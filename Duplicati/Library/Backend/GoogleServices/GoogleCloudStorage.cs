@@ -147,29 +147,30 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
         public async Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
         {
             using (System.IO.FileStream fs = System.IO.File.OpenRead(filename))
-                await PutAsync(remotename, fs, cancelToken);
+                await PutAsync(remotename, fs, cancelToken).ConfigureAwait(false);
         }
 
-        public void Get(string remotename, string filename)
+        public async Task GetAsync(string remotename, string filename, CancellationToken cancelToken)
         {
             using (System.IO.FileStream fs = System.IO.File.Create(filename))
-                Get(remotename, fs);
+                await GetAsync(remotename, fs, cancelToken).ConfigureAwait(false);
         }
-        public void Delete(string remotename)
+        public Task DeleteAsync(string remotename, CancellationToken cancelToken)
         {
 
             var req = m_oauth.CreateRequest(WebApi.GoogleCloudStorage.DeleteUrl(m_bucket, Library.Utility.Uri.UrlPathEncode(m_prefix + remotename)));
             req.Method = "DELETE";
 
-            m_oauth.ReadJSONResponse<object>(req);
+            return m_oauth.ReadJSONResponseAsync<object>(req, cancelToken);
         }
 
-        public void Test()
+        public Task TestAsync(CancellationToken cancelToken)
         {
             this.TestList();
+            return Task.CompletedTask;
         }
 
-        public void CreateFolder()
+        public async Task CreateFolderAsync(CancellationToken cancelToken)
         {
             if (string.IsNullOrEmpty(m_project))
                 throw new UserInformationException(Strings.GoogleCloudStorage.ProjectIDMissingError(PROJECT_OPTION), "GoogleCloudStorageMissingProjectID");
@@ -189,9 +190,9 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
             var areq = new AsyncHttpRequest(req);
 
             using (var rs = areq.GetRequestStream())
-                rs.Write(data, 0, data.Length);
+                await rs.WriteAsync(data, 0, data.Length, cancelToken);
 
-            m_oauth.ReadJSONResponse<BucketResourceItem>(areq);
+            await m_oauth.ReadJSONResponseAsync<BucketResourceItem>(areq, cancelToken).ConfigureAwait(false);
         }
 
         public string DisplayName
@@ -229,13 +230,7 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
             get { return Strings.GoogleCloudStorage.Description; }
         }
 
-        public string[] DNSName
-        {
-            get
-            {
-                return WebApi.GoogleCloudStorage.Hosts();
-            }
-        }
+        public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(WebApi.GoogleCloudStorage.Hosts());
 
         #endregion
 
@@ -244,23 +239,23 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
             var item = new BucketResourceItem { name = m_prefix + remotename };
 
             var url = WebApi.GoogleCloudStorage.PutUrl(m_bucket);
-            var res = await GoogleCommon.ChunkedUploadWithResumeAsync<BucketResourceItem, BucketResourceItem>(m_oauth, item, url, stream, cancelToken);
+            var res = await GoogleCommon.ChunkedUploadWithResumeAsync<BucketResourceItem, BucketResourceItem>(m_oauth, item, url, stream, cancelToken).ConfigureAwait(false);
 
             if (res == null)
                 throw new Exception("Upload succeeded, but no data was returned");
         }
 
-        public void Get(string remotename, System.IO.Stream stream)
+        public async Task GetAsync(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
         {
             try
             {
-                var url = WebApi.GoogleCloudStorage.GetUrl(m_bucket, Library.Utility.Uri.UrlPathEncode(m_prefix + remotename)); 
+                var url = WebApi.GoogleCloudStorage.GetUrl(m_bucket, Library.Utility.Uri.UrlPathEncode(m_prefix + remotename));
                 var req = m_oauth.CreateRequest(url);
                 var areq = new AsyncHttpRequest(req);
 
                 using (var resp = areq.GetResponse())
                 using (var rs = areq.GetResponseStream())
-                    Library.Utility.Utility.CopyStream(rs, stream);
+                    await Library.Utility.Utility.CopyStreamAsync(rs, stream, cancelToken).ConfigureAwait(false);
             }
             catch (WebException wex)
             {
@@ -271,7 +266,7 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
             }
         }
 
-        public void Rename(string oldname, string newname)
+        public async Task RenameAsync(string oldname, string newname, CancellationToken cancelToken)
         {
             var data = System.Text.Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(new BucketResourceItem
             {
@@ -285,9 +280,9 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
 
             var areq = new AsyncHttpRequest(req);
             using (var rs = areq.GetRequestStream())
-                rs.Write(data, 0, data.Length);
+                await rs.WriteAsync(data, 0, data.Length, cancelToken).ConfigureAwait(false);
 
-            m_oauth.ReadJSONResponse<BucketResourceItem>(req);
+            await m_oauth.ReadJSONResponseAsync<BucketResourceItem>(req, cancelToken).ConfigureAwait(false);
         }
 
         #region IDisposable implementation

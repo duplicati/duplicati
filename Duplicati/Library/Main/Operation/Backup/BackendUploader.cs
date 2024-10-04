@@ -353,7 +353,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                         try
                         {
                             // If we successfully create the folder, we can re-use the connection
-                            worker.Backend.CreateFolder();
+                            await worker.Backend.CreateFolderAsync(cancelToken).ConfigureAwait(false);
                             recovered = true;
                         }
                         catch (Exception dex)

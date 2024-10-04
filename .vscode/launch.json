@@ -93,11 +93,16 @@
             "console": "internalConsole"
         },
         {
-            "name": "C#: Duplicati.GUI.TrayIcon Debug",
-            "type": "dotnet",
+            "name": "Launch BackendTester executable",
+            "type": "coreclr",
             "request": "launch",
-            "projectPath": "${workspaceFolder}/Executables/net8/Duplicati.GUI.TrayIcon/Duplicati.GUI.TrayIcon.csproj"
-        }
+            "preLaunchTask": "build",
+            "program": "${workspaceFolder}/Executables/net8/Duplicati.CommandLine.BackendTester/bin/Debug/net8.0/Duplicati.CommandLine.BackendTester",
+            "args": [],
+            "cwd": "${workspaceFolder}",
+            "stopAtEntry": false,
+            "console": "internalConsole"
+        },
 
     ]
 }

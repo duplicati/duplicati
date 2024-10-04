@@ -26,6 +26,7 @@ using Duplicati.Library.Interface;
 using System.Linq;
 using System.Globalization;
 using System.Threading;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.CommandLine.BackendTester
 {
@@ -176,7 +177,7 @@ namespace Duplicati.CommandLine.BackendTester
                 IEnumerable<Library.Interface.IFileEntry> curlist = null;
                 try
                 {
-                    backend.Test();
+                    backend.TestAsync(CancellationToken.None).Await();
                     curlist = backend.List();
                 }
                 catch (FolderMissingException)
@@ -185,7 +186,7 @@ namespace Duplicati.CommandLine.BackendTester
                     {
                         try
                         {
-                            backend.CreateFolder();
+                            backend.CreateFolderAsync(CancellationToken.None).Await();
                             curlist = backend.List();
                         }
                         catch (Exception ex)
@@ -205,7 +206,7 @@ namespace Duplicati.CommandLine.BackendTester
                             if (Library.Utility.Utility.ParseBoolOption(options, "force"))
                             {
                                 Console.WriteLine("Auto clean, removing file: {0}", fe.Name);
-                                backend.Delete(fe.Name);
+                                backend.DeleteAsync(fe.Name, CancellationToken.None).Await();
                                 continue;
                             }
                             else
@@ -302,8 +303,7 @@ namespace Duplicati.CommandLine.BackendTester
 
                     TempFile originalRenamedFile = null;
                     string renamedFileNewName = null;
-                    IRenameEnabledBackend renameEnabledBackend = backend as IRenameEnabledBackend;
-                    if (renameEnabledBackend != null)
+                    if (backend is IRenameEnabledBackend renameEnabledBackend)
                     {
                         // Rename the second file in the list, if there are more than one. If not, just do the first one.
                         int renameIndex = files.Count > 1 ? 1 : 0;
@@ -313,7 +313,7 @@ namespace Duplicati.CommandLine.BackendTester
 
                         Console.WriteLine("Renaming file {0} from {1} to {2}", renameIndex, originalRenamedFile.remotefilename, renamedFileNewName);
 
-                        renameEnabledBackend.Rename(originalRenamedFile.remotefilename, renamedFileNewName);
+                        renameEnabledBackend.RenameAsync(originalRenamedFile.remotefilename, renamedFileNewName, CancellationToken.None).Await();
                         files[renameIndex] = new TempFile(renamedFileNewName, originalRenamedFile.localfilename, originalRenamedFile.hash, originalRenamedFile.length);
                     }
 
@@ -369,10 +369,10 @@ namespace Duplicati.CommandLine.BackendTester
                                     using (System.IO.FileStream fs = new System.IO.FileStream(cf, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.None))
                                     using (Library.Utility.ThrottledStream ts = new Library.Utility.ThrottledStream(fs, throttleDownload, throttleDownload))
                                     using (NonSeekableStream nss = new NonSeekableStream(ts))
-                                        streamingBackend.Get(files[i].remotefilename, nss);
+                                        streamingBackend.GetAsync(files[i].remotefilename, nss, CancellationToken.None).Await();
                                 }
                                 else
-                                    backend.Get(files[i].remotefilename, cf);
+                                    backend.GetAsync(files[i].remotefilename, cf, CancellationToken.None).Await();
 
                                 e = null;
                             }
@@ -404,7 +404,7 @@ namespace Duplicati.CommandLine.BackendTester
                     Console.WriteLine("Deleting files...");
 
                     foreach (TempFile tx in files)
-                        try { backend.Delete(tx.remotefilename); }
+                        try { backend.DeleteAsync(tx.remotefilename, CancellationToken.None).Await(); }
                         catch (Exception ex)
                         {
                             Console.WriteLine("*** Failed to delete file {0}, message: {1}", tx.remotefilename, ex);
@@ -424,7 +424,7 @@ namespace Duplicati.CommandLine.BackendTester
                     {
                         using (Duplicati.Library.Utility.TempFile tempFile = new Duplicati.Library.Utility.TempFile())
                         {
-                            backend.Get(string.Format("NonExistentFile-{0}", Guid.NewGuid()), tempFile.Name);
+                            backend.GetAsync(string.Format("NonExistentFile-{0}", Guid.NewGuid()), tempFile.Name, CancellationToken.None).Await();
                         }
                     }
                     catch (FileMissingException)
@@ -452,7 +452,7 @@ namespace Duplicati.CommandLine.BackendTester
                     bool noException;
                     try
                     {
-                        quota = quotaEnabledBackend.Quota;
+                        quota = quotaEnabledBackend.GetQuotaInfoAsync(CancellationToken.None).Await();
                         noException = true;
                     }
                     catch (Exception ex)
@@ -479,7 +479,7 @@ namespace Duplicati.CommandLine.BackendTester
                 Console.WriteLine("Checking DNS names used by this backend...");
                 try
                 {
-                    string[] dnsNames = backend.DNSName;
+                    var dnsNames = backend.GetDNSNamesAsync(CancellationToken.None).Await();
                     if (dnsNames != null)
                     {
                         foreach (string dnsName in dnsNames)
@@ -519,10 +519,10 @@ namespace Duplicati.CommandLine.BackendTester
                     using (System.IO.FileStream fs = new System.IO.FileStream(localfilename, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.Read))
                     using (Library.Utility.ThrottledStream ts = new Library.Utility.ThrottledStream(fs, throttle, throttle))
                     using (NonSeekableStream nss = new NonSeekableStream(ts))
-                        streamingBackend.PutAsync(remotefilename, nss, CancellationToken.None).Wait();
+                        streamingBackend.PutAsync(remotefilename, nss, CancellationToken.None).Await();
                 }
                 else
-                    backend.PutAsync(remotefilename, localfilename, CancellationToken.None).Wait();
+                    backend.PutAsync(remotefilename, localfilename, CancellationToken.None).Await();
 
                 e = null;
             }

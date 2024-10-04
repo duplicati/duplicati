@@ -29,7 +29,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net;
 using System.Net.Security;
 using System.Security.Authentication;
 using System.Threading;
@@ -74,7 +73,6 @@ namespace Duplicati.Library.Backend.AlternativeFTP
 
         private readonly bool _logToConsole = false;
         private readonly bool _logPrivateInfoToConsole = false;
-        private readonly byte[] _copybuffer = new byte[CoreUtility.DEFAULT_BUFFER_SIZE];
         private readonly bool _accepAllCertificates;
         private readonly string[] _validHashes;
 
@@ -386,7 +384,7 @@ namespace Duplicati.Library.Backend.AlternativeFTP
             }
         }
 
-        public void Get(string remotename, Stream output)
+        public async Task GetAsync(string remotename, Stream output, CancellationToken cancelToken)
         {
             var ftpClient = CreateClient();
 
@@ -399,11 +397,11 @@ namespace Duplicati.Library.Backend.AlternativeFTP
                 remotePath += remotename;
             }
 
-            using (var inputStream = ftpClient.OpenRead(remotePath).Await())
+            using (var inputStream = await ftpClient.OpenRead(remotePath, token: cancelToken))
             {
                 try
                 {
-                    CoreUtility.CopyStream(inputStream, output, false, _copybuffer);
+                    await CoreUtility.CopyStreamAsync(inputStream, output, false, cancelToken).ConfigureAwait(false);
                 }
                 finally
                 {
@@ -413,15 +411,15 @@ namespace Duplicati.Library.Backend.AlternativeFTP
 
         }
 
-        public void Get(string remotename, string localname)
+        public async Task GetAsync(string remotename, string localname, CancellationToken cancelToken)
         {
             using (FileStream fs = File.Open(localname, FileMode.Create, FileAccess.Write, FileShare.None))
             {
-                Get(remotename, fs);
+                await GetAsync(remotename, fs, cancelToken).ConfigureAwait(false);
             }
         }
 
-        public void Delete(string remotename)
+        public async Task DeleteAsync(string remotename, CancellationToken cancelToken)
         {
             var ftpClient = CreateClient();
 
@@ -434,7 +432,7 @@ namespace Duplicati.Library.Backend.AlternativeFTP
                 remotePath += remotename;
             }
 
-            ftpClient.DeleteFile(remotePath).Await();
+            await ftpClient.DeleteFile(remotePath, cancelToken);
 
         }
 
@@ -449,15 +447,12 @@ namespace Duplicati.Library.Backend.AlternativeFTP
             }
         }
 
-        public string[] DNSName
-        {
-            get { return new string[] { new Uri(_url).Host }; }
-        }
+        public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(new string[] { new Uri(_url).Host });
 
         /// <summary>
         /// Test FTP access permissions.
         /// </summary>
-        public void Test()
+        public async Task TestAsync(CancellationToken cancellationToken)
         {
             var list = List();
 
@@ -466,7 +461,7 @@ namespace Duplicati.Library.Backend.AlternativeFTP
             {
                 try
                 {
-                    Delete(TEST_FILE_NAME);
+                    await DeleteAsync(TEST_FILE_NAME, cancellationToken).ConfigureAwait(false);
                 }
                 catch (Exception e)
                 {
@@ -480,7 +475,7 @@ namespace Duplicati.Library.Backend.AlternativeFTP
             {
                 try
                 {
-                    PutAsync(TEST_FILE_NAME, testStream, CancellationToken.None).Await();
+                    await PutAsync(TEST_FILE_NAME, testStream, cancellationToken).ConfigureAwait(false);
                 }
                 catch (Exception e)
                 {
@@ -494,7 +489,7 @@ namespace Duplicati.Library.Backend.AlternativeFTP
             {
                 try
                 {
-                    Get(TEST_FILE_NAME, testStream);
+                    await GetAsync(TEST_FILE_NAME, testStream, cancellationToken).ConfigureAwait(false);
                     var readValue = System.Text.Encoding.UTF8.GetString(testStream.ToArray());
                     if (readValue != TEST_FILE_CONTENT)
                         throw new Exception("Test file corrupted.");
@@ -509,7 +504,7 @@ namespace Duplicati.Library.Backend.AlternativeFTP
             // Cleanup
             try
             {
-                Delete(TEST_FILE_NAME);
+                await DeleteAsync(TEST_FILE_NAME, cancellationToken).ConfigureAwait(false);
             }
             catch (Exception e)
             {
@@ -518,7 +513,7 @@ namespace Duplicati.Library.Backend.AlternativeFTP
             }
         }
 
-        public void CreateFolder()
+        public Task CreateFolderAsync(CancellationToken cancellationToken)
         {
             var client = CreateClient(false);
 
@@ -528,8 +523,7 @@ namespace Duplicati.Library.Backend.AlternativeFTP
             var remotePath = this.GetUnescapedAbsolutePath(url);
 
             // Try to create the directory 
-            client.CreateDirectory(remotePath, true).Await();
-
+            return client.CreateDirectory(remotePath, true, cancellationToken);
         }
 
         public void Dispose()

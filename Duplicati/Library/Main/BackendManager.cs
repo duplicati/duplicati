@@ -21,7 +21,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Cryptography;
 using System.Text;
 using Duplicati.Library.Utility;
 using Duplicati.Library.Main.Database;
@@ -31,6 +30,7 @@ using Duplicati.Library.Localization.Short;
 using System.Threading;
 using System.Net;
 using Duplicati.Library.Interface;
+using System.Threading.Tasks;
 
 namespace Duplicati.Library.Main
 {
@@ -478,22 +478,22 @@ namespace Duplicati.Library.Main
                                 switch (item.Operation)
                                 {
                                     case OperationType.Put:
-                                        DoPut(item);
+                                        DoPutAsync(item, CancellationToken.None).Await();
                                         // We do not auto create folders,
                                         // because we know the folder exists
                                         uploadSuccess = true;
                                         break;
                                     case OperationType.Get:
-                                        DoGet(item);
+                                        DoGetAsync(item, CancellationToken.None).Await();
                                         break;
                                     case OperationType.List:
                                         DoList(item);
                                         break;
                                     case OperationType.Delete:
-                                        DoDelete(item);
+                                        DoDeleteAsync(item, CancellationToken.None).Await();
                                         break;
                                     case OperationType.CreateFolder:
-                                        DoCreateFolder(item);
+                                        DoCreateFolderAsync(item, CancellationToken.None).Await();
                                         break;
                                     case OperationType.Terminate:
                                         m_queue.SetCompleted();
@@ -528,7 +528,7 @@ namespace Duplicati.Library.Main
                                 {
                                     try
                                     {
-                                        var names = m_backend.DNSName ?? new string[0];
+                                        var names = m_backend.GetDNSNamesAsync(CancellationToken.None).Await() ?? new string[0];
                                         foreach (var name in names)
                                             if (!string.IsNullOrWhiteSpace(name))
                                                 System.Net.Dns.GetHostEntry(name);
@@ -547,7 +547,7 @@ namespace Duplicati.Library.Main
                                 try
                                 {
                                     // If we successfully create the folder, we can re-use the connection
-                                    m_backend.CreateFolder();
+                                    m_backend.CreateFolderAsync(CancellationToken.None).Await();
                                     recovered = true;
                                 }
                                 catch (Exception dex)
@@ -705,7 +705,7 @@ namespace Duplicati.Library.Main
             m_statwriter.BackendProgressUpdater.UpdateProgress(pg);
         }
 
-        private void DoPut(FileEntryItem item)
+        private async Task DoPutAsync(FileEntryItem item, CancellationToken cancellationToken)
         {
             if (m_encryption != null)
                 lock (m_encryptionLock)
@@ -726,15 +726,15 @@ namespace Duplicati.Library.Main
 
             var begin = DateTime.Now;
 
-            if (m_backend is Library.Interface.IStreamingBackend && !m_options.DisableStreamingTransfers)
+            if (m_backend is Library.Interface.IStreamingBackend streamingBackend && !m_options.DisableStreamingTransfers)
             {
                 using (var fs = System.IO.File.OpenRead(item.LocalFilename))
                 using (var ts = new ThrottledStream(fs, m_options.MaxUploadPrSecond, 0))
                 using (var pgs = new Library.Utility.ProgressReportingStream(ts, pg => HandleProgress(ts, pg)))
-                    ((Library.Interface.IStreamingBackend)m_backend).PutAsync(item.RemoteFilename, pgs, CancellationToken.None).Wait();
+                    await streamingBackend.PutAsync(item.RemoteFilename, pgs, cancellationToken);
             }
             else
-                m_backend.PutAsync(item.RemoteFilename, item.LocalFilename, CancellationToken.None).Wait();
+                await m_backend.PutAsync(item.RemoteFilename, item.LocalFilename, cancellationToken);
 
             var duration = DateTime.Now - begin;
             Logging.Log.WriteProfilingMessage(LOGTAG, "UploadSpeed", "Uploaded {0} in {1}, {2}/s", Library.Utility.Utility.FormatSizeString(item.Size), duration, Library.Utility.Utility.FormatSizeString((long)(item.Size / duration.TotalSeconds)));
@@ -756,15 +756,15 @@ namespace Duplicati.Library.Main
             item.DeleteLocalFile(m_statwriter);
         }
 
-        private TempFile DoGetFile(FileEntryItem item, Interface.IEncryption useDecrypter, out long retDownloadSize, out string retHashcode)
+        private async Task<(TempFile tempFile, long downloadSize, string remotehash)> DoGetFile(FileEntryItem item, IEncryption useDecrypter, CancellationToken cancellationToken)
         {
-            retHashcode = null;
-            retDownloadSize = -1;
             TempFile retTarget, dlTarget = null, decryptTarget = null;
+            long retDownloadSize;
+            string retHashcode;
             try
             {
                 dlTarget = new Library.Utility.TempFile();
-                if (m_backend is Library.Interface.IStreamingBackend && !m_options.DisableStreamingTransfers)
+                if (m_backend is Library.Interface.IStreamingBackend streamingBackend && !m_options.DisableStreamingTransfers)
                 {
                     // extended to use stacked streams
                     using (var fs = System.IO.File.OpenWrite(dlTarget))
@@ -778,7 +778,7 @@ namespace Duplicati.Library.Main
 
                         using (var ts = new ThrottledStream(ss, 0, m_options.MaxDownloadPrSecond))
                         using (var pgs = new Library.Utility.ProgressReportingStream(ts, pg => HandleProgress(ts, pg)))
-                        { ((Library.Interface.IStreamingBackend)m_backend).Get(item.RemoteFilename, pgs); }
+                        { await streamingBackend.GetAsync(item.RemoteFilename, pgs, cancellationToken); }
                         ss.Flush();
                         retDownloadSize = ss.TotalBytesWritten;
                         retHashcode = Convert.ToBase64String(hs.GetFinalHash());
@@ -786,7 +786,7 @@ namespace Duplicati.Library.Main
                 }
                 else
                 {
-                    m_backend.Get(item.RemoteFilename, dlTarget);
+                    await m_backend.GetAsync(item.RemoteFilename, dlTarget, cancellationToken);
                     retDownloadSize = new System.IO.FileInfo(dlTarget).Length;
                     retHashcode = CalculateFileHash(dlTarget, m_options);
                 }
@@ -819,10 +819,10 @@ namespace Duplicati.Library.Main
                 if (decryptTarget != null) decryptTarget.Dispose();
             }
 
-            return retTarget;
+            return (retTarget, retDownloadSize, retHashcode);
         }
 
-        private void DoGet(FileEntryItem item)
+        private async Task DoGetAsync(FileEntryItem item, CancellationToken cancellationToken)
         {
             Library.Utility.TempFile tmpfile = null;
             m_statwriter.SendEvent(BackendActionType.Get, BackendEventType.Started, item.RemoteFilename, item.Size);
@@ -873,9 +873,7 @@ namespace Duplicati.Library.Main
                     }
                 }
 
-                string fileHash;
-                long dataSizeDownloaded;
-                tmpfile = DoGetFile(item, useDecrypter, out dataSizeDownloaded, out fileHash);
+                (tmpfile, var dataSizeDownloaded, var fileHash) = await DoGetFile(item, useDecrypter, cancellationToken);
 
                 var duration = DateTime.Now - begin;
                 Logging.Log.WriteProfilingMessage(LOGTAG, "DownloadSpeed", "Downloaded {3}{0} in {1}, {2}/s", Library.Utility.Utility.FormatSizeString(dataSizeDownloaded),
@@ -949,14 +947,14 @@ namespace Duplicati.Library.Main
             m_statwriter.SendEvent(BackendActionType.List, BackendEventType.Completed, null, r.Count);
         }
 
-        private void DoDelete(FileEntryItem item)
+        private async Task DoDeleteAsync(FileEntryItem item, CancellationToken cancellationToken)
         {
             m_statwriter.SendEvent(BackendActionType.Delete, BackendEventType.Started, item.RemoteFilename, item.Size);
 
             string result = null;
             try
             {
-                m_backend.Delete(item.RemoteFilename);
+                await m_backend.DeleteAsync(item.RemoteFilename, cancellationToken).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -999,14 +997,14 @@ namespace Duplicati.Library.Main
             m_statwriter.SendEvent(BackendActionType.Delete, BackendEventType.Completed, item.RemoteFilename, item.Size);
         }
 
-        private void DoCreateFolder(FileEntryItem item)
+        private async Task DoCreateFolderAsync(FileEntryItem item, CancellationToken cancelToken)
         {
             m_statwriter.SendEvent(BackendActionType.CreateFolder, BackendEventType.Started, null, -1);
 
             string result = null;
             try
             {
-                m_backend.CreateFolder();
+                await m_backend.CreateFolderAsync(cancelToken).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -1310,7 +1308,8 @@ namespace Duplicati.Library.Main
                 throw m_lastException;
         }
 
-        public IQuotaInfo Quota => (m_backend as IQuotaEnabledBackend)?.Quota;
+        public Task<IQuotaInfo> GetQuotaInfoAsync(CancellationToken cancelToken)
+            => (m_backend as IQuotaEnabledBackend)?.GetQuotaInfoAsync(cancelToken) ?? Task.FromResult<IQuotaInfo>(null);
 
         public bool FlushDbMessages()
         {

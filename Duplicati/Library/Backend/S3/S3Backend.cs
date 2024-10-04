@@ -290,20 +290,20 @@ namespace Duplicati.Library.Backend
             await Connection.AddFileStreamAsync(m_bucket, GetFullKey(remotename), input, cancelToken);
         }
 
-        public void Get(string remotename, string localname)
+        public async Task GetAsync(string remotename, string localname, CancellationToken cancelToken)
         {
             using (var fs = File.Open(localname, FileMode.Create, FileAccess.Write, FileShare.None))
-                Get(remotename, fs);
+                await GetAsync(remotename, fs, cancelToken).ConfigureAwait(false);
         }
 
-        public void Get(string remotename, Stream output)
+        public Task GetAsync(string remotename, Stream output, CancellationToken cancelToken)
         {
-            Connection.GetFileStream(m_bucket, GetFullKey(remotename), output);
+            return Connection.GetFileStreamAsync(m_bucket, GetFullKey(remotename), output, cancelToken);
         }
 
-        public void Delete(string remotename)
+        public Task DeleteAsync(string remotename, CancellationToken cancelToken)
         {
-            Connection.DeleteObject(m_bucket, GetFullKey(remotename));
+            return Connection.DeleteObjectAsync(m_bucket, GetFullKey(remotename), cancelToken);
         }
 
         public IList<ICommandLineArgument> SupportedCommands
@@ -358,24 +358,25 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public void Test()
+        public Task TestAsync(CancellationToken cancelToken)
         {
             this.TestList();
+            return Task.CompletedTask;
         }
 
-        public void CreateFolder()
+        public Task CreateFolderAsync(CancellationToken cancelToken)
         {
             //S3 does not complain if the bucket already exists
-            Connection.AddBucket(m_bucket);
+            return Connection.AddBucketAsync(m_bucket, cancelToken);
         }
 
         #endregion
 
         #region IRenameEnabledBackend Members
 
-        public void Rename(string source, string target)
+        public Task RenameAsync(string source, string target, CancellationToken cancelToken)
         {
-            Connection.RenameFile(m_bucket, GetFullKey(source), GetFullKey(target));
+            return Connection.RenameFileAsync(m_bucket, GetFullKey(source), GetFullKey(target), cancelToken);
         }
 
         #endregion
@@ -395,10 +396,7 @@ namespace Duplicati.Library.Backend
             get { return s3Client; }
         }
 
-        public string[] DNSName
-        {
-            get { return new[] { s3Client.GetDnsHost() }; }
-        }
+        public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(new[] { s3Client.GetDnsHost() });
 
         private string GetFullKey(string name)
         {

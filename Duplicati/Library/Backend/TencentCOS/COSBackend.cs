@@ -26,6 +26,7 @@ using COSXML.Model.Tag;
 using COSXML.Utils;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Utility;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -232,16 +233,16 @@ namespace Duplicati.Library.Backend.TencentCOS
         public async Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
         {
             using (FileStream fs = File.Open(filename, FileMode.Open, FileAccess.Read, FileShare.Read))
-                await PutAsync(remotename, fs, cancelToken);
+                await PutAsync(remotename, fs, cancelToken).ConfigureAwait(false);
         }
 
-        public void Get(string remotename, string filename)
+        public async Task GetAsync(string remotename, string filename, CancellationToken cancelToken)
         {
             using (var fs = File.Open(filename, FileMode.Create, FileAccess.Write, FileShare.None))
-                Get(remotename, fs);
+                await GetAsync(remotename, fs, cancelToken).ConfigureAwait(false);
         }
 
-        public void Delete(string remotename)
+        public Task DeleteAsync(string remotename, CancellationToken cancelToken)
         {
             try
             {
@@ -249,11 +250,12 @@ namespace Duplicati.Library.Backend.TencentCOS
                 string bucket = _cosOptions.Bucket;
                 string key = GetFullKey(remotename);
 
-                DeleteObjectRequest request = new DeleteObjectRequest(bucket, key);
+                var request = new DeleteObjectRequest(bucket, key);
+                cancelToken.Register(() => request.Cancel());
 
                 request.SetSign(TimeUtils.GetCurrentTime(TimeUnit.SECONDS), 600);
 
-                DeleteObjectResult result = cosXml.DeleteObject(request);
+                var result = cosXml.DeleteObject(request);
             }
             catch (COSXML.CosException.CosClientException clientEx)
             {
@@ -265,18 +267,21 @@ namespace Duplicati.Library.Backend.TencentCOS
                 Logging.Log.WriteErrorMessage(LOGTAG, "Delete", serverEx, "Delete failed: {0}, {1}", remotename, serverEx.GetInfo());
                 throw;
             }
+
+            return Task.CompletedTask;
         }
 
-        public void Test()
+        public Task TestAsync(CancellationToken cancelToken)
         {
             var json = JsonConvert.SerializeObject(_cosOptions);
             try
             {
                 cosXml = GetCosXml();
                 string bucket = _cosOptions.Bucket;
-                HeadBucketRequest request = new HeadBucketRequest(bucket);
+                var request = new HeadBucketRequest(bucket);
                 request.SetSign(TimeUtils.GetCurrentTime(TimeUnit.SECONDS), 600);
-                HeadBucketResult result = cosXml.HeadBucket(request);
+                cancelToken.Register(() => request.Cancel());
+                var result = cosXml.HeadBucket(request);
 
                 Logging.Log.WriteInformationMessage(LOGTAG, "Test", "Request complete {0}: {1}, {2}", result.httpCode, json, result.GetResultInfo());
             }
@@ -290,11 +295,14 @@ namespace Duplicati.Library.Backend.TencentCOS
                 Logging.Log.WriteErrorMessage(LOGTAG, "Test", serverEx, "Request failed: {0}, {1}", json, serverEx.GetInfo());
                 throw;
             }
+
+            return Task.CompletedTask;
         }
 
-        public void CreateFolder()
+        public Task CreateFolderAsync(CancellationToken cancelToken)
         {
             // No need to create folders
+            return Task.CompletedTask;
         }
 
         public void Dispose()
@@ -327,8 +335,9 @@ namespace Duplicati.Library.Backend.TencentCOS
                 {
                     request.SetRequestHeader("x-" + COS_STORAGE_CLASS, _cosOptions.StorageClass);
                 }
+                cancelToken.Register(() => request.Cancel());
 
-                PutObjectResult result = cosXml.PutObject(request);
+                var result = cosXml.PutObject(request);
             }
             catch (COSXML.CosException.CosClientException clientEx)
             {
@@ -344,7 +353,7 @@ namespace Duplicati.Library.Backend.TencentCOS
             return Task.CompletedTask;
         }
 
-        public void Get(string remotename, Stream stream)
+        public async Task GetAsync(string remotename, Stream stream, CancellationToken cancelToken)
         {
             try
             {
@@ -352,16 +361,17 @@ namespace Duplicati.Library.Backend.TencentCOS
                 string bucket = _cosOptions.Bucket;
                 string key = GetFullKey(remotename);
 
-                GetObjectBytesRequest request = new GetObjectBytesRequest(bucket, key);
+                var request = new GetObjectBytesRequest(bucket, key);
 
                 request.SetSign(TimeUtils.GetCurrentTime(TimeUnit.SECONDS), KEY_DURATION_SECOND);
+                cancelToken.Register(() => request.Cancel());
 
-                GetObjectBytesResult result = cosXml.GetObject(request);
+                var result = cosXml.GetObject(request);
 
-                byte[] bytes = result.content;
+                var bytes = result.content;
 
-                Stream ms = new MemoryStream(bytes);
-                Utility.Utility.CopyStream(ms, stream);
+                using (var ms = new MemoryStream(bytes))
+                    await Utility.Utility.CopyStreamAsync(ms, stream, cancelToken).ConfigureAwait(false);
             }
             catch (COSXML.CosException.CosClientException clientEx)
             {
@@ -375,31 +385,32 @@ namespace Duplicati.Library.Backend.TencentCOS
             }
         }
 
-        public void Rename(string oldname, string newname)
+        public async Task RenameAsync(string oldname, string newname, CancellationToken cancelToken)
         {
             try
             {
                 cosXml = GetCosXml();
-                string sourceAppid = _cosOptions.Appid;
-                string sourceBucket = _cosOptions.Bucket;
-                string sourceRegion = _cosOptions.Region;
-                string sourceKey = GetFullKey(oldname);
+                var sourceAppid = _cosOptions.Appid;
+                var sourceBucket = _cosOptions.Bucket;
+                var sourceRegion = _cosOptions.Region;
+                var sourceKey = GetFullKey(oldname);
 
-                CopySourceStruct copySource = new CopySourceStruct(sourceAppid, sourceBucket, sourceRegion, sourceKey);
+                var copySource = new CopySourceStruct(sourceAppid, sourceBucket, sourceRegion, sourceKey);
 
-                string bucket = _cosOptions.Bucket;
-                string key = GetFullKey(newname);
-                CopyObjectRequest request = new CopyObjectRequest(bucket, key);
+                var bucket = _cosOptions.Bucket;
+                var key = GetFullKey(newname);
+                var request = new CopyObjectRequest(bucket, key);
 
                 request.SetSign(TimeUtils.GetCurrentTime(TimeUnit.SECONDS), KEY_DURATION_SECOND);
                 request.SetCopySource(copySource);
                 request.SetCopyMetaDataDirective(COSXML.Common.CosMetaDataDirective.COPY);
+                cancelToken.Register(() => request.Cancel());
 
-                CopyObjectResult result = cosXml.CopyObject(request);
+                var result = cosXml.CopyObject(request);
 
                 //Console.WriteLine(result.GetResultInfo());
 
-                Delete(oldname);
+                await DeleteAsync(oldname, cancelToken).ConfigureAwait(false);
             }
             catch (COSXML.CosException.CosClientException clientEx)
             {
@@ -434,7 +445,7 @@ namespace Duplicati.Library.Backend.TencentCOS
             }
         }
 
-        public string[] DNSName => null;
+        public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(Array.Empty<string>());
 
         private string GetFullKey(string name)
         {

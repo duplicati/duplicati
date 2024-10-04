@@ -274,13 +274,13 @@ namespace Duplicati.Library.Backend
                 await PutAsync(remotename, fs, cancelToken);
         }
 
-        public void Get(string remotename, string filename)
+        public async Task GetAsync(string remotename, string filename, CancellationToken cancelToken)
         {
-            using (FileStream fs = File.Create(filename))
-                Get(remotename, fs);
+            using (var fs = File.Create(filename))
+                await GetAsync(remotename, fs, cancelToken);
         }
 
-        public void Delete(string remotename)
+        public async Task DeleteAsync(string remotename, CancellationToken cancelToken)
         {
             try
             {
@@ -290,7 +290,7 @@ namespace Duplicati.Library.Backend
                 using var requestResources = CreateRequest(remotename);
                 requestResources.RequestMessage.Method = HttpMethod.Delete;
 
-                var response = requestResources.HttpClient.SendAsync(requestResources.RequestMessage, timeoutToken.Token).ConfigureAwait(false).GetAwaiter().GetResult();
+                var response = await requestResources.HttpClient.SendAsync(requestResources.RequestMessage, timeoutToken.Token);
 
                 response.EnsureSuccessStatusCode(); // This replaces the if needed when Mono was used.
 
@@ -323,25 +323,22 @@ namespace Duplicati.Library.Backend
             get { return Strings.WEBDAV.Description; }
         }
 
-        public string[] DNSName
-        {
-            get { return new string[] { m_dnsName }; }
-        }
+        public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(new[] { m_dnsName });
 
-        public void Test()
+        public Task TestAsync(CancellationToken cancelToken)
         {
             List();
+            return Task.CompletedTask;
         }
 
-        public void CreateFolder()
+        public async Task CreateFolderAsync(CancellationToken cancelToken)
         {
-
-            using var timeoutToken = new CancellationTokenSource();
+            using var timeoutToken = CancellationTokenSource.CreateLinkedTokenSource(cancelToken);
             timeoutToken.CancelAfter(TimeSpan.FromSeconds(SHORT_OPERATION_TIMEOUT_SECONDS));
 
             using var requestResources = CreateRequest(string.Empty, new HttpMethod("MKCOL"));
 
-            using var response = requestResources.HttpClient.SendAsync(requestResources.RequestMessage, timeoutToken.Token).ConfigureAwait(false).GetAwaiter().GetResult();
+            using var response = await requestResources.HttpClient.SendAsync(requestResources.RequestMessage, timeoutToken.Token).ConfigureAwait(false);
 
             response.EnsureSuccessStatusCode(); // This replaces the if needed when Mono was used.
         }
@@ -430,16 +427,16 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public void Get(string remotename, Stream stream)
+        public async Task GetAsync(string remotename, Stream stream, CancellationToken cancelToken)
         {
             try
             {
-                using var timeoutToken = new CancellationTokenSource();
+                using var timeoutToken = CancellationTokenSource.CreateLinkedTokenSource(cancelToken);
                 timeoutToken.CancelAfter(TimeSpan.FromSeconds(LONG_OPERATION_TIMEOUT_SECONDS));
 
                 using var requestResources = CreateRequest(remotename, HttpMethod.Get);
 
-                requestResources.HttpClient.DownloadFile(requestResources.RequestMessage, stream, null, timeoutToken.Token).ConfigureAwait(false).GetAwaiter().GetResult();
+                await requestResources.HttpClient.DownloadFile(requestResources.RequestMessage, stream, null, timeoutToken.Token).ConfigureAwait(false);
 
             }
             catch (HttpRequestException wex)
@@ -456,6 +453,10 @@ namespace Duplicati.Library.Backend
                     m_filenamelist.Contains(remotename)
                 )
                     throw new Exception(Strings.WEBDAV.SeenThenNotFoundError(m_path, remotename, Path.GetExtension(remotename), wex.Message), wex);
+
+                if (wex.StatusCode == HttpStatusCode.NotFound)
+                    throw new FileMissingException(wex);
+
                 throw;
             }
         }
