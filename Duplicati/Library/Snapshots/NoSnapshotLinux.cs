@@ -24,7 +24,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
-using System.Threading.Tasks;
 using Duplicati.Library.Common.IO;
 using Microsoft.Win32.SafeHandles;
 
@@ -37,24 +36,44 @@ namespace Duplicati.Library.Snapshots
     [SupportedOSPlatform("macOS")]
     public sealed class NoSnapshotLinux : SnapshotBase
     {
-
-        [DllImport("libc", EntryPoint = "fopen", SetLastError = true)]
-        private static extern IntPtr fopen(string path, string mode);
-
-        [DllImport("libc", EntryPoint = "fclose", SetLastError = true)]
-        private static extern int fclose(IntPtr handle);
-
-        [DllImport("libc", EntryPoint = "fileno", SetLastError = true)]
-        private static extern int fileno(IntPtr stream);
-
-        [DllImport("libc", EntryPoint = "strerror", SetLastError = true)]
-        private static extern IntPtr strerror(int errnum);
-
-        private static string GetErrorMessage(int errno)
+        /// <summary>
+        /// PInvoke methods
+        /// </summary>
+        private static class PInvoke
         {
-            IntPtr strPtr = strerror(errno);
-            return Marshal.PtrToStringAnsi(strPtr) ?? $"Unknown error: {errno}";
+            [DllImport("libc", EntryPoint = "fopen", SetLastError = true)]
+            public static extern IntPtr fopen(string path, string mode);
+
+            [DllImport("libc", EntryPoint = "fclose", SetLastError = true)]
+            public static extern int fclose(IntPtr handle);
+
+            [DllImport("libc", EntryPoint = "fileno", SetLastError = true)]
+            public static extern int fileno(IntPtr stream);
+
+            [DllImport("libc", EntryPoint = "strerror", SetLastError = true)]
+            public static extern IntPtr strerror(int errnum);
+
+            public static string GetErrorMessage(int errno)
+            {
+                IntPtr strPtr = PInvoke.strerror(errno);
+                return Marshal.PtrToStringAnsi(strPtr) ?? $"Unknown error: {errno}";
+            }
         }
+
+        /// <summary>
+        /// Flag indicating if advisory locks should be ignored
+        /// </summary>
+        private readonly bool m_ignoreAdvisoryLocks;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="NoSnapshotLinux"/> class.
+        /// </summary>
+        /// <param name="ignoreAdvisoryLocks">A flag indicating if advisory locks should be ignored</param>
+        public NoSnapshotLinux(bool ignoreAdvisoryLocks)
+        {
+            m_ignoreAdvisoryLocks = ignoreAdvisoryLocks;
+        }
+
 
         /// <summary>
         /// Returns the symlink target if the entry is a symlink, and null otherwise
@@ -133,51 +152,60 @@ namespace Duplicati.Library.Snapshots
         /// <returns></returns>
         public override Stream OpenRead(string localPath)
         {
-            IntPtr filePtr = fopen(localPath, "r");
-            var errorNo = Marshal.GetLastWin32Error(); // Surprisingly, this is to be used on linux/macos
-            if (filePtr == IntPtr.Zero)
+            if (m_ignoreAdvisoryLocks)
             {
-                throw new IOException($"Unable to open file: {localPath}. Error: {errorNo} - {GetErrorMessage(errorNo)}");
+                var filePtr = PInvoke.fopen(localPath, "r");
+                var errorNo = Marshal.GetLastWin32Error(); // Surprisingly, this is to be used on linux/macos
+                if (filePtr == IntPtr.Zero)
+                {
+                    throw new IOException($"Unable to open file: {localPath}. Error: {errorNo} - {PInvoke.GetErrorMessage(errorNo)}");
+                }
+
+                try
+                {
+
+                    SafeFileHandle safeFileHandle = new(PInvoke.fileno(filePtr), false);
+                    return new UnixFileStream(safeFileHandle, filePtr, FileAccess.Read);
+                }
+                catch // Catch all exceptions and rethrow
+                {
+                    if (filePtr != IntPtr.Zero)
+                        PInvoke.fclose(filePtr);
+
+                    throw;
+                }
             }
-
-            try
+            else
             {
-
-                SafeFileHandle safeFileHandle = new(fileno(filePtr), false);
-
-                return new UnixFileStream(safeFileHandle, filePtr, FileAccess.Read);
-            }
-            catch // Catch all exceptions and rethrow
-            {
-                if (filePtr!=IntPtr.Zero)
-                    fclose(filePtr);
-
-                throw;
+                return base.OpenRead(localPath);
             }
         }
-    }
-    public class UnixFileStream : FileStream
-    {
-        [DllImport("libc", EntryPoint = "fclose", SetLastError = true)]
-        private static extern int fclose(IntPtr handle);
-        IntPtr _fileHandle;
-        SafeFileHandle _handle;
-        public UnixFileStream(SafeFileHandle handle, IntPtr fileHandle, FileAccess access) : base(handle, access)
+
+        /// <summary>
+        /// Stream wrapping a file handle
+        /// </summary>
+        private class UnixFileStream : FileStream
         {
-            _fileHandle = fileHandle;
-            _handle = handle;
-        }
-        protected override void Dispose(bool disposing)
-        {
-            if (_fileHandle != IntPtr.Zero)
+            IntPtr _fileHandle;
+            SafeFileHandle _handle;
+            public UnixFileStream(SafeFileHandle handle, IntPtr fileHandle, FileAccess access) : base(handle, access)
             {
-                fclose(_fileHandle);
-                _fileHandle = IntPtr.Zero;
+                _fileHandle = fileHandle;
+                _handle = handle;
             }
-            _handle?.Dispose();
-            base.Dispose(disposing);
-        }
 
+            protected override void Dispose(bool disposing)
+            {
+                if (_fileHandle != IntPtr.Zero)
+                {
+                    PInvoke.fclose(_fileHandle);
+                    _fileHandle = IntPtr.Zero;
+                }
+                _handle?.Dispose();
+                base.Dispose(disposing);
+            }
+
+        }
     }
 }
 
