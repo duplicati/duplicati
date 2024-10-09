@@ -272,6 +272,12 @@ public static partial class Command
             getDefaultValue: () => false
         );
 
+        var disableWebpack = new Option<bool>(
+            name: "--disable-webpack",
+            description: "Disables webpacking of the webroot",
+            getDefaultValue: () => false
+        );
+
         var command = new System.CommandLine.Command("build", "Builds the packages for a release") {
             gitStashPushOption,
             releaseChannelArgument,
@@ -294,7 +300,8 @@ public static partial class Command
             disableGithubUploadOption,
             disableUpdateServerReloadOption,
             disableDiscordAnnounceOption,
-            useHostedBuildsOption
+            useHostedBuildsOption,
+            disableWebpack
         };
 
         command.Handler = CommandHandler.Create<CommandInput>(DoBuild);
@@ -326,6 +333,7 @@ public static partial class Command
     /// <param name="DisableUpdateServerReload">If the update server should not be reloaded</param>
     /// <param name="DisableDiscordAnnounce">If forum posting should be disabled</param>
     /// <param name="UseHostedBuilds">If hosted builds should be used</param>
+    /// <param name="DisableWebpack">If webpacking should be disabled</param>
     record CommandInput(
         PackageTarget[] Targets,
         DirectoryInfo BuildPath,
@@ -348,7 +356,8 @@ public static partial class Command
         bool DisableGithubUpload,
         bool DisableUpdateServerReload,
         bool DisableDiscordAnnounce,
-        bool UseHostedBuilds
+        bool UseHostedBuilds,
+        bool DisableWebpack
     );
 
     static async Task DoBuild(CommandInput input)
@@ -486,7 +495,7 @@ public static partial class Command
             await ProcessHelper.Execute(["git", "stash", "save", $"auto-build-{releaseInfo.Timestamp:yyyy-MM-dd}"], workingDirectory: baseDir);
 
         // Inject various files that will be embedded into the build artifacts
-        var revertableFiles = await PrepareSourceDirectory(baseDir, releaseInfo, rtcfg);
+        var revertableFiles = await PrepareSourceDirectory(baseDir, releaseInfo, rtcfg, input.DisableWebpack);
 
         // Inject a version tag into the html files
         revertableFiles.AddRange(InjectVersionIntoFiles(baseDir, releaseInfo));
@@ -698,8 +707,9 @@ public static partial class Command
     /// <param name="baseDir">The source folder base</param>
     /// <param name="releaseInfo">The release info to use</param>
     /// <param name="rtcfg">The runtime configuration</param>
+    /// <param name="disableWebpack">If webpacking should be disabled</param>
     /// <returns>Modified files</returns>
-    static Task<List<string>> PrepareSourceDirectory(string baseDir, ReleaseInfo releaseInfo, RuntimeConfig rtcfg)
+    static async Task<List<string>> PrepareSourceDirectory(string baseDir, ReleaseInfo releaseInfo, RuntimeConfig rtcfg, bool disableWebpack)
     {
         var urlstring = string.Join(";", Program.Configuration.ExtraSettings.UpdaterUrls.Select(x =>
             ReplaceVersionPlaceholders(x, releaseInfo)
@@ -754,14 +764,22 @@ public static partial class Command
             releaseType: releaseInfo.Channel.ToString().ToLowerInvariant()
         );
 
-        return Task.FromResult(new List<string> {
+        var revertableFiles = new List<string> {
             manifestFile,
             Path.Combine(baseDir, "Duplicati", "License", "VersionTag.txt"),
             Path.Combine(baseDir, "Duplicati", "Library", "AutoUpdater", "AutoUpdateBuildChannel.txt"),
             Path.Combine(baseDir, "Duplicati", "Library", "AutoUpdater", "AutoUpdateURL.txt"),
             Path.Combine(baseDir, "Duplicati", "Library", "AutoUpdater", "AutoUpdateSignKeys.txt"),
             Path.Combine(baseDir, "changelog.txt")
-        });
+        };
+
+        if (!disableWebpack)
+        {
+            Console.WriteLine("Running webpack ...");
+            revertableFiles.AddRange(await PackWebroot.Command.PackWebroot(Path.Combine(baseDir, "Duplicati", "Server", "webroot", "ngax")));
+        }
+
+        return revertableFiles;
     }
 
     /// <summary>
