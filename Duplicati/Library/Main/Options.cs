@@ -229,10 +229,7 @@ namespace Duplicati.Library.Main
         /// <summary>
         /// Returns a list of options that are intentionally duplicate
         /// </summary>
-        public static string[] KnownDuplicates
-        {
-            get { return new string[] { "auth-password", "auth-username" }; }
-        }
+        public static string[] KnownDuplicates => ["auth-password", "auth-username", "accept-any-ssl-certificate", "accept-specified-ssl-hash"];
 
         /// <summary>
         /// A default backup name
