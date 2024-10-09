@@ -83,6 +83,16 @@ namespace Duplicati.Library.Backend
         //
         //private static readonly byte[] PROPFIND_BODY = System.Text.Encoding.UTF8.GetBytes("<?xml version=\"1.0\"?><D:propfind xmlns:D=\"DAV:\"><D:allprop/></D:propfind>");
         private static readonly byte[] PROPFIND_BODY = new byte[0];
+        
+        /// <summary>
+        /// Option to accept any SSL certificate
+        /// </summary>
+        private readonly bool m_acceptAnyCertificate;
+        
+        /// <summary>
+        /// Specific hashes to be accepted by the certificate validator
+        /// </summary>
+        private readonly string[] m_acceptSpecificCertificates;
 
         /// <summary>
         /// The default timeout in seconds for PUT/GET file operations
@@ -150,6 +160,8 @@ namespace Duplicati.Library.Backend
             m_rawurlPort = new Utility.Uri(m_useSSL ? "https" : "http", u.Host, m_path, null, null, null, port).ToString();
             m_sanitizedUrl = new Utility.Uri(m_useSSL ? "https" : "http", u.Host, m_path).ToString();
             m_reverseProtocolUrl = new Utility.Uri(m_useSSL ? "http" : "https", u.Host, m_path).ToString();
+            m_acceptAnyCertificate = options.ContainsKey("accept-any-ssl-certificate") && Utility.Utility.ParseBoolOption(options, "accept-any-ssl-certificate");
+            m_acceptSpecificCertificates = options.ContainsKey("accept-specified-ssl-hash") ? options["accept-specified-ssl-hash"].Split([",", ";"], StringSplitOptions.RemoveEmptyEntries): null;
         }
 
         #region IBackend Members
@@ -314,6 +326,8 @@ namespace Duplicati.Library.Backend
                     new CommandLineArgument("integrated-authentication", CommandLineArgument.ArgumentType.Boolean, Strings.WEBDAV.DescriptionIntegratedAuthenticationShort, Strings.WEBDAV.DescriptionIntegratedAuthenticationLong),
                     new CommandLineArgument("force-digest-authentication", CommandLineArgument.ArgumentType.Boolean, Strings.WEBDAV.DescriptionForceDigestShort, Strings.WEBDAV.DescriptionForceDigestLong),
                     new CommandLineArgument("use-ssl", CommandLineArgument.ArgumentType.Boolean, Strings.WEBDAV.DescriptionUseSSLShort, Strings.WEBDAV.DescriptionUseSSLLong),
+                    new CommandLineArgument("accept-any-ssl-certificate", CommandLineArgument.ArgumentType.Boolean, Strings.WEBDAV.DescriptionAcceptAnyCertificateShort, Strings.WEBDAV.DescriptionAcceptAnyCertificateLong),
+                    new CommandLineArgument("accept-specified-ssl-hash", CommandLineArgument.ArgumentType.String, Strings.WEBDAV.DescriptionAcceptHashShort, Strings.WEBDAV.DescriptionAcceptHashLong2)
                  });
             }
         }
@@ -357,33 +371,31 @@ namespace Duplicati.Library.Backend
         private RequestResources CreateRequest(string remotename, HttpMethod method = null)
         {
             HttpClient httpClient;
+            HttpClientHandler httpHandler = new HttpClientHandler();
+            HttpClientHelper.ConfigureHandlerCertificateValidator(httpHandler, m_acceptAnyCertificate, m_acceptSpecificCertificates);
 
             if (m_useIntegratedAuthentication)
             {
-                httpClient = HttpClientHelper.CreateClient(new HttpClientHandler
-                {
-                    UseDefaultCredentials = true
-                });
+                httpHandler.UseDefaultCredentials = true;
+                httpClient = HttpClientHelper.CreateClient(httpHandler);
             }
             else if (m_forceDigestAuthentication)
             {
-                httpClient = HttpClientHelper.CreateClient(new HttpClientHandler
+                httpHandler.Credentials = new CredentialCache
                 {
-                    Credentials = new CredentialCache
-                    {
-                        { new System.Uri(m_url), "Digest", m_userInfo }
-                    }
-                });
+                    { new System.Uri(m_url), "Digest", m_userInfo }
+                };
+                httpClient = HttpClientHelper.CreateClient(httpHandler);
             }
             else
             {
-                httpClient = HttpClientHelper.CreateClient();
+                httpClient = HttpClientHelper.CreateClient(httpHandler);
                 httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue(
                     "Basic",
                     Convert.ToBase64String(System.Text.Encoding.ASCII.GetBytes($"{m_userInfo.UserName}:{m_userInfo.Password}"))
                 );
             }
-
+            
             httpClient.Timeout = Timeout.InfiniteTimeSpan;
 
             var request = new HttpRequestMessage(HttpMethod.Get, $"{m_url}{Utility.Uri.UrlEncode(remotename).Replace("+", "%20")}");
