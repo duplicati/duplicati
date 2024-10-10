@@ -40,5 +40,9 @@ Error message: {3}", foldername, filename, extension, errormessage); }
         public static string DescriptionUseSSLShort { get { return LC.L(@"Instruct Duplicati to use an SSL (https) connection"); } }
         public static string DescriptionDebugPropfindLong { get { return LC.L(@"To aid in debugging issues, it is possible to set a path to a file that will be overwritten with the PROPFIND response."); } }
         public static string DescriptionDebugPropfindShort { get { return LC.L(@"Dump the PROPFIND response"); } }
+        public static string DescriptionAcceptAnyCertificateLong { get { return LC.L(@"Use this option to accept any server certificate, regardless of what errors it may have. Please use --{0} instead, whenever possible.", "accept-specified-ssl-hash"); } }
+        public static string DescriptionAcceptAnyCertificateShort { get { return LC.L(@"Accept any server certificate"); } }
+        public static string DescriptionAcceptHashLong2 { get { return LC.L(@"If your server certificate is reported as invalid (e.g. with self-signed certificates), you can supply the certificate hash (SHA1) to approve it anyway. The hash value must be entered in hex format without spaces or colons. You can enter multiple hashes separated by commas."); } }
+        public static string DescriptionAcceptHashShort { get { return LC.L(@"Optionally accept a known SSL certificate"); } }
     }
 }

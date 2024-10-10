@@ -172,7 +172,7 @@ namespace Duplicati.Library.Utility
         {
             // If we have a custom SSL validator, invoke it
             if (HttpContextSettings.CertificateValidator != null)
-                return CertificateValidator.ValidateServerCertficate(sender, certificate, chain, sslPolicyErrors);
+                return CertificateValidator.ValidateServerCertificate(sender, certificate, chain, sslPolicyErrors);
 
             // Default is to only approve certificates without errors
             var result = sslPolicyErrors == SslPolicyErrors.None;
@@ -183,7 +183,7 @@ namespace Duplicati.Library.Utility
             foreach (var v in CallContextSettings<HttpSettings>.GetAllInstances())
                 if (v.CertificateValidator != null)
                 {
-                    var t = v.CertificateValidator.ValidateServerCertficate(sender, certificate, chain, sslPolicyErrors);
+                    var t = v.CertificateValidator.ValidateServerCertificate(sender, certificate, chain, sslPolicyErrors);
 
                     // First instance overrides framework result
                     if (!any)
