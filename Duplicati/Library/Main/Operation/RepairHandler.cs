@@ -203,6 +203,11 @@ namespace Duplicati.Library.Main.Operation
                         }
                     }
 
+                    if (!CheckExtraVolumes(db, tp.ExtraVolumes))
+                    {
+                        throw new UserInformationException("The remote files seem to be newer than the local database. Repair would cause data loss. Run recreate instead if the remote files are not corrupted.", "NewerRemoteFilesError");
+                    }
+
                     // TODO: It is actually possible to use the extra files if we parse them
                     foreach (var n in tp.ExtraVolumes)
                         try
@@ -486,6 +491,40 @@ namespace Duplicati.Library.Main.Operation
                 backend.WaitForComplete(db, null);
                 db.WriteResults();
             }
+        }
+
+        private bool CheckExtraVolumes(LocalRepairDatabase db, IEnumerable<IParsedVolume> extraVolumes)
+        {
+            if (!extraVolumes.Any())
+            {
+                return true;
+            }
+            // Check whether any extra filelist has a date newer than the last backup
+            // This could be caused by running repair on an outdated version of the local database
+            var filesetTimestamp = (from pair in db.FilesetTimes orderby pair.Value descending select pair.Value).Take(1).ToList();
+
+            var filelists = from v in extraVolumes where v.FileType == RemoteVolumeType.Files orderby v.Time descending select v;
+
+            if (!filesetTimestamp.Any() && filelists.Any())
+            {
+                Logging.Log.WriteErrorMessage(LOGTAG, "CheckExtraVolumesError", null, "No backups in database, but {0} versions on the remote", filelists.Count());
+                return false;
+            }
+
+            var lastFilesetTime = filesetTimestamp.First();
+
+            var newerFilelists = from v in filelists where v.Time >= lastFilesetTime select v.File.Name;
+            if (newerFilelists.Any())
+            {
+                Logging.Log.WriteErrorMessage(LOGTAG, "CheckExtraVolumesError", null, "There are {0} newer backup versions on the remote. Repair would delete these versions. "
+                    + "If this is what you want, delete them manually.", newerFilelists.Count());
+                foreach (var n in newerFilelists)
+                {
+                    Logging.Log.WriteWarningMessage(LOGTAG, "CheckExtraVolumesError", null, "Newer backup version: {0}", n);
+                }
+                return false;
+            }
+            return true;
         }
 
         public void RunRepairCommon()
