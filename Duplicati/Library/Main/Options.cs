@@ -229,10 +229,7 @@ namespace Duplicati.Library.Main
         /// <summary>
         /// Returns a list of options that are intentionally duplicate
         /// </summary>
-        public static string[] KnownDuplicates
-        {
-            get { return new string[] { "auth-password", "auth-username" }; }
-        }
+        public static string[] KnownDuplicates => ["auth-password", "auth-username", "accept-any-ssl-certificate", "accept-specified-ssl-hash"];
 
         /// <summary>
         /// A default backup name
@@ -303,6 +300,7 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("vss-exclude-writers", CommandLineArgument.ArgumentType.String, Strings.Options.VssexcludewritersShort, Strings.Options.VssexcludewritersLong, "{e8132975-6f93-4464-a53e-1050253ae220}"),
                     new CommandLineArgument("vss-use-mapping", CommandLineArgument.ArgumentType.Boolean, Strings.Options.VssusemappingShort, Strings.Options.VssusemappingLong, "false"),
                     new CommandLineArgument("usn-policy", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.UsnpolicyShort, Strings.Options.UsnpolicyLong, "off", null, Enum.GetNames(typeof(OptimizationStrategy))),
+                    new CommandLineArgument("ignore-advisory-locking", CommandLineArgument.ArgumentType.Boolean, Strings.Options.IgnoreadvisorylockingShort, Strings.Options.IgnoreadvisorylockingLong, "false"),
 
                     new CommandLineArgument("encryption-module", CommandLineArgument.ArgumentType.String, Strings.Options.EncryptionmoduleShort, Strings.Options.EncryptionmoduleLong, "aes"),
                     new CommandLineArgument("compression-module", CommandLineArgument.ArgumentType.String, Strings.Options.CompressionmoduleShort, Strings.Options.CompressionmoduleLong, "zip"),
@@ -955,6 +953,11 @@ namespace Duplicati.Library.Main
                 return r;
             }
         }
+
+        /// <summary>
+        /// Gets a flag indicating if advisory locking should be ignored
+        /// </summary>
+        public bool IgnoreAdvisoryLocking => GetBool("ignore-advisory-locking");
 
         /// <summary>
         /// Gets the symlink strategy to use

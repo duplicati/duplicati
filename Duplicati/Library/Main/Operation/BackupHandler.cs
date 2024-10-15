@@ -90,7 +90,7 @@ namespace Duplicati.Library.Main.Operation
 
             if (OperatingSystem.IsMacOS() || OperatingSystem.IsLinux())
             {
-                return new NoSnapshotLinux();
+                return new NoSnapshotLinux(options.IgnoreAdvisoryLocking);
             }
             else if (OperatingSystem.IsWindows())
             {
