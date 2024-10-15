@@ -210,12 +210,12 @@ namespace Duplicati.Library.Backend
                 // To mirror the behavior of existing backups, we need to check the legacy options
                 
                 // This flag takes precedence over ftp-data-connection-type
-                if (CoreUtility.ParseBoolOption(options, CONFIG_KEY_FTP_LEGACY_FTPREGULAR)) 
-                    dataConnectionType = FtpDataConnectionType.AutoActive;
-                
-                // This flag takes precedence over the ftp-regular flag (which in turn takes precedence over ftp-data-connection-type)
                 if (CoreUtility.ParseBoolOption(options, CONFIG_KEY_FTP_LEGACY_FTPPASSIVE)) 
                     dataConnectionType = FtpDataConnectionType.AutoPassive;
+                
+                // This flag takes precedence over the ftp-passive flag
+                if (CoreUtility.ParseBoolOption(options, CONFIG_KEY_FTP_LEGACY_FTPREGULAR)) 
+                    dataConnectionType = FtpDataConnectionType.AutoActive;
                 
                 // When using legacy useSSL option, the encryption is set to automatic and the SSL protocols are set to none
                 // (None meaning the OS will choose the appropriate protocol)
