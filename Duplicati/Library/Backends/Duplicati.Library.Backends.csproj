@@ -7,7 +7,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-	<ProjectReference Include="..\Backend\AlternativeFTP\Duplicati.Library.Backend.AlternativeFTP.csproj" />
 	<ProjectReference Include="..\Backend\AzureBlob\Duplicati.Library.Backend.AzureBlob.csproj" />
 	<ProjectReference Include="..\Backend\Backblaze\Duplicati.Library.Backend.Backblaze.csproj" />
 	<ProjectReference Include="..\Backend\Box\Duplicati.Library.Backend.Box.csproj" />

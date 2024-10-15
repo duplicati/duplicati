@@ -39,13 +39,13 @@ public static class BackendModules
     /// </summary>
     private static readonly IReadOnlyList<IBackend> SupportedBackends = new IBackend[] {
         new Backend.AliyunOSS.OSS(),
-        new Backend.AlternativeFTP.AlternativeFtpBackend(),
         new Backend.AzureBlob.AzureBlobBackend(),
         new Backend.Backblaze.B2(),
         new Backend.Box.BoxBackend(),
         new Backend.CloudFiles(),
         new Backend.Dropbox(),
         new Backend.FTP(),
+        new Backend.AlternateFTPBackend(),
         new Backend.File(),
         new Backend.GoogleCloudStorage.GoogleCloudStorage(),
         new Backend.GoogleDrive.GoogleDrive(),
