@@ -68,16 +68,19 @@ namespace Duplicati.Library.Backend
         protected virtual string CONFIG_KEY_FTP_UPLOAD_DELAY => "ftp-upload-delay";
         protected virtual string CONFIG_KEY_FTP_LOGTOCONSOLE => "ftp-log-to-console";
         protected virtual string CONFIG_KEY_FTP_LOGPRIVATEINFOTOCONSOLE => "ftp-log-privateinfo-to-console";
+        
+        // The following keys are private because they are irrelevant for inheritors and are here for backwards compatibility
+        private static string CONFIG_KEY_FTP_LEGACY_FTPPASSIVE => "ftp-passive";
+        private static string CONFIG_KEY_FTP_LEGACY_FTPREGULAR => "ftp-regular";
+        private static string CONFIG_KEY_FTP_LEGACY_USESSL => "use-ssl";
 
         private const string TEST_FILE_NAME = "duplicati-access-privileges-test.tmp";
         private const string TEST_FILE_CONTENT = "This file is used by Duplicati to test access permissions and can be safely deleted.";
 
-        // ReSharper disable InconsistentNaming
-        private static readonly string DEFAULT_DATA_CONNECTION_TYPE_STRING = DEFAULT_DATA_CONNECTION_TYPE.ToString();
-        private static readonly string DEFAULT_ENCRYPTION_MODE_STRING = DEFAULT_ENCRYPTION_MODE.ToString();
-        private static readonly string DEFAULT_SSL_PROTOCOLS_STRING = DEFAULT_SSL_PROTOCOLS.ToString();
-        private static readonly string DEFAULT_UPLOAD_DELAY_STRING = "0s";
-        // ReSharper restore InconsistentNaming
+        protected static readonly string DEFAULT_DATA_CONNECTION_TYPE_STRING = DEFAULT_DATA_CONNECTION_TYPE.ToString();
+        protected static readonly string DEFAULT_ENCRYPTION_MODE_STRING = DEFAULT_ENCRYPTION_MODE.ToString();
+        protected static readonly string DEFAULT_SSL_PROTOCOLS_STRING = DEFAULT_SSL_PROTOCOLS.ToString();
+        protected static readonly string DEFAULT_UPLOAD_DELAY_STRING = "0s";
 
         private readonly string _url;
         private readonly bool _listVerify = true;
@@ -102,7 +105,7 @@ namespace Duplicati.Library.Backend
         private AsyncFtpClient Client
         { get; set; }
 
-        public IList<ICommandLineArgument> SupportedCommands =>
+        public virtual IList<ICommandLineArgument> SupportedCommands =>
             new List<ICommandLineArgument>([
                 new CommandLineArgument("auth-password", CommandLineArgument.ArgumentType.Password, Strings.DescriptionAuthPasswordShort, Strings.DescriptionAuthPasswordLong),
                 new CommandLineArgument("auth-username", CommandLineArgument.ArgumentType.String, Strings.DescriptionAuthUsernameShort, Strings.DescriptionAuthUsernameLong),
@@ -113,6 +116,9 @@ namespace Duplicati.Library.Backend
                 new CommandLineArgument(CONFIG_KEY_FTP_UPLOAD_DELAY, CommandLineArgument.ArgumentType.Timespan, Strings.DescriptionUploadDelayShort, Strings.DescriptionUploadDelayLong, DEFAULT_UPLOAD_DELAY_STRING),
                 new CommandLineArgument(CONFIG_KEY_FTP_LOGTOCONSOLE, CommandLineArgument.ArgumentType.Boolean, Strings.DescriptionLogToConsoleShort, Strings.DescriptionLogToConsoleLong),
                 new CommandLineArgument(CONFIG_KEY_FTP_LOGPRIVATEINFOTOCONSOLE, CommandLineArgument.ArgumentType.Boolean, Strings.DescriptionLogPrivateInfoToConsoleShort, Strings.DescriptionLogPrivateInfoToConsoleLong, "false"),
+                new CommandLineArgument(CONFIG_KEY_FTP_LEGACY_FTPPASSIVE, CommandLineArgument.ArgumentType.Boolean, Strings.DescriptionFTPPassiveShort, Strings.DescriptionFTPPassiveLong, "false", null, null, Strings.FtpPassiveDeprecated),
+                new CommandLineArgument(CONFIG_KEY_FTP_LEGACY_FTPREGULAR, CommandLineArgument.ArgumentType.Boolean, Strings.DescriptionFTPActiveShort, Strings.DescriptionFTPActiveLong, "true", null, null, Strings.FtpActiveDeprecated),
+                new CommandLineArgument(CONFIG_KEY_FTP_LEGACY_USESSL, CommandLineArgument.ArgumentType.Boolean, Strings.DescriptionUseSSLShort, Strings.DescriptionUseSSLLong, "false", null, null, Strings.UseSslDeprecated),
             ]);
 
         /// <summary>
@@ -190,7 +196,7 @@ namespace Duplicati.Library.Backend
 
             if (encryptionModeString == null || !Enum.TryParse(encryptionModeString, true, out encryptionMode))
                 encryptionMode = DEFAULT_ENCRYPTION_MODE;
-
+            
             // Process the aftp-ssl-protocols option
             SslProtocols sslProtocols;
             if (!options.TryGetValue(CONFIG_KEY_FTP_SSL_PROTOCOLS, out var sslProtocolsString) || string.IsNullOrWhiteSpace(sslProtocolsString))
@@ -198,6 +204,28 @@ namespace Duplicati.Library.Backend
 
             if (sslProtocolsString == null || !Enum.TryParse(sslProtocolsString, true, out sslProtocols)) sslProtocols = DEFAULT_SSL_PROTOCOLS;
 
+            // Process options of the legacy FTP backend
+            if (ProtocolKey == "ftp")
+            {
+                // To mirror the behavior of existing backups, we need to check the legacy options
+                
+                // This flag takes precedence over ftp-data-connection-type
+                if (CoreUtility.ParseBoolOption(options, CONFIG_KEY_FTP_LEGACY_FTPREGULAR)) 
+                    dataConnectionType = FtpDataConnectionType.AutoActive;
+                
+                // This flag takes precedence over the ftp-regular flag (which in turn takes precedence over ftp-data-connection-type)
+                if (CoreUtility.ParseBoolOption(options, CONFIG_KEY_FTP_LEGACY_FTPPASSIVE)) 
+                    dataConnectionType = FtpDataConnectionType.AutoPassive;
+                
+                // When using legacy useSSL option, the encryption is set to automatic and the SSL protocols are set to none
+                // (None meaning the OS will choose the appropriate protocol)
+                if (CoreUtility.ParseBoolOption(options, CONFIG_KEY_FTP_LEGACY_USESSL))
+                {
+                    sslProtocols = SslProtocols.None;
+                    encryptionMode = FtpEncryptionMode.Auto;
+                }
+            }
+            
             _logToConsole = CoreUtility.ParseBoolOption(options, CONFIG_KEY_FTP_LOGTOCONSOLE);
             _logPrivateInfoToConsole = CoreUtility.ParseBoolOption(options, CONFIG_KEY_FTP_LOGPRIVATEINFOTOCONSOLE);
             

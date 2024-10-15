@@ -55,5 +55,15 @@ namespace Duplicati.Library.Backend
         public static string ErrorDeleteFile { get { return LC.L(@"Error on deleting file: {0}"); } }
         public static string ErrorReadFile { get { return LC.L(@"Error reading file: {0}"); } }
         public static string ErrorWriteFile { get { return LC.L(@"Error writing file: {0}"); } }
+        public static string DescriptionUseSSLLong { get { return LC.L(@"Use this option to communicate using Secure Socket Layer (SSL) over ftp (ftps)."); } }
+        public static string DescriptionUseSSLShort { get { return LC.L(@"Instruct Duplicati to use an SSL (ftps) connection"); } }
+        public static string DescriptionFTPActiveLong { get { return LC.L(@"Activate this option to make the FTP connection in active mode. Even if the option --{0} is also set, the connection will be made in active mode.", "ftp-passive"); } }
+        public static string DescriptionFTPActiveShort { get { return LC.L(@"Toggle the FTP connections method"); } }
+        public static string DescriptionFTPPassiveLong { get { return LC.L(@"Activate this option to make the FTP connection in passive mode, which works better with some firewalls. If the option --{0} is set, this option is ignored.", "ftp-regular"); } }
+        public static string DescriptionFTPPassiveShort { get { return LC.L(@"Toggle the FTP connections method"); } }
+        public static string FtpPassiveDeprecated { get { return LC.L(@"The option ftp-passive is deprecated, use ftp-data-connection-type instead."); } }
+        public static string FtpActiveDeprecated { get { return LC.L(@"ftp-regular is deprecated, use ftp-data-connection-type instead."); } }
+        public static string UseSslDeprecated { get { return LC.L(@"use-ssl is deprecated, use ftp-ssl-protocols instead."); } }
+        
     }
 }
