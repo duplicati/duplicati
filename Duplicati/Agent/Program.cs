@@ -85,7 +85,7 @@ public static class Program
 
         var runcmd = new Command("run", "Runs the agent")
         {
-            new Option<string>("registration-url", description: "The server URL to connect to", getDefaultValue: () => "https://agent.duplicati.com"),
+            new Option<string>("registration-url", description: "The server URL to connect to", getDefaultValue: () => RegisterForRemote.DefaultRegisterationUrl),
             new Option<FileInfo>("agent-settings-file", description: "The file to use for the agent settings", getDefaultValue: () => new FileInfo(Settings.DefaultSettingsFile)),
             new Option<string>("webservice-listen-interface", description: "The interface to listen on for the webserver", getDefaultValue: () => "loopback"),
             new Option<string>("webservice-port", description: "The port to listen on for the webserver", getDefaultValue: () => "8210"),
@@ -248,7 +248,19 @@ public static class Program
             using (var registration = new RegisterForRemote(registrationUrl, null, cancellationToken))
             {
                 var registerClientData = await registration.Register();
-                Log.WriteMessage(LogMessageType.Information, LogTag, "ClientRegistered", $"Machine registered, claim it by visiting: {registerClientData.ClaimLink}");
+                if (registerClientData.RegistrationData != null)
+                {
+                    Log.WriteMessage(LogMessageType.Information, LogTag, "ClientRegistered", $"Machine registered, claim it by visiting: {registerClientData.RegistrationData.ClaimLink}");
+
+                    try
+                    {
+                        Library.Utility.UrlUtility.OpenURL(registerClientData.RegistrationData.ClaimLink);
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.WriteMessage(LogMessageType.Warning, LogTag, "ClientClaimLink", ex, "Failed to open the claim link in system browser");
+                    }
+                }
                 var claimedClientData = await registration.Claim();
 
                 Log.WriteMessage(LogMessageType.Information, LogTag, "ClientClaimed", "Machine claimed, saving JWT");

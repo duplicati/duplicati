@@ -104,7 +104,8 @@ public class RemoteControllerRegistrationService(Connection connection, IHttpCli
             var data = await _registerForRemote.Register(maxRetries: 3, retryInterval: TimeSpan.FromSeconds(5));
 
             // Make the link visible to outside
-            RegistrationUrl = data.ClaimLink;
+            if (data.RegistrationData != null)
+                RegistrationUrl = data.RegistrationData.ClaimLink;
 
             // Grab the claim data once it is returned
             var claimData = await _registerForRemote.Claim();

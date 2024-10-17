@@ -361,6 +361,12 @@ namespace Duplicati.Library.Modules.Builtin
                         extra["backup-name"] = System.IO.Path.GetFileNameWithoutExtension(Duplicati.Library.Utility.Utility.getEntryAssembly().Location);
                 }
 
+                if (input.IndexOf("%machine-name%", StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    if (!m_options.ContainsKey("machine-name"))
+                        extra["machine-name"] = Library.AutoUpdater.UpdaterManager.MachineName;
+                }
+
                 foreach (KeyValuePair<string, string> kv in m_options)
                     if (input.IndexOf($"%{kv.Key}%", StringComparison.OrdinalIgnoreCase) >= 0)
                         extra[kv.Key] = kv.Value;
@@ -389,6 +395,9 @@ namespace Duplicati.Library.Modules.Builtin
 
                 if (!m_options.ContainsKey("backup-name"))
                     input = Regex.Replace(input, "\\%backup-name\\%", System.IO.Path.GetFileNameWithoutExtension(Duplicati.Library.Utility.Utility.getEntryAssembly().Location) ?? "", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+
+                if (!m_options.ContainsKey("machine-name"))
+                    input = Regex.Replace(input, "\\%machine-name\\%", Library.AutoUpdater.UpdaterManager.MachineName, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
                 if (!m_options.ContainsKey("backup-id"))
                     input = Regex.Replace(input, "\\%backup-id\\%", Library.Utility.Utility.ByteArrayAsHexString(Library.Utility.Utility.RepeatedHashWithSalt(m_remoteurl, SALT)), RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
