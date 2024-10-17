@@ -249,7 +249,18 @@ public static class Program
             {
                 var registerClientData = await registration.Register();
                 if (registerClientData.RegistrationData != null)
+                {
                     Log.WriteMessage(LogMessageType.Information, LogTag, "ClientRegistered", $"Machine registered, claim it by visiting: {registerClientData.RegistrationData.ClaimLink}");
+
+                    try
+                    {
+                        Library.Utility.UrlUtility.OpenURL(registerClientData.RegistrationData.ClaimLink);
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.WriteMessage(LogMessageType.Warning, LogTag, "ClientClaimLink", ex, "Failed to open the claim link in system browser");
+                    }
+                }
                 var claimedClientData = await registration.Claim();
 
                 Log.WriteMessage(LogMessageType.Information, LogTag, "ClientClaimed", "Machine claimed, saving JWT");
