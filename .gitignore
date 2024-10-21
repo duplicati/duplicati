@@ -13,6 +13,7 @@ Duplicati/Localization/report.*.xml
 Duplicati/Server/webroot/extjs-*
 Duplicati/Server/webroot/*/node_modules/
 packages
+node_modules
 changelog-news.txt
 .idea/
 .vs/
