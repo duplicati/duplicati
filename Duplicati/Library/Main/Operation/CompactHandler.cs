@@ -128,9 +128,16 @@ namespace Duplicati.Library.Main.Operation
                     var downloadedVolumes = new List<KeyValuePair<string, long>>();
 
                     //We start by deleting unused volumes to save space before uploading new stuff
-                    var fullyDeleteable = (from v in remoteList
-                                           where report.DeleteableVolumes.Contains(v.Name)
-                                           select (IRemoteVolume)v).ToList();
+                    List<IRemoteVolume> fullyDeleteable = [];
+                    if (report.DeleteableVolumes.Any())
+                    {
+                        var deleteableVolumesAsHashSet = new HashSet<string>(report.DeleteableVolumes);
+                        fullyDeleteable =
+                            remoteList
+                                .Where(n => deleteableVolumesAsHashSet.Contains(n.Name))
+                                .Cast<IRemoteVolume>()
+                                .ToList();
+                    }
                     deletedVolumes.AddRange(DoDelete(db, backend, fullyDeleteable, ref transaction));
 
                     // This list is used to pick up unused volumes,
@@ -141,9 +148,16 @@ namespace Duplicati.Library.Main.Operation
                     if (report.ShouldCompact)
                     {
                         newvolindex?.StartVolume(newvol.RemoteFilename);
-                        var volumesToDownload = (from v in remoteList
-                                                 where report.CompactableVolumes.Contains(v.Name)
-                                                 select (IRemoteVolume)v).ToList();
+                        List<IRemoteVolume> volumesToDownload = [];
+                        if (report.CompactableVolumes.Any())
+                        {
+                            var compactableVolumesAsHashSet = new HashSet<string>(report.CompactableVolumes);
+                            volumesToDownload =
+                                remoteList
+                                    .Where(n => compactableVolumesAsHashSet.Contains(n.Name))
+                                    .Cast<IRemoteVolume>()
+                                    .ToList();
+                        }
 
                         using (var q = db.CreateBlockQueryHelper(transaction))
                         {
