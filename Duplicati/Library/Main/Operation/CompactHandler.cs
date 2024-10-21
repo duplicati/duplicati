@@ -131,10 +131,10 @@ namespace Duplicati.Library.Main.Operation
                     List<IRemoteVolume> fullyDeleteable = [];
                     if (report.DeleteableVolumes.Any())
                     {
-                        var deleteableVolumesAsHashes = new HashSet<string>(report.DeleteableVolumes);
+                        var deleteableVolumesAsHashSet = new HashSet<string>(report.DeleteableVolumes);
                         fullyDeleteable =
                             remoteList
-                                .Where(n => deleteableVolumesAsHashes.Contains(n.Name))
+                                .Where(n => deleteableVolumesAsHashSet.Contains(n.Name))
                                 .Cast<IRemoteVolume>()
                                 .ToList();
                     }
