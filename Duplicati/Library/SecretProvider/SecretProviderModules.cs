@@ -16,5 +16,6 @@ public static class SecretProviderModules
         new AzureSecretProvider(),
         new MacOSKeyChainProvider(),
         new UnixPassProvider(),
+        new WindowsCredentialManagerProvider(),
     ];
 }

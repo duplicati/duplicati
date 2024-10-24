@@ -163,3 +163,9 @@ internal static class UnixPassProvider
     public static string PassCommandDescriptionLong => LC.L("The command to use for retrieving secrets from the Unix pass password manager");
 }
 
+internal static class WindowsCredentialManagerProvider
+{
+    public static string DisplayName => LC.L("Secrets from Windows Credential Manager");
+    public static string Description => LC.L("Secret provider that reads secrets from the Windows Credential Manager");
+}
+
