@@ -112,7 +112,7 @@ namespace Duplicati.Library.Modules.Builtin
         /// <summary>
         /// The default message body
         /// </summary>
-        protected override string DEFAULT_BODY => string.Format("Duplicati %OPERATIONNAME% report for %backup-name% (%machine-id%, %backup-id%){0}{0}%RESULT%", Environment.NewLine);
+        protected override string DEFAULT_BODY => string.Format("Duplicati %OPERATIONNAME% report for %backup-name% (%machine-id%, %backup-id%, %machine-name%){0}{0}%RESULT%", Environment.NewLine);
         /// <summary>
         /// Don't use the subject for HTTP
         /// </summary>
@@ -262,7 +262,7 @@ namespace Duplicati.Library.Modules.Builtin
                 contenttype = new MediaTypeHeaderValue("application/x-www-form-urlencoded");
                 var postData = $"{m_messageParameterName}={System.Uri.EscapeDataString(body)}";
                 if (!string.IsNullOrEmpty(m_extraParameters))
-                    postData += $"&{System.Uri.EscapeUriString(m_extraParameters)}";
+                    postData += $"&{System.Uri.EscapeDataString(m_extraParameters)}";
                 data = Encoding.UTF8.GetBytes(postData);
             }
 
