@@ -103,6 +103,17 @@
             "stopAtEntry": false,
             "console": "internalConsole"
         },
+        {
+            "name": "Launch SecretProvider executable",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "program": "${workspaceFolder}/Executables/net8/Duplicati.CommandLine.SecretTool/bin/Debug/net8.0/Duplicati.CommandLine.SecretTool",
+            "args": [],
+            "cwd": "${workspaceFolder}",
+            "stopAtEntry": false,
+            "console": "internalConsole"
+        },
 
     ]
 }

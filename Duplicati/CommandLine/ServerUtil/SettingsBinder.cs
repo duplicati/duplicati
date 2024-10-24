@@ -31,6 +31,11 @@ public class SettingsBinder : BinderBase<Settings>
     public static readonly Option<bool> insecureOption = new Option<bool>("--insecure", description: "Accepts any TLS/SSL certificate (dangerous)", getDefaultValue: () => false);
 
     /// <summary>
+    /// The settings encryption key option.
+    /// </summary>
+    public static readonly Option<string?> settingsEncryptionKeyOption = new Option<string?>("--settings-encryption-key", description: $"The encryption key to use for the settings file. Can also be supplied with environment variable {Library.Encryption.EncryptedFieldHelper.ENVIROMENT_VARIABLE_NAME}", getDefaultValue: () => null);
+
+    /// <summary>
     /// Adds global options to the root command.
     /// </summary>
     /// <param name="rootCommand">The root command to add the options to.</param>
@@ -42,6 +47,7 @@ public class SettingsBinder : BinderBase<Settings>
         rootCommand.AddGlobalOption(serverDatafolderOption);
         rootCommand.AddGlobalOption(settingsFileOption);
         rootCommand.AddGlobalOption(insecureOption);
+        rootCommand.AddGlobalOption(settingsEncryptionKeyOption);
         return rootCommand;
     }
 
@@ -56,7 +62,8 @@ public class SettingsBinder : BinderBase<Settings>
             bindingContext.ParseResult.GetValueForOption(hostUrlOption),
             bindingContext.ParseResult.GetValueForOption(serverDatafolderOption)?.FullName,
             bindingContext.ParseResult.GetValueForOption(settingsFileOption)?.FullName ?? "settings.json",
-            bindingContext.ParseResult.GetValueForOption(insecureOption)
+            bindingContext.ParseResult.GetValueForOption(insecureOption),
+            bindingContext.ParseResult.GetValueForOption(settingsEncryptionKeyOption) ?? Environment.GetEnvironmentVariable(Library.Encryption.EncryptedFieldHelper.ENVIROMENT_VARIABLE_NAME)
         );
 
     /// <summary>

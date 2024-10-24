@@ -67,6 +67,8 @@ Error message: {0}", error); }
                 public static string BlacklistedEncryptionKey(string envkey, string disableoptionname) { return LC.L(@"The database encryption key is blacklisted and cannot be used. The database has been decrypted. Supply a new encryption key via the environment variable {0} or disable database encryption with the option --{1}", envkey, disableoptionname); }
                 public static string NoEncryptionKeySpecified(string envkey, string disableoptionname) { return LC.L(@"No database encryption key was found. The database will be stored unencrypted. Supply an encryption key via the environment variable {0} or disable database encryption with the option --{1}", envkey, disableoptionname); }
                 public static string EncryptionKeyMissing(string envkey) { return LC.L(@"The database appears to be encrypted, but no key was specified. Opening the database will likely fail. Use the environment variable {0} to specify the key.", envkey); }
+                public static string SettingsencryptionkeyShort { get { return LC.L(@"Set the encryption key for the settings database"); } }
+                public static string SettingsencryptionkeyLong(string envname) { return LC.L(@"Use this option to set the encryption key for the settings database. This option can also be set with the environment variable {0}.", envname); }
         }
         internal static class Scheduler
         {
