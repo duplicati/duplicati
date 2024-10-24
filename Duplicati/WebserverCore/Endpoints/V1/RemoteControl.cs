@@ -1,3 +1,4 @@
+using Duplicati.Library.RestAPI;
 using Duplicati.WebserverCore.Abstractions;
 using Duplicati.WebserverCore.Exceptions;
 using Microsoft.AspNetCore.Mvc;
@@ -8,6 +9,10 @@ public class RemoteControl : IEndpointV1
 {
     public static void Map(RouteGroupBuilder group)
     {
+        // Don't allow these in agent-mode
+        if (FIXMEGlobal.Origin == "Agent")
+            return;
+
         group.MapGet("/remotecontrol/status", ([FromServices] IRemoteControllerRegistration registration, [FromServices] IRemoteController remoteController)
             => GetStatus(registration, remoteController))
             .RequireAuthorization();

@@ -65,6 +65,7 @@ public static partial class Command
         { "Duplicati.CommandLine.SharpAESCrypt", "duplicati-aescrypt" },
         { "Duplicati.CommandLine.Snapshots", "duplicati-snapshots" },
         { "Duplicati.CommandLine.ServerUtil", "duplicati-server-util" },
+        { "Duplicati.CommandLine.SecretTool", "duplicati-secret-tool" },
         { "Duplicati.Service", "duplicati-service" },
         { "Duplicati.Agent", "duplicati-agent" },
         { "Duplicati.CommandLine", "duplicati-cli" },

@@ -496,6 +496,9 @@ namespace Duplicati.Server
                     ((RunnerData)data).Controller = controller;
                     data.UpdateThrottleSpeed();
 
+                    // Pass on the provider, will be replaced if configured in the backup
+                    controller.SetSecretProvider(FIXMEGlobal.SecretProvider);
+
                     if (backup.Metadata.ContainsKey("LastCompactFinished"))
                         controller.LastCompact = Library.Utility.Utility.DeserializeDateTime(backup.Metadata["LastCompactFinished"]);
 

@@ -25,9 +25,9 @@ using System.Linq;
 using System.Threading;
 using Duplicati.Library.Utility;
 using Duplicati.Library.Common.IO;
-using Duplicati.Library.Common;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main.Database;
+using System.Threading.Tasks;
 
 namespace Duplicati.Library.Main
 {
@@ -45,6 +45,10 @@ namespace Duplicati.Library.Main
         /// The parsed type-safe version of the commandline options
         /// </summary>
         private readonly Options m_options;
+        /// <summary>
+        /// The optional secret provider, if none provided in options
+        /// </summary>
+        public ISecretProvider SecretProvider { get; private set; }
         /// <summary>
         /// The destination for all output messages during execution
         /// </summary>
@@ -102,6 +106,15 @@ namespace Duplicati.Library.Main
                 messageSink.Append(sink);
             else
                 m_messageSink = new MultiMessageSink(m_messageSink, sink);
+        }
+
+        /// <summary>
+        /// Sets a secret provider to use for all operations
+        /// </summary>
+        /// <param name="secretProvider">The secret provider to use</param>
+        public void SetSecretProvider(ISecretProvider secretProvider)
+        {
+            SecretProvider = secretProvider;
         }
 
         public Duplicati.Library.Interface.IBackupResults Backup(string[] inputsources, IFilter filter = null)
@@ -429,6 +442,8 @@ namespace Duplicati.Library.Main
                     m_currentTask = result;
                     m_currentTaskThread = System.Threading.Thread.CurrentThread;
 
+                    m_options.MainAction = result.MainOperation;
+                    ApplySecretProvider(CancellationToken.None).Await();
                     SetupCommonOptions(result, ref paths, ref filter);
                     Logging.Log.WriteInformationMessage(LOGTAG, "StartingOperation", Strings.Controller.StartingOperationMessage(m_options.MainAction));
 
@@ -703,6 +718,14 @@ namespace Duplicati.Library.Main
                 m_options.Dbpath = DatabaseLocator.GetDatabasePath(m_backend, m_options);
 
             ValidateOptions();
+        }
+
+        private async Task ApplySecretProvider(CancellationToken cancellationToken)
+        {
+            var args = new[] { m_backend };
+            await SecretProviderHelper.ApplySecretProviderAsync(args, m_options.RawOptions, TempFolder.SystemTempPath, SecretProvider, cancellationToken);
+            // Write back the backend argument, if it was modified by the secret provider
+            m_backend = args[0];
         }
 
         /// <summary>

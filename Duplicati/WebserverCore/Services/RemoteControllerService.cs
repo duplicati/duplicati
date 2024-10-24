@@ -21,6 +21,7 @@
 
 using System.Net.Http.Headers;
 using Duplicati.Library.RemoteControl;
+using Duplicati.Library.RestAPI;
 using Duplicati.Server.Database;
 using Duplicati.WebserverCore.Abstractions;
 using Newtonsoft.Json;
@@ -108,9 +109,12 @@ public class RemoteControllerService(Connection connection, IHttpClientFactory h
             CertificateUrl = data.CertificateUrl
         });
 
-        // TODO: Implement changing the encryption key
-        // if (!string.IsNullOrWhiteSpace(data.LocalEncryptionKey) && data.LocalEncryptionKey != connection.ApplicationSettings.SettingsEncryptionKey)
-        //     connection.ChangeDbKey(keydata.LocalEncryptionKey);
+        if (!FIXMEGlobal.SettingsEncryptionKeyProvidedExternally)
+        {
+            // TODO: Implement changing the encryption key
+            // if (!string.IsNullOrWhiteSpace(data.LocalEncryptionKey) && data.LocalEncryptionKey != connection.ApplicationSettings.SettingsEncryptionKey)
+            //     connection.ChangeDbKey(keydata.LocalEncryptionKey);
+        }
 
         return Task.CompletedTask;
     }

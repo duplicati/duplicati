@@ -1,0 +1,7 @@
+{
+  "name": "HashiCorp.Vault",
+  "description": "The most comprehensive cross-platform .NET Library for HashiCorp's Vault - A Secret Management System.",
+  "link": "https://github.com/rajanadar/VaultSharp",
+  "license": "Apache-2.0",
+  "notes": ""
+}

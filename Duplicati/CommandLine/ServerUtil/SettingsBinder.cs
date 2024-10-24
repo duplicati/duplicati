@@ -1,5 +1,6 @@
 using System.CommandLine;
 using System.CommandLine.Binding;
+using Duplicati.Library.Main;
 
 namespace Duplicati.CommandLine.ServerUtil;
 
@@ -31,6 +32,26 @@ public class SettingsBinder : BinderBase<Settings>
     public static readonly Option<bool> insecureOption = new Option<bool>("--insecure", description: "Accepts any TLS/SSL certificate (dangerous)", getDefaultValue: () => false);
 
     /// <summary>
+    /// The settings encryption key option.
+    /// </summary>
+    public static readonly Option<string?> settingsEncryptionKeyOption = new Option<string?>("--settings-encryption-key", description: $"The encryption key to use for the settings file. Can also be supplied with environment variable {Library.Encryption.EncryptedFieldHelper.ENVIROMENT_VARIABLE_NAME}", getDefaultValue: () => null);
+
+    /// <summary>
+    /// The secret provider option.
+    /// </summary>
+    public static readonly Option<string?> secretProviderOption = new Option<string?>("--secret-provider", description: "The secret provider to use for reading secrets", getDefaultValue: () => null);
+
+    /// <summary>
+    /// The secret provider cache option.
+    /// </summary>
+    public static readonly Option<SecretProviderHelper.CachingLevel> secretProviderCacheOption = new Option<SecretProviderHelper.CachingLevel>("--secret-provider-cache", description: "The secret provider cache to use for reading secrets", getDefaultValue: () => SecretProviderHelper.CachingLevel.None);
+
+    /// <summary>
+    /// The secret provider pattern option.
+    /// </summary>
+    public static readonly Option<string?> secretProviderPatternOption = new Option<string?>("--secret-provider-pattern", description: "The pattern to use for the secret provider", getDefaultValue: () => "$");
+
+    /// <summary>
     /// Adds global options to the root command.
     /// </summary>
     /// <param name="rootCommand">The root command to add the options to.</param>
@@ -42,6 +63,10 @@ public class SettingsBinder : BinderBase<Settings>
         rootCommand.AddGlobalOption(serverDatafolderOption);
         rootCommand.AddGlobalOption(settingsFileOption);
         rootCommand.AddGlobalOption(insecureOption);
+        rootCommand.AddGlobalOption(settingsEncryptionKeyOption);
+        rootCommand.AddGlobalOption(secretProviderOption);
+        rootCommand.AddGlobalOption(secretProviderCacheOption);
+        rootCommand.AddGlobalOption(secretProviderPatternOption);
         return rootCommand;
     }
 
@@ -56,7 +81,12 @@ public class SettingsBinder : BinderBase<Settings>
             bindingContext.ParseResult.GetValueForOption(hostUrlOption),
             bindingContext.ParseResult.GetValueForOption(serverDatafolderOption)?.FullName,
             bindingContext.ParseResult.GetValueForOption(settingsFileOption)?.FullName ?? "settings.json",
-            bindingContext.ParseResult.GetValueForOption(insecureOption)
+            bindingContext.ParseResult.GetValueForOption(insecureOption),
+            bindingContext.ParseResult.GetValueForOption(settingsEncryptionKeyOption) ?? Environment.GetEnvironmentVariable(Library.Encryption.EncryptedFieldHelper.ENVIROMENT_VARIABLE_NAME),
+            bindingContext.ParseResult.GetValueForOption(secretProviderOption),
+            bindingContext.ParseResult.GetValueForOption(secretProviderCacheOption),
+            bindingContext.ParseResult.GetValueForOption(secretProviderPatternOption) ?? "$"
+
         );
 
     /// <summary>

@@ -18,6 +18,7 @@ See %CLI_EXE% help <topic> for more information.
   Modules: %ENCRYPTIONMODULES%, %COMPRESSIONMODULES%, %GENERICMODULES%
   Formats: date, time, size, decimal, encryption, compression
   Advanced: mail, advanced, returncodes, filter, filter-groups, <option>
+  Secrets: secret, <provider>
 
 https://duplicati.com/                 Version: %VERSION%
 
@@ -536,3 +537,35 @@ Duplicati reports the following return/exit codes:
   50 - Backup uploaded some files, but did not finish
   100 - An error occurred
   200 - Invalid commandline arguments found
+
+# =============================================================================
+> duplicati.commandline.exe help secret
+> duplicati.commandline.exe help secrets
+> duplicati.commandline.exe help secret-provider
+
+Duplicati supports reading secrets from an external secret provider.
+
+The setup is done by adding an option:
+  --secret-provider=<config>
+
+This setup will make Duplicati replace all values starting with a $-symbol, using the secret provider.
+As an example, if the setting is:
+  --passphrase=$backup-passhrase
+
+Duplicati will use the secret provider to fetch the secret for the key "backup-passphrase", and replace the value before starting the operation. If the value is not found the operation will fail.
+Replacing can also be done inside the backend urls, such that a backend url could be:
+  s3://?aws-access-key-id=$awsid&aws-secret-access-key=$awskey
+
+Here the values "awsid" and "awskey" would be fetched from the secret provider and replaced verbatim in the url (make sure to url encode the secrets in the provider).
+
+To support more robust parsing, it is also possible to change the pattern from the default "$":
+  --secret-provider-pattern=!secret{}
+
+This would extract keys inside that pattern, such as extracting "key name" from "!secret{key name}".
+
+For providers that return a set of secrets, the key lookup is default case insensitive. 
+For providers that require a request per secret, the lookup is case-sensitive.
+
+The following secret providers are supported:
+
+%SECRETPROVIDERS%

@@ -6,6 +6,7 @@ using Duplicati.Library.RestAPI.Abstractions;
 using Duplicati.Library.Utility;
 using Duplicati.WebserverCore.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
+using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.RestAPI
 {
@@ -100,6 +101,15 @@ namespace Duplicati.Library.RestAPI
         /// This is the lock to be used before manipulating the shared resources
         /// </summary>
         public static readonly object MainLock = new object();
+
+        /// <summary>
+        /// The shared secret provider from the server invocation
+        /// </summary>
+        public static ISecretProvider SecretProvider { get; set; }
+        /// <summary>
+        /// Flag to indicate if the settings encryption key was provided externally
+        /// </summary>
+        public static bool SettingsEncryptionKeyProvidedExternally { get; set; }
 
     }
 }
