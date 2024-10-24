@@ -45,7 +45,7 @@ public static class Program
 
     private static async Task<int> RunTest(string secretUrl, string[] secrets)
     {
-        var secretProvider = SecretProviderLoader.CreateInstance(secretUrl, CancellationToken.None);
+        var secretProvider = SecretProviderLoader.CreateInstance(secretUrl);
         await secretProvider.InitializeAsync(new Uri(secretUrl), CancellationToken.None);
         var result = await secretProvider.ResolveSecretsAsync(secrets, CancellationToken.None);
         Console.WriteLine("NOTE: Secret values are not displayed for security reasons");

@@ -189,7 +189,7 @@ public static class Program
             // Grab potential options from the agent configuration
             var options = agentProps.Select(x => (x.Key, Value: x.Value.GetValue(agentConfig)?.ToString()))
                 .Where(x => x.Value != null)
-                .ToDictionary(x => x.Key, x => x.Value!);
+                .ToDictionary(x => x.Key, x => x.Value);
 
             // Patch with the secret provider options
             options["secret-provider"] = agentConfig.SecretProvider;

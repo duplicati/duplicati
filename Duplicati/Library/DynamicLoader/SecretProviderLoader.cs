@@ -116,9 +116,8 @@ public class SecretProviderLoader
     /// Creates an instance of a secret provider
     /// </summary>
     /// <param name="config">The configuration string</param>
-    /// <param name="cancelToken">The cancellation token</param>
     /// <returns>The secret provider instance</returns>
-    public static ISecretProvider CreateInstance(string config, CancellationToken cancelToken)
+    public static ISecretProvider CreateInstance(string config)
     {
         if (string.IsNullOrEmpty(config))
             throw new ArgumentNullException(nameof(config));

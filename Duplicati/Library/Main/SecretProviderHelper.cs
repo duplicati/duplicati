@@ -55,7 +55,7 @@ public static class SecretProviderHelper
     /// <returns>The secret provider instance</returns>
     public static async Task<ISecretProvider> CreateInstanceAsync(string config, CachingLevel cachingLevel, string persistedFolder, string salt, CancellationToken cancelToken)
     {
-        var provider = SecretProviderLoader.CreateInstance(config, cancelToken);
+        var provider = SecretProviderLoader.CreateInstance(config);
         var sp = new SecretProviderCached(config, provider, cachingLevel, persistedFolder, salt);
         await sp.InitializeAsync(new System.Uri(config), cancelToken).ConfigureAwait(false);
 
@@ -72,7 +72,7 @@ public static class SecretProviderHelper
     /// <param name="fallbackProvider">The fallback provider to use if no provider is specified</param>
     /// <param name="cancellationToken">The cancellation token</param>
     /// <returns>The secret provider</returns>
-    public static async Task<ISecretProvider?> ApplySecretProviderAsync(string[] arguments, Dictionary<string, string> options, string persistedFolder, ISecretProvider? fallbackProvider, CancellationToken cancellationToken)
+    public static async Task<ISecretProvider?> ApplySecretProviderAsync(string?[] arguments, Dictionary<string, string?> options, string persistedFolder, ISecretProvider? fallbackProvider, CancellationToken cancellationToken)
     {
         var provider = options.GetValueOrDefault("secret-provider");
         if (string.IsNullOrWhiteSpace(provider) && fallbackProvider == null)
@@ -89,7 +89,7 @@ public static class SecretProviderHelper
         }
         else
         {
-            var newProvider = SecretProviderLoader.CreateInstance(provider, cancellationToken);
+            var newProvider = SecretProviderLoader.CreateInstance(provider);
 
             string salt;
             using (var hasher = HashFactory.CreateHasher(HashFactory.SHA256))
@@ -116,7 +116,7 @@ public static class SecretProviderHelper
     /// <param name="matchpattern">The prefix to look for</param>
     /// <param name="cancelToken">The cancellation token</param>
     /// <returns>An awaitable task</returns>
-    public static async Task ReplaceSecretsAsync(ISecretProvider provider, string[] values, Dictionary<string, string> options, string matchpattern, CancellationToken cancelToken)
+    public static async Task ReplaceSecretsAsync(ISecretProvider provider, string?[] values, Dictionary<string, string?> options, string matchpattern, CancellationToken cancelToken)
     {
         // Unwrap ${} to support ${name is long}
         var suffix = string.Empty;
@@ -134,14 +134,17 @@ public static class SecretProviderHelper
         // When we get the secrets, replace these values
         var optionsMap = options
             .Where(x => !x.Key.StartsWith("secret-provider", StringComparison.OrdinalIgnoreCase))
-            .Select(x => (x.Key, x.Value, Match: pattern.Match(x.Value)))
+            .Where(x => !string.IsNullOrWhiteSpace(x.Value))
+            .Select(x => (x.Key, Value: x.Value!, Match: pattern.Match(x.Value!)))
             .Where(x => x.Match.Success && !string.IsNullOrWhiteSpace(x.Match.Groups["key"].Value) && x.Match.Length == x.Value.Length)
             .Select(x => (x.Key, Secret: x.Match.Groups["key"].Value))
             .Where(x => !string.IsNullOrWhiteSpace(x.Secret))
             .GroupBy(x => x.Secret)
             .ToDictionary(x => x.Key, x => x.Select(y => y.Key).ToArray());
 
-        var secrets = values.SelectMany(x => pattern.Matches(x).Select(m => m.Groups["key"].Value))
+        var secrets = values
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .SelectMany(x => pattern.Matches(x!).Select(m => m.Groups["key"].Value))
             .Concat(optionsMap.Keys)
             .Distinct()
             .ToArray();
@@ -158,7 +161,11 @@ public static class SecretProviderHelper
 
         // Update values by replacing within the strings
         for (var i = 0; i < values.Length; i++)
-            values[i] = pattern.Replace(values[i], m => translated[m.Groups["key"].Value]);
+        {
+            var prev = values[i];
+            if (!string.IsNullOrWhiteSpace(prev))
+                values[i] = pattern.Replace(prev, m => translated[m.Groups["key"].Value]);
+        }
 
         return;
     }
