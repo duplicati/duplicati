@@ -153,5 +153,13 @@ internal static class MacOSKeyChainProvider
     public static string AccountDescriptionLong => LC.L("The account name to use for retrieving secrets from the macOS Keychain");
     public static string TypeDescriptionShort => LC.L("The type of password to get");
     public static string TypeDescriptionLong => LC.L("The type of password to get from the macOS Keychain");
-
 }
+
+internal static class UnixPassProvider
+{
+    public static string DisplayName => LC.L("Secrets from Unix pass");
+    public static string Description => LC.L("Secret provider that reads secrets from the Unix pass password manager");
+    public static string PassCommandDescriptionShort => LC.L("The pass command");
+    public static string PassCommandDescriptionLong => LC.L("The command to use for retrieving secrets from the Unix pass password manager");
+}
+

@@ -15,5 +15,6 @@ public static class SecretProviderModules
         new GCSSecretProvider(),
         new AzureSecretProvider(),
         new MacOSKeyChainProvider(),
+        new UnixPassProvider(),
     ];
 }
