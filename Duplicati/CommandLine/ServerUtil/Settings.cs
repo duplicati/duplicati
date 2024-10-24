@@ -1,6 +1,9 @@
 using System.Text.Json;
+using Duplicati.Library.DynamicLoader;
 using Duplicati.Library.Encryption;
+using Duplicati.Library.Interface;
 using Duplicati.Library.Main;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.CommandLine.ServerUtil;
 
@@ -14,14 +17,18 @@ namespace Duplicati.CommandLine.ServerUtil;
 /// <param name="SettingsFile">The settings file where data is loaded/saved</param>
 /// <param name="Insecure">Whether to disable TLS/SSL certificate trust check</param>
 /// <param name="Key">The encryption key to use for the settings file</param>
+/// <param name="SecretProvider">The secret provider to use for reading secrets</param>
+/// <param name="SecretProviderPattern">The pattern to use for the secret provider</param>
 public sealed record Settings(
     string? Password,
     string? RefreshToken,
-    Uri HostUrl,
+    System.Uri HostUrl,
     string? ServerDatafolder,
     string SettingsFile,
     bool Insecure,
-    EncryptedFieldHelper.KeyInstance? Key
+    EncryptedFieldHelper.KeyInstance? Key,
+    ISecretProvider? SecretProvider,
+    string SecretProviderPattern
 )
 {
     /// <summary>
@@ -32,7 +39,7 @@ public sealed record Settings(
     /// <param name="ServerDatafolder">The server datafolder, if any</param>
     private sealed record PersistedSettings(
         string? RefreshToken,
-        Uri HostUrl,
+        System.Uri HostUrl,
         string? ServerDatafolder
     );
     private static string GetDefaultStorageFolder(string filename)
@@ -54,9 +61,34 @@ public sealed record Settings(
     /// <param name="insecure">Whether to disable TLS/SSL certificate trust check</param>
     /// <param name="settingsPassphrase">The encryption key to use</param>
     /// <returns>The loaded settings</returns>
-    public static Settings Load(string? password, Uri? hostUrl, string? serverDataFolder, string settingsFile, bool insecure, string? settingsPassphrase)
+    public static Settings Load(string? password, System.Uri? hostUrl, string? serverDataFolder, string settingsFile, bool insecure, string? settingsPassphrase, string? secretProvider, SecretProviderHelper.CachingLevel secretProviderCache, string secretProviderPattern)
     {
-        hostUrl ??= new Uri("http://localhost:8200");
+        hostUrl ??= new System.Uri("http://localhost:8200");
+
+        ISecretProvider? secretInstance = null;
+        if (!string.IsNullOrWhiteSpace(secretProvider))
+        {
+            var secretProviderInstance = SecretProviderLoader.CreateInstance(secretProvider);
+
+            // Map into expected structure
+            var opts = new Dictionary<string, string?>
+            {
+                { "secret-provider", secretProvider },
+                { "secret-provider-pattern", secretProviderPattern },
+                { "secret-provider-cache", secretProviderCache.ToString() },
+                { "password", password },
+                { "settings-encryption-key", settingsPassphrase }
+            };
+
+            var args = new[] { hostUrl.ToString() };
+            secretInstance = SecretProviderHelper.ApplySecretProviderAsync(args, opts, Library.Utility.TempFolder.SystemTempPath, null, CancellationToken.None).Await();
+
+            // Read back transformed values
+            hostUrl = new System.Uri(args[0]);
+            password = opts["password"];
+            settingsPassphrase = opts["settings-encryption-key"];
+        }
+
         if (string.IsNullOrWhiteSpace(serverDataFolder))
             serverDataFolder = GetDefaultStorageFolder("Duplicati-server.sqlite");
 
@@ -74,8 +106,24 @@ public sealed record Settings(
             serverDataFolder,
             settingsFile,
             insecure,
-            key
+            key,
+            secretInstance,
+            secretProviderPattern
         );
+    }
+
+    /// <summary>
+    /// Replaces secrets inside arguments and options
+    /// </summary>
+    /// <param name="args">The arguments to replace</param>
+    /// <param name="options">The options to replace</param>
+    /// <returns>The task to await</returns>
+    public Task ReplaceSecrets(string?[] args, Dictionary<string, string?> options)
+    {
+        if (SecretProvider == null)
+            return Task.CompletedTask;
+
+        return SecretProviderHelper.ReplaceSecretsAsync(SecretProvider, args, options, SecretProviderPattern, CancellationToken.None);
     }
 
     /// <summary>
