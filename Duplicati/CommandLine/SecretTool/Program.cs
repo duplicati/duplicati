@@ -3,6 +3,7 @@ using System.CommandLine.Builder;
 using System.CommandLine.NamingConventionBinder;
 using System.CommandLine.Parsing;
 using Duplicati.Library.DynamicLoader;
+using Duplicati.Library.Interface;
 
 namespace Duplicati.CommandLine.SecretTool;
 
@@ -39,7 +40,20 @@ public static class Program
 
         return new CommandLineBuilder(cmd)
             .UseDefaults()
-            .Build()
+            .UseExceptionHandler((ex, context) =>
+            {
+                if (ex is UserInformationException userInformationException)
+                {
+                    Console.WriteLine("ErrorID: {0}", userInformationException.HelpID);
+                    Console.WriteLine("Message: {0}", userInformationException.Message);
+                    context.ExitCode = 2;
+                }
+                else
+                {
+                    Console.WriteLine("Exception: " + ex);
+                    context.ExitCode = 1;
+                }
+            }).Build()
             .InvokeAsync(args);
     }
 
