@@ -143,3 +143,15 @@ If the vault-uri parameter is not provided, the keyvault-name parameter will be 
     public static string AuthenticationTypeDescriptionLong => LC.L(@"The type of authentication to use for communication with Azure Key Vault");
 }
 
+internal static class MacOSKeyChainProvider
+{
+    public static string DisplayName => LC.L("Secrets from macOS Keychain");
+    public static string Description => LC.L("Secret provider that reads secrets from the macOS Keychain");
+    public static string ServiceDescriptionShort => LC.L("The service name");
+    public static string ServiceDescriptionLong => LC.L("The service name to use for retrieving secrets from the macOS Keychain");
+    public static string AccountDescriptionShort => LC.L("The account name");
+    public static string AccountDescriptionLong => LC.L("The account name to use for retrieving secrets from the macOS Keychain");
+    public static string TypeDescriptionShort => LC.L("The type of password to get");
+    public static string TypeDescriptionLong => LC.L("The type of password to get from the macOS Keychain");
+
+}

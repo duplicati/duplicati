@@ -14,5 +14,6 @@ public static class SecretProviderModules
         new HCVaultSecretProvider(),
         new GCSSecretProvider(),
         new AzureSecretProvider(),
+        new MacOSKeyChainProvider(),
     ];
 }
