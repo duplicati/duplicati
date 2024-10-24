@@ -91,23 +91,23 @@ public class AzureSecretProvider : ISecretProvider
         var scheme = cfg.ConnectionType == ConnectionType.Http ? "http" : "https";
 
         if (string.IsNullOrWhiteSpace(cfg.KeyVaultName) && string.IsNullOrWhiteSpace(cfg.VaultUri))
-            throw new InvalidOperationException($"Either {ArgName(nameof(AzureSecretProviderConfig.KeyVaultName))} or {ArgName(nameof(AzureSecretProviderConfig.VaultUri))} is required");
+            throw new UserInformationException($"Either {ArgName(nameof(AzureSecretProviderConfig.KeyVaultName))} or {ArgName(nameof(AzureSecretProviderConfig.VaultUri))} is required", "MissingVaultNameOrUri");
         else if (!string.IsNullOrWhiteSpace(cfg.KeyVaultName) && !string.IsNullOrWhiteSpace(cfg.VaultUri))
-            throw new InvalidOperationException($"Only one of {ArgName(nameof(AzureSecretProviderConfig.KeyVaultName))} or {ArgName(nameof(AzureSecretProviderConfig.VaultUri))} can be specified");
+            throw new UserInformationException($"Only one of {ArgName(nameof(AzureSecretProviderConfig.KeyVaultName))} or {ArgName(nameof(AzureSecretProviderConfig.VaultUri))} can be specified", "BothVaultNameAndUriSpecified");
 
         var vaultUri = cfg.VaultUri ?? $"{scheme}://{cfg.KeyVaultName}.vault.azure.net";
 
         if (cfg.AuthenticationType == AuthenticationType.ClientSecret && (string.IsNullOrWhiteSpace(cfg.TenantId) || string.IsNullOrWhiteSpace(cfg.ClientId) || string.IsNullOrWhiteSpace(cfg.ClientSecret)))
-            throw new InvalidOperationException($"The settings {ArgName(nameof(AzureSecretProviderConfig.TenantId))}, {ArgName(nameof(AzureSecretProviderConfig.ClientId))}, and {ArgName(nameof(AzureSecretProviderConfig.ClientSecret))} are required for client secret authentication");
+            throw new UserInformationException($"The settings {ArgName(nameof(AzureSecretProviderConfig.TenantId))}, {ArgName(nameof(AzureSecretProviderConfig.ClientId))}, and {ArgName(nameof(AzureSecretProviderConfig.ClientSecret))} are required for client secret authentication", "MissingClientSecretSettings");
         else if (cfg.AuthenticationType == AuthenticationType.UsernamePassword && (string.IsNullOrWhiteSpace(cfg.TenantId) || string.IsNullOrWhiteSpace(cfg.ClientId) || string.IsNullOrWhiteSpace(cfg.Username) || string.IsNullOrWhiteSpace(cfg.Password)))
-            throw new InvalidOperationException($"The settings {ArgName(nameof(AzureSecretProviderConfig.TenantId))}, {ArgName(nameof(AzureSecretProviderConfig.ClientId))}, {ArgName(nameof(AzureSecretProviderConfig.Username))}, and {ArgName(nameof(AzureSecretProviderConfig.Password))} are required for username/password authentication");
+            throw new UserInformationException($"The settings {ArgName(nameof(AzureSecretProviderConfig.TenantId))}, {ArgName(nameof(AzureSecretProviderConfig.ClientId))}, {ArgName(nameof(AzureSecretProviderConfig.Username))}, and {ArgName(nameof(AzureSecretProviderConfig.Password))} are required for username/password authentication", "MissingUsernamePasswordSettings");
 
         TokenCredential credential = cfg.AuthenticationType switch
         {
             AuthenticationType.ClientSecret => new ClientSecretCredential(cfg.TenantId, cfg.ClientId, cfg.ClientSecret),
             AuthenticationType.ManagedIdentity => new DefaultAzureCredential(),
             AuthenticationType.UsernamePassword => new UsernamePasswordCredential(cfg.Username, cfg.Password, cfg.TenantId, cfg.ClientId),
-            _ => throw new NotImplementedException($"Authentication type {cfg.AuthenticationType} is not supported")
+            _ => throw new UserInformationException($"Authentication type {cfg.AuthenticationType} is not supported", "UnsupportedAuthenticationType")
         };
 
 

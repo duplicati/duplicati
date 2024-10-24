@@ -155,11 +155,11 @@ public class HCVaultSecretProvider : ISecretProvider
             cfg.ClientSecret = Environment.GetEnvironmentVariable(EnvConstants.HCP_CLIENT_SECRET);
 
         if (string.IsNullOrWhiteSpace(cfg.ClientSecret) && !string.IsNullOrWhiteSpace(cfg.ClientId))
-            throw new InvalidOperationException($"{ArgName(nameof(HCVaultSettings.ClientSecret))} is required when {ArgName(nameof(HCVaultSettings.ClientId))} is specified");
+            throw new UserInformationException($"{ArgName(nameof(HCVaultSettings.ClientSecret))} is required when {ArgName(nameof(HCVaultSettings.ClientId))} is specified", "MissingClientSecret");
         if (string.IsNullOrWhiteSpace(cfg.Token) && string.IsNullOrWhiteSpace(cfg.ClientId))
-            throw new InvalidOperationException($"Either {ArgName(nameof(HCVaultSettings.Token))} or {ArgName(nameof(HCVaultSettings.ClientId))} is required");
+            throw new UserInformationException($"Either {ArgName(nameof(HCVaultSettings.Token))} or {ArgName(nameof(HCVaultSettings.ClientId))} is required", "MissingTokenOrClient");
         if (string.IsNullOrWhiteSpace(cfg.Secrets))
-            throw new InvalidOperationException($"{ArgName(nameof(HCVaultSettings.Secrets))} is required");
+            throw new UserInformationException($"{ArgName(nameof(HCVaultSettings.Secrets))} is required", "MissingSecrets");
 
         var secrets = cfg.Secrets?.Split([';', ','], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries) ?? Array.Empty<string>();
 

@@ -92,15 +92,15 @@ public class GCSSecretProvider : ISecretProvider
 
         var cfg = CommandLineArgumentMapper.ApplyArguments(new GCSSecretProviderOptions(), args);
         if (string.IsNullOrWhiteSpace(cfg.ProjectId))
-            throw new InvalidOperationException($"{ArgName(nameof(GCSSecretProviderOptions.ProjectId))} is required");
+            throw new UserInformationException($"{ArgName(nameof(GCSSecretProviderOptions.ProjectId))} is required", "MissingProjectId");
         if (string.IsNullOrWhiteSpace(cfg.Version))
-            throw new InvalidOperationException($"{ArgName(nameof(GCSSecretProviderOptions.Version))} is required");
+            throw new UserInformationException($"{ArgName(nameof(GCSSecretProviderOptions.Version))} is required", "MissingVersion");
         if (cfg.ApiType != null)
             builder.GrpcAdapter = cfg.ApiType switch
             {
                 ApiType.Grpc => GrpcCoreAdapter.Instance,
                 ApiType.Rest => RestGrpcAdapter.Default,
-                _ => throw new InvalidOperationException($"Unknown API type: {cfg.ApiType}")
+                _ => throw new UserInformationException($"Unknown API type: {cfg.ApiType}", "UnknownApiType")
             };
 
         if (!string.IsNullOrWhiteSpace(cfg.AccessToken))

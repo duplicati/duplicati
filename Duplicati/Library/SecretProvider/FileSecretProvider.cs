@@ -44,7 +44,7 @@ public class FileSecretProvider : ISecretProvider
         if (string.IsNullOrEmpty(passphrase))
         {
             secrets = await JsonSerializer.DeserializeAsync<Dictionary<string, string>>(fs, cancellationToken: cancellationToken).ConfigureAwait(false)
-                ?? throw new InvalidOperationException("The file does not contain any secrets");
+                ?? throw new UserInformationException("The file does not contain any secrets", "NoSecrets");
         }
         else
         {
@@ -52,7 +52,7 @@ public class FileSecretProvider : ISecretProvider
             await SharpAESCrypt.AESCrypt.DecryptAsync(passphrase, fs, ms, SharpAESCrypt.DecryptionOptions.Default with { LeaveOpen = true }, cancellationToken).ConfigureAwait(false);
             ms.Position = 0;
             secrets = await JsonSerializer.DeserializeAsync<Dictionary<string, string>>(ms, cancellationToken: cancellationToken).ConfigureAwait(false)
-                ?? throw new InvalidOperationException("The file does not contain any secrets");
+                ?? throw new UserInformationException("The file does not contain any secrets", "NoSecrets");
         }
 
         // Make secrets case-insensitive
