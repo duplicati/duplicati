@@ -181,7 +181,7 @@ public class RegisterForRemote : IDisposable
     /// <returns>The data needed to claim the machine</returns>
     /// <exception cref="InvalidOperationException">Thrown if the class is not in the correct state</exception>
     /// <exception cref="Exception">Thrown if the machine could not be registered</exception>
-    public async Task<RegisterClientData> Register(int? maxRetries = null, TimeSpan? retryInterval = null)
+    public async Task<(RegisterClientData? RegistrationData, ClaimedClientData? ClaimedData)> Register(int? maxRetries = null, TimeSpan? retryInterval = null)
     {
         if (_state != States.NotStarted)
             throw new InvalidOperationException("Registration process has already started");
@@ -189,7 +189,7 @@ public class RegisterForRemote : IDisposable
         _state = States.Registering;
         try
         {
-            _registerClientData = await RetryHelper.Retry(() => RegisterClient(), maxRetries ?? ClientRegisterMaxRetries, retryInterval ?? ClientRegisterRetryInterval, _cancellationTokenSource.Token);
+            (_registerClientData, _claimedClientData) = await RetryHelper.Retry(() => RegisterClient(), maxRetries ?? ClientRegisterMaxRetries, retryInterval ?? ClientRegisterRetryInterval, _cancellationTokenSource.Token);
         }
         catch (Exception ex)
         {
@@ -199,42 +199,78 @@ public class RegisterForRemote : IDisposable
             throw;
         }
 
-
         if (_state != States.Disposed)
-            _state = States.Registered;
-        return _registerClientData!;
+        {
+            if (_claimedClientData != null)
+                _state = States.Claimed;
+            else
+                _state = States.Registered;
+        }
+
+        return (_registerClientData, _claimedClientData);
     }
 
+    /// <summary>
+    /// Creates the machine data content for registration
+    /// </summary>
+    /// <returns>The JSON content for the machine data</returns>
     private JsonContent CreateMachineData()
-        => JsonContent.Create(new
+    {
+        var basics = new Dictionary<string, string?>
         {
-            InstanceId = ClientInstanceId,
-            MachineId = AutoUpdater.UpdaterManager.MachineID,
-            InstallId = AutoUpdater.UpdaterManager.InstallID,
-            LocalTime = DateTimeOffset.Now,
-            Version = AutoUpdater.UpdaterManager.SelfVersion?.Version,
-            PackageTypeId = AutoUpdater.UpdaterManager.PackageTypeId
-        });
+            { "instanceId", ClientInstanceId },
+            { "machineId", AutoUpdater.UpdaterManager.MachineID },
+            { "machineName", AutoUpdater.UpdaterManager.MachineName },
+            { "installId", AutoUpdater.UpdaterManager.InstallID },
+            { "localTime", DateTimeOffset.Now.ToString("o") },
+            { "version", AutoUpdater.UpdaterManager.SelfVersion?.Version },
+            { "packageTypeId", AutoUpdater.UpdaterManager.PackageTypeId }
+        };
+
+        // Pass any query parameters from the registration URL into the JSON body
+        // so they url can override the defaults if needed
+        var uri = new System.Uri(_registrationUrl);
+        var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
+        foreach (var key in query.AllKeys)
+            if (key != null && !string.IsNullOrWhiteSpace(query[key]))
+                basics[key] = query[key];
+
+        return JsonContent.Create(basics);
+    }
 
     /// <summary>
     /// Registers the machine with the server
     /// </summary>
     /// <returns>The data needed to claim the machine</returns>
-    private async Task<RegisterClientData> RegisterClient()
+    private async Task<(RegisterClientData?, ClaimedClientData?)> RegisterClient()
     {
-        var response = await _httpClient.PostAsync(_registrationUrl, JsonContent.Create(new
-        {
-            InstanceId = ClientInstanceId,
-            MachineId = AutoUpdater.UpdaterManager.MachineID,
-            InstallId = AutoUpdater.UpdaterManager.InstallID,
-            PackageTypeId = AutoUpdater.UpdaterManager.PackageTypeId,
-            LocalTime = DateTimeOffset.Now,
-
-        }), _cancellationTokenSource.Token);
+        var response = await _httpClient.PostAsync(_registrationUrl, CreateMachineData(), _cancellationTokenSource.Token);
 
         response.EnsureSuccessStatusCode();
-        return await response.Content.ReadFromJsonAsync<RegisterClientData>(options: JsonOptions, _cancellationTokenSource.Token)
-            ?? throw new Exception("Failed to read client registration data");
+        var raw = await response.Content.ReadAsStringAsync(_cancellationTokenSource.Token);
+        if (string.IsNullOrWhiteSpace(raw))
+            throw new Exception("Failed to read client registration data");
+
+        var doc = JsonDocument.Parse(raw);
+        if (doc.RootElement.TryGetProperty("jwt", out var _) && doc.RootElement.TryGetProperty("serverUrl", out var _))
+        {
+            return JsonSerializer.Deserialize<ClaimedClientData>(raw, JsonOptions) switch
+            {
+                { } data => (null, data),
+                null => throw new Exception("Failed to read client claimed data")
+            };
+        }
+
+        if (doc.RootElement.TryGetProperty("claimLink", out var _) && doc.RootElement.TryGetProperty("statusLink", out var _))
+        {
+            return JsonSerializer.Deserialize<RegisterClientData>(raw, JsonOptions) switch
+            {
+                { } data => (data, null),
+                null => throw new Exception("Failed to read client registration data")
+            };
+        }
+
+        throw new Exception("Failed to read client registration data");
     }
 
     /// <summary>
@@ -245,6 +281,9 @@ public class RegisterForRemote : IDisposable
     /// <exception cref="Exception">Thrown if the machine could not be registered</exception>
     public async Task<ClaimedClientData> Claim()
     {
+        if (_state == States.Claimed)
+            return _claimedClientData ?? throw new InvalidOperationException("Claimed data is null");
+
         if (_state != States.Registered)
             throw new InvalidOperationException("Resgistration process is not in the registered state");
 
