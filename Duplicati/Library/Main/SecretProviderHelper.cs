@@ -63,6 +63,18 @@ public static class SecretProviderHelper
     }
 
     /// <summary>
+    /// Wraps a secret provider with caching
+    /// </summary>
+    /// <param name="config">The configuration string</param>
+    /// <param name="provider">The provider to wrap</param>
+    /// <param name="cachingLevel">The caching level</param>
+    /// <param name="persistedFolder">The folder to persist the cache to</param>
+    /// <param name="salt">The salt to use for hashing</param>
+    /// <returns>The wrapped secret provider</returns>
+    public static ISecretProvider WrapWithCache(string config, ISecretProvider provider, CachingLevel cachingLevel, string persistedFolder, string salt)
+        => new SecretProviderCached(config, provider, cachingLevel, persistedFolder, salt);
+
+    /// <summary>
     /// Applies the secret provider to the arguments.
     /// Note that this method modifes the arguments and options in place.
     /// </summary>
@@ -78,9 +90,6 @@ public static class SecretProviderHelper
         if (string.IsNullOrWhiteSpace(provider) && fallbackProvider == null)
             return null;
 
-        var cachingLevel = Library.Utility.Utility.ParseEnumOption(options, "secret-provider-cache", CachingLevel.None);
-
-        // Weak salt, but semi-static
         ISecretProvider secretProvider;
         if (string.IsNullOrWhiteSpace(provider))
         {
@@ -91,11 +100,14 @@ public static class SecretProviderHelper
         {
             var newProvider = SecretProviderLoader.CreateInstance(provider);
 
+            // Weak salt, but semi-static
             string salt;
             using (var hasher = HashFactory.CreateHasher(HashFactory.SHA256))
                 salt = Environment.MachineName.ComputeHashToHex(hasher);
 
-            secretProvider = new SecretProviderCached(provider, newProvider, cachingLevel, persistedFolder, salt);
+            var cachingLevel = Library.Utility.Utility.ParseEnumOption(options, "secret-provider-cache", CachingLevel.None);
+
+            secretProvider = WrapWithCache(provider, newProvider, cachingLevel, persistedFolder, salt);
             await secretProvider.InitializeAsync(new System.Uri(provider), cancellationToken).ConfigureAwait(false);
         }
 
@@ -153,6 +165,10 @@ public static class SecretProviderHelper
             return;
 
         var translated = await provider.ResolveSecretsAsync(secrets, cancelToken).ConfigureAwait(false);
+
+        // Sanity check the results to guard against faulty providers
+        if (translated.Any(x => string.IsNullOrWhiteSpace(x.Value)))
+            throw new InvalidOperationException("The secret provider returned an empty key");
 
         // Update options by replacing values
         foreach (var v in optionsMap)

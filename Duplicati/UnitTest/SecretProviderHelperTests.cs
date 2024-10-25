@@ -1,0 +1,299 @@
+using System;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
+using Duplicati.Library.Interface;
+using Duplicati.Library.Main;
+using Duplicati.Library.Utility;
+using NUnit.Framework;
+
+namespace Duplicati.UnitTest;
+
+public class SecretProviderHelperTests : BasicSetupHelper
+{
+    private class MockedSecretProvider : ISecretProvider
+    {
+        public string Key => "mock";
+
+        public string DisplayName => "";
+
+        public string Description => "";
+
+        public Dictionary<string, string> Secrets { get; set; } = new();
+
+        public IList<ICommandLineArgument> SupportedCommands => [];
+
+        public bool ThrowOnInit { get; set; }
+
+        public Task InitializeAsync(System.Uri config, CancellationToken cancellationToken)
+        {
+            if (ThrowOnInit)
+                throw new InvalidOperationException("Initialization failed");
+
+            return Task.CompletedTask;
+        }
+
+        public Task<Dictionary<string, string>> ResolveSecretsAsync(IEnumerable<string> keys, CancellationToken cancellationToken)
+        {
+            var result = new Dictionary<string, string>();
+            foreach (var key in keys)
+            {
+                if (!Secrets.TryGetValue(key, out var value))
+                    throw new KeyNotFoundException($"The key '{key}' was not found");
+
+                result[key] = value;
+            }
+
+            return Task.FromResult(result);
+        }
+    }
+
+    [Test]
+    [Category("SecretHelper")]
+    public void ReplaceSecretsWithDefaultSettings()
+    {
+        var secretProvider = new MockedSecretProvider();
+        secretProvider.Secrets["key1"] = "secret1";
+        secretProvider.Secrets["key2"] = "secret2";
+
+        var settings = new Dictionary<string, string>
+        {
+            {"key1", "value1"},
+            {"key2", "$key2"},
+            {"key3", "value3$key"},
+        };
+
+        var args = new[] {
+            "test://host?pass=$key2&user=$key1&other=123",
+        };
+
+        SecretProviderHelper.ApplySecretProviderAsync(args, settings, null, secretProvider, CancellationToken.None).Await();
+
+        Assert.AreEqual("value1", settings["key1"]);
+        Assert.AreEqual("secret2", settings["key2"]);
+        Assert.AreEqual("value3$key", settings["key3"]);
+        Assert.AreEqual("test://host?pass=secret2&user=secret1&other=123", args[0]);
+    }
+
+    [Test]
+    [Category("SecretHelper")]
+    public void ReplaceSecretsWithSlashKeys()
+    {
+        var secretProvider = new MockedSecretProvider();
+        secretProvider.Secrets["key1"] = "secret1";
+        secretProvider.Secrets["key/with/slash"] = "secret2";
+
+        var settings = new Dictionary<string, string>
+        {
+            {"key1", "value1"},
+            {"key2", "$key/with/slash"},
+            {"key3", "value3$key"},
+        };
+
+        var args = new[] {
+            "test://host?pass=$key/with/slash&user=$key1&other=123",
+        };
+
+        SecretProviderHelper.ApplySecretProviderAsync(args, settings, null, secretProvider, CancellationToken.None).Await();
+
+        Assert.AreEqual("value1", settings["key1"]);
+        Assert.AreEqual("secret2", settings["key2"]);
+        Assert.AreEqual("value3$key", settings["key3"]);
+        Assert.AreEqual("test://host?pass=secret2&user=secret1&other=123", args[0]);
+    }
+
+    [Test]
+    [Category("SecretHelper")]
+    public void ReplaceSecretsWithExtendedPattern()
+    {
+        var secretProvider = new MockedSecretProvider();
+        secretProvider.Secrets["key1"] = "secret1";
+        secretProvider.Secrets["key2"] = "secret2";
+
+        var settings = new Dictionary<string, string>
+        {
+            {"key1", "value1"},
+            {"key2", "${key2}"},
+            {"key3", "value3${key}"},
+            {"secret-provider-pattern", "${}"},
+        };
+
+        var args = new[] {
+            "test://host?pass=${key2}&user=${key1}&other=123",
+        };
+
+        SecretProviderHelper.ApplySecretProviderAsync(args, settings, null, secretProvider, CancellationToken.None).Await();
+
+        Assert.AreEqual("value1", settings["key1"]);
+        Assert.AreEqual("secret2", settings["key2"]);
+        Assert.AreEqual("value3${key}", settings["key3"]);
+        Assert.AreEqual("test://host?pass=secret2&user=secret1&other=123", args[0]);
+    }
+
+    [Test]
+    [Category("SecretHelper")]
+    public void ReplaceSecretsWithExtendedLongPattern()
+    {
+        var secretProvider = new MockedSecretProvider();
+        secretProvider.Secrets["key1"] = "secret1";
+        secretProvider.Secrets["key2"] = "secret2";
+
+        var settings = new Dictionary<string, string>
+        {
+            {"key1", "value1"},
+            {"key2", ":sec{key2}"},
+            {"key3", "value3:sec{key}"},
+            {"secret-provider-pattern", ":sec{}"},
+        };
+
+        var args = new[] {
+            "test://host?pass=:sec{key2}&user=:sec{key1}&other=123",
+        };
+
+        SecretProviderHelper.ApplySecretProviderAsync(args, settings, null, secretProvider, CancellationToken.None).Await();
+
+        Assert.AreEqual("value1", settings["key1"]);
+        Assert.AreEqual("secret2", settings["key2"]);
+        Assert.AreEqual("value3:sec{key}", settings["key3"]);
+        Assert.AreEqual("test://host?pass=secret2&user=secret1&other=123", args[0]);
+    }
+
+    [Test]
+    [Category("SecretHelper")]
+    public void ReplaceFailsIfKeyIsMissing()
+    {
+        var secretProvider = new MockedSecretProvider();
+        secretProvider.Secrets["key1"] = "secret1";
+
+        var settings = new Dictionary<string, string>
+        {
+            {"key1", "value1"},
+            {"key2", "$key2"},
+        };
+
+        var args = new[] {
+            "test://host?pass=$key2&user=$key1&other=123",
+        };
+
+        Assert.Throws<KeyNotFoundException>(() => SecretProviderHelper.ApplySecretProviderAsync(args, settings, null, secretProvider, CancellationToken.None).Await());
+    }
+
+    [Test]
+    [Category("SecretHelper")]
+    public void ReplaceFailsIfValueIsEmpty()
+    {
+        var secretProvider = new MockedSecretProvider();
+        secretProvider.Secrets["key1"] = "secret1";
+        secretProvider.Secrets["key2"] = "";
+
+        var settings = new Dictionary<string, string>
+        {
+            {"key1", "value1"},
+            {"key2", "$key2"},
+        };
+
+        var args = new[] {
+            "test://host?pass=$key2&user=$key1&other=123",
+        };
+
+        Assert.Throws<InvalidOperationException>(() => SecretProviderHelper.ApplySecretProviderAsync(args, settings, null, secretProvider, CancellationToken.None).Await());
+    }
+
+    [Test]
+    [Category("SecretHelper")]
+    public void ReplaceUsesInMemoryCache()
+    {
+        var secretProvider = new MockedSecretProvider();
+        secretProvider.Secrets["key1"] = "secret1";
+        secretProvider.Secrets["key2"] = "secret2";
+
+        var settings = new Dictionary<string, string>
+        {
+            {"key1", "$key1"},
+            {"key2", "$key2"}
+        };
+
+        var cachedProvider = SecretProviderHelper.WrapWithCache("", secretProvider, SecretProviderHelper.CachingLevel.InMemory, null, "salt");
+        cachedProvider.InitializeAsync(new System.Uri("mock://"), CancellationToken.None).Await();
+
+        SecretProviderHelper.ApplySecretProviderAsync([], settings, null, cachedProvider, CancellationToken.None).Await();
+
+        secretProvider.Secrets = null;
+
+        settings["key1"] = "$key1";
+        settings["key2"] = "$key2";
+
+        SecretProviderHelper.ApplySecretProviderAsync([], settings, null, cachedProvider, CancellationToken.None).Await();
+
+        Assert.AreEqual("secret1", settings["key1"]);
+        Assert.AreEqual("secret2", settings["key2"]);
+    }
+
+    [Test]
+    [Category("SecretHelper")]
+    public void ReplaceUsesPersistedCache()
+    {
+        var secretProvider = new MockedSecretProvider();
+        secretProvider.Secrets["key1"] = "secret1";
+        secretProvider.Secrets["key2"] = "secret2";
+
+        var settings = new Dictionary<string, string>
+        {
+            {"key1", "$key1"},
+            {"key2", "$key2"}
+        };
+
+        using var tempFolder = new TempFolder();
+        var cachedProvider = SecretProviderHelper.WrapWithCache("", secretProvider, SecretProviderHelper.CachingLevel.Persistent, tempFolder, "salt");
+        cachedProvider.InitializeAsync(new System.Uri("mock://"), CancellationToken.None).Await();
+
+        SecretProviderHelper.ApplySecretProviderAsync([], settings, null, cachedProvider, CancellationToken.None).Await();
+
+        secretProvider.Secrets = null;
+
+        settings["key1"] = "$key1";
+        settings["key2"] = "$key2";
+
+        SecretProviderHelper.ApplySecretProviderAsync([], settings, null, cachedProvider, CancellationToken.None).Await();
+
+        Assert.AreEqual("secret1", settings["key1"]);
+        Assert.AreEqual("secret2", settings["key2"]);
+    }
+
+    [Test]
+    [Category("SecretHelper")]
+    public void ReplaceUsesPersistedCacheOnRestart()
+    {
+        var secretProvider = new MockedSecretProvider();
+        secretProvider.Secrets["key1"] = "secret1";
+        secretProvider.Secrets["key2"] = "secret2";
+
+        var settings = new Dictionary<string, string>
+        {
+            {"key1", "$key1"},
+            {"key2", "$key2"}
+        };
+
+        using var tempFolder = new TempFolder();
+        var cachedProvider = SecretProviderHelper.WrapWithCache("", secretProvider, SecretProviderHelper.CachingLevel.Persistent, tempFolder, "salt");
+        cachedProvider.InitializeAsync(new System.Uri("mock://"), CancellationToken.None).Await();
+
+        SecretProviderHelper.ApplySecretProviderAsync([], settings, null, cachedProvider, CancellationToken.None).Await();
+
+        settings["key1"] = "$key1";
+        settings["key2"] = "$key2";
+
+        // Create a new instance of the provider that is unavailable
+        cachedProvider = SecretProviderHelper.WrapWithCache("", secretProvider, SecretProviderHelper.CachingLevel.Persistent, tempFolder, "salt");
+        secretProvider.Secrets = null;
+        secretProvider.ThrowOnInit = true;
+
+        cachedProvider.InitializeAsync(new System.Uri("mock://"), CancellationToken.None).Await();
+
+        SecretProviderHelper.ApplySecretProviderAsync([], settings, null, cachedProvider, CancellationToken.None).Await();
+
+        Assert.AreEqual("secret1", settings["key1"]);
+        Assert.AreEqual("secret2", settings["key2"]);
+    }
+
+}
