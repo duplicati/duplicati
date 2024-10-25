@@ -120,7 +120,7 @@ public static class SecretProviderHelper
     {
         // Unwrap ${} to support ${name is long}
         var suffix = string.Empty;
-        var matcher = @"\w";
+        var matcher = @"(\w|/)";
         if (matchpattern.EndsWith("{}") || matchpattern.EndsWith("()") || matchpattern.EndsWith("[]"))
         {
             suffix = matchpattern[^1..];
