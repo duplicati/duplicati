@@ -76,6 +76,7 @@ public static class Program
         string AgentRegistrationUrl,
         FileInfo AgentSettingsFile,
         string? AgentSettingsFilePassphrase,
+        bool AgentRegisterOnly,
         string WebserviceListenInterface,
         string WebservicePort,
         string WebservicePassword,
@@ -103,6 +104,7 @@ public static class Program
             new Option<string>("--agent-registration-url", description: "The server URL to connect to", getDefaultValue: () => RegisterForRemote.DefaultRegisterationUrl),
             new Option<FileInfo>("--agent-settings-file", description: "The file to use for the agent settings", getDefaultValue: () => new FileInfo(Settings.DefaultSettingsFile)),
             new Option<string?>("--agent-settings-file-passphrase", description: "The passphrase for the agent settings file", getDefaultValue: () => null),
+            new Option<bool>("--agent-register-only", description: "Only register the agent, then exit", getDefaultValue: () => false),
             new Option<string>("--webservice-listen-interface", description: "The interface to listen on for the webserver", getDefaultValue: () => "loopback"),
             new Option<string>("--webservice-port", description: "The port to listen on for the webserver", getDefaultValue: () => "8210"),
             new Option<string?>("--webservice-password", description: "The password for the webserver, random if none supplied", getDefaultValue: () => null),
@@ -233,6 +235,9 @@ public static class Program
             Log.WriteMessage(LogMessageType.Information, LogTag, "AgentStarting", "Starting agent");
 
             var settings = await Register(agentConfig.AgentRegistrationUrl, agentConfig.AgentSettingsFile.FullName, agentConfig.AgentSettingsFilePassphrase, cts.Token);
+
+            if (agentConfig.AgentRegisterOnly)
+                return 0;
 
             var t = await Task.WhenAny(
                 Task.Run(() => StartLocalServer(agentConfig, settings, cts.Token)),
