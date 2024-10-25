@@ -24,7 +24,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using Duplicati.Library.Interface;
 using Duplicati.Library.SecretProvider;
 

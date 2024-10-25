@@ -20,7 +20,7 @@ public class GCSSecretProvider : ISecretProvider
     private const string OPTION_PREFIX_EXTRA = "ext-";
 
     /// <inheritdoc />
-    public string Key => "gcssm";
+    public string Key => "gcsm";
 
     /// <inheritdoc />
     public string DisplayName => Strings.GCSSecretProvider.DisplayName;
