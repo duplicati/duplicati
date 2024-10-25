@@ -80,7 +80,7 @@ public static class Program
         {
             var metadata = SecretProviderLoader.GetProviderMetadata(key);
             Console.WriteLine($"Secret provider '{key}'");
-            var lines = metadata.Description.Trim().Split(['\r', '\n'], StringSplitOptions.None);
+            var lines = metadata.Description.Trim().Split(new char[] { '\r', '\n' }, StringSplitOptions.None);
             foreach (var line in lines)
                 Console.WriteLine($"  {line.Trim()}");
             Console.WriteLine();

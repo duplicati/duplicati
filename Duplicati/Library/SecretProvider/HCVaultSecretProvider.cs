@@ -161,7 +161,7 @@ public class HCVaultSecretProvider : ISecretProvider
         if (string.IsNullOrWhiteSpace(cfg.Secrets))
             throw new UserInformationException($"{ArgName(nameof(HCVaultSettings.Secrets))} is required", "MissingSecrets");
 
-        var secrets = cfg.Secrets?.Split([';', ','], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries) ?? Array.Empty<string>();
+        var secrets = cfg.Secrets?.Split(new char[] { ';', ',' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries) ?? Array.Empty<string>();
 
         var builder = new UriBuilder(config)
         {
