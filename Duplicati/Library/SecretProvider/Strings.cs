@@ -169,3 +169,11 @@ internal static class WindowsCredentialManagerProvider
     public static string Description => LC.L("Secret provider that reads secrets from the Windows Credential Manager");
 }
 
+internal static class LibSecretLinuxProvider
+{
+    public static string DisplayName => LC.L("Secrets from libsecret");
+    public static string Description => LC.L("Secret provider that reads secrets from the libsecret password manager");
+    public static string CollectionDescriptionShort => LC.L("The collection name");
+    public static string CollectionDescriptionLong => LC.L("The collection name to use for retrieving secrets from the libsecret password manager");
+}
+

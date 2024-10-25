@@ -1,0 +1,1 @@
+https://github.com/spolnik/Simple.CredentialsManager

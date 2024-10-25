@@ -1,0 +1,7 @@
+{
+  "name": "Simple.CredentialsManager",
+  "description": "Simple.CredentialsManager",
+  "link": "https://github.com/spolnik/Simple.CredentialsManager",
+  "license": "Apache-2.0",
+  "notes": "Binary is built from commit 8a91c95 as NuGet package is not updated with Linux support"
+}

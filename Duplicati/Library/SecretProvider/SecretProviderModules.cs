@@ -17,5 +17,6 @@ public static class SecretProviderModules
         new MacOSKeyChainProvider(),
         new UnixPassProvider(),
         new WindowsCredentialManagerProvider(),
+        new LibSecretLinuxProvider(),
     ];
 }
