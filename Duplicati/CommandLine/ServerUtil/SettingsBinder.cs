@@ -49,7 +49,7 @@ public class SettingsBinder : BinderBase<Settings>
     /// <summary>
     /// The secret provider pattern option.
     /// </summary>
-    public static readonly Option<string?> secretProviderPatternOption = new Option<string?>("--secret-provider-pattern", description: "The pattern to use for the secret provider", getDefaultValue: () => "$");
+    public static readonly Option<string?> secretProviderPatternOption = new Option<string?>("--secret-provider-pattern", description: "The pattern to use for the secret provider", getDefaultValue: () => SecretProviderHelper.DEFAULT_PATTERN);
 
     /// <summary>
     /// Adds global options to the root command.
@@ -85,7 +85,7 @@ public class SettingsBinder : BinderBase<Settings>
             bindingContext.ParseResult.GetValueForOption(settingsEncryptionKeyOption) ?? Environment.GetEnvironmentVariable(Library.Encryption.EncryptedFieldHelper.ENVIROMENT_VARIABLE_NAME),
             bindingContext.ParseResult.GetValueForOption(secretProviderOption),
             bindingContext.ParseResult.GetValueForOption(secretProviderCacheOption),
-            bindingContext.ParseResult.GetValueForOption(secretProviderPatternOption) ?? "$"
+            bindingContext.ParseResult.GetValueForOption(secretProviderPatternOption) ?? SecretProviderHelper.DEFAULT_PATTERN
 
         );
 

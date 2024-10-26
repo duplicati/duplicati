@@ -160,6 +160,32 @@ public class SecretProviderHelperTests : BasicSetupHelper
 
     [Test]
     [Category("SecretHelper")]
+    public void CachedProviderRetainsPattern()
+    {
+        var secretProvider = new MockedSecretProvider();
+        secretProvider.Secrets["sec1"] = "secret1";
+
+        var settings = new Dictionary<string, string>
+        {
+            {"key1", "!ext{sec1}"}
+        };
+
+        var cachedProvider = SecretProviderHelper.WrapWithCache("", secretProvider, SecretProviderHelper.CachingLevel.InMemory, null, "salt", "!ext{}");
+        cachedProvider.InitializeAsync(new System.Uri("mock://"), CancellationToken.None).Await();
+
+        SecretProviderHelper.ApplySecretProviderAsync([], settings, null, cachedProvider, CancellationToken.None).Await();
+
+        Assert.AreEqual("secret1", settings["key1"]);
+
+        settings["key1"] = "!ext{sec1}";
+
+        SecretProviderHelper.ApplySecretProviderAsync([], settings, null, cachedProvider, CancellationToken.None).Await();
+
+        Assert.AreEqual("secret1", settings["key1"]);
+    }
+
+    [Test]
+    [Category("SecretHelper")]
     public void ReplaceFailsIfKeyIsMissing()
     {
         var secretProvider = new MockedSecretProvider();
@@ -213,7 +239,7 @@ public class SecretProviderHelperTests : BasicSetupHelper
             {"key2", "$key2"}
         };
 
-        var cachedProvider = SecretProviderHelper.WrapWithCache("", secretProvider, SecretProviderHelper.CachingLevel.InMemory, null, "salt");
+        var cachedProvider = SecretProviderHelper.WrapWithCache("", secretProvider, SecretProviderHelper.CachingLevel.InMemory, null, "salt", null);
         cachedProvider.InitializeAsync(new System.Uri("mock://"), CancellationToken.None).Await();
 
         SecretProviderHelper.ApplySecretProviderAsync([], settings, null, cachedProvider, CancellationToken.None).Await();
@@ -244,7 +270,7 @@ public class SecretProviderHelperTests : BasicSetupHelper
         };
 
         using var tempFolder = new TempFolder();
-        var cachedProvider = SecretProviderHelper.WrapWithCache("", secretProvider, SecretProviderHelper.CachingLevel.Persistent, tempFolder, "salt");
+        var cachedProvider = SecretProviderHelper.WrapWithCache("", secretProvider, SecretProviderHelper.CachingLevel.Persistent, tempFolder, "salt", null);
         cachedProvider.InitializeAsync(new System.Uri("mock://"), CancellationToken.None).Await();
 
         SecretProviderHelper.ApplySecretProviderAsync([], settings, null, cachedProvider, CancellationToken.None).Await();
@@ -275,7 +301,7 @@ public class SecretProviderHelperTests : BasicSetupHelper
         };
 
         using var tempFolder = new TempFolder();
-        var cachedProvider = SecretProviderHelper.WrapWithCache("", secretProvider, SecretProviderHelper.CachingLevel.Persistent, tempFolder, "salt");
+        var cachedProvider = SecretProviderHelper.WrapWithCache("", secretProvider, SecretProviderHelper.CachingLevel.Persistent, tempFolder, "salt", null);
         cachedProvider.InitializeAsync(new System.Uri("mock://"), CancellationToken.None).Await();
 
         SecretProviderHelper.ApplySecretProviderAsync([], settings, null, cachedProvider, CancellationToken.None).Await();
@@ -284,7 +310,7 @@ public class SecretProviderHelperTests : BasicSetupHelper
         settings["key2"] = "$key2";
 
         // Create a new instance of the provider that is unavailable
-        cachedProvider = SecretProviderHelper.WrapWithCache("", secretProvider, SecretProviderHelper.CachingLevel.Persistent, tempFolder, "salt");
+        cachedProvider = SecretProviderHelper.WrapWithCache("", secretProvider, SecretProviderHelper.CachingLevel.Persistent, tempFolder, "salt", null);
         secretProvider.Secrets = null;
         secretProvider.ThrowOnInit = true;
 

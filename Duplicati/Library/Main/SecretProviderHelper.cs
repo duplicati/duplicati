@@ -25,6 +25,11 @@ public static class SecretProviderHelper
     private static readonly string LOGTAG = Log.LogTagFromType<SecretProviderLoader>();
 
     /// <summary>
+    /// The default pattern to use for matching
+    /// </summary>
+    public const string DEFAULT_PATTERN = "$";
+
+    /// <summary>
     /// The different levels of caching permitted for the secrets
     /// </summary>
     public enum CachingLevel
@@ -51,12 +56,13 @@ public static class SecretProviderHelper
     /// <param name="cachingLevel">The caching level</param>
     /// <param name="persistedFolder">The folder to persist the cache to</param>
     /// <param name="salt">The salt to use for hashing</param>
+    /// <param name="pattern">The pattern to use for matching</param>
     /// <param name="cancelToken">The cancellation token</param>
     /// <returns>The secret provider instance</returns>
-    public static async Task<ISecretProvider> CreateInstanceAsync(string config, CachingLevel cachingLevel, string persistedFolder, string salt, CancellationToken cancelToken)
+    public static async Task<ISecretProvider> CreateInstanceAsync(string config, CachingLevel cachingLevel, string persistedFolder, string salt, string pattern, CancellationToken cancelToken)
     {
         var provider = SecretProviderLoader.CreateInstance(config);
-        var sp = new SecretProviderCached(config, provider, cachingLevel, persistedFolder, salt);
+        var sp = WrapWithCache(config, provider, cachingLevel, persistedFolder, salt, pattern);
         await sp.InitializeAsync(new System.Uri(config), cancelToken).ConfigureAwait(false);
 
         return sp;
@@ -70,9 +76,10 @@ public static class SecretProviderHelper
     /// <param name="cachingLevel">The caching level</param>
     /// <param name="persistedFolder">The folder to persist the cache to</param>
     /// <param name="salt">The salt to use for hashing</param>
+    /// <param name="pattern">The pattern to use for matching</param>
     /// <returns>The wrapped secret provider</returns>
-    public static ISecretProvider WrapWithCache(string config, ISecretProvider provider, CachingLevel cachingLevel, string persistedFolder, string salt)
-        => new SecretProviderCached(config, provider, cachingLevel, persistedFolder, salt);
+    public static ISecretProvider WrapWithCache(string config, ISecretProvider provider, CachingLevel cachingLevel, string persistedFolder, string salt, string? pattern)
+        => new SecretProviderCached(config, provider, cachingLevel, persistedFolder, salt, pattern);
 
     /// <summary>
     /// Applies the secret provider to the arguments.
@@ -89,6 +96,8 @@ public static class SecretProviderHelper
         var provider = options.GetValueOrDefault("secret-provider");
         if (string.IsNullOrWhiteSpace(provider) && fallbackProvider == null)
             return null;
+
+        var pattern = options.GetValueOrDefault("secret-provider-pattern");
 
         ISecretProvider secretProvider;
         if (string.IsNullOrWhiteSpace(provider))
@@ -107,11 +116,13 @@ public static class SecretProviderHelper
 
             var cachingLevel = Library.Utility.Utility.ParseEnumOption(options, "secret-provider-cache", CachingLevel.None);
 
-            secretProvider = WrapWithCache(provider, newProvider, cachingLevel, persistedFolder, salt);
+            secretProvider = WrapWithCache(provider, newProvider, cachingLevel, persistedFolder, salt, pattern);
             await secretProvider.InitializeAsync(new System.Uri(provider), cancellationToken).ConfigureAwait(false);
         }
 
-        var pattern = options.GetValueOrDefault("secret-provider-pattern", "$");
+        if (string.IsNullOrWhiteSpace(pattern) && secretProvider is SecretProviderCached cached)
+            pattern = cached.Pattern;
+
         if (string.IsNullOrWhiteSpace(pattern))
             throw new InvalidOperationException("No secret provider pattern specified");
 
@@ -230,6 +241,11 @@ public static class SecretProviderHelper
         private static readonly Dictionary<string, Dictionary<string, string>> _cache = new();
 
         /// <summary>
+        /// The pattern associated with the provider
+        /// </summary>
+        public string Pattern { get; }
+
+        /// <summary>
         /// Creates a new instance of the secret provider cache
         /// </summary>
         /// <param name="config">The configuration string</param>
@@ -237,12 +253,14 @@ public static class SecretProviderHelper
         /// <param name="cachingLevel">The caching level</param>
         /// <param name="persistedFolder">The folder to persist the cache to</param>
         /// <param name="salt">The salt to use for hashing</param>
-        public SecretProviderCached(string config, ISecretProvider provider, CachingLevel cachingLevel, string persistedFolder, string salt)
+        /// <param name="pattern">The pattern to use for matching</param>
+        public SecretProviderCached(string config, ISecretProvider provider, CachingLevel cachingLevel, string persistedFolder, string salt, string? pattern)
         {
             _provider = provider;
             _cachingLevel = cachingLevel;
             _config = config;
             _salt = salt;
+            Pattern = pattern ?? DEFAULT_PATTERN;
             if (cachingLevel == CachingLevel.Persistent)
             {
                 // Create a unique file name for the cache, tied to the configuration

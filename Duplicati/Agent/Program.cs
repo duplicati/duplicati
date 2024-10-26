@@ -118,7 +118,7 @@ public static class Program
             new Option<bool>("--ping-pong-keepalive", description: "Enable ping-pong keepalive", getDefaultValue: () => false),
             new Option<string?>("--secret-provider", description: "The secret provider to use", getDefaultValue: () => null),
             new Option<SecretProviderHelper.CachingLevel>("--secret-provider-cache", description: "The secret provider cache level", getDefaultValue: () => SecretProviderHelper.CachingLevel.None),
-            new Option<string>("--secret-provider-pattern", description: "The secret provider pattern", getDefaultValue: () => "$"),
+            new Option<string>("--secret-provider-pattern", description: "The secret provider pattern", getDefaultValue: () => SecretProviderHelper.DEFAULT_PATTERN),
         };
         runcmd.Handler = CommandHandler.Create<CommandLineArguments>(RunAgent);
 
