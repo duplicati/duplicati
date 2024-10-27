@@ -175,5 +175,7 @@ internal static class LibSecretLinuxProvider
     public static string Description => LC.L("Secret provider that reads secrets from the libsecret password manager");
     public static string CollectionDescriptionShort => LC.L("The collection name");
     public static string CollectionDescriptionLong => LC.L("The collection name to use for retrieving secrets from the libsecret password manager");
+    public static string CaseSensitiveDescriptionShort => LC.L("Case sensitivity");
+    public static string CaseSensitiveDescriptionLong => LC.L("Whether to use case-sensitive matching for secret names");
 }
 

@@ -1,8 +1,8 @@
 using System.Reflection;
 using System.Web;
 using Duplicati.Library.Interface;
+using Duplicati.Library.SecretProvider.LibSecret;
 using Duplicati.Library.Utility;
-using Simple.CredentialManager;
 namespace Duplicati.Library.SecretProvider;
 
 /// <summary>
@@ -30,6 +30,11 @@ public class LibSecretLinuxProvider : ISecretProvider
         public string Collection { get; set; } = "default";
 
         /// <summary>
+        /// Whether the collection name is case sensitive
+        /// </summary>
+        public bool CaseSensitive { get; set; }
+
+        /// <summary>
         /// Gets the command line argument description for the given name
         /// </summary>
         /// <param name="name">The name of the argument</param>
@@ -38,6 +43,7 @@ public class LibSecretLinuxProvider : ISecretProvider
             => name switch
             {
                 nameof(Collection) => new CommandLineArgumentDescriptionAttribute() { Name = "collection", Type = CommandLineArgument.ArgumentType.String, ShortDescription = Strings.LibSecretLinuxProvider.CollectionDescriptionShort, LongDescription = Strings.LibSecretLinuxProvider.CollectionDescriptionLong },
+                nameof(CaseSensitive) => new CommandLineArgumentDescriptionAttribute() { Name = "case-sensitive", Type = CommandLineArgument.ArgumentType.Boolean, ShortDescription = Strings.LibSecretLinuxProvider.CaseSensitiveDescriptionShort, LongDescription = Strings.LibSecretLinuxProvider.CaseSensitiveDescriptionLong },
                 _ => null,
             };
 
@@ -51,13 +57,18 @@ public class LibSecretLinuxProvider : ISecretProvider
     /// </summary>
     private LibSecretConfig? _cfg;
 
+    /// <summary>
+    /// The secret collection
+    /// </summary>
+    private SecretCollection? _collection;
+
     /// <inheritdoc />
     public IList<ICommandLineArgument> SupportedCommands
         => CommandLineArgumentMapper.MapArguments(new LibSecretConfig())
             .ToList();
 
     /// <inheritdoc />
-    public Task InitializeAsync(System.Uri config, CancellationToken cancellationToken)
+    public async Task InitializeAsync(System.Uri config, CancellationToken cancellationToken)
     {
         if (!OperatingSystem.IsLinux())
             throw new PlatformNotSupportedException("LibSecret is only supported on Linux");
@@ -67,29 +78,18 @@ public class LibSecretLinuxProvider : ISecretProvider
         if (string.IsNullOrWhiteSpace(_cfg.Collection))
             throw new UserInformationException("The collection must be specified", "CollectionRequired");
 
-        return Task.CompletedTask;
+        _collection = await SecretCollection.CreateAsync(_cfg.Collection, cancellationToken).ConfigureAwait(false);
+        await _collection.UnlockAsync().ConfigureAwait(false);
     }
 
     /// <inheritdoc />
     public Task<Dictionary<string, string>> ResolveSecretsAsync(IEnumerable<string> keys, CancellationToken cancellationToken)
     {
-        if (_cfg is null)
+        if (_cfg is null || _collection is null)
             throw new InvalidOperationException("The secret provider has not been initialized");
         if (!OperatingSystem.IsLinux())
             throw new PlatformNotSupportedException("LibSecret is only supported on Linux");
 
-        var result = new Dictionary<string, string>();
-        foreach (var key in keys)
-        {
-            var value = new LinuxCredential(key, string.Empty, null, _cfg.Collection);
-            if (!value.Load())
-                throw new KeyNotFoundException($"The key '{key}' was not found");
-            if (string.IsNullOrWhiteSpace(value.Password))
-                throw new KeyNotFoundException($"The key '{key}' was found but the password is empty");
-
-            result[key] = value.Password;
-        }
-
-        return Task.FromResult(result);
+        return _collection.GetSecretsAsync(keys, _cfg.CaseSensitive ? StringComparer.Ordinal : StringComparer.OrdinalIgnoreCase);
     }
 }
