@@ -604,13 +604,33 @@ namespace Duplicati.Library.Main.Operation
                         // TODO: Remove this later
                         m_transaction = m_database.BeginTransaction();
 
-                        if (await m_result.TaskReader.ProgressAsync)
-                            CompactIfRequired(backendManager, lastVolumeSize);
-
-                        if (m_options.UploadVerificationFile && await m_result.TaskReader.ProgressAsync)
+                        try
                         {
-                            m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_VerificationUpload);
-                            FilelistProcessor.UploadVerificationFile(backendManager.BackendUrl, m_options, m_result.BackendWriter, m_database, m_transaction);
+                            // If this throws, we should roll back the transaction
+                            if (await m_result.TaskReader.ProgressAsync)
+                                CompactIfRequired(backendManager, lastVolumeSize);
+
+                            if (m_options.UploadVerificationFile && await m_result.TaskReader.ProgressAsync)
+                            {
+                                m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_VerificationUpload);
+                                FilelistProcessor.UploadVerificationFile(backendManager.BackendUrl, m_options, m_result.BackendWriter, m_database, m_transaction);
+                            }
+                        }
+                        catch
+                        {
+                            try
+                            {
+                                m_transaction.Rollback();
+                                m_transaction.Dispose();
+                                m_transaction = null;
+                            }
+                            catch (Exception ex)
+                            {
+                                Logging.Log.WriteErrorMessage(LOGTAG, "RollbackError", ex, "Rollback error: {0}", ex.Message);
+                            }
+
+                            // Re-throw the original exception
+                            throw;
                         }
 
                         if (m_options.Dryrun)
@@ -660,11 +680,6 @@ namespace Duplicati.Library.Main.Operation
                 {
                     if (parallelScanner != null && !parallelScanner.IsCompleted)
                         parallelScanner.Wait(500);
-
-                    // TODO: We want to commit? always?
-                    if (m_transaction != null)
-                        try { m_transaction.Rollback(); }
-                        catch (Exception ex) { Logging.Log.WriteErrorMessage(LOGTAG, "RollbackError", ex, "Rollback error: {0}", ex.Message); }
                 }
             }
         }
