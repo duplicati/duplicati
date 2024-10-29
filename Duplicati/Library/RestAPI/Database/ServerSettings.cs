@@ -23,7 +23,6 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using System.Security.Cryptography;
-using System.Security.Cryptography.X509Certificates;
 using Duplicati.Library.RestAPI;
 using System.Text.Json;
 using System.Text;
@@ -49,7 +48,7 @@ namespace Duplicati.Server.Database
             public const string UNACKED_ERROR = "unacked-error";
             public const string UNACKED_WARNING = "unacked-warning";
             public const string SERVER_LISTEN_INTERFACE = "server-listen-interface";
-            public const string SERVER_USE_HTTPS = "server-use-https";
+            public const string SERVER_DISABLE_HTTPS = "server-disable-https";
             public const string SERVER_SSL_CERTIFICATE = "server-ssl-certificate";
             public const string SERVER_SSL_CERTIFICATEPASSWORD = "server-ssl-certificate-password";
             public const string HAS_FIXED_INVALID_BACKUPID = "has-fixed-invalid-backup-id";
@@ -620,17 +619,25 @@ namespace Duplicati.Server.Database
             }
         }
 
-        public bool ServerUseHTTPS
+        public bool DisableHTTPS
         {
             get
             {
-                return Duplicati.Library.Utility.Utility.ParseBool(settings[CONST.SERVER_USE_HTTPS], false);
+                return Duplicati.Library.Utility.Utility.ParseBool(settings[CONST.SERVER_DISABLE_HTTPS], false);
             }
             set
             {
                 lock (databaseConnection.m_lock)
-                    settings[CONST.SERVER_USE_HTTPS] = value.ToString();
+                    settings[CONST.SERVER_DISABLE_HTTPS] = value.ToString();
                 SaveSettings();
+            }
+        }
+
+        public bool UseHTTPS
+        {
+            get
+            {
+                return !DisableHTTPS && !string.IsNullOrWhiteSpace(ServerSSLCertificate);
             }
         }
 

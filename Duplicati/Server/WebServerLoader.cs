@@ -117,7 +117,12 @@ public static class WebServerLoader
     /// <summary>
     /// Option for setting if to use HTTPS
     /// </summary>
-    public const string OPTION_USEHTTPS = "webservice-usehttps";
+    public const string OPTION_DISABLEHTTPS = "webservice-disable-https";
+
+    /// <summary>
+    /// Option for removing the SSL certificate from the datbase
+    /// </summary>
+    public const string OPTION_REMOVECERTIFICATE = "webservice-remove-sslcertificate";
 
     /// <summary>
     /// Option for setting the webservice SSL certificate
@@ -140,7 +145,7 @@ public static class WebServerLoader
     /// <param name="WebRoot">The root folder with static files</param>
     /// <param name="Port">The listining port</param>
     /// <param name="Interface">The listening interface</param>
-    /// <param name="HTTPS">If to use HTTPS</param>
+    /// <param name="UseHTTPS">If HTTPS should be used</param>
     /// <param name="CertificateFile">Path to certificate file, if any</param>
     /// <param name="CertificatePassword">Password to the certificate, if any</param>
     /// <param name="Servername">The servername to report</param>
@@ -151,7 +156,7 @@ public static class WebServerLoader
         string WebRoot,
         int Port,
         System.Net.IPAddress Interface,
-        bool HTTPS,
+        bool UseHTTPS,
         string? CertificateFile,
         string? CertificatePassword,
         string Servername,
@@ -193,46 +198,44 @@ public static class WebServerLoader
         else if (interfacestring != "loopback")
             listenInterface = System.Net.IPAddress.Parse(interfacestring);
 
-        options.TryGetValue(OPTION_USEHTTPS, out var usehttps);
+        var removeCertificate = Library.Utility.Utility.ParseBoolOption(options, OPTION_REMOVECERTIFICATE);
+        connection.ApplicationSettings.DisableHTTPS = removeCertificate || Library.Utility.Utility.ParseBoolOption(options, OPTION_DISABLEHTTPS);
+
         options.TryGetValue(OPTION_SSLCERTIFICATEFILE, out var certificateFile);
         options.TryGetValue(OPTION_SSLCERTIFICATEFILEPASSWORD, out var certificateFilePassword);
-        certificateFilePassword = certificateFilePassword?.Trim() ?? "";
+        certificateFilePassword = certificateFilePassword?.Trim();
 
         if (string.IsNullOrEmpty(certificateFile) && !string.IsNullOrEmpty(certificateFilePassword))
             Library.Logging.Log.WriteInformationMessage(LOGTAG, "ServerCertificate", Strings.Server.SSLCertificateFileMissingOption);
 
         if (!string.IsNullOrEmpty(certificateFile) && !string.IsNullOrEmpty(certificateFilePassword))
         {
+            // Load the certificate, using the supplied password
             var cert = new X509Certificate2(certificateFile, certificateFilePassword, X509KeyStorageFlags.Exportable);
 
+            // Generate a new random password for the certificate
+            connection.ApplicationSettings.ServerSSLCertificatePassword = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
+            // Store the certificate in the database, encrypted with the new password
             connection.ApplicationSettings.ServerSSLCertificate = Convert.ToBase64String(cert.Export(X509ContentType.Pkcs12, connection.ApplicationSettings.ServerSSLCertificatePassword));
-            connection.ApplicationSettings.ServerSSLCertificatePassword = Guid.NewGuid().ToString().ToLowerInvariant();
         }
-        else if (certificateFile != null && certificateFile.Length == 0)
+        else if (removeCertificate)
         {
+            // Clear the certificate from the database
             connection.ApplicationSettings.ServerSSLCertificate = null;
             connection.ApplicationSettings.ServerSSLCertificatePassword = null;
         }
 
-        if (!string.IsNullOrEmpty(connection.ApplicationSettings.ServerSSLCertificate))
+        // If we are using HTTPS, write the certificate to a file, otherwise delete it
+        var serverCertFile = Path.Combine(Program.DataFolder, DEFAULT_OPTION_CERTIFICATEFILE);
+        if (connection.ApplicationSettings.UseHTTPS)
         {
-            File.WriteAllBytes(Path.Combine(Program.DataFolder, DEFAULT_OPTION_CERTIFICATEFILE), Convert.FromBase64String(connection.ApplicationSettings.ServerSSLCertificate));
-
-            //backward compatible check for installations before OPTION_USEHTTPS
-            if (usehttps == null && string.IsNullOrEmpty(connection.ApplicationSettings.ServerSSLCertificatePassword))
-                connection.ApplicationSettings.ServerUseHTTPS = true;
+            File.WriteAllBytes(serverCertFile, Convert.FromBase64String(connection.ApplicationSettings.ServerSSLCertificate));
         }
         else
         {
-            if (File.Exists(Path.Combine(Program.DataFolder, DEFAULT_OPTION_CERTIFICATEFILE)))
-                File.Delete(Path.Combine(Program.DataFolder, DEFAULT_OPTION_CERTIFICATEFILE));
+            if (File.Exists(serverCertFile))
+                File.Delete(serverCertFile);
         }
-
-        if (usehttps != null)
-            connection.ApplicationSettings.ServerUseHTTPS = bool.Parse(usehttps);
-
-        if (connection.ApplicationSettings.ServerUseHTTPS && connection.ApplicationSettings.ServerSSLCertificate == null)
-            throw new ArgumentException(Strings.Server.SSLParametersMismatch);
 
         var webroot = Library.AutoUpdater.UpdaterManager.INSTALLATIONDIR;
 
@@ -268,7 +271,7 @@ public static class WebServerLoader
             webroot,
             -1,
             listenInterface,
-            connection.ApplicationSettings.ServerUseHTTPS,
+            connection.ApplicationSettings.UseHTTPS,
             Path.Combine(Program.DataFolder, DEFAULT_OPTION_CERTIFICATEFILE),
             connection.ApplicationSettings.ServerSSLCertificatePassword,
             string.Format("{0} v{1}", Library.AutoUpdater.AutoUpdateSettings.AppName, System.Reflection.Assembly.GetExecutingAssembly().GetName().Version),
@@ -290,6 +293,8 @@ public static class WebServerLoader
                 settings = settings with { Port = p };
 
                 var server = await createServer(settings);
+
+                // If we get here, the server started successfully, so store the new interface setting
                 if (interfacestring != connection.ApplicationSettings.ServerListenInterface)
                     connection.ApplicationSettings.ServerListenInterface = interfacestring;
 
