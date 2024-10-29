@@ -115,7 +115,7 @@ public static class WebServerLoader
     /// <summary>
     /// Option for removing the SSL certificate from the datbase
     /// </summary>
-    public const string OPTION_REMOVECERTIFICATE = "webservice-remove-sslcertificate";
+    public const string OPTION_REMOVESSLCERTIFICATE = "webservice-remove-sslcertificate";
 
     /// <summary>
     /// Option for setting the webservice SSL certificate
@@ -187,7 +187,7 @@ public static class WebServerLoader
         else if (interfacestring != "loopback")
             listenInterface = System.Net.IPAddress.Parse(interfacestring);
 
-        var removeCertificate = Library.Utility.Utility.ParseBoolOption(options, OPTION_REMOVECERTIFICATE);
+        var removeCertificate = Library.Utility.Utility.ParseBoolOption(options, OPTION_REMOVESSLCERTIFICATE);
         connection.ApplicationSettings.DisableHTTPS = removeCertificate || Library.Utility.Utility.ParseBoolOption(options, OPTION_DISABLEHTTPS);
 
         options.TryGetValue(OPTION_SSLCERTIFICATEFILE, out var certificateFile);
