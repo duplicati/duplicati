@@ -19,9 +19,14 @@ public static partial class Command
     private const string PrimaryGUIProject = "Duplicati.GUI.TrayIcon.csproj";
 
     /// <summary>
-    /// The secondary project to build for CLI builds
+    /// The primary project to build for CLI builds
     /// </summary>
     private const string PrimaryCLIProject = "Duplicati.CommandLine.csproj";
+
+    /// <summary>
+    /// The primary project to build for Agent builds
+    /// </summary>
+    private const string PrimaryAgentProject = "Duplicati.Agent.csproj";
 
     /// <summary>
     /// Projects that only makes sense for Windows
@@ -31,7 +36,21 @@ public static partial class Command
     /// <summary>
     /// Projects the pull in GUI dependencies
     /// </summary>
-    private static readonly IReadOnlySet<string> GUIProjects = new HashSet<string>(StringComparer.InvariantCultureIgnoreCase) { "Duplicati.GUI.TrayIcon.csproj" };
+    private static readonly IReadOnlySet<string> GUIOnlyProjects = new HashSet<string>(StringComparer.InvariantCultureIgnoreCase) { "Duplicati.GUI.TrayIcon.csproj" };
+
+    /// <summary>
+    /// Projects that are Agent only
+    /// </summary>
+    private static readonly IReadOnlySet<string> AgentOnlyProjects = new HashSet<string>(StringComparer.InvariantCultureIgnoreCase) { "Duplicati.Agent.csproj" };
+
+    /// <summary>
+    /// The projects that are part of the agent builds
+    /// </summary>
+    private static readonly IReadOnlySet<string> AgentProjects = new HashSet<string>(StringComparer.InvariantCultureIgnoreCase) {
+        "Duplicati.Agent.csproj",
+        "Duplicati.Service.csproj",
+        "Duplicati.WindowsService.csproj"
+    };
 
     /// <summary>
     /// Some executables have shorter names that follow the Linux convention of all-lowercase
@@ -47,6 +66,7 @@ public static partial class Command
         { "Duplicati.CommandLine.Snapshots", "duplicati-snapshots" },
         { "Duplicati.CommandLine.ServerUtil", "duplicati-server-util" },
         { "Duplicati.Service", "duplicati-service" },
+        { "Duplicati.Agent", "duplicati-agent" },
         { "Duplicati.CommandLine", "duplicati-cli" },
         { "Duplicati.Server", "duplicati-server"},
         { "Duplicati.GUI.TrayIcon", "duplicati" }
@@ -369,12 +389,16 @@ public static partial class Command
 
         var primaryGUI = sourceProjects.FirstOrDefault(x => string.Equals(Path.GetFileName(x), PrimaryGUIProject, StringComparison.OrdinalIgnoreCase)) ?? throw new Exception("Failed to find tray icon executable");
         var primaryCLI = sourceProjects.FirstOrDefault(x => string.Equals(Path.GetFileName(x), PrimaryCLIProject, StringComparison.OrdinalIgnoreCase)) ?? throw new Exception("Failed to find cli executable");
+        var primaryAgent = sourceProjects.FirstOrDefault(x => string.Equals(Path.GetFileName(x), PrimaryAgentProject, StringComparison.OrdinalIgnoreCase)) ?? throw new Exception("Failed to find agent executable");
         var windowsOnly = sourceProjects.Where(x => WindowsOnlyProjects.Contains(Path.GetFileName(x))).ToHashSet(StringComparer.OrdinalIgnoreCase);
-        var guiOnlyProjects = sourceProjects.Where(x => GUIProjects.Contains(Path.GetFileName(x))).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var guiOnlyProjects = sourceProjects.Where(x => GUIOnlyProjects.Contains(Path.GetFileName(x))).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var agentOnlyProjects = sourceProjects.Where(x => AgentOnlyProjects.Contains(Path.GetFileName(x))).ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         // Put primary at the end
         sourceProjects.Remove(primaryGUI);
         sourceProjects.Remove(primaryCLI);
+        sourceProjects.Remove(primaryAgent);
+        sourceProjects.Add(primaryAgent);
         sourceProjects.Add(primaryCLI);
         sourceProjects.Add(primaryGUI);
 
@@ -467,8 +491,23 @@ public static partial class Command
         // Inject a version tag into the html files
         revertableFiles.AddRange(InjectVersionIntoFiles(baseDir, releaseInfo));
 
+        // Record the files that are replaced by the npm package
+        var foldersToRemove = new List<string>();
+        revertableFiles.AddRange(await ReplaceNpmPackages(baseDir, input.BuildPath.FullName, foldersToRemove, releaseInfo, rtcfg));
+
         // Perform the main compilations
-        await Compile.BuildProjects(baseDir, input.BuildPath.FullName, sourceProjects, windowsOnly, guiOnlyProjects, buildTargets, releaseInfo, input.KeepBuilds, rtcfg, input.UseHostedBuilds);
+        var sourceBuildMap = new Dictionary<InterfaceType, IEnumerable<string>> {
+            { InterfaceType.GUI, sourceProjects
+                .Where(x => !AgentOnlyProjects.Contains(Path.GetFileName(x))) },
+            { InterfaceType.Cli, sourceProjects
+                .Where(x => !GUIOnlyProjects.Contains(Path.GetFileName(x)))
+                .Where(x => !AgentOnlyProjects.Contains(Path.GetFileName(x))) },
+            { InterfaceType.Agent, sourceProjects
+                .Where(x => AgentProjects.Contains(Path.GetFileName(x)))
+            }
+        };
+
+        await Compile.BuildProjects(baseDir, input.BuildPath.FullName, sourceBuildMap, windowsOnly, buildTargets, releaseInfo, input.KeepBuilds, rtcfg, input.UseHostedBuilds);
 
         if (input.BuildOnly)
         {
@@ -588,6 +627,10 @@ public static partial class Command
         }
 
         // Clean up the source tree
+        foreach (var folder in foldersToRemove)
+            if (Directory.Exists(folder))
+                Directory.Delete(folder, true);
+
         await ProcessHelper.Execute(new[] {
                 "git", "checkout",
             }.Concat(revertableFiles.Select(x => Path.GetRelativePath(baseDir, x)))
@@ -720,6 +763,74 @@ public static partial class Command
             Path.Combine(baseDir, "changelog.txt")
         });
     }
+
+    /// <summary>
+    /// Uses NPM to replace the node_modules folder in the webroot with a fresh install
+    /// </summary>
+    /// <param name="baseDir">The base directory</param>
+    /// <param name="buildDir">The build directory</param>
+    /// <param name="foldersToRemove">The folders to remove after the build</param>
+    /// <param name="releaseInfo">The release info</param>
+    /// <param name="rtcfg">The runtime configuration</param>
+    /// <returns>The files that were deleted</returns>
+    static async Task<List<string>> ReplaceNpmPackages(string baseDir, string buildDir, List<string> foldersToRemove, ReleaseInfo releaseInfo, RuntimeConfig rtcfg)
+    {
+        var deleted = new List<string>();
+
+        // Find all webroot folders with a package.json and package-lock.json
+        var webroot = Path.Combine(baseDir, "Duplicati", "Server", "webroot");
+        var targets = Directory.EnumerateDirectories(webroot, "*", SearchOption.TopDirectoryOnly)
+            .Where(x => File.Exists(Path.Combine(x, "package.json")) && File.Exists(Path.Combine(x, "package-lock.json")))
+            .ToList();
+
+        foreach (var target in targets)
+        {
+            if (string.IsNullOrWhiteSpace(Program.Configuration.Commands.Npm))
+                throw new Exception("NPM command not found, but required for building");
+
+            // Remove existing node_modules folder
+            if (Directory.Exists(Path.Combine(target, "node_modules")))
+                Directory.Delete(Path.Combine(target, "node_modules"), true);
+
+            // These will be deleted after the build
+            deleted.AddRange(Directory.EnumerateFiles(target, "*", SearchOption.AllDirectories));
+
+            var tmp = Path.Combine(buildDir, "tmp-npm");
+            if (Directory.Exists(tmp))
+                Directory.Delete(tmp, true);
+
+            Directory.CreateDirectory(tmp);
+            EnvHelper.CopyDirectory(target, tmp, true);
+
+            // Run npm install in the temporary folder
+            await ProcessHelper.Execute(new[] { Program.Configuration.Commands.Npm, "ci" }, workingDirectory: tmp);
+            var basefolder = Directory.EnumerateDirectories(Path.Combine(tmp, "node_modules"), "*", SearchOption.AllDirectories)
+                .Where(x => File.Exists(Path.Combine(x, "index.html")))
+                .OrderBy(x => x.Length)
+                .FirstOrDefault();
+
+            if (string.IsNullOrWhiteSpace(basefolder))
+                throw new Exception($"Failed to locate node_modules folder in {target}");
+
+            Directory.Delete(target, true);
+            Directory.Move(basefolder, target);
+            Directory.Delete(tmp, true);
+            foldersToRemove.Add(target);
+
+            var indexfile = Path.Combine(target, "index.html");
+            if (File.Exists(indexfile))
+            {
+                var content = File.ReadAllText(indexfile);
+                var prefix = target.Substring(webroot.Length).Replace(Path.DirectorySeparatorChar, '/').Trim('/');
+                content = content.Replace("<base href=\"/\">", $"<base href=\"/{prefix}/\">");
+                File.WriteAllText(indexfile, content);
+            }
+        }
+
+        return deleted.Where(x => !Path.GetFileName(x).StartsWith("."))
+            .ToList();
+    }
+
 
     /// <summary>
     /// Loads a keyfile and decrypts the RSA key inside

@@ -59,21 +59,23 @@ namespace Duplicati.Library.Interface
         /// </summary>
         /// <param name="remotename">The remote filename, relative to the URL</param>
         /// <param name="filename">The local filename</param>
-        /// <param name="cancelToken">Token to cancel the operation.</param>
-        Task PutAsync(string remotename, string filename, CancellationToken cancelToken);
+        /// <param name="cancellationToken">Token to cancel the operation.</param>
+        Task PutAsync(string remotename, string filename, CancellationToken cancellationToken);
 
         /// <summary>
         /// Downloads a file with the remote data
         /// </summary>
         /// <param name="remotename">The remote filename, relative to the URL</param>
         /// <param name="filename">The local filename</param>
-        void Get(string remotename, string filename);
+        /// <param name="cancellationToken">Token to cancel the operation.</param>
+        Task GetAsync(string remotename, string filename, CancellationToken cancellationToken);
 
         /// <summary>
         /// Deletes the specified file
         /// </summary>
         /// <param name="remotename">The remote filename, relative to the URL</param>
-        void Delete(string remotename);
+        /// <param name="cancellationToken">Token to cancel the operation.</param>
+        Task DeleteAsync(string remotename, CancellationToken cancellationToken);
 
         /// <summary>
         /// A localized description of the backend, for display in the usage information
@@ -83,7 +85,9 @@ namespace Duplicati.Library.Interface
         /// <summary>
         /// The DNS names used to resolve the IP addresses for this backend
         /// </summary>
-        string[] DNSName { get; }
+        /// <param name="cancelToken">Token to cancel the operation.</param>
+        /// <returns>The DNS names</returns>
+        Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken);
 
         /// <summary>
         /// The purpose of this method is to test the connection to the remote backend.
@@ -91,7 +95,8 @@ namespace Duplicati.Library.Interface
         /// If the encountered problem is a missing target &quot;folder&quot;,
         /// this method should throw a <see cref="FolderMissingException"/>.
         /// </summary>
-        void Test();
+        /// <param name="cancellationToken">Token to cancel the operation.</param>
+        Task TestAsync(CancellationToken cancellationToken);
 
         /// <summary>
         /// The purpose of this method is to create the underlying &quot;folder&quot;.
@@ -101,6 +106,6 @@ namespace Duplicati.Library.Interface
         /// a <see cref="FolderMissingException"/> during <see cref="Test"/>, 
         /// and this method should throw a <see cref="MissingMethodException"/>.
         /// </summary>
-        void CreateFolder();
+        Task CreateFolderAsync(CancellationToken cancellationToken);
     }
 }

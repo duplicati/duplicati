@@ -595,10 +595,10 @@ namespace Duplicati.Server
 
                         case DuplicatiOperation.Delete:
                             {
-                                if (Library.Utility.Utility.ParseBoolOption(data.ExtraOptions, "delete-remote-files"))
+                                if (Library.Utility.Utility.ParseBoolOption(data.ExtraOptions.AsReadOnly(), "delete-remote-files"))
                                     controller.DeleteAllRemoteFiles();
 
-                                if (Library.Utility.Utility.ParseBoolOption(data.ExtraOptions, "delete-local-db"))
+                                if (Library.Utility.Utility.ParseBoolOption(data.ExtraOptions.AsReadOnly(), "delete-local-db"))
                                 {
                                     string dbpath;
                                     options.TryGetValue("dbpath", out dbpath);

@@ -62,7 +62,7 @@ namespace Duplicati.Library.Modules.Builtin
                     return;
 
             //See if a password is already present or encryption is disabled
-            if (!commandlineOptions.ContainsKey("passphrase") && !Duplicati.Library.Utility.Utility.ParseBoolOption(commandlineOptions, "no-encryption"))
+            if (!commandlineOptions.ContainsKey("passphrase") && !Duplicati.Library.Utility.Utility.ParseBoolOption(commandlineOptions.AsReadOnly(), "no-encryption"))
             {
                 // Print a banner
                 Console.Write("\n" + Strings.ConsolePasswordInput.EnterPassphrasePrompt + ": ");
@@ -71,7 +71,7 @@ namespace Duplicati.Library.Modules.Builtin
                 var confirm = string.Equals(commandlineOptions["main-action"], "backup", StringComparison.OrdinalIgnoreCase);
 
                 // Bypass the TTY input if requested
-                if (Library.Utility.Utility.ParseBoolOption(commandlineOptions, FORCE_PASSPHRASE_FROM_STDIN_OPTION))
+                if (Library.Utility.Utility.ParseBoolOption(commandlineOptions.AsReadOnly(), FORCE_PASSPHRASE_FROM_STDIN_OPTION))
                 {
                     commandlineOptions["passphrase"] = ReadPassphraseFromStdin(confirm);
                 }
@@ -126,13 +126,13 @@ namespace Duplicati.Library.Modules.Builtin
                     break;
 
                 if (k.Key == ConsoleKey.Escape)
-                    throw new Library.Interface.CancelException("");
+                    throw new Interface.CancelException("");
 
-                if (k.KeyChar != '\0') passphrase.Append(k.KeyChar);
+                if (k.KeyChar != '\0')
+                    passphrase.Append(k.KeyChar);
 
-                //Unix/Linux user know that there is no feedback, Win user gets scared :)
-                if (System.Environment.OSVersion.Platform != PlatformID.Unix)
-                    Console.Write("*");
+                // Provide feedback to the user
+                Console.Write("*");
             }
 
             Console.WriteLine();
@@ -153,9 +153,8 @@ namespace Duplicati.Library.Modules.Builtin
 
                     password2.Append(k.KeyChar);
 
-                    //Unix/Linux user know that there is no feedback, Win user gets scared :)
-                    if (System.Environment.OSVersion.Platform != PlatformID.Unix)
-                        Console.Write("*");
+                    // Provide feedback to the user
+                    Console.Write("*");
                 }
                 Console.WriteLine();
 

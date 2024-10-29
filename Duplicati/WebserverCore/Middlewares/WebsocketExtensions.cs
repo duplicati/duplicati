@@ -15,6 +15,8 @@ public static class WebsocketExtensions
         {
             if (context.Request.Path != notificationPath)
             {
+                // TODO: Exceptions have a stack trace pointing to here,
+                // if the exception is thrown in the next middleware.
                 await next(context);
             }
             else

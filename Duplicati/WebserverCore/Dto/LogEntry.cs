@@ -46,7 +46,7 @@ public sealed record LogEntry
     /// <summary>
     /// Exception data attached to the message
     /// </summary>
-    public required Exception Exception { get; init; }
+    public required string Exception { get; init; }
 
     /// <summary>
     /// The backup ID, if any
@@ -74,7 +74,7 @@ public sealed record LogEntry
             MessageID = entry.MessageID,
             ExceptionID = entry.ExceptionID,
             Type = entry.Type,
-            Exception = entry.Exception,
+            Exception = entry.Exception.ToString(),
             BackupID = entry.BackupID,
             TaskID = entry.TaskID
         };

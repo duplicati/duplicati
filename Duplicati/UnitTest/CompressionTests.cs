@@ -30,7 +30,8 @@ namespace Duplicati.UnitTest
     [Category("Compression")]
     public class CompressionTests : BasicSetupHelper
     {
-        [TestCase("zip")]
+        [TestCase("zip-io")]
+        [TestCase("zip-sc")]
         [TestCase("7z")]
         public void TestCompressionHints(string module)
         {
@@ -41,6 +42,17 @@ namespace Duplicati.UnitTest
             {
                 var opts = new Dictionary<string, string>();
                 opts["zip-compression-level"] = "9";
+
+                if (module == "zip-sc")
+                {
+                    module = "zip";
+                    opts["zip-compression-library"] = "SharpCompress";
+                }
+                else if (module == "zip-io")
+                {
+                    module = "zip";
+                    opts["zip-compression-library"] = "BuiltIn";
+                }
 
                 using (var z0 = Library.DynamicLoader.CompressionLoader.GetModule(module, tf0, Library.Interface.ArchiveMode.Write, opts))
                 using (var fs0 = z0.CreateFile("sample", Library.Interface.CompressionHint.Noncompressible, DateTime.Now))
@@ -63,7 +75,8 @@ namespace Duplicati.UnitTest
         /// Test compression reversibility
         /// </summary>
         /// <param name="module"></param>
-        [TestCase("zip")]
+        [TestCase("zip-sc")]
+        [TestCase("zip-io")]
         [TestCase("7z")]
         public void TestCompressionReversibility(string module)
         {
@@ -75,6 +88,17 @@ namespace Duplicati.UnitTest
             {
                 var opts = new Dictionary<string, string>();
                 opts["zip-compression-level"] = "9";
+
+                if (module == "zip-sc")
+                {
+                    module = "zip";
+                    opts["zip-compression-library"] = "SharpCompress";
+                }
+                else if (module == "zip-io")
+                {
+                    module = "zip";
+                    opts["zip-compression-library"] = "BuiltIn";
+                }
 
                 // Compress test streams
                 using (var z0 = Library.DynamicLoader.CompressionLoader.GetModule(module, stream, Library.Interface.ArchiveMode.Write, opts))

@@ -1,3 +1,24 @@
+// Copyright (C) 2024, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
+
 using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -12,6 +33,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http.Json;
 using Microsoft.Extensions.Configuration.Json;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.OpenApi.Models;
 
 namespace Duplicati.WebserverCore;
@@ -42,6 +64,9 @@ public partial class DuplicatiWebserver
     /// <param name="Interface">The listening interface</param>
     /// <param name="Certificate">The certificate, if any</param>
     /// <param name="Servername">The servername to report</param>
+    /// <param name="AllowedHostnames">The allowed hostnames</param>
+    /// <param name="DisableStaticFiles">If static files should be disabled</param>
+    /// <param name="SPAPaths">The paths to serve as SPAs</param>
     public record InitSettings(
         string WebRoot,
         int Port,
@@ -50,7 +75,9 @@ public partial class DuplicatiWebserver
         string? CertificateFile,
         string? CertificatePassword,
         string Servername,
-        IEnumerable<string> AllowedHostnames
+        IEnumerable<string> AllowedHostnames,
+        bool DisableStaticFiles,
+        IEnumerable<string> SPAPaths
     );
 
     public void InitWebServer(InitSettings settings, Connection connection)
@@ -158,6 +185,9 @@ public partial class DuplicatiWebserver
                 };
             });
 
+        builder.Services.AddHealthChecks()
+            .AddCheck("Basic", () => HealthCheckResult.Healthy("Service is running"));
+
         builder.Services.AddDuplicati(connection);
 
         // Prevent logs from spamming the console, but allow enabling for debugging
@@ -190,7 +220,8 @@ public partial class DuplicatiWebserver
             });
         }
 
-        App.UseDefaultStaticFiles(settings.WebRoot);
+        if (!settings.DisableStaticFiles)
+            App.UseDefaultStaticFiles(settings.WebRoot, settings.SPAPaths);
 
         App.UseExceptionHandler(app =>
         {
@@ -214,10 +245,14 @@ public partial class DuplicatiWebserver
                 }
             });
         });
+
+        if (connection.ApplicationSettings.RemoteControlEnabled)
+            App.Services.GetRequiredService<IRemoteController>().Enable();
     }
 
     public Task Start(InitSettings settings)
     {
+        App.MapHealthChecks("/health");
         App.AddEndpoints()
             .UseNotifications("/notifications");
 

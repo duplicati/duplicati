@@ -83,6 +83,16 @@ namespace Duplicati.Library.Backend
         //
         //private static readonly byte[] PROPFIND_BODY = System.Text.Encoding.UTF8.GetBytes("<?xml version=\"1.0\"?><D:propfind xmlns:D=\"DAV:\"><D:allprop/></D:propfind>");
         private static readonly byte[] PROPFIND_BODY = new byte[0];
+        
+        /// <summary>
+        /// Option to accept any SSL certificate
+        /// </summary>
+        private readonly bool m_acceptAnyCertificate;
+        
+        /// <summary>
+        /// Specific hashes to be accepted by the certificate validator
+        /// </summary>
+        private readonly string[] m_acceptSpecificCertificates;
 
         /// <summary>
         /// The default timeout in seconds for PUT/GET file operations
@@ -150,6 +160,8 @@ namespace Duplicati.Library.Backend
             m_rawurlPort = new Utility.Uri(m_useSSL ? "https" : "http", u.Host, m_path, null, null, null, port).ToString();
             m_sanitizedUrl = new Utility.Uri(m_useSSL ? "https" : "http", u.Host, m_path).ToString();
             m_reverseProtocolUrl = new Utility.Uri(m_useSSL ? "http" : "https", u.Host, m_path).ToString();
+            m_acceptAnyCertificate = options.ContainsKey("accept-any-ssl-certificate") && Utility.Utility.ParseBoolOption(options, "accept-any-ssl-certificate");
+            m_acceptSpecificCertificates = options.ContainsKey("accept-specified-ssl-hash") ? options["accept-specified-ssl-hash"].Split([",", ";"], StringSplitOptions.RemoveEmptyEntries): null;
         }
 
         #region IBackend Members
@@ -274,13 +286,13 @@ namespace Duplicati.Library.Backend
                 await PutAsync(remotename, fs, cancelToken);
         }
 
-        public void Get(string remotename, string filename)
+        public async Task GetAsync(string remotename, string filename, CancellationToken cancelToken)
         {
-            using (FileStream fs = File.Create(filename))
-                Get(remotename, fs);
+            using (var fs = File.Create(filename))
+                await GetAsync(remotename, fs, cancelToken);
         }
 
-        public void Delete(string remotename)
+        public async Task DeleteAsync(string remotename, CancellationToken cancelToken)
         {
             try
             {
@@ -290,7 +302,7 @@ namespace Duplicati.Library.Backend
                 using var requestResources = CreateRequest(remotename);
                 requestResources.RequestMessage.Method = HttpMethod.Delete;
 
-                var response = requestResources.HttpClient.SendAsync(requestResources.RequestMessage, timeoutToken.Token).ConfigureAwait(false).GetAwaiter().GetResult();
+                var response = await requestResources.HttpClient.SendAsync(requestResources.RequestMessage, timeoutToken.Token);
 
                 response.EnsureSuccessStatusCode(); // This replaces the if needed when Mono was used.
 
@@ -314,6 +326,8 @@ namespace Duplicati.Library.Backend
                     new CommandLineArgument("integrated-authentication", CommandLineArgument.ArgumentType.Boolean, Strings.WEBDAV.DescriptionIntegratedAuthenticationShort, Strings.WEBDAV.DescriptionIntegratedAuthenticationLong),
                     new CommandLineArgument("force-digest-authentication", CommandLineArgument.ArgumentType.Boolean, Strings.WEBDAV.DescriptionForceDigestShort, Strings.WEBDAV.DescriptionForceDigestLong),
                     new CommandLineArgument("use-ssl", CommandLineArgument.ArgumentType.Boolean, Strings.WEBDAV.DescriptionUseSSLShort, Strings.WEBDAV.DescriptionUseSSLLong),
+                    new CommandLineArgument("accept-any-ssl-certificate", CommandLineArgument.ArgumentType.Boolean, Strings.WEBDAV.DescriptionAcceptAnyCertificateShort, Strings.WEBDAV.DescriptionAcceptAnyCertificateLong),
+                    new CommandLineArgument("accept-specified-ssl-hash", CommandLineArgument.ArgumentType.String, Strings.WEBDAV.DescriptionAcceptHashShort, Strings.WEBDAV.DescriptionAcceptHashLong2)
                  });
             }
         }
@@ -323,25 +337,22 @@ namespace Duplicati.Library.Backend
             get { return Strings.WEBDAV.Description; }
         }
 
-        public string[] DNSName
-        {
-            get { return new string[] { m_dnsName }; }
-        }
+        public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(new[] { m_dnsName });
 
-        public void Test()
+        public Task TestAsync(CancellationToken cancelToken)
         {
             List();
+            return Task.CompletedTask;
         }
 
-        public void CreateFolder()
+        public async Task CreateFolderAsync(CancellationToken cancelToken)
         {
-
-            using var timeoutToken = new CancellationTokenSource();
+            using var timeoutToken = CancellationTokenSource.CreateLinkedTokenSource(cancelToken);
             timeoutToken.CancelAfter(TimeSpan.FromSeconds(SHORT_OPERATION_TIMEOUT_SECONDS));
 
             using var requestResources = CreateRequest(string.Empty, new HttpMethod("MKCOL"));
 
-            using var response = requestResources.HttpClient.SendAsync(requestResources.RequestMessage, timeoutToken.Token).ConfigureAwait(false).GetAwaiter().GetResult();
+            using var response = await requestResources.HttpClient.SendAsync(requestResources.RequestMessage, timeoutToken.Token).ConfigureAwait(false);
 
             response.EnsureSuccessStatusCode(); // This replaces the if needed when Mono was used.
         }
@@ -360,33 +371,31 @@ namespace Duplicati.Library.Backend
         private RequestResources CreateRequest(string remotename, HttpMethod method = null)
         {
             HttpClient httpClient;
+            HttpClientHandler httpHandler = new HttpClientHandler();
+            HttpClientHelper.ConfigureHandlerCertificateValidator(httpHandler, m_acceptAnyCertificate, m_acceptSpecificCertificates);
 
             if (m_useIntegratedAuthentication)
             {
-                httpClient = HttpClientHelper.CreateClient(new HttpClientHandler
-                {
-                    UseDefaultCredentials = true
-                });
+                httpHandler.UseDefaultCredentials = true;
+                httpClient = HttpClientHelper.CreateClient(httpHandler);
             }
             else if (m_forceDigestAuthentication)
             {
-                httpClient = HttpClientHelper.CreateClient(new HttpClientHandler
+                httpHandler.Credentials = new CredentialCache
                 {
-                    Credentials = new CredentialCache
-                    {
-                        { new System.Uri(m_url), "Digest", m_userInfo }
-                    }
-                });
+                    { new System.Uri(m_url), "Digest", m_userInfo }
+                };
+                httpClient = HttpClientHelper.CreateClient(httpHandler);
             }
             else
             {
-                httpClient = HttpClientHelper.CreateClient();
+                httpClient = HttpClientHelper.CreateClient(httpHandler);
                 httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue(
                     "Basic",
                     Convert.ToBase64String(System.Text.Encoding.ASCII.GetBytes($"{m_userInfo.UserName}:{m_userInfo.Password}"))
                 );
             }
-
+            
             httpClient.Timeout = Timeout.InfiniteTimeSpan;
 
             var request = new HttpRequestMessage(HttpMethod.Get, $"{m_url}{Utility.Uri.UrlEncode(remotename).Replace("+", "%20")}");
@@ -430,16 +439,16 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public void Get(string remotename, Stream stream)
+        public async Task GetAsync(string remotename, Stream stream, CancellationToken cancelToken)
         {
             try
             {
-                using var timeoutToken = new CancellationTokenSource();
+                using var timeoutToken = CancellationTokenSource.CreateLinkedTokenSource(cancelToken);
                 timeoutToken.CancelAfter(TimeSpan.FromSeconds(LONG_OPERATION_TIMEOUT_SECONDS));
 
                 using var requestResources = CreateRequest(remotename, HttpMethod.Get);
 
-                requestResources.HttpClient.DownloadFile(requestResources.RequestMessage, stream, null, timeoutToken.Token).ConfigureAwait(false).GetAwaiter().GetResult();
+                await requestResources.HttpClient.DownloadFile(requestResources.RequestMessage, stream, null, timeoutToken.Token).ConfigureAwait(false);
 
             }
             catch (HttpRequestException wex)
@@ -456,6 +465,10 @@ namespace Duplicati.Library.Backend
                     m_filenamelist.Contains(remotename)
                 )
                     throw new Exception(Strings.WEBDAV.SeenThenNotFoundError(m_path, remotename, Path.GetExtension(remotename), wex.Message), wex);
+
+                if (wex.StatusCode == HttpStatusCode.NotFound)
+                    throw new FileMissingException(wex);
+
                 throw;
             }
         }

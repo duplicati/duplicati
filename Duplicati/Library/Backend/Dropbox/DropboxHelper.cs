@@ -76,13 +76,13 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public FolderMetadata CreateFolder(string path)
+        public async Task<FolderMetadata> CreateFolderAsync(string path, CancellationToken cancellationToken)
         {
             var pa = new PathArg() { path = path };
 
             try
             {
-                return PostAndGetJSONData<FolderMetadata>(WebApi.Dropbox.CreateFolderUrl(), pa);
+                return await PostAndGetJSONDataAsync<FolderMetadata>(WebApi.Dropbox.CreateFolderUrl(), cancellationToken, pa).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -189,7 +189,7 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public void DownloadFile(string path, Stream fs)
+        public async Task DownloadFileAsync(string path, Stream fs, CancellationToken cancelToken)
         {
             try
             {
@@ -199,7 +199,7 @@ namespace Duplicati.Library.Backend
                 req.Headers[API_ARG_HEADER] = JsonConvert.SerializeObject(pa);
 
                 using (var response = GetResponse(req))
-                    Utility.Utility.CopyStream(response.GetResponseStream(), fs);
+                    await Utility.Utility.CopyStreamAsync(response.GetResponseStream(), fs, cancelToken).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -208,13 +208,13 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public void Delete(string path)
+        public async Task DeleteAsync(string path, CancellationToken cancelToken)
         {
             try
             {
                 var pa = new PathArg() { path = path };
-                using (var response = GetResponse(WebApi.Dropbox.DeleteUrl(), pa))
-                using(var sr = new StreamReader(response.GetResponseStream()))
+                using (var response = await GetResponseAsync(WebApi.Dropbox.DeleteUrl(), cancelToken, pa).ConfigureAwait(false))
+                using (var sr = new StreamReader(response.GetResponseStream()))
                     sr.ReadToEnd();
             }
             catch (Exception ex)
@@ -293,7 +293,7 @@ namespace Duplicati.Library.Backend
 
     public class FolderMetadata : MetaData
     {
-        
+
     }
 
     public class UploadSessionStartArg

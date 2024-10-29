@@ -95,7 +95,11 @@ public enum InterfaceType
     /// <summary>
     /// The commandline interface
     /// </summary>
-    Cli
+    Cli,
+    /// <summary>
+    /// The agent interface
+    /// </summary>
+    Agent
 }
 
 /// <summary>
@@ -167,6 +171,7 @@ public record PackageTarget(OSType OS, ArchType Arch, InterfaceType Interface, P
         {
             InterfaceType.GUI => "gui",
             InterfaceType.Cli => "cli",
+            InterfaceType.Agent => "agent",
             _ => throw new Exception("Not supported interface type")
         };
 

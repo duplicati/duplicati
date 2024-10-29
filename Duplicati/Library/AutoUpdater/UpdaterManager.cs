@@ -277,6 +277,11 @@ namespace Duplicati.Library.AutoUpdater
         }
 
         /// <summary>
+        /// The machine name
+        /// </summary>
+        public static string MachineName => System.Environment.MachineName;
+
+        /// <summary>
         /// The package type ID
         /// </summary>
         public static string PackageTypeId
@@ -354,7 +359,7 @@ namespace Duplicati.Library.AutoUpdater
                                 return null;
 
                             // Don't install a debug update on a release build and vice versa
-                            if (string.Equals(SelfVersion.ReleaseType, "Debug", StringComparison.OrdinalIgnoreCase) && !string.Equals(update.ReleaseType, SelfVersion.ReleaseType, StringComparison.CurrentCultureIgnoreCase))
+                            if (string.Equals(SelfVersion.ReleaseType, "Debug", StringComparison.OrdinalIgnoreCase) && !string.Equals(update.ReleaseType, SelfVersion.ReleaseType, StringComparison.OrdinalIgnoreCase))
                                 return null;
 
                             ReleaseType rt;

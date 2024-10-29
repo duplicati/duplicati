@@ -771,7 +771,7 @@ namespace Duplicati.Library.Utility
         /// <param name="options">The set of options to look for the setting in</param>
         /// <param name="value">The value to look for in the settings</param>
         /// <returns></returns>
-        public static bool ParseBoolOption(IDictionary<string, string> options, string value)
+        public static bool ParseBoolOption(IReadOnlyDictionary<string, string> options, string value)
         {
             string opt;
             if (options.TryGetValue(value, out opt))
@@ -788,7 +788,7 @@ namespace Duplicati.Library.Utility
         /// <param name="value">The value to look for in the settings</param>
         /// <param name="default">The default value to return if there are no matches.</param>
         /// <typeparam name="T">The enum type parameter.</typeparam>
-        public static T ParseEnumOption<T>(IDictionary<string, string> options, string value, T @default)
+        public static T ParseEnumOption<T>(IReadOnlyDictionary<string, string> options, string value, T @default)
         {
             return options.TryGetValue(value, out var opt) ? ParseEnum(opt, @default) : @default;
         }
@@ -838,7 +838,7 @@ namespace Duplicati.Library.Utility
         /// <param name="hex">The hex string</param>
         public static byte[] HexStringAsByteArray(string hex)
         {
-            byte[] data = new byte[hex.Length /2];
+            var data = new byte[hex.Length / 2];
             HexStringAsByteArray(hex, data);
             return data;
         }
@@ -1474,7 +1474,7 @@ namespace Duplicati.Library.Utility
         /// <param name="task">Task to await</param>
         public static void Await(this Task task)
         {
-            task.GetAwaiter().GetResult();
+            task.ConfigureAwait(false).GetAwaiter().GetResult();
         }
 
         /// <summary>
@@ -1488,7 +1488,7 @@ namespace Duplicati.Library.Utility
         /// <returns>Task result</returns>
         public static T Await<T>(this Task<T> task)
         {
-            return task.GetAwaiter().GetResult();
+            return task.ConfigureAwait(false).GetAwaiter().GetResult();
         }
 
         /// <summary>

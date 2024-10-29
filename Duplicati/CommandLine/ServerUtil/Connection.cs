@@ -411,6 +411,29 @@ public class Connection
     }
 
     /// <summary>
+    /// Exports a backup
+    /// </summary>
+    /// <param name="backupId">The ID of the backup</param>
+    /// <param name="passphrase">The passphrase to use, if encrypting</param>
+    /// <param name="includeKeys">Whether to include sensitive keys</param>
+    /// <returns>The stream with the exported backup</returns>
+    public async Task<Stream> ExportBackup(string backupId, string? passphrase, bool includeKeys)
+    {
+        var exportTokenResponse = await client.PostAsync("auth/issuetoken/export", null);
+        await EnsureSuccessStatusCodeWithParsing(exportTokenResponse);
+        var values = JsonSerializer.Deserialize<Dictionary<string, string>>(await exportTokenResponse.Content.ReadAsStringAsync())
+            ?? throw new UserReportedException("Failed to parse response");
+
+        if (!values.TryGetValue("Token", out var token))
+            throw new UserReportedException("Failed to get export token");
+
+        var response = await client.GetAsync($"backup/{Uri.EscapeDataString(backupId)}/export?passphrase={Uri.EscapeDataString(passphrase ?? "")}&export-passwords={includeKeys}&token={token}");
+        await EnsureSuccessStatusCodeWithParsing(response);
+
+        return await response.Content.ReadAsStreamAsync();
+    }
+
+    /// <summary>
     /// The server error structure for JSON deserialization
     /// </summary>
     /// <param name="Error">The error message</param>

@@ -20,6 +20,7 @@
 // DEALINGS IN THE SOFTWARE.
 
 using Duplicati.Library.Interface;
+using Duplicati.Library.Utility;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -133,7 +134,7 @@ namespace Duplicati.CommandLine.BackendTool
                         if (args.Count != 2)
                             throw new UserInformationException(string.Format("too many arguments: {0}", string.Join(",", args)), "BackendToolTooManyArguments");
 
-                        backend.CreateFolder();
+                        backend.CreateFolderAsync(CancellationToken.None).Await();
 
                         return 0;
                     }
@@ -143,7 +144,7 @@ namespace Duplicati.CommandLine.BackendTool
                             throw new UserInformationException("DELETE requires a filename argument", "BackendToolDeleteRequiresAnArgument");
                         if (args.Count > 3)
                             throw new Exception(string.Format("too many arguments: {0}", string.Join(",", args)));
-                        backend.Delete(Path.GetFileName(args[2]));
+                        backend.DeleteAsync(Path.GetFileName(args[2]), CancellationToken.None).Await();
 
                         return 0;
                     }
@@ -155,7 +156,7 @@ namespace Duplicati.CommandLine.BackendTool
                             throw new UserInformationException(string.Format("too many arguments: {0}", string.Join(",", args)), "BackendToolTooManyArguments");
                         if (File.Exists(args[2]))
                             throw new UserInformationException("File already exists, not overwriting!", "BackendToolFileAlreadyExists");
-                        backend.Get(Path.GetFileName(args[2]), args[2]);
+                        backend.GetAsync(Path.GetFileName(args[2]), args[2], CancellationToken.None).Await();
 
                         return 0;
                     }
@@ -166,7 +167,7 @@ namespace Duplicati.CommandLine.BackendTool
                         if (args.Count > 3)
                             throw new UserInformationException(string.Format("too many arguments: {0}", string.Join(",", args)), "BackendToolTooManyArguments");
 
-                        backend.PutAsync(Path.GetFileName(args[2]), args[2], CancellationToken.None).Wait();
+                        backend.PutAsync(Path.GetFileName(args[2]), args[2], CancellationToken.None).Await();
 
                         return 0;
                     }

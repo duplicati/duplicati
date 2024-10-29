@@ -19,7 +19,10 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
+using System;
+using System.Collections.Generic;
 using System.Net.Http;
+using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.Utility;
 
@@ -30,6 +33,13 @@ namespace Duplicati.Library.Utility;
 /// </summary>
 public static class HttpClientHelper
 {
+    
+    /// <summary>
+    /// Globally configured certificate validator to be used across the application.
+    /// Each backend can choose when creating the httpclient/requesthandler if it will
+    /// use this or the default (null) validator.
+    /// </summary>
+    public static SslCertificateValidator CertificateValidator { get; set; }
 
     /// <summary>
     /// Central HttpClient singleton instance to be used across the application as 
@@ -41,8 +51,8 @@ public static class HttpClientHelper
     /// Reference to the HttpClientFactory instance so we can create specific clients
     /// when the singleton pattnern is not desirable.
     /// </summary>
-    private static IHttpClientFactory _factory {get;set;}
-    
+    private static IHttpClientFactory _factory { get; set; }
+
     /// <summary>
     /// Sets the factory reference.
     /// </summary>
@@ -60,7 +70,7 @@ public static class HttpClientHelper
     /// <returns></returns>
     public static HttpClient CreateClient()
     {
-        return _factory.CreateClient();
+        return _factory?.CreateClient() ?? new HttpClient();
     }
 
     /// <summary>
@@ -71,5 +81,20 @@ public static class HttpClientHelper
     public static HttpClient CreateClient(HttpClientHandler handler)
     {
         return new HttpClient(handler);
+    }
+    
+    /// <summary>
+    /// Configures the httphandler with the certificate validator, if needed.
+    ///
+    /// The parameters indicate if it should accept all certificates or only the ones specified in the
+    /// hashes array.
+    /// </summary>
+    /// <param name="handler">The HttpClientHandler to be configured</param>
+    /// <param name="acceptAllCertificates">If all certificates will be considered valid</param>
+    /// <param name="acceptSpecificCertificateHashes">List of hashes of certificates that will be accepted</param>
+    public static void ConfigureHandlerCertificateValidator(HttpClientHandler handler, bool acceptAllCertificates, string[] acceptSpecificCertificateHashes)
+    {
+        var validator = new SslCertificateValidator(acceptAllCertificates, acceptSpecificCertificateHashes);
+        handler.ServerCertificateCustomValidationCallback = validator.ValidateServerCertificate;
     }
 }

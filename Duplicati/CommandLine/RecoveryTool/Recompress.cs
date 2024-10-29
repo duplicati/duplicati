@@ -172,7 +172,7 @@ namespace Duplicati.CommandLine.RecoveryTool
 
                         using (var tf = new TempFile())
                         {
-                            backend.Get(remoteFile.File.Name, tf);
+                            backend.GetAsync(remoteFile.File.Name, tf, CancellationToken.None).Await();
                             originLastWriteTime = new FileInfo(tf).LastWriteTime;
                             downloaded++;
 
@@ -275,8 +275,8 @@ namespace Duplicati.CommandLine.RecoveryTool
                         if (reupload)
                         {
                             Console.Write(" reuploading ...");
-                            backend.PutAsync((new FileInfo(localFileTarget)).Name, localFileTarget, CancellationToken.None).Wait();
-                            backend.Delete(remoteFile.File.Name);
+                            backend.PutAsync((new FileInfo(localFileTarget)).Name, localFileTarget, CancellationToken.None).Await();
+                            backend.DeleteAsync(remoteFile.File.Name, CancellationToken.None).Await();
                             File.Delete(localFileTarget);
                         }
 
@@ -297,7 +297,7 @@ namespace Duplicati.CommandLine.RecoveryTool
                     if (remoteverificationfileexist)
                     {
                         Console.WriteLine("Found verification file {0} - deleting", m_Options.Prefix + "-verification.json");
-                        backend.Delete(m_Options.Prefix + "-verification.json");
+                        backend.DeleteAsync(m_Options.Prefix + "-verification.json", CancellationToken.None).Await();
                     }
                 }
 

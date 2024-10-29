@@ -28,7 +28,6 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -112,12 +111,13 @@ namespace Duplicati.Library.Backend
 
         #region IBackend Members
 
-        public void Test()
+        public Task TestAsync(CancellationToken cancelToken)
         {
             this.TestList();
+            return Task.CompletedTask;
         }
 
-        public void CreateFolder()
+        public Task CreateFolderAsync(CancellationToken cancelToken)
         {
             CreateConnection();
 
@@ -139,6 +139,8 @@ namespace Duplicati.Library.Backend
                     this.m_con.CreateDirectory(partialPath);
                 }
             }
+
+            return Task.CompletedTask;
         }
 
         public string DisplayName => Strings.SSHv2Backend.DisplayName;
@@ -149,23 +151,23 @@ namespace Duplicati.Library.Backend
         {
             using (System.IO.FileStream fs = System.IO.File.Open(filename, System.IO.FileMode.Open,
                 System.IO.FileAccess.Read, System.IO.FileShare.Read))
-                await PutAsync(remotename, fs, cancelToken);
+                await PutAsync(remotename, fs, cancelToken).ConfigureAwait(false);
         }
 
-        public void Get(string remotename, string filename)
+        public async Task GetAsync(string remotename, string filename, CancellationToken cancelToken)
         {
-            using (System.IO.FileStream fs = System.IO.File.Open(filename, System.IO.FileMode.Create,
+            using (var fs = System.IO.File.Open(filename, System.IO.FileMode.Create,
                 System.IO.FileAccess.Write, System.IO.FileShare.None))
-                Get(remotename, fs);
+                await GetAsync(remotename, fs, cancelToken).ConfigureAwait(false);
         }
 
-        public void Delete(string remotename)
+        public async Task DeleteAsync(string remotename, CancellationToken cancelToken)
         {
             try
             {
                 CreateConnection();
                 ChangeDirectory(m_path);
-                m_con.DeleteFile(remotename);
+                await m_con.DeleteFileAsync(remotename, cancelToken).ConfigureAwait(false);
             }
             catch (SftpPathNotFoundException ex)
             {
@@ -241,26 +243,39 @@ namespace Duplicati.Library.Backend
         {
             CreateConnection();
             ChangeDirectory(m_path);
-            m_con.UploadFile(stream, remotename);
-            return Task.FromResult(true);
+            return Task.Factory.FromAsync(
+                (cb, state) => m_con.BeginUploadFile(stream, remotename, cb, state, _ => cancelToken.ThrowIfCancellationRequested()),
+                m_con.EndUploadFile,
+                null);
         }
 
-        public void Get(string remotename, System.IO.Stream stream)
+        public async Task GetAsync(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
         {
             CreateConnection();
             ChangeDirectory(m_path);
-            m_con.DownloadFile(remotename, stream);
+
+            try
+            {
+                await Task.Factory.FromAsync(
+                    (cb, state) => m_con.BeginDownloadFile(remotename, stream, cb, state, _ => cancelToken.ThrowIfCancellationRequested()),
+                    m_con.EndDownloadFile,
+                    null).ConfigureAwait(false);
+            }
+            catch (SftpPathNotFoundException ex)
+            {
+                throw new FileMissingException(ex);
+            }
         }
 
         #endregion
 
         #region IRenameEnabledBackend Implementation
 
-        public void Rename(string source, string target)
+        public Task RenameAsync(string source, string target, CancellationToken cancelToken)
         {
             CreateConnection();
             ChangeDirectory(m_path);
-            m_con.RenameFile(source, target);
+            return m_con.RenameFileAsync(source, target, cancelToken);
         }
 
         #endregion
@@ -413,9 +428,6 @@ namespace Duplicati.Library.Backend
             get { return m_con; }
         }
 
-        public string[] DNSName
-        {
-            get { return new[] { m_server }; }
-        }
+        public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(new[] { m_server });
     }
 }

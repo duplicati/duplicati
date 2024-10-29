@@ -1,5 +1,3 @@
-using System.Text.Json;
-using Duplicati.Library.Encryption;
 using Duplicati.Library.RestAPI;
 using Duplicati.Server.Database;
 using Duplicati.WebserverCore.Abstractions;

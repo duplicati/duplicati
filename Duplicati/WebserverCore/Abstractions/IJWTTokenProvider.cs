@@ -56,7 +56,8 @@ public interface IJWTTokenProvider
     /// </summary>
     /// <param name="userId">The user ID the token is for.</param>
     /// <param name="tokenFamilyId">The token family ID the token is for.</param>
-    string CreateAccessToken(string userId, string tokenFamilyId);
+    /// <param name="expiration">The expiration time of the token, can only be shorter than the current.</param>
+    string CreateAccessToken(string userId, string tokenFamilyId, TimeSpan? expiration = null);
     /// <summary>
     /// Creates a JWT token that can be used to refresh an access token.
     /// </summary>

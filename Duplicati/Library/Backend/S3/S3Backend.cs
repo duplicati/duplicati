@@ -66,7 +66,12 @@ namespace Duplicati.Library.Backend
             { "Infomaniak Swiss Backup cluster 2", "s3.swiss-backup02.infomaniak.com" },
             { "Infomaniak Swiss Backup cluster 3", "s3.swiss-backup03.infomaniak.com" },
             { "Infomaniak Public Cloud 1", "s3.pub1.infomaniak.cloud" },
-            { "さくらのクラウド (Sakura Cloud)", "s3.isk01.sakurastorage.jp" }
+            { "さくらのクラウド (Sakura Cloud)", "s3.isk01.sakurastorage.jp" },
+            { "Seagate Lyve - US-East-1", "https://s3.us-east-1.lyvecloud.seagate.com" },
+            { "Seagate Lyve - US-West-1", "https://s3.us-west-1.lyvecloud.seagate.com" },
+            { "Seagate Lyve - AP-Southeast-1", "https://s3.ap-southeast-1.lyvecloud.seagate.com" },
+            { "Seagate Lyve - EU-West-1", "https://s3.eu-west-1.lyvecloud.seagate.com" },
+            { "Seagate Lyve - US-Central-2", "https://s3.us-central-2.lyvecloud.seagate.com" }
         };
 
         //Updated list: http://docs.amazonwebservices.com/general/latest/gr/rande.html#s3_region
@@ -285,20 +290,20 @@ namespace Duplicati.Library.Backend
             await Connection.AddFileStreamAsync(m_bucket, GetFullKey(remotename), input, cancelToken);
         }
 
-        public void Get(string remotename, string localname)
+        public async Task GetAsync(string remotename, string localname, CancellationToken cancelToken)
         {
             using (var fs = File.Open(localname, FileMode.Create, FileAccess.Write, FileShare.None))
-                Get(remotename, fs);
+                await GetAsync(remotename, fs, cancelToken).ConfigureAwait(false);
         }
 
-        public void Get(string remotename, Stream output)
+        public Task GetAsync(string remotename, Stream output, CancellationToken cancelToken)
         {
-            Connection.GetFileStream(m_bucket, GetFullKey(remotename), output);
+            return Connection.GetFileStreamAsync(m_bucket, GetFullKey(remotename), output, cancelToken);
         }
 
-        public void Delete(string remotename)
+        public Task DeleteAsync(string remotename, CancellationToken cancelToken)
         {
-            Connection.DeleteObject(m_bucket, GetFullKey(remotename));
+            return Connection.DeleteObjectAsync(m_bucket, GetFullKey(remotename), cancelToken);
         }
 
         public IList<ICommandLineArgument> SupportedCommands
@@ -353,24 +358,25 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public void Test()
+        public Task TestAsync(CancellationToken cancelToken)
         {
             this.TestList();
+            return Task.CompletedTask;
         }
 
-        public void CreateFolder()
+        public Task CreateFolderAsync(CancellationToken cancelToken)
         {
             //S3 does not complain if the bucket already exists
-            Connection.AddBucket(m_bucket);
+            return Connection.AddBucketAsync(m_bucket, cancelToken);
         }
 
         #endregion
 
         #region IRenameEnabledBackend Members
 
-        public void Rename(string source, string target)
+        public Task RenameAsync(string source, string target, CancellationToken cancelToken)
         {
-            Connection.RenameFile(m_bucket, GetFullKey(source), GetFullKey(target));
+            return Connection.RenameFileAsync(m_bucket, GetFullKey(source), GetFullKey(target), cancelToken);
         }
 
         #endregion
@@ -390,10 +396,7 @@ namespace Duplicati.Library.Backend
             get { return s3Client; }
         }
 
-        public string[] DNSName
-        {
-            get { return new[] { s3Client.GetDnsHost() }; }
-        }
+        public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(new[] { s3Client.GetDnsHost() });
 
         private string GetFullKey(string name)
         {
