@@ -62,9 +62,7 @@ public partial class DuplicatiWebserver
     /// <param name="WebRoot">The root folder with static files</param>
     /// <param name="Port">The listining port</param>
     /// <param name="Interface">The listening interface</param>
-    /// <param name="UseHTTPS">If HTTPS should be used</param>
-    /// <param name="CertificateFile">The certificate file, if any</param>
-    /// <param name="CertificatePassword">The certificate password</param>
+    /// <param name="Certificate">The certificate, if using SSL</param>
     /// <param name="Servername">The servername to report</param>
     /// <param name="AllowedHostnames">The allowed hostnames</param>
     /// <param name="DisableStaticFiles">If static files should be disabled</param>
@@ -73,9 +71,7 @@ public partial class DuplicatiWebserver
         string WebRoot,
         int Port,
         System.Net.IPAddress Interface,
-        bool UseHTTPS,
-        string? CertificateFile,
-        string? CertificatePassword,
+        X509Certificate2? Certificate,
         string Servername,
         IEnumerable<string> AllowedHostnames,
         bool DisableStaticFiles,
@@ -104,8 +100,8 @@ public partial class DuplicatiWebserver
         {
             options.Listen(settings.Interface, settings.Port, listenOptions =>
             {
-                if (settings.UseHTTPS)
-                    listenOptions.UseHttps(settings.CertificateFile!, settings.CertificatePassword);
+                if (settings.Certificate != null)
+                    listenOptions.UseHttps(settings.Certificate);
             });
         });
 

@@ -125,15 +125,15 @@ namespace Duplicati.GUI.TrayIcon
                 openui = Server.Program.IsFirstRun || Server.Program.ServerPortChanged;
 
                 var scheme = Server.Program.DataConnection.ApplicationSettings.UseHTTPS ? "https" : "http";
-                serverURL = (new UriBuilder(serverURL)
+                serverURL = new UriBuilder(serverURL)
                 {
                     Port = Server.Program.ServerPort,
                     Scheme = scheme
-                }).Uri;
+                }.Uri;
 
                 if (Server.Program.DataConnection.ApplicationSettings.UseHTTPS && string.IsNullOrWhiteSpace(acceptedHostCertificate))
                     acceptedHostCertificate = Library.Utility.Utility.ByteArrayAsHexString(
-                            Server.Program.DataConnection.ApplicationSettings.LoadSSLCertificate()
+                            Server.Program.DataConnection.ApplicationSettings.ServerSSLCertificate
                             .GetCertHash());
 
             }
@@ -148,7 +148,7 @@ namespace Duplicati.GUI.TrayIcon
                         disableTrayIconLogin = databaseConnection.ApplicationSettings.DisableTrayIconLogin;
                         if (databaseConnection.ApplicationSettings.UseHTTPS && string.IsNullOrWhiteSpace(acceptedHostCertificate))
                             acceptedHostCertificate = Library.Utility.Utility.ByteArrayAsHexString(
-                                    databaseConnection.ApplicationSettings.LoadSSLCertificate()
+                                    databaseConnection.ApplicationSettings.ServerSSLCertificate
                                     .GetCertHash());
 
                         var scheme = databaseConnection.ApplicationSettings.UseHTTPS ? "https" : "http";

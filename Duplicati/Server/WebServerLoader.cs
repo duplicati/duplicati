@@ -22,13 +22,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.ConstrainedExecution;
-using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
-using System.IO;
 using Duplicati.Server.Database;
 using Microsoft.AspNetCore.Connections;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.Server;
 
@@ -110,11 +108,6 @@ public static class WebServerLoader
     public const int DEFAULT_OPTION_PORT = 8200;
 
     /// <summary>
-    /// The default certificate file for https
-    /// </summary>
-    public const string DEFAULT_OPTION_CERTIFICATEFILE = "server-webui.pfx";
-
-    /// <summary>
     /// Option for setting if to use HTTPS
     /// </summary>
     public const string OPTION_DISABLEHTTPS = "webservice-disable-https";
@@ -145,9 +138,7 @@ public static class WebServerLoader
     /// <param name="WebRoot">The root folder with static files</param>
     /// <param name="Port">The listining port</param>
     /// <param name="Interface">The listening interface</param>
-    /// <param name="UseHTTPS">If HTTPS should be used</param>
-    /// <param name="CertificateFile">Path to certificate file, if any</param>
-    /// <param name="CertificatePassword">Password to the certificate, if any</param>
+    /// <param name="Certificate">SSL certificate, if any</param>
     /// <param name="Servername">The servername to report</param>
     /// <param name="AllowedHostnames">The allowed hostnames</param>
     /// <param name="DisableStaticFiles">If static files should be disabled</param>
@@ -156,9 +147,7 @@ public static class WebServerLoader
         string WebRoot,
         int Port,
         System.Net.IPAddress Interface,
-        bool UseHTTPS,
-        string? CertificateFile,
-        string? CertificatePassword,
+        X509Certificate2? Certificate,
         string Servername,
         IEnumerable<string> AllowedHostnames,
         bool DisableStaticFiles,
@@ -209,9 +198,9 @@ public static class WebServerLoader
             Library.Logging.Log.WriteInformationMessage(LOGTAG, "ServerCertificate", Strings.Server.SSLCertificateFileMissingOption);
 
         if (!string.IsNullOrEmpty(certificateFile) && !string.IsNullOrEmpty(certificateFilePassword))
-            connection.ApplicationSettings.SetNewSSLCertificate(new X509Certificate2(certificateFile, certificateFilePassword, X509KeyStorageFlags.Exportable));
+            connection.ApplicationSettings.ServerSSLCertificate = Utility.LoadPfxCertificate(certificateFile, certificateFilePassword);
         else if (removeCertificate)
-            connection.ApplicationSettings.ClearSSLCertificate();
+            connection.ApplicationSettings.ServerSSLCertificate = null;
 
         var webroot = Library.AutoUpdater.UpdaterManager.INSTALLATIONDIR;
 
@@ -243,20 +232,11 @@ public static class WebServerLoader
         if (string.IsNullOrWhiteSpace(spaPathsString))
             spaPathsString = DEFAULT_OPTION_SPAPATHS;
 
-        // If we are using HTTPS, write the certificate to a file, otherwise delete it
-        var serverCertFile = Path.Combine(Program.DataFolder, DEFAULT_OPTION_CERTIFICATEFILE);
-        if (connection.ApplicationSettings.UseHTTPS)
-            File.WriteAllBytes(serverCertFile, Convert.FromBase64String(connection.ApplicationSettings.ServerSSLCertificate));
-        else if (File.Exists(serverCertFile))
-            File.Delete(serverCertFile);
-
         var settings = new ParsedWebserverSettings(
             webroot,
             -1,
             listenInterface,
-            connection.ApplicationSettings.UseHTTPS,
-            serverCertFile,
-            connection.ApplicationSettings.ServerSSLCertificatePassword,
+            connection.ApplicationSettings.UseHTTPS ? connection.ApplicationSettings.ServerSSLCertificate : null,
             string.Format("{0} v{1}", Library.AutoUpdater.AutoUpdateSettings.AppName, System.Reflection.Assembly.GetExecutingAssembly().GetName().Version),
             (connection.ApplicationSettings.AllowedHostnames ?? string.Empty).Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries),
             Duplicati.Library.Utility.Utility.ParseBoolOption(options, OPTION_WEBSERVICE_API_ONLY),

@@ -1526,7 +1526,7 @@ namespace Duplicati.Library.Utility
         /// <param name="pfxcertificate">The certificate as a byte array</param>
         /// <param name="password">The password used to protect the PFX file</param>
         /// <returns>The loaded certificate</returns>
-        public static X509Certificate2 LoadPfxCertificate(ReadOnlySpan<byte> pfxcertificate, string password)
+        public static X509Certificate2 LoadPfxCertificate(ReadOnlySpan<byte> pfxcertificate, string? password)
         {
             using var tempfile = new TempFile();
             File.WriteAllBytes(tempfile, pfxcertificate.ToArray());
@@ -1539,7 +1539,7 @@ namespace Duplicati.Library.Utility
         /// <param name="pfxPath">The path to the file</param>
         /// <param name="password">The password used to protect the PFX file</param>
         /// <returns>The loaded certificate</returns>
-        public static X509Certificate2 LoadPfxCertificate(string pfxPath, string password)
+        public static X509Certificate2 LoadPfxCertificate(string pfxPath, string? password)
         {
             if (string.IsNullOrEmpty(pfxPath))
                 throw new ArgumentNullException(nameof(pfxPath));

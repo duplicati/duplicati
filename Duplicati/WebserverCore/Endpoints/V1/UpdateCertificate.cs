@@ -22,12 +22,8 @@ public class UpdateCertificate : IEndpointV1
         X509Certificate2 certificate;
         try
         {
-            // The certificate store is broken and only works with files
-            using (var tempfile = new Library.Utility.TempFile())
-            {
-                File.WriteAllBytes(tempfile, Convert.FromBase64String(input.Certificate));
-                certificate = new X509Certificate2(tempfile, input.Password, X509KeyStorageFlags.Exportable);
-            }
+            // Load certificate first, to give better error message if it is invalid
+            certificate = Library.Utility.Utility.LoadPfxCertificate(Convert.FromBase64String(input.Certificate), input.Password);
         }
         catch (Exception ex)
         {
@@ -37,8 +33,7 @@ public class UpdateCertificate : IEndpointV1
 
         try
         {
-            // Read the certificate from temp file, using the supplied password
-            connection.ApplicationSettings.SetNewSSLCertificate(certificate);
+            connection.ApplicationSettings.ServerSSLCertificate = certificate;
         }
         catch (Exception ex)
         {

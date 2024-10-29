@@ -638,67 +638,38 @@ namespace Duplicati.Server.Database
         {
             get
             {
-                return !DisableHTTPS && !string.IsNullOrWhiteSpace(ServerSSLCertificate);
+                return !DisableHTTPS && !string.IsNullOrWhiteSpace(settings[CONST.SERVER_SSL_CERTIFICATE]);
             }
         }
 
-        public void SetNewSSLCertificate(X509Certificate2 certificate)
-        {
-            if (certificate == null)
-                throw new ArgumentNullException(nameof(certificate));
-
-            var password = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
-            var cert = Convert.ToBase64String(certificate.Export(X509ContentType.Pkcs12, password));
-
-            lock (databaseConnection.m_lock)
-            {
-                settings[CONST.SERVER_SSL_CERTIFICATE] = cert;
-                settings[CONST.SERVER_SSL_CERTIFICATEPASSWORD] = password;
-            }
-
-            SaveSettings();
-        }
-
-        public X509Certificate2? LoadSSLCertificate()
-        {
-            if (string.IsNullOrEmpty(settings[CONST.SERVER_SSL_CERTIFICATE]))
-                return null;
-
-            var cert = Convert.FromBase64String(settings[CONST.SERVER_SSL_CERTIFICATE]);
-            var password = settings[CONST.SERVER_SSL_CERTIFICATEPASSWORD];
-            return Library.Utility.Utility.LoadPfxCertificate(cert, password);
-        }
-
-        public void ClearSSLCertificate()
-        {
-            lock (databaseConnection.m_lock)
-            {
-                settings[CONST.SERVER_SSL_CERTIFICATE] = null;
-                settings[CONST.SERVER_SSL_CERTIFICATEPASSWORD] = null;
-            }
-
-            SaveSettings();
-        }
-
-        public string ServerSSLCertificate
+        public X509Certificate2? ServerSSLCertificate
         {
             get
             {
                 if (String.IsNullOrEmpty(settings[CONST.SERVER_SSL_CERTIFICATE]))
                     return null;
 
-                return settings[CONST.SERVER_SSL_CERTIFICATE];
+                return Library.Utility.Utility.LoadPfxCertificate(Convert.FromBase64String(settings[CONST.SERVER_SSL_CERTIFICATE]), settings[CONST.SERVER_SSL_CERTIFICATEPASSWORD]);
             }
-        }
-
-        public string ServerSSLCertificatePassword
-        {
-            get
+            set
             {
-                if (String.IsNullOrEmpty(settings[CONST.SERVER_SSL_CERTIFICATEPASSWORD]))
-                    return null;
+                if (value == null)
+                {
+                    lock (databaseConnection.m_lock)
+                        settings[CONST.SERVER_SSL_CERTIFICATE] = null;
+                }
+                else
+                {
+                    var password = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
+                    var certdata = Convert.ToBase64String(value.Export(X509ContentType.Pkcs12, password));
+                    lock (databaseConnection.m_lock)
+                    {
+                        settings[CONST.SERVER_SSL_CERTIFICATE] = certdata;
+                        settings[CONST.SERVER_SSL_CERTIFICATEPASSWORD] = password;
+                    }
+                }
 
-                return settings[CONST.SERVER_SSL_CERTIFICATEPASSWORD];
+                SaveSettings();
             }
         }
 

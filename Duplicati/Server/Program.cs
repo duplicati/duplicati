@@ -396,14 +396,12 @@ namespace Duplicati.Server
                     parsedOptions.WebRoot,
                     parsedOptions.Port,
                     parsedOptions.Interface,
-                    parsedOptions.UseHTTPS,
-                    parsedOptions.CertificateFile,
-                    parsedOptions.CertificatePassword,
+                    parsedOptions.Certificate,
                     parsedOptions.Servername,
                     parsedOptions.AllowedHostnames,
                     parsedOptions.DisableStaticFiles,
                     parsedOptions.SPAPaths
-                    );
+                );
 
                 var server = new DuplicatiWebserver();
 
