@@ -1528,6 +1528,9 @@ namespace Duplicati.Library.Utility
         /// <returns>The loaded certificate</returns>
         public static X509Certificate2 LoadPfxCertificate(ReadOnlySpan<byte> pfxcertificate, string? password)
         {
+            if (string.IsNullOrWhiteSpace(password))
+                throw new ArgumentException("Refusing to write unencryped certificate to disk");
+
             using var tempfile = new TempFile();
             File.WriteAllBytes(tempfile, pfxcertificate.ToArray());
             return LoadPfxCertificate(tempfile, password);
