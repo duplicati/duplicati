@@ -656,7 +656,10 @@ namespace Duplicati.Server.Database
                 if (value == null)
                 {
                     lock (databaseConnection.m_lock)
+                    {
                         settings[CONST.SERVER_SSL_CERTIFICATE] = null;
+                        settings[CONST.SERVER_SSL_CERTIFICATEPASSWORD] = null;
+                    }
                 }
                 else
                 {
