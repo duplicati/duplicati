@@ -26,6 +26,7 @@ using System.Security.Cryptography;
 using Duplicati.Library.RestAPI;
 using System.Text.Json;
 using System.Text;
+using System.Security.Cryptography.X509Certificates;
 
 namespace Duplicati.Server.Database
 {
@@ -641,6 +642,34 @@ namespace Duplicati.Server.Database
             }
         }
 
+        public void SetNewSSLCertificate(X509Certificate2 certificate)
+        {
+            if (certificate == null)
+                throw new ArgumentNullException(nameof(certificate));
+
+            var password = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
+            var cert = Convert.ToBase64String(certificate.Export(X509ContentType.Pkcs12, password));
+
+            lock (databaseConnection.m_lock)
+            {
+                settings[CONST.SERVER_SSL_CERTIFICATE] = cert;
+                settings[CONST.SERVER_SSL_CERTIFICATEPASSWORD] = password;
+            }
+
+            SaveSettings();
+        }
+
+        public void ClearSSLCertificate()
+        {
+            lock (databaseConnection.m_lock)
+            {
+                settings[CONST.SERVER_SSL_CERTIFICATE] = null;
+                settings[CONST.SERVER_SSL_CERTIFICATEPASSWORD] = null;
+            }
+
+            SaveSettings();
+        }
+
         public string ServerSSLCertificate
         {
             get
@@ -649,20 +678,6 @@ namespace Duplicati.Server.Database
                     return null;
 
                 return settings[CONST.SERVER_SSL_CERTIFICATE];
-            }
-            set
-            {
-                if (value == null)
-                {
-                    lock (databaseConnection.m_lock)
-                        settings[CONST.SERVER_SSL_CERTIFICATE] = String.Empty;
-                }
-                else
-                {
-                    lock (databaseConnection.m_lock)
-                        settings[CONST.SERVER_SSL_CERTIFICATE] = value;
-                }
-                SaveSettings();
             }
         }
 
@@ -674,20 +689,6 @@ namespace Duplicati.Server.Database
                     return null;
 
                 return settings[CONST.SERVER_SSL_CERTIFICATEPASSWORD];
-            }
-            set
-            {
-                if (value == null)
-                {
-                    lock (databaseConnection.m_lock)
-                        settings[CONST.SERVER_SSL_CERTIFICATEPASSWORD] = String.Empty;
-                }
-                else
-                {
-                    lock (databaseConnection.m_lock)
-                        settings[CONST.SERVER_SSL_CERTIFICATEPASSWORD] = value;
-                }
-                SaveSettings();
             }
         }
 

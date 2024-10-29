@@ -209,33 +209,9 @@ public static class WebServerLoader
             Library.Logging.Log.WriteInformationMessage(LOGTAG, "ServerCertificate", Strings.Server.SSLCertificateFileMissingOption);
 
         if (!string.IsNullOrEmpty(certificateFile) && !string.IsNullOrEmpty(certificateFilePassword))
-        {
-            // Load the certificate, using the supplied password
-            var cert = new X509Certificate2(certificateFile, certificateFilePassword, X509KeyStorageFlags.Exportable);
-
-            // Generate a new random password for the certificate
-            connection.ApplicationSettings.ServerSSLCertificatePassword = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
-            // Store the certificate in the database, encrypted with the new password
-            connection.ApplicationSettings.ServerSSLCertificate = Convert.ToBase64String(cert.Export(X509ContentType.Pkcs12, connection.ApplicationSettings.ServerSSLCertificatePassword));
-        }
+            connection.ApplicationSettings.SetNewSSLCertificate(new X509Certificate2(certificateFile, certificateFilePassword, X509KeyStorageFlags.Exportable));
         else if (removeCertificate)
-        {
-            // Clear the certificate from the database
-            connection.ApplicationSettings.ServerSSLCertificate = null;
-            connection.ApplicationSettings.ServerSSLCertificatePassword = null;
-        }
-
-        // If we are using HTTPS, write the certificate to a file, otherwise delete it
-        var serverCertFile = Path.Combine(Program.DataFolder, DEFAULT_OPTION_CERTIFICATEFILE);
-        if (connection.ApplicationSettings.UseHTTPS)
-        {
-            File.WriteAllBytes(serverCertFile, Convert.FromBase64String(connection.ApplicationSettings.ServerSSLCertificate));
-        }
-        else
-        {
-            if (File.Exists(serverCertFile))
-                File.Delete(serverCertFile);
-        }
+            connection.ApplicationSettings.ClearSSLCertificate();
 
         var webroot = Library.AutoUpdater.UpdaterManager.INSTALLATIONDIR;
 
@@ -267,12 +243,19 @@ public static class WebServerLoader
         if (string.IsNullOrWhiteSpace(spaPathsString))
             spaPathsString = DEFAULT_OPTION_SPAPATHS;
 
+        // If we are using HTTPS, write the certificate to a file, otherwise delete it
+        var serverCertFile = Path.Combine(Program.DataFolder, DEFAULT_OPTION_CERTIFICATEFILE);
+        if (connection.ApplicationSettings.UseHTTPS)
+            File.WriteAllBytes(serverCertFile, Convert.FromBase64String(connection.ApplicationSettings.ServerSSLCertificate));
+        else if (File.Exists(serverCertFile))
+            File.Delete(serverCertFile);
+
         var settings = new ParsedWebserverSettings(
             webroot,
             -1,
             listenInterface,
             connection.ApplicationSettings.UseHTTPS,
-            Path.Combine(Program.DataFolder, DEFAULT_OPTION_CERTIFICATEFILE),
+            serverCertFile,
             connection.ApplicationSettings.ServerSSLCertificatePassword,
             string.Format("{0} v{1}", Library.AutoUpdater.AutoUpdateSettings.AppName, System.Reflection.Assembly.GetExecutingAssembly().GetName().Version),
             (connection.ApplicationSettings.AllowedHostnames ?? string.Empty).Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries),
