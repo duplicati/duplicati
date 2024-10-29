@@ -659,6 +659,16 @@ namespace Duplicati.Server.Database
             SaveSettings();
         }
 
+        public X509Certificate2? LoadSSLCertificate()
+        {
+            if (string.IsNullOrEmpty(settings[CONST.SERVER_SSL_CERTIFICATE]))
+                return null;
+
+            var cert = Convert.FromBase64String(settings[CONST.SERVER_SSL_CERTIFICATE]);
+            var password = settings[CONST.SERVER_SSL_CERTIFICATEPASSWORD];
+            return Library.Utility.Utility.LoadPfxCertificate(cert, password);
+        }
+
         public void ClearSSLCertificate()
         {
             lock (databaseConnection.m_lock)
