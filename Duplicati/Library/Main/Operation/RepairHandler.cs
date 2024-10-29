@@ -246,20 +246,18 @@ namespace Duplicati.Library.Main.Operation
                                         foreach (var ixb in ifr.BlockLists)
                                             db.CheckBlocklistCorrect(ixb.Hash, ixb.Length, ixb.Blocklist, blocksize, hashsize);
 
-                                        // All checks fine, we accept the new index file
+                                        // Register the new index file and link it to the block files
                                         using (var tr = db.BeginTransaction())
                                         {
-
-                                            db.RegisterRemoteVolume(n.File.Name, RemoteVolumeType.Index, RemoteVolumeState.Uploading, size, new TimeSpan(0), tr);
-                                            var selfid = db.GetRemoteVolumeID(n.File.Name);
+                                            var selfid = db.RegisterRemoteVolume(n.File.Name, RemoteVolumeType.Index, RemoteVolumeState.Uploading, size, new TimeSpan(0), tr);
                                             foreach (var rv in ifr.Volumes)
                                             {
-                                                long id = db.GetRemoteVolumeID(rv.Filename);
+                                                // Guard against unknown block files
+                                                long id = db.GetRemoteVolumeID(rv.Filename, tr);
                                                 if (id == -1)
-                                                {
-                                                    throw new FileMissingException($"Index file references unknown block file: {rv.Filename}");
-                                                }
-                                                db.AddIndexBlockLink(selfid, id, tr);
+                                                    Logging.Log.WriteWarningMessage(LOGTAG, "UnknownBlockFile", null, "Index file {0} references unknown block file: {1}", n.File.Name, rv.Filename);
+                                                else
+                                                    db.AddIndexBlockLink(selfid, id, tr);
                                             }
                                             tr.Commit();
                                         }
