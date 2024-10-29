@@ -132,9 +132,7 @@ namespace Duplicati.GUI.TrayIcon
                 }.Uri;
 
                 if (Server.Program.DataConnection.ApplicationSettings.UseHTTPS && string.IsNullOrWhiteSpace(acceptedHostCertificate))
-                    acceptedHostCertificate = Library.Utility.Utility.ByteArrayAsHexString(
-                            Server.Program.DataConnection.ApplicationSettings.ServerSSLCertificate
-                            .GetCertHash());
+                    acceptedHostCertificate = Server.Program.DataConnection.ApplicationSettings.ServerSSLCertificate.GetCertHashString();
 
             }
             else if (Library.Utility.Utility.ParseBoolOption(options, READCONFIGFROMDB_OPTION))
@@ -147,9 +145,7 @@ namespace Duplicati.GUI.TrayIcon
                     {
                         disableTrayIconLogin = databaseConnection.ApplicationSettings.DisableTrayIconLogin;
                         if (databaseConnection.ApplicationSettings.UseHTTPS && string.IsNullOrWhiteSpace(acceptedHostCertificate))
-                            acceptedHostCertificate = Library.Utility.Utility.ByteArrayAsHexString(
-                                    databaseConnection.ApplicationSettings.ServerSSLCertificate
-                                    .GetCertHash());
+                            acceptedHostCertificate = databaseConnection.ApplicationSettings.ServerSSLCertificate.GetCertHashString();
 
                         var scheme = databaseConnection.ApplicationSettings.UseHTTPS ? "https" : "http";
                         serverURL = new UriBuilder(serverURL)

@@ -129,19 +129,26 @@ namespace Duplicati.GUI.TrayIcon
             m_options = options;
             m_passwordSource = passwordSource;
 
+            var acceptedCertificates = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            if (!string.IsNullOrWhiteSpace(acceptedHostCertificate))
+                acceptedCertificates.UnionWith(acceptedHostCertificate.Split([',', ';'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
+
             HTTPCLIENT = new(new HttpClientHandler
             {
-                ServerCertificateCustomValidationCallback = acceptedHostCertificate switch
+                ServerCertificateCustomValidationCallback = acceptedCertificates switch
                 {
-                    null or "" => null,
-                    "*" => HttpClientHandler.DangerousAcceptAnyServerCertificateValidator,
+                    { Count: 0 } => null,
+                    { } when acceptedCertificates.Contains("*") => HttpClientHandler.DangerousAcceptAnyServerCertificateValidator,
                     _ => (sender, cert, chain, sslPolicyErrors) =>
                     {
                         if (sslPolicyErrors == SslPolicyErrors.None)
                             return true;
 
-                        var certHash = Library.Utility.Utility.ByteArrayAsHexString(cert.GetCertHash());
-                        return string.Equals(certHash, acceptedHostCertificate, StringComparison.OrdinalIgnoreCase);
+                        if (cert == null)
+                            return false;
+
+                        var certHash = cert.GetCertHashString();
+                        return acceptedCertificates.Contains(certHash);
                     }
                 }
             })

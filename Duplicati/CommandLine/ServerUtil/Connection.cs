@@ -1,4 +1,5 @@
 using System.Net.Http.Json;
+using System.Net.Security;
 using System.Text.Json;
 
 namespace Duplicati.CommandLine.ServerUtil;
@@ -106,12 +107,23 @@ public class Connection
     {
         Console.WriteLine($"Connecting to {settings.HostUrl}...");
 
+        var trustedCertificateHashes = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        if (!string.IsNullOrWhiteSpace(settings.AcceptedHostCertificate))
+            trustedCertificateHashes.UnionWith(settings.AcceptedHostCertificate.Split([',', ';'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
+
         // Configure the client for requests
         var client = new HttpClient(new HttpClientHandler()
         {
-            ServerCertificateCustomValidationCallback = settings.Insecure
+            ServerCertificateCustomValidationCallback = settings.Insecure || trustedCertificateHashes.Contains("*")
                ? HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
-               : null
+               : ((message, cert, chain, sslPolicyErrors) =>
+                {
+                    if (sslPolicyErrors == SslPolicyErrors.None)
+                        return true;
+                    if (cert == null)
+                        return false;
+                    return trustedCertificateHashes.Contains(cert.GetCertHashString());
+                }),
         })
         {
             BaseAddress = new Uri(settings.HostUrl + "api/v1/")
@@ -148,7 +160,11 @@ public class Connection
             {
                 string? cfg = null;
                 using (var connection = Duplicati.Server.Program.GetDatabaseConnection(opts, true))
+                {
                     cfg = connection.ApplicationSettings.JWTConfig;
+                    if (settings.HostUrl.Scheme == "https" && connection.ApplicationSettings.ServerSSLCertificate != null)
+                        trustedCertificateHashes.Add(connection.ApplicationSettings.ServerSSLCertificate.GetCertHashString());
+                }
 
                 if (!string.IsNullOrWhiteSpace(cfg))
                 {

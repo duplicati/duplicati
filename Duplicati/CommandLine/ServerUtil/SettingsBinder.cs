@@ -31,6 +31,11 @@ public class SettingsBinder : BinderBase<Settings>
     public static readonly Option<bool> insecureOption = new Option<bool>("--insecure", description: "Accepts any TLS/SSL certificate (dangerous)", getDefaultValue: () => false);
 
     /// <summary>
+    /// The accepted host certificate option.
+    /// </summary>
+    public static readonly Option<string> acceptedHostCertificateOption = new Option<string>("--host-cert", description: "The SHA1 hash of the host certificate to accept. Use * for any certificate, same as --insecure (dangerous)", getDefaultValue: () => string.Empty);
+
+    /// <summary>
     /// Adds global options to the root command.
     /// </summary>
     /// <param name="rootCommand">The root command to add the options to.</param>
@@ -42,6 +47,7 @@ public class SettingsBinder : BinderBase<Settings>
         rootCommand.AddGlobalOption(serverDatafolderOption);
         rootCommand.AddGlobalOption(settingsFileOption);
         rootCommand.AddGlobalOption(insecureOption);
+        rootCommand.AddGlobalOption(acceptedHostCertificateOption);
         return rootCommand;
     }
 
@@ -56,7 +62,8 @@ public class SettingsBinder : BinderBase<Settings>
             bindingContext.ParseResult.GetValueForOption(hostUrlOption),
             bindingContext.ParseResult.GetValueForOption(serverDatafolderOption)?.FullName,
             bindingContext.ParseResult.GetValueForOption(settingsFileOption)?.FullName ?? "settings.json",
-            bindingContext.ParseResult.GetValueForOption(insecureOption)
+            bindingContext.ParseResult.GetValueForOption(insecureOption),
+            bindingContext.ParseResult.GetValueForOption(acceptedHostCertificateOption)
         );
 
     /// <summary>
