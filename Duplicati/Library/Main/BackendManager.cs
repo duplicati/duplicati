@@ -21,7 +21,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Cryptography;
 using System.Text;
 using Duplicati.Library.Utility;
 using Duplicati.Library.Main.Database;
@@ -30,6 +29,8 @@ using Newtonsoft.Json;
 using Duplicati.Library.Localization.Short;
 using System.Threading;
 using System.Net;
+using Duplicati.Library.Interface;
+using System.Threading.Tasks;
 
 namespace Duplicati.Library.Main
 {
@@ -223,7 +224,7 @@ namespace Duplicati.Library.Main
             {
                 if (Hash == null || Size < 0)
                 {
-                    Hash = CalculateFileHash(this.LocalFilename);
+                    Hash = CalculateFileHash(this.LocalFilename, options);
                     Size = new System.IO.FileInfo(this.LocalFilename).Length;
                     return true;
                 }
@@ -235,7 +236,7 @@ namespace Duplicati.Library.Main
             {
                 if (this.LocalTempfile != null)
                     try { this.LocalTempfile.Dispose(); }
-                catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, "DeleteTemporaryFileError", ex, "Failed to dispose temporary file: {0}", this.LocalTempfile); }
+                    catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, "DeleteTemporaryFileError", ex, "Failed to dispose temporary file: {0}", this.LocalTempfile); }
                     finally { this.LocalTempfile = null; }
             }
 
@@ -418,7 +419,8 @@ namespace Duplicati.Library.Main
             }
 
             if (m_taskControl != null)
-                m_taskControl.StateChangedEvent += (state) => {
+                m_taskControl.StateChangedEvent += (state) =>
+                {
                     if (state == TaskControlState.Abort)
                         m_thread.Interrupt();
                 };
@@ -429,38 +431,17 @@ namespace Duplicati.Library.Main
             m_thread.Start();
         }
 
-        public static string CalculateFileHash(string filename)
+        public static string CalculateFileHash(string filename, Options options)
         {
             using (System.IO.FileStream fs = System.IO.File.OpenRead(filename))
-            using (var hasher = VolumeHashFactory.CreateHasher())
-                return Convert.ToBase64String(hasher.ComputeHash(fs));
+                return CalculateFileHash(fs, options);
         }
 
         /// <summary> Calculate file hash directly on stream object (for piping) </summary>
-        public static string CalculateFileHash(System.IO.Stream stream)
+        public static string CalculateFileHash(System.IO.Stream stream, Options options)
         {
-            using (var hasher = VolumeHashFactory.CreateHasher())
+            using (var hasher = HashFactory.CreateHasher(options.FileHashAlgorithm))
                 return Convert.ToBase64String(hasher.ComputeHash(stream));
-        }
-
-        /// <summary>
-        /// Returns a stream for hashing that can be part of a stream stack together
-        /// with a callback to retrieve the hash when done.
-        /// </summary>
-        public static System.Security.Cryptography.CryptoStream GetFileHasherStream
-            (System.IO.Stream stream, System.Security.Cryptography.CryptoStreamMode mode, HashAlgorithm hasher, out Func<string> getHash)
-        {
-            System.Security.Cryptography.CryptoStream retHasherStream =
-                new System.Security.Cryptography.CryptoStream(stream, hasher, mode);
-            getHash = () =>
-            {
-                if (mode == System.Security.Cryptography.CryptoStreamMode.Write
-                    && !retHasherStream.HasFlushedFinalBlock)
-                    retHasherStream.FlushFinalBlock();
-                string retHash = Convert.ToBase64String(hasher.Hash);
-                return retHash;
-            };
-            return retHasherStream;
         }
 
 
@@ -497,22 +478,22 @@ namespace Duplicati.Library.Main
                                 switch (item.Operation)
                                 {
                                     case OperationType.Put:
-                                        DoPut(item);
+                                        DoPutAsync(item, CancellationToken.None).Await();
                                         // We do not auto create folders,
                                         // because we know the folder exists
                                         uploadSuccess = true;
                                         break;
                                     case OperationType.Get:
-                                        DoGet(item);
+                                        DoGetAsync(item, CancellationToken.None).Await();
                                         break;
                                     case OperationType.List:
                                         DoList(item);
                                         break;
                                     case OperationType.Delete:
-                                        DoDelete(item);
+                                        DoDeleteAsync(item, CancellationToken.None).Await();
                                         break;
                                     case OperationType.CreateFolder:
-                                        DoCreateFolder(item);
+                                        DoCreateFolderAsync(item, CancellationToken.None).Await();
                                         break;
                                     case OperationType.Terminate:
                                         m_queue.SetCompleted();
@@ -547,8 +528,8 @@ namespace Duplicati.Library.Main
                                 {
                                     try
                                     {
-                                        var names = m_backend.DNSName ?? new string[0];
-                                        foreach(var name in names)
+                                        var names = m_backend.GetDNSNamesAsync(CancellationToken.None).Await() ?? new string[0];
+                                        foreach (var name in names)
                                             if (!string.IsNullOrWhiteSpace(name))
                                                 System.Net.Dns.GetHostEntry(name);
                                     }
@@ -566,7 +547,7 @@ namespace Duplicati.Library.Main
                                 try
                                 {
                                     // If we successfully create the folder, we can re-use the connection
-                                    m_backend.CreateFolder();
+                                    m_backend.CreateFolderAsync(CancellationToken.None).Await();
                                     recovered = true;
                                 }
                                 catch (Exception dex)
@@ -724,7 +705,7 @@ namespace Duplicati.Library.Main
             m_statwriter.BackendProgressUpdater.UpdateProgress(pg);
         }
 
-        private void DoPut(FileEntryItem item)
+        private async Task DoPutAsync(FileEntryItem item, CancellationToken cancellationToken)
         {
             if (m_encryption != null)
                 lock (m_encryptionLock)
@@ -745,15 +726,15 @@ namespace Duplicati.Library.Main
 
             var begin = DateTime.Now;
 
-            if (m_backend is Library.Interface.IStreamingBackend && !m_options.DisableStreamingTransfers)
+            if (m_backend is Library.Interface.IStreamingBackend streamingBackend && !m_options.DisableStreamingTransfers)
             {
                 using (var fs = System.IO.File.OpenRead(item.LocalFilename))
                 using (var ts = new ThrottledStream(fs, m_options.MaxUploadPrSecond, 0))
                 using (var pgs = new Library.Utility.ProgressReportingStream(ts, pg => HandleProgress(ts, pg)))
-                    ((Library.Interface.IStreamingBackend)m_backend).PutAsync(item.RemoteFilename, pgs, CancellationToken.None).Wait();
+                    await streamingBackend.PutAsync(item.RemoteFilename, pgs, cancellationToken);
             }
             else
-                m_backend.PutAsync(item.RemoteFilename, item.LocalFilename, CancellationToken.None).Wait();
+                await m_backend.PutAsync(item.RemoteFilename, item.LocalFilename, cancellationToken);
 
             var duration = DateTime.Now - begin;
             Logging.Log.WriteProfilingMessage(LOGTAG, "UploadSpeed", "Uploaded {0} in {1}, {2}/s", Library.Utility.Utility.FormatSizeString(item.Size), duration, Library.Utility.Utility.FormatSizeString((long)(item.Size / duration.TotalSeconds)));
@@ -775,172 +756,39 @@ namespace Duplicati.Library.Main
             item.DeleteLocalFile(m_statwriter);
         }
 
-        private TempFile coreDoGetPiping(FileEntryItem item, Interface.IEncryption useDecrypter, out long retDownloadSize, out string retHashcode)
+        private async Task<(TempFile tempFile, long downloadSize, string remotehash)> DoGetFile(FileEntryItem item, IEncryption useDecrypter, CancellationToken cancellationToken)
         {
-            // With piping allowed, we will parallelize the operation with buffered pipes to maximize throughput:
-            // Separated: Download (only for streaming) - Hashing - Decryption
-            // The idea is to use DirectStreamLink's that are inserted in the stream stack, creating a fork to run
-            // the crypto operations on.
-
-            retDownloadSize = -1;
-            retHashcode = null;
-
-            bool enableStreaming = (m_backend is Library.Interface.IStreamingBackend && !m_options.DisableStreamingTransfers);
-
-            System.Threading.Tasks.Task<string> taskHasher = null;
-            DirectStreamLink linkForkHasher = null;
-            System.Threading.Tasks.Task taskDecrypter = null;
-            DirectStreamLink linkForkDecryptor = null;
-
-            // keep potential temp files and their streams for cleanup (cannot use using here).
-            TempFile retTarget = null, dlTarget = null, decryptTarget = null;
-            System.IO.Stream dlToStream = null, decryptToStream = null;
-            try
-            {
-                System.IO.Stream nextTierWriter = null; // target of our stacked streams
-                if (!enableStreaming) // we will always need dlTarget if not streaming...
-                    dlTarget = new TempFile();
-                else if (enableStreaming && useDecrypter == null)
-                {
-                    dlTarget = new TempFile();
-                    dlToStream = System.IO.File.OpenWrite(dlTarget);
-                    nextTierWriter = dlToStream; // actually write through to file.
-                }
-
-                // setup decryption: fork off a StreamLink from stack, and setup decryptor task
-                if (useDecrypter != null)
-                {
-                    linkForkDecryptor = new DirectStreamLink(1 << 16, false, false, nextTierWriter);
-                    nextTierWriter = linkForkDecryptor.WriterStream;
-                    linkForkDecryptor.SetKnownLength(item.Size, false); // Set length to allow AES-decryption (not streamable yet)
-                    decryptTarget = new TempFile();
-                    decryptToStream = System.IO.File.OpenWrite(decryptTarget);
-                    taskDecrypter = new System.Threading.Tasks.Task(() =>
-                            {
-                                using (var input = linkForkDecryptor.ReaderStream)
-                                using (var output = decryptToStream)
-                                    lock (m_encryptionLock) { useDecrypter.Decrypt(input, output); }
-                            }
-                        );
-                }
-
-                // setup hashing: fork off a StreamLink from stack, then task computes hash
-                linkForkHasher = new DirectStreamLink(1 << 16, false, false, nextTierWriter);
-                nextTierWriter = linkForkHasher.WriterStream;
-                taskHasher = new System.Threading.Tasks.Task<string>(() =>
-                        {
-                            using (var input = linkForkHasher.ReaderStream)
-                                return CalculateFileHash(input);
-                        }
-                    );
-
-                // OK, forks with tasks are set up, so let's do the download which is performed in main thread.
-                bool hadException = false;
-                try
-                {
-                    if (enableStreaming)
-                    {
-                        using (var ss = new ShaderStream(nextTierWriter, false))
-                        {
-                            using (var ts = new ThrottledStream(ss, 0, m_options.MaxDownloadPrSecond))
-                            using (var pgs = new Library.Utility.ProgressReportingStream(ts, pg => HandleProgress(ts, pg)))
-                            {
-                                taskHasher.Start(); // We do not start tasks earlier to be sure the input always gets closed. 
-                                if (taskDecrypter != null) taskDecrypter.Start();
-                                ((Library.Interface.IStreamingBackend)m_backend).Get(item.RemoteFilename, pgs);
-                            }
-                            retDownloadSize = ss.TotalBytesWritten;
-                        }
-                    }
-                    else
-                    {
-                        m_backend.Get(item.RemoteFilename, dlTarget);
-                        retDownloadSize = new System.IO.FileInfo(dlTarget).Length;
-                        using (dlToStream = System.IO.File.OpenRead(dlTarget))
-                        {
-                            taskHasher.Start(); // We do not start tasks earlier to be sure the input always gets closed. 
-                            if (taskDecrypter != null) taskDecrypter.Start();
-                            new DirectStreamLink.DataPump(dlToStream, nextTierWriter).Run();
-                        }
-                    }
-                }
-                catch (Exception)
-                { hadException = true; throw; }
-                finally
-                {
-                    // This nested try-catch-finally blocks will make sure we do not miss any exceptions ans all started tasks
-                    // are properly ended and tidied up. For what is thrown: If exceptions in main thread occured (download) it is thrown,
-                    // then hasher task is checked and last decryption. This resembles old logic.
-                    try { retHashcode = taskHasher.Result; }
-                    catch (AggregateException ex) { if (!hadException) { hadException = true; throw ex.Flatten().InnerException; } }
-                    finally
-                    {
-                        if (taskDecrypter != null)
-                        {
-                            try { taskDecrypter.Wait(); }
-                            catch (AggregateException ex)
-                            {
-                                if (!hadException)
-                                {
-                                    hadException = true;
-                                    AggregateException flattenedException = ex.Flatten();
-                                    if (flattenedException.InnerException is System.Security.Cryptography.CryptographicException)
-                                        throw flattenedException.InnerException;
-                                    else
-                                        throw new System.Security.Cryptography.CryptographicException(flattenedException.InnerException.Message, flattenedException.InnerException);
-                                }
-                            }
-                        }
-                    }
-                }
-
-                if (useDecrypter != null) // return decrypted temp file
-                { retTarget = decryptTarget; decryptTarget = null; }
-                else // return downloaded file
-                { retTarget = dlTarget; dlTarget = null; }
-            }
-            finally
-            {
-                // Be tidy: manually do some cleanup to temp files, as we could not use usings.
-                // Unclosed streams should only occur if we failed even before tasks were started.
-                if (dlToStream != null) dlToStream.Dispose();
-                if (dlTarget != null) dlTarget.Dispose();
-                if (decryptToStream != null) decryptToStream.Dispose();
-                if (decryptTarget != null) decryptTarget.Dispose();
-            }
-
-            return retTarget;
-        }
-
-        private TempFile coreDoGetSequential(FileEntryItem item, Interface.IEncryption useDecrypter, out long retDownloadSize, out string retHashcode)
-        {
-            retHashcode = null;
-            retDownloadSize = -1;
             TempFile retTarget, dlTarget = null, decryptTarget = null;
+            long retDownloadSize;
+            string retHashcode;
             try
             {
                 dlTarget = new Library.Utility.TempFile();
-                if (m_backend is Library.Interface.IStreamingBackend && !m_options.DisableStreamingTransfers)
+                if (m_backend is Library.Interface.IStreamingBackend streamingBackend && !m_options.DisableStreamingTransfers)
                 {
                     // extended to use stacked streams
                     using (var fs = System.IO.File.OpenWrite(dlTarget))
-                    using (var hasher = VolumeHashFactory.CreateHasher())
-                    using (var hs = GetFileHasherStream(fs, System.Security.Cryptography.CryptoStreamMode.Write, hasher, out var getFileHash))
+                    using (var hasher = HashFactory.CreateHasher(m_options.FileHashAlgorithm))
+                    using (var hs = new HashCalculatingStream(fs, hasher))
                     using (var ss = new ShaderStream(hs, true))
                     {
+                        // NOTE: It is possible to hash the file in parallel with download
+                        // but this requires some careful handling of buffers and threads/tasks
+                        // to avoid adding more overhead than what is gained.
+
                         using (var ts = new ThrottledStream(ss, 0, m_options.MaxDownloadPrSecond))
                         using (var pgs = new Library.Utility.ProgressReportingStream(ts, pg => HandleProgress(ts, pg)))
-                        { ((Library.Interface.IStreamingBackend)m_backend).Get(item.RemoteFilename, pgs); }
+                        { await streamingBackend.GetAsync(item.RemoteFilename, pgs, cancellationToken); }
                         ss.Flush();
                         retDownloadSize = ss.TotalBytesWritten;
-                        retHashcode = getFileHash();
+                        retHashcode = Convert.ToBase64String(hs.GetFinalHash());
                     }
                 }
                 else
                 {
-                    m_backend.Get(item.RemoteFilename, dlTarget);
+                    await m_backend.GetAsync(item.RemoteFilename, dlTarget, cancellationToken);
                     retDownloadSize = new System.IO.FileInfo(dlTarget).Length;
-                    retHashcode = CalculateFileHash(dlTarget);
+                    retHashcode = CalculateFileHash(dlTarget, m_options);
                 }
 
                 // Decryption is not placed in the stream stack because there seemed to be an effort
@@ -971,10 +819,10 @@ namespace Duplicati.Library.Main
                 if (decryptTarget != null) decryptTarget.Dispose();
             }
 
-            return retTarget;
+            return (retTarget, retDownloadSize, retHashcode);
         }
 
-        private void DoGet(FileEntryItem item)
+        private async Task DoGetAsync(FileEntryItem item, CancellationToken cancellationToken)
         {
             Library.Utility.TempFile tmpfile = null;
             m_statwriter.SendEvent(BackendActionType.Get, BackendEventType.Started, item.RemoteFilename, item.Size);
@@ -1025,12 +873,7 @@ namespace Duplicati.Library.Main
                     }
                 }
 
-                string fileHash;
-                long dataSizeDownloaded;
-                if (m_options.DisablePipedStreaming)
-                    tmpfile = coreDoGetSequential(item, useDecrypter, out dataSizeDownloaded, out fileHash);
-                else
-                    tmpfile = coreDoGetPiping(item, useDecrypter, out dataSizeDownloaded, out fileHash);
+                (tmpfile, var dataSizeDownloaded, var fileHash) = await DoGetFile(item, useDecrypter, cancellationToken);
 
                 var duration = DateTime.Now - begin;
                 Logging.Log.WriteProfilingMessage(LOGTAG, "DownloadSpeed", "Downloaded {3}{0} in {1}, {2}/s", Library.Utility.Utility.FormatSizeString(dataSizeDownloaded),
@@ -1104,14 +947,14 @@ namespace Duplicati.Library.Main
             m_statwriter.SendEvent(BackendActionType.List, BackendEventType.Completed, null, r.Count);
         }
 
-        private void DoDelete(FileEntryItem item)
+        private async Task DoDeleteAsync(FileEntryItem item, CancellationToken cancellationToken)
         {
             m_statwriter.SendEvent(BackendActionType.Delete, BackendEventType.Started, item.RemoteFilename, item.Size);
 
             string result = null;
             try
             {
-                m_backend.Delete(item.RemoteFilename);
+                await m_backend.DeleteAsync(item.RemoteFilename, cancellationToken).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -1154,14 +997,14 @@ namespace Duplicati.Library.Main
             m_statwriter.SendEvent(BackendActionType.Delete, BackendEventType.Completed, item.RemoteFilename, item.Size);
         }
 
-        private void DoCreateFolder(FileEntryItem item)
+        private async Task DoCreateFolderAsync(FileEntryItem item, CancellationToken cancelToken)
         {
             m_statwriter.SendEvent(BackendActionType.CreateFolder, BackendEventType.Started, null, -1);
 
             string result = null;
             try
             {
-                m_backend.CreateFolder();
+                await m_backend.CreateFolderAsync(cancelToken).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -1464,6 +1307,9 @@ namespace Duplicati.Library.Main
             if (m_lastException != null)
                 throw m_lastException;
         }
+
+        public Task<IQuotaInfo> GetQuotaInfoAsync(CancellationToken cancelToken)
+            => (m_backend as IQuotaEnabledBackend)?.GetQuotaInfoAsync(cancelToken) ?? Task.FromResult<IQuotaInfo>(null);
 
         public bool FlushDbMessages()
         {

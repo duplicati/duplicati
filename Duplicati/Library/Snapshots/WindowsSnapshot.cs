@@ -79,7 +79,7 @@ namespace Duplicati.Library.Snapshots
                 _vssBackupComponents.MapVolumesToSnapShots();
 
                 //If we should map the drives, we do that now and update the volumeMap
-                if (Utility.Utility.ParseBoolOption(options, "vss-use-mapping"))
+                if (Utility.Utility.ParseBoolOption(options.AsReadOnly(), "vss-use-mapping"))
                 {
                     _vssBackupComponents.MapDrives();
                 }

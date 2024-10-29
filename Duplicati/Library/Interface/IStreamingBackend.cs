@@ -44,7 +44,8 @@ namespace Duplicati.Library.Interface
         /// </summary>
         /// <param name="remotename">The remote filename, relative to the URL</param>
         /// <param name="stream">The stream to write data to</param>
-        void Get(string remotename, System.IO.Stream stream);
+        /// <param name="cancelToken">Token to cancel the operation.</param>
+        Task GetAsync(string remotename, System.IO.Stream stream, CancellationToken cancelToken);
 
     }
 }

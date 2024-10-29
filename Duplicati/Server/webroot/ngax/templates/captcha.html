@@ -2,14 +2,15 @@
 	<div ng-show="entry.imageurl">
 		<div>{{entry.message}}</div>
 		<div class="details">
-			<img src="{{entry.imageurl}}" />
-			<input type="text" ng-model="entry.answer" />
+			<img ng-hide="entry.noVisualChallenge" src="{{entry.imageurl}}" />
+			<code class="code" ng-show="entry.noVisualChallenge">{{entry.expectedAnswer}}</code>
+			<input class="answer" type="text" ng-model="entry.answer" />
 			<input type="button" value="{{'Reload' | translate}}" ng-click="reload()" />
 		</div>
 
-		<div class="centered-text" ng-show="entry.verifying" translate>Checking ...</div>
+		<div class="centered-text" ng-show="entry.verifying" translate>Checking …</div>
 		<div class="centered-text warning" ng-show="!entry.verifying && entry.hasfailed" translate>Incorrect answer, try again</div>
 
 	</div>
-	<div ng-hide="entry.imageurl" translate>Loading ...</div>
+	<div ng-hide="entry.imageurl" translate>Loading …</div>
 </div>

@@ -1,3 +1,24 @@
+// Copyright (C) 2024, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
+
 using Duplicati.Server.Database;
 using Duplicati.WebserverCore.Abstractions;
 using Duplicati.WebserverCore.Exceptions;
@@ -20,6 +41,8 @@ public class ServerSetting : IEndpointV1
     private static readonly string[] GUARDED_OUTPUT = [
         Server.Database.ServerSettings.CONST.JWT_CONFIG,
         Server.Database.ServerSettings.CONST.PBKDF_CONFIG,
+        Server.Database.ServerSettings.CONST.PRELOAD_SETTINGS_HASH,
+        Server.Database.ServerSettings.CONST.REMOTE_CONTROL_CONFIG,
         // Not used anymore, but not completely removed
         Server.Database.ServerSettings.CONST.SERVER_PASSPHRASE,
         Server.Database.ServerSettings.CONST.SERVER_PASSPHRASE_SALT,
@@ -31,9 +54,14 @@ public class ServerSetting : IEndpointV1
     private static readonly string[] GUARDED_INPUT = [
         Server.Database.ServerSettings.CONST.JWT_CONFIG,
         Server.Database.ServerSettings.CONST.PBKDF_CONFIG,
+        Server.Database.ServerSettings.CONST.PRELOAD_SETTINGS_HASH,
         Server.Database.ServerSettings.CONST.SERVER_PASSPHRASE,
         Server.Database.ServerSettings.CONST.SERVER_PASSPHRASE_SALT,
         Server.Database.ServerSettings.CONST.SERVER_SSL_CERTIFICATE,
+        Server.Database.ServerSettings.CONST.DISABLE_VISUAL_CAPTCHA,
+        Server.Database.ServerSettings.CONST.DISABLE_SIGNIN_TOKENS,
+        Server.Database.ServerSettings.CONST.ENCRYPTED_FIELDS,
+        Server.Database.ServerSettings.CONST.REMOTE_CONTROL_CONFIG,
         "ServerSSLCertificate",
         "server-passphrase-trayicon-hash",
         "server-passphrase-trayicon-salt"
@@ -127,6 +155,12 @@ public class ServerSetting : IEndpointV1
 
     private static void UpdateSetting(string key, string value, Connection connection)
     {
+        if (key == Server.Database.ServerSettings.CONST.SERVER_PASSPHRASE)
+        {
+            connection.ApplicationSettings.SetWebserverPassword(value);
+            return;
+        }
+
         if (GUARDED_INPUT.Any(x => string.Equals(x, key, StringComparison.OrdinalIgnoreCase)))
             throw new BadRequestException($"Cannot update {key} setting");
 

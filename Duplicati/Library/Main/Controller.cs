@@ -215,7 +215,7 @@ namespace Duplicati.Library.Main
                         .ToList();
 
                     // If the local database is available, we will use it to avoid deleting unrelated files
-                    // from the backend.  Otherwise, we may accidentally delete non-Duplicati files, or
+                    // from the backend. Otherwise, we may accidentally delete non-Duplicati files, or
                     // files from a different Duplicati configuration that points to the same backend location
                     // and uses the same prefix (see issues #2678, #3845, and #4244).
                     if (System.IO.File.Exists(m_options.Dbpath))
@@ -574,7 +574,7 @@ namespace Duplicati.Library.Main
                 m_resetPriority = null;
             }
 
-            if(m_localeChange != null)
+            if (m_localeChange != null)
             {
                 m_localeChange.Dispose();
                 m_localeChange = null;
@@ -1043,7 +1043,7 @@ namespace Duplicati.Library.Main
             {
                 bool found = false;
                 foreach (string v in arg.ValidValues ?? new string[0])
-                    if (string.Equals(v, value, StringComparison.CurrentCultureIgnoreCase))
+                    if (string.Equals(v, value, StringComparison.OrdinalIgnoreCase))
                     {
                         found = true;
                         break;
@@ -1061,7 +1061,7 @@ namespace Duplicati.Library.Main
 
                 foreach (var flag in flags)
                 {
-                    if (!validFlags.Any(validFlag => string.Equals(validFlag, flag, StringComparison.CurrentCultureIgnoreCase)))
+                    if (!validFlags.Any(validFlag => string.Equals(validFlag, flag, StringComparison.OrdinalIgnoreCase)))
                     {
                         validatedAllFlags = false;
                         break;

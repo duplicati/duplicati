@@ -26,6 +26,7 @@ using Duplicati.Library.Interface;
 using System.Linq;
 using System.Globalization;
 using System.Threading;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.CommandLine.BackendTester
 {
@@ -34,9 +35,9 @@ namespace Duplicati.CommandLine.BackendTester
         /// <summary>
         /// Used to maintain a reference to initialized system settings.
         /// </summary>
-        #pragma warning disable CS0414 // The private field `Duplicati.CommandLine.BackendTester.Program.SystemSettings' is assigned but its value is never used
+#pragma warning disable CS0414 // The private field `Duplicati.CommandLine.BackendTester.Program.SystemSettings' is assigned but its value is never used
         private static IDisposable SystemSettings;
-        #pragma warning restore CS0414 // The private field `Duplicati.CommandLine.BackendTester.Program.SystemSettings' is assigned but its value is never used
+#pragma warning restore CS0414 // The private field `Duplicati.CommandLine.BackendTester.Program.SystemSettings' is assigned but its value is never used
 
         class TempFile
         {
@@ -66,6 +67,8 @@ namespace Duplicati.CommandLine.BackendTester
         {
             try
             {
+                Library.AutoUpdater.PreloadSettingsLoader.ConfigurePreloadSettings(ref _args, Library.AutoUpdater.PackageHelper.NamedExecutable.BackendTester);
+
                 if (_args.Length == 1)
                 {
                     try
@@ -73,8 +76,8 @@ namespace Duplicati.CommandLine.BackendTester
                         var p = Environment.ExpandEnvironmentVariables(_args[0]);
                         if (System.IO.File.Exists(p))
                             _args = (from x in System.IO.File.ReadLines(p)
-                                where !string.IsNullOrWhiteSpace(x) && !x.Trim().StartsWith("#", StringComparison.Ordinal)
-                                select x.Trim()
+                                     where !string.IsNullOrWhiteSpace(x) && !x.Trim().StartsWith("#", StringComparison.Ordinal)
+                                     select x.Trim()
                             ).ToArray();
                     }
                     catch
@@ -105,7 +108,7 @@ namespace Duplicati.CommandLine.BackendTester
 
                 if (options.ContainsKey("tempdir") && !string.IsNullOrEmpty(options["tempdir"]))
                     Library.Utility.SystemContextSettings.DefaultTempPath = options["tempdir"];
-                
+
                 SystemSettings = Duplicati.Library.Utility.SystemContextSettings.StartSession();
 
                 if (!options.ContainsKey("auth_password") && !string.IsNullOrEmpty(System.Environment.GetEnvironmentVariable("AUTH_PASSWORD")))
@@ -174,7 +177,7 @@ namespace Duplicati.CommandLine.BackendTester
                 IEnumerable<Library.Interface.IFileEntry> curlist = null;
                 try
                 {
-                    backend.Test();
+                    backend.TestAsync(CancellationToken.None).Await();
                     curlist = backend.List();
                 }
                 catch (FolderMissingException)
@@ -183,7 +186,7 @@ namespace Duplicati.CommandLine.BackendTester
                     {
                         try
                         {
-                            backend.CreateFolder();
+                            backend.CreateFolderAsync(CancellationToken.None).Await();
                             curlist = backend.List();
                         }
                         catch (Exception ex)
@@ -203,7 +206,7 @@ namespace Duplicati.CommandLine.BackendTester
                             if (Library.Utility.Utility.ParseBoolOption(options, "force"))
                             {
                                 Console.WriteLine("Auto clean, removing file: {0}", fe.Name);
-                                backend.Delete(fe.Name);
+                                backend.DeleteAsync(fe.Name, CancellationToken.None).Await();
                                 continue;
                             }
                             else
@@ -300,8 +303,7 @@ namespace Duplicati.CommandLine.BackendTester
 
                     TempFile originalRenamedFile = null;
                     string renamedFileNewName = null;
-                    IRenameEnabledBackend renameEnabledBackend = backend as IRenameEnabledBackend;
-                    if (renameEnabledBackend != null)
+                    if (backend is IRenameEnabledBackend renameEnabledBackend)
                     {
                         // Rename the second file in the list, if there are more than one. If not, just do the first one.
                         int renameIndex = files.Count > 1 ? 1 : 0;
@@ -311,7 +313,7 @@ namespace Duplicati.CommandLine.BackendTester
 
                         Console.WriteLine("Renaming file {0} from {1} to {2}", renameIndex, originalRenamedFile.remotefilename, renamedFileNewName);
 
-                        renameEnabledBackend.Rename(originalRenamedFile.remotefilename, renamedFileNewName);
+                        renameEnabledBackend.RenameAsync(originalRenamedFile.remotefilename, renamedFileNewName, CancellationToken.None).Await();
                         files[renameIndex] = new TempFile(renamedFileNewName, originalRenamedFile.localfilename, originalRenamedFile.hash, originalRenamedFile.length);
                     }
 
@@ -367,10 +369,10 @@ namespace Duplicati.CommandLine.BackendTester
                                     using (System.IO.FileStream fs = new System.IO.FileStream(cf, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.None))
                                     using (Library.Utility.ThrottledStream ts = new Library.Utility.ThrottledStream(fs, throttleDownload, throttleDownload))
                                     using (NonSeekableStream nss = new NonSeekableStream(ts))
-                                        streamingBackend.Get(files[i].remotefilename, nss);
+                                        streamingBackend.GetAsync(files[i].remotefilename, nss, CancellationToken.None).Await();
                                 }
                                 else
-                                    backend.Get(files[i].remotefilename, cf);
+                                    backend.GetAsync(files[i].remotefilename, cf, CancellationToken.None).Await();
 
                                 e = null;
                             }
@@ -402,7 +404,7 @@ namespace Duplicati.CommandLine.BackendTester
                     Console.WriteLine("Deleting files...");
 
                     foreach (TempFile tx in files)
-                        try { backend.Delete(tx.remotefilename); }
+                        try { backend.DeleteAsync(tx.remotefilename, CancellationToken.None).Await(); }
                         catch (Exception ex)
                         {
                             Console.WriteLine("*** Failed to delete file {0}, message: {1}", tx.remotefilename, ex);
@@ -422,7 +424,7 @@ namespace Duplicati.CommandLine.BackendTester
                     {
                         using (Duplicati.Library.Utility.TempFile tempFile = new Duplicati.Library.Utility.TempFile())
                         {
-                            backend.Get(string.Format("NonExistentFile-{0}", Guid.NewGuid()), tempFile.Name);
+                            backend.GetAsync(string.Format("NonExistentFile-{0}", Guid.NewGuid()), tempFile.Name, CancellationToken.None).Await();
                         }
                     }
                     catch (FileMissingException)
@@ -450,7 +452,7 @@ namespace Duplicati.CommandLine.BackendTester
                     bool noException;
                     try
                     {
-                        quota = quotaEnabledBackend.Quota;
+                        quota = quotaEnabledBackend.GetQuotaInfoAsync(CancellationToken.None).Await();
                         noException = true;
                     }
                     catch (Exception ex)
@@ -477,7 +479,7 @@ namespace Duplicati.CommandLine.BackendTester
                 Console.WriteLine("Checking DNS names used by this backend...");
                 try
                 {
-                    string[] dnsNames = backend.DNSName;
+                    var dnsNames = backend.GetDNSNamesAsync(CancellationToken.None).Await();
                     if (dnsNames != null)
                     {
                         foreach (string dnsName in dnsNames)
@@ -517,10 +519,10 @@ namespace Duplicati.CommandLine.BackendTester
                     using (System.IO.FileStream fs = new System.IO.FileStream(localfilename, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.Read))
                     using (Library.Utility.ThrottledStream ts = new Library.Utility.ThrottledStream(fs, throttle, throttle))
                     using (NonSeekableStream nss = new NonSeekableStream(ts))
-                        streamingBackend.PutAsync(remotefilename, nss, CancellationToken.None).Wait();
+                        streamingBackend.PutAsync(remotefilename, nss, CancellationToken.None).Await();
                 }
                 else
-                    backend.PutAsync(remotefilename, localfilename, CancellationToken.None).Wait();
+                    backend.PutAsync(remotefilename, localfilename, CancellationToken.None).Await();
 
                 e = null;
             }
@@ -594,11 +596,11 @@ namespace Duplicati.CommandLine.BackendTester
                     new CommandLineArgument("max-file-size", CommandLineArgument.ArgumentType.Size, "The maximum allowed file size", "File sizes are chosen at random, this value is the upper bound", "50mb"),
                     new CommandLineArgument("min-filename-length", CommandLineArgument.ArgumentType.Integer, "The minimum allowed filename length", "File name lengths are chosen at random, this value is the lower bound", "5"),
                     new CommandLineArgument("max-filename-length", CommandLineArgument.ArgumentType.Integer, "The minimum allowed filename length", "File name lengths are chosen at random, this value is the upper bound", "80"),
-                    new CommandLineArgument("trim-filename-spaces", CommandLineArgument.ArgumentType.Boolean, "Trims whitespace from filenames", "A value that indicates if whitespace should be trimmed from the ends of randomly generated filenames", "false"),
-                    new CommandLineArgument("auto-create-folder", CommandLineArgument.ArgumentType.Boolean, "Allows automatic folder creation", "A value that indicates if missing folders are created automatically", "false"),
-                    new CommandLineArgument("skip-overwrite-test", CommandLineArgument.ArgumentType.Boolean, "Bypasses the overwrite test", "A value that indicates if dummy files should be uploaded prior to uploading the real files", "false"),
-                    new CommandLineArgument("auto-clean", CommandLineArgument.ArgumentType.Boolean, "Removes any files found in target folder", "A value that indicates if all files in the target folder should be deleted before starting the first test", "false"),
-                    new CommandLineArgument("force", CommandLineArgument.ArgumentType.Boolean, "Activates file deletion", "A value that indicates if existing files should really be deleted when using auto-clean", "false"),
+                    new CommandLineArgument("trim-filename-spaces", CommandLineArgument.ArgumentType.Boolean, "Trim whitespace from filenames", "A value that indicates if whitespace should be trimmed from the ends of randomly generated filenames", "false"),
+                    new CommandLineArgument("auto-create-folder", CommandLineArgument.ArgumentType.Boolean, "Allow automatic folder creation", "A value that indicates if missing folders are created automatically", "false"),
+                    new CommandLineArgument("skip-overwrite-test", CommandLineArgument.ArgumentType.Boolean, "Bypass the overwrite test", "A value that indicates if dummy files should be uploaded prior to uploading the real files", "false"),
+                    new CommandLineArgument("auto-clean", CommandLineArgument.ArgumentType.Boolean, "Remove any files found in target folder", "A value that indicates if all files in the target folder should be deleted before starting the first test", "false"),
+                    new CommandLineArgument("force", CommandLineArgument.ArgumentType.Boolean, "Activate file deletion", "A value that indicates if existing files should really be deleted when using auto-clean", "false"),
                 });
             }
         }

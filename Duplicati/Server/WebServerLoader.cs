@@ -1,9 +1,31 @@
+// Copyright (C) 2024, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
 using Duplicati.Server.Database;
+using Microsoft.AspNetCore.Connections;
 
 namespace Duplicati.Server;
 
@@ -43,14 +65,41 @@ public static class WebServerLoader
     public const string OPTION_WEBSERVICE_RESET_JWT_CONFIG = "webservice-reset-jwt-config";
 
     /// <summary>
+    /// Option for disabling the visual captcha
+    /// </summary>
+    public const string OPTION_WEBSERVICE_DISABLE_VISUAL_CAPTCHA = "webservice-disable-visual-captcha";
+
+    /// <summary>
     /// Option for setting the webservice allowed hostnames
     /// </summary>
-    public const string OPTION_WEBSERVICE_ALLOWEDHOSTNAMES = "webservice-allowedhostnames";
+    public const string OPTION_WEBSERVICE_ALLOWEDHOSTNAMES = "webservice-allowed-hostnames";
+    /// <summary>
+    /// Option for setting the webservice allowed hostnames, alternative name
+    /// </summary>
+    public const string OPTION_WEBSERVICE_ALLOWEDHOSTNAMES_ALT = "webservice-allowedhostnames";
+
+    /// <summary>
+    /// Option for removing the hosted static files from the server
+    /// </summary>
+    public const string OPTION_WEBSERVICE_API_ONLY = "webservice-api-only";
+    /// <summary>
+    /// Option for disabling the use of signin tokens
+    /// </summary>
+    public const string OPTION_WEBSERVICE_DISABLE_SIGNIN_TOKENS = "webservice-disable-signin-tokens";
+    /// <summary>
+    /// Option for setting the webservice SPA paths
+    /// </summary>
+    public const string OPTION_WEBSERVICE_SPAPATHS = "webservice-spa-paths";
 
     /// <summary>
     /// The default path to the web root
     /// </summary>
     public const string DEFAULT_OPTION_WEBROOT = "webroot";
+
+    /// <summary>
+    /// The default paths to serve as SPAs
+    /// </summary>
+    public const string DEFAULT_OPTION_SPAPATHS = "/ngclient";
 
     /// <summary>
     /// The default listening port
@@ -81,13 +130,17 @@ public static class WebServerLoader
     /// <param name="Certificate">The certificate, if any</param>
     /// <param name="Servername">The servername to report</param>
     /// <param name="AllowedHostnames">The allowed hostnames</param>
+    /// <param name="DisableStaticFiles">If static files should be disabled</param>
+    /// <param name="SPAPaths">The paths to serve as SPAs</param>
     public record ParsedWebserverSettings(
         string WebRoot,
         int Port,
         System.Net.IPAddress Interface,
         X509Certificate2? Certificate,
         string Servername,
-        IEnumerable<string> AllowedHostnames
+        IEnumerable<string> AllowedHostnames,
+        bool DisableStaticFiles,
+        IEnumerable<string> SPAPaths
     );
 
 
@@ -181,6 +234,10 @@ public static class WebServerLoader
 #endif
         }
 
+        options.TryGetValue(OPTION_WEBSERVICE_SPAPATHS, out var spaPathsString);
+        if (string.IsNullOrWhiteSpace(spaPathsString))
+            spaPathsString = DEFAULT_OPTION_SPAPATHS;
+
         var certValid = cert != null && cert.HasPrivateKey;
         var settings = new ParsedWebserverSettings(
             webroot,
@@ -188,8 +245,15 @@ public static class WebServerLoader
             listenInterface,
             cert,
             string.Format("{0} v{1}", Library.AutoUpdater.AutoUpdateSettings.AppName, System.Reflection.Assembly.GetExecutingAssembly().GetName().Version),
-            options.GetValueOrDefault(OPTION_WEBSERVICE_ALLOWEDHOSTNAMES, "").Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries)
+            (connection.ApplicationSettings.AllowedHostnames ?? string.Empty).Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries),
+            Duplicati.Library.Utility.Utility.ParseBoolOption(options, OPTION_WEBSERVICE_API_ONLY),
+            spaPathsString.Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries)
         );
+
+        // Materialize the list of ports, and move the last-used port to the front, so we try the last-known port first
+        ports = ports.ToList();
+        if (ports.Contains(connection.ApplicationSettings.LastWebserverPort))
+            ports = ports.Where(x => x != connection.ApplicationSettings.LastWebserverPort).Prepend(connection.ApplicationSettings.LastWebserverPort).ToList();
 
         // If we are in hosted mode with no specified port, 
         // then try different ports
@@ -209,9 +273,11 @@ public static class WebServerLoader
 
                 return server;
             }
-            catch (System.Net.Sockets.SocketException)
-            {
-            }
+            catch (Exception ex) when
+                (ex is System.Net.Sockets.SocketException { SocketErrorCode: System.Net.Sockets.SocketError.AddressAlreadyInUse }
+                || ex is System.IO.IOException { InnerException: AddressInUseException })
+            { }
+
 
         throw new Exception(Strings.Server.ServerStartFailure(ports));
     }

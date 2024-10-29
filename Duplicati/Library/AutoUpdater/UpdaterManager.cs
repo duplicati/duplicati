@@ -27,6 +27,8 @@ using Duplicati.Library.Utility;
 using Duplicati.Library.Common;
 using System.Diagnostics;
 using System.Text.Json;
+using System.Net.Http;
+using System.Threading;
 
 namespace Duplicati.Library.AutoUpdater
 {
@@ -104,6 +106,16 @@ namespace Duplicati.Library.AutoUpdater
         /// Gets the last version found from an update
         /// </summary>
         public static UpdateInfo LastUpdateCheckVersion { get; private set; }
+
+        /// <summary>
+        /// The default timeout in seconds for download operations
+        /// </summary>
+        private const int DOWNLOAD_OPERATION_TIMEOUT_SECONDS = 3600;
+
+        /// <summary>
+        /// The default timeout in seconds for fast get version metadata operations
+        /// </summary>
+        private const int SHORT_OPERATION_TIMEOUT_SECONDS = 30;
 
         /// <summary>
         /// Performs static initialization of the update manager, populating the readonly fields of the manager
@@ -265,6 +277,11 @@ namespace Duplicati.Library.AutoUpdater
         }
 
         /// <summary>
+        /// The machine name
+        /// </summary>
+        public static string MachineName => System.Environment.MachineName;
+
+        /// <summary>
         /// The package type ID
         /// </summary>
         public static string PackageTypeId
@@ -316,10 +333,15 @@ namespace Duplicati.Library.AutoUpdater
 
                     using (var tmpfile = new Library.Utility.TempFile())
                     {
-                        System.Net.WebClient wc = new System.Net.WebClient();
-                        wc.Headers.Add(System.Net.HttpRequestHeader.UserAgent, string.Format("{0} v{1}{2}", APPNAME, SelfVersion.Version, string.IsNullOrWhiteSpace(InstallID) ? "" : " -" + InstallID));
-                        wc.Headers.Add("X-Install-ID", InstallID);
-                        wc.DownloadFile(url, tmpfile);
+
+                        using var request = new HttpRequestMessage(HttpMethod.Get, url);
+
+                        request.Headers.Add(System.Net.HttpRequestHeader.UserAgent.ToString(), string.Format("{0} v{1}{2}", APPNAME, SelfVersion.Version, string.IsNullOrWhiteSpace(InstallID) ? "" : " -" + InstallID));
+                        request.Headers.Add("X-Install-ID", InstallID);
+
+                        using var timeoutToken = new CancellationTokenSource();
+                        timeoutToken.CancelAfter(TimeSpan.FromSeconds(SHORT_OPERATION_TIMEOUT_SECONDS));
+                        HttpClientHelper.DefaultClient.DownloadFile(request, tmpfile, null, timeoutToken.Token).ConfigureAwait(false).GetAwaiter().GetResult();
 
                         using (var fs = System.IO.File.OpenRead(tmpfile))
                         {
@@ -337,7 +359,7 @@ namespace Duplicati.Library.AutoUpdater
                                 return null;
 
                             // Don't install a debug update on a release build and vice versa
-                            if (string.Equals(SelfVersion.ReleaseType, "Debug", StringComparison.OrdinalIgnoreCase) && !string.Equals(update.ReleaseType, SelfVersion.ReleaseType, StringComparison.CurrentCultureIgnoreCase))
+                            if (string.Equals(SelfVersion.ReleaseType, "Debug", StringComparison.OrdinalIgnoreCase) && !string.Equals(update.ReleaseType, SelfVersion.ReleaseType, StringComparison.OrdinalIgnoreCase))
                                 return null;
 
                             ReleaseType rt;
@@ -439,15 +461,15 @@ namespace Duplicati.Library.AutoUpdater
                             if (progress != null)
                                 cb = (s) => { progress(Math.Min(1.0, Math.Max(0.0, (double)s / package.Length))); };
 
-                            var wreq = (System.Net.HttpWebRequest)System.Net.WebRequest.Create(url);
-                            wreq.UserAgent = string.Format("{0} v{1}", APPNAME, SelfVersion.Version);
-                            wreq.Headers.Add("X-Install-ID", InstallID);
+                            using var request = new HttpRequestMessage(HttpMethod.Get, url);
 
-                            var areq = new Duplicati.Library.Utility.AsyncHttpRequest(wreq);
-                            using (var resp = areq.GetResponse())
-                            using (var rss = areq.GetResponseStream())
-                            using (var pgs = new Duplicati.Library.Utility.ProgressReportingStream(rss, cb))
-                                Duplicati.Library.Utility.Utility.CopyStream(pgs, tempfile);
+                            request.Headers.Add(System.Net.HttpRequestHeader.UserAgent.ToString(), string.Format("{0} v{1}", APPNAME, SelfVersion.Version));
+                            request.Headers.Add("X-Install-ID", InstallID);
+
+                            using var timeoutToken = new CancellationTokenSource();
+                            timeoutToken.CancelAfter(TimeSpan.FromSeconds(DOWNLOAD_OPERATION_TIMEOUT_SECONDS));
+
+                            HttpClientHelper.DefaultClient.DownloadFile(request, tempfile, cb, timeoutToken.Token).ConfigureAwait(false).GetAwaiter().GetResult();
 
                             var sha256 = System.Security.Cryptography.SHA256.Create();
                             var md5 = System.Security.Cryptography.MD5.Create();

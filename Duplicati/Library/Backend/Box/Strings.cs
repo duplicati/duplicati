@@ -22,13 +22,11 @@ using Duplicati.Library.Localization.Short;
 namespace Duplicati.Library.Backend.Strings
 {
     internal static class Box {
-        public static string Description { get { return LC.L(@"This backend can read and write data to Box.com. Supported format is ""box://folder/subfolder""."); } }
+        public static string Description { get { return LC.L(@"This backend can read and write data to Box.com. Allowed format is ""box://folder/subfolder""."); } }
         public static string DisplayName { get { return LC.L(@"Box.com"); } }
-        public static string AuthidShort { get { return LC.L(@"The authorization code"); } }
         public static string AuthidLong(string url) { return LC.L(@"The authorization token retrieved from {0}", url); }
-        public static string ReallydeleteShort { get { return LC.L(@"Force delete files"); } }
+        public static string AuthidShort { get { return LC.L(@"The authorization code"); } }
         public static string ReallydeleteLong { get { return LC.L(@"After deleting a file, it may end up in the trash folder where it will be deleted after a grace period. Use this command to force immediate removal of delete files."); } }
-
+        public static string ReallydeleteShort { get { return LC.L(@"Force delete files"); } }
     }
 }
-

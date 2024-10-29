@@ -101,7 +101,7 @@ namespace Duplicati.Library.DynamicLoader
                     {
                         if (tex.InnerException != null)
                         {
-                            // Unwrap exceptions for nicer display.  The ExceptionDispatchInfo class allows us to
+                            // Unwrap exceptions for nicer display. The ExceptionDispatchInfo class allows us to
                             // rethrow an exception without changing the stack trace.
                             ExceptionDispatchInfo.Capture(tex.InnerException).Throw();
                         }

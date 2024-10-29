@@ -21,7 +21,7 @@ public class JSONSignatureTest
         using var source = new MemoryStream(content);
         using var target = new MemoryStream();
 
-        JSONSignature.SignAsync(source, target, [new JSONSignature.SignOperation(JSONSignature.RSA_SHA256, key.ToXmlString(false), key.ToXmlString(true), headers)]).Wait();
+        JSONSignature.SignAsync(source, target, [new JSONSignature.SignOperation(JSONSignature.RSA_SHA256, key.ToXmlString(false), key.ToXmlString(true), headers)]).Await();
 
         target.Position = 0;
 
@@ -43,7 +43,7 @@ public class JSONSignatureTest
 
         var algs = new[] { JSONSignature.RSA_SHA256, JSONSignature.RSA_SHA384, JSONSignature.RSA_SHA512 };
 
-        JSONSignature.SignAsync(source, target, algs.Select(x => new JSONSignature.SignOperation(x, key.ToXmlString(false), key.ToXmlString(true), headers))).Wait();
+        JSONSignature.SignAsync(source, target, algs.Select(x => new JSONSignature.SignOperation(x, key.ToXmlString(false), key.ToXmlString(true), headers))).Await();
 
         target.Position = 0;
         var valids = JSONSignature.Verify(target, algs.Select(x => new JSONSignature.VerifyOperation(x, key.ToXmlString(false))));
@@ -77,7 +77,7 @@ public class JSONSignatureTest
         var algs = new[] { JSONSignature.RSA_SHA256, JSONSignature.RSA_SHA384, JSONSignature.RSA_SHA512 };
         var algkeycombos = algs.SelectMany(alg => keys.Select(key => (Alg: alg, Key: key))).ToArray();
 
-        JSONSignature.SignAsync(source, target, algkeycombos.Select(x => new JSONSignature.SignOperation(x.Alg, x.Key.ToXmlString(false), x.Key.ToXmlString(true), headers))).Wait();
+        JSONSignature.SignAsync(source, target, algkeycombos.Select(x => new JSONSignature.SignOperation(x.Alg, x.Key.ToXmlString(false), x.Key.ToXmlString(true), headers))).Await();
 
         target.Position = 0;
         var valids = JSONSignature.Verify(target, algkeycombos.Select(x => new JSONSignature.VerifyOperation(x.Alg, x.Key.ToXmlString(false))));
@@ -145,7 +145,7 @@ public class JSONSignatureTest
         var algs = new[] { JSONSignature.RSA_SHA256, JSONSignature.RSA_SHA384, JSONSignature.RSA_SHA512 };
         var algkeycombos = algs.SelectMany(alg => keys.Select(key => (Alg: alg, Key: key))).ToArray();
 
-        JSONSignature.SignAsync(source, target, algkeycombos.Select(x => new JSONSignature.SignOperation(x.Alg, x.Key.ToXmlString(false), x.Key.ToXmlString(true), headers))).Wait();
+        JSONSignature.SignAsync(source, target, algkeycombos.Select(x => new JSONSignature.SignOperation(x.Alg, x.Key.ToXmlString(false), x.Key.ToXmlString(true), headers))).Await();
 
         // Taint the data
         target.Position = target.Length - 1;
@@ -173,7 +173,7 @@ public class JSONSignatureTest
         var algs = new[] { JSONSignature.RSA_SHA256, JSONSignature.RSA_SHA384, JSONSignature.RSA_SHA512 };
         var algkeycombos = algs.SelectMany(alg => keys.Select(key => (Alg: alg, Key: key))).ToArray();
 
-        JSONSignature.SignAsync(source, target, algkeycombos.Select(x => new JSONSignature.SignOperation(x.Alg, x.Key.ToXmlString(false), x.Key.ToXmlString(true), headers))).Wait();
+        JSONSignature.SignAsync(source, target, algkeycombos.Select(x => new JSONSignature.SignOperation(x.Alg, x.Key.ToXmlString(false), x.Key.ToXmlString(true), headers))).Await();
 
         // Taint the header data for the first signature
         target.Position = "//SIGJSONv1: ".Length + offset;

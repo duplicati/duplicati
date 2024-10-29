@@ -18,10 +18,10 @@ public class LogData : IEndpointV1
             .RequireAuthorization();
     }
 
-    private static Server.LogWriteHandler.LogEntry[] ExecuteLogPoll(Library.Logging.LogMessageType level, long id, long offset, int pagesize)
+    private static Dto.LogEntry[] ExecuteLogPoll(Library.Logging.LogMessageType level, long id, long offset, int pagesize)
     {
         pagesize = Math.Max(1, Math.Min(500, pagesize));
-        return FIXMEGlobal.LogHandler.AfterID(id, level, pagesize);
+        return FIXMEGlobal.LogHandler.AfterID(id, level, pagesize).Select(x => Dto.LogEntry.FromInternalEntry(x)).ToArray();
     }
 
     private static List<Dictionary<string, object>>? ExecuteGetLog(Connection connection, long? offset, long pagesize)

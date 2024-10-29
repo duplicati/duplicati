@@ -674,7 +674,7 @@ namespace Duplicati.Library.Utility
         }
 
         /// <summary>
-        /// Formats a size into a human readable format, eg. 2048 becomes &quot;2 KB&quot; or -2283 becomes &quot;-2.23 KB%quot.
+        /// Formats a size into a human readable format, e.g. 2048 becomes &quot;2 KB&quot; or -2283 becomes &quot;-2.23 KB%quot.
         /// </summary>
         /// <param name="size">The size to format</param>
         /// <returns>A human readable string representing the size</returns>
@@ -771,7 +771,7 @@ namespace Duplicati.Library.Utility
         /// <param name="options">The set of options to look for the setting in</param>
         /// <param name="value">The value to look for in the settings</param>
         /// <returns></returns>
-        public static bool ParseBoolOption(IDictionary<string, string> options, string value)
+        public static bool ParseBoolOption(IReadOnlyDictionary<string, string> options, string value)
         {
             string opt;
             if (options.TryGetValue(value, out opt))
@@ -788,7 +788,7 @@ namespace Duplicati.Library.Utility
         /// <param name="value">The value to look for in the settings</param>
         /// <param name="default">The default value to return if there are no matches.</param>
         /// <typeparam name="T">The enum type parameter.</typeparam>
-        public static T ParseEnumOption<T>(IDictionary<string, string> options, string value, T @default)
+        public static T ParseEnumOption<T>(IReadOnlyDictionary<string, string> options, string value, T @default)
         {
             return options.TryGetValue(value, out var opt) ? ParseEnum(opt, @default) : @default;
         }
@@ -829,6 +829,18 @@ namespace Duplicati.Library.Utility
         {
             for (var i = 0; i < hex.Length; i += 2)
                 data[i / 2] = Convert.ToByte(hex.Substring(i, 2), 16);
+        }
+
+        /// <summary>
+        /// Converts a hex string to a byte array, as a function so no variable declaration on caller's side is needed
+        /// </summary>
+        /// <returns>The string as byte array.</returns>
+        /// <param name="hex">The hex string</param>
+        public static byte[] HexStringAsByteArray(string hex)
+        {
+            var data = new byte[hex.Length / 2];
+            HexStringAsByteArray(hex, data);
+            return data;
         }
 
         [SupportedOSPlatform("linux")]
@@ -947,7 +959,7 @@ namespace Duplicati.Library.Utility
         {
             // Note that we cannot return (new DateTimeOffset(input)).ToUnixTimeSeconds() here.
             // The DateTimeOffset constructor will convert the provided DateTime to the UTC
-            // equivalent.  However, if DateTime.MinValue is provided (for example, when creating
+            // equivalent. However, if DateTime.MinValue is provided (for example, when creating
             // a new backup), this can result in values that fall outside the DateTimeOffset.MinValue
             // and DateTimeOffset.MaxValue bounds.
             return (long)Math.Floor((NormalizeDateTime(input) - EPOCH).TotalSeconds);
@@ -1028,7 +1040,7 @@ namespace Duplicati.Library.Utility
 
         // <summary>
         // Returns the entry assembly or reasonable approximation if no entry assembly is available.
-        // This is the case in NUnit tests.  The following approach does not work w/ Mono due to unimplemented members:
+        // This is the case in NUnit tests. The following approach does not work w/ Mono due to unimplemented members:
         // http://social.msdn.microsoft.com/Forums/nb-NO/clr/thread/db44fe1a-3bb4-41d4-a0e0-f3021f30e56f
         // so this layer of indirection is necessary
         // </summary>
@@ -1462,7 +1474,7 @@ namespace Duplicati.Library.Utility
         /// <param name="task">Task to await</param>
         public static void Await(this Task task)
         {
-            task.GetAwaiter().GetResult();
+            task.ConfigureAwait(false).GetAwaiter().GetResult();
         }
 
         /// <summary>
@@ -1476,7 +1488,7 @@ namespace Duplicati.Library.Utility
         /// <returns>Task result</returns>
         public static T Await<T>(this Task<T> task)
         {
-            return task.GetAwaiter().GetResult();
+            return task.ConfigureAwait(false).GetAwaiter().GetResult();
         }
 
         /// <summary>

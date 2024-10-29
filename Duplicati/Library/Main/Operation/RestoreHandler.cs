@@ -923,7 +923,7 @@ namespace Duplicati.Library.Main.Operation
 
                                             var key = Convert.ToBase64String(blockhasher.ComputeHash(blockbuffer, 0, size));
 
-                                            if (calcFileHashTask != null) calcFileHashTask.Wait(); // wait because blockbuffer will be overwritten.
+                                            if (calcFileHashTask != null) calcFileHashTask.Await(); // wait because blockbuffer will be overwritten.
 
                                             if (key == targetblock.Hash)
                                             {

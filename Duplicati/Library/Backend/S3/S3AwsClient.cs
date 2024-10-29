@@ -23,6 +23,7 @@
 using Amazon.S3;
 using Amazon.S3.Model;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Utility;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -79,11 +80,11 @@ namespace Duplicati.Library.Backend
 
             m_locationConstraint = locationConstraint;
             m_storageClass = storageClass;
-            m_dnsHost = string.IsNullOrWhiteSpace(cfg.ServiceURL) ? null : new Uri(cfg.ServiceURL).Host;
+            m_dnsHost = string.IsNullOrWhiteSpace(cfg.ServiceURL) ? null : new System.Uri(cfg.ServiceURL).Host;
             m_useChunkEncoding = !disableChunkEncoding;
         }
 
-        public void AddBucket(string bucketName)
+        public Task AddBucketAsync(string bucketName, CancellationToken cancelToken)
         {
             var request = new PutBucketRequest
             {
@@ -93,39 +94,49 @@ namespace Duplicati.Library.Backend
             if (!string.IsNullOrEmpty(m_locationConstraint))
                 request.BucketRegionName = m_locationConstraint;
 
-            m_client.PutBucketAsync(request).GetAwaiter().GetResult();
+            return m_client.PutBucketAsync(request, cancelToken);
         }
 
         internal static AmazonS3Config GetDefaultAmazonS3Config()
         {
             return new AmazonS3Config()
             {
-                BufferSize = (int) Utility.Utility.DEFAULT_BUFFER_SIZE,
+                BufferSize = (int)Utility.Utility.DEFAULT_BUFFER_SIZE,
 
                 // If this is not set, accessing the property will trigger an expensive operation (~30 seconds)
-                // to get the region endpoint.  The use of ARNs (Amazon Resource Names) doesn't appear to be
+                // to get the region endpoint. The use of ARNs (Amazon Resource Names) doesn't appear to be
                 // critical for our usages.
                 // See: https://docs.aws.amazon.com/general/latest/gr/aws-arns-and-namespaces.html
                 UseArnRegion = false,
             };
         }
 
-        public virtual void GetFileStream(string bucketName, string keyName, System.IO.Stream target)
+        public virtual async Task GetFileStreamAsync(string bucketName, string keyName, System.IO.Stream target, CancellationToken cancelToken)
         {
-            var objectGetRequest = new GetObjectRequest
+            try
             {
-                BucketName = bucketName,
-                Key = keyName
-            };
+                var objectGetRequest = new GetObjectRequest
+                {
+                    BucketName = bucketName,
+                    Key = keyName
+                };
 
-            using (GetObjectResponse objectGetResponse = m_client.GetObjectAsync(objectGetRequest).GetAwaiter().GetResult())
-            using (System.IO.Stream s = objectGetResponse.ResponseStream)
-            {
-                try { s.ReadTimeout = (int)TimeSpan.FromMinutes(1).TotalMilliseconds; }
-                catch { }
+                using (var objectGetResponse = await m_client.GetObjectAsync(objectGetRequest).ConfigureAwait(false))
+                using (var s = objectGetResponse.ResponseStream)
+                {
+                    // TODO: This does not work and throws InvalidOperationException()
+                    try { s.ReadTimeout = (int)TimeSpan.FromMinutes(1).TotalMilliseconds; }
+                    catch { }
 
-                Utility.Utility.CopyStream(s, target);
+                    await Utility.Utility.CopyStreamAsync(s, target, cancelToken).ConfigureAwait(false);
+                }
             }
+            catch (AmazonS3Exception s3Ex)
+            {
+                if (s3Ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+                    throw new FileMissingException(string.Format("File {0} not found", keyName), s3Ex);
+            }
+
         }
 
         public string GetDnsHost()
@@ -161,7 +172,7 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public void DeleteObject(string bucketName, string keyName)
+        public Task DeleteObjectAsync(string bucketName, string keyName, CancellationToken cancellationToken)
         {
             var objectDeleteRequest = new DeleteObjectRequest
             {
@@ -169,7 +180,7 @@ namespace Duplicati.Library.Backend
                 Key = keyName
             };
 
-            m_client.DeleteObjectAsync(objectDeleteRequest).GetAwaiter().GetResult();
+            return m_client.DeleteObjectAsync(objectDeleteRequest, cancellationToken);
         }
 
         public virtual IEnumerable<IFileEntry> ListBucket(string bucketName, string prefix)
@@ -185,7 +196,7 @@ namespace Duplicati.Library.Backend
             //We truncate after ITEM_LIST_LIMIT elements, and then repeat
             while (isTruncated)
             {
-                var listRequest = new ListObjectsRequest {BucketName = bucketName};
+                var listRequest = new ListObjectsRequest { BucketName = bucketName };
 
                 if (!string.IsNullOrEmpty(filename))
                     listRequest.Marker = filename;
@@ -197,7 +208,7 @@ namespace Duplicati.Library.Backend
                 ListObjectsResponse listResponse;
                 try
                 {
-                    listResponse = m_client.ListObjectsAsync(listRequest).GetAwaiter().GetResult();
+                    listResponse = m_client.ListObjectsAsync(listRequest).Await();
                 }
                 catch (AmazonS3Exception e)
                 {
@@ -225,7 +236,7 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public void RenameFile(string bucketName, string source, string target)
+        public async Task RenameFileAsync(string bucketName, string source, string target, CancellationToken cancelToken)
         {
             var copyObjectRequest = new CopyObjectRequest
             {
@@ -235,9 +246,8 @@ namespace Duplicati.Library.Backend
                 DestinationKey = target
             };
 
-            m_client.CopyObjectAsync(copyObjectRequest).GetAwaiter().GetResult();
-
-            DeleteObject(bucketName, source);
+            await m_client.CopyObjectAsync(copyObjectRequest, cancelToken).ConfigureAwait(false);
+            await DeleteObjectAsync(bucketName, source, cancelToken).ConfigureAwait(false);
         }
 
         #region IDisposable Members

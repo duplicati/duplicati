@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.IO.Compression;
+using System.Text;
 
 namespace ReleaseBuilder.Build;
 
@@ -162,11 +163,11 @@ public static partial class Command
         }
 
         /// <summary>
-        /// Builds a zip package asynchronously.
+        /// Builds a ZIP package asynchronously.
         /// </summary>
-        /// <param name="buildRoot">The output folder where the zip package will be created.</param>
-        /// <param name="dirName">The directory name to use as the root zip name.</param>
-        /// <param name="zipFile">The zip file to generate.</param>
+        /// <param name="buildRoot">The output folder where the ZIP package will be created.</param>
+        /// <param name="dirName">The directory name to use as the root ZIP name.</param>
+        /// <param name="zipFile">The ZIP file to generate.</param>
         /// <param name="target">The package target.</param>
         /// <param name="rtcfg">The runtime configuration.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
@@ -257,7 +258,7 @@ public static partial class Command
             if (File.Exists(binFiles))
                 File.Delete(binFiles);
 
-            File.WriteAllText(binFiles, WixHeatBuilder.CreateWixFilelist(sourceFiles));
+            File.WriteAllText(binFiles, WixHeatBuilder.CreateWixFilelist(sourceFiles, version: rtcfg.ReleaseInfo.Version.ToString()));
 
             var msiArch = target.Arch switch
             {
@@ -302,7 +303,10 @@ public static partial class Command
             {
                 var entitlementFile = Path.Combine(installerDir, "Entitlements.plist");
                 var updates = new[] { Path.Combine(appFolder, "Contents", "MacOS", "package_type_id.txt") }
-                    .Concat(ExecutableRenames.Values.Select(x => Path.Combine(appFolder, "Contents", "MacOS", x)))
+                    .Concat(
+                            ExecutableRenames.Values.Select(x => Path.Combine(appFolder, "Contents", "MacOS", x))
+                            .Where(File.Exists)
+                    )
                     .Append(appFolder);
 
                 foreach (var x in updates)
@@ -469,6 +473,32 @@ public static partial class Command
         }
 
         /// <summary>
+        /// Creates a GZip compressed file
+        /// </summary>
+        /// <param name="inputStream">The input stream path</param>
+        /// <param name="outputFilePath">The output file path</param>
+        /// <returns>A task representing the asynchronous operation</returns>
+        static async Task GzipCompressFileAsync(Stream inputStream, string outputFilePath)
+        {
+            using (var outputFileStream = new FileStream(outputFilePath, FileMode.Create, FileAccess.Write))
+            using (var gzipStream = new GZipStream(outputFileStream, CompressionMode.Compress))
+                await inputStream.CopyToAsync(gzipStream);
+        }
+
+        /// <summary>
+        /// Ensures the folder for the file exists
+        /// </summary>
+        /// <param name="filename">The filename</param>
+        /// <returns>The filename</returns>
+        public static string EnsureFolderForFile(string filename)
+        {
+            var folder = Path.GetDirectoryName(filename);
+            if (folder != null && !Directory.Exists(folder))
+                Directory.CreateDirectory(folder);
+            return filename;
+        }
+
+        /// <summary>
         /// Builds a DEB package using Docker
         /// </summary>
         /// <param name="baseDir">The base directory.</param>
@@ -529,17 +559,25 @@ public static partial class Command
             // Copy debian files
             var resourcesDir = Path.Combine(baseDir, "ReleaseBuilder", "Resources", "debian");
 
-            // Write in the release notes
-            if (!string.IsNullOrEmpty(rtcfg.ChangelogNews))
-                File.WriteAllText(Path.Combine(pkgroot, "DEBIAN", "releasenotes"), rtcfg.ChangelogNews);
+            // Write the license file
+            File.Copy(
+                Path.Combine(baseDir, "LICENSE.txt"),
+                EnsureFolderForFile(
+                    Path.Combine(pkgroot, "usr", "share", "doc", "duplicati", "copyright")
+                )
+            );
 
             // Write a custom changelog file
-            File.WriteAllText(
-                Path.Combine(pkgroot, "DEBIAN", "changelog"),
-                File.ReadAllText(Path.Combine(resourcesDir, "changelog.template.txt"))
+            var changelogData = File.ReadAllText(Path.Combine(resourcesDir, "changelog.template.txt"))
                     .Replace("%VERSION%", rtcfg.ReleaseInfo.Version.ToString())
-                    .Replace("%DATE%", DateTime.UtcNow.ToString("ddd, dd MMM yyyy HH:mm:ss +0000", CultureInfo.InvariantCulture))
-            );
+                    .Replace("%DATE%", DateTime.UtcNow.ToString("ddd, dd MMM yyyy HH:mm:ss +0000", CultureInfo.InvariantCulture));
+
+            // Write a compressed changelog file
+            using (var changelogStream = new MemoryStream(Encoding.UTF8.GetBytes(changelogData)))
+                await GzipCompressFileAsync(
+                    changelogStream,
+                    EnsureFolderForFile(Path.Combine(pkgroot, "usr", "share", "doc", "duplicati", "changelog.gz"))
+                );
 
             // Custom arch, from: https://wiki.debian.org/SupportedArchitectures
             var debArchString = target.Arch switch
@@ -564,7 +602,10 @@ public static partial class Command
 
             // Install various helper files
             var sharedDir = Path.Combine(baseDir, "ReleaseBuilder", "Resources", "shared");
-            var supportFiles = new List<(string Source, string Destination)>{
+            var supportFiles = new List<(string Source, string Destination)>();
+            if (target.Interface != InterfaceType.Agent)
+            {
+                supportFiles.AddRange([
                 (
                     Path.Combine(resourcesDir, "systemd", "duplicati.default"),
                     Path.Combine(pkgroot, "etc", "default", "duplicati")
@@ -573,7 +614,22 @@ public static partial class Command
                     Path.Combine(resourcesDir, "systemd", "duplicati.service"),
                     Path.Combine(pkgroot, "lib", "systemd", "system", "duplicati.service")
                 )
-            };
+                ]);
+            }
+            else
+            {
+                supportFiles.AddRange([
+                (
+                    Path.Combine(resourcesDir, "systemd", "duplicati-agent.default"),
+                    Path.Combine(pkgroot, "etc", "default", "duplicati-agent")
+                ),
+                (
+                    Path.Combine(resourcesDir, "systemd", "duplicati-agent.service"),
+                    Path.Combine(pkgroot, "lib", "systemd", "system", "duplicati-agent.service")
+                )
+                ]);
+
+            }
 
             if (target.Interface == InterfaceType.GUI)
             {
@@ -601,6 +657,18 @@ public static partial class Command
                 if (!OperatingSystem.IsWindows())
                     File.SetUnixFileMode(f.Destination, UnixFileMode.OtherRead | UnixFileMode.GroupRead | UnixFileMode.UserRead | UnixFileMode.UserWrite);
             }
+
+            // Write a conf file
+            var confroot = Path.Combine(pkgroot, "etc");
+            var conffiles = Directory.EnumerateFiles(confroot, "*", SearchOption.AllDirectories)
+                .Select(x => "/" + Path.GetRelativePath(pkgroot, x))
+                .Append(string.Empty)
+                .ToList();
+
+            File.WriteAllText(
+                Path.Combine(pkgroot, "DEBIAN", "conffiles"),
+                string.Join("\n", conffiles)
+            );
 
             // Copy the Docker build file
             File.Copy(
@@ -686,9 +754,17 @@ public static partial class Command
         File.Copy(Path.Combine(sharedDir, "pixmaps", "duplicati.xpm"), Path.Combine(sources, "duplicati.xpm"));
         File.Copy(Path.Combine(sharedDir, "pixmaps", "duplicati.png"), Path.Combine(sources, "duplicati.png"));
         File.Copy(Path.Combine(sharedDir, "desktop", "duplicati.desktop"), Path.Combine(sources, "duplicati.desktop"));
-        File.Copy(Path.Combine(resourcesDir, "systemd", "duplicati.service"), Path.Combine(sources, "duplicati.service"));
-        File.Copy(Path.Combine(resourcesDir, "systemd", "duplicati.default"), Path.Combine(sources, "duplicati.default"));
         File.Copy(Path.Combine(resourcesDir, "duplicati-install-recursive.sh"), Path.Combine(sources, "duplicati-install-recursive.sh"));
+        if (target.Interface != InterfaceType.Agent)
+        {
+            File.Copy(Path.Combine(resourcesDir, "systemd", "duplicati.service"), Path.Combine(sources, "duplicati.service"));
+            File.Copy(Path.Combine(resourcesDir, "systemd", "duplicati.default"), Path.Combine(sources, "duplicati.default"));
+        }
+        else
+        {
+            File.Copy(Path.Combine(resourcesDir, "systemd", "duplicati-agent.service"), Path.Combine(sources, "duplicati-agent.service"));
+            File.Copy(Path.Combine(resourcesDir, "systemd", "duplicati-agent.default"), Path.Combine(sources, "duplicati-agent.default"));
+        }
 
         // Write custom script to install executable files
         File.WriteAllLines(
@@ -717,6 +793,7 @@ public static partial class Command
                 .Replace("%BUILDVERSION%", rtcfg.ReleaseInfo.Version.ToString())
                 .Replace("%BUILDTAG%", rtcfg.ReleaseInfo.Channel.ToString().ToLowerInvariant())
                 .Replace("%VERSION%", rtcfg.ReleaseInfo.Version.ToString())
+                .Replace("%SERVICENAME%", target.Interface == InterfaceType.Agent ? "-agent" : "")
                 .Replace("%PROVIDES%", string.Join("\n", executables.Select(x => $"Provides:\t{x}")))
                 .Replace("%DEPENDS%", string.Join("\n",
                     (target.Interface == InterfaceType.GUI
@@ -779,7 +856,6 @@ public static partial class Command
         Directory.Delete(tmpbuild, true);
     }
 
-
     /// <summary>
     /// Builds the Docker images for the specified targets with buildx
     /// </summary>
@@ -790,68 +866,85 @@ public static partial class Command
     /// <returns>A task representing the asynchronous operation.</returns>
     private static async Task BuildDockerImages(string baseDir, string buildRoot, IEnumerable<PackageTarget> targets, RuntimeConfig rtcfg)
     {
-        var resourcesDir = Path.Combine(baseDir, "ReleaseBuilder", "Resources", "Docker");
-        var dockerArchs = targets.Select(target => target switch
-        {
-            PackageTarget { Arch: ArchType.x64, OS: OSType.Linux, Interface: InterfaceType.Cli } => "linux/amd64",
-            PackageTarget { Arch: ArchType.Arm64, OS: OSType.Linux, Interface: InterfaceType.Cli } => "linux/arm64/v8",
-            PackageTarget { Arch: ArchType.Arm7, OS: OSType.Linux, Interface: InterfaceType.Cli } => "linux/arm/v7",
-            _ => throw new Exception($"Unsupported Docker target: {target.OS}/{target.Arch} ({target.Interface})")
-        });
-
-        var tmpbuild = Path.Combine(buildRoot, "tmp-docker");
-        if (Directory.Exists(tmpbuild))
-            Directory.Delete(tmpbuild, true);
-        Directory.CreateDirectory(tmpbuild);
-
-        // Copy in the source data
-        foreach (var target in targets)
-        {
-            // Mapping to the Docker TARGETARCH value
-            var dockerShortArch = target.Arch switch
-            {
-                ArchType.x64 => "amd64",
-                ArchType.Arm64 => "arm64",
-                ArchType.Arm7 => "arm",
-                _ => throw new Exception($"Unsupported Docker target: {target.Arch}")
-            };
-
-            var tgfolder = Path.Combine(tmpbuild, dockerShortArch);
-
-            EnvHelper.CopyDirectory(Path.Combine(buildRoot, target.BuildTargetString), tgfolder, recursive: true);
-            await PackageSupport.InstallPackageIdentifier(tgfolder, target);
-            await PackageSupport.RenameExecutables(tgfolder);
-            await PackageSupport.SetPermissionFlags(tgfolder, rtcfg);
-        }
-
-        var tags = new List<string> { rtcfg.ReleaseInfo.Channel.ToString(), rtcfg.ReleaseInfo.Version.ToString() };
-        if (rtcfg.ReleaseInfo.Channel == ReleaseChannel.Stable)
-            tags.Add("latest");
-
         // Make sure any dangling buildx instances are removed
         try { await ProcessHelper.Execute([Program.Configuration.Commands.Docker!, "buildx", "rm", "duplicati-builder"], codeIsError: _ => false, suppressStdErr: true); }
         catch { }
 
         // Prepare multi-build
-        await ProcessHelper.Execute(new[] { Program.Configuration.Commands.Docker!, "buildx", "create", "--use", "--name", "duplicati-builder" });
+        await ProcessHelper.Execute([Program.Configuration.Commands.Docker!, "buildx", "create", "--use", "--name", "duplicati-builder"]);
 
-        // Build the images
-        var args = new List<string> { Program.Configuration.Commands.Docker!, "buildx", "build" };
-        args.AddRange(tags.SelectMany(x => new[] { "-t", $"{rtcfg.DockerRepo}:{x.ToLowerInvariant()}" }));
-        args.AddRange([
-            "--platform", string.Join(",", dockerArchs),
-            "--build-arg", $"VERSION={rtcfg.ReleaseInfo.Version}",
-            "--build-arg", $"CHANNEL={rtcfg.ReleaseInfo.Channel.ToString().ToLowerInvariant()}",
-            "--file", Path.Combine(resourcesDir, "Dockerfile"),
-            "--output", $"type=image,push={rtcfg.PushToDocker.ToString().ToLowerInvariant()}",
-            "."
-        ]);
+        // Perform a distict build for each interface type, but keep the buildx instance
+        foreach (var interfaceType in Enum.GetValues<InterfaceType>())
+        {
+            var buildTargets = targets.Where(x => x.Interface == interfaceType);
+            if (!buildTargets.Any())
+                continue;
 
-        // Run the build
-        await ProcessHelper.Execute(args, workingDirectory: tmpbuild);
+            var dockerArchs = buildTargets.Select(target => target switch
+            {
+                PackageTarget { Arch: ArchType.x64, OS: OSType.Linux } => "linux/amd64",
+                PackageTarget { Arch: ArchType.Arm64, OS: OSType.Linux } => "linux/arm64/v8",
+                PackageTarget { Arch: ArchType.Arm7, OS: OSType.Linux } => "linux/arm/v7",
+                _ => throw new Exception($"Unsupported Docker target: {target.OS}/{target.Arch} ({target.Interface})")
+            })
+            .ToList();
+
+            var resourcesDir = Path.Combine(baseDir, "ReleaseBuilder", "Resources", "Docker");
+            var tmpbuild = Path.Combine(buildRoot, "tmp-docker");
+            if (Directory.Exists(tmpbuild))
+                Directory.Delete(tmpbuild, true);
+            Directory.CreateDirectory(tmpbuild);
+
+            // Copy in the source data
+            foreach (var target in buildTargets)
+            {
+                // Mapping to the Docker TARGETARCH value
+                var dockerShortArch = target.Arch switch
+                {
+                    ArchType.x64 => "amd64",
+                    ArchType.Arm64 => "arm64",
+                    ArchType.Arm7 => "arm",
+                    _ => throw new Exception($"Unsupported Docker target: {target.Arch}")
+                };
+
+                var tgfolder = Path.Combine(tmpbuild, dockerShortArch);
+
+                EnvHelper.CopyDirectory(Path.Combine(buildRoot, target.BuildTargetString), tgfolder, recursive: true);
+                await PackageSupport.InstallPackageIdentifier(tgfolder, target);
+                await PackageSupport.RenameExecutables(tgfolder);
+                await PackageSupport.SetPermissionFlags(tgfolder, rtcfg);
+            }
+
+            var tags = new List<string> { rtcfg.ReleaseInfo.Channel.ToString(), rtcfg.ReleaseInfo.Version.ToString() };
+            if (rtcfg.ReleaseInfo.Channel == ReleaseChannel.Stable)
+                tags.Add("latest");
+
+            if (!dockerArchs.Any())
+                continue;
+
+            var dockerFile = Path.Combine(resourcesDir, interfaceType == InterfaceType.Agent ? "Dockerfile-agent" : "Dockerfile");
+            var repo = $"{rtcfg.DockerRepo}{(interfaceType == InterfaceType.Agent ? "-agent" : "")}";
+
+            // Build the images
+            var args = new List<string> { Program.Configuration.Commands.Docker!, "buildx", "build" };
+            args.AddRange(tags.SelectMany(x => new[] { "-t", $"{repo}:{x.ToLowerInvariant()}" }));
+            args.AddRange([
+                "--platform", string.Join(",", dockerArchs),
+                "--build-arg", $"VERSION={rtcfg.ReleaseInfo.Version}",
+                "--build-arg", $"CHANNEL={rtcfg.ReleaseInfo.Channel.ToString().ToLowerInvariant()}",
+                "--file", dockerFile,
+                "--output", $"type=image,push={rtcfg.PushToDocker.ToString().ToLowerInvariant()}",
+                "."
+            ]);
+
+            // Run the build
+            await ProcessHelper.Execute(args, workingDirectory: tmpbuild);
+
+            // Clean up
+            Directory.Delete(tmpbuild, true);
+        }
 
         // Clean up
-        await ProcessHelper.Execute(new[] { Program.Configuration.Commands.Docker!, "buildx", "rm", "duplicati-builder" });
-        Directory.Delete(tmpbuild, true);
+        await ProcessHelper.Execute([Program.Configuration.Commands.Docker!, "buildx", "rm", "duplicati-builder"]);
     }
 }

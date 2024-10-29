@@ -1,7 +1,4 @@
-using System.IO.Compression;
-using System.Net;
 using System.Text.RegularExpressions;
-using Duplicati.Library.Utility;
 
 namespace ReleaseBuilder.Build;
 
@@ -38,6 +35,8 @@ public static partial class Command
                     break;
 
                 case OSType.Linux:
+                    await ReplaceLibMonoUnix(baseDir, buildDir, arch);
+                    await ReplaceSQLiteInterop(baseDir, buildDir, arch);
                     break;
 
                 default:
@@ -235,7 +234,8 @@ public static partial class Command
 
                 // Executables cannot be signed before their dependencies are signed
                 // So they are placed last in the list
-                var executables = ExecutableRenames.Values.Select(x => Path.Combine(binDir, x));
+                var executables = ExecutableRenames.Values.Select(x => Path.Combine(binDir, x))
+                    .Where(File.Exists);
 
                 var signtargets = Directory.EnumerateFiles(binDir, "*", SearchOption.AllDirectories)
                     .Except(executables)
@@ -259,6 +259,50 @@ public static partial class Command
         }
 
         /// <summary>
+        /// Replaces the library libMono.Unix.so with a version that has large file support for ARM7
+        /// </summary>
+        /// <param name="baseDir">The base directory</param>
+        /// <param name="buildDir">The build directory</param>
+        /// <param name="arch">The architecture to build for</param>
+        /// <returns>An awaitable task</returns>
+        static Task ReplaceLibMonoUnix(string baseDir, string buildDir, ArchType arch)
+        {
+            if (arch != ArchType.Arm7)
+                return Task.CompletedTask;
+
+            var sourceFile = Path.Combine(baseDir, "ReleaseBuilder", "Resources", "linux-arm-binary", "libMono.Unix.so");
+            var targetFile = Path.Combine(buildDir, "libMono.Unix.so");
+            if (!File.Exists(targetFile))
+                throw new Exception($"Expected file \"{targetFile}\" not found, has build changed?");
+
+            File.Copy(sourceFile, targetFile, overwrite: true);
+
+            return Task.CompletedTask;
+        }
+
+        /// <summary>
+        /// Replaces the library SQLiteInterop.dll with a version that is built against GLIBC_2.33 for ARM7
+        /// </summary>
+        /// <param name="baseDir">The base directory</param>
+        /// <param name="buildDir">The build directory</param>
+        /// <param name="arch">The architecture to build for</param>
+        /// <returns>An awaitable task</returns>
+        static Task ReplaceSQLiteInterop(string baseDir, string buildDir, ArchType arch)
+        {
+            if (arch != ArchType.Arm7)
+                return Task.CompletedTask;
+
+            var sourceFile = Path.Combine(baseDir, "ReleaseBuilder", "Resources", "linux-arm-binary", "SQLite.Interop.dll");
+            var targetFile = Path.Combine(buildDir, "SQLite.Interop.dll");
+            if (!File.Exists(targetFile))
+                throw new Exception($"Expected file \"{targetFile}\" not found, has build changed?");
+
+            File.Copy(sourceFile, targetFile, overwrite: true);
+
+            return Task.CompletedTask;
+        }
+
+        /// <summary>
         /// Signs all .exe and .dll files with Authenticode
         /// </summary>
         /// <param name="buildDir">The folder to sign files in</param>
@@ -279,27 +323,5 @@ public static partial class Command
             foreach (var file in filenames)
                 await rtcfg.AuthenticodeSign(file);
         }
-    }
-
-    /// <summary>
-    /// Downloads a file from a URL and saves it to a destination path
-    /// </summary>
-    /// <param name="url">The URL to download from</param>
-    /// <param name="destinationPath">The path to save the file to</param>
-    /// <returns>An awaitable task</returns>
-    static async Task DownloadFileAsync(string url, string destinationPath)
-    {
-        using var httpClient = new HttpClient(new HttpClientHandler
-        {
-            CookieContainer = new CookieContainer()
-        });
-
-        using var response = await httpClient.GetAsync(url);
-        response.EnsureSuccessStatusCode();
-        using var tf = new TempFile();
-        using var fileStream = File.Create(tf);
-        await response.Content.CopyToAsync(fileStream);
-
-        File.Move(tf, destinationPath);
     }
 }

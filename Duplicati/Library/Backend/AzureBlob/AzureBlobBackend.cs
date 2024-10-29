@@ -116,24 +116,24 @@ namespace Duplicati.Library.Backend.AzureBlob
             await _azureBlob.AddFileStream(remotename, input, cancelToken);
         }
 
-        public void Get(string remotename, string localname)
+        public async Task GetAsync(string remotename, string localname, CancellationToken cancellationToken)
         {
             using (var fs = File.Open(localname,
                 FileMode.Create, FileAccess.Write,
                 FileShare.None))
             {
-                Get(remotename, fs);
+                await GetAsync(remotename, fs, cancellationToken).ConfigureAwait(false);
             }
         }
 
-        public void Get(string remotename, Stream output)
+        public Task GetAsync(string remotename, Stream output, CancellationToken cancellationToken)
         {
-            _azureBlob.GetFileStream(remotename, output);
+            return _azureBlob.GetFileStreamAsync(remotename, output, cancellationToken);
         }
 
-        public void Delete(string remotename)
+        public Task DeleteAsync(string remotename, CancellationToken cancellationToken)
         {
-            _azureBlob.DeleteObject(remotename);
+            return _azureBlob.DeleteObjectAsync(remotename, cancellationToken);
         }
 
         public IList<ICommandLineArgument> SupportedCommands
@@ -145,17 +145,17 @@ namespace Duplicati.Library.Backend.AzureBlob
                         CommandLineArgument.ArgumentType.String,
                         Strings.AzureBlobBackend.StorageAccountNameDescriptionShort,
                         Strings.AzureBlobBackend.StorageAccountNameDescriptionLong,
-                        null, null, null, "This is deprecated, use azure-account-name instead"),
+                        null, null, null, "This is deprecated. Use azure-account-name instead."),
                     new CommandLineArgument("azure_access_key",
                         CommandLineArgument.ArgumentType.Password,
                         Strings.AzureBlobBackend.AccessKeyDescriptionShort,
                         Strings.AzureBlobBackend.AccessKeyDescriptionLong,
-                        null, null, null, "This is deprecated, use azure-access-key instead"),
+                        null, null, null, "This is deprecated. Use azure-access-key instead."),
                     new CommandLineArgument("azure_blob_container_name",
                         CommandLineArgument.ArgumentType.String,
                         Strings.AzureBlobBackend.ContainerNameDescriptionShort,
                         Strings.AzureBlobBackend.ContainerNameDescriptionLong,
-                        null, null, null, "This is deprecated, use azure-blob-container-name instead"),
+                        null, null, null, "This is deprecated. Use azure-blob-container-name instead."),
                     new CommandLineArgument("azure-account-name",
                         CommandLineArgument.ArgumentType.String,
                         Strings.AzureBlobBackend.StorageAccountNameDescriptionShort,
@@ -193,19 +193,17 @@ namespace Duplicati.Library.Backend.AzureBlob
             }
         }
 
-        public string[] DNSName
-        {
-            get { return _azureBlob.DnsNames; }
-        }
+        public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(_azureBlob.DnsNames);
 
-        public void Test()
+        public Task TestAsync(CancellationToken cancellationToken)
         {
             this.TestList();
+            return Task.CompletedTask;
         }
 
-        public void CreateFolder()
+        public Task CreateFolderAsync(CancellationToken cancellationToken)
         {
-            _azureBlob.AddContainer();
+            return _azureBlob.AddContainerAsync(cancellationToken);
         }
 
         public void Dispose()

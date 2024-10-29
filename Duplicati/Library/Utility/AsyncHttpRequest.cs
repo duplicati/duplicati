@@ -129,7 +129,7 @@ namespace Duplicati.Library.Utility
                 // Prevent in-memory buffering causing out-of-memory issues
                 webRequest.AllowReadStreamBuffering = HttpContextSettings.BufferRequests;
             }
-		}
+        }
 
         /// <summary>
         /// Gets the request that is wrapped
@@ -195,12 +195,14 @@ namespace Duplicati.Library.Utility
 
         public static Stream TrySetTimeout(Stream str, int timeoutmilliseconds = 30000)
         {
+            // TODO: Looks like this is no longer supported by (most) .NET streams
+            // And it throws InvalidOperationException() when trying to set it
             try { str.ReadTimeout = timeoutmilliseconds; }
             catch { }
 
             return str;
         }
-            
+
         /// <summary>
         /// Wrapper class for getting request and response objects in a async manner
         /// </summary>
@@ -225,8 +227,8 @@ namespace Duplicati.Library.Utility
                 else
                     m_async = m_owner.m_request.BeginGetResponse(new AsyncCallback(this.OnAsync), null);
 
-                if ( m_owner.m_timeout != System.Threading.Timeout.Infinite)
-                    ThreadPool.RegisterWaitForSingleObject(m_async.AsyncWaitHandle, new WaitOrTimerCallback(this.OnTimeout), null, TimeSpan.FromMilliseconds( m_owner.m_timeout), true);
+                if (m_owner.m_timeout != System.Threading.Timeout.Infinite)
+                    ThreadPool.RegisterWaitForSingleObject(m_async.AsyncWaitHandle, new WaitOrTimerCallback(this.OnTimeout), null, TimeSpan.FromMilliseconds(m_owner.m_timeout), true);
             }
 
             private void OnAsync(IAsyncResult r)
@@ -251,7 +253,7 @@ namespace Duplicati.Library.Utility
                             WebResponse resp = null;
 
                             try { resp = r.GetType().GetProperty("Response", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)?.GetValue(r) as WebResponse; }
-                            catch {}
+                            catch { }
 
                             if (resp == null)
                                 try { resp = m_owner.m_request.GetType().GetField("webResponse", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)?.GetValue(m_owner.m_request) as WebResponse; }
@@ -293,7 +295,7 @@ namespace Duplicati.Library.Utility
                 catch (ThreadAbortException)
                 {
                     m_owner.m_request.Abort();
-                    
+
                     //Grant a little time for cleanups
                     m_event.WaitOne((int)TimeSpan.FromSeconds(5).TotalMilliseconds, false);
 

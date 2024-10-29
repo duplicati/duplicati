@@ -27,6 +27,7 @@ public class StatusService(
             UpdateDownloadProgress = updatePollThread.DownloadProgess,
             ActiveTask = workerThreadsManager.CurrentTask,
             SchedulerQueueIds = scheduler.GetSchedulerQueueIds(),
+            ProposedSchedule = scheduler.GetProposedSchedule(),
             LastEventID = eventPollNotify.EventNo,
             LastDataUpdateID = notificationUpdateService.LastDataUpdateId,
             LastNotificationUpdateID = notificationUpdateService.LastNotificationUpdateId,
@@ -35,7 +36,7 @@ public class StatusService(
             HasError = settingsService.GetSettings().UnackedError,
             EstimatedPauseEnd = liveControls.EstimatedPauseEnd,
             SuggestedStatusIcon = MapStateToIcon(),
-            UpdateDownloadLink = settingsService.GetSettings().UpdateCheckNewVersion
+            UpdateDownloadLink = settingsService.GetSettings().NewVersionUpdateUrl
         };
         PullSettings(status);
         PullLiveControls(status);
@@ -76,7 +77,7 @@ public class StatusService(
     {
         status.HasError = settingsService.GetSettings().UnackedError;
         status.HasWarning = settingsService.GetSettings().UnackedWarning;
-        status.UpdateDownloadLink = settingsService.GetSettings().UpdateCheckNewVersion;
+        status.UpdateDownloadLink = settingsService.GetSettings().NewVersionUpdateUrl;
     }
 
     private string? GetUpdatedVersion()

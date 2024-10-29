@@ -30,13 +30,13 @@ namespace Duplicati.Library.Backend
     {
         IEnumerable<IFileEntry> ListBucket(string bucketName, string prefix);
 
-        void AddBucket(string bucketName);
+        Task AddBucketAsync(string bucketName, CancellationToken cancelToken);
 
-        void DeleteObject(string bucketName, string keyName);
+        Task DeleteObjectAsync(string bucketName, string keyName, CancellationToken cancelToken);
 
-        void RenameFile(string bucketName, string source, string target);
+        Task RenameFileAsync(string bucketName, string source, string target, CancellationToken cancelToken);
 
-        void GetFileStream(string bucketName, string keyName, System.IO.Stream target);
+        Task GetFileStreamAsync(string bucketName, string keyName, System.IO.Stream target, CancellationToken cancelToken);
 
         string GetDnsHost();
 

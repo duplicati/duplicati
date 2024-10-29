@@ -23,6 +23,8 @@ using System;
 using System.IO;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.CommandLine.RecoveryTool
 {
@@ -36,7 +38,7 @@ namespace Duplicati.CommandLine.RecoveryTool
                 return 100;
             }
 
-            using(var backend = Library.DynamicLoader.BackendLoader.GetBackend(args[1], options))
+            using (var backend = Library.DynamicLoader.BackendLoader.GetBackend(args[1], options))
             {
                 if (backend == null)
                 {
@@ -65,7 +67,7 @@ namespace Duplicati.CommandLine.RecoveryTool
                 string passphrase;
                 options.TryGetValue("passphrase", out passphrase);
 
-                foreach(var file in lst)
+                foreach (var file in lst)
                 {
                     try
                     {
@@ -80,7 +82,7 @@ namespace Duplicati.CommandLine.RecoveryTool
                         var local = Path.Combine(targetfolder, file.Name);
                         if (p.EncryptionModule != null)
                         {
-                            if (string.IsNullOrWhiteSpace(passphrase)) 
+                            if (string.IsNullOrWhiteSpace(passphrase))
                             {
                                 needspass++;
                                 Console.WriteLine(" - No passphrase supplied, skipping");
@@ -104,15 +106,15 @@ namespace Duplicati.CommandLine.RecoveryTool
 
                         Console.Write(" - downloading ({0})...", Library.Utility.Utility.FormatSizeString(file.Size));
 
-                        using(var tf = new Library.Utility.TempFile())
+                        using (var tf = new Library.Utility.TempFile())
                         {
-                            backend.Get(file.Name, tf);
+                            backend.GetAsync(file.Name, tf, CancellationToken.None).Await();
 
                             if (p.EncryptionModule != null)
                             {
                                 Console.Write(" - decrypting ...");
-                                using(var m = Library.DynamicLoader.EncryptionLoader.GetModule(p.EncryptionModule, passphrase, options))
-                                using(var tf2 = new Library.Utility.TempFile())
+                                using (var m = Library.DynamicLoader.EncryptionLoader.GetModule(p.EncryptionModule, passphrase, options))
+                                using (var tf2 = new Library.Utility.TempFile())
                                 {
                                     m.Decrypt(tf, tf2);
                                     File.Copy(tf2, local);
@@ -123,9 +125,9 @@ namespace Duplicati.CommandLine.RecoveryTool
                         }
 
                         Console.WriteLine(" done!");
-                        
+
                     }
-                    catch(Exception ex)
+                    catch (Exception ex)
                     {
                         Console.WriteLine(" error: {0}", ex);
                         errors++;
@@ -148,8 +150,8 @@ namespace Duplicati.CommandLine.RecoveryTool
                     return 200;
                 else
                     return 0;
-                
-            }            
+
+            }
         }
     }
 }

@@ -188,9 +188,10 @@ namespace Duplicati.Library.Backend
 
             this.m_retryAfter = new RetryAfterHelper();
 
-            // Extract out the path to the backup root folder from the given URI.  Since this can be an expensive operation, 
+            // Extract out the path to the backup root folder from the given URI. Since this can be an expensive operation, 
             // we will cache the value using a lazy initializer.
-            this.rootPathFromURL = new Lazy<string>(() => MicrosoftGraphBackend.NormalizeSlashes(this.GetRootPathFromUrl(url)));
+            // TODO: Should not call network methods in constructor
+            this.rootPathFromURL = new Lazy<string>(() => MicrosoftGraphBackend.NormalizeSlashes(Utility.Utility.Await(this.GetRootPathFromUrlAsync(url, CancellationToken.None))));
         }
 
         public abstract string ProtocolKey { get; }
@@ -225,69 +226,64 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public string[] DNSName
+        public async Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken)
         {
-            get
+            if (this.dnsNames == null)
             {
-                if (this.dnsNames == null)
+                // The DNS names that this instance may need to access include:
+                // - Core graph API endpoint
+                // - Upload session endpoint (which seems to be different depending on the drive being accessed - not sure if it can vary for a single drive)
+                // To get the upload session endpoint, we can start an upload session and then immediately cancel it.
+                // We pick a random file name (using a guid) to make sure we don't conflict with an existing file
+                string dnsTestFile = string.Format("DNSNameTest-{0}", Guid.NewGuid());
+                var uploadSession = await this.PostAsync<UploadSession>(string.Format("{0}/root:{1}{2}:/createUploadSession", this.DrivePrefix, this.RootPath, NormalizeSlashes(dnsTestFile)), MicrosoftGraphBackend.dummyUploadSession, cancelToken).ConfigureAwait(false);
+
+                // Canceling an upload session is done by sending a DELETE to the upload URL
+                await m_retryAfter.WaitForRetryAfterAsync(cancelToken).ConfigureAwait(false);
+                if (this.m_client != null)
                 {
-                    // The DNS names that this instance may need to access include:
-                    // - Core graph API endpoint
-                    // - Upload session endpoint (which seems to be different depending on the drive being accessed - not sure if it can vary for a single drive)
-                    // To get the upload session endpoint, we can start an upload session and then immediately cancel it.
-                    // We pick a random file name (using a guid) to make sure we don't conflict with an existing file
-                    string dnsTestFile = string.Format("DNSNameTest-{0}", Guid.NewGuid());
-                    UploadSession uploadSession = this.Post<UploadSession>(string.Format("{0}/root:{1}{2}:/createUploadSession", this.DrivePrefix, this.RootPath, NormalizeSlashes(dnsTestFile)), MicrosoftGraphBackend.dummyUploadSession);
-
-                    // Canceling an upload session is done by sending a DELETE to the upload URL
-                    m_retryAfter.WaitForRetryAfter();
-                    if (this.m_client != null)
+                    using (var request = new HttpRequestMessage(HttpMethod.Delete, uploadSession.UploadUrl))
+                    using (var response = await this.m_client.SendAsync(request, cancelToken).ConfigureAwait(false))
                     {
-                        using (var request = new HttpRequestMessage(HttpMethod.Delete, uploadSession.UploadUrl))
-                        using (var response = this.m_client.SendAsync(request).Await())
-                        {
-                            this.CheckResponse(response);
-                        }
+                        this.CheckResponse(response);
                     }
-                    else
+                }
+                else
+                {
+                    using (var response = await this.m_oAuthHelper.GetResponseWithoutExceptionAsync(uploadSession.UploadUrl, cancelToken, MicrosoftGraphBackend.dummyUploadSession, HttpMethod.Delete.ToString()).ConfigureAwait(false))
                     {
-                        using (var response = this.m_oAuthHelper.GetResponseWithoutException(uploadSession.UploadUrl, MicrosoftGraphBackend.dummyUploadSession, HttpMethod.Delete.ToString()))
-                        {
-                            this.CheckResponse(response);
-                        }
+                        this.CheckResponse(response);
                     }
+                }
 
-                    this.dnsNames = new[]
-                        {
+                this.dnsNames = new[]
+                    {
                             new System.Uri(BASE_ADDRESS).Host,
                             new System.Uri(uploadSession.UploadUrl).Host,
                         }
-                        .Distinct(StringComparer.OrdinalIgnoreCase)
-                        .ToArray();
-                }
-
-                return this.dnsNames;
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToArray();
             }
+
+            return this.dnsNames;
         }
 
-        public IQuotaInfo Quota
+        public async Task<IQuotaInfo> GetQuotaInfoAsync(CancellationToken cancelToken)
         {
-            get
+            Drive driveInfo = await this.GetAsync<Drive>(this.DrivePrefix, cancelToken).ConfigureAwait(false);
+            if (driveInfo.Quota != null)
             {
-                Drive driveInfo = this.Get<Drive>(this.DrivePrefix);
-                if (driveInfo.Quota != null)
+                // Some sources (SharePoint for example) seem to return 0 for these values even when the quota isn't exceeded..
+                // As a special test, if all the returned values are 0, we pretend that no quota was reported.
+                // This way we don't send spurious warnings because the quota looks like it is exceeded.
+                if (driveInfo.Quota.Total != 0 || driveInfo.Quota.Remaining != 0 || driveInfo.Quota.Used != 0)
                 {
-                    // Some sources (SharePoint for example) seem to return 0 for these values even when the quota isn't exceeded..
-                    // As a special test, if all the returned values are 0, we pretend that no quota was reported.
-                    // This way we don't send spurious warnings because the quota looks like it is exceeded.
-                    if (driveInfo.Quota.Total != 0 || driveInfo.Quota.Remaining != 0 || driveInfo.Quota.Used != 0)
-                    {
-                        return new QuotaInfo(driveInfo.Quota.Total, driveInfo.Quota.Remaining);
-                    }
+                    return new QuotaInfo(driveInfo.Quota.Total, driveInfo.Quota.Remaining);
                 }
-
-                return null;
             }
+
+            return null;
+
         }
 
         /// <summary>
@@ -330,7 +326,7 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public void CreateFolder()
+        public async Task CreateFolderAsync(CancellationToken cancelToken)
         {
             string parentFolder = "root";
             string parentFolderPath = string.Empty;
@@ -340,17 +336,17 @@ namespace Duplicati.Library.Backend
                 DriveItem folderItem;
                 try
                 {
-                    folderItem = this.Get<DriveItem>(string.Format("{0}/root:{1}", this.DrivePrefix, NormalizeSlashes(nextPath)));
+                    folderItem = await this.GetAsync<DriveItem>(string.Format("{0}/root:{1}", this.DrivePrefix, NormalizeSlashes(nextPath)), cancelToken).ConfigureAwait(false);
                 }
                 catch (DriveItemNotFoundException)
                 {
-                    DriveItem newFolder = new DriveItem()
+                    var newFolder = new DriveItem()
                     {
                         Name = folder,
                         Folder = new FolderFacet(),
                     };
 
-                    folderItem = this.Post(string.Format("{0}/items/{1}/children", this.DrivePrefix, parentFolder), newFolder);
+                    folderItem = await this.PostAsync(string.Format("{0}/items/{1}/children", this.DrivePrefix, parentFolder), newFolder, cancelToken).ConfigureAwait(false);
                 }
 
                 parentFolder = folderItem.Id;
@@ -374,15 +370,13 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public void Get(string remotename, string filename)
+        public async Task GetAsync(string remotename, string filename, CancellationToken cancelToken)
         {
-            using (FileStream fileStream = File.OpenWrite(filename))
-            {
-                this.Get(remotename, fileStream);
-            }
+            using (var fileStream = File.OpenWrite(filename))
+                await GetAsync(remotename, fileStream, cancelToken).ConfigureAwait(false);
         }
 
-        public void Get(string remotename, Stream stream)
+        public async Task GetAsync(string remotename, Stream stream, CancellationToken cancelToken)
         {
             try
             {
@@ -390,13 +384,11 @@ namespace Duplicati.Library.Backend
                 string getUrl = string.Format("{0}/root:{1}{2}:/content", this.DrivePrefix, this.RootPath, NormalizeSlashes(remotename));
                 if (this.m_client != null)
                 {
-                    using (var response = this.m_client.GetAsync(getUrl).Await())
+                    using (var response = await this.m_client.GetAsync(getUrl, cancelToken).ConfigureAwait(false))
                     {
                         this.CheckResponse(response);
-                        using (Stream responseStream = response.Content.ReadAsStreamAsync().Await())
-                        {
-                            responseStream.CopyTo(stream);
-                        }
+                        using (var responseStream = await response.Content.ReadAsStreamAsync(cancelToken).ConfigureAwait(false))
+                            await Library.Utility.Utility.CopyStreamAsync(responseStream, stream, cancelToken).ConfigureAwait(false);
                     }
                 }
                 else
@@ -404,10 +396,8 @@ namespace Duplicati.Library.Backend
                     using (var response = this.m_oAuthHelper.GetResponseWithoutException(getUrl))
                     {
                         this.CheckResponse(response);
-                        using (Stream responseStream = response.GetResponseStream())
-                        {
-                            responseStream.CopyTo(stream);
-                        }
+                        using (var responseStream = response.GetResponseStream())
+                            await Library.Utility.Utility.CopyStreamAsync(responseStream, stream, cancelToken).ConfigureAwait(false);
                     }
                 }
             }
@@ -418,11 +408,11 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public void Rename(string oldname, string newname)
+        public async Task RenameAsync(string oldname, string newname, CancellationToken cancelToken)
         {
             try
             {
-                this.Patch(string.Format("{0}/root:{1}{2}", this.DrivePrefix, this.RootPath, NormalizeSlashes(oldname)), new DriveItem() { Name = newname });
+                await this.PatchAsync(string.Format("{0}/root:{1}{2}", this.DrivePrefix, this.RootPath, NormalizeSlashes(oldname)), new DriveItem() { Name = newname }, cancelToken).ConfigureAwait(false);
             }
             catch (DriveItemNotFoundException ex)
             {
@@ -454,7 +444,7 @@ namespace Duplicati.Library.Backend
                         using (var response = await this.m_client.PutAsync(putUrl, streamContent, cancelToken).ConfigureAwait(false))
                         {
                             // Make sure this response is a valid drive item, though we don't actually use it for anything currently.
-                            this.ParseResponse<DriveItem>(response);
+                            await this.ParseResponseAsync<DriveItem>(response, cancelToken).ConfigureAwait(false);
                         }
                     }
                 }
@@ -463,7 +453,7 @@ namespace Duplicati.Library.Backend
                     using (var response = await this.m_oAuthHelper.GetResponseWithoutExceptionAsync(putUrl, cancelToken, stream, HttpMethod.Put.ToString()).ConfigureAwait(false))
                     {
                         // Make sure this response is a valid drive item, though we don't actually use it for anything currently.
-                        this.ParseResponse<DriveItem>(response);
+                        await this.ParseResponseAsync<DriveItem>(response, cancelToken).ConfigureAwait(false);
                     }
                 }
             }
@@ -481,7 +471,7 @@ namespace Duplicati.Library.Backend
                     using (HttpRequestMessage createSessionRequest = new HttpRequestMessage(HttpMethod.Post, createSessionUrl))
                     using (HttpResponseMessage createSessionResponse = await this.m_client.SendAsync(createSessionRequest, cancelToken).ConfigureAwait(false))
                     {
-                        UploadSession uploadSession = this.ParseResponse<UploadSession>(createSessionResponse);
+                        var uploadSession = await this.ParseResponseAsync<UploadSession>(createSessionResponse, cancelToken).ConfigureAwait(false);
 
                         // If the stream's total length is less than the chosen fragment size, then we should make the buffer only as large as the stream.
                         int bufferSize = (int)Math.Min(this.fragmentSize, stream.Length);
@@ -529,7 +519,7 @@ namespace Duplicati.Library.Backend
                                             using (HttpResponseMessage response = await this.m_client.SendAsync(request, false, cancelToken).ConfigureAwait(false))
                                             {
                                                 // Note: On the last request, the json result includes the default properties of the item that was uploaded
-                                                this.ParseResponse<UploadSession>(response);
+                                                await this.ParseResponseAsync<UploadSession>(response, cancelToken).ConfigureAwait(false);
                                             }
                                         }
                                         catch (MicrosoftGraphException ex)
@@ -650,9 +640,9 @@ namespace Duplicati.Library.Backend
                 else
                 {
                     await m_retryAfter.WaitForRetryAfterAsync(cancelToken).ConfigureAwait(false);
-                    using (HttpWebResponse createSessionResponse = await this.m_oAuthHelper.GetResponseWithoutExceptionAsync(createSessionUrl, cancelToken, MicrosoftGraphBackend.dummyUploadSession, HttpMethod.Post.ToString()).ConfigureAwait(false))
+                    using (var createSessionResponse = await this.m_oAuthHelper.GetResponseWithoutExceptionAsync(createSessionUrl, cancelToken, MicrosoftGraphBackend.dummyUploadSession, HttpMethod.Post.ToString()).ConfigureAwait(false))
                     {
-                        UploadSession uploadSession = this.ParseResponse<UploadSession>(createSessionResponse);
+                        var uploadSession = await this.ParseResponseAsync<UploadSession>(createSessionResponse, cancelToken).ConfigureAwait(false);
 
                         // If the stream's total length is less than the chosen fragment size, then we should make the buffer only as large as the stream.
                         int bufferSize = (int)Math.Min(this.fragmentSize, stream.Length);
@@ -702,7 +692,7 @@ namespace Duplicati.Library.Backend
                                         using (var response = await this.m_oAuthHelper.GetResponseWithoutExceptionAsync(request, cancelToken).ConfigureAwait(false))
                                         {
                                             // Note: On the last request, the json result includes the default properties of the item that was uploaded
-                                            this.ParseResponse<UploadSession>(response);
+                                            await this.ParseResponseAsync<UploadSession>(response, cancelToken).ConfigureAwait(false);
                                         }
                                     }
                                     catch (MicrosoftGraphException ex)
@@ -822,22 +812,22 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public void Delete(string remotename)
+        public async Task DeleteAsync(string remotename, CancellationToken cancelToken)
         {
             try
             {
-                m_retryAfter.WaitForRetryAfter();
+                await m_retryAfter.WaitForRetryAfterAsync(cancelToken).ConfigureAwait(false);
                 string deleteUrl = string.Format("{0}/root:{1}{2}", this.DrivePrefix, this.RootPath, NormalizeSlashes(remotename));
                 if (this.m_client != null)
                 {
-                    using (var response = this.m_client.DeleteAsync(deleteUrl).Await())
+                    using (var response = await this.m_client.DeleteAsync(deleteUrl, cancelToken).ConfigureAwait(false))
                     {
                         this.CheckResponse(response);
                     }
                 }
                 else
                 {
-                    using (var response = this.m_oAuthHelper.GetResponseWithoutException(deleteUrl, null, HttpMethod.Delete.ToString()))
+                    using (var response = await this.m_oAuthHelper.GetResponseWithoutExceptionAsync(deleteUrl, cancelToken, null, HttpMethod.Delete.ToString()).ConfigureAwait(false))
                     {
                         this.CheckResponse(response);
                     }
@@ -850,12 +840,12 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public void Test()
+        public async Task TestAsync(CancellationToken cancelToken)
         {
             try
             {
                 string rootPath = string.Format("{0}/root:{1}", this.DrivePrefix, this.RootPath);
-                this.Get<DriveItem>(rootPath);
+                await this.GetAsync<DriveItem>(rootPath, cancelToken).ConfigureAwait(false);
             }
             catch (DriveItemNotFoundException ex)
             {
@@ -872,56 +862,57 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        protected virtual string GetRootPathFromUrl(string url)
+        protected virtual Task<string> GetRootPathFromUrlAsync(string url, CancellationToken cancelToken)
         {
             // Extract out the path to the backup root folder from the given URI
             var uri = new Utility.Uri(url);
 
-            return Utility.Uri.UrlDecode(uri.HostAndPath);
+            return Task.FromResult(Utility.Uri.UrlDecode(uri.HostAndPath));
         }
 
-        protected T Get<T>(string url)
+        protected Task<T> GetAsync<T>(string url, CancellationToken cancelToken)
         {
-            return this.SendRequest<T>(HttpMethod.Get, url);
+            return this.SendRequestAsync<T>(HttpMethod.Get, url, cancelToken);
         }
 
-        protected T Post<T>(string url, T body) where T : class
+        protected Task<T> PostAsync<T>(string url, T body, CancellationToken cancelToken) where T : class
         {
-            return this.SendRequest(HttpMethod.Post, url, body);
+            return this.SendRequestAsync(HttpMethod.Post, url, body, cancelToken);
         }
 
-        protected T Patch<T>(string url, T body) where T : class
+        protected Task<T> PatchAsync<T>(string url, T body, CancellationToken cancelToken) where T : class
         {
-            return this.SendRequest(PatchMethod, url, body);
+            return this.SendRequestAsync(PatchMethod, url, body, cancelToken);
         }
 
-        private T SendRequest<T>(HttpMethod method, string url)
+        private async Task<T> SendRequestAsync<T>(HttpMethod method, string url, CancellationToken cancelToken)
         {
             if (this.m_client != null)
             {
                 using (var request = new HttpRequestMessage(method, url))
                 {
-                    return this.SendRequest<T>(request);
+                    return await this.SendRequestAsync<T>(request, cancelToken).ConfigureAwait(false);
                 }
             }
             else
             {
-                m_retryAfter.WaitForRetryAfter();
-                using (var response = this.m_oAuthHelper.GetResponseWithoutException(url, null, method.ToString()))
+                await m_retryAfter.WaitForRetryAfterAsync(cancelToken).ConfigureAwait(false);
+                using (var response = await this.m_oAuthHelper.GetResponseWithoutExceptionAsync(url, cancelToken, null, method.ToString()).ConfigureAwait(false))
+
                 {
-                    return this.ParseResponse<T>(response);
+                    return await this.ParseResponseAsync<T>(response, cancelToken).ConfigureAwait(false);
                 }
             }
         }
 
-        private T SendRequest<T>(HttpMethod method, string url, T body) where T : class
+        private async Task<T> SendRequestAsync<T>(HttpMethod method, string url, T body, CancellationToken cancelToken) where T : class
         {
             if (this.m_client != null)
             {
                 using (var request = new HttpRequestMessage(method, url))
                 using (request.Content = this.PrepareContent(body))
                 {
-                    return this.SendRequest<T>(request);
+                    return await this.SendRequestAsync<T>(request, cancelToken).ConfigureAwait(false);
                 }
             }
             else
@@ -929,17 +920,17 @@ namespace Duplicati.Library.Backend
                 m_retryAfter.WaitForRetryAfter();
                 using (var response = this.m_oAuthHelper.GetResponseWithoutException(url, body, method.ToString()))
                 {
-                    return this.ParseResponse<T>(response);
+                    return await this.ParseResponseAsync<T>(response, cancelToken).ConfigureAwait(false);
                 }
             }
         }
 
-        private T SendRequest<T>(HttpRequestMessage request)
+        private async Task<T> SendRequestAsync<T>(HttpRequestMessage request, CancellationToken cancelToken)
         {
-            m_retryAfter.WaitForRetryAfter();
-            using (var response = this.m_client.SendAsync(request).Await())
+            await m_retryAfter.WaitForRetryAfterAsync(cancelToken).ConfigureAwait(false);
+            using (var response = await this.m_client.SendAsync(request, cancelToken).ConfigureAwait(false))
             {
-                return this.ParseResponse<T>(response);
+                return await this.ParseResponseAsync<T>(response, cancelToken).ConfigureAwait(false);
             }
         }
 
@@ -951,7 +942,7 @@ namespace Duplicati.Library.Backend
                 GraphCollection<T> results;
                 try
                 {
-                    results = this.Get<GraphCollection<T>>(nextUrl);
+                    results = this.GetAsync<GraphCollection<T>>(nextUrl, CancellationToken.None).Await();
                 }
                 catch (DriveItemNotFoundException ex)
                 {
@@ -1010,25 +1001,25 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        private T ParseResponse<T>(HttpResponseMessage response)
+        private async Task<T> ParseResponseAsync<T>(HttpResponseMessage response, CancellationToken cancelToken)
         {
             this.CheckResponse(response);
-            using (Stream responseStream = response.Content.ReadAsStreamAsync().Await())
-            using (StreamReader reader = new StreamReader(responseStream))
-            using (JsonTextReader jsonReader = new JsonTextReader(reader))
+            using (var responseStream = await response.Content.ReadAsStreamAsync(cancelToken).ConfigureAwait(false))
+            using (var reader = new StreamReader(responseStream))
+            using (var jsonReader = new JsonTextReader(reader))
             {
                 return this.m_serializer.Deserialize<T>(jsonReader);
             }
         }
 
-        private T ParseResponse<T>(HttpWebResponse response)
+        private Task<T> ParseResponseAsync<T>(HttpWebResponse response, CancellationToken cancelToken)
         {
             this.CheckResponse(response);
             using (Stream responseStream = response.GetResponseStream())
             using (StreamReader reader = new StreamReader(responseStream))
             using (JsonTextReader jsonReader = new JsonTextReader(reader))
             {
-                return this.m_serializer.Deserialize<T>(jsonReader);
+                return Task.FromResult(this.m_serializer.Deserialize<T>(jsonReader));
             }
         }
 
@@ -1042,11 +1033,11 @@ namespace Duplicati.Library.Backend
         {
             // Before throwing the exception, cancel the upload session
             // The uploaded delete request will error if it is authenticated
-            using (HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Delete, uploadSession.UploadUrl))
-            using (HttpResponseMessage response = await this.m_client.SendAsync(request, false, cancelToken).ConfigureAwait(false))
+            using (var request = new HttpRequestMessage(HttpMethod.Delete, uploadSession.UploadUrl))
+            using (var response = await this.m_client.SendAsync(request, false, cancelToken).ConfigureAwait(false))
             {
                 // Note that the response body should always be empty in this case.
-                this.ParseResponse<UploadSession>(response);
+                await this.ParseResponseAsync<UploadSession>(response, cancelToken).ConfigureAwait(false);
             }
 
             throw new UploadSessionException(createSessionResponse, fragment, fragmentCount, ex);
@@ -1066,7 +1057,7 @@ namespace Duplicati.Library.Backend
             using (var response = await this.m_oAuthHelper.GetResponseWithoutExceptionAsync(request, cancelToken).ConfigureAwait(false))
             {
                 // Note that the response body should always be empty in this case.
-                this.ParseResponse<UploadSession>(response);
+                await this.ParseResponseAsync<UploadSession>(response, cancelToken).ConfigureAwait(false);
             }
 
             throw new UploadSessionException(createSessionResponse, fragment, fragmentCount, ex);

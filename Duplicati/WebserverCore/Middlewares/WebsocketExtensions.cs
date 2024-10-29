@@ -6,18 +6,17 @@ namespace Duplicati.WebserverCore.Middlewares;
 
 public static class WebsocketExtensions
 {
-    public static IApplicationBuilder UseNotifications(this IApplicationBuilder app, IEnumerable<string> allowedOrigins, string notificationPath)
+    public static IApplicationBuilder UseNotifications(this IApplicationBuilder app, string notificationPath)
     {
         var opts = new WebSocketOptions();
-        if (allowedOrigins.Any())
-            foreach (var origin in allowedOrigins)
-                opts.AllowedOrigins.Add(origin);
 
         app.UseWebSockets(opts);
         return app.Use(async (context, next) =>
         {
             if (context.Request.Path != notificationPath)
             {
+                // TODO: Exceptions have a stack trace pointing to here,
+                // if the exception is thrown in the next middleware.
                 await next(context);
             }
             else
@@ -52,24 +51,37 @@ public static class WebsocketExtensions
 
         var result = await ReceiveAsync();
 
-        while (!result.CloseStatus.HasValue)
+        while (!result?.CloseStatus.HasValue == true)
         {
             result = await ReceiveAsync();
         }
 
-        await webSocket.CloseAsync(
-            result.CloseStatus.Value,
-            result.CloseStatusDescription,
-            CancellationToken.None);
+        if (result?.CloseStatus is not null)
+        {
+            await webSocket.CloseAsync(result.CloseStatus.Value, result.CloseStatusDescription, CancellationToken.None);
+        }
 
         return;
 
-        async Task<WebSocketReceiveResult> ReceiveAsync()
+        async Task<WebSocketReceiveResult?> ReceiveAsync()
         {
-            var receiveResult = await webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), cancellationToken);
+            WebSocketReceiveResult? receiveResult;
+            try
+            {
+                receiveResult = await webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), cancellationToken);
+            }
+            catch (WebSocketException e)
+                when (e is { WebSocketErrorCode: WebSocketError.ConnectionClosedPrematurely })
+            {
+                Console.WriteLine("[WebSocket] Client closed connection prematurely.");
+                receiveResult = null;
+            }
 
-            var message = Encoding.Default.GetString(buffer[..receiveResult.Count]);
-            await websocketAccessor.HandleClientMessage(message);
+            if (receiveResult?.CloseStatus is not null)
+            {
+                var message = Encoding.Default.GetString(buffer[..receiveResult.Count]);
+                await websocketAccessor.HandleClientMessage(message);
+            }
 
             return receiveResult;
         }

@@ -17,6 +17,8 @@ public record JWTConfig
     public int RefreshTokenDurationInMinutes { get; init; } = 60 * 24 * 30;
     public int SigninTokenDurationInMinutes { get; init; } = 5;
     public int SingleOperationTokenDurationInMinutes { get; init; } = 1;
+    public int MaxRefreshTokenDrift { get; init; } = 1;
+    public int MaxRefreshTokenDriftSeconds { get; init; } = 30;
     public SymmetricSecurityKey SymmetricSecurityKey() => new(Encoding.UTF8.GetBytes(SigningKey));
 
     public static JWTConfig Create() => new()
@@ -43,12 +45,12 @@ public class JWTTokenProvider(JWTConfig jWTConfig) : IJWTTokenProvider
             new Claim(Claims.UserId, userId)
         ], DateTime.Now, expires: DateTime.Now.AddMinutes(jWTConfig.SigninTokenDurationInMinutes));
 
-    public string CreateAccessToken(string userId, string tokenFamilyId)
+    public string CreateAccessToken(string userId, string tokenFamilyId, TimeSpan? expiration = null)
     => GenerateToken([
             new Claim(Claims.Type, TokenType.AccessToken.ToString()),
             new Claim(Claims.UserId, userId),
             new Claim(Claims.Family, tokenFamilyId)
-        ], DateTime.Now, expires: DateTime.Now.AddMinutes(jWTConfig.AccessTokenDurationInMinutes));
+        ], DateTime.Now, expires: DateTime.Now.AddMinutes(Math.Min(jWTConfig.AccessTokenDurationInMinutes, expiration?.TotalMinutes ?? jWTConfig.AccessTokenDurationInMinutes)));
 
     public string CreateRefreshToken(string userId, string tokenFamilyId, int counter)
         => GenerateToken([

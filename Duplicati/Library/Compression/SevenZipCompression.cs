@@ -69,7 +69,7 @@ namespace Duplicati.Library.Compression
         public SevenZipCompression() { }
 
         /// <summary>
-        /// Constructs a new zip instance.
+        /// Constructs a new ZIP instance.
         /// Access mode is specified by mode parameter.
         /// Note that stream would not be disposed by FileArchiveZip instance so
         /// you may reuse it and have to dispose it yourself.
@@ -79,7 +79,7 @@ namespace Duplicati.Library.Compression
         /// <param name="options">The options passed on the commandline</param>
         public SevenZipCompression(Stream stream, ArchiveMode mode, IDictionary<string, string> options)
         {
-            InitializeCompression(options);
+            InitializeCompression(options.AsReadOnly());
             // Preventing the stream being closed by ArchiveWriter so it could be reused.
             // Required for using with MemoryStream.
             m_stream = new ShaderStream(stream, true);
@@ -92,7 +92,7 @@ namespace Duplicati.Library.Compression
             }
         }
 
-        private void InitializeCompression(IDictionary<string, string> options)
+        private void InitializeCompression(IReadOnlyDictionary<string, string> options)
         {
             m_threadCount = DEFAULT_THREAD_COUNT;
 

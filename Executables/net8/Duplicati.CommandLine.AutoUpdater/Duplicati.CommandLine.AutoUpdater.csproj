@@ -7,8 +7,8 @@
     <Copyright>Copyright © 2024 Team Duplicati, MIT license</Copyright>
   </PropertyGroup>
 
-  <ItemGroup>	
-    <ProjectReference Include="..\..\..\Duplicati\CommandLine\AutoUpdater\Duplicati.CommandLine.AutoUpdater.csproj" />
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\Duplicati\Library\AutoUpdater\Duplicati.Library.AutoUpdater.csproj" />
   </ItemGroup>
 
   <ItemGroup>

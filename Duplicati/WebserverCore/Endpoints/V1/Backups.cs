@@ -1,4 +1,3 @@
-using System.Text.Json;
 using Duplicati.Library.RestAPI;
 using Duplicati.Server.Database;
 using Duplicati.WebserverCore.Abstractions;
@@ -15,20 +14,8 @@ public class Backups : IEndpointV1
             => ExecuteGet(connection))
                .RequireAuthorization();
 
-        // TODO: Figure out why the JSON deserialization is not working here
-        // group.MapPost("/backups", ([FromServices] Connection connection, [FromBody] Dto.BackupAndScheduleInputDto input, [FromQuery] bool? temporary, [FromQuery] bool? existingdb)
-        //     => ExecuteAdd(connection, input, temporary ?? false, existingdb ?? false)).RequireAuthorization();
-
-        group.MapPost("/backups", async ([FromServices] Connection connection, [FromQuery] bool? temporary, [FromQuery] bool? existingdb, [FromServices] IHttpContextAccessor httpContextAccessor) =>
-            {
-                var opts = new JsonSerializerOptions()
-                {
-                    Converters = { new DayOfWeekStringEnumConverter() }
-                };
-                var input = await JsonSerializer.DeserializeAsync<Dto.BackupAndScheduleInputDto>(httpContextAccessor.HttpContext!.Request.Body, opts)
-                    ?? throw new BadRequestException("No data found in request body");
-                return ExecuteAdd(connection, input, temporary ?? false, existingdb ?? false);
-            })
+        group.MapPost("/backups", ([FromServices] Connection connection, [FromBody] Dto.BackupAndScheduleInputDto input, [FromQuery] bool? temporary, [FromQuery] bool? existingdb)
+            => ExecuteAdd(connection, input, temporary ?? false, existingdb ?? false))
             .RequireAuthorization();
 
         group.MapPost("/backups/import", ([FromBody] Dto.ImportBackupInputDto input, [FromServices] IJWTTokenProvider jWTTokenProvider, [FromServices] Connection connection, [FromServices] IHttpContextAccessor httpContextAccessor) =>
@@ -36,9 +23,7 @@ public class Backups : IEndpointV1
             using var tempfile = new Library.Utility.TempFile();
             File.WriteAllBytes(tempfile, Convert.FromBase64String(input.config));
 
-            var html = ExecuteImport(connection, input.cmdline ?? false, input.import_metadata ?? false, input.direct ?? false, input.passphrase ?? "", tempfile);
-            httpContextAccessor.HttpContext!.Response.ContentType = "text/html";
-            return html;
+            return ExecuteImport(connection, input.cmdline ?? false, input.import_metadata ?? false, input.direct ?? false, input.passphrase ?? "", tempfile);
 
         }).RequireAuthorization();
     }

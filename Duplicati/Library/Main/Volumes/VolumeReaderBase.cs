@@ -19,11 +19,11 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 using Duplicati.Library.Interface;
+using Duplicati.Library.Utility;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Main.Volumes
 {
@@ -170,7 +170,14 @@ namespace Duplicati.Library.Main.Volumes
             }
         }
 
-        public static IEnumerable<string> ReadBlocklist(ICompression compression, string filename, long hashsize)
+        /// <summary>
+        /// Reads the blocklist from the file, not checking if the hash is correct
+        /// </summary>
+        /// <param name="compression">The compression to use</param>
+        /// <param name="filename">The file to read the blocklist from</param>
+        /// <param name="hashsize">The size of the hash</param>
+        /// <returns>The blocklist</returns>
+        public static IEnumerable<string> ReadBlocklistUnverified(ICompression compression, string filename, long hashsize)
         {
             var buffer = new byte[hashsize];
             using (var fs = compression.OpenRead(filename))
@@ -186,6 +193,38 @@ namespace Duplicati.Library.Main.Volumes
                     yield return Convert.ToBase64String(buffer);
                 }
             }
+        }
+
+        /// <summary>
+        /// Read blocklist and check the hash. Throws InvalidDataException if not matching
+        /// </summary>
+        /// <param name="compression">The compression to use</param>
+        /// <param name="filename">The file to read the blocklist from</param>
+        /// <param name="hashsize">The size of the hash</param>
+        /// <param name="hash">The hash to check against</param>
+        /// <param name="blockHashAlgorithm">The block hash algorithm to use</param>
+        public static IEnumerable<string> ReadBlocklistVerified(ICompression compression, string filename, long hashsize, string hash, string blockHashAlgorithm)
+        {
+            var buffer = new byte[hashsize];
+            using var hashalg = HashFactory.CreateHasher(blockHashAlgorithm);
+            using var fs = compression.OpenRead(filename);
+
+            int s;
+            var read = 0L;
+            while ((s = Library.Utility.Utility.ForceStreamRead(fs, buffer, buffer.Length)) != 0)
+            {
+                if (s != buffer.Length)
+                    throw new InvalidDataException($"Premature End-of-stream encountered while reading blocklist hashes for {filename}. Got {s} bytes of {buffer.Length} at offset {read * buffer.Length}");
+
+                read++;
+                hashalg.TransformBlock(buffer, 0, s, buffer, 0);
+                yield return Convert.ToBase64String(buffer);
+            }
+
+            hashalg.TransformFinalBlock(buffer, 0, 0);
+            var calculatedHash = Convert.ToBase64String(hashalg.Hash);
+            if (hash != calculatedHash)
+                throw new InvalidDataException($"Blocklist hash does not match: expected {hash}, got {calculatedHash}");
         }
 
         protected static object SkipJsonToken(JsonReader reader, JsonToken type)

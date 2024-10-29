@@ -112,10 +112,10 @@ namespace Duplicati.Library.Main.Operation.Common
                 }
             }
 
-            public static string CalculateFileHash(string filename)
+            public static string CalculateFileHash(string filename, Options options)
             {
                 using (System.IO.FileStream fs = System.IO.File.OpenRead(filename))
-                using (var hasher = VolumeHashFactory.CreateHasher())
+                using (var hasher = HashFactory.CreateHasher(options.FileHashAlgorithm))
                     return Convert.ToBase64String(hasher.ComputeHash(fs));
             }
 
@@ -124,7 +124,7 @@ namespace Duplicati.Library.Main.Operation.Common
             {
                 if (Hash == null || Size < 0)
                 {
-                    Hash = CalculateFileHash(this.LocalFilename);
+                    Hash = CalculateFileHash(this.LocalFilename, options);
                     Size = new System.IO.FileInfo(this.LocalFilename).Length;
                     return true;
                 }

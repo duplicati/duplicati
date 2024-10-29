@@ -22,7 +22,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Duplicati.Library.Common;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main;
@@ -32,6 +31,34 @@ namespace Duplicati.UnitTest
 {
     public class RestoreHandlerTests : BasicSetupHelper
     {
+
+        [Test]
+        [Category("RestoreHandler")]
+        public void DisablePipedStreaming()
+        {
+            string filePath = Path.Combine(this.DATAFOLDER, "file");
+            File.WriteAllBytes(filePath, new byte[] { 0 });
+
+            Dictionary<string, string> options = new Dictionary<string, string>(this.TestOptions);
+            using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
+            {
+                c.Backup(new[] { this.DATAFOLDER });
+            }
+
+            Dictionary<string, string> restoreOptions = new Dictionary<string, string>(this.TestOptions) { ["restore-path"] = this.RESTOREFOLDER };
+            // This is now the default behavior, so we cannot explicitly disable it
+            //restoreOptions["disable-piped-streaming"] = "true";
+            using (Controller c = new Controller("file://" + this.TARGETFOLDER, restoreOptions, null))
+            {
+                IRestoreResults restoreResults = c.Restore(new[] { filePath });
+                Assert.AreEqual(0, restoreResults.Errors.Count());
+                Assert.AreEqual(0, restoreResults.Warnings.Count());
+            }
+
+            string restoredFilePath = Path.Combine(this.RESTOREFOLDER, "file");
+            Assert.IsTrue(File.Exists(restoredFilePath));
+        }
+
         [Test]
         [Category("RestoreHandler")]
         public void RestoreEmptyFile()
@@ -44,7 +71,7 @@ namespace Duplicati.UnitTest
             Dictionary<string, string> options = new Dictionary<string, string>(this.TestOptions);
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
-                IBackupResults backupResults = c.Backup(new[] {this.DATAFOLDER});
+                IBackupResults backupResults = c.Backup(new[] { this.DATAFOLDER });
                 Assert.AreEqual(0, backupResults.Errors.Count());
                 Assert.AreEqual(0, backupResults.Warnings.Count());
             }
@@ -57,12 +84,12 @@ namespace Duplicati.UnitTest
             };
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, restoreOptions, null))
             {
-                IRestoreResults restoreResults = c.Restore(new[] {filePath});
+                IRestoreResults restoreResults = c.Restore(new[] { filePath });
                 Assert.AreEqual(0, restoreResults.Errors.Count());
                 Assert.AreEqual(0, restoreResults.Warnings.Count());
             }
 
-            // We need to strip the root part of the path.  Otherwise, Path.Combine will simply return the second argument
+            // We need to strip the root part of the path. Otherwise, Path.Combine will simply return the second argument
             // if it's determined to be an absolute path.
             string rootString = SystemIO.IO_OS.GetPathRoot(filePath);
             string newPathPart = filePath.Substring(rootString.Length);

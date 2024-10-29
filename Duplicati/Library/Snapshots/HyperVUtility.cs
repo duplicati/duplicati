@@ -123,9 +123,8 @@ namespace Duplicati.Library.Snapshots
                 return;
             }
 
-            // TODO: Replace with OperatingSystem.IsWindowsVersionAtLeast(6,2) if that is correct
             //Set the namespace depending off host OS
-            _wmiv2Namespace = Environment.OSVersion.Version.Major > 6 || (Environment.OSVersion.Version.Major == 6 && Environment.OSVersion.Version.Minor >= 2);
+            _wmiv2Namespace = OperatingSystem.IsWindowsVersionAtLeast(6, 2);
 
             //Set the scope to use in WMI. V2 for Server 2012 or newer.
             _wmiScope = _wmiv2Namespace
@@ -219,7 +218,7 @@ namespace Duplicati.Library.Snapshots
         {
             using (var vssBackupComponents = new VssBackupComponents())
             {
-                var writerGUIDS = new [] { HyperVWriterGuid };
+                var writerGUIDS = new[] { HyperVWriterGuid };
 
                 try
                 {
@@ -229,7 +228,8 @@ namespace Duplicati.Library.Snapshots
                 {
                     throw new Interface.UserInformationException("Microsoft Hyper-V VSS Writer not found - cannot backup Hyper-V machines.", "NoHyperVVssWriter");
                 }
-                foreach (var o in vssBackupComponents.ParseWriterMetaData(writerGUIDS)) {
+                foreach (var o in vssBackupComponents.ParseWriterMetaData(writerGUIDS))
+                {
                     yield return o;
                 }
             }

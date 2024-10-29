@@ -19,7 +19,6 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
-using Duplicati.Library.Common;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 using System;
@@ -49,8 +48,6 @@ namespace Duplicati.Library.Backend
         private bool m_hasAutenticated;
         private readonly bool m_forceReauth;
         private readonly bool m_verifyDestinationLength;
-
-        private readonly byte[] m_copybuffer = new byte[Utility.Utility.DEFAULT_BUFFER_SIZE];
 
         private static readonly ISystemIO systemIO = SystemIO.IO_OS;
 
@@ -190,7 +187,7 @@ namespace Duplicati.Library.Backend
             {
                 if (random.NextDouble() > 0.6666)
                     throw new Exception("Random upload failure");
-                await Utility.Utility.CopyStreamAsync(stream, writestream, cancelToken);
+                await Utility.Utility.CopyStreamAsync(stream, writestream, cancelToken).ConfigureAwait(false);
             }
         }
 #else
@@ -199,17 +196,17 @@ namespace Duplicati.Library.Backend
             string targetFilePath = GetRemoteName(targetFilename);
             long copiedBytes = 0;
             using (var targetStream = systemIO.FileCreate(targetFilePath))
-                copiedBytes = await Utility.Utility.CopyStreamAsync(sourceStream, targetStream, true, cancelToken, m_copybuffer);
+                copiedBytes = await Utility.Utility.CopyStreamAsync(sourceStream, targetStream, true, cancelToken).ConfigureAwait(false);
 
             VerifyMatchingSize(targetFilePath, sourceStream, copiedBytes);
         }
 #endif
 
-        public void Get(string remotename, System.IO.Stream stream)
+        public async Task GetAsync(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
         {
             // FileOpenRead has flags System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.Read
-            using (System.IO.FileStream readstream = systemIO.FileOpenRead(GetRemoteName(remotename)))
-                Utility.Utility.CopyStream(readstream, stream, true, m_copybuffer);
+            using (var readstream = systemIO.FileOpenRead(GetRemoteName(remotename)))
+                await Utility.Utility.CopyStreamAsync(readstream, stream, true, cancelToken).ConfigureAwait(false);
         }
 
         public Task PutAsync(string targetFilename, string sourceFilePath, CancellationToken cancelToken)
@@ -234,17 +231,19 @@ namespace Duplicati.Library.Backend
                     VerifyMatchingSize(targetFilePath, sourceFilePath);
             }
 
-            return Task.FromResult(true);
+            return Task.CompletedTask;
         }
 
-        public void Get(string remotename, string filename)
+        public Task GetAsync(string remotename, string filename, CancellationToken cancelToken)
         {
             systemIO.FileCopy(GetRemoteName(remotename), filename, true);
+            return Task.CompletedTask;
         }
 
-        public void Delete(string remotename)
+        public Task DeleteAsync(string remotename, CancellationToken cancelToken)
         {
             systemIO.FileDelete(GetRemoteName(remotename));
+            return Task.CompletedTask;
         }
 
         public IList<ICommandLineArgument> SupportedCommands
@@ -273,17 +272,19 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public void Test()
+        public Task TestAsync(CancellationToken cancelToken)
         {
             this.TestList();
+            return Task.CompletedTask;
         }
 
-        public void CreateFolder()
+        public Task CreateFolderAsync(CancellationToken cancelToken)
         {
             if (systemIO.DirectoryExists(m_path))
                 throw new FolderAreadyExistedException();
 
             systemIO.DirectoryCreate(m_path);
+            return Task.CompletedTask;
         }
 
         #endregion
@@ -335,44 +336,40 @@ namespace Duplicati.Library.Backend
             return null;
         }
 
-        public IQuotaInfo Quota
+        public Task<IQuotaInfo> GetQuotaInfoAsync(CancellationToken cancelToken)
         {
-            get
+            var driveInfo = this.GetDrive();
+            if (driveInfo != null)
             {
-                System.IO.DriveInfo driveInfo = this.GetDrive();
-                if (driveInfo != null)
+                // Check that the total space is above 0, because Mono sometimes reports 0 for unknown file systems
+                // If the drive actually has a total size of 0, this should be obvious immediately due to write errors
+                if (driveInfo.TotalSize > 0)
                 {
-                    // Check that the total space is above 0, because Mono sometimes reports 0 for unknown file systems
-                    // If the drive actually has a total size of 0, this should be obvious immediately due to write errors
-                    if (driveInfo.TotalSize > 0)
-                    {
-                        return new QuotaInfo(driveInfo.TotalSize, driveInfo.AvailableFreeSpace);
-                    }
+                    return Task.FromResult<IQuotaInfo>(new QuotaInfo(driveInfo.TotalSize, driveInfo.AvailableFreeSpace));
                 }
-
-                if (OperatingSystem.IsWindows())
-                {
-                    // If we can't get the DriveInfo on Windows, fallback to GetFreeDiskSpaceEx
-                    // https://stackoverflow.com/questions/2050343/programmatically-determining-space-available-from-unc-path
-                    return GetDiskFreeSpace(m_path);
-                }
-
-                return null;
             }
+
+            if (OperatingSystem.IsWindows())
+            {
+                // If we can't get the DriveInfo on Windows, fallback to GetFreeDiskSpaceEx
+                // https://stackoverflow.com/questions/2050343/programmatically-determining-space-available-from-unc-path
+                return Task.FromResult<IQuotaInfo>(GetDiskFreeSpace(m_path));
+            }
+
+            return null;
         }
 
-        public string[] DNSName
-        {
-            get { return null; }
-        }
+        public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(Array.Empty<string>());
 
-        public void Rename(string oldname, string newname)
+        public Task RenameAsync(string oldname, string newname, CancellationToken cancellationToken)
         {
             var source = GetRemoteName(oldname);
             var target = GetRemoteName(newname);
             if (systemIO.FileExists(target))
                 systemIO.FileDelete(target);
             systemIO.FileMove(source, target);
+
+            return Task.CompletedTask;
         }
 
         /// <summary>

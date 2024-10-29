@@ -36,18 +36,18 @@ public class Filesystem : IEndpointV1
 
     private static void Validate(string path)
     {
-        path = ExpandPath(path);
 
         try
         {
+            path = ExpandPath(path);
             if (Path.IsPathRooted(path) && (Directory.Exists(path) || File.Exists(path)))
                 return;
         }
         catch
         {
-            throw new NotFoundException("The path does not exist");
         }
 
+        throw new NotFoundException("The path does not exist");
     }
 
     private static IEnumerable<Dto.TreeNodeDto> Execute(string path, bool onlyFolders, bool showHidden)

@@ -58,20 +58,11 @@ namespace Duplicati.GUI.TrayIcon
         };
 
         private record ServerStatusImpl(
-            Tuple<long, string> ActiveTask,
             LiveControlState ProgramState,
-            IList<Tuple<long, string>> SchedulerQueueIds,
-            bool HasWarning,
-            bool HasError,
             SuggestedStatusIcon SuggestedStatusIcon,
-            DateTime EstimatedPauseEnd,
             long LastEventID,
             long LastDataUpdateID,
-            long LastNotificationUpdateID,
-            string UpdatedVersion,
-            string UpdateDownloadLink,
-            UpdatePollerStates UpdaterState,
-            double UpdateDownloadProgress
+            long LastNotificationUpdateID
         ) : IServerStatus;
 
         private record NotificationImpl(
@@ -288,7 +279,7 @@ namespace Duplicati.GUI.TrayIcon
 
         private T PerformRequest<T>(string method, string urlfragment, string body, TimeSpan? timeout)
         {
-            if (string.IsNullOrWhiteSpace(m_accesstoken))
+            if (string.IsNullOrWhiteSpace(m_accesstoken) && !urlfragment.StartsWith("/auth/"))
                 ObtainAccessToken();
 
             var hasTriedPassword = false;
@@ -382,7 +373,7 @@ namespace Duplicati.GUI.TrayIcon
             string signinjwt = null;
 
             // If we host the server, issue the token from the service
-            if (FIXMEGlobal.IsServerStarted || m_passwordSource == Program.PasswordSource.HostedServer)
+            if (FIXMEGlobal.IsServerStarted && m_passwordSource == Program.PasswordSource.HostedServer)
                 signinjwt = FIXMEGlobal.Provider.GetRequiredService<IJWTTokenProvider>().CreateSigninToken("trayicon");
 
             // If we have database access, grab the issuer key from the db and issue a token

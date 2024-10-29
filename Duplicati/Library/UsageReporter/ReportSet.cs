@@ -55,7 +55,7 @@ namespace Duplicati.Library.UsageReporter
             else if (OperatingSystem.IsWindows())
                 Cached_OSType = "Windows";
             else
-                Cached_OSType = Environment.OSVersion.Platform.ToString();
+                Cached_OSType = "Unknown";
 
             Cached_OSVersion = OSInfoHelper.PlatformString;
         }
