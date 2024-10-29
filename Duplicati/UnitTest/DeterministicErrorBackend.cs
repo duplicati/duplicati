@@ -60,13 +60,13 @@ namespace Duplicati.UnitTest
             var uploadError = random.NextDouble() > 0.9;
 
             using (var f = new Library.Utility.ProgressReportingStream(stream, x => { if (uploadError && stream.Position > stream.Length / 2) throw new Exception("Random upload failure"); }))
-                await m_backend.PutAsync(remotename, f, cancelToken);
+                await m_backend.PutAsync(remotename, f, cancelToken).ConfigureAwait(false);
             ThrowError("put_async", remotename);
         }
-        public void Get(string remotename, Stream stream)
+        public async Task GetAsync(string remotename, Stream stream, CancellationToken cancellationToken)
         {
             ThrowError("get_0", remotename);
-            m_backend.Get(remotename, stream);
+            await m_backend.GetAsync(remotename, stream, cancellationToken).ConfigureAwait(false);
             ThrowError("get_1", remotename);
         }
         #endregion
@@ -79,35 +79,32 @@ namespace Duplicati.UnitTest
         public async Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
         {
             ThrowError("put_0", remotename);
-            await m_backend.PutAsync(remotename, filename, cancelToken);
+            await m_backend.PutAsync(remotename, filename, cancelToken).ConfigureAwait(false);
             ThrowError("put_1", remotename);
         }
-        public void Get(string remotename, string filename)
+        public async Task GetAsync(string remotename, string filename, CancellationToken cancelToken)
         {
             ThrowError("get_0", remotename);
-            m_backend.Get(remotename, filename);
+            await m_backend.GetAsync(remotename, filename, cancelToken).ConfigureAwait(false);
             ThrowError("get_1", remotename);
         }
-        public void Delete(string remotename)
+        public async Task DeleteAsync(string remotename, CancellationToken cancelToken)
         {
             ThrowError("delete_0", remotename);
-            m_backend.Delete(remotename);
+            await m_backend.DeleteAsync(remotename, cancelToken).ConfigureAwait(false);
             ThrowError("delete_1", remotename);
         }
-        public void Test()
+        public Task TestAsync(CancellationToken cancelToken)
         {
-            m_backend.Test();
+            return m_backend.TestAsync(cancelToken);
         }
-        public void CreateFolder()
+        public Task CreateFolderAsync(CancellationToken cancelToken)
         {
-            m_backend.CreateFolder();
+            return m_backend.CreateFolderAsync(cancelToken);
         }
-        public string[] DNSName
+        public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken)
         {
-            get
-            {
-                return m_backend.DNSName;
-            }
+            return m_backend.GetDNSNamesAsync(cancelToken);
         }
         public string DisplayName
         {
