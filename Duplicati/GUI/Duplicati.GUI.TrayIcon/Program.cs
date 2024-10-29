@@ -122,7 +122,7 @@ namespace Duplicati.GUI.TrayIcon
                 // we should open the main page
                 openui = Server.Program.IsFirstRun || Server.Program.ServerPortChanged;
 
-                var scheme = databaseConnection.ApplicationSettings.UseHTTPS ? "https" : "http";
+                var scheme = Server.Program.DataConnection.ApplicationSettings.UseHTTPS ? "https" : "http";
                 serverURL = (new UriBuilder(serverURL)
                 {
                     Port = Server.Program.ServerPort,
