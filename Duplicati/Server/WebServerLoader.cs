@@ -173,8 +173,6 @@ public static class WebServerLoader
         interfacestring = interfacestring.Trim();
         if (new[] { "*", "all", "any" }.Any(x => x.Equals(interfacestring, StringComparison.OrdinalIgnoreCase)))
             listenInterface = System.Net.IPAddress.Any;
-        else if (interfacestring == "ipv6loopback")
-            listenInterface = System.Net.IPAddress.IPv6Loopback;
         else if (interfacestring != "loopback")
             listenInterface = System.Net.IPAddress.Parse(interfacestring);
 

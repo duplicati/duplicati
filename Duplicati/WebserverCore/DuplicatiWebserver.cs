@@ -107,6 +107,14 @@ public partial class DuplicatiWebserver
                         listenOptions.UseHttps(settings.Certificate);
                 });
             }
+            else if (settings.Interface == System.Net.IPAddress.Loopback)
+            {
+                options.ListenLocalhost(settings.Port, listenOptions =>
+                {
+                    if (settings.Certificate != null)
+                        listenOptions.UseHttps(settings.Certificate);
+                });
+            }
             else
             {
                 options.Listen(settings.Interface, settings.Port, listenOptions =>
