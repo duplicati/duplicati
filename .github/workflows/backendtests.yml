@@ -9,6 +9,7 @@ jobs:
       s3_secrets_available: '${{ steps.check_s3.outputs.available }}'
       dropbox_secrets_available: '${{ steps.check_dropbox.outputs.available }}'
       azure_secrets_available: '${{ steps.check_azure.outputs.available }}'
+      testcontainers_secrets_available: '${{ steps.check_testcontainers.outputs.available }}'
     steps:
       - id: check_s3
         name: Check S3 secrets
@@ -55,14 +56,29 @@ jobs:
             echo "available=false" >> $GITHUB_OUTPUT
           fi
           echo "Azure check completed"
+      - id: check_testcontainers
+        name: Check TestContainers secret
+        shell: bash
+        run: |
+          echo "Starting TestContainers secrets check..."
+          if [[ -n "${{ secrets.TC_CLOUD_TOKEN }}" ]]; then
+            echo "All TestContainers secrets found"
+            echo "available=true" >> $GITHUB_OUTPUT
+          else
+            echo "Missing TestContainers token"
+            echo "available=false" >> $GITHUB_OUTPUT
+          fi
+          echo "Azure check completed"
       - name: Debug Output
         shell: bash
         run: |
           echo "S3 Available: ${{ steps.check_s3.outputs.available }}"
           echo "Dropbox Available: ${{ steps.check_dropbox.outputs.available }}"
-
-  
+          echo "Dropbox Available: ${{ steps.check_testcontainers.outputs.available }}"
+         
   test_ftp:
+    needs: check_secrets
+    if: needs.check_secrets.outputs.testcontainers_secrets_available == 'true'
     name: FTP Tests
     runs-on: '${{ matrix.os }}'
     strategy:
@@ -177,6 +193,8 @@ jobs:
           LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.sln
 
   test_webdav:
+    needs: check_secrets
+    if: needs.check_secrets.outputs.testcontainers_secrets_available == 'true'
     name: Webdav Tests
     runs-on: '${{ matrix.os }}'
     strategy:
@@ -251,6 +269,8 @@ jobs:
           --logger:"console;verbosity=detailed"
           LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.sln
   test_ssh:
+    needs: check_secrets
+    if: needs.check_secrets.outputs.testcontainers_secrets_available == 'true'
     name: SSH Tests
     runs-on: '${{ matrix.os }}'
     strategy:
