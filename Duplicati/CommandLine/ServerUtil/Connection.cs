@@ -109,7 +109,7 @@ public class Connection
 
         var trustedCertificateHashes = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         if (!string.IsNullOrWhiteSpace(settings.AcceptedHostCertificate))
-            trustedCertificateHashes.UnionWith(settings.AcceptedHostCertificate.Split([',', ';'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
+            trustedCertificateHashes.UnionWith(settings.AcceptedHostCertificate.Split(new char[] {',', ';'}, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
 
         // Configure the client for requests
         var client = new HttpClient(new HttpClientHandler()
