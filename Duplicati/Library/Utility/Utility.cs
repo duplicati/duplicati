@@ -1525,10 +1525,11 @@ namespace Duplicati.Library.Utility
         /// <remarks>This method masks a problem with loading certificates with EC based keys by using a temporary file</remarks>
         /// <param name="pfxcertificate">The certificate as a byte array</param>
         /// <param name="password">The password used to protect the PFX file</param>
+        /// <param name="allowUnsafeCertificateLoad">A flag indicating if unsafe certificate loading is allowed</param>
         /// <returns>The loaded certificate</returns>
-        public static X509Certificate2 LoadPfxCertificate(ReadOnlySpan<byte> pfxcertificate, string? password)
+        public static X509Certificate2 LoadPfxCertificate(ReadOnlySpan<byte> pfxcertificate, string? password, bool allowUnsafeCertificateLoad = false)
         {
-            if (string.IsNullOrWhiteSpace(password))
+            if (string.IsNullOrWhiteSpace(password) && !allowUnsafeCertificateLoad)
                 throw new ArgumentException("Refusing to write unencryped certificate to disk");
 
             using var tempfile = new TempFile();

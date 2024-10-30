@@ -649,7 +649,12 @@ namespace Duplicati.Server.Database
                 if (String.IsNullOrEmpty(settings[CONST.SERVER_SSL_CERTIFICATE]))
                     return null;
 
-                return Library.Utility.Utility.LoadPfxCertificate(Convert.FromBase64String(settings[CONST.SERVER_SSL_CERTIFICATE]), settings[CONST.SERVER_SSL_CERTIFICATEPASSWORD]);
+                return Library.Utility.Utility.LoadPfxCertificate(
+                    Convert.FromBase64String(settings[CONST.SERVER_SSL_CERTIFICATE]),
+                    settings[CONST.SERVER_SSL_CERTIFICATEPASSWORD],
+                    // Need to allow loading of plain-text certificates for backwards compatibility
+                    allowUnsafeCertificateLoad: true
+                );
             }
             set
             {
