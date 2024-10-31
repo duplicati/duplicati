@@ -36,7 +36,7 @@ namespace Duplicati.Library.Main.Operation.Backup
     /// </summary>
     internal static class DataBlockProcessor
     {
-        public static Task Run(BackupDatabase database, Options options, ITaskReader taskreader, ConcurrentHashSet<string> blocklistHashes)
+        public static Task Run(BackupDatabase database, Options options, ITaskReader taskreader)
         {
             return AutomationExtensions.RunTask(
             new
@@ -64,13 +64,6 @@ namespace Duplicati.Library.Main.Operation.Backup
                         // We need these blocks to be stored in the full index files
                         var isMandatoryBlocklistHash = b.IsBlocklistHashes && fullIndexFiles;
 
-                        // Don't touch the database if this is a known blocklist hash
-                        if (isMandatoryBlocklistHash && blocklistHashes.Contains(b.HashKey))
-                        {
-                            b.TaskCompletion.TrySetResult(false);
-                            continue;
-                        }
-
                         // Lazy-start a new block volume
                         if (blockvolume == null)
                         {
@@ -97,10 +90,15 @@ namespace Duplicati.Library.Main.Operation.Backup
 
                         // If we are recording blocklist hashes, add them to the index file,
                         // even if they are already added as non-blocklist blocks, but filter out duplicates
-                        if (indexvolume != null && isMandatoryBlocklistHash && blocklistHashes.Add(b.HashKey))
+                        if (indexvolume != null && isMandatoryBlocklistHash)
                         {
-                            blocklistHashesAdded++;
-                            indexvolume.AddBlockListHash(b.HashKey, b.Size, b.Data);
+                            // This can cause a race between workers, 
+                            // but the side-effect is that the index files are slightly larger                        
+                            if (newBlock || !await database.IsBlocklistHashKnownAsync(b.HashKey))
+                            {
+                                blocklistHashesAdded++;
+                                indexvolume.AddBlockListHash(b.HashKey, b.Size, b.Data);
+                            }
                         }
 
                         if (newBlock)

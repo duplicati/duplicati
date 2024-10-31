@@ -281,16 +281,13 @@ namespace Duplicati.Library.Main.Operation
                 // Make sure the CompressionHints table is initialized, otherwise all workers will initialize it
                 var unused = options.CompressionHints.Count;
 
-                // If using full index files, do not emit more than one blocklist hash per backup
-                var blocklistHashes = new ConcurrentHashSet<string>();
-
                 Task all;
                 using (new ChannelScope())
                 {
                     all = Task.WhenAll(
                         new[]
                             {
-                                    Backup.DataBlockProcessor.Run(database, options, taskreader, blocklistHashes),
+                                    Backup.DataBlockProcessor.Run(database, options, taskreader),
                                     Backup.FileBlockProcessor.Run(snapshot, options, database, stats, taskreader, token),
                                     Backup.StreamBlockSplitter.Run(options, database, taskreader),
                                     Backup.FileEnumerationProcess.Run(sources, snapshot, journalService,
@@ -310,7 +307,7 @@ namespace Duplicati.Library.Main.Operation
                             // Spawn additional compressors
                             .Union(
                                 Enumerable.Range(0, options.ConcurrencyCompressors - 1).Select(x =>
-                                    Backup.DataBlockProcessor.Run(database, options, taskreader, blocklistHashes))
+                                    Backup.DataBlockProcessor.Run(database, options, taskreader))
                             )
                     );
                 }
