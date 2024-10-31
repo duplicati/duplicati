@@ -109,7 +109,7 @@ public class Connection
 
         var trustedCertificateHashes = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         if (!string.IsNullOrWhiteSpace(settings.AcceptedHostCertificate))
-            trustedCertificateHashes.UnionWith(settings.AcceptedHostCertificate.Split(new char[] {',', ';'}, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
+            trustedCertificateHashes.UnionWith(settings.AcceptedHostCertificate.Split(new char[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
 
         // Configure the client for requests
         var client = new HttpClient(new HttpClientHandler()
@@ -162,7 +162,7 @@ public class Connection
                 using (var connection = Duplicati.Server.Program.GetDatabaseConnection(opts, true))
                 {
                     cfg = connection.ApplicationSettings.JWTConfig;
-                    if (settings.HostUrl.Scheme == "https" && connection.ApplicationSettings.ServerSSLCertificate != null)
+                    if (settings.HostUrl.Scheme == "https" && connection.ApplicationSettings.ServerSSLCertificate != null && trustedCertificateHashes.Count == 0)
                         trustedCertificateHashes.Add(connection.ApplicationSettings.ServerSSLCertificate.GetCertHashString());
                 }
 
