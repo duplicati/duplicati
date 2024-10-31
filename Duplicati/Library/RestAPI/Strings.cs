@@ -30,8 +30,10 @@ Error message: {0}", error); }
                 public static string WrongSQLiteVersion(System.Version actualversion, string expectedversion) { return LC.L(@"Unsupported version of SQLite detected ({0}), must be {1} or higher", actualversion, expectedversion); }
                 public static string WebserverWebrootDescription { get { return LC.L(@"The path to the folder where the static files for the webserver is present. The folder must be located beneath the installation folder."); } }
                 public static string WebserverPortDescription { get { return LC.L(@"The port the webserver listens on. Multiple values may be supplied with a comma in between."); } }
-                public static string WebserverCertificateFileDescription { get { return LC.L(@"The certificate and key file in PKCS #12 format the webserver use for SSL. Only RSA/DSA keys are supported."); } }
-                public static string WebserverCertificatePasswordDescription { get { return LC.L(@"The password for decryption of certificate PKCS #12 file."); } }
+                public static string WebserverDisableHTTPSDescription { get { return LC.L(@"Deactivates the use of HTTPS even if a certificate is stored in the database or provided on the commandline."); } }
+                public static string WebserverRemoveCertificateDescription { get { return LC.L(@"Removes any existing certificate from the database. This option also disables HTTPS."); } }
+                public static string WebserverCertificateFileDescription { get { return LC.L(@"The certificate and key file in PKCS #12 format the webserver use for SSL."); } }
+                public static string WebserverCertificatePasswordDescription { get { return LC.L(@"The password for decryption of the provided certificate PKCS #12 file."); } }
                 public static string WebserverInterfaceDescription { get { return LC.L(@"The interface the webserver listens on. The special values ""*"" and ""any"" means any interface. The special value ""loopback"" means the loopback adapter."); } }
                 public static string WebserverPasswordDescription { get { return LC.L(@"The password required to access the webserver. This option is saved so you do not need to set it on each run. Setting an empty value disables the password."); } }
                 public static string WebserverAllowedhostnamesDescription { get { return LC.L(@"The hostnames that are accepted, separated with semicolons. If any of the hostnames are ""*"", all hostnames are allowed and the hostname checking is disabled."); } }
@@ -74,9 +76,8 @@ Error message: {0}", error); }
         }
         public static class Server
         {
-                public static string DefectSSLCertInDatabase { get { return @"Unable to create SSL certificate using data from database. Starting without SSL."; } }
                 public static string StartedServer(string ip, int port) { return LC.L(@"Server has started and is listening on {0}, port {1}", ip, port); }
-                public static string SSLCertificateFailure(string errormessage) { return LC.L(@"Unable to create SSL certificate using provided parameters. Exception detail: {0}", errormessage); }
+                public static string SSLCertificateFileMissingOption { get { return LC.L(@"SSL certificate password option has no meaning when provided without SSL certificate file option!"); } }
                 public static string ServerStartFailure(IEnumerable<int> portstried) { return LC.L(@"Unable to open a socket for listening, tried ports: {0}", string.Join(",", from n in (portstried ?? new int[0]) select n.ToString())); }
         }
 

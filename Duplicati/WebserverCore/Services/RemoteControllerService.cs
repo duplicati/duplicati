@@ -125,7 +125,7 @@ public class RemoteControllerService(Connection connection, IHttpClientFactory h
         using var httpClient = httpClientFactory.CreateClient();
         var token = jwtTokenProvider.CreateAccessToken("remote-control", jwtTokenProvider.TemporaryFamilyId, TimeSpan.FromMinutes(2));
 
-        httpClient.BaseAddress = new Uri($"http{(connection.ApplicationSettings.ServerSSLCertificate == null ? "" : "s")}://127.0.0.1:{connection.ApplicationSettings.LastWebserverPort}");
+        httpClient.BaseAddress = new Uri($"{(connection.ApplicationSettings.UseHTTPS ? "https" : "http")}://127.0.0.1:{connection.ApplicationSettings.LastWebserverPort}");
         httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         await commandMessage.Handle(httpClient);
