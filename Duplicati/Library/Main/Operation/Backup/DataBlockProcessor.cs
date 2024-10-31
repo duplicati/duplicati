@@ -22,6 +22,7 @@
 using CoCoL;
 using Duplicati.Library.Main.Operation.Common;
 using Duplicati.Library.Main.Volumes;
+using Duplicati.Library.Utility;
 using System;
 using System.Threading.Tasks;
 using static Duplicati.Library.Main.Operation.Common.BackendHandler;
@@ -35,7 +36,7 @@ namespace Duplicati.Library.Main.Operation.Backup
     /// </summary>
     internal static class DataBlockProcessor
     {
-        public static Task Run(BackupDatabase database, Options options, ITaskReader taskreader)
+        public static Task Run(BackupDatabase database, Options options, ITaskReader taskreader, ConcurrentHashSet<string> blocklistHashes)
         {
             return AutomationExtensions.RunTask(
             new
@@ -49,6 +50,7 @@ namespace Duplicati.Library.Main.Operation.Backup
             {
                 var noIndexFiles = options.IndexfilePolicy == Options.IndexFileStrategy.None;
                 var fullIndexFiles = options.IndexfilePolicy == Options.IndexFileStrategy.Full;
+                var blocklistHashesAdded = 0L;
 
                 BlockVolumeWriter blockvolume = null;
                 TemporaryIndexVolume indexvolume = null;
@@ -59,6 +61,16 @@ namespace Duplicati.Library.Main.Operation.Backup
                     {
                         var b = await self.Input.ReadAsync();
 
+                        // We need these blocks to be stored in the full index files
+                        var isMandatoryBlocklistHash = b.IsBlocklistHashes && fullIndexFiles;
+
+                        // Don't touch the database if this is a known blocklist hash
+                        if (isMandatoryBlocklistHash && blocklistHashes.Contains(b.HashKey))
+                        {
+                            b.TaskCompletion.TrySetResult(false);
+                            continue;
+                        }
+
                         // Lazy-start a new block volume
                         if (blockvolume == null)
                         {
@@ -67,7 +79,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                             // There can be a race, such that two workers determine that
                             // the block is missing, but this will be solved by the AddBlock call
                             // which runs atomically
-                            if (await database.FindBlockIDAsync(b.HashKey, b.Size) >= 0)
+                            if (!isMandatoryBlocklistHash && await database.FindBlockIDAsync(b.HashKey, b.Size) >= 0)
                             {
                                 b.TaskCompletion.TrySetResult(false);
                                 continue;
@@ -77,20 +89,25 @@ namespace Duplicati.Library.Main.Operation.Backup
                             blockvolume.VolumeID = await database.RegisterRemoteVolumeAsync(blockvolume.RemoteFilename, RemoteVolumeType.Blocks, RemoteVolumeState.Temporary);
 
                             indexvolume = noIndexFiles ? null : new TemporaryIndexVolume(options);
+                            blocklistHashesAdded = 0;
                         }
 
                         var newBlock = await database.AddBlockAsync(b.HashKey, b.Size, blockvolume.VolumeID);
                         b.TaskCompletion.TrySetResult(newBlock);
 
+                        // If we are recording blocklist hashes, add them to the index file,
+                        // even if they are already added as non-blocklist blocks, but filter out duplicates
+                        if (indexvolume != null && isMandatoryBlocklistHash && blocklistHashes.Add(b.HashKey))
+                        {
+                            blocklistHashesAdded++;
+                            indexvolume.AddBlockListHash(b.HashKey, b.Size, b.Data);
+                        }
+
                         if (newBlock)
                         {
                             blockvolume.AddBlock(b.HashKey, b.Data, b.Offset, (int)b.Size, b.Hint);
                             if (indexvolume != null)
-                            {
                                 indexvolume.AddBlock(b.HashKey, b.Size);
-                                if (b.IsBlocklistHashes && fullIndexFiles)
-                                    indexvolume.AddBlockListHash(b.HashKey, b.Size, b.Data);
-                            }
 
                             // If the volume is full, send to upload
                             if (blockvolume.Filesize > options.VolumeSize - options.Blocksize)
@@ -132,7 +149,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                     if (ex.IsRetiredException())
                     {
                         // If we have collected data, merge all pending volumes into a single volume
-                        if (blockvolume != null && blockvolume.SourceSize > 0)
+                        if (blockvolume != null && (blockvolume.SourceSize > 0 || blocklistHashesAdded > 0))
                         {
                             await self.SpillPickup.WriteAsync(new SpillVolumeRequest(blockvolume, indexvolume));
                         }
