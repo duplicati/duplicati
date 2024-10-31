@@ -31,8 +31,8 @@ using System.Threading;
 using Duplicati.Library.Snapshots;
 using Duplicati.Library.Utility;
 using Duplicati.Library.Common.IO;
-using Duplicati.Library.Common;
 using Duplicati.Library.Logging;
+using System.IO;
 
 namespace Duplicati.Library.Main.Operation
 {
@@ -148,6 +148,24 @@ namespace Duplicati.Library.Main.Operation
 
             return service;
         }
+
+        /// <summary>
+        /// Returns a list of paths that should be blacklisted
+        /// </summary>
+        /// <returns>The list of paths</returns>
+        public static HashSet<string> GetBlacklistedPaths(Options options)
+            => new HashSet<string>(Library.Utility.Utility.ClientFilenameStringComparer)
+            {
+                //m_options.Dbpath,
+                options.Dbpath + "-journal",
+            };
+
+        /// <summary>
+        /// Returns a list of paths that should be blacklisted
+        /// </summary>
+        /// <returns>The list of paths</returns>
+        public HashSet<string> GetBlacklistedPaths()
+            => GetBlacklistedPaths(m_options);
 
         private sealed record PreBackupVerifyResult(
             LocalBackupDatabase Database,
@@ -293,7 +311,7 @@ namespace Duplicati.Library.Main.Operation
                                     Backup.FileEnumerationProcess.Run(sources, snapshot, journalService,
                                         options.FileAttributeFilter, sourcefilter, filter, options.SymlinkPolicy,
                                         options.HardlinkPolicy, options.ExcludeEmptyFolders, options.IgnoreFilenames,
-                                        options.ChangedFilelist, taskreader, token),
+                                        GetBlacklistedPaths(options), options.ChangedFilelist, taskreader, token),
                                     Backup.FilePreFilterProcess.Run(snapshot, options, stats, database),
                                     Backup.MetadataPreProcess.Run(snapshot, options, database, lastfilesetid, token),
                                     Backup.SpillCollectorProcess.Run(options, database, taskreader),
@@ -567,7 +585,7 @@ namespace Duplicati.Library.Main.Operation
                                 }
                                 else
                                 {
-                                    parallelScanner = Backup.CountFilesHandler.Run(sources, snapshot, journalService, m_result, m_options, m_sourceFilter, m_filter, m_result.TaskReader, counterToken.Token);
+                                    parallelScanner = Backup.CountFilesHandler.Run(sources, snapshot, journalService, m_result, m_options, m_sourceFilter, m_filter, GetBlacklistedPaths(), m_result.TaskReader, counterToken.Token);
                                 }
 
                                 // Run the backup operation
