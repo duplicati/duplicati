@@ -36,7 +36,7 @@ namespace Duplicati.Library.Main.Operation
 
         private readonly Options m_options;
         private readonly TestFilterResults m_result;
-        
+
         public TestFilterHandler(Options options, TestFilterResults results)
         {
             m_options = options;
@@ -52,8 +52,8 @@ namespace Duplicati.Library.Main.Operation
             {
                 var source = Operation.Backup.FileEnumerationProcess.Run(sources, snapshot, null,
                     m_options.FileAttributeFilter, sourcefilter, filter, m_options.SymlinkPolicy,
-                    m_options.HardlinkPolicy, m_options.ExcludeEmptyFolders, m_options.IgnoreFilenames, null,
-                    m_result.TaskReader, token);
+                    m_options.HardlinkPolicy, m_options.ExcludeEmptyFolders, m_options.IgnoreFilenames,
+                    BackupHandler.GetBlacklistedPaths(m_options), null, m_result.TaskReader, token);
 
                 var sink = CoCoL.AutomationExtensions.RunTask(
                     new { source = Operation.Backup.Channels.SourcePaths.ForRead },

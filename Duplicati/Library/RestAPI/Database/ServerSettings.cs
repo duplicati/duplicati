@@ -23,10 +23,10 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using System.Security.Cryptography;
-using System.Security.Cryptography.X509Certificates;
 using Duplicati.Library.RestAPI;
 using System.Text.Json;
 using System.Text;
+using System.Security.Cryptography.X509Certificates;
 
 namespace Duplicati.Server.Database
 {
@@ -49,7 +49,9 @@ namespace Duplicati.Server.Database
             public const string UNACKED_ERROR = "unacked-error";
             public const string UNACKED_WARNING = "unacked-warning";
             public const string SERVER_LISTEN_INTERFACE = "server-listen-interface";
+            public const string SERVER_DISABLE_HTTPS = "server-disable-https";
             public const string SERVER_SSL_CERTIFICATE = "server-ssl-certificate";
+            public const string SERVER_SSL_CERTIFICATEPASSWORD = "server-ssl-certificate-password";
             public const string HAS_FIXED_INVALID_BACKUPID = "has-fixed-invalid-backup-id";
             public const string UPDATE_CHANNEL = "update-channel";
             public const string USAGE_REPORTER_LEVEL = "usage-reporter-level";
@@ -618,34 +620,63 @@ namespace Duplicati.Server.Database
             }
         }
 
-        public X509Certificate2 ServerSSLCertificate
+        public bool DisableHTTPS
+        {
+            get
+            {
+                return Duplicati.Library.Utility.Utility.ParseBool(settings[CONST.SERVER_DISABLE_HTTPS], false);
+            }
+            set
+            {
+                lock (databaseConnection.m_lock)
+                    settings[CONST.SERVER_DISABLE_HTTPS] = value.ToString();
+                SaveSettings();
+            }
+        }
+
+        public bool UseHTTPS
+        {
+            get
+            {
+                return !DisableHTTPS && !string.IsNullOrWhiteSpace(settings[CONST.SERVER_SSL_CERTIFICATE]);
+            }
+        }
+
+        public X509Certificate2? ServerSSLCertificate
         {
             get
             {
                 if (String.IsNullOrEmpty(settings[CONST.SERVER_SSL_CERTIFICATE]))
                     return null;
 
-                if (OperatingSystem.IsWindows())
-                    return new X509Certificate2(Convert.FromBase64String(settings[CONST.SERVER_SSL_CERTIFICATE]));
-                else
-                    return new X509Certificate2(Convert.FromBase64String(settings[CONST.SERVER_SSL_CERTIFICATE]), "");
+                return Library.Utility.Utility.LoadPfxCertificate(
+                    Convert.FromBase64String(settings[CONST.SERVER_SSL_CERTIFICATE]),
+                    settings[CONST.SERVER_SSL_CERTIFICATEPASSWORD],
+                    // Need to allow loading of plain-text certificates for backwards compatibility
+                    allowUnsafeCertificateLoad: true
+                );
             }
             set
             {
                 if (value == null)
                 {
                     lock (databaseConnection.m_lock)
-                        settings[CONST.SERVER_SSL_CERTIFICATE] = String.Empty;
+                    {
+                        settings[CONST.SERVER_SSL_CERTIFICATE] = null;
+                        settings[CONST.SERVER_SSL_CERTIFICATEPASSWORD] = null;
+                    }
                 }
                 else
                 {
-                    if (OperatingSystem.IsWindows())
-                        lock (databaseConnection.m_lock)
-                            settings[CONST.SERVER_SSL_CERTIFICATE] = Convert.ToBase64String(value.Export(X509ContentType.Pkcs12));
-                    else
-                        lock (databaseConnection.m_lock)
-                            settings[CONST.SERVER_SSL_CERTIFICATE] = Convert.ToBase64String(value.Export(X509ContentType.Pkcs12, ""));
+                    var password = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
+                    var certdata = Convert.ToBase64String(value.Export(X509ContentType.Pkcs12, password));
+                    lock (databaseConnection.m_lock)
+                    {
+                        settings[CONST.SERVER_SSL_CERTIFICATE] = certdata;
+                        settings[CONST.SERVER_SSL_CERTIFICATEPASSWORD] = password;
+                    }
                 }
+
                 SaveSettings();
             }
         }

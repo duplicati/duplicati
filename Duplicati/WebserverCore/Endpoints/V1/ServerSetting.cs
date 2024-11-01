@@ -43,6 +43,8 @@ public class ServerSetting : IEndpointV1
         Server.Database.ServerSettings.CONST.PBKDF_CONFIG,
         Server.Database.ServerSettings.CONST.PRELOAD_SETTINGS_HASH,
         Server.Database.ServerSettings.CONST.REMOTE_CONTROL_CONFIG,
+        Server.Database.ServerSettings.CONST.SERVER_SSL_CERTIFICATE,
+        Server.Database.ServerSettings.CONST.SERVER_SSL_CERTIFICATEPASSWORD,
         // Not used anymore, but not completely removed
         Server.Database.ServerSettings.CONST.SERVER_PASSPHRASE,
         Server.Database.ServerSettings.CONST.SERVER_PASSPHRASE_SALT,
@@ -62,6 +64,7 @@ public class ServerSetting : IEndpointV1
         Server.Database.ServerSettings.CONST.DISABLE_SIGNIN_TOKENS,
         Server.Database.ServerSettings.CONST.ENCRYPTED_FIELDS,
         Server.Database.ServerSettings.CONST.REMOTE_CONTROL_CONFIG,
+        Server.Database.ServerSettings.CONST.SERVER_SSL_CERTIFICATEPASSWORD,
         "ServerSSLCertificate",
         "server-passphrase-trayicon-hash",
         "server-passphrase-trayicon-salt"
