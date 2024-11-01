@@ -114,8 +114,8 @@ namespace Duplicati.UnitTest
 
 
         [Test]
-        [Category("Disruption"), Category("Bug"), Explicit("Known bug")]
-        public void TestSystematicErrors()
+        [Category("Disruption"), Category("Bug")]
+        public void TestSystematicErrors5023()
         {
             // Attempt to recreate other bugs from #5023, but not successful
             var testopts = new Dictionary<string, string>(TestOptions)
