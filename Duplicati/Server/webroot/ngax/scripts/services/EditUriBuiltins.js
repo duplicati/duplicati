@@ -1188,7 +1188,6 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
     EditUriBackendConfig.validaters['rclone'] = function (scope, continuation) {
         var res =
             EditUriBackendConfig.require_field(scope, 'Server', gettextCatalog.getString('Remote Repository')) &&
-            EditUriBackendConfig.require_field(scope, 'rclone_local_repository', gettextCatalog.getString('Local Repository')) &&
             EditUriBackendConfig.require_field(scope, 'Path', gettextCatalog.getString('Remote Path'));
 
         if (res)
