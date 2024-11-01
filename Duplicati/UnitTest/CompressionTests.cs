@@ -32,7 +32,6 @@ namespace Duplicati.UnitTest
     {
         [TestCase("zip-io")]
         [TestCase("zip-sc")]
-        [TestCase("7z")]
         public void TestCompressionHints(string module)
         {
             const int TESTSIZE = 1024 * 1024;
@@ -77,7 +76,6 @@ namespace Duplicati.UnitTest
         /// <param name="module"></param>
         [TestCase("zip-sc")]
         [TestCase("zip-io")]
-        [TestCase("7z")]
         public void TestCompressionReversibility(string module)
         {
             const int TESTSIZE = 1024 * 1024;

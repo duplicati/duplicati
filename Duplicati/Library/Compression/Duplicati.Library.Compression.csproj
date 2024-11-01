@@ -12,12 +12,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Reference Include="managed-lzma">
-      <HintPath>..\..\..\thirdparty\ManagedLZMA\managed-lzma.dll</HintPath>
-    </Reference>
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\Interface\Duplicati.Library.Interface.csproj" />
     <ProjectReference Include="..\Localization\Duplicati.Library.Localization.csproj" />
     <ProjectReference Include="..\Utility\Duplicati.Library.Utility.csproj" />
