@@ -150,10 +150,9 @@ namespace Duplicati.Library
 
             if (delay > TimeSpan.Zero)
             {
-                Log.WriteWarningMessage(
+                Log.WriteInformationMessage(
                     LOGTAG,
                     "RetryAfterWait",
-                    null,
                     "Waiting for {0} to respect Retry-After header",
                     delay);
 
