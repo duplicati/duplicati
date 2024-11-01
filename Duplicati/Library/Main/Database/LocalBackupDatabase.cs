@@ -998,7 +998,7 @@ SELECT ""BlocklistHash"".""BlocksetID"" FROM ""BlocklistHash"" WHERE ""Blocklist
             m_getfirstfilesetwithblockinblockset.SetParameterValue(0, hash);
             var res = m_getfirstfilesetwithblockinblockset.ExecuteScalarInt64();
             if (res != m_filesetId)
-                return true;
+                return false; //true;
             else
                 return !m_blocklistHashes.Add(hash);
         }
