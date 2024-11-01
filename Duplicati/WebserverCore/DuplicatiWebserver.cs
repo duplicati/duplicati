@@ -62,7 +62,7 @@ public partial class DuplicatiWebserver
     /// <param name="WebRoot">The root folder with static files</param>
     /// <param name="Port">The listining port</param>
     /// <param name="Interface">The listening interface</param>
-    /// <param name="Certificate">The certificate, if any</param>
+    /// <param name="Certificate">The certificate, if using SSL</param>
     /// <param name="Servername">The servername to report</param>
     /// <param name="AllowedHostnames">The allowed hostnames</param>
     /// <param name="DisableStaticFiles">If static files should be disabled</param>

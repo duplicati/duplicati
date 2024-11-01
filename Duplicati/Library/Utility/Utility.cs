@@ -28,10 +28,9 @@ using System.Threading.Tasks;
 using System.Text;
 using System.Text.RegularExpressions;
 using Duplicati.Library.Common.IO;
-using Duplicati.Library.Common;
 using System.Globalization;
-using System.Security.Cryptography;
 using System.Runtime.Versioning;
+using System.Security.Cryptography.X509Certificates;
 
 namespace Duplicati.Library.Utility
 {
@@ -1518,6 +1517,41 @@ namespace Duplicati.Library.Utility
             }
 
             return delay;
+        }
+
+        /// <summary>
+        /// Loads the pfxcertificate from bytes into an exportable format.
+        /// </summary>
+        /// <remarks>This method masks a problem with loading certificates with EC based keys by using a temporary file</remarks>
+        /// <param name="pfxcertificate">The certificate as a byte array</param>
+        /// <param name="password">The password used to protect the PFX file</param>
+        /// <param name="allowUnsafeCertificateLoad">A flag indicating if unsafe certificate loading is allowed</param>
+        /// <returns>The loaded certificate</returns>
+        public static X509Certificate2 LoadPfxCertificate(ReadOnlySpan<byte> pfxcertificate, string? password, bool allowUnsafeCertificateLoad = false)
+        {
+            if (string.IsNullOrWhiteSpace(password) && !allowUnsafeCertificateLoad)
+                throw new ArgumentException("Refusing to write unencryped certificate to disk");
+
+            using var tempfile = new TempFile();
+            File.WriteAllBytes(tempfile, pfxcertificate.ToArray());
+            return LoadPfxCertificate(tempfile, password);
+        }
+
+        /// <summary>
+        /// Loads a PFX certificate from a file into an exportable format.
+        /// </summary>
+        /// <param name="pfxPath">The path to the file</param>
+        /// <param name="password">The password used to protect the PFX file</param>
+        /// <returns>The loaded certificate</returns>
+        public static X509Certificate2 LoadPfxCertificate(string pfxPath, string? password)
+        {
+            if (string.IsNullOrEmpty(pfxPath))
+                throw new ArgumentNullException(nameof(pfxPath));
+
+            if (!File.Exists(pfxPath))
+                throw new FileNotFoundException("The specified PFX file does not exist.", pfxPath);
+
+            return new X509Certificate2(pfxPath, password, X509KeyStorageFlags.Exportable);
         }
     }
 }

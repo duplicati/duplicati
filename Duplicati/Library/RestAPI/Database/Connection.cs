@@ -53,7 +53,9 @@ namespace Duplicati.Server.Database
                 .Concat([
                     ServerSettings.CONST.JWT_CONFIG,
                     ServerSettings.CONST.PBKDF_CONFIG,
-                    ServerSettings.CONST.REMOTE_CONTROL_CONFIG
+                    ServerSettings.CONST.REMOTE_CONTROL_CONFIG,
+                    ServerSettings.CONST.SERVER_SSL_CERTIFICATE,
+                    ServerSettings.CONST.SERVER_SSL_CERTIFICATEPASSWORD
                 ])
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 

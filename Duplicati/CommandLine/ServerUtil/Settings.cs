@@ -13,13 +13,15 @@ namespace Duplicati.CommandLine.ServerUtil;
 /// <param name="ServerDatafolder">The server datafolder for password-free connections</param>
 /// <param name="SettingsFile">The settings file where data is loaded/saved</param>
 /// <param name="Insecure">Whether to disable TLS/SSL certificate trust check</param>
+/// <param name="AcceptedHostCertificate">The SHA1 hash of the host certificate to accept</param>
 public sealed record Settings(
     string? Password,
     string? RefreshToken,
     Uri HostUrl,
     string? ServerDatafolder,
     string SettingsFile,
-    bool Insecure
+    bool Insecure,
+    string? AcceptedHostCertificate
 )
 {
     /// <summary>
@@ -50,8 +52,9 @@ public sealed record Settings(
     /// <param name="serverDataFolder">The server data folder to use</param>
     /// <param name="settingsFile">The settings file to use</param>
     /// <param name="insecure">Whether to disable TLS/SSL certificate trust check</param>
+    /// <param name="acceptedHostCertificate">The SHA1 hash of the host certificate to accept</param>
     /// <returns>The loaded settings</returns>
-    public static Settings Load(string? password, Uri? hostUrl, string? serverDataFolder, string settingsFile, bool insecure)
+    public static Settings Load(string? password, Uri? hostUrl, string? serverDataFolder, string settingsFile, bool insecure, string? acceptedHostCertificate)
     {
         hostUrl ??= new Uri("http://localhost:8200");
         if (string.IsNullOrWhiteSpace(serverDataFolder))
@@ -69,7 +72,8 @@ public sealed record Settings(
             hostUrl,
             serverDataFolder,
             settingsFile,
-            insecure
+            insecure,
+            acceptedHostCertificate
         );
     }
 

@@ -308,9 +308,9 @@ namespace Duplicati.Server
                 {
                     var signinToken = DuplicatiWebserver.Provider.GetRequiredService<IJWTTokenProvider>().CreateSigninToken("server-cli");
                     var hostname = (DataConnection.ApplicationSettings.AllowedHostnames ?? string.Empty).Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault(x => x != "*") ?? "localhost";
-                    var protocol = DataConnection.ApplicationSettings.ServerSSLCertificate != null ? "https" : "http";
+                    var scheme = DataConnection.ApplicationSettings.UseHTTPS ? "https" : "http";
 
-                    var url = $"{protocol}://{hostname}:{DuplicatiWebserver.Port}/signin.html?token={signinToken}";
+                    var url = $"{scheme}://{hostname}:{DuplicatiWebserver.Port}/signin.html?token={signinToken}";
                     Library.Logging.Log.WriteWarningMessage(LOGTAG, "ServerStartedSignin", null, Strings.Program.ServerStartedSignin(url));
                     logMessageToConsole(Strings.Program.ServerStartedSignin(url));
                 }
@@ -401,7 +401,7 @@ namespace Duplicati.Server
                     parsedOptions.AllowedHostnames,
                     parsedOptions.DisableStaticFiles,
                     parsedOptions.SPAPaths
-                    );
+                );
 
                 var server = new DuplicatiWebserver();
 
@@ -900,9 +900,10 @@ namespace Duplicati.Server
                 new Duplicati.Library.Interface.CommandLineArgument("log-file", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Path, Strings.Program.LogfileCommandDescription, Strings.Program.LogfileCommandDescription),
                 new Duplicati.Library.Interface.CommandLineArgument("log-level", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Enumeration, Strings.Program.LoglevelCommandDescription, Strings.Program.LoglevelCommandDescription, Library.Logging.LogMessageType.Warning.ToString(), null, Enum.GetNames(typeof(Duplicati.Library.Logging.LogMessageType))),
                 new Duplicati.Library.Interface.CommandLineArgument(WebServerLoader.OPTION_WEBROOT, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Path, Strings.Program.WebserverWebrootDescription, Strings.Program.WebserverWebrootDescription, WebServerLoader.DEFAULT_OPTION_WEBROOT),
-                new Duplicati.Library.Interface.CommandLineArgument(WebServerLoader.OPTION_PORT, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.String, Strings.Program.WebserverPortDescription, Strings.Program.WebserverPortDescription, WebServerLoader.DEFAULT_OPTION_PORT.ToString()),
-                new Duplicati.Library.Interface.CommandLineArgument(WebServerLoader.OPTION_SSLCERTIFICATEFILE, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.String, Strings.Program.WebserverCertificateFileDescription, Strings.Program.WebserverCertificateFileDescription, WebServerLoader.OPTION_SSLCERTIFICATEFILE),
-                new Duplicati.Library.Interface.CommandLineArgument(WebServerLoader.OPTION_SSLCERTIFICATEFILEPASSWORD, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.String, Strings.Program.WebserverCertificatePasswordDescription, Strings.Program.WebserverCertificatePasswordDescription, WebServerLoader.OPTION_SSLCERTIFICATEFILEPASSWORD),
+                new Duplicati.Library.Interface.CommandLineArgument(WebServerLoader.OPTION_DISABLEHTTPS, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.String, Strings.Program.WebserverDisableHTTPSDescription, Strings.Program.WebserverDisableHTTPSDescription),
+                new Duplicati.Library.Interface.CommandLineArgument(WebServerLoader.OPTION_REMOVESSLCERTIFICATE, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.String, Strings.Program.WebserverRemoveCertificateDescription, Strings.Program.WebserverRemoveCertificateDescription),
+                new Duplicati.Library.Interface.CommandLineArgument(WebServerLoader.OPTION_SSLCERTIFICATEFILE, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.String, Strings.Program.WebserverCertificateFileDescription, Strings.Program.WebserverCertificateFileDescription),
+                new Duplicati.Library.Interface.CommandLineArgument(WebServerLoader.OPTION_SSLCERTIFICATEFILEPASSWORD, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.String, Strings.Program.WebserverCertificatePasswordDescription, Strings.Program.WebserverCertificatePasswordDescription),
                 new Duplicati.Library.Interface.CommandLineArgument(WebServerLoader.OPTION_INTERFACE, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.String, Strings.Program.WebserverInterfaceDescription, Strings.Program.WebserverInterfaceDescription, WebServerLoader.DEFAULT_OPTION_INTERFACE),
                 new Duplicati.Library.Interface.CommandLineArgument(WebServerLoader.OPTION_WEBSERVICE_PASSWORD, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Password, Strings.Program.WebserverPasswordDescription, Strings.Program.WebserverPasswordDescription),
                 new Duplicati.Library.Interface.CommandLineArgument(WebServerLoader.OPTION_WEBSERVICE_ALLOWEDHOSTNAMES, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.String, Strings.Program.WebserverAllowedhostnamesDescription, Strings.Program.WebserverAllowedhostnamesDescription, null, [WebServerLoader.OPTION_WEBSERVICE_ALLOWEDHOSTNAMES_ALT]),
