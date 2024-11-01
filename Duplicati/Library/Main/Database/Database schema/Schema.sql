@@ -217,6 +217,9 @@ CREATE TABLE "DuplicateBlock" (
     "VolumeID" INTEGER NOT NULL
 );
 
+CREATE UNIQUE INDEX "UniqueBlockVolumeDuplicateBlock"
+ON "DuplicateBlock" ("BlockID", "VolumeID");
+
 /*
 A metadata set, essentially a placeholder
 to easily extend metadatasets with new properties
@@ -287,4 +290,4 @@ CREATE TABLE "ChangeJournalData" (
     "ConfigHash" TEXT NOT NULL  
 );
 
-INSERT INTO "Version" ("Version") VALUES (12);
+INSERT INTO "Version" ("Version") VALUES (13);
