@@ -566,9 +566,7 @@ namespace Duplicati.UnitTest
             using (var c = new Library.Main.Controller(target, testopts, null))
             {
                 ICompactResults compactResults = c.Compact();
-                // This currently fails, because the DeletedBlocks table is not populated after a repair
-                // Once PR #4982 is merged, this should work
-                // Assert.Greater(compactResults.DownloadedFileCount, 0, "No compact operation was performed");
+                Assert.Greater(compactResults.DownloadedFileCount, 0, "No compact operation was performed");
             }
 
             // Make sure there are no errors after success compacting
