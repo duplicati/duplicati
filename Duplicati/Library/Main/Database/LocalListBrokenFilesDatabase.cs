@@ -65,7 +65,7 @@ SELECT ""A"".""Path"", ""B"".""Length"" FROM ""File"" A, ""Blockset"" B WHERE ""
 + BROKEN_FILE_IDS +
 @") AND ""A"".""ID"" IN (SELECT ""FileID"" FROM ""FilesetEntry"" WHERE ""FilesetID"" = ?)";
 
-        private const string INSERT_BROKEN_IDS = @"INSERT INTO ""{3}"" (""{4}"") " + BROKEN_FILE_IDS 
+        private const string INSERT_BROKEN_IDS = @"INSERT INTO ""{3}"" (""{4}"") " + BROKEN_FILE_IDS
             + @" AND ""ID"" IN (SELECT ""FileID"" FROM ""FilesetEntry"" WHERE ""FilesetID"" = ?)";
 
         public LocalListBrokenFilesDatabase(string path)
@@ -90,7 +90,7 @@ SELECT ""A"".""Path"", ""B"".""Length"" FROM ""File"" A, ""Blockset"" B WHERE ""
             query += @" GROUP BY ""A"".""FilesetID""";
 
             using (var cmd = Connection.CreateCommand(transaction))
-                 foreach (var rd in cmd.ExecuteReaderEnumerable(query, clause.Item2))
+                foreach (var rd in cmd.ExecuteReaderEnumerable(query, clause.Item2))
                     if (!rd.IsDBNull(0))
                         yield return new Tuple<DateTime, long, long>(ParseFromEpochSeconds(rd.ConvertValueToInt64(0, 0)), rd.ConvertValueToInt64(1, -1), rd.ConvertValueToInt64(2, 0));
         }
@@ -136,6 +136,7 @@ SELECT ""A"".""Path"", ""B"".""Length"" FROM ""File"" A, ""Blockset"" B WHERE ""
 
                 deletecmd.ExecuteNonQuery(string.Format(@"DELETE FROM ""IndexBlockLink"" WHERE ""BlockVolumeID"" IN ({0}) OR ""IndexVolumeID"" IN ({0})", volIdsSubQuery));
                 deletecmd.ExecuteNonQuery(string.Format(@"DELETE FROM ""Block"" WHERE ""VolumeID"" IN ({0})", volIdsSubQuery));
+                deletecmd.ExecuteNonQuery(string.Format(@"DELETE FROM ""DeletedBlock"" WHERE ""VolumeID"" IN ({0})", volIdsSubQuery));
 
                 // Clean up temp tables for subqueries. We truncate content and then try to delete.
                 // Drop in try-block, as it fails in nested transactions (SQLite problem)
