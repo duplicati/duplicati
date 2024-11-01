@@ -26,6 +26,8 @@ namespace Duplicati.UnitTest
 {
     public class DeterministicErrorBackend : IBackend, IStreamingBackend
     {
+        public class DeterministicErrorBackendException(string message) : Exception(message) { };
+
         static DeterministicErrorBackend() { WrappedBackend = "file"; }
 
         private static readonly Random random = new Random(42);
@@ -51,7 +53,7 @@ namespace Duplicati.UnitTest
         {
             if (ErrorGenerator != null && ErrorGenerator(action, remotename))
             {
-                throw new Exception("Backend error");
+                throw new DeterministicErrorBackendException("Backend error");
             }
         }
         #region IStreamingBackend implementation

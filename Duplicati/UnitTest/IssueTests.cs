@@ -1,4 +1,5 @@
-﻿using Duplicati.Library.Interface;
+﻿using Duplicati.Library.DynamicLoader;
+using Duplicati.Library.Interface;
 using Duplicati.Library.Main;
 using NUnit.Framework;
 using System;
@@ -6,10 +7,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
-using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace Duplicati.UnitTest
 {
@@ -60,15 +58,22 @@ namespace Duplicati.UnitTest
                 }
                 return false;
             };
+            BackendLoader.AddBackend(new DeterministicErrorBackend());
             string file2 = Path.Combine(DATAFOLDER, "f2");
             TestUtils.WriteTestFile(file2, filesize);
-            Assert.Catch(() =>
+            var uploadEx = Assert.Catch(() =>
             {
                 using (var c = new Library.Main.Controller(target, testopts, null))
                 {
                     IBackupResults backupResults = c.Backup(new[] { DATAFOLDER });
                 }
             });
+
+            while (uploadEx is AggregateException && uploadEx.InnerException is not null)
+                uploadEx = uploadEx.InnerException;
+
+            Assert.That(uploadEx, Is.TypeOf<DeterministicErrorBackend.DeterministicErrorBackendException>());
+
             Console.WriteLine("Interrupted after upload of {0}", interruptedName);
             // Sleep to ensure timestamps are different
             Thread.Sleep(1000);
