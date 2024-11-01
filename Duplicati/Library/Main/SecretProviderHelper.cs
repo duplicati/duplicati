@@ -145,7 +145,7 @@ public static class SecretProviderHelper
             pattern = cached.Pattern;
 
         if (string.IsNullOrWhiteSpace(pattern))
-            throw new InvalidOperationException("No secret provider pattern specified");
+            pattern = DEFAULT_PATTERN;
 
         await ReplaceSecretsAsync(secretProvider, arguments, options, pattern, cancellationToken).ConfigureAwait(false);
         return secretProvider;
