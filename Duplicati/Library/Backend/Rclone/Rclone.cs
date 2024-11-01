@@ -60,26 +60,23 @@ namespace Duplicati.Library.Backend
         public Rclone(string url, Dictionary<string, string> options)
         {
             var uri = new Utility.Uri(url);
-
-            remote_repo = uri.Host;
-            remote_path = uri.Path;
-
-
-            local_repo = "local";
-            opt_rclone = "";
-            rclone_executable = "rclone";
             /*should check here if program is installed */
 
-            if (options.ContainsKey(OPTION_LOCAL_REPO))
-                local_repo = options[OPTION_LOCAL_REPO];
-            if (options.ContainsKey(OPTION_REMOTE_REPO))
-                remote_repo = options[OPTION_REMOTE_REPO];
-            if (options.ContainsKey(OPTION_REMOTE_PATH))
-                remote_path = options[OPTION_REMOTE_PATH];
-            if (options.ContainsKey(OPTION_RCLONE))
-                opt_rclone = options[OPTION_RCLONE];
-            if (options.ContainsKey(OPTION_RCLONE_EXECUTABLE))
-                rclone_executable = options[OPTION_RCLONE_EXECUTABLE];
+            local_repo = options.GetValueOrDefault(OPTION_LOCAL_REPO, local_repo);
+            remote_repo = options.GetValueOrDefault(OPTION_REMOTE_REPO, remote_repo);
+            remote_path = options.GetValueOrDefault(OPTION_REMOTE_PATH, remote_path);
+            opt_rclone = options.GetValueOrDefault(OPTION_RCLONE, opt_rclone) ?? "";
+            rclone_executable = options.GetValueOrDefault(OPTION_RCLONE_EXECUTABLE, rclone_executable);
+
+            if (string.IsNullOrWhiteSpace(local_repo))
+                local_repo = "local";
+            if (string.IsNullOrWhiteSpace(remote_repo))
+                remote_repo = uri.Host;
+            if (string.IsNullOrWhiteSpace(remote_path))
+                remote_path = uri.Path;
+            if (string.IsNullOrWhiteSpace(rclone_executable))
+                rclone_executable = "rclone";
+
 #if DEBUG
             Console.WriteLine("Constructor {0}: {1}:{2} {3}", local_repo, remote_repo, remote_path, opt_rclone);
 #endif
