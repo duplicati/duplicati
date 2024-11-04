@@ -188,6 +188,8 @@ namespace Duplicati.Library.Interface
             : this(name)
         {
             m_type = type;
+            if (type == ArgumentType.Boolean)
+                m_defaultValue = "false";
         }
 
         /// <summary>
@@ -216,6 +218,8 @@ namespace Duplicati.Library.Interface
             : this(name, type, shortDescription, longDescription)
         {
             m_defaultValue = defaultValue;
+            if (type == ArgumentType.Boolean && string.IsNullOrEmpty(m_defaultValue))
+                m_defaultValue = "false";
         }
 
         /// <summary>
