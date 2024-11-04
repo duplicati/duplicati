@@ -218,7 +218,7 @@ namespace Duplicati.CommandLine.RecoveryTool
                                     {
                                         // Correct inner filename extension to target compression type
                                         cmfileNew = cmfileNew.Replace("." + cmFileVolume.CompressionModule, "." + target_compr_module);
-                                        if (!reencrypt)
+                                        if (!reencrypt && !string.IsNullOrWhiteSpace(cmFileVolume.EncryptionModule))
                                             cmfileNew = cmfileNew.Replace("." + cmFileVolume.EncryptionModule, "");
 
                                         //Because compression changes blocks file sizes - needs to be updated
