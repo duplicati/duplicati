@@ -26,6 +26,11 @@ using System.Text;
 using System.IO;
 using Duplicati.Library.Modules.Builtin.ResultSerialization;
 using Duplicati.Library.Utility;
+using System.Runtime.CompilerServices;
+
+
+// Expose internal classes to UnitTests, so that Database classes can be tested
+[assembly: InternalsVisibleTo("Duplicati.UnitTest")]
 
 namespace Duplicati.Library.Main.Database
 {
