@@ -104,6 +104,7 @@ namespace Duplicati.WebserverCore.Endpoints.V1
                     return;
                 }
             }
+            // TODO: These should be wrapped in a JSON response, possibly with 200 status code
             catch (FolderMissingException)
             {
                 if (autoCreate)
@@ -126,6 +127,14 @@ namespace Duplicati.WebserverCore.Endpoints.V1
                     throw new ServerErrorException($@"incorrect-host-key:""{hex.ReportedHostKey}"", accepted-host-key:""{hex.AcceptedHostKey}""");
                 }
             }
+            catch (UserInformationException uex)
+            {
+                throw new ServerErrorException($@"error-id:{uex.HelpID}, user-information:{uex.Message}");
+            }
+            catch (Exception ex)
+            {
+                throw new ServerErrorException(ex.Message);
+            }
             finally
             {
                 wrapper?.Dispose();
@@ -135,8 +144,19 @@ namespace Duplicati.WebserverCore.Endpoints.V1
 
         private static async Task ExecuteCreate(string uri, CancellationToken cancelToken)
         {
-            using (var b = Duplicati.Library.DynamicLoader.BackendLoader.GetBackend(uri, new Dictionary<string, string>()))
-                await b.CreateFolderAsync(cancelToken).ConfigureAwait(false);
+            try
+            {
+                using (var b = Duplicati.Library.DynamicLoader.BackendLoader.GetBackend(uri, new Dictionary<string, string>()))
+                    await b.CreateFolderAsync(cancelToken).ConfigureAwait(false);
+            }
+            catch (UserInformationException uex)
+            {
+                throw new ServerErrorException($@"error-id:{uex.HelpID}, user-information:{uex.Message}");
+            }
+            catch (Exception ex)
+            {
+                throw new ServerErrorException(ex.Message);
+            }
         }
 
     }

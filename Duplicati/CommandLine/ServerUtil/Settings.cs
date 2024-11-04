@@ -19,6 +19,7 @@ namespace Duplicati.CommandLine.ServerUtil;
 /// <param name="Key">The encryption key to use for the settings file</param>
 /// <param name="SecretProvider">The secret provider to use for reading secrets</param>
 /// <param name="SecretProviderPattern">The pattern to use for the secret provider</param>
+/// <param name="AcceptedHostCertificate">The SHA1 hash of the host certificate to accept</param>
 public sealed record Settings(
     string? Password,
     string? RefreshToken,
@@ -28,7 +29,8 @@ public sealed record Settings(
     bool Insecure,
     EncryptedFieldHelper.KeyInstance? Key,
     ISecretProvider? SecretProvider,
-    string SecretProviderPattern
+    string SecretProviderPattern,
+    string? AcceptedHostCertificate
 )
 {
     /// <summary>
@@ -60,8 +62,12 @@ public sealed record Settings(
     /// <param name="settingsFile">The settings file to use</param>
     /// <param name="insecure">Whether to disable TLS/SSL certificate trust check</param>
     /// <param name="settingsPassphrase">The encryption key to use</param>
+    /// <param name="secretProvider">The secret provider to use</param>
+    /// <param name="secretProviderCache">The secret provider cache level to use</param>
+    /// <param name="secretProviderPattern">The secret provider pattern to use</param>
+    /// <param name="acceptedHostCertificate">The SHA1 hash of the host certificate to accept</param>
     /// <returns>The loaded settings</returns>
-    public static Settings Load(string? password, System.Uri? hostUrl, string? serverDataFolder, string settingsFile, bool insecure, string? settingsPassphrase, string? secretProvider, SecretProviderHelper.CachingLevel secretProviderCache, string secretProviderPattern)
+    public static Settings Load(string? password, System.Uri? hostUrl, string? serverDataFolder, string settingsFile, bool insecure, string? settingsPassphrase, string? secretProvider, SecretProviderHelper.CachingLevel secretProviderCache, string secretProviderPattern, string? acceptedHostCertificate)
     {
         hostUrl ??= new System.Uri("http://localhost:8200");
 
@@ -108,7 +114,8 @@ public sealed record Settings(
             insecure,
             key,
             secretInstance,
-            secretProviderPattern
+            secretProviderPattern,
+            acceptedHostCertificate
         );
     }
 

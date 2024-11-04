@@ -42,6 +42,7 @@ namespace Duplicati.GUI.TrayIcon
         private const string HOSTURL_OPTION = "hosturl";
         private const string NOHOSTEDSERVER_OPTION = "no-hosted-server";
         private const string READCONFIGFROMDB_OPTION = "read-config-from-db";
+        private const string ACCEPTED_SSL_CERTIFICATE = "host-cert-hash";
 
         private const string DETACHED_PROCESS = "detached-process";
         private const string BROWSER_COMMAND_OPTION = "browser-command";
@@ -100,6 +101,7 @@ namespace Duplicati.GUI.TrayIcon
             HostedInstanceKeeper hosted = null;
 
             string password = null;
+            var acceptedHostCertificate = options.GetValueOrDefault(ACCEPTED_SSL_CERTIFICATE, null);
             if (!Library.Utility.Utility.ParseBoolOption(options, NOHOSTEDSERVER_OPTION))
             {
                 try
@@ -123,17 +125,16 @@ namespace Duplicati.GUI.TrayIcon
                 // we should open the main page
                 openui = Server.Program.IsFirstRun || Server.Program.ServerPortChanged;
 
-                var cert = Server.Program.DataConnection.ApplicationSettings.ServerSSLCertificate;
-                var scheme = "http";
-
-                if (cert != null && cert.HasPrivateKey)
-                    scheme = "https";
-
-                serverURL = (new UriBuilder(serverURL)
+                var scheme = Server.Program.DataConnection.ApplicationSettings.UseHTTPS ? "https" : "http";
+                serverURL = new UriBuilder(serverURL)
                 {
                     Port = Server.Program.ServerPort,
                     Scheme = scheme
-                }).Uri;
+                }.Uri;
+
+                if (Server.Program.DataConnection.ApplicationSettings.UseHTTPS && string.IsNullOrWhiteSpace(acceptedHostCertificate))
+                    acceptedHostCertificate = Server.Program.DataConnection.ApplicationSettings.ServerSSLCertificate.GetCertHashString();
+
             }
             else if (Library.Utility.Utility.ParseBoolOption(options, READCONFIGFROMDB_OPTION))
             {
@@ -144,13 +145,10 @@ namespace Duplicati.GUI.TrayIcon
                     if (databaseConnection != null)
                     {
                         disableTrayIconLogin = databaseConnection.ApplicationSettings.DisableTrayIconLogin;
+                        if (databaseConnection.ApplicationSettings.UseHTTPS && string.IsNullOrWhiteSpace(acceptedHostCertificate))
+                            acceptedHostCertificate = databaseConnection.ApplicationSettings.ServerSSLCertificate.GetCertHashString();
 
-                        var cert = databaseConnection.ApplicationSettings.ServerSSLCertificate;
-                        var scheme = "http";
-
-                        if (cert != null && cert.HasPrivateKey)
-                            scheme = "https";
-
+                        var scheme = databaseConnection.ApplicationSettings.UseHTTPS ? "https" : "http";
                         serverURL = new UriBuilder(serverURL)
                         {
                             Port = databaseConnection.ApplicationSettings.LastWebserverPort == -1 ? serverURL.Port : databaseConnection.ApplicationSettings.LastWebserverPort,
@@ -183,12 +181,12 @@ No password provided, unable to connect to server, exiting");
                 return 1;
             }
 
-            StartTray(_args, options, hosted, password);
+            StartTray(_args, options, hosted, password, acceptedHostCertificate);
 
             return 0;
         }
 
-        private static void StartTray(string[] _args, Dictionary<string, string> options, HostedInstanceKeeper hosted, string password)
+        private static void StartTray(string[] _args, Dictionary<string, string> options, HostedInstanceKeeper hosted, string password, string acceptedHostCertificate)
         {
             using (hosted)
             {
@@ -199,7 +197,7 @@ No password provided, unable to connect to server, exiting");
                     try
                     {
                         ServicePointManager.SecurityProtocol = SecurityProtocolType.SystemDefault;
-                        using (Connection = new HttpServerConnection(serverURL, password, databaseConnection != null ? PasswordSource.Database : PasswordSource.HostedServer, disableTrayIconLogin, options))
+                        using (Connection = new HttpServerConnection(serverURL, password, databaseConnection != null ? PasswordSource.Database : PasswordSource.HostedServer, disableTrayIconLogin, acceptedHostCertificate, options))
                         {
                             using (var tk = RunTrayIcon())
                             {
@@ -277,6 +275,7 @@ No password provided, unable to connect to server, exiting");
                     new CommandLineArgument(NOHOSTEDSERVER_OPTION, CommandLineArgument.ArgumentType.String, "Disables local server", "Set this option to not spawn a local service, use if the TrayIcon should connect to a running service"),
                     new CommandLineArgument(READCONFIGFROMDB_OPTION, CommandLineArgument.ArgumentType.String, "Read server connection info from DB", $"Set this option to read server connection info for running service from its database (only together with {NOHOSTEDSERVER_OPTION})"),
                     new CommandLineArgument(BROWSER_COMMAND_OPTION, CommandLineArgument.ArgumentType.String, "Sets the browser command", "Set this option to override the default browser detection"),
+                    new CommandLineArgument(ACCEPTED_SSL_CERTIFICATE, CommandLineArgument.ArgumentType.String, "Accepts a specific SSL certificate", "Set this option to accept a specific SSL certificate, the value should be the hash of the certificate in hexadecimal format. Use * to accept any certificate (dangerous)"),
                 };
 
                 if (OperatingSystem.IsWindows())

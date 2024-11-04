@@ -25,6 +25,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Net.Security;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -45,18 +46,7 @@ namespace Duplicati.GUI.TrayIcon
     {
         private static readonly string LOGTAG = Library.Logging.Log.LogTagFromType<HttpServerConnection>();
         private const string LONGPOLL_TIMEOUT = "5m";
-        private static readonly HttpClient HTTPCLIENT = new(new SocketsHttpHandler
-        {
-            PooledConnectionLifetime = TimeSpan.FromSeconds(10)
-        })
-        {
-            // Max time a request can be pending, actual requests can set a lower limit
-            Timeout = Library.Utility.Timeparser.ParseTimeSpan(LONGPOLL_TIMEOUT) + TimeSpan.FromSeconds(10),
-            DefaultRequestHeaders = {
-                UserAgent = { new ProductInfoHeaderValue("Duplicati-TrayIcon-Monitor", System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString()) }
-            }
-        };
-
+        private readonly HttpClient HTTPCLIENT;
         private record ServerStatusImpl(
             LiveControlState ProgramState,
             SuggestedStatusIcon SuggestedStatusIcon,
@@ -125,7 +115,7 @@ namespace Duplicati.GUI.TrayIcon
         private readonly object m_lock = new object();
         private readonly Queue<BackgroundRequest> m_workQueue = new Queue<BackgroundRequest>();
 
-        public HttpServerConnection(Uri server, string password, Program.PasswordSource passwordSource, bool disableTrayIconLogin, Dictionary<string, string> options)
+        public HttpServerConnection(Uri server, string password, Program.PasswordSource passwordSource, bool disableTrayIconLogin, string acceptedHostCertificate, Dictionary<string, string> options)
         {
             m_baseUri = Util.AppendDirSeparator(server.ToString(), "/");
 
@@ -138,6 +128,37 @@ namespace Duplicati.GUI.TrayIcon
             m_password = password;
             m_options = options;
             m_passwordSource = passwordSource;
+
+            var acceptedCertificates = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            if (!string.IsNullOrWhiteSpace(acceptedHostCertificate))
+                acceptedCertificates.UnionWith(acceptedHostCertificate.Split(new char[] {',', ';'}, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
+
+            HTTPCLIENT = new(new HttpClientHandler
+            {
+                ServerCertificateCustomValidationCallback = acceptedCertificates switch
+                {
+                    { Count: 0 } => null,
+                    { } when acceptedCertificates.Contains("*") => HttpClientHandler.DangerousAcceptAnyServerCertificateValidator,
+                    _ => (sender, cert, chain, sslPolicyErrors) =>
+                    {
+                        if (sslPolicyErrors == SslPolicyErrors.None)
+                            return true;
+
+                        if (cert == null)
+                            return false;
+
+                        var certHash = cert.GetCertHashString();
+                        return acceptedCertificates.Contains(certHash);
+                    }
+                }
+            })
+            {
+                // Max time a request can be pending, actual requests can set a lower limit
+                Timeout = Library.Utility.Timeparser.ParseTimeSpan(LONGPOLL_TIMEOUT) + TimeSpan.FromSeconds(10),
+                DefaultRequestHeaders = {
+                    UserAgent = { new ProductInfoHeaderValue("Duplicati-TrayIcon-Monitor", System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString()) }
+                }
+            };
 
             // TODO: Not nice to do in constructor
             // Get a connection

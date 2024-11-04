@@ -26,6 +26,7 @@ using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
 using Duplicati.Server.Database;
 using Microsoft.AspNetCore.Connections;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.Server;
 
@@ -107,6 +108,16 @@ public static class WebServerLoader
     public const int DEFAULT_OPTION_PORT = 8200;
 
     /// <summary>
+    /// Option for setting if to use HTTPS
+    /// </summary>
+    public const string OPTION_DISABLEHTTPS = "webservice-disable-https";
+
+    /// <summary>
+    /// Option for removing the SSL certificate from the datbase
+    /// </summary>
+    public const string OPTION_REMOVESSLCERTIFICATE = "webservice-remove-sslcertificate";
+
+    /// <summary>
     /// Option for setting the webservice SSL certificate
     /// </summary>
     public const string OPTION_SSLCERTIFICATEFILE = "webservice-sslcertificatefile";
@@ -127,7 +138,7 @@ public static class WebServerLoader
     /// <param name="WebRoot">The root folder with static files</param>
     /// <param name="Port">The listining port</param>
     /// <param name="Interface">The listening interface</param>
-    /// <param name="Certificate">The certificate, if any</param>
+    /// <param name="Certificate">SSL certificate, if any</param>
     /// <param name="Servername">The servername to report</param>
     /// <param name="AllowedHostnames">The allowed hostnames</param>
     /// <param name="DisableStaticFiles">If static files should be disabled</param>
@@ -176,37 +187,20 @@ public static class WebServerLoader
         else if (interfacestring != "loopback")
             listenInterface = System.Net.IPAddress.Parse(interfacestring);
 
+        var removeCertificate = Library.Utility.Utility.ParseBoolOption(options, OPTION_REMOVESSLCERTIFICATE);
+        connection.ApplicationSettings.DisableHTTPS = removeCertificate || Library.Utility.Utility.ParseBoolOption(options, OPTION_DISABLEHTTPS);
+
         options.TryGetValue(OPTION_SSLCERTIFICATEFILE, out var certificateFile);
         options.TryGetValue(OPTION_SSLCERTIFICATEFILEPASSWORD, out var certificateFilePassword);
-        certificateFilePassword = certificateFilePassword?.Trim() ?? "";
+        certificateFilePassword = certificateFilePassword?.Trim();
 
-        X509Certificate2? cert = null;
-        if (certificateFile == null)
-        {
-            try
-            {
-                cert = connection.ApplicationSettings.ServerSSLCertificate;
-            }
-            catch (Exception ex)
-            {
-                Library.Logging.Log.WriteWarningMessage(LOGTAG, "DefectStoredSSLCert", ex, Strings.Server.DefectSSLCertInDatabase);
-            }
-        }
-        else if (certificateFile.Length == 0)
-        {
+        if (string.IsNullOrEmpty(certificateFile) && !string.IsNullOrEmpty(certificateFilePassword))
+            Library.Logging.Log.WriteInformationMessage(LOGTAG, "ServerCertificate", Strings.Server.SSLCertificateFileMissingOption);
+
+        if (!string.IsNullOrEmpty(certificateFile) && !string.IsNullOrEmpty(certificateFilePassword))
+            connection.ApplicationSettings.ServerSSLCertificate = Utility.LoadPfxCertificate(certificateFile, certificateFilePassword);
+        else if (removeCertificate)
             connection.ApplicationSettings.ServerSSLCertificate = null;
-        }
-        else
-        {
-            try
-            {
-                cert = new X509Certificate2(certificateFile, certificateFilePassword, X509KeyStorageFlags.Exportable);
-            }
-            catch (Exception ex)
-            {
-                throw new Exception(Strings.Server.SSLCertificateFailure(ex.Message), ex);
-            }
-        }
 
         var webroot = Library.AutoUpdater.UpdaterManager.INSTALLATIONDIR;
 
@@ -238,12 +232,11 @@ public static class WebServerLoader
         if (string.IsNullOrWhiteSpace(spaPathsString))
             spaPathsString = DEFAULT_OPTION_SPAPATHS;
 
-        var certValid = cert != null && cert.HasPrivateKey;
         var settings = new ParsedWebserverSettings(
             webroot,
             -1,
             listenInterface,
-            cert,
+            connection.ApplicationSettings.UseHTTPS ? connection.ApplicationSettings.ServerSSLCertificate : null,
             string.Format("{0} v{1}", Library.AutoUpdater.AutoUpdateSettings.AppName, System.Reflection.Assembly.GetExecutingAssembly().GetName().Version),
             (connection.ApplicationSettings.AllowedHostnames ?? string.Empty).Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries),
             Duplicati.Library.Utility.Utility.ParseBoolOption(options, OPTION_WEBSERVICE_API_ONLY),
@@ -263,11 +256,10 @@ public static class WebServerLoader
                 settings = settings with { Port = p };
 
                 var server = await createServer(settings);
+
+                // If we get here, the server started successfully, so store the new interface setting
                 if (interfacestring != connection.ApplicationSettings.ServerListenInterface)
                     connection.ApplicationSettings.ServerListenInterface = interfacestring;
-
-                if (certValid && cert != connection.ApplicationSettings.ServerSSLCertificate)
-                    connection.ApplicationSettings.ServerSSLCertificate = cert;
 
                 Library.Logging.Log.WriteInformationMessage(LOGTAG, "ServerListening", Strings.Server.StartedServer(listenInterface.ToString(), p));
 

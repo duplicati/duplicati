@@ -50,6 +50,9 @@ public class SettingsBinder : BinderBase<Settings>
     /// The secret provider pattern option.
     /// </summary>
     public static readonly Option<string?> secretProviderPatternOption = new Option<string?>("--secret-provider-pattern", description: "The pattern to use for the secret provider", getDefaultValue: () => SecretProviderHelper.DEFAULT_PATTERN);
+    /// The accepted host certificate option.
+    /// </summary>
+    public static readonly Option<string> acceptedHostCertificateOption = new Option<string>("--host-cert", description: "The SHA1 hash of the host certificate to accept. Use * for any certificate, same as --insecure (dangerous)", getDefaultValue: () => string.Empty);
 
     /// <summary>
     /// Adds global options to the root command.
@@ -67,6 +70,7 @@ public class SettingsBinder : BinderBase<Settings>
         rootCommand.AddGlobalOption(secretProviderOption);
         rootCommand.AddGlobalOption(secretProviderCacheOption);
         rootCommand.AddGlobalOption(secretProviderPatternOption);
+        rootCommand.AddGlobalOption(acceptedHostCertificateOption);
         return rootCommand;
     }
 
@@ -85,8 +89,8 @@ public class SettingsBinder : BinderBase<Settings>
             bindingContext.ParseResult.GetValueForOption(settingsEncryptionKeyOption) ?? Environment.GetEnvironmentVariable(Library.Encryption.EncryptedFieldHelper.ENVIROMENT_VARIABLE_NAME),
             bindingContext.ParseResult.GetValueForOption(secretProviderOption),
             bindingContext.ParseResult.GetValueForOption(secretProviderCacheOption),
-            bindingContext.ParseResult.GetValueForOption(secretProviderPatternOption) ?? SecretProviderHelper.DEFAULT_PATTERN
-
+            bindingContext.ParseResult.GetValueForOption(secretProviderPatternOption) ?? SecretProviderHelper.DEFAULT_PATTERN,
+            bindingContext.ParseResult.GetValueForOption(acceptedHostCertificateOption)
         );
 
     /// <summary>
