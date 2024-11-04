@@ -992,12 +992,12 @@ SELECT ""BlocklistHash"".""BlocksetID"" FROM ""BlocklistHash"" WHERE ""Blocklist
         /// <param name="hash">The hash to check</param>
         /// <param name="transaction">An optional external transaction</param>
         /// <returns>True if the hash is known, false otherwise</returns>
-        public bool IsBlocklistHashKnown(string hash, System.Data.IDbTransaction transaction)
+        public bool IsBlocklistHashKnown(string hash, IDbTransaction transaction)
         {
             m_getfirstfilesetwithblockinblockset.Transaction = transaction;
             m_getfirstfilesetwithblockinblockset.SetParameterValue(0, hash);
             var res = m_getfirstfilesetwithblockinblockset.ExecuteScalarInt64();
-            if (res != m_filesetId)
+            if (res != -1 && res != m_filesetId)
                 return true;
             else
                 return !m_blocklistHashes.Add(hash);
