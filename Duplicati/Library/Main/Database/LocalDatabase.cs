@@ -338,6 +338,20 @@ namespace Duplicati.Library.Main.Database
             return m_selectremotevolumeIdCommand.ExecuteScalarInt64(null, -1, file);
         }
 
+        public IEnumerable<KeyValuePair<string, long>> GetRemoteVolumeIDs(IEnumerable<string> files, System.Data.IDbTransaction transaction = null)
+        {
+            using (var cmd = m_connection.CreateCommand(transaction))
+            {
+                cmd.CommandText = @"SELECT ""Name"", ""ID"" FROM ""RemoteVolume"" WHERE ""Name"" IN (?)";
+                cmd.AddParameters(1);
+                cmd.SetParameterValue(0, files);
+
+                using (var rd = cmd.ExecuteReader())
+                    while (rd.Read())
+                        yield return new KeyValuePair<string, long>(rd.GetString(0), rd.GetInt64(1));
+            }
+        }
+
         public RemoteVolumeEntry GetRemoteVolume(string file, System.Data.IDbTransaction transaction = null)
         {
             m_selectremotevolumeCommand.Transaction = transaction;
