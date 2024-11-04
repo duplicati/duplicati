@@ -135,6 +135,36 @@ public class SecretProviderHelperTests : BasicSetupHelper
 
     [Test]
     [Category("SecretHelper")]
+    public void ReplacesSecretsWithUrlEscaping()
+    {
+        var secretProvider = new MockedSecretProvider();
+        secretProvider.Secrets["key1"] = "secret 1%&+abc";
+
+        var settings = new Dictionary<string, string>
+        {
+            {"key1", "$key1"}
+        };
+
+        var argsSys = new[] {
+            new System.Uri("test://host/?pass=$key1&user=user")
+        };
+
+        var argsInternal = new[] {
+            new Library.Utility.Uri("test://host?pass=$key1&user=user")
+        };
+
+        SecretProviderHelper.ApplySecretProviderAsync(argsSys, argsInternal, settings, null, secretProvider, CancellationToken.None).Await();
+
+        // Check no escaping is done for options
+        Assert.AreEqual("secret 1%&+abc", settings["key1"]);
+
+        // Check escaping is done for the URL
+        Assert.AreEqual("test://host/?pass=secret%201%25%26%2Babc&user=user", argsSys[0].ToString());
+        Assert.AreEqual("test://host?pass=secret%201%25%26%2Babc&user=user", argsInternal[0].ToString());
+    }
+
+    [Test]
+    [Category("SecretHelper")]
     public void ReplaceSecretsWithExtendedPattern()
     {
         var secretProvider = new MockedSecretProvider();
