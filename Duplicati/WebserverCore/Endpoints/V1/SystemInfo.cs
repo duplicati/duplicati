@@ -48,6 +48,7 @@ public class SystemInfo : IEndpointV1
             WebModules = Server.Serializable.ServerSettings.WebModules,
             ConnectionModules = Server.Serializable.ServerSettings.ConnectionModules,
             ServerModules = Server.Serializable.ServerSettings.ServerModules,
+            SecretProviderModules = Server.Serializable.ServerSettings.SecretProviderModules,
             UsingAlternateUpdateURLs = Library.AutoUpdater.AutoUpdateSettings.UsesAlternateURLs,
             LogLevels = Enum.GetNames(typeof(Library.Logging.LogMessageType)),
             SpecialFolders = SpecialFolders.Nodes.Select(n => new Dto.SystemInfoDto.SpecialFolderDto { ID = n.id, Path = n.resolvedpath }),
