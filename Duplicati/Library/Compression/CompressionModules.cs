@@ -30,7 +30,6 @@ public static class CompressionModules
     /// The list of all built-in compression modules
     /// </summary>
     public static IReadOnlyList<ICompression> BuiltInCompressionModules => [
-        new ZipCompression.FileArchiveZip(),
-        new SevenZipCompression()
+        new ZipCompression.FileArchiveZip()
     ];
 }
