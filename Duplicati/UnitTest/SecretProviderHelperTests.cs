@@ -84,16 +84,21 @@ public class SecretProviderHelperTests : BasicSetupHelper
             {"key3", "value3$key"},
         };
 
-        var args = new[] {
-            "test://host?pass=$key2&user=$key1&other=123",
+        var argsSys = new[] {
+            new System.Uri("test://host/?pass=$key2&user=$key1&other=123")
         };
 
-        SecretProviderHelper.ApplySecretProviderAsync(args, settings, null, secretProvider, CancellationToken.None).Await();
+        var argsInternal = new[] {
+            new Library.Utility.Uri("test://host?pass=$key2&user=$key1&other=123")
+        };
+
+        SecretProviderHelper.ApplySecretProviderAsync(argsSys, argsInternal, settings, null, secretProvider, CancellationToken.None).Await();
 
         Assert.AreEqual("value1", settings["key1"]);
         Assert.AreEqual("secret2", settings["key2"]);
         Assert.AreEqual("value3$key", settings["key3"]);
-        Assert.AreEqual("test://host?pass=secret2&user=secret1&other=123", args[0]);
+        Assert.AreEqual("test://host/?pass=secret2&user=secret1&other=123", argsSys[0].ToString());
+        Assert.AreEqual("test://host?pass=secret2&user=secret1&other=123", argsInternal[0].ToString());
     }
 
     [Test]
@@ -111,16 +116,21 @@ public class SecretProviderHelperTests : BasicSetupHelper
             {"key3", "value3$key"},
         };
 
-        var args = new[] {
-            "test://host?pass=$key/with/slash&user=$key1&other=123",
+        var argsSys = new[] {
+            new System.Uri("test://host/?pass=$key/with/slash&user=$key1&other=123")
         };
 
-        SecretProviderHelper.ApplySecretProviderAsync(args, settings, null, secretProvider, CancellationToken.None).Await();
+        var argsInternal = new[] {
+            new Library.Utility.Uri("test://host?pass=$key/with/slash&user=$key1&other=123")
+        };
+
+        SecretProviderHelper.ApplySecretProviderAsync(argsSys, argsInternal, settings, null, secretProvider, CancellationToken.None).Await();
 
         Assert.AreEqual("value1", settings["key1"]);
         Assert.AreEqual("secret2", settings["key2"]);
         Assert.AreEqual("value3$key", settings["key3"]);
-        Assert.AreEqual("test://host?pass=secret2&user=secret1&other=123", args[0]);
+        Assert.AreEqual("test://host/?pass=secret2&user=secret1&other=123", argsSys[0].ToString());
+        Assert.AreEqual("test://host?pass=secret2&user=secret1&other=123", argsInternal[0].ToString());
     }
 
     [Test]
@@ -139,16 +149,21 @@ public class SecretProviderHelperTests : BasicSetupHelper
             {"secret-provider-pattern", "${}"},
         };
 
-        var args = new[] {
-            "test://host?pass=${key2}&user=${key1}&other=123",
+        var argsSys = new[] {
+            new System.Uri("test://host/?pass=${key2}&user=${key1}&other=123"),
         };
 
-        SecretProviderHelper.ApplySecretProviderAsync(args, settings, null, secretProvider, CancellationToken.None).Await();
+        var argsInternal = new[] {
+            new Library.Utility.Uri("test://host?pass=${key2}&user=${key1}&other=123"),
+        };
+
+        SecretProviderHelper.ApplySecretProviderAsync(argsSys, argsInternal, settings, null, secretProvider, CancellationToken.None).Await();
 
         Assert.AreEqual("value1", settings["key1"]);
         Assert.AreEqual("secret2", settings["key2"]);
         Assert.AreEqual("value3${key}", settings["key3"]);
-        Assert.AreEqual("test://host?pass=secret2&user=secret1&other=123", args[0]);
+        Assert.AreEqual("test://host/?pass=secret2&user=secret1&other=123", argsSys[0].ToString());
+        Assert.AreEqual("test://host?pass=secret2&user=secret1&other=123", argsInternal[0].ToString());
     }
 
     [Test]
@@ -167,16 +182,21 @@ public class SecretProviderHelperTests : BasicSetupHelper
             {"secret-provider-pattern", ":sec{}"},
         };
 
-        var args = new[] {
-            "test://host?pass=:sec{key2}&user=:sec{key1}&other=123",
+        var argsSys = new[] {
+            new System.Uri("test://host/?pass=:sec{key2}&user=:sec{key1}&other=123"),
         };
 
-        SecretProviderHelper.ApplySecretProviderAsync(args, settings, null, secretProvider, CancellationToken.None).Await();
+        var argsInternal = new[] {
+            new Library.Utility.Uri("test://host?pass=:sec{key2}&user=:sec{key1}&other=123"),
+        };
+
+        SecretProviderHelper.ApplySecretProviderAsync(argsSys, argsInternal, settings, null, secretProvider, CancellationToken.None).Await();
 
         Assert.AreEqual("value1", settings["key1"]);
         Assert.AreEqual("secret2", settings["key2"]);
         Assert.AreEqual("value3:sec{key}", settings["key3"]);
-        Assert.AreEqual("test://host?pass=secret2&user=secret1&other=123", args[0]);
+        Assert.AreEqual("test://host/?pass=secret2&user=secret1&other=123", argsSys[0].ToString());
+        Assert.AreEqual("test://host?pass=secret2&user=secret1&other=123", argsInternal[0].ToString());
     }
 
     [Test]
@@ -194,13 +214,13 @@ public class SecretProviderHelperTests : BasicSetupHelper
         var cachedProvider = SecretProviderHelper.WrapWithCache("", secretProvider, SecretProviderHelper.CachingLevel.InMemory, null, "salt", "!ext{}");
         cachedProvider.InitializeAsync(new System.Uri("mock://"), CancellationToken.None).Await();
 
-        SecretProviderHelper.ApplySecretProviderAsync([], settings, null, cachedProvider, CancellationToken.None).Await();
+        SecretProviderHelper.ApplySecretProviderAsync([], [], settings, null, cachedProvider, CancellationToken.None).Await();
 
         Assert.AreEqual("secret1", settings["key1"]);
 
         settings["key1"] = "!ext{sec1}";
 
-        SecretProviderHelper.ApplySecretProviderAsync([], settings, null, cachedProvider, CancellationToken.None).Await();
+        SecretProviderHelper.ApplySecretProviderAsync([], [], settings, null, cachedProvider, CancellationToken.None).Await();
 
         Assert.AreEqual("secret1", settings["key1"]);
     }
@@ -218,11 +238,15 @@ public class SecretProviderHelperTests : BasicSetupHelper
             {"key2", "$key2"},
         };
 
-        var args = new[] {
-            "test://host?pass=$key2&user=$key1&other=123",
+        var argsSys = new[] {
+            new System.Uri("test://host?pass=$key2&user=$key1&other=123"),
         };
 
-        Assert.Throws<KeyNotFoundException>(() => SecretProviderHelper.ApplySecretProviderAsync(args, settings, null, secretProvider, CancellationToken.None).Await());
+        var argsInternal = new[] {
+            new Library.Utility.Uri("test://host?pass=$key2&user=$key1&other=123"),
+        };
+
+        Assert.Throws<KeyNotFoundException>(() => SecretProviderHelper.ApplySecretProviderAsync(argsSys, argsInternal, settings, null, secretProvider, CancellationToken.None).Await());
     }
 
     [Test]
@@ -239,11 +263,15 @@ public class SecretProviderHelperTests : BasicSetupHelper
             {"key2", "$key2"},
         };
 
-        var args = new[] {
-            "test://host?pass=$key2&user=$key1&other=123",
+        var argsSys = new[] {
+            new System.Uri("test://host?pass=$key2&user=$key1&other=123"),
         };
 
-        Assert.Throws<InvalidOperationException>(() => SecretProviderHelper.ApplySecretProviderAsync(args, settings, null, secretProvider, CancellationToken.None).Await());
+        var argsInternal = new[] {
+            new Library.Utility.Uri("test://host?pass=$key2&user=$key1&other=123"),
+        };
+
+        Assert.Throws<InvalidOperationException>(() => SecretProviderHelper.ApplySecretProviderAsync(argsSys, argsInternal, settings, null, secretProvider, CancellationToken.None).Await());
     }
 
     [Test]
@@ -263,14 +291,14 @@ public class SecretProviderHelperTests : BasicSetupHelper
         var cachedProvider = SecretProviderHelper.WrapWithCache("", secretProvider, SecretProviderHelper.CachingLevel.InMemory, null, "salt", null);
         cachedProvider.InitializeAsync(new System.Uri("mock://"), CancellationToken.None).Await();
 
-        SecretProviderHelper.ApplySecretProviderAsync([], settings, null, cachedProvider, CancellationToken.None).Await();
+        SecretProviderHelper.ApplySecretProviderAsync([], [], settings, null, cachedProvider, CancellationToken.None).Await();
 
         secretProvider.Secrets = null;
 
         settings["key1"] = "$key1";
         settings["key2"] = "$key2";
 
-        SecretProviderHelper.ApplySecretProviderAsync([], settings, null, cachedProvider, CancellationToken.None).Await();
+        SecretProviderHelper.ApplySecretProviderAsync([], [], settings, null, cachedProvider, CancellationToken.None).Await();
 
         Assert.AreEqual("secret1", settings["key1"]);
         Assert.AreEqual("secret2", settings["key2"]);
@@ -294,14 +322,14 @@ public class SecretProviderHelperTests : BasicSetupHelper
         var cachedProvider = SecretProviderHelper.WrapWithCache("", secretProvider, SecretProviderHelper.CachingLevel.Persistent, tempFolder, "salt", null);
         cachedProvider.InitializeAsync(new System.Uri("mock://"), CancellationToken.None).Await();
 
-        SecretProviderHelper.ApplySecretProviderAsync([], settings, null, cachedProvider, CancellationToken.None).Await();
+        SecretProviderHelper.ApplySecretProviderAsync([], [], settings, null, cachedProvider, CancellationToken.None).Await();
 
         secretProvider.Secrets = null;
 
         settings["key1"] = "$key1";
         settings["key2"] = "$key2";
 
-        SecretProviderHelper.ApplySecretProviderAsync([], settings, null, cachedProvider, CancellationToken.None).Await();
+        SecretProviderHelper.ApplySecretProviderAsync([], [], settings, null, cachedProvider, CancellationToken.None).Await();
 
         Assert.AreEqual("secret1", settings["key1"]);
         Assert.AreEqual("secret2", settings["key2"]);
@@ -325,7 +353,7 @@ public class SecretProviderHelperTests : BasicSetupHelper
         var cachedProvider = SecretProviderHelper.WrapWithCache("", secretProvider, SecretProviderHelper.CachingLevel.Persistent, tempFolder, "salt", null);
         cachedProvider.InitializeAsync(new System.Uri("mock://"), CancellationToken.None).Await();
 
-        SecretProviderHelper.ApplySecretProviderAsync([], settings, null, cachedProvider, CancellationToken.None).Await();
+        SecretProviderHelper.ApplySecretProviderAsync([], [], settings, null, cachedProvider, CancellationToken.None).Await();
 
         settings["key1"] = "$key1";
         settings["key2"] = "$key2";
@@ -337,7 +365,7 @@ public class SecretProviderHelperTests : BasicSetupHelper
 
         cachedProvider.InitializeAsync(new System.Uri("mock://"), CancellationToken.None).Await();
 
-        SecretProviderHelper.ApplySecretProviderAsync([], settings, null, cachedProvider, CancellationToken.None).Await();
+        SecretProviderHelper.ApplySecretProviderAsync([], [], settings, null, cachedProvider, CancellationToken.None).Await();
 
         Assert.AreEqual("secret1", settings["key1"]);
         Assert.AreEqual("secret2", settings["key2"]);

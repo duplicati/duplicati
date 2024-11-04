@@ -28,7 +28,7 @@ public record WebModules : IEndpointV1
         foreach (var k in inputOptions.Keys)
             options[k] = inputOptions[k];
 
-        await SecretProviderHelper.ApplySecretProviderAsync([], options, Library.Utility.TempFolder.SystemTempPath, FIXMEGlobal.SecretProvider, cancellationToken);
+        await SecretProviderHelper.ApplySecretProviderAsync([], [], options, Library.Utility.TempFolder.SystemTempPath, FIXMEGlobal.SecretProvider, cancellationToken);
 
         return new Dto.WebModuleOutputDto(
             Status: "OK",

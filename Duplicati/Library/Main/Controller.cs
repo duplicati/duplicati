@@ -722,10 +722,10 @@ namespace Duplicati.Library.Main
 
         private async Task ApplySecretProvider(CancellationToken cancellationToken)
         {
-            var args = new[] { m_backend };
-            await SecretProviderHelper.ApplySecretProviderAsync(args, m_options.RawOptions, TempFolder.SystemTempPath, SecretProvider, cancellationToken);
+            var args = new[] { new Library.Utility.Uri(m_backend) };
+            await SecretProviderHelper.ApplySecretProviderAsync([], args, m_options.RawOptions, TempFolder.SystemTempPath, SecretProvider, cancellationToken);
             // Write back the backend argument, if it was modified by the secret provider
-            m_backend = args[0];
+            m_backend = args[0].ToString();
         }
 
         /// <summary>

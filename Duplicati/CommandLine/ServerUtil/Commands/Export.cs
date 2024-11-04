@@ -60,7 +60,7 @@ public static class Export
                 if (settings.SecretProvider != null)
                 {
                     var opts = new Dictionary<string, string?>() { { "password", encryptionPassphrase } };
-                    await settings.ReplaceSecrets([], opts).ConfigureAwait(false);
+                    await settings.ReplaceSecrets(opts).ConfigureAwait(false);
                     encryptionPassphrase = opts["password"]!;
                 }
 

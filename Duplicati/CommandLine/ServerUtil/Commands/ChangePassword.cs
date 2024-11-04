@@ -27,7 +27,7 @@ public static class ChangePassword
             if (settings.SecretProvider != null)
             {
                 var opts = new Dictionary<string, string?>() { { "password", newPassword } };
-                await settings.ReplaceSecrets([], opts).ConfigureAwait(false);
+                await settings.ReplaceSecrets(opts).ConfigureAwait(false);
                 newPassword = opts["password"]!;
             }
 

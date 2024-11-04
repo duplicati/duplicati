@@ -86,11 +86,11 @@ public sealed record Settings(
                 { "settings-encryption-key", settingsPassphrase }
             };
 
-            var args = new[] { hostUrl.ToString() };
-            secretInstance = SecretProviderHelper.ApplySecretProviderAsync(args, opts, Library.Utility.TempFolder.SystemTempPath, null, CancellationToken.None).Await();
+            var args = new[] { hostUrl };
+            secretInstance = SecretProviderHelper.ApplySecretProviderAsync(args, [], opts, Library.Utility.TempFolder.SystemTempPath, null, CancellationToken.None).Await();
 
             // Read back transformed values
-            hostUrl = new System.Uri(args[0]);
+            hostUrl = args[0];
             password = opts["password"];
             settingsPassphrase = opts["settings-encryption-key"];
         }
@@ -125,12 +125,12 @@ public sealed record Settings(
     /// <param name="args">The arguments to replace</param>
     /// <param name="options">The options to replace</param>
     /// <returns>The task to await</returns>
-    public Task ReplaceSecrets(string?[] args, Dictionary<string, string?> options)
+    public Task ReplaceSecrets(Dictionary<string, string?> options)
     {
         if (SecretProvider == null)
             return Task.CompletedTask;
 
-        return SecretProviderHelper.ReplaceSecretsAsync(SecretProvider, args, options, SecretProviderPattern, CancellationToken.None);
+        return SecretProviderHelper.ReplaceSecretsAsync(SecretProvider, [], [], options, SecretProviderPattern, CancellationToken.None);
     }
 
     /// <summary>

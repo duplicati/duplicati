@@ -198,7 +198,7 @@ public static class Program
             options["secret-provider-cache"] = agentConfig.SecretProviderCache.ToString();
             options["secret-provider-pattern"] = agentConfig.SecretProviderPattern;
 
-            FIXMEGlobal.SecretProvider = await SecretProviderHelper.ApplySecretProviderAsync([], options, TempFolder.SystemTempPath, null, CancellationToken.None);
+            FIXMEGlobal.SecretProvider = await SecretProviderHelper.ApplySecretProviderAsync([], [], options, TempFolder.SystemTempPath, null, CancellationToken.None);
 
             // Apply the secret provider to the agent configuration
             foreach (var prop in agentProps)

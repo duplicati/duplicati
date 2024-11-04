@@ -72,9 +72,9 @@ namespace Duplicati.WebserverCore.Endpoints.V1
             var uri = new Library.Utility.Uri(url);
             var opts = ParseUrlOptions(uri);
 
-            var tmp = new[] { url };
-            await SecretProviderHelper.ApplySecretProviderAsync(tmp, opts, Library.Utility.TempFolder.SystemTempPath, FIXMEGlobal.SecretProvider, cancelToken);
-            url = tmp[0];
+            var tmp = new[] { uri };
+            await SecretProviderHelper.ApplySecretProviderAsync([], tmp, opts, Library.Utility.TempFolder.SystemTempPath, FIXMEGlobal.SecretProvider, cancelToken);
+            url = tmp[0].ToString();
 
             var modules = ConfigureModules(opts);
             var backend = Library.DynamicLoader.BackendLoader.GetBackend(url, new Dictionary<string, string>());

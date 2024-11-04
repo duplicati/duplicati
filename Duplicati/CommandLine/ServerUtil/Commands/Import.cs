@@ -33,7 +33,7 @@ public static class Import
                 if (settings.SecretProvider != null)
                 {
                     var opts = new Dictionary<string, string?>() { { "password", passphrase } };
-                    await settings.ReplaceSecrets([], opts).ConfigureAwait(false);
+                    await settings.ReplaceSecrets(opts).ConfigureAwait(false);
                     passphrase = opts["password"]!;
                 }
             }

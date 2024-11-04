@@ -596,7 +596,7 @@ namespace Duplicati.Server
         }
 
         private static async Task ApplySecretProvider(Dictionary<string, string> commandlineOptions, CancellationToken cancellationToken)
-            => FIXMEGlobal.SecretProvider = await SecretProviderHelper.ApplySecretProviderAsync([], commandlineOptions, TempFolder.SystemTempPath, FIXMEGlobal.SecretProvider, cancellationToken).ConfigureAwait(false);
+            => FIXMEGlobal.SecretProvider = await SecretProviderHelper.ApplySecretProviderAsync([], [], commandlineOptions, TempFolder.SystemTempPath, FIXMEGlobal.SecretProvider, cancellationToken).ConfigureAwait(false);
 
         private static void ConfigureLogging(Dictionary<string, string> commandlineOptions)
         {

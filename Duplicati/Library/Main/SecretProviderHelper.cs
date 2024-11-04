@@ -28,10 +28,12 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Web;
 using Duplicati.Library.DynamicLoader;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Logging;
 using Duplicati.Library.Utility;
+using Google.Protobuf.WellKnownTypes;
 
 namespace Duplicati.Library.Main;
 
@@ -106,13 +108,14 @@ public static class SecretProviderHelper
     /// Applies the secret provider to the arguments.
     /// Note that this method modifes the arguments and options in place.
     /// </summary>
-    /// <param name="arguments">The arguments to modify</param>
+    /// <param name="realUriArguments">The arguments to modify, of type <see cref="System.Uri"/></param>
+    /// <param name="internalUriArguments">The arguments to modify, of type <see cref="Library.Utility.Uri"/></param>
     /// <param name="options">The options to modify</param>
     /// <param name="persistedFolder">The persisted secret cache folder</param>
     /// <param name="fallbackProvider">The fallback provider to use if no provider is specified</param>
     /// <param name="cancellationToken">The cancellation token</param>
     /// <returns>The secret provider</returns>
-    public static async Task<ISecretProvider?> ApplySecretProviderAsync(string?[] arguments, Dictionary<string, string?> options, string persistedFolder, ISecretProvider? fallbackProvider, CancellationToken cancellationToken)
+    public static async Task<ISecretProvider?> ApplySecretProviderAsync(System.Uri?[] realUriArguments, Library.Utility.Uri[] internalUriArguments, Dictionary<string, string?> options, string persistedFolder, ISecretProvider? fallbackProvider, CancellationToken cancellationToken)
     {
         var provider = options.GetValueOrDefault("secret-provider");
         if (string.IsNullOrWhiteSpace(provider) && fallbackProvider == null)
@@ -147,7 +150,7 @@ public static class SecretProviderHelper
         if (string.IsNullOrWhiteSpace(pattern))
             pattern = DEFAULT_PATTERN;
 
-        await ReplaceSecretsAsync(secretProvider, arguments, options, pattern, cancellationToken).ConfigureAwait(false);
+        await ReplaceSecretsAsync(secretProvider, realUriArguments, internalUriArguments, options, pattern, cancellationToken).ConfigureAwait(false);
         return secretProvider;
     }
 
@@ -155,12 +158,13 @@ public static class SecretProviderHelper
     /// Helper method that finds all secrets matching the prefix and replaces them with the resolved values
     /// </summary>
     /// <param name="provider">The secret provider to use</param>
-    /// <param name="values">Any string values to update</param>
+    /// <param name="realUriArguments">The arguments to modify, of type <see cref="System.Uri"/></param>
+    /// <param name="internalUriArguments">The arguments to modify, of type <see cref="Library.Utility.Uri"/></param>
     /// <param name="options">Any options to update</param>
     /// <param name="matchpattern">The prefix to look for</param>
     /// <param name="cancelToken">The cancellation token</param>
     /// <returns>An awaitable task</returns>
-    public static async Task ReplaceSecretsAsync(ISecretProvider provider, string?[] values, Dictionary<string, string?> options, string matchpattern, CancellationToken cancelToken)
+    public static async Task ReplaceSecretsAsync(ISecretProvider provider, System.Uri?[] realUriArguments, Library.Utility.Uri[] internalUriArguments, Dictionary<string, string?> options, string matchpattern, CancellationToken cancelToken)
     {
         // Unwrap ${} to support ${name is long}
         var suffix = string.Empty;
@@ -178,17 +182,34 @@ public static class SecretProviderHelper
         // When we get the secrets, replace these values
         var optionsMap = options
             .Where(x => !x.Key.StartsWith("secret-provider", StringComparison.OrdinalIgnoreCase))
-            .Where(x => !string.IsNullOrWhiteSpace(x.Value))
-            .Select(x => (x.Key, Value: x.Value!, Match: pattern.Match(x.Value!)))
-            .Where(x => x.Match.Success && !string.IsNullOrWhiteSpace(x.Match.Groups["key"].Value) && x.Match.Length == x.Value.Length)
-            .Select(x => (x.Key, Secret: x.Match.Groups["key"].Value))
+            .Select(x => (x.Key, Secret: GetKey(x.Value, pattern)))
             .Where(x => !string.IsNullOrWhiteSpace(x.Secret))
-            .GroupBy(x => x.Secret)
+            .GroupBy(x => x.Secret!)
             .ToDictionary(x => x.Key, x => x.Select(y => y.Key).ToArray());
 
-        var secrets = values
-            .Where(x => !string.IsNullOrWhiteSpace(x))
-            .SelectMany(x => pattern.Matches(x!).Select(m => m.Groups["key"].Value))
+        var realUriMap = realUriArguments
+            .Zip(Enumerable.Range(0, realUriArguments.Length))
+            .Where(x => !string.IsNullOrWhiteSpace(x.First?.Query))
+            .Select(x => (Source: x.Second, Params: HttpUtility.ParseQueryString(x.First!.Query)))
+            .SelectMany(x => x.Params.AllKeys.Select(k => (Source: x.Source, Key: k, Value: x.Params[k])))
+            .Select(x => (x.Source, x.Key, Secret: GetKey(x.Value, pattern)))
+            .Where(x => !string.IsNullOrWhiteSpace(x.Secret))
+            .GroupBy(x => x.Secret!)
+            .ToDictionary(x => x.Key, x => x.Select(y => (y.Source, y.Key)).ToArray());
+
+        var internalUriMap = internalUriArguments
+            .Zip(Enumerable.Range(0, internalUriArguments.Length))
+            .Select(x => (Source: x.Second, Value: x.First))
+            .Where(x => !string.IsNullOrWhiteSpace(x.Value.Query))
+            .Select(x => (Source: x.Source, Params: x.Value.QueryParameters))
+            .SelectMany(x => x.Params.AllKeys.Select(k => (Source: x.Source, Key: k, Value: x.Params[k])))
+            .Select(x => (x.Source, x.Key, Secret: GetKey(x.Value, pattern)))
+            .Where(x => !string.IsNullOrWhiteSpace(x.Secret))
+            .GroupBy(x => x.Secret!)
+            .ToDictionary(x => x.Key, x => x.Select(y => (y.Source, y.Key)).ToArray());
+
+        var secrets = realUriMap.Keys
+            .Concat(internalUriMap.Keys)
             .Concat(optionsMap.Keys)
             .Distinct()
             .ToArray();
@@ -207,17 +228,48 @@ public static class SecretProviderHelper
             foreach (var k in v.Value)
                 options[k] = translated[v.Key];
 
-        // Update values by replacing within the strings
-        for (var i = 0; i < values.Length; i++)
-        {
-            var prev = values[i];
-            if (!string.IsNullOrWhiteSpace(prev))
-                values[i] = pattern.Replace(prev, m => translated[m.Groups["key"].Value]);
-        }
+        // Update real uri arguments by replacing values
+        foreach (var v in realUriMap)
+            foreach (var (s, k) in v.Value)
+            {
+                var builder = new UriBuilder(realUriArguments[s]!);
+                var query = HttpUtility.ParseQueryString(builder.Query);
+                query[k] = translated[v.Key];
+                builder.Query = query.ToString();
+                realUriArguments[s] = builder.Uri;
+            }
+
+        // Update internal uri arguments by replacing values
+        foreach (var v in internalUriMap)
+            foreach (var (s, k) in v.Value)
+            {
+                var uri = internalUriArguments[s];
+                var kp = uri.QueryParameters;
+                kp[k] = translated[v.Key];
+                uri = uri.SetQuery(Library.Utility.Uri.BuildUriQuery(kp));
+                internalUriArguments[s] = uri;
+            }
 
         return;
     }
 
+    /// <summary>
+    /// Gets the key from a value using the pattern
+    /// </summary>
+    /// <param name="value">The value to get the key from</param>
+    /// <param name="pattern">The pattern to use</param>
+    /// <returns>The key or null if not found</returns>
+    private static string? GetKey(string? value, Regex pattern)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return null;
+
+        var match = pattern.Match(value);
+        if (!match.Success || string.IsNullOrWhiteSpace(match.Groups["key"].Value) || match.Length != value.Length)
+            return null;
+
+        return match.Groups["key"].Value;
+    }
 
     /// <summary>
     /// A cache for secret provider values
