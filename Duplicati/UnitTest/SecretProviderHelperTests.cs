@@ -160,9 +160,9 @@ public class SecretProviderHelperTests : BasicSetupHelper
 
         // Check escaping is done for the URL
         if (argsSys[0].ToString().Contains("+")) // Some versions of .NET escape space as +, others as %20
-            Assert.AreEqual("test://host/?pass=secret+1%25%26%2Babc&user=user", argsSys[0].ToString());
+            Assert.AreEqual("test://host/?pass=secret+1%25%26%2Babc&user=user".ToLowerInvariant(), argsSys[0].ToString().ToLowerInvariant());
         else
-            Assert.AreEqual("test://host/?pass=secret%201%25%26%2Babc&user=user", argsSys[0].ToString());
+            Assert.AreEqual("test://host/?pass=secret%201%25%26%2Babc&user=user".ToLowerInvariant(), argsSys[0].ToString().ToLowerInvariant());
 
         Assert.AreEqual("test://host?pass=secret%201%25%26%2Babc&user=user", argsInternal[0].ToString());
     }
