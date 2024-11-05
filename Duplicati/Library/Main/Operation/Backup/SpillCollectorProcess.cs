@@ -74,6 +74,29 @@ namespace Duplicati.Library.Main.Operation.Backup
                         throw;
                     }
 
+                async Task<SpillVolumeRequest> GetNextTarget(SpillVolumeRequest source)
+                {
+                    SpillVolumeRequest target = null;
+                    if (lst.Count == 0)
+                    {
+                        // No more targets, make one
+                        target = new SpillVolumeRequest(new BlockVolumeWriter(options), source.IndexVolume == null ? null : new TemporaryIndexVolume(options));
+                        target.BlockVolume.VolumeID = await database.RegisterRemoteVolumeAsync(target.BlockVolume.RemoteFilename, RemoteVolumeType.Blocks, RemoteVolumeState.Temporary).ConfigureAwait(false);
+                    }
+                    else
+                    {
+                        // Grab the next target
+                        target = lst[0];
+                        lst.RemoveAt(0);
+                    }
+
+                    // We copy all blocklisthashes as they are pre-filtered to be unique
+                    if (source.IndexVolume != null)
+                        source.IndexVolume.CopyTo(target.IndexVolume, true);
+
+                    return target;
+                }
+
 
                 while (lst.Count > 1)
                 {
@@ -93,29 +116,14 @@ namespace Duplicati.Library.Main.Operation.Backup
 
                     using (var rd = new BlockVolumeReader(options.CompressionModule, source.BlockVolume.LocalFilename, options))
                     {
+                        // Make sure we process the blocklisthashes, even if the blockvolume is empty
+                        target = await GetNextTarget(source).ConfigureAwait(false);
+
                         foreach (var file in rd.Blocks)
                         {
                             // Grab a target
                             if (target == null)
-                            {
-                                if (lst.Count == 0)
-                                {
-                                    // No more targets, make one
-                                    target = new SpillVolumeRequest(new BlockVolumeWriter(options), source.IndexVolume == null ? null : new TemporaryIndexVolume(options));
-                                    target.BlockVolume.VolumeID = await database.RegisterRemoteVolumeAsync(target.BlockVolume.RemoteFilename, RemoteVolumeType.Blocks, RemoteVolumeState.Temporary).ConfigureAwait(false);
-                                }
-                                else
-                                {
-                                    // Grab the next target
-                                    target = lst[0];
-                                    lst.RemoveAt(0);
-                                }
-
-                                // We copy all the blocklisthashes, which may create duplicates
-                                // but otherwise we need to query all hashes to see if they are blocklisthashes
-                                if (source.IndexVolume != null)
-                                    source.IndexVolume.CopyTo(target.IndexVolume, true);
-                            }
+                                target = await GetNextTarget(source).ConfigureAwait(false);
 
                             var len = rd.ReadBlock(file.Key, buffer);
                             target.BlockVolume.AddBlock(file.Key, buffer, 0, len, Duplicati.Library.Interface.CompressionHint.Default);

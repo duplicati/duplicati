@@ -34,6 +34,7 @@
     <EmbeddedResource Include="Database\Database schema\10. Add IsFullBackup to Fileset table.sql" />
     <EmbeddedResource Include="Database\Database schema\11. Add Block indices.sql" />
     <EmbeddedResource Include="Database\Database schema\12. Performance Indexes.sql" />
+    <EmbeddedResource Include="Database\Database schema\13. Unique index on DuplicateBlock.sql" />
   </ItemGroup>
   
   <ItemGroup>

@@ -186,7 +186,7 @@ namespace Duplicati.Library.Backend
                 this.m_oAuthHelper.AutoAuthHeader = true;
             }
 
-            this.m_retryAfter = new RetryAfterHelper();
+            this.m_retryAfter = RetryAfterHelper.CreateOrGetRetryAfterHelper(url);
 
             // Extract out the path to the backup root folder from the given URI. Since this can be an expensive operation, 
             // we will cache the value using a lazy initializer.

@@ -384,5 +384,50 @@ namespace Duplicati.UnitTest
                 Assert.AreEqual(5, backupResults.Warnings.Count());
             }
         }
+
+        [Test]
+        [Category("RepairHandler")]
+        [TestCase("true")]
+        [TestCase("false")]
+        public void RepairExtraIndexFiles(string noEncryption)
+        {
+            // Extra index files will be added to the database and should have a correct link established
+            Dictionary<string, string> options = new Dictionary<string, string>(this.TestOptions) { ["no-encryption"] = noEncryption };
+            using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
+            {
+                IBackupResults backupResults = c.Backup(new[] { this.DATAFOLDER });
+                TestUtils.AssertResults(backupResults);
+            }
+
+            string[] dindexFiles = Directory.EnumerateFiles(this.TARGETFOLDER, "*dindex*").ToArray();
+            Assert.Greater(dindexFiles.Length, 0);
+            string origFile = dindexFiles.First();
+            // Duplicate index file
+            string dupFile = Path.Combine(TARGETFOLDER, Path.GetFileName(origFile).Replace(".dindex", "1.dindex"));
+            File.Copy(origFile, dupFile);
+
+            using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
+            {
+                IRepairResults repairResults = c.Repair();
+                TestUtils.AssertResults(repairResults);
+            }
+
+            // Check database block link
+            using (LocalDatabase db = new LocalDatabase(DBFILE, "Test", true))
+            {
+                long indexVolumeId = db.GetRemoteVolumeID(Path.GetFileName(origFile));
+                long duplicateVolumeId = db.GetRemoteVolumeID(Path.GetFileName(dupFile));
+                Assert.AreNotEqual(-1, indexVolumeId);
+                Assert.AreNotEqual(-1, duplicateVolumeId);
+
+                using (var cmd = db.Connection.CreateCommand())
+                {
+                    string sql = @"SELECT ""BlockVolumeID"" FROM ""IndexBlockLink"" WHERE ""IndexVolumeID"" = ?";
+                    long linkedIndexId = cmd.ExecuteScalarInt64(sql, -1, indexVolumeId);
+                    long linkedDuplicateId = cmd.ExecuteScalarInt64(sql, -1, duplicateVolumeId);
+                    Assert.AreEqual(linkedIndexId, linkedDuplicateId);
+                }
+            }
+        }
     }
 }

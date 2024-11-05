@@ -309,6 +309,14 @@ namespace Duplicati.UnitTest
                 Assert.AreEqual((filenames.Count * 3) + 1, r.Files.Count());
             }
 
+            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { full_remote_verification = true }), null))
+            {
+                var r = c.Test(long.MaxValue);
+                Assert.AreEqual(0, r.Errors.Count());
+                Assert.AreEqual(0, r.Warnings.Count());
+                Assert.IsFalse(r.Verifications.Any(p => p.Value.Any()));
+            }
+
             testopts["dbpath"] = this.recreatedDatabaseFile;
 
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
@@ -356,6 +364,14 @@ namespace Duplicati.UnitTest
                 //ProgressWriteLine("Newest after delete:");
                 //ProgressWriteLine(string.Join(Environment.NewLine, r.Files.Select(x => x.Path)));
                 Assert.AreEqual((filenames.Count * 3) + 1, r.Files.Count());
+            }
+
+            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { full_remote_verification = true }), null))
+            {
+                var r = c.Test(long.MaxValue);
+                Assert.AreEqual(0, r.Errors.Count());
+                Assert.AreEqual(0, r.Warnings.Count());
+                Assert.IsFalse(r.Verifications.Any(p => p.Value.Any()));
             }
 
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { restore_path = RESTOREFOLDER }), null))

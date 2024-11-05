@@ -856,10 +856,6 @@ namespace Duplicati.Library.Main
                 }
             }
 
-            // For now, warn not to use 7z
-            if (string.Equals(m_options.CompressionModule, "7z", StringComparison.OrdinalIgnoreCase))
-                Logging.Log.WriteWarningMessage(LOGTAG, "7zModuleHasIssues", null, "The 7z compression module has known issues and should only be used for experimental purposes");
-
             //Inform the user about the deprecated Tardigrade-Backend. They should switch to Storj DCS instead.
             if (string.Equals(new Library.Utility.Uri(m_backend).Scheme, "tardigrade", StringComparison.OrdinalIgnoreCase))
                 Logging.Log.WriteWarningMessage(LOGTAG, "TardigradeRename", null, "The Tardigrade-backend got renamed to Storj DCS - please migrate your backups to the new configuration by changing the destination storage type to Storj DCS.");

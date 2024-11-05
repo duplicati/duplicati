@@ -57,8 +57,10 @@ namespace Duplicati.Library.Main.Database
 
         private readonly System.Data.IDbCommand m_insertfileOperationCommand;
         private readonly System.Data.IDbCommand m_selectfilemetadatahashandsizeCommand;
+        private readonly System.Data.IDbCommand m_getfirstfilesetwithblockinblockset;
 
         private Dictionary<string, long> m_blockCache;
+        private HashSet<string> m_blocklistHashes;
 
         private long m_filesetId;
 
@@ -93,6 +95,7 @@ namespace Duplicati.Library.Main.Database
             m_selectfileHashCommand = m_connection.CreateCommand();
             m_insertblocksetentryFastCommand = m_connection.CreateCommand();
             m_selectfilemetadatahashandsizeCommand = m_connection.CreateCommand();
+            m_getfirstfilesetwithblockinblockset = m_connection.CreateCommand();
 
             m_findblockCommand.CommandText = @"SELECT ""ID"" FROM ""Block"" WHERE ""Hash"" = ? AND ""Size"" = ?";
             m_findblockCommand.AddParameters(2);
@@ -229,6 +232,13 @@ namespace Duplicati.Library.Main.Database
 
             m_selectblocklistHashesCommand.CommandText = @"SELECT ""Hash"" FROM ""BlocklistHash"" WHERE ""BlocksetID"" = ? ORDER BY ""Index"" ASC ";
             m_selectblocklistHashesCommand.AddParameters(1);
+
+            m_getfirstfilesetwithblockinblockset.CommandText = @"SELECT MIN(""FilesetEntry"".""FilesetID"") FROM ""FilesetEntry"" WHERE  ""FilesetEntry"".""FileID"" IN (
+SELECT ""File"".""ID"" FROM ""File"" WHERE ""File"".""BlocksetID"" IN(
+SELECT ""BlocklistHash"".""BlocksetID"" FROM ""BlocklistHash"" WHERE ""BlocklistHash"".""Hash"" = ?))";
+            m_getfirstfilesetwithblockinblockset.AddParameters(1);
+
+            m_blocklistHashes = new HashSet<string>();
         }
 
         /// <summary>
@@ -974,6 +984,23 @@ namespace Duplicati.Library.Main.Database
 
                 tr.Commit();
             }
+        }
+
+        /// <summary>
+        /// Checks if a blocklist hash is known
+        /// </summary>
+        /// <param name="hash">The hash to check</param>
+        /// <param name="transaction">An optional external transaction</param>
+        /// <returns>True if the hash is known, false otherwise</returns>
+        public bool IsBlocklistHashKnown(string hash, IDbTransaction transaction)
+        {
+            m_getfirstfilesetwithblockinblockset.Transaction = transaction;
+            m_getfirstfilesetwithblockinblockset.SetParameterValue(0, hash);
+            var res = m_getfirstfilesetwithblockinblockset.ExecuteScalarInt64();
+            if (res != -1 && res != m_filesetId)
+                return true;
+            else
+                return !m_blocklistHashes.Add(hash);
         }
     }
 }
