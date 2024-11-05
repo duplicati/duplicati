@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+﻿// Copyright (C) 2024, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -581,6 +581,14 @@ namespace Duplicati.Library.Main.Operation
                 }
 
                 backend.WaitForComplete(restoredb, null);
+
+                if (!m_options.RepairOnlyPaths)
+                {
+                    // All blocks are collected and added into the Block table
+                    // Find out which blocks are deleted and move them into DeletedBlock, 
+                    // so that compact can calculate the unused space
+                    restoredb.CleanupDeletedBlocks(null);
+                }
 
                 // In some cases we have a stale reference from an index file to a deleted block file
                 if (!m_options.UnittestMode)

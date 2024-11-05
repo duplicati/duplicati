@@ -188,7 +188,7 @@ namespace Duplicati.Library.Main.Operation
                                                 if (newvolindex != null)
                                                     newvolindex.AddBlock(e.Key, e.Value);
 
-                                                db.MoveBlockToNewVolume(e.Key, e.Value, newvol.VolumeID, transaction);
+                                                db.RegisterDuplicatedBlock(e.Key, e.Value, newvol.VolumeID, transaction);
                                                 blocksInVolume++;
 
                                                 if (newvol.Filesize > m_options.VolumeSize)
@@ -208,9 +208,15 @@ namespace Duplicati.Library.Main.Operation
 
                                                     blocksInVolume = 0;
 
-                                                    //After we upload this volume, we can delete all previous encountered volumes
-                                                    deletedVolumes.AddRange(DoDelete(db, backend, deleteableVolumes, ref transaction));
-                                                    deleteableVolumes = new List<IRemoteVolume>();
+                                                    // Wait for the backend to catch up
+                                                    backend.WaitForEmpty(db, transaction);
+
+                                                    // Commit as we have uploaded a volume
+                                                    if (!m_options.Dryrun)
+                                                    {
+                                                        transaction.Commit();
+                                                        transaction = db.BeginTransaction();
+                                                    }
                                                 }
                                             }
                                         }
@@ -300,10 +306,21 @@ namespace Duplicati.Library.Main.Operation
 
         private IEnumerable<KeyValuePair<string, long>> DoDelete(LocalDeleteDatabase db, BackendManager backend, IEnumerable<IRemoteVolume> deleteableVolumes, ref System.Data.IDbTransaction transaction)
         {
+            // Find volumes that can be deleted
+            var remoteFilesToRemove = db.ReOrderDeleteableVolumes(deleteableVolumes, transaction).ToList();
+
+            // Make sure we do not re-assign blocks to any of the volumes we are about to delete
+            var toRemoveVolumeIds = db.GetRemoteVolumeIDs(remoteFilesToRemove.Select(x => x.Name), transaction)
+                .Select(x => x.Value)
+                .Distinct()
+                .ToList();
+
             // Mark all volumes and relevant index files as disposable
-            List<IRemoteVolume> remoteFilesToRemove = db.GetDeletableVolumes(deleteableVolumes, transaction).ToList();
             foreach (var f in remoteFilesToRemove)
+            {
+                db.PrepareForDelete(f.Name, toRemoveVolumeIds, transaction);
                 db.UpdateRemoteVolume(f.Name, RemoteVolumeState.Deleting, f.Size, f.Hash, transaction);
+            }
 
             // Before we commit the current state, make sure the backend has caught up
             backend.WaitForEmpty(db, transaction);

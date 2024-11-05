@@ -260,5 +260,40 @@ namespace Duplicati.UnitTest
 
             TestUtils.AssertDirectoryTreesAreEquivalent(this.DATAFOLDER, restoreFolder, false, "Verifying restore using RecoveryTool.");
         }
+
+        [Test]
+        [Category("RecoveryTool")]
+        [TestCase(false)]
+        [TestCase(true)]
+        public void Recompress(bool noEncryption)
+        {
+            // Files to create in MB.
+            int[] fileSizes = { 10, 20, 30 };
+            foreach (int size in fileSizes)
+            {
+                byte[] data = new byte[size * 1024 * 1024];
+                Random rng = new Random();
+                rng.NextBytes(data);
+                File.WriteAllBytes(Path.Combine(this.DATAFOLDER, size + "MB"), data);
+            }
+            // Run a backup.
+            Dictionary<string, string> options = new Dictionary<string, string>(this.TestOptions)
+            {
+                ["no-encryption"] = noEncryption.ToString()
+            };
+            string backendURL = "file://" + this.TARGETFOLDER;
+            using (Controller c = new Controller(backendURL, options, null))
+            {
+                IBackupResults backupResults = c.Backup(new[] { this.DATAFOLDER });
+                Assert.AreEqual(0, backupResults.Errors.Count());
+                Assert.AreEqual(0, backupResults.Warnings.Count());
+            }
+            // Recompress.
+            string downloadFolder = Path.Combine(this.RESTOREFOLDER, "downloadedFiles");
+            Directory.CreateDirectory(downloadFolder);
+            int status = CommandLine.RecoveryTool.Program.Main(new[] { "recompress", "zip", $"{backendURL}", this.RESTOREFOLDER, $"--passphrase={options["passphrase"]}" });
+            Assert.AreEqual(0, status);
+        }
+
     }
 }

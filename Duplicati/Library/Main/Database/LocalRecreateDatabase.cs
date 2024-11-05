@@ -192,7 +192,7 @@ namespace Duplicati.Library.Main.Database
             m_insertBlockCommand.CommandText = @"INSERT INTO ""Block"" (""Hash"", ""Size"", ""VolumeID"") VALUES (?,?,?)";
             m_insertBlockCommand.AddParameters(3);
 
-            m_insertDuplicateBlockCommand.CommandText = @"INSERT INTO ""DuplicateBlock"" (""BlockID"", ""VolumeID"") VALUES ((SELECT ""ID"" FROM ""Block"" WHERE ""Hash"" = ? AND ""Size"" = ?), ?)";
+            m_insertDuplicateBlockCommand.CommandText = @"INSERT OR IGNORE INTO ""DuplicateBlock"" (""BlockID"", ""VolumeID"") VALUES ((SELECT ""ID"" FROM ""Block"" WHERE ""Hash"" = ? AND ""Size"" = ?), ?)";
             m_insertDuplicateBlockCommand.AddParameters(3);
         }
 
@@ -723,6 +723,36 @@ DELETE FROM ""RemoteVolume"" WHERE ""Type"" = '{RemoteVolumeType.Blocks}' AND ""
                     Logging.Log.WriteVerboseMessage(LOGTAG, "ReplacedMissingVolumes", "Replaced blocks for {0} missing volumes; there are now {1} missing volumes", cnt, cnt2);
                 }
             }
+        }
+
+        /// <summary>
+        /// Move blocks that are not referenced by any files to DeletedBlock table.
+        /// </summary>
+        /// Needs to be called after the last FindMissingBlocklistHashes, otherwise the tables are not up to date.
+        public void CleanupDeletedBlocks(System.Data.IDbTransaction transaction)
+        {
+            // Find out which blocks are deleted and move them into DeletedBlock, so that compact notices these blocks are empty
+            // Deleted blocks do not appear in the BlocksetEntry and not in the BlocklistHash table
+
+            var tmptablename = "DeletedBlocks-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
+
+            using (var tr = new TemporaryTransactionWrapper(m_connection, transaction))
+            using (var cmd = m_connection.CreateCommand(tr.Parent))
+            {
+                // 1. Select blocks not used by any file and not as a blocklist into temporary table
+                cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}""
+                    AS SELECT ""Block"".""ID"", ""Block"".""Hash"", ""Block"".""Size"", ""Block"".""VolumeID"" FROM ""Block""
+                        WHERE ""Block"".""ID"" NOT IN (SELECT ""BlocksetEntry"".""BlockID"" FROM ""BlocksetEntry"")
+                        AND ""Block"".""Hash"" NOT IN (SELECT ""BlocklistHash"".""Hash"" FROM ""BlocklistHash"")", tmptablename));
+                // 2. Insert blocks into DeletedBlock table
+                cmd.ExecuteNonQuery(string.Format(@"INSERT INTO ""DeletedBlock"" (""Hash"", ""Size"", ""VolumeID"") SELECT ""Hash"", ""Size"", ""VolumeID"" FROM ""{0}""", tmptablename));
+                // 3. Remove blocks from Block table
+                cmd.ExecuteNonQuery(string.Format(@"DELETE FROM ""Block"" WHERE ""ID"" IN (SELECT ""ID"" FROM ""{0}"")", tmptablename));
+                cmd.ExecuteNonQuery(string.Format(@"DROP TABLE IF EXISTS ""{0}""", tmptablename));
+                tr.Commit();
+            }
+
+
         }
 
         public override void Dispose()

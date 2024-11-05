@@ -98,11 +98,31 @@ public partial class DuplicatiWebserver
 
         builder.WebHost.ConfigureKestrel(options =>
         {
-            options.Listen(settings.Interface, settings.Port, listenOptions =>
+            // Handle IPv6 addresses
+            if (settings.Interface == System.Net.IPAddress.Any)
             {
-                if (settings.Certificate != null)
-                    listenOptions.UseHttps(settings.Certificate);
-            });
+                options.ListenAnyIP(settings.Port, listenOptions =>
+                {
+                    if (settings.Certificate != null)
+                        listenOptions.UseHttps(settings.Certificate);
+                });
+            }
+            else if (settings.Interface == System.Net.IPAddress.Loopback)
+            {
+                options.ListenLocalhost(settings.Port, listenOptions =>
+                {
+                    if (settings.Certificate != null)
+                        listenOptions.UseHttps(settings.Certificate);
+                });
+            }
+            else
+            {
+                options.Listen(settings.Interface, settings.Port, listenOptions =>
+                {
+                    if (settings.Certificate != null)
+                        listenOptions.UseHttps(settings.Certificate);
+                });
+            }
         });
 
         builder.Services.Configure<JsonOptions>(opt =>
