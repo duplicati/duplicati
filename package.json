@@ -9,7 +9,7 @@
     "stylelint-config-standard-less": "^3.0.1"
   },
   "scripts": {
-    "build:style": "npm run lint:style-fix; npx lessc Duplicati/Server/webroot/ngax/less/dark.less Duplicati/Server/webroot/ngax/styles/dark.css --clean-css -m=always && npx lessc Duplicati/Server/webroot/ngax/less/default.less Duplicati/Server/webroot/ngax/styles/default.css --clean-css -m=always",
+    "build:style": "npm run lint:style-fix; npx lessc Duplicati/Server/webroot/ngax/less/dark.less Duplicati/Server/webroot/ngax/styles/dark.css --clean-css -m=always && npx lessc Duplicati/Server/webroot/ngax/less/default.less Duplicati/Server/webroot/ngax/styles/default.css --clean-css -m=always && npx postcss Duplicati/Server/webroot/ngax/styles/dark.css Duplicati/Server/webroot/ngax/styles/default.css --no-map --use autoprefixer --replace",
     "lint:style": "npx stylelint \"Duplicati/Server/**/less/*.less\"",
     "lint:style-fix": "npx stylelint \"Duplicati/Server/**/less/*.less\" --fix"
   }
