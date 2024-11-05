@@ -30,6 +30,7 @@ public class SystemInfo : IEndpointV1
             DefaultUpdateChannel = Library.AutoUpdater.AutoUpdateSettings.DefaultUpdateChannel.ToString(),
             DefaultUsageReportLevel = Library.UsageReporter.Reporter.DefaultReportLevel,
             ServerTime = DateTime.Now,
+            ServerTimeZone = TimeZoneInfo.Local.Id,
             OSType = OperatingSystem.IsWindows() ? "Windows" : OperatingSystem.IsLinux() ? "Linux" : OperatingSystem.IsMacOS() ? "MacOS" : "Unknown",
             OSVersion = Library.UsageReporter.OSInfoHelper.PlatformString,
             DirectorySeparator = Path.DirectorySeparatorChar,
@@ -64,7 +65,14 @@ public class SystemInfo : IEndpointV1
                     EnglishName = new CultureInfo(x).EnglishName,
                     DisplayName = new CultureInfo(x).NativeName
                 }),
-            BrowserLocaleSupported = Library.Localization.LocalizationService.isCultureSupported(browserlanguage)
+            BrowserLocaleSupported = Library.Localization.LocalizationService.isCultureSupported(browserlanguage),
+            TimeZones = Library.Utility.TimeZoneHelper.GetTimeZones()
+                .Select(x => new Dto.SystemInfoDto.TimeZoneDto
+                {
+                    ID = x.Id,
+                    DisplayName = x.DisplayName,
+                    CurrentUTCOffset = x.CurrentUtcOffset.ToString()
+                }),
         };
     }
 

@@ -27,6 +27,7 @@ using Duplicati.Library.RestAPI;
 using System.Text.Json;
 using System.Text;
 using System.Security.Cryptography.X509Certificates;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.Server.Database
 {
@@ -66,6 +67,7 @@ namespace Duplicati.Server.Database
             public const string DISABLE_SIGNIN_TOKENS = "disable-signin-tokens";
             public const string ENCRYPTED_FIELDS = "encrypted-fields";
             public const string PRELOAD_SETTINGS_HASH = "preload-settings-hash";
+            public const string TIMEZONE_OPTION = "server-timezone";
         }
 
         private readonly Dictionary<string, string> settings;
@@ -747,6 +749,34 @@ namespace Duplicati.Server.Database
             {
                 lock (databaseConnection.m_lock)
                     settings[CONST.PRELOAD_SETTINGS_HASH] = value;
+                SaveSettings();
+            }
+        }
+
+        public TimeZoneInfo Timezone
+        {
+            get
+            {
+                var id = settings[CONST.TIMEZONE_OPTION];
+
+                // All times are stored in UTC in the database, prior to introducing the timezone option
+                if (string.IsNullOrEmpty(id))
+                    return TimeZoneInfo.Utc;
+
+                try
+                {
+                    if (!string.IsNullOrEmpty(id))
+                        return TimeZoneHelper.GetTimeZoneById(id);
+                }
+                catch
+                {
+                }
+                return TimeZoneInfo.Local;
+            }
+            set
+            {
+                lock (databaseConnection.m_lock)
+                    settings[CONST.TIMEZONE_OPTION] = value?.Id;
                 SaveSettings();
             }
         }
