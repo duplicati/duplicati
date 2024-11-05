@@ -1,22 +1,22 @@
 // Copyright (C) 2024, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
-// 
-// Permission is hereby granted, free of charge, to any person obtaining a 
-// copy of this software and associated documentation files (the "Software"), 
-// to deal in the Software without restriction, including without limitation 
-// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
-// and/or sell copies of the Software, and to permit persons to whom the 
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the "Software"),
+// to deal in the Software without restriction, including without limitation
+// the rights to use, copy, modify, merge, publish, distribute, sublicense,
+// and/or sell copies of the Software, and to permit persons to whom the
 // Software is furnished to do so, subject to the following conditions:
-// 
-// The above copyright notice and this permission notice shall be included in 
+//
+// The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
-// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
 using CoCoL;
@@ -55,11 +55,24 @@ namespace Duplicati.Library.Main.Operation.Backup
                 BlockVolumeWriter blockvolume = null;
                 TemporaryIndexVolume indexvolume = null;
 
+                System.Diagnostics.Stopwatch sw_workload = new ();
+                long allowed_workload_ms = options.CPUIntensity * 100;
+
                 try
                 {
                     while (true)
                     {
                         var b = await self.Input.ReadAsync();
+
+                        // Check if the process has spent more than allowed workload time
+                        if (options.CPUIntensity < 10 && sw_workload.ElapsedMilliseconds > allowed_workload_ms)
+                        {
+                            // Sleep the remaining time
+                            int time_to_sleep = 1000 - (int) allowed_workload_ms;
+                            await Task.Delay(time_to_sleep);
+                            sw_workload.Reset();
+                        }
+                        sw_workload.Start();
 
                         // We need these blocks to be stored in the full index files
                         var isMandatoryBlocklistHash = b.IsBlocklistHashes && fullIndexFiles;
@@ -75,6 +88,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                             if (!isMandatoryBlocklistHash && await database.FindBlockIDAsync(b.HashKey, b.Size) >= 0)
                             {
                                 b.TaskCompletion.TrySetResult(false);
+                                sw_workload.Stop();
                                 continue;
                             }
 
@@ -140,6 +154,8 @@ namespace Duplicati.Library.Main.Operation.Backup
 
                         // We ignore the stop signal, but not the pause and terminate
                         await taskreader.ProgressAsync;
+
+                        sw_workload.Stop();
                     }
                 }
                 catch (Exception ex)
