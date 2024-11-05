@@ -28,16 +28,19 @@ public static class SecretProviderModules
     /// <summary>
     /// The list of all built-in secret provider modules
     /// </summary>
-    public static IReadOnlyList<ISecretProvider> Modules => [
+    public static IReadOnlyList<ISecretProvider> Modules => new ISecretProvider?[] {
         new EnvironmentSecretProvider(),
         new FileSecretProvider(),
         new AWSSecretProvider(),
         new HCVaultSecretProvider(),
         new GCSSecretProvider(),
         new AzureSecretProvider(),
-        new MacOSKeyChainProvider(),
-        new UnixPassProvider(),
-        new WindowsCredentialManagerProvider(),
-        new LibSecretLinuxProvider(),
-    ];
+        OperatingSystem.IsWindows() ? new WindowsCredentialManagerProvider() : null,
+        OperatingSystem.IsMacOS() ? new MacOSKeyChainProvider() : null,
+        OperatingSystem.IsLinux() ? new UnixPassProvider() : null,
+        OperatingSystem.IsLinux() ? new LibSecretLinuxProvider() : null,
+    }
+    .Where(x => x != null)
+    .Select(x => x!)
+    .ToList();
 }
