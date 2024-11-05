@@ -1,7 +1,10 @@
 {
   "devDependencies": {
+    "autoprefixer": "^10.4.20",
     "less": "^4.2.0",
     "less-plugin-clean-css": "^1.6.0",
+    "postcss": "^8.4.47",
+    "postcss-cli": "^11.0.0",
     "stylelint": "^16.9.0",
     "stylelint-config-standard-less": "^3.0.1"
   },
