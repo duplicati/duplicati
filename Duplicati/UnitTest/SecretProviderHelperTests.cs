@@ -159,7 +159,11 @@ public class SecretProviderHelperTests : BasicSetupHelper
         Assert.AreEqual("secret 1%&+abc", settings["key1"]);
 
         // Check escaping is done for the URL
-        Assert.AreEqual("test://host/?pass=secret%201%25%26%2Babc&user=user", argsSys[0].ToString());
+        if (argsSys[0].ToString().Contains("+")) // Some versions of .NET escape space as +, others as %20
+            Assert.AreEqual("test://host/?pass=secret+1%25%26%2Babc&user=user", argsSys[0].ToString());
+        else
+            Assert.AreEqual("test://host/?pass=secret%201%25%26%2Babc&user=user", argsSys[0].ToString());
+
         Assert.AreEqual("test://host?pass=secret%201%25%26%2Babc&user=user", argsInternal[0].ToString());
     }
 
