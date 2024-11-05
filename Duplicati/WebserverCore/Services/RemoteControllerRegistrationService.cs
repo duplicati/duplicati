@@ -55,7 +55,7 @@ public sealed record RemoteControlConfig
 /// </summary>
 /// <param name="connection">The database connection</param>
 /// <param name="httpClientFactory">The HTTP client factory</param>
-public class RemoteControllerRegistrationService(Connection connection, IHttpClientFactory httpClientFactory, RemoteControllerService remoteControllerService) : IRemoteControllerRegistration
+public class RemoteControllerRegistrationService(Connection connection, IHttpClientFactory httpClientFactory, IRemoteController remoteController) : IRemoteControllerRegistration
 {
     /// <summary>
     /// The registration process controller this service is wrapping.
@@ -118,8 +118,8 @@ public class RemoteControllerRegistrationService(Connection connection, IHttpCli
             });
 
             // Automatically connect after we are registered
-            if (remoteControllerService.CanEnable)
-                remoteControllerService.Enable();
+            if (remoteController.CanEnable)
+                remoteController.Enable();
 
         });
     }
