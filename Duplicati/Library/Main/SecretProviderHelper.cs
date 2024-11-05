@@ -245,7 +245,7 @@ public static class SecretProviderHelper
             {
                 var uri = internalUriArguments[s];
                 var kp = uri.QueryParameters;
-                kp[k] = translated[v.Key];
+                kp[k] = Library.Utility.Uri.UrlEncode(translated[v.Key]);
                 uri = uri.SetQuery(Library.Utility.Uri.BuildUriQuery(kp));
                 internalUriArguments[s] = uri;
             }
