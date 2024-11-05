@@ -212,7 +212,7 @@ namespace Duplicati.UnitTest
         }
 
         [Test, Sequential]
-        [Category("Targeted"), Category("Bug"), Category("Non-critical"), Explicit("Known bug")]
+        [Category("Targeted"), Category("Bug"), Category("Non-critical")]
         [TestCase(false, true), TestCase(true, true), TestCase(true, false)]
         public void Issue5038MissingListBlocklist(bool sameVersion, bool blockFirst)
         {

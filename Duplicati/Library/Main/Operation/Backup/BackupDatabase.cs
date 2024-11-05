@@ -112,11 +112,12 @@ namespace Duplicati.Library.Main.Operation.Backup
                 var id = m_database.GetFileLastModified(prefixid, path, lastfilesetid, includeLength, out var lastModified, out var length, m_transaction);
                 return new Tuple<long, DateTime, long>(id, lastModified, length);
             });
-		}
+        }
 
-		public Task<FileEntryData> GetFileEntryAsync(long prefixid, string path, long lastfilesetid)
+        public Task<FileEntryData> GetFileEntryAsync(long prefixid, string path, long lastfilesetid)
         {
-            return RunOnMain(() => { 
+            return RunOnMain(() =>
+            {
                 DateTime oldModified;
                 long lastFileSize;
                 string oldMetahash;
@@ -132,7 +133,8 @@ namespace Duplicati.Library.Main.Operation.Backup
 
         public Task<long> AddBlocksetAsync(string filehash, long size, int blocksize, IEnumerable<string> hashlist, IEnumerable<string> blocklisthashes)
         {
-            return RunOnMain(() => {
+            return RunOnMain(() =>
+            {
                 long blocksetid;
 
                 m_database.AddBlockset(filehash, size, blocksize, hashlist, blocklisthashes, out blocksetid, m_transaction);
@@ -154,7 +156,7 @@ namespace Duplicati.Library.Main.Operation.Backup
         {
             return RunOnMain(() => m_database.AddUnmodifiedFile(fileid, lastModified, m_transaction));
         }
-            
+
 
         public Task MoveBlockToVolumeAsync(string blockkey, long size, long sourcevolumeid, long targetvolumeid)
         {
@@ -181,7 +183,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                 m_database.AddIndexBlockLink(indexvolume.VolumeID, blockvolume.VolumeID, m_transaction);
                 indexvolume.StartVolume(blockvolume.RemoteFilename);
 
-                foreach(var b in m_database.GetBlocks(blockvolume.VolumeID, m_transaction))
+                foreach (var b in m_database.GetBlocks(blockvolume.VolumeID, m_transaction))
                     indexvolume.AddBlock(b.Hash, b.Size);
 
                 m_database.UpdateRemoteVolume(indexvolume.RemoteFilename, RemoteVolumeState.Uploading, -1, null, m_transaction);
@@ -291,6 +293,11 @@ namespace Duplicati.Library.Main.Operation.Backup
         public Task UpdateChangeJournalDataAsync(IEnumerable<USNJournalDataEntry> journalData, long lastfilesetid)
         {
             return RunOnMain(() => m_database.UpdateChangeJournalData(journalData, lastfilesetid, m_transaction));
+        }
+
+        public Task<bool> IsBlocklistHashKnownAsync(string hash)
+        {
+            return RunOnMain(() => m_database.IsBlocklistHashKnown(hash, m_transaction));
         }
 
     }
