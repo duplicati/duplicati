@@ -7,7 +7,7 @@ ENV DOCKER_BUILD_PROXY=$DOCKER_BUILD_PROXY
 # Install common build tools
 RUN dnf -y install deltarpm
 RUN dnf -y upgrade
-RUN dnf -y install --allowerasing @"Minimal Install" @buildsys-build yum-utils rpm-sign gnupg rpmdevtools
+RUN dnf -y install --allowerasing @buildsys-build yum-utils rpm-sign gnupg rpmdevtools
 
 RUN dnf -y update
 
