@@ -513,6 +513,16 @@ Duplicati can send email notifications after each operation. Use the send-mail c
       The backend url
     %LOCALPATH%
       The path to the local folders involved (i.e. the folders being backed up)
+    %machine-id%
+      The assigned unique random identifier for the current machine, can be overridden with --machine-id
+    %backup-id%
+      The assigned id for the backup, can be overridden with --backup-id
+    %backup-name%
+      The name of the backup, can be overridden with --backup-name
+    %machine-name%
+      The name of the machine, can be overridden with --machine-name
+
+
       
 # =============================================================================
 > duplicati.commandline.exe help advanced
