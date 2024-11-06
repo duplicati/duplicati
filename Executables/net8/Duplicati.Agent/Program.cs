@@ -1,6 +1,6 @@
 using System.Threading.Tasks;
 
-namespace Duplicati.Server.Net8
+namespace Duplicati.Agent.Net8
 {
     // Wrapper class to keep code independent
     public static class Program

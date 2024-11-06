@@ -24,6 +24,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using Duplicati.Library.Interface;
+using Duplicati.Library.RestAPI;
 using Duplicati.Server;
 
 namespace Duplicati.GUI.TrayIcon
@@ -106,7 +107,7 @@ namespace Duplicati.GUI.TrayIcon
                 try
                 {
                     // Tell the hosted server it was started by the TrayIcon
-                    Server.Program.Origin = "Tray icon";
+                    FIXMEGlobal.Origin = "Tray icon";
                     hosted = new HostedInstanceKeeper(_args);
                 }
                 catch (Exception ex)

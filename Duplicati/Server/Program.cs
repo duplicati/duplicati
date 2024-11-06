@@ -23,6 +23,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Encryption;
@@ -30,6 +31,7 @@ using Duplicati.Library.Interface;
 using Duplicati.Library.Main;
 using Duplicati.Library.Main.Database;
 using Duplicati.Library.RestAPI;
+using Duplicati.Library.Utility;
 using Duplicati.Server.Database;
 using Duplicati.WebserverCore;
 using Duplicati.WebserverCore.Abstractions;
@@ -49,6 +51,7 @@ namespace Duplicati.Server
         private const string WINDOWS_EVENTLOG_LEVEL_OPTION = "windows-eventlog-level";
         private const string DISABLE_DB_ENCRYPTION_OPTION = "disable-db-encryption";
         private const string REQUIRE_DB_ENCRYPTION_KEY_OPTION = "require-db-encryption-key";
+        private const string SETTINGS_ENCRYPTION_KEY_OPTION = "settings-encryption-key";
 
 #if DEBUG
         private const bool DEBUG_MODE = true;
@@ -173,11 +176,6 @@ namespace Duplicati.Server
         /// </summary>
         public static LogWriteHandler LogHandler { get => FIXMEGlobal.LogHandler; }
 
-        /// <summary>
-        /// Used to check the origin of the web server (e.g. Tray icon or a stand alone Server)
-        /// </summary>
-        public static string Origin { get => FIXMEGlobal.Origin; set => FIXMEGlobal.Origin = value; }
-
         private static System.Threading.Timer PurgeTempFilesTimer = null;
 
         public static int ServerPort
@@ -192,12 +190,6 @@ namespace Duplicati.Server
         {
             get { return DataConnection.ApplicationSettings.IsFirstRun; }
             set { DataConnection.ApplicationSettings.IsFirstRun = value; }
-        }
-
-        public static string StartedBy
-        {
-            get { return Origin; }
-            set { Origin = value; }
         }
 
         public static bool ServerPortChanged
@@ -245,6 +237,7 @@ namespace Duplicati.Server
             Library.Utility.SystemContextSettings.StartSession();
 
             ApplyEnvironmentVariables(commandlineOptions);
+            ApplySecretProvider(commandlineOptions, CancellationToken.None).Await();
 
             var parameterFileOption = commandlineOptions.Keys.Select(s => s.ToLower())
                 .Intersect(ParameterFileOptionStrings.Select(x => x.ToLower())).FirstOrDefault();
@@ -596,7 +589,14 @@ namespace Duplicati.Server
                 if (!string.IsNullOrWhiteSpace(envval))
                     commandlineOptions[key] = envval;
             }
+
+            // Set the encryption key from the environment variable
+            if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(EncryptedFieldHelper.ENVIROMENT_VARIABLE_NAME)) && string.IsNullOrWhiteSpace(commandlineOptions.GetValueOrDefault(SETTINGS_ENCRYPTION_KEY_OPTION)))
+                commandlineOptions[SETTINGS_ENCRYPTION_KEY_OPTION] = Environment.GetEnvironmentVariable(EncryptedFieldHelper.ENVIROMENT_VARIABLE_NAME);
         }
+
+        private static async Task ApplySecretProvider(Dictionary<string, string> commandlineOptions, CancellationToken cancellationToken)
+            => FIXMEGlobal.SecretProvider = await SecretProviderHelper.ApplySecretProviderAsync([], [], commandlineOptions, TempFolder.SystemTempPath, FIXMEGlobal.SecretProvider, cancellationToken).ConfigureAwait(false);
 
         private static void ConfigureLogging(Dictionary<string, string> commandlineOptions)
         {
@@ -732,12 +732,14 @@ namespace Duplicati.Server
 
             var disableDbEncryption = Library.Utility.Utility.ParseBoolOption(commandlineOptions, DISABLE_DB_ENCRYPTION_OPTION);
             var requireDbEncryptionKey = Library.Utility.Utility.ParseBoolOption(commandlineOptions, REQUIRE_DB_ENCRYPTION_KEY_OPTION);
-            var hasEncryptionKey = !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(Library.Encryption.EncryptedFieldHelper.ENVIROMENT_VARIABLE_NAME));
-            var usingBlacklistedKey = Library.Encryption.EncryptedFieldHelper.IsDefaultKeyBlacklisted;
-            var hasValidEncryptionKey = Library.Encryption.EncryptedFieldHelper.HasValidDefaultKey;
+            var encKey = EncryptedFieldHelper.KeyInstance.CreateKeyIfValid(commandlineOptions.GetValueOrDefault(SETTINGS_ENCRYPTION_KEY_OPTION));
+            var usingBlacklistedKey = encKey?.IsBlacklisted ?? false;
+            var hasValidEncryptionKey = encKey != null;
 
-            if (requireDbEncryptionKey && !(hasEncryptionKey || disableDbEncryption))
-                throw new UserInformationException(Strings.Program.DatabaseEncryptionKeyRequired(Library.Encryption.EncryptedFieldHelper.ENVIROMENT_VARIABLE_NAME, DISABLE_DB_ENCRYPTION_OPTION), "RequireDbEncryptionKey");
+            FIXMEGlobal.SettingsEncryptionKeyProvidedExternally = hasValidEncryptionKey;
+
+            if (requireDbEncryptionKey && !(hasValidEncryptionKey || disableDbEncryption))
+                throw new UserInformationException(Strings.Program.DatabaseEncryptionKeyRequired(EncryptedFieldHelper.ENVIROMENT_VARIABLE_NAME, DISABLE_DB_ENCRYPTION_OPTION), "RequireDbEncryptionKey");
 
             if (!hasValidEncryptionKey)
             {
@@ -780,7 +782,7 @@ namespace Duplicati.Server
                     Console.WriteLine(Strings.Program.BlacklistedEncryptionKey(Library.Encryption.EncryptedFieldHelper.ENVIROMENT_VARIABLE_NAME, DISABLE_DB_ENCRYPTION_OPTION));
             }
 
-            return new Database.Connection(con, disableDbEncryption);
+            return new Database.Connection(con, disableDbEncryption, encKey);
         }
 
         public static void StartOrStopUsageReporter()
@@ -882,6 +884,11 @@ namespace Duplicati.Server
         private static readonly string DEFAULT_LOG_RETENTION = "30D";
 
         /// <summary>
+        /// The options related to the secret provider
+        /// </summary>
+        private static readonly IReadOnlyList<ICommandLineArgument> SECRET_PROVIDER_OPTIONS = new Options(new Dictionary<string, string>()).SupportedCommands.Where(x => x.Name.StartsWith("secret-provider")).ToList();
+
+        /// <summary>
         /// Gets a list of all supported commandline options
         /// </summary>
         public static Library.Interface.ICommandLineArgument[] SupportedCommands
@@ -917,7 +924,9 @@ namespace Duplicati.Server
                 new Duplicati.Library.Interface.CommandLineArgument("server-datafolder", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Path, Strings.Program.ServerdatafolderShort, Strings.Program.ServerdatafolderLong(DATAFOLDER_ENV_NAME), System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), Library.AutoUpdater.AutoUpdateSettings.AppName)),
                 new Duplicati.Library.Interface.CommandLineArgument(DISABLE_DB_ENCRYPTION_OPTION, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean, Strings.Program.DisabledbencryptionShort, Strings.Program.DisabledbencryptionLong),
                 new Duplicati.Library.Interface.CommandLineArgument(REQUIRE_DB_ENCRYPTION_KEY_OPTION, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean, Strings.Program.RequiredbencryptionShort, Strings.Program.RequiredbencryptionLong),
+                new Duplicati.Library.Interface.CommandLineArgument(SETTINGS_ENCRYPTION_KEY_OPTION, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Password, Strings.Program.SettingsencryptionkeyShort, Strings.Program.SettingsencryptionkeyLong(EncryptedFieldHelper.ENVIROMENT_VARIABLE_NAME)),
             ])
+            .Concat(SECRET_PROVIDER_OPTIONS)
             .ToArray();
 
         private static bool ReadOptionsFromFile(string filename, ref Library.Utility.IFilter filter, List<string> cargs, Dictionary<string, string> options)

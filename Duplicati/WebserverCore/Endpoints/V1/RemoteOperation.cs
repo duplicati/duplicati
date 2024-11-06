@@ -1,4 +1,6 @@
 using Duplicati.Library.Interface;
+using Duplicati.Library.Main;
+using Duplicati.Library.RestAPI;
 using Duplicati.Server;
 using Duplicati.WebserverCore.Abstractions;
 using Duplicati.WebserverCore.Exceptions;
@@ -31,7 +33,7 @@ namespace Duplicati.WebserverCore.Endpoints.V1
             return new Dto.GetDbPathDto(!string.IsNullOrWhiteSpace(path), path);
         }
 
-        private static Dictionary<string, string> ParseUrlOptions(Library.Utility.Uri uri)
+        private static Dictionary<string, string?> ParseUrlOptions(Library.Utility.Uri uri)
         {
             var qp = uri.QueryParameters;
 
@@ -42,7 +44,7 @@ namespace Duplicati.WebserverCore.Endpoints.V1
             return opts;
         }
 
-        private static IEnumerable<IGenericModule> ConfigureModules(IDictionary<string, string> opts)
+        private static IEnumerable<IGenericModule> ConfigureModules(IDictionary<string, string?> opts)
         {
             // TODO: This works because the generic modules are implemented
             // with pre .NetCore logic, using static methods
@@ -65,10 +67,15 @@ namespace Duplicati.WebserverCore.Endpoints.V1
             }
         }
 
-        private static TupleDisposeWrapper GetBackend(string url)
+        private static async Task<TupleDisposeWrapper> GetBackend(string url, CancellationToken cancelToken)
         {
             var uri = new Library.Utility.Uri(url);
             var opts = ParseUrlOptions(uri);
+
+            var tmp = new[] { uri };
+            await SecretProviderHelper.ApplySecretProviderAsync([], tmp, opts, Library.Utility.TempFolder.SystemTempPath, FIXMEGlobal.SecretProvider, cancelToken);
+            url = tmp[0].ToString();
+
             var modules = ConfigureModules(opts);
             var backend = Library.DynamicLoader.BackendLoader.GetBackend(url, new Dictionary<string, string>());
             return new TupleDisposeWrapper(backend, modules);
@@ -80,7 +87,7 @@ namespace Duplicati.WebserverCore.Endpoints.V1
 
             try
             {
-                wrapper = GetBackend(url);
+                wrapper = await GetBackend(url, cancelToken);
 
                 using (var b = wrapper.Backend)
                 {

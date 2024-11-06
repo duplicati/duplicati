@@ -21,7 +21,9 @@
 
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Duplicati.Library.Encryption;
+using Duplicati.Library.Interface;
 using Duplicati.Library.Main;
 using Duplicati.Library.RemoteControl;
 
@@ -35,13 +37,15 @@ namespace Duplicati.Agent;
 /// <param name="ServerUrl">The URL of the server</param>
 /// <param name="SettingsEncryptionKey">The encryption key for the local settings</param>
 /// <param name="ServerCertificates">The server certificates</param>
+/// <param name="Key">The encryption key to use for agent settings</param>
 public sealed record Settings(
     string Filename,
     string JWT,
     string ServerUrl,
     string CertificateUrl,
     string? SettingsEncryptionKey,
-    IEnumerable<MiniServerCertificate> ServerCertificates
+    IEnumerable<MiniServerCertificate> ServerCertificates,
+    EncryptedFieldHelper.KeyInstance? Key
 )
 {
     /// <summary>
@@ -59,22 +63,49 @@ public sealed record Settings(
     private static readonly EncryptedFieldHelper.KeyInstance? DefaultKey = null;
 
     /// <summary>
+    /// Shared JSON serialization options
+    /// </summary>
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        WriteIndented = true,
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) },
+        PropertyNameCaseInsensitive = true
+    };
+
+    /// <summary>
     /// Loads the settings from a file
     /// </summary>
     /// <param name="path">The path to the file</param>
     /// <returns>The loaded settings</returns>
-    public static Settings Load(string? path = null)
+    public static Settings Load(string path, string? key)
     {
-        path ??= DefaultSettingsFile;
-        var tmp = JsonSerializer.Deserialize<Settings>(File.ReadAllText(path))
-            ?? new Settings(path, string.Empty, string.Empty, string.Empty, string.Empty, Array.Empty<MiniServerCertificate>());
+        var keyInstance = string.IsNullOrWhiteSpace(key)
+            ? DefaultKey
+            : EncryptedFieldHelper.KeyInstance.CreateKey(key);
 
-        return tmp with
+        var tmp = (File.Exists(path) ? JsonSerializer.Deserialize<Settings>(File.ReadAllText(path), JsonOptions) : null)
+            ?? new Settings(path, string.Empty, string.Empty, string.Empty, string.Empty, Array.Empty<MiniServerCertificate>(), null);
+
+        try
         {
-            Filename = path,
-            JWT = EncryptedFieldHelper.Decrypt(tmp.JWT, DefaultKey),
-            SettingsEncryptionKey = EncryptedFieldHelper.Decrypt(tmp.SettingsEncryptionKey, DefaultKey)
-        };
+            return tmp with
+            {
+                Filename = path,
+                JWT = EncryptedFieldHelper.Decrypt(tmp.JWT, keyInstance),
+                SettingsEncryptionKey = EncryptedFieldHelper.Decrypt(tmp.SettingsEncryptionKey, keyInstance),
+                Key = keyInstance
+            };
+        }
+        catch (SettingsEncryptionKeyMismatchException sek)
+        {
+            throw new UserInformationException("Invalid settings key provided", "InvalidAgentSettingsKey", sek);
+        }
+        catch (SettingsEncryptionKeyMissingException sek)
+        {
+            throw new UserInformationException("Settings file is encrypted but key is missing", "AgentSettingsKeyMissing", sek);
+        }
     }
 
     /// <summary>
@@ -82,16 +113,16 @@ public sealed record Settings(
     /// </summary>
     public void Save()
     {
-        var tmp = DefaultKey != null && !DefaultKey.IsBlacklisted
-            ? this
-            : this with
+        var tmp = this with { Key = null, Filename = null! };
+        tmp = Key == null || Key.IsBlacklisted
+            ? tmp
+            : tmp with
             {
-                Filename = null!,
-                JWT = EncryptFieldIfPossible(JWT),
-                SettingsEncryptionKey = EncryptFieldIfPossible(SettingsEncryptionKey)
+                JWT = EncryptFieldIfPossible(JWT, Key),
+                SettingsEncryptionKey = EncryptFieldIfPossible(SettingsEncryptionKey, Key)
             };
 
-        File.WriteAllText(Filename, JsonSerializer.Serialize(tmp));
+        File.WriteAllText(Filename, JsonSerializer.Serialize(tmp, JsonOptions));
     }
 
     /// <summary>
@@ -100,15 +131,15 @@ public sealed record Settings(
     /// <param name="value">The value to encrypt</param>
     /// <returns>The encrypted value</returns>
     [return: NotNullIfNotNull("value")]
-    private static string? EncryptFieldIfPossible(string? value)
+    private static string? EncryptFieldIfPossible(string? value, EncryptedFieldHelper.KeyInstance? key)
     {
-        if (DefaultKey == null || DefaultKey.IsBlacklisted)
+        if (key == null || key.IsBlacklisted)
             return value;
         if (value == null)
             return null;
         if (string.IsNullOrWhiteSpace(value))
             return string.Empty;
-        return EncryptedFieldHelper.Encrypt(value, DefaultKey);
+        return EncryptedFieldHelper.Encrypt(value, key);
     }
 
     /// <summary>
