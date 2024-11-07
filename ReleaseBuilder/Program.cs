@@ -18,8 +18,8 @@ class Program
         "win-x86-gui.msi",
         "win-arm64-gui.zip",
         "win-arm64-gui.msi",
-        // "win-x64-agent.msi", // Need to add support for building without trayicon + window service support
-        // "win-arm64-agent.msi", // Need to add support for building without trayicon + window service support
+        "win-x64-agent.msi", // Missing window service support
+        "win-arm64-agent.msi", // Missing window service support
         "win-x64-agent.zip",
         "win-arm64-agent.zip",
 

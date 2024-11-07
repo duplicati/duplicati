@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?include UpgradeData.wxi ?>
+
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+
+  <!-- Various nice-to-have shorthands for x64/x32 -->
+  <?if $(sys.BUILDARCH) = "x64" ?>
+    <?define SystemFolder = "System64Folder" ?>
+    <?define SystemFolderX86 = "SystemFolder" ?>
+    <?define SoftwareKey = "Software" ?>
+    <?define SoftwareKeyX86 = "Software\Wow6432Node" ?>
+    <?define ProgramFilesFolder = "ProgramFiles64Folder" ?>
+    <?define ProgramFilesFolderX86 = "ProgramFilesFolder" ?>
+    <?define Suffix = "_X64" ?>
+  <?else?>
+    <?define SystemFolder = "SystemFolder" ?>
+    <?define SystemFolderX86 = "SystemFolder" ?>
+    <?define SoftwareKey = "Software" ?>
+    <?define SoftwareKeyX86 = "Software" ?>
+    <?define ProgramFilesFolder = "ProgramFilesFolder" ?>
+    <?define Suffix = "_X86" ?>
+  <?endif?>
+
+  <?define DisplayName = "Duplicati Agent" ?>
+
+  <Product Id="$(var.ProductCode)" Name="$(var.DisplayName)" Language="1033" Version="$(var.ProductVersion)" Manufacturer="$(var.Manufacturer)" UpgradeCode="$(var.UpgradeCode)">
+    <Package InstallerVersion="405" Compressed="yes" Id="$(var.PackageCode)" InstallScope="perMachine" />
+    <Media Id="1" Cabinet="media1.cab" EmbedCab="yes" />
+
+    <UIRef Id="WixUI_InstallDir"/>
+
+    <Property Id="FORSERVICE" Value="false" />
+
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <Directory Id="ProgramMenuFolder" Name="Programs"/>
+      <Directory Id="DesktopFolder" Name="Desktop"/>
+    
+      <Directory Id="$(var.ProgramFilesFolder)">
+        <Directory Id="INSTALLLOCATION" Name="Duplicati Agent" />
+      </Directory>
+    </Directory>
+
+    <Property Id="WIXUI_INSTALLDIR" Value="INSTALLLOCATION" />
+
+    <Feature Id="DuplicatiCore" Title="Duplicati core files" Level="1" Description="Installs the required files for the Duplicati Agent." AllowAdvertise="no" Absent="disallow" ConfigurableDirectory="INSTALLLOCATION" >
+      <ComponentGroupRef Id="DUPLICATIBIN" />
+    </Feature>
+    
+    <Feature Id="DuplicatiStartupShortCutFeature" Title="Launch Duplicati at startup" Level="1" Description ="Automatically launches Duplicati when you log on to the computer" Absent="allow" AllowAdvertise="no">
+      <ComponentRef Id="StartupMenuItem"/>
+      <Condition Level="0">FORSERVICE = "true"</Condition>
+    </Feature>
+
+    <!-- Launch duplicati setup -->
+    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Launch Duplicati now" />
+    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOX" Value="1" />
+    <CustomAction Id="LaunchApplication" FileKey="Duplicati.Agent.exe" Impersonate="yes" ExeCommand="run" Return="asyncNoWait" />
+ 
+    <!-- Not suppored by wixl, so we do not validate the path -->
+    <!-- <CustomAction Id="WixUIValidatePath$(var.Suffix)" BinaryRef="WixUiCa$(var.Suffix)" DllEntry="ValidatePath" Return="ignore" Execute="immediate" /> -->
+    <Property Id="WIXUI_DONTVALIDATEPATH" Value="true" />
+
+    <!-- Set the Add/Remove icon -->
+    <Property Id="ARPPRODUCTICON" Value="DuplicatiIcon.exe" />
+
+    <!-- Remove old versions -->
+    <InstallExecuteSequence>
+      <!-- Note: This is suboptimal, but the ref counting is not working, so we use Early REP -->
+      <RemoveExistingProducts Before="CostInitialize" />
+    </InstallExecuteSequence>
+
+    <Property Id="PREVIOUSVERSIONSINSTALLED" Secure="yes" />
+    <Upgrade Id="$(var.UpgradeCode)">
+      <UpgradeVersion Minimum="2.0.0.0" Property="PREVIOUSVERSIONSINSTALLED"  Maximum="99.0.0.0" IncludeMinimum="yes" IncludeMaximum="no" />
+    </Upgrade>
+
+    <Icon Id="DuplicatiIcon.exe" SourceFile="$(var.HarvestPath)Duplicati.Agent.exe" />
+
+  </Product>
+</Wix>
