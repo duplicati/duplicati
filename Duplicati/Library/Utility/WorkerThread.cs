@@ -333,18 +333,17 @@ namespace Duplicati.Library.Utility
                 }
                 catch (Exception ex)
                 {
-                    try { System.Threading.Thread.ResetAbort(); }
-                    catch { }
-
+                    //TODO: Here where Thread.ResetAbort() was called we shall integrate the CancelationToken pattern.
                     if (OnError != null)
                         try { OnError(this, m_currentTask, ex); }
-                        catch { }
+                        catch
+                        {
+                            // ignored
+                        }
                 }
                 finally
                 {
-                    try { System.Threading.Thread.ResetAbort(); }
-                    catch { }
-
+                    //TODO: Here where Thread.ResetAbort() was called we shall integrate the CancelationToken pattern.
                     m_active = false;
                 }
 
@@ -356,7 +355,10 @@ namespace Duplicati.Library.Utility
                     catch (Exception ex)
                     {
                         try { OnError(this, task, ex); }
-                        catch { }
+                        catch
+                        {
+                            // ignored
+                        }
                     }
             }
         }
