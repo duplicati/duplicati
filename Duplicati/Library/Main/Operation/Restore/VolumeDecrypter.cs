@@ -18,10 +18,10 @@ namespace Duplicati.Library.Main.Operation.Restore
             {
                 while (true)
                 {
-                    var volume = await self.Input.ReadAsync();
+                    var (volume_id, volume) = await self.Input.ReadAsync();
                     // NOP operation for now - decryption is handled by the backend during download.
                     Console.WriteLine($"Decrypted volume: '{volume.Name}'");
-                    await self.Output.WriteAsync(volume);
+                    await self.Output.WriteAsync((volume_id, volume));
                 }
             });
         }

@@ -9,10 +9,10 @@ namespace Duplicati.Library.Main.Operation.Restore
 {
     internal class BlockManager
     {
-        internal class SleepableDictionary(LocalRestoreDatabase db, IWriteChannel<IRemoteVolume> volume_request) // That also auto requests!
+        internal class SleepableDictionary(LocalRestoreDatabase db, IWriteChannel<(long,IRemoteVolume)> volume_request) // That also auto requests!
         {
             private readonly LocalRestoreDatabase m_db = db;
-            private readonly IWriteChannel<IRemoteVolume> m_volume_request = volume_request;
+            private readonly IWriteChannel<(long,IRemoteVolume)> m_volume_request = volume_request;
             private readonly ConcurrentDictionary<long, byte[]> _dictionary = new();
             private readonly ConcurrentDictionary<long, TaskCompletionSource<byte[]>> _waiters = new();
 
@@ -25,7 +25,7 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                 // TODO Track in-flight, and local volumes.
                 var remote_volume = m_db.Connection.CreateCommand().ExecuteReaderEnumerable(@$"SELECT Name, Hash, Size FROM RemoteVolume WHERE ID = ""{volume_id}""").Select(x => new RemoteVolume(x.GetString(0), x.GetString(1), x.GetInt64(2))).First();
-                m_volume_request.WriteAsync(remote_volume);
+                m_volume_request.WriteAsync((volume_id, remote_volume));
 
                 var tcs = new TaskCompletionSource<byte[]>();
                 _waiters.GetOrAdd(key, tcs);
@@ -58,11 +58,8 @@ namespace Duplicati.Library.Main.Operation.Restore
                 var volume_consumer = Task.Run(async () => {
                     while (true)
                     {
-                        var volume = await self.Input.ReadAsync();
-                        foreach (var (blockid, data) in volume)
-                        {
-                            cache.Set(blockid, data);
-                        }
+                        var (block_id, data) = await self.Input.ReadAsync();
+                        cache.Set(block_id, data);
                     }
                 });
                 var block_handlers = fp_requests.Zip(fp_responses, (req, res) => Task.Run(async () => {

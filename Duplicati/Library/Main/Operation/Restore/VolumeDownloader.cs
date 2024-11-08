@@ -19,7 +19,7 @@ namespace Duplicati.Library.Main.Operation.Restore
             {
                 while (true)
                 {
-                    var request = await self.Input.ReadAsync();
+                    var (volume_id, request) = await self.Input.ReadAsync();
 
                     Console.WriteLine($"Got volume to download: '{request.Name}', {request.Size} bytes, {request.Hash}");
 
@@ -36,7 +36,7 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                     Console.WriteLine($"Downloaded volume: '{f.Name}'");
 
-                    self.Output.Write(f);
+                    self.Output.Write((volume_id,f));
                 }
             });
         }
