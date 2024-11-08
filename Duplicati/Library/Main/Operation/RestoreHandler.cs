@@ -137,7 +137,7 @@ namespace Duplicati.Library.Main.Operation
                 all = Task.WhenAll(
                     [
                         Restore.FileLister.Run(db, m_backendurl, filter, m_options, m_result),
-                        Restore.FileProcessor.Run()
+                        Restore.FileProcessor.Run(db)
                     ]
                 );
             }
