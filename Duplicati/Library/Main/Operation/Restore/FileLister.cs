@@ -30,13 +30,18 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                         if (!options.NoBackendverification)
                         {
+                            result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_PreRestoreVerify);
                             FilelistProcessor.VerifyRemoteList(backend, options, db, result.BackendWriter, false, null);
                         }
 
-                        PrepareBlockAndFileList(db, options, filter);
+                        result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_CreateFileList);
+                        PrepareBlockAndFileList(db, options, filter, result);
+                        result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_CreateTargetFolders);
                         CreateDirectoryStructure(db, options);
                         var files = db.GetFilesToRestore(false);
 
+                        result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_DownloadingRemoteFiles);
+                        // No more touching result - now only the FileProcessor updates, which locks.
                         foreach (var file in files)
                         {
                             await self.Output.WriteAsync(file);
@@ -85,9 +90,11 @@ namespace Duplicati.Library.Main.Operation.Restore
             }
         }
 
-        private static void PrepareBlockAndFileList(LocalRestoreDatabase db, Options options, IFilter filter)
+        private static void PrepareBlockAndFileList(LocalRestoreDatabase db, Options options, IFilter filter, RestoreResults result)
         {
             var c = db.PrepareRestoreFilelist(options.Time, options.Version, filter);
+            result.OperationProgressUpdater.UpdatefileCount(c.Item1, c.Item2, true);
+
             if (!string.IsNullOrEmpty(options.Restorepath))
             {
                 // Find the largest common prefix
