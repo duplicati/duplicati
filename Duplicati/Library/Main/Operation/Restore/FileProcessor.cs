@@ -8,14 +8,12 @@ namespace Duplicati.Library.Main.Operation.Restore
 {
     internal class FileProcessor
     {
-        public static Task Run(LocalRestoreDatabase db, ChannelMarkerWrapper<(long,long)> block_request, ChannelMarkerWrapper<byte[]> block_response)
+        public static Task Run(LocalRestoreDatabase db, IChannel<(long,long)> block_request, IChannel<byte[]> block_response)
         {
             return AutomationExtensions.RunTask(
             new
             {
                 Input = Channels.filesToRestore.ForRead,
-                BlockRequest = block_request.ForWrite,
-                BlockResponse = block_response.ForRead
             },
             async self =>
             {
@@ -35,10 +33,8 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                     foreach (var (id, hash, size, vid) in blocks)
                     {
-                        Console.WriteLine($"Requesting block {id}, {hash}, {size}, {vid}");
-                        await self.BlockRequest.WriteAsync((id, vid));
-                        var data = await self.BlockResponse.ReadAsync();
-                        Console.WriteLine($"Got block {data.Length} bytes");
+                        await block_request.WriteAsync((id, vid));
+                        var data = await block_response.ReadAsync();
                     }
                 }
             });

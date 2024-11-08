@@ -41,15 +41,13 @@ namespace Duplicati.Library.Main.Operation.Restore
             }
         }
 
-        public static Task Run(LocalRestoreDatabase db, ChannelMarkerWrapper<(long,long)>[] fp_requests, ChannelMarkerWrapper<byte[]>[] fp_responses)
+        public static Task Run(LocalRestoreDatabase db, IChannel<(long,long)>[] fp_requests, IChannel<byte[]>[] fp_responses)
         {
             return AutomationExtensions.RunTask(
             new
             {
                 Input = Channels.decompressedVolumes.ForRead,
-                Output = Channels.downloadRequest.ForWrite,
-                Requests = fp_requests.Select(x => x.ForRead).ToArray(),
-                Responses = fp_responses.Select(x => x.ForWrite).ToArray()
+                Output = Channels.downloadRequest.ForWrite
             },
             async self =>
             {
@@ -66,7 +64,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                         }
                     }
                 });
-                var block_handlers = self.Requests.Zip(self.Responses, (req, res) => Task.Run(async () => {
+                var block_handlers = fp_requests.Zip(fp_responses, (req, res) => Task.Run(async () => {
                     while (true)
                     {
                         var (blockid, vid) = await req.ReadAsync();
