@@ -1,8 +1,7 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using CoCoL;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Main.Operation.Restore
 {
@@ -18,21 +17,26 @@ namespace Duplicati.Library.Main.Operation.Restore
             },
             async self =>
             {
-                try
+                while (true)
                 {
-                    while (true)
+                    var request = await self.Input.ReadAsync();
+
+                    Console.WriteLine($"Got volume to download: '{request.Name}', {request.Size} bytes, {request.Hash}");
+
+                    TempFile f = null;
+                    try
                     {
-                        var request = await self.Input.ReadAsync();
-
-                        // Handle internal exceptions? Maybe the next ones can do that.
-                        var volume = new AsyncDownloader(new List<Database.IRemoteVolume>([request]), backend).FirstOrDefault();
-
-                        self.Output.Write(volume);
+                        f = backend.GetAsync(request.Name, request.Size, request.Hash).Wait();
                     }
-                }
-                catch (Exception ex)
-                {
-                    // Check the type of exception and handle it accordingly?
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Failed to download volume: '{request.Name}' | {ex.Message}");
+                        continue;
+                    }
+
+                    Console.WriteLine($"Downloaded volume: '{f.Name}'");
+
+                    self.Output.Write(f);
                 }
             });
         }
