@@ -145,11 +145,11 @@ namespace Duplicati.Library.Main.Operation
                     all = Task.WhenAll(
                         [
                             Restore.FileLister.Run(db, backend, filter, m_options, m_result),
-                            ..Enumerable.Range(0, parallelism).Select(i =>
-                                Restore.FileProcessor.Run(db, fileprocessor_requests[i], fileprocessor_responses[i])),
+                            ..Enumerable.Range(0, parallelism).Select(i => Restore.FileProcessor.Run(db, fileprocessor_requests[i], fileprocessor_responses[i])),
                             Restore.BlockManager.Run(db, fileprocessor_requests, fileprocessor_responses),
                             ..Enumerable.Range(0, parallelism).Select(i => Restore.VolumeDownloader.Run(backend, m_options)),
-                            ..Enumerable.Range(0, parallelism).Select(i => Restore.VolumeDecrypter.Run())
+                            ..Enumerable.Range(0, parallelism).Select(i => Restore.VolumeDecrypter.Run()),
+                            ..Enumerable.Range(0, parallelism).Select(i => Restore.VolumeDecompressor.Run(db, m_options))
                         ]
                     );
                 }
