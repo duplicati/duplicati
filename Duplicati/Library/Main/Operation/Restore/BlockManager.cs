@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Concurrent;
 using System.Linq;
 using System.Threading.Tasks;
@@ -44,6 +45,15 @@ namespace Duplicati.Library.Main.Operation.Restore
                     tcs.SetResult(value);
                 }
             }
+
+            public void CancelAll()
+            {
+                foreach (var tcs in _waiters.Values)
+                {
+                    tcs.SetException(new RetiredException("Request waiter"));
+                }
+                m_volume_request.Retire();
+            }
         }
 
         public static Task Run(LocalRestoreDatabase db, IChannel<(long,long)>[] fp_requests, IChannel<byte[]>[] fp_responses)
@@ -60,18 +70,32 @@ namespace Duplicati.Library.Main.Operation.Restore
                 SleepableDictionary cache = new(db, self.Output);
 
                 var volume_consumer = Task.Run(async () => {
-                    while (true)
+                    try
                     {
-                        var (block_id, data) = await self.Input.ReadAsync();
-                        cache.Set(block_id, data);
+                        while (true)
+                        {
+                            var (block_id, data) = await self.Input.ReadAsync();
+                            cache.Set(block_id, data);
+                        }
+                    }
+                    catch (RetiredException)
+                    {
+                        // NOP
                     }
                 });
                 var block_handlers = fp_requests.Zip(fp_responses, (req, res) => Task.Run(async () => {
-                    while (true)
+                    try
                     {
-                        var (blockid, vid) = await req.ReadAsync();
-                        var data = await cache.Get(blockid, vid);
-                        await res.WriteAsync(data);
+                        while (true)
+                        {
+                            var (blockid, vid) = await req.ReadAsync();
+                            var data = await cache.Get(blockid, vid);
+                            await res.WriteAsync(data);
+                        }
+                    }
+                    catch (RetiredException)
+                    {
+                        cache.CancelAll();
                     }
                 })).ToArray();
 

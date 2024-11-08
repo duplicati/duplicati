@@ -17,26 +17,33 @@ namespace Duplicati.Library.Main.Operation.Restore
             },
             async self =>
             {
-                while (true)
+                try
                 {
-                    var (volume_id, request) = await self.Input.ReadAsync();
-
-                    Console.WriteLine($"Got volume to download: '{request.Name}', {request.Size} bytes, {request.Hash}");
-
-                    TempFile f = null;
-                    try
+                    while (true)
                     {
-                        f = backend.GetAsync(request.Name, request.Size, request.Hash).Wait();
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"Failed to download volume: '{request.Name}' | {ex.Message}");
-                        continue;
-                    }
+                        var (volume_id, request) = await self.Input.ReadAsync();
 
-                    Console.WriteLine($"Downloaded volume: '{f.Name}'");
+                        Console.WriteLine($"Got volume to download: '{request.Name}', {request.Size} bytes, {request.Hash}");
 
-                    self.Output.Write((volume_id,f));
+                        TempFile f = null;
+                        try
+                        {
+                            f = backend.GetAsync(request.Name, request.Size, request.Hash).Wait();
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"Failed to download volume: '{request.Name}' | {ex.Message}");
+                            throw;
+                        }
+
+                        Console.WriteLine($"Downloaded volume: '{f.Name}'");
+
+                        self.Output.Write((volume_id,f));
+                    }
+                }
+                catch (RetiredException ex)
+                {
+                    // NOP
                 }
             });
         }

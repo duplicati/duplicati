@@ -45,7 +45,7 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                     // TODO Maybe use a heap to manage the priority queue?
                 }
-                catch (Exception ex)
+                catch (RetiredException ex)
                 {
                     // Check the type of exception and handle it accordingly?
                 }

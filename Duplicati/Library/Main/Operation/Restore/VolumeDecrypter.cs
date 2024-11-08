@@ -16,12 +16,19 @@ namespace Duplicati.Library.Main.Operation.Restore
             },
             async self =>
             {
-                while (true)
+                try
                 {
-                    var (volume_id, volume) = await self.Input.ReadAsync();
-                    // NOP operation for now - decryption is handled by the backend during download.
-                    Console.WriteLine($"Decrypted volume: '{volume.Name}'");
-                    await self.Output.WriteAsync((volume_id, volume));
+                    while (true)
+                    {
+                        var (volume_id, volume) = await self.Input.ReadAsync();
+                        // NOP operation for now - decryption is handled by the backend during download.
+                        Console.WriteLine($"Decrypted volume: '{volume.Name}'");
+                        await self.Output.WriteAsync((volume_id, volume));
+                    }
+                }
+                catch (RetiredException ex)
+                {
+                    // NOP
                 }
             });
         }

@@ -137,12 +137,12 @@ namespace Duplicati.Library.Main.Operation
             var fileprocessor_requests = new Channel<(long, long)>[parallelism].Select(_ => ChannelManager.CreateChannel<(long, long)>()).ToArray();
             var fileprocessor_responses = new Channel<byte[]>[parallelism].Select(_ => ChannelManager.CreateChannel<byte[]>()).ToArray();
 
-            Task all;
+            Task[] all;
             using (var backend = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, db))
             {
                 using (new ChannelScope())
                 {
-                    all = Task.WhenAll(
+                    all =
                         [
                             Restore.FileLister.Run(db, backend, filter, m_options, m_result),
                             ..Enumerable.Range(0, parallelism).Select(i => Restore.FileProcessor.Run(db, fileprocessor_requests[i], fileprocessor_responses[i])),
@@ -150,12 +150,10 @@ namespace Duplicati.Library.Main.Operation
                             ..Enumerable.Range(0, parallelism).Select(i => Restore.VolumeDownloader.Run(backend, m_options)),
                             ..Enumerable.Range(0, parallelism).Select(i => Restore.VolumeDecrypter.Run()),
                             ..Enumerable.Range(0, parallelism).Select(i => Restore.VolumeDecompressor.Run(db, m_options))
-                        ]
-                    );
+                        ];
                 }
-                //await all.ConfigureAwait(false);
-                //await all;
-                all.Wait();
+
+                Task.WhenAll(all).Wait();
             }
 
             // Dispose the created intermediates
