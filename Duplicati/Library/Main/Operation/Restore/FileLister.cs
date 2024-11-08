@@ -12,7 +12,7 @@ namespace Duplicati.Library.Main.Operation.Restore
 
     internal static class FileLister
     {
-        public static Task Run(string backendurl, string[] paths, IFilter filter, Options options, RestoreResults result)
+        public static Task Run(LocalRestoreDatabase db, string backendurl, IFilter filter, Options options, RestoreResults result)
         {
             return AutomationExtensions.RunTask(
             new
@@ -21,33 +21,8 @@ namespace Duplicati.Library.Main.Operation.Restore
             },
             async self =>
             {
-                LocalRestoreDatabase db = null;
-                TempFile tmpdb = null;
-
                 try
                 {
-                    // If we have both target paths and a filter, combine them into a single filter
-                    filter = JoinedFilterExpression.Join(new FilterExpression(paths), filter);
-
-                    // TODO internal timers for later profiling
-                    if (!options.NoLocalDb && SystemIO.IO_OS.FileExists(options.Dbpath))
-                    {
-                        db = new LocalRestoreDatabase(options.Dbpath);
-                    }
-                    else
-                    {
-                        tmpdb = new TempFile();
-                        RecreateDatabaseHandler.NumberedFilterFilelistDelegate filelistfilter = RestoreHandler.FilterNumberedFilelist(options.Time, options.Version);
-                        db = new LocalRestoreDatabase(tmpdb);
-
-                        using (var metadatastorage = new RestoreHandlerMetadataStorage())
-                        {
-                            result.RecreateDatabaseResults = new RecreateDatabaseResults(result);
-                            new RecreateDatabaseHandler(backendurl, options, (RecreateDatabaseResults) result.RecreateDatabaseResults)
-                                .DoRun(db, false, filter, filelistfilter, null);
-                        }
-                    }
-
                     using (var backend = new BackendManager(backendurl, options, result.BackendWriter, db))
                     using (var metadatastorage = new RestoreHandlerMetadataStorage())
                     {
@@ -75,10 +50,6 @@ namespace Duplicati.Library.Main.Operation.Restore
                 {
                     // Check the type of exception and handle it accordingly?
                 }
-
-                // Dispose the database if it was created
-                db?.Dispose();
-                tmpdb?.Dispose();
             });
         }
 

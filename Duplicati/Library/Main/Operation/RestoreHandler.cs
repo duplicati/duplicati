@@ -107,8 +107,29 @@ namespace Duplicati.Library.Main.Operation
         {
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_Begin);
 
-            // If we have both target paths and a filter, combine into a single filter
-            filter = Library.Utility.JoinedFilterExpression.Join(new Library.Utility.FilterExpression(paths), filter);
+            // If we have both target paths and a filter, combine them into a single filter
+            filter = JoinedFilterExpression.Join(new FilterExpression(paths), filter);
+
+            LocalRestoreDatabase db = null;
+            TempFile tmpdb = null;
+            // TODO internal timers for later profiling
+            if (!m_options.NoLocalDb && SystemIO.IO_OS.FileExists(m_options.Dbpath))
+            {
+                db = new LocalRestoreDatabase(m_options.Dbpath);
+            }
+            else
+            {
+                tmpdb = new TempFile();
+                RecreateDatabaseHandler.NumberedFilterFilelistDelegate filelistfilter = FilterNumberedFilelist(m_options.Time, m_options.Version);
+                db = new LocalRestoreDatabase(tmpdb);
+
+                using (var metadatastorage = new RestoreHandlerMetadataStorage())
+                {
+                    m_result.RecreateDatabaseResults = new RecreateDatabaseResults(m_result);
+                    new RecreateDatabaseHandler(m_backendurl, m_options, (RecreateDatabaseResults) m_result.RecreateDatabaseResults)
+                        .DoRun(db, false, filter, filelistfilter, null);
+                }
+            }
 
             Task all;
             using (new ChannelScope())
@@ -116,7 +137,8 @@ namespace Duplicati.Library.Main.Operation
                 all = Task.WhenAll(
                     new[]
                     {
-                        Restore.FileLister.Run(m_backendurl, paths, filter, m_options, m_result)
+                        Restore.FileLister.Run(db, m_backendurl, filter, m_options, m_result),
+                        Restore.FileProcessor.Run()
                     }
                 );
             }
@@ -124,11 +146,15 @@ namespace Duplicati.Library.Main.Operation
             //await all;
             all.Wait();
 
+            // Dispose the created intermediates
+            db?.Dispose();
+            tmpdb?.Dispose();
+
             System.Environment.Exit(42);
 
             if (!m_options.NoLocalDb && SystemIO.IO_OS.FileExists(m_options.Dbpath))
             {
-                using (var db = new LocalRestoreDatabase(m_options.Dbpath))
+                using (var db_ = new LocalRestoreDatabase(m_options.Dbpath))
                 {
                     db.SetResult(m_result);
                     DoRun(db, filter, m_result);
@@ -142,7 +168,7 @@ namespace Duplicati.Library.Main.Operation
             Logging.Log.WriteInformationMessage(LOGTAG, "NoLocalDatabase", "No local database, building a temporary database");
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_RecreateDatabase);
 
-            using (var tmpdb = new Library.Utility.TempFile())
+            using (var tmpdb_ = new Library.Utility.TempFile())
             {
                 RecreateDatabaseHandler.NumberedFilterFilelistDelegate filelistfilter = FilterNumberedFilelist(m_options.Time, m_options.Version);
 
