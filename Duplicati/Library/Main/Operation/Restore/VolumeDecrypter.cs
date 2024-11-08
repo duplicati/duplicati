@@ -12,7 +12,7 @@ namespace Duplicati.Library.Main.Operation.Restore
             new
             {
                 Input = Channels.downloadedVolume.ForRead,
-                Output = Channels.decompressedVolumes.ForWrite
+                Output = Channels.decryptedVolume.ForWrite
             },
             async self =>
             {

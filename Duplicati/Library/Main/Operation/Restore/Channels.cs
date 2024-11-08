@@ -9,6 +9,6 @@ namespace Duplicati.Library.Main.Operation.Restore
         public static readonly ChannelMarkerWrapper<TempFile> downloadedVolume = new(new ChannelNameAttribute("downloadResponse"));
         public static readonly ChannelMarkerWrapper<Database.LocalRestoreDatabase.IFileToRestore> filesToRestore = new(new ChannelNameAttribute("filesToRestore"));
         public static readonly ChannelMarkerWrapper<(long, byte[])[]> decompressedVolumes = new(new ChannelNameAttribute("decompressedVolumes"));
-        public static readonly ChannelMarkerWrapper<TempFile> decrytedVolume = new(new ChannelNameAttribute("decrytedVolume"));
+        public static readonly ChannelMarkerWrapper<TempFile> decryptedVolume = new(new ChannelNameAttribute("decrytedVolume"));
     }
 }
