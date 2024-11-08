@@ -1,22 +1,22 @@
 // Copyright (C) 2024, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
-// 
-// Permission is hereby granted, free of charge, to any person obtaining a 
-// copy of this software and associated documentation files (the "Software"), 
-// to deal in the Software without restriction, including without limitation 
-// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
-// and/or sell copies of the Software, and to permit persons to whom the 
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the "Software"),
+// to deal in the Software without restriction, including without limitation
+// the rights to use, copy, modify, merge, publish, distribute, sublicense,
+// and/or sell copies of the Software, and to permit persons to whom the
 // Software is furnished to do so, subject to the following conditions:
-// 
-// The above copyright notice and this permission notice shall be included in 
+//
+// The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
-// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
 using System;
@@ -27,6 +27,8 @@ using Duplicati.Library.Common.IO;
 using Duplicati.Library.Main.Database;
 using Duplicati.Library.Main.Volumes;
 using Duplicati.Library.Utility;
+using CoCoL;
+using System.Threading.Tasks;
 
 namespace Duplicati.Library.Main.Operation
 {
@@ -107,6 +109,22 @@ namespace Duplicati.Library.Main.Operation
 
             // If we have both target paths and a filter, combine into a single filter
             filter = Library.Utility.JoinedFilterExpression.Join(new Library.Utility.FilterExpression(paths), filter);
+
+            Task all;
+            using (new ChannelScope())
+            {
+                all = Task.WhenAll(
+                    new[]
+                    {
+                        Restore.FileLister.Run(m_backendurl, paths, filter, m_options, m_result)
+                    }
+                );
+            }
+            //await all.ConfigureAwait(false);
+            //await all;
+            all.Wait();
+
+            System.Environment.Exit(42);
 
             if (!m_options.NoLocalDb && SystemIO.IO_OS.FileExists(m_options.Dbpath))
             {
@@ -696,7 +714,7 @@ namespace Duplicati.Library.Main.Operation
                                         {
                                             if (source.IsMetadata)
                                             {
-                                                // TODO: Handle this by reconstructing 
+                                                // TODO: Handle this by reconstructing
                                                 // metadata from file and checking the hash
 
                                                 continue;
@@ -867,7 +885,7 @@ namespace Duplicati.Library.Main.Operation
                             var wasTruncated = false;
 
                             // Adjust file length in overwrite mode if necessary (smaller is ok, will be extended during restore)
-                            // We do it before scanning for blocks. This allows full verification on files that only needs to 
+                            // We do it before scanning for blocks. This allows full verification on files that only needs to
                             // be truncated (i.e. forthwritten log files).
                             if (!rename && currentfilelength > targetfilelength)
                             {
@@ -889,7 +907,7 @@ namespace Duplicati.Library.Main.Operation
                                 wasTruncated = true;
                             }
 
-                            // If file size does not match and we have to rename on conflict, 
+                            // If file size does not match and we have to rename on conflict,
                             // the whole scan can be skipped here because all blocks have to be restored anyway.
                             // For the other cases, we will check block and and file hashes and look for blocks
                             // to be restored and files that can already be verified.
@@ -1011,7 +1029,7 @@ namespace Duplicati.Library.Main.Operation
                         {
                             try
                             {
-                                // If we have a file with the correct name, 
+                                // If we have a file with the correct name,
                                 // it is most likely the file we want
                                 filehasher.Initialize();
 
