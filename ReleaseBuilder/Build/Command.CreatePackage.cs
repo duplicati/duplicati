@@ -1012,6 +1012,7 @@ public static partial class Command
         {
             File.Copy(Path.Combine(resourcesDir, "systemd", "duplicati-agent.service"), Path.Combine(sources, "duplicati-agent.service"));
             File.Copy(Path.Combine(resourcesDir, "systemd", "duplicati-agent.default"), Path.Combine(sources, "duplicati-agent.default"));
+            File.Copy(Path.Combine(resourcesDir, "systemd", "duplicati-agent.preset"), Path.Combine(sources, "duplicati-agent.preset"));
         }
 
         // Write custom script to install executable files
@@ -1046,14 +1047,18 @@ public static partial class Command
                 .Replace("%DEPENDS%", string.Join("\n",
                     (target.Interface == InterfaceType.GUI
                         ? FedoraGUIDepends
-                        : FedoraCLIDepends).Select(x => $"Requires:\t{x}")))
-                .Replace("#GUI_ONLY#", target.Interface == InterfaceType.Cli ? "# " : "");
+                        : FedoraCLIDepends).Select(x => $"Requires:\t{x}")));
 
         // Remove comment markers, or remove lines
         if (target.Interface == InterfaceType.GUI)
             specData = specData.Replace("#GUI_ONLY#", "");
         else
             specData = string.Join("\n", specData.Split('\n').Where(x => !x.StartsWith("#GUI_ONLY#")));
+
+        if (target.Interface == InterfaceType.Agent)
+            specData = specData.Replace("#AGENT_ONLY#", "");
+        else
+            specData = string.Join("\n", specData.Split('\n').Where(x => !x.StartsWith("#AGENT_ONLY#")));
 
         File.WriteAllText(
             Path.Combine(sources, "duplicati.spec"),
