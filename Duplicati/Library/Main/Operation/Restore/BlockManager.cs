@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Concurrent;
 using System.Linq;
 using System.Threading.Tasks;
@@ -15,6 +14,7 @@ namespace Duplicati.Library.Main.Operation.Restore
             private readonly IWriteChannel<(long,IRemoteVolume)> m_volume_request = volume_request;
             private readonly ConcurrentDictionary<long, byte[]> _dictionary = new();
             private readonly ConcurrentDictionary<long, TaskCompletionSource<byte[]>> _waiters = new();
+            private readonly ConcurrentDictionary<long, bool> _in_flight = new();
 
             public Task<byte[]> Get(long key, long volume_id)
             {
@@ -24,8 +24,12 @@ namespace Duplicati.Library.Main.Operation.Restore
                 }
 
                 // TODO Track in-flight, and local volumes.
-                var remote_volume = m_db.Connection.CreateCommand().ExecuteReaderEnumerable(@$"SELECT Name, Hash, Size FROM RemoteVolume WHERE ID = ""{volume_id}""").Select(x => new RemoteVolume(x.GetString(0), x.GetString(1), x.GetInt64(2))).First();
-                m_volume_request.WriteAsync((volume_id, remote_volume));
+                if (!_in_flight.ContainsKey(volume_id))
+                {
+                    var remote_volume = m_db.Connection.CreateCommand().ExecuteReaderEnumerable(@$"SELECT Name, Hash, Size FROM RemoteVolume WHERE ID = ""{volume_id}""").Select(x => new RemoteVolume(x.GetString(0), x.GetString(1), x.GetInt64(2))).First();
+                    m_volume_request.WriteAsync((volume_id, remote_volume));
+                    _in_flight[volume_id] = true;
+                }
 
                 var tcs = new TaskCompletionSource<byte[]>();
                 _waiters.GetOrAdd(key, tcs);
