@@ -134,8 +134,8 @@ namespace Duplicati.Library.Main.Operation
             // TODO move to Options
             int parallelism = 1;
 
-            var fileprocessor_requests = new ChannelMarkerWrapper<long>[parallelism];
-            var fileprocessor_responses = new ChannelMarkerWrapper<byte[]>[parallelism];
+            var fileprocessor_requests = Enumerable.Range(0, parallelism).Select(i => new ChannelMarkerWrapper<(long,long)>(new ChannelNameAttribute($"FileProcessor_request_{i}"))).ToArray();
+            var fileprocessor_responses = Enumerable.Range(0, parallelism).Select(i => new ChannelMarkerWrapper<byte[]>(new ChannelNameAttribute($"FileProcessor_response_{i}"))).ToArray();
 
             Task all;
             using (new ChannelScope())
