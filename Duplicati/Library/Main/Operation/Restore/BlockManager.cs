@@ -11,7 +11,7 @@ namespace Duplicati.Library.Main.Operation.Restore
     {
         internal class SleepableDictionary(LocalRestoreDatabase db, IWriteChannel<IRemoteVolume> volume_request) // That also auto requests!
         {
-            private readonly LocalRestoreDatabase m_db;
+            private readonly LocalRestoreDatabase m_db = db;
             private readonly IWriteChannel<IRemoteVolume> m_volume_request = volume_request;
             private readonly ConcurrentDictionary<long, byte[]> _dictionary = new();
             private readonly ConcurrentDictionary<long, TaskCompletionSource<byte[]>> _waiters = new();
