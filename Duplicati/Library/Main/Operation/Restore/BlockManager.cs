@@ -23,6 +23,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                     return Task.FromResult(value);
                 }
 
+                // TODO Track in-flight, and local volumes.
                 var remote_volume = m_db.Connection.CreateCommand().ExecuteReaderEnumerable(@$"SELECT Name, Hash, Size FROM RemoteVolume WHERE ID = ""{volume_id}""").Select(x => new RemoteVolume(x.GetString(0), x.GetString(1), x.GetInt64(2))).First();
                 m_volume_request.WriteAsync(remote_volume);
 
