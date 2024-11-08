@@ -21,8 +21,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                     while (true)
                     {
                         var (volume_id, volume) = await self.Input.ReadAsync();
-                        // NOP operation for now - decryption is handled by the backend during download.
-                        Console.WriteLine($"Decrypted volume: '{volume.Name}'");
+                        // NOP operation for now - decryption is handled by the backend during download. Should be done here to increase concurrency.
                         await self.Output.WriteAsync((volume_id, volume));
                     }
                 }

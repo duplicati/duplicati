@@ -23,8 +23,6 @@ namespace Duplicati.Library.Main.Operation.Restore
                     {
                         var (volume_id, request) = await self.Input.ReadAsync();
 
-                        Console.WriteLine($"Got volume to download: '{request.Name}', {request.Size} bytes, {request.Hash}");
-
                         TempFile f = null;
                         try
                         {
@@ -35,8 +33,6 @@ namespace Duplicati.Library.Main.Operation.Restore
                             Console.WriteLine($"Failed to download volume: '{request.Name}' | {ex.Message}");
                             throw;
                         }
-
-                        Console.WriteLine($"Downloaded volume: '{f.Name}'");
 
                         self.Output.Write((volume_id,f));
                     }

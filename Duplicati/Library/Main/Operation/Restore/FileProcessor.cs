@@ -8,7 +8,7 @@ namespace Duplicati.Library.Main.Operation.Restore
 {
     internal class FileProcessor
     {
-        public static Task Run(LocalRestoreDatabase db, IChannel<(long,long)> block_request, IChannel<byte[]> block_response)
+        public static Task Run(LocalRestoreDatabase db, IChannel<(long,long)> block_request, IChannel<byte[]> block_response, RestoreResults results)
         {
             return AutomationExtensions.RunTask(
             new
@@ -25,13 +25,10 @@ namespace Duplicati.Library.Main.Operation.Restore
                     while (true)
                     {
                         var file = await self.Input.ReadAsync();
-                        if (file == null)
-                        {
-                            //break;
-                        }
-                        Console.WriteLine($"Got file to restore: '{file.Path}', {file.Length} bytes, {file.Hash}");
 
                         var blocks = db.Connection.CreateCommand().ExecuteReaderEnumerable(@$"SELECT Block.ID, Block.Hash, Block.Size, Block.VolumeID FROM BlocksetEntry INNER JOIN Block ON BlocksetEntry.BlockID = Block.ID WHERE BlocksetEntry.BlocksetID = ""{file.BlocksetID}""").Select(x => (x.GetInt64(0), x.GetString(1), x.GetInt64(2), x.GetInt64(3))).ToList();
+
+                        long bytes_written = 0;
 
                         if (blocks.Count == 1 && blocks[0].Item3 == 0)
                         {
@@ -51,12 +48,16 @@ namespace Duplicati.Library.Main.Operation.Restore
                             {
                                 await block_request.WriteAsync((id, vid));
                                 var data = await block_response.ReadAsync();
-                                Console.WriteLine($"Got block: {data.Length} bytes");
+                                bytes_written += data.Length;
                                 await fs.WriteAsync(data);
                             }
                         }
 
-                        Console.WriteLine($"Restored file: '{file.Path}'");
+                        lock (results)
+                        {
+                            results.RestoredFiles++;
+                            results.SizeOfRestoredFiles += bytes_written;
+                        }
                     }
                 }
                 catch (RetiredException ex)
