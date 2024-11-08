@@ -11,10 +11,13 @@ Also, the dialogs were modified to place the buttons as the first items in the d
 
 The extra files are:
 
-- [`BrowseDlg.wxs`](./ui/BrowseDlg.wxs)
-- [`CustomizeDlg.wxs`](./ui/CustomizeDlg.wxs)
-- [`DiskCostDlg.wxs`](./ui/DiskCostDlg.wxs)
-- [`LicenseAgreementDlg.wxs`](./ui/LicenseAgreementDlg.wxs)
-- [`WixUI_FeatureTree.wxs`](./ui/WixUI_FeatureTree.wxs)
+- [`BrowseDlg.wxs`](./BrowseDlg.wxs)
+- [`CustomizeDlg.wxs`](./CustomizeDlg.wxs)
+- [`DiskCostDlg.wxs`](./DiskCostDlg.wxs)
+- [`LicenseAgreementDlg.wxs`](./LicenseAgreementDlg.wxs)
+- [`WixUI_FeatureTree.wxs`](./WixUI_FeatureTree.wxs)
+- [`WixUI_InstallDir.wxs`](./WixUI_InstallDir.wxs)
+- [`InstallDirDlg.wxs`](./InstallDirDlg.wxs)
+- [`InvalidDirDlg.wxs`](./InvalidDirDlg.wxs)
 
 The files are all licensed under the [MS-RL](https://opensource.org/licenses/ms-rl) license.

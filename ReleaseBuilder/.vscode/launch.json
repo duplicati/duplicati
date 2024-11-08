@@ -27,6 +27,8 @@
                 "--targets", "win-x86-gui.msi",
                 "--targets", "win-x64-gui.msi",
                 "--targets", "win-x64-gui.zip",                
+                "--targets", "win-x64-agent.msi",
+                "--targets", "win-arm64-agent.msi",
                 "--targets", "linux-x64-gui.zip",
                 "--targets", "linux-arm64-gui.zip",
                 "--targets", "osx-x64-gui.dmg",

@@ -24,6 +24,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.Versioning;
 using System.Threading;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Common.IO;
@@ -421,6 +422,7 @@ namespace Duplicati.Library.Snapshots
         /// </summary>
         /// <param name="sources">List of sources</param>
         /// <returns>Dictionary of volumes, with list of sources as values</returns>
+        [SupportedOSPlatform("windows")]
         private static Dictionary<string, List<string>> SortByVolume(IEnumerable<string> sources)
         {
             var sourcesByVolume = new Dictionary<string, List<string>>();
@@ -446,6 +448,7 @@ namespace Duplicati.Library.Snapshots
         /// </summary>
         /// <param name="path"></param>
         /// <returns></returns>
+        [SupportedOSPlatform("windows")]
         public bool IsPathEnumerated(string path)
         {
             // get NTFS volume root

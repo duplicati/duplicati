@@ -41,7 +41,7 @@ namespace Duplicati.Library.Common.IO
                 Mono.Unix.Native.Syscall.llistxattr("/", out v);
                 works = true;
             }
-            catch (EntryPointNotFoundException e)
+            catch (EntryPointNotFoundException)
             {
             }
             catch
