@@ -1,0 +1,5 @@
+#!/bin/sh
+
+set -e
+/bin/launchctl unload -w "/Library/LaunchAgents/com.duplicati.app.launchagent.plist"
+/bin/launchctl load -w "/Library/LaunchAgents/com.duplicati.app.launchagent.plist"

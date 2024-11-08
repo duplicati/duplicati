@@ -128,7 +128,10 @@ public static partial class Command
                     break;
 
                 case PackageType.MacPkg:
-                    await BuildMacPkgPackage(baseDir, buildRoot, tempFile, target, rtcfg);
+                    if (target.Interface == InterfaceType.Agent)
+                        await BuildMacAgentPkgPackage(baseDir, buildRoot, tempFile, target, rtcfg);
+                    else
+                        await BuildMacAppPkgPackage(baseDir, buildRoot, tempFile, target, rtcfg);
                     break;
 
                 case PackageType.Deb:
@@ -343,7 +346,7 @@ public static partial class Command
             }
             Directory.CreateDirectory(mountDir);
 
-            var resourcesDir = Path.Combine(baseDir, "ReleaseBuilder", "Resources", "MacOS");
+            var resourcesDir = Path.Combine(baseDir, "ReleaseBuilder", "Resources", "MacOS", "AppBundle");
             var compressedDmg = Path.Combine(resourcesDir, "template.dmg.bz2");
             if (!File.Exists(compressedDmg))
                 throw new FileNotFoundException($"Compressed dmg template file not found: {compressedDmg}");
@@ -410,14 +413,14 @@ public static partial class Command
         /// <param name="target">The package target.</param>
         /// <param name="rtcfg">The runtime configuration.</param>
         /// <returns>A task representing the asynchronous operation.</returns>
-        static async Task BuildMacPkgPackage(string baseDir, string buildRoot, string pkgFile, PackageTarget target, RuntimeConfig rtcfg)
+        static async Task BuildMacAppPkgPackage(string baseDir, string buildRoot, string pkgFile, PackageTarget target, RuntimeConfig rtcfg)
         {
             var tmpFolder = Path.Combine(buildRoot, "tmp-pkg");
             if (Directory.Exists(tmpFolder))
                 Directory.Delete(tmpFolder, true);
             Directory.CreateDirectory(tmpFolder);
 
-            var installerDir = Path.Combine(baseDir, "ReleaseBuilder", "Resources", "MacOS");
+            var installerDir = Path.Combine(baseDir, "ReleaseBuilder", "Resources", "MacOS", "AppBundle");
 
             var appFolder = Path.Combine(tmpFolder, rtcfg.MacOSAppName);
             if (Directory.Exists(appFolder))
@@ -456,11 +459,19 @@ public static partial class Command
                 File.Delete(pkgDaemonFile);
 
             var distributionFile = Path.Combine(tmpFolder, "Distribution.xml");
+            var hostArch = target.Arch switch
+            {
+                ArchType.x86 => "i386",
+                ArchType.x64 => "x86_64",
+                ArchType.Arm64 => "arm64",
+                _ => throw new Exception($"Unsupported architecture: {target.ArchString}")
+            };
 
             File.WriteAllText(distributionFile,
                 File.ReadAllText(Path.Combine(installerDir, "Distribution.xml"))
                     .Replace("DuplicatiApp.pkg", Path.GetFileName(pkgAppFile))
                     .Replace("DuplicatiDaemon.pkg", Path.GetFileName(pkgDaemonFile))
+                    .Replace("$HOSTARCH", hostArch)
             );
 
             // Make the pkg files
@@ -468,6 +479,124 @@ public static partial class Command
                 ["pkgbuild", "--analyze", "--root", appFolder, "--install-location", "/Applications/Duplicati.app", "InstallerComponent.plist"],
                 ["pkgbuild", "--scripts", Path.Combine(tmpFolder, "app-scripts"), "--identifier", "com.duplicati.app", "--root", appFolder, "--install-location", "/Applications/Duplicati.app", "--component-plist", "InstallerComponent.plist", pkgAppFile],
                 ["pkgbuild", "--scripts", Path.Combine(tmpFolder, "daemon-scripts"), "--identifier", "com.duplicati.app.daemon", "--root", Path.Combine(tmpFolder, "daemon"), "--install-location", "/Library/LaunchAgents", pkgDaemonFile],
+                ["productbuild", "--distribution", distributionFile, "--package-path", ".", "--resources", ".", pkgFile]
+            ], workingDirectory: tmpFolder);
+
+            // Clean up
+            Directory.Delete(tmpFolder, true);
+
+            // Sign the pkg file
+            if (rtcfg.UseCodeSignSigning)
+                await rtcfg.Productsign(pkgFile);
+        }
+
+        /// <summary>
+        /// Builds the Mac package asynchronously.
+        /// </summary>
+        /// <param name="baseDir">The base directory.</param>
+        /// <param name="buildRoot">The build root directory.</param>
+        /// <param name="pkgFile">The package file path.</param>
+        /// <param name="target">The package target.</param>
+        /// <param name="rtcfg">The runtime configuration.</param>
+        /// <returns>A task representing the asynchronous operation.</returns>
+        static async Task BuildMacAgentPkgPackage(string baseDir, string buildRoot, string pkgFile, PackageTarget target, RuntimeConfig rtcfg)
+        {
+            var tmpFolder = Path.Combine(buildRoot, "tmp-pkg");
+            if (Directory.Exists(tmpFolder))
+                Directory.Delete(tmpFolder, true);
+            Directory.CreateDirectory(tmpFolder);
+
+            var installerDir = Path.Combine(baseDir, "ReleaseBuilder", "Resources", "MacOS", "Agent");
+
+            var binFolder = Path.Combine(tmpFolder, "bin");
+            if (Directory.Exists(binFolder))
+                Directory.Delete(binFolder, true);
+
+            // Place the prepared folder
+            EnvHelper.CopyDirectory(Path.Combine(buildRoot, $"{target.BuildTargetString}"), binFolder, recursive: true);
+
+            // Rename the executables
+            await PackageSupport.RenameExecutables(binFolder);
+            await PackageSupport.SetPermissionFlags(binFolder, rtcfg);
+
+            // Copy the source script files
+            var scripts = new[] { "daemon", "daemon-scripts", "app-scripts" };
+
+            // Copy scripts
+            foreach (var s in scripts)
+                EnvHelper.CopyDirectory(Path.Combine(installerDir, s), Path.Combine(tmpFolder, s), recursive: true);
+
+            // Inject the launch agent
+            EnvHelper.CopyDirectory(
+                Path.Combine(installerDir, "daemon"),
+                Path.Combine(binFolder),
+                recursive: true
+            );
+
+            // Inject the uninstall.sh script
+            File.Copy(
+                Path.Combine(installerDir, "uninstall.sh"),
+                Path.Combine(binFolder, "uninstall.sh"),
+                overwrite: true
+            );
+
+            // Copy the package identifier
+            await PackageSupport.InstallPackageIdentifier(binFolder, target);
+
+            // Set permissions
+            if (!OperatingSystem.IsWindows())
+            {
+                await EnvHelper.Chown(binFolder, "root", "admin", true);
+                foreach (var f in Directory.EnumerateFiles(Path.Combine(tmpFolder, "daemon"), "*.launchagent.plist", SearchOption.AllDirectories))
+                    await EnvHelper.Chown(f, "root", "wheel", false);
+
+                var filemode = EnvHelper.GetUnixFileMode("+x");
+                var allscripts = scripts
+                    .Select(x => Path.Combine(tmpFolder, x))
+                    .Where(Directory.Exists)
+                    .SelectMany(x => Directory.EnumerateFiles(x, "*", SearchOption.AllDirectories))
+                    .Append(Path.Combine(tmpFolder, "uninstall.sh"));
+
+                foreach (var x in allscripts)
+                    if (File.Exists(x))
+                        EnvHelper.AddFilemode(x, filemode);
+            }
+
+            // Apply code signing, if requested
+            if (rtcfg.UseCodeSignSigning)
+            {
+                var entitlementFile = Path.Combine(installerDir, "Entitlements.plist");
+                await PackageSupport.SignMacOSBinaries(rtcfg, binFolder, entitlementFile);
+            }
+
+            var pkgAppFile = Path.Combine(tmpFolder, $"{rtcfg.ReleaseInfo.ReleaseName}-DuplicatiAgent.pkg");
+            if (File.Exists(pkgAppFile))
+                File.Delete(pkgAppFile);
+            var pkgDaemonFile = Path.Combine(tmpFolder, $"{rtcfg.ReleaseInfo.ReleaseName}-DuplicatiAgentDaemon.pkg");
+            if (File.Exists(pkgDaemonFile))
+                File.Delete(pkgDaemonFile);
+
+            var distributionFile = Path.Combine(tmpFolder, "Distribution.xml");
+            var hostArch = target.Arch switch
+            {
+                ArchType.x86 => "i386",
+                ArchType.x64 => "x86_64",
+                ArchType.Arm64 => "arm64",
+                _ => throw new Exception($"Unsupported architecture: {target.ArchString}")
+            };
+
+            File.WriteAllText(distributionFile,
+                File.ReadAllText(Path.Combine(installerDir, "Distribution.xml"))
+                    .Replace("DuplicatiAgent.pkg", Path.GetFileName(pkgAppFile))
+                    .Replace("DuplicatiAgentDaemon.pkg", Path.GetFileName(pkgDaemonFile))
+                    .Replace("$HOSTARCH", hostArch)
+            );
+
+            // Make the pkg files
+            await ProcessHelper.ExecuteAll([
+                ["pkgbuild", "--analyze", "--root", binFolder, "--install-location", "/usr/local/duplicati-agent", "InstallerComponent.plist"],
+                ["pkgbuild", "--scripts", Path.Combine(tmpFolder, "app-scripts"), "--identifier", "com.duplicati.agent", "--root", binFolder, "--install-location", "/usr/local/duplicati-agent", "--component-plist", "InstallerComponent.plist", pkgAppFile],
+                ["pkgbuild", "--scripts", Path.Combine(tmpFolder, "daemon-scripts"), "--identifier", "com.duplicati.agent.daemon", "--root", Path.Combine(tmpFolder, "daemon"), "--install-location", "/Library/LaunchAgents", pkgDaemonFile],
                 ["productbuild", "--distribution", distributionFile, "--package-path", ".", "--resources", ".", pkgFile]
             ], workingDirectory: tmpFolder);
 
