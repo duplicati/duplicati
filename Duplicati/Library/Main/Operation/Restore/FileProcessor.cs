@@ -8,7 +8,7 @@ namespace Duplicati.Library.Main.Operation.Restore
 {
     internal class FileProcessor
     {
-        public static Task Run(LocalRestoreDatabase db, ChannelMarkerWrapper<long> block_request, ChannelMarkerWrapper<byte[]> block_response)
+        public static Task Run(LocalRestoreDatabase db, ChannelMarkerWrapper<(long,long)> block_request, ChannelMarkerWrapper<byte[]> block_response)
         {
             return AutomationExtensions.RunTask(
             new
@@ -31,13 +31,14 @@ namespace Duplicati.Library.Main.Operation.Restore
                     }
                     Console.WriteLine($"Got file to restore: '{file.Path}', {file.Length} bytes, {file.Hash}");
 
-                    var blocks = db.Connection.CreateCommand().ExecuteReaderEnumerable(@$"SELECT BlockID FROM BlocksetEntry WHERE BlocksetID = ""{file.BlocksetID}""").Select(x => x.GetInt64(0)).ToList();
+                    var blocks = db.Connection.CreateCommand().ExecuteReaderEnumerable(@$"SELECT Block.ID, Block.Hash, Block.Size, Block.VolumeID FROM BlocksetEntry  INNER JOIN Block ON BlocksetEntry.BlockID = Block.ID WHERE BlocksetEntry.BlocksetID = ""{file.BlocksetID}""").Select(x => (x.GetInt64(0), x.GetString(1), x.GetInt64(2), x.GetInt64(3))).ToList();
 
-                    foreach (var block in blocks)
+                    foreach (var (id, hash, size, vid) in blocks)
                     {
-                        await self.BlockRequest.WriteAsync(block);
+                        Console.WriteLine($"Requesting block {id}, {hash}, {size}, {vid}");
+                        await self.BlockRequest.WriteAsync((id, vid));
                         var data = await self.BlockResponse.ReadAsync();
-                        Console.WriteLine($"Got block {block}, {data.Length} bytes");
+                        Console.WriteLine($"Got block {data.Length} bytes");
                     }
                 }
             });

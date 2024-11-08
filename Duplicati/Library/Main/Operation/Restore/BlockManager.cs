@@ -9,17 +9,22 @@ namespace Duplicati.Library.Main.Operation.Restore
 {
     internal class BlockManager
     {
-        internal class SleepableDictionary
+        internal class SleepableDictionary(LocalRestoreDatabase db, IWriteChannel<IRemoteVolume> volume_request) // That also auto requests!
         {
+            private readonly LocalRestoreDatabase m_db;
+            private readonly IWriteChannel<IRemoteVolume> m_volume_request = volume_request;
             private readonly ConcurrentDictionary<long, byte[]> _dictionary = new();
             private readonly ConcurrentDictionary<long, TaskCompletionSource<byte[]>> _waiters = new();
 
-            public Task<byte[]> Get(long key)
+            public Task<byte[]> Get(long key, long volume_id)
             {
                 if (_dictionary.TryGetValue(key, out var value))
                 {
                     return Task.FromResult(value);
                 }
+
+                var remote_volume = m_db.Connection.CreateCommand().ExecuteReaderEnumerable(@$"SELECT Name, Hash, Size FROM RemoteVolume WHERE ID = ""{volume_id}""").Select(x => new RemoteVolume(x.GetString(0), x.GetString(1), x.GetInt64(2))).First();
+                m_volume_request.WriteAsync(remote_volume);
 
                 var tcs = new TaskCompletionSource<byte[]>();
                 _waiters.GetOrAdd(key, tcs);
@@ -36,26 +41,26 @@ namespace Duplicati.Library.Main.Operation.Restore
             }
         }
 
-        public static Task Run(LocalRestoreDatabase db, ChannelMarkerWrapper<long>[] fp_requests, ChannelMarkerWrapper<byte[]>[] fp_responses)
+        public static Task Run(LocalRestoreDatabase db, ChannelMarkerWrapper<(long,long)>[] fp_requests, ChannelMarkerWrapper<byte[]>[] fp_responses)
         {
             return AutomationExtensions.RunTask(
             new
             {
                 Input = Channels.decompressedVolumes.ForRead,
-                Output = Channels.volumeRequest.ForWrite,
+                Output = Channels.downloadRequest.ForWrite,
                 Requests = fp_requests.Select(x => x.ForRead).ToArray(),
                 Responses = fp_responses.Select(x => x.ForWrite).ToArray()
             },
             async self =>
             {
                 // TODO at some point, this should include some kind of cache eviction policy
-                SleepableDictionary cache = new();
+                SleepableDictionary cache = new(db, self.Output);
 
                 var volume_consumer = Task.Run(async () => {
                     while (true)
                     {
                         var volume = await self.Input.ReadAsync();
-                        foreach ((var blockid, var data) in volume)
+                        foreach (var (blockid, data) in volume)
                         {
                             cache.Set(blockid, data);
                         }
@@ -64,8 +69,8 @@ namespace Duplicati.Library.Main.Operation.Restore
                 var block_handlers = self.Requests.Zip(self.Responses, (req, res) => Task.Run(async () => {
                     while (true)
                     {
-                        var blockid = await req.ReadAsync();
-                        var data = await cache.Get(blockid);
+                        var (blockid, vid) = await req.ReadAsync();
+                        var data = await cache.Get(blockid, vid);
                         await res.WriteAsync(data);
                     }
                 })).ToArray();
