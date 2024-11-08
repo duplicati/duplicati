@@ -135,11 +135,10 @@ namespace Duplicati.Library.Main.Operation
             using (new ChannelScope())
             {
                 all = Task.WhenAll(
-                    new[]
-                    {
+                    [
                         Restore.FileLister.Run(db, m_backendurl, filter, m_options, m_result),
                         Restore.FileProcessor.Run()
-                    }
+                    ]
                 );
             }
             //await all.ConfigureAwait(false);
