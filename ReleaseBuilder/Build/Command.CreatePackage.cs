@@ -799,12 +799,19 @@ public static partial class Command
                 _ => throw new Exception($"Architeture not supported: {target.ArchString}")
             };
 
+            var packageType = target.Interface switch
+            {
+                InterfaceType.Agent => "-agent",
+                _ => ""
+            };
+
             // Write a custom control file
             File.WriteAllText(
                 Path.Combine(pkgroot, "DEBIAN", "control"),
                 File.ReadAllText(Path.Combine(resourcesDir, "control.template.txt"))
                     .Replace("%VERSION%", rtcfg.ReleaseInfo.Version.ToString())
                     .Replace("%ARCH%", debArchString)
+                    .Replace("%PACKAGE_TYPE%", packageType)
                     .Replace("%DEPENDS%", string.Join(", ", target.Interface == InterfaceType.GUI
                         ? DebianGUIDepends
                         : DebianCLIDepends))
@@ -879,6 +886,37 @@ public static partial class Command
                 Path.Combine(pkgroot, "DEBIAN", "conffiles"),
                 string.Join("\n", conffiles)
             );
+
+            if (target.Interface == InterfaceType.Agent)
+            {
+                // Write a custom postinst script
+                File.Copy(
+                    Path.Combine(resourcesDir, $"postinst-agent"),
+                    Path.Combine(pkgroot, "DEBIAN", "postinst"),
+                    true
+                );
+
+                // Write a custom prerm script
+                File.Copy(
+                    Path.Combine(resourcesDir, $"prerm-agent"),
+                    Path.Combine(pkgroot, "DEBIAN", "prerm"),
+                    true
+                );
+
+                if (!OperatingSystem.IsWindows())
+                {
+                    var filemode = UnixFileMode.UserRead
+                        | UnixFileMode.UserWrite
+                        | UnixFileMode.UserExecute
+                        | UnixFileMode.GroupRead
+                        | UnixFileMode.GroupExecute
+                        | UnixFileMode.OtherRead
+                        | UnixFileMode.OtherExecute;
+
+                    File.SetUnixFileMode(Path.Combine(pkgroot, "DEBIAN", "prerm"), filemode);
+                    File.SetUnixFileMode(Path.Combine(pkgroot, "DEBIAN", "postinst"), filemode);
+                }
+            }
 
             // Copy the Docker build file
             File.Copy(
