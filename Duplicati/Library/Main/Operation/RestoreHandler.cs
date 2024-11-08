@@ -148,7 +148,8 @@ namespace Duplicati.Library.Main.Operation
                             ..Enumerable.Range(0, parallelism).Select(i =>
                                 Restore.FileProcessor.Run(db, fileprocessor_requests[i], fileprocessor_responses[i])),
                             Restore.BlockManager.Run(db, fileprocessor_requests, fileprocessor_responses),
-                            ..Enumerable.Range(0, parallelism).Select(i => Restore.VolumeDownloader.Run(backend, m_options))
+                            ..Enumerable.Range(0, parallelism).Select(i => Restore.VolumeDownloader.Run(backend, m_options)),
+                            ..Enumerable.Range(0, parallelism).Select(i => Restore.VolumeDecrypter.Run())
                         ]
                     );
                 }
