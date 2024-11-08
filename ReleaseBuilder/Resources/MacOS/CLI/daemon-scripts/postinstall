@@ -1,0 +1,6 @@
+#!/bin/sh
+
+set -e
+# Package is CLI, so we do not install the server launch agent automatically
+#/bin/launchctl unload -w "/Library/LaunchAgents/com.duplicati.server.launchagent.plist"
+#/bin/launchctl load -w "/Library/LaunchAgents/com.duplicati.server.launchagent.plist"
