@@ -88,10 +88,13 @@ public static class CommandLineArgumentMapper
     /// </summary>
     /// <param name="p">The property to read</param>
     /// <param name="parent">The parent object to read from</param>
+    /// <param name="excludeDefaultValue">A list of properties to exclude</param>
     /// <returns>The value of the property</returns>
-    private static object? GetValueGuarded(PropertyInfo p, object parent)
+    private static object? GetValueGuarded(PropertyInfo p, object parent, HashSet<string>? excludeDefaultValue)
     {
         object? value = null;
+        if (excludeDefaultValue != null && excludeDefaultValue.Contains(p.Name))
+            return value;
 #if DEBUG
         var start = DateTime.Now;
         value = p.GetValue(parent);
@@ -111,7 +114,7 @@ public static class CommandLineArgumentMapper
     /// <param name="prefix">The prefix to use for the arguments</param>
     /// <param name="exclude">A list of properties to exclude</param>
     /// <returns>A list of command line arguments</returns>
-    public static IEnumerable<ICommandLineArgument> MapArguments(object obj, string prefix = "", HashSet<string>? exclude = null)
+    public static IEnumerable<ICommandLineArgument> MapArguments(object obj, string prefix = "", HashSet<string>? exclude = null, HashSet<string>? excludeDefaultValue = null)
     {
         exclude ??= new HashSet<string>();
         foreach (var p in obj.GetType().GetProperties().Where(p => p.CanWrite && p.CanRead))
@@ -124,7 +127,7 @@ public static class CommandLineArgumentMapper
             var name = (prefix + (customAttr?.Name ?? p.Name)).ToLowerInvariant();
             var shortDescription = customAttr?.ShortDescription ?? p.Name;
             var longDescription = customAttr?.LongDescription ?? p.Name;
-            var defaultValue = customAttr?.DefaultValue ?? GetValueGuarded(p, obj)?.ToString();
+            var defaultValue = customAttr?.DefaultValue ?? GetValueGuarded(p, obj, excludeDefaultValue)?.ToString();
             var argumentType = customAttr?.Type;
 
             // Fully custom argument

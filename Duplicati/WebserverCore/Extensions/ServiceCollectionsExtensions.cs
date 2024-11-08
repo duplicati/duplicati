@@ -47,7 +47,8 @@ public static class ServiceCollectionsExtensions
             .AddTransient<ITokenFamilyStore, TokenFamilyStore>()
             .AddTransient<ILoginProvider, LoginProvider>()
             .AddSingleton<IRemoteController, RemoteControllerService>()
-            .AddSingleton<IRemoteControllerRegistration, RemoteControllerRegistrationService>();
+            .AddSingleton<IRemoteControllerRegistration, RemoteControllerRegistrationService>()
+            .AddSingleton<ISystemInfoProvider, SystemInfoProvider>();
 
         return services;
     }

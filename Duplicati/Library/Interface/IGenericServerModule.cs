@@ -19,11 +19,12 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
-using System;
 using System.Collections.Generic;
 
 namespace Duplicati.Library.Interface
 {
+    // TODO: This interface has no implementers and should be removed
+
     /// <summary>
     /// A module that displays a set of options in the general setup area
     /// </summary>

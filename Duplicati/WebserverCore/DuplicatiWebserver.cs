@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+﻿// Copyright (C) 2024, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -266,6 +266,9 @@ public partial class DuplicatiWebserver
 
         if (connection.ApplicationSettings.RemoteControlEnabled)
             App.Services.GetRequiredService<IRemoteController>().Enable();
+
+        // Preload static system info, for better first-load experience
+        var _ = Task.Run(() => App.Services.GetRequiredService<ISystemInfoProvider>().GetSystemInfo(null));
     }
 
     public Task Start(InitSettings settings)
