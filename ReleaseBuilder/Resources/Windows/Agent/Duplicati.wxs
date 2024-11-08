@@ -28,7 +28,9 @@
     <Package InstallerVersion="405" Compressed="yes" Id="$(var.PackageCode)" InstallScope="perMachine" />
     <Media Id="1" Cabinet="media1.cab" EmbedCab="yes" />
 
-    <UIRef Id="WixUI_InstallDir"/>
+    <!-- Using FeatureTree until the service support is complete -->
+    <!-- <UIRef Id="WixUI_InstallDir"/> -->
+    <UIRef Id="WixUI_FeatureTree"/>
 
     <Property Id="FORSERVICE" Value="false" />
 
@@ -43,11 +45,11 @@
 
     <Property Id="WIXUI_INSTALLDIR" Value="INSTALLLOCATION" />
 
-    <Feature Id="DuplicatiCore" Title="Duplicati core files" Level="1" Description="Installs the required files for the Duplicati Agent." AllowAdvertise="no" Absent="disallow" ConfigurableDirectory="INSTALLLOCATION" >
+    <Feature Id="DuplicatiCore" Title="Duplicati Agent files" Level="1" Description="Installs the required files for the Duplicati Agent." AllowAdvertise="no" Absent="disallow" ConfigurableDirectory="INSTALLLOCATION" >
       <ComponentGroupRef Id="DUPLICATIBIN" />
     </Feature>
     
-    <Feature Id="DuplicatiStartupShortCutFeature" Title="Launch Duplicati at startup" Level="1" Description ="Automatically launches Duplicati when you log on to the computer" Absent="allow" AllowAdvertise="no">
+    <Feature Id="DuplicatiStartupShortCutFeature" Title="Launch Duplicati Agent at startup" Level="1" Description ="Automatically launches the Duplicati Agent when you log on to the computer" Absent="allow" AllowAdvertise="no">
       <ComponentRef Id="StartupMenuItem"/>
       <Condition Level="0">FORSERVICE = "true"</Condition>
     </Feature>
