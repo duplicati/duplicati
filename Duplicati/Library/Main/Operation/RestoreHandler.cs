@@ -131,13 +131,21 @@ namespace Duplicati.Library.Main.Operation
                 }
             }
 
+            // TODO move to Options
+            int parallelism = 1;
+
+            var fileprocessor_requests = new ChannelMarkerWrapper<long>[parallelism];
+            var fileprocessor_responses = new ChannelMarkerWrapper<byte[]>[parallelism];
+
             Task all;
             using (new ChannelScope())
             {
                 all = Task.WhenAll(
                     [
                         Restore.FileLister.Run(db, m_backendurl, filter, m_options, m_result),
-                        Restore.FileProcessor.Run(db)
+                        ..Enumerable.Range(0, parallelism).Select(i =>
+                            Restore.FileProcessor.Run(db, fileprocessor_requests[i], fileprocessor_responses[i])),
+                        Restore.BlockManager.Run(db, fileprocessor_requests, fileprocessor_responses)
                     ]
                 );
             }
