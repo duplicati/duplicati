@@ -242,6 +242,13 @@ public static partial class Command
         static async Task BuildMsiPackage(string baseDir, string buildRoot, string msiFile, PackageTarget target, RuntimeConfig rtcfg)
         {
             var resourcesDir = Path.Combine(baseDir, "ReleaseBuilder", "Resources", "Windows");
+            var resourcesSubDir = Path.Combine(resourcesDir,
+                target.Interface switch
+                {
+                    InterfaceType.GUI => "TrayIcon",
+                    InterfaceType.Agent => "Agent",
+                    _ => throw new Exception($"Unsupported interface type: {target.Interface}")
+                });
 
             var buildTmp = Path.Combine(buildRoot, "tmp-msi");
             if (Directory.Exists(buildTmp))
@@ -254,7 +261,7 @@ public static partial class Command
             if (!sourceFiles.EndsWith(Path.DirectorySeparatorChar))
                 sourceFiles += Path.DirectorySeparatorChar;
 
-            var binFiles = Path.Combine(resourcesDir, "binfiles.wxs");
+            var binFiles = Path.Combine(resourcesSubDir, "binfiles.wxs");
             if (File.Exists(binFiles))
                 File.Delete(binFiles);
 
@@ -275,9 +282,9 @@ public static partial class Command
                 "--define", $"HarvestPath={sourceFiles}",
                 "--arch", msiArch,
                 "--output", msiFile,
-                Path.Combine(resourcesDir, "Shortcuts.wxs"),
+                Path.Combine(resourcesSubDir, "Shortcuts.wxs"),
                 binFiles,
-                Path.Combine(resourcesDir, "Duplicati.wxs")
+                Path.Combine(resourcesSubDir, "Duplicati.wxs")
             ], workingDirectory: buildRoot);
 
             if (rtcfg.UseAuthenticodeSigning)
