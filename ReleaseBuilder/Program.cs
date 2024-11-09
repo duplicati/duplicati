@@ -57,10 +57,12 @@ class Program
 
         "osx-x64-gui.dmg",
         "osx-x64-gui.pkg",
-        // "osx-x64-agent.pkg", // Need to support building DMG without trayicon
+        "osx-x64-agent.pkg",
+        "osx-x64-cli.pkg",
         "osx-arm64-gui.dmg",
         "osx-arm64-gui.pkg",
-        // "osx-arm64-agent.pkg", // Need to support building DMG without trayicon
+        "osx-arm64-agent.pkg",
+        "osx-arm64-cli.pkg",
     }
     .Select(x => PackageTarget.ParsePackageId(x))
     .Distinct()

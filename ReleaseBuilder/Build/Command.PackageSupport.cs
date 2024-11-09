@@ -69,5 +69,34 @@ public static partial class Command
         /// <returns>An awaitable task</returns>
         public static Task InstallPackageIdentifier(string buildDir, PackageTarget target)
             => File.WriteAllTextAsync(Path.Combine(buildDir, "package_type_id.txt"), target.PackageTargetString);
+
+        /// <summary>
+        /// Codesigns the binary files in the given directory
+        /// </summary>
+        /// <param name="rtcfg">The runtime configuration</param>
+        /// <param name="binDir">The directory containing the binaries</param>
+        /// <param name="entitlementFile">The entitlement file to use</param>
+        /// <returns>An awaitable task</returns>
+        public static async Task SignMacOSBinaries(RuntimeConfig rtcfg, string binDir, string entitlementFile)
+        {
+            if (rtcfg.UseCodeSignSigning)
+            {
+                Console.WriteLine("Performing MacOS code signing ...");
+
+                // Executables cannot be signed before their dependencies are signed
+                // So they are placed last in the list
+                var executables = ExecutableRenames.Values.Select(x => Path.Combine(binDir, x))
+                    .Where(File.Exists);
+
+                var signtargets = Directory.EnumerateFiles(binDir, "*", SearchOption.AllDirectories)
+                    .Except(executables)
+                    .Concat(executables)
+                    .Distinct()
+                    .ToList();
+
+                foreach (var f in signtargets)
+                    await rtcfg.Codesign(f, entitlementFile);
+            }
+        }
     }
 }

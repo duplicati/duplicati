@@ -31,6 +31,7 @@ Source3:	%{namer}%SERVICENAME%.service
 Source4:	%{namer}%SERVICENAME%.default
 #GUI_ONLY#Source5:	%{namer}.png
 #GUI_ONLY#Source6:	%{namer}.desktop
+#AGENT_ONLY#Source5:	%{namer}%SERVICENAME%.preset
 
 #GUI_ONLY#BuildRequires:  desktop-file-utils
 BuildRequires:  systemd
@@ -95,6 +96,7 @@ install -p -D -m 644 %{_topdir}/SOURCES/%{namer}%SERVICENAME%.default %{buildroo
 #GUI_ONLY#%{_bindir}/gtk-update-icon-cache \
 #GUI_ONLY#  --quiet %{_datadir}/icons/hicolor 2> /dev/null|| :
 %systemd_post %{namer}%SERVICENAME%.service
+#AGENT_ONLY#%{__install} -Dm644 %{namer}%SERVICENAME%.preset %{buildroot}%{_presetdir}/50-%{namer}%SERVICENAME%.preset
 
 %preun
 %systemd_preun %{namer}%SERVICENAME%.service

@@ -128,7 +128,10 @@ public static partial class Command
                     break;
 
                 case PackageType.MacPkg:
-                    await BuildMacPkgPackage(baseDir, buildRoot, tempFile, target, rtcfg);
+                    if (target.Interface != InterfaceType.GUI)
+                        await BuildMacNonAppPkgPackage(baseDir, buildRoot, tempFile, target, rtcfg);
+                    else
+                        await BuildMacAppPkgPackage(baseDir, buildRoot, tempFile, target, rtcfg);
                     break;
 
                 case PackageType.Deb:
@@ -343,7 +346,7 @@ public static partial class Command
             }
             Directory.CreateDirectory(mountDir);
 
-            var resourcesDir = Path.Combine(baseDir, "ReleaseBuilder", "Resources", "MacOS");
+            var resourcesDir = Path.Combine(baseDir, "ReleaseBuilder", "Resources", "MacOS", "AppBundle");
             var compressedDmg = Path.Combine(resourcesDir, "template.dmg.bz2");
             if (!File.Exists(compressedDmg))
                 throw new FileNotFoundException($"Compressed dmg template file not found: {compressedDmg}");
@@ -410,14 +413,14 @@ public static partial class Command
         /// <param name="target">The package target.</param>
         /// <param name="rtcfg">The runtime configuration.</param>
         /// <returns>A task representing the asynchronous operation.</returns>
-        static async Task BuildMacPkgPackage(string baseDir, string buildRoot, string pkgFile, PackageTarget target, RuntimeConfig rtcfg)
+        static async Task BuildMacAppPkgPackage(string baseDir, string buildRoot, string pkgFile, PackageTarget target, RuntimeConfig rtcfg)
         {
             var tmpFolder = Path.Combine(buildRoot, "tmp-pkg");
             if (Directory.Exists(tmpFolder))
                 Directory.Delete(tmpFolder, true);
             Directory.CreateDirectory(tmpFolder);
 
-            var installerDir = Path.Combine(baseDir, "ReleaseBuilder", "Resources", "MacOS");
+            var installerDir = Path.Combine(baseDir, "ReleaseBuilder", "Resources", "MacOS", "AppBundle");
 
             var appFolder = Path.Combine(tmpFolder, rtcfg.MacOSAppName);
             if (Directory.Exists(appFolder))
@@ -456,11 +459,19 @@ public static partial class Command
                 File.Delete(pkgDaemonFile);
 
             var distributionFile = Path.Combine(tmpFolder, "Distribution.xml");
+            var hostArch = target.Arch switch
+            {
+                ArchType.x86 => "i386",
+                ArchType.x64 => "x86_64",
+                ArchType.Arm64 => "arm64",
+                _ => throw new Exception($"Unsupported architecture: {target.ArchString}")
+            };
 
             File.WriteAllText(distributionFile,
                 File.ReadAllText(Path.Combine(installerDir, "Distribution.xml"))
                     .Replace("DuplicatiApp.pkg", Path.GetFileName(pkgAppFile))
                     .Replace("DuplicatiDaemon.pkg", Path.GetFileName(pkgDaemonFile))
+                    .Replace("$HOSTARCH", hostArch)
             );
 
             // Make the pkg files
@@ -468,6 +479,198 @@ public static partial class Command
                 ["pkgbuild", "--analyze", "--root", appFolder, "--install-location", "/Applications/Duplicati.app", "InstallerComponent.plist"],
                 ["pkgbuild", "--scripts", Path.Combine(tmpFolder, "app-scripts"), "--identifier", "com.duplicati.app", "--root", appFolder, "--install-location", "/Applications/Duplicati.app", "--component-plist", "InstallerComponent.plist", pkgAppFile],
                 ["pkgbuild", "--scripts", Path.Combine(tmpFolder, "daemon-scripts"), "--identifier", "com.duplicati.app.daemon", "--root", Path.Combine(tmpFolder, "daemon"), "--install-location", "/Library/LaunchAgents", pkgDaemonFile],
+                ["productbuild", "--distribution", distributionFile, "--package-path", ".", "--resources", ".", pkgFile]
+            ], workingDirectory: tmpFolder);
+
+            // Clean up
+            Directory.Delete(tmpFolder, true);
+
+            // Sign the pkg file
+            if (rtcfg.UseCodeSignSigning)
+                await rtcfg.Productsign(pkgFile);
+        }
+
+        /// <summary>
+        /// Builds the Mac package asynchronously.
+        /// </summary>
+        /// <param name="baseDir">The base directory.</param>
+        /// <param name="buildRoot">The build root directory.</param>
+        /// <param name="pkgFile">The package file path.</param>
+        /// <param name="target">The package target.</param>
+        /// <param name="rtcfg">The runtime configuration.</param>
+        /// <returns>A task representing the asynchronous operation.</returns>
+        static async Task BuildMacNonAppPkgPackage(string baseDir, string buildRoot, string pkgFile, PackageTarget target, RuntimeConfig rtcfg)
+        {
+            var tmpFolder = Path.Combine(buildRoot, "tmp-pkg");
+            if (Directory.Exists(tmpFolder))
+                Directory.Delete(tmpFolder, true);
+            Directory.CreateDirectory(tmpFolder);
+
+            var resFolder = target.Interface switch
+            {
+                InterfaceType.Agent => "Agent",
+                InterfaceType.Cli => "CLI",
+                _ => throw new Exception($"Unsupported interface type: {target.Interface}")
+            };
+
+            var installerDir = Path.Combine(baseDir, "ReleaseBuilder", "Resources", "MacOS", resFolder);
+
+            var binFolder = Path.Combine(tmpFolder, "bin");
+            if (Directory.Exists(binFolder))
+                Directory.Delete(binFolder, true);
+
+            // Place the prepared folder
+            EnvHelper.CopyDirectory(Path.Combine(buildRoot, $"{target.BuildTargetString}"), binFolder, recursive: true);
+
+            // Rename the executables
+            await PackageSupport.RenameExecutables(binFolder);
+            await PackageSupport.SetPermissionFlags(binFolder, rtcfg);
+
+            // Copy the source script files
+            var scripts = new[] { "daemon", "daemon-scripts", "app-scripts" };
+
+            // Copy scripts
+            foreach (var s in scripts)
+                EnvHelper.CopyDirectory(Path.Combine(installerDir, s), Path.Combine(tmpFolder, s), recursive: true);
+
+            // Inject the launch agent
+            EnvHelper.CopyDirectory(
+                Path.Combine(installerDir, "daemon"),
+                Path.Combine(binFolder),
+                recursive: true
+            );
+
+            // Inject the uninstall.sh script
+            File.Copy(
+                Path.Combine(installerDir, "uninstall.sh"),
+                Path.Combine(binFolder, "uninstall.sh"),
+                overwrite: true
+            );
+
+            // Create symlinks for the executables
+            if (target.Interface == InterfaceType.Cli)
+            {
+                var installedExecutables = ExecutableRenames.Values
+                    .Select(x => Path.Combine(binFolder, x))
+                    .Where(File.Exists)
+                    .Select(Path.GetFileName)
+                    .ToList();
+
+                var installScript = Path.Combine(tmpFolder, "app-scripts", "postinstall");
+                var installCommands = new StringBuilder();
+                installCommands.Append(File.ReadAllText(installScript));
+                installCommands.AppendLine();
+                installCommands.AppendLine("echo 'Creating symbolic links for the Duplicati executables'");
+                foreach (var x in installedExecutables)
+                    installCommands.AppendLine($"ln -s /usr/local/duplicati/{x} /usr/local/bin/{x}");
+                installCommands.AppendLine("echo 'Duplicati CLI has been installed'");
+                installCommands.AppendLine("exit 0");
+                File.WriteAllText(installScript, installCommands.ToString());
+
+                var uninstallScript = Path.Combine(binFolder, "uninstall.sh");
+                var uninstallCommands = new StringBuilder();
+                uninstallCommands.Append(File.ReadAllText(uninstallScript));
+                uninstallCommands.AppendLine();
+                uninstallCommands.AppendLine("echo 'Removing links for the Duplicati executables'");
+                foreach (var x in installedExecutables)
+                    uninstallCommands.AppendLine($"if [ -L /usr/local/bin/{x} ]; then rm /usr/local/bin/{x}; fi");
+                uninstallCommands.AppendLine("echo 'Duplicati symlinks are removed'");
+                uninstallCommands.AppendLine("exit 0");
+                File.WriteAllText(uninstallScript, uninstallCommands.ToString());
+            }
+
+            // Copy the package identifier
+            await PackageSupport.InstallPackageIdentifier(binFolder, target);
+
+            // Set permissions
+            if (!OperatingSystem.IsWindows())
+            {
+                await EnvHelper.Chown(binFolder, "root", "admin", true);
+                foreach (var f in Directory.EnumerateFiles(Path.Combine(tmpFolder, "daemon"), "*.launchagent.plist", SearchOption.AllDirectories))
+                    await EnvHelper.Chown(f, "root", "wheel", false);
+
+                var filemode = EnvHelper.GetUnixFileMode("+x");
+                var allscripts = scripts
+                    .Select(x => Path.Combine(tmpFolder, x))
+                    .Where(Directory.Exists)
+                    .SelectMany(x => Directory.EnumerateFiles(x, "*", SearchOption.AllDirectories))
+                    .Append(Path.Combine(tmpFolder, "uninstall.sh"));
+
+                foreach (var x in allscripts)
+                    if (File.Exists(x))
+                        EnvHelper.AddFilemode(x, filemode);
+            }
+
+            // Apply code signing, if requested
+            if (rtcfg.UseCodeSignSigning)
+            {
+                var entitlementFile = Path.Combine(installerDir, "Entitlements.plist");
+                await PackageSupport.SignMacOSBinaries(rtcfg, binFolder, entitlementFile);
+            }
+
+            var payloadPkgFile = target.Interface switch
+            {
+                InterfaceType.Agent => "DuplicatiAgent.pkg",
+                InterfaceType.Cli => "DuplicatiCLI.pkg",
+                _ => throw new Exception($"Unsupported interface type: {target.Interface}")
+            };
+
+            var daemonPkgFile = target.Interface switch
+            {
+                InterfaceType.Agent => "DuplicatiAgentDaemon.pkg",
+                InterfaceType.Cli => "DuplicatiServerDaemon.pkg",
+                _ => throw new Exception($"Unsupported interface type: {target.Interface}")
+            };
+
+            var pkgAppFile = Path.Combine(tmpFolder, $"{rtcfg.ReleaseInfo.ReleaseName}-{payloadPkgFile}");
+            if (File.Exists(pkgAppFile))
+                File.Delete(pkgAppFile);
+            var pkgDaemonFile = Path.Combine(tmpFolder, $"{rtcfg.ReleaseInfo.ReleaseName}-{daemonPkgFile}");
+            if (File.Exists(pkgDaemonFile))
+                File.Delete(pkgDaemonFile);
+
+            var distributionFile = Path.Combine(tmpFolder, "Distribution.xml");
+            var hostArch = target.Arch switch
+            {
+                ArchType.x86 => "i386",
+                ArchType.x64 => "x86_64",
+                ArchType.Arm64 => "arm64",
+                _ => throw new Exception($"Unsupported architecture: {target.ArchString}")
+            };
+
+            File.WriteAllText(distributionFile,
+                File.ReadAllText(Path.Combine(installerDir, "Distribution.xml"))
+                    .Replace(payloadPkgFile, Path.GetFileName(pkgAppFile))
+                    .Replace(daemonPkgFile, Path.GetFileName(pkgDaemonFile))
+                    .Replace("$HOSTARCH", hostArch)
+            );
+
+            var installLocation = target.Interface switch
+            {
+                InterfaceType.Agent => "/usr/local/duplicati-agent",
+                InterfaceType.Cli => "/usr/local/duplicati",
+                _ => throw new Exception($"Unsupported interface type: {target.Interface}")
+            };
+
+            var appId = target.Interface switch
+            {
+                InterfaceType.Agent => "com.duplicati.agent",
+                InterfaceType.Cli => "com.duplicati.cli",
+                _ => throw new Exception($"Unsupported interface type: {target.Interface}")
+            };
+
+            var daemonId = target.Interface switch
+            {
+                InterfaceType.Agent => "com.duplicati.agent.daemon",
+                InterfaceType.Cli => "com.duplicati.server.daemon",
+                _ => throw new Exception($"Unsupported interface type: {target.Interface}")
+            };
+
+            // Make the pkg files
+            await ProcessHelper.ExecuteAll([
+                ["pkgbuild", "--analyze", "--root", binFolder, "--install-location", installLocation, "InstallerComponent.plist"],
+                ["pkgbuild", "--scripts", Path.Combine(tmpFolder, "app-scripts"), "--identifier", appId, "--root", binFolder, "--install-location", installLocation, "--component-plist", "InstallerComponent.plist", pkgAppFile],
+                ["pkgbuild", "--scripts", Path.Combine(tmpFolder, "daemon-scripts"), "--identifier", daemonId, "--root", Path.Combine(tmpFolder, "daemon"), "--install-location", "/Library/LaunchAgents", pkgDaemonFile],
                 ["productbuild", "--distribution", distributionFile, "--package-path", ".", "--resources", ".", pkgFile]
             ], workingDirectory: tmpFolder);
 
@@ -596,12 +799,19 @@ public static partial class Command
                 _ => throw new Exception($"Architeture not supported: {target.ArchString}")
             };
 
+            var packageType = target.Interface switch
+            {
+                InterfaceType.Agent => "-agent",
+                _ => ""
+            };
+
             // Write a custom control file
             File.WriteAllText(
                 Path.Combine(pkgroot, "DEBIAN", "control"),
                 File.ReadAllText(Path.Combine(resourcesDir, "control.template.txt"))
                     .Replace("%VERSION%", rtcfg.ReleaseInfo.Version.ToString())
                     .Replace("%ARCH%", debArchString)
+                    .Replace("%PACKAGE_TYPE%", packageType)
                     .Replace("%DEPENDS%", string.Join(", ", target.Interface == InterfaceType.GUI
                         ? DebianGUIDepends
                         : DebianCLIDepends))
@@ -676,6 +886,37 @@ public static partial class Command
                 Path.Combine(pkgroot, "DEBIAN", "conffiles"),
                 string.Join("\n", conffiles)
             );
+
+            if (target.Interface == InterfaceType.Agent)
+            {
+                // Write a custom postinst script
+                File.Copy(
+                    Path.Combine(resourcesDir, $"postinst-agent"),
+                    Path.Combine(pkgroot, "DEBIAN", "postinst"),
+                    true
+                );
+
+                // Write a custom prerm script
+                File.Copy(
+                    Path.Combine(resourcesDir, $"prerm-agent"),
+                    Path.Combine(pkgroot, "DEBIAN", "prerm"),
+                    true
+                );
+
+                if (!OperatingSystem.IsWindows())
+                {
+                    var filemode = UnixFileMode.UserRead
+                        | UnixFileMode.UserWrite
+                        | UnixFileMode.UserExecute
+                        | UnixFileMode.GroupRead
+                        | UnixFileMode.GroupExecute
+                        | UnixFileMode.OtherRead
+                        | UnixFileMode.OtherExecute;
+
+                    File.SetUnixFileMode(Path.Combine(pkgroot, "DEBIAN", "prerm"), filemode);
+                    File.SetUnixFileMode(Path.Combine(pkgroot, "DEBIAN", "postinst"), filemode);
+                }
+            }
 
             // Copy the Docker build file
             File.Copy(
@@ -771,6 +1012,7 @@ public static partial class Command
         {
             File.Copy(Path.Combine(resourcesDir, "systemd", "duplicati-agent.service"), Path.Combine(sources, "duplicati-agent.service"));
             File.Copy(Path.Combine(resourcesDir, "systemd", "duplicati-agent.default"), Path.Combine(sources, "duplicati-agent.default"));
+            File.Copy(Path.Combine(resourcesDir, "systemd", "duplicati-agent.preset"), Path.Combine(sources, "duplicati-agent.preset"));
         }
 
         // Write custom script to install executable files
@@ -805,14 +1047,18 @@ public static partial class Command
                 .Replace("%DEPENDS%", string.Join("\n",
                     (target.Interface == InterfaceType.GUI
                         ? FedoraGUIDepends
-                        : FedoraCLIDepends).Select(x => $"Requires:\t{x}")))
-                .Replace("#GUI_ONLY#", target.Interface == InterfaceType.Cli ? "# " : "");
+                        : FedoraCLIDepends).Select(x => $"Requires:\t{x}")));
 
         // Remove comment markers, or remove lines
         if (target.Interface == InterfaceType.GUI)
             specData = specData.Replace("#GUI_ONLY#", "");
         else
             specData = string.Join("\n", specData.Split('\n').Where(x => !x.StartsWith("#GUI_ONLY#")));
+
+        if (target.Interface == InterfaceType.Agent)
+            specData = specData.Replace("#AGENT_ONLY#", "");
+        else
+            specData = string.Join("\n", specData.Split('\n').Where(x => !x.StartsWith("#AGENT_ONLY#")));
 
         File.WriteAllText(
             Path.Combine(sources, "duplicati.spec"),
