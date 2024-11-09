@@ -28,6 +28,7 @@ using Duplicati.Library.Modules.Builtin.ResultSerialization;
 using System.Threading.Tasks;
 using System.Text.RegularExpressions;
 using System.Linq;
+using Duplicati.Library.Logging;
 
 namespace Duplicati.Library.Modules.Builtin
 {
@@ -303,6 +304,9 @@ namespace Duplicati.Library.Modules.Builtin
 
                         stderr = cs.StandardError;
                         stdout = cs.StandardOutput;
+                        
+                        SendStdOutToLogs(stdout);
+                        
                         if (p.ExitCode != 0)
                         {
                             if (!requiredScript)
@@ -449,6 +453,35 @@ namespace Duplicati.Library.Modules.Builtin
                 // If we wait a little here, we eventually get the data.
                 // If the streams have completed we do not wait.
                 m_task.Wait(TimeSpan.FromSeconds(5));
+            }
+        }
+        
+        /// <summary>
+        /// Define the log actions for the different prefixes
+        /// </summary>
+        private static readonly Dictionary<string, Action<string>> LogActions = new()
+        {
+            ["LOG:WARN"] = msg => Log.WriteWarningMessage(LOGTAG, "ScriptOutput", null, msg),
+            ["LOG:ERROR"] = msg => Log.WriteErrorMessage(LOGTAG, "ScriptOutput", null, msg),
+            ["LOG:INFO"] = msg => Log.WriteInformationMessage(LOGTAG, "ScriptOutput", msg)
+        };
+        
+        /// <summary>
+        /// Parses the STDOUT of the script and sends it to the logs according to the prefix
+        /// </summary>
+        /// <param name="stdout">Captured stdout stream from the process</param>
+        private static void SendStdOutToLogs(string stdout)
+        {
+            if (String.IsNullOrWhiteSpace(stdout))
+                return;
+            // Explicit CR/LF types for all OSes instead of Environment.NewLine in case stdout producer
+            // script explicitly uses a different line ending from the OS the process is ran on.
+            foreach (var line in stdout.Split(["\r\n", "\r", "\n"], StringSplitOptions.RemoveEmptyEntries))
+            {
+                var prefix = LogActions.Keys.FirstOrDefault(p => line.StartsWith(p));
+                if (prefix == null) continue;
+                var message = line.Substring(prefix.Length).Trim();
+                LogActions[prefix](message);
             }
         }
     }
