@@ -1,3 +1,51 @@
+2024-11-09 - 2.0.9.110_canary_2024-11-09
+==========
+This release is a canary release intended to be used for testing.
+This release is expected to progress to a stable release if no major blockers are found.
+
+**Unlike regular canary builds, this one has a major change in the build system, so it now runs on .NET8.**
+The builds are self-contained so Mono or .NET installations are not required to install.
+
+For users running on builds prior to 2.0.9.x, this build will appear later as an update that requires manual installation.
+
+**Important changes from last Beta**
+- Updated to .NET8 with OS specific builds
+- Using Kestrel as the API/UI server
+- Mandatory password and new authentication scheme for server
+- Settings database version updated to v8
+- Backup database updated to v13
+
+Please see list of known issues related to .NET8/Kestrel upgrade:
+https://github.com/orgs/duplicati/projects/2
+
+# New tool to manage a running server
+Due to incompatibility with `duplicati_client` a new tool is included, named `Duplicati.CommandLine.ServerUtil.exe`/`duplicati-server-util`.
+
+# Upgrade from `v2.0.9.105`
+If you are upgrading from 2.0.9.105 please see the release notes from 2.0.9.106 for how to prepare the database. 
+Upgrades from other versions do not need special steps.
+
+## Downgrade backup database to v12
+If you need to go back to v12, run these two SQL statements:
+```
+DROP INDEX "UniqueBlockVolumeDuplicateBlock";
+UPDATE "Version" SET "Version" = 12;
+```
+
+## Detailed list of changes:
+- Minor updates to help text and option types
+- Fixed an issue with file backend url on Windows, thanks @Jojo-1000
+- Fixed a condition that could hang the trayicon on a crash
+- Updated AWSSDK to latest version
+- Fixed an issue with the AWS Secrets Manader provider stalling the load of settings
+- Fixed Telegram notifications
+- Added Agent MSI installer
+- Updated Avalonia to the latest version to fix crash on Debian
+- Added Agent PKG for MacOS
+- Added CLI PKG for MacOS
+- Added autolaunch for Agent Deb package
+- Added option to let scripts create log entries
+
 2024-11-06 - 2.0.9.109_canary_2024-11-06
 ==========
 This release is a canary release intended to be used for testing.
