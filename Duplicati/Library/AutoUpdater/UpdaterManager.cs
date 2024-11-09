@@ -338,6 +338,7 @@ namespace Duplicati.Library.AutoUpdater
 
                         request.Headers.Add(System.Net.HttpRequestHeader.UserAgent.ToString(), string.Format("{0} v{1}{2}", APPNAME, SelfVersion.Version, string.IsNullOrWhiteSpace(InstallID) ? "" : " -" + InstallID));
                         request.Headers.Add("X-Install-ID", InstallID);
+                        request.Headers.Add("X-Package-Type-ID", PackageTypeId);
 
                         using var timeoutToken = new CancellationTokenSource();
                         timeoutToken.CancelAfter(TimeSpan.FromSeconds(SHORT_OPERATION_TIMEOUT_SECONDS));
