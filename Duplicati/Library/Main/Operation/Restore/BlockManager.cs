@@ -1,25 +1,34 @@
-using System;
 using System.Collections.Concurrent;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using CoCoL;
 using Duplicati.Library.Main.Database;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace Duplicati.Library.Main.Operation.Restore
 {
     internal class BlockManager
     {
-        internal class SleepableDictionary(LocalRestoreDatabase db, IWriteChannel<(long,IRemoteVolume)> volume_request) // That also auto requests!
+        internal class SleepableDictionary // That also auto requests!
         {
-            private readonly LocalRestoreDatabase m_db = db;
-            private readonly IWriteChannel<(long,IRemoteVolume)> m_volume_request = volume_request;
-            private readonly ConcurrentDictionary<long, byte[]> _dictionary = new();
+            private readonly LocalRestoreDatabase m_db;
+            private readonly IWriteChannel<(long,IRemoteVolume)> m_volume_request;
+            private readonly MemoryCache _dictionary;
             private readonly ConcurrentDictionary<long, TaskCompletionSource<byte[]>> _waiters = new();
             private readonly ConcurrentDictionary<long, bool> _in_flight = new();
 
+            public SleepableDictionary(LocalRestoreDatabase db, IWriteChannel<(long,IRemoteVolume)> volume_request)
+            {
+                m_db = db;
+                m_volume_request = volume_request;
+                var cache_options = new MemoryCacheOptions();
+                _dictionary = new MemoryCache(cache_options);
+            }
+
             public Task<byte[]> Get(long key, long volume_id)
             {
-                if (_dictionary.TryGetValue(key, out var value))
+                if (_dictionary.TryGetValue(key, out byte[] value))
                 {
                     return Task.FromResult(value);
                 }
@@ -39,10 +48,16 @@ namespace Duplicati.Library.Main.Operation.Restore
 
             public void Set(long key, byte[] value)
             {
-                _dictionary.TryAdd(key, value);
+                _dictionary.Set(key, value);
                 if (_waiters.TryRemove(key, out var tcs))
                 {
                     tcs.SetResult(value);
+                }
+                // TODO Make this a configurable value
+                // TODO Current eviction policy evicts 50 %. Maybe make this a configurable value?
+                if (_dictionary.Count > 32 * 1024)
+                {
+                    _dictionary.Compact(0.5);
                 }
             }
 
