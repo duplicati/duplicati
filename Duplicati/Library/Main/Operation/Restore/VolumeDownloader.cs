@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using CoCoL;
 using Duplicati.Library.Utility;
@@ -19,19 +20,25 @@ namespace Duplicati.Library.Main.Operation.Restore
             {
                 try
                 {
+                    Dictionary<long, TempFile> cache = [];
+
                     while (true)
                     {
                         var (block_id, volume_id, request) = await self.Input.ReadAsync();
 
                         TempFile f = null;
-                        try
+                        if (!cache.TryGetValue(volume_id, out f))
                         {
-                            f = backend.GetAsync(request.Name, request.Size, request.Hash).Wait();
-                        }
-                        catch (Exception ex)
-                        {
-                            Console.WriteLine($"Failed to download volume: '{request.Name}' | {ex.Message}");
-                            throw;
+                            try
+                            {
+                                f = backend.GetAsync(request.Name, request.Size, request.Hash).Wait();
+                                cache.Add(volume_id, f);
+                            }
+                            catch (Exception ex)
+                            {
+                                Console.WriteLine($"Failed to download volume: '{request.Name}' | {ex.Message}");
+                                throw;
+                            }
                         }
 
                         self.Output.Write((block_id, volume_id, f));

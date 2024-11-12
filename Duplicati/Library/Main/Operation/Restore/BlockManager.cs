@@ -16,7 +16,6 @@ namespace Duplicati.Library.Main.Operation.Restore
             private readonly IWriteChannel<(long,long,IRemoteVolume)> m_volume_request;
             private readonly MemoryCache _dictionary;
             private readonly ConcurrentDictionary<long, TaskCompletionSource<byte[]>> _waiters = new();
-            private readonly ConcurrentDictionary<long, bool> _in_flight = new();
 
             public SleepableDictionary(LocalRestoreDatabase db, IWriteChannel<(long,long,IRemoteVolume)> volume_request)
             {
@@ -33,16 +32,15 @@ namespace Duplicati.Library.Main.Operation.Restore
                     return Task.FromResult(value);
                 }
 
-                // TODO Track in-flight, and local volumes.
-                if (!_in_flight.ContainsKey(volume_id))
+                if (_waiters.TryGetValue(key, out TaskCompletionSource<byte[]> tcs))
                 {
-                    var remote_volume = m_db.Connection.CreateCommand().ExecuteReaderEnumerable(@$"SELECT Name, Hash, Size FROM RemoteVolume WHERE ID = ""{volume_id}""").Select(x => new RemoteVolume(x.GetString(0), x.GetString(1), x.GetInt64(2))).First();
-                    m_volume_request.WriteAsync((volume_id, remote_volume));
-                    _in_flight[volume_id] = true;
+                    return tcs.Task;
                 }
 
-                var tcs = new TaskCompletionSource<byte[]>();
+                tcs = new TaskCompletionSource<byte[]>();
                 _waiters.GetOrAdd(key, tcs);
+                var remote_volume = m_db.Connection.CreateCommand().ExecuteReaderEnumerable(@$"SELECT Name, Hash, Size FROM RemoteVolume WHERE ID = ""{volume_id}""").Select(x => new RemoteVolume(x.GetString(0), x.GetString(1), x.GetInt64(2))).First();
+                m_volume_request.WriteAsync((key, volume_id, remote_volume));
                 return tcs.Task;
             }
 
@@ -55,7 +53,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                 }
                 // TODO Make this a configurable value
                 // TODO Current eviction policy evicts 50 %. Maybe make this a configurable value?
-                if (_dictionary.Count > 32 * 1024)
+                if (_dictionary.Count > 8 * 1024)
                 {
                     _dictionary.Compact(0.5);
                 }

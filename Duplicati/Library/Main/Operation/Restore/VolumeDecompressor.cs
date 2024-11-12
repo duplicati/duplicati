@@ -24,15 +24,13 @@ namespace Duplicati.Library.Main.Operation.Restore
                     {
                         var (block_id, volume_id, volume) = await self.Input.ReadAsync();
 
-                        var bids = db.Connection.CreateCommand().ExecuteReaderEnumerable(@$"SELECT ID, Hash, Size FROM Block WHERE VolumeID = ""{volume_id}""").Select(x => (x.GetInt64(0), x.GetString(1), x.GetInt64(2))).ToArray();
-                        var bid_lut = bids.ToDictionary(x => x.Item2);
+                        var reader = db.Connection.CreateCommand().ExecuteReader(@$"SELECT Hash, Size FROM Block WHERE ID = {block_id}");
+                        reader.Read();
+                        var bhash = reader.GetString(0);
+                        var bsize = reader.GetInt64(1);
+                        byte[] buffer = new byte[options.Blocksize];
+                        new BlockVolumeReader(options.CompressionModule, volume, options).ReadBlock(bhash, buffer);
 
-                        using (var blocks = new BlockVolumeReader(options.CompressionModule, volume, options))
-                        {
-                            var volume_blocks = blocks.Blocks.ToArray();
-                            for (int i = 0; i < volume_blocks.Length; i++)
-                            {
-                                byte[] buffer = new byte[options.Blocksize];
                         await self.Output.WriteAsync((block_id, buffer[..(int)bsize]));
                     }
                 }
