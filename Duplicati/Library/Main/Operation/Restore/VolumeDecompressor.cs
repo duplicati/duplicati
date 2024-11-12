@@ -22,7 +22,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                 try {
                     while (true)
                     {
-                        var (volume_id, volume) = await self.Input.ReadAsync();
+                        var (block_id, volume_id, volume) = await self.Input.ReadAsync();
 
                         var bids = db.Connection.CreateCommand().ExecuteReaderEnumerable(@$"SELECT ID, Hash, Size FROM Block WHERE VolumeID = ""{volume_id}""").Select(x => (x.GetInt64(0), x.GetString(1), x.GetInt64(2))).ToArray();
                         var bid_lut = bids.ToDictionary(x => x.Item2);
@@ -33,12 +33,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                             for (int i = 0; i < volume_blocks.Length; i++)
                             {
                                 byte[] buffer = new byte[options.Blocksize];
-
-                                blocks.ReadBlock(volume_blocks[i].Key, buffer);
-
-                                await self.Output.WriteAsync((bid_lut[volume_blocks[i].Key].Item1, buffer[..(int)volume_blocks[i].Value]));
-                            }
-                        }
+                        await self.Output.WriteAsync((block_id, buffer[..(int)bsize]));
                     }
                 }
                 catch (RetiredException ex)

@@ -21,7 +21,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                 {
                     while (true)
                     {
-                        var (volume_id, request) = await self.Input.ReadAsync();
+                        var (block_id, volume_id, request) = await self.Input.ReadAsync();
 
                         TempFile f = null;
                         try
@@ -34,7 +34,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                             throw;
                         }
 
-                        self.Output.Write((volume_id,f));
+                        self.Output.Write((block_id, volume_id, f));
                     }
                 }
                 catch (RetiredException ex)
