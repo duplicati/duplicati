@@ -116,6 +116,7 @@ public static class Program
             new Option<bool>("--webservice-api-only", description: "Only allow API access to the webserver", getDefaultValue: () => true),
             new Option<bool>("--webservice-disable-signin-tokens", description: "Disable signin tokens for the webserver", getDefaultValue: () => true),
             new Option<bool>("--ping-pong-keepalive", description: "Enable ping-pong keepalive", getDefaultValue: () => false),
+            new Option<bool>("--disable-pre-shared-key", description: "Disable the pre-shared key that prevents outside access to the webserver", getDefaultValue: () => false),
             new Option<string?>("--secret-provider", description: "The secret provider to use", getDefaultValue: () => null),
             new Option<SecretProviderHelper.CachingLevel>("--secret-provider-cache", description: "The secret provider cache level", getDefaultValue: () => SecretProviderHelper.CachingLevel.None),
             new Option<string>("--secret-provider-pattern", description: "The secret provider pattern", getDefaultValue: () => SecretProviderHelper.DEFAULT_PATTERN),
