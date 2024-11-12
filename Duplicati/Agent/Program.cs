@@ -107,7 +107,7 @@ public static class Program
             new Option<bool>("--agent-register-only", description: "Only register the agent, then exit", getDefaultValue: () => false),
             new Option<string>("--webservice-listen-interface", description: "The interface to listen on for the webserver", getDefaultValue: () => "loopback"),
             new Option<string>("--webservice-port", description: "The port to listen on for the webserver", getDefaultValue: () => "8210"),
-            new Option<string?>("--webservice-password", description: "The password for the webserver, random if none supplied", getDefaultValue: () => null),
+            new Option<string?>("--webservice-password", description: "The password for the webserver, if set to \"random\" a random passphrase is used", getDefaultValue: () => "random"),
             new Option<string?>("--settings-encryption-key", description: "The encryption key for the database settings", getDefaultValue: () => null),
             new Option<string>("--windows-eventlog", description: "The Windows event log to write to", getDefaultValue: () => "Duplicati"),
             new Option<bool>("--disable-db-encryption", description: "Disable database encryption", getDefaultValue: () => false),
@@ -208,7 +208,7 @@ public static class Program
         }
 
         // Prevent access to the webserver interface from anything but the agent
-        if (string.IsNullOrWhiteSpace(agentConfig.WebservicePassword))
+        if (string.Equals("random", agentConfig.WebservicePassword, StringComparison.OrdinalIgnoreCase))
             agentConfig = agentConfig with { WebservicePassword = System.Security.Cryptography.RandomNumberGenerator.GetHexString(128) };
 
         // Set the pre-shared key for the agent
