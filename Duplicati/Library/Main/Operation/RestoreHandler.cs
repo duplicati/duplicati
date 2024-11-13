@@ -134,13 +134,13 @@ namespace Duplicati.Library.Main.Operation
 
             // TODO move to Options
             int
-                file_processors = 1,
+                file_processors = 8,
                 volume_downloaders = 1,
-                volume_decrypters = 1,
-                volume_decompressors = 1;
+                volume_decrypters = 8,
+                volume_decompressors = 8;
             int fileprocessor_buffersize = 8;
 
-            var fileprocessor_requests = new Channel<(long, long)>[file_processors].Select(_ => ChannelManager.CreateChannel<(long, long)>(buffersize:fileprocessor_buffersize)).ToArray();
+            var fileprocessor_requests = new Channel<Restore.BlockRequest>[file_processors].Select(_ => ChannelManager.CreateChannel<Restore.BlockRequest>(buffersize:fileprocessor_buffersize)).ToArray();
             var fileprocessor_responses = new Channel<byte[]>[file_processors].Select(_ => ChannelManager.CreateChannel<byte[]>(buffersize:fileprocessor_buffersize)).ToArray();
 
             Task[] all;
@@ -152,10 +152,10 @@ namespace Duplicati.Library.Main.Operation
                         [
                             Restore.FileLister.Run(db, backend, filter, m_options, m_result),
                             ..Enumerable.Range(0, file_processors).Select(i => Restore.FileProcessor.Run(db, fileprocessor_requests[i], fileprocessor_responses[i], m_result)),
-                            Restore.BlockManager.Run(db, fileprocessor_requests, fileprocessor_responses),
-                            ..Enumerable.Range(0, volume_downloaders).Select(i => Restore.VolumeDownloader.Run(backend, m_options)),
+                            Restore.BlockManager.Run(fileprocessor_requests, fileprocessor_responses),
+                            ..Enumerable.Range(0, volume_downloaders).Select(i => Restore.VolumeDownloader.Run(db, backend, m_options)),
                             ..Enumerable.Range(0, volume_decrypters).Select(i => Restore.VolumeDecrypter.Run()),
-                            ..Enumerable.Range(0, volume_decompressors).Select(i => Restore.VolumeDecompressor.Run(db, m_options))
+                            ..Enumerable.Range(0, volume_decompressors).Select(i => Restore.VolumeDecompressor.Run(m_options))
                         ];
                 }
 
@@ -168,6 +168,13 @@ namespace Duplicati.Library.Main.Operation
             // Dispose the created intermediates
             db?.Dispose();
             tmpdb?.Dispose();
+
+            // TODO License
+            // TODO Logging
+            // TODO Error handling
+            // TODO Documentation
+
+            //Next step is to profile and look at whether we can optimize the parallelism
 
             return;
 

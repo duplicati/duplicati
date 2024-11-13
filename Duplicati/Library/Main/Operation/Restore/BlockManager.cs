@@ -12,35 +12,27 @@ namespace Duplicati.Library.Main.Operation.Restore
     {
         internal class SleepableDictionary // That also auto requests!
         {
-            private readonly LocalRestoreDatabase m_db;
-            private readonly IWriteChannel<(long,long,IRemoteVolume)> m_volume_request;
+            private readonly IWriteChannel<BlockRequest> m_volume_request;
             private readonly MemoryCache _dictionary;
             private readonly ConcurrentDictionary<long, TaskCompletionSource<byte[]>> _waiters = new();
 
-            public SleepableDictionary(LocalRestoreDatabase db, IWriteChannel<(long,long,IRemoteVolume)> volume_request)
+            public SleepableDictionary(IWriteChannel<BlockRequest> volume_request)
             {
-                m_db = db;
                 m_volume_request = volume_request;
                 var cache_options = new MemoryCacheOptions();
                 _dictionary = new MemoryCache(cache_options);
             }
 
-            public Task<byte[]> Get(long key, long volume_id)
+            public Task<byte[]> Get(BlockRequest block_request)
             {
-                if (_dictionary.TryGetValue(key, out byte[] value))
+                if (_dictionary.TryGetValue(block_request.BlockID, out byte[] value))
                 {
                     return Task.FromResult(value);
                 }
 
-                if (_waiters.TryGetValue(key, out TaskCompletionSource<byte[]> tcs))
-                {
-                    return tcs.Task;
-                }
-
-                tcs = new TaskCompletionSource<byte[]>();
-                _waiters.GetOrAdd(key, tcs);
-                var remote_volume = m_db.Connection.CreateCommand().ExecuteReaderEnumerable(@$"SELECT Name, Hash, Size FROM RemoteVolume WHERE ID = ""{volume_id}""").Select(x => new RemoteVolume(x.GetString(0), x.GetString(1), x.GetInt64(2))).First();
-                m_volume_request.WriteAsync((key, volume_id, remote_volume));
+                var tcs = new TaskCompletionSource<byte[]>();
+                tcs = _waiters.GetOrAdd(block_request.BlockID, tcs);
+                m_volume_request.WriteAsync(block_request);
                 return tcs.Task;
             }
 
@@ -51,6 +43,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                 {
                     tcs.SetResult(value);
                 }
+
                 // TODO Make this a configurable value
                 // TODO Current eviction policy evicts 50 %. Maybe make this a configurable value?
                 if (_dictionary.Count > 8 * 1024)
@@ -69,7 +62,7 @@ namespace Duplicati.Library.Main.Operation.Restore
             }
         }
 
-        public static Task Run(LocalRestoreDatabase db, IChannel<(long,long)>[] fp_requests, IChannel<byte[]>[] fp_responses)
+        public static Task Run(IChannel<BlockRequest>[] fp_requests, IChannel<byte[]>[] fp_responses)
         {
             return AutomationExtensions.RunTask(
             new
@@ -80,15 +73,15 @@ namespace Duplicati.Library.Main.Operation.Restore
             async self =>
             {
                 // TODO at some point, this should include some kind of cache eviction policy
-                SleepableDictionary cache = new(db, self.Output);
+                SleepableDictionary cache = new(self.Output);
 
                 var volume_consumer = Task.Run(async () => {
                     try
                     {
                         while (true)
                         {
-                            var (block_id, data) = await self.Input.ReadAsync();
-                            cache.Set(block_id, data);
+                            var (block_request, data) = await self.Input.ReadAsync();
+                            cache.Set(block_request.BlockID, data);
                         }
                     }
                     catch (RetiredException)
@@ -101,8 +94,8 @@ namespace Duplicati.Library.Main.Operation.Restore
                     {
                         while (true)
                         {
-                            var (blockid, vid) = await req.ReadAsync();
-                            var data = await cache.Get(blockid, vid);
+                            var block_request = await req.ReadAsync();
+                            var data = await cache.Get(block_request);
                             await res.WriteAsync(data);
                         }
                     }

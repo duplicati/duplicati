@@ -1,15 +1,12 @@
-using System;
-using System.Linq;
 using System.Threading.Tasks;
 using CoCoL;
-using Duplicati.Library.Main.Database;
 using Duplicati.Library.Main.Volumes;
 
 namespace Duplicati.Library.Main.Operation.Restore
 {
     internal class VolumeDecompressor
     {
-        public static Task Run(LocalRestoreDatabase db, Options options)
+        public static Task Run(Options options)
         {
             return AutomationExtensions.RunTask(
             new
@@ -22,17 +19,12 @@ namespace Duplicati.Library.Main.Operation.Restore
                 try {
                     while (true)
                     {
-                        var (block_id, volume_id, volume) = await self.Input.ReadAsync();
+                        var (block_request, volume) = await self.Input.ReadAsync();
 
-                        var reader = db.Connection.CreateCommand().ExecuteReader(@$"SELECT Hash, Size FROM Block WHERE ID = {block_id}");
-                        reader.Read();
-                        var bhash = reader.GetString(0);
-                        var bsize = reader.GetInt64(1);
-                        reader.Close();
                         byte[] buffer = new byte[options.Blocksize];
-                        new BlockVolumeReader(options.CompressionModule, volume, options).ReadBlock(bhash, buffer);
+                        new BlockVolumeReader(options.CompressionModule, volume, options).ReadBlock(block_request.BlockHash, buffer);
 
-                        await self.Output.WriteAsync((block_id, buffer[..(int)bsize]));
+                        await self.Output.WriteAsync((block_request, buffer[..(int)block_request.BlockSize]));
                     }
                 }
                 catch (RetiredException ex)

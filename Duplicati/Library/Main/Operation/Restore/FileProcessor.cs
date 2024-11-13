@@ -8,7 +8,7 @@ namespace Duplicati.Library.Main.Operation.Restore
 {
     internal class FileProcessor
     {
-        public static Task Run(LocalRestoreDatabase db, IChannel<(long,long)> block_request, IChannel<byte[]> block_response, RestoreResults results)
+        public static Task Run(LocalRestoreDatabase db, IChannel<BlockRequest> block_request, IChannel<byte[]> block_response, RestoreResults results)
         {
             return AutomationExtensions.RunTask(
             new
@@ -26,30 +26,43 @@ namespace Duplicati.Library.Main.Operation.Restore
                     {
                         var file = await self.Input.ReadAsync();
 
-                        var blocks = db.Connection.CreateCommand().ExecuteReaderEnumerable(@$"SELECT Block.ID, Block.Hash, Block.Size, Block.VolumeID FROM BlocksetEntry INNER JOIN Block ON BlocksetEntry.BlockID = Block.ID WHERE BlocksetEntry.BlocksetID = ""{file.BlocksetID}""").Select(x => (x.GetInt64(0), x.GetString(1), x.GetInt64(2), x.GetInt64(3))).ToList();
+                        var blocks = db.Connection
+                            .CreateCommand()
+                            .ExecuteReaderEnumerable(@$"
+                                SELECT Block.ID, Block.Hash, Block.Size, Block.VolumeID
+                                FROM BlocksetEntry INNER JOIN Block
+                                ON BlocksetEntry.BlockID = Block.ID
+                                WHERE BlocksetEntry.BlocksetID = ""{file.BlocksetID}"""
+                            )
+                            .Select(x =>
+                                new BlockRequest(x.GetInt64(0), x.GetString(1), x.GetInt64(2), x.GetInt64(3))
+                            )
+                            .ToList();
 
                         long bytes_written = 0;
 
-                        if (blocks.Count == 1 && blocks[0].Item3 == 0)
+                        if (blocks.Count == 1 && blocks[0].BlockSize == 0)
                         {
                             // Create an empty file
                             using var fs = new System.IO.FileStream(file.Path, System.IO.FileMode.OpenOrCreate, System.IO.FileAccess.Write, System.IO.FileShare.None);
                         }
                         else
                         {
-                            if (blocks.Any(x => x.Item4 < 0))
+                            if (blocks.Any(x => x.VolumeID < 0))
                             {
                                 Console.WriteLine($"{file.Path} has a negative volume ID and positive size, skipping");
                                 continue;
                             }
 
                             using var fs = new System.IO.FileStream(file.Path, System.IO.FileMode.OpenOrCreate, System.IO.FileAccess.Write, System.IO.FileShare.None);
-                            foreach (var (id, hash, size, vid) in blocks)
+
+                            foreach (var block in blocks)
                             {
-                                await block_request.WriteAsync((id, vid));
+                                await block_request.WriteAsync(block);
                                 var data = await block_response.ReadAsync();
-                                bytes_written += data.Length;
+                                // TODO verify the hash, size, volume ID, and file hash
                                 await fs.WriteAsync(data);
+                                bytes_written += data.Length;
                             }
                         }
 

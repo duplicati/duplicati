@@ -2,14 +2,15 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using CoCoL;
-using Duplicati.Library.Utility;
+using System.Linq;
+using Duplicati.Library.Main.Database;
 using static Duplicati.Library.Main.BackendManager;
 
 namespace Duplicati.Library.Main.Operation.Restore
 {
     internal static class VolumeDownloader
     {
-        public static Task Run(BackendManager backend, Options options)
+        public static Task Run(LocalRestoreDatabase db, BackendManager backend, Options options)
         {
             return AutomationExtensions.RunTask(
             new
@@ -25,23 +26,24 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                     while (true)
                     {
-                        var (block_id, volume_id, request) = await self.Input.ReadAsync();
+                        var block_request = await self.Input.ReadAsync();
 
-                        if (!cache.TryGetValue(volume_id, out IDownloadWaitHandle f))
+                        if (!cache.TryGetValue(block_request.VolumeID, out IDownloadWaitHandle f))
                         {
                             try
                             {
-                                f = backend.GetAsync(request.Name, request.Size, request.Hash);
-                                cache.Add(volume_id, f);
+                                var (volume_name, volume_size, volume_hash) = db.Connection.CreateCommand().ExecuteReaderEnumerable(@$"SELECT Name, Size, Hash FROM RemoteVolume WHERE ID = ""{block_request.VolumeID}""").Select(x => (x.GetString(0), x.GetInt64(1), x.GetString(2))).First();
+                                f = backend.GetAsync(volume_name, volume_size, volume_hash);
+                                cache.Add(block_request.VolumeID, f);
                             }
                             catch (Exception ex)
                             {
-                                Console.WriteLine($"Failed to download volume: '{request.Name}' | {ex.Message}");
+                                Console.WriteLine($"Failed to download volume: '{block_request.VolumeID}' | {ex.Message}");
                                 throw;
                             }
                         }
 
-                        self.Output.Write((block_id, volume_id, f));
+                        self.Output.Write((block_request, f));
                     }
                 }
                 catch (RetiredException ex)
