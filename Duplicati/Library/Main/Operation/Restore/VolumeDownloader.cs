@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using CoCoL;
 using Duplicati.Library.Utility;
+using static Duplicati.Library.Main.BackendManager;
 
 namespace Duplicati.Library.Main.Operation.Restore
 {
@@ -20,18 +21,17 @@ namespace Duplicati.Library.Main.Operation.Restore
             {
                 try
                 {
-                    Dictionary<long, TempFile> cache = [];
+                    Dictionary<long, IDownloadWaitHandle> cache = [];
 
                     while (true)
                     {
                         var (block_id, volume_id, request) = await self.Input.ReadAsync();
 
-                        TempFile f = null;
-                        if (!cache.TryGetValue(volume_id, out f))
+                        if (!cache.TryGetValue(volume_id, out IDownloadWaitHandle f))
                         {
                             try
                             {
-                                f = backend.GetAsync(request.Name, request.Size, request.Hash).Wait();
+                                f = backend.GetAsync(request.Name, request.Size, request.Hash);
                                 cache.Add(volume_id, f);
                             }
                             catch (Exception ex)
