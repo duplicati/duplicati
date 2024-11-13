@@ -160,6 +160,7 @@ namespace Duplicati.Library.Main.Operation
                 }
 
                 Task.WhenAll(all).Wait();
+                backend.WaitForComplete(db, null);
             }
 
             DoRun(db, filter, m_result);
