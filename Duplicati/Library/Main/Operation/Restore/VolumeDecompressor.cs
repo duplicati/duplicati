@@ -28,6 +28,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                         reader.Read();
                         var bhash = reader.GetString(0);
                         var bsize = reader.GetInt64(1);
+                        reader.Close();
                         byte[] buffer = new byte[options.Blocksize];
                         new BlockVolumeReader(options.CompressionModule, volume, options).ReadBlock(bhash, buffer);
 
