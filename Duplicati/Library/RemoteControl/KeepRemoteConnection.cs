@@ -54,7 +54,7 @@ public class KeepRemoteConnection : IDisposable
     /// <summary>
     /// The interval between heartbeats
     /// </summary>
-    private static readonly TimeSpan HeartbeatInterval = TimeSpan.FromSeconds(15);
+    private static readonly TimeSpan HeartbeatInterval = TimeSpan.FromSeconds(60);
 
     /// <summary>
     /// The minimum time between certificate refreshes
@@ -257,7 +257,7 @@ public class KeepRemoteConnection : IDisposable
                 return;
 
             _lastMessageReceived = DateTimeOffset.Now;
-            Log.WriteMessage(LogMessageType.Information, LogTag, "WebsocketMessage", "Received message from server: {0}", msg);
+            Log.WriteMessage(LogMessageType.Verbose, LogTag, "WebsocketMessage", "Received message from server: {0}", msg);
 
             try
             {
