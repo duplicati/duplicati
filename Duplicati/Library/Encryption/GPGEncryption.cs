@@ -264,7 +264,7 @@ namespace Duplicati.Library.Encryption
         private static string GetGpgProgramPath()
         {
             var gpgpath = GPGLocator.GetGpgExecutablePath();
-            Log.WriteInformationMessage("GetGpgProgramPath", "gpg", gpgpath);
+            Log.WriteVerboseMessage("GetGpgProgramPath", "gpg", gpgpath);
             return gpgpath;
         }
     }
