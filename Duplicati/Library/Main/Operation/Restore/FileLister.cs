@@ -7,11 +7,12 @@ using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Main.Operation.Restore
 {
-    // TODO Properly check logging
     // TODO Properly check dryrun
 
-    internal static class FileLister
+    internal class FileLister
     {
+        private static readonly string LOGTAG = Logging.Log.LogTagFromType<FileLister>();
+
         public static Task Run(LocalRestoreDatabase db, BackendManager backend, IFilter filter, Options options, RestoreResults result)
         {
             return AutomationExtensions.RunTask(
@@ -51,9 +52,14 @@ namespace Duplicati.Library.Main.Operation.Restore
                     }
                     // TODO Maybe use a heap to manage the priority queue if it changes during runtime?
                 }
-                catch (RetiredException ex)
+                catch (RetiredException)
                 {
-                    // Check the type of exception and handle it accordingly?
+                    Logging.Log.WriteVerboseMessage(LOGTAG, "RetiredProcess", null, "File lister retired");
+                }
+                catch (Exception ex)
+                {
+                    Logging.Log.WriteErrorMessage(LOGTAG, "FileListerError", ex, "Error during file listing");
+                    throw;
                 }
             });
         }
@@ -85,7 +91,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Failed to create the directory {folder}: {ex.Message}");
+                    Logging.Log.WriteErrorMessage(LOGTAG, "CreateDirectoryError", ex, $"Failed to create the directory {folder}");
                     throw;
                 }
             }
