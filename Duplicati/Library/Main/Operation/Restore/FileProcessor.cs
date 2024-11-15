@@ -56,13 +56,22 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                             using var fs = new System.IO.FileStream(file.Path, System.IO.FileMode.OpenOrCreate, System.IO.FileAccess.Write, System.IO.FileShare.None);
 
-                            foreach (var block in blocks)
+                            // TODO burst should be an option and should relate to the channel depth
+                            int burst = 8;
+                            for (int i = 0; i < blocks.Count; i += burst)
                             {
-                                await block_request.WriteAsync(block);
+                                int this_burst = Math.Min(burst, blocks.Count - i);
+                                for (int j = 0; j < this_burst; j++)
+                            {
+                                    await block_request.WriteAsync(blocks[i + j]);
+                                }
+                                for (int j = 0; j < this_burst; j++)
+                                {
                                 var data = await block_response.ReadAsync();
-                                // TODO verify the hash, size, volume ID, and file hash
                                 await fs.WriteAsync(data);
                                 bytes_written += data.Length;
+
+                                }
                             }
                         }
 
