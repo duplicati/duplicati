@@ -3,12 +3,13 @@ using System.Linq;
 using System.Threading.Tasks;
 using CoCoL;
 using Duplicati.Library.Main.Database;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Main.Operation.Restore
 {
     internal class FileProcessor
     {
-        public static Task Run(LocalRestoreDatabase db, IChannel<BlockRequest> block_request, IChannel<byte[]> block_response, RestoreResults results)
+        public static Task Run(LocalRestoreDatabase db, IChannel<BlockRequest> block_request, IChannel<byte[]> block_response, RestoreResults results, Options options)
         {
             return AutomationExtensions.RunTask(
             new
@@ -22,9 +23,12 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                 try
                 {
+                    using var filehasher = HashFactory.CreateHasher(options.FileHashAlgorithm);
+
                     while (true)
                     {
                         var file = await self.Input.ReadAsync();
+                        filehasher.Initialize();
 
                         var blocks = db.Connection
                             .CreateCommand()
@@ -68,10 +72,18 @@ namespace Duplicati.Library.Main.Operation.Restore
                                 for (int j = 0; j < this_burst; j++)
                                 {
                                 var data = await block_response.ReadAsync();
+                                    filehasher.TransformBlock(data, 0, data.Length, data, 0);
                                 await fs.WriteAsync(data);
                                 bytes_written += data.Length;
 
                                 }
+                            }
+
+                            filehasher.TransformFinalBlock([], 0, 0);
+                            if (Convert.ToBase64String(filehasher.Hash) != file.Hash)
+                            {
+                                Console.WriteLine($"File hash mismatch: {Convert.ToBase64String(filehasher.Hash)} != {file.Hash}");
+                                throw new Exception("File hash mismatch");
                             }
                         }
 
