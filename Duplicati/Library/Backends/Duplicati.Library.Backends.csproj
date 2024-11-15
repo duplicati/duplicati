@@ -20,6 +20,7 @@
 	<ProjectReference Include="..\Backend\Mega\Duplicati.Library.Backend.Mega.csproj" />
 	<ProjectReference Include="..\Backend\OneDrive\Duplicati.Library.Backend.OneDrive.csproj" />
 	<ProjectReference Include="..\Backend\OpenStack\Duplicati.Library.Backend.OpenStack.csproj" />
+	<ProjectReference Include="..\Backend\pCloud\Duplicati.Library.Backend.pCloud.csproj" />
 	<ProjectReference Include="..\Backend\Rclone\Duplicati.Library.Backend.Rclone.csproj" />
 	<ProjectReference Include="..\Backend\S3\Duplicati.Library.Backend.S3.csproj" />
 	<ProjectReference Include="..\Backend\SharePoint\Duplicati.Library.Backend.SharePoint.csproj" />
