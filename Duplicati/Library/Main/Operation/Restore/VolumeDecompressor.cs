@@ -8,6 +8,8 @@ namespace Duplicati.Library.Main.Operation.Restore
 {
     internal class VolumeDecompressor
     {
+        private static readonly string LOGTAG = Logging.Log.LogTagFromType<VolumeDecompressor>();
+
         public static Task Run(Options options)
         {
             return AutomationExtensions.RunTask(
@@ -31,16 +33,20 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                         if (hash != block_request.BlockHash)
                         {
-                            Console.WriteLine($"Block hash mismatch: {hash} != {block_request.BlockHash}");
-                            throw new Exception("Block hash mismatch");
+                            Logging.Log.WriteWarningMessage(LOGTAG, "InvalidBlock", null, $"Invalid block detected for block {block_request.BlockID} in volume {block_request.VolumeID}, expected hash: {block_request.BlockHash}, actual hash: {hash}");
                         }
 
                         await self.Output.WriteAsync((block_request, buffer));
                     }
                 }
-                catch (RetiredException ex)
+                catch (RetiredException)
                 {
-                    // NOP
+                    Logging.Log.WriteVerboseMessage(LOGTAG, "RetiredProcess", null, "Volume decompressor retired");
+                }
+                catch (Exception ex)
+                {
+                    Logging.Log.WriteErrorMessage(LOGTAG, "DecompressionError", ex, "Error during decompression");
+                    throw;
                 }
             });
         }
