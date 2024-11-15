@@ -43,7 +43,8 @@ namespace Duplicati.Server.Serializable
                 this.Key = backend.ProtocolKey;
                 this.Description = backend.Description;
                 this.DisplayName = backend.DisplayName;
-                this.Options = backend.SupportedCommands?.ToArray() ?? [];
+                if (backend.SupportedCommands != null)
+                    this.Options = backend.SupportedCommands.ToArray();
             }
 
             /// <summary>
@@ -54,7 +55,8 @@ namespace Duplicati.Server.Serializable
                 this.Key = module.FilenameExtension;
                 this.Description = module.Description;
                 this.DisplayName = module.DisplayName;
-                this.Options = module.SupportedCommands?.ToArray() ?? [];
+                if (module.SupportedCommands != null)
+                    this.Options = module.SupportedCommands.ToArray();
             }
 
             /// <summary>
@@ -65,7 +67,8 @@ namespace Duplicati.Server.Serializable
                 this.Key = module.FilenameExtension;
                 this.Description = module.Description;
                 this.DisplayName = module.DisplayName;
-                this.Options = module.SupportedCommands?.ToArray() ?? [];
+                if (module.SupportedCommands != null)
+                    this.Options = module.SupportedCommands.ToArray();
             }
 
             /// <summary>
@@ -76,7 +79,8 @@ namespace Duplicati.Server.Serializable
                 this.Key = module.Key;
                 this.Description = module.Description;
                 this.DisplayName = module.DisplayName;
-                this.Options = module.SupportedCommands?.ToArray() ?? [];
+                if (module.SupportedCommands != null)
+                    this.Options = module.SupportedCommands.ToArray();
             }
 
             /// <summary>
@@ -87,7 +91,8 @@ namespace Duplicati.Server.Serializable
                 this.Key = module.Key;
                 this.Description = module.Description;
                 this.DisplayName = module.DisplayName;
-                this.Options = module.SupportedCommands?.ToArray() ?? [];
+                if (module.SupportedCommands != null)
+                    this.Options = module.SupportedCommands.ToArray();
             }
 
             /// <summary>
@@ -98,7 +103,8 @@ namespace Duplicati.Server.Serializable
                 this.Key = module.Key;
                 this.Description = module.Description;
                 this.DisplayName = module.DisplayName;
-                this.Options = module.SupportedCommands?.ToArray() ?? [];
+                if (module.SupportedCommands != null)
+                    this.Options = module.SupportedCommands.ToArray();
             }
             /// <summary>
             /// The module key
@@ -137,7 +143,6 @@ namespace Duplicati.Server.Serializable
         {
             get
             {
-                Console.WriteLine("Inside getter");
                 return
                     (from n in Library.DynamicLoader.BackendLoader.Backends
                      select new DynamicModule(n))

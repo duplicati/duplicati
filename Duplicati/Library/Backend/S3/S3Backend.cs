@@ -21,7 +21,6 @@
 
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
-using Duplicati.Library.Utility;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -323,7 +322,19 @@ namespace Duplicati.Library.Backend
                 foreach (var s in KNOWN_S3_LOCATIONS)
                     locations.AppendLine(string.Format("{0}: {1}", s.Key, s.Value));
 
-                var exts = S3AwsClient.GetAwsExtendedOptions();
+                var defaults = S3AwsClient.GetDefaultAmazonS3Config();
+
+                var exts =
+                    typeof(Amazon.S3.AmazonS3Config).GetProperties().Where(x => x.CanRead && x.CanWrite && (x.PropertyType == typeof(string) || x.PropertyType == typeof(bool) || x.PropertyType == typeof(int) || x.PropertyType == typeof(long) || x.PropertyType.IsEnum))
+                        .Select(x => (ICommandLineArgument)new CommandLineArgument(
+                            "s3-ext-" + x.Name.ToLowerInvariant(),
+                            x.PropertyType == typeof(bool) ? CommandLineArgument.ArgumentType.Boolean : x.PropertyType.IsEnum ? CommandLineArgument.ArgumentType.Enumeration : CommandLineArgument.ArgumentType.String,
+                            x.Name,
+                            string.Format("Extended option {0}", x.Name),
+                            string.Format("{0}", x.GetValue(defaults)),
+                            null,
+                            x.PropertyType.IsEnum ? Enum.GetNames(x.PropertyType) : null));
+
 
                 var normal = new ICommandLineArgument[] {
                     new CommandLineArgument("aws-secret-access-key", CommandLineArgument.ArgumentType.Password, Strings.S3Backend.AMZKeyDescriptionShort, Strings.S3Backend.AMZKeyDescriptionLong,null, new string[] {"auth-password"}, null ),
