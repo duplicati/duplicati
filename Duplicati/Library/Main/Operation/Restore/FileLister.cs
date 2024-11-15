@@ -7,8 +7,6 @@ using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Main.Operation.Restore
 {
-    // TODO Properly check dryrun
-
     internal class FileLister
     {
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<FileLister>();
@@ -83,7 +81,11 @@ namespace Duplicati.Library.Main.Operation.Restore
                 {
                     if (!SystemIO.IO_OS.DirectoryExists(folder))
                     {
-                        if (!options.Dryrun)
+                        if (options.Dryrun)
+                        {
+                            Logging.Log.WriteDryrunMessage(LOGTAG, "DryrunCreateDirectory", $"Would have created the directory {folder}");
+                        }
+                        else
                         {
                             SystemIO.IO_OS.DirectoryCreate(folder);
                         }

@@ -49,8 +49,15 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                         if (blocks.Count == 1 && blocks[0].BlockSize == 0)
                         {
-                            // Create an empty file
-                            using var fs = new System.IO.FileStream(file.Path, System.IO.FileMode.OpenOrCreate, System.IO.FileAccess.Write, System.IO.FileShare.None);
+                            if (options.Dryrun)
+                            {
+                                Logging.Log.WriteDryrunMessage(LOGTAG, "DryrunRestore", @$"Would have created empty file ""{file.Path}""");
+                            }
+                            else
+                            {
+                                // Create an empty file
+                                using var fs = new System.IO.FileStream(file.Path, System.IO.FileMode.OpenOrCreate, System.IO.FileAccess.Write, System.IO.FileShare.None);
+                            }
                         }
                         else
                         {
@@ -60,7 +67,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                                 continue;
                             }
 
-                            using var fs = new System.IO.FileStream(file.Path, System.IO.FileMode.OpenOrCreate, System.IO.FileAccess.Write, System.IO.FileShare.None);
+                            using var fs = options.Dryrun ? null : new System.IO.FileStream(file.Path, System.IO.FileMode.OpenOrCreate, System.IO.FileAccess.Write, System.IO.FileShare.None);
 
                             // TODO burst should be an option and should relate to the channel depth
                             int burst = 8;
@@ -75,10 +82,18 @@ namespace Duplicati.Library.Main.Operation.Restore
                                 {
                                     var data = await block_response.ReadAsync();
                                     filehasher.TransformBlock(data, 0, data.Length, data, 0);
-                                    await fs.WriteAsync(data);
+                                    if (!options.Dryrun)
+                                    {
+                                        await fs.WriteAsync(data);
+                                    }
                                     bytes_written += data.Length;
 
                                 }
+                            }
+
+                            if (options.Dryrun)
+                            {
+                                Logging.Log.WriteDryrunMessage(LOGTAG, "DryrunRestore", @$"Would have restored ""{file.Path}"" of size {bytes_written}");
                             }
 
                             filehasher.TransformFinalBlock([], 0, 0);
