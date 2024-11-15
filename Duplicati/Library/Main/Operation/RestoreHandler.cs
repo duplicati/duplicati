@@ -116,123 +116,33 @@ namespace Duplicati.Library.Main.Operation
             if (!m_options.NoLocalDb && SystemIO.IO_OS.FileExists(m_options.Dbpath))
             {
                 db = new LocalRestoreDatabase(m_options.Dbpath);
+                db.SetResult(m_result);
             }
             else
             {
+                Logging.Log.WriteInformationMessage(LOGTAG, "NoLocalDatabase", "No local database, building a temporary database");
                 tmpdb = new TempFile();
                 RecreateDatabaseHandler.NumberedFilterFilelistDelegate filelistfilter = FilterNumberedFilelist(m_options.Time, m_options.Version);
                 db = new LocalRestoreDatabase(tmpdb);
-
-                using (var metadatastorage = new RestoreHandlerMetadataStorage())
-                {
-                    m_result.RecreateDatabaseResults = new RecreateDatabaseResults(m_result);
-                    new RecreateDatabaseHandler(m_backendurl, m_options, (RecreateDatabaseResults) m_result.RecreateDatabaseResults)
+                m_result.RecreateDatabaseResults = new RecreateDatabaseResults(m_result);
+                using (new Logging.Timer(LOGTAG, "RecreateTempDbForRestore", "Recreate temporary database for restore"))
+                    new RecreateDatabaseHandler(m_backendurl, m_options, (RecreateDatabaseResults)m_result.RecreateDatabaseResults)
                         .DoRun(db, false, filter, filelistfilter, null);
-                }
-            }
-            db.SetResult(m_result);
 
-            // TODO move to Options
-            int
-                file_processors = 8,
-                volume_downloaders = 1,
-                volume_decrypters = 8,
-                volume_decompressors = 8;
-            int fileprocessor_buffersize = 8;
-
-            using (new ChannelScope())
-            {
-            var fileprocessor_requests = new Channel<Restore.BlockRequest>[file_processors].Select(_ => ChannelManager.CreateChannel<Restore.BlockRequest>(buffersize:fileprocessor_buffersize)).ToArray();
-            var fileprocessor_responses = new Channel<byte[]>[file_processors].Select(_ => ChannelManager.CreateChannel<byte[]>(buffersize:fileprocessor_buffersize)).ToArray();
-
-            Task[] all;
-            using (var backend = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, db))
-            {
-                    var filelister = Restore.FileLister.Run(db, backend, filter, m_options, m_result);
-                    var fileprocessors = Enumerable.Range(0, file_processors).Select(i => Restore.FileProcessor.Run(db, fileprocessor_requests[i], fileprocessor_responses[i], m_result)).ToArray();
-                    var blockmanager = Restore.BlockManager.Run(fileprocessor_requests, fileprocessor_responses);
-                    var volumedownloaders = Enumerable.Range(0, volume_downloaders).Select(i => Restore.VolumeDownloader.Run(db, backend, m_options)).ToArray();
-                    var volumedecrypters = Enumerable.Range(0, volume_decrypters).Select(i => Restore.VolumeDecrypter.Run()).ToArray();
-                    var volumedecompressors = Enumerable.Range(0, volume_decompressors).Select(i => Restore.VolumeDecompressor.Run(m_options)).ToArray();
-
-                    all =
-                        [
-                            filelister,
-                            ..fileprocessors,
-                            blockmanager,
-                            ..volumedownloaders,
-                            ..volumedecrypters,
-                            ..volumedecompressors
-                        ];
-
-                Task.WhenAll(all).Wait();
-                backend.WaitForComplete(db, null);
-                }
+                if (!m_options.SkipMetadata)
+                    ApplyStoredMetadata(m_options, new RestoreHandlerMetadataStorage());
             }
 
-            DoRun(db, filter, m_result);
+            //DoRun(db, filter, m_result);
+            DoRunNew(db, filter, m_result);
+            db.WriteResults();
 
-            // Dispose the created intermediates
             db?.Dispose();
             tmpdb?.Dispose();
 
             // TODO License
-            // TODO Logging
             // TODO Error handling
             // TODO Documentation
-
-            //Next step is to profile and look at whether we can optimize the parallelism
-
-            return;
-
-            if (!m_options.NoLocalDb && SystemIO.IO_OS.FileExists(m_options.Dbpath))
-            {
-                using (var db_ = new LocalRestoreDatabase(m_options.Dbpath))
-                {
-                    db.SetResult(m_result);
-                    DoRun(db, filter, m_result);
-                    db.WriteResults();
-                }
-
-                return;
-            }
-
-
-            Logging.Log.WriteInformationMessage(LOGTAG, "NoLocalDatabase", "No local database, building a temporary database");
-            m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_RecreateDatabase);
-
-            using (var tmpdb_ = new Library.Utility.TempFile())
-            {
-                RecreateDatabaseHandler.NumberedFilterFilelistDelegate filelistfilter = FilterNumberedFilelist(m_options.Time, m_options.Version);
-
-                // Simultaneously with downloading blocklists, we patch as much as we can from the blockvolumes
-                // This prevents repeated downloads, except for cases where the blocklists refer blocks
-                // that have been previously handled. A local blockvolume cache can reduce this issue
-                using (var database = new LocalRestoreDatabase(tmpdb))
-                {
-                    using (var metadatastorage = new RestoreHandlerMetadataStorage())
-                    {
-                        // TODO: When UpdateMissingBlocksTable is implemented, the localpatcher
-                        // (removed in revision 9ce1e807 ("Remove unused variables and fields") can be activated
-                        // and this will reduce the need for multiple downloads of the same volume
-                        // TODO: This will need some work to preserve the missing block list for use with --fh-dryrun
-                        m_result.RecreateDatabaseResults = new RecreateDatabaseResults(m_result);
-                        using (new Logging.Timer(LOGTAG, "RecreateTempDbForRestore", "Recreate temporary database for restore"))
-                            new RecreateDatabaseHandler(m_backendurl, m_options, (RecreateDatabaseResults)m_result.RecreateDatabaseResults)
-                                .DoRun(database, false, filter, filelistfilter, null);
-
-                        if (!m_options.SkipMetadata)
-                            ApplyStoredMetadata(m_options, metadatastorage);
-                    }
-
-                    //If we have --version set, we need to adjust, as the db has only the required versions
-                    //TODO: Bit of a hack to set options that way
-                    if (m_options.Version != null && m_options.Version.Length > 0)
-                        m_options.RawOptions["version"] = string.Join(",", Enumerable.Range(0, m_options.Version.Length).Select(x => x.ToString()));
-
-                    DoRun(database, filter, m_result);
-                }
-            }
         }
 
         private static void PatchWithBlocklist(LocalRestoreDatabase database, BlockVolumeReader blocks, Options options, RestoreResults result, byte[] blockbuffer, RestoreHandlerMetadataStorage metadatastorage)
@@ -384,6 +294,64 @@ namespace Duplicati.Library.Main.Operation
             }
         }
 
+        private void DoRunNew(LocalRestoreDatabase database, Library.Utility.IFilter filter, RestoreResults result)
+        {
+            Utility.UpdateOptionsFromDb(database, m_options);
+            Utility.VerifyOptionsAndUpdateDatabase(database, m_options);
+
+            using var backend = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, database);
+
+            if (!m_options.NoBackendverification)
+            {
+                m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_PreRestoreVerify);
+                FilelistProcessor.VerifyRemoteList(backend, m_options, database, m_result.BackendWriter, false, null);
+            }
+
+            m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_CreateFileList);
+            PrepareBlockAndFileList(database, m_options, filter, m_result);
+            m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_CreateTargetFolders);
+            CreateDirectoryStructure(database, m_options, m_result);
+            database.SetResult(m_result);
+
+            // TODO move to Options
+            const int
+                file_processors = 8,
+                volume_downloaders = 1,
+                volume_decrypters = 8,
+                volume_decompressors = 8;
+
+            using (new ChannelScope())
+            {
+                var fileprocessor_requests = new Channel<Restore.BlockRequest>[file_processors].Select(_ => ChannelManager.CreateChannel<Restore.BlockRequest>(buffersize:Restore.Channels.bufferSize)).ToArray();
+                var fileprocessor_responses = new Channel<byte[]>[file_processors].Select(_ => ChannelManager.CreateChannel<byte[]>(buffersize:Restore.Channels.bufferSize)).ToArray();
+
+                Task[] all;
+                {
+                    var filelister = Restore.FileLister.Run(database, backend, filter, m_options, m_result);
+                    var fileprocessors = Enumerable.Range(0, file_processors).Select(i => Restore.FileProcessor.Run(database, fileprocessor_requests[i], fileprocessor_responses[i], m_result, m_options)).ToArray();
+                    var blockmanager = Restore.BlockManager.Run(fileprocessor_requests, fileprocessor_responses);
+                    var volumedownloaders = Enumerable.Range(0, volume_downloaders).Select(i => Restore.VolumeDownloader.Run(database, backend, m_options)).ToArray();
+                    var volumedecrypters = Enumerable.Range(0, volume_decrypters).Select(i => Restore.VolumeDecrypter.Run()).ToArray();
+                    var volumedecompressors = Enumerable.Range(0, volume_decompressors).Select(i => Restore.VolumeDecompressor.Run(m_options)).ToArray();
+
+                    all =
+                        [
+                            filelister,
+                            ..fileprocessors,
+                            blockmanager,
+                            ..volumedownloaders,
+                            ..volumedecrypters,
+                            ..volumedecompressors
+                        ];
+
+                    Task.WhenAll(all).Wait();
+                    backend.WaitForComplete(database, null);
+                }
+            }
+
+            DoRun(database, filter, m_result);
+        }
+
         private void DoRun(LocalRestoreDatabase database, Library.Utility.IFilter filter, RestoreResults result)
         {
             //In this case, we check that the remote storage fits with the database.
@@ -526,6 +494,7 @@ namespace Duplicati.Library.Main.Operation
 
                 m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_PostRestoreVerify);
 
+                /*
                 if (m_options.PerformRestoredFileVerification)
                 {
                     // After all blocks in the files are restored, verify the file hash
@@ -565,6 +534,7 @@ namespace Duplicati.Library.Main.Operation
                             }
                         }
                 }
+                */
 
                 if (fileErrors > 0 && brokenFiles.Count > 0)
                     Logging.Log.WriteInformationMessage(LOGTAG, "RestoreFailures", "Failed to restore {0} files, additionally the following files failed to download, which may be the cause:{1}{2}", fileErrors, Environment.NewLine, string.Join(Environment.NewLine, brokenFiles));
