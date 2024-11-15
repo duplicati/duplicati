@@ -45,7 +45,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                             }
                         }
 
-                        self.Output.Write((block_request, f));
+                        await self.Output.WriteAsync((block_request, f));
                     }
                 }
                 catch (RetiredException ex)

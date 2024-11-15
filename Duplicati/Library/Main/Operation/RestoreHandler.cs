@@ -151,8 +151,8 @@ namespace Duplicati.Library.Main.Operation
                     var filelister = Restore.FileLister.Run(db, backend, filter, m_options, m_result);
                     var fileprocessors = Enumerable.Range(0, file_processors).Select(i => Restore.FileProcessor.Run(db, fileprocessor_requests[i], fileprocessor_responses[i], m_result)).ToArray();
                     var blockmanager = Restore.BlockManager.Run(fileprocessor_requests, fileprocessor_responses);
-                    var volumedecrypters = Enumerable.Range(0, volume_decrypters).Select(i => Restore.VolumeDecrypter.Run()).ToArray();
                     var volumedownloaders = Enumerable.Range(0, volume_downloaders).Select(i => Restore.VolumeDownloader.Run(db, backend, m_options)).ToArray();
+                    var volumedecrypters = Enumerable.Range(0, volume_decrypters).Select(i => Restore.VolumeDecrypter.Run()).ToArray();
                     var volumedecompressors = Enumerable.Range(0, volume_decompressors).Select(i => Restore.VolumeDecompressor.Run(m_options)).ToArray();
 
                     all =

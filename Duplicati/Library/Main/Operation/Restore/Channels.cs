@@ -9,10 +9,10 @@ namespace Duplicati.Library.Main.Operation.Restore
         // TODO Should maybe come from Options, or at least some global configuration file?
         private static readonly int bufferSize = 128;
 
+        public static readonly ChannelMarkerWrapper<Database.LocalRestoreDatabase.IFileToRestore> filesToRestore = new(new ChannelNameAttribute("filesToRestore", bufferSize));
         public static readonly ChannelMarkerWrapper<BlockRequest> downloadRequest = new(new ChannelNameAttribute("downloadRequest", bufferSize));
         public static readonly ChannelMarkerWrapper<(BlockRequest, IDownloadWaitHandle)> downloadedVolume = new(new ChannelNameAttribute("downloadResponse", bufferSize));
-        public static readonly ChannelMarkerWrapper<Database.LocalRestoreDatabase.IFileToRestore> filesToRestore = new(new ChannelNameAttribute("filesToRestore", bufferSize));
-        public static readonly ChannelMarkerWrapper<(BlockRequest, byte[])> decompressedVolumes = new(new ChannelNameAttribute("decompressedVolumes", bufferSize));
         public static readonly ChannelMarkerWrapper<(BlockRequest, TempFile)> decryptedVolume = new(new ChannelNameAttribute("decrytedVolume", bufferSize));
+        public static readonly ChannelMarkerWrapper<(BlockRequest, byte[])> decompressedVolumes = new(new ChannelNameAttribute("decompressedVolumes", bufferSize));
     }
 }
