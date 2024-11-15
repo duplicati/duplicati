@@ -23,7 +23,9 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using Duplicati.Library.Common.IO;
-using Duplicati.Library.Common;
+using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
+using System.IO;
 
 namespace Duplicati.Server
 {
@@ -130,6 +132,15 @@ namespace Duplicati.Server
 
                 try
                 {
+                    // PInvoke to get the download folder
+                    TryAdd(lst, SHGetFolder.DownloadFolder, "%MY_DOWNLOADS%", "Downloads");
+                }
+                catch
+                {
+                }
+
+                try
+                {
                     // In case the UserProfile member points to junk
                     TryAdd(lst, System.IO.Path.Combine(Environment.GetEnvironmentVariable("HOMEDRIVE"), Environment.GetEnvironmentVariable("HOMEPATH")), "%HOME%", "Home");
                 }
@@ -140,12 +151,17 @@ namespace Duplicati.Server
             }
             else
             {
-                TryAdd(lst, Environment.SpecialFolder.MyDocuments, "%MY_DOCUMENTS%", "My Documents");
-                TryAdd(lst, Environment.SpecialFolder.MyMusic, "%MY_MUSIC%", "My Music");
-                TryAdd(lst, Environment.SpecialFolder.MyPictures, "%MY_PICTURES%", "My Pictures");
+                var homedir = Environment.GetEnvironmentVariable("HOME");
+                if (string.IsNullOrWhiteSpace(homedir))
+                    homedir = System.Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+
+                TryAdd(lst, Environment.SpecialFolder.MyDocuments, "%MY_DOCUMENTS%", "Documents");
+                TryAdd(lst, Environment.SpecialFolder.MyMusic, "%MY_MUSIC%", "Music");
+                TryAdd(lst, Environment.SpecialFolder.MyPictures, "%MY_PICTURES%", "Pictures");
                 TryAdd(lst, Environment.SpecialFolder.DesktopDirectory, "%DESKTOP%", "Desktop");
                 TryAdd(lst, Environment.GetEnvironmentVariable("HOME"), "%HOME%", "Home");
                 TryAdd(lst, Environment.SpecialFolder.UserProfile, "%HOME%", "Home");
+                TryAdd(lst, Path.Combine(homedir, "Downloads"), "%MY_DOWNLOADS%", "Downloads");
             }
 
             Nodes = lst.ToArray();
@@ -189,6 +205,49 @@ namespace Duplicati.Server
                 result[x.Key] = x.Value;
 
             return result;
+        }
+
+        /// <summary>
+        /// Wrapper for SHGetKnownFolderPath to get the download folder on Windows
+        /// </summary>
+        [SupportedOSPlatform("windows")]
+        private static class SHGetFolder
+        {
+            /// <summary>
+            /// Gets the download folder path
+            /// </summary>
+            public static string DownloadFolder => GetKnownFolderPath(new Guid("374DE290-123F-4565-9164-39C4925E467B"));
+
+            /// <summary>
+            /// SHGetKnownFolderPath function to get the folder path
+            /// </summary>
+            /// <param name="rfid">The folder GUID</param>
+            /// <param name="dwFlags">Get folder flags</param>
+            /// <param name="hToken">The access token</param>
+            /// <param name="ppszPath">The folder path</param>
+            /// <returns>The HRESULT error code</returns>
+            [DllImport("Shell32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+            private static extern int SHGetKnownFolderPath(
+                  [MarshalAs(UnmanagedType.LPStruct)] Guid rfid,
+                  uint dwFlags,
+                  IntPtr hToken,
+                  out IntPtr ppszPath);
+
+            /// <summary>
+            /// Gets the folder path using SHGetKnownFolderPath
+            /// </summary>
+            /// <param name="folderGuid">The folder GUID</param>
+            /// <returns>The folder path</returns>
+            private static string GetKnownFolderPath(Guid folderGuid)
+            {
+                var result = SHGetKnownFolderPath(folderGuid, 0, IntPtr.Zero, out var outPath);
+                if (result != 0)
+                    Marshal.ThrowExceptionForHR(result); // Throws an exception for the HRESULT error code
+
+                var path = Marshal.PtrToStringUni(outPath);
+                Marshal.FreeCoTaskMem(outPath); // Free the memory allocated by SHGetKnownFolderPath
+                return path;
+            }
         }
     }
 }
