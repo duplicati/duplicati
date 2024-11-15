@@ -67,6 +67,7 @@ public class AWSSecretProvider : ISecretProvider
     /// <summary>
     /// List of properties that slow down the loading of the AWS Secrets Manager client
     /// </summary>
+    /// <remarks>Changes in this list will likely need to be reflected in S3AwsClient.cs</remarks>
     private static readonly HashSet<string> SlowLoadingProperties = new[] {
         nameof(AmazonSecretsManagerConfig.RegionEndpoint),
         nameof(AmazonSecretsManagerConfig.ServiceURL),
