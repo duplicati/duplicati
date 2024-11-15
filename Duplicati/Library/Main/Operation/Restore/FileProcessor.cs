@@ -9,6 +9,8 @@ namespace Duplicati.Library.Main.Operation.Restore
 {
     internal class FileProcessor
     {
+        private static readonly string LOGTAG = Logging.Log.LogTagFromType<FileProcessor>();
+
         public static Task Run(LocalRestoreDatabase db, IChannel<BlockRequest> block_request, IChannel<byte[]> block_response, RestoreResults results, Options options)
         {
             return AutomationExtensions.RunTask(
@@ -54,7 +56,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                         {
                             if (blocks.Any(x => x.VolumeID < 0))
                             {
-                                Console.WriteLine($"{file.Path} has a negative volume ID and positive size, skipping");
+                                Logging.Log.WriteWarningMessage(LOGTAG, "NegativeVolumeID", null, $"{file.Path} has a negative volume ID, skipping");
                                 continue;
                             }
 
@@ -66,15 +68,15 @@ namespace Duplicati.Library.Main.Operation.Restore
                             {
                                 int this_burst = Math.Min(burst, blocks.Count - i);
                                 for (int j = 0; j < this_burst; j++)
-                            {
+                                {
                                     await block_request.WriteAsync(blocks[i + j]);
                                 }
                                 for (int j = 0; j < this_burst; j++)
                                 {
-                                var data = await block_response.ReadAsync();
+                                    var data = await block_response.ReadAsync();
                                     filehasher.TransformBlock(data, 0, data.Length, data, 0);
-                                await fs.WriteAsync(data);
-                                bytes_written += data.Length;
+                                    await fs.WriteAsync(data);
+                                    bytes_written += data.Length;
 
                                 }
                             }
@@ -82,7 +84,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                             filehasher.TransformFinalBlock([], 0, 0);
                             if (Convert.ToBase64String(filehasher.Hash) != file.Hash)
                             {
-                                Console.WriteLine($"File hash mismatch: {Convert.ToBase64String(filehasher.Hash)} != {file.Hash}");
+                                Logging.Log.WriteErrorMessage(LOGTAG, "FileHashMismatch", null, $"File hash mismatch for {file.Path}");
                                 throw new Exception("File hash mismatch");
                             }
                         }
@@ -94,11 +96,17 @@ namespace Duplicati.Library.Main.Operation.Restore
                         }
                     }
                 }
-                catch (RetiredException ex)
+                catch (RetiredException)
                 {
+                    Logging.Log.WriteVerboseMessage(LOGTAG, "RetiredProcess", null, "File processor retired");
                     block_request.Retire();
                     block_response.Retire();
                     return;
+                }
+                catch (Exception ex)
+                {
+                    Logging.Log.WriteErrorMessage(LOGTAG, "FileProcessingError", ex, "Error during file processing");
+                    throw;
                 }
             });
         }
