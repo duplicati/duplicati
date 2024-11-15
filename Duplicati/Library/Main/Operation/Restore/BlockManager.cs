@@ -1,9 +1,9 @@
+using System;
 using System.Collections.Concurrent;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using CoCoL;
-using Duplicati.Library.Main.Database;
 using Microsoft.Extensions.Caching.Memory;
 
 namespace Duplicati.Library.Main.Operation.Restore
@@ -15,12 +15,14 @@ namespace Duplicati.Library.Main.Operation.Restore
             private readonly IWriteChannel<BlockRequest> m_volume_request;
             private readonly MemoryCache _dictionary;
             private readonly ConcurrentDictionary<long, TaskCompletionSource<byte[]>> _waiters = new();
+            private int readers = 0;
 
-            public SleepableDictionary(IWriteChannel<BlockRequest> volume_request)
+            public SleepableDictionary(IWriteChannel<BlockRequest> volume_request, int readers)
             {
                 m_volume_request = volume_request;
                 var cache_options = new MemoryCacheOptions();
                 _dictionary = new MemoryCache(cache_options);
+                this.readers = readers;
             }
 
             public Task<byte[]> Get(BlockRequest block_request)
@@ -52,6 +54,12 @@ namespace Duplicati.Library.Main.Operation.Restore
                 }
             }
 
+            public void Retire()
+            {
+                if (Interlocked.Decrement(ref readers) <= 0)
+                    m_volume_request.Retire();
+            }
+
             public void CancelAll()
             {
                 foreach (var tcs in _waiters.Values)
@@ -73,7 +81,7 @@ namespace Duplicati.Library.Main.Operation.Restore
             async self =>
             {
                 // TODO at some point, this should include some kind of cache eviction policy
-                SleepableDictionary cache = new(self.Output);
+                SleepableDictionary cache = new(self.Output, fp_requests.Length);
 
                 var volume_consumer = Task.Run(async () => {
                     try
@@ -87,6 +95,8 @@ namespace Duplicati.Library.Main.Operation.Restore
                     catch (RetiredException)
                     {
                         // NOP
+                        // Cancel any remaining readers - although there shouldn't be any.
+                        cache.CancelAll();
                     }
                 });
                 var block_handlers = fp_requests.Zip(fp_responses, (req, res) => Task.Run(async () => {
@@ -101,7 +111,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                     }
                     catch (RetiredException)
                     {
-                        cache.CancelAll();
+                        cache.Retire();
                     }
                 })).ToArray();
 
