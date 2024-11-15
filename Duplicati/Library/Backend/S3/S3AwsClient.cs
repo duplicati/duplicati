@@ -41,7 +41,7 @@ namespace Duplicati.Library.Backend
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<S3AwsClient>();
         private const int ITEM_LIST_LIMIT = 1000;
 
-        private const string EXT_OPTION_PREFIX = "s3-ext";
+        private const string EXT_OPTION_PREFIX = "s3-ext-";
 
         private readonly string m_locationConstraint;
         private readonly string m_storageClass;
@@ -112,7 +112,13 @@ namespace Duplicati.Library.Backend
         }.ToHashSet();
 
         public static IEnumerable<ICommandLineArgument> GetAwsExtendedOptions()
-            => CommandLineArgumentMapper.MapArguments(GetDefaultAmazonS3Config(), prefix: EXT_OPTION_PREFIX, exclude: EXCLUDED_EXTENDED_OPTIONS, excludeDefaultValue: SLOW_LOADING_PROPERTIES);
+            => CommandLineArgumentMapper.MapArguments(GetDefaultAmazonS3Config(), prefix: EXT_OPTION_PREFIX, exclude: EXCLUDED_EXTENDED_OPTIONS, excludeDefaultValue: SLOW_LOADING_PROPERTIES)
+                .Cast<CommandLineArgument>()
+                .Select(x =>
+                {
+                    x.LongDescription = $"Extended option {x.LongDescription}";
+                    return x;
+                });
 
         public virtual async Task GetFileStreamAsync(string bucketName, string keyName, System.IO.Stream target, CancellationToken cancelToken)
         {
