@@ -10,6 +10,8 @@ namespace Duplicati.Library.Main.Operation.Restore
 {
     internal class BlockManager
     {
+        private static readonly string LOGTAG = Logging.Log.LogTagFromType<BlockManager>();
+
         internal class SleepableDictionary // That also auto requests!
         {
             private readonly IWriteChannel<BlockRequest> m_volume_request;
@@ -66,7 +68,6 @@ namespace Duplicati.Library.Main.Operation.Restore
                 {
                     tcs.SetException(new RetiredException("Request waiter"));
                 }
-                m_volume_request.Retire();
             }
         }
 
@@ -94,7 +95,8 @@ namespace Duplicati.Library.Main.Operation.Restore
                     }
                     catch (RetiredException)
                     {
-                        // NOP
+                        Logging.Log.WriteVerboseMessage(LOGTAG, "RetiredProcess", null, "BlockManager Volume consumer retired");
+
                         // Cancel any remaining readers - although there shouldn't be any.
                         cache.CancelAll();
                     }
@@ -111,6 +113,8 @@ namespace Duplicati.Library.Main.Operation.Restore
                     }
                     catch (RetiredException)
                     {
+                        Logging.Log.WriteVerboseMessage(LOGTAG, "RetiredProcess", null, "BlockManager Block handler retired");
+
                         cache.Retire();
                     }
                 })).ToArray();
