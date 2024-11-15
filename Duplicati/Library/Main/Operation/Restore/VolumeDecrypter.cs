@@ -21,7 +21,8 @@ namespace Duplicati.Library.Main.Operation.Restore
                     while (true)
                     {
                         var (block_request, volume) = await self.Input.ReadAsync();
-                        await self.Output.WriteAsync((block_request, volume.Wait()));
+                        var f = volume.Wait();
+                        await self.Output.WriteAsync((block_request, f));
                     }
                 }
                 catch (RetiredException ex)
