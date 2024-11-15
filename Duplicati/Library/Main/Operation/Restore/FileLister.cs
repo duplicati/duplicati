@@ -42,13 +42,14 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                         result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_DownloadingRemoteFiles);
                         // No more touching result - now only the FileProcessor updates, which locks.
+
+                        // TODO Prioritize the files to restore.
                         foreach (var file in files)
                         {
                             await self.Output.WriteAsync(file);
                         }
                     }
-
-                    // TODO Maybe use a heap to manage the priority queue?
+                    // TODO Maybe use a heap to manage the priority queue if it changes during runtime?
                 }
                 catch (RetiredException ex)
                 {

@@ -35,6 +35,8 @@ namespace Duplicati.Library.Main.Operation.Restore
                                 var (volume_name, volume_size, volume_hash) = db.Connection.CreateCommand().ExecuteReaderEnumerable(@$"SELECT Name, Size, Hash FROM RemoteVolume WHERE ID = ""{block_request.VolumeID}""").Select(x => (x.GetString(0), x.GetInt64(1), x.GetString(2))).First();
                                 f = backend.GetAsync(volume_name, volume_size, volume_hash);
                                 cache.Add(block_request.VolumeID, f);
+                                // TODO Auto evict and delete tmp files if their references have been reached.
+                                // TODO Also check if another local file already have the block, and if so, fetch it and shortcut the process network by delivering it straight to the BlockManager.
                             }
                             catch (Exception ex)
                             {
