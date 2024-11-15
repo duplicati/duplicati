@@ -6,6 +6,8 @@ namespace Duplicati.Library.Main.Operation.Restore
 {
     internal class VolumeDecrypter
     {
+        private static readonly string LOGTAG = Logging.Log.LogTagFromType<VolumeDecrypter>();
+
         public static Task Run()
         {
             return AutomationExtensions.RunTask(
@@ -25,9 +27,14 @@ namespace Duplicati.Library.Main.Operation.Restore
                         await self.Output.WriteAsync((block_request, f));
                     }
                 }
-                catch (RetiredException ex)
+                catch (RetiredException)
                 {
-                    // NOP
+                    Logging.Log.WriteVerboseMessage(LOGTAG, "RetiredProcess", null, "Volume decrypter retired");
+                }
+                catch (Exception ex)
+                {
+                    Logging.Log.WriteErrorMessage(LOGTAG, "DecryptionError", ex, "Error during decryption");
+                    throw;
                 }
             });
         }
