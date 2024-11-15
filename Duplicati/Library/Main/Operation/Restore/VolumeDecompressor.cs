@@ -21,10 +21,10 @@ namespace Duplicati.Library.Main.Operation.Restore
                     {
                         var (block_request, volume) = await self.Input.ReadAsync();
 
-                        byte[] buffer = new byte[options.Blocksize];
+                        byte[] buffer = new byte[block_request.BlockSize];
                         new BlockVolumeReader(options.CompressionModule, volume, options).ReadBlock(block_request.BlockHash, buffer);
 
-                        await self.Output.WriteAsync((block_request, buffer[..(int)block_request.BlockSize]));
+                        await self.Output.WriteAsync((block_request, buffer));
                     }
                 }
                 catch (RetiredException ex)
