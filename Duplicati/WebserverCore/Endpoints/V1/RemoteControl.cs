@@ -9,13 +9,13 @@ public class RemoteControl : IEndpointV1
 {
     public static void Map(RouteGroupBuilder group)
     {
-        // Don't allow these in agent-mode
-        if (FIXMEGlobal.Origin == "Agent")
-            return;
-
         group.MapGet("/remotecontrol/status", ([FromServices] IRemoteControllerRegistration registration, [FromServices] IRemoteController remoteController)
             => GetStatus(registration, remoteController))
             .RequireAuthorization();
+
+        // Don't allow these in agent-mode
+        if (FIXMEGlobal.Origin == "Agent")
+            return;
 
         group.MapPost("/remotecontrol/enable", ([FromServices] IRemoteControllerRegistration registration, [FromServices] IRemoteController remoteController)
             => EnableRemoteControl(registration, remoteController))
