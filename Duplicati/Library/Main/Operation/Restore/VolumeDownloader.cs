@@ -8,8 +8,10 @@ using static Duplicati.Library.Main.BackendManager;
 
 namespace Duplicati.Library.Main.Operation.Restore
 {
-    internal static class VolumeDownloader
+    internal class VolumeDownloader
     {
+        private static readonly string LOGTAG = Logging.Log.LogTagFromType<VolumeDownloader>();
+
         public static Task Run(LocalRestoreDatabase db, BackendManager backend, Options options)
         {
             return AutomationExtensions.RunTask(
@@ -40,7 +42,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                             }
                             catch (Exception ex)
                             {
-                                Console.WriteLine($"Failed to download volume: '{block_request.VolumeID}' | {ex.Message}");
+                                Logging.Log.WriteErrorMessage(LOGTAG, "DownloadError", ex, $"Failed to download volume: '{block_request.VolumeID}'");
                                 throw;
                             }
                         }
@@ -48,9 +50,14 @@ namespace Duplicati.Library.Main.Operation.Restore
                         await self.Output.WriteAsync((block_request, f));
                     }
                 }
-                catch (RetiredException ex)
+                catch (RetiredException)
                 {
-                    // NOP
+                    Logging.Log.WriteVerboseMessage(LOGTAG, "RetiredProcess", null, "Volume downloader retired");
+                }
+                catch (Exception ex)
+                {
+                    Logging.Log.WriteErrorMessage(LOGTAG, "DownloadError", ex, "Error during download");
+                    throw;
                 }
             });
         }
