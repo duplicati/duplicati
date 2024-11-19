@@ -41,7 +41,7 @@ using Uri = System.Uri;
 
 namespace Duplicati.Library.Backend
 {
-    
+
     /// <summary>
     /// The unified FTP backend which uses the FluentFTP library.
     ///
@@ -68,7 +68,7 @@ namespace Duplicati.Library.Backend
         protected virtual string CONFIG_KEY_FTP_UPLOAD_DELAY => "ftp-upload-delay";
         protected virtual string CONFIG_KEY_FTP_LOGTOCONSOLE => "ftp-log-to-console";
         protected virtual string CONFIG_KEY_FTP_LOGPRIVATEINFOTOCONSOLE => "ftp-log-privateinfo-to-console";
-        
+
         // The following keys are private because they are irrelevant for inheritors and are here for backwards compatibility
         private static string CONFIG_KEY_FTP_LEGACY_FTPPASSIVE => "ftp-passive";
         private static string CONFIG_KEY_FTP_LEGACY_FTPREGULAR => "ftp-regular";
@@ -196,7 +196,7 @@ namespace Duplicati.Library.Backend
 
             if (encryptionModeString == null || !Enum.TryParse(encryptionModeString, true, out encryptionMode))
                 encryptionMode = DEFAULT_ENCRYPTION_MODE;
-            
+
             // Process the aftp-ssl-protocols option
             SslProtocols sslProtocols;
             if (!options.TryGetValue(CONFIG_KEY_FTP_SSL_PROTOCOLS, out var sslProtocolsString) || string.IsNullOrWhiteSpace(sslProtocolsString))
@@ -208,15 +208,15 @@ namespace Duplicati.Library.Backend
             if (ProtocolKey == "ftp")
             {
                 // To mirror the behavior of existing backups, we need to check the legacy options
-                
+
                 // This flag takes precedence over ftp-data-connection-type
-                if (CoreUtility.ParseBoolOption(options, CONFIG_KEY_FTP_LEGACY_FTPPASSIVE)) 
+                if (CoreUtility.ParseBoolOption(options, CONFIG_KEY_FTP_LEGACY_FTPPASSIVE))
                     dataConnectionType = FtpDataConnectionType.AutoPassive;
-                
+
                 // This flag takes precedence over the ftp-passive flag
-                if (CoreUtility.ParseBoolOption(options, CONFIG_KEY_FTP_LEGACY_FTPREGULAR)) 
+                if (CoreUtility.ParseBoolOption(options, CONFIG_KEY_FTP_LEGACY_FTPREGULAR))
                     dataConnectionType = FtpDataConnectionType.AutoActive;
-                
+
                 // When using legacy useSSL option, the encryption is set to automatic and the SSL protocols are set to none
                 // (None meaning the OS will choose the appropriate protocol)
                 if (CoreUtility.ParseBoolOption(options, CONFIG_KEY_FTP_LEGACY_USESSL))
@@ -225,10 +225,10 @@ namespace Duplicati.Library.Backend
                     encryptionMode = FtpEncryptionMode.Auto;
                 }
             }
-            
+
             _logToConsole = CoreUtility.ParseBoolOption(options, CONFIG_KEY_FTP_LOGTOCONSOLE);
             _logPrivateInfoToConsole = CoreUtility.ParseBoolOption(options, CONFIG_KEY_FTP_LOGPRIVATEINFOTOCONSOLE);
-            
+
             _ftpConfig = new FtpConfig
             {
                 DataConnectionType = dataConnectionType,
@@ -366,7 +366,7 @@ namespace Duplicati.Library.Backend
             var status = await ftpClient.UploadStream(input, remotePath, createRemoteDir: false, token: cancelToken, progress: null).ConfigureAwait(false);
             if (status != FtpStatus.Success)
             {
-                throw new UserInformationException(string.Format(Strings.ErrorWriteFile, remotename), "AftpPutFailure");
+                throw new UserInformationException(Strings.ErrorWriteFile(remotename, $"Status is {status}"), "AftpPutFailure");
             }
 
             // Wait for the upload, if required
@@ -463,7 +463,7 @@ namespace Duplicati.Library.Backend
                 catch (Exception e)
                 {
                     if (e.InnerException != null) { e = e.InnerException; }
-                    throw new Exception(string.Format(Strings.ErrorDeleteFile, e.Message), e);
+                    throw new UserInformationException(Strings.ErrorDeleteFile(TEST_FILE_NAME, e.Message), "TestPreparationError");
                 }
             }
 
@@ -477,7 +477,7 @@ namespace Duplicati.Library.Backend
                 catch (Exception e)
                 {
                     if (e.InnerException != null) { e = e.InnerException; }
-                    throw new Exception(string.Format(Strings.ErrorWriteFile, e.Message), e);
+                    throw new UserInformationException(Strings.ErrorWriteFile(TEST_FILE_NAME, e.Message), "TestWriteError");
                 }
             }
 
@@ -494,7 +494,7 @@ namespace Duplicati.Library.Backend
                 catch (Exception e)
                 {
                     if (e.InnerException != null) { e = e.InnerException; }
-                    throw new Exception(string.Format(Strings.ErrorReadFile, e.Message), e);
+                    throw new UserInformationException(Strings.ErrorReadFile(TEST_FILE_NAME, e.Message), "TestReadError");
                 }
             }
 
@@ -506,7 +506,7 @@ namespace Duplicati.Library.Backend
             catch (Exception e)
             {
                 if (e.InnerException != null) { e = e.InnerException; }
-                throw new Exception(string.Format(Strings.ErrorDeleteFile, e.Message), e);
+                throw new UserInformationException(Strings.ErrorDeleteFile(TEST_FILE_NAME, e.Message), "TestCleanupError");
             }
         }
 
