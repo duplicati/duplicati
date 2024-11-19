@@ -26,20 +26,21 @@ namespace Duplicati.Library.Main.Operation.Restore
                 try
                 {
                     using var filehasher = HashFactory.CreateHasher(options.FileHashAlgorithm);
+                    using var cmd = db.Connection.CreateCommand();
+                    cmd.CommandText = @$"
+                        SELECT Block.ID, Block.Hash, Block.Size, Block.VolumeID
+                        FROM BlocksetEntry INNER JOIN Block
+                        ON BlocksetEntry.BlockID = Block.ID
+                        WHERE BlocksetEntry.BlocksetID = ?";
+                    cmd.AddParameter();
 
                     while (true)
                     {
                         var file = await self.Input.ReadAsync();
                         filehasher.Initialize();
 
-                        var blocks = db.Connection
-                            .CreateCommand()
-                            .ExecuteReaderEnumerable(@$"
-                                SELECT Block.ID, Block.Hash, Block.Size, Block.VolumeID
-                                FROM BlocksetEntry INNER JOIN Block
-                                ON BlocksetEntry.BlockID = Block.ID
-                                WHERE BlocksetEntry.BlocksetID = ""{file.BlocksetID}"""
-                            )
+                        cmd.SetParameterValue(0, file.BlocksetID);
+                        var blocks = cmd.ExecuteReaderEnumerable()
                             .Select(x =>
                                 new BlockRequest(x.GetInt64(0), x.GetString(1), x.GetInt64(2), x.GetInt64(3))
                             )
