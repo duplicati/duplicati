@@ -44,11 +44,11 @@ namespace Duplicati.Library.Main.Operation.Restore
                             .Select(x =>
                                 new BlockRequest(x.GetInt64(0), x.GetString(1), x.GetInt64(2), x.GetInt64(3))
                             )
-                            .ToList();
+                            .ToArray();
 
                         long bytes_written = 0;
 
-                        if (blocks.Count == 1 && blocks[0].BlockSize == 0)
+                        if (blocks.Length == 1 && blocks[0].BlockSize == 0)
                         {
                             if (options.Dryrun)
                             {
@@ -72,24 +72,23 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                             // TODO burst should be an option and should relate to the channel depth
                             int burst = 8;
-                            for (int i = 0; i < blocks.Count; i += burst)
+                            for (int i = 0; i < (int) Math.Min(blocks.Length, burst); i++)
                             {
-                                int this_burst = Math.Min(burst, blocks.Count - i);
-                                for (int j = 0; j < this_burst; j++)
+                                await block_request.WriteAsync(blocks[i]);
+                            }
+                            for (int i = 0; i < blocks.Length; i++)
+                            {
+                                var data = await block_response.ReadAsync();
+                                if (i < blocks.Length - burst)
                                 {
-                                    await block_request.WriteAsync(blocks[i + j]);
+                                    await block_request.WriteAsync(blocks[i + burst]);
                                 }
-                                for (int j = 0; j < this_burst; j++)
+                                filehasher.TransformBlock(data, 0, data.Length, data, 0);
+                                if (!options.Dryrun)
                                 {
-                                    var data = await block_response.ReadAsync();
-                                    filehasher.TransformBlock(data, 0, data.Length, data, 0);
-                                    if (!options.Dryrun)
-                                    {
-                                        await fs.WriteAsync(data);
-                                    }
-                                    bytes_written += data.Length;
-
+                                    await fs.WriteAsync(data);
                                 }
+                                bytes_written += data.Length;
                             }
 
                             if (options.Dryrun)
