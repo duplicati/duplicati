@@ -133,6 +133,7 @@ namespace Duplicati.Library.Main.Operation
                     ApplyStoredMetadata(m_options, new RestoreHandlerMetadataStorage());
             }
 
+            // TODO Make the change optional through options
             //DoRun(db, filter, m_result);
             DoRunNew(db, filter, m_result);
             db.WriteResults();
@@ -345,11 +346,37 @@ namespace Duplicati.Library.Main.Operation
                         ];
 
                     Task.WhenAll(all).Wait();
-                    backend.WaitForComplete(database, null);
                 }
             }
 
-            DoRun(database, filter, m_result);
+            using (var metadatastorage = new RestoreHandlerMetadataStorage())
+            {
+                var brokenFiles = new List<string>();
+                var fileErrors = 0L;
+
+                // Apply metadata
+                if (!m_options.SkipMetadata)
+                    ApplyStoredMetadata(m_options, metadatastorage);
+
+                if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
+                    return;
+
+                m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_PostRestoreVerify);
+
+                if (fileErrors > 0 && brokenFiles.Count > 0)
+                    Logging.Log.WriteInformationMessage(LOGTAG, "RestoreFailures", "Failed to restore {0} files, additionally the following files failed to download, which may be the cause:{1}{2}", fileErrors, Environment.NewLine, string.Join(Environment.NewLine, brokenFiles));
+                else if (fileErrors > 0)
+                    Logging.Log.WriteInformationMessage(LOGTAG, "RestoreFailures", "Failed to restore {0} files", fileErrors);
+                else if (result.RestoredFiles == 0)
+                    Logging.Log.WriteWarningMessage(LOGTAG, "NoFilesRestored", null, "Restore completed without errors but no files were restored");
+
+                // Drop the temp tables
+                database.DropRestoreTable();
+                backend.WaitForComplete(database, null);
+            }
+
+            m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_Complete);
+            result.EndTime = DateTime.UtcNow;
         }
 
         private void DoRun(LocalRestoreDatabase database, Library.Utility.IFilter filter, RestoreResults result)
@@ -360,7 +387,6 @@ namespace Duplicati.Library.Main.Operation
             using (var backend = new BackendManager(m_backendurl, m_options, result.BackendWriter, database))
             using (var metadatastorage = new RestoreHandlerMetadataStorage())
             {
-                /*
                 database.SetResult(m_result);
                 Utility.UpdateOptionsFromDb(database, m_options);
                 Utility.VerifyOptionsAndUpdateDatabase(database, m_options);
@@ -382,7 +408,6 @@ namespace Duplicati.Library.Main.Operation
                 using (new Logging.Timer(LOGTAG, "CreateDirectory", "CreateDirectory"))
                     CreateDirectoryStructure(database, m_options, result);
 
-                TODO hertil er med
                 //If we are patching an existing target folder, do not touch stuff that is already updated
                 m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_ScanForExistingFiles);
                 using (var blockhasher = HashFactory.CreateHasher(m_options.BlockHashAlgorithm))
@@ -421,7 +446,6 @@ namespace Duplicati.Library.Main.Operation
                     backend.WaitForComplete(database, null);
                     return;
                 }
-                TODO hertil er ikke med, fordi det skal presses ind et andet sted.
 
                 // Fill BLOCKS with remote sources
                 List<IRemoteVolume> volumes;
@@ -433,9 +457,9 @@ namespace Duplicati.Library.Main.Operation
                     Logging.Log.WriteInformationMessage(LOGTAG, "RemoteFileCount", "{0} remote files are required to restore", volumes.Count);
                     m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_DownloadingRemoteFiles);
                 }
-*/
+
                 var brokenFiles = new List<string>();
-                /*
+
                 foreach (var blockvolume in new AsyncDownloader(volumes, backend))
                     try
                     {
@@ -456,8 +480,8 @@ namespace Duplicati.Library.Main.Operation
                         if (ex is System.Threading.ThreadAbortException)
                             throw;
                     }
-*/
-                var fileErrors = 0L; /*
+
+                var fileErrors = 0L;
 
                 // Restore empty files. They might not have any blocks so don't appear in any volume.
                 foreach (var file in database.GetFilesToRestore(true).Where(item => item.Length == 0))
@@ -483,7 +507,6 @@ namespace Duplicati.Library.Main.Operation
 
                 // Enforcing the length of files is now already done during ScanForExistingTargetBlocks
                 // and thus not necessary anymore.
-                */
 
                 // Apply metadata
                 if (!m_options.SkipMetadata)
@@ -494,7 +517,7 @@ namespace Duplicati.Library.Main.Operation
 
                 m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_PostRestoreVerify);
 
-                /*
+
                 if (m_options.PerformRestoredFileVerification)
                 {
                     // After all blocks in the files are restored, verify the file hash
@@ -522,8 +545,8 @@ namespace Duplicati.Library.Main.Operation
 
                                 if (key != file.Hash)
                                     throw new Exception(string.Format("Failed to restore file: \"{0}\". File hash is {1}, expected hash is {2}", file.Path, key, file.Hash));
-                                //result.RestoredFiles++;
-                                //result.SizeOfRestoredFiles += size;
+                                result.RestoredFiles++;
+                                result.SizeOfRestoredFiles += size;
                             }
                             catch (Exception ex)
                             {
@@ -534,7 +557,6 @@ namespace Duplicati.Library.Main.Operation
                             }
                         }
                 }
-                */
 
                 if (fileErrors > 0 && brokenFiles.Count > 0)
                     Logging.Log.WriteInformationMessage(LOGTAG, "RestoreFailures", "Failed to restore {0} files, additionally the following files failed to download, which may be the cause:{1}{2}", fileErrors, Environment.NewLine, string.Join(Environment.NewLine, brokenFiles));
