@@ -47,14 +47,14 @@ public class KeepRemoteConnection : IDisposable
     private static readonly TimeSpan ReconnectInterval = TimeSpan.FromSeconds(30);
 
     /// <summary>
-    /// The interval between reconnect attempts
-    /// </summary>
-    private static readonly TimeSpan NoResponseTimeout = TimeSpan.FromSeconds(30);
-
-    /// <summary>
     /// The interval between heartbeats
     /// </summary>
     private static readonly TimeSpan HeartbeatInterval = TimeSpan.FromSeconds(60);
+
+    /// <summary>
+    /// The time between reconnect attempts if no response is received
+    /// </summary>
+    private static readonly TimeSpan NoResponseTimeout = HeartbeatInterval * 2;
 
     /// <summary>
     /// The minimum time between certificate refreshes
