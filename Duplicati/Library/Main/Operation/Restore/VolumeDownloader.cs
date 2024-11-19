@@ -25,6 +25,9 @@ namespace Duplicati.Library.Main.Operation.Restore
                 try
                 {
                     Dictionary<long, IDownloadWaitHandle> cache = [];
+                    using var cmd = db.Connection.CreateCommand();
+                    cmd.CommandText = "SELECT Name, Size, Hash FROM RemoteVolume WHERE ID = ?";
+                    cmd.AddParameter();
 
                     while (true)
                     {
@@ -34,7 +37,8 @@ namespace Duplicati.Library.Main.Operation.Restore
                         {
                             try
                             {
-                                var (volume_name, volume_size, volume_hash) = db.Connection.CreateCommand().ExecuteReaderEnumerable(@$"SELECT Name, Size, Hash FROM RemoteVolume WHERE ID = ""{block_request.VolumeID}""").Select(x => (x.GetString(0), x.GetInt64(1), x.GetString(2))).First();
+                                cmd.SetParameterValue(0, block_request.VolumeID);
+                                var (volume_name, volume_size, volume_hash) = cmd.ExecuteReaderEnumerable().Select(x => (x.GetString(0), x.GetInt64(1), x.GetString(2))).First();
                                 f = backend.GetAsync(volume_name, volume_size, volume_hash);
                                 cache.Add(block_request.VolumeID, f);
                                 // TODO Auto evict and delete tmp files if their references have been reached.
