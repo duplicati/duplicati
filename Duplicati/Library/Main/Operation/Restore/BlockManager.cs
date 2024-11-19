@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Concurrent;
+using System.Data;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using CoCoL;
+using Duplicati.Library.Main.Database;
 using Microsoft.Extensions.Caching.Memory;
 
 namespace Duplicati.Library.Main.Operation.Restore
@@ -17,14 +19,42 @@ namespace Duplicati.Library.Main.Operation.Restore
             private readonly IWriteChannel<BlockRequest> m_volume_request;
             private readonly MemoryCache _dictionary;
             private readonly ConcurrentDictionary<long, TaskCompletionSource<byte[]>> _waiters = new();
+            private readonly string m_temptabsetguid = Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
+            private readonly LocalRestoreDatabase db;
+            private readonly IDbCommand m_blockcountcmd;
+            private readonly IDbCommand m_blockcountdecrcmd;
             private int readers = 0;
 
-            public SleepableDictionary(IWriteChannel<BlockRequest> volume_request, int readers)
+            public SleepableDictionary(LocalRestoreDatabase db, IWriteChannel<BlockRequest> volume_request, int readers)
             {
                 m_volume_request = volume_request;
                 var cache_options = new MemoryCacheOptions();
                 _dictionary = new MemoryCache(cache_options);
                 this.readers = readers;
+                this.db = db;
+                var cmd = db.Connection.CreateCommand();
+                cmd.ExecuteNonQuery($@"DROP TABLE IF EXISTS ""blockcount_{m_temptabsetguid}""");
+                cmd.ExecuteNonQuery($@"CREATE TEMP TABLE ""blockcount_{m_temptabsetguid}"" (BlockID INTEGER PRIMARY KEY, Count INTEGER)");
+                // TODO Ensure that it only counts the blocks that should be restored.
+                cmd.ExecuteNonQuery($@"
+                    INSERT INTO ""blockcount_{m_temptabsetguid}""
+                    SELECT BlockID, COUNT(*)
+                    FROM (
+                        SELECT BlockID
+                        FROM BlocksetEntry
+                        INNER JOIN ""{db.m_tempfiletable}"" ON BlocksetEntry.BlocksetID = ""{db.m_tempfiletable}"".BlocksetID
+                    )
+                    GROUP BY BlockID
+                ");
+                cmd.ExecuteNonQuery($@"CREATE INDEX ""blockcount_{m_temptabsetguid}_idx"" ON ""blockcount_{m_temptabsetguid}"" (BlockID)");
+
+                m_blockcountcmd = db.Connection.CreateCommand();
+                m_blockcountcmd.CommandText = $@"SELECT Count FROM ""blockcount_{m_temptabsetguid}"" WHERE BlockID = ?";
+                m_blockcountcmd.AddParameter();
+
+                m_blockcountdecrcmd = db.Connection.CreateCommand();
+                m_blockcountdecrcmd.CommandText = $@"UPDATE ""blockcount_{m_temptabsetguid}"" SET Count = Count - 1 WHERE BlockID = ?";
+                m_blockcountdecrcmd.AddParameter();
             }
 
             public Task<byte[]> Get(BlockRequest block_request)
@@ -42,7 +72,20 @@ namespace Duplicati.Library.Main.Operation.Restore
 
             public void Set(long key, byte[] value)
             {
-                _dictionary.Set(key, value);
+                m_blockcountcmd.SetParameterValue(0, key);
+                var count = m_blockcountcmd.ExecuteScalarInt64();
+                if (count > 1) {
+                    _dictionary.Set(key, value);
+                }
+                else if (count == 1) {
+                    _dictionary.Remove(key);
+                }
+                else if (count == 0) {
+                    Logging.Log.WriteWarningMessage(LOGTAG, "BlockCountError", null, $"Block {key} has a count of 0");
+                }
+                m_blockcountdecrcmd.SetParameterValue(0, key);
+                m_blockcountdecrcmd.ExecuteNonQuery();
+
                 if (_waiters.TryRemove(key, out var tcs))
                 {
                     tcs.SetResult(value);
@@ -58,8 +101,10 @@ namespace Duplicati.Library.Main.Operation.Restore
 
             public void Retire()
             {
-                if (Interlocked.Decrement(ref readers) <= 0)
+                if (Interlocked.Decrement(ref readers) <= 0) {
                     m_volume_request.Retire();
+                    db.Connection.CreateCommand().ExecuteNonQuery($@"DROP TABLE IF EXISTS ""blockcount_{m_temptabsetguid}""");
+                }
             }
 
             public void CancelAll()
@@ -71,7 +116,7 @@ namespace Duplicati.Library.Main.Operation.Restore
             }
         }
 
-        public static Task Run(IChannel<BlockRequest>[] fp_requests, IChannel<byte[]>[] fp_responses)
+        public static Task Run(LocalRestoreDatabase db, IChannel<BlockRequest>[] fp_requests, IChannel<byte[]>[] fp_responses)
         {
             return AutomationExtensions.RunTask(
             new
@@ -82,7 +127,7 @@ namespace Duplicati.Library.Main.Operation.Restore
             async self =>
             {
                 // TODO at some point, this should include some kind of cache eviction policy
-                SleepableDictionary cache = new(self.Output, fp_requests.Length);
+                SleepableDictionary cache = new(db, self.Output, fp_requests.Length);
 
                 var volume_consumer = Task.Run(async () => {
                     try
