@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using CoCoL;
@@ -26,6 +27,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                 try
                 {
                     using var filehasher = HashFactory.CreateHasher(options.FileHashAlgorithm);
+                    using var blockhasher = HashFactory.CreateHasher(options.BlockHashAlgorithm);
                     using var cmd = db.Connection.CreateCommand();
                     cmd.CommandText = @$"
                         SELECT Block.ID, Block.Hash, Block.Size, Block.VolumeID
@@ -37,14 +39,74 @@ namespace Duplicati.Library.Main.Operation.Restore
                     while (true)
                     {
                         var file = await self.Input.ReadAsync();
-                        filehasher.Initialize();
 
                         cmd.SetParameterValue(0, file.BlocksetID);
                         var blocks = cmd.ExecuteReaderEnumerable()
-                            .Select(x =>
-                                new BlockRequest(x.GetInt64(0), x.GetString(1), x.GetInt64(2), x.GetInt64(3))
+                            .Select((b, i) =>
+                                new BlockRequest(b.GetInt64(0), i, b.GetString(1), b.GetInt64(2), b.GetInt64(3))
                             )
                             .ToArray();
+
+                        // Check if the file exists
+                        List<BlockRequest> missing_blocks = [];
+                        // TODO It should check both the target path and the original path, as I think the original solution might be doing this. At some point, benchmark the original without having a local copy.
+                        if (System.IO.File.Exists(file.Path))
+                        {
+                            filehasher.Initialize();
+                            using var f = new System.IO.FileStream(file.Path, System.IO.FileMode.Open, System.IO.FileAccess.ReadWrite);
+                            var buffer = new byte[options.Blocksize];
+                            long bytes_read = 0;
+                            for (int i = 0; i < blocks.Length; i++)
+                            {
+                                var read = await f.ReadAsync(buffer, 0, (int) blocks[i].BlockSize);
+                                if (read == blocks[i].BlockSize)
+                                {
+                                    filehasher.TransformBlock(buffer, 0, read, buffer, 0);
+                                    var blockhash = Convert.ToBase64String(blockhasher.ComputeHash(buffer, 0, read));
+                                    if (blockhash != blocks[i].BlockHash)
+                                    {
+                                        missing_blocks.Add(blocks[i]);
+                                    }
+                                    else
+                                    {
+                                        bytes_read += read;
+                                    }
+                                }
+                                else
+                                {
+                                    missing_blocks.Add(blocks[i]);
+                                    if (f.Position == f.Length)
+                                    {
+                                        missing_blocks.AddRange(blocks.Skip(i + 1));
+                                        break;
+                                    }
+                                }
+                            }
+                            if (missing_blocks.Count == 0)
+                            {
+                                filehasher.TransformFinalBlock([], 0, 0);
+                                if (Convert.ToBase64String(filehasher.Hash) == file.Hash)
+                                {
+                                    if (file.Length < f.Length)
+                                    {
+                                        if (options.Dryrun)
+                                        {
+                                            Logging.Log.WriteDryrunMessage(LOGTAG, "DryrunRestore", @$"Would have truncated ""{file.Path}"" from {f.Length} to {file.Length}");
+                                        }
+                                        else
+                                        {
+                                            f.SetLength(file.Length);
+                                        }
+                                    }
+                                    // File is already restored
+                                    continue;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            missing_blocks.AddRange(blocks);
+                        }
 
                         long bytes_written = 0;
 
@@ -68,39 +130,75 @@ namespace Duplicati.Library.Main.Operation.Restore
                                 continue;
                             }
 
-                            using var fs = options.Dryrun ? null : new System.IO.FileStream(file.Path, System.IO.FileMode.OpenOrCreate, System.IO.FileAccess.Write, System.IO.FileShare.None);
+                            filehasher.Initialize();
+
+                            using var fs = options.Dryrun ? new System.IO.FileStream(file.Path, System.IO.FileMode.Open, System.IO.FileAccess.Read) : new System.IO.FileStream(file.Path, System.IO.FileMode.OpenOrCreate, System.IO.FileAccess.ReadWrite, System.IO.FileShare.None);
 
                             // TODO burst should be an option and should relate to the channel depth
                             int burst = 8;
-                            for (int i = 0; i < (int) Math.Min(blocks.Length, burst); i++)
+                            int j = 0;
+                            for (int i = 0; i < (int) Math.Min(missing_blocks.Count, burst); i++)
                             {
-                                await block_request.WriteAsync(blocks[i]);
+                                await block_request.WriteAsync(missing_blocks[i]);
                             }
                             for (int i = 0; i < blocks.Length; i++)
                             {
-                                var data = await block_response.ReadAsync();
-                                if (i < blocks.Length - burst)
+                                if (j < missing_blocks.Count && missing_blocks[j].BlockOffset == i)
                                 {
-                                    await block_request.WriteAsync(blocks[i + burst]);
+                                    var data = await block_response.ReadAsync();
+                                    if (j < missing_blocks.Count - burst)
+                                    {
+                                        await block_request.WriteAsync(missing_blocks[j + burst]);
+                                    }
+                                    filehasher.TransformBlock(data, 0, data.Length, data, 0);
+                                    if (options.Dryrun)
+                                    {
+                                        fs.Seek(fs.Position + blocks[i].BlockSize, System.IO.SeekOrigin.Begin);
+                                    }
+                                    else
+                                    {
+                                        await fs.WriteAsync(data);
+                                    }
+                                    bytes_written += data.Length;
+                                    j++;
                                 }
-                                filehasher.TransformBlock(data, 0, data.Length, data, 0);
-                                if (!options.Dryrun)
+                                else
                                 {
-                                    await fs.WriteAsync(data);
+                                    // Read the block to verify the file hash
+                                    var data = new byte[blocks[i].BlockSize];
+                                    var read = await fs.ReadAsync(data, 0, data.Length);
+                                    // TODO the earlier step should have checked this block.
+                                    //var bhash = blockhasher.ComputeHash(data, 0, data.Length);
+                                    //if (Convert.ToBase64String(bhash) != blocks[i].BlockHash)
+                                    //{
+                                    //    Logging.Log.WriteWarningMessage(LOGTAG, "InvalidBlock", null, $"Invalid block detected for block index {i} {blocks[i].BlockID} in volume {blocks[i].VolumeID}, expected hash: {blocks[i].BlockHash}, actual hash: {Convert.ToBase64String(bhash)}");
+                                    //}
+                                    filehasher.TransformBlock(data, 0, read, data, 0);
                                 }
-                                bytes_written += data.Length;
                             }
 
                             if (options.Dryrun)
                             {
-                                Logging.Log.WriteDryrunMessage(LOGTAG, "DryrunRestore", @$"Would have restored ""{file.Path}"" of size {bytes_written}");
+                                Logging.Log.WriteDryrunMessage(LOGTAG, "DryrunRestore", @$"Would have restored {bytes_written} bytes of ""{file.Path}""");
                             }
 
                             filehasher.TransformFinalBlock([], 0, 0);
                             if (Convert.ToBase64String(filehasher.Hash) != file.Hash)
                             {
-                                Logging.Log.WriteErrorMessage(LOGTAG, "FileHashMismatch", null, $"File hash mismatch for {file.Path}");
+                                Logging.Log.WriteErrorMessage(LOGTAG, "FileHashMismatch", null, $"File hash mismatch for {file.Path} - expected: {file.Hash}, actual: {Convert.ToBase64String(filehasher.Hash)}");
                                 throw new Exception("File hash mismatch");
+                            }
+
+                            if (fs?.Length > file.Length)
+                            {
+                                if (options.Dryrun)
+                                {
+                                    Logging.Log.WriteDryrunMessage(LOGTAG, "DryrunRestore", @$"Would have truncated ""{file.Path}"" from {fs.Length} to {file.Length}");
+                                }
+                                else
+                                {
+                                    fs.SetLength(file.Length);
+                                }
                             }
                         }
 
@@ -121,6 +219,8 @@ namespace Duplicati.Library.Main.Operation.Restore
                 catch (Exception ex)
                 {
                     Logging.Log.WriteErrorMessage(LOGTAG, "FileProcessingError", ex, "Error during file processing");
+                    block_request.Retire();
+                    block_response.Retire();
                     throw;
                 }
             });
