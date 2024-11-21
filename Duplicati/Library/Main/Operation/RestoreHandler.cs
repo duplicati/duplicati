@@ -301,6 +301,7 @@ namespace Duplicati.Library.Main.Operation
             Utility.VerifyOptionsAndUpdateDatabase(database, m_options);
 
             using var backend = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, database);
+            using var metadatastorage = new RestoreHandlerMetadataStorage();
 
             if (!m_options.NoBackendverification)
             {
@@ -349,8 +350,6 @@ namespace Duplicati.Library.Main.Operation
                 }
             }
 
-            using (var metadatastorage = new RestoreHandlerMetadataStorage())
-            {
                 var brokenFiles = new List<string>();
                 var fileErrors = 0L;
 
@@ -373,7 +372,6 @@ namespace Duplicati.Library.Main.Operation
                 // Drop the temp tables
                 database.DropRestoreTable();
                 backend.WaitForComplete(database, null);
-            }
 
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_Complete);
             result.EndTime = DateTime.UtcNow;
