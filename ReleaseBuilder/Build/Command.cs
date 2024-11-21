@@ -587,7 +587,6 @@ public static partial class Command
                 var content = Upload.CreatePackageJson(builtPackages, rtcfg);
 
                 File.WriteAllText(packageJson, content);
-                File.WriteAllText(packageJs, $"duplicati_installers = {content};");
 
                 var uploads = files.Select(x => new Upload.UploadFile(x, Path.GetFileName(x)))
                    .Concat(manifestNames.Select(x => new Upload.UploadFile(manifestfile, x)))
