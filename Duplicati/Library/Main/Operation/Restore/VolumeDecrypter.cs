@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using CoCoL;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Main.Operation.Restore
 {
@@ -8,7 +9,7 @@ namespace Duplicati.Library.Main.Operation.Restore
     {
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<VolumeDecrypter>();
 
-        public static Task Run()
+        public static Task Run(RestoreResults results)
         {
             return AutomationExtensions.RunTask(
             new
@@ -22,8 +23,22 @@ namespace Duplicati.Library.Main.Operation.Restore
                 {
                     while (true)
                     {
+
                         var (block_request, volume) = await self.Input.ReadAsync();
-                        var f = volume.Wait();
+                        TempFile f = null;
+                        try
+                        {
+                            f = volume.Wait();
+                        }
+                        catch (Exception)
+                        {
+                            lock (results)
+                            {
+                                results.BrokenRemoteFiles.Add(block_request.VolumeID);
+                            }
+                            throw;
+                        }
+
                         await self.Output.WriteAsync((block_request, f));
                     }
                 }

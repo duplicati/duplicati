@@ -10,7 +10,7 @@ namespace Duplicati.Library.Main.Operation.Restore
     {
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<VolumeDecompressor>();
 
-        public static Task Run(Options options)
+        public static Task Run(Options options, RestoreResults results)
         {
             return AutomationExtensions.RunTask(
             new
@@ -34,6 +34,10 @@ namespace Duplicati.Library.Main.Operation.Restore
                         if (hash != block_request.BlockHash)
                         {
                             Logging.Log.WriteWarningMessage(LOGTAG, "InvalidBlock", null, $"Invalid block detected for block {block_request.BlockID} in volume {block_request.VolumeID}, expected hash: {block_request.BlockHash}, actual hash: {hash}");
+                            lock (results)
+                            {
+                                results.BrokenRemoteFiles.Add(block_request.VolumeID);
+                            }
                         }
 
                         await self.Output.WriteAsync((block_request, buffer));

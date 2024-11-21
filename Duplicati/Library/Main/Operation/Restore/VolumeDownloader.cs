@@ -12,7 +12,7 @@ namespace Duplicati.Library.Main.Operation.Restore
     {
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<VolumeDownloader>();
 
-        public static Task Run(LocalRestoreDatabase db, BackendManager backend, Options options)
+        public static Task Run(LocalRestoreDatabase db, BackendManager backend, Options options, RestoreResults results)
         {
             return AutomationExtensions.RunTask(
             new
@@ -44,9 +44,12 @@ namespace Duplicati.Library.Main.Operation.Restore
                                 // TODO Auto evict and delete tmp files if their references have been reached.
                                 // TODO Also check if another local file already have the block, and if so, fetch it and shortcut the process network by delivering it straight to the BlockManager.
                             }
-                            catch (Exception ex)
+                            catch (Exception)
                             {
-                                Logging.Log.WriteErrorMessage(LOGTAG, "DownloadError", ex, $"Failed to download volume: '{block_request.VolumeID}'");
+                                lock (results)
+                                {
+                                    results.BrokenRemoteFiles.Add(block_request.VolumeID);
+                                }
                                 throw;
                             }
                         }
