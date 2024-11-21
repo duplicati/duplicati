@@ -47,66 +47,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                             )
                             .ToArray();
 
-                        // Check if the file exists
-                        List<BlockRequest> missing_blocks = [];
-                        // TODO It should check both the target path and the original path, as I think the original solution might be doing this. At some point, benchmark the original without having a local copy.
-                        if (System.IO.File.Exists(file.Path))
-                        {
-                            filehasher.Initialize();
-                            using var f = new System.IO.FileStream(file.Path, System.IO.FileMode.Open, System.IO.FileAccess.ReadWrite);
-                            var buffer = new byte[options.Blocksize];
-                            long bytes_read = 0;
-                            for (int i = 0; i < blocks.Length; i++)
-                            {
-                                var read = await f.ReadAsync(buffer, 0, (int) blocks[i].BlockSize);
-                                if (read == blocks[i].BlockSize)
-                                {
-                                    filehasher.TransformBlock(buffer, 0, read, buffer, 0);
-                                    var blockhash = Convert.ToBase64String(blockhasher.ComputeHash(buffer, 0, read));
-                                    if (blockhash != blocks[i].BlockHash)
-                                    {
-                                        missing_blocks.Add(blocks[i]);
-                                    }
-                                    else
-                                    {
-                                        bytes_read += read;
-                                    }
-                                }
-                                else
-                                {
-                                    missing_blocks.Add(blocks[i]);
-                                    if (f.Position == f.Length)
-                                    {
-                                        missing_blocks.AddRange(blocks.Skip(i + 1));
-                                        break;
-                                    }
-                                }
-                            }
-                            if (missing_blocks.Count == 0)
-                            {
-                                filehasher.TransformFinalBlock([], 0, 0);
-                                if (Convert.ToBase64String(filehasher.Hash) == file.Hash)
-                                {
-                                    if (file.Length < f.Length)
-                                    {
-                                        if (options.Dryrun)
-                                        {
-                                            Logging.Log.WriteDryrunMessage(LOGTAG, "DryrunRestore", @$"Would have truncated ""{file.Path}"" from {f.Length} to {file.Length}");
-                                        }
-                                        else
-                                        {
-                                            f.SetLength(file.Length);
-                                        }
-                                    }
-                                    // File is already restored
-                                    continue;
-                                }
-                            }
-                        }
-                        else
-                        {
-                            missing_blocks.AddRange(blocks);
-                        }
+                        var missing_blocks = await VerifyTargetBlocks(file, blocks, filehasher, blockhasher, options);
 
                         long bytes_written = 0;
 
@@ -224,6 +165,71 @@ namespace Duplicati.Library.Main.Operation.Restore
                     throw;
                 }
             });
+        }
+
+        private static async Task<List<BlockRequest>> VerifyTargetBlocks(LocalRestoreDatabase.IFileToRestore file, BlockRequest[] blocks, System.Security.Cryptography.HashAlgorithm filehasher, System.Security.Cryptography.HashAlgorithm blockhasher, Options options)
+        {
+            // Check if the file exists
+            List<BlockRequest> missing_blocks = [];
+            // TODO It should check both the target path and the original path, as I think the original solution might be doing this. At some point, benchmark the original without having a local copy.
+            if (System.IO.File.Exists(file.Path))
+            {
+                filehasher.Initialize();
+                using var f = new System.IO.FileStream(file.Path, System.IO.FileMode.Open, System.IO.FileAccess.ReadWrite);
+                var buffer = new byte[options.Blocksize];
+                long bytes_read = 0;
+                for (int i = 0; i < blocks.Length; i++)
+                {
+                    var read = await f.ReadAsync(buffer, 0, (int) blocks[i].BlockSize);
+                    if (read == blocks[i].BlockSize)
+                    {
+                        filehasher.TransformBlock(buffer, 0, read, buffer, 0);
+                        var blockhash = Convert.ToBase64String(blockhasher.ComputeHash(buffer, 0, read));
+                        if (blockhash != blocks[i].BlockHash)
+                        {
+                            missing_blocks.Add(blocks[i]);
+                        }
+                        else
+                        {
+                            bytes_read += read;
+                        }
+                    }
+                    else
+                    {
+                        missing_blocks.Add(blocks[i]);
+                        if (f.Position == f.Length)
+                        {
+                            missing_blocks.AddRange(blocks.Skip(i + 1));
+                            break;
+                        }
+                    }
+                }
+
+                if (missing_blocks.Count == 0)
+                {
+                    filehasher.TransformFinalBlock([], 0, 0);
+                    if (Convert.ToBase64String(filehasher.Hash) == file.Hash)
+                    {
+                        if (file.Length < f.Length)
+                        {
+                            if (options.Dryrun)
+                            {
+                                Logging.Log.WriteDryrunMessage(LOGTAG, "DryrunRestore", @$"Would have truncated ""{file.Path}"" from {f.Length} to {file.Length}");
+                            }
+                            else
+                            {
+                                f.SetLength(file.Length);
+                            }
+                        }
+                    }
+                }
+            }
+            else
+            {
+                missing_blocks.AddRange(blocks);
+            }
+
+            return missing_blocks;
         }
     }
 }
