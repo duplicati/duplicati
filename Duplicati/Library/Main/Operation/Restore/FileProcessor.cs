@@ -48,13 +48,14 @@ namespace Duplicati.Library.Main.Operation.Restore
                             )
                             .ToArray();
 
-                        var missing_blocks = await VerifyTargetBlocks(file, blocks, filehasher, blockhasher, options);
+                        // TODO consistent argument ordering.
+                        var missing_blocks = await VerifyTargetBlocks(file, blocks, filehasher, blockhasher, options, results);
 
                         long bytes_written = 0;
 
                         if (options.UseLocalBlocks && missing_blocks.Count > 0)
                         {
-                            var (bw, new_missing_blocks) = await VerifyLocalBlocks(file, missing_blocks, blocks.Length, filehasher, blockhasher, options);
+                            var (bw, new_missing_blocks) = await VerifyLocalBlocks(file, missing_blocks, blocks.Length, filehasher, blockhasher, options, results);
                             bytes_written = bw;
                             missing_blocks = new_missing_blocks;
                         }
@@ -82,73 +83,84 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                             filehasher.Initialize();
 
-                            using var fs = options.Dryrun ? new System.IO.FileStream(file.Path, System.IO.FileMode.Open, System.IO.FileAccess.Read) : new System.IO.FileStream(file.Path, System.IO.FileMode.OpenOrCreate, System.IO.FileAccess.ReadWrite, System.IO.FileShare.None);
+                            try
+                            {
+                                using var fs = options.Dryrun ? new System.IO.FileStream(file.Path, System.IO.FileMode.Open, System.IO.FileAccess.Read) : new System.IO.FileStream(file.Path, System.IO.FileMode.OpenOrCreate, System.IO.FileAccess.ReadWrite, System.IO.FileShare.None);
 
-                            // TODO burst should be an option and should relate to the channel depth
-                            int burst = 8;
-                            int j = 0;
-                            for (int i = 0; i < (int) Math.Min(missing_blocks.Count, burst); i++)
-                            {
-                                await block_request.WriteAsync(missing_blocks[i]);
-                            }
-                            for (int i = 0; i < blocks.Length; i++)
-                            {
-                                if (j < missing_blocks.Count && missing_blocks[j].BlockOffset == i)
+                                // TODO burst should be an option and should relate to the channel depth
+                                int burst = 8;
+                                int j = 0;
+                                for (int i = 0; i < (int) Math.Min(missing_blocks.Count, burst); i++)
                                 {
-                                    var data = await block_response.ReadAsync();
-                                    if (j < missing_blocks.Count - burst)
+                                    await block_request.WriteAsync(missing_blocks[i]);
+                                }
+                                for (int i = 0; i < blocks.Length; i++)
+                                {
+                                    if (j < missing_blocks.Count && missing_blocks[j].BlockOffset == i)
                                     {
-                                        await block_request.WriteAsync(missing_blocks[j + burst]);
-                                    }
-                                    filehasher.TransformBlock(data, 0, data.Length, data, 0);
-                                    if (options.Dryrun)
-                                    {
-                                        fs.Seek(fs.Position + blocks[i].BlockSize, System.IO.SeekOrigin.Begin);
+                                        var data = await block_response.ReadAsync();
+                                        if (j < missing_blocks.Count - burst)
+                                        {
+                                            await block_request.WriteAsync(missing_blocks[j + burst]);
+                                        }
+                                        filehasher.TransformBlock(data, 0, data.Length, data, 0);
+                                        if (options.Dryrun)
+                                        {
+                                            fs.Seek(fs.Position + blocks[i].BlockSize, System.IO.SeekOrigin.Begin);
+                                        }
+                                        else
+                                        {
+                                            await fs.WriteAsync(data);
+                                        }
+                                        bytes_written += data.Length;
+                                        j++;
                                     }
                                     else
                                     {
-                                        await fs.WriteAsync(data);
+                                        // Read the block to verify the file hash
+                                        var data = new byte[blocks[i].BlockSize];
+                                        var read = await fs.ReadAsync(data, 0, data.Length);
+                                        // TODO the earlier step should have checked this block.
+                                        //var bhash = blockhasher.ComputeHash(data, 0, data.Length);
+                                        //if (Convert.ToBase64String(bhash) != blocks[i].BlockHash)
+                                        //{
+                                        //    Logging.Log.WriteWarningMessage(LOGTAG, "InvalidBlock", null, $"Invalid block detected for block index {i} {blocks[i].BlockID} in volume {blocks[i].VolumeID}, expected hash: {blocks[i].BlockHash}, actual hash: {Convert.ToBase64String(bhash)}");
+                                        //}
+                                        filehasher.TransformBlock(data, 0, read, data, 0);
                                     }
-                                    bytes_written += data.Length;
-                                    j++;
                                 }
-                                else
-                                {
-                                    // Read the block to verify the file hash
-                                    var data = new byte[blocks[i].BlockSize];
-                                    var read = await fs.ReadAsync(data, 0, data.Length);
-                                    // TODO the earlier step should have checked this block.
-                                    //var bhash = blockhasher.ComputeHash(data, 0, data.Length);
-                                    //if (Convert.ToBase64String(bhash) != blocks[i].BlockHash)
-                                    //{
-                                    //    Logging.Log.WriteWarningMessage(LOGTAG, "InvalidBlock", null, $"Invalid block detected for block index {i} {blocks[i].BlockID} in volume {blocks[i].VolumeID}, expected hash: {blocks[i].BlockHash}, actual hash: {Convert.ToBase64String(bhash)}");
-                                    //}
-                                    filehasher.TransformBlock(data, 0, read, data, 0);
-                                }
-                            }
 
-                            if (options.Dryrun)
-                            {
-                                Logging.Log.WriteDryrunMessage(LOGTAG, "DryrunRestore", @$"Would have restored {bytes_written} bytes of ""{file.Path}""");
-                            }
-
-                            filehasher.TransformFinalBlock([], 0, 0);
-                            if (Convert.ToBase64String(filehasher.Hash) != file.Hash)
-                            {
-                                Logging.Log.WriteErrorMessage(LOGTAG, "FileHashMismatch", null, $"File hash mismatch for {file.Path} - expected: {file.Hash}, actual: {Convert.ToBase64String(filehasher.Hash)}");
-                                throw new Exception("File hash mismatch");
-                            }
-
-                            if (fs?.Length > file.Length)
-                            {
                                 if (options.Dryrun)
                                 {
-                                    Logging.Log.WriteDryrunMessage(LOGTAG, "DryrunRestore", @$"Would have truncated ""{file.Path}"" from {fs.Length} to {file.Length}");
+                                    Logging.Log.WriteDryrunMessage(LOGTAG, "DryrunRestore", @$"Would have restored {bytes_written} bytes of ""{file.Path}""");
                                 }
-                                else
+
+                                filehasher.TransformFinalBlock([], 0, 0);
+                                if (Convert.ToBase64String(filehasher.Hash) != file.Hash)
                                 {
-                                    fs.SetLength(file.Length);
+                                    Logging.Log.WriteErrorMessage(LOGTAG, "FileHashMismatch", null, $"File hash mismatch for {file.Path} - expected: {file.Hash}, actual: {Convert.ToBase64String(filehasher.Hash)}");
+                                    throw new Exception("File hash mismatch");
                                 }
+
+                                if (fs?.Length > file.Length)
+                                {
+                                    if (options.Dryrun)
+                                    {
+                                        Logging.Log.WriteDryrunMessage(LOGTAG, "DryrunRestore", @$"Would have truncated ""{file.Path}"" from {fs.Length} to {file.Length}");
+                                    }
+                                    else
+                                    {
+                                        fs.SetLength(file.Length);
+                                    }
+                                }
+                            }
+                            catch (Exception)
+                            {
+                                lock (results)
+                                {
+                                    results.BrokenLocalFiles.Add(file.Path);
+                                }
+                                throw;
                             }
                         }
 
@@ -176,7 +188,7 @@ namespace Duplicati.Library.Main.Operation.Restore
             });
         }
 
-        private static async Task<List<BlockRequest>> VerifyTargetBlocks(LocalRestoreDatabase.IFileToRestore file, BlockRequest[] blocks, System.Security.Cryptography.HashAlgorithm filehasher, System.Security.Cryptography.HashAlgorithm blockhasher, Options options)
+        private static async Task<List<BlockRequest>> VerifyTargetBlocks(LocalRestoreDatabase.IFileToRestore file, BlockRequest[] blocks, System.Security.Cryptography.HashAlgorithm filehasher, System.Security.Cryptography.HashAlgorithm blockhasher, Options options, RestoreResults results)
         {
             // Check if the file exists
             List<BlockRequest> missing_blocks = [];
@@ -184,13 +196,14 @@ namespace Duplicati.Library.Main.Operation.Restore
             if (System.IO.File.Exists(file.Path))
             {
                 filehasher.Initialize();
-                using (var f = new System.IO.FileStream(file.Path, System.IO.FileMode.Open, System.IO.FileAccess.Read))
+                try
                 {
+                    using var f = new System.IO.FileStream(file.Path, System.IO.FileMode.Open, System.IO.FileAccess.Read);
                     var buffer = new byte[options.Blocksize];
                     long bytes_read = 0;
                     for (int i = 0; i < blocks.Length; i++)
                     {
-                        var read = await f.ReadAsync(buffer, 0, (int) blocks[i].BlockSize);
+                        var read = await f.ReadAsync(buffer, 0, (int)blocks[i].BlockSize);
                         if (read == blocks[i].BlockSize)
                         {
                             filehasher.TransformBlock(buffer, 0, read, buffer, 0);
@@ -213,6 +226,13 @@ namespace Duplicati.Library.Main.Operation.Restore
                                 break;
                             }
                         }
+                    }
+                }
+                catch (Exception)
+                {
+                    lock (results)
+                    {
+                        results.BrokenLocalFiles.Add(file.Path);
                     }
                 }
 
@@ -247,7 +267,7 @@ namespace Duplicati.Library.Main.Operation.Restore
             return missing_blocks;
         }
 
-        private static async Task<(long, List<BlockRequest>)> VerifyLocalBlocks(LocalRestoreDatabase.IFileToRestore file, List<BlockRequest> blocks, long total_blocks, System.Security.Cryptography.HashAlgorithm filehasher, System.Security.Cryptography.HashAlgorithm blockhasher, Options options)
+        private static async Task<(long, List<BlockRequest>)> VerifyLocalBlocks(LocalRestoreDatabase.IFileToRestore file, List<BlockRequest> blocks, long total_blocks, System.Security.Cryptography.HashAlgorithm filehasher, System.Security.Cryptography.HashAlgorithm blockhasher, Options options, RestoreResults results)
         {
             // Check if the file exists
             List<BlockRequest> missing_blocks = [];
@@ -267,8 +287,19 @@ namespace Duplicati.Library.Main.Operation.Restore
                     int read;
                     if (j < blocks.Count && blocks[j].BlockOffset == i)
                     {
-                        f_original.Seek(i * (long)options.Blocksize, System.IO.SeekOrigin.Begin);
-                        read = await f_original.ReadAsync(buffer, 0, (int) blocks[j].BlockSize);
+                        try
+                        {
+                            f_original.Seek(i * (long)options.Blocksize, System.IO.SeekOrigin.Begin);
+                            read = await f_original.ReadAsync(buffer, 0, (int) blocks[j].BlockSize);
+                        }
+                        catch (Exception)
+                        {
+                            lock (results)
+                            {
+                                results.BrokenLocalFiles.Add(file.Path);
+                            }
+                            throw;
+                        }
 
                         if (read == blocks[j].BlockSize)
                         {
@@ -279,8 +310,19 @@ namespace Duplicati.Library.Main.Operation.Restore
                             }
                             else
                             {
-                                f_target.Seek(blocks[j].BlockOffset * (long)options.Blocksize, System.IO.SeekOrigin.Begin);
-                                await f_target.WriteAsync(buffer, 0, read);
+                                try
+                                {
+                                    f_target.Seek(blocks[j].BlockOffset * (long)options.Blocksize, System.IO.SeekOrigin.Begin);
+                                    await f_target.WriteAsync(buffer, 0, read);
+                                }
+                                catch (Exception)
+                                {
+                                    lock (results)
+                                    {
+                                        results.BrokenLocalFiles.Add(file.Path);
+                                    }
+                                    throw;
+                                }
                                 bytes_read += read;
                                 bytes_written += read;
                             }
@@ -299,8 +341,19 @@ namespace Duplicati.Library.Main.Operation.Restore
                     }
                     else
                     {
-                        f_target.Seek(i * (long)options.Blocksize, System.IO.SeekOrigin.Begin);
-                        read = await f_target.ReadAsync(buffer, 0, options.Blocksize);
+                        try
+                        {
+                            f_target.Seek(i * (long)options.Blocksize, System.IO.SeekOrigin.Begin);
+                            read = await f_target.ReadAsync(buffer, 0, options.Blocksize);
+                        }
+                        catch (Exception)
+                        {
+                            lock (results)
+                            {
+                                results.BrokenLocalFiles.Add(file.Path);
+                            }
+                            throw;
+                        }
                     }
                     filehasher.TransformBlock(buffer, 0, read, buffer, 0);
                 }
@@ -318,7 +371,18 @@ namespace Duplicati.Library.Main.Operation.Restore
                             }
                             else
                             {
-                                f_target.SetLength(file.Length);
+                                try
+                                {
+                                    f_target.SetLength(file.Length);
+                                }
+                                catch (Exception)
+                                {
+                                    lock (results)
+                                    {
+                                        results.BrokenLocalFiles.Add(file.Path);
+                                    }
+                                    throw;
+                                }
                             }
                         }
                     }

@@ -637,6 +637,7 @@ namespace Duplicati.Library.Main
 
     internal class RestoreResults : BasicResults, Library.Interface.IRestoreResults
     {
+        public List<string> BrokenLocalFiles { get; internal set; }
         public long RestoredFiles { get; internal set; }
         public long SizeOfRestoredFiles { get; internal set; }
         public long RestoredFolders { get; internal set; }
