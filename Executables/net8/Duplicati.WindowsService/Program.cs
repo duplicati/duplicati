@@ -1,4 +1,5 @@
 using System.Runtime.Versioning;
+using Duplicati.Library.Crashlog;
 
 namespace Duplicati.WindowsService.Net8
 {
@@ -6,6 +7,6 @@ namespace Duplicati.WindowsService.Net8
     public static class Program
     {
         public static int Main(string[] args)
-            => Duplicati.WindowsService.Program.Main(args);
+            => CrashlogHelper.WrapWithCrashLog(() => Duplicati.WindowsService.Program.Main(args));
     }
 }

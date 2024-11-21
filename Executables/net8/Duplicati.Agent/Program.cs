@@ -1,4 +1,5 @@
 using System.Threading.Tasks;
+using Duplicati.Library.Crashlog;
 
 namespace Duplicati.Agent.Net8
 {
@@ -6,6 +7,6 @@ namespace Duplicati.Agent.Net8
     public static class Program
     {
         public static Task<int> Main(string[] args)
-            => Duplicati.Agent.Program.Main(args);
+            => CrashlogHelper.WrapWithCrashLog(() => Duplicati.Agent.Program.Main(args));
     }
 }
