@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+﻿// Copyright (C) 2024, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -110,7 +110,7 @@ namespace Duplicati.Library.Backend
         /// <summary>
         /// The configuration key for the FTP relative paths option
         /// </summary>
-        protected virtual string CONFIG_KEY_FTP_RELATIVE_PATHS => "ftp-relative-paths";
+        protected virtual string CONFIG_KEY_FTP_ABSOLUTE_PATH => "ftp-absolute-path";
         /// <summary>
         /// The configuration key for the FTP use CWD names option
         /// </summary>
@@ -172,7 +172,7 @@ namespace Duplicati.Library.Backend
         /// <summary>
         /// The flag to indicate if relative paths are used
         /// </summary>
-        private readonly bool _relativePaths = false;
+        private readonly bool _relativePaths = true;
         /// <summary>
         /// The flag to indicate if the CWD strategy is used
         /// </summary>
@@ -229,7 +229,7 @@ namespace Duplicati.Library.Backend
                 new CommandLineArgument("auth-password", CommandLineArgument.ArgumentType.Password, Strings.DescriptionAuthPasswordShort, Strings.DescriptionAuthPasswordLong),
                 new CommandLineArgument("auth-username", CommandLineArgument.ArgumentType.String, Strings.DescriptionAuthUsernameShort, Strings.DescriptionAuthUsernameLong),
                 new CommandLineArgument(CONFIG_KEY_DISABLE_UPLOAD_VERIFY, CommandLineArgument.ArgumentType.Boolean, Strings.DescriptionDisableUploadVerifyShort, Strings.DescriptionDisableUploadVerifyLong),
-                new CommandLineArgument(CONFIG_KEY_FTP_RELATIVE_PATHS, CommandLineArgument.ArgumentType.Boolean, Strings.DescriptionRelativePathsShort, Strings.DescriptionRelativePathsLong),
+                new CommandLineArgument(CONFIG_KEY_FTP_ABSOLUTE_PATH, CommandLineArgument.ArgumentType.Boolean, Strings.DescriptionAbsolutePathShort, Strings.DescriptionAbsolutePathLong),
                 new CommandLineArgument(CONFIG_KEY_FTP_USE_CWD_NAMES, CommandLineArgument.ArgumentType.Boolean, Strings.DescriptionUseCwdNamesShort, Strings.DescriptionUseCwdNamesLong),
                 new CommandLineArgument(CONFIG_KEY_FTP_DATA_CONNECTION_TYPE, CommandLineArgument.ArgumentType.Enumeration, Strings.DescriptionFtpDataConnectionTypeShort, Strings.DescriptionFtpDataConnectionTypeLong, DEFAULT_DATA_CONNECTION_TYPE_STRING, null, Enum.GetNames(typeof(FtpDataConnectionType))),
                 new CommandLineArgument(CONFIG_KEY_FTP_ENCRYPTION_MODE, CommandLineArgument.ArgumentType.Enumeration, Strings.DescriptionFtpEncryptionModeShort, Strings.DescriptionFtpEncryptionModeLong, DEFAULT_ENCRYPTION_MODE_STRING, null, Enum.GetNames(typeof(FtpEncryptionMode))),
@@ -302,7 +302,7 @@ namespace Duplicati.Library.Backend
             _url = new Uri(parsedurl);
 
             _listVerify = !CoreUtility.ParseBoolOption(options, CONFIG_KEY_DISABLE_UPLOAD_VERIFY);
-            _relativePaths = CoreUtility.ParseBoolOption(options, CONFIG_KEY_FTP_RELATIVE_PATHS);
+            _relativePaths = !CoreUtility.ParseBoolOption(options, CONFIG_KEY_FTP_ABSOLUTE_PATH);
             _useCwdNames = CoreUtility.ParseBoolOption(options, CONFIG_KEY_FTP_USE_CWD_NAMES);
             if (options.TryGetValue(CONFIG_KEY_FTP_UPLOAD_DELAY, out var uploadWaitTimeString) && !string.IsNullOrWhiteSpace(uploadWaitTimeString))
                 _uploadWaitTime = Timeparser.ParseTimeSpan(uploadWaitTimeString);
