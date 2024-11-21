@@ -27,6 +27,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Library.AutoUpdater;
 using Duplicati.Library.Common.IO;
+using Duplicati.Library.Crashlog;
 using Duplicati.Library.Encryption;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main;
@@ -715,6 +716,7 @@ namespace Duplicati.Server
         public static Database.Connection GetDatabaseConnection(Dictionary<string, string> commandlineOptions, bool silentConsole)
         {
             DataFolder = GetDataFolderPath(commandlineOptions);
+            CrashlogHelper.DefaultLogDir = DataFolder;
 
             var sqliteVersion = new Version(Duplicati.Library.SQLiteHelper.SQLiteLoader.SQLiteVersion);
             if (sqliteVersion < new Version(3, 6, 3))

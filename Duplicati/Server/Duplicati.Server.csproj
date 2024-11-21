@@ -37,6 +37,7 @@
     <ProjectReference Include="..\CommandLine\RecoveryTool\Duplicati.CommandLine.RecoveryTool.csproj" />
     <ProjectReference Include="..\Library\UsageReporter\Duplicati.Library.UsageReporter.csproj" />
     <ProjectReference Include="..\Tools\Duplicati.Tools.csproj" />
+    <ProjectReference Include="..\Library\Crashlog\Duplicati.Library.Crashlog.csproj" />
   </ItemGroup>
   
   <ItemGroup>
