@@ -106,11 +106,14 @@ namespace Duplicati.Library.Backend
         /// The configuration key for the FTP log private info to console
         /// </summary>
         protected virtual string CONFIG_KEY_FTP_LOGPRIVATEINFOTOCONSOLE => "ftp-log-privateinfo-to-console";
-
         /// <summary>
-        /// The configuration key for the FTP relative paths option
+        /// The configuration key for the FTP absolute paths option
         /// </summary>
         protected virtual string CONFIG_KEY_FTP_ABSOLUTE_PATH => "ftp-absolute-path";
+        /// <summary>
+        /// The configuration key for the FTP relative path option
+        /// </summary>
+        protected virtual string CONFIG_KEY_FTP_RELATIVE_PATH => "ftp-relative-path";
         /// <summary>
         /// The configuration key for the FTP use CWD names option
         /// </summary>
@@ -302,7 +305,10 @@ namespace Duplicati.Library.Backend
             _url = new Uri(parsedurl);
 
             _listVerify = !CoreUtility.ParseBoolOption(options, CONFIG_KEY_DISABLE_UPLOAD_VERIFY);
-            _relativePaths = !CoreUtility.ParseBoolOption(options, CONFIG_KEY_FTP_ABSOLUTE_PATH);
+            _relativePaths = ProtocolKey == "ftp"
+                ? !CoreUtility.ParseBoolOption(options, CONFIG_KEY_FTP_ABSOLUTE_PATH)
+                : CoreUtility.ParseBoolOption(options, CONFIG_KEY_FTP_RELATIVE_PATH);
+
             _useCwdNames = CoreUtility.ParseBoolOption(options, CONFIG_KEY_FTP_USE_CWD_NAMES);
             if (options.TryGetValue(CONFIG_KEY_FTP_UPLOAD_DELAY, out var uploadWaitTimeString) && !string.IsNullOrWhiteSpace(uploadWaitTimeString))
                 _uploadWaitTime = Timeparser.ParseTimeSpan(uploadWaitTimeString);
