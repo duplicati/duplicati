@@ -4,11 +4,11 @@ jobs:
   check_secrets:
     runs-on: ubuntu-latest
     outputs:
-      s3_secrets_available: '${{ steps.check_s3.outputs.available }}'
-      dropbox_secrets_available: '${{ steps.check_dropbox.outputs.available }}'
-      azure_secrets_available: '${{ steps.check_azure.outputs.available }}'
-      testcontainers_secrets_available: '${{ steps.check_testcontainers.outputs.available }}'
-      google_secrets_available: '${{ steps.check_google.outputs.available }}'
+      s3_secrets_available: "${{ steps.check_s3.outputs.available }}"
+      dropbox_secrets_available: "${{ steps.check_dropbox.outputs.available }}"
+      azure_secrets_available: "${{ steps.check_azure.outputs.available }}"
+      testcontainers_secrets_available: "${{ steps.check_testcontainers.outputs.available }}"
+      google_secrets_available: "${{ steps.check_google.outputs.available }}"
     steps:
       - id: check_s3
         name: Check S3 secrets
@@ -95,10 +95,10 @@ jobs:
     needs: check_secrets
     if: needs.check_secrets.outputs.testcontainers_secrets_available == 'true'
     name: FTP Tests
-    runs-on: '${{ matrix.os }}'
+    runs-on: "${{ matrix.os }}"
     strategy:
       fail-fast: false
-      max-parallel: 1 
+      max-parallel: 1
       matrix:
         os:
           - ubuntu-latest
@@ -122,10 +122,10 @@ jobs:
       - name: Setup Testcontainers Cloud Client
         uses: atomicjar/testcontainers-cloud-setup-action@v1
         with:
-          token: '${{ secrets.TC_CLOUD_TOKEN }}'
+          token: "${{ secrets.TC_CLOUD_TOKEN }}"
       - name: Run FTP tests
         env:
-          TC_CLOUD_TOKEN: '${{ secrets.TC_CLOUD_TOKEN }}'
+          TC_CLOUD_TOKEN: "${{ secrets.TC_CLOUD_TOKEN }}"
         run: >-
           dotnet test --no-build --filter="ClassName~FtpTests"
           --logger:"console;verbosity=detailed"
@@ -134,9 +134,9 @@ jobs:
     needs: check_secrets
     if: needs.check_secrets.outputs.s3_secrets_available == 'true'
     name: S3 Tests
-    runs-on: '${{ matrix.os }}'
+    runs-on: "${{ matrix.os }}"
     strategy:
-      max-parallel: 1 
+      max-parallel: 1
       fail-fast: false
       matrix:
         os:
@@ -160,11 +160,11 @@ jobs:
           LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.sln
       - name: Run S3 tests
         env:
-          TC_CLOUD_TOKEN: '${{ secrets.TC_CLOUD_TOKEN }}'
-          TESTCREDENTIAL_S3_BUCKETNAME: '${{ secrets.TESTCREDENTIAL_S3_BUCKETNAME }}'
-          TESTCREDENTIAL_S3_KEY: '${{ secrets.TESTCREDENTIAL_S3_KEY }}'
-          TESTCREDENTIAL_S3_REGION: '${{ secrets.TESTCREDENTIAL_S3_REGION }}'
-          TESTCREDENTIAL_S3_SECRET: '${{ secrets.TESTCREDENTIAL_S3_SECRET }}'
+          TC_CLOUD_TOKEN: "${{ secrets.TC_CLOUD_TOKEN }}"
+          TESTCREDENTIAL_S3_BUCKETNAME: "${{ secrets.TESTCREDENTIAL_S3_BUCKETNAME }}"
+          TESTCREDENTIAL_S3_KEY: "${{ secrets.TESTCREDENTIAL_S3_KEY }}"
+          TESTCREDENTIAL_S3_REGION: "${{ secrets.TESTCREDENTIAL_S3_REGION }}"
+          TESTCREDENTIAL_S3_SECRET: "${{ secrets.TESTCREDENTIAL_S3_SECRET }}"
         run: >-
           dotnet test --no-build --filter="ClassName~S3Tests"
           --logger:"console;verbosity=detailed"
@@ -173,9 +173,9 @@ jobs:
     needs: check_secrets
     if: needs.check_secrets.outputs.azure_secrets_available == 'true'
     name: Azure Tests
-    runs-on: '${{ matrix.os }}'
+    runs-on: "${{ matrix.os }}"
     strategy:
-      max-parallel: 1 
+      max-parallel: 1
       fail-fast: false
       matrix:
         os:
@@ -199,9 +199,9 @@ jobs:
           LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.sln
       - name: Run Azure tests
         env:
-          TESTCREDENTIAL_AZURE_ACCOUNTNAME: '${{ secrets.TESTCREDENTIAL_AZURE_ACCOUNTNAME }}'
-          TESTCREDENTIAL_AZURE_ACCESSKEY: '${{ secrets.TESTCREDENTIAL_AZURE_ACCESSKEY }}'
-          TESTCREDENTIAL_AZURE_CONTAINERNAME: '${{ secrets.TESTCREDENTIAL_AZURE_CONTAINERNAME }}'
+          TESTCREDENTIAL_AZURE_ACCOUNTNAME: "${{ secrets.TESTCREDENTIAL_AZURE_ACCOUNTNAME }}"
+          TESTCREDENTIAL_AZURE_ACCESSKEY: "${{ secrets.TESTCREDENTIAL_AZURE_ACCESSKEY }}"
+          TESTCREDENTIAL_AZURE_CONTAINERNAME: "${{ secrets.TESTCREDENTIAL_AZURE_CONTAINERNAME }}"
         run: >-
           dotnet test --no-build --filter="ClassName~AzureTests"
           --logger:"console;verbosity=detailed"
@@ -210,9 +210,9 @@ jobs:
     needs: check_secrets
     if: needs.check_secrets.outputs.testcontainers_secrets_available == 'true'
     name: Webdav Tests
-    runs-on: '${{ matrix.os }}'
+    runs-on: "${{ matrix.os }}"
     strategy:
-      max-parallel: 1 
+      max-parallel: 1
       fail-fast: false
       matrix:
         os:
@@ -237,10 +237,10 @@ jobs:
       - name: Setup Testcontainers Cloud Client
         uses: atomicjar/testcontainers-cloud-setup-action@v1
         with:
-          token: '${{ secrets.TC_CLOUD_TOKEN }}'
+          token: "${{ secrets.TC_CLOUD_TOKEN }}"
       - name: Run Webdav tests
         env:
-          TC_CLOUD_TOKEN: '${{ secrets.TC_CLOUD_TOKEN }}'
+          TC_CLOUD_TOKEN: "${{ secrets.TC_CLOUD_TOKEN }}"
         run: >-
           dotnet test --no-build --filter="ClassName~WebDavTests"
           --logger:"console;verbosity=detailed"
@@ -249,9 +249,9 @@ jobs:
     needs: check_secrets
     if: needs.check_secrets.outputs.dropbox_secrets_available == 'true'
     name: DropBox Tests
-    runs-on: '${{ matrix.os }}'
+    runs-on: "${{ matrix.os }}"
     strategy:
-      max-parallel: 1 
+      max-parallel: 1
       fail-fast: false
       matrix:
         os:
@@ -275,9 +275,9 @@ jobs:
           LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.sln
       - name: Run Dropbox tests
         env:
-          TC_CLOUD_TOKEN: '${{ secrets.TC_CLOUD_TOKEN }}'
-          TESTCREDENTIAL_DROPBOX_FOLDER: '${{ secrets.TESTCREDENTIAL_DROPBOX_FOLDER }}'
-          TESTCREDENTIAL_DROPBOX_TOKEN: '${{ secrets.TESTCREDENTIAL_DROPBOX_TOKEN }}'
+          TC_CLOUD_TOKEN: "${{ secrets.TC_CLOUD_TOKEN }}"
+          TESTCREDENTIAL_DROPBOX_FOLDER: "${{ secrets.TESTCREDENTIAL_DROPBOX_FOLDER }}"
+          TESTCREDENTIAL_DROPBOX_TOKEN: "${{ secrets.TESTCREDENTIAL_DROPBOX_TOKEN }}"
         run: >-
           dotnet test --no-build --filter="ClassName~DropBoxTests"
           --logger:"console;verbosity=detailed"
@@ -286,10 +286,10 @@ jobs:
     needs: check_secrets
     if: needs.check_secrets.outputs.testcontainers_secrets_available == 'true'
     name: SSH Tests
-    runs-on: '${{ matrix.os }}'
+    runs-on: "${{ matrix.os }}"
     strategy:
       fail-fast: false
-      max-parallel: 1 
+      max-parallel: 1
       matrix:
         os:
           - ubuntu-latest
@@ -313,10 +313,10 @@ jobs:
       - name: Setup Testcontainers Cloud Client
         uses: atomicjar/testcontainers-cloud-setup-action@v1
         with:
-          token: '${{ secrets.TC_CLOUD_TOKEN }}'
+          token: "${{ secrets.TC_CLOUD_TOKEN }}"
       - name: Run SSH tests
         env:
-          TC_CLOUD_TOKEN: '${{ secrets.TC_CLOUD_TOKEN }}'
+          TC_CLOUD_TOKEN: "${{ secrets.TC_CLOUD_TOKEN }}"
         run: >-
           dotnet test --no-build --filter="ClassName~SshTests"
           --logger:"console;verbosity=detailed"
@@ -325,9 +325,9 @@ jobs:
     needs: check_secrets
     if: needs.check_secrets.outputs.google_secrets_available == 'true'
     name: Google Drive Tests
-    runs-on: '${{ matrix.os }}'
+    runs-on: "${{ matrix.os }}"
     strategy:
-      max-parallel: 1 
+      max-parallel: 1
       fail-fast: false
       matrix:
         os:
@@ -351,10 +351,9 @@ jobs:
           LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.sln
       - name: Run Dropbox tests
         env:
-          TESTCREDENTIAL_GOOGLEDRIVE_TOKEN: '${{ secrets.TESTCREDENTIAL_GOOGLEDRIVE_TOKEN }}'
-          TESTCREDENTIAL_GOOGLEDRIVE_FOLDER: '${{ secrets.TESTCREDENTIAL_GOOGLEDRIVE_FOLDER }}'
+          TESTCREDENTIAL_GOOGLEDRIVE_TOKEN: "${{ secrets.TESTCREDENTIAL_GOOGLEDRIVE_TOKEN }}"
+          TESTCREDENTIAL_GOOGLEDRIVE_FOLDER: "${{ secrets.TESTCREDENTIAL_GOOGLEDRIVE_FOLDER }}"
         run: >-
           dotnet test --no-build --filter="ClassName~GoogleDriveTests"
           --logger:"console;verbosity=detailed"
           LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.sln
- 
