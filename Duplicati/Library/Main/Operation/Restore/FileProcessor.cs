@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using CoCoL;
@@ -51,6 +52,13 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                         long bytes_written = 0;
 
+                        if (options.UseLocalBlocks && missing_blocks.Count > 0)
+                        {
+                            var (bw, new_missing_blocks) = await VerifyLocalBlocks(file, missing_blocks, blocks.Length, filehasher, blockhasher, options);
+                            bytes_written = bw;
+                            missing_blocks = new_missing_blocks;
+                        }
+
                         if (blocks.Length == 1 && blocks[0].BlockSize == 0)
                         {
                             if (options.Dryrun)
@@ -59,11 +67,12 @@ namespace Duplicati.Library.Main.Operation.Restore
                             }
                             else
                             {
-                                // Create an empty file
+                                // Create an empty file, or truncate to 0
                                 using var fs = new System.IO.FileStream(file.Path, System.IO.FileMode.OpenOrCreate, System.IO.FileAccess.Write, System.IO.FileShare.None);
+                                fs.SetLength(0);
                             }
                         }
-                        else
+                        else if (missing_blocks.Count > 0)
                         {
                             if (blocks.Any(x => x.VolumeID < 0))
                             {
@@ -175,32 +184,34 @@ namespace Duplicati.Library.Main.Operation.Restore
             if (System.IO.File.Exists(file.Path))
             {
                 filehasher.Initialize();
-                using var f = new System.IO.FileStream(file.Path, System.IO.FileMode.Open, System.IO.FileAccess.ReadWrite);
-                var buffer = new byte[options.Blocksize];
-                long bytes_read = 0;
-                for (int i = 0; i < blocks.Length; i++)
+                using (var f = new System.IO.FileStream(file.Path, System.IO.FileMode.Open, System.IO.FileAccess.Read))
                 {
-                    var read = await f.ReadAsync(buffer, 0, (int) blocks[i].BlockSize);
-                    if (read == blocks[i].BlockSize)
+                    var buffer = new byte[options.Blocksize];
+                    long bytes_read = 0;
+                    for (int i = 0; i < blocks.Length; i++)
                     {
-                        filehasher.TransformBlock(buffer, 0, read, buffer, 0);
-                        var blockhash = Convert.ToBase64String(blockhasher.ComputeHash(buffer, 0, read));
-                        if (blockhash != blocks[i].BlockHash)
+                        var read = await f.ReadAsync(buffer, 0, (int) blocks[i].BlockSize);
+                        if (read == blocks[i].BlockSize)
                         {
-                            missing_blocks.Add(blocks[i]);
+                            filehasher.TransformBlock(buffer, 0, read, buffer, 0);
+                            var blockhash = Convert.ToBase64String(blockhasher.ComputeHash(buffer, 0, read));
+                            if (blockhash != blocks[i].BlockHash)
+                            {
+                                missing_blocks.Add(blocks[i]);
+                            }
+                            else
+                            {
+                                bytes_read += read;
+                            }
                         }
                         else
                         {
-                            bytes_read += read;
-                        }
-                    }
-                    else
-                    {
-                        missing_blocks.Add(blocks[i]);
-                        if (f.Position == f.Length)
-                        {
-                            missing_blocks.AddRange(blocks.Skip(i + 1));
-                            break;
+                            missing_blocks.Add(blocks[i]);
+                            if (f.Position == f.Length)
+                            {
+                                missing_blocks.AddRange(blocks.Skip(i + 1));
+                                break;
+                            }
                         }
                     }
                 }
@@ -210,14 +221,18 @@ namespace Duplicati.Library.Main.Operation.Restore
                     filehasher.TransformFinalBlock([], 0, 0);
                     if (Convert.ToBase64String(filehasher.Hash) == file.Hash)
                     {
-                        if (file.Length < f.Length)
+                        FileInfo fi = new FileInfo(file.Path);
+                        if (file.Length < fi.Length)
                         {
                             if (options.Dryrun)
                             {
-                                Logging.Log.WriteDryrunMessage(LOGTAG, "DryrunRestore", @$"Would have truncated ""{file.Path}"" from {f.Length} to {file.Length}");
+                                Logging.Log.WriteDryrunMessage(LOGTAG, "DryrunRestore", @$"Would have truncated ""{file.Path}"" from {fi.Length} to {file.Length}");
                             }
                             else
                             {
+                                // Reopen file with write permission
+                                fi.IsReadOnly = false; // The metadata handler will revert this back later.
+                                using var f = new System.IO.FileStream(file.Path, System.IO.FileMode.Open, System.IO.FileAccess.ReadWrite);
                                 f.SetLength(file.Length);
                             }
                         }
@@ -230,6 +245,90 @@ namespace Duplicati.Library.Main.Operation.Restore
             }
 
             return missing_blocks;
+        }
+
+        private static async Task<(long, List<BlockRequest>)> VerifyLocalBlocks(LocalRestoreDatabase.IFileToRestore file, List<BlockRequest> blocks, long total_blocks, System.Security.Cryptography.HashAlgorithm filehasher, System.Security.Cryptography.HashAlgorithm blockhasher, Options options)
+        {
+            // Check if the file exists
+            List<BlockRequest> missing_blocks = [];
+            // TODO It should check both the target path and the original path, as I think the original solution might be doing this. At some point, benchmark the original without having a local copy.
+            if (System.IO.File.Exists(file.Name))
+            {
+                filehasher.Initialize();
+                using var f_original = new System.IO.FileStream(file.Name, System.IO.FileMode.Open, System.IO.FileAccess.Read);
+                using var f_target = new System.IO.FileStream(file.Path, System.IO.FileMode.OpenOrCreate, System.IO.FileAccess.ReadWrite);
+                var buffer = new byte[options.Blocksize];
+                long bytes_read = 0;
+                long bytes_written = 0;
+
+                int j = 0;
+                for (long i = 0; i < total_blocks; i++)
+                {
+                    int read;
+                    if (j < blocks.Count && blocks[j].BlockOffset == i)
+                    {
+                        f_original.Seek(i * (long)options.Blocksize, System.IO.SeekOrigin.Begin);
+                        read = await f_original.ReadAsync(buffer, 0, (int) blocks[j].BlockSize);
+
+                        if (read == blocks[j].BlockSize)
+                        {
+                            var blockhash = Convert.ToBase64String(blockhasher.ComputeHash(buffer, 0, read));
+                            if (blockhash != blocks[j].BlockHash)
+                            {
+                                missing_blocks.Add(blocks[j]);
+                            }
+                            else
+                            {
+                                f_target.Seek(blocks[j].BlockOffset * (long)options.Blocksize, System.IO.SeekOrigin.Begin);
+                                await f_target.WriteAsync(buffer, 0, read);
+                                bytes_read += read;
+                                bytes_written += read;
+                            }
+                        }
+                        else
+                        {
+                            missing_blocks.Add(blocks[j]);
+                            if (f_original.Position == f_original.Length)
+                            {
+                                missing_blocks.AddRange(blocks.Skip(j + 1));
+                                break;
+                            }
+                        }
+
+                        j++;
+                    }
+                    else
+                    {
+                        f_target.Seek(i * (long)options.Blocksize, System.IO.SeekOrigin.Begin);
+                        read = await f_target.ReadAsync(buffer, 0, options.Blocksize);
+                    }
+                    filehasher.TransformBlock(buffer, 0, read, buffer, 0);
+                }
+
+                if (missing_blocks.Count == 0)
+                {
+                    filehasher.TransformFinalBlock([], 0, 0);
+                    if (Convert.ToBase64String(filehasher.Hash) == file.Hash)
+                    {
+                        if (file.Length < f_target.Length)
+                        {
+                            if (options.Dryrun)
+                            {
+                                Logging.Log.WriteDryrunMessage(LOGTAG, "DryrunRestore", @$"Would have truncated ""{file.Path}"" from {f_target.Length} to {file.Length}");
+                            }
+                            else
+                            {
+                                f_target.SetLength(file.Length);
+                            }
+                        }
+                    }
+                }
+                return (bytes_written, missing_blocks);
+            }
+            else
+            {
+                return (0, blocks);
+            }
         }
     }
 }
