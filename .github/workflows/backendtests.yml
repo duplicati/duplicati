@@ -1,7 +1,5 @@
 name: Backend Live Tests
-'on':
-  - push
-  - pull_request
+on: [push]
 jobs:
   check_secrets:
     runs-on: ubuntu-latest
