@@ -1,7 +1,7 @@
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using CoCoL;
-using Duplicati.Library.Common.IO;
 using Duplicati.Library.Main.Database;
 using Duplicati.Library.Utility;
 
@@ -22,7 +22,7 @@ namespace Duplicati.Library.Main.Operation.Restore
             {
                 try
                 {
-                    var files = db.GetFilesToRestore(false);
+                    var files = db.GetFilesToRestore(true).OrderByDescending(x => x.Length).ToArray();
 
                     result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_DownloadingRemoteFiles);
                     // No more touching result - now only the FileProcessor updates, which locks.
