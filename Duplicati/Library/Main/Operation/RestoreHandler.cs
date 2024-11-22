@@ -350,9 +350,6 @@ namespace Duplicati.Library.Main.Operation
                 }
             }
 
-                var brokenFiles = new List<string>();
-                var fileErrors = 0L;
-
                 // Apply metadata
                 if (!m_options.SkipMetadata)
                     ApplyStoredMetadata(m_options, metadatastorage);
@@ -362,11 +359,17 @@ namespace Duplicati.Library.Main.Operation
 
                 m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_PostRestoreVerify);
 
-                if (fileErrors > 0 && brokenFiles.Count > 0)
-                    Logging.Log.WriteInformationMessage(LOGTAG, "RestoreFailures", "Failed to restore {0} files, additionally the following files failed to download, which may be the cause:{1}{2}", fileErrors, Environment.NewLine, string.Join(Environment.NewLine, brokenFiles));
-                else if (fileErrors > 0)
-                    Logging.Log.WriteInformationMessage(LOGTAG, "RestoreFailures", "Failed to restore {0} files", fileErrors);
-                else if (result.RestoredFiles == 0)
+            if (m_result.BrokenRemoteFiles.Count > 0 || m_result.BrokenLocalFiles.Count > 0)
+            {
+                var nl = Environment.NewLine;
+                string remoteMessage = m_result.BrokenRemoteFiles.Count > 0 ? $"Failed to download {m_result.BrokenRemoteFiles.Count} remote files." : string.Empty;
+                string remoteList = m_result.BrokenRemoteFiles.Count > 0 ? $"The following remote files failed to download, which may be the cause:{nl}{string.Join(nl, m_result.BrokenRemoteFiles)}{nl}" : string.Empty;
+                string localMessage = m_result.BrokenLocalFiles.Count > 0 ? $"Failed to restore {m_result.BrokenLocalFiles.Count} local files." : string.Empty;
+                string localList = m_result.BrokenLocalFiles.Count > 0 ? $"The following local files failed to restore:{nl}{string.Join(nl, m_result.BrokenLocalFiles)}{nl}" : string.Empty;
+
+                Logging.Log.WriteInformationMessage(LOGTAG, "RestoreFailures", $"{remoteMessage}{nl}{localMessage}{nl}{remoteList}{nl}{localList}");
+            }
+            else if (m_result.RestoredFiles == 0)
                     Logging.Log.WriteWarningMessage(LOGTAG, "NoFilesRestored", null, "Restore completed without errors but no files were restored");
 
                 // Drop the temp tables
