@@ -37,7 +37,7 @@ namespace Duplicati.Library.Main.Database
         private static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(LocalRestoreDatabase));
 
         protected readonly string m_temptabsetguid = Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
-        protected string m_tempfiletable;
+        public string m_tempfiletable { get; private set; }
         protected string m_tempblocktable;
         protected string m_fileprogtable;
         protected string m_totalprogtable;
