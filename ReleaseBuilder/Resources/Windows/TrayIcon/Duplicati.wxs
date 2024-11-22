@@ -70,7 +70,7 @@
     <!-- Remove old versions -->
     <InstallExecuteSequence>
       <!-- Note: This is suboptimal, but the ref counting is not working, so we use Early REP -->
-      <RemoveExistingProducts Before="CostInitialize" />
+      <RemoveExistingProducts After="FindRelatedProducts" />
     </InstallExecuteSequence>
 
     <Property Id="PREVIOUSVERSIONSINSTALLED" Secure="yes" />
