@@ -435,6 +435,7 @@ namespace Duplicati.Library.Main
 
                     new CommandLineArgument("restore-cache-max", CommandLineArgument.ArgumentType.Size, Strings.Options.RestoreCacheMaxShort, Strings.Options.RestoreCacheMaxLong, "8G"),
                     new CommandLineArgument("restore-cache-evict", CommandLineArgument.ArgumentType.Decimal, Strings.Options.RestoreCacheEvictShort, Strings.Options.RestoreCacheEvictLong, "0.5"),
+                    new CommandLineArgument("restore-legacy", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RestoreLegacyShort, Strings.Options.RestoreLegacyLong, "false"),
                 });
 
                 return lst;
@@ -2052,6 +2053,14 @@ namespace Duplicati.Library.Main
 
                 return percentage;
             }
+        }
+
+        /// <summary>
+        /// Gets whether to use the legacy restore method
+        /// </summary>
+        public bool RestoreLegacy
+        {
+            get { return Library.Utility.Utility.ParseBoolOption(m_options, "restore-legacy"); }
         }
 
         /// <summary>

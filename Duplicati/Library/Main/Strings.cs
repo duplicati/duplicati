@@ -328,6 +328,8 @@ namespace Duplicati.Library.Main.Strings
         public static string RestoreCacheMaxLong { get { return LC.L("Use this option to set the maximum size of the cache used for restoring files. The cache is used to store the data blocks that are downloaded from the remote storage. The default value is 8GB. It assumes that the value is divisable by the block size."); } }
         public static string RestoreCacheEvictShort { get { return LC.L("Eviction ratio of the data block cache during restore"); } }
         public static string RestoreCacheEvictLong { get { return LC.L("Use this option to set the eviction ratio of the data block cache during restore. The eviction ratio is the percentage of the cache that is evicted when the cache is full. The default value is 0.5, which means that 50% of the cache is evicted when the cache is full."); } }
+        public static string RestoreLegacyShort { get { return LC.L("Use legacy restore method"); } }
+        public static string RestoreLegacyLong { get { return LC.L("Use this option to use the legacy restore method. The legacy restore method is slower than the new method, but may be more reliable in some cases."); } }
     }
 
     internal static class Common

@@ -133,9 +133,10 @@ namespace Duplicati.Library.Main.Operation
                     ApplyStoredMetadata(m_options, new RestoreHandlerMetadataStorage());
             }
 
-            // TODO Make the change optional through options
-            //DoRun(db, filter);
-            DoRunNew(db, filter);
+            if (m_options.RestoreLegacy)
+                DoRun(db, filter);
+            else
+                DoRunNew(db, filter);
 
             db.WriteResults();
 
@@ -339,23 +340,23 @@ namespace Duplicati.Library.Main.Operation
 
                 // Create the process network
                 var filelister = Restore.FileLister.Run(database, m_result);
-                    var fileprocessors = Enumerable.Range(0, file_processors).Select(i => Restore.FileProcessor.Run(database, fileprocessor_requests[i], fileprocessor_responses[i], m_result, m_options)).ToArray();
+                var fileprocessors = Enumerable.Range(0, file_processors).Select(i => Restore.FileProcessor.Run(database, fileprocessor_requests[i], fileprocessor_responses[i], m_result, m_options)).ToArray();
                 var blockmanager = Restore.BlockManager.Run(database, m_options, fileprocessor_requests, fileprocessor_responses);
-                    var volumedownloaders = Enumerable.Range(0, volume_downloaders).Select(i => Restore.VolumeDownloader.Run(database, backend, m_options, m_result)).ToArray();
-                    var volumedecrypters = Enumerable.Range(0, volume_decrypters).Select(i => Restore.VolumeDecrypter.Run(m_result)).ToArray();
-                    var volumedecompressors = Enumerable.Range(0, volume_decompressors).Select(i => Restore.VolumeDecompressor.Run(m_options, m_result)).ToArray();
+                var volumedownloaders = Enumerable.Range(0, volume_downloaders).Select(i => Restore.VolumeDownloader.Run(database, backend, m_options, m_result)).ToArray();
+                var volumedecrypters = Enumerable.Range(0, volume_decrypters).Select(i => Restore.VolumeDecrypter.Run(m_result)).ToArray();
+                var volumedecompressors = Enumerable.Range(0, volume_decompressors).Select(i => Restore.VolumeDecompressor.Run(m_options, m_result)).ToArray();
 
                 // Wait for the network to complete
                 Task[] all =
-                        [
-                            filelister,
-                            ..fileprocessors,
-                            blockmanager,
-                            ..volumedownloaders,
-                            ..volumedecrypters,
-                            ..volumedecompressors
-                        ];
-                    Task.WhenAll(all).Wait();
+                    [
+                        filelister,
+                        ..fileprocessors,
+                        blockmanager,
+                        ..volumedownloaders,
+                        ..volumedecrypters,
+                        ..volumedecompressors
+                    ];
+                Task.WhenAll(all).Wait();
             }
 
             // Apply metadata
