@@ -94,6 +94,11 @@ namespace Duplicati.Library.Main
         private const long DEFAULT_RESTORE_CACHE_MAX = 8L * 1024L * 1024L * 1024L;
 
         /// <summary>
+        /// The default value for the ratio of the restore cache to evict when full
+        /// </summary>
+        private const float DEFAULT_RESTORE_CACHE_EVICT = 0.5f;
+
+        /// <summary>
         /// An enumeration that describes the supported strategies for an optimization
         /// </summary>
         public enum OptimizationStrategy
@@ -429,6 +434,7 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("cpu-intensity", CommandLineArgument.ArgumentType.Integer, Strings.Options.CPUIntensityShort, Strings.Options.CPUIntensityLong, "10"),
 
                     new CommandLineArgument("restore-cache-max", CommandLineArgument.ArgumentType.Size, Strings.Options.RestoreCacheMaxShort, Strings.Options.RestoreCacheMaxLong, "8G"),
+                    new CommandLineArgument("restore-cache-evict", CommandLineArgument.ArgumentType.Decimal, Strings.Options.RestoreCacheEvictShort, Strings.Options.RestoreCacheEvictLong, "0.5"),
                 });
 
                 return lst;
@@ -2013,6 +2019,38 @@ namespace Duplicati.Library.Main
                     return DEFAULT_RESTORE_CACHE_MAX;
                 else
                     return long.Parse(v);
+            }
+        }
+
+        /// <summary>
+        /// Gets the ratio of cache entries to evict when the cache is full
+        /// </summary>
+        public float RestoreCacheEvict
+        {
+            get
+            {
+                m_options.TryGetValue("restore-cache-evict", out string s);
+                if (string.IsNullOrEmpty(s))
+                {
+                    return DEFAULT_RESTORE_CACHE_EVICT;
+                }
+
+                float percentage;
+                try
+                {
+                    percentage = float.Parse(s, CultureInfo.InvariantCulture);
+                }
+                catch (Exception ex)
+                {
+                    throw new ArgumentException("The value provided for the restore-cache-evict option must lie between 0 and 1.0", ex);
+                }
+
+                if ((percentage < 0.0f) || (percentage > 1.0f))
+                {
+                    throw new ArgumentOutOfRangeException(nameof(percentage), "The value provided for the restore-cache-evict option must lie between 0 and 1.0");
+                }
+
+                return percentage;
             }
         }
 

@@ -95,6 +95,10 @@ namespace Duplicati.Library.Main.Operation.Restore
             /// The maximum size of the internal cache in number of blocks.
             /// </summary>
             private long cache_max;
+            /// <summary>
+            /// The eviction ratio for the internal cache when full.
+            /// </summary>
+            private float eviction_ratio;
 
             /// <summary>
             /// Initializes a new instance of the <see cref="SleepableDictionary"/> class.
@@ -134,6 +138,7 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                 // Assumes that the RestoreCacheMax is divisable by the blocksize
                 cache_max = options.RestoreCacheMax / options.Blocksize;
+                eviction_ratio = options.RestoreCacheEvict;
             }
 
             /// <summary>
@@ -194,10 +199,9 @@ namespace Duplicati.Library.Main.Operation.Restore
                 }
 
                 // Compact the cache if it is too large.
-                // TODO Current eviction policy evicts 50 %. Maybe make this a configurable value?
                 if (_dictionary.Count > cache_max)
                 {
-                    _dictionary.Compact(0.5);
+                    _dictionary.Compact(eviction_ratio);
                 }
             }
 
