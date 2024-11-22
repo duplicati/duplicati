@@ -52,9 +52,9 @@ namespace Duplicati.Library.Backend
         public static string DescriptionSslProtocolsShort { get { return LC.L(@"Configure the SSL policy to use when encryption is enabled"); } }
         public static string DescriptionUploadDelayLong { get { return LC.L(@"Some FTP servers need a small delay before reporting the correct file size. The required delay depends on network topology. If you experience errors related to the upload size not matching, try adding a few seconds delay."); } }
         public static string DescriptionUploadDelayShort { get { return LC.L(@"Add a delay after uploading a file"); } }
-        public static string ErrorDeleteFile { get { return LC.L(@"Error on deleting file: {0}"); } }
-        public static string ErrorReadFile { get { return LC.L(@"Error reading file: {0}"); } }
-        public static string ErrorWriteFile { get { return LC.L(@"Error writing file: {0}"); } }
+        public static string ErrorDeleteFile(string filename, string message) { return LC.L(@"Error on deleting file: {0}, error: {1}", filename, message); }
+        public static string ErrorReadFile(string filename, string message) { return LC.L(@"Error reading file: {0}, error: {1}", filename, message); }
+        public static string ErrorWriteFile(string filename, string message) { return LC.L(@"Error writing file: {0}, error: {1}", filename, message); }
         public static string DescriptionUseSSLLong { get { return LC.L(@"Use this option to communicate using Secure Socket Layer (SSL) over ftp (ftps)."); } }
         public static string DescriptionUseSSLShort { get { return LC.L(@"Instruct Duplicati to use an SSL (ftps) connection"); } }
         public static string DescriptionFTPActiveLong { get { return LC.L(@"Activate this option to make the FTP connection in active mode. Even if the option --{0} is also set, the connection will be made in active mode.", "ftp-passive"); } }
@@ -64,6 +64,13 @@ namespace Duplicati.Library.Backend
         public static string FtpPassiveDeprecated { get { return LC.L(@"The option ftp-passive is deprecated, use ftp-data-connection-type instead."); } }
         public static string FtpActiveDeprecated { get { return LC.L(@"ftp-regular is deprecated, use ftp-data-connection-type instead."); } }
         public static string UseSslDeprecated { get { return LC.L(@"use-ssl is deprecated, use ftp-ssl-protocols instead."); } }
-        
+        public static string FileMissingError(string filename, string message) { return LC.L(@"The file {0} was not found. Message: {1}", filename, message); }
+        public static string DescriptionAbsolutePathShort { get { return LC.L(@"Treat the url path as absolute"); } }
+        public static string DescriptionAbsolutePathLong { get { return LC.L(@"Use this option to interpret the url path as an absolute path. This option only has an effect if the initial starting folder in the FTP server is not the (virtual) root folder. If not set, the path in the url is treated as relative to the initial login folder."); } }
+        public static string DescriptionRelativePathShort { get { return LC.L(@"Treat the url path as relative"); } }
+        public static string DescriptionRelativePathLong { get { return LC.L(@"Use this option to interpret the url path as a path that is relative to the initial login folder. This option only has an effect if the initial starting folder in the FTP server is not the (virtual) root folder. If not set, the path in the url is treated as absolute, ignoring the initial login folder."); } }
+        public static string DescriptionUseCwdNamesShort { get { return LC.L(@"Use CWD instead of absolute paths"); } }
+        public static string DescriptionUseCwdNamesLong { get { return LC.L(@"Use this option to start the connection with a CWD command instead of an absolute path. This can be useful if the FTP server does not support absolute paths."); } }
+        public static string ErrorCreateFolder(string targetFolderName, string resultingFolder) { return LC.L(@"Error creating folder {0}, gave folder: {1}", targetFolderName, resultingFolder); }
     }
 }
