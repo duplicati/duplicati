@@ -14,7 +14,7 @@ namespace Duplicati.Library.Main.Operation.Restore
     {
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<BlockManager>();
 
-        internal class SleepableDictionary // That also auto requests!
+        internal class SleepableDictionary : IDisposable
         {
             private readonly IWriteChannel<BlockRequest> m_volume_request;
             private readonly MemoryCache _dictionary;
@@ -103,8 +103,12 @@ namespace Duplicati.Library.Main.Operation.Restore
             {
                 if (Interlocked.Decrement(ref readers) <= 0) {
                     m_volume_request.Retire();
-                    db.Connection.CreateCommand().ExecuteNonQuery($@"DROP TABLE IF EXISTS ""blockcount_{m_temptabsetguid}""");
                 }
+            }
+
+            public void Dispose()
+            {
+                db.Connection.CreateCommand().ExecuteNonQuery($@"DROP TABLE IF EXISTS ""blockcount_{m_temptabsetguid}""");
             }
 
             public void CancelAll()
@@ -127,7 +131,7 @@ namespace Duplicati.Library.Main.Operation.Restore
             async self =>
             {
                 // TODO at some point, this should include some kind of cache eviction policy
-                SleepableDictionary cache = new(db, self.Output, fp_requests.Length);
+                using SleepableDictionary cache = new(db, self.Output, fp_requests.Length);
 
                 var volume_consumer = Task.Run(async () => {
                     try
@@ -141,6 +145,13 @@ namespace Duplicati.Library.Main.Operation.Restore
                     catch (RetiredException)
                     {
                         Logging.Log.WriteVerboseMessage(LOGTAG, "RetiredProcess", null, "BlockManager Volume consumer retired");
+
+                        // Cancel any remaining readers - although there shouldn't be any.
+                        cache.CancelAll();
+                    }
+                    catch (Exception ex)
+                    {
+                        Logging.Log.WriteWarningMessage(LOGTAG, "VolumeConsumerError", ex, "Error in volume consumer");
 
                         // Cancel any remaining readers - although there shouldn't be any.
                         cache.CancelAll();
