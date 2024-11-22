@@ -86,9 +86,20 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                             filehasher.Initialize();
 
+                            FileStream fs = null;
                             try
                             {
-                                using var fs = options.Dryrun ? new System.IO.FileStream(file.Path, System.IO.FileMode.Open, System.IO.FileAccess.Read) : new System.IO.FileStream(file.Path, System.IO.FileMode.OpenOrCreate, System.IO.FileAccess.ReadWrite, System.IO.FileShare.None);
+                                if (options.Dryrun)
+                                {
+                                    if (System.IO.File.Exists(file.Path))
+                                    {
+                                        fs = new System.IO.FileStream(file.Path, System.IO.FileMode.Open, System.IO.FileAccess.Read);
+                                    }
+                                }
+                                else
+                                {
+                                    fs = new System.IO.FileStream(file.Path, System.IO.FileMode.OpenOrCreate, System.IO.FileAccess.ReadWrite, System.IO.FileShare.None);
+                                }
 
                                 // TODO burst should be an option and should relate to the channel depth
                                 int burst = 8;
@@ -164,6 +175,10 @@ namespace Duplicati.Library.Main.Operation.Restore
                                     results.BrokenLocalFiles.Add(file.Path);
                                 }
                                 throw;
+                            }
+                            finally
+                            {
+                                fs?.Dispose();
                             }
                         }
 
