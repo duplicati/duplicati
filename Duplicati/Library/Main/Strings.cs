@@ -330,6 +330,13 @@ namespace Duplicati.Library.Main.Strings
         public static string RestoreCacheEvictLong { get { return LC.L("Use this option to set the eviction ratio of the data block cache during restore. The eviction ratio is the percentage of the cache that is evicted when the cache is full. The default value is 0.5, which means that 50% of the cache is evicted when the cache is full."); } }
         public static string RestoreLegacyShort { get { return LC.L("Use legacy restore method"); } }
         public static string RestoreLegacyLong { get { return LC.L("Use this option to use the legacy restore method. The legacy restore method is slower than the new method, but may be more reliable in some cases."); } }
+        public static string RestoreFileprocessorsShort { get { return LC.L("Number of concurrent FileProcessors processes used during restore"); } }
+        public static string RestoreFileprocessorsLong { get { return LC.L("Use this option to set the number of concurrent FileProcessors processes used during restore. A FileProcessor processes one file at a time, and increasing the number of FileProcessors may improve restore performance. The default value is 8."); } }
+        public static string RestoreFiledecompressorsShort { get { return LC.L("Number of concurrent FileDecompressor processes used during restore"); } }
+        public static string RestoreFiledecompressorsLong { get { return LC.L("Use this option to set the number of concurrent FileDecompressor processes used during restore. A FileDecompressor processes one volume at a time, and increasing the number of FileDecompressors may improve restore performance if the bottleneck is decompression. The default value is 8."); } }
+        public static string RestoreFiledecryptersShort { get { return LC.L("Number of concurrent FileDecrypter processes used during restore"); } }
+        public static string RestoreFiledecryptersLong { get { return LC.L("Use this option to set the number of concurrent FileDecrypter processes used during restore. A FileDecrypter processes one volume at a time, and increasing the number of FileDecrypters may improve restore performance if the bottleneck is decryption. The default value is 8."); } }
+
     }
 
     internal static class Common

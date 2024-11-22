@@ -325,26 +325,19 @@ namespace Duplicati.Library.Main.Operation
             CreateDirectoryStructure(database, m_options, m_result);
             database.SetResult(m_result);
 
-            // TODO move to Options
-            const int
-                file_processors = 8,
-                volume_downloaders = 1,
-                volume_decrypters = 8,
-                volume_decompressors = 8;
-
             using (new ChannelScope())
             {
                 // Create the channels between BlockManager and FileProcessor
-                var fileprocessor_requests = new Channel<Restore.BlockRequest>[file_processors].Select(_ => ChannelManager.CreateChannel<Restore.BlockRequest>(buffersize:Restore.Channels.bufferSize)).ToArray();
-                var fileprocessor_responses = new Channel<byte[]>[file_processors].Select(_ => ChannelManager.CreateChannel<byte[]>(buffersize:Restore.Channels.bufferSize)).ToArray();
+                var fileprocessor_requests = new Channel<Restore.BlockRequest>[m_options.RestoreFileProcessors].Select(_ => ChannelManager.CreateChannel<Restore.BlockRequest>(buffersize:Restore.Channels.bufferSize)).ToArray();
+                var fileprocessor_responses = new Channel<byte[]>[m_options.RestoreFileProcessors].Select(_ => ChannelManager.CreateChannel<byte[]>(buffersize:Restore.Channels.bufferSize)).ToArray();
 
                 // Create the process network
                 var filelister = Restore.FileLister.Run(database, m_result);
-                var fileprocessors = Enumerable.Range(0, file_processors).Select(i => Restore.FileProcessor.Run(database, fileprocessor_requests[i], fileprocessor_responses[i], m_result, m_options)).ToArray();
+                var fileprocessors = Enumerable.Range(0, m_options.RestoreFileProcessors).Select(i => Restore.FileProcessor.Run(database, fileprocessor_requests[i], fileprocessor_responses[i], m_result, m_options)).ToArray();
                 var blockmanager = Restore.BlockManager.Run(database, m_options, fileprocessor_requests, fileprocessor_responses);
-                var volumedownloaders = Enumerable.Range(0, volume_downloaders).Select(i => Restore.VolumeDownloader.Run(database, backend, m_options, m_result)).ToArray();
-                var volumedecrypters = Enumerable.Range(0, volume_decrypters).Select(i => Restore.VolumeDecrypter.Run(m_result)).ToArray();
-                var volumedecompressors = Enumerable.Range(0, volume_decompressors).Select(i => Restore.VolumeDecompressor.Run(m_options, m_result)).ToArray();
+                var volumedownloader = Restore.VolumeDownloader.Run(database, backend, m_options, m_result);
+                var volumedecrypters = Enumerable.Range(0, m_options.RestoreVolumeDecrypters).Select(i => Restore.VolumeDecrypter.Run(m_result)).ToArray();
+                var volumedecompressors = Enumerable.Range(0, m_options.RestoreVolumeDecompressors).Select(i => Restore.VolumeDecompressor.Run(m_options, m_result)).ToArray();
 
                 // Wait for the network to complete
                 Task[] all =
@@ -352,7 +345,7 @@ namespace Duplicati.Library.Main.Operation
                         filelister,
                         ..fileprocessors,
                         blockmanager,
-                        ..volumedownloaders,
+                        volumedownloader,
                         ..volumedecrypters,
                         ..volumedecompressors
                     ];

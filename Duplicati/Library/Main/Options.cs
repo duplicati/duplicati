@@ -99,6 +99,21 @@ namespace Duplicati.Library.Main
         private const float DEFAULT_RESTORE_CACHE_EVICT = 0.5f;
 
         /// <summary>
+        /// The default value for the number of file processors during restore
+        /// </summary>
+        private const int DEFAULT_RESTORE_FILE_PROCESSORS = 8;
+
+        /// <summary>
+        /// The default value for the number of volume decryptors during restore
+        /// </summary>
+        private const int DEFAULT_RESTORE_VOLUME_DECRYPTORS = 8;
+
+        /// <summary>
+        /// The default value for the number of volume decompressors during restore
+        /// </summary>
+        private const int DEFAULT_RESTORE_VOLUME_DECOMPRESSORS = 8;
+
+        /// <summary>
         /// An enumeration that describes the supported strategies for an optimization
         /// </summary>
         public enum OptimizationStrategy
@@ -436,6 +451,9 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("restore-cache-max", CommandLineArgument.ArgumentType.Size, Strings.Options.RestoreCacheMaxShort, Strings.Options.RestoreCacheMaxLong, "8G"),
                     new CommandLineArgument("restore-cache-evict", CommandLineArgument.ArgumentType.Decimal, Strings.Options.RestoreCacheEvictShort, Strings.Options.RestoreCacheEvictLong, "0.5"),
                     new CommandLineArgument("restore-legacy", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RestoreLegacyShort, Strings.Options.RestoreLegacyLong, "false"),
+                    new CommandLineArgument("restore-fileprocessors", CommandLineArgument.ArgumentType.Integer, Strings.Options.RestoreFileprocessorsShort, Strings.Options.RestoreFileprocessorsLong, "8"),
+                    new CommandLineArgument("restore-filedecompressors", CommandLineArgument.ArgumentType.Integer, Strings.Options.RestoreFiledecompressorsShort, Strings.Options.RestoreFiledecompressorsLong, "8"),
+                    new CommandLineArgument("restore-filedecrypters", CommandLineArgument.ArgumentType.Integer, Strings.Options.RestoreFiledecryptersShort, Strings.Options.RestoreFiledecryptersLong, "8"),
                 });
 
                 return lst;
@@ -2061,6 +2079,60 @@ namespace Duplicati.Library.Main
         public bool RestoreLegacy
         {
             get { return Library.Utility.Utility.ParseBoolOption(m_options, "restore-legacy"); }
+        }
+
+        /// <summary>
+        /// Gets the number of file processors to use in the restore process
+        /// </summary>
+        public int RestoreFileProcessors
+        {
+            get
+            {
+                string v;
+                if (!m_options.TryGetValue("restore-file-processors", out v))
+                    v = null;
+
+                if (string.IsNullOrEmpty(v))
+                    return DEFAULT_RESTORE_FILE_PROCESSORS;
+                else
+                    return int.Parse(v);
+            }
+        }
+
+        /// <summary>
+        /// Gets the number of volume decrypters to use in the restore process
+        /// </summary>
+        public int RestoreVolumeDecrypters
+        {
+            get
+            {
+                string v;
+                if (!m_options.TryGetValue("restore-volume-decrypters", out v))
+                    v = null;
+
+                if (string.IsNullOrEmpty(v))
+                    return DEFAULT_RESTORE_VOLUME_DECRYPTORS;
+                else
+                    return int.Parse(v);
+            }
+        }
+
+        /// <summary>
+        /// Gets the number of volume decompressors to use in the restore process
+        /// </summary>
+        public int RestoreVolumeDecompressors
+        {
+            get
+            {
+                string v;
+                if (!m_options.TryGetValue("restore-volume-decompressors", out v))
+                    v = null;
+
+                if (string.IsNullOrEmpty(v))
+                    return DEFAULT_RESTORE_VOLUME_DECOMPRESSORS;
+                else
+                    return int.Parse(v);
+            }
         }
 
         /// <summary>
