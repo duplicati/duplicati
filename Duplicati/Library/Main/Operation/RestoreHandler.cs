@@ -142,7 +142,6 @@ namespace Duplicati.Library.Main.Operation
             db?.Dispose();
             tmpdb?.Dispose();
 
-            // TODO License
             // TODO Documentation
             // TODO Options
         }
