@@ -51,6 +51,9 @@ namespace Duplicati.Library.Main.Operation.Restore
                         // TODO consistent argument ordering.
                         var missing_blocks = await VerifyTargetBlocks(file, blocks, filehasher, blockhasher, options, results);
 
+                        if (missing_blocks.Count == 0)
+                            continue;
+
                         long bytes_written = 0;
 
                         if (options.UseLocalBlocks && missing_blocks.Count > 0)
