@@ -21,6 +21,15 @@
 
 namespace Duplicati.Library.Main.Operation.Restore
 {
+
+    /// <summary>
+    /// Represents a block request that the `VolumeDownloader` process will use to download a block from the backend.
+    /// </summary>
+    /// <param name="blockID">The block ID in the database.</param>
+    /// <param name="blockOffset">The offset in blocks this block represents in the target file.</param>
+    /// <param name="blockHash">The hash of the block.</param>
+    /// <param name="blockSize">The size of the block.</param>
+    /// <param name="volumeID">The ID of the volume in which the block is stored remotely.</param>
     public class BlockRequest(long blockID, long blockOffset, string blockHash, long blockSize, long volumeID)
     { // Total = 76 bytes
         public long BlockID { get; } = blockID;
@@ -29,4 +38,5 @@ namespace Duplicati.Library.Main.Operation.Restore
         public long BlockSize { get; } = blockSize;
         public long VolumeID { get; } = volumeID;
     }
+
 }

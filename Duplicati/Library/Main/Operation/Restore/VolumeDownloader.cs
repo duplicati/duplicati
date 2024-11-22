@@ -29,8 +29,15 @@ using static Duplicati.Library.Main.BackendManager;
 
 namespace Duplicati.Library.Main.Operation.Restore
 {
+
+    /// <summary>
+    /// Process that starts the download of the requested volumes. It also keeps a reference to the downloaded volumes, so that consecutive requests for the same volume can be served from the cache.
+    /// </summary>
     internal class VolumeDownloader
     {
+        /// <summary>
+        /// The log tag for this class.
+        /// </summary>
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<VolumeDownloader>();
 
         public static Task Run(LocalRestoreDatabase db, BackendManager backend, Options options, RestoreResults results)
@@ -45,15 +52,20 @@ namespace Duplicati.Library.Main.Operation.Restore
             {
                 try
                 {
+                    // Cache for the downloaded volumes
                     Dictionary<long, IDownloadWaitHandle> cache = [];
+
+                    // Prepare the command to get the volume information
                     using var cmd = db.Connection.CreateCommand();
                     cmd.CommandText = "SELECT Name, Size, Hash FROM RemoteVolume WHERE ID = ?";
                     cmd.AddParameter();
 
                     while (true)
                     {
+                        // Get the block request from the `BlockManager` process.
                         var block_request = await self.Input.ReadAsync();
 
+                        // Check if the volume is already in the cache, if not, download it.
                         if (!cache.TryGetValue(block_request.VolumeID, out IDownloadWaitHandle f))
                         {
                             try
@@ -63,7 +75,6 @@ namespace Duplicati.Library.Main.Operation.Restore
                                 f = backend.GetAsync(volume_name, volume_size, volume_hash);
                                 cache.Add(block_request.VolumeID, f);
                                 // TODO Auto evict and delete tmp files if their references have been reached.
-                                // TODO Also check if another local file already have the block, and if so, fetch it and shortcut the process network by delivering it straight to the BlockManager.
                             }
                             catch (Exception)
                             {
@@ -75,6 +86,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                             }
                         }
 
+                        // Pass the download handle (which may or may not have downloaded already) to the `VolumeDecrypter` process.
                         await self.Output.WriteAsync((block_request, f));
                     }
                 }
@@ -90,4 +102,5 @@ namespace Duplicati.Library.Main.Operation.Restore
             });
         }
     }
+
 }

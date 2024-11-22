@@ -195,6 +195,11 @@ namespace Duplicati.Library.Main.Database
                 return self.ExecuteReader();
         }
 
+        /// <summary>
+        /// Executes the command and returns an enumerable of data readers.
+        /// </summary>
+        /// <param name="self">The database command to execute.</param>
+        /// <returns>An enumerable of data readers.</returns>
         public static IEnumerable<System.Data.IDataReader> ExecuteReaderEnumerable(this System.Data.IDbCommand self)
         {
             using var rd = self.ExecuteReader();
@@ -202,6 +207,13 @@ namespace Duplicati.Library.Main.Database
                 yield return rd;
         }
 
+        /// <summary>
+        /// Executes the given command string `cmd` on the given database command `self` with the given values `values` and returns an enumerable of data readers.
+        /// </summary>
+        /// <param name="self">The database command to execute on.</param>
+        /// <param name="cmd">The command string to execute.</param>
+        /// <param name="values">The values that the command string should be parameterized with.</param>
+        /// <returns></returns>
         public static IEnumerable<System.Data.IDataReader> ExecuteReaderEnumerable(this System.Data.IDbCommand self, string cmd, params object[] values)
         {
             using var rd = ExecuteReader(self, cmd, values);

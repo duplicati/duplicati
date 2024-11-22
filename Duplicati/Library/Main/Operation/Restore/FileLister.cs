@@ -24,15 +24,18 @@ using System.Linq;
 using System.Threading.Tasks;
 using CoCoL;
 using Duplicati.Library.Main.Database;
-using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Main.Operation.Restore
 {
+
+    /// <summary>
+    /// Process that holds the files that this particular restore operation needs to restore.
+    /// </summary>
     internal class FileLister
     {
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<FileLister>();
 
-        public static Task Run(LocalRestoreDatabase db, BackendManager backend, IFilter filter, Options options, RestoreResults result)
+        public static Task Run(LocalRestoreDatabase db, RestoreResults result)
         {
             return AutomationExtensions.RunTask(
             new
@@ -46,14 +49,11 @@ namespace Duplicati.Library.Main.Operation.Restore
                     var files = db.GetFilesToRestore(true).OrderByDescending(x => x.Length).ToArray();
 
                     result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_DownloadingRemoteFiles);
-                    // No more touching result - now only the FileProcessor updates, which locks.
 
-                    // TODO Prioritize the files to restore.
                     foreach (var file in files)
                     {
                         await self.Output.WriteAsync(file);
                     }
-                    // TODO Maybe use a heap to manage the priority queue if it changes during runtime?
                 }
                 catch (RetiredException)
                 {
@@ -67,4 +67,5 @@ namespace Duplicati.Library.Main.Operation.Restore
             });
         }
     }
+
 }

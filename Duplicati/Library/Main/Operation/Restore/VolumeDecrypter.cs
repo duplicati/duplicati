@@ -26,6 +26,10 @@ using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Main.Operation.Restore
 {
+
+    /// <summary>
+    /// Process that decrypts the volumes that the `VolumeDownloader` process has downloaded.
+    /// </summary>
     internal class VolumeDecrypter
     {
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<VolumeDecrypter>();
@@ -44,8 +48,10 @@ namespace Duplicati.Library.Main.Operation.Restore
                 {
                     while (true)
                     {
-
+                        // Get the block request and volume from the `VolumeDownloader` process.
                         var (block_request, volume) = await self.Input.ReadAsync();
+
+                        // Trigger the download, which will also decrypt the volume.
                         TempFile f = null;
                         try
                         {
@@ -60,6 +66,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                             throw;
                         }
 
+                        // Pass the decrypted volume to the `VolumeDecompressor` process.
                         await self.Output.WriteAsync((block_request, f));
                     }
                 }
@@ -75,4 +82,5 @@ namespace Duplicati.Library.Main.Operation.Restore
             });
         }
     }
+
 }

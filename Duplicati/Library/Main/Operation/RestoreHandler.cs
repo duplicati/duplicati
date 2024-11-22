@@ -142,7 +142,6 @@ namespace Duplicati.Library.Main.Operation
             db?.Dispose();
             tmpdb?.Dispose();
 
-            // TODO Documentation
             // TODO Options
         }
 
@@ -295,20 +294,30 @@ namespace Duplicati.Library.Main.Operation
             }
         }
 
+        /// <summary>
+        /// Perform the restore operation.
+        /// This is the new implementation, which utilizes a CSP network of processes to perform the restore.
+        /// </summary>
+        /// <param name="database">The database containing information about the restore.</param>
+        /// <param name="filter">The filter of which files to restore.</param>
         private void DoRunNew(LocalRestoreDatabase database, Library.Utility.IFilter filter)
         {
+            // Perform initial setup
             Utility.UpdateOptionsFromDb(database, m_options);
             Utility.VerifyOptionsAndUpdateDatabase(database, m_options);
 
+            // Open the backend and metadata storage
             using var backend = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, database);
             using var metadatastorage = new RestoreHandlerMetadataStorage();
 
+            // Verify the backend if necessary
             if (!m_options.NoBackendverification)
             {
                 m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_PreRestoreVerify);
                 FilelistProcessor.VerifyRemoteList(backend, m_options, database, m_result.BackendWriter, false, null);
             }
 
+            // Prepare the block and file list and create the directory structure
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_CreateFileList);
             PrepareBlockAndFileList(database, m_options, filter, m_result);
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_CreateTargetFolders);
@@ -324,19 +333,20 @@ namespace Duplicati.Library.Main.Operation
 
             using (new ChannelScope())
             {
+                // Create the channels between BlockManager and FileProcessor
                 var fileprocessor_requests = new Channel<Restore.BlockRequest>[file_processors].Select(_ => ChannelManager.CreateChannel<Restore.BlockRequest>(buffersize:Restore.Channels.bufferSize)).ToArray();
                 var fileprocessor_responses = new Channel<byte[]>[file_processors].Select(_ => ChannelManager.CreateChannel<byte[]>(buffersize:Restore.Channels.bufferSize)).ToArray();
 
-                Task[] all;
-                {
-                    var filelister = Restore.FileLister.Run(database, backend, filter, m_options, m_result);
+                // Create the process network
+                var filelister = Restore.FileLister.Run(database, m_result);
                     var fileprocessors = Enumerable.Range(0, file_processors).Select(i => Restore.FileProcessor.Run(database, fileprocessor_requests[i], fileprocessor_responses[i], m_result, m_options)).ToArray();
                     var blockmanager = Restore.BlockManager.Run(database, fileprocessor_requests, fileprocessor_responses);
                     var volumedownloaders = Enumerable.Range(0, volume_downloaders).Select(i => Restore.VolumeDownloader.Run(database, backend, m_options, m_result)).ToArray();
                     var volumedecrypters = Enumerable.Range(0, volume_decrypters).Select(i => Restore.VolumeDecrypter.Run(m_result)).ToArray();
                     var volumedecompressors = Enumerable.Range(0, volume_decompressors).Select(i => Restore.VolumeDecompressor.Run(m_options, m_result)).ToArray();
 
-                    all =
+                // Wait for the network to complete
+                Task[] all =
                         [
                             filelister,
                             ..fileprocessors,
@@ -345,9 +355,7 @@ namespace Duplicati.Library.Main.Operation
                             ..volumedecrypters,
                             ..volumedecompressors
                         ];
-
                     Task.WhenAll(all).Wait();
-                }
             }
 
             // Apply metadata
@@ -359,6 +367,7 @@ namespace Duplicati.Library.Main.Operation
 
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_PostRestoreVerify);
 
+            // If any errors occurred, log them
             if (m_result.BrokenRemoteFiles.Count > 0 || m_result.BrokenLocalFiles.Count > 0)
             {
                 var nl = Environment.NewLine;
@@ -376,10 +385,17 @@ namespace Duplicati.Library.Main.Operation
             database.DropRestoreTable();
             backend.WaitForComplete(database, null);
 
+            // Report that the restore is complete
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_Complete);
             m_result.EndTime = DateTime.UtcNow;
         }
 
+        /// <summary>
+        /// Perform the restore operation.
+        /// This is the legacy implementation, which performs the restore in a single thread. Kept as in case the new implementation fails.
+        /// </summary>
+        /// <param name="database">The database containing information about the restore.</param>
+        /// <param name="filter">The filter of which files to restore.</param>
         private void DoRun(LocalRestoreDatabase database, Library.Utility.IFilter filter)
         {
             //In this case, we check that the remote storage fits with the database.

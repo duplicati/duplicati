@@ -30,6 +30,15 @@ using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Main.Operation.Restore
 {
+
+    /// <summary>
+    /// Process that handles each file that needs to be restored. It starts by
+    /// identifying the blocks that need to be restored. Then it verifies the
+    /// which of the target file blocks are missing. Then it checks whether it
+    /// can use local blocks to restore the file. Finally, it restores the file
+    /// by downloading the missing blocks and writing them to the target file.
+    /// It also verifies the file hash and truncates the file if necessary.
+    /// </summary>
     internal class FileProcessor
     {
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<FileProcessor>();
@@ -60,8 +69,10 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                     while (true)
                     {
+                        // Get the next file to restore.
                         var file = await self.Input.ReadAsync();
 
+                        // Get information about the blocks for the file
                         cmd.SetParameterValue(0, file.BlocksetID);
                         var blocks = cmd.ExecuteReaderEnumerable()
                             .Select((b, i) =>
@@ -70,17 +81,18 @@ namespace Duplicati.Library.Main.Operation.Restore
                             .ToArray();
 
                         // TODO consistent argument ordering.
+                        // Verify the target file blocks that may already exist.
                         var missing_blocks = await VerifyTargetBlocks(file, blocks, filehasher, blockhasher, options, results);
 
                         if (missing_blocks.Count == 0)
-                            // Hard crash
-                            Environment.Exit(1);
-                            //continue;
+                            // No blocks are missing, so the file is already restored.
+                            continue;
 
                         long bytes_written = 0;
 
                         if (options.UseLocalBlocks && missing_blocks.Count > 0)
                         {
+                            // Verify the local blocks at the original restore path that may be used to restore the file.
                             var (bw, new_missing_blocks) = await VerifyLocalBlocks(file, missing_blocks, blocks.Length, filehasher, blockhasher, options, results);
                             bytes_written = bw;
                             missing_blocks = new_missing_blocks;
@@ -112,8 +124,10 @@ namespace Duplicati.Library.Main.Operation.Restore
                             FileStream fs = null;
                             try
                             {
+                                // Open the target file
                                 if (options.Dryrun)
                                 {
+                                    // If dryrun, open the file for read only to verify the file hash.
                                     if (System.IO.File.Exists(file.Path))
                                     {
                                         fs = new System.IO.FileStream(file.Path, System.IO.FileMode.Open, System.IO.FileAccess.Read);
@@ -125,6 +139,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                                 }
 
                                 // TODO burst should be an option and should relate to the channel depth
+                                // Burst the block requests to speed up the restore
                                 int burst = 8;
                                 int j = 0;
                                 for (int i = 0; i < (int) Math.Min(missing_blocks.Count, burst); i++)
@@ -133,36 +148,38 @@ namespace Duplicati.Library.Main.Operation.Restore
                                 }
                                 for (int i = 0; i < blocks.Length; i++)
                                 {
+                                    // Each response block is not verified against the block hash, as the processes downloading the blocks should do that.
                                     if (j < missing_blocks.Count && missing_blocks[j].BlockOffset == i)
                                     {
+                                        // Read the block from the response and issue a new request, if more blocks are missing
                                         var data = await block_response.ReadAsync();
                                         if (j < missing_blocks.Count - burst)
                                         {
                                             await block_request.WriteAsync(missing_blocks[j + burst]);
                                         }
+
+                                        // Hash the block to verify the file hash
                                         filehasher.TransformBlock(data, 0, data.Length, data, 0);
                                         if (options.Dryrun)
                                         {
+                                            // Simulate writing the block
                                             fs.Seek(fs.Position + blocks[i].BlockSize, System.IO.SeekOrigin.Begin);
                                         }
                                         else
                                         {
+                                            // Write the block to the file
                                             await fs.WriteAsync(data);
                                         }
+
+                                        // Keep track of metrics
                                         bytes_written += data.Length;
                                         j++;
                                     }
                                     else
                                     {
-                                        // Read the block to verify the file hash
+                                        // No more blocks are missing, so read the rest of the blocks to verify the file hash.
                                         var data = new byte[blocks[i].BlockSize];
                                         var read = await fs.ReadAsync(data, 0, data.Length);
-                                        // TODO the earlier step should have checked this block.
-                                        //var bhash = blockhasher.ComputeHash(data, 0, data.Length);
-                                        //if (Convert.ToBase64String(bhash) != blocks[i].BlockHash)
-                                        //{
-                                        //    Logging.Log.WriteWarningMessage(LOGTAG, "InvalidBlock", null, $"Invalid block detected for block index {i} {blocks[i].BlockID} in volume {blocks[i].VolumeID}, expected hash: {blocks[i].BlockHash}, actual hash: {Convert.ToBase64String(bhash)}");
-                                        //}
                                         filehasher.TransformBlock(data, 0, read, data, 0);
                                     }
                                 }
@@ -172,6 +189,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                                     Logging.Log.WriteDryrunMessage(LOGTAG, "DryrunRestore", @$"Would have restored {bytes_written} bytes of ""{file.Path}""");
                                 }
 
+                                // Verify the file hash
                                 filehasher.TransformFinalBlock([], 0, 0);
                                 if (Convert.ToBase64String(filehasher.Hash) != file.Hash)
                                 {
@@ -179,6 +197,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                                     throw new Exception("File hash mismatch");
                                 }
 
+                                // Truncate the file if it is larger than the expected size.
                                 if (fs?.Length > file.Length)
                                 {
                                     if (options.Dryrun)
@@ -205,6 +224,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                             }
                         }
 
+                        // Keep track of the restored files and their sizes
                         lock (results)
                         {
                             results.RestoredFiles++;
@@ -229,11 +249,21 @@ namespace Duplicati.Library.Main.Operation.Restore
             });
         }
 
+        /// <summary>
+        /// Verifies the target blocks of a file that may already exist.
+        /// </summary>
+        /// <param name="file">The target file.</param>
+        /// <param name="blocks">The metadata about the blocks that make up the file.</param>
+        /// <param name="filehasher">A hasher for the file.</param>
+        /// <param name="blockhasher">A hasher for a data block.</param>
+        /// <param name="options">The Duplicati configuration options.</param>
+        /// <param name="results">The restoration results.</param>
+        /// <returns>An awaitable `Task`, which returns a collection of data blocks that are missing.</returns>
         private static async Task<List<BlockRequest>> VerifyTargetBlocks(LocalRestoreDatabase.IFileToRestore file, BlockRequest[] blocks, System.Security.Cryptography.HashAlgorithm filehasher, System.Security.Cryptography.HashAlgorithm blockhasher, Options options, RestoreResults results)
         {
-            // Check if the file exists
             List<BlockRequest> missing_blocks = [];
-            // TODO It should check both the target path and the original path, as I think the original solution might be doing this. At some point, benchmark the original without having a local copy.
+
+            // Check if the file exists
             if (System.IO.File.Exists(file.Path))
             {
                 filehasher.Initialize();
@@ -247,22 +277,27 @@ namespace Duplicati.Library.Main.Operation.Restore
                         var read = await f.ReadAsync(buffer, 0, (int)blocks[i].BlockSize);
                         if (read == blocks[i].BlockSize)
                         {
+                            // Block is present
                             filehasher.TransformBlock(buffer, 0, read, buffer, 0);
                             var blockhash = Convert.ToBase64String(blockhasher.ComputeHash(buffer, 0, read));
-                            if (blockhash != blocks[i].BlockHash)
+                            if (blockhash == blocks[i].BlockHash)
                             {
-                                missing_blocks.Add(blocks[i]);
+                                // Block matches
+                                bytes_read += read;
                             }
                             else
                             {
-                                bytes_read += read;
+                                // Block mismatch
+                                missing_blocks.Add(blocks[i]);
                             }
                         }
                         else
                         {
+                            // Block is missing
                             missing_blocks.Add(blocks[i]);
                             if (f.Position == f.Length)
                             {
+                                // No more file - the rest of the blocks are missing.
                                 missing_blocks.AddRange(blocks.Skip(i + 1));
                                 break;
                             }
@@ -277,11 +312,14 @@ namespace Duplicati.Library.Main.Operation.Restore
                     }
                 }
 
+                // If all of the individual blocks have been verified.
                 if (missing_blocks.Count == 0)
                 {
+                    // Verify the file hash
                     filehasher.TransformFinalBlock([], 0, 0);
                     if (Convert.ToBase64String(filehasher.Hash) == file.Hash)
                     {
+                        // Truncate the file if it is larger than the expected size.
                         FileInfo fi = new FileInfo(file.Path);
                         if (file.Length < fi.Length)
                         {
@@ -302,20 +340,34 @@ namespace Duplicati.Library.Main.Operation.Restore
             }
             else
             {
+                // The file doesn't exist, so all blocks are missing.
                 missing_blocks.AddRange(blocks);
             }
 
             return missing_blocks;
         }
 
+        /// <summary>
+        /// Verifies the local blocks at the original restore path that may be used to restore the file.
+        /// </summary>
+        /// <param name="file">The file to restore. Contains both the target and original paths.</param>
+        /// <param name="blocks">The collection of blocks that are currently missing.</param>
+        /// <param name="total_blocks">The total number of blocks for the file.</param>
+        /// <param name="filehasher">A hasher for the file.</param>
+        /// <param name="blockhasher">A hasher for the data block.</param>
+        /// <param name="options">The Duplicati configuration options.</param>
+        /// <param name="results">The restoration results.</param>
+        /// <returns>An awaitable `Task`, which returns a collection of data blocks that are missing.</returns>
         private static async Task<(long, List<BlockRequest>)> VerifyLocalBlocks(LocalRestoreDatabase.IFileToRestore file, List<BlockRequest> blocks, long total_blocks, System.Security.Cryptography.HashAlgorithm filehasher, System.Security.Cryptography.HashAlgorithm blockhasher, Options options, RestoreResults results)
         {
-            // Check if the file exists
             List<BlockRequest> missing_blocks = [];
-            // TODO It should check both the target path and the original path, as I think the original solution might be doing this. At some point, benchmark the original without having a local copy.
+
+            // Check if the file exists
             if (System.IO.File.Exists(file.Name))
             {
                 filehasher.Initialize();
+
+                // Open both files, as the target file is still being read to produce the overall file hash, if all the blocks are present across both the target and original files.
                 using var f_original = new System.IO.FileStream(file.Name, System.IO.FileMode.Open, System.IO.FileAccess.Read);
                 using var f_target = new System.IO.FileStream(file.Path, System.IO.FileMode.OpenOrCreate, System.IO.FileAccess.ReadWrite);
                 var buffer = new byte[options.Blocksize];
@@ -328,6 +380,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                     int read;
                     if (j < blocks.Count && blocks[j].BlockOffset == i)
                     {
+                        // The current block is a missing block
                         try
                         {
                             f_original.Seek(i * (long)options.Blocksize, System.IO.SeekOrigin.Begin);
@@ -382,6 +435,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                     }
                     else
                     {
+                        // The current block is not a missing block - read from the target file.
                         try
                         {
                             f_target.Seek(i * (long)options.Blocksize, System.IO.SeekOrigin.Begin);
@@ -401,9 +455,11 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                 if (missing_blocks.Count == 0)
                 {
+                    // No more blocks are missing, so check the file hash.
                     filehasher.TransformFinalBlock([], 0, 0);
                     if (Convert.ToBase64String(filehasher.Hash) == file.Hash)
                     {
+                        // Truncate the file if it is larger than the expected size.
                         if (file.Length < f_target.Length)
                         {
                             if (options.Dryrun)
@@ -427,13 +483,24 @@ namespace Duplicati.Library.Main.Operation.Restore
                             }
                         }
                     }
+                    else
+                    {
+                        Logging.Log.WriteErrorMessage(LOGTAG, "FileHashMismatch", null, $"File hash mismatch for {file.Path} - expected: {file.Hash}, actual: {Convert.ToBase64String(filehasher.Hash)}");
+                        lock (results)
+                        {
+                            results.BrokenLocalFiles.Add(file.Path);
+                        }
+                    }
                 }
+
                 return (bytes_written, missing_blocks);
             }
             else
             {
+                // The original file is no longer present, so all blocks are missing.
                 return (0, blocks);
             }
         }
     }
+
 }

@@ -27,8 +27,15 @@ using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Main.Operation.Restore
 {
+
+    /// <summary>
+    /// Process that decompresses the volumes that the `VolumeDecrypter` process has decrypted.
+    /// </summary>
     internal class VolumeDecompressor
     {
+        /// <summary>
+        /// The log tag for this class.
+        /// </summary>
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<VolumeDecompressor>();
 
         public static Task Run(Options options, RestoreResults results)
@@ -46,12 +53,15 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                     while (true)
                     {
+                        // Get the block request and volume from the `VolumeDecrypter` process.
                         var (block_request, volume) = await self.Input.ReadAsync();
 
+                        // Read the block from the volume.
                         byte[] buffer = new byte[block_request.BlockSize];
                         new BlockVolumeReader(options.CompressionModule, volume, options).ReadBlock(block_request.BlockHash, buffer);
-                        var hash = Convert.ToBase64String(block_hasher.ComputeHash(buffer, 0, (int)block_request.BlockSize));
 
+                        // Verify the block hash.
+                        var hash = Convert.ToBase64String(block_hasher.ComputeHash(buffer, 0, (int)block_request.BlockSize));
                         if (hash != block_request.BlockHash)
                         {
                             Logging.Log.WriteWarningMessage(LOGTAG, "InvalidBlock", null, $"Invalid block detected for block {block_request.BlockID} in volume {block_request.VolumeID}, expected hash: {block_request.BlockHash}, actual hash: {hash}");
@@ -61,6 +71,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                             }
                         }
 
+                        // Send the block to the `BlockManager` process.
                         await self.Output.WriteAsync((block_request, buffer));
                     }
                 }
@@ -76,4 +87,5 @@ namespace Duplicati.Library.Main.Operation.Restore
             });
         }
     }
+
 }

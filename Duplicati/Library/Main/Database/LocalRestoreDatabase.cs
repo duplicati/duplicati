@@ -37,6 +37,9 @@ namespace Duplicati.Library.Main.Database
         private static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(LocalRestoreDatabase));
 
         protected readonly string m_temptabsetguid = Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
+        /// <summary>
+        /// The name of the temporary table in the database, which is used to store the list of files to restore.
+        /// </summary>
         public string m_tempfiletable { get; private set; }
         protected string m_tempblocktable;
         protected string m_fileprogtable;
@@ -536,6 +539,9 @@ namespace Duplicati.Library.Main.Database
             IEnumerable<IBlockDescriptor> Blocks { get; }
         }
 
+        /// <summary>
+        /// Interface for an object describing a file to restore.
+        /// </summary>
         public interface IFileToRestore
         {
             public string Name { get; }

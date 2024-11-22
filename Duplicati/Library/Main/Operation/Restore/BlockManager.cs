@@ -31,21 +31,73 @@ using Microsoft.Extensions.Caching.Memory;
 
 namespace Duplicati.Library.Main.Operation.Restore
 {
+
+    /// <summary>
+    /// Process that manages the block requests and responses to/from the
+    /// `FileProcessor` process by caching the blocks.
+    /// </summary>
     internal class BlockManager
     {
+        /// <summary>
+        /// The log tag for this class.
+        /// </summary>
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<BlockManager>();
 
+        /// <summary>
+        /// Dictionary for data blocks that are being cached. Whenever a block
+        /// is requested, it checks if it is in the cache. If it is not, it
+        /// will request the block from the corresponding volume. The requester
+        /// will be given a `Task` that will be completed when the block is
+        /// available. The cache will also keep track of how many times a block
+        /// is requested, and only remove it from the cache when all requests
+        /// have been fulfilled. This is to ensure that the cache is not
+        /// prematurely evicted, while keeping the memory usage low. The
+        /// dictionary also keeps track of how many readers are accessing it,
+        /// and will retire the volume request channel when the last reader is
+        /// done. Once disposed, the dictionary will clean up the database
+        /// table that was used to keep track of the block counts.
+        /// </summary>
         internal class SleepableDictionary : IDisposable
         {
+            /// <summary>
+            /// Channel for submitting block requests from a volume.
+            /// </summary>
             private readonly IWriteChannel<BlockRequest> m_volume_request;
+            /// <summary>
+            /// The dictionary holding the cached blocks.
+            /// </summary>
             private readonly MemoryCache _dictionary;
+            /// <summary>
+            /// The dictionary holding the `Tasks` for each block request in flight.
+            /// </summary>
             private readonly ConcurrentDictionary<long, TaskCompletionSource<byte[]>> _waiters = new();
+            /// <summary>
+            /// The GUID for temporary tables.
+            /// </summary>
             private readonly string m_temptabsetguid = Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
+            /// <summary>
+            /// The database holding (amongst other information) information about how many of each block this restore requires.
+            /// </summary>
             private readonly LocalRestoreDatabase db;
+            /// <summary>
+            /// The command for getting the block count for a block.
+            /// </summary>
             private readonly IDbCommand m_blockcountcmd;
+            /// <summary>
+            /// The command for decrementing the block count for a block.
+            /// </summary>
             private readonly IDbCommand m_blockcountdecrcmd;
+            /// <summary>
+            /// The number of readers accessing this dictionary. Used during shutdown / cleanup.
+            /// </summary>
             private int readers = 0;
 
+            /// <summary>
+            /// Initializes a new instance of the <see cref="SleepableDictionary"/> class.
+            /// </summary>
+            /// <param name="db">The database holding information about how many of each block this restore requires.</param>
+            /// <param name="volume_request">Channel for submitting block requests from a volume.</param>
+            /// <param name="readers">Number of readers accessing this dictionary. Used during shutdown / cleanup.</param>
             public SleepableDictionary(LocalRestoreDatabase db, IWriteChannel<BlockRequest> volume_request, int readers)
             {
                 m_volume_request = volume_request;
@@ -78,21 +130,41 @@ namespace Duplicati.Library.Main.Operation.Restore
                 m_blockcountdecrcmd.AddParameter();
             }
 
+            /// <summary>
+            /// Get a block from the cache. If the block is not in the cache,
+            /// it will request the block from the volume and return a `Task`
+            /// that will be completed when the block is available.
+            /// </summary>
+            /// <param name="block_request">The requested block.</param>
+            /// <returns>A `Task` holding the data block.</returns>
             public Task<byte[]> Get(BlockRequest block_request)
             {
+                // Check if the block is already in the cache, and return it if it is.
                 if (_dictionary.TryGetValue(block_request.BlockID, out byte[] value))
                 {
                     return Task.FromResult(value);
                 }
 
+                // If the block is not in the cache, request it from the volume.
                 var tcs = new TaskCompletionSource<byte[]>();
                 tcs = _waiters.GetOrAdd(block_request.BlockID, tcs);
                 m_volume_request.WriteAsync(block_request);
                 return tcs.Task;
             }
 
+            /// <summary>
+            /// Set a block in the cache. If the block is already in the cache,
+            /// it will be replaced. If the block is not in the cache, it will
+            /// be added. If the block is no longer needed, it will be removed
+            /// from the cache. If the block is requested while it is being
+            /// removed, the requester will be given a `Task` that will be
+            /// completed when the block is available.
+            /// </summary>
+            /// <param name="key"></param>
+            /// <param name="value"></param>
             public void Set(long key, byte[] value)
             {
+                // Check whether the block is still needed.
                 m_blockcountcmd.SetParameterValue(0, key);
                 var count = m_blockcountcmd.ExecuteScalarInt64();
                 if (count > 1) {
@@ -104,14 +176,18 @@ namespace Duplicati.Library.Main.Operation.Restore
                 else if (count == 0) {
                     Logging.Log.WriteWarningMessage(LOGTAG, "BlockCountError", null, $"Block {key} has a count of 0");
                 }
+
+                // Decrement the block count.
                 m_blockcountdecrcmd.SetParameterValue(0, key);
                 m_blockcountdecrcmd.ExecuteNonQuery();
 
+                // Notify any waiters that the block is available.
                 if (_waiters.TryRemove(key, out var tcs))
                 {
                     tcs.SetResult(value);
                 }
 
+                // Compact the cache if it is too large.
                 // TODO Make this a configurable value
                 // TODO Current eviction policy evicts 50 %. Maybe make this a configurable value?
                 if (_dictionary.Count > 8 * 1024)
@@ -120,6 +196,12 @@ namespace Duplicati.Library.Main.Operation.Restore
                 }
             }
 
+            /// <summary>
+            /// Retire the dictionary. This will decrement the number of readers
+            /// accessing the dictionary, and if there are no more readers, it
+            /// will retire the volume request channel, effectively shutting
+            /// down the restore process network.
+            /// </summary>
             public void Retire()
             {
                 if (Interlocked.Decrement(ref readers) <= 0) {
@@ -127,11 +209,19 @@ namespace Duplicati.Library.Main.Operation.Restore
                 }
             }
 
+            /// <summary>
+            /// Clean up the dictionary. This will remove the database table
+            /// that was used to keep track of the block counts.
+            /// </summary>
             public void Dispose()
             {
                 db.Connection.CreateCommand().ExecuteNonQuery($@"DROP TABLE IF EXISTS ""blockcount_{m_temptabsetguid}""");
             }
 
+            /// <summary>
+            /// Cancel all pending requests. This will set an exception on all
+            /// pending requests, effectively cancelling them.
+            /// </summary>
             public void CancelAll()
             {
                 foreach (var tcs in _waiters.Values)
@@ -151,9 +241,10 @@ namespace Duplicati.Library.Main.Operation.Restore
             },
             async self =>
             {
-                // TODO at some point, this should include some kind of cache eviction policy
+                // Create a cache for the blocks,
                 using SleepableDictionary cache = new(db, self.Output, fp_requests.Length);
 
+                // The volume consumer will read blocks from the input channel (data blocks from the volumes) and store them in the cache.
                 var volume_consumer = Task.Run(async () => {
                     try
                     {
@@ -178,6 +269,8 @@ namespace Duplicati.Library.Main.Operation.Restore
                         cache.CancelAll();
                     }
                 });
+
+                // The block handlers will read block requests from the `FileProcessor`, access the cache for the blocks, and write the resulting blocks to the `FileProcessor`.
                 var block_handlers = fp_requests.Zip(fp_responses, (req, res) => Task.Run(async () => {
                     try
                     {
@@ -200,4 +293,5 @@ namespace Duplicati.Library.Main.Operation.Restore
             });
         }
     }
+
 }
