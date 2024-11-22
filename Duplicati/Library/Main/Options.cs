@@ -89,6 +89,11 @@ namespace Duplicati.Library.Main
         private const int DEFAULT_QUOTA_WARNING_THRESHOLD = 10;
 
         /// <summary>
+        /// The default value for the maximum size of the restore cache
+        /// </summary>
+        private const long DEFAULT_RESTORE_CACHE_MAX = 8L * 1024L * 1024L * 1024L;
+
+        /// <summary>
         /// An enumeration that describes the supported strategies for an optimization
         /// </summary>
         public enum OptimizationStrategy
@@ -422,6 +427,8 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("secret-provider-pattern", CommandLineArgument.ArgumentType.String, Strings.Options.SecretProviderPatternShort, Strings.Options.SecretProviderPatternLong, SecretProviderHelper.DEFAULT_PATTERN),
                     new CommandLineArgument("secret-provider-cache", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.SecretProviderCacheShort, Strings.Options.SecretProviderCacheLong, Enum.GetName(SecretProviderHelper.CachingLevel.None), null, Enum.GetNames(typeof(SecretProviderHelper.CachingLevel))),
                     new CommandLineArgument("cpu-intensity", CommandLineArgument.ArgumentType.Integer, Strings.Options.CPUIntensityShort, Strings.Options.CPUIntensityLong, "10"),
+
+                    new CommandLineArgument("restore-cache-max", CommandLineArgument.ArgumentType.Size, Strings.Options.RestoreCacheMaxShort, Strings.Options.RestoreCacheMaxLong, "8G"),
                 });
 
                 return lst;
@@ -1989,6 +1996,24 @@ namespace Duplicati.Library.Main
         private bool GetBool(string name)
         {
             return Library.Utility.Utility.ParseBoolOption(m_options, name);
+        }
+
+        /// <summary>
+        /// Gets the maximum number of data blocks to keep in the cache
+        /// </summary>
+        public long RestoreCacheMax
+        {
+            get
+            {
+                string v;
+                if (!m_options.TryGetValue("restore-cache-max", out v))
+                    v = null;
+
+                if (string.IsNullOrEmpty(v))
+                    return DEFAULT_RESTORE_CACHE_MAX;
+                else
+                    return long.Parse(v);
+            }
         }
 
         /// <summary>

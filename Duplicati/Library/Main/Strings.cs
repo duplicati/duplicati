@@ -323,6 +323,9 @@ namespace Duplicati.Library.Main.Strings
 
         public static string CPUIntensityShort { get { return LC.L("CPU intensity level"); } }
         public static string CPUIntensityLong { get { return LC.L("Set the CPU intensity level to limit CPU resource utilization. A higher number translates into a higher utilization budget. E.g. 10 would mean no restrictions. Must be an integer between 1-10."); } }
+
+        public static string RestoreCacheMaxShort { get { return LC.L("Maximum cache size for restoring files"); } }
+        public static string RestoreCacheMaxLong { get { return LC.L("Use this option to set the maximum size of the cache used for restoring files. The cache is used to store the data blocks that are downloaded from the remote storage. The default value is 8GB. It assumes that the value is divisable by the block size."); } }
     }
 
     internal static class Common

@@ -91,6 +91,10 @@ namespace Duplicati.Library.Main.Operation.Restore
             /// The number of readers accessing this dictionary. Used during shutdown / cleanup.
             /// </summary>
             private int readers = 0;
+            /// <summary>
+            /// The maximum size of the internal cache in number of blocks.
+            /// </summary>
+            private long cache_max;
 
             /// <summary>
             /// Initializes a new instance of the <see cref="SleepableDictionary"/> class.
@@ -98,7 +102,7 @@ namespace Duplicati.Library.Main.Operation.Restore
             /// <param name="db">The database holding information about how many of each block this restore requires.</param>
             /// <param name="volume_request">Channel for submitting block requests from a volume.</param>
             /// <param name="readers">Number of readers accessing this dictionary. Used during shutdown / cleanup.</param>
-            public SleepableDictionary(LocalRestoreDatabase db, IWriteChannel<BlockRequest> volume_request, int readers)
+            public SleepableDictionary(LocalRestoreDatabase db, IWriteChannel<BlockRequest> volume_request, Options options, int readers)
             {
                 m_volume_request = volume_request;
                 var cache_options = new MemoryCacheOptions();
@@ -108,7 +112,6 @@ namespace Duplicati.Library.Main.Operation.Restore
                 var cmd = db.Connection.CreateCommand();
                 cmd.ExecuteNonQuery($@"DROP TABLE IF EXISTS ""blockcount_{m_temptabsetguid}""");
                 cmd.ExecuteNonQuery($@"CREATE TEMP TABLE ""blockcount_{m_temptabsetguid}"" (BlockID INTEGER PRIMARY KEY, Count INTEGER)");
-                // TODO Ensure that it only counts the blocks that should be restored.
                 cmd.ExecuteNonQuery($@"
                     INSERT INTO ""blockcount_{m_temptabsetguid}""
                     SELECT BlockID, COUNT(*)
@@ -128,6 +131,9 @@ namespace Duplicati.Library.Main.Operation.Restore
                 m_blockcountdecrcmd = db.Connection.CreateCommand();
                 m_blockcountdecrcmd.CommandText = $@"UPDATE ""blockcount_{m_temptabsetguid}"" SET Count = Count - 1 WHERE BlockID = ?";
                 m_blockcountdecrcmd.AddParameter();
+
+                // Assumes that the RestoreCacheMax is divisable by the blocksize
+                cache_max = options.RestoreCacheMax / options.Blocksize;
             }
 
             /// <summary>
@@ -188,9 +194,8 @@ namespace Duplicati.Library.Main.Operation.Restore
                 }
 
                 // Compact the cache if it is too large.
-                // TODO Make this a configurable value
                 // TODO Current eviction policy evicts 50 %. Maybe make this a configurable value?
-                if (_dictionary.Count > 8 * 1024)
+                if (_dictionary.Count > cache_max)
                 {
                     _dictionary.Compact(0.5);
                 }
@@ -231,7 +236,7 @@ namespace Duplicati.Library.Main.Operation.Restore
             }
         }
 
-        public static Task Run(LocalRestoreDatabase db, IChannel<BlockRequest>[] fp_requests, IChannel<byte[]>[] fp_responses)
+        public static Task Run(LocalRestoreDatabase db, Options options, IChannel<BlockRequest>[] fp_requests, IChannel<byte[]>[] fp_responses)
         {
             return AutomationExtensions.RunTask(
             new
@@ -242,7 +247,7 @@ namespace Duplicati.Library.Main.Operation.Restore
             async self =>
             {
                 // Create a cache for the blocks,
-                using SleepableDictionary cache = new(db, self.Output, fp_requests.Length);
+                using SleepableDictionary cache = new(db, self.Output, options, fp_requests.Length);
 
                 // The volume consumer will read blocks from the input channel (data blocks from the volumes) and store them in the cache.
                 var volume_consumer = Task.Run(async () => {
