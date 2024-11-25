@@ -76,7 +76,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                         cmd.SetParameterValue(0, file.BlocksetID);
                         var blocks = cmd.ExecuteReaderEnumerable()
                             .Select((b, i) =>
-                                new BlockRequest(b.GetInt64(0), i, b.GetString(1), b.GetInt64(2), b.GetInt64(3))
+                                new BlockRequest(b.GetInt64(0), i, b.GetString(1), b.GetInt64(2), b.GetInt64(3), false)
                             )
                             .ToArray();
 

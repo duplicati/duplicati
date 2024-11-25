@@ -50,11 +50,11 @@ namespace Duplicati.Library.Main.Operation.Restore
             },
             async self =>
             {
+                // Cache for the downloaded volumes
+                Dictionary<long, IDownloadWaitHandle> cache = [];
+
                 try
                 {
-                    // Cache for the downloaded volumes
-                    Dictionary<long, IDownloadWaitHandle> cache = [];
-
                     // Prepare the command to get the volume information
                     using var cmd = db.Connection.CreateCommand();
                     cmd.CommandText = "SELECT Name, Size, Hash FROM RemoteVolume WHERE ID = ?";
@@ -65,6 +65,14 @@ namespace Duplicati.Library.Main.Operation.Restore
                         // Get the block request from the `BlockManager` process.
                         var block_request = await self.Input.ReadAsync();
 
+                        if (block_request.PurgeVolumeID)
+                        {
+                            var req = cache[block_request.VolumeID];
+                            cache.Remove(block_request.VolumeID);
+                            req.Wait().Dispose();
+                            continue;
+                        }
+
                         // Check if the volume is already in the cache, if not, download it.
                         if (!cache.TryGetValue(block_request.VolumeID, out IDownloadWaitHandle f))
                         {
@@ -74,7 +82,6 @@ namespace Duplicati.Library.Main.Operation.Restore
                                 var (volume_name, volume_size, volume_hash) = cmd.ExecuteReaderEnumerable().Select(x => (x.GetString(0), x.GetInt64(1), x.GetString(2))).First();
                                 f = backend.GetAsync(volume_name, volume_size, volume_hash);
                                 cache.Add(block_request.VolumeID, f);
-                                // TODO Auto evict and delete tmp files if their references have been reached.
                             }
                             catch (Exception)
                             {
@@ -93,6 +100,10 @@ namespace Duplicati.Library.Main.Operation.Restore
                 catch (RetiredException)
                 {
                     Logging.Log.WriteVerboseMessage(LOGTAG, "RetiredProcess", null, "Volume downloader retired");
+                    if (cache.Count > 0)
+                    {
+                        Logging.Log.WriteWarningMessage(LOGTAG, "RetiredProcess", null, "Volume downloader retired with cache not empty");
+                    }
                 }
                 catch (Exception ex)
                 {

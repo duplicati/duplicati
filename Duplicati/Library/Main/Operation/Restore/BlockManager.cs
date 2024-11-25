@@ -80,6 +80,10 @@ namespace Duplicati.Library.Main.Operation.Restore
             /// </summary>
             private readonly IDbCommand m_blockcountdecrcmd;
             /// <summary>
+            /// The command for decrementing the block count for a volume.
+            /// </summary>
+            private readonly IDbCommand m_volumecountdecrcmd;
+            /// <summary>
             /// The number of readers accessing this dictionary. Used during shutdown / cleanup.
             /// </summary>
             private int readers = 0;
@@ -105,9 +109,10 @@ namespace Duplicati.Library.Main.Operation.Restore
                 _dictionary = new MemoryCache(cache_options);
                 this.readers = readers;
                 this.db = db;
+
                 var cmd = db.Connection.CreateCommand();
                 cmd.ExecuteNonQuery($@"DROP TABLE IF EXISTS ""blockcount_{db.m_temptabsetguid}""");
-                cmd.ExecuteNonQuery($@"CREATE TEMP TABLE ""blockcount_{db.m_temptabsetguid}"" (BlockID INTEGER PRIMARY KEY, Count INTEGER)");
+                cmd.ExecuteNonQuery($@"CREATE TEMP TABLE ""blockcount_{db.m_temptabsetguid}"" (BlockID INTEGER PRIMARY KEY, BlockCount INTEGER)");
                 cmd.ExecuteNonQuery($@"
                     INSERT INTO ""blockcount_{db.m_temptabsetguid}""
                     SELECT BlockID, COUNT(*)
@@ -115,20 +120,79 @@ namespace Duplicati.Library.Main.Operation.Restore
                         SELECT BlockID
                         FROM BlocksetEntry
                         INNER JOIN ""{db.m_tempfiletable}"" ON BlocksetEntry.BlocksetID = ""{db.m_tempfiletable}"".BlocksetID
+                        INNER JOIN Block ON Block.ID == BlocksetEntry.BlockID
+                        WHERE Block.VolumeID IS NOT -1
                     )
                     GROUP BY BlockID
                 ");
                 cmd.ExecuteNonQuery($@"CREATE INDEX ""blockcount_{db.m_temptabsetguid}_idx"" ON ""blockcount_{db.m_temptabsetguid}"" (BlockID)");
 
-                
+                cmd.ExecuteNonQuery($@"DROP TABLE IF EXISTS ""volumecount_{db.m_temptabsetguid}""");
+                cmd.ExecuteNonQuery($@"CREATE TEMP TABLE ""volumecount_{db.m_temptabsetguid}"" (VolumeID INTEGER PRIMARY KEY, BlockCount INTEGER)");
+                cmd.ExecuteNonQuery($@"
+                    INSERT INTO ""volumecount_{db.m_temptabsetguid}""
+                    SELECT VolumeID, COUNT(*)
+                    FROM (
+                        SELECT VolumeID, BlockCount
+                        FROM Block
+                        INNER JOIN ""blockcount_{db.m_temptabsetguid}"" ON Block.ID = ""blockcount_{db.m_temptabsetguid}"".BlockID
+                    )
+                    GROUP BY VolumeID
+                ");
+                cmd.ExecuteNonQuery($@"CREATE INDEX ""volumecount_{db.m_temptabsetguid}_idx"" ON ""volumecount_{db.m_temptabsetguid}"" (VolumeID)");
 
                 m_blockcountdecrcmd = db.Connection.CreateCommand();
-                m_blockcountdecrcmd.CommandText = $@"UPDATE ""blockcount_{db.m_temptabsetguid}"" SET Count = Count - 1 WHERE BlockID = ? RETURNING Count";
+                m_blockcountdecrcmd.CommandText = $@"UPDATE ""blockcount_{db.m_temptabsetguid}"" SET BlockCount = BlockCount - 1 WHERE BlockID = ? RETURNING BlockCount";
                 m_blockcountdecrcmd.AddParameter();
+
+                m_volumecountdecrcmd = db.Connection.CreateCommand();
+                m_volumecountdecrcmd.CommandText = $@"UPDATE ""volumecount_{db.m_temptabsetguid}"" SET BlockCount = BlockCount - 1 WHERE VolumeID = ? RETURNING BlockCount";
+                m_volumecountdecrcmd.AddParameter();
 
                 // Assumes that the RestoreCacheMax is divisable by the blocksize
                 cache_max = options.RestoreCacheMax / options.Blocksize;
                 eviction_ratio = options.RestoreCacheEvict;
+            }
+
+            /// <summary>
+            /// Decrements the block counters for the block and volume, and checks
+            /// if the block is still needed. If the block is no longer needed, it
+            /// will be removed from the cache. If the volume is no longer needed,
+            /// the VolumeDownloader will be notified.
+            /// </summary>
+            /// <param name="blockRequest">The block request to check.</param>
+            /// <param name="decrement"></param>
+            private void CheckCounts(BlockRequest blockRequest)
+            {
+                lock (m_blockcountdecrcmd)
+                {
+                    // Update the block count and check whether the block is still needed.
+                    m_blockcountdecrcmd.SetParameterValue(0, blockRequest.BlockID);
+                    var count = m_blockcountdecrcmd.ExecuteScalarInt64();
+                    if (count > 0)
+                    {
+                        return;
+                    }
+                    else if (count == 0)
+                    {
+                        // Evict the block from the cache and check if the volume is no longer needed.
+                        _dictionary.Remove(blockRequest.BlockID);
+                        m_volumecountdecrcmd.SetParameterValue(0, blockRequest.VolumeID);
+                        var volcount = m_volumecountdecrcmd.ExecuteScalarInt64();
+                        if (volcount == 0)
+                        {
+                            m_volume_request.WriteAsync(new BlockRequest(-1, -1, "", -1, blockRequest.VolumeID, true));
+                        }
+                        if (volcount < 0)
+                        {
+                            Logging.Log.WriteWarningMessage(LOGTAG, "VolumeCountError", null, $"Volume {blockRequest.VolumeID} has a count below 0");
+                        }
+                    }
+                    else if (count < 0)
+                    {
+                        Logging.Log.WriteWarningMessage(LOGTAG, "BlockCountError", null, $"Block {blockRequest.BlockID} has a count below 0");
+                    }
+                }
             }
 
             /// <summary>
@@ -143,14 +207,18 @@ namespace Duplicati.Library.Main.Operation.Restore
                 // Check if the block is already in the cache, and return it if it is.
                 if (_dictionary.TryGetValue(block_request.BlockID, out byte[] value))
                 {
+                    CheckCounts(block_request);
                     return Task.FromResult(value);
                 }
 
                 // If the block is not in the cache, request it from the volume.
                 var tcs = new TaskCompletionSource<byte[]>();
-                tcs = _waiters.GetOrAdd(block_request.BlockID, tcs);
-                m_volume_request.WriteAsync(block_request);
-                return tcs.Task;
+                var new_tcs = _waiters.GetOrAdd(block_request.BlockID, tcs);
+                if (new_tcs == tcs)
+                { // We are the first to request this block
+                    m_volume_request.WriteAsync(block_request);
+                }
+                return new_tcs.Task.ContinueWith(t => { CheckCounts(block_request); return t.Result; });
             }
 
             /// <summary>
@@ -163,23 +231,10 @@ namespace Duplicati.Library.Main.Operation.Restore
             /// </summary>
             /// <param name="key"></param>
             /// <param name="value"></param>
-            public void Set(long key, byte[] value)
+            public void Set(BlockRequest blockRequest, byte[] value)
             {
-                // Update the block count and check whether the block is still needed.
-                m_blockcountdecrcmd.SetParameterValue(0, key);
-                var count = m_blockcountdecrcmd.ExecuteScalarInt64();
-                if (count > 0) {
-                    _dictionary.Set(key, value);
-                }
-                else if (count == 0) {
-                    _dictionary.Remove(key);
-                }
-                else if (count < 0) {
-                    Logging.Log.WriteWarningMessage(LOGTAG, "BlockCountError", null, $"Block {key} has a count of 0");
-                }
-
                 // Notify any waiters that the block is available.
-                if (_waiters.TryRemove(key, out var tcs))
+                if (_waiters.TryRemove(blockRequest.BlockID, out var tcs))
                 {
                     tcs.SetResult(value);
                 }
@@ -210,7 +265,37 @@ namespace Duplicati.Library.Main.Operation.Restore
             /// </summary>
             public void Dispose()
             {
-                db.Connection.CreateCommand().ExecuteNonQuery($@"DROP TABLE IF EXISTS ""blockcount_{db.m_temptabsetguid}""");
+                // Verify that the tables are empty
+                var cmd = db.Connection.CreateCommand();
+                var blockcount = cmd.ExecuteScalarInt64($@"SELECT SUM(BlockCount) FROM ""blockcount_{db.m_temptabsetguid}""");
+                var volumecount = cmd.ExecuteScalarInt64($@"SELECT SUM(BlockCount) FROM ""volumecount_{db.m_temptabsetguid}""");
+
+                if (blockcount != 0)
+                {
+                    var blocks = cmd.ExecuteReaderEnumerable($@"
+                        SELECT BlockID
+                        FROM ""blockcount_{db.m_temptabsetguid}""
+                        WHERE BlockCount > 0")
+                        .Select(x => x.GetInt64(0))
+                        .ToArray();
+                    var blockids = string.Join(", ", blocks);
+                    Logging.Log.WriteWarningMessage(LOGTAG, "BlockCountError", null, $"Block count in SleepableDictionarys block table is not zero: {blockcount}{Environment.NewLine}Blocks: {blockids}");
+                }
+
+                if (volumecount != 0)
+                {
+                    var vols = cmd.ExecuteReaderEnumerable($@"
+                        SELECT VolumeID
+                        FROM ""volumecount_{db.m_temptabsetguid}""
+                        WHERE BlockCount > 0")
+                        .Select(x => x.GetInt64(0))
+                        .ToArray();
+                    var volids = string.Join(", ", vols);
+                    Logging.Log.WriteWarningMessage(LOGTAG, "VolumeCountError", null, $"Volume count in SleepableDictionarys volume table is not zero: {volumecount}{Environment.NewLine}Volumes: {volids}");
+                }
+
+                cmd.ExecuteNonQuery($@"DROP TABLE IF EXISTS ""blockcount_{db.m_temptabsetguid}""");
+                cmd.ExecuteNonQuery($@"DROP TABLE IF EXISTS ""volumecount_{db.m_temptabsetguid}""");
             }
 
             /// <summary>
@@ -246,7 +331,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                         while (true)
                         {
                             var (block_request, data) = await self.Input.ReadAsync();
-                            cache.Set(block_request.BlockID, data);
+                            cache.Set(block_request, data);
                         }
                     }
                     catch (RetiredException)
