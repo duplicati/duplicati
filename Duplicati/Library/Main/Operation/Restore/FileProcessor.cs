@@ -81,7 +81,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                             .ToArray();
 
                         // Verify the target file blocks that may already exist.
-                        var missing_blocks = await VerifyTargetBlocks(file, blocks, filehasher, blockhasher, options, results);
+                        var missing_blocks = await VerifyTargetBlocks(file, blocks, filehasher, blockhasher, options, results, block_request);
 
                         if (missing_blocks.Count == 0)
                             // No blocks are missing, so the file is already restored.
@@ -92,12 +92,12 @@ namespace Duplicati.Library.Main.Operation.Restore
                         if (options.UseLocalBlocks && missing_blocks.Count > 0)
                         {
                             // Verify the local blocks at the original restore path that may be used to restore the file.
-                            var (bw, new_missing_blocks) = await VerifyLocalBlocks(file, missing_blocks, blocks.Length, filehasher, blockhasher, options, results);
+                            var (bw, new_missing_blocks) = await VerifyLocalBlocks(file, missing_blocks, blocks.Length, filehasher, blockhasher, options, results, block_request);
                             bytes_written = bw;
                             missing_blocks = new_missing_blocks;
                         }
 
-                        if (blocks.Length == 1 && blocks[0].BlockSize == 0)
+                        if (missing_blocks.Count == 1 && missing_blocks[0].BlockSize == 0)
                         {
                             if (options.Dryrun)
                             {
@@ -108,6 +108,8 @@ namespace Duplicati.Library.Main.Operation.Restore
                                 // Create an empty file, or truncate to 0
                                 using var fs = new System.IO.FileStream(file.Path, System.IO.FileMode.OpenOrCreate, System.IO.FileAccess.Write, System.IO.FileShare.None);
                                 fs.SetLength(0);
+                                blocks[0].CacheDecrEvict = true;
+                                await block_request.WriteAsync(blocks[0]);
                             }
                         }
                         else if (missing_blocks.Count > 0)
@@ -257,7 +259,7 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// <param name="options">The Duplicati configuration options.</param>
         /// <param name="results">The restoration results.</param>
         /// <returns>An awaitable `Task`, which returns a collection of data blocks that are missing.</returns>
-        private static async Task<List<BlockRequest>> VerifyTargetBlocks(LocalRestoreDatabase.IFileToRestore file, BlockRequest[] blocks, System.Security.Cryptography.HashAlgorithm filehasher, System.Security.Cryptography.HashAlgorithm blockhasher, Options options, RestoreResults results)
+        private static async Task<List<BlockRequest>> VerifyTargetBlocks(LocalRestoreDatabase.IFileToRestore file, BlockRequest[] blocks, System.Security.Cryptography.HashAlgorithm filehasher, System.Security.Cryptography.HashAlgorithm blockhasher, Options options, RestoreResults results, IChannel<BlockRequest> block_request)
         {
             List<BlockRequest> missing_blocks = [];
 
@@ -282,6 +284,8 @@ namespace Duplicati.Library.Main.Operation.Restore
                             {
                                 // Block matches
                                 bytes_read += read;
+                                blocks[i].CacheDecrEvict = true;
+                                await block_request.WriteAsync(blocks[i]);
                             }
                             else
                             {
@@ -356,7 +360,7 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// <param name="options">The Duplicati configuration options.</param>
         /// <param name="results">The restoration results.</param>
         /// <returns>An awaitable `Task`, which returns a collection of data blocks that are missing.</returns>
-        private static async Task<(long, List<BlockRequest>)> VerifyLocalBlocks(LocalRestoreDatabase.IFileToRestore file, List<BlockRequest> blocks, long total_blocks, System.Security.Cryptography.HashAlgorithm filehasher, System.Security.Cryptography.HashAlgorithm blockhasher, Options options, RestoreResults results)
+        private static async Task<(long, List<BlockRequest>)> VerifyLocalBlocks(LocalRestoreDatabase.IFileToRestore file, List<BlockRequest> blocks, long total_blocks, System.Security.Cryptography.HashAlgorithm filehasher, System.Security.Cryptography.HashAlgorithm blockhasher, Options options, RestoreResults results, IChannel<BlockRequest> block_request)
         {
             List<BlockRequest> missing_blocks = [];
 
@@ -417,6 +421,8 @@ namespace Duplicati.Library.Main.Operation.Restore
                                 }
                                 bytes_read += read;
                                 bytes_written += read;
+                                blocks[j].CacheDecrEvict = true;
+                                await block_request.WriteAsync(blocks[j]);
                             }
                         }
                         else

@@ -120,8 +120,6 @@ namespace Duplicati.Library.Main.Operation.Restore
                         SELECT BlockID
                         FROM BlocksetEntry
                         INNER JOIN ""{db.m_tempfiletable}"" ON BlocksetEntry.BlocksetID = ""{db.m_tempfiletable}"".BlocksetID
-                        INNER JOIN Block ON Block.ID == BlocksetEntry.BlockID
-                        WHERE Block.VolumeID IS NOT -1
                     )
                     GROUP BY BlockID
                 ");
@@ -162,7 +160,7 @@ namespace Duplicati.Library.Main.Operation.Restore
             /// </summary>
             /// <param name="blockRequest">The block request to check.</param>
             /// <param name="decrement"></param>
-            private void CheckCounts(BlockRequest blockRequest)
+            public void CheckCounts(BlockRequest blockRequest)
             {
                 lock (m_blockcountdecrcmd)
                 {
@@ -358,8 +356,16 @@ namespace Duplicati.Library.Main.Operation.Restore
                         while (true)
                         {
                             var block_request = await req.ReadAsync();
-                            var data = await cache.Get(block_request);
-                            await res.WriteAsync(data);
+                            if (block_request.CacheDecrEvict)
+                            {
+                                // Target file already had the block.
+                                cache.CheckCounts(block_request);
+                            }
+                            else
+                            {
+                                var data = await cache.Get(block_request);
+                                await res.WriteAsync(data);
+                            }
                         }
                     }
                     catch (RetiredException)
