@@ -25,6 +25,7 @@ using System.Globalization;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Duplicati.Library.AutoUpdater;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Crashlog;
 using Duplicati.Library.Encryption;
@@ -555,6 +556,23 @@ namespace Duplicati.Server
                 {
                     throw new UserInformationException(Strings.Program.InvalidTimezone(commandlineOptions[WebServerLoader.OPTION_WEBSERVICE_TIMEZONE]), "InvalidTimeZone", ex);
                 }
+
+            // The database has recorded a new version
+            if (DataConnection.ApplicationSettings.UpdatedVersion != null)
+            {
+                // Check if the running version is newer than the recorded version
+                if (UpdaterManager.TryParseVersion(DataConnection.ApplicationSettings.UpdatedVersion.Version) <= UpdaterManager.TryParseVersion(UpdaterManager.SelfVersion.Version))
+                {
+                    // Clean up lingering update notifications
+                    var updateNotifications = DataConnection.GetNotifications().Where(x => x.Action == "update:new").ToList();
+                    foreach (var n in updateNotifications)
+                        DataConnection.DismissNotification(n.ID);
+
+                    // Clear up the recorded version
+                    DataConnection.ApplicationSettings.UpdatedVersion = null;
+                }
+            }
+
         }
 
         private static void CreateApplicationInstance(bool writeToConsoleOnExceptionw)
