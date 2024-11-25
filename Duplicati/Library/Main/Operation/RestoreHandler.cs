@@ -142,8 +142,6 @@ namespace Duplicati.Library.Main.Operation
 
             db?.Dispose();
             tmpdb?.Dispose();
-
-            // TODO Options
         }
 
         private static void PatchWithBlocklist(LocalRestoreDatabase database, BlockVolumeReader blocks, Options options, RestoreResults result, byte[] blockbuffer, RestoreHandlerMetadataStorage metadatastorage)

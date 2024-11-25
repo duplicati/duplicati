@@ -80,7 +80,6 @@ namespace Duplicati.Library.Main.Operation.Restore
                             )
                             .ToArray();
 
-                        // TODO consistent argument ordering.
                         // Verify the target file blocks that may already exist.
                         var missing_blocks = await VerifyTargetBlocks(file, blocks, filehasher, blockhasher, options, results);
 
