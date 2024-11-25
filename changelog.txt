@@ -1,3 +1,27 @@
+2024-11-25 - 2.1.0.100_canary_2024-11-25
+==========
+This release is a canary release intended to be used for testing.
+
+**Note that this build is using .NET8, unlike the current beta**
+See release notes from previous canary builds for details.
+
+## Detailed list of changes:
+- Fixed startup delay caused by AWS upgrade
+- Running WindowsService INSTALL will now automatically start the new service
+- Removed log messages from GPG detection
+- Fixed an issue with Agent not being able to see connection status in the UI
+- Added Downloads folder to list of special folders
+- Fixed an issue with the remote control heartbeat period
+- Re-introduced the crashlog feature
+- Updated FTP backend to be compatible with the previous FTP backend
+- Fixed an issue with quiet MSI upgrades
+- MSI will automatically attempt to stop and restart the service during install
+- Added single-click handler to TrayIcon on Linux+Windows
+- Added pCloud native backend
+- Fixed issue with DST changes causing schedule time-of-day to change
+- Fixed issue with lingering update notification
+- Added option to ignore snapshot warnings from HyperV on client-Windows
+
 2024-11-14 - 2.0.9.111_canary_2024-11-14
 ==========
 This release is a canary release intended to be used for testing.
