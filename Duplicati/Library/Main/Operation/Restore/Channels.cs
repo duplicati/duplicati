@@ -31,7 +31,6 @@ namespace Duplicati.Library.Main.Operation.Restore
     /// </summary>
     internal static class Channels
     {
-        // TODO Should maybe come from Options, or at least some global configuration file?
         /// <summary>
         /// The buffer size for the channels. The buffer size is the number of
         /// messages that can be queued up before the sender blocks.

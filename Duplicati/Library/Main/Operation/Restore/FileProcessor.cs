@@ -138,9 +138,8 @@ namespace Duplicati.Library.Main.Operation.Restore
                                     fs = new System.IO.FileStream(file.Path, System.IO.FileMode.OpenOrCreate, System.IO.FileAccess.ReadWrite, System.IO.FileShare.None);
                                 }
 
-                                // TODO burst should be an option and should relate to the channel depth
                                 // Burst the block requests to speed up the restore
-                                int burst = 8;
+                                int burst = Channels.bufferSize;
                                 int j = 0;
                                 for (int i = 0; i < (int) Math.Min(missing_blocks.Count, burst); i++)
                                 {
