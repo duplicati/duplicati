@@ -90,11 +90,11 @@ namespace Duplicati.Library.Main.Operation.Restore
             /// <summary>
             /// The maximum size of the internal cache in number of blocks.
             /// </summary>
-            private long cache_max;
+            private readonly long cache_max;
             /// <summary>
             /// The eviction ratio for the internal cache when full.
             /// </summary>
-            private float eviction_ratio;
+            private readonly float eviction_ratio;
 
             /// <summary>
             /// Initializes a new instance of the <see cref="SleepableDictionary"/> class.
