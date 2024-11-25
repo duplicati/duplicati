@@ -1,6 +1,6 @@
 <Include>
   <!-- Never change the UpgradeCode -->
-  <?define UpgradeCode="bc5a1c94-2bf2-4273-9d8f-780d162cb30e" ?>
+  <?define UpgradeCode="BC5A1C94-2BF2-4273-9D8F-780D162CB30E" ?>
 
   <!-- Remember to change product version on each install -->
   <?define ProductVersion="2.0.8.104" ?>

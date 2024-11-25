@@ -1,3 +1,31 @@
+2024-11-14 - 2.0.9.111_canary_2024-11-14
+==========
+This release is a canary release intended to be used for testing.
+This release is expected to progress to a stable release if no major blockers are found.
+
+**Unlike regular canary builds, this one has a major change in the build system, so it now runs on .NET8.**
+The builds are self-contained so Mono or .NET installations are not required to install.
+
+**Important changes from last Beta**
+- Updated to .NET8 with OS specific builds
+- Using Kestrel as the API/UI server
+- Mandatory password and new authentication scheme for server
+- Settings database version updated to v8
+- Backup database updated to v13
+
+# New tool to manage a running server
+Due to incompatibility with `duplicati_client` a new tool is included, named `Duplicati.CommandLine.ServerUtil.exe`/`duplicati-server-util`.
+
+# Upgrade from `v2.0.9.105`
+If you are upgrading from 2.0.9.105 please see the release notes from 2.0.9.106 for how to prepare the database. 
+Upgrades from other versions do not need special steps.
+
+## Detailed list of changes:
+- Added missing options to Agent commandline
+- Fixed a warning when using the S3 backend
+- Sending package type id to usage reporter
+- Reduced log output and increased heartbeat period for Agent
+
 2024-11-09 - 2.0.9.110_canary_2024-11-09
 ==========
 This release is a canary release intended to be used for testing.

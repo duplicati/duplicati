@@ -69,7 +69,11 @@
     <!-- Remove old versions -->
     <InstallExecuteSequence>
       <!-- Note: This is suboptimal, but the ref counting is not working, so we use Early REP -->
-      <RemoveExistingProducts Before="CostInitialize" />
+      <RemoveExistingProducts After="FindRelatedProducts" />
+      
+      <!-- Stop the service before install -->
+      <Custom Action="StopService" Before="RemoveExistingProducts"></Custom>
+      <Custom Action="StartService" After="InstallFiles">SERVICE_WAS_STOPPED=1</Custom>
     </InstallExecuteSequence>
 
     <Property Id="PREVIOUSVERSIONSINSTALLED" Secure="yes" />
@@ -79,5 +83,20 @@
 
     <Icon Id="DuplicatiIcon.exe" SourceFile="$(var.HarvestPath)Duplicati.Agent.exe" />
 
+    <!-- Service restart code below -->
+    <Binary Id="StopServiceScript" SourceFile="StopService.js" />
+    <Binary Id="StartServiceScript" SourceFile="StartService.js" />
+
+    <CustomAction Id="StopService"
+              BinaryKey="StopServiceScript"
+              JScriptCall="CustomAction"
+              Execute="immediate"
+              Property="SERVICE_WAS_STOPPED" />
+
+    <CustomAction Id="StartService"
+              BinaryKey="StartServiceScript"
+              JScriptCall="CustomAction"
+              Execute="deferred"              
+              Return="check" />
   </Product>
 </Wix>
