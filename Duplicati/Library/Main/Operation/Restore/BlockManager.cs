@@ -181,7 +181,8 @@ namespace Duplicati.Library.Main.Operation.Restore
                         var volcount = m_volumecountdecrcmd.ExecuteScalarInt64();
                         if (volcount == 0)
                         {
-                            m_volume_request.WriteAsync(new BlockRequest(-1, -1, "", -1, blockRequest.VolumeID, true));
+                            blockRequest.CacheDecrEvict = true;
+                            m_volume_request.WriteAsync(blockRequest);
                         }
                         if (volcount < 0)
                         {

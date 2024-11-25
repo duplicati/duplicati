@@ -65,11 +65,13 @@ namespace Duplicati.Library.Main.Operation.Restore
                         // Get the block request from the `BlockManager` process.
                         var block_request = await self.Input.ReadAsync();
 
-                        if (block_request.PurgeVolumeID)
+                        if (block_request.CacheDecrEvict)
                         {
-                            var req = cache[block_request.VolumeID];
-                            cache.Remove(block_request.VolumeID);
-                            req.Wait().Dispose();
+                            if (cache.TryGetValue(block_request.VolumeID, out IDownloadWaitHandle req))
+                            {
+                                cache.Remove(block_request.VolumeID);
+                                req.Wait().Dispose();
+                            }
                             continue;
                         }
 
