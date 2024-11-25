@@ -28,6 +28,7 @@ using Duplicati.Library.RestAPI;
 using Duplicati.Library.Encryption;
 using Duplicati.Library.DynamicLoader;
 using Duplicati.Library.Main;
+using Duplicati.Library.AutoUpdater;
 
 namespace Duplicati.Server.Database
 {
@@ -146,7 +147,7 @@ namespace Duplicati.Server.Database
             var scheduleId = GetScheduleIDsFromTags(new string[] { "ID=" + backup.ID });
             return new Serializable.ImportExportStructure()
             {
-                CreatedByVersion = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString(),
+                CreatedByVersion = UpdaterManager.SelfVersion.Version,
                 Backup = (Database.Backup)backup,
                 Schedule = (Database.Schedule)(scheduleId.Any() ? GetSchedule(scheduleId.First()) : null),
                 DisplayNames = SpecialFolders.GetSourceNames(backup)
@@ -876,8 +877,12 @@ namespace Duplicati.Server.Database
                 FIXMEGlobal.DataConnection.ApplicationSettings.UnackedWarning = notifications.Any(x => x.ID != id && x.Type == Duplicati.Server.Serialization.NotificationType.Warning);
             }
 
-            FIXMEGlobal.NotificationUpdateService.IncrementLastNotificationUpdateId();
-            FIXMEGlobal.StatusEventNotifyer.SignalNewEvent();
+            // Guard against dismissing notifications before the provider is initialized
+            if (FIXMEGlobal.Provider != null)
+            {
+                FIXMEGlobal.NotificationUpdateService.IncrementLastNotificationUpdateId();
+                FIXMEGlobal.StatusEventNotifyer.SignalNewEvent();
+            }
 
             return true;
         }

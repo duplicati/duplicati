@@ -1,3 +1,4 @@
+using Duplicati.Library.AutoUpdater;
 using Duplicati.Server.Database;
 using Duplicati.WebserverCore.Abstractions;
 using Duplicati.WebserverCore.Exceptions;
@@ -32,7 +33,7 @@ public class Changelog : IEndpointV1
             var path = Path.Combine(System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location) ?? ".", "changelog.txt");
             return new Dto.ChangelogDto()
             {
-                Version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString(),
+                Version = UpdaterManager.SelfVersion.Version,
                 Changelog = System.IO.File.ReadAllText(path)
             };
         }

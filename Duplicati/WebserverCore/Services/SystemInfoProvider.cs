@@ -1,4 +1,5 @@
 using System.Globalization;
+using Duplicati.Library.AutoUpdater;
 using Duplicati.Library.RestAPI;
 using Duplicati.Server;
 using Duplicati.Server.Serialization.Interface;
@@ -190,7 +191,7 @@ public class SystemInfoProvider : ISystemInfoProvider
     {
         APIVersion = 1,
         PasswordPlaceholder = FIXMEGlobal.PASSWORD_PLACEHOLDER,
-        ServerVersion = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString(),
+        ServerVersion = UpdaterManager.SelfVersion.Version,
         ServerVersionName = License.VersionNumbers.Version,
         ServerVersionType = Library.AutoUpdater.UpdaterManager.SelfVersion.ReleaseType,
         RemoteControlRegistrationUrl = Duplicati.Library.RemoteControl.RegisterForRemote.DefaultRegisterationUrl,
