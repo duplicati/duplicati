@@ -72,10 +72,6 @@ namespace Duplicati.Library.Main.Operation.Restore
             /// </summary>
             private readonly ConcurrentDictionary<long, TaskCompletionSource<byte[]>> _waiters = new();
             /// <summary>
-            /// The GUID for temporary tables.
-            /// </summary>
-            private readonly string m_temptabsetguid = Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
-            /// <summary>
             /// The database holding (amongst other information) information about how many of each block this restore requires.
             /// </summary>
             private readonly LocalRestoreDatabase db;
@@ -114,10 +110,10 @@ namespace Duplicati.Library.Main.Operation.Restore
                 this.readers = readers;
                 this.db = db;
                 var cmd = db.Connection.CreateCommand();
-                cmd.ExecuteNonQuery($@"DROP TABLE IF EXISTS ""blockcount_{m_temptabsetguid}""");
-                cmd.ExecuteNonQuery($@"CREATE TEMP TABLE ""blockcount_{m_temptabsetguid}"" (BlockID INTEGER PRIMARY KEY, Count INTEGER)");
+                cmd.ExecuteNonQuery($@"DROP TABLE IF EXISTS ""blockcount_{db.m_temptabsetguid}""");
+                cmd.ExecuteNonQuery($@"CREATE TEMP TABLE ""blockcount_{db.m_temptabsetguid}"" (BlockID INTEGER PRIMARY KEY, Count INTEGER)");
                 cmd.ExecuteNonQuery($@"
-                    INSERT INTO ""blockcount_{m_temptabsetguid}""
+                    INSERT INTO ""blockcount_{db.m_temptabsetguid}""
                     SELECT BlockID, COUNT(*)
                     FROM (
                         SELECT BlockID
@@ -126,14 +122,14 @@ namespace Duplicati.Library.Main.Operation.Restore
                     )
                     GROUP BY BlockID
                 ");
-                cmd.ExecuteNonQuery($@"CREATE INDEX ""blockcount_{m_temptabsetguid}_idx"" ON ""blockcount_{m_temptabsetguid}"" (BlockID)");
+                cmd.ExecuteNonQuery($@"CREATE INDEX ""blockcount_{db.m_temptabsetguid}_idx"" ON ""blockcount_{db.m_temptabsetguid}"" (BlockID)");
 
                 m_blockcountcmd = db.Connection.CreateCommand();
-                m_blockcountcmd.CommandText = $@"SELECT Count FROM ""blockcount_{m_temptabsetguid}"" WHERE BlockID = ?";
+                m_blockcountcmd.CommandText = $@"SELECT Count FROM ""blockcount_{db.m_temptabsetguid}"" WHERE BlockID = ?";
                 m_blockcountcmd.AddParameter();
 
                 m_blockcountdecrcmd = db.Connection.CreateCommand();
-                m_blockcountdecrcmd.CommandText = $@"UPDATE ""blockcount_{m_temptabsetguid}"" SET Count = Count - 1 WHERE BlockID = ?";
+                m_blockcountdecrcmd.CommandText = $@"UPDATE ""blockcount_{db.m_temptabsetguid}"" SET Count = Count - 1 WHERE BlockID = ?";
                 m_blockcountdecrcmd.AddParameter();
 
                 // Assumes that the RestoreCacheMax is divisable by the blocksize
@@ -224,7 +220,7 @@ namespace Duplicati.Library.Main.Operation.Restore
             /// </summary>
             public void Dispose()
             {
-                db.Connection.CreateCommand().ExecuteNonQuery($@"DROP TABLE IF EXISTS ""blockcount_{m_temptabsetguid}""");
+                db.Connection.CreateCommand().ExecuteNonQuery($@"DROP TABLE IF EXISTS ""blockcount_{db.m_temptabsetguid}""");
             }
 
             /// <summary>
