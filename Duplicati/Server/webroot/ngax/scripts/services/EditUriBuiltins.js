@@ -30,11 +30,12 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
     EditUriBackendConfig.templates['dropbox']     = 'templates/backends/oauth.html';
     EditUriBackendConfig.templates['sia']         = 'templates/backends/sia.html';
     EditUriBackendConfig.templates['storj']       = 'templates/backends/storj.html';
-	  EditUriBackendConfig.templates['rclone']      = 'templates/backends/rclone.html';
+    EditUriBackendConfig.templates['rclone']      = 'templates/backends/rclone.html';
     EditUriBackendConfig.templates['cos']         = 'templates/backends/cos.html';
-	  EditUriBackendConfig.templates['aliyunoss']   = 'templates/backends/aliyunoss.html';
+    EditUriBackendConfig.templates['aliyunoss']   = 'templates/backends/aliyunoss.html';
     EditUriBackendConfig.templates['e2']          = 'templates/backends/e2.html';
-
+    EditUriBackendConfig.templates['pcloud']      = 'templates/backends/pcloud.html';
+    
     EditUriBackendConfig.testers['s3'] = function(scope, callback) {
 
         if (scope.s3_server != 's3.amazonaws.com')
@@ -276,6 +277,8 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
     EditUriBackendConfig.loaders['jottacloud']  = function() { return this['oauth-base'].apply(this, arguments); };
     EditUriBackendConfig.loaders['box']         = function() { return this['oauth-base'].apply(this, arguments); };
     EditUriBackendConfig.loaders['dropbox']     = function() { return this['oauth-base'].apply(this, arguments); };
+    EditUriBackendConfig.loaders['pcloud']      = function() {
+        return this['oauth-base'].apply(this, arguments); };
 
     EditUriBackendConfig.loaders['openstack'] = function (scope) {
         if (scope.openstack_providers == null) {
@@ -333,8 +336,8 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
 
         this['oauth-base'].apply(this, arguments);
     };
-
-    // Parsers take a decomposed uri input and sets up the scope variables
+    
+        // Parsers take a decomposed uri input and sets up the scope variables
     EditUriBackendConfig.parsers['file'] = function (scope, module, server, port, path, options) {
         if (scope.Path == null && scope.Server == null) {
             var ix = scope.uri.indexOf('?');
@@ -419,8 +422,8 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
             scope.AuthID = options['--authid'];
 
         delete options['--authid'];
-
-        EditUriBackendConfig.mergeServerAndPath(scope);
+        if (module !== 'pcloud')
+            EditUriBackendConfig.mergeServerAndPath(scope);
     };
 
     EditUriBackendConfig.parsers['googledrive'] = function() { return this['oauth-base'].apply(this, arguments); };
@@ -430,7 +433,8 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
     EditUriBackendConfig.parsers['jottacloud']  = function() { return this['oauth-base'].apply(this, arguments); };
     EditUriBackendConfig.parsers['box']         = function() { return this['oauth-base'].apply(this, arguments); };
     EditUriBackendConfig.parsers['dropbox']     = function() { return this['oauth-base'].apply(this, arguments); };
-
+    EditUriBackendConfig.parsers['pcloud']      = function() { return this['oauth-base'].apply(this, arguments); };
+    
     EditUriBackendConfig.parsers['openstack'] = function (scope, module, server, port, path, options) {
         scope.openstack_domainname = options['--openstack-domain-name'];
         scope.openstack_server = scope.openstack_server_custom = options['--openstack-authuri'];
@@ -649,6 +653,20 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
         );
 
         return url;
+    };
+
+    EditUriBackendConfig.builders['pcloud'] = function (scope) {
+        var opts = {
+            'authid': scope.AuthID
+        }
+        EditUriBackendConfig.merge_in_advanced_options(scope, opts, false);
+
+        return AppUtils.format('{0}://{1}/{2}{3}',
+            scope.Backend.Key,
+            scope.Server,
+            scope.Path || '',
+            AppUtils.encodeDictAsUrl(opts)
+        );
     };
 
     EditUriBackendConfig.builders['googledrive'] = function() { return this['oauth-base'].apply(this, arguments); };
@@ -952,7 +970,17 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
     EditUriBackendConfig.validaters['cloudfiles'] = EditUriBackendConfig.validaters['ssh'];
     EditUriBackendConfig.validaters['tahoe'] = EditUriBackendConfig.validaters['ssh'];
 
+    EditUriBackendConfig.validaters['pcloud'] = function (scope, continuation) {
+        var res =
+            EditUriBackendConfig.require_server(scope) &&
+            EditUriBackendConfig.require_field(scope, 'AuthID', gettextCatalog.getString('AuthID'));
 
+        if (res)
+            EditUriBackendConfig.recommend_path(scope, function() {
+                continuation();
+            });
+    };
+    
     EditUriBackendConfig.validaters['authid-base'] = function (scope, continuation) {
         var res =
             EditUriBackendConfig.require_field(scope, 'AuthID', gettextCatalog.getString('AuthID'));
@@ -972,7 +1000,8 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
     EditUriBackendConfig.validaters['onedrive']    = EditUriBackendConfig.validaters['authid-base'];
     EditUriBackendConfig.validaters['onedrivev2']  = EditUriBackendConfig.validaters['authid-base'];
     EditUriBackendConfig.validaters['sharepoint']  = EditUriBackendConfig.validaters['authid-base'];
-
+    EditUriBackendConfig.validaters['pcloud']      = EditUriBackendConfig.validaters['pcloud'];
+    
     EditUriBackendConfig.validaters['msgroup'] = function (scope, continuation) {
 
         EditUriBackendConfig.validaters['authid-base'](scope, function () {

@@ -76,7 +76,8 @@ backupApp.service('SystemInfo', function($rootScope, $timeout, $cookies, AppServ
                 'jottacloud': null,
 				'rclone': null,
                 'cos': null,
-				'aliyunoss': null
+				'aliyunoss': null,
+                'pcloud': null
             }
         };
 

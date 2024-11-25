@@ -65,7 +65,8 @@ public static class BackendModules
         IsStorjSupported? new Backend.Storj.Storj() : null,
         new Backend.TahoeBackend(),
         new Backend.TencentCOS.COS(),
-        new Backend.WEBDAV()
+        new Backend.WEBDAV(),
+        new Backend.pCloudBackend()
     }
     .Where(x => x != null)
     .ToList();
