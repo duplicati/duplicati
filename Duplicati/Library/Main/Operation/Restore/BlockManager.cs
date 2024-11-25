@@ -76,10 +76,6 @@ namespace Duplicati.Library.Main.Operation.Restore
             /// </summary>
             private readonly LocalRestoreDatabase db;
             /// <summary>
-            /// The command for getting the block count for a block.
-            /// </summary>
-            private readonly IDbCommand m_blockcountcmd;
-            /// <summary>
             /// The command for decrementing the block count for a block.
             /// </summary>
             private readonly IDbCommand m_blockcountdecrcmd;
@@ -124,12 +120,10 @@ namespace Duplicati.Library.Main.Operation.Restore
                 ");
                 cmd.ExecuteNonQuery($@"CREATE INDEX ""blockcount_{db.m_temptabsetguid}_idx"" ON ""blockcount_{db.m_temptabsetguid}"" (BlockID)");
 
-                m_blockcountcmd = db.Connection.CreateCommand();
-                m_blockcountcmd.CommandText = $@"SELECT Count FROM ""blockcount_{db.m_temptabsetguid}"" WHERE BlockID = ?";
-                m_blockcountcmd.AddParameter();
+                
 
                 m_blockcountdecrcmd = db.Connection.CreateCommand();
-                m_blockcountdecrcmd.CommandText = $@"UPDATE ""blockcount_{db.m_temptabsetguid}"" SET Count = Count - 1 WHERE BlockID = ?";
+                m_blockcountdecrcmd.CommandText = $@"UPDATE ""blockcount_{db.m_temptabsetguid}"" SET Count = Count - 1 WHERE BlockID = ? RETURNING Count";
                 m_blockcountdecrcmd.AddParameter();
 
                 // Assumes that the RestoreCacheMax is divisable by the blocksize
@@ -171,22 +165,18 @@ namespace Duplicati.Library.Main.Operation.Restore
             /// <param name="value"></param>
             public void Set(long key, byte[] value)
             {
-                // Check whether the block is still needed.
-                m_blockcountcmd.SetParameterValue(0, key);
-                var count = m_blockcountcmd.ExecuteScalarInt64();
-                if (count > 1) {
+                // Update the block count and check whether the block is still needed.
+                m_blockcountdecrcmd.SetParameterValue(0, key);
+                var count = m_blockcountdecrcmd.ExecuteScalarInt64();
+                if (count > 0) {
                     _dictionary.Set(key, value);
                 }
-                else if (count == 1) {
+                else if (count == 0) {
                     _dictionary.Remove(key);
                 }
-                else if (count == 0) {
+                else if (count < 0) {
                     Logging.Log.WriteWarningMessage(LOGTAG, "BlockCountError", null, $"Block {key} has a count of 0");
                 }
-
-                // Decrement the block count.
-                m_blockcountdecrcmd.SetParameterValue(0, key);
-                m_blockcountdecrcmd.ExecuteNonQuery();
 
                 // Notify any waiters that the block is available.
                 if (_waiters.TryRemove(key, out var tcs))
