@@ -451,9 +451,9 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("restore-cache-max", CommandLineArgument.ArgumentType.Size, Strings.Options.RestoreCacheMaxShort, Strings.Options.RestoreCacheMaxLong, "8G"),
                     new CommandLineArgument("restore-cache-evict", CommandLineArgument.ArgumentType.Decimal, Strings.Options.RestoreCacheEvictShort, Strings.Options.RestoreCacheEvictLong, "0.5"),
                     new CommandLineArgument("restore-legacy", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RestoreLegacyShort, Strings.Options.RestoreLegacyLong, "false"),
-                    new CommandLineArgument("restore-fileprocessors", CommandLineArgument.ArgumentType.Integer, Strings.Options.RestoreFileprocessorsShort, Strings.Options.RestoreFileprocessorsLong, "8"),
-                    new CommandLineArgument("restore-filedecompressors", CommandLineArgument.ArgumentType.Integer, Strings.Options.RestoreFiledecompressorsShort, Strings.Options.RestoreFiledecompressorsLong, "8"),
-                    new CommandLineArgument("restore-filedecrypters", CommandLineArgument.ArgumentType.Integer, Strings.Options.RestoreFiledecryptersShort, Strings.Options.RestoreFiledecryptersLong, "8"),
+                    new CommandLineArgument("restore-file-processors", CommandLineArgument.ArgumentType.Integer, Strings.Options.RestoreFileprocessorsShort, Strings.Options.RestoreFileprocessorsLong, "8"),
+                    new CommandLineArgument("restore-volume-decompressors", CommandLineArgument.ArgumentType.Integer, Strings.Options.RestoreVolumeDecompressorsShort, Strings.Options.RestoreVolumeDecompressorsLong, "8"),
+                    new CommandLineArgument("restore-volume-decryptors", CommandLineArgument.ArgumentType.Integer, Strings.Options.RestoreVolumeDecryptorsShort, Strings.Options.RestoreVolumeDecryptorsLong, "8"),
                 });
 
                 return lst;
@@ -2088,8 +2088,7 @@ namespace Duplicati.Library.Main
         {
             get
             {
-                string v;
-                if (!m_options.TryGetValue("restore-file-processors", out v))
+                if (!m_options.TryGetValue("restore-file-processors", out string v))
                     v = null;
 
                 if (string.IsNullOrEmpty(v))
@@ -2106,8 +2105,7 @@ namespace Duplicati.Library.Main
         {
             get
             {
-                string v;
-                if (!m_options.TryGetValue("restore-volume-decrypters", out v))
+                if (!m_options.TryGetValue("restore-volume-decryptors", out string v))
                     v = null;
 
                 if (string.IsNullOrEmpty(v))
@@ -2124,8 +2122,7 @@ namespace Duplicati.Library.Main
         {
             get
             {
-                string v;
-                if (!m_options.TryGetValue("restore-volume-decompressors", out v))
+                if (!m_options.TryGetValue("restore-volume-decompressors", out string v))
                     v = null;
 
                 if (string.IsNullOrEmpty(v))
