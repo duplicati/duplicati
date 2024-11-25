@@ -27,7 +27,7 @@ namespace Duplicati.Library.Backend.pCloud;
 ///
 /// The all lower case is to match the JSON response from the pCloud API 
 /// </summary>
-internal record pClouCreateFolderResponse
+internal record pCloudCreateFolderResponse
 {
     /// <summary>
     /// Result code from the API call. 0 indicates success
@@ -42,5 +42,5 @@ internal record pClouCreateFolderResponse
     /// <summary>
     /// Detailed metadata about the created or existing folder
     /// </summary>
-    public PCloudFolderMetadata? metadata { get; init; } 
+    public pCloudFolderMetadata? metadata { get; init; } 
 }

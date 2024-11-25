@@ -26,7 +26,7 @@ namespace Duplicati.Library.Backend.pCloud;
 ///
 /// The all lower case is to match the JSON response from the pCloud API
 /// </summary>
-internal record PCloudFolderMetadata
+internal record pCloudFolderMetadata
 {
     /// <summary>
     /// Name of the folder

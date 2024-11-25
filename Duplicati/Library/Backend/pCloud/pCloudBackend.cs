@@ -164,7 +164,7 @@ public class pCloudBackend : IStreamingBackend
     private IEnumerable<IFileEntry> List(bool root)
     {
         if (_CachedFolderID == null && string.IsNullOrWhiteSpace(_Path) == false && root == false)
-            CreateFolderAsync(new CancellationToken()).GetAwaiter().GetResult();
+            CreateFolderAsync(CancellationToken.None).Await();
 
         ulong folderId = root ? 0 : _CachedFolderID ?? 0;
 
@@ -175,7 +175,7 @@ public class pCloudBackend : IStreamingBackend
 
         using var response = requestResources.HttpClient
             .SendAsync(requestResources.RequestMessage, HttpCompletionOption.ResponseContentRead,
-                timeoutToken.Token).ConfigureAwait(false).GetAwaiter().GetResult();
+                timeoutToken.Token).Await();
 
         response.EnsureSuccessStatusCode();
         var content = response.Content.ReadAsStringAsync(timeoutToken.Token).Result;
@@ -223,7 +223,7 @@ public class pCloudBackend : IStreamingBackend
     {
         await using var fs = File.Open(localname,
             FileMode.Open, FileAccess.Read, FileShare.Read);
-        await PutAsync(remotename, fs, cancellationToken);
+        await PutAsync(remotename, fs, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -238,7 +238,7 @@ public class pCloudBackend : IStreamingBackend
     {
         // If we don't have the folder ID cached, lets fetch it with the create folder api
         if (_CachedFolderID == null)
-            await CreateFolderAsync(cancellationToken);
+            await CreateFolderAsync(cancellationToken).ConfigureAwait(false);
 
         using var timeoutToken = new CancellationTokenSource();
         timeoutToken.CancelAfter(TimeSpan.FromSeconds(LONG_OPERATION_TIMEOUT_SECONDS));
@@ -258,9 +258,9 @@ public class pCloudBackend : IStreamingBackend
 
         using var response = await requestResources.HttpClient.SendAsync(
             requestResources.RequestMessage,
-            HttpCompletionOption.ResponseContentRead, combinedTokens.Token);
+            HttpCompletionOption.ResponseContentRead, combinedTokens.Token).ConfigureAwait(false);
 
-        var content = await response.Content.ReadAsStringAsync(combinedTokens.Token);
+        var content = await response.Content.ReadAsStringAsync(combinedTokens.Token).ConfigureAwait(false);
         var uploadResponse = JsonSerializer.Deserialize<pCloudUploadResponse>(content);
 
         if (pCloudErrorList.ErrorMessages.TryGetValue(uploadResponse.result, out var message))
@@ -303,14 +303,14 @@ public class pCloudBackend : IStreamingBackend
 
         using var response = await requestResources.HttpClient.SendAsync(
             requestResources.RequestMessage,
-            HttpCompletionOption.ResponseContentRead);
+            HttpCompletionOption.ResponseContentRead).ConfigureAwait(false);
 
         if (!response.IsSuccessStatusCode)
         {
             throw new Exception($"Failed to get download link. Status: {response.StatusCode}");
         }
 
-        var content = await response.Content.ReadAsStringAsync();
+        var content = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
         var getFileIdResponse = JsonSerializer.Deserialize<pCloudDownloadResponse>(content);
 
         if (pCloudErrorList.ErrorMessages.TryGetValue(getFileIdResponse.result, out var message))
@@ -345,7 +345,7 @@ public class pCloudBackend : IStreamingBackend
             requestResources.RequestMessage.RequestUri = new Uri(await GetFileId(remotename));
 
             await requestResources.HttpClient.DownloadFile(requestResources.RequestMessage, output, null,
-                timeoutToken.Token);
+                timeoutToken.Token).ConfigureAwait(false);
         }
         catch (HttpRequestException wex)
         {
@@ -390,11 +390,11 @@ public class pCloudBackend : IStreamingBackend
 
         using var response = requestResources.HttpClient.SendAsync(
             requestResources.RequestMessage,
-            HttpCompletionOption.ResponseContentRead, combinedTokens.Token).GetAwaiter().GetResult();
+            HttpCompletionOption.ResponseContentRead, combinedTokens.Token).Await();
 
         response.EnsureSuccessStatusCode();
 
-        var content = response.Content.ReadAsStringAsync(combinedTokens.Token).GetAwaiter().GetResult();
+        var content = response.Content.ReadAsStringAsync(combinedTokens.Token).Await();
         var deleteFileResponse = JsonSerializer.Deserialize<pCloudDeleteResponse>(content);
 
         // If no error code is matched, result was == 0 so it successfully created the folder
@@ -451,12 +451,12 @@ public class pCloudBackend : IStreamingBackend
 
         using var response = requestResources.HttpClient.SendAsync(
             requestResources.RequestMessage,
-            HttpCompletionOption.ResponseContentRead, combinedTokens.Token).GetAwaiter().GetResult();
+            HttpCompletionOption.ResponseContentRead, combinedTokens.Token).Await();
 
         response.EnsureSuccessStatusCode();
 
-        var content = response.Content.ReadAsStringAsync(combinedTokens.Token).GetAwaiter().GetResult();
-        var createFolderResponse = JsonSerializer.Deserialize<pClouCreateFolderResponse>(content);
+        var content = response.Content.ReadAsStringAsync(combinedTokens.Token).Await();
+        var createFolderResponse = JsonSerializer.Deserialize<pCloudCreateFolderResponse>(content);
 
         if (pCloudErrorList.ErrorMessages.TryGetValue(createFolderResponse.result, out var message))
             throw new Exception(message);
