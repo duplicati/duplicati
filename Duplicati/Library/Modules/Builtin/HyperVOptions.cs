@@ -38,6 +38,8 @@ namespace Duplicati.Library.Modules.Builtin
         private const string m_HyperVPathGuidRegExp = @"\%HYPERV\%\\([0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12})";
         private const string m_HyperVPathAllRegExp = @"%HYPERV%";
 
+        private const string IGNORE_CONSISTENCY_WARNING_OPTION = "hyperv-ignore-client-warning";
+
         #region IGenericModule Members
 
         public string Key
@@ -61,9 +63,10 @@ namespace Duplicati.Library.Modules.Builtin
         }
 
         public IList<Interface.ICommandLineArgument> SupportedCommands
-        {
-            get { return null; }
-        }
+            => new List<Interface.ICommandLineArgument>
+            {
+                new Interface.CommandLineArgument(IGNORE_CONSISTENCY_WARNING_OPTION, Interface.CommandLineArgument.ArgumentType.Boolean, Strings.HyperVOptions.IgnoreConsistencyWarningShort, Strings.HyperVOptions.IgnoreConsistencyWarningLong)
+            };
 
         public void Configure(IDictionary<string, string> commandlineOptions)
         {
@@ -124,7 +127,7 @@ namespace Duplicati.Library.Modules.Builtin
 
             if (paths == null || !ContainFilesForBackup(paths) || !hypervUtility.IsHyperVInstalled)
                 return changedOptions;
-            
+
             if (commandlineOptions.Keys.Contains("vss-exclude-writers"))
             {
                 var excludedWriters = commandlineOptions["vss-exclude-writers"].Split(';').Where(x => !string.IsNullOrWhiteSpace(x) && x.Trim().Length > 0).Select(x => new Guid(x)).ToArray();
@@ -135,18 +138,18 @@ namespace Duplicati.Library.Modules.Builtin
                     changedOptions["vss-exclude-writers"] = string.Join(";", excludedWriters.Where(x => x != HyperVUtility.HyperVWriterGuid));
                 }
             }
-            
+
             if (!commandlineOptions.Keys.Contains("snapshot-policy") || !commandlineOptions["snapshot-policy"].Equals("required", StringComparison.OrdinalIgnoreCase))
             {
                 Logging.Log.WriteWarningMessage(LOGTAG, "MustSetSnapshotPolicy", null, "Snapshot policy have to be set to \"required\" when backuping Hyper-V virtual machines. Changing to \"required\" to continue", Logging.LogMessageType.Warning);
                 changedOptions["snapshot-policy"] = "required";
             }
-            
-            if (!hypervUtility.IsVSSWriterSupported)
+
+            if (!hypervUtility.IsVSSWriterSupported && !Library.Utility.Utility.ParseBoolOption(commandlineOptions, IGNORE_CONSISTENCY_WARNING_OPTION))
                 Logging.Log.WriteWarningMessage(LOGTAG, "HyperVOnServerOnly", null, "This is client version of Windows. Hyper-V VSS writer is present only on Server version. Backup will continue, but will be crash consistent only in opposite to application consistent in Server version");
 
             Logging.Log.WriteInformationMessage(LOGTAG, "StartingHyperVQuery", "Starting to gather Hyper-V information");
-            hypervUtility.QueryHyperVGuestsInfo(true);          
+            hypervUtility.QueryHyperVGuestsInfo(true);
             Logging.Log.WriteInformationMessage(LOGTAG, "HyperVMachineCount", "Found {0} virtual machines on Hyper-V", hypervUtility.Guests.Count);
 
             foreach (var guest in hypervUtility.Guests)
@@ -197,7 +200,7 @@ namespace Duplicati.Library.Modules.Builtin
             var pathsForBackup = new List<string>(paths);
             var filterhandler = new Utility.FilterExpression(
                 filter.Split(new string[] { System.IO.Path.PathSeparator.ToString() }, StringSplitOptions.RemoveEmptyEntries).Where(x => x.StartsWith("-", StringComparison.Ordinal)).Select(x => x.Substring(1)).ToList());
-            
+
             foreach (var guestForBackup in guestsForBackup)
                 foreach (var pathForBackup in guestForBackup.DataPaths)
                 {
@@ -215,7 +218,7 @@ namespace Duplicati.Library.Modules.Builtin
 
             return changedOptions;
         }
-        
+
         public bool ContainFilesForBackup(string[] paths)
         {
             if (paths == null || !OperatingSystem.IsWindows())
