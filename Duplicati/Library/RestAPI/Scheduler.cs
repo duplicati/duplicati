@@ -185,25 +185,26 @@ namespace Duplicati.Server
         /// <param name="allowedDays">The days the backup is allowed to run</param>
         /// <returns>The next valid date, or throws an exception if no such date can be found</returns>
         public static DateTime GetNextValidTime(DateTime basetime, DateTime firstdate, string repetition,
-            DayOfWeek[] allowedDays)
+            DayOfWeek[] allowedDays, TimeZoneInfo timeZoneInfo)
         {
             var res = basetime;
+            var ts = Timeparser.ParseTimeSpan(repetition);
+
+            // If we move in days or more, we keep the time of day across DST changes
+            var keepTimeOfDay = ts.Hours == 0 && ts.Minutes == 0 && ts.Seconds == 0;
 
             var i = 50000;
             while (res < firstdate && i-- > 0)
-                res = Timeparser.ParseTimeInterval(repetition, res);
+                res = Timeparser.DSTAwareParseTimeInterval(repetition, res, timeZoneInfo, keepTimeOfDay);
 
             // If we arrived somewhere after the first allowed date
             if (res >= firstdate)
             {
-                var ts = Timeparser.ParseTimeSpan(repetition);
-
                 if (ts.TotalDays >= 1)
                 {
                     // We jump in days, so we pick the first valid day after firstdate
-
                     for (var n = 0; n < 8; n++)
-                        if (IsDateAllowed(res, allowedDays))
+                        if (IsDateAllowed(res, allowedDays, timeZoneInfo))
                             break;
                         else
                             res = res.AddDays(1);
@@ -212,14 +213,13 @@ namespace Duplicati.Server
                 {
                     // We jump less than a day, so we keep adding the repetition until
                     // we hit a valid day
-
                     i = 50000;
-                    while (!IsDateAllowed(res, allowedDays) && i-- > 0)
-                        res = Timeparser.ParseTimeInterval(repetition, res);
+                    while (!IsDateAllowed(res, allowedDays, timeZoneInfo) && i-- > 0)
+                        res = Timeparser.DSTAwareParseTimeInterval(repetition, res, timeZoneInfo, keepTimeOfDay);
                 }
             }
 
-            if (!IsDateAllowed(res, allowedDays) || res < firstdate)
+            if (!IsDateAllowed(res, allowedDays, timeZoneInfo) || res < firstdate)
             {
                 StringBuilder sb = new StringBuilder();
                 if (allowedDays != null)
@@ -283,6 +283,7 @@ namespace Duplicati.Server
                 // to avoid frequent db lookups
 
                 //Determine schedule list
+                var timeZoneInfo = FIXMEGlobal.DataConnection.ApplicationSettings.Timezone;
                 var lst = FIXMEGlobal.DataConnection.Schedules;
                 foreach (var sc in lst)
                 {
@@ -313,7 +314,7 @@ namespace Duplicati.Server
                                 last = DateTime.UtcNow;
                             }
 
-                            start = GetNextValidTime(start, last, sc.Repeat, sc.AllowedDays);
+                            start = GetNextValidTime(start, last, sc.Repeat, sc.AllowedDays, timeZoneInfo);
                         }
                         catch (Exception ex)
                         {
@@ -369,7 +370,7 @@ namespace Duplicati.Server
                                 start = GetNextValidTime(start,
                                     new DateTime(
                                         Math.Max(DateTime.UtcNow.AddSeconds(1).Ticks, start.AddSeconds(1).Ticks),
-                                        DateTimeKind.Utc), sc.Repeat, sc.AllowedDays);
+                                        DateTimeKind.Utc), sc.Repeat, sc.AllowedDays, timeZoneInfo);
                             }
                             catch (Exception ex)
                             {
@@ -451,14 +452,15 @@ namespace Duplicati.Server
         /// </summary>
         /// <param name="time">The time to evaluate</param>
         /// <param name="allowedDays">The allowed days</param>
+        /// <param name="timeZoneInfo">The time zone info</param>
         /// <returns>True if the backup is allowed to run, false otherwise</returns>
-        private static bool IsDateAllowed(DateTime time, DayOfWeek[] allowedDays)
+        private static bool IsDateAllowed(DateTime time, DayOfWeek[] allowedDays, TimeZoneInfo timeZoneInfo)
         {
-            var localTime = time.ToLocalTime();
             if (allowedDays == null || allowedDays.Length == 0)
                 return true;
-            else
-                return Array.IndexOf<DayOfWeek>(allowedDays, localTime.DayOfWeek) >= 0;
+
+            var localTime = TimeZoneInfo.ConvertTimeFromUtc(time, timeZoneInfo);
+            return Array.IndexOf(allowedDays, localTime.DayOfWeek) >= 0;
         }
     }
 }

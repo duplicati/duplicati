@@ -113,6 +113,16 @@
             </select>
         </div>
 
+        <div class="input mixed multiple">
+            <label for="timezone" translate>Time zone</label>
+            <select id="timezone" name="timezone" ng-model="timezone" ng-options="item.ID as item.DisplayName for item in SystemInfo.TimeZones">
+            </select>
+            <div class="input mixed multiple" ng-show="timezone != SystemInfo.ServerTimeZone ">
+                <input type="button" id="settimezonedefault" class="submit" value="{{'Set timezone to default' | translate}}" ng-click="timezone = SystemInfo.ServerTimeZone" />
+            </div>
+
+        </div>
+
         <h2 translate>Update channel</h2>
         <div class="input checkbox">
             <input type="radio" class="checkbox" id="updateChannelDefault" value="" name="updateChannel" ng-model="updateChannel" />

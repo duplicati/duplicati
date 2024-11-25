@@ -91,6 +91,10 @@ public static class WebServerLoader
     /// Option for setting the webservice SPA paths
     /// </summary>
     public const string OPTION_WEBSERVICE_SPAPATHS = "webservice-spa-paths";
+    /// <summary>
+    /// Option for setting the webservice timezone
+    /// </summary>
+    public const string OPTION_WEBSERVICE_TIMEZONE = "webservice-timezone";
 
     /// <summary>
     /// The default path to the web root

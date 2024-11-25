@@ -176,6 +176,11 @@ public class SystemInfoProvider : ISystemInfoProvider
         /// Gets or sets the supported locales.
         /// </summary>
         public required SystemInfoDto.LocaleDto[] SupportedLocales { get; init; }
+
+        /// <summary>
+        /// The timezones available on the system
+        /// </summary>
+        public required IEnumerable<SystemInfoDto.TimeZoneDto> TimeZones { get; init; }
     }
 
     /// <summary>
@@ -220,7 +225,14 @@ public class SystemInfoProvider : ISystemInfoProvider
                     Code = x,
                     EnglishName = new CultureInfo(x).EnglishName,
                     DisplayName = new CultureInfo(x).NativeName
-                }).ToArray()
+                }).ToArray(),
+        TimeZones = Library.Utility.TimeZoneHelper.GetTimeZones()
+                .Select(x => new Dto.SystemInfoDto.TimeZoneDto
+                {
+                    ID = x.Id,
+                    DisplayName = x.DisplayName,
+                    CurrentUTCOffset = x.CurrentUtcOffset.ToString()
+                }),
     });
 
     /// <inheritdoc />
@@ -242,6 +254,7 @@ public class SystemInfoProvider : ISystemInfoProvider
             DefaultUpdateChannel = systeminfo.DefaultUpdateChannel,
             DefaultUsageReportLevel = systeminfo.DefaultUsageReportLevel,
             ServerTime = DateTime.Now,
+            ServerTimeZone = TimeZoneInfo.Local.Id,
             OSType = systeminfo.OSType,
             OSVersion = systeminfo.OSVersion,
             DirectorySeparator = systeminfo.DirectorySeparator,
@@ -271,8 +284,8 @@ public class SystemInfoProvider : ISystemInfoProvider
                 DisplayName = browserlanguage.NativeName
             },
             SupportedLocales = systeminfo.SupportedLocales,
-            BrowserLocaleSupported = Library.Localization.LocalizationService.isCultureSupported(browserlanguage)
-
+            BrowserLocaleSupported = Library.Localization.LocalizationService.isCultureSupported(browserlanguage),
+            TimeZones = systeminfo.TimeZones,
         };
     }
 }
