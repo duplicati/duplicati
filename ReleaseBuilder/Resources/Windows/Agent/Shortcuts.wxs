@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+	<Fragment>
+    <DirectoryRef Id="ProgramMenuFolder">
+      <Directory Id="StartupFolder">
+        <Component Id="StartupMenuItem" Guid="1D4EA85B-26EF-4d6a-8C1F-2ABCE8DE79EA">
+          <Shortcut Id="DuplicatiStartupComponent"
+                    Name="Duplicati Agent"
+                    WorkingDirectory="INSTALLLOCATION"
+                    Description="Launch Duplicati Agent"
+                    Directory="StartupFolder"
+                    Icon="DuplicatiIcon.exe"
+                    IconIndex="0"
+                    Target="[INSTALLLOCATION]Duplicati.Agent.exe"
+                    Arguments="run"
+                />
+          
+          <RegistryKey Root="HKCU" Key="Software\DuplicatiTeam\Duplicati\StartupShortcut">
+            <RegistryValue
+                    Value="Installed"
+                    Type="string"
+                    KeyPath="yes" />
+          </RegistryKey>
+        </Component>
+      </Directory>
+    </DirectoryRef>
+
+  </Fragment>
+</Wix>

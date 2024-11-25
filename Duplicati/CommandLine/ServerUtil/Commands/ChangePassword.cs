@@ -1,5 +1,6 @@
 using System.CommandLine;
 using System.CommandLine.NamingConventionBinder;
+using Duplicati.Library.Main;
 
 namespace Duplicati.CommandLine.ServerUtil.Commands;
 
@@ -22,6 +23,13 @@ public static class ChangePassword
 
             if (string.IsNullOrWhiteSpace(newPassword))
                 throw new UserReportedException("No password provided");
+
+            if (settings.SecretProvider != null)
+            {
+                var opts = new Dictionary<string, string?>() { { "password", newPassword } };
+                await settings.ReplaceSecrets(opts).ConfigureAwait(false);
+                newPassword = opts["password"]!;
+            }
 
             await connection.ChangePassword(newPassword);
         }));

@@ -314,6 +314,13 @@ namespace Duplicati.Library.Main.Strings
         public static string AutoCompactIntervalShort { get { return LC.L("Minimum time between auto compactions"); } }
         public static string AutoVacuumIntervalLong { get { return LC.L("The minimum amount of time that must elapse after the last vacuum before another will be automatically triggered at the end of a backup job. Automatic vacuum can be a long-running process and may not be desirable to run after every single backup."); } }
         public static string AutoVacuumIntervalShort { get { return LC.L("Minimum time between auto vacuums"); } }
+        public static string SecretProviderShort { get { return LC.L("Secret provider to use for reading credentials"); } }
+        public static string SecretProviderLong(string toolname) { return LC.L("Configures a secret provider to use for reading credentials. Use the commandline tool {0} to test the provider and see supported options. This value is interpreted as an environment variable if it starts with '$' or begins and ends with '%'.", toolname); }
+        public static string SecretProviderPatternShort { get { return LC.L("Pattern for secrets"); } }
+        public static string SecretProviderPatternLong { get { return LC.L("Use this option to specify a pattern for secret provider options. The pattern is used to find values that are intended to be translated by the secret provider. Patterns are treated as a prefix, with support for braces."); } }
+        public static string SecretProviderCacheShort { get { return LC.L("Cache rules for the secret provider"); } }
+        public static string SecretProviderCacheLong { get { return LC.L("Use this option to set the allowed caching of credentials from the secret provider. Setting a cache level may reduce the security but allow the backups to continue despite provider outages."); } }
+
         public static string CPUIntensityShort { get { return LC.L("CPU intensity level"); } }
         public static string CPUIntensityLong { get { return LC.L("Set the CPU intensity level to limit CPU resource utilization. A higher number translates into a higher utilization budget. E.g. 10 would mean no restrictions. Must be an integer between 1-10."); } }
     }

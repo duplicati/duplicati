@@ -71,7 +71,6 @@ public static class HttpClientExtensions
     /// <returns></returns>
     public static async Task DownloadFile(this HttpClient client, HttpRequestMessage request, Stream fileStream, Action<long> progressReportingAction = null, CancellationToken cancellationToken = default)
     {
-
         using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
         response.EnsureSuccessStatusCode();
         using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);

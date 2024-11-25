@@ -26,6 +26,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using Duplicati.Library.AutoUpdater;
+using Duplicati.Library.DynamicLoader;
 using FilterGroup = Duplicati.Library.Utility.FilterGroup;
 
 namespace Duplicati.CommandLine
@@ -108,7 +109,6 @@ namespace Duplicati.CommandLine
                 else if (System.Environment.CommandLine.IndexOf("--include", StringComparison.OrdinalIgnoreCase) >= 0)
                     topic = "include";
             }
-
 
             if (_document.ContainsKey(topic))
             {
@@ -260,6 +260,18 @@ namespace Duplicati.CommandLine
                     }
                 }
 
+                if (tp.Contains("%SECRETPROVIDERS%"))
+                {
+                    var lines = new List<string>();
+                    foreach (var module in SecretProviderLoader.Keys)
+                    {
+                        var metadata = SecretProviderLoader.GetProviderMetadata(module);
+                        lines.Add($"- {module}: {metadata.DisplayName}");
+                    }
+
+                    tp = tp.Replace("%SECRETPROVIDERS%", string.Join(Environment.NewLine, lines.ToArray()));
+                }
+
                 if (NAMEDOPTION_REGEX.IsMatch(tp))
                     tp = NAMEDOPTION_REGEX.Replace(tp, new Matcher().MathEvaluator);
 
@@ -297,6 +309,14 @@ namespace Duplicati.CommandLine
                         if (string.Equals(mod.Key, topic, StringComparison.OrdinalIgnoreCase))
                         {
                             PrintGenericModule(mod, lines);
+                            break;
+                        }
+
+                if (lines.Count == 0)
+                    foreach (Duplicati.Library.Interface.ISecretProvider mod in SecretProviderLoader.Modules)
+                        if (string.Equals(mod.Key, topic, StringComparison.OrdinalIgnoreCase))
+                        {
+                            PrintSecretProvider(mod, lines);
                             break;
                         }
 
@@ -395,6 +415,18 @@ namespace Duplicati.CommandLine
             lines.Add("");
         }
 
+        private static void PrintSecretProvider(Duplicati.Library.Interface.ISecretProvider mod, List<string> lines)
+        {
+            lines.Add($"{mod.Key}: {mod.Description}");
+            if (mod.SupportedCommands != null && mod.SupportedCommands.Count > 0)
+            {
+                lines.Add(" " + Strings.Program.SupportedOptionsHeader);
+                foreach (Library.Interface.ICommandLineArgument arg in mod.SupportedCommands)
+                    Library.Interface.CommandLineArgument.PrintArgument(lines, arg, "  ");
+            }
+            lines.Add("");
+        }
+
         private static void PrintFormatted(TextWriter outwriter, IEnumerable<string> lines)
         {
             int windowWidth = 80;
@@ -432,10 +464,14 @@ namespace Duplicati.CommandLine
                     len -= leadingSpaces.Length;
                     if (len < c.Length)
                     {
-                        int ix = c.LastIndexOf(" ", len, StringComparison.Ordinal);
+                        int ix = c.LastIndexOf(' ', len);
                         if (ix > 0)
                             len = ix;
                     }
+
+                    var lfix = c.IndexOf('\n');
+                    if (lfix >= 0 && lfix < len)
+                        len = lfix + 1;
 
                     outwriter.WriteLine(leadingSpaces + c.Substring(0, len).Trim());
                     c = c.Remove(0, len);

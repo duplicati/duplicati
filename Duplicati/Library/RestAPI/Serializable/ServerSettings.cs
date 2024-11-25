@@ -33,7 +33,7 @@ namespace Duplicati.Server.Serializable
         /// <summary>
         /// Shared implementation for reporting dynamic modules
         /// </summary>
-        private class DynamicModule : IDynamicModule 
+        private class DynamicModule : IDynamicModule
         {
             /// <summary>
             /// Constructor for backend interface
@@ -43,10 +43,9 @@ namespace Duplicati.Server.Serializable
                 this.Key = backend.ProtocolKey;
                 this.Description = backend.Description;
                 this.DisplayName = backend.DisplayName;
-                if (backend.SupportedCommands != null)
-                    this.Options = backend.SupportedCommands.ToArray();
+                this.Options = backend.SupportedCommands?.ToArray() ?? [];
             }
-        
+
             /// <summary>
             /// Constructor for compression module interface
             /// </summary>
@@ -55,8 +54,7 @@ namespace Duplicati.Server.Serializable
                 this.Key = module.FilenameExtension;
                 this.Description = module.Description;
                 this.DisplayName = module.DisplayName;
-                if (module.SupportedCommands != null)
-                    this.Options = module.SupportedCommands.ToArray();
+                this.Options = module.SupportedCommands?.ToArray() ?? [];
             }
 
             /// <summary>
@@ -67,8 +65,7 @@ namespace Duplicati.Server.Serializable
                 this.Key = module.FilenameExtension;
                 this.Description = module.Description;
                 this.DisplayName = module.DisplayName;
-                if (module.SupportedCommands != null)
-                    this.Options = module.SupportedCommands.ToArray();
+                this.Options = module.SupportedCommands?.ToArray() ?? [];
             }
 
             /// <summary>
@@ -79,8 +76,7 @@ namespace Duplicati.Server.Serializable
                 this.Key = module.Key;
                 this.Description = module.Description;
                 this.DisplayName = module.DisplayName;
-                if (module.SupportedCommands != null)
-                    this.Options = module.SupportedCommands.ToArray();
+                this.Options = module.SupportedCommands?.ToArray() ?? [];
             }
 
             /// <summary>
@@ -91,8 +87,18 @@ namespace Duplicati.Server.Serializable
                 this.Key = module.Key;
                 this.Description = module.Description;
                 this.DisplayName = module.DisplayName;
-                if (module.SupportedCommands != null)
-                    this.Options = module.SupportedCommands.ToArray();
+                this.Options = module.SupportedCommands?.ToArray() ?? [];
+            }
+
+            /// <summary>
+            /// Constructor for sercretprovider interface
+            /// </summary>
+            public DynamicModule(Duplicati.Library.Interface.ISecretProvider module)
+            {
+                this.Key = module.Key;
+                this.Description = module.Description;
+                this.DisplayName = module.DisplayName;
+                this.Options = module.SupportedCommands?.ToArray() ?? [];
             }
             /// <summary>
             /// The module key
@@ -112,99 +118,100 @@ namespace Duplicati.Server.Serializable
             /// </summary>
             public Duplicati.Library.Interface.ICommandLineArgument[] Options { get; private set; }
         }
-    
+
         /// <summary>
         /// Gets all supported options
         /// </summary>
         public static Duplicati.Library.Interface.ICommandLineArgument[] Options
-        { 
+        {
             get
             {
                 return new Duplicati.Library.Main.Options(new System.Collections.Generic.Dictionary<string, string>()).SupportedCommands.ToArray();
             }
         }
-        
+
         /// <summary>
         /// The backend modules known by the server
         /// </summary>
         public static IDynamicModule[] BackendModules
-        { 
+        {
             get
-            { 
-                return 
+            {
+                Console.WriteLine("Inside getter");
+                return
                     (from n in Library.DynamicLoader.BackendLoader.Backends
                      select new DynamicModule(n))
-                    .ToArray(); 
+                    .ToArray();
             }
-        } 
+        }
         /// <summary>
         /// The encryption modules known by the server
         /// </summary>
         public static IDynamicModule[] EncryptionModules
         {
             get
-            { 
-                return 
+            {
+                return
                     (from n in Library.DynamicLoader.EncryptionLoader.Modules
                      select new DynamicModule(n))
-                    .ToArray(); 
+                    .ToArray();
             }
         }
-        
+
         /// <summary>
         /// The compression modules known by the server
         /// </summary>
         public static IDynamicModule[] CompressionModules
-        { 
+        {
             get
-            { 
-                return 
+            {
+                return
                     (from n in Library.DynamicLoader.CompressionLoader.Modules
                      select new DynamicModule(n))
-                    .ToArray(); 
+                    .ToArray();
             }
-        } 
+        }
 
         /// <summary>
         /// The generic modules known by the server
         /// </summary>
         public static IDynamicModule[] GenericModules
-        { 
+        {
             get
-            { 
-                return 
+            {
+                return
                     (from n in Library.DynamicLoader.GenericLoader.Modules
                      select new DynamicModule(n))
-                    .ToArray(); 
+                    .ToArray();
             }
-        } 
-        
+        }
+
         /// <summary>
         /// The web modules known by the server
         /// </summary>
         public static IDynamicModule[] WebModules
-        { 
+        {
             get
-            { 
-                return 
+            {
+                return
                     (from n in Library.DynamicLoader.WebLoader.Modules
                      select new DynamicModule(n))
-                    .ToArray(); 
+                    .ToArray();
             }
-        }        
+        }
 
         /// <summary>
         /// The web modules known by the server
         /// </summary>
         public static IDynamicModule[] ConnectionModules
-        { 
+        {
             get
-            { 
-                return 
+            {
+                return
                     (from n in Library.DynamicLoader.GenericLoader.Modules
                      where n is Library.Interface.IConnectionModule
                      select new DynamicModule(n))
-                    .ToArray(); 
+                    .ToArray();
             }
         }
 
@@ -224,18 +231,32 @@ namespace Duplicati.Server.Serializable
         }
 
         /// <summary>
+        /// The web modules known by the server
+        /// </summary>
+        public static IDynamicModule[] SecretProviderModules
+        {
+            get
+            {
+                return
+                    (from n in Library.DynamicLoader.SecretProviderLoader.Modules
+                     select new DynamicModule(n))
+                    .ToArray();
+            }
+        }
+
+        /// <summary>
         /// The filters that are applied to all backups
         /// </summary>
         public static IFilter[] Filters
         {
             get { return FIXMEGlobal.DataConnection.Filters; }
         }
-        
+
         /// <summary>
         /// The settings applied to all backups by default
         /// </summary>
         public static ISetting[] Settings
-        { 
+        {
             get { return FIXMEGlobal.DataConnection.Settings; }
         }
     }

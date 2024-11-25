@@ -18,8 +18,8 @@ class Program
         "win-x86-gui.msi",
         "win-arm64-gui.zip",
         "win-arm64-gui.msi",
-        // "win-x64-agent.msi", // Need to add support for building without trayicon + window service support
-        // "win-arm64-agent.msi", // Need to add support for building without trayicon + window service support
+        "win-x64-agent.msi", // Missing window service support
+        "win-arm64-agent.msi", // Missing window service support
         "win-x64-agent.zip",
         "win-arm64-agent.zip",
 
@@ -57,10 +57,12 @@ class Program
 
         "osx-x64-gui.dmg",
         "osx-x64-gui.pkg",
-        // "osx-x64-agent.pkg", // Need to support building DMG without trayicon
+        "osx-x64-agent.pkg",
+        "osx-x64-cli.pkg",
         "osx-arm64-gui.dmg",
         "osx-arm64-gui.pkg",
-        // "osx-arm64-agent.pkg", // Need to support building DMG without trayicon
+        "osx-arm64-agent.pkg",
+        "osx-arm64-cli.pkg",
     }
     .Select(x => PackageTarget.ParsePackageId(x))
     .Distinct()

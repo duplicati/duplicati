@@ -1,8 +1,32 @@
+// Copyright (C) 2024, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.Http;
+using System.Threading;
+using System.Threading.Tasks;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Utility;
+using Uri = System.Uri;
 
 namespace Duplicati.Library.Modules.Builtin;
 
@@ -60,6 +84,11 @@ public class SendTelegramMessage : ReportHelper
     /// Option used to set the maximum number of log lines
     /// </summary>
     private const string OPTION_MAX_LOG_LINES = "send-telegram-max-log-lines";
+    
+    /// <summary>
+    /// Telegram message maximum length.
+    /// </summary>
+    private const int TELEGRAM_MAX_LENGTH = 4096;
 
     #endregion
 
@@ -162,39 +191,83 @@ public class SendTelegramMessage : ReportHelper
     protected override string ReplaceTemplate(string input, object result, Exception exception, bool subjectline)
     {
         // No need to do the expansion as we throw away the result
-        if (subjectline)
-            return string.Empty;
-        return base.ReplaceTemplate(input, result, exception, subjectline);
+        return subjectline ? string.Empty : base.ReplaceTemplate(input, result, exception, subjectline);
     }
-
+    
+    /// <summary>
+    /// Sends message to telegram
+    /// </summary>
+    /// <param name="subject">Header to add to message</param>
+    /// <param name="body">Body of message</param>
     protected override async void SendMessage(string subject, string body)
     {
         try
         {
+            if (string.IsNullOrEmpty(body))
+                return; 
+            
+            // Combine subject and body
+            body = string.Join(Environment.NewLine, subject, body);
 
-            var p = new
-            {
-                chat_id = Uri.EscapeDataString(m_channelId),
-                parse_mode = "Text",
-                text = Uri.EscapeDataString(body),
-                botId = Uri.EscapeDataString(m_botid),
-                apiKey = Uri.EscapeDataString(m_apikey)
-            };
-            var url = $"https://api.telegram.org/bot{p.botId}:{p.apiKey}/sendMessage?chat_id={p.chat_id}&parse_mode={p.parse_mode}&text={p.text}";
+            // Split message into chunks if needed
+            var messages = body.Length <= TELEGRAM_MAX_LENGTH 
+                ? [body]
+                : Enumerable.Range(0, (body.Length + TELEGRAM_MAX_LENGTH - 1) / TELEGRAM_MAX_LENGTH)
+                    .Select(i => body.Substring(
+                        i * TELEGRAM_MAX_LENGTH,
+                        Math.Min(TELEGRAM_MAX_LENGTH, body.Length - i * TELEGRAM_MAX_LENGTH)))
+                    .ToArray();
 
-            using var client = new HttpClient { Timeout = REQUEST_TIMEOUT };
-            var response = await client.GetAsync(url);
-            var responseContent = await response.Content.ReadAsStringAsync();
-
-            if (responseContent.Contains("\"ok\":true"))
-                return;
-
-            Logging.Log.WriteWarningMessage(LOGTAG, "telegramSendError", null, "Failed to send to telegram messages: {0}", responseContent);
+            // Send all chunks sequentially
+            for (var i = 0; i < messages.Length; i++)
+                await SendMessageChunk(messages[i], i + 1, messages.Length);
         }
         catch (Exception e)
         {
-            Logging.Log.WriteWarningMessage(LOGTAG, "telegramSendError", e, "Failed to send to telegram messages: {0}", e.Message);
+            Logging.Log.WriteWarningMessage(LOGTAG, "telegramSendError", e, 
+                "Failed to process message for telegram: {0}", e.Message);
         }
     }
+    
+    /// <summary>
+    /// Sends the message/partial message to telegram
+    /// </summary>
+    /// <param name="message">body or partial body to send</param>
+    /// <param name="partNumber">Part number</param>
+    /// <param name="totalParts">Total parts in the original message</param>
+    private async Task SendMessageChunk(string message, int partNumber, int totalParts)
+    {
+        try
+        {
+            var p = new
+            {
+                chat_id = Uri.EscapeDataString(m_channelId),
+                parse_mode = "Markdown",
+                text = Uri.EscapeDataString(totalParts > 1 
+                    ? $"Part {partNumber}/{totalParts}:\n{message}"
+                    : message),
+                botId = Uri.EscapeDataString(m_botid),
+                apiKey = Uri.EscapeDataString(m_apikey)
+            };
 
+            var url = $"https://api.telegram.org/bot{p.botId}:{p.apiKey}/sendMessage?chat_id={p.chat_id}&parse_mode={p.parse_mode}&text={p.text}";
+            using var timeoutToken = new CancellationTokenSource();
+            timeoutToken.CancelAfter(REQUEST_TIMEOUT);
+
+            using var client = HttpClientHelper.CreateClient();
+            var response = await client.GetAsync(url, timeoutToken.Token);
+            var responseContent = await response.Content.ReadAsStringAsync(timeoutToken.Token);
+
+            if (!responseContent.Contains("\"ok\":true"))
+                Logging.Log.WriteWarningMessage(LOGTAG, "telegramSendError", null, 
+                    "Failed to send to telegram messages part {0}/{1}: {2}", 
+                    partNumber, totalParts, responseContent);
+        }
+        catch (Exception e)
+        {
+            Logging.Log.WriteWarningMessage(LOGTAG, "telegramSendError", e, 
+                "Failed to send to telegram messages part {0}/{1}: {2}", 
+                partNumber, totalParts, e.Message);
+        }
+    }
 }

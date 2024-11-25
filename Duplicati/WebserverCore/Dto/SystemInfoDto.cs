@@ -150,6 +150,11 @@ public sealed record SystemInfoDto
     public required IEnumerable<object> ServerModules { get; init; }
 
     /// <summary>
+    /// Gets or sets the secret provider modules.
+    /// </summary>
+    public required IEnumerable<IDynamicModule> SecretProviderModules { get; init; }
+
+    /// <summary>
     /// Gets or sets a value indicating whether alternate update URLs are being used.
     /// </summary>
     public required bool UsingAlternateUpdateURLs { get; init; }

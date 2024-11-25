@@ -87,7 +87,7 @@ public static partial class Command
                     }
 
                     // Perform any post-build steps, cleaning and signing as needed
-                    await PostCompile.PrepareTargetDirectory(baseDir, tmpfolder, target.OS, target.Arch, target.BuildTargetString, rtcfg, keepBuilds);
+                    await PostCompile.PrepareTargetDirectory(baseDir, tmpfolder, target, rtcfg, keepBuilds);
 
                     Directory.Move(tmpfolder, outputFolder);
                 }

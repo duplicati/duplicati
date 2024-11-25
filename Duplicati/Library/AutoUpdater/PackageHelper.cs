@@ -85,6 +85,10 @@ namespace Duplicati.Library.AutoUpdater
             /// The remote managed agent
             /// </summary>
             Agent,
+            /// <summary>
+            /// The secret tool
+            /// </summary>
+            SecretTool,
 
         }
 
@@ -110,6 +114,7 @@ namespace Duplicati.Library.AutoUpdater
                 NamedExecutable.ServerUtil => OperatingSystem.IsWindows() ? "Duplicati.CommandLine.ServerUtil.exe" : "duplicati-server-util",
                 NamedExecutable.Service => OperatingSystem.IsWindows() ? "Duplicati.Service.exe" : "duplicati-service",
                 NamedExecutable.Agent => OperatingSystem.IsWindows() ? "Duplicati.Agent.exe" : "duplicati-agent",
+                NamedExecutable.SecretTool => OperatingSystem.IsWindows() ? "Duplicati.CommandLine.SecretTool.exe" : "duplicati-secret-tool",
                 _ => throw new ArgumentException($"Named executable not known: {exe}", nameof(exe))
             };
 

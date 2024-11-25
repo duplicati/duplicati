@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+﻿// Copyright (C) 2024, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -18,6 +18,8 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
+
+#nullable enable
 
 using System;
 using System.Collections.Generic;
@@ -41,7 +43,7 @@ using Uri = System.Uri;
 
 namespace Duplicati.Library.Backend
 {
-    
+
     /// <summary>
     /// The unified FTP backend which uses the FluentFTP library.
     ///
@@ -54,42 +56,154 @@ namespace Duplicati.Library.Backend
     /// </summary>
     public class FTP : IStreamingBackend
     {
-        private NetworkCredential _userInfo;
+        /// <summary>
+        /// The credentials used to authenticate with the FTP server
+        /// </summary>
+        private readonly NetworkCredential? _userInfo;
+        /// <summary>
+        /// Th option used to accept a specific SSL certificate hash
+        /// </summary>
         private const string OPTION_ACCEPT_SPECIFIED_CERTIFICATE = "accept-specified-ssl-hash"; // Global option
+        /// <summary>
+        /// The option used to accept any SSL certificate
+        /// </summary>
         private const string OPTION_ACCEPT_ANY_CERTIFICATE = "accept-any-ssl-certificate"; // Global option
 
+        /// <summary>
+        /// The default data connection type
+        /// </summary>
         private const FtpDataConnectionType DEFAULT_DATA_CONNECTION_TYPE = FtpDataConnectionType.AutoPassive;
+        /// <summary>
+        /// The default encryption mode
+        /// </summary>
         private const FtpEncryptionMode DEFAULT_ENCRYPTION_MODE = FtpEncryptionMode.None;
-        private static readonly SslProtocols DEFAULT_SSL_PROTOCOLS = SslProtocols.None; // NOTE: None means "use system default"
+        /// <summary>
+        /// The default SSL protocols
+        /// </summary>
+        private static readonly SslProtocols DEFAULT_SSL_PROTOCOLS = SslProtocols.None; // NOTE: None means "use system default"        
 
+        /// <summary>
+        /// The configuration key for the FTP encryption mode
+        /// </summary>
         protected virtual string CONFIG_KEY_FTP_ENCRYPTION_MODE => "ftp-encryption-mode";
+        /// <summary>
+        /// The configuration key for the FTP data connection type
+        /// </summary>
         protected virtual string CONFIG_KEY_FTP_DATA_CONNECTION_TYPE => "ftp-data-connection-type";
+        /// <summary>
+        /// The configuration key for the FTP SSL protocols
+        /// </summary>
         protected virtual string CONFIG_KEY_FTP_SSL_PROTOCOLS => "ftp-ssl-protocols";
+        /// <summary>
+        /// The configuration key for the FTP upload delay
+        /// </summary>
         protected virtual string CONFIG_KEY_FTP_UPLOAD_DELAY => "ftp-upload-delay";
+        /// <summary>
+        /// The configuration key for the FTP log to console
+        /// </summary>
         protected virtual string CONFIG_KEY_FTP_LOGTOCONSOLE => "ftp-log-to-console";
+        /// <summary>
+        /// The configuration key for the FTP log private info to console
+        /// </summary>
         protected virtual string CONFIG_KEY_FTP_LOGPRIVATEINFOTOCONSOLE => "ftp-log-privateinfo-to-console";
-        
+        /// <summary>
+        /// The configuration key for the FTP absolute paths option
+        /// </summary>
+        protected virtual string CONFIG_KEY_FTP_ABSOLUTE_PATH => "ftp-absolute-path";
+        /// <summary>
+        /// The configuration key for the FTP relative path option
+        /// </summary>
+        protected virtual string CONFIG_KEY_FTP_RELATIVE_PATH => "ftp-relative-path";
+        /// <summary>
+        /// The configuration key for the FTP use CWD names option
+        /// </summary>
+        protected virtual string CONFIG_KEY_FTP_USE_CWD_NAMES => "ftp-use-cwd-names";
+
+        /// <summary>
+        /// The configuration key for the disable upload verify option
+        /// </summary>
+        protected virtual string CONFIG_KEY_DISABLE_UPLOAD_VERIFY => "disable-upload-verify";
+
         // The following keys are private because they are irrelevant for inheritors and are here for backwards compatibility
+        /// <summary>
+        /// The configuration key for the legacy FTP passive mode
+        /// </summary>
         private static string CONFIG_KEY_FTP_LEGACY_FTPPASSIVE => "ftp-passive";
+        /// <summary>
+        /// The configuration key for the legacy FTP active mode
+        /// </summary>
         private static string CONFIG_KEY_FTP_LEGACY_FTPREGULAR => "ftp-regular";
+        /// <summary>
+        /// The configuration key for the legacy use SSL option
+        /// </summary>
         private static string CONFIG_KEY_FTP_LEGACY_USESSL => "use-ssl";
 
+        /// <summary>
+        /// The test file name used to test access permissions
+        /// </summary>
         private const string TEST_FILE_NAME = "duplicati-access-privileges-test.tmp";
+        /// <summary>
+        /// The test file content used to test access permissions
+        /// </summary>
         private const string TEST_FILE_CONTENT = "This file is used by Duplicati to test access permissions and can be safely deleted.";
 
+        /// <summary>
+        /// The default data connection type as a string
+        /// </summary>
         protected static readonly string DEFAULT_DATA_CONNECTION_TYPE_STRING = DEFAULT_DATA_CONNECTION_TYPE.ToString();
+        /// <summary>
+        /// The default encryption mode as a string
+        /// </summary>
         protected static readonly string DEFAULT_ENCRYPTION_MODE_STRING = DEFAULT_ENCRYPTION_MODE.ToString();
+        /// <summary>
+        /// The default SSL protocols as a string
+        /// </summary>
         protected static readonly string DEFAULT_SSL_PROTOCOLS_STRING = DEFAULT_SSL_PROTOCOLS.ToString();
+        /// <summary>
+        /// The default upload delay as a string
+        /// </summary>
         protected static readonly string DEFAULT_UPLOAD_DELAY_STRING = "0s";
 
-        private readonly string _url;
+        /// <summary>
+        /// The URL of the FTP server
+        /// </summary>
+        private readonly Uri _url;
+        /// <summary>
+        /// The flag to indicate if the list verify option is enabled
+        /// </summary>
         private readonly bool _listVerify = true;
+        /// <summary>
+        /// The flag to indicate if relative paths are used
+        /// </summary>
+        private readonly bool _relativePaths = true;
+        /// <summary>
+        /// The flag to indicate if the CWD strategy is used
+        /// </summary>
+        private readonly bool _useCwdNames = false;
+        /// <summary>
+        /// The FTP configuration
+        /// </summary>
         private readonly FtpConfig _ftpConfig;
+        /// <summary>
+        /// The wait time after each upload before checking the file size
+        /// </summary>
         private readonly TimeSpan _uploadWaitTime;
 
+        /// <summary>
+        /// The flag to indicate if the dialog should be logged to the console
+        /// </summary>
         private readonly bool _logToConsole;
+        /// <summary>
+        /// The flag to indicate if private information should be logged to the console
+        /// </summary>
         private readonly bool _logPrivateInfoToConsole;
+        /// <summary>
+        /// The flag to indicate if all certificates should be accepted
+        /// </summary>
         private readonly bool _accepAllCertificates;
+        /// <summary>
+        /// The valid certificate hashes
+        /// </summary>
         private readonly string[] _validHashes;
 
         /// <summary>
@@ -102,14 +216,24 @@ namespace Duplicati.Library.Backend
         /// </summary>
         public virtual string ProtocolKey => "ftp";
 
-        private AsyncFtpClient Client
-        { get; set; }
+        /// <summary>
+        /// The client instance
+        /// </summary>
+        private AsyncFtpClient? _client;
 
+        /// <summary>
+        /// The server initial working directory
+        /// </summary>
+        private string? _initialCwd;
+
+        /// <inheritdoc />
         public virtual IList<ICommandLineArgument> SupportedCommands =>
             new List<ICommandLineArgument>([
                 new CommandLineArgument("auth-password", CommandLineArgument.ArgumentType.Password, Strings.DescriptionAuthPasswordShort, Strings.DescriptionAuthPasswordLong),
                 new CommandLineArgument("auth-username", CommandLineArgument.ArgumentType.String, Strings.DescriptionAuthUsernameShort, Strings.DescriptionAuthUsernameLong),
-                new CommandLineArgument("disable-upload-verify", CommandLineArgument.ArgumentType.Boolean, Strings.DescriptionDisableUploadVerifyShort, Strings.DescriptionDisableUploadVerifyLong),
+                new CommandLineArgument(CONFIG_KEY_DISABLE_UPLOAD_VERIFY, CommandLineArgument.ArgumentType.Boolean, Strings.DescriptionDisableUploadVerifyShort, Strings.DescriptionDisableUploadVerifyLong),
+                new CommandLineArgument(CONFIG_KEY_FTP_ABSOLUTE_PATH, CommandLineArgument.ArgumentType.Boolean, Strings.DescriptionAbsolutePathShort, Strings.DescriptionAbsolutePathLong),
+                new CommandLineArgument(CONFIG_KEY_FTP_USE_CWD_NAMES, CommandLineArgument.ArgumentType.Boolean, Strings.DescriptionUseCwdNamesShort, Strings.DescriptionUseCwdNamesLong),
                 new CommandLineArgument(CONFIG_KEY_FTP_DATA_CONNECTION_TYPE, CommandLineArgument.ArgumentType.Enumeration, Strings.DescriptionFtpDataConnectionTypeShort, Strings.DescriptionFtpDataConnectionTypeLong, DEFAULT_DATA_CONNECTION_TYPE_STRING, null, Enum.GetNames(typeof(FtpDataConnectionType))),
                 new CommandLineArgument(CONFIG_KEY_FTP_ENCRYPTION_MODE, CommandLineArgument.ArgumentType.Enumeration, Strings.DescriptionFtpEncryptionModeShort, Strings.DescriptionFtpEncryptionModeLong, DEFAULT_ENCRYPTION_MODE_STRING, null, Enum.GetNames(typeof(FtpEncryptionMode))),
                 new CommandLineArgument(CONFIG_KEY_FTP_SSL_PROTOCOLS, CommandLineArgument.ArgumentType.Flags, Strings.DescriptionSslProtocolsShort, Strings.DescriptionSslProtocolsLong, DEFAULT_SSL_PROTOCOLS_STRING, null, Enum.GetNames(typeof(SslProtocols))),
@@ -126,7 +250,11 @@ namespace Duplicati.Library.Backend
         /// </summary>
         public FTP()
         {
-
+            // TODO: Remove this constructor once static properties are introduced on IBackend
+            _validHashes = null!;
+            _ftpConfig = null!;
+            _url = null!;
+            _client = null!;
         }
 
         /// <summary>
@@ -139,10 +267,9 @@ namespace Duplicati.Library.Backend
         {
             _accepAllCertificates = CoreUtility.ParseBoolOption(options, OPTION_ACCEPT_ANY_CERTIFICATE);
 
-            string certHash;
-            options.TryGetValue(OPTION_ACCEPT_SPECIFIED_CERTIFICATE, out certHash);
+            options.TryGetValue(OPTION_ACCEPT_SPECIFIED_CERTIFICATE, out var certHash);
 
-            _validHashes = certHash?.Split([",", ";"], StringSplitOptions.RemoveEmptyEntries);
+            _validHashes = certHash?.Split([",", ";"], StringSplitOptions.RemoveEmptyEntries) ?? [];
 
             var u = new Utility.Uri(url);
             u.RequireHost();
@@ -173,50 +300,36 @@ namespace Duplicati.Library.Backend
             if (_userInfo != null)
                 _userInfo.Domain = "";
 
-            _url = u.SetScheme("ftp").SetQuery(null).SetCredentials(null, null).ToString();
-            _url = Util.AppendDirSeparator(_url, "/");
-            _listVerify = !CoreUtility.ParseBoolOption(options, "disable-upload-verify");
+            var parsedurl = u.SetScheme("ftp").SetQuery(null).SetCredentials(null, null).ToString();
+            parsedurl = Util.AppendDirSeparator(parsedurl, "/");
+            _url = new Uri(parsedurl);
+
+            _listVerify = !CoreUtility.ParseBoolOption(options, CONFIG_KEY_DISABLE_UPLOAD_VERIFY);
+            _relativePaths = ProtocolKey == "ftp"
+                ? !CoreUtility.ParseBoolOption(options, CONFIG_KEY_FTP_ABSOLUTE_PATH)
+                : CoreUtility.ParseBoolOption(options, CONFIG_KEY_FTP_RELATIVE_PATH);
+
+            _useCwdNames = CoreUtility.ParseBoolOption(options, CONFIG_KEY_FTP_USE_CWD_NAMES);
             if (options.TryGetValue(CONFIG_KEY_FTP_UPLOAD_DELAY, out var uploadWaitTimeString) && !string.IsNullOrWhiteSpace(uploadWaitTimeString))
                 _uploadWaitTime = Timeparser.ParseTimeSpan(uploadWaitTimeString);
 
-            // Process the aftp-data-connection-type option
-            string dataConnectionTypeString;
-            FtpDataConnectionType dataConnectionType;
-
-            if (!options.TryGetValue(CONFIG_KEY_FTP_DATA_CONNECTION_TYPE, out dataConnectionTypeString) || string.IsNullOrWhiteSpace(dataConnectionTypeString))
-                dataConnectionTypeString = null;
-
-            if (dataConnectionTypeString == null || !Enum.TryParse(dataConnectionTypeString, true, out dataConnectionType))
-                dataConnectionType = DEFAULT_DATA_CONNECTION_TYPE;
-
-            // Process the aftp-encryption-mode option
-            FtpEncryptionMode encryptionMode;
-            if (!options.TryGetValue(CONFIG_KEY_FTP_ENCRYPTION_MODE, out var encryptionModeString) || string.IsNullOrWhiteSpace(encryptionModeString))
-                encryptionModeString = null;
-
-            if (encryptionModeString == null || !Enum.TryParse(encryptionModeString, true, out encryptionMode))
-                encryptionMode = DEFAULT_ENCRYPTION_MODE;
-            
-            // Process the aftp-ssl-protocols option
-            SslProtocols sslProtocols;
-            if (!options.TryGetValue(CONFIG_KEY_FTP_SSL_PROTOCOLS, out var sslProtocolsString) || string.IsNullOrWhiteSpace(sslProtocolsString))
-                sslProtocolsString = null;
-
-            if (sslProtocolsString == null || !Enum.TryParse(sslProtocolsString, true, out sslProtocols)) sslProtocols = DEFAULT_SSL_PROTOCOLS;
+            var dataConnectionType = CoreUtility.ParseEnumOption(options, CONFIG_KEY_FTP_DATA_CONNECTION_TYPE, DEFAULT_DATA_CONNECTION_TYPE);
+            var encryptionMode = CoreUtility.ParseEnumOption(options, CONFIG_KEY_FTP_ENCRYPTION_MODE, DEFAULT_ENCRYPTION_MODE);
+            var sslProtocols = CoreUtility.ParseEnumOption(options, CONFIG_KEY_FTP_SSL_PROTOCOLS, DEFAULT_SSL_PROTOCOLS);
 
             // Process options of the legacy FTP backend
             if (ProtocolKey == "ftp")
             {
                 // To mirror the behavior of existing backups, we need to check the legacy options
-                
+
                 // This flag takes precedence over ftp-data-connection-type
-                if (CoreUtility.ParseBoolOption(options, CONFIG_KEY_FTP_LEGACY_FTPPASSIVE)) 
+                if (CoreUtility.ParseBoolOption(options, CONFIG_KEY_FTP_LEGACY_FTPPASSIVE))
                     dataConnectionType = FtpDataConnectionType.AutoPassive;
-                
+
                 // This flag takes precedence over the ftp-passive flag
-                if (CoreUtility.ParseBoolOption(options, CONFIG_KEY_FTP_LEGACY_FTPREGULAR)) 
+                if (CoreUtility.ParseBoolOption(options, CONFIG_KEY_FTP_LEGACY_FTPREGULAR))
                     dataConnectionType = FtpDataConnectionType.AutoActive;
-                
+
                 // When using legacy useSSL option, the encryption is set to automatic and the SSL protocols are set to none
                 // (None meaning the OS will choose the appropriate protocol)
                 if (CoreUtility.ParseBoolOption(options, CONFIG_KEY_FTP_LEGACY_USESSL))
@@ -225,246 +338,219 @@ namespace Duplicati.Library.Backend
                     encryptionMode = FtpEncryptionMode.Auto;
                 }
             }
-            
+
             _logToConsole = CoreUtility.ParseBoolOption(options, CONFIG_KEY_FTP_LOGTOCONSOLE);
             _logPrivateInfoToConsole = CoreUtility.ParseBoolOption(options, CONFIG_KEY_FTP_LOGPRIVATEINFOTOCONSOLE);
-            
+
             _ftpConfig = new FtpConfig
             {
                 DataConnectionType = dataConnectionType,
                 EncryptionMode = encryptionMode,
                 SslProtocols = sslProtocols,
                 LogToConsole = _logToConsole,
+                ValidateAnyCertificate = _accepAllCertificates
             };
 
             if (_logPrivateInfoToConsole) _ftpConfig.LogHost = _ftpConfig.LogPassword = _ftpConfig.LogUserName = true;
         }
 
+        /// <inheritdoc />
         public IEnumerable<IFileEntry> List()
         {
-            return List(string.Empty);
-        }
-
-        public IEnumerable<IFileEntry> List(string filename)
-        {
-            return List(filename, false);
-        }
-
-        private IEnumerable<IFileEntry> List(string filename, bool stripFile)
-        {
-            var list = new List<IFileEntry>();
-            string remotePath = filename;
-
-            var ftpClient = CreateClient();
-
-            // Get the remote path
-            var url = new Uri(_url);
-            remotePath = "/" + GetUnescapedAbsolutePath(url);
-
-            if (!string.IsNullOrEmpty(filename))
+            try
             {
-                if (!stripFile)
-                {
-                    // Append the filename
-                    remotePath += filename;
-                }
-                else if (filename.Contains("/"))
-                {
-                    remotePath += filename.Substring(0, filename.LastIndexOf("/", StringComparison.Ordinal));
-                }
-                // else: stripping the filename in this case ignoring it
-            }
+                var list = new List<IFileEntry>();
+                var client = CreateClient(CancellationToken.None).Await();
+                var remotePath = PreparePathForClient(null);
 
-            foreach (FtpListItem item in ftpClient.GetListing(remotePath, FtpListOption.Modify | FtpListOption.Size).Await())
-            {
-                switch (item.Type)
+                foreach (var item in client.GetListing(remotePath, FtpListOption.Modify | FtpListOption.Size).Await())
                 {
-                    case FtpObjectType.Directory:
-                        {
+                    switch (item.Type)
+                    {
+                        case FtpObjectType.Directory:
                             if (item.Name == "." || item.Name == "..")
-                            {
                                 continue;
-                            }
 
                             list.Add(new FileEntry(item.Name, -1, new DateTime(), item.Modified)
                             {
                                 IsFolder = true,
                             });
-
                             break;
-                        }
-                    case FtpObjectType.File:
-                        {
+
+                        case FtpObjectType.File:
                             list.Add(new FileEntry(item.Name, item.Size, new DateTime(), item.Modified));
-
                             break;
-                        }
-                    case FtpObjectType.Link:
-                        {
-                            if (item.Name == "." || item.Name == "..")
-                            {
-                                continue;
-                            }
 
-                            if (item.LinkObject != null)
+                        case FtpObjectType.Link:
                             {
-                                switch (item.LinkObject.Type)
+                                if (item.Name == "." || item.Name == "..")
+                                    continue;
+
+                                if (item.LinkObject != null)
                                 {
-                                    case FtpObjectType.Directory:
-                                        {
+                                    switch (item.LinkObject.Type)
+                                    {
+                                        case FtpObjectType.Directory:
                                             if (item.Name == "." || item.Name == "..")
-                                            {
                                                 continue;
-                                            }
 
                                             list.Add(new FileEntry(item.Name, -1, new DateTime(), item.Modified)
                                             {
                                                 IsFolder = true,
                                             });
-
                                             break;
-                                        }
-                                    case FtpObjectType.File:
-                                        {
+
+                                        case FtpObjectType.File:
                                             list.Add(new FileEntry(item.Name, item.Size, new DateTime(), item.Modified));
-
                                             break;
-                                        }
+                                    }
                                 }
+                                break;
                             }
-                            break;
-                        }
 
+                    }
                 }
-            }
 
-            return list;
+                return list;
+            }
+            catch (Exception e)
+            {
+                if (TranslateException(null, ref e))
+                    throw e;
+
+                throw;
+            }
         }
 
+        /// <inheritdoc />
         public async Task PutAsync(string remotename, Stream input, CancellationToken cancelToken)
         {
-            string remotePath = remotename;
-            long streamLen;
-
-            var ftpClient = CreateClient();
-
             try
             {
-                streamLen = input.Length;
-            }
-            catch (NotSupportedException) { streamLen = -1; }
+                var streamLen = -1L;
+                var client = await CreateClient(cancelToken).ConfigureAwait(false);
+                var clientRemoteName = PreparePathForClient(remotename);
 
-            // Get the remote path
-            remotePath = "";
+                try { streamLen = input.Length; }
+                catch (NotSupportedException) { }
 
-            if (!string.IsNullOrEmpty(remotename))
-            {
-                // Append the filename
-                remotePath += remotename;
-            }
+                var status = await client.UploadStream(input, clientRemoteName, createRemoteDir: false, token: cancelToken, progress: null).ConfigureAwait(false);
+                if (status != FtpStatus.Success)
+                    throw new UserInformationException(Strings.ErrorWriteFile(remotename, $"Status is {status}"), "FtpPutFailure");
 
-            var status = await ftpClient.UploadStream(input, remotePath, createRemoteDir: false, token: cancelToken, progress: null).ConfigureAwait(false);
-            if (status != FtpStatus.Success)
-            {
-                throw new UserInformationException(string.Format(Strings.ErrorWriteFile, remotename), "AftpPutFailure");
-            }
+                // Wait for the upload, if required
+                if (_uploadWaitTime.Ticks > 0)
+                    Thread.Sleep(_uploadWaitTime);
 
-            // Wait for the upload, if required
-            if (_uploadWaitTime.Ticks > 0)
-            {
-                Thread.Sleep(_uploadWaitTime);
-            }
-
-            if (_listVerify)
-            {
-                // check remote file size; matching file size indicates completion
-                var remoteSize = await ftpClient.GetFileSize(remotePath, -1, cancelToken);
-                if (streamLen != remoteSize)
+                if (_listVerify)
                 {
-                    throw new UserInformationException(Strings.ListVerifySizeFailure(remotename, remoteSize, streamLen), "AftpListVerifySizeFailure");
+                    // check remote file size; matching file size indicates completion
+                    var remoteSize = await client.GetFileSize(clientRemoteName, -1, cancelToken);
+                    if (streamLen != remoteSize)
+                        throw new UserInformationException(Strings.ListVerifySizeFailure(remotename, remoteSize, streamLen), "FtpListVerifySizeFailure");
                 }
+            }
+            catch (Exception e)
+            {
+                if (TranslateException(remotename, ref e))
+                    throw e;
+
+                throw;
             }
         }
 
+        /// <inheritdoc />
         public async Task PutAsync(string remotename, string localname, CancellationToken cancelToken)
         {
-            await using FileStream fs = File.Open(localname, FileMode.Open, FileAccess.Read, FileShare.Read);
+            await using var fs = File.Open(localname, FileMode.Open, FileAccess.Read, FileShare.Read);
             await PutAsync(remotename, fs, cancelToken);
         }
 
+        /// <inheritdoc />
         public async Task GetAsync(string remotename, Stream output, CancellationToken cancelToken)
         {
-            var ftpClient = CreateClient();
-
-            // Get the remote path
-            var remotePath = "";
-
-            if (!string.IsNullOrEmpty(remotename))
-            {
-                // Append the filename
-                remotePath += remotename;
-            }
-
-            await using var inputStream = await ftpClient.OpenRead(remotePath, token: cancelToken);
             try
             {
+                var client = await CreateClient(cancelToken).ConfigureAwait(false);
+                var clientRemoteName = PreparePathForClient(remotename);
+                await using var inputStream = await client.OpenRead(clientRemoteName, token: cancelToken);
                 await CoreUtility.CopyStreamAsync(inputStream, output, false, cancelToken).ConfigureAwait(false);
             }
-            finally
+            catch (Exception e)
             {
-                inputStream.Close();
+                if (TranslateException(remotename, ref e))
+                    throw e;
+
+                throw;
             }
         }
 
+        /// <inheritdoc />
         public async Task GetAsync(string remotename, string localname, CancellationToken cancelToken)
         {
             await using FileStream fs = File.Open(localname, FileMode.Create, FileAccess.Write, FileShare.None);
             await GetAsync(remotename, fs, cancelToken).ConfigureAwait(false);
         }
 
+        /// <inheritdoc />
         public async Task DeleteAsync(string remotename, CancellationToken cancelToken)
         {
-            var ftpClient = CreateClient();
-
-            // Get the remote path
-            var remotePath = "";
-
-            if (!string.IsNullOrEmpty(remotename))
+            try
             {
-                // Append the filename
-                remotePath += remotename;
+                var client = await CreateClient(cancelToken).ConfigureAwait(false);
+                var clientRemoteName = PreparePathForClient(remotename);
+                await client.DeleteFile(clientRemoteName, cancelToken);
             }
+            catch (Exception e)
+            {
+                if (TranslateException(remotename, ref e))
+                    throw e;
 
-            await ftpClient.DeleteFile(remotePath, cancelToken);
+                throw;
+            }
 
         }
 
-        /// <summary>
-        /// A localized description of the backend, for display in the usage information
-        /// </summary>
+        /// <inheritdoc />
         public virtual string Description => Strings.Description;
 
-        public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(new[] { new Uri(_url).Host });
+        /// <inheritdoc />
+        public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(new[] { _url.Host });
 
-        /// <summary>
-        /// Test FTP access permissions.
-        /// </summary>
+        /// <inheritdoc />
         public async Task TestAsync(CancellationToken cancellationToken)
         {
-            var list = List();
-
-            // Delete test file if exists
-            if (list.Any(entry => entry.Name == TEST_FILE_NAME))
+            // Try to set the working directory to trigger a folder-not-found exception
+            try
             {
-                try
+                var client = await CreateClient(cancellationToken).ConfigureAwait(false);
+                if (!_useCwdNames)
                 {
+                    var folderpath = PreparePathForClient(null);
+                    await client.SetWorkingDirectory(folderpath, cancellationToken).ConfigureAwait(false);
+                }
+            }
+            catch (Exception e)
+            {
+                if (TranslateException(null, ref e))
+                    throw e;
+
+                throw;
+            }
+
+            // Remove the file if it exists
+            try
+            {
+                var list = List();
+                if (list.Any(entry => entry.Name == TEST_FILE_NAME))
                     await DeleteAsync(TEST_FILE_NAME, cancellationToken).ConfigureAwait(false);
-                }
-                catch (Exception e)
-                {
-                    if (e.InnerException != null) { e = e.InnerException; }
-                    throw new Exception(string.Format(Strings.ErrorDeleteFile, e.Message), e);
-                }
+            }
+            catch (Exception e)
+            {
+                if (TranslateException(TEST_FILE_NAME, ref e))
+                    throw e;
+
+                throw new UserInformationException(Strings.ErrorDeleteFile(TEST_FILE_NAME, e.Message), "TestPreparationError");
             }
 
             // Test write permissions
@@ -476,8 +562,11 @@ namespace Duplicati.Library.Backend
                 }
                 catch (Exception e)
                 {
-                    if (e.InnerException != null) { e = e.InnerException; }
-                    throw new Exception(string.Format(Strings.ErrorWriteFile, e.Message), e);
+                    // Do not pass the filename here because a not-found should be treated as folder-not-found
+                    if (TranslateException(null, ref e))
+                        throw e;
+
+                    throw new UserInformationException(Strings.ErrorWriteFile(TEST_FILE_NAME, e.Message), "TestWriteError");
                 }
             }
 
@@ -493,8 +582,10 @@ namespace Duplicati.Library.Backend
                 }
                 catch (Exception e)
                 {
-                    if (e.InnerException != null) { e = e.InnerException; }
-                    throw new Exception(string.Format(Strings.ErrorReadFile, e.Message), e);
+                    if (TranslateException(TEST_FILE_NAME, ref e))
+                        throw e;
+
+                    throw new UserInformationException(Strings.ErrorReadFile(TEST_FILE_NAME, e.Message), "TestReadError");
                 }
             }
 
@@ -505,82 +596,99 @@ namespace Duplicati.Library.Backend
             }
             catch (Exception e)
             {
-                if (e.InnerException != null) { e = e.InnerException; }
-                throw new Exception(string.Format(Strings.ErrorDeleteFile, e.Message), e);
+                if (TranslateException(TEST_FILE_NAME, ref e))
+                    throw e;
+
+                throw new UserInformationException(Strings.ErrorDeleteFile(TEST_FILE_NAME, e.Message), "TestCleanupError");
             }
         }
 
-        public Task CreateFolderAsync(CancellationToken cancellationToken)
+        /// <inheritdoc />
+        public async Task CreateFolderAsync(CancellationToken cancellationToken)
         {
-            var client = CreateClient(false);
+            try
+            {
+                // Try to create the directory 
+                var client = await CreateClient(cancellationToken, false).ConfigureAwait(false);
+                var clientPath = PreparePathForClient(null, false);
+                if (_useCwdNames && clientPath.Contains('/') && clientPath != "/")
+                {
+                    // Go to the parent folder and create the folder
+                    var parentPath = clientPath.Substring(0, clientPath.LastIndexOf('/'));
+                    var folderName = clientPath.Substring(clientPath.LastIndexOf('/') + 1);
+                    await client.SetWorkingDirectory(parentPath, cancellationToken).ConfigureAwait(false);
+                    await client.CreateDirectory(folderName, true, cancellationToken).ConfigureAwait(false);
 
-            var url = new Uri(_url);
-
-            // Get the remote path
-            var remotePath = GetUnescapedAbsolutePath(url);
-
-            // Try to create the directory 
-            return client.CreateDirectory(remotePath, true, cancellationToken);
+                    // Reset the client and check that it works
+                    _client = null;
+                    client = await CreateClient(cancellationToken).ConfigureAwait(false);
+                    var cwd = await client.GetWorkingDirectory(cancellationToken).ConfigureAwait(false);
+                    if (!string.Equals(cwd?.TrimEnd('/'), clientPath, StringComparison.OrdinalIgnoreCase))
+                        throw new UserInformationException(Strings.ErrorCreateFolder(clientPath, cwd), "CreateFolderError");
+                }
+                else
+                {
+                    await client.CreateDirectory(clientPath, true, cancellationToken);
+                }
+            }
+            catch (Exception ex)
+            {
+                if (TranslateException(null, ref ex))
+                    throw ex;
+                throw;
+            }
         }
 
+        /// <inheritdoc />
         public void Dispose()
         {
-            if (Client != null)
-                Client.Dispose();
-
-            Client = null;
-            _userInfo = null;
+            _client?.Dispose();
         }
 
-        private AsyncFtpClient CreateClient(bool setWorkingDirectory = true)
+        /// <summary>
+        /// Create a new FTP client, or return the existing one if it already exists.
+        /// </summary>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <param name="cwdFlag">A flag to override the CWD strategy.</param>
+        /// <returns>The FTP client.</returns>
+        private async Task<AsyncFtpClient> CreateClient(CancellationToken cancellationToken, bool? cwdFlag = null)
         {
-            var uri = new Uri(_url);
-
-            if (Client == null) // Create connection if it doesn't exist yet
+            if (_client == null)
             {
-                var ftpClient = new AsyncFtpClient
+                var client = new AsyncFtpClient
                 {
-                    Host = uri.Host,
-                    Port = uri.Port == -1 ? 21 : uri.Port,
+                    Host = _url.Host,
+                    Port = _url.Port == -1 ? 21 : _url.Port,
                     Credentials = _userInfo,
-                    Config = _ftpConfig,
+                    Config = _ftpConfig
                 };
 
-                ftpClient.ValidateCertificate += HandleValidateCertificate;
+                client.ValidateCertificate += HandleValidateCertificate;
 
-                Client = ftpClient;
-
-            } // else reuse existing connection
-
-            if (setWorkingDirectory)
-            {
-                // Change working directory to the remote path
-                // Do this every time to prevent issues when FtpClient silently reconnects after failure.
-                var remotePath = GetUnescapedAbsolutePath(uri);
-                try
+                // Set up for relative paths
+                if (_relativePaths)
                 {
-                    Client.SetWorkingDirectory(remotePath).Await();
+                    _initialCwd = await client.GetWorkingDirectory(cancellationToken).ConfigureAwait(false);
+                    _initialCwd = _initialCwd?.TrimEnd('/');
                 }
-                catch (FtpCommandException ex)
-                {
-                    if (ex.CompletionCode == "550")
-                    {
-                        throw new FolderMissingException(Strings.MissingFolderError(remotePath, ex.Message), ex);
-                    }
 
-                    throw;
+                // Setup the initial working directory, if needed
+                if (cwdFlag ?? _useCwdNames)
+                {
+                    var clientPath = PreparePathForClient(null, false, client);
+                    await client.SetWorkingDirectory(clientPath, cancellationToken).ConfigureAwait(false);
                 }
+
+                _client = client;
             }
-
-            return Client;
+            return _client;
         }
 
-        private string GetUnescapedAbsolutePath(Uri uri)
-        {
-            string absolutePath = Uri.UnescapeDataString(uri.AbsolutePath);
-            return absolutePath.EndsWith("/", StringComparison.Ordinal) ? absolutePath.Substring(0, absolutePath.Length - 1) : absolutePath;
-        }
-
+        /// <summary>
+        /// Handle the certificate validation event.
+        /// </summary>
+        /// <param name="control">The FTP client.</param>
+        /// <param name="e">The event arguments.</param>
         private void HandleValidateCertificate(BaseFtpClient control, FtpSslValidationEventArgs e)
         {
             if (e.PolicyErrors == SslPolicyErrors.None || _accepAllCertificates)
@@ -589,21 +697,79 @@ namespace Duplicati.Library.Backend
                 return;
             }
 
+            e.Accept = false;
             try
             {
-                var certHash = (_validHashes != null && _validHashes.Length > 0) ? CoreUtility.ByteArrayAsHexString(e.Certificate.GetCertHash()) : null;
-                if (certHash != null)
-                {
-                    if (_validHashes.Any(hash => !string.IsNullOrEmpty(hash) && certHash.Equals(hash, StringComparison.OrdinalIgnoreCase)))
-                    {
-                        e.Accept = true;
-                    }
-                }
+                var certHash = (_validHashes != null && _validHashes.Length > 0) ? e.Certificate?.GetCertHashString() : null;
+                if (certHash != null && _validHashes != null && _validHashes.Any(hash => !string.IsNullOrEmpty(hash) && certHash.Equals(hash, StringComparison.OrdinalIgnoreCase)))
+                    e.Accept = true;
             }
             catch
             {
-                e.Accept = false;
             }
+
+            if (e.Accept == false && e.Certificate != null)
+                throw new SslCertificateValidator.InvalidCertificateException(e.Certificate?.GetCertHashString(), e.PolicyErrors);
+        }
+
+        /// <summary>
+        /// Prepare the path for the client.
+        /// </summary>
+        /// <param name="path">The path to prepare.</param>
+        /// <param name="cwdFlag">A flag to override the CWD strategy.</param>
+        /// <param name="client">The FTP client, if not using the class instance.</param>
+        /// <returns>The prepared path.</returns>
+        private string PreparePathForClient(string? path, bool? cwdFlag = null, AsyncFtpClient? client = null)
+        {
+            client = client ?? _client;
+            if (cwdFlag ?? _useCwdNames)
+                return string.IsNullOrWhiteSpace(path)
+                    ? string.Empty
+                    : path;
+
+            var remotePath = _url.AbsolutePath.TrimEnd('/');
+            if (_relativePaths)
+            {
+                if (client == null)
+                    throw new InvalidOperationException("Client not initialized");
+
+                if (!string.IsNullOrWhiteSpace(_initialCwd))
+                    remotePath = _initialCwd + "/" + remotePath.TrimStart('/');
+            }
+
+            if (string.IsNullOrEmpty(path))
+                return remotePath;
+
+            if (path.StartsWith("/", StringComparison.Ordinal))
+                return path;
+
+            return remotePath + "/" + path;
+        }
+
+        /// <summary>
+        /// Translate an exception to a more user-friendly exception.
+        /// </summary>
+        /// <param name="filename">The filename provided.</param>
+        /// <param name="ex">The exception to translate.</param>
+        /// <returns>True if the exception was translated, otherwise false.</returns>
+        private bool TranslateException(string? filename, ref Exception ex)
+        {
+            if (ex.InnerException != null && (ex.InnerException is FtpCommandException || ex.InnerException is SslCertificateValidator.InvalidCertificateException))
+                ex = ex.InnerException;
+
+            if (ex is FtpCommandException ftpEx && (ftpEx.CompletionCode == "550" || ftpEx.CompletionCode == "450"))
+            {
+                ex = string.IsNullOrWhiteSpace(filename)
+                    ? new FolderMissingException(Strings.MissingFolderError(_url.AbsolutePath, ftpEx.Message), ftpEx)
+                    : new FileMissingException(Strings.FileMissingError(filename, ftpEx.Message), ftpEx);
+
+                return true;
+            }
+
+            if (ex is SslCertificateValidator.InvalidCertificateException)
+                return true;
+
+            return false;
         }
     }
 }

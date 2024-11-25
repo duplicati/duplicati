@@ -36,7 +36,7 @@ public static class GenericModules
         new MSSQLOptions(),
         new RunScript(),
         new SendHttpMessage(),
-        new SendJabberMessage(),
+        new SendJabberMessage(), 
         new SendTelegramMessage(),
         new SendMail(),
     ];

@@ -1,6 +1,9 @@
 using System.Text.Json;
+using Duplicati.Library.DynamicLoader;
 using Duplicati.Library.Encryption;
+using Duplicati.Library.Interface;
 using Duplicati.Library.Main;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.CommandLine.ServerUtil;
 
@@ -13,14 +16,20 @@ namespace Duplicati.CommandLine.ServerUtil;
 /// <param name="ServerDatafolder">The server datafolder for password-free connections</param>
 /// <param name="SettingsFile">The settings file where data is loaded/saved</param>
 /// <param name="Insecure">Whether to disable TLS/SSL certificate trust check</param>
+/// <param name="Key">The encryption key to use for the settings file</param>
+/// <param name="SecretProvider">The secret provider to use for reading secrets</param>
+/// <param name="SecretProviderPattern">The pattern to use for the secret provider</param>
 /// <param name="AcceptedHostCertificate">The SHA1 hash of the host certificate to accept</param>
 public sealed record Settings(
     string? Password,
     string? RefreshToken,
-    Uri HostUrl,
+    System.Uri HostUrl,
     string? ServerDatafolder,
     string SettingsFile,
     bool Insecure,
+    EncryptedFieldHelper.KeyInstance? Key,
+    ISecretProvider? SecretProvider,
+    string SecretProviderPattern,
     string? AcceptedHostCertificate
 )
 {
@@ -32,7 +41,7 @@ public sealed record Settings(
     /// <param name="ServerDatafolder">The server datafolder, if any</param>
     private sealed record PersistedSettings(
         string? RefreshToken,
-        Uri HostUrl,
+        System.Uri HostUrl,
         string? ServerDatafolder
     );
     private static string GetDefaultStorageFolder(string filename)
@@ -52,18 +61,48 @@ public sealed record Settings(
     /// <param name="serverDataFolder">The server data folder to use</param>
     /// <param name="settingsFile">The settings file to use</param>
     /// <param name="insecure">Whether to disable TLS/SSL certificate trust check</param>
+    /// <param name="settingsPassphrase">The encryption key to use</param>
+    /// <param name="secretProvider">The secret provider to use</param>
+    /// <param name="secretProviderCache">The secret provider cache level to use</param>
+    /// <param name="secretProviderPattern">The secret provider pattern to use</param>
     /// <param name="acceptedHostCertificate">The SHA1 hash of the host certificate to accept</param>
     /// <returns>The loaded settings</returns>
-    public static Settings Load(string? password, Uri? hostUrl, string? serverDataFolder, string settingsFile, bool insecure, string? acceptedHostCertificate)
+    public static Settings Load(string? password, System.Uri? hostUrl, string? serverDataFolder, string settingsFile, bool insecure, string? settingsPassphrase, string? secretProvider, SecretProviderHelper.CachingLevel secretProviderCache, string secretProviderPattern, string? acceptedHostCertificate)
     {
-        hostUrl ??= new Uri("http://localhost:8200");
+        hostUrl ??= new System.Uri("http://localhost:8200");
+
+        ISecretProvider? secretInstance = null;
+        if (!string.IsNullOrWhiteSpace(secretProvider))
+        {
+            var secretProviderInstance = SecretProviderLoader.CreateInstance(secretProvider);
+
+            // Map into expected structure
+            var opts = new Dictionary<string, string?>
+            {
+                { "secret-provider", secretProvider },
+                { "secret-provider-pattern", secretProviderPattern },
+                { "secret-provider-cache", secretProviderCache.ToString() },
+                { "password", password },
+                { "settings-encryption-key", settingsPassphrase }
+            };
+
+            var args = new[] { hostUrl };
+            secretInstance = SecretProviderHelper.ApplySecretProviderAsync(args, [], opts, Library.Utility.TempFolder.SystemTempPath, null, CancellationToken.None).Await();
+
+            // Read back transformed values
+            hostUrl = args[0];
+            password = opts["password"];
+            settingsPassphrase = opts["settings-encryption-key"];
+        }
+
         if (string.IsNullOrWhiteSpace(serverDataFolder))
             serverDataFolder = GetDefaultStorageFolder("Duplicati-server.sqlite");
 
         if (!string.IsNullOrWhiteSpace(settingsFile) && !Path.IsPathRooted(settingsFile))
             settingsFile = Path.Combine(GetDefaultStorageFolder(settingsFile), settingsFile);
 
-        var persistedSettings = LoadSettings(settingsFile)
+        var key = EncryptedFieldHelper.KeyInstance.CreateKeyIfValid(settingsPassphrase);
+        var persistedSettings = LoadSettings(settingsFile, key)
             .FirstOrDefault(x => x.HostUrl == hostUrl);
 
         return new Settings(
@@ -73,8 +112,25 @@ public sealed record Settings(
             serverDataFolder,
             settingsFile,
             insecure,
+            key,
+            secretInstance,
+            secretProviderPattern,
             acceptedHostCertificate
         );
+    }
+
+    /// <summary>
+    /// Replaces secrets inside arguments and options
+    /// </summary>
+    /// <param name="args">The arguments to replace</param>
+    /// <param name="options">The options to replace</param>
+    /// <returns>The task to await</returns>
+    public Task ReplaceSecrets(Dictionary<string, string?> options)
+    {
+        if (SecretProvider == null)
+            return Task.CompletedTask;
+
+        return SecretProviderHelper.ReplaceSecretsAsync(SecretProvider, [], [], options, SecretProviderPattern, CancellationToken.None);
     }
 
     /// <summary>
@@ -82,22 +138,29 @@ public sealed record Settings(
     /// </summary>
     public void Save()
     {
+        var thisKey = Key;
         if (!string.IsNullOrWhiteSpace(RefreshToken))
         {
-            if (!EncryptedFieldHelper.HasValidDefaultKey)
+            if (Key == null)
+            {
                 Console.WriteLine("Warning: The encryption key is missing, saving login token without encryption");
-            else if (EncryptedFieldHelper.IsDefaultKeyBlacklisted)
+            }
+            else if (Key?.IsBlacklisted ?? false)
+            {
                 Console.WriteLine("Warning: The current encryption key is blacklisted and cannot be used, saving login token without encryption");
+                thisKey = null;
+            }
+
         }
 
-        File.WriteAllText(SettingsFile, JsonSerializer.Serialize(LoadSettings(SettingsFile)
+        File.WriteAllText(SettingsFile, JsonSerializer.Serialize(LoadSettings(SettingsFile, thisKey)
             .Where(x => x.HostUrl != HostUrl)
             .Append(new PersistedSettings(RefreshToken, HostUrl, ServerDatafolder))
             .Select(x => x with
             {
-                RefreshToken = string.IsNullOrWhiteSpace(x.RefreshToken) || EncryptedFieldHelper.IsDefaultKeyBlacklisted || !EncryptedFieldHelper.HasValidDefaultKey
+                RefreshToken = string.IsNullOrWhiteSpace(x.RefreshToken) || thisKey == null
                     ? x.RefreshToken
-                    : EncryptedFieldHelper.Encrypt(x.RefreshToken)
+                    : EncryptedFieldHelper.Encrypt(x.RefreshToken, thisKey)
             })
         ));
     }
@@ -115,12 +178,13 @@ public sealed record Settings(
     /// Loads the settings from the settings file
     /// </summary>
     /// <param name="filename">The filename to load</param>
+    /// <param name="key">The encryption key to use</param>
     /// <returns>The loaded settings</returns>
-    private static List<PersistedSettings> LoadSettings(string filename)
+    private static List<PersistedSettings> LoadSettings(string filename, EncryptedFieldHelper.KeyInstance? key)
     {
         if (File.Exists(filename))
             return (JsonSerializer.Deserialize<List<PersistedSettings>>(File.ReadAllText(filename)) ?? [])
-                .Select(x => x with { RefreshToken = EncryptedFieldHelper.Decrypt(x.RefreshToken) })
+                .Select(x => x with { RefreshToken = EncryptedFieldHelper.Decrypt(x.RefreshToken, key) })
                 .ToList();
 
         return [];

@@ -14,29 +14,29 @@ public static partial class Command
         /// </summary>
         /// <param name="baseDir">The source directory</param>
         /// <param name="buildDir">The output build directory to modify</param>
-        /// <param name="os">The target operating system</param>
-        /// <param name="arch">The target architecture</param>
+        /// <param name="target">The target to prepare for</param>
         /// <param name="buildTargetString">The build target string os-arch-interface</param>
         /// <param name="rtcfg">The runtime config</param>
         /// <param name="keepBuilds">A flag that allows re-using existing builds</param>
         /// <returns>An awaitable task</returns>
-        public static async Task PrepareTargetDirectory(string baseDir, string buildDir, OSType os, ArchType arch, string buildTargetString, RuntimeConfig rtcfg, bool keepBuilds)
+        public static async Task PrepareTargetDirectory(string baseDir, string buildDir, PackageTarget target, RuntimeConfig rtcfg, bool keepBuilds)
         {
-            await RemoveUnwantedFiles(os, buildDir);
+            await RemoveUnwantedFiles(target.OS, buildDir);
 
-            switch (os)
+            switch (target.OS)
             {
                 case OSType.Windows:
                     await SignWindowsExecutables(buildDir, rtcfg);
                     break;
 
                 case OSType.MacOS:
-                    await BundleMacOSApplication(baseDir, buildDir, buildTargetString, rtcfg, keepBuilds);
+                    if (target.Interface == InterfaceType.GUI)
+                        await BundleMacOSApplication(baseDir, buildDir, target.BuildTargetString, rtcfg, keepBuilds);
                     break;
 
                 case OSType.Linux:
-                    await ReplaceLibMonoUnix(baseDir, buildDir, arch);
-                    await ReplaceSQLiteInterop(baseDir, buildDir, arch);
+                    await ReplaceLibMonoUnix(baseDir, buildDir, target.Arch);
+                    await ReplaceSQLiteInterop(baseDir, buildDir, target.Arch);
                     break;
 
                 default:
@@ -189,7 +189,7 @@ public static partial class Command
             EnvHelper.CopyDirectory(buildDir, binDir, recursive: true);
 
             // Patch the plist and place the icon from the resources
-            var resourcesDir = Path.Combine(baseDir, "ReleaseBuilder", "Resources", "MacOS");
+            var resourcesDir = Path.Combine(baseDir, "ReleaseBuilder", "Resources", "MacOS", "AppBundle");
 
             var plist = File.ReadAllText(Path.Combine(resourcesDir, "app-resources", "Info.plist"))
                 .Replace("!LONG_VERSION!", rtcfg.ReleaseInfo.ReleaseName)
@@ -228,26 +228,12 @@ public static partial class Command
             var licenseTarget = Path.Combine(tmpApp, "Contents", "Licenses");
             Directory.Move(Path.Combine(binDir, "licenses"), licenseTarget);
 
+            // Apply code signing, if requested
             if (rtcfg.UseCodeSignSigning)
             {
-                Console.WriteLine("Performing MacOS code signing ...");
-
-                // Executables cannot be signed before their dependencies are signed
-                // So they are placed last in the list
-                var executables = ExecutableRenames.Values.Select(x => Path.Combine(binDir, x))
-                    .Where(File.Exists);
-
-                var signtargets = Directory.EnumerateFiles(binDir, "*", SearchOption.AllDirectories)
-                    .Except(executables)
-                    .Concat(executables)
-                    .Distinct()
-                    .ToList();
-
                 var entitlementFile = Path.Combine(resourcesDir, "Entitlements.plist");
-                foreach (var f in signtargets)
-                    await rtcfg.Codesign(f, entitlementFile);
-
-                await rtcfg.Codesign(Path.Combine(tmpApp), entitlementFile);
+                await PackageSupport.SignMacOSBinaries(rtcfg, binDir, entitlementFile);
+                await rtcfg.Codesign(tmpApp, entitlementFile);
             }
 
             if (!OperatingSystem.IsWindows())

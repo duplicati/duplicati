@@ -208,9 +208,11 @@ namespace Duplicati.Library.Backend
             }
             else
             {
+#pragma warning disable DE0001
                 System.Security.SecureString securePwd = new System.Security.SecureString();
+#pragma warning restore DE0001
                 usePassword.ToList().ForEach(c => securePwd.AppendChar(c));
-                m_userInfo = new Microsoft.SharePoint.Client.SharePointOnlineCredentials(useUsername, securePwd);
+                m_userInfo = new SharePointOnlineCredentials(useUsername, securePwd);
                 // Other options (also ADAL, see class remarks) might be supported on request.
                 // Maybe go in deep then and also look at:
                 // - Microsoft.SharePoint.Client.AppPrincipalCredential.CreateFromKeyGroup()

@@ -8,7 +8,7 @@
     <pkg-ref id="com.duplicati.app"/>
     <pkg-ref id="com.duplicati.app.daemon"/>
 
-    <options require-scripts="false"/>
+    <options require-scripts="false" hostArchitectures="$HOSTARCH"/>
     <choices-outline>
         <line choice="com.duplicati.app"/>
         <line choice="com.duplicati.app.daemon"/>

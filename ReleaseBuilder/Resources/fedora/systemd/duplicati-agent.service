@@ -7,7 +7,7 @@ Nice=19
 IOSchedulingClass=idle
 IOSchedulingPriority=7
 EnvironmentFile=-/etc/sysconfig/duplicati-agent
-ExecStart=/usr/bin/duplicati-agent $DAEMON_OPTS
+ExecStart=/usr/bin/duplicati-agent run $DAEMON_OPTS
 Restart=on-failure
 
 [Install]

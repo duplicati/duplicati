@@ -377,6 +377,7 @@ namespace Duplicati.GUI.TrayIcon
                     menu.Add(item.GetNativeItem());
                 }
                 trayIcon.Menu = menu;
+                trayIcon.Clicked += (_, _) => this.menuItems.FirstOrDefault(x => x.IsDefault)?.Callback();
             }
         }
 

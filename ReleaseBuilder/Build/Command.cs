@@ -65,6 +65,7 @@ public static partial class Command
         { "Duplicati.CommandLine.SharpAESCrypt", "duplicati-aescrypt" },
         { "Duplicati.CommandLine.Snapshots", "duplicati-snapshots" },
         { "Duplicati.CommandLine.ServerUtil", "duplicati-server-util" },
+        { "Duplicati.CommandLine.SecretTool", "duplicati-secret-tool" },
         { "Duplicati.Service", "duplicati-service" },
         { "Duplicati.Agent", "duplicati-agent" },
         { "Duplicati.CommandLine", "duplicati-cli" },
@@ -675,17 +676,29 @@ public static partial class Command
                 regex.Replace(File.ReadAllText(file), $"?v={releaseInfo.Version}")
             );
 
-        var wixFile = Path.Combine(baseDir, "ReleaseBuilder", "Resources", "Windows", "UpgradeData.wxi");
+        var wixFileGUI = Path.Combine(baseDir, "ReleaseBuilder", "Resources", "Windows", "TrayIcon", "UpgradeData.wxi");
         File.WriteAllText(
-            wixFile,
+            wixFileGUI,
             Regex.Replace(
-                File.ReadAllText(wixFile),
+                File.ReadAllText(wixFileGUI),
                 @"\<\?define ProductVersion\=\""" + versionre + @"\"" \?\>",
                 $"<?define ProductVersion=\"{releaseInfo.Version}\" ?>"
             )
         );
 
-        targetfiles.Add(wixFile);
+        targetfiles.Add(wixFileGUI);
+
+        var wixFileAgent = Path.Combine(baseDir, "ReleaseBuilder", "Resources", "Windows", "Agent", "UpgradeData.wxi");
+        File.WriteAllText(
+            wixFileAgent,
+            Regex.Replace(
+                File.ReadAllText(wixFileAgent),
+                @"\<\?define ProductVersion\=\""" + versionre + @"\"" \?\>",
+                $"<?define ProductVersion=\"{releaseInfo.Version}\" ?>"
+            )
+        );
+
+        targetfiles.Add(wixFileAgent);
 
         return targetfiles;
     }

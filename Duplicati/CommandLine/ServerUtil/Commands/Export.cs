@@ -57,6 +57,13 @@ public static class Export
                         throw new UserReportedException("No passphrase provided, use --unencrypted to export unencrypted configurations");
                 }
 
+                if (settings.SecretProvider != null)
+                {
+                    var opts = new Dictionary<string, string?>() { { "password", encryptionPassphrase } };
+                    await settings.ReplaceSecrets(opts).ConfigureAwait(false);
+                    encryptionPassphrase = opts["password"]!;
+                }
+
                 if (!exportPasswords.HasValue)
                     exportPasswords = true;
             }

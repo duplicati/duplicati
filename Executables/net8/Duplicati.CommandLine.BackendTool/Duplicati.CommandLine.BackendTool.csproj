@@ -9,6 +9,7 @@
 
   <ItemGroup>	
     <ProjectReference Include="..\..\..\Duplicati\CommandLine\BackendTool\Duplicati.CommandLine.BackendTool.csproj" />
+    <ProjectReference Include="..\..\..\Duplicati\Library\Crashlog\Duplicati.Library.Crashlog.csproj" />
   </ItemGroup>
 
   <ItemGroup>

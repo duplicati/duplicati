@@ -22,6 +22,7 @@
 
 using Amazon.S3;
 using Amazon.S3.Model;
+using Duplicati.Library.Backend.Strings;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
 using System;
@@ -40,6 +41,8 @@ namespace Duplicati.Library.Backend
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<S3AwsClient>();
         private const int ITEM_LIST_LIMIT = 1000;
 
+        private const string EXT_OPTION_PREFIX = "s3-ext-";
+
         private readonly string m_locationConstraint;
         private readonly string m_storageClass;
         private AmazonS3Client m_client;
@@ -54,27 +57,7 @@ namespace Duplicati.Library.Backend
             cfg.UseHttp = !useSSL;
             cfg.ServiceURL = (useSSL ? "https://" : "http://") + servername;
 
-            foreach (var opt in options.Keys.Where(x => x.StartsWith("s3-ext-", StringComparison.OrdinalIgnoreCase)))
-            {
-                var prop = cfg.GetType().GetProperties().FirstOrDefault(x =>
-                    string.Equals(x.Name, opt.Substring("s3-ext-".Length), StringComparison.OrdinalIgnoreCase));
-                if (prop != null && prop.CanWrite)
-                {
-                    if (prop.PropertyType == typeof(bool))
-                        prop.SetValue(cfg, Utility.Utility.ParseBoolOption(options, opt));
-                    else if (prop.PropertyType.IsEnum)
-                        prop.SetValue(cfg, Enum.Parse(prop.PropertyType, options[opt], true));
-                    else if (prop.PropertyType == typeof(int))
-                        prop.SetValue(cfg, int.Parse(options[opt]));
-                    else if (prop.PropertyType == typeof(long))
-                        prop.SetValue(cfg, long.Parse(options[opt]));
-                    else if (prop.PropertyType == typeof(string))
-                        prop.SetValue(cfg, options[opt]);
-                }
-
-                if (prop == null)
-                    Logging.Log.WriteWarningMessage(LOGTAG, "UnsupportedOption", null, "Unsupported option: {0}", opt);
-            }
+            CommandLineArgumentMapper.ApplyArguments(cfg, options, EXT_OPTION_PREFIX);
 
             m_client = new AmazonS3Client(awsID, awsKey, cfg);
 
@@ -97,7 +80,7 @@ namespace Duplicati.Library.Backend
             return m_client.PutBucketAsync(request, cancelToken);
         }
 
-        internal static AmazonS3Config GetDefaultAmazonS3Config()
+        public static AmazonS3Config GetDefaultAmazonS3Config()
         {
             return new AmazonS3Config()
             {
@@ -110,6 +93,32 @@ namespace Duplicati.Library.Backend
                 UseArnRegion = false,
             };
         }
+
+        private static readonly HashSet<string> EXCLUDED_EXTENDED_OPTIONS = new HashSet<string>([
+            nameof(AmazonS3Config.USEast1RegionalEndpointValue)
+        ]);
+
+        /// <summary>
+        /// List of properties that are slow to read the default value from
+        /// </summary>
+        /// <remarks>Changes in this list will likely need to be reflected in AWSSecretProvider.cs</remarks>
+        private static readonly HashSet<string> SLOW_LOADING_PROPERTIES = new[] {
+            nameof(AmazonS3Config.RegionEndpoint),
+            nameof(AmazonS3Config.ServiceURL),
+            nameof(AmazonS3Config.MaxErrorRetry),
+            nameof(AmazonS3Config.DefaultConfigurationMode),
+            nameof(AmazonS3Config.Timeout),
+            nameof(AmazonS3Config.RetryMode),
+        }.ToHashSet();
+
+        public static IEnumerable<ICommandLineArgument> GetAwsExtendedOptions()
+            => CommandLineArgumentMapper.MapArguments(GetDefaultAmazonS3Config(), prefix: EXT_OPTION_PREFIX, exclude: EXCLUDED_EXTENDED_OPTIONS, excludeDefaultValue: SLOW_LOADING_PROPERTIES)
+                .Cast<CommandLineArgument>()
+                .Select(x =>
+                {
+                    x.LongDescription = $"Extended option {x.LongDescription}";
+                    return x;
+                });
 
         public virtual async Task GetFileStreamAsync(string bucketName, string keyName, System.IO.Stream target, CancellationToken cancelToken)
         {
