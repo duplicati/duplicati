@@ -28,6 +28,13 @@ namespace Duplicati.UnitTest;
 
 public class TimeZoneHelperTests : BasicSetupHelper
 {
+    private static string CETName = OperatingSystem.IsWindows() 
+        // For some reason CET is not recognized on Windows
+        // It has no effect outside the tests, as the string is not
+        // present outside the tests
+        ? "Central European Standard Time"
+        : "CET";
+    
     [Test]
     [Category("TimeZoneHelper")]
     public void GetTimeZoneFromAbbreviationTest()
@@ -38,7 +45,7 @@ public class TimeZoneHelperTests : BasicSetupHelper
         timeZone = TimeZoneHelper.FindTimeZone("Pacific Standard Time");
         Assert.NotNull(timeZone);
 
-        timeZone = TimeZoneHelper.FindTimeZone("CET");
+        timeZone = TimeZoneHelper.FindTimeZone(CETName);
         Assert.NotNull(timeZone);
     }
 
@@ -57,7 +64,7 @@ public class TimeZoneHelperTests : BasicSetupHelper
     [Category("TimeZoneHelper")]
     public void CheckTestSystemTimeZonesAreCorrect()
     {
-        var timeZone = TimeZoneHelper.FindTimeZone("CET");
+        var timeZone = TimeZoneHelper.FindTimeZone(CETName);
         var localTime = new DateTimeOffset(2024, 3, 31, 1, 59, 59, timeZone.BaseUtcOffset);
 
         // Check that the system time is correct
@@ -69,7 +76,7 @@ public class TimeZoneHelperTests : BasicSetupHelper
     [Category("TimeZoneHelper")]
     public void CheckAddIsStableOverDSTForward()
     {
-        var timeZone = TimeZoneHelper.FindTimeZone("CET");
+        var timeZone = TimeZoneHelper.FindTimeZone(CETName);
         var localTime = new DateTimeOffset(2024, 3, 31, 1, 59, 59, timeZone.BaseUtcOffset);
 
         var utcTime = localTime.ToUniversalTime().DateTime;
@@ -86,7 +93,7 @@ public class TimeZoneHelperTests : BasicSetupHelper
     [Category("TimeZoneHelper")]
     public void CheckAddIsStableOverDSTBackward()
     {
-        var timeZone = TimeZoneHelper.FindTimeZone("CET");
+        var timeZone = TimeZoneHelper.FindTimeZone(CETName);
         var dstOffset = timeZone.GetUtcOffset(new DateTimeOffset(2024, 10, 26, 14, 0, 0, timeZone.BaseUtcOffset));
         var localTime = new DateTimeOffset(2024, 10, 27, 2, 59, 59, dstOffset);
 
@@ -104,7 +111,7 @@ public class TimeZoneHelperTests : BasicSetupHelper
     [Category("TimeZoneHelper")]
     public void CheckRepeatScheduleIsStableOverDSTForward()
     {
-        var timeZone = TimeZoneHelper.FindTimeZone("CET");
+        var timeZone = TimeZoneHelper.FindTimeZone(CETName);
         var localTime = new DateTimeOffset(2024, 3, 30, 14, 0, 0, timeZone.BaseUtcOffset);
         var localTimeOfDay = localTime.TimeOfDay;
 
@@ -142,7 +149,7 @@ public class TimeZoneHelperTests : BasicSetupHelper
     [Category("TimeZoneHelper")]
     public void CheckRepeatScheduleIsStableOverDSTBackward()
     {
-        var timeZone = TimeZoneHelper.FindTimeZone("CET");
+        var timeZone = TimeZoneHelper.FindTimeZone(CETName);
         var dstOffset = timeZone.GetUtcOffset(new DateTimeOffset(2024, 10, 26, 14, 0, 0, timeZone.BaseUtcOffset));
         var localTime = new DateTimeOffset(2024, 10, 26, 14, 0, 0, dstOffset);
         var crossTime = new DateTimeOffset(2024, 10, 27, 2, 59, 59, dstOffset);
