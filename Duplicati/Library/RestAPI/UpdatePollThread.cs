@@ -22,6 +22,7 @@
 using System;
 using System.Linq;
 using System.Threading;
+using Duplicati.Library.AutoUpdater;
 using Duplicati.Server.Database;
 using Duplicati.Server.Serialization;
 
@@ -161,8 +162,17 @@ namespace Duplicati.Server
                             connection.ApplicationSettings.UpdatedVersion = null;
                     }
 
+                    // If the update is the same or older than the current version, we discard it
+                    // NOTE: This check is also inside the UpdaterManager.CheckForUpdate method,
+                    // but we may have a stale version recorded, so we force-clear it here
+                    if (connection.ApplicationSettings.UpdatedVersion != null)
+                    {
+                        if (UpdaterManager.TryParseVersion(connection.ApplicationSettings.UpdatedVersion.Version) <= UpdaterManager.TryParseVersion(UpdaterManager.SelfVersion.Version))
+                            connection.ApplicationSettings.UpdatedVersion = null;
+                    }
+
                     var updatedinfo = connection.ApplicationSettings.UpdatedVersion;
-                    if (updatedinfo != null && Duplicati.Library.AutoUpdater.UpdaterManager.TryParseVersion(updatedinfo.Version) > System.Reflection.Assembly.GetExecutingAssembly().GetName().Version)
+                    if (updatedinfo != null && UpdaterManager.TryParseVersion(updatedinfo.Version) > UpdaterManager.TryParseVersion(UpdaterManager.SelfVersion.Version))
                     {
                         var package = updatedinfo.FindPackage();
 

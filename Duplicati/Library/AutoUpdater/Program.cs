@@ -68,7 +68,7 @@ namespace Duplicati.Library.AutoUpdater
                         var update = UpdaterManager.CheckForUpdate();
                         if (update == null || update.Version == UpdaterManager.SelfVersion.Version)
                         {
-                            Console.WriteLine("You are running the latest version: {0} ({1})", UpdaterManager.SelfVersion.Displayname, System.Reflection.Assembly.GetExecutingAssembly().GetName().Version);
+                            Console.WriteLine("You are running the latest version: {0} ({1})", UpdaterManager.SelfVersion.Displayname, UpdaterManager.SelfVersion.Version);
                             return 0;
                         }
 
@@ -117,7 +117,7 @@ namespace Duplicati.Library.AutoUpdater
             Console.WriteLine();
             Console.WriteLine("Updates are downloaded from: {0}", string.Join(";", AutoUpdateSettings.URLs));
             Console.WriteLine("Machine settings are installed in: {0}", UpdaterManager.UPDATEDIR);
-            Console.WriteLine("This version is \"{0}\" ({1}) and is installed in: {2}", UpdaterManager.SelfVersion.Displayname, System.Reflection.Assembly.GetExecutingAssembly().GetName().Version, UpdaterManager.INSTALLATIONDIR);
+            Console.WriteLine("This version is \"{0}\" ({1}) and is installed in: {2}", UpdaterManager.SelfVersion.Displayname, UpdaterManager.SelfVersion.Version, UpdaterManager.INSTALLATIONDIR);
             Console.WriteLine();
         }
     }
