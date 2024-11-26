@@ -30,7 +30,7 @@ public static partial class Command
                     "git", "commit",
                     "-m", $"Version bump to v{releaseInfo.Version}-{releaseInfo.ReleaseName}",
                     "-m", "You can download this build from: ",
-                    "-m", $"Binaries: https://updates.duplicati.com/{releaseInfo.Channel.ToString().ToLowerInvariant()}/",
+                    "-m", $"Binaries: https://updates.duplicati.com/{releaseInfo.Channel.ToString().ToLowerInvariant()}/?version={releaseInfo.Version}",
                     "-m", $"Signature file: https://updates.duplicati.com/{releaseInfo.Channel.ToString().ToLowerInvariant()}/duplicati-{releaseInfo.ReleaseName}.signatures.zip"
                 }, workingDirectory: baseDir);
 
