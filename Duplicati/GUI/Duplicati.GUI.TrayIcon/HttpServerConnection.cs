@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+﻿// Copyright (C) 2024, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -33,6 +33,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.RestAPI;
+using Duplicati.Library.Utility;
 using Duplicati.Server.Serialization;
 using Duplicati.Server.Serialization.Interface;
 using Duplicati.WebserverCore;
@@ -115,7 +116,7 @@ namespace Duplicati.GUI.TrayIcon
         private readonly object m_lock = new object();
         private readonly Queue<BackgroundRequest> m_workQueue = new Queue<BackgroundRequest>();
 
-        public HttpServerConnection(Uri server, string password, Program.PasswordSource passwordSource, bool disableTrayIconLogin, string acceptedHostCertificate, Dictionary<string, string> options)
+        public HttpServerConnection(System.Uri server, string password, Program.PasswordSource passwordSource, bool disableTrayIconLogin, string acceptedHostCertificate, Dictionary<string, string> options)
         {
             m_baseUri = Util.AppendDirSeparator(server.ToString(), "/");
 
@@ -131,7 +132,7 @@ namespace Duplicati.GUI.TrayIcon
 
             var acceptedCertificates = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             if (!string.IsNullOrWhiteSpace(acceptedHostCertificate))
-                acceptedCertificates.UnionWith(acceptedHostCertificate.Split(new char[] {',', ';'}, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
+                acceptedCertificates.UnionWith(acceptedHostCertificate.Split(new char[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
 
             HTTPCLIENT = new(new HttpClientHandler
             {
@@ -334,7 +335,7 @@ namespace Duplicati.GUI.TrayIcon
 
         private async Task<T> PerformRequestInternalAsync<T>(string method, string endpoint, string body, TimeSpan? timeout)
         {
-            var request = new HttpRequestMessage(new HttpMethod(method), new Uri(m_apiUri + endpoint));
+            var request = new HttpRequestMessage(new HttpMethod(method), new System.Uri(m_apiUri + endpoint));
             if (!string.IsNullOrWhiteSpace(m_accesstoken))
                 request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", m_accesstoken);
 
@@ -347,18 +348,18 @@ namespace Duplicati.GUI.TrayIcon
                 ? timeout.Value + TimeSpan.FromSeconds(5)
                 : TimeSpan.FromSeconds(100));
 
-            var response = await HTTPCLIENT.SendAsync(request, cts.Token);
+            var response = await HTTPCLIENT.SendAsync(request, cts.Token).ConfigureAwait(false);
             response.EnsureSuccessStatusCode();
 
             if (typeof(T) == typeof(string))
-                return (T)(object)await response.Content.ReadAsStringAsync();
+                return (T)(object)await response.Content.ReadAsStringAsync().ConfigureAwait(false);
 
             using (var stream = await response.Content.ReadAsStreamAsync())
-                return await JsonSerializer.DeserializeAsync<T>(stream, serializerOptions);
+                return await JsonSerializer.DeserializeAsync<T>(stream, serializerOptions).ConfigureAwait(false);
         }
 
         private T PerformRequestInternal<T>(string method, string endpoint, string body, TimeSpan? timeout)
-            => PerformRequestInternalAsync<T>(method, endpoint, body, timeout).Result;
+            => PerformRequestInternalAsync<T>(method, endpoint, body, timeout).Await();
 
         private void ExecuteAndNotify(string method, string urifragment, string body)
         {
