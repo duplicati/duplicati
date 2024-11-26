@@ -43,7 +43,7 @@ namespace Duplicati.Library.Main.Operation.Restore
     {
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<FileProcessor>();
 
-        public static Task Run(LocalRestoreDatabase db, IChannel<BlockRequest> block_request, IChannel<byte[]> block_response, RestoreResults results, Options options)
+        public static Task Run(LocalRestoreDatabase db, IChannel<BlockRequest> block_request, IChannel<byte[]> block_response, RestoreHandlerMetadataStorage metadatastorage, Options options, RestoreResults results)
         {
             return AutomationExtensions.RunTask(
             new
@@ -83,13 +83,9 @@ namespace Duplicati.Library.Main.Operation.Restore
                         // Verify the target file blocks that may already exist.
                         var missing_blocks = await VerifyTargetBlocks(file, blocks, filehasher, blockhasher, options, results, block_request);
 
-                        if (missing_blocks.Count == 0)
-                            // No blocks are missing, so the file is already restored.
-                            continue;
-
                         long bytes_written = 0;
 
-                        if (options.UseLocalBlocks && missing_blocks.Count > 0)
+                        if (missing_blocks.Count > 0 && options.UseLocalBlocks && missing_blocks.Count > 0)
                         {
                             // Verify the local blocks at the original restore path that may be used to restore the file.
                             var (bw, new_missing_blocks) = await VerifyLocalBlocks(file, missing_blocks, blocks.Length, filehasher, blockhasher, options, results, block_request);
@@ -114,7 +110,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                         }
                         else if (missing_blocks.Count > 0)
                         {
-                            if (blocks.Any(x => x.VolumeID < 0))
+                            if (missing_blocks.Any(x => x.VolumeID < 0))
                             {
                                 Logging.Log.WriteWarningMessage(LOGTAG, "NegativeVolumeID", null, $"{file.Path} has a negative volume ID, skipping");
                                 continue;
@@ -224,6 +220,10 @@ namespace Duplicati.Library.Main.Operation.Restore
                             }
                         }
 
+                        if (!options.SkipMetadata) {
+                            await RestoreMetadata(db, file, block_request, block_response, options, results);
+                        }
+
                         // Keep track of the restored files and their sizes
                         lock (results)
                         {
@@ -247,6 +247,47 @@ namespace Duplicati.Library.Main.Operation.Restore
                     throw;
                 }
             });
+        }
+
+        private static async Task<bool> RestoreMetadata(LocalRestoreDatabase db, LocalRestoreDatabase.IFileToRestore file, IChannel<BlockRequest> block_request, IChannel<byte[]> block_response, Options options, RestoreResults results)
+        {
+            var cmd = db.Connection.CreateCommand();
+            cmd.CommandText = @"
+                SELECT Metadataset.BlocksetID
+                FROM FileLookup
+                JOIN Metadataset ON FileLookup.MetadataID = Metadataset.ID
+                WHERE FileLookup.ID = ?";
+            cmd.AddParameter();
+            cmd.SetParameterValue(0, file.ID);
+            var blockset_id = cmd.ExecuteScalarInt64();
+
+            cmd = db.Connection.CreateCommand();
+            cmd.CommandText = @"
+                SELECT Block.ID, Block.Hash, Block.Size, Block.VolumeID
+                FROM BlocksetEntry
+                JOIN Block ON BlocksetEntry.BlockID = Block.ID
+                WHERE BlocksetEntry.BlocksetID = ?";
+            cmd.AddParameter();
+            cmd.SetParameterValue(0, blockset_id);
+            var blocks = cmd.ExecuteReaderEnumerable()
+                .Select((b, i) =>
+                    new BlockRequest(b.GetInt64(0), i, b.GetString(1), b.GetInt64(2), b.GetInt64(3), false)
+                )
+                .ToArray();
+
+            using var ms = new MemoryStream();
+
+            foreach (var block in blocks)
+            {
+                await block_request.WriteAsync(block);
+                var data = await block_response.ReadAsync();
+                ms.Write(data, 0, data.Length);
+            }
+            ms.Seek(0, SeekOrigin.Begin);
+
+            RestoreHandler.ApplyMetadata(file.Path, ms, options.RestorePermissions, options.RestoreSymlinkMetadata, options.Dryrun);
+
+            return true;
         }
 
         /// <summary>

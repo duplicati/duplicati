@@ -331,7 +331,7 @@ namespace Duplicati.Library.Main.Operation
 
                 // Create the process network
                 var filelister = Restore.FileLister.Run(database, m_result);
-                var fileprocessors = Enumerable.Range(0, m_options.RestoreFileProcessors).Select(i => Restore.FileProcessor.Run(database, fileprocessor_requests[i], fileprocessor_responses[i], m_result, m_options)).ToArray();
+                var fileprocessors = Enumerable.Range(0, m_options.RestoreFileProcessors).Select(i => Restore.FileProcessor.Run(database, fileprocessor_requests[i], fileprocessor_responses[i], metadatastorage, m_options, m_result)).ToArray();
                 var blockmanager = Restore.BlockManager.Run(database, m_options, fileprocessor_requests, fileprocessor_responses);
                 var volumedownloader = Restore.VolumeDownloader.Run(database, backend, m_options, m_result);
                 var volumedecrypters = Enumerable.Range(0, m_options.RestoreVolumeDecrypters).Select(i => Restore.VolumeDecrypter.Run(m_result)).ToArray();
@@ -347,12 +347,9 @@ namespace Duplicati.Library.Main.Operation
                         ..volumedecrypters,
                         ..volumedecompressors
                     ];
+
                 Task.WhenAll(all).Wait();
             }
-
-            // Apply metadata
-            if (!m_options.SkipMetadata)
-                ApplyStoredMetadata(m_options, metadatastorage);
 
             if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
                 return;
@@ -583,7 +580,7 @@ namespace Duplicati.Library.Main.Operation
             m_result.EndTime = DateTime.UtcNow;
         }
 
-        private static void ApplyMetadata(string path, System.IO.Stream stream, bool restorePermissions, bool restoreSymlinkMetadata, bool dryrun)
+        public static void ApplyMetadata(string path, System.IO.Stream stream, bool restorePermissions, bool restoreSymlinkMetadata, bool dryrun)
         {
             using (var tr = new System.IO.StreamReader(stream))
             using (var jr = new Newtonsoft.Json.JsonTextReader(tr))

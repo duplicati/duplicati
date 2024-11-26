@@ -544,6 +544,7 @@ namespace Duplicati.Library.Main.Database
         /// </summary>
         public interface IFileToRestore
         {
+            public long ID { get; }
             public string Name { get; }
             public string Path { get; }
             public string Hash { get; }
@@ -942,14 +943,16 @@ namespace Duplicati.Library.Main.Database
 
         private class FileToRestore : IFileToRestore
         {
+            public long ID { get; private set; }
             public string Name { get; private set; }
             public string Path { get; private set; }
             public string Hash { get; private set; }
             public long Length { get; private set; }
             public long BlocksetID { get; private set; }
 
-            public FileToRestore(string name, string path, string hash, long length, long blocksetid)
+            public FileToRestore(long id, string name, string path, string hash, long length, long blocksetid)
             {
+                this.ID = id;
                 this.Name = name;
                 this.Path = path;
                 this.Hash = hash;
@@ -963,9 +966,9 @@ namespace Duplicati.Library.Main.Database
             using (var cmd = m_connection.CreateCommand())
             {
                 cmd.AddParameter(!onlyNonVerified);
-                using (var rd = cmd.ExecuteReader(string.Format(@"SELECT ""{0}"".""Path"", ""{0}"".""TargetPath"", ""Blockset"".""FullHash"", ""Blockset"".""Length"", ""Blockset"".""ID"" FROM ""{0}"",""Blockset"" WHERE ""{0}"".""BlocksetID"" = ""Blockset"".""ID"" AND ""{0}"".""DataVerified"" <= ?", m_tempfiletable)))
+                using (var rd = cmd.ExecuteReader(string.Format(@"SELECT ""{0}"".ID, ""{0}"".""Path"", ""{0}"".""TargetPath"", ""Blockset"".""FullHash"", ""Blockset"".""Length"", ""Blockset"".""ID"" FROM ""{0}"",""Blockset"" WHERE ""{0}"".""BlocksetID"" = ""Blockset"".""ID"" AND ""{0}"".""DataVerified"" <= ?", m_tempfiletable)))
                     while (rd.Read())
-                        yield return new FileToRestore(rd.ConvertValueToString(0), rd.ConvertValueToString(1), rd.ConvertValueToString(2), rd.ConvertValueToInt64(3), rd.ConvertValueToInt64(4));
+                        yield return new FileToRestore(rd.ConvertValueToInt64(0), rd.ConvertValueToString(1), rd.ConvertValueToString(2), rd.ConvertValueToString(3), rd.ConvertValueToInt64(4), rd.ConvertValueToInt64(5));
             }
         }
 

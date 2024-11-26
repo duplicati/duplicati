@@ -122,7 +122,19 @@ namespace Duplicati.Library.Main.Operation.Restore
                         INNER JOIN ""{db.m_tempfiletable}"" ON BlocksetEntry.BlocksetID = ""{db.m_tempfiletable}"".BlocksetID
                     )
                     GROUP BY BlockID
-                ");
+                    "
+                    + (options.SkipMetadata ? "" : $@"
+                    UNION ALL
+                    SELECT BlockID, COUNT(*)
+                    FROM (
+                        SELECT BlockID
+                        FROM ""{db.m_tempfiletable}""
+                        INNER JOIN Metadataset ON ""{db.m_tempfiletable}"".MetadataID = Metadataset.ID
+                        INNER JOIN BlocksetEntry ON Metadataset.BlocksetID = BlocksetEntry.BlocksetID
+                        WHERE ""{db.m_tempfiletable}"".BlocksetID IS NOT {LocalDatabase.FOLDER_BLOCKSET_ID}
+                    )
+                    GROUP BY BlockID
+                "));
                 cmd.ExecuteNonQuery($@"CREATE INDEX ""blockcount_{db.m_temptabsetguid}_idx"" ON ""blockcount_{db.m_temptabsetguid}"" (BlockID)");
 
                 cmd.ExecuteNonQuery($@"DROP TABLE IF EXISTS ""volumecount_{db.m_temptabsetguid}""");
