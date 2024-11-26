@@ -55,6 +55,16 @@ TESTCREDENTIAL_AZURE_ACCESSKEY
 TESTCREDENTIAL_AZURE_CONTAINERNAME
 ```
 
+## pCloud Native API
+
+```
+TESTCREDENTIAL_PCLOUD_SERVER
+TESTCREDENTIAL_PCLOUD_TOKEN
+TESTCREDENTIAL_PCLOUD_FOLDER
+```
+For PCloud the server is the API server(eapi.pcloud.com for EU hosted account or api.pcloud.com for non EU). The token is the OAuth token.
+
+
 ## Running the tests
 
 [TestContainers](https://testcontainers.org/) is a pre-requisite for SSH, FTP and Webdav tests. It is not required for the other tests.
