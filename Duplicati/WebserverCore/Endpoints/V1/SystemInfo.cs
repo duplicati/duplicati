@@ -15,7 +15,7 @@ public class SystemInfo : IEndpointV1
     private static Dto.SystemInfoDto Execute(ISystemInfoProvider systemInfoProvider, CultureInfo? browserlanguage)
         => systemInfoProvider.GetSystemInfo(browserlanguage);
 
-    private static object ExecuteFilterGroups()
-        => new { FilterGroups = Library.Utility.FilterGroups.GetFilterStringMap() };
+    private static Dto.FilterGroupsDto ExecuteFilterGroups()
+        => new Dto.FilterGroupsDto(Library.Utility.FilterGroups.GetFilterStringMap());
 }
 
