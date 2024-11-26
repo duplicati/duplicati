@@ -31,10 +31,23 @@ namespace Duplicati.GUI.TrayIcon
 {
     public static class Program
     {
+        /// <summary>
+        /// The source of the password
+        /// </summary>
         public enum PasswordSource
         {
+            /// <summary>
+            /// No password, using token information from the database
+            /// </summary>
             Database,
-            HostedServer
+            /// <summary>
+            /// No password supplied, using the hosted server
+            /// </summary>
+            HostedServer,
+            /// <summary>
+            /// The password was supplied on the commandline
+            /// </summary>
+            SuppliedPassword
         }
 
         public static HttpServerConnection Connection;
@@ -101,6 +114,7 @@ namespace Duplicati.GUI.TrayIcon
             HostedInstanceKeeper hosted = null;
 
             string password = null;
+            var passwordSource = PasswordSource.SuppliedPassword;
             var acceptedHostCertificate = options.GetValueOrDefault(ACCEPTED_SSL_CERTIFICATE, null);
             if (!Library.Utility.Utility.ParseBoolOption(options, NOHOSTEDSERVER_OPTION))
             {
@@ -108,6 +122,7 @@ namespace Duplicati.GUI.TrayIcon
                 {
                     // Tell the hosted server it was started by the TrayIcon
                     FIXMEGlobal.Origin = "Tray icon";
+                    passwordSource = PasswordSource.HostedServer;
                     hosted = new HostedInstanceKeeper(_args);
                 }
                 catch (Exception ex)
@@ -140,6 +155,7 @@ namespace Duplicati.GUI.TrayIcon
             {
                 if (File.Exists(Path.Combine(Server.Program.GetDataFolderPath(options), Server.Program.SERVER_DATABASE_FILENAME)))
                 {
+                    passwordSource = PasswordSource.Database;
                     databaseConnection = Server.Program.GetDatabaseConnection(options, true);
 
                     if (databaseConnection != null)
@@ -171,7 +187,7 @@ namespace Duplicati.GUI.TrayIcon
             if (options.TryGetValue(HOSTURL_OPTION, out var url))
                 serverURL = new Uri(url);
 
-            if (string.IsNullOrWhiteSpace(password) && databaseConnection == null && hosted == null)
+            if (string.IsNullOrWhiteSpace(password) && passwordSource == PasswordSource.SuppliedPassword)
             {
                 Console.WriteLine($@"
 When running the TrayIcon without a hosted server, you must provide the server password via the option --{WebServerLoader.OPTION_WEBSERVICE_PASSWORD}=<password>.
@@ -181,12 +197,12 @@ No password provided, unable to connect to server, exiting");
                 return 1;
             }
 
-            StartTray(_args, options, hosted, password, acceptedHostCertificate);
+            StartTray(_args, options, hosted, passwordSource, password, acceptedHostCertificate);
 
             return 0;
         }
 
-        private static void StartTray(string[] _args, Dictionary<string, string> options, HostedInstanceKeeper hosted, string password, string acceptedHostCertificate)
+        private static void StartTray(string[] _args, Dictionary<string, string> options, HostedInstanceKeeper hosted, PasswordSource passwordSource, string password, string acceptedHostCertificate)
         {
             using (hosted)
             {
@@ -197,7 +213,7 @@ No password provided, unable to connect to server, exiting");
                     try
                     {
                         ServicePointManager.SecurityProtocol = SecurityProtocolType.SystemDefault;
-                        using (Connection = new HttpServerConnection(serverURL, password, databaseConnection != null ? PasswordSource.Database : PasswordSource.HostedServer, disableTrayIconLogin, acceptedHostCertificate, options))
+                        using (Connection = new HttpServerConnection(serverURL, password, passwordSource, disableTrayIconLogin, acceptedHostCertificate, options))
                         {
                             using (var tk = RunTrayIcon())
                             {
