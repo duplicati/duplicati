@@ -93,7 +93,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                             missing_blocks = new_missing_blocks;
                         }
 
-                        if (missing_blocks.Count == 1 && missing_blocks[0].BlockSize == 0)
+                        if (missing_blocks.Count == 0 || (missing_blocks.Count == 1 && missing_blocks[0].BlockSize == 0))
                         {
                             if (options.Dryrun)
                             {
@@ -104,8 +104,11 @@ namespace Duplicati.Library.Main.Operation.Restore
                                 // Create an empty file, or truncate to 0
                                 using var fs = new System.IO.FileStream(file.Path, System.IO.FileMode.OpenOrCreate, System.IO.FileAccess.Write, System.IO.FileShare.None);
                                 fs.SetLength(0);
+                                if (missing_blocks.Count != 0)
+                                {
                                 blocks[0].CacheDecrEvict = true;
                                 await block_request.WriteAsync(blocks[0]);
+                                }
                             }
                         }
                         else if (missing_blocks.Count > 0)
