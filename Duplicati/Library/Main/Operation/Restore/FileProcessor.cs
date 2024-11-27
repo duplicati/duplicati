@@ -106,8 +106,8 @@ namespace Duplicati.Library.Main.Operation.Restore
                                 fs.SetLength(0);
                                 if (missing_blocks.Count != 0)
                                 {
-                                blocks[0].CacheDecrEvict = true;
-                                await block_request.WriteAsync(blocks[0]);
+                                    blocks[0].CacheDecrEvict = true;
+                                    await block_request.WriteAsync(blocks[0]);
                                 }
                             }
                         }
@@ -255,23 +255,17 @@ namespace Duplicati.Library.Main.Operation.Restore
         private static async Task<bool> RestoreMetadata(LocalRestoreDatabase db, LocalRestoreDatabase.IFileToRestore file, IChannel<BlockRequest> block_request, IChannel<byte[]> block_response, Options options, RestoreResults results)
         {
             var cmd = db.Connection.CreateCommand();
-            cmd.CommandText = @"
-                SELECT Metadataset.BlocksetID
-                FROM FileLookup
-                JOIN Metadataset ON FileLookup.MetadataID = Metadataset.ID
-                WHERE FileLookup.ID = ?";
+            cmd.CommandText = $@"
+                SELECT Block.ID, Block.Hash, Block.Size, Block.VolumeID
+                FROM ""{db.m_tempfiletable}""
+                INNER JOIN Metadataset ON ""{db.m_tempfiletable}"".MetadataID = Metadataset.ID
+                INNER JOIN BlocksetEntry ON Metadataset.BlocksetID = BlocksetEntry.BlocksetID
+                INNER JOIN Block ON BlocksetEntry.BlockID = Block.ID
+                WHERE ""{db.m_tempfiletable}"".ID = ?
+            ";
             cmd.AddParameter();
             cmd.SetParameterValue(0, file.ID);
-            var blockset_id = cmd.ExecuteScalarInt64();
 
-            cmd = db.Connection.CreateCommand();
-            cmd.CommandText = @"
-                SELECT Block.ID, Block.Hash, Block.Size, Block.VolumeID
-                FROM BlocksetEntry
-                JOIN Block ON BlocksetEntry.BlockID = Block.ID
-                WHERE BlocksetEntry.BlocksetID = ?";
-            cmd.AddParameter();
-            cmd.SetParameterValue(0, blockset_id);
             var blocks = cmd.ExecuteReaderEnumerable()
                 .Select((b, i) =>
                     new BlockRequest(b.GetInt64(0), i, b.GetString(1), b.GetInt64(2), b.GetInt64(3), false)
