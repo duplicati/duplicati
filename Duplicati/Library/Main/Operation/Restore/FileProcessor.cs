@@ -93,7 +93,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                             missing_blocks = new_missing_blocks;
                         }
 
-                        if (missing_blocks.Count == 0 || (missing_blocks.Count == 1 && missing_blocks[0].BlockSize == 0))
+                        if (file.BlocksetID != LocalDatabase.SYMLINK_BLOCKSET_ID && (missing_blocks.Count == 0 || (missing_blocks.Count == 1 && missing_blocks[0].BlockSize == 0)))
                         {
                             if (options.Dryrun)
                             {
