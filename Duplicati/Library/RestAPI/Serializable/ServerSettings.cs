@@ -137,7 +137,6 @@ namespace Duplicati.Server.Serializable
         {
             get
             {
-                Console.WriteLine("Inside getter");
                 return
                     (from n in Library.DynamicLoader.BackendLoader.Backends
                      select new DynamicModule(n))
