@@ -250,7 +250,6 @@ public class pCloudBackend : IStreamingBackend
         using var requestResources =
             CreateRequest($"/uploadfile?folderid={_CachedFolderID}&filename={encodedPath}&nopartial=1",
                 HttpMethod.Post);
-        input.Position = 0;
         requestResources.RequestMessage.Content = new StreamContent(input);
         requestResources.RequestMessage.Content.Headers.ContentLength = input.Length;
         requestResources.RequestMessage.Content.Headers.ContentType =
