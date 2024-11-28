@@ -25,6 +25,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using CoCoL;
+using Duplicati.Library.Common.IO;
 using Duplicati.Library.Main.Database;
 using Duplicati.Library.Utility;
 
@@ -101,6 +102,12 @@ namespace Duplicati.Library.Main.Operation.Restore
                             }
                             else
                             {
+                                var foldername = SystemIO.IO_OS.PathGetDirectoryName(file.Path);
+                                if (!System.IO.Directory.Exists(foldername))
+                                {
+                                    System.IO.Directory.CreateDirectory(foldername);
+                                }
+
                                 // Create an empty file, or truncate to 0
                                 using var fs = new System.IO.FileStream(file.Path, System.IO.FileMode.OpenOrCreate, System.IO.FileAccess.Write, System.IO.FileShare.None);
                                 fs.SetLength(0);
