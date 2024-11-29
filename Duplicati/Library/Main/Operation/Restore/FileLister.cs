@@ -20,6 +20,7 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using CoCoL;
@@ -35,7 +36,7 @@ namespace Duplicati.Library.Main.Operation.Restore
     {
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<FileLister>();
 
-        public static Task Run(LocalRestoreDatabase db, RestoreResults result)
+        public static Task Run(LocalRestoreDatabase db, Options options, RestoreResults result)
         {
             return AutomationExtensions.RunTask(
             new
@@ -44,20 +45,31 @@ namespace Duplicati.Library.Main.Operation.Restore
             },
             async self =>
             {
+                Stopwatch sw_prework = options.InternalProfiling ? new () : null;
+                Stopwatch sw_write = options.InternalProfiling ? new () : null;
                 try
                 {
+                    sw_prework?.Start();
                     var files = db.GetFilesAndSymlinksToRestore(true).OrderByDescending(x => x.Length).ToArray();
 
                     result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_DownloadingRemoteFiles);
+                    sw_prework?.Stop();
 
+                    sw_write?.Start();
                     foreach (var file in files)
                     {
                         await self.Output.WriteAsync(file);
                     }
+                    sw_write?.Stop();
                 }
                 catch (RetiredException)
                 {
                     Logging.Log.WriteVerboseMessage(LOGTAG, "RetiredProcess", null, "File lister retired");
+
+                    if (options.InternalProfiling)
+                    {
+                        Logging.Log.WriteProfilingMessage(LOGTAG, "InternalTimings", $"Prework: {sw_prework.ElapsedMilliseconds}ms, Write: {sw_write.ElapsedMilliseconds}ms");
+                    }
                 }
                 catch (Exception ex)
                 {

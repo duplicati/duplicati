@@ -454,6 +454,7 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("restore-file-processors", CommandLineArgument.ArgumentType.Integer, Strings.Options.RestoreFileprocessorsShort, Strings.Options.RestoreFileprocessorsLong, "8"),
                     new CommandLineArgument("restore-volume-decompressors", CommandLineArgument.ArgumentType.Integer, Strings.Options.RestoreVolumeDecompressorsShort, Strings.Options.RestoreVolumeDecompressorsLong, "8"),
                     new CommandLineArgument("restore-volume-decryptors", CommandLineArgument.ArgumentType.Integer, Strings.Options.RestoreVolumeDecryptorsShort, Strings.Options.RestoreVolumeDecryptorsLong, "8"),
+                    new CommandLineArgument("internal-profiling", CommandLineArgument.ArgumentType.Boolean, Strings.Options.InternalProfilingShort, Strings.Options.InternalProfilingLong, "false"),
                 });
 
                 return lst;
@@ -2130,6 +2131,14 @@ namespace Duplicati.Library.Main
                 else
                     return int.Parse(v);
             }
+        }
+
+        /// <summary>
+        /// Toggles whether internal profiling is enabled and should be logged.
+        /// </summary>
+        public bool InternalProfiling
+        {
+            get { return Library.Utility.Utility.ParseBoolOption(m_options, "internal-profiling"); }
         }
 
         /// <summary>

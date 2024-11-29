@@ -22,6 +22,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Data;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -337,17 +338,28 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                 // The volume consumer will read blocks from the input channel (data blocks from the volumes) and store them in the cache.
                 var volume_consumer = Task.Run(async () => {
+                    Stopwatch sw_read = options.InternalProfiling ? new () : null;
+                    Stopwatch sw_set  = options.InternalProfiling ? new () : null;
                     try
                     {
                         while (true)
                         {
+                            sw_read?.Start();
                             var (block_request, data) = await self.Input.ReadAsync();
+                            sw_read?.Stop();
+                            sw_set?.Start();
                             cache.Set(block_request, data);
+                            sw_set?.Stop();
                         }
                     }
                     catch (RetiredException)
                     {
                         Logging.Log.WriteVerboseMessage(LOGTAG, "RetiredProcess", null, "BlockManager Volume consumer retired");
+
+                        if (options.InternalProfiling)
+                        {
+                            Logging.Log.WriteProfilingMessage(LOGTAG, "InternalTimings", null, $"Read: {sw_read.ElapsedMilliseconds}ms, Set: {sw_set.ElapsedMilliseconds}ms");
+                        }
 
                         // Cancel any remaining readers - although there shouldn't be any.
                         cache.CancelAll();
@@ -363,26 +375,43 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                 // The block handlers will read block requests from the `FileProcessor`, access the cache for the blocks, and write the resulting blocks to the `FileProcessor`.
                 var block_handlers = fp_requests.Zip(fp_responses, (req, res) => Task.Run(async () => {
+                    Stopwatch sw_req   = options.InternalProfiling ? new () : null;
+                    Stopwatch sw_resp  = options.InternalProfiling ? new () : null;
+                    Stopwatch sw_cache = options.InternalProfiling ? new () : null;
+                    Stopwatch sw_get   = options.InternalProfiling ? new () : null;
                     try
                     {
                         while (true)
                         {
+                            sw_req?.Start();
                             var block_request = await req.ReadAsync();
+                            sw_req?.Stop();
                             if (block_request.CacheDecrEvict)
                             {
+                                sw_cache?.Start();
                                 // Target file already had the block.
                                 cache.CheckCounts(block_request);
+                                sw_cache?.Stop();
                             }
                             else
                             {
+                                sw_get?.Start();
                                 var data = await cache.Get(block_request);
+                                sw_get?.Stop();
+                                sw_resp?.Start();
                                 await res.WriteAsync(data);
+                                sw_resp?.Stop();
                             }
                         }
                     }
                     catch (RetiredException)
                     {
                         Logging.Log.WriteVerboseMessage(LOGTAG, "RetiredProcess", null, "BlockManager Block handler retired");
+
+                        if (options.InternalProfiling)
+                        {
+                            Logging.Log.WriteProfilingMessage(LOGTAG, "InternalTimings", null, $"Req: {sw_req.ElapsedMilliseconds}ms, Resp: {sw_resp.ElapsedMilliseconds}ms, Cache: {sw_cache.ElapsedMilliseconds}ms, Get: {sw_get.ElapsedMilliseconds}ms");
+                        }
 
                         cache.Retire();
                     }

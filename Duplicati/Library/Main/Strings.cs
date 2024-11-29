@@ -336,7 +336,8 @@ namespace Duplicati.Library.Main.Strings
         public static string RestoreVolumeDecompressorsLong { get { return LC.L("Use this option to set the number of concurrent FileDecompressor processes used during restore. A FileDecompressor processes one volume at a time, and increasing the number of FileDecompressors may improve restore performance if the bottleneck is decompression. The default value is 8."); } }
         public static string RestoreVolumeDecryptorsShort { get { return LC.L("Number of concurrent FileDecrypter processes used during restore"); } }
         public static string RestoreVolumeDecryptorsLong { get { return LC.L("Use this option to set the number of concurrent FileDecrypter processes used during restore. A FileDecrypter processes one volume at a time, and increasing the number of FileDecrypters may improve restore performance if the bottleneck is decryption. The default value is 8."); } }
-
+        public static string InternalProfilingShort { get { return LC.L("Enable internal profiling"); } }
+        public static string InternalProfilingLong { get { return LC.L("Use this option to enable internal profiling. Profiling is used to measure the performance of the internal code. The profiling data is written to the log file and can be used to identify performance bottlenecks."); } }
     }
 
     internal static class Common

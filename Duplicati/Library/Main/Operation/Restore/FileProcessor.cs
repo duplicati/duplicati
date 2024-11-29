@@ -21,6 +21,8 @@
 
 using System;
 using System.Collections.Generic;
+using System.Data;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -44,6 +46,13 @@ namespace Duplicati.Library.Main.Operation.Restore
     {
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<FileProcessor>();
 
+        private static Stopwatch sw_file;
+        private static Stopwatch sw_block;
+        private static Stopwatch sw_meta;
+        private static Stopwatch sw_req;
+        private static Stopwatch sw_resp;
+        private static Stopwatch sw_work;
+
         public static Task Run(LocalRestoreDatabase db, IChannel<BlockRequest> block_request, IChannel<byte[]> block_response, RestoreHandlerMetadataStorage metadatastorage, Options options, RestoreResults results)
         {
             return AutomationExtensions.RunTask(
@@ -55,6 +64,13 @@ namespace Duplicati.Library.Main.Operation.Restore
             {
                 // TODO preallocate the file size to avoid fragmentation / help the operating system / filesystem. Verify this in a benchmark - I think it relies on OS and filesystem.
                 // using (var fs = new FileStream(path, FileMode.OpenOrCreate, FileAccess.Write, FileShare.None) { fs.SetLength(size); fs.Seek(0, SeekOrigin.Begin); }
+
+                sw_file  = options.InternalProfiling ? new () : null;
+                sw_block = options.InternalProfiling ? new () : null;
+                sw_meta  = options.InternalProfiling ? new () : null;
+                sw_req   = options.InternalProfiling ? new () : null;
+                sw_resp  = options.InternalProfiling ? new () : null;
+                sw_work  = options.InternalProfiling ? new () : null;
 
                 try
                 {
@@ -82,16 +98,21 @@ namespace Duplicati.Library.Main.Operation.Restore
                     while (true)
                     {
                         // Get the next file to restore.
+                        sw_file?.Start();
                         var file = await self.Input.ReadAsync();
+                        sw_file?.Stop();
 
                         // Get information about the blocks for the file
-                        cmd.SetParameterValue(0, file.BlocksetID);
-                        var blocks = cmd.ExecuteReaderEnumerable()
+                        sw_block?.Start();
+                        findBlocksCmd.SetParameterValue(0, file.BlocksetID);
+                        var blocks = findBlocksCmd.ExecuteReaderEnumerable()
                             .Select((b, i) =>
                                 new BlockRequest(b.GetInt64(0), i, b.GetString(1), b.GetInt64(2), b.GetInt64(3), false)
                             )
                             .ToArray();
+                        sw_block?.Stop();
 
+                        sw_work?.Start();
                         // Verify the target file blocks that may already exist.
                         var missing_blocks = await VerifyTargetBlocks(file, blocks, filehasher, blockhasher, options, results, block_request);
 
@@ -156,6 +177,8 @@ namespace Duplicati.Library.Main.Operation.Restore
                                     fs = new System.IO.FileStream(file.Path, System.IO.FileMode.OpenOrCreate, System.IO.FileAccess.ReadWrite, System.IO.FileShare.None);
                                 }
 
+                                sw_work?.Stop();
+                                sw_req?.Start();
                                 // Burst the block requests to speed up the restore
                                 int burst = Channels.bufferSize;
                                 int j = 0;
@@ -163,17 +186,25 @@ namespace Duplicati.Library.Main.Operation.Restore
                                 {
                                     await block_request.WriteAsync(missing_blocks[i]);
                                 }
+                                sw_req?.Stop();
+                                sw_work?.Start();
                                 for (int i = 0; i < blocks.Length; i++)
                                 {
                                     // Each response block is not verified against the block hash, as the processes downloading the blocks should do that.
                                     if (j < missing_blocks.Count && missing_blocks[j].BlockOffset == i)
                                     {
                                         // Read the block from the response and issue a new request, if more blocks are missing
+                                        sw_work?.Stop();
+                                        sw_resp?.Start();
                                         var data = await block_response.ReadAsync();
+                                        sw_resp?.Stop();
+                                        sw_req?.Start();
                                         if (j < missing_blocks.Count - burst)
                                         {
                                             await block_request.WriteAsync(missing_blocks[j + burst]);
                                         }
+                                        sw_req?.Stop();
+                                        sw_work?.Start();
 
                                         // Hash the block to verify the file hash
                                         filehasher.TransformBlock(data, 0, data.Length, data, 0);
@@ -251,6 +282,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                             results.RestoredFiles++;
                             results.SizeOfRestoredFiles += bytes_written;
                         }
+                        sw_work?.Stop();
                     }
                 }
                 catch (RetiredException)
@@ -258,6 +290,11 @@ namespace Duplicati.Library.Main.Operation.Restore
                     Logging.Log.WriteVerboseMessage(LOGTAG, "RetiredProcess", null, "File processor retired");
                     block_request.Retire();
                     block_response.Retire();
+
+                    if (options.InternalProfiling)
+                    {
+                        Logging.Log.WriteProfilingMessage(LOGTAG, "InternalTimings", $"File: {sw_file.ElapsedMilliseconds}ms, Block: {sw_block.ElapsedMilliseconds}ms, Meta: {sw_meta.ElapsedMilliseconds}ms, Req: {sw_req.ElapsedMilliseconds}ms, Resp: {sw_resp.ElapsedMilliseconds}ms, Work: {sw_work.ElapsedMilliseconds}ms");
+                    }
                     return;
                 }
                 catch (Exception ex)
@@ -270,22 +307,32 @@ namespace Duplicati.Library.Main.Operation.Restore
             });
         }
 
+        // TODO double check all of the docstrings
         private static async Task<bool> RestoreMetadata(LocalRestoreDatabase db, IDbCommand cmd, LocalRestoreDatabase.IFileToRestore file, IChannel<BlockRequest> block_request, IChannel<byte[]> block_response, Options options, RestoreResults results)
         {
-            
+            sw_work?.Stop();
+            sw_meta?.Start();
             cmd.SetParameterValue(0, file.ID);
             var blocks = cmd.ExecuteReaderEnumerable()
                 .Select((b, i) =>
                     new BlockRequest(b.GetInt64(0), i, b.GetString(1), b.GetInt64(2), b.GetInt64(3), false)
                 )
                 .ToArray();
+            sw_meta?.Stop();
+            sw_work?.Start();
 
             using var ms = new MemoryStream();
 
             foreach (var block in blocks)
             {
+                sw_work?.Stop();
+                sw_req?.Start();
                 await block_request.WriteAsync(block);
+                sw_req?.Stop();
+                sw_resp?.Start();
                 var data = await block_response.ReadAsync();
+                sw_resp?.Stop();
+                sw_work?.Start();
                 ms.Write(data, 0, data.Length);
             }
             ms.Seek(0, SeekOrigin.Begin);

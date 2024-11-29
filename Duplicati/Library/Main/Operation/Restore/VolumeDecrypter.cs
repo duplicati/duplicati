@@ -20,6 +20,7 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using CoCoL;
 using Duplicati.Library.Utility;
@@ -34,7 +35,7 @@ namespace Duplicati.Library.Main.Operation.Restore
     {
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<VolumeDecrypter>();
 
-        public static Task Run(RestoreResults results)
+        public static Task Run(Options options, RestoreResults results)
         {
             return AutomationExtensions.RunTask(
             new
@@ -44,13 +45,19 @@ namespace Duplicati.Library.Main.Operation.Restore
             },
             async self =>
             {
+                Stopwatch sw_read    = options.InternalProfiling ? new () : null;
+                Stopwatch sw_write   = options.InternalProfiling ? new () : null;
+                Stopwatch sw_decrypt = options.InternalProfiling ? new () : null;
                 try
                 {
                     while (true)
                     {
                         // Get the block request and volume from the `VolumeDownloader` process.
+                        sw_read?.Start();
                         var (block_request, volume) = await self.Input.ReadAsync();
+                        sw_read?.Stop();
 
+                        sw_decrypt?.Start();
                         // Trigger the download, which will also decrypt the volume.
                         TempFile f = null;
                         try
@@ -65,14 +72,22 @@ namespace Duplicati.Library.Main.Operation.Restore
                             }
                             throw;
                         }
+                        sw_decrypt?.Stop();
 
+                        sw_write?.Start();
                         // Pass the decrypted volume to the `VolumeDecompressor` process.
                         await self.Output.WriteAsync((block_request, f));
+                        sw_write?.Stop();
                     }
                 }
                 catch (RetiredException)
                 {
                     Logging.Log.WriteVerboseMessage(LOGTAG, "RetiredProcess", null, "Volume decrypter retired");
+
+                    if (options.InternalProfiling)
+                    {
+                        Logging.Log.WriteProfilingMessage(LOGTAG, "InternalTimings", $"Read: {sw_read.ElapsedMilliseconds}ms, Decrypt: {sw_decrypt.ElapsedMilliseconds}ms, Write: {sw_write.ElapsedMilliseconds}ms");
+                    }
                 }
                 catch (Exception ex)
                 {

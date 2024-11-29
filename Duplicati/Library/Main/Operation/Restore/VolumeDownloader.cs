@@ -26,6 +26,7 @@ using CoCoL;
 using System.Linq;
 using Duplicati.Library.Main.Database;
 using static Duplicati.Library.Main.BackendManager;
+using System.Diagnostics;
 
 namespace Duplicati.Library.Main.Operation.Restore
 {
@@ -53,6 +54,11 @@ namespace Duplicati.Library.Main.Operation.Restore
                 // Cache for the downloaded volumes
                 Dictionary<long, IDownloadWaitHandle> cache = [];
 
+                Stopwatch sw_read        = options.InternalProfiling ? new () : null;
+                Stopwatch sw_write       = options.InternalProfiling ? new () : null;
+                Stopwatch sw_cache_evict = options.InternalProfiling ? new () : null;
+                Stopwatch sw_cache_add   = options.InternalProfiling ? new () : null;
+
                 try
                 {
                     // Prepare the command to get the volume information
@@ -62,19 +68,24 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                     while (true)
                     {
+                        sw_read?.Start();
                         // Get the block request from the `BlockManager` process.
                         var block_request = await self.Input.ReadAsync();
+                        sw_read?.Stop();
 
                         if (block_request.CacheDecrEvict)
                         {
+                            sw_cache_evict?.Start();
                             if (cache.TryGetValue(block_request.VolumeID, out IDownloadWaitHandle req))
                             {
                                 cache.Remove(block_request.VolumeID);
                                 req.Wait().Dispose();
                             }
+                            sw_cache_evict?.Stop();
                             continue;
                         }
 
+                        sw_cache_add?.Start();
                         // Check if the volume is already in the cache, if not, download it.
                         if (!cache.TryGetValue(block_request.VolumeID, out IDownloadWaitHandle f))
                         {
@@ -94,14 +105,23 @@ namespace Duplicati.Library.Main.Operation.Restore
                                 throw;
                             }
                         }
+                        sw_cache_add?.Stop();
 
+                        sw_write?.Start();
                         // Pass the download handle (which may or may not have downloaded already) to the `VolumeDecrypter` process.
                         await self.Output.WriteAsync((block_request, f));
+                        sw_write?.Stop();
                     }
                 }
                 catch (RetiredException)
                 {
                     Logging.Log.WriteVerboseMessage(LOGTAG, "RetiredProcess", null, "Volume downloader retired");
+
+                    if (options.InternalProfiling)
+                    {
+                        Logging.Log.WriteProfilingMessage(LOGTAG, "InternalTimings", $"Read: {sw_read.ElapsedMilliseconds}ms, Write: {sw_write.ElapsedMilliseconds}ms, CacheEvict: {sw_cache_evict.ElapsedMilliseconds}ms, CacheAdd: {sw_cache_add.ElapsedMilliseconds}ms");
+                    }
+
                     if (cache.Count > 0)
                     {
                         Logging.Log.WriteWarningMessage(LOGTAG, "RetiredProcess", null, "Volume downloader retired with cache not empty");

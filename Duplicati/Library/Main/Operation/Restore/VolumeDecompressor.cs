@@ -20,6 +20,7 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using CoCoL;
 using Duplicati.Library.Main.Volumes;
@@ -48,18 +49,28 @@ namespace Duplicati.Library.Main.Operation.Restore
             },
             async self =>
             {
+                Stopwatch sw_read       = options.InternalProfiling ? new () : null;
+                Stopwatch sw_write      = options.InternalProfiling ? new () : null;
+                Stopwatch sw_decompress = options.InternalProfiling ? new () : null;
+                Stopwatch sw_verify     = options.InternalProfiling ? new () : null;
+
                 try {
                     using var block_hasher = HashFactory.CreateHasher(options.BlockHashAlgorithm);
 
                     while (true)
                     {
+                        sw_read?.Start();
                         // Get the block request and volume from the `VolumeDecrypter` process.
                         var (block_request, volume) = await self.Input.ReadAsync();
+                        sw_read?.Stop();
 
+                        sw_decompress?.Start();
                         // Read the block from the volume.
                         byte[] buffer = new byte[block_request.BlockSize];
                         new BlockVolumeReader(options.CompressionModule, volume, options).ReadBlock(block_request.BlockHash, buffer);
+                        sw_decompress?.Stop();
 
+                        sw_verify?.Start();
                         // Verify the block hash.
                         var hash = Convert.ToBase64String(block_hasher.ComputeHash(buffer, 0, (int)block_request.BlockSize));
                         if (hash != block_request.BlockHash)
@@ -70,14 +81,22 @@ namespace Duplicati.Library.Main.Operation.Restore
                                 results.BrokenRemoteFiles.Add(block_request.VolumeID);
                             }
                         }
+                        sw_verify?.Stop();
 
+                        sw_write?.Start();
                         // Send the block to the `BlockManager` process.
                         await self.Output.WriteAsync((block_request, buffer));
+                        sw_write?.Stop();
                     }
                 }
                 catch (RetiredException)
                 {
                     Logging.Log.WriteVerboseMessage(LOGTAG, "RetiredProcess", null, "Volume decompressor retired");
+
+                    if (options.InternalProfiling)
+                    {
+                        Logging.Log.WriteProfilingMessage(LOGTAG, "InternalTimings", $"Read: {sw_read.ElapsedMilliseconds}ms, Write: {sw_write.ElapsedMilliseconds}ms, Decompress: {sw_decompress.ElapsedMilliseconds}ms, Verify: {sw_verify.ElapsedMilliseconds}ms");
+                    }
                 }
                 catch (Exception ex)
                 {
