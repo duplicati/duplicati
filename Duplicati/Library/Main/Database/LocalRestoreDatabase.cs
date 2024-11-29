@@ -972,6 +972,25 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
+        /// <summary>
+        /// Returns a list of files and symlinks to restore.
+        /// </summary>
+        /// <param name="onlyNonVerified">Flag to indicate if only files with non-verified data should be returned.</param>
+        /// <returns>A list of files and symlinks to restore.</returns>
+        public IEnumerable<IFileToRestore> GetFilesAndSymlinksToRestore(bool onlyNonVerified)
+        {
+            using var cmd = m_connection.CreateCommand();
+            cmd.AddParameter(!onlyNonVerified);
+            using var rd = cmd.ExecuteReader($@"
+                SELECT F.ID, F.Path, F.TargetPath, IFNULL(B.FullHash, ''), IFNULL(B.Length, 0), F.BlocksetID
+                FROM ""{m_tempfiletable}"" F
+                LEFT JOIN Blockset B ON F.BlocksetID = B.ID
+                WHERE F.BlocksetID IS NOT ""{LocalDatabase.FOLDER_BLOCKSET_ID}""
+                    AND F.DataVerified <= ?");
+            while (rd.Read())
+                yield return new FileToRestore(rd.ConvertValueToInt64(0), rd.ConvertValueToString(1), rd.ConvertValueToString(2), rd.ConvertValueToString(3), rd.ConvertValueToInt64(4), rd.ConvertValueToInt64(5));
+        }
+
         public void DropRestoreTable()
         {
             using (var cmd = m_connection.CreateCommand())

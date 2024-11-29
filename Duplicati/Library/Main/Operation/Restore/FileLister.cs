@@ -46,7 +46,7 @@ namespace Duplicati.Library.Main.Operation.Restore
             {
                 try
                 {
-                    var files = db.GetFilesToRestore2(true).OrderByDescending(x => x.Length).ToArray();
+                    var files = db.GetFilesAndSymlinksToRestore(true).OrderByDescending(x => x.Length).ToArray();
 
                     result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_DownloadingRemoteFiles);
 
