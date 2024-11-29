@@ -629,7 +629,6 @@ namespace Duplicati.Server
 
         private static void ConfigureLogging(Dictionary<string, string> commandlineOptions)
         {
-
             //Log various information in the logfile
             if (DEBUG_MODE && !commandlineOptions.ContainsKey("log-file"))
             {
@@ -673,6 +672,8 @@ namespace Duplicati.Server
                     LogHandler.AppendLogDestination(new WindowsEventLogSource(source), loglevel);
                 }
             }
+
+            CrashlogHelper.OnUnobservedTaskException += (ex) => Library.Logging.Log.WriteErrorMessage(LOGTAG, "UnobservedTaskException", ex, ex.Message);
         }
 
         private static int ShowHelp(bool writeToConsoleOnExceptionw)
