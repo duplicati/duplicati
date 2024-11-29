@@ -673,7 +673,7 @@ namespace Duplicati.Server
                 }
             }
 
-            CrashlogHelper.OnUnobservedTaskException += (ex) => Library.Logging.Log.WriteErrorMessage(LOGTAG, "UnobservedTaskException", ex, ex.Message);
+            CrashlogHelper.OnUnobservedTaskException += (ex) => LogHandler.WriteMessage(new Library.Logging.LogEntry(ex.Message, null, Library.Logging.LogMessageType.Error, LOGTAG, "UnobservedTaskException", ex));
         }
 
         private static int ShowHelp(bool writeToConsoleOnExceptionw)
