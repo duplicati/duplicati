@@ -1,3 +1,46 @@
+2024-11-29 - 2.1.0.2_beta_2024-11-29
+==========
+This release is a beta release, considered to be stable for general use.
+This release is expected to progress to a stable release if no major blockers are found.
+
+**Unlike previoius builds, this one has a major change in the build system, so it now runs on .NET8.**
+The builds are self-contained so Mono or .NET installations are not required to install.
+Automatic updating to this version is not supported.
+
+**Important changes from last Beta**
+- Updated to .NET8 with OS specific builds
+- Using Kestrel as the API/UI server
+- Mandatory password and new authentication scheme for server
+- Settings database version updated to v8
+- Backup database updated to v13
+
+# New tool to manage a running server
+Due to incompatibility with `duplicati_client` a new tool is included, named `Duplicati.CommandLine.ServerUtil.exe`/`duplicati-server-util`.
+
+# Summary of changes
+- Updated to .NET8
+- Updated to Kestrel/ASP.NET Core
+- Updated the authentication system
+- Added support for encrypting database fields
+- Updated most packages to the latest version, including SQLite
+- Changed to Avalonia for the TrayIcon
+- Split into operating system specific packages
+- Fixed a number of stability issues
+- Updated backends to work with `async`
+- Added a Telegram report destination
+- Updated WebDAV and FTP backends
+- Added support for remote control
+- Improved IPv6 support
+- Removed 7z compression
+- Added secret providers
+- Added a new experimental UI
+- Added new server-util executable
+- Added new Agent executable
+- Removed Tardigrade in favor of Storj
+- No longer using local blocks for restore by default, and testing more blocks
+- Updated blocksize to 1MiB by default 
+- Removed RC4 database encryption (auto-decrypt)
+
 2024-11-25 - 2.1.0.1_experimental_2024-11-25
 ==========
 This release is an experimental release intended to be used for testing prior to a stable release.
