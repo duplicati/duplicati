@@ -76,7 +76,7 @@ namespace Duplicati.Library.Utility
             /// The regular expression version of the filter
             /// </summary>
             public readonly Regex Regexp;
-            
+
             /// <summary>
             /// The single wildcard character (DOS style)
             /// </summary>
@@ -192,7 +192,7 @@ namespace Duplicati.Library.Utility
                     return result;
                 }
             }
-            
+
             /// <summary>
             /// Tests whether specified string can be matched against provided pattern string. Pattern may contain single- and multiple-replacing
             /// wildcard characters.
@@ -215,7 +215,7 @@ namespace Duplicati.Library.Utility
                     inputPos++;
                     patternPos++;
                 }
-                
+
                 // Push this position to stack if it points to end of pattern or to a general wildcard
                 if (patternPos == pattern.Length || pattern[patternPos] == MULTIPLE_WILDCARD)
                 {
@@ -236,10 +236,10 @@ namespace Duplicati.Library.Utility
                     if (inputPos == input.Length && (patternPos == pattern.Length || (patternPos == pattern.Length - 1 && pattern[patternPos] == MULTIPLE_WILDCARD)))
                         matched = true;     // Reached end of both pattern and input string, hence matching is successful
                     else
-                    {   
+                    {
                         // First character in next pattern block is guaranteed to be multiple wildcard
                         // So skip it and search for all matches in value string until next multiple wildcard character is reached in pattern
-                        for(int curInputStart = inputPos; curInputStart < input.Length; curInputStart++)
+                        for (int curInputStart = inputPos; curInputStart < input.Length; curInputStart++)
                         {
                             int curInputPos = curInputStart;
                             int curPatternPos = patternPos + 1;
@@ -259,7 +259,7 @@ namespace Duplicati.Library.Utility
                             // If we have reached next multiple wildcard character in pattern without breaking the matching sequence, then we have another candidate for full match
                             // This candidate should be pushed to stack for further processing
                             // At the same time, pair (input position, pattern position) will be marked as tested, so that it will not be pushed to stack later again
-                            if (((curPatternPos == pattern.Length && curInputPos == input.Length) || (curPatternPos < pattern.Length && pattern[curPatternPos] == MULTIPLE_WILDCARD)) 
+                            if (((curPatternPos == pattern.Length && curInputPos == input.Length) || (curPatternPos < pattern.Length && pattern[curPatternPos] == MULTIPLE_WILDCARD))
                                 && !pointTested[curInputPos, curPatternPos])
                             {
                                 pointTested[curInputPos, curPatternPos] = true;
@@ -271,7 +271,7 @@ namespace Duplicati.Library.Utility
                 }
                 return matched;
             }
-            
+
             /// <summary>
             /// Gets a value indicating if the filter matches the path
             /// </summary>
@@ -289,7 +289,7 @@ namespace Duplicati.Library.Utility
                         var m = this.Regexp.Match(path);
                         return m.Success && m.Length == path.Length;
                     default:
-                        return false;                            
+                        return false;
                 }
             }
 
@@ -308,12 +308,45 @@ namespace Duplicati.Library.Utility
                 }
             }
         }
-    
+
+        /// <summary>
+        /// A filter with a pre-calculated result for no match
+        /// </summary>
+        private class PrebuiltFilter : IPrebuiltFilter
+        {
+            /// <inheritdoc/>
+            public IFilter Filter { get; }
+            /// <inheritdoc/>
+            public bool NoMatchResult { get; }
+
+            /// <inheritdoc/>
+            public bool Empty => Filter.Empty;
+
+            /// <summary>
+            /// Initializes a new instance of the <see cref="T:Duplicati.Library.Utility.FilterExpression.PrebuiltFilter"/> class.
+            /// </summary>
+            /// <param name="filter">The filter to use</param>
+            public PrebuiltFilter(IFilter filter)
+            {
+                Filter = filter ?? new FilterExpression();
+                AnalyzeFilters(Filter, out bool includes, out bool excludes);
+                NoMatchResult = !(includes && !excludes);
+            }
+
+            /// <inheritdoc/>
+            public bool Matches(string entry, out bool result, out IFilter match)
+                => Filter.Matches(entry, out result, out match);
+
+            /// <inheritdoc/>
+            public string GetFilterHash()
+                => Filter.GetFilterHash();
+        }
+
         /// <summary>
         /// The internal list of expressions
         /// </summary>
         private readonly List<FilterEntry> m_filters;
-    
+
         /// <summary>
         /// Gets the type of the filter
         /// </summary>
@@ -341,7 +374,7 @@ namespace Duplicati.Library.Utility
             else
                 throw new InvalidOperationException($"Cannot extract simple list when the type is: {this.Type}");
         }
-        
+
         /// <summary>
         /// Gets a value indicating if the filter matches the path
         /// </summary>
@@ -355,14 +388,14 @@ namespace Duplicati.Library.Utility
                 match = null;
                 return false;
             }
-            
+
             if (m_filters.Any(x => x.Matches(path)))
             {
                 match = this;
                 result = this.Result;
                 return true;
             }
-            
+
             match = null;
             return false;
         }
@@ -371,7 +404,7 @@ namespace Duplicati.Library.Utility
         public string GetFilterHash()
         {
             var hash = MD5HashHelper.GetHash(m_filters?.Select(x => x.Filter));
-			return Utility.ByteArrayAsHexString(hash);
+            return Utility.ByteArrayAsHexString(hash);
         }
 
         /// <summary>
@@ -399,26 +432,26 @@ namespace Duplicati.Library.Utility
         public FilterExpression(IEnumerable<string> filter, bool result = true)
         {
             this.Result = result;
-            
+
             if (filter == null)
             {
                 this.Type = FilterType.Empty;
                 return;
             }
-            
+
             m_filters = Compact(
                 (from n in filter
-                let nx = new FilterEntry(n)
-                where nx.Type != FilterType.Empty
-                select nx)
+                 let nx = new FilterEntry(n)
+                 where nx.Type != FilterType.Empty
+                 select nx)
             );
-            
+
             if (m_filters.Count == 0)
                 this.Type = FilterType.Empty;
             else
                 this.Type = m_filters.Max((a) => a.Type);
         }
-        
+
         private static IEnumerable<string> Expand(string filter)
         {
             if (string.IsNullOrWhiteSpace(filter))
@@ -438,7 +471,7 @@ namespace Duplicati.Library.Utility
 
             return filter.Split(new char[] { System.IO.Path.PathSeparator }, StringSplitOptions.RemoveEmptyEntries);
         }
-        
+
         private static List<FilterEntry> Compact(IEnumerable<FilterEntry> items)
         {
             var r = new List<FilterEntry>();
@@ -482,7 +515,7 @@ namespace Duplicati.Library.Utility
             if (combined.Length > 0)
                 r.Add(new FilterEntry("[" + combined.Append("]")));
 
-            return r;                    
+            return r;
         }
 
         /// <summary>
@@ -496,14 +529,24 @@ namespace Duplicati.Library.Utility
         private readonly static object _matchLock = new object();
 
         /// <summary>
+        /// Utility function to create a prebuilt filter
+        /// </summary>
+        /// <param name="filter">The filter to use</param>
+        /// <returns>The prebuilt filter</returns>
+        public static IPrebuiltFilter CreatePrebuiltFilter(IFilter filter)
+        {
+            if (filter is IPrebuiltFilter prebuilt)
+                return prebuilt;
+            return new PrebuiltFilter(filter);
+        }
+
+        /// <summary>
         /// Utility function to match a filter with a default fall-through value
         /// </summary>
         /// <param name="filter">The filter to evaluate</param>
         /// <param name="path">The path to evaluate</param>
         public static bool Matches(IFilter filter, string path)
-        {
-            return Matches(filter, path, out _);
-        }
+            => Matches(filter, path, out _);
 
         /// <summary>
         /// Examines a list of filters and returns flags indicating if the list contains excludes and includes
@@ -520,7 +563,7 @@ namespace Duplicati.Library.Utility
 
             // Check for cached results
             if (filter != null)
-                lock(_matchLock)
+                lock (_matchLock)
                     if (_matchFallbackLookup.TryGetValue(filter, out cacheLookup))
                     {
                         includes = cacheLookup.Item1;
@@ -553,7 +596,7 @@ namespace Duplicati.Library.Utility
                 }
 
                 // Populate the cache
-                lock(_matchLock)
+                lock (_matchLock)
                 {
                     if (_matchFallbackLookup.Count > 10)
                         _matchFallbackLookup.Remove(_matchFallbackLookup.Keys.Skip(new Random().Next(0, _matchFallbackLookup.Count)).First());
@@ -565,7 +608,7 @@ namespace Duplicati.Library.Utility
         /// <summary>
         /// Utility function to match a filter with a default fall-through value
         /// </summary>
-        /// <param name="filter">The filter to evaluate</param>
+        /// <param name="filter">The pre-built filter to evaluate</param>
         /// <param name="path">The path to evaluate</param>
         /// <param name="match">The filter that matched</param>
         public static bool Matches(IFilter filter, string path, out IFilter match)
@@ -575,16 +618,16 @@ namespace Duplicati.Library.Utility
                 match = null;
                 return true;
             }
-        
+
             bool result;
             if (filter.Matches(path, out result, out match))
                 return result;
 
-            bool includes;
-            bool excludes;
-
-            AnalyzeFilters(filter, out includes, out excludes);
             match = null;
+            if (filter is IPrebuiltFilter prebuilt)
+                return prebuilt.NoMatchResult;
+
+            AnalyzeFilters(filter, out var includes, out var excludes);
 
             // We have only include filters, we exclude files by default
             if (includes && !excludes)
@@ -598,7 +641,7 @@ namespace Duplicati.Library.Utility
             }
 
         }
-        
+
         /// <summary>
         /// Combine the specified filter expressions.
         /// </summary>
@@ -642,12 +685,12 @@ namespace Duplicati.Library.Utility
         {
             if (this.Empty)
                 return "";
-            
-            return 
+
+            return
                 "(" +
                 string.Join(") || (",
                     (from n in m_filters
-                        select n.ToString())
+                     select n.ToString())
                 ) +
                 ")";
         }
@@ -663,7 +706,7 @@ namespace Duplicati.Library.Utility
 
             return
                 (from n in m_filters
-                    select $"{(this.Result ? "+" : "-")}{n.ToString()}"
+                 select $"{(this.Result ? "+" : "-")}{n.ToString()}"
                 ).ToArray();
         }
 
@@ -675,7 +718,7 @@ namespace Duplicati.Library.Utility
         {
             if (filter == null || filter.Empty)
                 return new string[0];
-            
+
             IEnumerable<string> res = new string[0];
             var work = new Stack<IFilter>();
             work.Push(filter);
@@ -709,7 +752,7 @@ namespace Duplicati.Library.Utility
                 return null;
 
             IFilter res = null;
-            foreach(var n in filters) 
+            foreach (var n in filters)
             {
                 bool include;
                 if (n.StartsWith("+", StringComparison.Ordinal))
