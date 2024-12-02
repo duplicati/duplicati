@@ -38,7 +38,11 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// </summary>
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<VolumeDecompressor>();
 
-        public static Task Run(Options options, RestoreResults results)
+        /// <summary>
+        /// Runs the volume decompressor process.
+        /// </summary>
+        /// <param name="options">The restore options</param>
+        public static Task Run(Options options)
         {
             return AutomationExtensions.RunTask(
             new
@@ -91,7 +95,6 @@ namespace Duplicati.Library.Main.Operation.Restore
                     if (options.InternalProfiling)
                     {
                         Logging.Log.WriteProfilingMessage(LOGTAG, "InternalTimings", $"Read: {sw_read.ElapsedMilliseconds}ms, Write: {sw_write.ElapsedMilliseconds}ms, Decompress: {sw_decompress.ElapsedMilliseconds}ms, Verify: {sw_verify.ElapsedMilliseconds}ms");
-                        Console.WriteLine($"Volume decompressor - Read: {sw_read.ElapsedMilliseconds}ms, Write: {sw_write.ElapsedMilliseconds}ms, Decompress: {sw_decompress.ElapsedMilliseconds}ms, Verify: {sw_verify.ElapsedMilliseconds}ms");
                     }
                 }
                 catch (Exception ex)
