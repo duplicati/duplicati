@@ -21,6 +21,7 @@
 
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Data;
 using System.Diagnostics;
 using System.Linq;
@@ -87,11 +88,11 @@ namespace Duplicati.Library.Main.Operation.Restore
             /// <summary>
             /// Dictionary for keeping track of how many times each block is requested. Used to determine when a block is no longer needed.
             /// </summary>
-            private readonly ConcurrentDictionary<long, long> m_blockcount = new ();
+            private readonly Dictionary<long, long> m_blockcount = new ();
             /// <summary>
             /// Dictionary for keeping track of how many times each volume is requested. Used to determine when a volume is no longer needed.
             /// </summary>
-            private readonly ConcurrentDictionary<long, long> m_volumecount = new ();
+            private readonly Dictionary<long, long> m_volumecount = new ();
 
             /// <summary>
             /// Initializes a new instance of the <see cref="SleepableDictionary"/> class.
@@ -124,8 +125,12 @@ namespace Duplicati.Library.Main.Operation.Restore
                     "));
                 foreach (var row in blockcounts)
                 {
-                    m_blockcount.AddOrUpdate(row.GetInt64(0), 1, (k, v) => v + 1);
-                    m_volumecount.AddOrUpdate(row.GetInt64(1), 1, (k, v) => v + 1);
+                    var bid = row.GetInt64(0);
+                    var bc = m_blockcount.TryGetValue(bid, out var c);
+                    m_blockcount[bid] = bc ? c + 1 : 1;
+                    var vid = row.GetInt64(1);
+                    var vc = m_volumecount.TryGetValue(vid, out var v);
+                    m_volumecount[vid] = vc ? v + 1 : 1;
                 }
             }
 
@@ -152,7 +157,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                     else if (block_count == 0)
                     {
                         // Evict the block from the cache and check if the volume is no longer needed.
-                        m_blockcount.TryRemove(blockRequest.BlockID, out _);
+                        m_blockcount.Remove(blockRequest.BlockID);
                         m_block_cache.Remove(blockRequest.BlockID);
                     }
                     else // block_count < 0
@@ -168,7 +173,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                     else if (vol_count == 0)
                     {
                         // Notify the `VolumeManager` that it should evict the volume.
-                        m_volumecount.TryRemove(blockRequest.VolumeID, out _);
+                        m_volumecount.Remove(blockRequest.VolumeID);
                         blockRequest.CacheDecrEvict = true;
                         m_volume_request.Write(blockRequest);
                     }
