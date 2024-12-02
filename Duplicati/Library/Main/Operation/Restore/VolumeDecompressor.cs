@@ -29,7 +29,7 @@ namespace Duplicati.Library.Main.Operation.Restore
 {
 
     /// <summary>
-    /// Process that decompresses the volumes that the `VolumeDecrypter` process has decrypted.
+    /// Process that decompresses the volumes that the `VolumeDecryptor` process has decrypted.
     /// </summary>
     internal class VolumeDecompressor
     {
@@ -59,7 +59,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                     while (true)
                     {
                         sw_read?.Start();
-                        // Get the block request and volume from the `VolumeDecrypter` process.
+                        // Get the block request and volume from the `VolumeDecryptor` process.
                         var (block_request, volume_reader) = await self.Input.ReadAsync();
                         sw_read?.Stop();
 

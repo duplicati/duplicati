@@ -81,7 +81,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                         sw_wait?.Stop();
 
                         sw_write?.Start();
-                        // Pass the download handle (which may or may not have downloaded already) to the `VolumeDecrypter` process.
+                        // Pass the download handle (which may or may not have downloaded already) to the `VolumeDecryptor` process.
                         await self.Output.WriteAsync((volume_id, f));
                         sw_write?.Stop();
                     }

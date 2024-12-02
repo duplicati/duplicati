@@ -69,7 +69,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                 }
                 catch (RetiredException)
                 {
-                    Logging.Log.WriteVerboseMessage(LOGTAG, "RetiredProcess", null, "Volume decrypter retired");
+                    Logging.Log.WriteVerboseMessage(LOGTAG, "RetiredProcess", null, "Volume decryptor retired");
 
                     if (options.InternalProfiling)
                     {

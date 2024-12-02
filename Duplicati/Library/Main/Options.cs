@@ -2100,9 +2100,9 @@ namespace Duplicati.Library.Main
         }
 
         /// <summary>
-        /// Gets the number of volume decrypters to use in the restore process
+        /// Gets the number of volume decryptors to use in the restore process
         /// </summary>
-        public int RestoreVolumeDecrypters
+        public int RestoreVolumeDecryptors
         {
             get
             {

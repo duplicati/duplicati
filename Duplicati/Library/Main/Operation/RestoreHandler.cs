@@ -335,7 +335,7 @@ namespace Duplicati.Library.Main.Operation
                 var blockmanager = Restore.BlockManager.Run(database, m_options, fileprocessor_requests, fileprocessor_responses);
                 var volumecache = Restore.VolumeCache.Run(database, backend, m_options, m_result);
                 var volumedownloaders = Enumerable.Range(0, 32).Select(i => Restore.VolumeDownloader.Run(database, backend, m_options, m_result)).ToArray();
-                var volumedecryptors = Enumerable.Range(0, m_options.RestoreVolumeDecrypters).Select(i => Restore.VolumeDecryptor.Run(m_options, m_result)).ToArray();
+                var volumedecryptors = Enumerable.Range(0, m_options.RestoreVolumeDecryptors).Select(i => Restore.VolumeDecryptor.Run(m_options, m_result)).ToArray();
                 var volumedecompressors = Enumerable.Range(0, m_options.RestoreVolumeDecompressors).Select(i => Restore.VolumeDecompressor.Run(m_options, m_result)).ToArray();
 
                 // Wait for the network to complete
