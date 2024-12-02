@@ -114,6 +114,11 @@ namespace Duplicati.Library.Main
         private const int DEFAULT_RESTORE_VOLUME_DECOMPRESSORS = 8;
 
         /// <summary>
+        /// The default value for the number of volume downloaders during restore
+        /// </summary>
+        private const int DEFAULT_RESTORE_VOLUME_DOWNLOADERS = 8;
+
+        /// <summary>
         /// An enumeration that describes the supported strategies for an optimization
         /// </summary>
         public enum OptimizationStrategy
@@ -454,6 +459,7 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("restore-file-processors", CommandLineArgument.ArgumentType.Integer, Strings.Options.RestoreFileprocessorsShort, Strings.Options.RestoreFileprocessorsLong, "8"),
                     new CommandLineArgument("restore-volume-decompressors", CommandLineArgument.ArgumentType.Integer, Strings.Options.RestoreVolumeDecompressorsShort, Strings.Options.RestoreVolumeDecompressorsLong, "8"),
                     new CommandLineArgument("restore-volume-decryptors", CommandLineArgument.ArgumentType.Integer, Strings.Options.RestoreVolumeDecryptorsShort, Strings.Options.RestoreVolumeDecryptorsLong, "8"),
+                    new CommandLineArgument("restore-volume-downloaders", CommandLineArgument.ArgumentType.Integer, Strings.Options.RestoreVolumeDownloadersShort, Strings.Options.RestoreVolumeDownloadersLong, "8"),
                     new CommandLineArgument("internal-profiling", CommandLineArgument.ArgumentType.Boolean, Strings.Options.InternalProfilingShort, Strings.Options.InternalProfilingLong, "false"),
                 });
 
@@ -2128,6 +2134,23 @@ namespace Duplicati.Library.Main
 
                 if (string.IsNullOrEmpty(v))
                     return DEFAULT_RESTORE_VOLUME_DECOMPRESSORS;
+                else
+                    return int.Parse(v);
+            }
+        }
+
+        /// <summary>
+        /// Gets the number of volume downloaders to use in the restore process
+        /// </summary>
+        public int RestoreVolumeDownloaders
+        {
+            get
+            {
+                if (!m_options.TryGetValue("restore-volume-downloaders", out string v))
+                    v = null;
+
+                if (string.IsNullOrEmpty(v))
+                    return DEFAULT_RESTORE_VOLUME_DOWNLOADERS;
                 else
                     return int.Parse(v);
             }
