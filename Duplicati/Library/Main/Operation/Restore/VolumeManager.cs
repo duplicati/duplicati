@@ -10,9 +10,9 @@ using System.Threading.Tasks;
 namespace Duplicati.Library.Main.Operation.Restore
 {
 
-    internal class VolumeCache
+    internal class VolumeManager
     {
-        private static readonly string LOGTAG = Logging.Log.LogTagFromType<VolumeCache>();
+        private static readonly string LOGTAG = Logging.Log.LogTagFromType<VolumeManager>();
 
         public static Task Run(LocalRestoreDatabase db, BackendManager backend, Options options, RestoreResults results)
         {

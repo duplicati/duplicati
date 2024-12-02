@@ -44,12 +44,12 @@ namespace Duplicati.Library.Main.Operation.Restore
         public static readonly ChannelMarkerWrapper<Database.LocalRestoreDatabase.IFileToRestore> FilesToRestore = new(new ChannelNameAttribute("FilesToRestore", BufferSize));
 
         /// <summary>
-        /// Channel between <see cref="BlockManager"/> and <see cref="VolumeCache"/>.
+        /// Channel between <see cref="BlockManager"/> and <see cref="VolumeManager"/>.
         /// </summary>
         public static readonly ChannelMarkerWrapper<BlockRequest> BlockFetch = new(new ChannelNameAttribute("BlockFetch", BufferSize));
 
         /// <summary>
-        /// Channel between <see cref="VolumeCache"/> and <see cref="VolumeDownloader"/>.
+        /// Channel between <see cref="VolumeManager"/> and <see cref="VolumeDownloader"/>.
         /// </summary>
         public static readonly ChannelMarkerWrapper<(long, IDownloadWaitHandle)> DownloadRequest = new(new ChannelNameAttribute("DownloadRequest", BufferSize));
 
@@ -59,12 +59,12 @@ namespace Duplicati.Library.Main.Operation.Restore
         public static readonly ChannelMarkerWrapper<(long, TempFile)> DecryptRequest = new(new ChannelNameAttribute("DecryptRequest", BufferSize));
 
         /// <summary>
-        /// Channel between <see cref="VolumeDecryptor"/> and <see cref="VolumeCache"/>
+        /// Channel between <see cref="VolumeDecryptor"/> and <see cref="VolumeManager"/>
         /// </summary>
         public static readonly ChannelMarkerWrapper<(long, TempFile, BlockVolumeReader)> DecryptedVolume = new(new ChannelNameAttribute("DecryptedVolume", BufferSize));
 
         /// <summary>
-        /// Channel between <see cref="VolumeCache"/> and <see cref="VolumeDecompressor"/>
+        /// Channel between <see cref="VolumeManager"/> and <see cref="VolumeDecompressor"/>
         /// </summary>
         public static readonly ChannelMarkerWrapper<(BlockRequest, BlockVolumeReader)> DecompressionRequest = new(new ChannelNameAttribute("DecompressionRequest", BufferSize));
 
