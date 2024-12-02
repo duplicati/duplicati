@@ -80,10 +80,21 @@ namespace Duplicati.Library.Main.Operation.Restore
             /// The number of readers accessing this dictionary. Used during shutdown / cleanup.
             /// </summary>
             private int readers = 0;
-
-            private readonly Stopwatch sw_checkcounts = new ();
-            private readonly Stopwatch sw_get_wait = new ();
+            /// <summary>
+            /// Internal stopwatch for profiling the `CheckCounts` method.
+            /// </summary>
+            private readonly Stopwatch sw_checkcounts;
+            /// <summary>
+            /// Internal stopwatch for profiling setting up the waiters.
+            /// </summary>
+            private readonly Stopwatch sw_get_wait;
+            /// <summary>
+            /// Dictionary for keeping track of how many times each block is requested. Used to determine when a block is no longer needed.
+            /// </summary>
             private readonly ConcurrentDictionary<long, long> m_blockcount = new ();
+            /// <summary>
+            /// Dictionary for keeping track of how many times each volume is requested. Used to determine when a volume is no longer needed.
+            /// </summary>
             private readonly ConcurrentDictionary<long, long> m_volumecount = new ();
 
             /// <summary>
@@ -320,6 +331,18 @@ namespace Duplicati.Library.Main.Operation.Restore
             }
         }
 
+        /// <summary>
+        /// Run the block manager process. This will create a cache for the
+        /// blocks, and start two tasks: one for reading blocks from the input
+        /// channel (data blocks from the volumes) and storing them in the
+        /// cache, and one for reading block requests from the `FileProcessor`,
+        /// accessing the cache for the blocks, and writing the resulting
+        /// blocks back to the `FileProcessor`.
+        /// </summary>
+        /// <param name="db">The database holding information about how many of each block this restore requires.</param>
+        /// <param name="options">The restore options.</param>
+        /// <param name="fp_requests">The channels for reading block requests from the `FileProcessor`.</param>
+        /// <param name="fp_responses">The channels for writing block responses back to the `FileProcessor`.</param>
         public static Task Run(LocalRestoreDatabase db, Options options, IChannel<BlockRequest>[] fp_requests, IChannel<byte[]>[] fp_responses)
         {
             return AutomationExtensions.RunTask(
