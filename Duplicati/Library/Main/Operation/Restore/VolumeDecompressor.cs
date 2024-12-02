@@ -23,7 +23,6 @@ using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using CoCoL;
-using Duplicati.Library.Main.Volumes;
 using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Main.Operation.Restore
@@ -44,16 +43,14 @@ namespace Duplicati.Library.Main.Operation.Restore
             return AutomationExtensions.RunTask(
             new
             {
-                Input = Channels.decryptedVolume.ForRead,
-                Output = Channels.decompressedVolumes.ForWrite
+                Input = Channels.DecompressionRequest.ForRead,
+                Output = Channels.DecompressedBlock.ForWrite
             },
             async self =>
             {
                 Stopwatch sw_read       = options.InternalProfiling ? new () : null;
                 Stopwatch sw_write      = options.InternalProfiling ? new () : null;
                 Stopwatch sw_decompress = options.InternalProfiling ? new () : null;
-                Stopwatch sw_decompress_1 = options.InternalProfiling ? new () : null;
-                Stopwatch sw_decompress_2 = options.InternalProfiling ? new () : null;
                 Stopwatch sw_verify     = options.InternalProfiling ? new () : null;
 
                 try {
@@ -63,21 +60,27 @@ namespace Duplicati.Library.Main.Operation.Restore
                     {
                         sw_read?.Start();
                         // Get the block request and volume from the `VolumeDecrypter` process.
-                        var (block_request, volume) = await self.Input.ReadAsync();
+                        var (block_request, volume_reader) = await self.Input.ReadAsync();
                         sw_read?.Stop();
 
-                        if (block_request.CacheDecrEvict)
+                        sw_decompress?.Start();
+                        var data = new byte[block_request.BlockSize];
+                        lock (volume_reader) // The BlockVolumeReader is not thread-safe
                         {
-                            self.Output.Write((block_request, null));
-                            continue;
+                            volume_reader.ReadBlock(block_request.BlockHash, data);
                         }
-                        sw_decompress_1?.Start();
-                        var bvr = new BlockVolumeReader(options.CompressionModule, volume, options);
-                        sw_decompress_1?.Stop();
+                        sw_decompress?.Stop();
+
+                        sw_verify?.Start();
+                        var hash = Convert.ToBase64String(block_hasher.ComputeHash(data, 0, (int)block_request.BlockSize));
+                        if (hash != block_request.BlockHash) {
+                            Logging.Log.WriteErrorMessage(LOGTAG, "InvalidBlock", null, $"Invalid block detected for block {block_request.BlockID} in volume {block_request.VolumeID}, expected hash: {block_request.BlockHash}, actual hash: {hash}");
+                        }
+                        sw_verify?.Stop();
 
                         sw_write?.Start();
                         // Send the block to the `BlockManager` process.
-                        await self.Output.WriteAsync((block_request, bvr));
+                        await self.Output.WriteAsync((block_request, data));
                         sw_write?.Stop();
                     }
                 }
@@ -88,7 +91,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                     if (options.InternalProfiling)
                     {
                         Logging.Log.WriteProfilingMessage(LOGTAG, "InternalTimings", $"Read: {sw_read.ElapsedMilliseconds}ms, Write: {sw_write.ElapsedMilliseconds}ms, Decompress: {sw_decompress.ElapsedMilliseconds}ms, Verify: {sw_verify.ElapsedMilliseconds}ms");
-                        Console.WriteLine($"Volume decompressor - Decompress: {sw_decompress.ElapsedMilliseconds}ms, Read: {sw_read.ElapsedMilliseconds}ms, Write: {sw_write.ElapsedMilliseconds}ms, Verify: {sw_verify.ElapsedMilliseconds}ms, Decompress1: {sw_decompress_1.ElapsedMilliseconds}ms, Decompress2: {sw_decompress_2.ElapsedMilliseconds}ms");
+                        Console.WriteLine($"Volume decompressor - Read: {sw_read.ElapsedMilliseconds}ms, Write: {sw_write.ElapsedMilliseconds}ms, Decompress: {sw_decompress.ElapsedMilliseconds}ms, Verify: {sw_verify.ElapsedMilliseconds}ms");
                     }
                 }
                 catch (Exception ex)

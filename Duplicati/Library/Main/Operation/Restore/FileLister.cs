@@ -41,7 +41,7 @@ namespace Duplicati.Library.Main.Operation.Restore
             return AutomationExtensions.RunTask(
             new
             {
-                Output = Channels.filesToRestore.ForWrite
+                Output = Channels.FilesToRestore.ForWrite
             },
             async self =>
             {

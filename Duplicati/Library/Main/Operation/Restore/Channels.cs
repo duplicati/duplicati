@@ -36,32 +36,42 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// The buffer size for the channels. The buffer size is the number of
         /// messages that can be queued up before the sender blocks.
         /// </summary>
-        public static readonly int bufferSize = 1024;
+        public static readonly int BufferSize = 1024;
 
         /// <summary>
-        /// The channel between the `FileLister` and `FileProcessor` processes.
+        /// Channel between <see cref="FileLister"/> and <see cref="FileProcessor"/>.
         /// </summary>
-        public static readonly ChannelMarkerWrapper<Database.LocalRestoreDatabase.IFileToRestore> filesToRestore = new(new ChannelNameAttribute("filesToRestore", bufferSize));
+        public static readonly ChannelMarkerWrapper<Database.LocalRestoreDatabase.IFileToRestore> FilesToRestore = new(new ChannelNameAttribute("FilesToRestore", BufferSize));
 
         /// <summary>
-        /// The channel between the `BlockManager` and `VolumeDownloader` processes.
+        /// Channel between <see cref="BlockManager"/> and <see cref="VolumeCache"/>.
         /// </summary>
-        public static readonly ChannelMarkerWrapper<BlockRequest> downloadRequest = new(new ChannelNameAttribute("downloadRequest", bufferSize));
+        public static readonly ChannelMarkerWrapper<BlockRequest> BlockFetch = new(new ChannelNameAttribute("BlockFetch", BufferSize));
 
         /// <summary>
-        /// The channel between the `VolumeDownloader` and `VolumeDecrypter` processes.
+        /// Channel between <see cref="VolumeCache"/> and <see cref="VolumeDownloader"/>.
         /// </summary>
-        public static readonly ChannelMarkerWrapper<(BlockRequest, IDownloadWaitHandle)> downloadedVolume = new(new ChannelNameAttribute("downloadResponse", bufferSize));
+        public static readonly ChannelMarkerWrapper<(long, IDownloadWaitHandle)> DownloadRequest = new(new ChannelNameAttribute("DownloadRequest", BufferSize));
 
         /// <summary>
-        /// The channel between the `VolumeDecrypter` and `VolumeDecompressor` processes.
+        /// Channel between <see cref="VolumeDownloader"/> and <see cref="VolumeDecryptor"/>
         /// </summary>
-        public static readonly ChannelMarkerWrapper<(BlockRequest, TempFile)> decryptedVolume = new(new ChannelNameAttribute("decrytedVolume", bufferSize));
+        public static readonly ChannelMarkerWrapper<(long, TempFile)> DecryptRequest = new(new ChannelNameAttribute("DecryptRequest", BufferSize));
 
         /// <summary>
-        /// The channel between the `VolumeDecompressor` and `BlockManager` processes.
+        /// Channel between <see cref="VolumeDecryptor"/> and <see cref="VolumeCache"/>
         /// </summary>
-        public static readonly ChannelMarkerWrapper<(BlockRequest, BlockVolumeReader)> decompressedVolumes = new(new ChannelNameAttribute("decompressedVolumes", bufferSize));
+        public static readonly ChannelMarkerWrapper<(long, TempFile, BlockVolumeReader)> DecryptedVolume = new(new ChannelNameAttribute("DecryptedVolume", BufferSize));
+
+        /// <summary>
+        /// Channel between <see cref="VolumeCache"/> and <see cref="VolumeDecompressor"/>
+        /// </summary>
+        public static readonly ChannelMarkerWrapper<(BlockRequest, BlockVolumeReader)> DecompressionRequest = new(new ChannelNameAttribute("DecompressionRequest", BufferSize));
+
+        /// <summary>
+        /// Channel between <see cref="VolumeDecompressor"/> and <see cref="BlockManager"/>
+        /// </summary>
+        public static readonly ChannelMarkerWrapper<(BlockRequest, byte[])> DecompressedBlock = new(new ChannelNameAttribute("DecompressedBlock", BufferSize));
     }
 
 }

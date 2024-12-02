@@ -100,9 +100,6 @@ namespace Duplicati.Library.Main.Operation.Restore
             /// </summary>
             private readonly float eviction_ratio;
 
-            private readonly ConcurrentDictionary<long, BlockVolumeReader> m_volumes;
-            private readonly HashAlgorithm m_block_hasher; // TODO concurrency? Check lock contention.
-            private readonly ConcurrentDictionary<long, ConcurrentBag<BlockRequest>> m_pending_requests = new();
             Stopwatch sw_checkcounts = new ();
             Stopwatch sw_get_decompress = new ();
             Stopwatch sw_get_wait = new ();
@@ -121,8 +118,6 @@ namespace Duplicati.Library.Main.Operation.Restore
                 m_volume_request = volume_request;
                 var cache_options = new MemoryCacheOptions();
                 _dictionary = new MemoryCache(cache_options);
-                m_volumes = new ();
-                m_block_hasher = HashFactory.CreateHasher(options.BlockHashAlgorithm);
                 this.readers = readers;
                 this.db = db;
 
@@ -232,7 +227,8 @@ namespace Duplicati.Library.Main.Operation.Restore
                         else if (volcount == 0)
                         {
                             m_volumecount.TryRemove(blockRequest.VolumeID, out _);
-                            m_volumes.TryRemove(blockRequest.VolumeID, out _);
+                            blockRequest.CacheDecrEvict = true;
+                            m_volume_request.Write(blockRequest);
                         }
                         if (volcount < 0)
                         {
@@ -256,36 +252,23 @@ namespace Duplicati.Library.Main.Operation.Restore
             /// <returns>A `Task` holding the data block.</returns>
             public Task<byte[]> Get(BlockRequest block_request)
             {
-                lock (_waiters)
+                // Check if the block is already in the cache, and return it if it is.
+                if (_dictionary.TryGetValue(block_request.BlockID, out byte[] value))
                 {
-                    // Check if the block is already in the cache, and return it if it is.
-                    if (_dictionary.TryGetValue(block_request.BlockID, out byte[] value))
-                    {
-                        CheckCounts(block_request);
-                        return Task.FromResult(value);
-                    }
-
-                    if (m_volumes.TryGetValue(block_request.VolumeID, out BlockVolumeReader volume))
-                    {
-                        var data = ReadFromVolume(block_request, volume);
-                        CheckCounts(block_request);
-                        return Task.FromResult(data);
-                    }
-
-                    // If the block is not in the cache, request it from the volume.
-                    sw_get_wait.Start();
-                    var tcs = new TaskCompletionSource<byte[]>();
-                    var new_tcs = _waiters.GetOrAdd(block_request.BlockID, tcs);
-                    var block_requests = new ConcurrentBag<BlockRequest>();
-                    var new_block_requests = m_pending_requests.GetOrAdd(block_request.VolumeID, block_requests);
-                    new_block_requests.Add(block_request);
-                    if (new_block_requests == block_requests)
-                    { // We are the first to request this block
-                        m_volume_request.WriteAsync(block_request);
-                    }
-                    sw_get_wait.Stop();
-                    return new_tcs.Task.ContinueWith(t => { CheckCounts(block_request); return t.Result; });
+                    CheckCounts(block_request);
+                    return Task.FromResult(value);
                 }
+
+                // If the block is not in the cache, request it from the volume.
+                sw_get_wait.Start();
+                var tcs = new TaskCompletionSource<byte[]>();
+                var new_tcs = _waiters.GetOrAdd(block_request.BlockID, tcs);
+                if (tcs == new_tcs)
+                { // We are the first to request this block
+                    m_volume_request.Write(block_request);
+                }
+                sw_get_wait.Stop();
+                return new_tcs.Task.ContinueWith(t => { CheckCounts(block_request); return t.Result; });
             }
 
             /// <summary>
@@ -300,55 +283,11 @@ namespace Duplicati.Library.Main.Operation.Restore
             /// <param name="value"></param>
             public void Set(BlockRequest blockRequest, byte[] value)
             {
-                lock (_waiters)
+                // Notify any waiters that the block is available.
+                if (_waiters.TryRemove(blockRequest.BlockID, out var tcs))
                 {
-                    // Notify any waiters that the block is available.
-                    if (_waiters.TryRemove(blockRequest.BlockID, out var tcs))
-                    {
-                        tcs.SetResult(value);
-                    }
+                    tcs.SetResult(value);
                 }
-
-                // Compact the cache if it is too large.
-                //if (_dictionary.Count > cache_max)
-                //{
-                //    _dictionary.Compact(eviction_ratio);
-                //}
-            }
-
-            public void SetVolume(BlockRequest request, BlockVolumeReader volume)
-            {
-                if (request.CacheDecrEvict)
-                    throw new InvalidOperationException("Cannot set volume for eviction");
-                m_volumes.TryAdd(request.VolumeID, volume);
-                m_pending_requests.TryGetValue(request.VolumeID, out var reqs);
-                foreach (var req in reqs)
-                {
-                    var data = ReadFromVolume(req, volume);
-                    Set(req, data);
-                }
-                //Set(request, ReadFromVolume(request, volume));
-            }
-
-            private byte[] ReadFromVolume(BlockRequest request, BlockVolumeReader volume)
-            {
-                sw_get_decompress.Start();
-                byte[] data = new byte[request.BlockSize];
-                volume.ReadBlock(request.BlockHash, data);
-                sw_get_decompress.Stop();
-
-                sw_get_verify.Start();
-                lock (m_block_hasher)
-                {
-                    var hash = Convert.ToBase64String(m_block_hasher.ComputeHash(data, 0, (int)request.BlockSize));
-                    if (hash != request.BlockHash) {
-                        Logging.Log.WriteErrorMessage(LOGTAG, "InvalidBlock", null, $"Invalid block detected for block {request.BlockID} in volume {request.VolumeID}, expected hash: {request.BlockHash}, actual hash: {hash}");
-                    }
-                }
-                sw_get_verify.Stop();
-                Set(request, data);
-
-                return data;
             }
 
             /// <summary>
@@ -392,8 +331,6 @@ namespace Duplicati.Library.Main.Operation.Restore
                 cmd.ExecuteNonQuery($@"DROP TABLE IF EXISTS ""blockcount_{db.m_temptabsetguid}""");
                 cmd.ExecuteNonQuery($@"DROP TABLE IF EXISTS ""volumecount_{db.m_temptabsetguid}""");
 
-                m_block_hasher.Dispose();
-
                 Console.WriteLine($"Sleepable dictionary - CheckCounts: {sw_checkcounts.ElapsedMilliseconds}ms, Get wait: {sw_get_wait.ElapsedMilliseconds}ms, Get decompress: {sw_get_decompress.ElapsedMilliseconds}ms, Get verify: {sw_get_verify.ElapsedMilliseconds}ms");
             }
 
@@ -415,8 +352,8 @@ namespace Duplicati.Library.Main.Operation.Restore
             return AutomationExtensions.RunTask(
             new
             {
-                Input = Channels.decompressedVolumes.ForRead,
-                Output = Channels.downloadRequest.ForWrite
+                Input = Channels.DecompressedBlock.ForRead,
+                Output = Channels.BlockFetch.ForWrite
             },
             async self =>
             {
@@ -435,7 +372,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                             var (block_request, data) = await self.Input.ReadAsync();
                             sw_read?.Stop();
                             sw_set?.Start();
-                            cache.SetVolume(block_request, data);
+                            cache.Set(block_request, data);
                             sw_set?.Stop();
                         }
                     }

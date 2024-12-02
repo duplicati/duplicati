@@ -20,13 +20,11 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using CoCoL;
-using System.Linq;
 using Duplicati.Library.Main.Database;
-using static Duplicati.Library.Main.BackendManager;
 using System.Diagnostics;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Main.Operation.Restore
 {
@@ -46,69 +44,45 @@ namespace Duplicati.Library.Main.Operation.Restore
             return AutomationExtensions.RunTask(
             new
             {
-                Input = Channels.downloadRequest.ForRead,
-                Output = Channels.downloadedVolume.ForWrite
+                Input = Channels.DownloadRequest.ForRead,
+                Output = Channels.DecryptRequest.ForWrite
             },
             async self =>
             {
-                // Cache for the downloaded volumes
-                Dictionary<long, IDownloadWaitHandle> cache = [];
-
-                Stopwatch sw_read        = options.InternalProfiling ? new () : null;
-                Stopwatch sw_write       = options.InternalProfiling ? new () : null;
-                Stopwatch sw_cache_evict = options.InternalProfiling ? new () : null;
-                Stopwatch sw_cache_add   = options.InternalProfiling ? new () : null;
+                Stopwatch sw_read  = options.InternalProfiling ? new () : null;
+                Stopwatch sw_write = options.InternalProfiling ? new () : null;
+                Stopwatch sw_wait  = options.InternalProfiling ? new () : null;
 
                 try
                 {
-                    // Prepare the command to get the volume information
-                    using var cmd = db.Connection.CreateCommand();
-                    cmd.CommandText = "SELECT Name, Size, Hash FROM RemoteVolume WHERE ID = ?";
-                    cmd.AddParameter();
 
                     while (true)
                     {
                         sw_read?.Start();
                         // Get the block request from the `BlockManager` process.
-                        var block_request = await self.Input.ReadAsync();
+                        var (volume_id, handle) = await self.Input.ReadAsync();
                         sw_read?.Stop();
 
-                        if (block_request.CacheDecrEvict)
+                        sw_wait?.Start();
+                         // Trigger the download.
+                        TempFile f = null;
+                        try
                         {
-                            sw_cache_evict?.Start();
-                            if (cache.TryGetValue(block_request.VolumeID, out IDownloadWaitHandle req))
-                            {
-                                cache.Remove(block_request.VolumeID);
-                                req.Wait().Dispose();
-                            }
-                            sw_cache_evict?.Stop();
-                            continue;
+                            f = handle.Wait();
                         }
-
-                        sw_cache_add?.Start();
-                        // Check if the volume is already in the cache, if not, download it.
-                        if (!cache.TryGetValue(block_request.VolumeID, out IDownloadWaitHandle f))
+                        catch (Exception)
                         {
-                            try
+                            lock (results)
                             {
-                                cmd.SetParameterValue(0, block_request.VolumeID);
-                                var (volume_name, volume_size, volume_hash) = cmd.ExecuteReaderEnumerable().Select(x => (x.GetString(0), x.GetInt64(1), x.GetString(2))).First();
-                                f = backend.GetAsync(volume_name, volume_size, volume_hash);
+                                results.BrokenRemoteFiles.Add(volume_id);
                             }
-                            catch (Exception)
-                            {
-                                lock (results)
-                                {
-                                    results.BrokenRemoteFiles.Add(block_request.VolumeID);
-                                }
-                                throw;
-                            }
+                            throw;
                         }
-                        sw_cache_add?.Stop();
+                        sw_wait?.Stop();
 
                         sw_write?.Start();
                         // Pass the download handle (which may or may not have downloaded already) to the `VolumeDecrypter` process.
-                        await self.Output.WriteAsync((block_request, f));
+                        await self.Output.WriteAsync((volume_id, f));
                         sw_write?.Stop();
                     }
                 }
@@ -118,13 +92,8 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                     if (options.InternalProfiling)
                     {
-                        Logging.Log.WriteProfilingMessage(LOGTAG, "InternalTimings", $"Read: {sw_read.ElapsedMilliseconds}ms, Write: {sw_write.ElapsedMilliseconds}ms, CacheEvict: {sw_cache_evict.ElapsedMilliseconds}ms, CacheAdd: {sw_cache_add.ElapsedMilliseconds}ms");
-                        Console.WriteLine($"Volume downloader - Read: {sw_read.ElapsedMilliseconds}ms, Write: {sw_write.ElapsedMilliseconds}ms, CacheEvict: {sw_cache_evict.ElapsedMilliseconds}ms, CacheAdd: {sw_cache_add.ElapsedMilliseconds}ms");
-                    }
-
-                    if (cache.Count > 0)
-                    {
-                        Logging.Log.WriteWarningMessage(LOGTAG, "RetiredProcess", null, "Volume downloader retired with cache not empty");
+                        Logging.Log.WriteProfilingMessage(LOGTAG, "InternalTimings", $"Read: {sw_read.ElapsedMilliseconds}ms, Write: {sw_write.ElapsedMilliseconds}ms, Wait: {sw_wait.ElapsedMilliseconds}ms");
+                        Console.WriteLine($"Volume downloader - Read: {sw_read.ElapsedMilliseconds}ms, Write: {sw_write.ElapsedMilliseconds}ms, Wait: {sw_wait.ElapsedMilliseconds}ms");
                     }
                 }
                 catch (Exception ex)

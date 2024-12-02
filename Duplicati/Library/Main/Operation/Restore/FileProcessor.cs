@@ -51,7 +51,7 @@ namespace Duplicati.Library.Main.Operation.Restore
             return AutomationExtensions.RunTask(
             new
             {
-                Input = Channels.filesToRestore.ForRead,
+                Input = Channels.FilesToRestore.ForRead,
             },
             async self =>
             {
@@ -173,7 +173,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                                 sw_work?.Stop();
                                 sw_req?.Start();
                                 // Burst the block requests to speed up the restore
-                                int burst = Channels.bufferSize;
+                                int burst = Channels.BufferSize;
                                 int j = 0;
                                 for (int i = 0; i < (int) Math.Min(missing_blocks.Count, burst); i++)
                                 {

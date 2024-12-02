@@ -23,7 +23,7 @@ using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using CoCoL;
-using Duplicati.Library.Utility;
+using Duplicati.Library.Main.Volumes;
 
 namespace Duplicati.Library.Main.Operation.Restore
 {
@@ -31,17 +31,17 @@ namespace Duplicati.Library.Main.Operation.Restore
     /// <summary>
     /// Process that decrypts the volumes that the `VolumeDownloader` process has downloaded.
     /// </summary>
-    internal class VolumeDecrypter
+    internal class VolumeDecryptor
     {
-        private static readonly string LOGTAG = Logging.Log.LogTagFromType<VolumeDecrypter>();
+        private static readonly string LOGTAG = Logging.Log.LogTagFromType<VolumeDecryptor>();
 
         public static Task Run(Options options, RestoreResults results)
         {
             return AutomationExtensions.RunTask(
             new
             {
-                Input = Channels.downloadedVolume.ForRead,
-                Output = Channels.decryptedVolume.ForWrite
+                Input = Channels.DecryptRequest.ForRead,
+                Output = Channels.DecryptedVolume.ForWrite
             },
             async self =>
             {
@@ -54,29 +54,16 @@ namespace Duplicati.Library.Main.Operation.Restore
                     {
                         // Get the block request and volume from the `VolumeDownloader` process.
                         sw_read?.Start();
-                        var (block_request, volume) = await self.Input.ReadAsync();
+                        var (volume_id, volume) = await self.Input.ReadAsync();
                         sw_read?.Stop();
 
                         sw_decrypt?.Start();
-                        // Trigger the download, which will also decrypt the volume.
-                        TempFile f = null;
-                        try
-                        {
-                            f = volume.Wait();
-                        }
-                        catch (Exception)
-                        {
-                            lock (results)
-                            {
-                                results.BrokenRemoteFiles.Add(block_request.VolumeID);
-                            }
-                            throw;
-                        }
+                        var bvr = new BlockVolumeReader(options.CompressionModule, volume, options);
                         sw_decrypt?.Stop();
 
                         sw_write?.Start();
                         // Pass the decrypted volume to the `VolumeDecompressor` process.
-                        await self.Output.WriteAsync((block_request, f));
+                        await self.Output.WriteAsync((volume_id, volume, bvr));
                         sw_write?.Stop();
                     }
                 }
