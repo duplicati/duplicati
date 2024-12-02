@@ -25,6 +25,7 @@ using Duplicati.Library.Main.Volumes;
 using Duplicati.Library.Utility;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -65,67 +66,105 @@ namespace Duplicati.Library.Main.Operation.Restore
                     Dictionary<long, TempFile> files = [];
                     Dictionary<long, List<BlockRequest>> in_flight = [];
 
+                    Stopwatch sw_cache_set = options.InternalProfiling ? new () : null;
+                    Stopwatch sw_cache_evict = options.InternalProfiling ? new () : null;
+                    Stopwatch sw_query = options.InternalProfiling ? new () : null;
+                    Stopwatch sw_backend = options.InternalProfiling ? new () : null;
+                    Stopwatch sw_request = options.InternalProfiling ? new () : null;
+                    Stopwatch sw_wakeup = options.InternalProfiling ? new () : null;
+
                     // Prepare the command to get the volume information
                     using var cmd = db.Connection.CreateCommand();
                     cmd.CommandText = "SELECT Name, Size, Hash FROM RemoteVolume WHERE ID = ?";
                     cmd.AddParameter();
 
-                    while (true)
+                    try
                     {
-                        var msg = (await MultiChannelAccess.ReadFromAnyAsync(self.VolumeRequest, self.DownloadResponse)).Value;
-
-                        switch (msg)
+                        while (true)
                         {
-                            case BlockRequest request:
-                                {
-                                    if (request.CacheDecrEvict)
+                            var msg = (await MultiChannelAccess.ReadFromAnyAsync(self.VolumeRequest, self.DownloadResponse)).Value;
+
+                            switch (msg)
+                            {
+                                case BlockRequest request:
                                     {
-                                        cache.Remove(request.VolumeID, out var reader);
-                                        reader?.Dispose();
-                                        files.Remove(request.VolumeID, out var tempfile);
-                                        tempfile?.Dispose();
-                                    }
-                                    else
-                                    {
-                                        if (cache.TryGetValue(request.VolumeID, out BlockVolumeReader reader))
+                                        if (request.CacheDecrEvict)
                                         {
-                                            await self.DecompressRequest.WriteAsync((request, reader));
+                                            sw_cache_evict?.Start();
+                                            cache.Remove(request.VolumeID, out var reader);
+                                            reader?.Dispose();
+                                            files.Remove(request.VolumeID, out var tempfile);
+                                            tempfile?.Dispose();
+                                            sw_cache_evict?.Stop();
                                         }
                                         else
                                         {
-                                            if (in_flight.TryGetValue(request.VolumeID, out var waiters))
+                                            sw_request?.Start();
+                                            if (cache.TryGetValue(request.VolumeID, out BlockVolumeReader reader))
                                             {
-                                                waiters.Add(request);
+                                                await self.DecompressRequest.WriteAsync((request, reader));
                                             }
                                             else
                                             {
-                                                cmd.SetParameterValue(0, request.VolumeID);
-                                                var (volume_name, volume_size, volume_hash) = cmd.ExecuteReaderEnumerable()
-                                                    .Select(x => (x.GetString(0), x.GetInt64(1), x.GetString(2))).First();
-                                                var handle = backend.GetAsync(volume_name, volume_size, volume_hash);
-                                                await self.DownloadRequest.WriteAsync((request.VolumeID, handle));
-                                                in_flight[request.VolumeID] = [request];
-                                            }
-                                        };
+                                                if (in_flight.TryGetValue(request.VolumeID, out var waiters))
+                                                {
+                                                    waiters.Add(request);
+                                                }
+                                                else
+                                                {
+                                                    sw_query?.Start();
+                                                    cmd.SetParameterValue(0, request.VolumeID);
+                                                    var (volume_name, volume_size, volume_hash) = cmd.ExecuteReaderEnumerable()
+                                                        .Select(x => (x.GetString(0), x.GetInt64(1), x.GetString(2))).First();
+                                                    sw_query?.Stop();
+                                                    sw_backend?.Start();
+                                                    var handle = backend.GetAsync(volume_name, volume_size, volume_hash);
+                                                    sw_backend?.Stop();
+                                                    await self.DownloadRequest.WriteAsync((request.VolumeID, handle));
+                                                    in_flight[request.VolumeID] = [request];
+                                                }
+                                            };
+                                            sw_request?.Stop();
+                                        }
+                                        break;
                                     }
-                                    break;
-                                }
-                            case (long volume_id, TempFile temp_file, BlockVolumeReader reader):
-                                {
-                                    cache[volume_id] = reader;
-                                    files[volume_id] = temp_file;
-                                    foreach (var request in in_flight[volume_id])
+                                case (long volume_id, TempFile temp_file, BlockVolumeReader reader):
                                     {
-                                        await self.DecompressRequest.WriteAsync((request, reader));
+                                        sw_cache_set?.Start();
+                                        cache[volume_id] = reader;
+                                        files[volume_id] = temp_file;
+                                        sw_cache_set?.Stop();
+                                        sw_wakeup?.Start();
+                                        foreach (var request in in_flight[volume_id])
+                                        {
+                                            await self.DecompressRequest.WriteAsync((request, reader));
+                                        }
+                                        in_flight.Remove(volume_id);
+                                        sw_wakeup?.Stop();
+                                        break;
                                     }
-                                    in_flight.Remove(volume_id);
-                                    break;
-                                }
-                            default:
-                                var ex = new InvalidOperationException("Unexpected message type");
-                                Logging.Log.WriteErrorMessage(LOGTAG, "UnexpectedMessage", ex, "Unexpected message type");
-                                throw ex;
+                                default:
+                                    throw new InvalidOperationException("Unexpected message type");
+                            }
                         }
+                    }
+                    catch (RetiredException)
+                    {
+                        Logging.Log.WriteVerboseMessage(LOGTAG, "RetiredProcess", null, "Volume manager retired");
+                        self.VolumeRequest.Retire();
+                        self.DecompressRequest.Retire();
+                        self.DownloadRequest.Retire();
+                        self.DownloadResponse.Retire();
+
+                        if (options.InternalProfiling)
+                        {
+                            Logging.Log.WriteProfilingMessage(LOGTAG, "InternalTimings", $"CacheSet: {sw_cache_set.ElapsedMilliseconds}ms, CacheEvict: {sw_cache_evict.ElapsedMilliseconds}ms, Query: {sw_query.ElapsedMilliseconds}ms, Backend: {sw_backend.ElapsedMilliseconds}ms, Request: {sw_request.ElapsedMilliseconds}ms, Wakeup: {sw_wakeup.ElapsedMilliseconds}ms");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Logging.Log.WriteErrorMessage(LOGTAG, "VolumeManagerError", ex, "Error during volume manager");
+                        throw;
                     }
                 }
             );
