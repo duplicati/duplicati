@@ -73,10 +73,6 @@ namespace Duplicati.Library.Main.Operation.Restore
             /// </summary>
             private readonly ConcurrentDictionary<long, TaskCompletionSource<byte[]>> m_waiters = new();
             /// <summary>
-            /// The database holding (amongst other information) information about how many of each block this restore requires.
-            /// </summary>
-            private readonly LocalRestoreDatabase db;
-            /// <summary>
             /// The number of readers accessing this dictionary. Used during shutdown / cleanup.
             /// </summary>
             private int readers = 0;
@@ -109,63 +105,27 @@ namespace Duplicati.Library.Main.Operation.Restore
                 var cache_options = new MemoryCacheOptions();
                 m_block_cache = new MemoryCache(cache_options);
                 this.readers = readers;
-                this.db = db;
 
                 var cmd = db.Connection.CreateCommand();
-                cmd.ExecuteNonQuery($@"DROP TABLE IF EXISTS ""blockcount_{db.m_temptabsetguid}""");
-                cmd.ExecuteNonQuery($@"CREATE TEMP TABLE ""blockcount_{db.m_temptabsetguid}"" (BlockID INTEGER PRIMARY KEY, BlockCount INTEGER)");
-                cmd.ExecuteNonQuery($@"
-                    INSERT INTO ""blockcount_{db.m_temptabsetguid}""
-                    SELECT BlockID, COUNT(*)
-                    FROM (
-                        SELECT BlockID
+                var blockcounts = cmd.ExecuteReaderEnumerable($@"
+                        SELECT Block.ID, Block.VolumeID
                         FROM BlocksetEntry
                         INNER JOIN ""{db.m_tempfiletable}"" ON BlocksetEntry.BlocksetID = ""{db.m_tempfiletable}"".BlocksetID
-                    )
-                    GROUP BY BlockID
-                    "
-                    + (options.SkipMetadata ? "" : $@"
-                    UNION ALL
-                    SELECT BlockID, COUNT(*)
-                    FROM (
-                        SELECT BlockID
+                        INNER JOIN Block ON BlocksetEntry.BlockID = Block.ID
+                        "
+                        + (options.SkipMetadata ? "" : $@"
+                        UNION ALL
+                        SELECT Block.ID, Block.VolumeID
                         FROM ""{db.m_tempfiletable}""
                         INNER JOIN Metadataset ON ""{db.m_tempfiletable}"".MetadataID = Metadataset.ID
                         INNER JOIN BlocksetEntry ON Metadataset.BlocksetID = BlocksetEntry.BlocksetID
+                        INNER JOIN Block ON BlocksetEntry.BlockID = Block.ID
                         WHERE ""{db.m_tempfiletable}"".BlocksetID IS NOT {LocalDatabase.FOLDER_BLOCKSET_ID}
-                    )
-                    GROUP BY BlockID
-                "));
-                cmd.ExecuteNonQuery($@"CREATE INDEX ""blockcount_{db.m_temptabsetguid}_idx"" ON ""blockcount_{db.m_temptabsetguid}"" (BlockID)");
-
-                foreach (var row in cmd.ExecuteReaderEnumerable($@"
-                    SELECT BlockID, BlockCount
-                    FROM ""blockcount_{db.m_temptabsetguid}""
-                    WHERE BlockCount > 1"))
+                    "));
+                foreach (var row in blockcounts)
                 {
-                    m_blockcount.TryAdd(row.GetInt64(0), row.GetInt64(1));
-                }
-
-                cmd.ExecuteNonQuery($@"DROP TABLE IF EXISTS ""volumecount_{db.m_temptabsetguid}""");
-                cmd.ExecuteNonQuery($@"CREATE TEMP TABLE ""volumecount_{db.m_temptabsetguid}"" (VolumeID INTEGER PRIMARY KEY, BlockCount INTEGER)");
-                cmd.ExecuteNonQuery($@"
-                    INSERT INTO ""volumecount_{db.m_temptabsetguid}""
-                    SELECT VolumeID, COUNT(*)
-                    FROM (
-                        SELECT VolumeID, BlockCount
-                        FROM Block
-                        INNER JOIN ""blockcount_{db.m_temptabsetguid}"" ON Block.ID = ""blockcount_{db.m_temptabsetguid}"".BlockID
-                    )
-                    GROUP BY VolumeID
-                ");
-                cmd.ExecuteNonQuery($@"CREATE INDEX ""volumecount_{db.m_temptabsetguid}_idx"" ON ""volumecount_{db.m_temptabsetguid}"" (VolumeID)");
-
-                foreach (var row in cmd.ExecuteReaderEnumerable($@"
-                    SELECT VolumeID, BlockCount
-                    FROM ""volumecount_{db.m_temptabsetguid}""
-                    WHERE BlockCount > 0"))
-                {
-                    m_volumecount.TryAdd(row.GetInt64(0), row.GetInt64(1));
+                    m_blockcount.AddOrUpdate(row.GetInt64(0), 1, (k, v) => v + 1);
+                    m_volumecount.AddOrUpdate(row.GetInt64(1), 1, (k, v) => v + 1);
                 }
             }
 
@@ -182,39 +142,39 @@ namespace Duplicati.Library.Main.Operation.Restore
                 lock (m_blockcount)
                 {
                     sw_checkcounts.Start();
-                    // Decrement the block count.
-                    var count = m_blockcount.TryGetValue(blockRequest.BlockID, out var c) ? c-1 : 0;
-                    if (count > 0)
+
+                    var block_count = m_blockcount.TryGetValue(blockRequest.BlockID, out var c) ? c-1 : 0;
+
+                    if (block_count > 0)
                     {
-                        m_blockcount[blockRequest.BlockID] = count;
-                        sw_checkcounts.Stop();
-                        return;
+                        m_blockcount[blockRequest.BlockID] = block_count;
                     }
-                    else if (count == 0)
+                    else if (block_count == 0)
                     {
                         // Evict the block from the cache and check if the volume is no longer needed.
                         m_blockcount.TryRemove(blockRequest.BlockID, out _);
                         m_block_cache.Remove(blockRequest.BlockID);
-                        var volcount = m_volumecount.TryGetValue(blockRequest.VolumeID, out var vc) ? vc-1 : 0;
-                        if (volcount > 0)
-                        {
-                            m_volumecount[blockRequest.VolumeID] = volcount;
-                        }
-                        else if (volcount == 0)
-                        {
-                            // Notify the `VolumeManager` that it should evict the volume.
-                            m_volumecount.TryRemove(blockRequest.VolumeID, out _);
-                            blockRequest.CacheDecrEvict = true;
-                            m_volume_request.Write(blockRequest);
-                        }
-                        if (volcount < 0)
-                        {
-                            Logging.Log.WriteWarningMessage(LOGTAG, "VolumeCountError", null, $"Volume {blockRequest.VolumeID} has a count below 0");
-                        }
                     }
-                    else if (count < 0)
+                    else // block_count < 0
                     {
                         Logging.Log.WriteWarningMessage(LOGTAG, "BlockCountError", null, $"Block {blockRequest.BlockID} has a count below 0");
+                    }
+
+                    var vol_count = m_volumecount.TryGetValue(blockRequest.VolumeID, out var vc) ? vc-1 : 0;
+                    if (vol_count > 0)
+                    {
+                        m_volumecount[blockRequest.VolumeID] = vol_count;
+                    }
+                    else if (vol_count == 0)
+                    {
+                        // Notify the `VolumeManager` that it should evict the volume.
+                        m_volumecount.TryRemove(blockRequest.VolumeID, out _);
+                        blockRequest.CacheDecrEvict = true;
+                        m_volume_request.Write(blockRequest);
+                    }
+                    else // vol_count < 0
+                    {
+                        Logging.Log.WriteWarningMessage(LOGTAG, "VolumeCountError", null, $"Volume {blockRequest.VolumeID} has a count below 0");
                     }
                     sw_checkcounts.Stop();
                 }
@@ -294,7 +254,6 @@ namespace Duplicati.Library.Main.Operation.Restore
             public void Dispose()
             {
                 // Verify that the tables are empty
-                var cmd = db.Connection.CreateCommand();
                 var blockcount = m_blockcount.Sum(x => x.Value);
                 var volumecount = m_volumecount.Sum(x => x.Value);
 
@@ -311,9 +270,6 @@ namespace Duplicati.Library.Main.Operation.Restore
                     var volids = string.Join(", ", vols);
                     Logging.Log.WriteWarningMessage(LOGTAG, "VolumeCountError", null, $"Volume count in SleepableDictionarys volume table is not zero: {volumecount}{Environment.NewLine}Volumes: {volids}");
                 }
-
-                cmd.ExecuteNonQuery($@"DROP TABLE IF EXISTS ""blockcount_{db.m_temptabsetguid}""");
-                cmd.ExecuteNonQuery($@"DROP TABLE IF EXISTS ""volumecount_{db.m_temptabsetguid}""");
 
                 Console.WriteLine($"Sleepable dictionary - CheckCounts: {sw_checkcounts.ElapsedMilliseconds}ms, Get wait: {sw_get_wait.ElapsedMilliseconds}ms");
             }
