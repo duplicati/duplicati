@@ -94,7 +94,6 @@ namespace Duplicati.Library.Main.Operation.Restore
                                 cmd.SetParameterValue(0, block_request.VolumeID);
                                 var (volume_name, volume_size, volume_hash) = cmd.ExecuteReaderEnumerable().Select(x => (x.GetString(0), x.GetInt64(1), x.GetString(2))).First();
                                 f = backend.GetAsync(volume_name, volume_size, volume_hash);
-                                cache.Add(block_request.VolumeID, f);
                             }
                             catch (Exception)
                             {
@@ -120,6 +119,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                     if (options.InternalProfiling)
                     {
                         Logging.Log.WriteProfilingMessage(LOGTAG, "InternalTimings", $"Read: {sw_read.ElapsedMilliseconds}ms, Write: {sw_write.ElapsedMilliseconds}ms, CacheEvict: {sw_cache_evict.ElapsedMilliseconds}ms, CacheAdd: {sw_cache_add.ElapsedMilliseconds}ms");
+                        Console.WriteLine($"Volume downloader - Read: {sw_read.ElapsedMilliseconds}ms, Write: {sw_write.ElapsedMilliseconds}ms, CacheEvict: {sw_cache_evict.ElapsedMilliseconds}ms, CacheAdd: {sw_cache_add.ElapsedMilliseconds}ms");
                     }
 
                     if (cache.Count > 0)

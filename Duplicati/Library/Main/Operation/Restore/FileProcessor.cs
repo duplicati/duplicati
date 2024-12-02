@@ -46,13 +46,6 @@ namespace Duplicati.Library.Main.Operation.Restore
     {
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<FileProcessor>();
 
-        private static Stopwatch sw_file;
-        private static Stopwatch sw_block;
-        private static Stopwatch sw_meta;
-        private static Stopwatch sw_req;
-        private static Stopwatch sw_resp;
-        private static Stopwatch sw_work;
-
         public static Task Run(LocalRestoreDatabase db, IChannel<BlockRequest> block_request, IChannel<byte[]> block_response, RestoreHandlerMetadataStorage metadatastorage, Options options, RestoreResults results)
         {
             return AutomationExtensions.RunTask(
@@ -65,12 +58,12 @@ namespace Duplicati.Library.Main.Operation.Restore
                 // TODO preallocate the file size to avoid fragmentation / help the operating system / filesystem. Verify this in a benchmark - I think it relies on OS and filesystem.
                 // using (var fs = new FileStream(path, FileMode.OpenOrCreate, FileAccess.Write, FileShare.None) { fs.SetLength(size); fs.Seek(0, SeekOrigin.Begin); }
 
-                sw_file  = options.InternalProfiling ? new () : null;
-                sw_block = options.InternalProfiling ? new () : null;
-                sw_meta  = options.InternalProfiling ? new () : null;
-                sw_req   = options.InternalProfiling ? new () : null;
-                sw_resp  = options.InternalProfiling ? new () : null;
-                sw_work  = options.InternalProfiling ? new () : null;
+                Stopwatch sw_file  = options.InternalProfiling ? new () : null;
+                Stopwatch sw_block = options.InternalProfiling ? new () : null;
+                Stopwatch sw_meta  = options.InternalProfiling ? new () : null;
+                Stopwatch sw_req   = options.InternalProfiling ? new () : null;
+                Stopwatch sw_resp  = options.InternalProfiling ? new () : null;
+                Stopwatch sw_work  = options.InternalProfiling ? new () : null;
 
                 try
                 {
@@ -273,7 +266,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                         }
 
                         if (!options.SkipMetadata) {
-                            await RestoreMetadata(db, findMetaBlocksCmd, file, block_request, block_response, options, results);
+                            await RestoreMetadata(db, findMetaBlocksCmd, file, block_request, block_response, options, results, sw_meta, sw_work, sw_req, sw_resp);
                         }
 
                         // Keep track of the restored files and their sizes
@@ -294,6 +287,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                     if (options.InternalProfiling)
                     {
                         Logging.Log.WriteProfilingMessage(LOGTAG, "InternalTimings", $"File: {sw_file.ElapsedMilliseconds}ms, Block: {sw_block.ElapsedMilliseconds}ms, Meta: {sw_meta.ElapsedMilliseconds}ms, Req: {sw_req.ElapsedMilliseconds}ms, Resp: {sw_resp.ElapsedMilliseconds}ms, Work: {sw_work.ElapsedMilliseconds}ms");
+                        Console.WriteLine($"File processor - File: {sw_file.ElapsedMilliseconds}ms, Block: {sw_block.ElapsedMilliseconds}ms, Meta: {sw_meta.ElapsedMilliseconds}ms, Req: {sw_req.ElapsedMilliseconds}ms, Resp: {sw_resp.ElapsedMilliseconds}ms, Work: {sw_work.ElapsedMilliseconds}ms");
                     }
                     return;
                 }
@@ -308,7 +302,7 @@ namespace Duplicati.Library.Main.Operation.Restore
         }
 
         // TODO double check all of the docstrings
-        private static async Task<bool> RestoreMetadata(LocalRestoreDatabase db, IDbCommand cmd, LocalRestoreDatabase.IFileToRestore file, IChannel<BlockRequest> block_request, IChannel<byte[]> block_response, Options options, RestoreResults results)
+        private static async Task<bool> RestoreMetadata(LocalRestoreDatabase db, IDbCommand cmd, LocalRestoreDatabase.IFileToRestore file, IChannel<BlockRequest> block_request, IChannel<byte[]> block_response, Options options, RestoreResults results, Stopwatch sw_meta, Stopwatch sw_work, Stopwatch sw_req, Stopwatch sw_resp)
         {
             sw_work?.Stop();
             sw_meta?.Start();
@@ -330,6 +324,8 @@ namespace Duplicati.Library.Main.Operation.Restore
                 await block_request.WriteAsync(block);
                 sw_req?.Stop();
                 sw_resp?.Start();
+                //Console.WriteLine("Reading metadata block");
+                //Deadlock occurs when the print is missing - look into block manager
                 var data = await block_response.ReadAsync();
                 sw_resp?.Stop();
                 sw_work?.Start();

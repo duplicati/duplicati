@@ -52,6 +52,8 @@ namespace Duplicati.Library.Main.Operation.Restore
                 Stopwatch sw_read       = options.InternalProfiling ? new () : null;
                 Stopwatch sw_write      = options.InternalProfiling ? new () : null;
                 Stopwatch sw_decompress = options.InternalProfiling ? new () : null;
+                Stopwatch sw_decompress_1 = options.InternalProfiling ? new () : null;
+                Stopwatch sw_decompress_2 = options.InternalProfiling ? new () : null;
                 Stopwatch sw_verify     = options.InternalProfiling ? new () : null;
 
                 try {
@@ -64,28 +66,18 @@ namespace Duplicati.Library.Main.Operation.Restore
                         var (block_request, volume) = await self.Input.ReadAsync();
                         sw_read?.Stop();
 
-                        sw_decompress?.Start();
-                        // Read the block from the volume.
-                        byte[] buffer = new byte[block_request.BlockSize];
-                        new BlockVolumeReader(options.CompressionModule, volume, options).ReadBlock(block_request.BlockHash, buffer);
-                        sw_decompress?.Stop();
-
-                        sw_verify?.Start();
-                        // Verify the block hash.
-                        var hash = Convert.ToBase64String(block_hasher.ComputeHash(buffer, 0, (int)block_request.BlockSize));
-                        if (hash != block_request.BlockHash)
+                        if (block_request.CacheDecrEvict)
                         {
-                            Logging.Log.WriteWarningMessage(LOGTAG, "InvalidBlock", null, $"Invalid block detected for block {block_request.BlockID} in volume {block_request.VolumeID}, expected hash: {block_request.BlockHash}, actual hash: {hash}");
-                            lock (results)
-                            {
-                                results.BrokenRemoteFiles.Add(block_request.VolumeID);
-                            }
+                            self.Output.Write((block_request, null));
+                            continue;
                         }
-                        sw_verify?.Stop();
+                        sw_decompress_1?.Start();
+                        var bvr = new BlockVolumeReader(options.CompressionModule, volume, options);
+                        sw_decompress_1?.Stop();
 
                         sw_write?.Start();
                         // Send the block to the `BlockManager` process.
-                        await self.Output.WriteAsync((block_request, buffer));
+                        await self.Output.WriteAsync((block_request, bvr));
                         sw_write?.Stop();
                     }
                 }
@@ -96,6 +88,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                     if (options.InternalProfiling)
                     {
                         Logging.Log.WriteProfilingMessage(LOGTAG, "InternalTimings", $"Read: {sw_read.ElapsedMilliseconds}ms, Write: {sw_write.ElapsedMilliseconds}ms, Decompress: {sw_decompress.ElapsedMilliseconds}ms, Verify: {sw_verify.ElapsedMilliseconds}ms");
+                        Console.WriteLine($"Volume decompressor - Decompress: {sw_decompress.ElapsedMilliseconds}ms, Read: {sw_read.ElapsedMilliseconds}ms, Write: {sw_write.ElapsedMilliseconds}ms, Verify: {sw_verify.ElapsedMilliseconds}ms, Decompress1: {sw_decompress_1.ElapsedMilliseconds}ms, Decompress2: {sw_decompress_2.ElapsedMilliseconds}ms");
                     }
                 }
                 catch (Exception ex)

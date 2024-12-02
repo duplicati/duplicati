@@ -20,6 +20,7 @@
 // DEALINGS IN THE SOFTWARE.
 
 using CoCoL;
+using Duplicati.Library.Main.Volumes;
 using Duplicati.Library.Utility;
 using static Duplicati.Library.Main.BackendManager;
 
@@ -35,7 +36,7 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// The buffer size for the channels. The buffer size is the number of
         /// messages that can be queued up before the sender blocks.
         /// </summary>
-        public static readonly int bufferSize = 8;
+        public static readonly int bufferSize = 1024;
 
         /// <summary>
         /// The channel between the `FileLister` and `FileProcessor` processes.
@@ -60,7 +61,7 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// <summary>
         /// The channel between the `VolumeDecompressor` and `BlockManager` processes.
         /// </summary>
-        public static readonly ChannelMarkerWrapper<(BlockRequest, byte[])> decompressedVolumes = new(new ChannelNameAttribute("decompressedVolumes", bufferSize));
+        public static readonly ChannelMarkerWrapper<(BlockRequest, BlockVolumeReader)> decompressedVolumes = new(new ChannelNameAttribute("decompressedVolumes", bufferSize));
     }
 
 }
