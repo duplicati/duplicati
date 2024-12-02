@@ -93,6 +93,10 @@ namespace Duplicati.Library.Main.Operation.Restore
             /// Dictionary for keeping track of how many times each volume is requested. Used to determine when a volume is no longer needed.
             /// </summary>
             private readonly Dictionary<long, long> m_volumecount = new ();
+            /// <summary>
+            /// The options for the restore.
+            /// </summary>
+            private readonly Options m_options;
 
             /// <summary>
             /// Initializes a new instance of the <see cref="SleepableDictionary"/> class.
@@ -102,10 +106,13 @@ namespace Duplicati.Library.Main.Operation.Restore
             /// <param name="readers">Number of readers accessing this dictionary. Used during shutdown / cleanup.</param>
             public SleepableDictionary(LocalRestoreDatabase db, IWriteChannel<BlockRequest> volume_request, Options options, int readers)
             {
+                m_options = options;
                 m_volume_request = volume_request;
                 var cache_options = new MemoryCacheOptions();
                 m_block_cache = new MemoryCache(cache_options);
                 this.readers = readers;
+                sw_checkcounts = options.InternalProfiling ? new () : null;
+                sw_get_wait = options.InternalProfiling ? new () : null;
 
                 var cmd = db.Connection.CreateCommand();
                 var blockcounts = cmd.ExecuteReaderEnumerable($@"
@@ -146,7 +153,7 @@ namespace Duplicati.Library.Main.Operation.Restore
             {
                 lock (m_blockcount)
                 {
-                    sw_checkcounts.Start();
+                    sw_checkcounts?.Start();
 
                     var block_count = m_blockcount.TryGetValue(blockRequest.BlockID, out var c) ? c-1 : 0;
 
@@ -181,7 +188,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                     {
                         Logging.Log.WriteWarningMessage(LOGTAG, "VolumeCountError", null, $"Volume {blockRequest.VolumeID} has a count below 0");
                     }
-                    sw_checkcounts.Stop();
+                    sw_checkcounts?.Stop();
                 }
             }
 
@@ -202,7 +209,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                 }
 
                 // If the block is not in the cache, request it from the volume.
-                sw_get_wait.Start();
+                sw_get_wait?.Start();
                 var tcs = new TaskCompletionSource<byte[]>();
                 var new_tcs = m_waiters.GetOrAdd(block_request.BlockID, tcs);
                 if (tcs == new_tcs)
@@ -210,7 +217,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                     // We are the first to request this block
                     m_volume_request.Write(block_request);
                 }
-                sw_get_wait.Stop();
+                sw_get_wait?.Stop();
 
                 return new_tcs.Task.ContinueWith(t => {
                     CheckCounts(block_request);
@@ -276,7 +283,10 @@ namespace Duplicati.Library.Main.Operation.Restore
                     Logging.Log.WriteWarningMessage(LOGTAG, "VolumeCountError", null, $"Volume count in SleepableDictionarys volume table is not zero: {volumecount}{Environment.NewLine}Volumes: {volids}");
                 }
 
-                Console.WriteLine($"Sleepable dictionary - CheckCounts: {sw_checkcounts.ElapsedMilliseconds}ms, Get wait: {sw_get_wait.ElapsedMilliseconds}ms");
+                if (m_options.InternalProfiling)
+                {
+                    Logging.Log.WriteProfilingMessage(LOGTAG, "InternalTimings", null, $"Sleepable dictionary - CheckCounts: {sw_checkcounts.ElapsedMilliseconds}ms, Get wait: {sw_get_wait.ElapsedMilliseconds}ms");
+                }
             }
 
             /// <summary>
@@ -340,7 +350,7 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                         if (options.InternalProfiling)
                         {
-                            Logging.Log.WriteProfilingMessage(LOGTAG, "InternalTimings", null, $"Read: {sw_read.ElapsedMilliseconds}ms, Set: {sw_set.ElapsedMilliseconds}ms");
+                            Logging.Log.WriteProfilingMessage(LOGTAG, "InternalTimings", null, $"Volume consumer - Read: {sw_read.ElapsedMilliseconds}ms, Set: {sw_set.ElapsedMilliseconds}ms");
                         }
 
                         // Cancel any remaining readers - although there shouldn't be any.
@@ -393,7 +403,7 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                         if (options.InternalProfiling)
                         {
-                            Logging.Log.WriteProfilingMessage(LOGTAG, "InternalTimings", null, $"Req: {sw_req.ElapsedMilliseconds}ms, Resp: {sw_resp.ElapsedMilliseconds}ms, Cache: {sw_cache.ElapsedMilliseconds}ms, Get: {sw_get.ElapsedMilliseconds}ms");
+                            Logging.Log.WriteProfilingMessage(LOGTAG, "InternalTimings", null, $"Block handler - Req: {sw_req.ElapsedMilliseconds}ms, Resp: {sw_resp.ElapsedMilliseconds}ms, Cache: {sw_cache.ElapsedMilliseconds}ms, Get: {sw_get.ElapsedMilliseconds}ms");
                         }
 
                         cache.Retire();
