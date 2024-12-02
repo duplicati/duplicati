@@ -34,8 +34,18 @@ namespace Duplicati.Library.Main.Operation.Restore
     /// </summary>
     internal class FileLister
     {
+        /// <summary>
+        /// The log tag for this class.
+        /// </summary>
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<FileLister>();
 
+        /// <summary>
+        /// Runs the file lister process that lists the files that need to be restored
+        /// and sends them to the <see cref="FileProcessor"/>.
+        /// </summary>
+        /// <param name="db">The restore database, which is queried for the file list.</param>
+        /// <param name="options">The restore options</param>
+        /// <param name="result">The restore results</param>
         public static Task Run(LocalRestoreDatabase db, Options options, RestoreResults result)
         {
             return AutomationExtensions.RunTask(
@@ -46,12 +56,11 @@ namespace Duplicati.Library.Main.Operation.Restore
             async self =>
             {
                 Stopwatch sw_prework = options.InternalProfiling ? new () : null;
-                Stopwatch sw_write = options.InternalProfiling ? new () : null;
+                Stopwatch sw_write   = options.InternalProfiling ? new () : null;
                 try
                 {
                     sw_prework?.Start();
                     var files = db.GetFilesAndSymlinksToRestore(true).OrderByDescending(x => x.Length).ToArray();
-
                     result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_DownloadingRemoteFiles);
                     sw_prework?.Stop();
 
