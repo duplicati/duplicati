@@ -985,8 +985,7 @@ namespace Duplicati.Library.Main.Database
                 SELECT F.ID, F.Path, F.TargetPath, IFNULL(B.FullHash, ''), IFNULL(B.Length, 0), F.BlocksetID
                 FROM ""{m_tempfiletable}"" F
                 LEFT JOIN Blockset B ON F.BlocksetID = B.ID
-                WHERE F.BlocksetID IS NOT ""{LocalDatabase.FOLDER_BLOCKSET_ID}""
-                    AND F.DataVerified <= ?");
+                WHERE F.BlocksetID != {LocalDatabase.FOLDER_BLOCKSET_ID}");
             while (rd.Read())
                 yield return new FileToRestore(rd.ConvertValueToInt64(0), rd.ConvertValueToString(1), rd.ConvertValueToString(2), rd.ConvertValueToString(3), rd.ConvertValueToInt64(4), rd.ConvertValueToInt64(5));
         }
