@@ -41,12 +41,24 @@ namespace Duplicati.Library.Main.Operation.Restore
     /// can use local blocks to restore the file. Finally, it restores the file
     /// by downloading the missing blocks and writing them to the target file.
     /// It also verifies the file hash and truncates the file if necessary.
+    /// If enabled, it also restores the metadata for the file.
     /// </summary>
     internal class FileProcessor
     {
+        /// <summary>
+        /// The log tag for this class.
+        /// </summary>
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<FileProcessor>();
 
-        public static Task Run(LocalRestoreDatabase db, IChannel<BlockRequest> block_request, IChannel<byte[]> block_response, RestoreHandlerMetadataStorage metadatastorage, Options options, RestoreResults results)
+        /// <summary>
+        /// Runs the file processor process that restores the files that need to be restored.
+        /// </summary>
+        /// <param name="db">The restore database, which is queried for blocks, corresponding volumes and metadata for the files.</param>
+        /// <param name="block_request">The channel to request blocks from the block manager.</param>
+        /// <param name="block_response">The channel to receive blocks from the block manager.</param>
+        /// <param name="options">The restore options.</param>
+        /// <param name="results">The restore results.</param>
+        public static Task Run(LocalRestoreDatabase db, IChannel<BlockRequest> block_request, IChannel<byte[]> block_response, Options options, RestoreResults results)
         {
             return AutomationExtensions.RunTask(
             new
@@ -128,13 +140,13 @@ namespace Duplicati.Library.Main.Operation.Restore
                             else
                             {
                                 var foldername = SystemIO.IO_OS.PathGetDirectoryName(file.Path);
-                                if (!System.IO.Directory.Exists(foldername))
+                                if (!Directory.Exists(foldername))
                                 {
-                                    System.IO.Directory.CreateDirectory(foldername);
+                                    Directory.CreateDirectory(foldername);
                                 }
 
                                 // Create an empty file, or truncate to 0
-                                using var fs = new System.IO.FileStream(file.Path, System.IO.FileMode.OpenOrCreate, System.IO.FileAccess.Write, System.IO.FileShare.None);
+                                using var fs = new FileStream(file.Path, FileMode.OpenOrCreate, FileAccess.Write, FileShare.None);
                                 fs.SetLength(0);
                                 if (missing_blocks.Count != 0)
                                 {
@@ -160,14 +172,14 @@ namespace Duplicati.Library.Main.Operation.Restore
                                 if (options.Dryrun)
                                 {
                                     // If dryrun, open the file for read only to verify the file hash.
-                                    if (System.IO.File.Exists(file.Path))
+                                    if (File.Exists(file.Path))
                                     {
-                                        fs = new System.IO.FileStream(file.Path, System.IO.FileMode.Open, System.IO.FileAccess.Read);
+                                        fs = new FileStream(file.Path, FileMode.Open, FileAccess.Read);
                                     }
                                 }
                                 else
                                 {
-                                    fs = new System.IO.FileStream(file.Path, System.IO.FileMode.OpenOrCreate, System.IO.FileAccess.ReadWrite, System.IO.FileShare.None);
+                                    fs = new FileStream(file.Path, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
                                 }
 
                                 sw_work?.Stop();
@@ -204,7 +216,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                                         if (options.Dryrun)
                                         {
                                             // Simulate writing the block
-                                            fs.Seek(fs.Position + blocks[i].BlockSize, System.IO.SeekOrigin.Begin);
+                                            fs.Seek(fs.Position + blocks[i].BlockSize, SeekOrigin.Begin);
                                         }
                                         else
                                         {
@@ -266,7 +278,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                         }
 
                         if (!options.SkipMetadata) {
-                            await RestoreMetadata(db, findMetaBlocksCmd, file, block_request, block_response, options, results, sw_meta, sw_work, sw_req, sw_resp);
+                            await RestoreMetadata(findMetaBlocksCmd, file, block_request, block_response, options, sw_meta, sw_work, sw_req, sw_resp);
                         }
 
                         // Keep track of the restored files and their sizes
@@ -287,7 +299,6 @@ namespace Duplicati.Library.Main.Operation.Restore
                     if (options.InternalProfiling)
                     {
                         Logging.Log.WriteProfilingMessage(LOGTAG, "InternalTimings", $"File: {sw_file.ElapsedMilliseconds}ms, Block: {sw_block.ElapsedMilliseconds}ms, Meta: {sw_meta.ElapsedMilliseconds}ms, Req: {sw_req.ElapsedMilliseconds}ms, Resp: {sw_resp.ElapsedMilliseconds}ms, Work: {sw_work.ElapsedMilliseconds}ms");
-                        Console.WriteLine($"File processor - File: {sw_file.ElapsedMilliseconds}ms, Block: {sw_block.ElapsedMilliseconds}ms, Meta: {sw_meta.ElapsedMilliseconds}ms, Req: {sw_req.ElapsedMilliseconds}ms, Resp: {sw_resp.ElapsedMilliseconds}ms, Work: {sw_work.ElapsedMilliseconds}ms");
                     }
                     return;
                 }
@@ -301,8 +312,19 @@ namespace Duplicati.Library.Main.Operation.Restore
             });
         }
 
-        // TODO double check all of the docstrings
-        private static async Task<bool> RestoreMetadata(LocalRestoreDatabase db, IDbCommand cmd, LocalRestoreDatabase.IFileToRestore file, IChannel<BlockRequest> block_request, IChannel<byte[]> block_response, Options options, RestoreResults results, Stopwatch sw_meta, Stopwatch sw_work, Stopwatch sw_req, Stopwatch sw_resp)
+        /// <summary>
+        /// Restores the metadata for a file.
+        /// </summary>
+        /// <param name="cmd">The command to execute to retrieve the metadata blocks.</param>
+        /// <param name="file">The file to restore.</param>
+        /// <param name="block_request">The channel to request blocks from the block manager.</param>
+        /// <param name="block_response">The channel to receive blocks from the block manager.</param>
+        /// <param name="options">The restore options.</param>
+        /// <param name="sw_meta">The stopwatch for internal profiling of the metadata processing.</param>
+        /// <param name="sw_work">The stopwatch for internal profiling of the general processing.</param>
+        /// <param name="sw_req">The stopwatch for internal profiling of the block requests.</param>
+        /// <param name="sw_resp">The stopwatch for internal profiling of the block responses.</param>
+        private static async Task RestoreMetadata(IDbCommand cmd, LocalRestoreDatabase.IFileToRestore file, IChannel<BlockRequest> block_request, IChannel<byte[]> block_response, Options options, Stopwatch sw_meta, Stopwatch sw_work, Stopwatch sw_req, Stopwatch sw_resp)
         {
             sw_work?.Stop();
             sw_meta?.Start();
@@ -324,8 +346,6 @@ namespace Duplicati.Library.Main.Operation.Restore
                 await block_request.WriteAsync(block);
                 sw_req?.Stop();
                 sw_resp?.Start();
-                //Console.WriteLine("Reading metadata block");
-                //Deadlock occurs when the print is missing - look into block manager
                 var data = await block_response.ReadAsync();
                 sw_resp?.Stop();
                 sw_work?.Start();
@@ -334,8 +354,6 @@ namespace Duplicati.Library.Main.Operation.Restore
             ms.Seek(0, SeekOrigin.Begin);
 
             RestoreHandler.ApplyMetadata(file.Path, ms, options.RestorePermissions, options.RestoreSymlinkMetadata, options.Dryrun);
-
-            return true;
         }
 
         /// <summary>
@@ -347,18 +365,19 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// <param name="blockhasher">A hasher for a data block.</param>
         /// <param name="options">The Duplicati configuration options.</param>
         /// <param name="results">The restoration results.</param>
+        /// <param name="block_request">The channel to request blocks from the block manager. Used to inform the block manager which blocks are already present.</param>
         /// <returns>An awaitable `Task`, which returns a collection of data blocks that are missing.</returns>
         private static async Task<List<BlockRequest>> VerifyTargetBlocks(LocalRestoreDatabase.IFileToRestore file, BlockRequest[] blocks, System.Security.Cryptography.HashAlgorithm filehasher, System.Security.Cryptography.HashAlgorithm blockhasher, Options options, RestoreResults results, IChannel<BlockRequest> block_request)
         {
             List<BlockRequest> missing_blocks = [];
 
             // Check if the file exists
-            if (System.IO.File.Exists(file.Path))
+            if (File.Exists(file.Path))
             {
                 filehasher.Initialize();
                 try
                 {
-                    using var f = new System.IO.FileStream(file.Path, System.IO.FileMode.Open, System.IO.FileAccess.Read);
+                    using var f = new FileStream(file.Path, FileMode.Open, FileAccess.Read);
                     var buffer = new byte[options.Blocksize];
                     long bytes_read = 0;
                     for (int i = 0; i < blocks.Length; i++)
@@ -411,7 +430,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                     if (Convert.ToBase64String(filehasher.Hash) == file.Hash)
                     {
                         // Truncate the file if it is larger than the expected size.
-                        FileInfo fi = new FileInfo(file.Path);
+                        FileInfo fi = new (file.Path);
                         if (file.Length < fi.Length)
                         {
                             if (options.Dryrun)
@@ -422,7 +441,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                             {
                                 // Reopen file with write permission
                                 fi.IsReadOnly = false; // The metadata handler will revert this back later.
-                                using var f = new System.IO.FileStream(file.Path, System.IO.FileMode.Open, System.IO.FileAccess.ReadWrite);
+                                using var f = new FileStream(file.Path, FileMode.Open, FileAccess.ReadWrite);
                                 f.SetLength(file.Length);
                             }
                         }
@@ -448,19 +467,20 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// <param name="blockhasher">A hasher for the data block.</param>
         /// <param name="options">The Duplicati configuration options.</param>
         /// <param name="results">The restoration results.</param>
+        /// <param name="block_request">The channel to request blocks from the block manager. Used to inform the block manager which blocks are already present.</param>
         /// <returns>An awaitable `Task`, which returns a collection of data blocks that are missing.</returns>
         private static async Task<(long, List<BlockRequest>)> VerifyLocalBlocks(LocalRestoreDatabase.IFileToRestore file, List<BlockRequest> blocks, long total_blocks, System.Security.Cryptography.HashAlgorithm filehasher, System.Security.Cryptography.HashAlgorithm blockhasher, Options options, RestoreResults results, IChannel<BlockRequest> block_request)
         {
             List<BlockRequest> missing_blocks = [];
 
             // Check if the file exists
-            if (System.IO.File.Exists(file.Name))
+            if (File.Exists(file.Name))
             {
                 filehasher.Initialize();
 
                 // Open both files, as the target file is still being read to produce the overall file hash, if all the blocks are present across both the target and original files.
-                using var f_original = new System.IO.FileStream(file.Name, System.IO.FileMode.Open, System.IO.FileAccess.Read);
-                using var f_target = new System.IO.FileStream(file.Path, System.IO.FileMode.OpenOrCreate, System.IO.FileAccess.ReadWrite);
+                using var f_original = new FileStream(file.Name, FileMode.Open, FileAccess.Read);
+                using var f_target = new FileStream(file.Path, FileMode.OpenOrCreate, FileAccess.ReadWrite);
                 var buffer = new byte[options.Blocksize];
                 long bytes_read = 0;
                 long bytes_written = 0;
@@ -474,7 +494,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                         // The current block is a missing block
                         try
                         {
-                            f_original.Seek(i * (long)options.Blocksize, System.IO.SeekOrigin.Begin);
+                            f_original.Seek(i * options.Blocksize, SeekOrigin.Begin);
                             read = await f_original.ReadAsync(buffer, 0, (int) blocks[j].BlockSize);
                         }
                         catch (Exception)
@@ -497,7 +517,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                             {
                                 try
                                 {
-                                    f_target.Seek(blocks[j].BlockOffset * (long)options.Blocksize, System.IO.SeekOrigin.Begin);
+                                    f_target.Seek(blocks[j].BlockOffset * options.Blocksize, SeekOrigin.Begin);
                                     await f_target.WriteAsync(buffer, 0, read);
                                 }
                                 catch (Exception)
@@ -531,7 +551,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                         // The current block is not a missing block - read from the target file.
                         try
                         {
-                            f_target.Seek(i * (long)options.Blocksize, System.IO.SeekOrigin.Begin);
+                            f_target.Seek(i * options.Blocksize, SeekOrigin.Begin);
                             read = await f_target.ReadAsync(buffer, 0, options.Blocksize);
                         }
                         catch (Exception)
