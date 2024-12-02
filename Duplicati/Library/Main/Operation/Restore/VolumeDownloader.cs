@@ -20,17 +20,16 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using CoCoL;
-using Duplicati.Library.Main.Database;
-using System.Diagnostics;
 using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Main.Operation.Restore
 {
 
     /// <summary>
-    /// Process that starts the download of the requested volumes. It also keeps a reference to the downloaded volumes, so that consecutive requests for the same volume can be served from the cache.
+    /// Process that starts the download of the requested volumes.
     /// </summary>
     internal class VolumeDownloader
     {
@@ -39,7 +38,12 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// </summary>
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<VolumeDownloader>();
 
-        public static Task Run(LocalRestoreDatabase db, BackendManager backend, Options options, RestoreResults results)
+        /// <summary>
+        /// Runs the volume downloader process.
+        /// </summary>
+        /// <param name="options">The restore options.</param>
+        /// <param name="results">The restore results.</param>
+        public static Task Run(Options options, RestoreResults results)
         {
             return AutomationExtensions.RunTask(
             new
@@ -55,16 +59,15 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                 try
                 {
-
                     while (true)
                     {
-                        sw_read?.Start();
                         // Get the block request from the `BlockManager` process.
+                        sw_read?.Start();
                         var (volume_id, handle) = await self.Input.ReadAsync();
                         sw_read?.Stop();
 
-                        sw_wait?.Start();
                          // Trigger the download.
+                        sw_wait?.Start();
                         TempFile f = null;
                         try
                         {
@@ -80,8 +83,8 @@ namespace Duplicati.Library.Main.Operation.Restore
                         }
                         sw_wait?.Stop();
 
-                        sw_write?.Start();
                         // Pass the download handle (which may or may not have downloaded already) to the `VolumeDecryptor` process.
+                        sw_write?.Start();
                         await self.Output.WriteAsync((volume_id, f));
                         sw_write?.Stop();
                     }
@@ -93,7 +96,6 @@ namespace Duplicati.Library.Main.Operation.Restore
                     if (options.InternalProfiling)
                     {
                         Logging.Log.WriteProfilingMessage(LOGTAG, "InternalTimings", $"Read: {sw_read.ElapsedMilliseconds}ms, Write: {sw_write.ElapsedMilliseconds}ms, Wait: {sw_wait.ElapsedMilliseconds}ms");
-                        Console.WriteLine($"Volume downloader - Read: {sw_read.ElapsedMilliseconds}ms, Write: {sw_write.ElapsedMilliseconds}ms, Wait: {sw_wait.ElapsedMilliseconds}ms");
                     }
                 }
                 catch (Exception ex)
