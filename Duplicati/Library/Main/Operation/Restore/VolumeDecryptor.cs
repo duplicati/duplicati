@@ -33,9 +33,16 @@ namespace Duplicati.Library.Main.Operation.Restore
     /// </summary>
     internal class VolumeDecryptor
     {
+        /// <summary>
+        /// The log tag for this class.
+        /// </summary>
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<VolumeDecryptor>();
 
-        public static Task Run(Options options, RestoreResults results)
+        /// <summary>
+        /// Runs the volume decryptor process.
+        /// </summary>
+        /// <param name="options">The restore options.</param>
+        public static Task Run(Options options)
         {
             return AutomationExtensions.RunTask(
             new
@@ -74,7 +81,6 @@ namespace Duplicati.Library.Main.Operation.Restore
                     if (options.InternalProfiling)
                     {
                         Logging.Log.WriteProfilingMessage(LOGTAG, "InternalTimings", $"Read: {sw_read.ElapsedMilliseconds}ms, Decrypt: {sw_decrypt.ElapsedMilliseconds}ms, Write: {sw_write.ElapsedMilliseconds}ms");
-                        Console.WriteLine($"Volume decryptor - Read: {sw_read.ElapsedMilliseconds}ms, Decrypt: {sw_decrypt.ElapsedMilliseconds}ms, Write: {sw_write.ElapsedMilliseconds}ms");
                     }
                 }
                 catch (Exception ex)
