@@ -1,3 +1,24 @@
+// Copyright (C) 2024, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the "Software"),
+// to deal in the Software without restriction, including without limitation
+// the rights to use, copy, modify, merge, publish, distribute, sublicense,
+// and/or sell copies of the Software, and to permit persons to whom the
+// Software is furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+// DEALINGS IN THE SOFTWARE.
+
 using CoCoL;
 using Duplicati.Library.Main.Database;
 using Duplicati.Library.Main.Volumes;
@@ -10,10 +31,24 @@ using System.Threading.Tasks;
 namespace Duplicati.Library.Main.Operation.Restore
 {
 
+    /// <summary>
+    /// Process that manages the volumes that the `VolumeDownloader` process has downloaded.
+    /// It is responsible for fetching the volumes from the backend and caching them.
+    /// </summary>
     internal class VolumeManager
     {
+        /// <summary>
+        /// The log tag for this class.
+        /// </summary>
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<VolumeManager>();
 
+        /// <summary>
+        /// Runs the volume manager process.
+        /// </summary>
+        /// <param name="db">The local restore database, used to find the volume where a block is stored.</param>
+        /// <param name="backend">The backend manager, used to fetch the volumes from the backend.</param>
+        /// <param name="options">The restore options.</param>
+        /// <param name="results">The restore results.</param>
         public static Task Run(LocalRestoreDatabase db, BackendManager backend, Options options, RestoreResults results)
         {
             return AutomationExtensions.RunTask(
@@ -87,7 +122,9 @@ namespace Duplicati.Library.Main.Operation.Restore
                                     break;
                                 }
                             default:
-                                throw new InvalidOperationException("Unexpected message type");
+                                var ex = new InvalidOperationException("Unexpected message type");
+                                Logging.Log.WriteErrorMessage(LOGTAG, "UnexpectedMessage", ex, "Unexpected message type");
+                                throw ex;
                         }
                     }
                 }
