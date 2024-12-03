@@ -209,10 +209,10 @@ namespace Duplicati.GUI.TrayIcon
 
         internal static string GetThemePath()
         {
-            // var isDark = string.Equals(Application.Current.ActualThemeVariant.ToString(), "Dark", StringComparison.OrdinalIgnoreCase);
+            var isDark = string.Equals(Application.Current.ActualThemeVariant.ToString(), "Dark", StringComparison.OrdinalIgnoreCase);
 
             if (OperatingSystem.IsMacOS())
-                return "macos";
+                return isDark ? "macos/dark" : "macos/light";
             if (OperatingSystem.IsWindows())
                 return "windows";
 
