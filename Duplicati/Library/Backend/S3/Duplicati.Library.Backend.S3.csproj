@@ -8,9 +8,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="AWSSDK.Core" Version="3.3.104.11" />
-    <PackageReference Include="AWSSDK.IdentityManagement" Version="3.3.104.18" />
-    <PackageReference Include="AWSSDK.S3" Version="3.3.110.7" />
+    <PackageReference Include="AWSSDK.Core" Version="3.7.400.45" />
+    <PackageReference Include="AWSSDK.IdentityManagement" Version="3.7.402.39" />
+    <PackageReference Include="AWSSDK.S3" Version="3.7.405.9" />
     <PackageReference Include="Minio" Version="3.1.13" />
     <PackageReference Include="System.Reactive.Linq" Version="4.3.2" />
   </ItemGroup>

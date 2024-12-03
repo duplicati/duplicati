@@ -1,9 +1,9 @@
 <Include>
   <!-- Never change the UpgradeCode -->
-  <?define UpgradeCode="1c94bc5a-2bf2-4273-9d8f-2cb30e780d16" ?>
+  <?define UpgradeCode="1C94BC5A-2BF2-4273-9D8F-2CB30E780D16" ?>
 
   <!-- Remember to change product version on each install -->
-  <?define ProductVersion="2.0.8.106" ?>
+  <?define ProductVersion="2.0.8.104" ?>
 
   <?define Manufacturer="Duplicati Team" ?>
 

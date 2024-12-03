@@ -5,10 +5,12 @@
     <TargetFramework>net8.0</TargetFramework>
     <Description>The Duplicati Agent implementation</Description>
     <Copyright>Copyright © 2024 Team Duplicati, MIT license</Copyright>
+    <ApplicationIcon>..\..\..\Duplicati\GUI\Duplicati.GUI.TrayIcon\Duplicati.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>	
     <ProjectReference Include="..\..\..\Duplicati\Agent\Duplicati.Agent.csproj" />
+    <ProjectReference Include="..\..\..\Duplicati\Library\Crashlog\Duplicati.Library.Crashlog.csproj" />
   </ItemGroup>
 
   <ItemGroup>

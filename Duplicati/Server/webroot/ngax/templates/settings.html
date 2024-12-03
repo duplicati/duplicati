@@ -36,7 +36,7 @@
             <label translate>Status: {{getRemoteControlStatusText()}}</label>
         </div>
 
-        <div ng-show="remoteControlState != 'unknown'">
+        <div ng-show="remoteControlState != 'unknown' &amp;&amp; SystemInfo.StartedBy != 'Agent'">
 
             <div class="input mixed multiple" ng-show="remoteControlState == 'inactive'">
                 <label for="remoteControlRegisterUrl" translate>Registration URL</label>
@@ -111,6 +111,16 @@
                 <option value="default" translate>The default blue on white theme (by Alex)</option>
                 <option value="dark" translate>The dark theme (by Michal)</option>
             </select>
+        </div>
+
+        <div class="input mixed multiple">
+            <label for="timezone" translate>Time zone</label>
+            <select id="timezone" name="timezone" ng-model="timezone" ng-options="item.ID as item.DisplayName for item in SystemInfo.TimeZones">
+            </select>
+            <div class="input mixed multiple" ng-show="timezone != SystemInfo.ServerTimeZone ">
+                <input type="button" id="settimezonedefault" class="submit" value="{{'Set timezone to default' | translate}}" ng-click="timezone = SystemInfo.ServerTimeZone" />
+            </div>
+
         </div>
 
         <h2 translate>Update channel</h2>

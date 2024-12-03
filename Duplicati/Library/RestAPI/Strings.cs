@@ -52,6 +52,7 @@ Error message: {0}", error); }
                 public static string WebserverApiOnlyDescription { get { return LC.L(@"Disable the web interface and only allow API access"); } }
                 public static string WebserverDisableSigninTokensDescription { get { return LC.L(@"Disable the use of signin tokens"); } }
                 public static string WebserverSpaPathsDescription { get { return LC.L(@"The relative paths that should be served as single page applications, separated with semicolons."); } }
+                public static string WebserverTimezoneDescription { get { return LC.L(@"The timezone to use for the webserver. The timezone must be a valid timezone identifier, such as ""America/New_York"" or ""UTC"". Common three-letter abbreviations like ""CET"" are supported, but ambiguous in some cases."); } }
                 public static string DisabledbencryptionLong { get { return LC.L(@"Use this option to disable database encryption of sensitive fields"); } }
                 public static string DisabledbencryptionShort { get { return LC.L(@"Disable database encryption"); } }
                 public static string LogwindowseventlogLong { get { return LC.L(@"Use this option to log to the Windows event log."); } }
@@ -69,6 +70,7 @@ Error message: {0}", error); }
                 public static string BlacklistedEncryptionKey(string envkey, string disableoptionname) { return LC.L(@"The database encryption key is blacklisted and cannot be used. The database has been decrypted. Supply a new encryption key via the environment variable {0} or disable database encryption with the option --{1}", envkey, disableoptionname); }
                 public static string NoEncryptionKeySpecified(string envkey, string disableoptionname) { return LC.L(@"No database encryption key was found. The database will be stored unencrypted. Supply an encryption key via the environment variable {0} or disable database encryption with the option --{1}", envkey, disableoptionname); }
                 public static string EncryptionKeyMissing(string envkey) { return LC.L(@"The database appears to be encrypted, but no key was specified. Opening the database will likely fail. Use the environment variable {0} to specify the key.", envkey); }
+                public static string InvalidTimezone(string timezone) { return LC.L(@"The timezone {0} is not valid", timezone); }
                 public static string SettingsencryptionkeyShort { get { return LC.L(@"Set the encryption key for the settings database"); } }
                 public static string SettingsencryptionkeyLong(string envname) { return LC.L(@"Use this option to set the encryption key for the settings database. This option can also be set with the environment variable {0}.", envname); }
         }

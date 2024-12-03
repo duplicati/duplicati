@@ -13,7 +13,7 @@ namespace Duplicati.Library.Backend;
 ///
 /// The functionality is identical to the FTP backend
 /// </summary>
-public class AlternateFTPBackend: FTP
+public class AlternateFTPBackend : FTP
 {
     /* 
         These constants are overriden to provide transparent access to the alternate configuration keys
@@ -24,9 +24,11 @@ public class AlternateFTPBackend: FTP
     protected override string CONFIG_KEY_FTP_UPLOAD_DELAY => "aftp-upload-delay";
     protected override string CONFIG_KEY_FTP_LOGTOCONSOLE => "aftp-log-to-console";
     protected override string CONFIG_KEY_FTP_LOGPRIVATEINFOTOCONSOLE => "aftp-log-privateinfo-to-console";
-    
+    protected override string CONFIG_KEY_FTP_RELATIVE_PATH => "aftp-relative-path";
+    protected override string CONFIG_KEY_FTP_USE_CWD_NAMES => "aftp-use-cwd-names";
+
     public override string Description => Strings.DescriptionAlternate;
-    
+
     public override string DisplayName => Strings.DisplayNameAlternate;
 
     /*
@@ -36,12 +38,12 @@ public class AlternateFTPBackend: FTP
 
     public AlternateFTPBackend()
     {
-        
+
     }
-    public AlternateFTPBackend(string url, Dictionary<string, string> options): base(url, options)
+    public AlternateFTPBackend(string url, Dictionary<string, string> options) : base(url, options)
     {
     }
-    
+
     /// <summary>
     /// Overriden so that for the alternate FTP backend, we need to support the alternate config keys starting with "aftp"
     /// </summary>
@@ -49,7 +51,9 @@ public class AlternateFTPBackend: FTP
     new List<ICommandLineArgument>([
         new CommandLineArgument("auth-password", CommandLineArgument.ArgumentType.Password, Strings.DescriptionAuthPasswordShort, Strings.DescriptionAuthPasswordLong),
         new CommandLineArgument("auth-username", CommandLineArgument.ArgumentType.String, Strings.DescriptionAuthUsernameShort, Strings.DescriptionAuthUsernameLong),
-        new CommandLineArgument("disable-upload-verify", CommandLineArgument.ArgumentType.Boolean, Strings.DescriptionDisableUploadVerifyShort, Strings.DescriptionDisableUploadVerifyLong),
+        new CommandLineArgument(CONFIG_KEY_DISABLE_UPLOAD_VERIFY, CommandLineArgument.ArgumentType.Boolean, Strings.DescriptionDisableUploadVerifyShort, Strings.DescriptionDisableUploadVerifyLong),
+        new CommandLineArgument(CONFIG_KEY_FTP_RELATIVE_PATH, CommandLineArgument.ArgumentType.Boolean, Strings.DescriptionAbsolutePathShort, Strings.DescriptionAbsolutePathLong),
+        new CommandLineArgument(CONFIG_KEY_FTP_USE_CWD_NAMES, CommandLineArgument.ArgumentType.Boolean, Strings.DescriptionUseCwdNamesShort, Strings.DescriptionUseCwdNamesLong),
         new CommandLineArgument(CONFIG_KEY_FTP_DATA_CONNECTION_TYPE, CommandLineArgument.ArgumentType.Enumeration, Strings.DescriptionFtpDataConnectionTypeShort, Strings.DescriptionFtpDataConnectionTypeLong, DEFAULT_DATA_CONNECTION_TYPE_STRING, null, Enum.GetNames(typeof(FtpDataConnectionType))),
         new CommandLineArgument(CONFIG_KEY_FTP_ENCRYPTION_MODE, CommandLineArgument.ArgumentType.Enumeration, Strings.DescriptionFtpEncryptionModeShort, Strings.DescriptionFtpEncryptionModeLong, DEFAULT_ENCRYPTION_MODE_STRING, null, Enum.GetNames(typeof(FtpEncryptionMode))),
         new CommandLineArgument(CONFIG_KEY_FTP_SSL_PROTOCOLS, CommandLineArgument.ArgumentType.Flags, Strings.DescriptionSslProtocolsShort, Strings.DescriptionSslProtocolsLong, DEFAULT_SSL_PROTOCOLS_STRING, null, Enum.GetNames(typeof(SslProtocols))),

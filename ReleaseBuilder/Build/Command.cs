@@ -584,18 +584,14 @@ public static partial class Command
                 var manifestNames = new[] { $"duplicati-{releaseInfo.ReleaseName}.manifest", "latest-v2.manifest" };
 
                 var packageJson = Path.Combine(input.BuildPath.FullName, "packages", "latest-v2.json");
-                var packageJs = Path.Combine(input.BuildPath.FullName, "packages", "latest-v2.js");
                 var content = Upload.CreatePackageJson(builtPackages, rtcfg);
 
                 File.WriteAllText(packageJson, content);
-                File.WriteAllText(packageJs, $"duplicati_installers = {content};");
 
                 var uploads = files.Select(x => new Upload.UploadFile(x, Path.GetFileName(x)))
                    .Concat(manifestNames.Select(x => new Upload.UploadFile(manifestfile, x)))
                    .Append(new Upload.UploadFile(packageJson, Path.GetFileName(packageJson)))
-                   .Append(new Upload.UploadFile(packageJs, Path.GetFileName(packageJs)))
-                   .Append(new Upload.UploadFile(packageJson, $"latest-v2-{releaseInfo.Version}.json"))
-                   .Append(new Upload.UploadFile(packageJs, $"latest-v2-{releaseInfo.Version}.js"));
+                   .Append(new Upload.UploadFile(packageJson, $"latest-v2-{releaseInfo.Version}.json"));
 
                 await Upload.UploadToS3(uploads, rtcfg);
             }
@@ -676,17 +672,29 @@ public static partial class Command
                 regex.Replace(File.ReadAllText(file), $"?v={releaseInfo.Version}")
             );
 
-        var wixFile = Path.Combine(baseDir, "ReleaseBuilder", "Resources", "Windows", "UpgradeData.wxi");
+        var wixFileGUI = Path.Combine(baseDir, "ReleaseBuilder", "Resources", "Windows", "TrayIcon", "UpgradeData.wxi");
         File.WriteAllText(
-            wixFile,
+            wixFileGUI,
             Regex.Replace(
-                File.ReadAllText(wixFile),
+                File.ReadAllText(wixFileGUI),
                 @"\<\?define ProductVersion\=\""" + versionre + @"\"" \?\>",
                 $"<?define ProductVersion=\"{releaseInfo.Version}\" ?>"
             )
         );
 
-        targetfiles.Add(wixFile);
+        targetfiles.Add(wixFileGUI);
+
+        var wixFileAgent = Path.Combine(baseDir, "ReleaseBuilder", "Resources", "Windows", "Agent", "UpgradeData.wxi");
+        File.WriteAllText(
+            wixFileAgent,
+            Regex.Replace(
+                File.ReadAllText(wixFileAgent),
+                @"\<\?define ProductVersion\=\""" + versionre + @"\"" \?\>",
+                $"<?define ProductVersion=\"{releaseInfo.Version}\" ?>"
+            )
+        );
+
+        targetfiles.Add(wixFileAgent);
 
         return targetfiles;
     }

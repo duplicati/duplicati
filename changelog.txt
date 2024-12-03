@@ -1,3 +1,168 @@
+2024-11-25 - 2.1.0.100_canary_2024-11-25
+==========
+This release is a canary release intended to be used for testing.
+
+**Note that this build is using .NET8, unlike the current beta**
+See release notes from previous canary builds for details.
+
+## Detailed list of changes:
+- Fixed startup delay caused by AWS upgrade
+- Running WindowsService INSTALL will now automatically start the new service
+- Removed log messages from GPG detection
+- Fixed an issue with Agent not being able to see connection status in the UI
+- Added Downloads folder to list of special folders
+- Fixed an issue with the remote control heartbeat period
+- Re-introduced the crashlog feature
+- Updated FTP backend to be compatible with the previous FTP backend
+- Fixed an issue with quiet MSI upgrades
+- MSI will automatically attempt to stop and restart the service during install
+- Added single-click handler to TrayIcon on Linux+Windows
+- Added pCloud native backend
+- Fixed issue with DST changes causing schedule time-of-day to change
+- Fixed issue with lingering update notification
+- Added option to ignore snapshot warnings from HyperV on client-Windows
+
+2024-11-14 - 2.0.9.111_canary_2024-11-14
+==========
+This release is a canary release intended to be used for testing.
+This release is expected to progress to a stable release if no major blockers are found.
+
+**Unlike regular canary builds, this one has a major change in the build system, so it now runs on .NET8.**
+The builds are self-contained so Mono or .NET installations are not required to install.
+
+**Important changes from last Beta**
+- Updated to .NET8 with OS specific builds
+- Using Kestrel as the API/UI server
+- Mandatory password and new authentication scheme for server
+- Settings database version updated to v8
+- Backup database updated to v13
+
+# New tool to manage a running server
+Due to incompatibility with `duplicati_client` a new tool is included, named `Duplicati.CommandLine.ServerUtil.exe`/`duplicati-server-util`.
+
+# Upgrade from `v2.0.9.105`
+If you are upgrading from 2.0.9.105 please see the release notes from 2.0.9.106 for how to prepare the database. 
+Upgrades from other versions do not need special steps.
+
+## Detailed list of changes:
+- Added missing options to Agent commandline
+- Fixed a warning when using the S3 backend
+- Sending package type id to usage reporter
+- Reduced log output and increased heartbeat period for Agent
+
+2024-11-09 - 2.0.9.110_canary_2024-11-09
+==========
+This release is a canary release intended to be used for testing.
+This release is expected to progress to a stable release if no major blockers are found.
+
+**Unlike regular canary builds, this one has a major change in the build system, so it now runs on .NET8.**
+The builds are self-contained so Mono or .NET installations are not required to install.
+
+For users running on builds prior to 2.0.9.x, this build will appear later as an update that requires manual installation.
+
+**Important changes from last Beta**
+- Updated to .NET8 with OS specific builds
+- Using Kestrel as the API/UI server
+- Mandatory password and new authentication scheme for server
+- Settings database version updated to v8
+- Backup database updated to v13
+
+Please see list of known issues related to .NET8/Kestrel upgrade:
+https://github.com/orgs/duplicati/projects/2
+
+# New tool to manage a running server
+Due to incompatibility with `duplicati_client` a new tool is included, named `Duplicati.CommandLine.ServerUtil.exe`/`duplicati-server-util`.
+
+# Upgrade from `v2.0.9.105`
+If you are upgrading from 2.0.9.105 please see the release notes from 2.0.9.106 for how to prepare the database. 
+Upgrades from other versions do not need special steps.
+
+## Downgrade backup database to v12
+If you need to go back to v12, run these two SQL statements:
+```
+DROP INDEX "UniqueBlockVolumeDuplicateBlock";
+UPDATE "Version" SET "Version" = 12;
+```
+
+## Detailed list of changes:
+- Minor updates to help text and option types
+- Fixed an issue with file backend url on Windows, thanks @Jojo-1000
+- Fixed a condition that could hang the trayicon on a crash
+- Updated AWSSDK to latest version
+- Fixed an issue with the AWS Secrets Manader provider stalling the load of settings
+- Fixed Telegram notifications
+- Added Agent MSI installer
+- Updated Avalonia to the latest version to fix crash on Debian
+- Added Agent PKG for MacOS
+- Added CLI PKG for MacOS
+- Added autolaunch for Agent Deb package
+- Added option to let scripts create log entries
+
+2024-11-06 - 2.0.9.109_canary_2024-11-06
+==========
+This release is a canary release intended to be used for testing.
+This release is expected to progress to a stable release if no major blockers are found.
+
+**Unlike regular canary builds, this one has a major change in the build system, so it now runs on .NET8.**
+The builds are self-contained so Mono or .NET installations are not required to install.
+
+For users running on builds prior to 2.0.9.x, this build will appear later as an update that requires manual installation.
+
+**Important changes from last Beta**
+- Updated to .NET8 with OS specific builds
+- Using Kestrel as the API/UI server
+- Mandatory password and new authentication scheme for server
+- Settings database version updated to v8
+- Backup database updated to v13
+
+Please see list of known issues related to .NET8/Kestrel upgrade:
+https://github.com/orgs/duplicati/projects/2
+
+# New tool to manage a running server
+Due to incompatibility with `duplicati_client` a new tool is included, named `Duplicati.CommandLine.ServerUtil.exe`/`duplicati-server-util`.
+
+# Upgrade from `v2.0.9.105`
+If you are upgrading from 2.0.9.105 please see the release notes from 2.0.9.106 for how to prepare the database. 
+Upgrades from other versions do not need special steps.
+
+## Downgrade backup database to v12
+If you need to go back to v12, run these two SQL statements:
+```
+DROP INDEX "UniqueBlockVolumeDuplicateBlock";
+UPDATE "Version" SET "Version" = 12;
+```
+
+## Detailed list of changes:
+- Updated list of S3 endpoints to include Segate Lyve
+- Updated all backends to support asyncronous calls
+- Bugfixes for the new API implementation
+- Bugfix for recreate failing on some systems
+- Added option to disregard advisory locking on Linux
+- Fixed issues with WebDAV and self-signed certificates
+- Removed the deprecated FTP backend and made FluentFTP handle both FTP and aFTP
+- Fixed a performance issue with compacting
+- Fixed issues with remote control registration
+- Fixed a performance issue with SharpAESCrypt
+- Fixed an incorrect error masking another error in backups
+- Support for EC-based certificates, thanks @mnaiman
+- Always excluding the SQLite journal file for the active database
+- Added support for detecting self-signed certificates and securely accepting them
+- Cleaned up CSS/Less files, thanks @luixxiul
+- Improved IPv6 support for `loopback` and `any`
+- Fixed Rclone backend not setting defaults for empty strings
+- Fixed a bug in the recompress tool, if not using encryption
+- Fixed an issue where SharePoint would not honor the server throttle requests
+- Improved cleanup after removing volumes, thanks @Jojo-1000
+- Removed 7z compression
+- Simplified showing the default value of boolean options
+- Fixed an issue with leftover index files, thanks @Jojo-1000 and @ts678
+- Fixed an issue that would cause verification errors if the compact was interrupted, thanks @Jojo-1000 and @ts678
+- Fixed an issue where `dindex` files would be missing a blocklist, causing extra download on restores
+- Fixed CSS/Less to rely on autoprefixer, thanks @luixxiul
+- Added support for reducing the system load intensity
+- Disabled Telegram notification destination
+- Added support for external secret providers
+
 2024-10-03 - 2.0.9.108_canary_2024-10-03
 ==========
 This release is a canary release intended to be used for testing in preparation of a later stable release.

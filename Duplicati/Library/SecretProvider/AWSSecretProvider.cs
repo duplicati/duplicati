@@ -56,10 +56,31 @@ public class AWSSecretProvider : ISecretProvider
         public const string AWS_ENDPOINT_URL = "AWS_ENDPOINT_URL";
     }
 
+    /// <summary>
+    /// Properties that are present in the specfic configuration and the general configuration
+    /// </summary>
+    private static readonly HashSet<string> DuplicatedProperties = new[] {
+        nameof(AmazonSecretsManagerConfig.RegionEndpoint),
+        nameof(AmazonSecretsManagerConfig.ServiceURL)
+    }.ToHashSet();
+
+    /// <summary>
+    /// List of properties that slow down the loading of the AWS Secrets Manager client
+    /// </summary>
+    /// <remarks>Changes in this list will likely need to be reflected in S3AwsClient.cs</remarks>
+    private static readonly HashSet<string> SlowLoadingProperties = new[] {
+        nameof(AmazonSecretsManagerConfig.RegionEndpoint),
+        nameof(AmazonSecretsManagerConfig.ServiceURL),
+        nameof(AmazonSecretsManagerConfig.MaxErrorRetry),
+        nameof(AmazonSecretsManagerConfig.DefaultConfigurationMode),
+        nameof(AmazonSecretsManagerConfig.Timeout),
+        nameof(AmazonSecretsManagerConfig.RetryMode),
+    }.ToHashSet();
+
     /// <inheritdoc/>
     public IList<ICommandLineArgument> SupportedCommands
         => CommandLineArgumentMapper.MapArguments(new AWSSettings())
-        .Concat(CommandLineArgumentMapper.MapArguments(new AmazonSecretsManagerConfig(), OPTION_PREFIX_EXTRA))
+        .Concat(CommandLineArgumentMapper.MapArguments(new AmazonSecretsManagerConfig(), OPTION_PREFIX_EXTRA, exclude: DuplicatedProperties, excludeDefaultValue: SlowLoadingProperties))
         .ToList();
 
     /// <summary>

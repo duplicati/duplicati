@@ -107,7 +107,7 @@ public static class Program
             new Option<bool>("--agent-register-only", description: "Only register the agent, then exit", getDefaultValue: () => false),
             new Option<string>("--webservice-listen-interface", description: "The interface to listen on for the webserver", getDefaultValue: () => "loopback"),
             new Option<string>("--webservice-port", description: "The port to listen on for the webserver", getDefaultValue: () => "8210"),
-            new Option<string?>("--webservice-password", description: "The password for the webserver, random if none supplied", getDefaultValue: () => null),
+            new Option<string?>("--webservice-password", description: "The password for the webserver, if set to \"random\" a random passphrase is used", getDefaultValue: () => "random"),
             new Option<string?>("--settings-encryption-key", description: "The encryption key for the database settings", getDefaultValue: () => null),
             new Option<string>("--windows-eventlog", description: "The Windows event log to write to", getDefaultValue: () => "Duplicati"),
             new Option<bool>("--disable-db-encryption", description: "Disable database encryption", getDefaultValue: () => false),
@@ -116,6 +116,7 @@ public static class Program
             new Option<bool>("--webservice-api-only", description: "Only allow API access to the webserver", getDefaultValue: () => true),
             new Option<bool>("--webservice-disable-signin-tokens", description: "Disable signin tokens for the webserver", getDefaultValue: () => true),
             new Option<bool>("--ping-pong-keepalive", description: "Enable ping-pong keepalive", getDefaultValue: () => false),
+            new Option<bool>("--disable-pre-shared-key", description: "Disable the pre-shared key that prevents outside access to the webserver", getDefaultValue: () => false),
             new Option<string?>("--secret-provider", description: "The secret provider to use", getDefaultValue: () => null),
             new Option<SecretProviderHelper.CachingLevel>("--secret-provider-cache", description: "The secret provider cache level", getDefaultValue: () => SecretProviderHelper.CachingLevel.None),
             new Option<string>("--secret-provider-pattern", description: "The secret provider pattern", getDefaultValue: () => SecretProviderHelper.DEFAULT_PATTERN),
@@ -207,7 +208,7 @@ public static class Program
         }
 
         // Prevent access to the webserver interface from anything but the agent
-        if (string.IsNullOrWhiteSpace(agentConfig.WebservicePassword))
+        if (string.Equals("random", agentConfig.WebservicePassword, StringComparison.OrdinalIgnoreCase))
             agentConfig = agentConfig with { WebservicePassword = System.Security.Cryptography.RandomNumberGenerator.GetHexString(128) };
 
         // Set the pre-shared key for the agent

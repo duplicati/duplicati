@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using CoCoL;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.GUI.TrayIcon;
 
@@ -77,7 +78,7 @@ public class ProcessBasedActionDelay : IDisposable
     /// </summary>
     public void Dispose()
     {
-        m_inboundActionChannel.Retire();
-        m_initializedChannel.Retire();
+        m_inboundActionChannel.RetireAsync(true).Await();
+        m_initializedChannel.RetireAsync(true).Await();
     }
 }
