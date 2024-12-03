@@ -41,7 +41,7 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// <summary>
         /// Channel between <see cref="FileLister"/> and <see cref="FileProcessor"/>.
         /// </summary>
-        public static readonly ChannelMarkerWrapper<Database.LocalRestoreDatabase.IFileToRestore> FilesToRestore = new(new ChannelNameAttribute("FilesToRestore", BufferSize));
+        public static readonly ChannelMarkerWrapper<FileRequest> FilesToRestore = new(new ChannelNameAttribute("FilesToRestore", BufferSize));
 
         /// <summary>
         /// Channel between <see cref="BlockManager"/> and <see cref="VolumeManager"/>.

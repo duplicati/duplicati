@@ -41,4 +41,23 @@ namespace Duplicati.Library.Main.Operation.Restore
         public bool CacheDecrEvict { get; set; } = cacheDecrEvict;
     }
 
+    /// <summary>
+    /// Represents a file request that the `FileLister` process sends to the `FileProcessor` process.
+    /// </summary>
+    /// <param name="ID">The File ID.</param>
+    /// <param name="OriginalPath">The original path of the file.</param>
+    /// <param name="TargetPath">The target path of the file.</param>
+    /// <param name="Hash">The file hash.</param>
+    /// <param name="Length">The length of the file.</param>
+    /// <param name="BlocksetID">The BlocksetID of the file.</param>
+    public class FileRequest(long ID, string OriginalPath, string TargetPath, string Hash, long Length, long BlocksetID)
+    {
+        public long ID { get; } = ID;
+        public string OriginalPath { get; } = OriginalPath;
+        public string TargetPath { get; } = TargetPath;
+        public string Hash { get; } = Hash;
+        public long Length { get; } = Length;
+        public long BlocksetID { get; } = BlocksetID;
+    }
+
 }

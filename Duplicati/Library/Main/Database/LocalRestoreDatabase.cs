@@ -20,10 +20,11 @@
 // DEALINGS IN THE SOFTWARE.
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Text;
-using Duplicati.Library.Common;
 using Duplicati.Library.Common.IO;
+using Duplicati.Library.Main.Operation.Restore;
 using Duplicati.Library.Main.Volumes;
 using Duplicati.Library.Utility;
 
@@ -36,11 +37,11 @@ namespace Duplicati.Library.Main.Database
         /// </summary>
         private static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(LocalRestoreDatabase));
 
-        public readonly string m_temptabsetguid = Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
+        protected readonly string m_temptabsetguid = Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
         /// <summary>
         /// The name of the temporary table in the database, which is used to store the list of files to restore.
         /// </summary>
-        public string m_tempfiletable { get; private set; }
+        protected string m_tempfiletable;
         protected string m_tempblocktable;
         protected string m_fileprogtable;
         protected string m_totalprogtable;
@@ -544,12 +545,9 @@ namespace Duplicati.Library.Main.Database
         /// </summary>
         public interface IFileToRestore
         {
-            public long ID { get; }
-            public string Name { get; }
-            public string Path { get; }
-            public string Hash { get; }
-            public long Length { get; }
-            public long BlocksetID { get; }
+            string Path { get; }
+            string Hash { get; }
+            long Length { get; }
         }
 
         public interface IPatchBlock
@@ -943,21 +941,15 @@ namespace Duplicati.Library.Main.Database
 
         private class FileToRestore : IFileToRestore
         {
-            public long ID { get; private set; }
-            public string Name { get; private set; }
             public string Path { get; private set; }
             public string Hash { get; private set; }
             public long Length { get; private set; }
-            public long BlocksetID { get; private set; }
 
-            public FileToRestore(long id, string name, string path, string hash, long length, long blocksetid)
+            public FileToRestore(long id, string path, string hash, long length)
             {
-                this.ID = id;
-                this.Name = name;
                 this.Path = path;
                 this.Hash = hash;
                 this.Length = length;
-                this.BlocksetID = blocksetid;
             }
         }
 
@@ -966,9 +958,9 @@ namespace Duplicati.Library.Main.Database
             using (var cmd = m_connection.CreateCommand())
             {
                 cmd.AddParameter(!onlyNonVerified);
-                using (var rd = cmd.ExecuteReader(string.Format(@"SELECT ""{0}"".ID, ""{0}"".""Path"", ""{0}"".""TargetPath"", ""Blockset"".""FullHash"", ""Blockset"".""Length"", ""Blockset"".""ID"" FROM ""{0}"",""Blockset"" WHERE ""{0}"".""BlocksetID"" = ""Blockset"".""ID"" AND ""{0}"".""DataVerified"" <= ?", m_tempfiletable)))
+                using (var rd = cmd.ExecuteReader(string.Format(@"SELECT ""{0}"".""ID"", ""{0}"".""TargetPath"", ""Blockset"".""FullHash"", ""Blockset"".""Length"" FROM ""{0}"",""Blockset"" WHERE ""{0}"".""BlocksetID"" = ""Blockset"".""ID"" AND ""{0}"".""DataVerified"" <= ?", m_tempfiletable)))
                     while (rd.Read())
-                        yield return new FileToRestore(rd.ConvertValueToInt64(0), rd.ConvertValueToString(1), rd.ConvertValueToString(2), rd.ConvertValueToString(3), rd.ConvertValueToInt64(4), rd.ConvertValueToInt64(5));
+                        yield return new FileToRestore(rd.ConvertValueToInt64(0), rd.ConvertValueToString(1), rd.ConvertValueToString(2), rd.ConvertValueToInt64(3));
             }
         }
 
@@ -977,7 +969,7 @@ namespace Duplicati.Library.Main.Database
         /// </summary>
         /// <param name="onlyNonVerified">Flag to indicate if only files with non-verified data should be returned.</param>
         /// <returns>A list of files and symlinks to restore.</returns>
-        public IEnumerable<IFileToRestore> GetFilesAndSymlinksToRestore(bool onlyNonVerified)
+        public IEnumerable<FileRequest> GetFilesAndSymlinksToRestore(bool onlyNonVerified)
         {
             using var cmd = m_connection.CreateCommand();
             cmd.AddParameter(!onlyNonVerified);
@@ -985,9 +977,99 @@ namespace Duplicati.Library.Main.Database
                 SELECT F.ID, F.Path, F.TargetPath, IFNULL(B.FullHash, ''), IFNULL(B.Length, 0), F.BlocksetID
                 FROM ""{m_tempfiletable}"" F
                 LEFT JOIN Blockset B ON F.BlocksetID = B.ID
-                WHERE F.BlocksetID != {LocalDatabase.FOLDER_BLOCKSET_ID}");
+                WHERE F.BlocksetID != {FOLDER_BLOCKSET_ID}");
             while (rd.Read())
-                yield return new FileToRestore(rd.ConvertValueToInt64(0), rd.ConvertValueToString(1), rd.ConvertValueToString(2), rd.ConvertValueToString(3), rd.ConvertValueToInt64(4), rd.ConvertValueToInt64(5));
+                yield return new FileRequest(rd.ConvertValueToInt64(0), rd.ConvertValueToString(1), rd.ConvertValueToString(2), rd.ConvertValueToString(3), rd.ConvertValueToInt64(4), rd.ConvertValueToInt64(5));
+        }
+
+        /// <summary>
+        /// Returns a list of blocks and their volume IDs. Used by the <see cref="BlockManager"/> to keep track of blocks and volumes to automatically evict them from the respective caches.
+        /// </summary>
+        /// <param name="skipMetadata">Flag indicating whether the returned blocks should exclude the metadata blocks.</param>
+        /// <returns>A list of tuples containing the block ID and the volume ID of the block.</returns>
+        public IEnumerable<(long, long)> GetBlocksAndVolumeIDs(bool skipMetadata)
+        {
+            using var cmd = Connection.CreateCommand();
+            using var reader = cmd.ExecuteReader($@"
+                SELECT Block.ID, Block.VolumeID
+                FROM BlocksetEntry
+                INNER JOIN ""{m_tempfiletable}"" ON BlocksetEntry.BlocksetID = ""{m_tempfiletable}"".BlocksetID
+                INNER JOIN Block ON BlocksetEntry.BlockID = Block.ID
+                "
+                + (skipMetadata ? "" : $@"
+                UNION ALL
+                SELECT Block.ID, Block.VolumeID
+                FROM ""{m_tempfiletable}""
+                INNER JOIN Metadataset ON ""{m_tempfiletable}"".MetadataID = Metadataset.ID
+                INNER JOIN BlocksetEntry ON Metadataset.BlocksetID = BlocksetEntry.BlocksetID
+                INNER JOIN Block ON BlocksetEntry.BlockID = Block.ID
+                WHERE ""{m_tempfiletable}"".BlocksetID IS NOT {FOLDER_BLOCKSET_ID}
+            "));
+            while (reader.Read())
+                yield return (reader.ConvertValueToInt64(0), reader.ConvertValueToInt64(1));
+        }
+
+        /// <summary>
+        /// Returns a list of <see cref="BlockRequest"/> for the given blockset ID. It is used by the <see cref="FileProcessor"/> to restore the blocks of a file.
+        /// </summary>
+        /// <param name="blocksetID">The BlocksetID of the file.</param>
+        /// <returns>A list of <see cref="BlockRequest"/> needed to restore the given file.</returns>
+        public IEnumerable<BlockRequest> GetBlocksFromFile(long blocksetID)
+        {
+            using var cmd = m_connection.CreateCommand();
+            cmd.CommandText = @$"
+                SELECT Block.ID, Block.Hash, Block.Size, Block.VolumeID
+                FROM BlocksetEntry INNER JOIN Block
+                ON BlocksetEntry.BlockID = Block.ID
+                WHERE BlocksetEntry.BlocksetID = ?";
+            cmd.AddParameter();
+            cmd.SetParameterValue(0, blocksetID);
+            using var reader = cmd.ExecuteReader();
+            for (long i = 0; reader.Read(); i++)
+            {
+                yield return new BlockRequest(reader.GetInt64(0), i, reader.GetString(1), reader.GetInt64(2), reader.GetInt64(3), false);
+            }
+        }
+
+        /// <summary>
+        /// Returns a list of <see cref="BlockRequest"/> for the metadata blocks of the given file. It is used by the <see cref="FileProcessor"/> to restore the metadata of a file.
+        /// </summary>
+        /// <param name="fileID">The ID of the file.</param>
+        /// <returns>A list of <see cref="BlockRequest"/> needed to restore the metadata of the given file.</returns>
+        public IEnumerable<BlockRequest> GetMetadataBlocksFromFile(long fileID)
+        {
+            using var cmd = m_connection.CreateCommand();
+            cmd.CommandText = $@"
+                SELECT Block.ID, Block.Hash, Block.Size, Block.VolumeID
+                FROM ""{m_tempfiletable}""
+                INNER JOIN Metadataset ON ""{m_tempfiletable}"".MetadataID = Metadataset.ID
+                INNER JOIN BlocksetEntry ON Metadataset.BlocksetID = BlocksetEntry.BlocksetID
+                INNER JOIN Block ON BlocksetEntry.BlockID = Block.ID
+                WHERE ""{m_tempfiletable}"".ID = ?
+            ";
+            cmd.AddParameter();
+            cmd.SetParameterValue(0, fileID);
+            using var reader = cmd.ExecuteReader();
+            for (long i = 0; reader.Read(); i++)
+            {
+                yield return new BlockRequest(reader.GetInt64(0), i, reader.GetString(1), reader.GetInt64(2), reader.GetInt64(3), false);
+            }
+        }
+
+        /// <summary>
+        /// Returns the volume information for the given volume ID. It is used by the <see cref="VolumeManager"/> to get the volume information for the given volume ID.
+        /// </summary>
+        /// <param name="VolumeID">The ID of the volume.</param>
+        /// <returns>A tuple containing the name, size, and hash of the volume.</returns>
+        public IEnumerable<(string,long,string)> GetVolumeInfo(long VolumeID)
+        {
+            using var cmd = m_connection.CreateCommand();
+            cmd.CommandText = "SELECT Name, Size, Hash FROM RemoteVolume WHERE ID = ?";
+            cmd.AddParameter();
+            cmd.SetParameterValue(0, VolumeID);
+            using var reader = cmd.ExecuteReader();
+            while (reader.Read())
+                yield return (reader.GetString(0), reader.GetInt64(1), reader.GetString(2));
         }
 
         public void DropRestoreTable()

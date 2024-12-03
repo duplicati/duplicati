@@ -81,24 +81,6 @@ namespace Duplicati.Library.Main.Operation.Restore
                 {
                     using var filehasher = HashFactory.CreateHasher(options.FileHashAlgorithm);
                     using var blockhasher = HashFactory.CreateHasher(options.BlockHashAlgorithm);
-                    using var findBlocksCmd = db.Connection.CreateCommand();
-                    findBlocksCmd.CommandText = @$"
-                        SELECT Block.ID, Block.Hash, Block.Size, Block.VolumeID
-                        FROM BlocksetEntry INNER JOIN Block
-                        ON BlocksetEntry.BlockID = Block.ID
-                        WHERE BlocksetEntry.BlocksetID = ?";
-                    findBlocksCmd.AddParameter();
-
-                    var findMetaBlocksCmd = db.Connection.CreateCommand();
-                    findMetaBlocksCmd.CommandText = $@"
-                        SELECT Block.ID, Block.Hash, Block.Size, Block.VolumeID
-                        FROM ""{db.m_tempfiletable}""
-                        INNER JOIN Metadataset ON ""{db.m_tempfiletable}"".MetadataID = Metadataset.ID
-                        INNER JOIN BlocksetEntry ON Metadataset.BlocksetID = BlocksetEntry.BlocksetID
-                        INNER JOIN Block ON BlocksetEntry.BlockID = Block.ID
-                        WHERE ""{db.m_tempfiletable}"".ID = ?
-                    ";
-                    findMetaBlocksCmd.AddParameter();
 
                     while (true)
                     {
@@ -109,12 +91,7 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                         // Get information about the blocks for the file
                         sw_block?.Start();
-                        findBlocksCmd.SetParameterValue(0, file.BlocksetID);
-                        var blocks = findBlocksCmd.ExecuteReaderEnumerable()
-                            .Select((b, i) =>
-                                new BlockRequest(b.GetInt64(0), i, b.GetString(1), b.GetInt64(2), b.GetInt64(3), false)
-                            )
-                            .ToArray();
+                        var blocks = db.GetBlocksFromFile(file.BlocksetID).ToArray();
                         sw_block?.Stop();
 
                         sw_work?.Start();
@@ -135,18 +112,18 @@ namespace Duplicati.Library.Main.Operation.Restore
                         {
                             if (options.Dryrun)
                             {
-                                Logging.Log.WriteDryrunMessage(LOGTAG, "DryrunRestore", @$"Would have created empty file ""{file.Path}""");
+                                Logging.Log.WriteDryrunMessage(LOGTAG, "DryrunRestore", @$"Would have created empty file ""{file.TargetPath}""");
                             }
                             else
                             {
-                                var foldername = SystemIO.IO_OS.PathGetDirectoryName(file.Path);
+                                var foldername = SystemIO.IO_OS.PathGetDirectoryName(file.TargetPath);
                                 if (!Directory.Exists(foldername))
                                 {
                                     Directory.CreateDirectory(foldername);
                                 }
 
                                 // Create an empty file, or truncate to 0
-                                using var fs = new FileStream(file.Path, FileMode.OpenOrCreate, FileAccess.Write, FileShare.None);
+                                using var fs = new FileStream(file.TargetPath, FileMode.OpenOrCreate, FileAccess.Write, FileShare.None);
                                 fs.SetLength(0);
                                 if (missing_blocks.Count != 0)
                                 {
@@ -159,7 +136,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                         {
                             if (missing_blocks.Any(x => x.VolumeID < 0))
                             {
-                                Logging.Log.WriteWarningMessage(LOGTAG, "NegativeVolumeID", null, $"{file.Path} has a negative volume ID, skipping");
+                                Logging.Log.WriteWarningMessage(LOGTAG, "NegativeVolumeID", null, $"{file.TargetPath} has a negative volume ID, skipping");
                                 continue;
                             }
 
@@ -172,14 +149,14 @@ namespace Duplicati.Library.Main.Operation.Restore
                                 if (options.Dryrun)
                                 {
                                     // If dryrun, open the file for read only to verify the file hash.
-                                    if (File.Exists(file.Path))
+                                    if (File.Exists(file.TargetPath))
                                     {
-                                        fs = new FileStream(file.Path, FileMode.Open, FileAccess.Read);
+                                        fs = new FileStream(file.TargetPath, FileMode.Open, FileAccess.Read);
                                     }
                                 }
                                 else
                                 {
-                                    fs = new FileStream(file.Path, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
+                                    fs = new FileStream(file.TargetPath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
                                 }
 
                                 sw_work?.Stop();
@@ -239,14 +216,14 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                                 if (options.Dryrun)
                                 {
-                                    Logging.Log.WriteDryrunMessage(LOGTAG, "DryrunRestore", @$"Would have restored {bytes_written} bytes of ""{file.Path}""");
+                                    Logging.Log.WriteDryrunMessage(LOGTAG, "DryrunRestore", @$"Would have restored {bytes_written} bytes of ""{file.TargetPath}""");
                                 }
 
                                 // Verify the file hash
                                 filehasher.TransformFinalBlock([], 0, 0);
                                 if (Convert.ToBase64String(filehasher.Hash) != file.Hash)
                                 {
-                                    Logging.Log.WriteErrorMessage(LOGTAG, "FileHashMismatch", null, $"File hash mismatch for {file.Path} - expected: {file.Hash}, actual: {Convert.ToBase64String(filehasher.Hash)}");
+                                    Logging.Log.WriteErrorMessage(LOGTAG, "FileHashMismatch", null, $"File hash mismatch for {file.TargetPath} - expected: {file.Hash}, actual: {Convert.ToBase64String(filehasher.Hash)}");
                                     throw new Exception("File hash mismatch");
                                 }
 
@@ -255,7 +232,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                                 {
                                     if (options.Dryrun)
                                     {
-                                        Logging.Log.WriteDryrunMessage(LOGTAG, "DryrunRestore", @$"Would have truncated ""{file.Path}"" from {fs.Length} to {file.Length}");
+                                        Logging.Log.WriteDryrunMessage(LOGTAG, "DryrunRestore", @$"Would have truncated ""{file.TargetPath}"" from {fs.Length} to {file.Length}");
                                     }
                                     else
                                     {
@@ -267,7 +244,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                             {
                                 lock (results)
                                 {
-                                    results.BrokenLocalFiles.Add(file.Path);
+                                    results.BrokenLocalFiles.Add(file.TargetPath);
                                 }
                                 throw;
                             }
@@ -278,7 +255,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                         }
 
                         if (!options.SkipMetadata) {
-                            await RestoreMetadata(findMetaBlocksCmd, file, block_request, block_response, options, sw_meta, sw_work, sw_req, sw_resp);
+                            await RestoreMetadata(db, file, block_request, block_response, options, sw_meta, sw_work, sw_req, sw_resp);
                         }
 
                         // Keep track of the restored files and their sizes
@@ -324,16 +301,11 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// <param name="sw_work">The stopwatch for internal profiling of the general processing.</param>
         /// <param name="sw_req">The stopwatch for internal profiling of the block requests.</param>
         /// <param name="sw_resp">The stopwatch for internal profiling of the block responses.</param>
-        private static async Task RestoreMetadata(IDbCommand cmd, LocalRestoreDatabase.IFileToRestore file, IChannel<BlockRequest> block_request, IChannel<byte[]> block_response, Options options, Stopwatch sw_meta, Stopwatch sw_work, Stopwatch sw_req, Stopwatch sw_resp)
+        private static async Task RestoreMetadata(LocalRestoreDatabase db, FileRequest file, IChannel<BlockRequest> block_request, IChannel<byte[]> block_response, Options options, Stopwatch sw_meta, Stopwatch sw_work, Stopwatch sw_req, Stopwatch sw_resp)
         {
             sw_work?.Stop();
             sw_meta?.Start();
-            cmd.SetParameterValue(0, file.ID);
-            var blocks = cmd.ExecuteReaderEnumerable()
-                .Select((b, i) =>
-                    new BlockRequest(b.GetInt64(0), i, b.GetString(1), b.GetInt64(2), b.GetInt64(3), false)
-                )
-                .ToArray();
+            var blocks = db.GetMetadataBlocksFromFile(file.ID).ToArray();
             sw_meta?.Stop();
             sw_work?.Start();
 
@@ -353,7 +325,7 @@ namespace Duplicati.Library.Main.Operation.Restore
             }
             ms.Seek(0, SeekOrigin.Begin);
 
-            RestoreHandler.ApplyMetadata(file.Path, ms, options.RestorePermissions, options.RestoreSymlinkMetadata, options.Dryrun);
+            RestoreHandler.ApplyMetadata(file.TargetPath, ms, options.RestorePermissions, options.RestoreSymlinkMetadata, options.Dryrun);
         }
 
         /// <summary>
@@ -367,17 +339,17 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// <param name="results">The restoration results.</param>
         /// <param name="block_request">The channel to request blocks from the block manager. Used to inform the block manager which blocks are already present.</param>
         /// <returns>An awaitable `Task`, which returns a collection of data blocks that are missing.</returns>
-        private static async Task<List<BlockRequest>> VerifyTargetBlocks(LocalRestoreDatabase.IFileToRestore file, BlockRequest[] blocks, System.Security.Cryptography.HashAlgorithm filehasher, System.Security.Cryptography.HashAlgorithm blockhasher, Options options, RestoreResults results, IChannel<BlockRequest> block_request)
+        private static async Task<List<BlockRequest>> VerifyTargetBlocks(FileRequest file, BlockRequest[] blocks, System.Security.Cryptography.HashAlgorithm filehasher, System.Security.Cryptography.HashAlgorithm blockhasher, Options options, RestoreResults results, IChannel<BlockRequest> block_request)
         {
             List<BlockRequest> missing_blocks = [];
 
             // Check if the file exists
-            if (File.Exists(file.Path))
+            if (File.Exists(file.TargetPath))
             {
                 filehasher.Initialize();
                 try
                 {
-                    using var f = new FileStream(file.Path, FileMode.Open, FileAccess.Read);
+                    using var f = new FileStream(file.TargetPath, FileMode.Open, FileAccess.Read);
                     var buffer = new byte[options.Blocksize];
                     long bytes_read = 0;
                     for (int i = 0; i < blocks.Length; i++)
@@ -418,7 +390,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                 {
                     lock (results)
                     {
-                        results.BrokenLocalFiles.Add(file.Path);
+                        results.BrokenLocalFiles.Add(file.TargetPath);
                     }
                 }
 
@@ -430,18 +402,18 @@ namespace Duplicati.Library.Main.Operation.Restore
                     if (Convert.ToBase64String(filehasher.Hash) == file.Hash)
                     {
                         // Truncate the file if it is larger than the expected size.
-                        FileInfo fi = new (file.Path);
+                        FileInfo fi = new (file.TargetPath);
                         if (file.Length < fi.Length)
                         {
                             if (options.Dryrun)
                             {
-                                Logging.Log.WriteDryrunMessage(LOGTAG, "DryrunRestore", @$"Would have truncated ""{file.Path}"" from {fi.Length} to {file.Length}");
+                                Logging.Log.WriteDryrunMessage(LOGTAG, "DryrunRestore", @$"Would have truncated ""{file.TargetPath}"" from {fi.Length} to {file.Length}");
                             }
                             else
                             {
                                 // Reopen file with write permission
                                 fi.IsReadOnly = false; // The metadata handler will revert this back later.
-                                using var f = new FileStream(file.Path, FileMode.Open, FileAccess.ReadWrite);
+                                using var f = new FileStream(file.TargetPath, FileMode.Open, FileAccess.ReadWrite);
                                 f.SetLength(file.Length);
                             }
                         }
@@ -469,18 +441,18 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// <param name="results">The restoration results.</param>
         /// <param name="block_request">The channel to request blocks from the block manager. Used to inform the block manager which blocks are already present.</param>
         /// <returns>An awaitable `Task`, which returns a collection of data blocks that are missing.</returns>
-        private static async Task<(long, List<BlockRequest>)> VerifyLocalBlocks(LocalRestoreDatabase.IFileToRestore file, List<BlockRequest> blocks, long total_blocks, System.Security.Cryptography.HashAlgorithm filehasher, System.Security.Cryptography.HashAlgorithm blockhasher, Options options, RestoreResults results, IChannel<BlockRequest> block_request)
+        private static async Task<(long, List<BlockRequest>)> VerifyLocalBlocks(FileRequest file, List<BlockRequest> blocks, long total_blocks, System.Security.Cryptography.HashAlgorithm filehasher, System.Security.Cryptography.HashAlgorithm blockhasher, Options options, RestoreResults results, IChannel<BlockRequest> block_request)
         {
             List<BlockRequest> missing_blocks = [];
 
             // Check if the file exists
-            if (File.Exists(file.Name))
+            if (File.Exists(file.OriginalPath))
             {
                 filehasher.Initialize();
 
                 // Open both files, as the target file is still being read to produce the overall file hash, if all the blocks are present across both the target and original files.
-                using var f_original = new FileStream(file.Name, FileMode.Open, FileAccess.Read);
-                using var f_target = new FileStream(file.Path, FileMode.OpenOrCreate, FileAccess.ReadWrite);
+                using var f_original = new FileStream(file.OriginalPath, FileMode.Open, FileAccess.Read);
+                using var f_target = new FileStream(file.TargetPath, FileMode.OpenOrCreate, FileAccess.ReadWrite);
                 var buffer = new byte[options.Blocksize];
                 long bytes_read = 0;
                 long bytes_written = 0;
@@ -501,7 +473,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                         {
                             lock (results)
                             {
-                                results.BrokenLocalFiles.Add(file.Path);
+                                results.BrokenLocalFiles.Add(file.TargetPath);
                             }
                             throw;
                         }
@@ -524,7 +496,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                                 {
                                     lock (results)
                                     {
-                                        results.BrokenLocalFiles.Add(file.Path);
+                                        results.BrokenLocalFiles.Add(file.TargetPath);
                                     }
                                     throw;
                                 }
@@ -558,7 +530,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                         {
                             lock (results)
                             {
-                                results.BrokenLocalFiles.Add(file.Path);
+                                results.BrokenLocalFiles.Add(file.TargetPath);
                             }
                             throw;
                         }
@@ -577,7 +549,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                         {
                             if (options.Dryrun)
                             {
-                                Logging.Log.WriteDryrunMessage(LOGTAG, "DryrunRestore", @$"Would have truncated ""{file.Path}"" from {f_target.Length} to {file.Length}");
+                                Logging.Log.WriteDryrunMessage(LOGTAG, "DryrunRestore", @$"Would have truncated ""{file.TargetPath}"" from {f_target.Length} to {file.Length}");
                             }
                             else
                             {
@@ -589,7 +561,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                                 {
                                     lock (results)
                                     {
-                                        results.BrokenLocalFiles.Add(file.Path);
+                                        results.BrokenLocalFiles.Add(file.TargetPath);
                                     }
                                     throw;
                                 }
@@ -598,10 +570,10 @@ namespace Duplicati.Library.Main.Operation.Restore
                     }
                     else
                     {
-                        Logging.Log.WriteErrorMessage(LOGTAG, "FileHashMismatch", null, $"File hash mismatch for {file.Path} - expected: {file.Hash}, actual: {Convert.ToBase64String(filehasher.Hash)}");
+                        Logging.Log.WriteErrorMessage(LOGTAG, "FileHashMismatch", null, $"File hash mismatch for {file.TargetPath} - expected: {file.Hash}, actual: {Convert.ToBase64String(filehasher.Hash)}");
                         lock (results)
                         {
-                            results.BrokenLocalFiles.Add(file.Path);
+                            results.BrokenLocalFiles.Add(file.TargetPath);
                         }
                     }
                 }

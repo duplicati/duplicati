@@ -73,11 +73,6 @@ namespace Duplicati.Library.Main.Operation.Restore
                     Stopwatch sw_request = options.InternalProfiling ? new () : null;
                     Stopwatch sw_wakeup = options.InternalProfiling ? new () : null;
 
-                    // Prepare the command to get the volume information
-                    using var cmd = db.Connection.CreateCommand();
-                    cmd.CommandText = "SELECT Name, Size, Hash FROM RemoteVolume WHERE ID = ?";
-                    cmd.AddParameter();
-
                     try
                     {
                         while (true)
@@ -113,9 +108,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                                                 else
                                                 {
                                                     sw_query?.Start();
-                                                    cmd.SetParameterValue(0, request.VolumeID);
-                                                    var (volume_name, volume_size, volume_hash) = cmd.ExecuteReaderEnumerable()
-                                                        .Select(x => (x.GetString(0), x.GetInt64(1), x.GetString(2))).First();
+                                                    var (volume_name, volume_size, volume_hash) = db.GetVolumeInfo(request.VolumeID).First();
                                                     sw_query?.Stop();
                                                     sw_backend?.Start();
                                                     var handle = backend.GetAsync(volume_name, volume_size, volume_hash);

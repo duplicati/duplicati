@@ -114,30 +114,12 @@ namespace Duplicati.Library.Main.Operation.Restore
                 sw_checkcounts = options.InternalProfiling ? new () : null;
                 sw_get_wait = options.InternalProfiling ? new () : null;
 
-                var cmd = db.Connection.CreateCommand();
-                var blockcounts = cmd.ExecuteReaderEnumerable($@"
-                        SELECT Block.ID, Block.VolumeID
-                        FROM BlocksetEntry
-                        INNER JOIN ""{db.m_tempfiletable}"" ON BlocksetEntry.BlocksetID = ""{db.m_tempfiletable}"".BlocksetID
-                        INNER JOIN Block ON BlocksetEntry.BlockID = Block.ID
-                        "
-                        + (options.SkipMetadata ? "" : $@"
-                        UNION ALL
-                        SELECT Block.ID, Block.VolumeID
-                        FROM ""{db.m_tempfiletable}""
-                        INNER JOIN Metadataset ON ""{db.m_tempfiletable}"".MetadataID = Metadataset.ID
-                        INNER JOIN BlocksetEntry ON Metadataset.BlocksetID = BlocksetEntry.BlocksetID
-                        INNER JOIN Block ON BlocksetEntry.BlockID = Block.ID
-                        WHERE ""{db.m_tempfiletable}"".BlocksetID IS NOT {LocalDatabase.FOLDER_BLOCKSET_ID}
-                    "));
-                foreach (var row in blockcounts)
+                foreach (var (block_id, volume_id) in db.GetBlocksAndVolumeIDs(options.SkipMetadata))
                 {
-                    var bid = row.GetInt64(0);
-                    var bc = m_blockcount.TryGetValue(bid, out var c);
-                    m_blockcount[bid] = bc ? c + 1 : 1;
-                    var vid = row.GetInt64(1);
-                    var vc = m_volumecount.TryGetValue(vid, out var v);
-                    m_volumecount[vid] = vc ? v + 1 : 1;
+                    var bc = m_blockcount.TryGetValue(block_id, out var c);
+                    m_blockcount[block_id] = bc ? c + 1 : 1;
+                    var vc = m_volumecount.TryGetValue(volume_id, out var v);
+                    m_volumecount[volume_id] = vc ? v + 1 : 1;
                 }
             }
 
