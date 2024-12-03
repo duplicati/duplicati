@@ -93,9 +93,7 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                         sw_work?.Start();
                         // Verify the target file blocks that may already exist.
-                        var missing_blocks = await VerifyTargetBlocks(file, blocks, filehasher, blockhasher, options, results, block_request);
-
-                        long bytes_written = 0;
+                        var (bytes_written, missing_blocks) = await VerifyTargetBlocks(file, blocks, filehasher, blockhasher, options, results, block_request);
 
                         if (missing_blocks.Count > 0 && options.UseLocalBlocks && missing_blocks.Count > 0)
                         {
@@ -343,8 +341,9 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// <param name="results">The restoration results.</param>
         /// <param name="block_request">The channel to request blocks from the block manager. Used to inform the block manager which blocks are already present.</param>
         /// <returns>An awaitable `Task`, which returns a collection of data blocks that are missing.</returns>
-        private static async Task<List<BlockRequest>> VerifyTargetBlocks(FileRequest file, BlockRequest[] blocks, System.Security.Cryptography.HashAlgorithm filehasher, System.Security.Cryptography.HashAlgorithm blockhasher, Options options, RestoreResults results, IChannel<BlockRequest> block_request)
+        private static async Task<(long,List<BlockRequest>)> VerifyTargetBlocks(FileRequest file, BlockRequest[] blocks, System.Security.Cryptography.HashAlgorithm filehasher, System.Security.Cryptography.HashAlgorithm blockhasher, Options options, RestoreResults results, IChannel<BlockRequest> block_request)
         {
+            long bytes_read = 0;
             List<BlockRequest> missing_blocks = [];
 
             // Check if the file exists
@@ -355,7 +354,6 @@ namespace Duplicati.Library.Main.Operation.Restore
                 {
                     using var f = new FileStream(file.TargetPath, FileMode.Open, FileAccess.Read);
                     var buffer = new byte[options.Blocksize];
-                    long bytes_read = 0;
                     for (int i = 0; i < blocks.Length; i++)
                     {
                         var read = await f.ReadAsync(buffer, 0, (int)blocks[i].BlockSize);
@@ -430,7 +428,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                 missing_blocks.AddRange(blocks);
             }
 
-            return missing_blocks;
+            return (bytes_read, missing_blocks);
         }
 
         /// <summary>

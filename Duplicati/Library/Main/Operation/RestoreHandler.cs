@@ -29,6 +29,7 @@ using Duplicati.Library.Main.Volumes;
 using Duplicati.Library.Utility;
 using CoCoL;
 using System.Threading.Tasks;
+using System.Threading;
 
 namespace Duplicati.Library.Main.Operation
 {
@@ -348,7 +349,18 @@ namespace Duplicati.Library.Main.Operation
                         ..volumedecompressors
                     ];
 
+                // Start the progress updater
+                var kill_updater = new CancellationTokenSource();
+                var updater = Task.Run(async () => {
+                    while (true)
+                    {
+                        m_result.OperationProgressUpdater.UpdatefilesProcessed(m_result.RestoredFiles, m_result.SizeOfRestoredFiles);
+                        await Task.Delay(1000);
+                    }
+                }, kill_updater.Token);
+
                 Task.WhenAll(all).Wait();
+                kill_updater.Cancel();
             }
 
             if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
