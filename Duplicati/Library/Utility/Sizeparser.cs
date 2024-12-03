@@ -35,9 +35,13 @@ namespace Duplicati.Library.Utility
             size = size.Trim();
 
             if (size.EndsWith("tb", StringComparison.OrdinalIgnoreCase) ||
+                size.EndsWith("tib", StringComparison.OrdinalIgnoreCase) ||
                 size.EndsWith("gb", StringComparison.OrdinalIgnoreCase) ||
+                size.EndsWith("gib", StringComparison.OrdinalIgnoreCase) ||
                 size.EndsWith("mb", StringComparison.OrdinalIgnoreCase) ||
+                size.EndsWith("mib", StringComparison.OrdinalIgnoreCase) ||
                 size.EndsWith("kb", StringComparison.OrdinalIgnoreCase) ||
+                size.EndsWith("kib", StringComparison.OrdinalIgnoreCase) ||
                 size.EndsWith("b", StringComparison.OrdinalIgnoreCase))
                 return ParseSize(size);
             else
@@ -52,25 +56,25 @@ namespace Duplicati.Library.Utility
             string origsize = size;
 
             size = size.Trim();
-            
+
             long factor = 1;
 
-            if (size.EndsWith("tb", StringComparison.OrdinalIgnoreCase))
+            if (size.EndsWith("tb", StringComparison.OrdinalIgnoreCase) || size.EndsWith("tib", StringComparison.OrdinalIgnoreCase))
             {
                 factor = 1024L * 1024 * 1024 * 1024;
                 size = size.Substring(0, size.Length - 2).Trim();
             }
-            else if (size.EndsWith("gb", StringComparison.OrdinalIgnoreCase))
+            else if (size.EndsWith("gb", StringComparison.OrdinalIgnoreCase) || size.EndsWith("gib", StringComparison.OrdinalIgnoreCase))
             {
                 factor = 1024 * 1024 * 1024;
                 size = size.Substring(0, size.Length - 2).Trim();
             }
-            else if (size.EndsWith("mb", StringComparison.OrdinalIgnoreCase))
+            else if (size.EndsWith("mb", StringComparison.OrdinalIgnoreCase) || size.EndsWith("mib", StringComparison.OrdinalIgnoreCase))
             {
                 factor = 1024 * 1024;
                 size = size.Substring(0, size.Length - 2).Trim();
             }
-            else if (size.EndsWith("kb", StringComparison.OrdinalIgnoreCase))
+            else if (size.EndsWith("kb", StringComparison.OrdinalIgnoreCase) || size.EndsWith("kib", StringComparison.OrdinalIgnoreCase))
             {
                 factor = 1024;
                 size = size.Substring(0, size.Length - 2).Trim();
