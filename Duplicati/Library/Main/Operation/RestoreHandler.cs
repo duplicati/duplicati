@@ -599,7 +599,14 @@ namespace Duplicati.Library.Main.Operation
 
                 // Make the symlink first, otherwise we cannot apply metadata to it
                 if (metadata.TryGetValue("CoreSymlinkTarget", out k))
+                {
+                    // Check if the target exists, and overwrite it if it does.
+                    if (System.IO.File.Exists(targetpath) || System.IO.Directory.Exists(targetpath))
+                    {
+                        System.IO.File.Delete(targetpath);
+                    }
                     SystemIO.IO_OS.CreateSymlink(targetpath, k, isDirTarget);
+                }
                 // If the target is a folder, make sure we create it first
                 else if (isDirTarget && !SystemIO.IO_OS.DirectoryExists(targetpath))
                     SystemIO.IO_OS.DirectoryCreate(targetpath);
