@@ -306,7 +306,6 @@ namespace Duplicati.Library.Main.Operation
 
             // Open the backend and metadata storage
             using var backend = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, database);
-            using var metadatastorage = new RestoreHandlerMetadataStorage();
 
             // Verify the backend if necessary
             if (!m_options.NoBackendverification)
