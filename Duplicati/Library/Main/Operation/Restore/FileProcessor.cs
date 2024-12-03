@@ -67,9 +67,6 @@ namespace Duplicati.Library.Main.Operation.Restore
             },
             async self =>
             {
-                // TODO preallocate the file size to avoid fragmentation / help the operating system / filesystem. Verify this in a benchmark - I think it relies on OS and filesystem.
-                // using (var fs = new FileStream(path, FileMode.OpenOrCreate, FileAccess.Write, FileShare.None) { fs.SetLength(size); fs.Seek(0, SeekOrigin.Begin); }
-
                 Stopwatch sw_file  = options.InternalProfiling ? new () : null;
                 Stopwatch sw_block = options.InternalProfiling ? new () : null;
                 Stopwatch sw_meta  = options.InternalProfiling ? new () : null;
@@ -169,6 +166,13 @@ namespace Duplicati.Library.Main.Operation.Restore
                                     await block_request.WriteAsync(missing_blocks[i]);
                                 }
                                 sw_req?.Stop();
+
+                                if (!options.Dryrun && options.RestorePreAllocate)
+                                {
+                                    // Preallocate the file size to avoid fragmentation / help the operating system / filesystem.
+                                    fs.SetLength(file.Length);
+                                }
+
                                 sw_work?.Start();
                                 for (int i = 0; i < blocks.Length; i++)
                                 {

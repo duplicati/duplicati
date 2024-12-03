@@ -455,8 +455,9 @@ namespace Duplicati.Library.Main
 
                     new CommandLineArgument("restore-cache-max", CommandLineArgument.ArgumentType.Size, Strings.Options.RestoreCacheMaxShort, Strings.Options.RestoreCacheMaxLong, "8G"),
                     new CommandLineArgument("restore-cache-evict", CommandLineArgument.ArgumentType.Decimal, Strings.Options.RestoreCacheEvictShort, Strings.Options.RestoreCacheEvictLong, "0.5"),
-                    new CommandLineArgument("restore-legacy", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RestoreLegacyShort, Strings.Options.RestoreLegacyLong, "false"),
                     new CommandLineArgument("restore-file-processors", CommandLineArgument.ArgumentType.Integer, Strings.Options.RestoreFileprocessorsShort, Strings.Options.RestoreFileprocessorsLong, "8"),
+                    new CommandLineArgument("restore-legacy", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RestoreLegacyShort, Strings.Options.RestoreLegacyLong, "false"),
+                    new CommandLineArgument("restore-preallocate-size", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RestorePreallocateSizeShort, Strings.Options.RestorePreallocateSizeLong, "false"),
                     new CommandLineArgument("restore-volume-decompressors", CommandLineArgument.ArgumentType.Integer, Strings.Options.RestoreVolumeDecompressorsShort, Strings.Options.RestoreVolumeDecompressorsLong, "8"),
                     new CommandLineArgument("restore-volume-decryptors", CommandLineArgument.ArgumentType.Integer, Strings.Options.RestoreVolumeDecryptorsShort, Strings.Options.RestoreVolumeDecryptorsLong, "8"),
                     new CommandLineArgument("restore-volume-downloaders", CommandLineArgument.ArgumentType.Integer, Strings.Options.RestoreVolumeDownloadersShort, Strings.Options.RestoreVolumeDownloadersLong, "8"),
@@ -2081,14 +2082,6 @@ namespace Duplicati.Library.Main
         }
 
         /// <summary>
-        /// Gets whether to use the legacy restore method
-        /// </summary>
-        public bool RestoreLegacy
-        {
-            get { return Library.Utility.Utility.ParseBoolOption(m_options, "restore-legacy"); }
-        }
-
-        /// <summary>
         /// Gets the number of file processors to use in the restore process
         /// </summary>
         public int RestoreFileProcessors
@@ -2103,6 +2096,22 @@ namespace Duplicati.Library.Main
                 else
                     return int.Parse(v);
             }
+        }
+
+        /// <summary>
+        /// Gets whether to use the legacy restore method
+        /// </summary>
+        public bool RestoreLegacy
+        {
+            get { return Library.Utility.Utility.ParseBoolOption(m_options, "restore-legacy"); }
+        }
+
+        /// <summary>
+        /// Gets whether to preallocate files during restore
+        /// </summary>
+        public bool RestorePreAllocate
+        {
+            get { return Library.Utility.Utility.ParseBoolOption(m_options, "restore-pre-allocate"); }
         }
 
         /// <summary>
