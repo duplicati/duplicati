@@ -92,9 +92,20 @@ public class pCloudBackend : IStreamingBackend
     /// requests
     /// </summary>
     private ulong? _CachedFolderID;
-
+    
+    /// <summary>
+    /// Name of the authentication parameter/option
+    /// </summary>
     private const string AUTHENTICATION_OPTION = "authid";
 
+    /// <summary>
+    /// Path separators (both Windows \ and unix /) to be used in path manipulation
+    /// </summary>
+    private static readonly char[] PATH_SEPARATORS = ['/', '\\'];
+
+    /// <summary>
+    /// List of pcloud Servers and their respective hostnames
+    /// </summary>
     private static readonly Dictionary<string, string> PCLOUD_SERVERS = new(StringComparer.OrdinalIgnoreCase)
     {
         { "pCloud Global", "api.pcloud.com" },
@@ -128,8 +139,9 @@ public class pCloudBackend : IStreamingBackend
 
         if (string.IsNullOrWhiteSpace(uri.Host))
             throw new UserInformationException(Strings.pCloudBackend.NoServerSpecified, "NopCloudServerSpecified");
-
-        _Path = uri.Path;
+        
+        // Ensure that the path is in the correct format, without starting or tailing slashes
+        _Path = uri.Path.TrimStart(PATH_SEPARATORS).TrimEnd(PATH_SEPARATORS).Trim();
         _ServerUrl = uri.Host;
     }
 
@@ -155,19 +167,31 @@ public class pCloudBackend : IStreamingBackend
     /// The root parameter is used to list the root folder, as the pCloud API
     /// when using oauth tokens creates an isolated folder Applications/ApplicationName
     ///
-    /// When root = true, this is the directory it will be listed.
-    /// When root = false, it will list the _Path directory if it exists, which is
-    /// where the Duplicati backup files are stored.
     /// </summary>
-    /// <param name="root">True to list absolute root, false to list _Path directory</param>
+    /// <param name="folderId">The folder ID to consider as root</param>
     /// <returns></returns>
-    private IEnumerable<IFileEntry> List(bool root)
+    private IEnumerable<IFileEntry> List(ulong folderId)
     {
-        if (_CachedFolderID == null && string.IsNullOrWhiteSpace(_Path) == false && root == false)
-            CreateFolderAsync(CancellationToken.None).Await();
-
-        ulong folderId = root ? 0 : _CachedFolderID ?? 0;
-
+        return ListWithMetadata(folderId)
+            .Select<pCloudFolderContent, IFileEntry>(item => new pCloudFileEntry
+            {
+                IsFolder = item.isfolder,
+                Name = item.name,
+                Size = item.size ?? 0,
+                LastAccess = DateTime.Parse(item.created),
+                LastModification = DateTime.Parse(item.modified)
+            })
+            .ToList();
+    }
+    
+    /// <summary>
+    /// Lists folders with pCloud metadata, necessary to obtain the folder IDs
+    /// </summary>
+    /// <param name="folderId">FolderId to be used as root.</param>
+    /// <returns></returns>
+    /// <exception cref="Exception"></exception>
+    private IEnumerable<pCloudFolderContent> ListWithMetadata(ulong folderId)
+    {
         var timeoutToken = new CancellationTokenSource();
         timeoutToken.CancelAfter(TimeSpan.FromSeconds(SHORT_OPERATION_TIMEOUT_SECONDS));
 
@@ -187,19 +211,7 @@ public class pCloudBackend : IStreamingBackend
         if (listFolderResponse.result != 0)
             throw new Exception(Strings.pCloudBackend.FailedWithUnexpectedErrorCode("list", listFolderResponse.result));
 
-        if (listFolderResponse?.metadata?.contents == null)
-            return new List<IFileEntry>();
-
-        return listFolderResponse.metadata.contents
-            .Select<pCloudFolderContent, IFileEntry>(item => new pCloudFileEntry
-            {
-                IsFolder = item.isfolder,
-                Name = item.name,
-                Size = item.size ?? 0,
-                LastAccess = DateTime.Parse(item.created),
-                LastModification = DateTime.Parse(item.modified)
-            })
-            .ToList();
+        return listFolderResponse.metadata?.contents ?? [];
     }
 
     /// <summary>
@@ -208,7 +220,9 @@ public class pCloudBackend : IStreamingBackend
     /// <returns>List of IFileEntry with directory listing result</returns>
     public IEnumerable<IFileEntry> List()
     {
-        return List(false);
+        _CachedFolderID ??= GetFolderId().Await();
+
+        return List(_CachedFolderID.Value);
     }
 
     /// <summary>
@@ -236,10 +250,8 @@ public class pCloudBackend : IStreamingBackend
     /// <exception cref="Exception">Exceptions arising from either code execution</exception>
     public async Task PutAsync(string remotename, Stream input, CancellationToken cancellationToken)
     {
-        // If we don't have the folder ID cached, lets fetch it with the create folder api
-        if (_CachedFolderID == null)
-            await CreateFolderAsync(cancellationToken).ConfigureAwait(false);
-
+        _CachedFolderID ??= GetFolderId().Await();
+        
         using var timeoutToken = new CancellationTokenSource();
         timeoutToken.CancelAfter(TimeSpan.FromSeconds(LONG_OPERATION_TIMEOUT_SECONDS));
         using var combinedTokens =
@@ -250,6 +262,7 @@ public class pCloudBackend : IStreamingBackend
         using var requestResources =
             CreateRequest($"/uploadfile?folderid={_CachedFolderID}&filename={encodedPath}&nopartial=1",
                 HttpMethod.Post);
+      
         requestResources.RequestMessage.Content = new StreamContent(input);
         requestResources.RequestMessage.Content.Headers.ContentLength = input.Length;
         requestResources.RequestMessage.Content.Headers.ContentType =
@@ -293,12 +306,9 @@ public class pCloudBackend : IStreamingBackend
     /// <returns></returns>
     /// <exception cref="FileMissingException">FileMissingException when file is not found</exception>
     /// <exception cref="Exception">Exceptions arising from either code execution</exception>
-    private async Task<string> GetFileId(string filename)
+    private async Task<string> GetFileLink(string filename)
     {
-        var path = string.IsNullOrWhiteSpace(_Path) ? "" : $"/{_Path}";
-        var encodedPath = Uri.EscapeDataString($"{path}/{filename}");
-
-        using var requestResources = CreateRequest($"/getfilelink?path={encodedPath}", HttpMethod.Get);
+        using var requestResources = CreateRequest($"/getfilelink?fileid={GetFileId(filename).Await()}", HttpMethod.Get);
 
         using var response = await requestResources.HttpClient.SendAsync(
             requestResources.RequestMessage,
@@ -317,7 +327,7 @@ public class pCloudBackend : IStreamingBackend
 
         if (getFileIdResponse.result != 0)
             throw new Exception(
-                Strings.pCloudBackend.FailedWithUnexpectedErrorCode("getfileid", getFileIdResponse.result));
+                Strings.pCloudBackend.FailedWithUnexpectedErrorCode("getfilelink", getFileIdResponse.result));
 
         return $"https://{getFileIdResponse.hosts[0]}{getFileIdResponse.path}";
     }
@@ -341,7 +351,7 @@ public class pCloudBackend : IStreamingBackend
 
             using var requestResources = CreateRequest(string.Empty, HttpMethod.Get);
 
-            requestResources.RequestMessage.RequestUri = new Uri(await GetFileId(remotename));
+            requestResources.RequestMessage.RequestUri = new Uri(GetFileLink(remotename).Await());
 
             await requestResources.HttpClient.DownloadFile(requestResources.RequestMessage, output, null,
                 timeoutToken.Token).ConfigureAwait(false);
@@ -377,15 +387,12 @@ public class pCloudBackend : IStreamingBackend
     /// <exception cref="Exception">Exceptions arising from either code execution or business logic when return code from pcloud indicates an error.</exception>
     public Task DeleteAsync(string remotename, CancellationToken cancellationToken)
     {
-        if (!String.IsNullOrWhiteSpace(_Path))
-            remotename = $"/{_Path}/{remotename}";
-
         using var timeoutToken = new CancellationTokenSource();
         timeoutToken.CancelAfter(TimeSpan.FromSeconds(SHORT_OPERATION_TIMEOUT_SECONDS));
         using var combinedTokens =
             CancellationTokenSource.CreateLinkedTokenSource(timeoutToken.Token, cancellationToken);
 
-        using var requestResources = CreateRequest($"/deletefile?path={remotename}", HttpMethod.Get);
+        using var requestResources = CreateRequest($"/deletefile?fileid={GetFileId(remotename).Await()}", HttpMethod.Get);
 
         using var response = requestResources.HttpClient.SendAsync(
             requestResources.RequestMessage,
@@ -418,17 +425,23 @@ public class pCloudBackend : IStreamingBackend
     public Task<string[]> GetDNSNamesAsync(CancellationToken cancellationToken) => Task.FromResult(new[] { _DnsName });
 
     /// <summary>
-    /// Performs basic backend conectivity tests, in this case, checks
-    /// that the configured path, if configured, exists
+    /// Tests backend connectivity by verifying the configured path exists
     /// </summary>
-    /// <param name="cancellationToken">CancellationToken, in this call not used.</param>
-    /// <returns></returns>
+    /// <param name="cancellationToken">The cancellation token (not used)</param>
     /// <exception cref="FolderMissingException">Thrown when configured path does not exist</exception>
     public Task TestAsync(CancellationToken cancellationToken)
     {
-        // List the scoped root directory and check if _Path folder exists
-        if (!List(true).Any(x => x.IsFolder && x.Name == _Path) && !string.IsNullOrWhiteSpace(_Path))
-            throw new FolderMissingException();
+        if (string.IsNullOrWhiteSpace(_Path))
+            return Task.CompletedTask;
+
+        var segments = _Path.Split(PATH_SEPARATORS, StringSplitOptions.RemoveEmptyEntries);
+        if (segments.Length == 0)
+            return Task.CompletedTask;
+
+        _ = segments.Aggregate(0UL, (parentId, folder) =>
+            ListWithMetadata(parentId)
+                .FirstOrDefault(x => x.isfolder && x.name == folder)
+                ?.folderid ?? throw new FolderMissingException());
 
         return Task.CompletedTask;
     }
@@ -441,12 +454,33 @@ public class pCloudBackend : IStreamingBackend
     /// <exception cref="Exception"></exception>
     public Task CreateFolderAsync(CancellationToken cancellationToken)
     {
+        if (string.IsNullOrWhiteSpace(_Path))
+            _CachedFolderID = 0;
+        else
+            _CachedFolderID = _Path.IndexOfAny(PATH_SEPARATORS) == -1
+                ? CreateFolder(cancellationToken, 0, _Path).Await()
+                : _Path.Split(PATH_SEPARATORS, StringSplitOptions.RemoveEmptyEntries)
+                    .Aggregate(0UL, (currentId, folder) => 
+                        CreateFolder(cancellationToken, currentId, folder).Await());
+        
+        return Task.CompletedTask;
+    }
+    
+    /// <summary>
+    /// Create remote folder in relation to the parent folder
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation Token</param>
+    /// <param name="parentFolderId">Parent Folder ID</param>
+    /// <param name="folderName">Folder name</param>
+    /// <returns>The folderID of the newly created folder</returns>
+    private Task<ulong> CreateFolder(CancellationToken cancellationToken, ulong parentFolderId, string folderName)
+    {
         using var timeoutToken = new CancellationTokenSource();
         timeoutToken.CancelAfter(TimeSpan.FromSeconds(SHORT_OPERATION_TIMEOUT_SECONDS));
         using var combinedTokens =
             CancellationTokenSource.CreateLinkedTokenSource(timeoutToken.Token, cancellationToken);
 
-        using var requestResources = CreateRequest($"/createfolderifnotexists?folderid=0&name={_Path}", HttpMethod.Get);
+        using var requestResources = CreateRequest($"/createfolderifnotexists?folderid={parentFolderId}&name={folderName}", HttpMethod.Get);
 
         using var response = requestResources.HttpClient.SendAsync(
             requestResources.RequestMessage,
@@ -459,21 +493,48 @@ public class pCloudBackend : IStreamingBackend
 
         if (pCloudErrorList.ErrorMessages.TryGetValue(createFolderResponse.result, out var message))
             throw new Exception(message);
-        /*
-         * If no error code is matched, result was == 0 so it successfully created the folder
-         * We must cache the folderID, as that will be used to upload files, reason being that
-         * for oauth clients, pCloud creates a scoped folder Applications/ApplicationName
-         * and the folders created with /createfolderifnotexists api are created under that folder.
-         *
-         * However, when uploading files, the folderid is required (and surprisingly if not provided
-         * it will create the file outside the scoped folder, at the root of the drive)
-         */
-        if (createFolderResponse.result == 0) _CachedFolderID = createFolderResponse.metadata?.folderid;
-
-        return Task.CompletedTask;
+   
+        return createFolderResponse is { result: 0, metadata.folderid: var id }
+            ? Task.FromResult(id)
+            : throw new Exception(Strings.pCloudBackend.FailedWithUnexpectedErrorCode("createfolder", createFolderResponse.result));
     }
 
+    /// <summary>
+    /// Returns the fileID by listing the folder and searching for the filename & metadata.
+    ///
+    /// For operations such as delete/getfilelink using the fileID is more reliable than using direct path/filename concatenation.
+    /// </summary>
+    /// <param name="name">The filename</param>
+    /// <returns></returns>
+    /// <exception cref="FileNotFoundException"></exception>
+    private Task<ulong> GetFileId(string name)
+    {
+        _CachedFolderID ??= GetFolderId().Await();
+    
+        return Task.FromResult(ListWithMetadata((ulong)_CachedFolderID)
+            .FirstOrDefault(x => !x.isfolder && x.name == name)
+            ?.fileid ?? throw new FileNotFoundException(name));
+    }
+    
+    /// <summary>
+    /// Returns the folder ID for the configured path, regardless of the depth
+    /// </summary>
+    /// <exception cref="FolderMissingException"></exception>
+    private Task<ulong> GetFolderId()
+    {
+        if (string.IsNullOrWhiteSpace(_Path))
+            return Task.FromResult(0UL);
 
+        var segments = _Path.Split(PATH_SEPARATORS, StringSplitOptions.RemoveEmptyEntries);
+        if (segments.Length == 0)
+            return Task.FromResult(0UL);
+
+        return Task.FromResult(segments.Aggregate(0UL, (parentId, folder) =>
+            ListWithMetadata(parentId)
+                .FirstOrDefault(x => x.isfolder && x.name == folder)
+                ?.folderid ?? throw new FolderMissingException()));
+    }
+    
     /// <summary>
     /// Wrapper for the tupple of HttpClient and HttpRequestMessage used in web requests.
     /// </summary>
