@@ -112,7 +112,6 @@ namespace Duplicati.Library.Main.Operation
 
             LocalRestoreDatabase db = null;
             TempFile tmpdb = null;
-            // TODO internal timers for later profiling
             if (!m_options.NoLocalDb && SystemIO.IO_OS.FileExists(m_options.Dbpath))
             {
                 db = new LocalRestoreDatabase(m_options.Dbpath);
