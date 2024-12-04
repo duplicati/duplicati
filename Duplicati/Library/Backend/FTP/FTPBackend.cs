@@ -335,7 +335,7 @@ namespace Duplicati.Library.Backend
                 if (CoreUtility.ParseBoolOption(options, CONFIG_KEY_FTP_LEGACY_USESSL))
                 {
                     sslProtocols = SslProtocols.None;
-                    encryptionMode = FtpEncryptionMode.Auto;
+                    encryptionMode = FtpEncryptionMode.Explicit;
                 }
             }
 
