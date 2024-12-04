@@ -37,8 +37,11 @@ namespace Duplicati.UnitTest
         {
             // Sleep until the next second to make sure the next backup is not the same
             var nextSecond = prevTimestamp.AddMilliseconds(-prevTimestamp.Millisecond).AddSeconds(2);
-            var remainder = Math.Max(100, (nextSecond - DateTime.Now).TotalMilliseconds);
-            System.Threading.Thread.Sleep(TimeSpan.FromMilliseconds(remainder));
+            var remainder = Math.Max(2000, (nextSecond - DateTime.Now).TotalMilliseconds);
+            if (remainder > 0)
+            {
+                System.Threading.Thread.Sleep(TimeSpan.FromMilliseconds(remainder));
+            }
         }
 
         /// <summary>
@@ -402,7 +405,7 @@ namespace Duplicati.UnitTest
                     "Test verification failed:\n {0}", VerificationToString(testResults.Verifications));
             }
 
-            // Make sure we can compact after two interrupted compacts            
+            // Make sure we can compact after two interrupted compacts
             using (var c = new Library.Main.Controller(target, testopts, null))
             {
                 ICompactResults compactResults = c.Compact();
