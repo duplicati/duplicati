@@ -67,6 +67,7 @@ public partial class DuplicatiWebserver
     /// <param name="Port">The listining port</param>
     /// <param name="Interface">The listening interface</param>
     /// <param name="Certificate">The certificate, if using SSL</param>
+    /// <param name="ForceIntermediateCertificates">If intermediate certificates should be forced into the response</param>
     /// <param name="Servername">The servername to report</param>
     /// <param name="AllowedHostnames">The allowed hostnames</param>
     /// <param name="DisableStaticFiles">If static files should be disabled</param>
@@ -76,6 +77,7 @@ public partial class DuplicatiWebserver
         int Port,
         System.Net.IPAddress Interface,
         X509Certificate2Collection? Certificate,
+        bool ForceIntermediateCertificates,
         string Servername,
         IEnumerable<string> AllowedHostnames,
         bool DisableStaticFiles,
@@ -108,7 +110,7 @@ public partial class DuplicatiWebserver
                 options.ListenAnyIP(settings.Port, listenOptions =>
                 {
                     if (settings.Certificate != null)
-                        ConfigureHttps(listenOptions, settings.Certificate);
+                        ConfigureHttps(listenOptions, settings.Certificate, settings.ForceIntermediateCertificates);
                 });
             }
             else if (settings.Interface == System.Net.IPAddress.Loopback)
@@ -116,7 +118,7 @@ public partial class DuplicatiWebserver
                 options.ListenLocalhost(settings.Port, listenOptions =>
                 {
                     if (settings.Certificate != null)
-                        ConfigureHttps(listenOptions, settings.Certificate);
+                        ConfigureHttps(listenOptions, settings.Certificate, settings.ForceIntermediateCertificates);
                 });
             }
             else
@@ -124,7 +126,7 @@ public partial class DuplicatiWebserver
                 options.Listen(settings.Interface, settings.Port, listenOptions =>
                 {
                     if (settings.Certificate != null)
-                        ConfigureHttps(listenOptions, settings.Certificate);
+                        ConfigureHttps(listenOptions, settings.Certificate, settings.ForceIntermediateCertificates);
                 });
             }
         });
@@ -275,10 +277,17 @@ public partial class DuplicatiWebserver
         var _ = Task.Run(() => App.Services.GetRequiredService<ISystemInfoProvider>().GetSystemInfo(null));
     }
 
-    private static void ConfigureHttps(Microsoft.AspNetCore.Server.Kestrel.Core.ListenOptions listenOptions, X509Certificate2Collection? certificates)
+    private static void ConfigureHttps(Microsoft.AspNetCore.Server.Kestrel.Core.ListenOptions listenOptions, X509Certificate2Collection? certificates, bool forceIntermediateCertificates)
     {
         if (certificates == null || certificates.Count == 0)
             return;
+
+        // If there are no additional certificates, do not try to set up a custom handshake
+        if (certificates.Count == 1 || !forceIntermediateCertificates)
+        {
+            listenOptions.UseHttps(certificates[0]);
+            return;
+        }
 
         var cert = certificates.FirstOrDefault(x => x.HasPrivateKey) ?? throw new Exception("No certificate with private key found");
         certificates.Remove(cert);
@@ -287,13 +296,6 @@ public partial class DuplicatiWebserver
         foreach (var certificate in certificates.ToList())
             if (IsRootCertificate(certificate))
                 certificates.Remove(certificate);
-
-        // If there are no additional certificates, do not try to set up a custom handshake
-        if (certificates.Count == 0)
-        {
-            listenOptions.UseHttps(cert);
-            return;
-        }
 
         // Create the SSL context
         var ctx = SslStreamCertificateContext.Create(cert, certificates, offline: true);

@@ -114,22 +114,27 @@ public static class WebServerLoader
     /// <summary>
     /// Option for setting if to use HTTPS
     /// </summary>
-    public const string OPTION_DISABLEHTTPS = "webservice-disable-https";
+    public const string OPTION_WEBSERVICE_DISABLEHTTPS = "webservice-disable-https";
 
     /// <summary>
     /// Option for removing the SSL certificate from the datbase
     /// </summary>
-    public const string OPTION_REMOVESSLCERTIFICATE = "webservice-remove-sslcertificate";
+    public const string OPTION_WEBSERVICE_REMOVESSLCERTIFICATE = "webservice-remove-sslcertificate";
 
     /// <summary>
     /// Option for setting the webservice SSL certificate
     /// </summary>
-    public const string OPTION_SSLCERTIFICATEFILE = "webservice-sslcertificatefile";
+    public const string OPTION_WEBSERVICE_SSLCERTIFICATEFILE = "webservice-sslcertificatefile";
 
     /// <summary>
     /// Option for setting the webservice SSL certificate key
     /// </summary>
-    public const string OPTION_SSLCERTIFICATEFILEPASSWORD = "webservice-sslcertificatepassword";
+    public const string OPTION_WEBSERVICE_SSLCERTIFICATEFILEPASSWORD = "webservice-sslcertificatepassword";
+
+    /// <summary>
+    /// Option for setting if intermediate certificates should be forced
+    /// </summary>
+    public const string OPTION_WEBSERVICE_SSLFORCEINTERMEDIATECERTIFICATES = "webservice-sslcertificate-force-intermediate";
 
     /// <summary>
     /// The default listening interface
@@ -143,6 +148,7 @@ public static class WebServerLoader
     /// <param name="Port">The listining port</param>
     /// <param name="Interface">The listening interface</param>
     /// <param name="Certificate">SSL certificate, if any</param>
+    /// <param name="ForceIntermediateCertificates">If intermediate certificates should be forced</param>
     /// <param name="Servername">The servername to report</param>
     /// <param name="AllowedHostnames">The allowed hostnames</param>
     /// <param name="DisableStaticFiles">If static files should be disabled</param>
@@ -152,6 +158,7 @@ public static class WebServerLoader
         int Port,
         System.Net.IPAddress Interface,
         X509Certificate2Collection? Certificate,
+        bool ForceIntermediateCertificates,
         string Servername,
         IEnumerable<string> AllowedHostnames,
         bool DisableStaticFiles,
@@ -191,11 +198,11 @@ public static class WebServerLoader
         else if (interfacestring != "loopback")
             listenInterface = System.Net.IPAddress.Parse(interfacestring);
 
-        var removeCertificate = Library.Utility.Utility.ParseBoolOption(options, OPTION_REMOVESSLCERTIFICATE);
-        connection.ApplicationSettings.DisableHTTPS = removeCertificate || Library.Utility.Utility.ParseBoolOption(options, OPTION_DISABLEHTTPS);
+        var removeCertificate = Library.Utility.Utility.ParseBoolOption(options, OPTION_WEBSERVICE_REMOVESSLCERTIFICATE);
+        connection.ApplicationSettings.DisableHTTPS = removeCertificate || Library.Utility.Utility.ParseBoolOption(options, OPTION_WEBSERVICE_DISABLEHTTPS);
 
-        options.TryGetValue(OPTION_SSLCERTIFICATEFILE, out var certificateFile);
-        options.TryGetValue(OPTION_SSLCERTIFICATEFILEPASSWORD, out var certificateFilePassword);
+        options.TryGetValue(OPTION_WEBSERVICE_SSLCERTIFICATEFILE, out var certificateFile);
+        options.TryGetValue(OPTION_WEBSERVICE_SSLCERTIFICATEFILEPASSWORD, out var certificateFilePassword);
         certificateFilePassword = certificateFilePassword?.Trim();
 
         if (string.IsNullOrEmpty(certificateFile) && !string.IsNullOrEmpty(certificateFilePassword))
@@ -241,6 +248,7 @@ public static class WebServerLoader
             -1,
             listenInterface,
             connection.ApplicationSettings.UseHTTPS ? connection.ApplicationSettings.ServerSSLCertificate : null,
+            Duplicati.Library.Utility.Utility.ParseBoolOption(options, OPTION_WEBSERVICE_SSLFORCEINTERMEDIATECERTIFICATES),
             string.Format("{0} v{1}", Library.AutoUpdater.AutoUpdateSettings.AppName, Library.AutoUpdater.UpdaterManager.SelfVersion.Version),
             (connection.ApplicationSettings.AllowedHostnames ?? string.Empty).Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries),
             Duplicati.Library.Utility.Utility.ParseBoolOption(options, OPTION_WEBSERVICE_API_ONLY),
