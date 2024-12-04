@@ -283,6 +283,11 @@ public partial class DuplicatiWebserver
         var cert = certificates.FirstOrDefault(x => x.HasPrivateKey) ?? throw new Exception("No certificate with private key found");
         certificates.Remove(cert);
 
+        // No point in including root certificates in the chain
+        foreach (var certificate in certificates.ToList())
+            if (IsRootCertificate(certificate))
+                certificates.Remove(certificate);
+
         // If there are no additional certificates, do not try to set up a custom handshake
         if (certificates.Count == 0)
         {
@@ -319,6 +324,27 @@ public partial class DuplicatiWebserver
             ServerCertificate = cert,
             ServerCertificateChain = certificates
         });
+    }
+
+    /// <summary>
+    /// Check if a certificate is a root certificate
+    /// </summary>
+    /// <param name="certificate">The certificate to check</param>
+    /// <returns>True if the certificate is a root certificate</returns>
+    private static bool IsRootCertificate(X509Certificate2 certificate)
+    {
+        // A root certificate is self-signed: Issuer == Subject
+        if (!certificate.Subject.Equals(certificate.Issuer, StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        // Check if the Basic Constraints extension indicates it's a CA
+        foreach (var extension in certificate.Extensions)
+            if (extension is X509BasicConstraintsExtension basicConstraints)
+                // Root certificates are Certificate Authorities (CA) and usually do not have a path length constraint
+                return basicConstraints.CertificateAuthority && basicConstraints.HasPathLengthConstraint == false;
+
+        // If no Basic Constraints extension, assume it's not a root
+        return false;
     }
 
     public Task Start(InitSettings settings)
