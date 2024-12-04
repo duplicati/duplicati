@@ -19,6 +19,8 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
+using System.Collections.ObjectModel;
+using System.Net.Security;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -32,6 +34,7 @@ using Duplicati.WebserverCore.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http.Json;
+using Microsoft.AspNetCore.Server.Kestrel.Https;
 using Microsoft.Extensions.Configuration.Json;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.OpenApi.Models;
@@ -40,6 +43,7 @@ namespace Duplicati.WebserverCore;
 
 public partial class DuplicatiWebserver
 {
+    private static readonly string LOGTAG = Library.Logging.Log.LogTagFromType<DuplicatiWebserver>();
     public IConfiguration Configuration { get; private set; }
 
     public WebApplication App { get; private set; }
@@ -71,7 +75,7 @@ public partial class DuplicatiWebserver
         string WebRoot,
         int Port,
         System.Net.IPAddress Interface,
-        X509Certificate2? Certificate,
+        X509Certificate2Collection? Certificate,
         string Servername,
         IEnumerable<string> AllowedHostnames,
         bool DisableStaticFiles,
@@ -104,7 +108,7 @@ public partial class DuplicatiWebserver
                 options.ListenAnyIP(settings.Port, listenOptions =>
                 {
                     if (settings.Certificate != null)
-                        listenOptions.UseHttps(settings.Certificate);
+                        ConfigureHttps(listenOptions, settings.Certificate);
                 });
             }
             else if (settings.Interface == System.Net.IPAddress.Loopback)
@@ -112,7 +116,7 @@ public partial class DuplicatiWebserver
                 options.ListenLocalhost(settings.Port, listenOptions =>
                 {
                     if (settings.Certificate != null)
-                        listenOptions.UseHttps(settings.Certificate);
+                        ConfigureHttps(listenOptions, settings.Certificate);
                 });
             }
             else
@@ -120,7 +124,7 @@ public partial class DuplicatiWebserver
                 options.Listen(settings.Interface, settings.Port, listenOptions =>
                 {
                     if (settings.Certificate != null)
-                        listenOptions.UseHttps(settings.Certificate);
+                        ConfigureHttps(listenOptions, settings.Certificate);
                 });
             }
         });
@@ -269,6 +273,52 @@ public partial class DuplicatiWebserver
 
         // Preload static system info, for better first-load experience
         var _ = Task.Run(() => App.Services.GetRequiredService<ISystemInfoProvider>().GetSystemInfo(null));
+    }
+
+    private static void ConfigureHttps(Microsoft.AspNetCore.Server.Kestrel.Core.ListenOptions listenOptions, X509Certificate2Collection? certificates)
+    {
+        if (certificates == null || certificates.Count == 0)
+            return;
+
+        var cert = certificates.FirstOrDefault(x => x.HasPrivateKey) ?? throw new Exception("No certificate with private key found");
+        certificates.Remove(cert);
+
+        // If there are no additional certificates, do not try to set up a custom handshake
+        if (certificates.Count == 0)
+        {
+            listenOptions.UseHttps(cert);
+            return;
+        }
+
+        // Create the SSL context
+        var ctx = SslStreamCertificateContext.Create(cert, certificates, offline: true);
+
+        // .NET will strip the intermediate certificates from the chain, so we need to set them manually
+        var field = typeof(SslStreamCertificateContext).GetFields(System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
+            .FirstOrDefault(x => x.Name.Contains(nameof(SslStreamCertificateContext.IntermediateCertificates), StringComparison.OrdinalIgnoreCase) && x.FieldType == typeof(ReadOnlyCollection<X509Certificate2>));
+
+        if (field == null)
+            Library.Logging.Log.WriteWarningMessage(LOGTAG, "FailedToSetIntermediateCertificates", null, "Failed to set intermediate certificates");
+        else
+            field.SetValue(ctx, new ReadOnlyCollection<X509Certificate2>(certificates.ToList()));
+
+        var opts = ValueTask.FromResult(new SslServerAuthenticationOptions
+        {
+            ServerCertificateContext = ctx
+        });
+
+        listenOptions.UseHttps(new TlsHandshakeCallbackOptions
+        {
+            OnConnection = context => opts
+        });
+
+        // This does not appear to have any effect,
+        // but setting it anyway in case it is needed in the future
+        listenOptions.UseHttps(new HttpsConnectionAdapterOptions()
+        {
+            ServerCertificate = cert,
+            ServerCertificateChain = certificates
+        });
     }
 
     public Task Start(InitSettings settings)

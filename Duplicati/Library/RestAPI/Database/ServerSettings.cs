@@ -644,7 +644,7 @@ namespace Duplicati.Server.Database
             }
         }
 
-        public X509Certificate2? ServerSSLCertificate
+        public X509Certificate2Collection? ServerSSLCertificate
         {
             get
             {

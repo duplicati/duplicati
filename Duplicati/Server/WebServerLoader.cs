@@ -151,7 +151,7 @@ public static class WebServerLoader
         string WebRoot,
         int Port,
         System.Net.IPAddress Interface,
-        X509Certificate2? Certificate,
+        X509Certificate2Collection? Certificate,
         string Servername,
         IEnumerable<string> AllowedHostnames,
         bool DisableStaticFiles,

@@ -19,7 +19,7 @@ public class UpdateCertificate : IEndpointV1
 
     private static void ExecuteUpdate(Connection connection, Dto.UpdateCertificateInputDto input)
     {
-        X509Certificate2 certificate;
+        X509Certificate2Collection certificate;
         try
         {
             // Load certificate first, to give better error message if it is invalid

@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+﻿// Copyright (C) 2024, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -1529,7 +1529,7 @@ namespace Duplicati.Library.Utility
         /// <param name="password">The password used to protect the PFX file</param>
         /// <param name="allowUnsafeCertificateLoad">A flag indicating if unsafe certificate loading is allowed</param>
         /// <returns>The loaded certificate</returns>
-        public static X509Certificate2 LoadPfxCertificate(ReadOnlySpan<byte> pfxcertificate, string? password, bool allowUnsafeCertificateLoad = false)
+        public static X509Certificate2Collection LoadPfxCertificate(ReadOnlySpan<byte> pfxcertificate, string? password, bool allowUnsafeCertificateLoad = false)
         {
             if (string.IsNullOrWhiteSpace(password) && !allowUnsafeCertificateLoad)
                 throw new ArgumentException("Refusing to write unencryped certificate to disk");
@@ -1545,7 +1545,7 @@ namespace Duplicati.Library.Utility
         /// <param name="pfxPath">The path to the file</param>
         /// <param name="password">The password used to protect the PFX file</param>
         /// <returns>The loaded certificate</returns>
-        public static X509Certificate2 LoadPfxCertificate(string pfxPath, string? password)
+        public static X509Certificate2Collection LoadPfxCertificate(string pfxPath, string? password)
         {
             if (string.IsNullOrEmpty(pfxPath))
                 throw new ArgumentNullException(nameof(pfxPath));
@@ -1553,7 +1553,9 @@ namespace Duplicati.Library.Utility
             if (!File.Exists(pfxPath))
                 throw new FileNotFoundException("The specified PFX file does not exist.", pfxPath);
 
-            return new X509Certificate2(pfxPath, password, X509KeyStorageFlags.Exportable);
+            var collection = new X509Certificate2Collection();
+            collection.Import(pfxPath, password, X509KeyStorageFlags.Exportable);
+            return collection;
         }
     }
 }
