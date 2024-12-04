@@ -19,8 +19,6 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
-using System.Collections.ObjectModel;
-using System.Net.Security;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -67,7 +65,6 @@ public partial class DuplicatiWebserver
     /// <param name="Port">The listining port</param>
     /// <param name="Interface">The listening interface</param>
     /// <param name="Certificate">The certificate, if using SSL</param>
-    /// <param name="ForceIntermediateCertificates">If intermediate certificates should be forced into the response</param>
     /// <param name="Servername">The servername to report</param>
     /// <param name="AllowedHostnames">The allowed hostnames</param>
     /// <param name="DisableStaticFiles">If static files should be disabled</param>
@@ -77,7 +74,6 @@ public partial class DuplicatiWebserver
         int Port,
         System.Net.IPAddress Interface,
         X509Certificate2Collection? Certificate,
-        bool ForceIntermediateCertificates,
         string Servername,
         IEnumerable<string> AllowedHostnames,
         bool DisableStaticFiles,
@@ -110,7 +106,7 @@ public partial class DuplicatiWebserver
                 options.ListenAnyIP(settings.Port, listenOptions =>
                 {
                     if (settings.Certificate != null)
-                        ConfigureHttps(listenOptions, settings.Certificate, settings.ForceIntermediateCertificates);
+                        ConfigureHttps(listenOptions, settings.Certificate);
                 });
             }
             else if (settings.Interface == System.Net.IPAddress.Loopback)
@@ -118,7 +114,7 @@ public partial class DuplicatiWebserver
                 options.ListenLocalhost(settings.Port, listenOptions =>
                 {
                     if (settings.Certificate != null)
-                        ConfigureHttps(listenOptions, settings.Certificate, settings.ForceIntermediateCertificates);
+                        ConfigureHttps(listenOptions, settings.Certificate);
                 });
             }
             else
@@ -126,7 +122,7 @@ public partial class DuplicatiWebserver
                 options.Listen(settings.Interface, settings.Port, listenOptions =>
                 {
                     if (settings.Certificate != null)
-                        ConfigureHttps(listenOptions, settings.Certificate, settings.ForceIntermediateCertificates);
+                        ConfigureHttps(listenOptions, settings.Certificate);
                 });
             }
         });
@@ -277,76 +273,24 @@ public partial class DuplicatiWebserver
         var _ = Task.Run(() => App.Services.GetRequiredService<ISystemInfoProvider>().GetSystemInfo(null));
     }
 
-    private static void ConfigureHttps(Microsoft.AspNetCore.Server.Kestrel.Core.ListenOptions listenOptions, X509Certificate2Collection? certificates, bool forceIntermediateCertificates)
+    private static void ConfigureHttps(Microsoft.AspNetCore.Server.Kestrel.Core.ListenOptions listenOptions, X509Certificate2Collection? certificates)
     {
-        if (certificates == null || certificates.Count == 0)
-            return;
+        var servedCert = certificates?.FirstOrDefault(x => x.HasPrivateKey)
+            ?? throw new Exception("No certificate with private key found");
 
-        // If there are no additional certificates, do not try to set up a custom handshake
-        if (certificates.Count == 1 || !forceIntermediateCertificates)
+        listenOptions.UseHttps(new HttpsConnectionAdapterOptions()
         {
-            listenOptions.UseHttps(certificates.FirstOrDefault(x => x.HasPrivateKey) ?? certificates[0]);
-            return;
-        }
-
-        var cert = certificates.FirstOrDefault(x => x.HasPrivateKey) ?? throw new Exception("No certificate with private key found");
-        certificates.Remove(cert);
-
-        // No point in including root certificates in the chain
-        foreach (var certificate in certificates.ToList())
-            if (IsRootCertificate(certificate))
-                certificates.Remove(certificate);
-
-        // Create the SSL context
-        var ctx = SslStreamCertificateContext.Create(cert, certificates, offline: true);
-
-        // .NET will strip the intermediate certificates from the chain, so we need to set them manually
-        var field = typeof(SslStreamCertificateContext).GetFields(System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
-            .FirstOrDefault(x => x.Name.Contains(nameof(SslStreamCertificateContext.IntermediateCertificates), StringComparison.OrdinalIgnoreCase) && x.FieldType == typeof(ReadOnlyCollection<X509Certificate2>));
-
-        if (field == null)
-            Library.Logging.Log.WriteWarningMessage(LOGTAG, "FailedToSetIntermediateCertificates", null, "Failed to set intermediate certificates");
-        else
-            field.SetValue(ctx, new ReadOnlyCollection<X509Certificate2>(certificates.ToList()));
-
-        var opts = ValueTask.FromResult(new SslServerAuthenticationOptions
-        {
-            ServerCertificateContext = ctx
-        });
-
-        listenOptions.UseHttps(new TlsHandshakeCallbackOptions
-        {
-            OnConnection = context => opts
+            ServerCertificate = servedCert,
+            ServerCertificateChain = certificates
         });
 
         // This does not appear to have any effect,
         // but setting it anyway in case it is needed in the future
         listenOptions.UseHttps(new HttpsConnectionAdapterOptions()
         {
-            ServerCertificate = cert,
+            ServerCertificate = servedCert,
             ServerCertificateChain = certificates
         });
-    }
-
-    /// <summary>
-    /// Check if a certificate is a root certificate
-    /// </summary>
-    /// <param name="certificate">The certificate to check</param>
-    /// <returns>True if the certificate is a root certificate</returns>
-    private static bool IsRootCertificate(X509Certificate2 certificate)
-    {
-        // A root certificate is self-signed: Issuer == Subject
-        if (!certificate.Subject.Equals(certificate.Issuer, StringComparison.OrdinalIgnoreCase))
-            return false;
-
-        // Check if the Basic Constraints extension indicates it's a CA
-        foreach (var extension in certificate.Extensions)
-            if (extension is X509BasicConstraintsExtension basicConstraints)
-                // Root certificates are Certificate Authorities (CA) and usually do not have a path length constraint
-                return basicConstraints.CertificateAuthority && basicConstraints.HasPathLengthConstraint == false;
-
-        // If no Basic Constraints extension, assume it's not a root
-        return false;
     }
 
     public Task Start(InitSettings settings)

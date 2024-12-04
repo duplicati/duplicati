@@ -132,11 +132,6 @@ public static class WebServerLoader
     public const string OPTION_WEBSERVICE_SSLCERTIFICATEFILEPASSWORD = "webservice-sslcertificatepassword";
 
     /// <summary>
-    /// Option for setting if intermediate certificates should be forced
-    /// </summary>
-    public const string OPTION_WEBSERVICE_SSLFORCEINTERMEDIATECERTIFICATES = "webservice-sslcertificate-force-intermediate";
-
-    /// <summary>
     /// The default listening interface
     /// </summary>
     public const string DEFAULT_OPTION_INTERFACE = "loopback";
@@ -148,7 +143,6 @@ public static class WebServerLoader
     /// <param name="Port">The listining port</param>
     /// <param name="Interface">The listening interface</param>
     /// <param name="Certificate">SSL certificate, if any</param>
-    /// <param name="ForceIntermediateCertificates">If intermediate certificates should be forced</param>
     /// <param name="Servername">The servername to report</param>
     /// <param name="AllowedHostnames">The allowed hostnames</param>
     /// <param name="DisableStaticFiles">If static files should be disabled</param>
@@ -158,7 +152,6 @@ public static class WebServerLoader
         int Port,
         System.Net.IPAddress Interface,
         X509Certificate2Collection? Certificate,
-        bool ForceIntermediateCertificates,
         string Servername,
         IEnumerable<string> AllowedHostnames,
         bool DisableStaticFiles,
@@ -248,7 +241,6 @@ public static class WebServerLoader
             -1,
             listenInterface,
             connection.ApplicationSettings.UseHTTPS ? connection.ApplicationSettings.ServerSSLCertificate : null,
-            Duplicati.Library.Utility.Utility.ParseBoolOption(options, OPTION_WEBSERVICE_SSLFORCEINTERMEDIATECERTIFICATES),
             string.Format("{0} v{1}", Library.AutoUpdater.AutoUpdateSettings.AppName, Library.AutoUpdater.UpdaterManager.SelfVersion.Version),
             (connection.ApplicationSettings.AllowedHostnames ?? string.Empty).Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries),
             Duplicati.Library.Utility.Utility.ParseBoolOption(options, OPTION_WEBSERVICE_API_ONLY),
