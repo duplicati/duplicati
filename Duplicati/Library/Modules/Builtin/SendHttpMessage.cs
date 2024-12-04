@@ -26,6 +26,8 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
+using Duplicati.Library.Utility;
+using Uri = System.Uri;
 
 namespace Duplicati.Library.Modules.Builtin
 {
@@ -101,7 +103,16 @@ namespace Duplicati.Library.Modules.Builtin
         /// Option used to set the maximum number of log lines
         /// </summary>
         private const string OPTION_MAX_LOG_LINES = "send-http-max-log-lines";
-
+        
+        /// <summary>
+        /// The option used to accept a specific SSL certificate hash
+        /// </summary>
+        private const string OPTION_ACCEPT_SPECIFIED_CERTIFICATE = "accept-specified-ssl-hash"; 
+        /// <summary>
+        /// The option used to accept any SSL certificate
+        /// </summary>
+        private const string OPTION_ACCEPT_ANY_CERTIFICATE = "accept-any-ssl-certificate"; 
+        
         #endregion
 
         #region Option defaults
@@ -132,6 +143,16 @@ namespace Duplicati.Library.Modules.Builtin
         /// The message parameter name
         /// </summary>
         private string m_extraParameters;
+        
+        /// <summary>
+        /// Option to accept any SSL certificate
+        /// </summary>
+        private bool m_acceptAnyCertificate;
+        
+        /// <summary>
+        /// Specific hashes to be accepted by the certificate validator
+        /// </summary>
+        private string[] m_acceptSpecificCertificates;
 
         #endregion
 
@@ -184,6 +205,9 @@ namespace Duplicati.Library.Modules.Builtin
 
                     new CommandLineArgument(OPTION_URL_FORM, CommandLineArgument.ArgumentType.String, Strings.SendHttpMessage.SendhttpurlsformShort, Strings.SendHttpMessage.SendhttpurlsformLong),
                     new CommandLineArgument(OPTION_URL_JSON, CommandLineArgument.ArgumentType.String, Strings.SendHttpMessage.SendhttpurlsjsonShort, Strings.SendHttpMessage.SendhttpurlsjsonLong),
+                    
+                    new CommandLineArgument(OPTION_ACCEPT_ANY_CERTIFICATE, CommandLineArgument.ArgumentType.Boolean, Strings.SendHttpMessage.AcceptAnyCertificateShort, Strings.SendHttpMessage.AcceptAnyCertificateLong),
+                    new CommandLineArgument(OPTION_ACCEPT_SPECIFIED_CERTIFICATE, CommandLineArgument.ArgumentType.String, Strings.SendHttpMessage.AcceptSpecifiedCertificateShort, Strings.SendHttpMessage.AcceptSpecifiedCertificateLong),
                 });
             }
         }
@@ -242,6 +266,9 @@ namespace Duplicati.Library.Modules.Builtin
                 m_messageParameterName = DEFAULT_MESSAGE_PARAMETER_NAME;
 
             commandlineOptions.TryGetValue(OPTION_EXTRA_PARAMETERS, out m_extraParameters);
+            m_acceptAnyCertificate = commandlineOptions.ContainsKey(OPTION_ACCEPT_ANY_CERTIFICATE) && Utility.Utility.ParseBoolOption(commandlineOptions.AsReadOnly(), OPTION_ACCEPT_ANY_CERTIFICATE);
+            m_acceptSpecificCertificates = commandlineOptions.ContainsKey(OPTION_ACCEPT_SPECIFIED_CERTIFICATE) ? commandlineOptions[OPTION_ACCEPT_SPECIFIED_CERTIFICATE].Split([",", ";"], StringSplitOptions.RemoveEmptyEntries): null;
+
             return true;
         }
 
@@ -327,7 +354,10 @@ namespace Duplicati.Library.Modules.Builtin
             if (m_report_targets == null || m_cachedBodyResults == null)
                 return;
 
-            using var client = new HttpClient();
+            using HttpClientHandler httpHandler = new HttpClientHandler();
+            HttpClientHelper.ConfigureHandlerCertificateValidator(httpHandler, m_acceptAnyCertificate, m_acceptSpecificCertificates);
+
+            using var client = new HttpClient(httpHandler);
 
             Exception ex = null;
 
