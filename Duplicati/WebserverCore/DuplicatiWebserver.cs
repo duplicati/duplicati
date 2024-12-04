@@ -285,7 +285,7 @@ public partial class DuplicatiWebserver
         // If there are no additional certificates, do not try to set up a custom handshake
         if (certificates.Count == 1 || !forceIntermediateCertificates)
         {
-            listenOptions.UseHttps(certificates[0]);
+            listenOptions.UseHttps(certificates.FirstOrDefault(x => x.HasPrivateKey) ?? certificates[0]);
             return;
         }
 
