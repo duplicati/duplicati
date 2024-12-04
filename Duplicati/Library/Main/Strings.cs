@@ -181,8 +181,6 @@ namespace Duplicati.Library.Main.Strings
         public static string DisablefilepathcacheLong { get { return LC.L(@"Use this option to reduce the memory footprint by not keeping paths and modification timestamps in memory."); } }
         public static string DisablefilepathcacheShort { get { return LC.L(@"Reduce memory footprint by disabling in-memory lookups"); } }
         public static string DisablefilepathcacheDeprecated { get { return LC.L(@"The option --{0} is no longer used and has been deprecated.", "disable-filepath-cache"); } }
-        public static string UseblockcacheLong { get { return LC.L(@"Use this option to increase speed in exchange for extra memory use."); } }
-        public static string UseblockcacheShort { get { return LC.L(@"Store an in-memory block cache"); } }
         public static string NobackendverificationLong { get { return LC.L(@"If this option is set, the local database is not compared to the remote filelist on startup. The intended usage for this option is to work correctly in cases where the filelisting is broken or unavailable."); } }
         public static string NobackendverificationShort { get { return LC.L(@"Do not query backend at startup"); } }
         public static string IndexfilepolicyLong { get { return LC.L(@"The index files are used to limit the need for downloading dblock files when there is no local database present. The more information is recorded in the index files, the faster operations can proceed without the database. The tradeoff is that larger index files take up more remote space and which may never be used."); } }
