@@ -670,6 +670,9 @@ namespace Duplicati.Server.Database
                 }
                 else
                 {
+                    if (!value.Any(x => x.HasPrivateKey))
+                        throw new ArgumentException("The certificate must have a private key");
+
                     var password = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
                     var certdata = Convert.ToBase64String(value.Export(X509ContentType.Pkcs12, password));
                     lock (databaseConnection.m_lock)
