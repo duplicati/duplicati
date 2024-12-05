@@ -69,6 +69,7 @@ public static class Program
     /// <param name="WebserviceDisableSigninTokens">Disable signin tokens for the webserver</param>
     /// <param name="PingPongKeepalive">Enable ping-pong keepalive</param>
     /// <param name="DisablePreSharedKey">Disable the pre-shared key</param>
+    /// <param name="KeepWebservicePassword">Keep the webserver password</param>
     /// <param name="SecretProvider">The secret provider to use</param>
     /// <param name="SecretProviderCache">The secret provider cache level</param>
     /// <param name="SecretProviderPattern">The secret provider pattern</param>
@@ -89,6 +90,7 @@ public static class Program
         bool WebserviceDisableSigninTokens,
         bool PingPongKeepalive,
         bool DisablePreSharedKey,
+        bool KeepWebservicePassword,
         string? SecretProvider,
         SecretProviderHelper.CachingLevel SecretProviderCache,
         string SecretProviderPattern
@@ -107,7 +109,7 @@ public static class Program
             new Option<bool>("--agent-register-only", description: "Only register the agent, then exit", getDefaultValue: () => false),
             new Option<string>("--webservice-listen-interface", description: "The interface to listen on for the webserver", getDefaultValue: () => "loopback"),
             new Option<string>("--webservice-port", description: "The port to listen on for the webserver", getDefaultValue: () => "8210"),
-            new Option<string?>("--webservice-password", description: "The password for the webserver, if set to \"random\" a random passphrase is used", getDefaultValue: () => "random"),
+            new Option<string?>("--webservice-password", description: "The password for the webserver, not set, or set to \"random\", a random value is used.", getDefaultValue: () => null),
             new Option<string?>("--settings-encryption-key", description: "The encryption key for the database settings", getDefaultValue: () => null),
             new Option<string>("--windows-eventlog", description: "The Windows event log to write to", getDefaultValue: () => "Duplicati"),
             new Option<bool>("--disable-db-encryption", description: "Disable database encryption", getDefaultValue: () => false),
@@ -117,6 +119,7 @@ public static class Program
             new Option<bool>("--webservice-disable-signin-tokens", description: "Disable signin tokens for the webserver", getDefaultValue: () => true),
             new Option<bool>("--ping-pong-keepalive", description: "Enable ping-pong keepalive", getDefaultValue: () => false),
             new Option<bool>("--disable-pre-shared-key", description: "Disable the pre-shared key that prevents outside access to the webserver", getDefaultValue: () => false),
+            new Option<bool>("--keep-webservice-password", description: "Disables the random password assigned to the webserver on startup if no password is provided", getDefaultValue: () => false),
             new Option<string?>("--secret-provider", description: "The secret provider to use", getDefaultValue: () => null),
             new Option<SecretProviderHelper.CachingLevel>("--secret-provider-cache", description: "The secret provider cache level", getDefaultValue: () => SecretProviderHelper.CachingLevel.None),
             new Option<string>("--secret-provider-pattern", description: "The secret provider pattern", getDefaultValue: () => SecretProviderHelper.DEFAULT_PATTERN),
@@ -208,6 +211,7 @@ public static class Program
             WebserviceDisableSigninTokens: true,
             PingPongKeepalive: false,
             DisablePreSharedKey: false,
+            KeepWebservicePassword: false,
             SecretProvider: secretProvider,
             SecretProviderCache: SecretProviderHelper.CachingLevel.None,
             SecretProviderPattern: secretProviderPattern
@@ -252,9 +256,18 @@ public static class Program
                     prop.Value.SetValue(agentConfig, value);
         }
 
-        // Prevent access to the webserver interface from anything but the agent
-        if (string.Equals("random", agentConfig.WebservicePassword, StringComparison.OrdinalIgnoreCase))
-            agentConfig = agentConfig with { WebservicePassword = System.Security.Cryptography.RandomNumberGenerator.GetHexString(128) };
+        if (agentConfig.KeepWebservicePassword)
+        {
+            // Check for conflicting options, require no password
+            if (!string.IsNullOrWhiteSpace(agentConfig.WebservicePassword))
+                throw new UserInformationException("Cannot use --keep-webservice-password with a provided password", "KeepWebservicePasswordWithPassword");
+        }
+        else
+        {
+            // Prevent access to the webserver interface from anything but the agent
+            if (string.Equals("random", agentConfig.WebservicePassword, StringComparison.OrdinalIgnoreCase) || string.IsNullOrWhiteSpace(agentConfig.WebservicePassword))
+                agentConfig = agentConfig with { WebservicePassword = System.Security.Cryptography.RandomNumberGenerator.GetHexString(128) };
+        }
 
         // Set the pre-shared key for the agent
         if (!agentConfig.DisablePreSharedKey)
@@ -454,19 +467,28 @@ public static class Program
         else if (!string.IsNullOrWhiteSpace(settings.SettingsEncryptionKey))
             settingsEncryptionKey = settings.SettingsEncryptionKey;
 
+        // Helper method to support empty arguments
+        static string EncodeOption(string option, string? value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                return "";
+
+            return $"{option}={value}";
+        }
+
         // Lock down the instance, reset tokens and password,
         // and forward relevant settings from agent to the webserver
         var args = new[] {
-                $"--webservice-listen-interface={agentConfig.WebserviceListenInterface}",
-                $"--webservice-password={agentConfig.WebservicePassword}",
-                OperatingSystem.IsWindows() ? $"--windows-eventlog={agentConfig.WindowsEventLog}" : "",
-                $"--webservice-port={agentConfig.WebservicePort}",
-                $"--webservice-reset-jwt-config={agentConfig.WebserviceResetJwtConfig}",
-                $"--webservice-allowed-hostnames={agentConfig.WebserviceAllowedHostnames}",
-                $"--webservice-api-only={agentConfig.WebserviceApiOnly}",
-                $"--webservice-disable-signin-tokens={agentConfig.WebserviceDisableSigninTokens}",
-                $"--disable-db-encryption={agentConfig.DisableDbEncryption}",
-                string.IsNullOrWhiteSpace(settingsEncryptionKey) ? "" : $"--settings-encryption-key={settingsEncryptionKey}",
+            EncodeOption("--webservice-listen-interface", agentConfig.WebserviceListenInterface),
+            EncodeOption("--webservice-password", agentConfig.WebservicePassword),
+            EncodeOption("--windows-eventlog", OperatingSystem.IsWindows() ? agentConfig.WindowsEventLog : ""),
+            EncodeOption("--webservice-port", agentConfig.WebservicePort),
+            EncodeOption("--webservice-reset-jwt-config", agentConfig.WebserviceResetJwtConfig.ToString()),
+            EncodeOption("--webservice-allowed-hostnames", agentConfig.WebserviceAllowedHostnames),
+            EncodeOption("--webservice-api-only", agentConfig.WebserviceApiOnly.ToString()),
+            EncodeOption("--webservice-disable-signin-tokens", agentConfig.WebserviceDisableSigninTokens.ToString()),
+            EncodeOption("--disable-db-encryption", agentConfig.DisableDbEncryption.ToString()),
+            EncodeOption("--settings-encryption-key", settingsEncryptionKey),
             }
             .Where(x => !string.IsNullOrWhiteSpace(x))
             .ToArray();
