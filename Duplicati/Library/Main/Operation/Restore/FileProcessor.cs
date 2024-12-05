@@ -118,7 +118,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                                 }
 
                                 // Create an empty file, or truncate to 0
-                                using var fs = new FileStream(file.TargetPath, FileMode.OpenOrCreate, FileAccess.Write, FileShare.None);
+                                using var fs = SystemIO.IO_OS.FileOpenWrite(file.TargetPath);
                                 fs.SetLength(0);
                                 if (missing_blocks.Count != 0)
                                 {
@@ -146,12 +146,16 @@ namespace Duplicati.Library.Main.Operation.Restore
                                     // If dryrun, open the file for read only to verify the file hash.
                                     if (File.Exists(file.TargetPath))
                                     {
-                                        fs = new FileStream(file.TargetPath, FileMode.Open, FileAccess.Read);
+                                        fs = SystemIO.IO_OS.FileOpenRead(file.TargetPath);
+                                    }
+                                    else
+                                    {
+                                        Logging.Log.WriteDryrunMessage(LOGTAG, "DryrunRestore", @$"Tried opening ""{file.TargetPath}"" for reading, but it doesn't exist.");
                                     }
                                 }
                                 else
                                 {
-                                    fs = new FileStream(file.TargetPath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
+                                    fs = SystemIO.IO_OS.FileOpenWrite(file.TargetPath);
                                 }
 
                                 sw_work?.Stop();
@@ -195,7 +199,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                                         if (options.Dryrun)
                                         {
                                             // Simulate writing the block
-                                            fs.Seek(fs.Position + blocks[i].BlockSize, SeekOrigin.Begin);
+                                            fs?.Seek(fs.Position + blocks[i].BlockSize, SeekOrigin.Begin);
                                         }
                                         else
                                         {
@@ -211,7 +215,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                                     {
                                         // No more blocks are missing, so read the rest of the blocks to verify the file hash.
                                         var data = new byte[blocks[i].BlockSize];
-                                        var read = await fs.ReadAsync(data, 0, data.Length);
+                                        var read = await fs?.ReadAsync(data, 0, data.Length);
                                         filehasher.TransformBlock(data, 0, read, data, 0);
                                     }
                                 }
@@ -352,7 +356,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                 filehasher.Initialize();
                 try
                 {
-                    using var f = new FileStream(file.TargetPath, FileMode.Open, FileAccess.Read);
+                    using var f = SystemIO.IO_OS.FileOpenRead(file.TargetPath);
                     var buffer = new byte[options.Blocksize];
                     for (int i = 0; i < blocks.Length; i++)
                     {
@@ -415,7 +419,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                             {
                                 // Reopen file with write permission
                                 fi.IsReadOnly = false; // The metadata handler will revert this back later.
-                                using var f = new FileStream(file.TargetPath, FileMode.Open, FileAccess.ReadWrite);
+                                using var f = SystemIO.IO_OS.FileOpenWrite(file.TargetPath);
                                 f.SetLength(file.Length);
                             }
                         }
@@ -453,8 +457,8 @@ namespace Duplicati.Library.Main.Operation.Restore
                 filehasher.Initialize();
 
                 // Open both files, as the target file is still being read to produce the overall file hash, if all the blocks are present across both the target and original files.
-                using var f_original = new FileStream(file.OriginalPath, FileMode.Open, FileAccess.Read);
-                using var f_target = new FileStream(file.TargetPath, FileMode.OpenOrCreate, FileAccess.ReadWrite);
+                using var f_original = SystemIO.IO_OS.FileOpenRead(file.OriginalPath);
+                using var f_target = SystemIO.IO_OS.FileOpenWrite(file.TargetPath);
                 var buffer = new byte[options.Blocksize];
                 long bytes_read = 0;
                 long bytes_written = 0;
