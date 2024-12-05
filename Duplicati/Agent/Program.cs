@@ -129,10 +129,21 @@ public static class Program
         };
         clearCommand.Handler = CommandHandler.Create<FileInfo>(ClearAgentSettings);
 
+        var registerCommand = new Command("register", "Registers the agent and exits")
+        {
+            new Argument<string>("agent-registration-url", description: "The server URL to connect to", getDefaultValue: () => RegisterForRemote.DefaultRegisterationUrl) { Arity = ArgumentArity.ZeroOrOne },
+            new Option<FileInfo>("--agent-settings-file", description: "The file to use for the agent settings", getDefaultValue: () => new FileInfo(Settings.DefaultSettingsFile)),
+            new Option<string?>("--agent-settings-file-passphrase", description: "The passphrase for the agent settings file", getDefaultValue: () => null),
+            new Option<string?>("--secret-provider", description: "The secret provider to use", getDefaultValue: () => null),
+            new Option<string>("--secret-provider-pattern", description: "The secret provider pattern", getDefaultValue: () => SecretProviderHelper.DEFAULT_PATTERN),
+        };
+        registerCommand.Handler = CommandHandler.Create<string, FileInfo, string?, string?, string>(RegisterAgent);
+
         var rootcmd = new RootCommand("Duplicati Agent")
         {
             runcmd,
-            clearCommand
+            clearCommand,
+            registerCommand
         };
         // rootcmd.Handler = CommandHandler.Create<CommandLineArguments>(RunAgent);
 
@@ -167,6 +178,40 @@ public static class Program
             File.Delete(agentSettingsFile.FullName);
         return Task.FromResult(0);
     }
+
+    /// <summary>
+    /// Registers the agent with the remote server
+    /// </summary>
+    /// <param name="agentRegistrationUrl">The URL to register the agent with</param>
+    /// <param name="agentSettingsFile">The file to save the settings to</param>
+    /// <param name="agentSettingsFilePassphrase">The passphrase for the settings file</param>
+    /// <param name="secretProvider">The secret provider to use</param>
+    /// <param name="secretProviderPattern">The secret provider pattern</param>
+    /// <returns></returns>
+    private static Task<int> RegisterAgent(string agentRegistrationUrl, FileInfo agentSettingsFile, string? agentSettingsFilePassphrase, string? secretProvider, string secretProviderPattern)
+        => RunAgent(new CommandLineArguments(
+            AgentRegistrationUrl: string.IsNullOrWhiteSpace(agentRegistrationUrl)
+                ? RegisterForRemote.DefaultRegisterationUrl
+                : agentRegistrationUrl,
+            AgentSettingsFile: agentSettingsFile,
+            AgentSettingsFilePassphrase: agentSettingsFilePassphrase,
+            AgentRegisterOnly: true,
+            WebserviceListenInterface: "loopback",
+            WebservicePort: "8210",
+            WebservicePassword: null!,
+            SettingsEncryptionKey: null,
+            WindowsEventLog: "Duplicati",
+            DisableDbEncryption: false,
+            WebserviceResetJwtConfig: false,
+            WebserviceAllowedHostnames: "",
+            WebserviceApiOnly: true,
+            WebserviceDisableSigninTokens: true,
+            PingPongKeepalive: false,
+            DisablePreSharedKey: false,
+            SecretProvider: secretProvider,
+            SecretProviderCache: SecretProviderHelper.CachingLevel.None,
+            SecretProviderPattern: secretProviderPattern
+        ));
 
     /// <summary>
     /// Runs the agent
@@ -238,7 +283,10 @@ public static class Program
             var settings = await Register(agentConfig.AgentRegistrationUrl, agentConfig.AgentSettingsFile.FullName, agentConfig.AgentSettingsFilePassphrase, cts.Token);
 
             if (agentConfig.AgentRegisterOnly)
+            {
+                Log.WriteMessage(LogMessageType.Information, LogTag, "ClientRegistered", "Client registered, exiting");
                 return 0;
+            }
 
             var t = await Task.WhenAny(
                 Task.Run(() => StartLocalServer(agentConfig, settings, cts.Token)),
