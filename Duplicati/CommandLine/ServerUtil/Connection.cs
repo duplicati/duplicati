@@ -163,7 +163,11 @@ public class Connection
                 {
                     cfg = connection.ApplicationSettings.JWTConfig;
                     if (settings.HostUrl.Scheme == "https" && connection.ApplicationSettings.ServerSSLCertificate != null && trustedCertificateHashes.Count == 0)
-                        trustedCertificateHashes.Add(connection.ApplicationSettings.ServerSSLCertificate.GetCertHashString());
+                    {
+                        var selfSignedCertHash = connection.ApplicationSettings.ServerSSLCertificate?.FirstOrDefault(x => x.HasPrivateKey)?.GetCertHashString();
+                        if (!string.IsNullOrWhiteSpace(selfSignedCertHash))
+                            trustedCertificateHashes.Add(selfSignedCertHash);
+                    }
                 }
 
                 if (!string.IsNullOrWhiteSpace(cfg))

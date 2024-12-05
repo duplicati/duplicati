@@ -32,6 +32,7 @@ using Duplicati.WebserverCore.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http.Json;
+using Microsoft.AspNetCore.Server.Kestrel.Https;
 using Microsoft.Extensions.Configuration.Json;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.OpenApi.Models;
@@ -40,6 +41,7 @@ namespace Duplicati.WebserverCore;
 
 public partial class DuplicatiWebserver
 {
+    private static readonly string LOGTAG = Library.Logging.Log.LogTagFromType<DuplicatiWebserver>();
     public IConfiguration Configuration { get; private set; }
 
     public WebApplication App { get; private set; }
@@ -71,7 +73,7 @@ public partial class DuplicatiWebserver
         string WebRoot,
         int Port,
         System.Net.IPAddress Interface,
-        X509Certificate2? Certificate,
+        X509Certificate2Collection? Certificate,
         string Servername,
         IEnumerable<string> AllowedHostnames,
         bool DisableStaticFiles,
@@ -104,7 +106,7 @@ public partial class DuplicatiWebserver
                 options.ListenAnyIP(settings.Port, listenOptions =>
                 {
                     if (settings.Certificate != null)
-                        listenOptions.UseHttps(settings.Certificate);
+                        ConfigureHttps(listenOptions, settings.Certificate);
                 });
             }
             else if (settings.Interface == System.Net.IPAddress.Loopback)
@@ -112,7 +114,7 @@ public partial class DuplicatiWebserver
                 options.ListenLocalhost(settings.Port, listenOptions =>
                 {
                     if (settings.Certificate != null)
-                        listenOptions.UseHttps(settings.Certificate);
+                        ConfigureHttps(listenOptions, settings.Certificate);
                 });
             }
             else
@@ -120,7 +122,7 @@ public partial class DuplicatiWebserver
                 options.Listen(settings.Interface, settings.Port, listenOptions =>
                 {
                     if (settings.Certificate != null)
-                        listenOptions.UseHttps(settings.Certificate);
+                        ConfigureHttps(listenOptions, settings.Certificate);
                 });
             }
         });
@@ -269,6 +271,26 @@ public partial class DuplicatiWebserver
 
         // Preload static system info, for better first-load experience
         var _ = Task.Run(() => App.Services.GetRequiredService<ISystemInfoProvider>().GetSystemInfo(null));
+    }
+
+    private static void ConfigureHttps(Microsoft.AspNetCore.Server.Kestrel.Core.ListenOptions listenOptions, X509Certificate2Collection? certificates)
+    {
+        var servedCert = certificates?.FirstOrDefault(x => x.HasPrivateKey)
+            ?? throw new Exception("No certificate with private key found");
+
+        listenOptions.UseHttps(new HttpsConnectionAdapterOptions()
+        {
+            ServerCertificate = servedCert,
+            ServerCertificateChain = certificates
+        });
+
+        // This does not appear to have any effect,
+        // but setting it anyway in case it is needed in the future
+        listenOptions.UseHttps(new HttpsConnectionAdapterOptions()
+        {
+            ServerCertificate = servedCert,
+            ServerCertificateChain = certificates
+        });
     }
 
     public Task Start(InitSettings settings)
