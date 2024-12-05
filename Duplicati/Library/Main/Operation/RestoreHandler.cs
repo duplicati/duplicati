@@ -113,35 +113,40 @@ namespace Duplicati.Library.Main.Operation
 
             LocalRestoreDatabase db = null;
             TempFile tmpdb = null;
-            if (!m_options.NoLocalDb && SystemIO.IO_OS.FileExists(m_options.Dbpath))
+            try
             {
-                db = new LocalRestoreDatabase(m_options.Dbpath);
-                db.SetResult(m_result);
+                if (!m_options.NoLocalDb && SystemIO.IO_OS.FileExists(m_options.Dbpath))
+                {
+                    db = new LocalRestoreDatabase(m_options.Dbpath);
+                    db.SetResult(m_result);
+                }
+                else
+                {
+                    Logging.Log.WriteInformationMessage(LOGTAG, "NoLocalDatabase", "No local database, building a temporary database");
+                    tmpdb = new TempFile();
+                    RecreateDatabaseHandler.NumberedFilterFilelistDelegate filelistfilter = FilterNumberedFilelist(m_options.Time, m_options.Version);
+                    db = new LocalRestoreDatabase(tmpdb);
+                    m_result.RecreateDatabaseResults = new RecreateDatabaseResults(m_result);
+                    using (new Logging.Timer(LOGTAG, "RecreateTempDbForRestore", "Recreate temporary database for restore"))
+                        new RecreateDatabaseHandler(m_backendurl, m_options, (RecreateDatabaseResults)m_result.RecreateDatabaseResults)
+                            .DoRun(db, false, filter, filelistfilter, null);
+
+                    if (!m_options.SkipMetadata)
+                        ApplyStoredMetadata(m_options, new RestoreHandlerMetadataStorage());
+                }
+
+                if (m_options.RestoreLegacy)
+                    DoRun(db, filter);
+                else
+                    DoRunNew(db, filter);
+
+                db.WriteResults();
             }
-            else
+            finally
             {
-                Logging.Log.WriteInformationMessage(LOGTAG, "NoLocalDatabase", "No local database, building a temporary database");
-                tmpdb = new TempFile();
-                RecreateDatabaseHandler.NumberedFilterFilelistDelegate filelistfilter = FilterNumberedFilelist(m_options.Time, m_options.Version);
-                db = new LocalRestoreDatabase(tmpdb);
-                m_result.RecreateDatabaseResults = new RecreateDatabaseResults(m_result);
-                using (new Logging.Timer(LOGTAG, "RecreateTempDbForRestore", "Recreate temporary database for restore"))
-                    new RecreateDatabaseHandler(m_backendurl, m_options, (RecreateDatabaseResults)m_result.RecreateDatabaseResults)
-                        .DoRun(db, false, filter, filelistfilter, null);
-
-                if (!m_options.SkipMetadata)
-                    ApplyStoredMetadata(m_options, new RestoreHandlerMetadataStorage());
+                db?.Dispose();
+                tmpdb?.Dispose();
             }
-
-            if (m_options.RestoreLegacy)
-                DoRun(db, filter);
-            else
-                DoRunNew(db, filter);
-
-            db.WriteResults();
-
-            db?.Dispose();
-            tmpdb?.Dispose();
         }
 
         private static void PatchWithBlocklist(LocalRestoreDatabase database, BlockVolumeReader blocks, Options options, RestoreResults result, byte[] blockbuffer, RestoreHandlerMetadataStorage metadatastorage)
