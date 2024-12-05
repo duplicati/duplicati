@@ -85,7 +85,7 @@ internal record pCloudFolderContent
     /// <summary>
     /// Folder ID if the item is a folder (null otherwise)
     /// </summary>
-    public long? folderid { get; init; }
+    public ulong folderid { get; init; }
 
     /// <summary>
     /// File ID if the item is a file (null otherwise)
