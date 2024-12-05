@@ -1,4 +1,4 @@
-﻿using Duplicati.Library.Interface;
+using Duplicati.Library.Interface;
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
@@ -536,6 +536,7 @@ namespace Duplicati.UnitTest
             });
 
             DeterministicErrorBackend.ErrorGenerator = null;
+            target = "file://" + TARGETFOLDER;
             testopts["full-remote-verification"] = "true";
             testopts["full-block-verification"] = "true";
             using (var c = new Library.Main.Controller(target, testopts, null))
