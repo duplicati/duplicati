@@ -107,11 +107,11 @@ namespace Duplicati.Library.Modules.Builtin
         /// <summary>
         /// The option used to accept a specific SSL certificate hash
         /// </summary>
-        private const string OPTION_ACCEPT_SPECIFIED_CERTIFICATE = "accept-specified-ssl-hash"; 
+        private const string OPTION_ACCEPT_SPECIFIED_CERTIFICATE = "send-http-accept-specified-ssl-hash"; 
         /// <summary>
         /// The option used to accept any SSL certificate
         /// </summary>
-        private const string OPTION_ACCEPT_ANY_CERTIFICATE = "accept-any-ssl-certificate"; 
+        private const string OPTION_ACCEPT_ANY_CERTIFICATE = "send-http-accept-any-ssl-certificate"; 
         
         #endregion
 
