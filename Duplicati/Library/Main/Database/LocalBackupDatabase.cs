@@ -59,7 +59,6 @@ namespace Duplicati.Library.Main.Database
         private readonly System.Data.IDbCommand m_selectfilemetadatahashandsizeCommand;
         private readonly System.Data.IDbCommand m_getfirstfilesetwithblockinblockset;
 
-        private Dictionary<string, long> m_blockCache;
         private HashSet<string> m_blocklistHashes;
 
         private long m_filesetId;
@@ -263,17 +262,6 @@ SELECT ""BlocklistHash"".""BlocksetID"" FROM ""BlocklistHash"" WHERE ""Blocklist
         /// <returns>True if the block should be added to the current output</returns>
         public bool AddBlock(string key, long size, long volumeid, System.Data.IDbTransaction transaction = null)
         {
-            long exsize;
-
-            if (m_blockCache != null && m_blockCache.TryGetValue(key, out exsize))
-            {
-                if (exsize == size)
-                    return false;
-
-                Logging.Log.WriteWarningMessage(LOGTAG, "HashCollisionsFound", null, "Found hash collision on {0}, sizes {1} vs {2}. Disabling cache from now on.", key, size, exsize);
-                m_blockCache = null;
-            }
-
             m_findblockCommand.Transaction = transaction;
             m_findblockCommand.SetParameterValue(0, key);
             m_findblockCommand.SetParameterValue(1, size);
@@ -286,8 +274,6 @@ SELECT ""BlocklistHash"".""BlocksetID"" FROM ""BlocklistHash"" WHERE ""Blocklist
                 m_insertblockCommand.SetParameterValue(1, volumeid);
                 m_insertblockCommand.SetParameterValue(2, size);
                 m_insertblockCommand.ExecuteScalarInt64(m_logQueries);
-                if (m_blockCache != null)
-                    m_blockCache.Add(key, size);
                 return true;
             }
             else

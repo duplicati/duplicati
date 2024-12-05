@@ -22,6 +22,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net;
 using Duplicati.Library.Interface;
 using Duplicati.Library.RestAPI;
@@ -148,7 +149,7 @@ namespace Duplicati.GUI.TrayIcon
                 }.Uri;
 
                 if (Server.Program.DataConnection.ApplicationSettings.UseHTTPS && string.IsNullOrWhiteSpace(acceptedHostCertificate))
-                    acceptedHostCertificate = Server.Program.DataConnection.ApplicationSettings.ServerSSLCertificate.GetCertHashString();
+                    acceptedHostCertificate = Server.Program.DataConnection.ApplicationSettings.ServerSSLCertificate?.FirstOrDefault(x => x.HasPrivateKey)?.GetCertHashString();
 
             }
             else if (Library.Utility.Utility.ParseBoolOption(options, READCONFIGFROMDB_OPTION))
@@ -162,7 +163,7 @@ namespace Duplicati.GUI.TrayIcon
                     {
                         disableTrayIconLogin = databaseConnection.ApplicationSettings.DisableTrayIconLogin;
                         if (databaseConnection.ApplicationSettings.UseHTTPS && string.IsNullOrWhiteSpace(acceptedHostCertificate))
-                            acceptedHostCertificate = databaseConnection.ApplicationSettings.ServerSSLCertificate.GetCertHashString();
+                            acceptedHostCertificate = databaseConnection.ApplicationSettings.ServerSSLCertificate?.FirstOrDefault(x => x.HasPrivateKey)?.GetCertHashString();
 
                         var scheme = databaseConnection.ApplicationSettings.UseHTTPS ? "https" : "http";
                         serverURL = new UriBuilder(serverURL)

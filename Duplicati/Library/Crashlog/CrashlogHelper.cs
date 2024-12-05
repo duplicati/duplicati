@@ -26,6 +26,27 @@ public static class CrashlogHelper
     public static string DefaultLogDir { get; set; } = SystemTempPath;
 
     /// <summary>
+    /// Event to subscribe to for unobserved task exceptions
+    /// </summary>
+    public static event Action<Exception>? OnUnobservedTaskException;
+
+    /// <summary>
+    /// Handler for unobserved task exceptions
+    /// </summary>
+    /// <param name="sender">Unused sender</param>
+    /// <param name="e">The exception event args</param>
+    private static void TaskSchedulerOnUnobservedTaskException(object? sender, UnobservedTaskExceptionEventArgs e)
+    {
+        try
+        {
+            OnUnobservedTaskException?.Invoke(e.Exception);
+        }
+        catch
+        {
+        }
+    }
+
+    /// <summary>
     /// Wraps a method in a try-catch block and logs any exceptions to a file
     /// </summary>
     /// <typeparam name="T">The return type of the method</typeparam>
@@ -37,12 +58,17 @@ public static class CrashlogHelper
     {
         try
         {
+            TaskScheduler.UnobservedTaskException += TaskSchedulerOnUnobservedTaskException;
             return method();
         }
         catch (Exception ex)
         {
             LogCrashException(ex, logdir, applicationName);
             throw;
+        }
+        finally
+        {
+            TaskScheduler.UnobservedTaskException -= TaskSchedulerOnUnobservedTaskException;
         }
     }
 
@@ -58,12 +84,17 @@ public static class CrashlogHelper
     {
         try
         {
+            TaskScheduler.UnobservedTaskException += TaskSchedulerOnUnobservedTaskException;
             return await method().ConfigureAwait(false);
         }
         catch (Exception ex)
         {
             LogCrashException(ex, logdir, applicationName);
             throw;
+        }
+        finally
+        {
+            TaskScheduler.UnobservedTaskException -= TaskSchedulerOnUnobservedTaskException;
         }
     }
 

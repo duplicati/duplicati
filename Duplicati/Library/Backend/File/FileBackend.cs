@@ -81,7 +81,7 @@ namespace Duplicati.Library.Backend
                 paths.AddRange(options[OPTION_ALTERNATE_PATHS].Split(new string[] { System.IO.Path.PathSeparator.ToString() }, StringSplitOptions.RemoveEmptyEntries));
 
                 //On windows we expand the drive letter * to all drives
-                if (!OperatingSystem.IsWindows())
+                if (OperatingSystem.IsWindows())
                 {
                     System.IO.DriveInfo[] drives = System.IO.DriveInfo.GetDrives();
 
@@ -302,9 +302,14 @@ namespace Duplicati.Library.Backend
         private System.IO.DriveInfo GetDrive()
         {
             string root;
-            if (OperatingSystem.IsWindows())
+            if (!OperatingSystem.IsWindows())
             {
                 string path = Util.AppendDirSeparator(systemIO.PathGetFullPath(m_path));
+
+                // If the built-in .NET DriveInfo works, use it
+                try { return new System.IO.DriveInfo(path); }
+                catch { }
+
                 root = "/";
 
                 //Find longest common prefix from mounted devices

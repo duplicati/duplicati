@@ -26,6 +26,7 @@ using Duplicati.Library.Localization.Short;
 using System.IO;
 using Duplicati.Library.Interface;
 using Duplicati.Library.AutoUpdater;
+using Duplicati.Library.Crashlog;
 
 namespace Duplicati.CommandLine
 {
@@ -46,13 +47,18 @@ namespace Duplicati.CommandLine
             FROM_COMMANDLINE = true;
             try
             {
+                CrashlogHelper.OnUnobservedTaskException += LogUnobservedTaskExceptions;
                 return RunCommandLine(Console.Out, Console.Error, c => { }, args);
             }
             finally
             {
                 Library.UsageReporter.Reporter.ShutDown();
+                CrashlogHelper.OnUnobservedTaskException -= LogUnobservedTaskExceptions;
             }
         }
+
+        private static void LogUnobservedTaskExceptions(Exception ex) => Console.Error.WriteLine("UnobservedTaskException: {0}", ex);
+
 
         private static Dictionary<string, Func<TextWriter, Action<Library.Main.Controller>, List<string>, Dictionary<string, string>, Library.Utility.IFilter, int>> CommandMap
         {
