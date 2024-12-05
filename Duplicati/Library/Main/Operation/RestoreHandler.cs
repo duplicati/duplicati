@@ -618,9 +618,13 @@ namespace Duplicati.Library.Main.Operation
                 if (metadata.TryGetValue("CoreSymlinkTarget", out k))
                 {
                     // Check if the target exists, and overwrite it if it does.
-                    if (System.IO.File.Exists(targetpath) || System.IO.Directory.Exists(targetpath))
+                    if (SystemIO.IO_OS.FileExists(targetpath))
                     {
-                        System.IO.File.Delete(targetpath);
+                        SystemIO.IO_OS.FileDelete(targetpath);
+                    }
+                    else if (SystemIO.IO_OS.DirectoryExists(targetpath))
+                    {
+                        SystemIO.IO_OS.DirectoryDelete(targetpath, false);
                     }
                     SystemIO.IO_OS.CreateSymlink(targetpath, k, isDirTarget);
                 }
