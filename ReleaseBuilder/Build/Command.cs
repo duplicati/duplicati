@@ -220,7 +220,7 @@ public static partial class Command
         );
 
         var changelogFileOption = new Option<FileInfo>(
-            name: "--changelog-file",
+            name: "--changelog-news-file",
             description: "The path to the changelog news file. Contents from this file are prepended to the changelog.",
             getDefaultValue: () => new FileInfo(Path.GetFullPath("changelog-news.txt"))
         );
@@ -319,7 +319,7 @@ public static partial class Command
     /// <param name="DisableDockerPush">If the docker push should be disabled</param>
     /// <param name="MacOSAppName">The name of the MacOS app bundle</param>
     /// <param name="DockerRepo">The docker repository to push to</param>
-    /// <param name="ChangelogFile">The path to the changelog file</param>
+    /// <param name="ChangelogNewsFile">The path to the changelog news file</param>
     /// <param name="DisableNotarizeSigning">If notarize signing should be disabled</param>
     /// <param name="DisableGpgSigning">If GPG signing should be disabled</param>
     /// <param name="DisableS3Upload">If S3 upload should be disabled</param>
@@ -342,7 +342,7 @@ public static partial class Command
         bool DisableDockerPush,
         string MacOSAppName,
         string DockerRepo,
-        FileInfo ChangelogFile,
+        FileInfo ChangelogNewsFile,
         bool DisableNotarizeSigning,
         bool DisableGpgSigning,
         bool DisableS3Upload,
@@ -408,28 +408,28 @@ public static partial class Command
         if (!File.Exists(primaryCLI))
             throw new Exception($"Failed to locate project file: {primaryCLI}");
 
-        if (!input.ChangelogFile.Exists)
+        if (!input.ChangelogNewsFile.Exists)
         {
-            Console.WriteLine($"Changelog news file not found: {input.ChangelogFile.FullName}");
+            Console.WriteLine($"Changelog news file not found: {input.ChangelogNewsFile.FullName}");
             Console.WriteLine($"Create an empty file if you want a release without changes");
             if (OperatingSystem.IsWindows())
-                Console.WriteLine($"> type nul > {input.ChangelogFile.FullName}");
+                Console.WriteLine($"> type nul > {input.ChangelogNewsFile.FullName}");
             else
-                Console.WriteLine($"> touch {input.ChangelogFile.FullName}");
+                Console.WriteLine($"> touch {input.ChangelogNewsFile.FullName}");
 
             Program.ReturnCode = 1;
             return;
         }
 
-        if (input.ChangelogFile.LastAccessTimeUtc < DateTime.UtcNow.AddDays(-1))
+        if (input.ChangelogNewsFile.LastAccessTimeUtc < DateTime.UtcNow.AddDays(-1))
         {
-            Console.WriteLine($"Changelog news file was last modified {input.ChangelogFile.LastAccessTimeUtc:yyyy-MM-dd}, indicating a stale file");
+            Console.WriteLine($"Changelog news file was last modified {input.ChangelogNewsFile.LastAccessTimeUtc:yyyy-MM-dd}, indicating a stale file");
             Console.WriteLine($"Please update the file with the changelog news for the release");
             Program.ReturnCode = 1;
             return;
         }
 
-        var changelogNews = File.ReadAllText(input.ChangelogFile.FullName);
+        var changelogNews = File.ReadAllText(input.ChangelogNewsFile.FullName);
 
         var releaseInfo = string.IsNullOrWhiteSpace(input.Version)
             ? ReleaseInfo.Create(input.Channel, Version.Parse(File.ReadAllText(versionFilePath)), 1)
@@ -620,7 +620,7 @@ public static partial class Command
             await GitPush.TagAndPush(baseDir, releaseInfo);
 
             // Contents are added to changelog, so we can remove the file
-            input.ChangelogFile.Delete();
+            input.ChangelogNewsFile.Delete();
         }
 
         // Clean up the source tree
