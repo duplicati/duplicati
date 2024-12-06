@@ -472,6 +472,12 @@ public static partial class Command
                 throw new Exception($"The following packages cannot be built without Docker: {string.Join(", ", unsupportedBuilds.Select(x => x.PackageTargetString))}");
         }
 
+        if (rtcfg.UseGithubUpload && !input.GitStashPush)
+        {
+            Console.WriteLine("Github upload requested, but pushing the tag is disabled");
+            Program.ReturnCode = 1;
+        }
+
         if (!input.KeepBuilds && Directory.Exists(input.BuildPath.FullName))
         {
             Console.WriteLine($"Deleting build folder: {input.BuildPath.FullName}");
@@ -576,6 +582,11 @@ public static partial class Command
             files.Add(sigfile);
         }
 
+        // Ensure the tag is pushed before uploading, so the uploaded files
+        // are associated with the release tag
+        if (input.GitStashPush)
+            await GitPush.TagAndPush(baseDir, releaseInfo);
+
         if (rtcfg.UseS3Upload || rtcfg.UseGithubUpload)
         {
             Console.WriteLine("Build completed, uploading packages ...");
@@ -597,10 +608,18 @@ public static partial class Command
             }
 
             if (rtcfg.UseGithubUpload)
+            {
+                if (!rtcfg.UseS3Upload && input.GitStashPush)
+                {
+                    Console.WriteLine("Waiting for Github to create the release tag ...");
+                    await Task.Delay(TimeSpan.FromSeconds(30));
+                }
+
                 await Upload.UploadToGithub(
                     files.Select(x => new Upload.UploadFile(x, Path.GetFileName(x))),
                     rtcfg
                 );
+            }
         }
 
         if (rtcfg.UseUpdateServerReload)
@@ -617,8 +636,6 @@ public static partial class Command
 
         if (input.GitStashPush)
         {
-            await GitPush.TagAndPush(baseDir, releaseInfo);
-
             // Contents are added to changelog, so we can remove the file
             input.ChangelogNewsFile.Delete();
         }
