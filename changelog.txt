@@ -1,3 +1,31 @@
+2024-12-06 - 2.1.0.101_canary_2024-12-06
+==========
+This release is a canary release intended to be used for testing.
+
+**Note that this build is using .NET8, unlike the 2.0.8.1 build**
+
+## Breaking change from previous canary
+The pCloud backend is updated to support subfolders.
+Paths with `/` will now be treated as a folder structure on pCloud.
+Previous version would treat `folder/subfolder` as a single foldername,
+this version treats it as `folder` / `subfolder`.
+
+## Detailed list of changes:
+- Fixed a case where the TrayIcon would hang in detached mode
+- Improved OpenAPI description for filter groups
+- Fixed an issue with websocket requests through a proxy
+- Updated icons for Linux and dark-mode MacOS
+- Added logging of unobserved exceptions
+- Fixed a compatibility issue with FTP not correctly detecting explicit TLS
+- Fixed an issue where the quota was reported incorrectly
+- Removed the unused `--use-block-cache` option
+- Agent now has a dedicated `register` command
+- Sizes can now be supplied as kikibytes, eg. `20kib`
+- Fixed supporting subfolders in pCloud
+- Added option to send http requests with relaxed TLS security
+- Agent can now be asked to retain the previous UI password
+- Updated SSH.NET to v2024.2.0
+
 2024-11-25 - 2.1.0.100_canary_2024-11-25
 ==========
 This release is a canary release intended to be used for testing.
