@@ -628,10 +628,18 @@ public static partial class Command
             if (Directory.Exists(folder))
                 Directory.Delete(folder, true);
 
-        await ProcessHelper.Execute(new[] {
+        // This often fails and should be fixed
+        try
+        {
+            await ProcessHelper.Execute(new[] {
                 "git", "checkout",
             }.Concat(revertableFiles.Select(x => Path.GetRelativePath(baseDir, x)))
-         , workingDirectory: baseDir);
+             , workingDirectory: baseDir);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Warning: Failed to clean source directory: {ex.Message}");
+        }
 
         Console.WriteLine("All done!");
     }
