@@ -22,7 +22,6 @@
 using CoCoL;
 using Duplicati.Library.Main.Operation.Common;
 using Duplicati.Library.Main.Volumes;
-using Duplicati.Library.Utility;
 using System;
 using System.Threading.Tasks;
 using static Duplicati.Library.Main.Operation.Common.BackendHandler;
@@ -106,8 +105,8 @@ namespace Duplicati.Library.Main.Operation.Backup
                         // even if they are already added as non-blocklist blocks, but filter out duplicates
                         if (indexvolume != null && isMandatoryBlocklistHash)
                         {
-                            // This can cause a race between workers, 
-                            // but the side-effect is that the index files are slightly larger                        
+                            // This can cause a race between workers,
+                            // but the side-effect is that the index files are slightly larger
                             if (newBlock || !await database.IsBlocklistHashKnownAsync(b.HashKey))
                             {
                                 blocklistHashesAdded++;
@@ -163,9 +162,16 @@ namespace Duplicati.Library.Main.Operation.Backup
                     if (ex.IsRetiredException())
                     {
                         // If we have collected data, merge all pending volumes into a single volume
-                        if (blockvolume != null && (blockvolume.SourceSize > 0 || blocklistHashesAdded > 0))
+                        if (blockvolume != null)
                         {
-                            await self.SpillPickup.WriteAsync(new SpillVolumeRequest(blockvolume, indexvolume));
+                            if (blockvolume.SourceSize > 0 || blocklistHashesAdded > 0)
+                            {
+                                await self.SpillPickup.WriteAsync(new SpillVolumeRequest(blockvolume, indexvolume));
+                            }
+                            else
+                            {
+                                await database.RemoveRemoteVolumeAsync(blockvolume.RemoteFilename);
+                            }
                         }
                     }
 
