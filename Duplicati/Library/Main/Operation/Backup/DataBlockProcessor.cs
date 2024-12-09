@@ -35,14 +35,14 @@ namespace Duplicati.Library.Main.Operation.Backup
     /// </summary>
     internal static class DataBlockProcessor
     {
-        public static Task Run(BackupDatabase database, Options options, ITaskReader taskreader)
+        public static Task Run(Channels channels, BackupDatabase database, Options options, ITaskReader taskreader)
         {
             return AutomationExtensions.RunTask(
             new
             {
-                Input = Channels.OutputBlocks.ForRead,
-                Output = Channels.BackendRequest.ForWrite,
-                SpillPickup = Channels.SpillPickup.ForWrite,
+                Input = channels.OutputBlocks.AsRead(),
+                Output = channels.BackendRequest.AsWrite(),
+                SpillPickup = channels.SpillPickup.AsWrite(),
             },
 
             async self =>
