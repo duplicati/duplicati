@@ -91,7 +91,7 @@ namespace Duplicati.Library.Main
         /// <summary>
         /// The default value for the maximum size of the restore cache
         /// </summary>
-        private const long DEFAULT_RESTORE_CACHE_MAX = 8L * 1024L * 1024L * 1024L;
+        private const string DEFAULT_RESTORE_CACHE_MAX = "4gb";
 
         /// <summary>
         /// The default value for the percentage of the restore cache to evict when full
@@ -452,7 +452,7 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("secret-provider-cache", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.SecretProviderCacheShort, Strings.Options.SecretProviderCacheLong, Enum.GetName(SecretProviderHelper.CachingLevel.None), null, Enum.GetNames(typeof(SecretProviderHelper.CachingLevel))),
                     new CommandLineArgument("cpu-intensity", CommandLineArgument.ArgumentType.Integer, Strings.Options.CPUIntensityShort, Strings.Options.CPUIntensityLong, "10", null, ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]),
 
-                    new CommandLineArgument("restore-cache-max", CommandLineArgument.ArgumentType.Size, Strings.Options.RestoreCacheMaxShort, Strings.Options.RestoreCacheMaxLong, "8G"),
+                    new CommandLineArgument("restore-cache-max", CommandLineArgument.ArgumentType.Size, Strings.Options.RestoreCacheMaxShort, Strings.Options.RestoreCacheMaxLong, DEFAULT_RESTORE_CACHE_MAX),
                     new CommandLineArgument("restore-cache-evict", CommandLineArgument.ArgumentType.Integer, Strings.Options.RestoreCacheEvictShort, Strings.Options.RestoreCacheEvictLong, DEFAULT_RESTORE_CACHE_EVICT.ToString()),
                     new CommandLineArgument("restore-file-processors", CommandLineArgument.ArgumentType.Integer, Strings.Options.RestoreFileprocessorsShort, Strings.Options.RestoreFileprocessorsLong, DEFAULT_RESTORE_FILE_PROCESSORS.ToString()),
                     new CommandLineArgument("restore-legacy", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RestoreLegacyShort, Strings.Options.RestoreLegacyLong, "false"),
@@ -2019,20 +2019,21 @@ namespace Duplicati.Library.Main
         }
 
         /// <summary>
-        /// Gets the maximum number of data blocks to keep in the cache
+        /// Gets the maximum number of data blocks to keep in the cache. If set to 0, the cache is disabled.
         /// </summary>
         public long RestoreCacheMax
         {
             get
             {
-                string v;
-                if (!m_options.TryGetValue("restore-cache-max", out v))
-                    v = null;
+                if (!m_options.TryGetValue("restore-cache-max", out string v))
+                    v = DEFAULT_RESTORE_CACHE_MAX;
 
-                if (string.IsNullOrEmpty(v))
-                    return DEFAULT_RESTORE_CACHE_MAX;
-                else
-                    return long.Parse(v);
+                long max_cache = Sizeparser.ParseSize(v, "mb");
+
+                if (max_cache > 0 && max_cache < Blocksize)
+                    throw new ArgumentOutOfRangeException(nameof(max_cache), string.Format("The maximum cache size cannot be less than the blocksize if not explicitly 0: {0} < {1}", max_cache, Blocksize));
+
+                return max_cache;
             }
         }
 
