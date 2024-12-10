@@ -453,7 +453,7 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("cpu-intensity", CommandLineArgument.ArgumentType.Integer, Strings.Options.CPUIntensityShort, Strings.Options.CPUIntensityLong, "10", null, ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]),
 
                     new CommandLineArgument("restore-cache-max", CommandLineArgument.ArgumentType.Size, Strings.Options.RestoreCacheMaxShort, Strings.Options.RestoreCacheMaxLong, "8G"),
-                    new CommandLineArgument("restore-cache-evict", CommandLineArgument.ArgumentType.Decimal, Strings.Options.RestoreCacheEvictShort, Strings.Options.RestoreCacheEvictLong, "0.5"),
+                    new CommandLineArgument("restore-cache-evict", CommandLineArgument.ArgumentType.Integer, Strings.Options.RestoreCacheEvictShort, Strings.Options.RestoreCacheEvictLong, DEFAULT_RESTORE_CACHE_EVICT.ToString()),
                     new CommandLineArgument("restore-file-processors", CommandLineArgument.ArgumentType.Integer, Strings.Options.RestoreFileprocessorsShort, Strings.Options.RestoreFileprocessorsLong, DEFAULT_RESTORE_FILE_PROCESSORS.ToString()),
                     new CommandLineArgument("restore-legacy", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RestoreLegacyShort, Strings.Options.RestoreLegacyLong, "false"),
                     new CommandLineArgument("restore-preallocate-size", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RestorePreallocateSizeShort, Strings.Options.RestorePreallocateSizeLong, "false"),
@@ -2046,25 +2046,25 @@ namespace Duplicati.Library.Main
                 m_options.TryGetValue("restore-cache-evict", out string s);
                 if (string.IsNullOrEmpty(s))
                 {
-                    return DEFAULT_RESTORE_CACHE_EVICT;
+                    return DEFAULT_RESTORE_CACHE_EVICT / 100f;
                 }
 
-                float percentage;
+                int percentage;
                 try
                 {
-                    percentage = float.Parse(s, CultureInfo.InvariantCulture);
+                    percentage = int.Parse(s, CultureInfo.InvariantCulture);
                 }
                 catch (Exception ex)
                 {
-                    throw new ArgumentException("The value provided for the restore-cache-evict option must lie between 0 and 1.0", ex);
+                    throw new ArgumentException("The value provided for the restore-cache-evict option must lie between 0 and 100", ex);
                 }
 
-                if ((percentage < 0.0f) || (percentage > 1.0f))
+                if ((percentage < 0) || (percentage > 100))
                 {
-                    throw new ArgumentOutOfRangeException(nameof(percentage), "The value provided for the restore-cache-evict option must lie between 0 and 1.0");
+                    throw new ArgumentOutOfRangeException(nameof(percentage), "The value provided for the restore-cache-evict option must lie between 0 and 100");
                 }
 
-                return percentage;
+                return percentage / 100f;
             }
         }
 
