@@ -354,7 +354,7 @@ namespace Duplicati.Library.Main.Operation
                     }
                 }
 
-                if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
+                if (!m_result.TaskControl.ProgressRendevouz().Await())
                 {
                     backend.WaitForComplete(database, null);
                     return;
@@ -369,7 +369,7 @@ namespace Duplicati.Library.Main.Operation
                         ScanForExistingSourceBlocks(database, m_options, m_blockbuffer, blockhasher, result, metadatastorage);
                 }
 
-                if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
+                if (!m_result.TaskControl.ProgressRendevouz().Await())
                 {
                     backend.WaitForComplete(database, null);
                     return;
@@ -390,7 +390,7 @@ namespace Duplicati.Library.Main.Operation
                 foreach (var blockvolume in new AsyncDownloader(volumes, backend))
                     try
                     {
-                        if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
+                        if (!m_result.TaskControl.ProgressRendevouz().Await())
                         {
                             backend.WaitForComplete(database, null);
                             return;
@@ -439,7 +439,7 @@ namespace Duplicati.Library.Main.Operation
                 if (!m_options.SkipMetadata)
                     ApplyStoredMetadata(m_options, metadatastorage);
 
-                if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
+                if (!m_result.TaskControl.ProgressRendevouz().Await())
                     return;
 
                 m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_PostRestoreVerify);
@@ -453,7 +453,7 @@ namespace Duplicati.Library.Main.Operation
                         {
                             try
                             {
-                                if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
+                                if (!m_result.TaskControl.ProgressRendevouz().Await())
                                 {
                                     backend.WaitForComplete(database, null);
                                     return;
@@ -586,7 +586,7 @@ namespace Duplicati.Library.Main.Operation
                                     {
                                         foreach (var block in entry.Blocks)
                                         {
-                                            if (result.TaskControlRendevouz() == TaskControlState.Stop)
+                                            if (!result.TaskControl.ProgressRendevouz().Await())
                                                 return;
 
                                             //TODO: Handle metadata
@@ -626,7 +626,7 @@ namespace Duplicati.Library.Main.Operation
                             if ((++updateCount) % 20 == 0)
                             {
                                 blockmarker.UpdateProcessed(result.OperationProgressUpdater);
-                                if (result.TaskControlRendevouz() == TaskControlState.Stop)
+                                if (!result.TaskControl.ProgressRendevouz().Await())
                                     return;
                             }
 
@@ -672,7 +672,7 @@ namespace Duplicati.Library.Main.Operation
                     var patched = false;
                     try
                     {
-                        if (result.TaskControlRendevouz() == TaskControlState.Stop)
+                        if (!result.TaskControl.ProgressRendevouz().Await())
                             return;
 
                         var folderpath = SystemIO.IO_OS.PathGetDirectoryName(targetpath);
@@ -689,7 +689,7 @@ namespace Duplicati.Library.Main.Operation
                                 {
                                     try
                                     {
-                                        if (result.TaskControlRendevouz() == TaskControlState.Stop)
+                                        if (!result.TaskControl.ProgressRendevouz().Await())
                                             return;
 
                                         if (SystemIO.IO_OS.FileExists(source.Path))
@@ -819,7 +819,7 @@ namespace Duplicati.Library.Main.Operation
             {
                 try
                 {
-                    if (result.TaskControlRendevouz() == TaskControlState.Stop)
+                    if (!result.TaskControl.ProgressRendevouz().Await())
                         return;
 
                     if (!SystemIO.IO_OS.DirectoryExists(folder))
@@ -860,7 +860,7 @@ namespace Duplicati.Library.Main.Operation
                     {
                         try
                         {
-                            if (result.TaskControlRendevouz() == TaskControlState.Stop)
+                            if (!result.TaskControl.ProgressRendevouz().Await())
                                 return;
 
                             var currentfilelength = SystemIO.IO_OS.FileLength(targetpath);
@@ -977,7 +977,7 @@ namespace Duplicati.Library.Main.Operation
                             if ((++updateCount) % 20 == 0)
                             {
                                 blockmarker.UpdateProcessed(result.OperationProgressUpdater);
-                                if (result.TaskControlRendevouz() == TaskControlState.Stop)
+                                if (!result.TaskControl.ProgressRendevouz().Await())
                                     return;
                             }
                         }

@@ -24,6 +24,7 @@ using System.Linq;
 using System.Collections.Generic;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main.Database;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Main.Operation
 {
@@ -124,7 +125,7 @@ namespace Duplicati.Library.Main.Operation
 
                 foreach (var f in lst)
                 {
-                    if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
+                    if (!m_result.TaskControl.ProgressRendevouz().Await())
                     {
                         backend.WaitForComplete(db, transaction);
                         return;

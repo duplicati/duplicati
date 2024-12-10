@@ -31,6 +31,7 @@ using System.Threading;
 using System.Net;
 using Duplicati.Library.Interface;
 using System.Threading.Tasks;
+using Duplicati.Library.Main.Operation.Common;
 
 namespace Duplicati.Library.Main
 {
@@ -377,7 +378,7 @@ namespace Duplicati.Library.Main
         private readonly string m_backendurl;
         private readonly IBackendWriter m_statwriter;
         private System.Threading.Thread m_thread;
-        private readonly BasicResults m_taskControl;
+        private readonly ITaskReader m_taskReader;
         private readonly DatabaseCollector m_db;
 
         // Cache these
@@ -392,7 +393,7 @@ namespace Duplicati.Library.Main
             m_options = options;
             m_backendurl = backendurl;
             m_statwriter = statwriter;
-            m_taskControl = statwriter as BasicResults;
+            m_taskReader = (statwriter as BasicResults).TaskControl;
             m_numberofretries = options.NumberOfRetries;
             m_retrydelay = options.RetryDelay;
             m_retrywithexponentialbackoff = options.RetryWithExponentialBackoff;
@@ -418,12 +419,6 @@ namespace Duplicati.Library.Main
                     throw new Duplicati.Library.Interface.UserInformationException(string.Format("Encryption method not supported: {0}", m_options.EncryptionModule), "EncryptionMethodNotSupported");
             }
 
-            if (m_taskControl != null)
-                m_taskControl.StateChangedEvent += (state) =>
-                {
-                    if (state == TaskControlState.Abort)
-                        m_thread.Interrupt();
-                };
             m_queue = new BlockingQueue<FileEntryItem>(options.SynchronousUpload ? 1 : (options.AsynchronousUploadLimit == 0 ? int.MaxValue : options.AsynchronousUploadLimit));
             m_thread = new System.Threading.Thread(this.ThreadRun);
             m_thread.Name = "Backend Async Worker";
@@ -460,8 +455,7 @@ namespace Duplicati.Library.Main
                     {
                         try
                         {
-                            if (m_taskControl != null)
-                                m_taskControl.TaskControlRendevouz();
+                            m_taskReader?.ProgressRendevouz().Await();
 
                             if (m_options.NoConnectionReuse && m_backend != null)
                             {
@@ -574,7 +568,7 @@ namespace Duplicati.Library.Main
 
                                     while (target > DateTime.Now)
                                     {
-                                        if (m_taskControl != null && m_taskControl.IsAbortRequested())
+                                        if (m_taskReader?.ProgressState == State.Terminated)
                                             break;
 
                                         System.Threading.Thread.Sleep(500);
@@ -681,10 +675,11 @@ namespace Duplicati.Library.Main
 
         private void HandleProgress(ThrottledStream ts, long pg)
         {
-            // TODO: Should we pause here as well?
-            // It might give annoying timeouts for transfers
-            if (m_taskControl != null)
-                m_taskControl.TaskControlRendevouz();
+            if (m_taskReader != null)
+            {
+                if (!m_taskReader.TransferRendevouz().Await())
+                    throw new TaskCanceledException();
+            }
 
             // Update the throttle speeds if they have changed
             string tmp;

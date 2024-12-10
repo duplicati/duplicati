@@ -53,7 +53,7 @@ namespace Duplicati.Library.Main.Operation
                 var source = Backup.FileEnumerationProcess.Run(channels, sources, snapshot, null,
                     m_options.FileAttributeFilter, sourcefilter, filter, m_options.SymlinkPolicy,
                     m_options.HardlinkPolicy, m_options.ExcludeEmptyFolders, m_options.IgnoreFilenames,
-                    BackupHandler.GetBlacklistedPaths(m_options), null, m_result.TaskReader, token);
+                    BackupHandler.GetBlacklistedPaths(m_options), null, m_result.TaskControl, token);
 
                 var sink = CoCoL.AutomationExtensions.RunTask(new
                     {
