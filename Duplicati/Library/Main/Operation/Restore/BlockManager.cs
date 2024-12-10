@@ -78,6 +78,10 @@ namespace Duplicati.Library.Main.Operation.Restore
             /// </summary>
             private int readers = 0;
             /// <summary>
+            /// Internal stopwatch for profiling the cache eviction.
+            /// </summary>
+            private readonly Stopwatch sw_cacheevict;
+            /// <summary>
             /// Internal stopwatch for profiling the `CheckCounts` method.
             /// </summary>
             private readonly Stopwatch sw_checkcounts;
@@ -108,9 +112,13 @@ namespace Duplicati.Library.Main.Operation.Restore
             {
                 m_options = options;
                 m_volume_request = volume_request;
-                var cache_options = new MemoryCacheOptions();
-                m_block_cache = new MemoryCache(cache_options);
+                if (m_options.RestoreCacheMax > 0)
+                {
+                    var cache_options = new MemoryCacheOptions();
+                    m_block_cache = new MemoryCache(cache_options);
+                }
                 this.readers = readers;
+                sw_cacheevict = options.InternalProfiling ? new () : null;
                 sw_checkcounts = options.InternalProfiling ? new () : null;
                 sw_get_wait = options.InternalProfiling ? new () : null;
 
@@ -147,7 +155,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                     {
                         // Evict the block from the cache and check if the volume is no longer needed.
                         m_blockcount.Remove(blockRequest.BlockID);
-                        m_block_cache.Remove(blockRequest.BlockID);
+                        m_block_cache?.Remove(blockRequest.BlockID);
                     }
                     else // block_count < 0
                     {
@@ -184,7 +192,7 @@ namespace Duplicati.Library.Main.Operation.Restore
             public Task<byte[]> Get(BlockRequest block_request)
             {
                 // Check if the block is already in the cache, and return it if it is.
-                if (m_block_cache.TryGetValue(block_request.BlockID, out byte[] value))
+                if (m_block_cache != null && m_block_cache.TryGetValue(block_request.BlockID, out byte[] value))
                 {
                     CheckCounts(block_request);
                     return Task.FromResult(value);
@@ -219,13 +227,20 @@ namespace Duplicati.Library.Main.Operation.Restore
             /// <param name="value"></param>
             public void Set(BlockRequest blockRequest, byte[] value)
             {
-                m_block_cache.Set(blockRequest.BlockID, value);
+                m_block_cache?.Set(blockRequest.BlockID, value);
 
                 // Notify any waiters that the block is available.
                 if (m_waiters.TryRemove(blockRequest.BlockID, out var tcs))
                 {
                     tcs.SetResult(value);
                 }
+
+                sw_cacheevict?.Start();
+                if (m_block_cache?.Count * m_options.Blocksize > m_options.RestoreCacheMax)
+                {
+                    m_block_cache?.Compact(m_options.RestoreCacheEvict);
+                }
+                sw_cacheevict?.Stop();
             }
 
             /// <summary>
@@ -267,7 +282,7 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                 if (m_options.InternalProfiling)
                 {
-                    Logging.Log.WriteProfilingMessage(LOGTAG, "InternalTimings", null, $"Sleepable dictionary - CheckCounts: {sw_checkcounts.ElapsedMilliseconds}ms, Get wait: {sw_get_wait.ElapsedMilliseconds}ms");
+                    Logging.Log.WriteProfilingMessage(LOGTAG, "InternalTimings", null, $"Sleepable dictionary - CheckCounts: {sw_checkcounts.ElapsedMilliseconds}ms, Get wait: {sw_get_wait.ElapsedMilliseconds}ms, Cache evict: {sw_cacheevict.ElapsedMilliseconds}ms");
                 }
             }
 
