@@ -42,13 +42,13 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// Runs the volume decryptor process.
         /// </summary>
         /// <param name="options">The restore options.</param>
-        public static Task Run(Options options)
+        public static Task Run(Channels channels, Options options)
         {
             return AutomationExtensions.RunTask(
             new
             {
-                Input = Channels.DecryptRequest.ForRead,
-                Output = Channels.DecryptedVolume.ForWrite
+                Input = channels.DecryptRequest.AsRead(),
+                Output = channels.VolumeRequestResponse.AsWrite()
             },
             async self =>
             {

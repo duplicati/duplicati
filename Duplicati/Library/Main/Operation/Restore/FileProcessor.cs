@@ -58,12 +58,12 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// <param name="block_response">The channel to receive blocks from the block manager.</param>
         /// <param name="options">The restore options.</param>
         /// <param name="results">The restore results.</param>
-        public static Task Run(LocalRestoreDatabase db, IChannel<BlockRequest> block_request, IChannel<byte[]> block_response, Options options, RestoreResults results)
+        public static Task Run(Channels channels, LocalRestoreDatabase db, IChannel<BlockRequest> block_request, IChannel<byte[]> block_response, Options options, RestoreResults results)
         {
             return AutomationExtensions.RunTask(
             new
             {
-                Input = Channels.FilesToRestore.ForRead,
+                Input = channels.FilesToRestore.AsRead()
             },
             async self =>
             {

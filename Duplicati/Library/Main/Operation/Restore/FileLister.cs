@@ -46,12 +46,12 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// <param name="db">The restore database, which is queried for the file list.</param>
         /// <param name="options">The restore options</param>
         /// <param name="result">The restore results</param>
-        public static Task Run(LocalRestoreDatabase db, Options options, RestoreResults result)
+        public static Task Run(Channels channels, LocalRestoreDatabase db, Options options, RestoreResults result)
         {
             return AutomationExtensions.RunTask(
             new
             {
-                Output = Channels.FilesToRestore.ForWrite
+                Output = channels.FilesToRestore.AsWrite()
             },
             async self =>
             {

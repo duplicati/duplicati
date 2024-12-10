@@ -334,13 +334,14 @@ namespace Duplicati.Library.Main.Operation
                 var fileprocessor_responses = new Channel<byte[]>[m_options.RestoreFileProcessors].Select(_ => ChannelManager.CreateChannel<byte[]>(buffersize:Restore.Channels.BufferSize)).ToArray();
 
                 // Create the process network
-                var filelister = Restore.FileLister.Run(database, m_options, m_result);
-                var fileprocessors = Enumerable.Range(0, m_options.RestoreFileProcessors).Select(i => Restore.FileProcessor.Run(database, fileprocessor_requests[i], fileprocessor_responses[i], m_options, m_result)).ToArray();
-                var blockmanager = Restore.BlockManager.Run(database, m_options, fileprocessor_requests, fileprocessor_responses);
-                var volumecache = Restore.VolumeManager.Run(database, backend, m_options, m_result);
-                var volumedownloaders = Enumerable.Range(0, m_options.RestoreVolumeDownloaders).Select(i => Restore.VolumeDownloader.Run(m_options, m_result)).ToArray();
-                var volumedecryptors = Enumerable.Range(0, m_options.RestoreVolumeDecryptors).Select(i => Restore.VolumeDecryptor.Run(m_options)).ToArray();
-                var volumedecompressors = Enumerable.Range(0, m_options.RestoreVolumeDecompressors).Select(i => Restore.VolumeDecompressor.Run(m_options)).ToArray();
+                Restore.Channels channels = new ();
+                var filelister = Restore.FileLister.Run(channels, database, m_options, m_result);
+                var fileprocessors = Enumerable.Range(0, m_options.RestoreFileProcessors).Select(i => Restore.FileProcessor.Run(channels, database, fileprocessor_requests[i], fileprocessor_responses[i], m_options, m_result)).ToArray();
+                var blockmanager = Restore.BlockManager.Run(channels, database, m_options, fileprocessor_requests, fileprocessor_responses);
+                var volumecache = Restore.VolumeManager.Run(channels, database, backend, m_options, m_result);
+                var volumedownloaders = Enumerable.Range(0, m_options.RestoreVolumeDownloaders).Select(i => Restore.VolumeDownloader.Run(channels, m_options, m_result)).ToArray();
+                var volumedecryptors = Enumerable.Range(0, m_options.RestoreVolumeDecryptors).Select(i => Restore.VolumeDecryptor.Run(channels, m_options)).ToArray();
+                var volumedecompressors = Enumerable.Range(0, m_options.RestoreVolumeDecompressors).Select(i => Restore.VolumeDecompressor.Run(channels, m_options)).ToArray();
 
                 // Wait for the network to complete
                 Task[] all =

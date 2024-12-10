@@ -42,13 +42,13 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// Runs the volume decompressor process.
         /// </summary>
         /// <param name="options">The restore options</param>
-        public static Task Run(Options options)
+        public static Task Run(Channels channels, Options options)
         {
             return AutomationExtensions.RunTask(
             new
             {
-                Input = Channels.DecompressionRequest.ForRead,
-                Output = Channels.DecompressedBlock.ForWrite
+                Input = channels.DecompressionRequest.AsRead(),
+                Output = channels.DecompressedBlock.AsWrite()
             },
             async self =>
             {

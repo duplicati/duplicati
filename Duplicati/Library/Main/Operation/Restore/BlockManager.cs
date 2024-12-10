@@ -296,13 +296,13 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// <param name="options">The restore options.</param>
         /// <param name="fp_requests">The channels for reading block requests from the `FileProcessor`.</param>
         /// <param name="fp_responses">The channels for writing block responses back to the `FileProcessor`.</param>
-        public static Task Run(LocalRestoreDatabase db, Options options, IChannel<BlockRequest>[] fp_requests, IChannel<byte[]>[] fp_responses)
+        public static Task Run(Channels channels, LocalRestoreDatabase db, Options options, IChannel<BlockRequest>[] fp_requests, IChannel<byte[]>[] fp_responses)
         {
             return AutomationExtensions.RunTask(
             new
             {
-                Input = Channels.DecompressedBlock.ForRead,
-                Output = Channels.BlockFetch.ForWrite
+                Input = channels.DecompressedBlock.AsRead(),
+                Output = channels.VolumeRequestResponse.AsWrite()
             },
             async self =>
             {

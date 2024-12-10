@@ -43,13 +43,13 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// </summary>
         /// <param name="options">The restore options.</param>
         /// <param name="results">The restore results.</param>
-        public static Task Run(Options options, RestoreResults results)
+        public static Task Run(Channels channels, Options options, RestoreResults results)
         {
             return AutomationExtensions.RunTask(
             new
             {
-                Input = Channels.DownloadRequest.ForRead,
-                Output = Channels.DecryptRequest.ForWrite
+                Input = channels.DownloadRequest.AsRead(),
+                Output = channels.DecryptRequest.AsWrite()
             },
             async self =>
             {
