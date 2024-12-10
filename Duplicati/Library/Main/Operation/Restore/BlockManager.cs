@@ -141,6 +141,9 @@ namespace Duplicati.Library.Main.Operation.Restore
             /// <param name="decrement"></param>
             public void CheckCounts(BlockRequest blockRequest)
             {
+                long error_block_id = -1;
+                long error_volume_id = -1;
+
                 lock (m_blockcount)
                 {
                     sw_checkcounts?.Start();
@@ -159,7 +162,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                     }
                     else // block_count < 0
                     {
-                        Logging.Log.WriteWarningMessage(LOGTAG, "BlockCountError", null, $"Block {blockRequest.BlockID} has a count below 0");
+                        error_block_id = blockRequest.BlockID;
                     }
 
                     var vol_count = m_volumecount.TryGetValue(blockRequest.VolumeID, out var vc) ? vc-1 : 0;
@@ -176,9 +179,19 @@ namespace Duplicati.Library.Main.Operation.Restore
                     }
                     else // vol_count < 0
                     {
-                        Logging.Log.WriteWarningMessage(LOGTAG, "VolumeCountError", null, $"Volume {blockRequest.VolumeID} has a count below 0");
+                        error_volume_id = blockRequest.VolumeID;
                     }
                     sw_checkcounts?.Stop();
+                }
+
+                if (error_block_id != -1)
+                {
+                    Logging.Log.WriteWarningMessage(LOGTAG, "BlockCountError", null, $"Block {blockRequest.BlockID} has a count below 0");
+                }
+
+                if (error_volume_id != -1)
+                {
+                    Logging.Log.WriteWarningMessage(LOGTAG, "VolumeCountError", null, $"Volume {blockRequest.VolumeID} has a count below 0");
                 }
             }
 
