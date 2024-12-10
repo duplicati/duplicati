@@ -35,7 +35,7 @@ namespace Duplicati.Server
             Duplicati.Server.Serialization.Interface.IBackup Backup { get; }
             IDictionary<string, string> ExtraOptions { get; }
             string[] FilterStrings { get; }
-            void Stop(bool allowCurrentFileToFinish);
+            void Stop();
             void Abort();
             void Pause();
             void Resume();
@@ -62,32 +62,24 @@ namespace Duplicati.Server
                 Controller = controller;
             }
 
-            public void Stop(bool allowCurrentFileToFinish)
+            public void Stop()
             {
-                var c = Controller;
-                if (c != null)
-                    c.Stop(allowCurrentFileToFinish);
+                Controller?.Stop();
             }
 
             public void Abort()
             {
-                var c = Controller;
-                if (c != null)
-                    c.Abort();
+                Controller?.Abort();
             }
 
             public void Pause()
             {
-                var c = Controller;
-                if (c != null)
-                    c.Pause();
+                Controller?.Pause();
             }
 
             public void Resume()
             {
-                var c = Controller;
-                if (c != null)
-                    c.Resume();
+                Controller?.Resume();
             }
 
             public long OriginalUploadSpeed { get; set; }

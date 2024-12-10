@@ -76,11 +76,6 @@ namespace Duplicati.Library.Main
         private ControllerMultiLogTarget m_logTarget;
 
         /// <summary>
-        /// The cancellation token for the running task
-        /// </summary>
-        private readonly CancellationTokenSource m_cancellationTokenSource = new CancellationTokenSource();
-
-        /// <summary>
         /// Constructs a new interface for performing backup and restore operations
         /// </summary>
         /// <param name="backend">The url for the backend to use</param>
@@ -127,7 +122,7 @@ namespace Duplicati.Library.Main
 
                 using (var h = new Operation.BackupHandler(m_backend, m_options, result))
                 {
-                    h.Run(ExpandInputSources(inputsources, filter), filter, m_cancellationTokenSource.Token);
+                    h.RunAsync(ExpandInputSources(inputsources, filter), filter).Await();
                 }
 
                 Library.UsageReporter.Reporter.Report("BACKUP_FILECOUNT", result.ExaminedFiles);
@@ -327,7 +322,7 @@ namespace Duplicati.Library.Main
             {
                 return RunAction(new TestFilterResults(), ref paths, ref filter, (result) =>
                 {
-                    new Operation.TestFilterHandler(m_options, result).Run(ExpandInputSources(paths, filter), filter, m_cancellationTokenSource.Token);
+                    new Operation.TestFilterHandler(m_options, result).RunAsync(ExpandInputSources(paths, filter), filter).Await();
                 });
             }
         }
@@ -1146,15 +1141,14 @@ namespace Duplicati.Library.Main
                 ct.Resume();
         }
 
-        public void Stop(bool allowCurrentFileToFinish)
+        public void Stop()
         {
             var ct = m_currentTaskControl;
             if (ct == null)
                 return;
 
             Logging.Log.WriteVerboseMessage(LOGTAG, "CancellationRequested", "Cancellation Requested");
-            m_cancellationTokenSource.Cancel();
-            ct.Stop(allowCurrentFileToFinish);
+            ct.Stop();
         }
 
         public void Abort()

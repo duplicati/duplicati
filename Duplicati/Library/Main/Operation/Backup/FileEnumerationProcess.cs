@@ -120,15 +120,9 @@ namespace Duplicati.Library.Main.Operation.Backup
                     // Process each path, and dequeue the mixins with symlinks as we go
                     foreach (var s in source)
                     {
-                        if (token.IsCancellationRequested)
-                        {
-                            break;
-                        }
-
-                        if (!await taskreader.ProgressAsync)
-                        {
+                        // Stop if requested
+                        if (token.IsCancellationRequested || !await taskreader.ProgressRendevouz().ConfigureAwait(false))
                             return;
-                        }
 
                         await self.Output.WriteAsync(s);
                     }

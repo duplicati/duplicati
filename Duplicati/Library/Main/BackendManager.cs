@@ -568,7 +568,7 @@ namespace Duplicati.Library.Main
 
                                     while (target > DateTime.Now)
                                     {
-                                        if (m_taskReader?.ProgressState == State.Terminated)
+                                        if (m_taskReader?.ProgressToken.IsCancellationRequested ?? false)
                                             break;
 
                                         System.Threading.Thread.Sleep(500);
@@ -675,11 +675,7 @@ namespace Duplicati.Library.Main
 
         private void HandleProgress(ThrottledStream ts, long pg)
         {
-            if (m_taskReader != null)
-            {
-                if (!m_taskReader.TransferRendevouz().Await())
-                    throw new TaskCanceledException();
-            }
+            m_taskReader?.ProgressToken.ThrowIfCancellationRequested();
 
             // Update the throttle speeds if they have changed
             string tmp;

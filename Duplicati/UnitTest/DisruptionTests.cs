@@ -100,7 +100,7 @@ namespace Duplicati.UnitTest
             if (backupTask.IsCompleted)
                 throw new Exception("Backup task completed before we could stop it");
 
-            controller.Stop(true);
+            controller.Stop();
             return await backupTask.ConfigureAwait(false);
         }
 
@@ -658,7 +658,7 @@ namespace Duplicati.UnitTest
                 Assert.AreEqual(BackupType.FULL_BACKUP, filesets[0].IsFullBackup);
             }
 
-            // Interrupt a backup with "stop now".
+            // Interrupt a backup with "abort".
             this.ModifySourceFiles();
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
@@ -669,8 +669,14 @@ namespace Duplicati.UnitTest
                 // with the Controller. Otherwise, the call to Stop will simply be a no-op.
                 Thread.Sleep(1000);
 
-                c.Stop(false);
-                await backupTask.ConfigureAwait(false);
+                c.Abort();
+                try
+                {
+                    await backupTask.ConfigureAwait(false);
+                }
+                catch (TaskCanceledException)
+                {
+                }
             }
 
             // The next backup should proceed without issues.
