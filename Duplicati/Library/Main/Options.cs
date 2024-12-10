@@ -74,6 +74,11 @@ namespace Duplicati.Library.Main
         private const string DEFAULT_LOG_RETENTION = "30D";
 
         /// <summary>
+        /// The default activity timeout
+        /// </summary>
+        private const string DEFAULT_READ_WRITE_TIMEOUT = "30s";
+
+        /// <summary>
         /// The default number of compressor instances
         /// </summary>
         private readonly int DEFAULT_COMPRESSORS = Math.Max(1, Environment.ProcessorCount / 2);
@@ -325,6 +330,7 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("asynchronous-upload-folder", CommandLineArgument.ArgumentType.Path, Strings.Options.AsynchronousuploadfolderShort, Strings.Options.AsynchronousuploadfolderLong, System.IO.Path.GetTempPath()),
 
                     new CommandLineArgument("disable-streaming-transfers", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisableStreamingShort, Strings.Options.DisableStreamingLong, "false"),
+                    new CommandLineArgument("read-write-timeout", CommandLineArgument.ArgumentType.Timespan, Strings.Options.ReadWriteTimeoutShort, Strings.Options.ReadWriteTimeoutLong, DEFAULT_READ_WRITE_TIMEOUT),
 
                     new CommandLineArgument("throttle-upload", CommandLineArgument.ArgumentType.Size, Strings.Options.ThrottleuploadShort, Strings.Options.ThrottleuploadLong, "0kb"),
                     new CommandLineArgument("throttle-download", CommandLineArgument.ArgumentType.Size, Strings.Options.ThrottledownloadShort, Strings.Options.ThrottledownloadLong, "0kb"),
@@ -866,6 +872,26 @@ namespace Duplicati.Library.Main
         /// A value indicating if use of the streaming interface is disallowed
         /// </summary>
         public bool DisableStreamingTransfers { get { return GetBool("disable-streaming-transfers"); } }
+
+        /// <summary>
+        /// The maximum time to allow inactivity before a connection is closed.
+        /// Returns -1 if disabled.
+        /// </summary>
+        public int ReadWriteTimeout
+        {
+            get
+            {
+                var v = m_options.GetValueOrDefault("read-write-timeout");
+                if (string.IsNullOrWhiteSpace(v))
+                    v = DEFAULT_READ_WRITE_TIMEOUT;
+
+                var res = Library.Utility.Timeparser.ParseTimeSpan(DEFAULT_READ_WRITE_TIMEOUT);
+                if (res.Ticks <= 0)
+                    return -1;
+
+                return (int)res.TotalMilliseconds;
+            }
+        }
 
         /// <summary>
         /// Gets the delay period to retry uploads
