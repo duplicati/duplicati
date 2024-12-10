@@ -21,8 +21,10 @@
 
 using System;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading.Tasks;
 using CoCoL;
+using Duplicati.Library.Main.Database;
 using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Main.Operation.Restore
@@ -43,7 +45,7 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// </summary>
         /// <param name="options">The restore options.</param>
         /// <param name="results">The restore results.</param>
-        public static Task Run(Channels channels, Options options, RestoreResults results)
+        public static Task Run(Channels channels, LocalRestoreDatabase db, Options options, RestoreResults results)
         {
             return AutomationExtensions.RunTask(
             new
@@ -75,9 +77,10 @@ namespace Duplicati.Library.Main.Operation.Restore
                         }
                         catch (Exception)
                         {
+                            var (volume_name, _, _) = db.GetVolumeInfo(volume_id).First();
                             lock (results)
                             {
-                                results.BrokenRemoteFiles.Add(volume_id);
+                                results.BrokenRemoteFiles.Add(volume_name);
                             }
                             throw;
                         }

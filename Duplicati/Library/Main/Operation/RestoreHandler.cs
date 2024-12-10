@@ -344,7 +344,7 @@ namespace Duplicati.Library.Main.Operation
                 var fileprocessors = Enumerable.Range(0, m_options.RestoreFileProcessors).Select(i => Restore.FileProcessor.Run(channels, database, fileprocessor_requests[i], fileprocessor_responses[i], m_options, m_result)).ToArray();
                 var blockmanager = Restore.BlockManager.Run(channels, database, m_options, fileprocessor_requests, fileprocessor_responses);
                 var volumecache = Restore.VolumeManager.Run(channels, database, backend, m_options, m_result);
-                var volumedownloaders = Enumerable.Range(0, m_options.RestoreVolumeDownloaders).Select(i => Restore.VolumeDownloader.Run(channels, m_options, m_result)).ToArray();
+                var volumedownloaders = Enumerable.Range(0, m_options.RestoreVolumeDownloaders).Select(i => Restore.VolumeDownloader.Run(channels, database, m_options, m_result)).ToArray();
                 var volumedecryptors = Enumerable.Range(0, m_options.RestoreVolumeDecryptors).Select(i => Restore.VolumeDecryptor.Run(channels, m_options)).ToArray();
                 var volumedecompressors = Enumerable.Range(0, m_options.RestoreVolumeDecompressors).Select(i => Restore.VolumeDecompressor.Run(channels, m_options)).ToArray();
 
@@ -383,12 +383,18 @@ namespace Duplicati.Library.Main.Operation
             if (m_result.BrokenRemoteFiles.Count > 0 || m_result.BrokenLocalFiles.Count > 0)
             {
                 var nl = Environment.NewLine;
-                string remoteMessage = m_result.BrokenRemoteFiles.Count > 0 ? $"Failed to download {m_result.BrokenRemoteFiles.Count} remote files." : string.Empty;
-                string remoteList = m_result.BrokenRemoteFiles.Count > 0 ? $"The following remote files failed to download, which may be the cause:{nl}{string.Join(nl, m_result.BrokenRemoteFiles)}{nl}" : string.Empty;
-                string localMessage = m_result.BrokenLocalFiles.Count > 0 ? $"Failed to restore {m_result.BrokenLocalFiles.Count} local files." : string.Empty;
-                string localList = m_result.BrokenLocalFiles.Count > 0 ? $"The following local files failed to restore:{nl}{string.Join(nl, m_result.BrokenLocalFiles)}{nl}" : string.Empty;
+                int maxN = 10;
+                long remoteFirstN = Math.Min(maxN, m_result.BrokenRemoteFiles.Count);
+                string remoteFirst = remoteFirstN < m_result.BrokenRemoteFiles.Count ? $"first {maxN} " : string.Empty;
+                long localFirstN = Math.Min(maxN, m_result.BrokenLocalFiles.Count);
+                string localFirst = localFirstN < m_result.BrokenLocalFiles.Count ? $"first {maxN} " : string.Empty;
 
-                Logging.Log.WriteInformationMessage(LOGTAG, "RestoreFailures", $"{remoteMessage}{nl}{localMessage}{nl}{remoteList}{nl}{localList}");
+                string remoteMessage = m_result.BrokenRemoteFiles.Count > 0 ? $"Failed to download {m_result.BrokenRemoteFiles.Count} remote files." : string.Empty;
+                string remoteList = m_result.BrokenRemoteFiles.Count > 0 ? $"The following {remoteFirst}remote files failed to download, which may be the cause:{nl}{string.Join(nl, m_result.BrokenRemoteFiles.Take(maxN))}{nl}" : string.Empty;
+                string localMessage = m_result.BrokenLocalFiles.Count > 0 ? $"Failed to restore {m_result.BrokenLocalFiles.Count} local files." : string.Empty;
+                string localList = m_result.BrokenLocalFiles.Count > 0 ? $"The following {localFirst}local files failed to restore:{nl}{string.Join(nl, m_result.BrokenLocalFiles.Take(maxN))}{nl}" : string.Empty;
+
+                Logging.Log.WriteErrorMessage(LOGTAG, "RestoreFailures", null, $"{remoteMessage}{nl}{localMessage}{nl}{remoteList}{nl}{localList}");
             }
             else if (m_result.RestoredFiles == 0)
                 Logging.Log.WriteWarningMessage(LOGTAG, "NoFilesRestored", null, "Restore completed without errors but no files were restored");
