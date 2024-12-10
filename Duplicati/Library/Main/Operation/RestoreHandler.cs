@@ -333,11 +333,11 @@ namespace Duplicati.Library.Main.Operation
             database.SetResult(m_result);
 
             // Create the channels between BlockManager and FileProcessor
-            var fileprocessor_requests = new Channel<Restore.BlockRequest>[m_options.RestoreFileProcessors].Select(_ => ChannelManager.CreateChannel<Restore.BlockRequest>(buffersize:Restore.Channels.BufferSize)).ToArray();
-            var fileprocessor_responses = new Channel<byte[]>[m_options.RestoreFileProcessors].Select(_ => ChannelManager.CreateChannel<byte[]>(buffersize:Restore.Channels.BufferSize)).ToArray();
+            var fileprocessor_requests = new Channel<Restore.BlockRequest>[m_options.RestoreFileProcessors].Select(_ => ChannelManager.CreateChannel<Restore.BlockRequest>(buffersize: Restore.Channels.BufferSize)).ToArray();
+            var fileprocessor_responses = new Channel<byte[]>[m_options.RestoreFileProcessors].Select(_ => ChannelManager.CreateChannel<byte[]>(buffersize: Restore.Channels.BufferSize)).ToArray();
 
             // Create the process network
-            Restore.Channels channels = new ();
+            Restore.Channels channels = new();
             var filelister = Restore.FileLister.Run(channels, database, m_options, m_result);
             var fileprocessors = Enumerable.Range(0, m_options.RestoreFileProcessors).Select(i => Restore.FileProcessor.Run(channels, database, fileprocessor_requests[i], fileprocessor_responses[i], m_options, m_result)).ToArray();
             var blockmanager = Restore.BlockManager.Run(channels, database, m_options, fileprocessor_requests, fileprocessor_responses);
@@ -360,7 +360,8 @@ namespace Duplicati.Library.Main.Operation
 
             // Start the progress updater
             var kill_updater = new CancellationTokenSource();
-            var updater = Task.Run(async () => {
+            var updater = Task.Run(async () =>
+            {
                 while (true)
                 {
                     m_result.OperationProgressUpdater.UpdatefilesProcessed(m_result.RestoredFiles, m_result.SizeOfRestoredFiles);
@@ -371,7 +372,7 @@ namespace Duplicati.Library.Main.Operation
             Task.WhenAll(all).Wait();
             kill_updater.Cancel();
 
-            if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
+            if (!m_result.TaskControl.ProgressRendevouz().Await())
                 return;
 
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_PostRestoreVerify);
