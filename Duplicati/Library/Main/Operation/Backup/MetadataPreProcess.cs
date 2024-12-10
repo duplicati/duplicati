@@ -65,7 +65,7 @@ namespace Duplicati.Library.Main.Operation.Backup
             public bool MetadataChanged;
         }
 
-        public static Task Run(Channels channels, Snapshots.ISnapshotService snapshot, Options options, BackupDatabase database, long lastfilesetid, CancellationToken token)
+        public static Task Run(Channels channels, Snapshots.ISnapshotService snapshot, Options options, BackupDatabase database, long lastfilesetid, ITaskReader taskReader)
         {
             return AutomationExtensions.RunTask(new
             {
@@ -159,12 +159,13 @@ namespace Duplicati.Library.Main.Operation.Backup
                         }
                         catch (Exception ex)
                         {
-                            if (ex.IsRetiredException() || token.IsCancellationRequested)
-                            {
+                            if (ex.IsRetiredException())
                                 continue;
-                            }
+
                             Logging.Log.WriteWarningMessage(FILELOGTAG, "ProcessingMetadataFailed", ex,
                                 "Failed to process entry, path: {0}", path);
+
+                            taskReader.ProgressToken.ThrowIfCancellationRequested();
                         }
                     }
                 }

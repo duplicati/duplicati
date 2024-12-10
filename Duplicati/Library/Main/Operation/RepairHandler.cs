@@ -168,7 +168,7 @@ namespace Duplicati.Library.Main.Operation
                             foreach (var n in tp.VerificationRequiredVolumes)
                                 try
                                 {
-                                    if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
+                                    if (!m_result.TaskControl.ProgressRendevouz().Await())
                                     {
                                         backend.WaitForComplete(db, null);
                                         return;
@@ -207,7 +207,7 @@ namespace Duplicati.Library.Main.Operation
                     foreach (var n in tp.ExtraVolumes)
                         try
                         {
-                            if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
+                            if (!m_result.TaskControl.ProgressRendevouz().Await())
                             {
                                 backend.WaitForComplete(db, null);
                                 return;
@@ -302,7 +302,7 @@ namespace Duplicati.Library.Main.Operation
 
                         try
                         {
-                            if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
+                            if (!m_result.TaskControl.ProgressRendevouz().Await())
                             {
                                 backend.WaitForComplete(db, null);
                                 return;

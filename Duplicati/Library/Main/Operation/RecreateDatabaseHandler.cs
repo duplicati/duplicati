@@ -209,7 +209,7 @@ namespace Duplicati.Library.Main.Operation
                     foreach (var entry in new AsyncDownloader(filelistWork, backend))
                         try
                         {
-                            if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
+                            if (!m_result.TaskControl.ProgressRendevouz().Await())
                             {
                                 backend.WaitForComplete(restoredb, null);
                                 m_result.EndTime = DateTime.UtcNow;
@@ -371,7 +371,7 @@ namespace Duplicati.Library.Main.Operation
                         foreach (var sf in new AsyncDownloader(indexfiles, backend))
                             try
                             {
-                                if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
+                                if (!m_result.TaskControl.ProgressRendevouz().Await())
                                 {
                                     backend.WaitForComplete(restoredb, null);
                                     m_result.EndTime = DateTime.UtcNow;
@@ -514,7 +514,7 @@ namespace Duplicati.Library.Main.Operation
                                 using (var rd = new BlockVolumeReader(RestoreHandler.GetCompressionModule(sf.Name), tmpfile, m_options))
                                 using (var tr = restoredb.BeginTransaction())
                                 {
-                                    if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
+                                    if (!m_result.TaskControl.ProgressRendevouz().Await())
                                     {
                                         backend.WaitForComplete(restoredb, null);
                                         m_result.EndTime = DateTime.UtcNow;

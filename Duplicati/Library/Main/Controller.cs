@@ -28,6 +28,7 @@ using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main.Database;
 using System.Threading.Tasks;
+using Duplicati.Library.Main.Operation.Common;
 
 namespace Duplicati.Library.Main
 {
@@ -57,12 +58,7 @@ namespace Duplicati.Library.Main
         /// <summary>
         /// The current executing task
         /// </summary>
-        private ITaskControl m_currentTask = null;
-
-        /// <summary>
-        /// The thread running the current task
-        /// </summary>
-        private System.Threading.Thread m_currentTaskThread = null;
+        private ITaskControl m_currentTaskControl = null;
 
         /// <summary>
         /// The thread priority to reset to
@@ -78,11 +74,6 @@ namespace Duplicati.Library.Main
         /// The multi-controller log target
         /// </summary>
         private ControllerMultiLogTarget m_logTarget;
-
-        /// <summary>
-        /// The cancellation token for the running task
-        /// </summary>
-        private readonly CancellationTokenSource m_cancellationTokenSource = new CancellationTokenSource();
 
         /// <summary>
         /// Constructs a new interface for performing backup and restore operations
@@ -131,7 +122,7 @@ namespace Duplicati.Library.Main
 
                 using (var h = new Operation.BackupHandler(m_backend, m_options, result))
                 {
-                    h.Run(ExpandInputSources(inputsources, filter), filter, m_cancellationTokenSource.Token);
+                    h.RunAsync(ExpandInputSources(inputsources, filter), filter).Await();
                 }
 
                 Library.UsageReporter.Reporter.Report("BACKUP_FILECOUNT", result.ExaminedFiles);
@@ -331,7 +322,7 @@ namespace Duplicati.Library.Main
             {
                 return RunAction(new TestFilterResults(), ref paths, ref filter, (result) =>
                 {
-                    new Operation.TestFilterHandler(m_options, result).Run(ExpandInputSources(paths, filter), filter, m_cancellationTokenSource.Token);
+                    new Operation.TestFilterHandler(m_options, result).RunAsync(ExpandInputSources(paths, filter), filter).Await();
                 });
             }
         }
@@ -407,7 +398,7 @@ namespace Duplicati.Library.Main
         }
 
         private T RunAction<T>(T result, Action<T> method)
-            where T : ISetCommonOptions, ITaskControl, Logging.ILogDestination
+            where T : ISetCommonOptions, ITaskControlProvider, Logging.ILogDestination
         {
             var tmp = new string[0];
             IFilter tempfilter = null;
@@ -415,21 +406,21 @@ namespace Duplicati.Library.Main
         }
 
         private T RunAction<T>(T result, ref string[] paths, Action<T> method)
-            where T : ISetCommonOptions, ITaskControl, Logging.ILogDestination
+            where T : ISetCommonOptions, ITaskControlProvider, Logging.ILogDestination
         {
             IFilter tempfilter = null;
             return RunAction<T>(result, ref paths, ref tempfilter, method);
         }
 
         private T RunAction<T>(T result, ref IFilter filter, Action<T> method)
-            where T : ISetCommonOptions, ITaskControl, Logging.ILogDestination
+            where T : ISetCommonOptions, ITaskControlProvider, Logging.ILogDestination
         {
             var tmp = new string[0];
             return RunAction<T>(result, ref tmp, ref filter, method);
         }
 
         private T RunAction<T>(T result, ref string[] paths, ref IFilter filter, Action<T> method)
-            where T : ISetCommonOptions, ITaskControl, Logging.ILogDestination
+            where T : ISetCommonOptions, ITaskControlProvider, Logging.ILogDestination
         {
             m_logTarget = new ControllerMultiLogTarget(result, Logging.LogMessageType.Information, null);
             using (Logging.Log.StartScope(m_logTarget, null))
@@ -439,9 +430,7 @@ namespace Duplicati.Library.Main
 
                 try
                 {
-                    m_currentTask = result;
-                    m_currentTaskThread = System.Threading.Thread.CurrentThread;
-
+                    m_currentTaskControl = result.TaskControl;
                     m_options.MainAction = result.MainOperation;
                     ApplySecretProvider(CancellationToken.None).Await();
                     SetupCommonOptions(result, ref paths, ref filter);
@@ -540,8 +529,7 @@ namespace Duplicati.Library.Main
                 }
                 finally
                 {
-                    m_currentTask = null;
-                    m_currentTaskThread = null;
+                    m_currentTaskControl = null;
                 }
             }
         }
@@ -1141,38 +1129,31 @@ namespace Duplicati.Library.Main
 
         public void Pause()
         {
-            var ct = m_currentTask;
+            var ct = m_currentTaskControl;
             if (ct != null)
                 ct.Pause();
         }
 
         public void Resume()
         {
-            var ct = m_currentTask;
+            var ct = m_currentTaskControl;
             if (ct != null)
                 ct.Resume();
         }
 
-        public void Stop(bool allowCurrentFileToFinish)
+        public void Stop()
         {
-            var ct = m_currentTask;
+            var ct = m_currentTaskControl;
             if (ct == null)
                 return;
 
             Logging.Log.WriteVerboseMessage(LOGTAG, "CancellationRequested", "Cancellation Requested");
-            m_cancellationTokenSource.Cancel();
-            ct.Stop(allowCurrentFileToFinish);
+            ct.Stop();
         }
 
         public void Abort()
         {
-            var ct = m_currentTask;
-            if (ct != null)
-                ct.Abort();
-
-            var t = m_currentTaskThread;
-            if (t != null)
-                t.Interrupt();
+            m_currentTaskControl?.Terminate();
         }
 
         public long MaxUploadSpeed

@@ -78,10 +78,8 @@ public class Tasks : IEndpointV1
         switch (stopState)
         {
             case TaskStopState.StopAfterCurrentFile:
-                task.Stop(allowCurrentFileToFinish: true);
-                break;
             case TaskStopState.StopNow:
-                task.Stop(allowCurrentFileToFinish: false);
+                task.Stop();
                 break;
             case TaskStopState.Abort:
                 task.Abort();

@@ -142,7 +142,7 @@ namespace Duplicati.Library.Main.Operation
                 filteredList.RemoveAt(0);
                 Dictionary<string, List<long>> res;
 
-                if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
+                if (!m_result.TaskControl.ProgressRendevouz().Await())
                     return;
 
                 using (var tmpfile = backend.Get(firstEntry.File.Name, firstEntry.File.Size, null))
@@ -181,7 +181,7 @@ namespace Duplicati.Library.Main.Operation
                     using (var tmpfile = backend.Get(flentry.Value.File.Name, flentry.Value.File == null ? -1 : flentry.Value.File.Size, null))
                     using (var rd = new Volumes.FilesetVolumeReader(flentry.Value.CompressionModule, tmpfile, m_options))
                     {
-                        if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
+                        if (!m_result.TaskControl.ProgressRendevouz().Await())
                             return;
 
                         foreach (var p in from n in rd.Files where Library.Utility.FilterExpression.Matches(filter, n.Path) select n)
@@ -229,7 +229,7 @@ namespace Duplicati.Library.Main.Operation
             List<IListResultFileset> list = new List<IListResultFileset>();
             foreach (KeyValuePair<long, IParsedVolume> entry in filteredList)
             {
-                AsyncDownloader downloader = new AsyncDownloader(new IRemoteVolume[] {new RemoteVolume(entry.Value.File)}, backendManager);
+                AsyncDownloader downloader = new AsyncDownloader(new IRemoteVolume[] { new RemoteVolume(entry.Value.File) }, backendManager);
                 foreach (IAsyncDownloadedFile file in downloader)
                 {
                     // We must obtain the partial/full status from the fileset file in the dlist files.

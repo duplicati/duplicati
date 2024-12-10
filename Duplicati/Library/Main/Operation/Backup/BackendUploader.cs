@@ -143,12 +143,12 @@ namespace Duplicati.Library.Main.Operation.Backup
 
                 try
                 {
-                    while (!await self.Input.IsRetiredAsync && await m_taskReader.ProgressAsync)
+                    while (true)
                     {
                         var req = await self.Input.ReadAsync();
 
-                        if (!await m_taskReader.ProgressAsync)
-                            break;
+                        // Listen to pause/resume and abort, but ignore stop requests
+                        await m_taskReader.ProgressRendevouz().ConfigureAwait(false);
 
                         Worker worker = GetWorker(workers);
 

@@ -51,31 +51,56 @@ namespace Duplicati.UnitTest
             }
         }
 
+        private class DebugHelperSink : IMessageSink
+        {
+            public Action<LogEntry> OnMessage { get; set; }
+            public Action<BackendActionType, BackendEventType, string, long> OnBackendEvent { get; set; }
+            public Action<IBackendProgress> OnBackendProgress { get; set; }
+            public Action<IOperationProgress> OnOperationProgress { get; set; }
+
+            public void BackendEvent(BackendActionType action, BackendEventType type, string path, long size)
+                => this.OnBackendEvent?.Invoke(action, type, path, size);
+
+            public void SetBackendProgress(IBackendProgress progress)
+                => this.OnBackendProgress?.Invoke(progress);
+
+            public void SetOperationProgress(IOperationProgress progress)
+                => this.OnOperationProgress?.Invoke(progress);
+
+            public void WriteMessage(LogEntry entry)
+                => this.OnMessage?.Invoke(entry);
+        }
+
         private async Task<IBackupResults> RunPartialBackup(Controller controller)
         {
             this.ModifySourceFiles();
 
+            // Capture the progress monitor
+            IOperationProgress opProgress = null;
+            controller.AppendSink(new DebugHelperSink()
+            {
+                OnOperationProgress = (progress) => opProgress = progress
+            });
+
             // ReSharper disable once AccessToDisposedClosure
             Task<IBackupResults> backupTask = Task.Run(() => controller.Backup(new[] { this.DATAFOLDER }));
 
-            IBackupResults taskControl = null;
-            // Wait for the controller to have the task associated
+            // Wait for files to be processed
             while (!backupTask.IsCompleted)
             {
-                taskControl = controller.GetType().GetField("m_currentTask", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic).GetValue(controller) as IBackupResults;
-                if (taskControl != null)
-                    break;
+                if (opProgress != null)
+                {
+                    opProgress.UpdateOverall(out var phase, out var _, out var filesprocessed, out var _, out var _, out var _, out var _);
+                    if (phase == OperationPhase.Backup_ProcessingFiles && filesprocessed > 0)
+                        break;
+                }
                 Thread.Sleep(100);
             }
-
-            // Wait for the first file to be processed
-            while (!backupTask.IsCompleted && taskControl.ExaminedFiles == 0)
-                Thread.Sleep(100);
 
             if (backupTask.IsCompleted)
                 throw new Exception("Backup task completed before we could stop it");
 
-            controller.Stop(true);
+            controller.Stop();
             return await backupTask.ConfigureAwait(false);
         }
 
@@ -633,7 +658,7 @@ namespace Duplicati.UnitTest
                 Assert.AreEqual(BackupType.FULL_BACKUP, filesets[0].IsFullBackup);
             }
 
-            // Interrupt a backup with "stop now".
+            // Interrupt a backup with "abort".
             this.ModifySourceFiles();
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
@@ -644,8 +669,14 @@ namespace Duplicati.UnitTest
                 // with the Controller. Otherwise, the call to Stop will simply be a no-op.
                 Thread.Sleep(1000);
 
-                c.Stop(false);
-                await backupTask.ConfigureAwait(false);
+                c.Abort();
+                try
+                {
+                    await backupTask.ConfigureAwait(false);
+                }
+                catch (TaskCanceledException)
+                {
+                }
             }
 
             // The next backup should proceed without issues.

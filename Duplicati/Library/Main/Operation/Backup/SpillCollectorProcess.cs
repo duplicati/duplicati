@@ -101,7 +101,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                 while (lst.Count > 1)
                 {
                     // We ignore the stop signal, but not the pause and terminate
-                    await taskreader.ProgressAsync.ConfigureAwait(false);
+                    await taskreader.ProgressRendevouz().ConfigureAwait(false);
 
                     SpillVolumeRequest target = null;
                     var source = lst[0];
@@ -153,7 +153,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                 foreach (var n in lst)
                 {
                     // We ignore the stop signal, but not the pause and terminate
-                    await taskreader.ProgressAsync.ConfigureAwait(false);
+                    await taskreader.ProgressRendevouz().ConfigureAwait(false);
 
                     n.BlockVolume.Close();
                     await UploadVolumeAndIndex(n, self.Output, options, database).ConfigureAwait(false);

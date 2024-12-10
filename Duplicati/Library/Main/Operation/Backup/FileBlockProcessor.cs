@@ -37,7 +37,7 @@ namespace Duplicati.Library.Main.Operation.Backup
         /// </summary>
         private static readonly string FILELOGTAG = Logging.Log.LogTagFromType(typeof(FileBlockProcessor)) + ".FileEntry";
 
-        public static Task Run(Channels channels, Snapshots.ISnapshotService snapshot, Options options, BackupDatabase database, BackupStatsCollector stats, ITaskReader taskreader, CancellationToken token)
+        public static Task Run(Channels channels, Snapshots.ISnapshotService snapshot, Options options, BackupDatabase database, BackupStatsCollector stats, ITaskReader taskreader)
         {
             return AutomationExtensions.RunTask(
             new
@@ -48,17 +48,15 @@ namespace Duplicati.Library.Main.Operation.Backup
 
             async self =>
             {
-                while (await taskreader.ProgressAsync)
+                while (true)
                 {
                     var e = await self.Input.ReadAsync();
 
+                    // We ignore the stop signal, but not the pause and terminate
+                    await taskreader.ProgressRendevouz().ConfigureAwait(false);
+
                     try
                     {
-                        if (token.IsCancellationRequested)
-                        {
-                            break;
-                        }
-
                         var hint = options.GetCompressionHintFromFilename(e.Path);
                         var oldHash = e.OldId < 0 ? null : await database.GetFileHashAsync(e.OldId);
 
@@ -135,7 +133,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                             }
                         }
                     }
-                    catch(Exception ex)
+                    catch (Exception ex)
                     {
                         if (ex.IsRetiredException())
                             return;

@@ -35,7 +35,7 @@ namespace Duplicati.Library.Main.Operation.Backup
             // Keep the log channel from the parent scope
             using (Logging.Log.StartIsolatingScope(true))
             {
-                Channels channels = new ();
+                Channels channels = new();
                 var enumeratorTask = Backup.FileEnumerationProcess.Run(channels, sources, snapshot, journalService, options.FileAttributeFilter, sourcefilter, filter, options.SymlinkPolicy, options.HardlinkPolicy, options.ExcludeEmptyFolders, options.IgnoreFilenames, blacklistPaths, options.ChangedFilelist, taskreader, token);
                 var counterTask = AutomationExtensions.RunTask(new
                 {
@@ -49,7 +49,7 @@ namespace Duplicati.Library.Main.Operation.Backup
 
                     try
                     {
-                        while (await taskreader.ProgressAsync && !token.IsCancellationRequested)
+                        while (await taskreader.ProgressRendevouz() && !token.IsCancellationRequested)
                         {
                             var path = await self.Input.ReadAsync();
 

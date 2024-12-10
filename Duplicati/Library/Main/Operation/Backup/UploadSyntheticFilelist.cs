@@ -78,7 +78,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                     return;
                 }
 
-                if (!await taskreader.ProgressAsync)
+                if (!await taskreader.ProgressRendevouz().ConfigureAwait(false))
                     return;
 
                 result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_PreviousBackupFinalize);
@@ -130,7 +130,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                     await database.WriteFilesetAsync(fsw, newFilesetID);
                     fsw.Close();
 
-                    if (!await taskreader.ProgressAsync)
+                    if (!await taskreader.ProgressRendevouz().ConfigureAwait(false))
                         return;
 
                     await database.UpdateRemoteVolumeAsync(fsw.RemoteFilename, RemoteVolumeState.Uploading, -1, null);
