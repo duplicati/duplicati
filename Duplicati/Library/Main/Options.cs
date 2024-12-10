@@ -101,22 +101,22 @@ namespace Duplicati.Library.Main
         /// <summary>
         /// The default value for the number of file processors during restore
         /// </summary>
-        private const int DEFAULT_RESTORE_FILE_PROCESSORS = 8;
+        private readonly int DEFAULT_RESTORE_FILE_PROCESSORS = Math.Max(1, Environment.ProcessorCount / 2);
 
         /// <summary>
         /// The default value for the number of volume decryptors during restore
         /// </summary>
-        private const int DEFAULT_RESTORE_VOLUME_DECRYPTORS = 8;
+        private readonly int DEFAULT_RESTORE_VOLUME_DECRYPTORS = Math.Max(1, Environment.ProcessorCount / 2);
 
         /// <summary>
         /// The default value for the number of volume decompressors during restore
         /// </summary>
-        private const int DEFAULT_RESTORE_VOLUME_DECOMPRESSORS = 8;
+        private readonly int DEFAULT_RESTORE_VOLUME_DECOMPRESSORS = Math.Max(1, Environment.ProcessorCount / 2);
 
         /// <summary>
         /// The default value for the number of volume downloaders during restore
         /// </summary>
-        private const int DEFAULT_RESTORE_VOLUME_DOWNLOADERS = 8;
+        private readonly int DEFAULT_RESTORE_VOLUME_DOWNLOADERS = Math.Max(1, Environment.ProcessorCount / 2);
 
         /// <summary>
         /// An enumeration that describes the supported strategies for an optimization
