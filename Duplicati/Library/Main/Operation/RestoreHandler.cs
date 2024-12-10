@@ -133,6 +133,11 @@ namespace Duplicati.Library.Main.Operation
 
                     if (!m_options.SkipMetadata)
                         ApplyStoredMetadata(m_options, new RestoreHandlerMetadataStorage());
+
+                    //If we have --version set, we need to adjust, as the db has only the required versions
+                    //TODO: Bit of a hack to set options that way
+                    if (m_options.Version != null && m_options.Version.Length > 0)
+                        m_options.RawOptions["version"] = string.Join(",", Enumerable.Range(0, m_options.Version.Length).Select(x => x.ToString()));
                 }
 
                 if (m_options.RestoreLegacy)
