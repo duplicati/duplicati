@@ -94,9 +94,9 @@ namespace Duplicati.Library.Main
         private const long DEFAULT_RESTORE_CACHE_MAX = 8L * 1024L * 1024L * 1024L;
 
         /// <summary>
-        /// The default value for the ratio of the restore cache to evict when full
+        /// The default value for the percentage of the restore cache to evict when full
         /// </summary>
-        private const float DEFAULT_RESTORE_CACHE_EVICT = 0.5f;
+        private const int DEFAULT_RESTORE_CACHE_EVICT = 50;
 
         /// <summary>
         /// The default value for the number of file processors during restore
@@ -454,12 +454,12 @@ namespace Duplicati.Library.Main
 
                     new CommandLineArgument("restore-cache-max", CommandLineArgument.ArgumentType.Size, Strings.Options.RestoreCacheMaxShort, Strings.Options.RestoreCacheMaxLong, "8G"),
                     new CommandLineArgument("restore-cache-evict", CommandLineArgument.ArgumentType.Decimal, Strings.Options.RestoreCacheEvictShort, Strings.Options.RestoreCacheEvictLong, "0.5"),
-                    new CommandLineArgument("restore-file-processors", CommandLineArgument.ArgumentType.Integer, Strings.Options.RestoreFileprocessorsShort, Strings.Options.RestoreFileprocessorsLong, "8"),
+                    new CommandLineArgument("restore-file-processors", CommandLineArgument.ArgumentType.Integer, Strings.Options.RestoreFileprocessorsShort, Strings.Options.RestoreFileprocessorsLong, DEFAULT_RESTORE_FILE_PROCESSORS.ToString()),
                     new CommandLineArgument("restore-legacy", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RestoreLegacyShort, Strings.Options.RestoreLegacyLong, "false"),
                     new CommandLineArgument("restore-preallocate-size", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RestorePreallocateSizeShort, Strings.Options.RestorePreallocateSizeLong, "false"),
-                    new CommandLineArgument("restore-volume-decompressors", CommandLineArgument.ArgumentType.Integer, Strings.Options.RestoreVolumeDecompressorsShort, Strings.Options.RestoreVolumeDecompressorsLong, "8"),
-                    new CommandLineArgument("restore-volume-decryptors", CommandLineArgument.ArgumentType.Integer, Strings.Options.RestoreVolumeDecryptorsShort, Strings.Options.RestoreVolumeDecryptorsLong, "8"),
-                    new CommandLineArgument("restore-volume-downloaders", CommandLineArgument.ArgumentType.Integer, Strings.Options.RestoreVolumeDownloadersShort, Strings.Options.RestoreVolumeDownloadersLong, "8"),
+                    new CommandLineArgument("restore-volume-decompressors", CommandLineArgument.ArgumentType.Integer, Strings.Options.RestoreVolumeDecompressorsShort, Strings.Options.RestoreVolumeDecompressorsLong, DEFAULT_RESTORE_VOLUME_DECOMPRESSORS.ToString()),
+                    new CommandLineArgument("restore-volume-decryptors", CommandLineArgument.ArgumentType.Integer, Strings.Options.RestoreVolumeDecryptorsShort, Strings.Options.RestoreVolumeDecryptorsLong, DEFAULT_RESTORE_VOLUME_DECRYPTORS.ToString()),
+                    new CommandLineArgument("restore-volume-downloaders", CommandLineArgument.ArgumentType.Integer, Strings.Options.RestoreVolumeDownloadersShort, Strings.Options.RestoreVolumeDownloadersLong, DEFAULT_RESTORE_VOLUME_DOWNLOADERS.ToString()),
                     new CommandLineArgument("internal-profiling", CommandLineArgument.ArgumentType.Boolean, Strings.Options.InternalProfilingShort, Strings.Options.InternalProfilingLong, "false"),
                 });
 
