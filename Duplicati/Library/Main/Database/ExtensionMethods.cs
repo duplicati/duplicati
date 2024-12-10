@@ -1,22 +1,22 @@
 // Copyright (C) 2024, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
-// 
-// Permission is hereby granted, free of charge, to any person obtaining a 
-// copy of this software and associated documentation files (the "Software"), 
-// to deal in the Software without restriction, including without limitation 
-// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
-// and/or sell copies of the Software, and to permit persons to whom the 
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the "Software"),
+// to deal in the Software without restriction, including without limitation
+// the rights to use, copy, modify, merge, publish, distribute, sublicense,
+// and/or sell copies of the Software, and to permit persons to whom the
 // Software is furnished to do so, subject to the following conditions:
-// 
-// The above copyright notice and this permission notice shall be included in 
+//
+// The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
-// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 using System;
 using System.Collections.Generic;
@@ -117,7 +117,7 @@ namespace Duplicati.Library.Main.Database
         {
             if (cmd != null)
                 self.CommandText = cmd;
-            
+
             if (values != null && values.Length > 0)
             {
                 self.Parameters.Clear();
@@ -195,11 +195,30 @@ namespace Duplicati.Library.Main.Database
                 return self.ExecuteReader();
         }
 
+        /// <summary>
+        /// Executes the command and returns an enumerable of data readers.
+        /// </summary>
+        /// <param name="self">The database command to execute.</param>
+        /// <returns>An enumerable of data readers.</returns>
+        public static IEnumerable<System.Data.IDataReader> ExecuteReaderEnumerable(this System.Data.IDbCommand self)
+        {
+            using var rd = self.ExecuteReader();
+            while (rd.Read())
+                yield return rd;
+        }
+
+        /// <summary>
+        /// Executes the given command string `cmd` on the given database command `self` with the given values `values` and returns an enumerable of data readers.
+        /// </summary>
+        /// <param name="self">The database command to execute on.</param>
+        /// <param name="cmd">The command string to execute.</param>
+        /// <param name="values">The values that the command string should be parameterized with.</param>
+        /// <returns></returns>
         public static IEnumerable<System.Data.IDataReader> ExecuteReaderEnumerable(this System.Data.IDbCommand self, string cmd, params object[] values)
         {
-            using(var rd = ExecuteReader(self, cmd, values))
-                while (rd.Read())
-                    yield return rd;
+            using var rd = ExecuteReader(self, cmd, values);
+            while (rd.Read())
+                yield return rd;
         }
 
         public static string ConvertValueToString(this System.Data.IDataReader reader, int index)
