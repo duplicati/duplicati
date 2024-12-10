@@ -640,11 +640,11 @@ namespace Duplicati.Library.Main
         /// <summary>
         /// The list of broken local files - i.e. locally stored files that raised an error during restore.
         /// </summary>
-        public List<string> BrokenLocalFiles { get; internal set; } = [];
+        public Library.Utility.FileBackedStringList BrokenLocalFiles { get; internal set; } = [];
         /// <summary>
         /// The list of broken remote files - i.e. remotely stored files that raised an error during restore.
         /// </summary>
-        public List<long> BrokenRemoteFiles { get; internal set; } = [];
+        public Library.Utility.FileBackedStringList BrokenRemoteFiles { get; internal set; } = [];
         public long RestoredFiles { get; internal set; }
         public long SizeOfRestoredFiles { get; internal set; }
         public long RestoredFolders { get; internal set; }
