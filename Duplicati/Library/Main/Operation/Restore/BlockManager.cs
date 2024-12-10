@@ -64,7 +64,7 @@ namespace Duplicati.Library.Main.Operation.Restore
             /// <summary>
             /// Channel for submitting block requests from a volume.
             /// </summary>
-            private readonly IWriteChannel<BlockRequest> m_volume_request;
+            private readonly IWriteChannel<object> m_volume_request;
             /// <summary>
             /// The dictionary holding the cached blocks.
             /// </summary>
@@ -104,7 +104,7 @@ namespace Duplicati.Library.Main.Operation.Restore
             /// <param name="db">The database holding information about how many of each block this restore requires.</param>
             /// <param name="volume_request">Channel for submitting block requests from a volume.</param>
             /// <param name="readers">Number of readers accessing this dictionary. Used during shutdown / cleanup.</param>
-            public SleepableDictionary(LocalRestoreDatabase db, IWriteChannel<BlockRequest> volume_request, Options options, int readers)
+            public SleepableDictionary(LocalRestoreDatabase db, IWriteChannel<object> volume_request, Options options, int readers)
             {
                 m_options = options;
                 m_volume_request = volume_request;

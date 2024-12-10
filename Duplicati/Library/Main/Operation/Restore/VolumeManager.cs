@@ -50,15 +50,14 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// <param name="backend">The backend manager, used to fetch the volumes from the backend.</param>
         /// <param name="options">The restore options.</param>
         /// <param name="results">The restore results.</param>
-        public static Task Run(LocalRestoreDatabase db, BackendManager backend, Options options, RestoreResults results)
+        public static Task Run(Channels channels, LocalRestoreDatabase db, BackendManager backend, Options options, RestoreResults results)
         {
             return AutomationExtensions.RunTask(
                 new
                 {
-                    VolumeRequest = Channels.BlockFetch.ForRead,
-                    DecompressRequest = Channels.DecompressionRequest.ForWrite,
-                    DownloadRequest = Channels.DownloadRequest.ForWrite,
-                    DownloadResponse = Channels.DecryptedVolume.ForRead,
+                    VolumeRequestResponse = channels.VolumeRequestResponse.AsRead(),
+                    DecompressRequest = channels.DecompressionRequest.AsWrite(),
+                    DownloadRequest = channels.DownloadRequest.AsWrite(),
                 },
                 async self =>
                 {
@@ -77,7 +76,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                     {
                         while (true)
                         {
-                            var msg = (await MultiChannelAccess.ReadFromAnyAsync(self.VolumeRequest, self.DownloadResponse)).Value;
+                            var msg = await self.VolumeRequestResponse.ReadAsync();
 
                             switch (msg)
                             {
@@ -144,10 +143,6 @@ namespace Duplicati.Library.Main.Operation.Restore
                     catch (RetiredException)
                     {
                         Logging.Log.WriteVerboseMessage(LOGTAG, "RetiredProcess", null, "Volume manager retired");
-                        self.VolumeRequest.Retire();
-                        self.DecompressRequest.Retire();
-                        self.DownloadRequest.Retire();
-                        self.DownloadResponse.Retire();
 
                         if (options.InternalProfiling)
                         {
