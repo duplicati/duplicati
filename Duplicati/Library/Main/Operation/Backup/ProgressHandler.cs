@@ -1,22 +1,22 @@
 // Copyright (C) 2024, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
-// 
-// Permission is hereby granted, free of charge, to any person obtaining a 
-// copy of this software and associated documentation files (the "Software"), 
-// to deal in the Software without restriction, including without limitation 
-// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
-// and/or sell copies of the Software, and to permit persons to whom the 
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the "Software"),
+// to deal in the Software without restriction, including without limitation
+// the rights to use, copy, modify, merge, publish, distribute, sublicense,
+// and/or sell copies of the Software, and to permit persons to whom the
 // Software is furnished to do so, subject to the following conditions:
-// 
-// The above copyright notice and this permission notice shall be included in 
+//
+// The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
-// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
 using System;
@@ -33,13 +33,13 @@ namespace Duplicati.Library.Main.Operation.Backup
     /// </summary>
     internal static class ProgressHandler
     {
-        public static Task Run(BackupResults stat)
+        public static Task Run(Channels channels, BackupResults stat)
         {
             return AutomationExtensions.RunTask(new
             {
-                Input = Channels.ProgressEvents.ForRead
+                Input = channels.ProgressEvents.AsRead()
             },
-            
+
             async self =>
             {
                 var filesStarted = new Dictionary<string, long>();
@@ -64,7 +64,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                         case EventType.FileClosed:
                             if (fileProgress.ContainsKey(t.Filepath))
                                 fileProgress[t.Filepath] = t.Length;
-                        
+
                             if (t.Filepath == current)
                             {
                                 stat.OperationProgressUpdater.UpdateFileProgress(t.Length);
@@ -94,7 +94,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                         {
                             stat.OperationProgressUpdater.StartFile(current, filesStarted[current]);
                             if (fileProgress.ContainsKey(current) && fileProgress[current] > 0)
-                                stat.OperationProgressUpdater.UpdateFileProgress(fileProgress[current]);       
+                                stat.OperationProgressUpdater.UpdateFileProgress(fileProgress[current]);
                         }
                     }
                 }

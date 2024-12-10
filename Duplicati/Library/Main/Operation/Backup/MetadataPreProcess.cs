@@ -1,22 +1,22 @@
 // Copyright (C) 2024, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
-// 
-// Permission is hereby granted, free of charge, to any person obtaining a 
-// copy of this software and associated documentation files (the "Software"), 
-// to deal in the Software without restriction, including without limitation 
-// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
-// and/or sell copies of the Software, and to permit persons to whom the 
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the "Software"),
+// to deal in the Software without restriction, including without limitation
+// the rights to use, copy, modify, merge, publish, distribute, sublicense,
+// and/or sell copies of the Software, and to permit persons to whom the
 // Software is furnished to do so, subject to the following conditions:
-// 
-// The above copyright notice and this permission notice shall be included in 
+//
+// The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
-// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
 using System;
@@ -64,16 +64,16 @@ namespace Duplicati.Library.Main.Operation.Backup
             public IMetahash MetaHashAndSize;
             public bool MetadataChanged;
         }
-            
-        public static Task Run(Snapshots.ISnapshotService snapshot, Options options, BackupDatabase database, long lastfilesetid, CancellationToken token)
+
+        public static Task Run(Channels channels, Snapshots.ISnapshotService snapshot, Options options, BackupDatabase database, long lastfilesetid, CancellationToken token)
         {
             return AutomationExtensions.RunTask(new
             {
-                Input = Backup.Channels.SourcePaths.ForRead,
-                StreamBlockChannel = Channels.StreamBlock.ForWrite,
-                Output = Backup.Channels.ProcessedFiles.ForWrite,
+                Input = channels.SourcePaths.AsRead(),
+                StreamBlockChannel = channels.StreamBlock.AsWrite(),
+                Output = channels.ProcessedFiles.AsWrite(),
             },
-                
+
             async self =>
             {
                 var emptymetadata = Utility.WrapMetadata(new Dictionary<string, string>(), options);
@@ -88,22 +88,22 @@ namespace Duplicati.Library.Main.Operation.Backup
 
                     var lastwrite = new DateTime(0, DateTimeKind.Utc);
                     var attributes = default(FileAttributes);
-                    try 
-                    { 
-                        lastwrite = snapshot.GetLastWriteTimeUtc(path); 
+                    try
+                    {
+                        lastwrite = snapshot.GetLastWriteTimeUtc(path);
                     }
-                    catch (Exception ex) 
+                    catch (Exception ex)
                     {
                         Logging.Log.WriteWarningMessage(FILELOGTAG, "TimestampReadFailed", ex, "Failed to read timestamp on \"{0}\"", path);
                     }
 
-                    try 
-                    { 
-                        attributes = snapshot.GetAttributes(path); 
-                    }
-                    catch (Exception ex) 
+                    try
                     {
-                        Logging.Log.WriteVerboseMessage(FILELOGTAG, "FailedAttributeRead", "Failed to read attributes from {0}: {1}", path, ex.Message);                     
+                        attributes = snapshot.GetAttributes(path);
+                    }
+                    catch (Exception ex)
+                    {
+                        Logging.Log.WriteVerboseMessage(FILELOGTAG, "FailedAttributeRead", "Failed to read attributes from {0}: {1}", path, ex.Message);
                     }
 
                     // If we only have metadata, stop here
@@ -258,13 +258,13 @@ namespace Duplicati.Library.Main.Operation.Backup
         {
             StreamProcessResult res;
             using (var ms = new MemoryStream(meta.Blob))
-                res = await StreamBlock.ProcessStream(streamblockchannel, path, ms, true, CompressionHint.Default); 
+                res = await StreamBlock.ProcessStream(streamblockchannel, path, ms, true, CompressionHint.Default);
 
             return await database.AddMetadatasetAsync(res.Streamhash, res.Streamlength, res.Blocksetid);
         }
 
         /// <summary>
-        /// Adds a file to the output, 
+        /// Adds a file to the output,
         /// </summary>
         /// <param name="filename">The name of the file to record</param>
         /// <param name="lastModified">The value of the lastModified timestamp</param>
@@ -275,7 +275,7 @@ namespace Duplicati.Library.Main.Operation.Backup
         }
 
         /// <summary>
-        /// Adds a file to the output, 
+        /// Adds a file to the output,
         /// </summary>
         /// <param name="filename">The name of the file to record</param>
         /// <param name="lastModified">The value of the lastModified timestamp</param>
