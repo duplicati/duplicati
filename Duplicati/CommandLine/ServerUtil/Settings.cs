@@ -69,7 +69,7 @@ public sealed record Settings(
     /// <returns>The loaded settings</returns>
     public static Settings Load(string? password, System.Uri? hostUrl, string? serverDataFolder, string settingsFile, bool insecure, string? settingsPassphrase, string? secretProvider, SecretProviderHelper.CachingLevel secretProviderCache, string secretProviderPattern, string? acceptedHostCertificate)
     {
-        hostUrl ??= new System.Uri("http://localhost:8200");
+        hostUrl ??= new System.Uri("http://127.0.0.1:8200");
 
         ISecretProvider? secretInstance = null;
         if (!string.IsNullOrWhiteSpace(secretProvider))
