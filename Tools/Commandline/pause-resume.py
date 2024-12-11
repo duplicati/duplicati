@@ -50,7 +50,7 @@ if __name__ == '__main__':
         print("Syntax: %s [pause|resume] [password]" % sys.argv[0])
         sys.exit(1)
 
-    ds = DuplicatiServer("http://localhost:8200/", password)
+    ds = DuplicatiServer("http://127.0.0.1:8200/", password)
 
     if cmd == 'pause':
         r = ds.pause()
