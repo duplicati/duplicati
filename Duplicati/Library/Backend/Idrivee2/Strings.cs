@@ -19,9 +19,11 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 using Duplicati.Library.Localization.Short;
-namespace Duplicati.Library.Backend.Strings {
-    internal static class Idrivee2Backend {
-        public static string Description { get { return LC.L(@"This backend can read and write data to IDrive e2."); } }
+namespace Duplicati.Library.Backend.Strings
+{
+    internal static class Idrivee2Backend
+    {
+        public static string Description { get { return LC.L(@"This backend can read and write data to IDrive e2. Allowed format is ""e2://bucket/folder""."); } }
         public static string DisplayName { get { return LC.L(@"IDrive e2"); } }
         public static string KeySecretDescriptionLong { get { return LC.L(@"Access Key Secret can be obtained after logging into your IDrive e2 account. This can also be supplied through the option --{0}.", "auth-password"); } }
         public static string KeySecretDescriptionShort { get { return LC.L(@"Access Key Secret"); } }
