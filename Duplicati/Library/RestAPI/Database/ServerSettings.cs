@@ -491,9 +491,46 @@ namespace Duplicati.Server.Database
             }
         }
 
-        // Enabling forever-tokens is not persisted in the database,
-        // as it is meant to be a temporary setting
-        public bool EnableForeverTokens { get; set; } = false;
+        /// <summary>
+        /// The number of forever tokens that can be created.
+        /// A value of -1 means that forever tokens are disabled.
+        /// </summary>
+        /// <value>The number of forever tokens that can be created.</value>
+        /// <remarks>
+        /// This setting is not persisted in the database, as it is meant to be a temporary setting.
+        /// </remarks>
+        private int m_remainingForeverTokens = -1;
+
+        /// <summary>
+        /// Enables forever tokens
+        /// </summary>
+        public void EnableForeverTokens()
+        {
+            lock (databaseConnection.m_lock)
+                if (m_remainingForeverTokens == -1)
+                    m_remainingForeverTokens = 1;
+        }
+
+
+        /// <summary>
+        /// Consumes a forever token, if available
+        /// </summary>
+        /// <returns>True if a token was consumed, false if no tokens are available, null if forever tokens are disabled</returns>
+        public bool? ConsumeForeverToken()
+        {
+            lock (databaseConnection.m_lock)
+            {
+                if (m_remainingForeverTokens == -1)
+                    return null;
+                if (m_remainingForeverTokens == 0)
+                    return false;
+
+                if (m_remainingForeverTokens > 0)
+                    m_remainingForeverTokens--;
+
+                return true;
+            }
+        }
 
         public string RemoteControlConfig
         {
