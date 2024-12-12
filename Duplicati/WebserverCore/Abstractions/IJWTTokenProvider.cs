@@ -57,13 +57,20 @@ public interface IJWTTokenProvider
     /// <param name="userId">The user ID the token is for.</param>
     /// <param name="tokenFamilyId">The token family ID the token is for.</param>
     /// <param name="expiration">The expiration time of the token, can only be shorter than the current.</param>
+    /// <returns>The JWT token.</returns>
     string CreateAccessToken(string userId, string tokenFamilyId, TimeSpan? expiration = null);
+    /// <summary>
+    /// Creates a JWT token that can be used to access resources &quot;forever&quot;.
+    /// </summary>
+    /// <returns>The JWT token.</returns>
+    string CreateForeverToken();
     /// <summary>
     /// Creates a JWT token that can be used to refresh an access token.
     /// </summary>
     /// <param name="userId">The user ID the token is for.</param>
     /// <param name="tokenFamilyId">The token family ID the token is for.</param>
     /// <param name="counter">The counter of the token family the token is for.</param>
+    /// <returns>The JWT token.</returns>
     string CreateRefreshToken(string userId, string tokenFamilyId, int counter);
 
     /// <summary>

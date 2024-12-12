@@ -134,6 +134,14 @@ public partial class Auth : IEndpointV1
             var singleOperationToken = tokenProvider.CreateSingleOperationToken("web-api", operation);
             return new Dto.SingleOperationTokenOutputDto(singleOperationToken);
         }).RequireAuthorization();
+
+        group.MapPost("auth/issue-forever-token", ([FromServices] Connection connection, [FromServices] IJWTTokenProvider tokenProvider) =>
+        {
+            if (!connection.ApplicationSettings.EnableForeverTokens)
+                throw new UnauthorizedException("Forever tokens are not enabled");
+
+            return new Dto.AccessTokenOutput(tokenProvider.CreateForeverToken());
+        }).RequireAuthorization();
     }
 
     private static void AddCookie(HttpContext context, string name, string value, DateTimeOffset expires)

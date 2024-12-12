@@ -491,6 +491,10 @@ namespace Duplicati.Server.Database
             }
         }
 
+        // Enabling forever-tokens is not persisted in the database,
+        // as it is meant to be a temporary setting
+        public bool EnableForeverTokens { get; set; } = false;
+
         public string RemoteControlConfig
         {
             get => settings[CONST.REMOTE_CONTROL_CONFIG];
