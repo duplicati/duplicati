@@ -40,7 +40,7 @@ public static partial class Command
                 }, workingDirectory: baseDir);
 
             // Then push the release
-            await ProcessHelper.Execute(new[] { "git", "push" }, workingDirectory: baseDir);
+            await ProcessHelper.Execute(new[] { "git", "push", "-u", "origin", "head" }, workingDirectory: baseDir);
             await ProcessHelper.Execute(new[] { "git", "push", "--tags" }, workingDirectory: baseDir);
         }
     }
