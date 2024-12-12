@@ -66,6 +66,11 @@ public static class WebServerLoader
     public const string OPTION_WEBSERVICE_RESET_JWT_CONFIG = "webservice-reset-jwt-config";
 
     /// <summary>
+    /// Option for enabling the forever token
+    /// </summary>
+    public const string OPTION_WEBSERVICE_ENABLE_FOREVER_TOKEN = "webservice-enable-forever-token";
+
+    /// <summary>
     /// Option for disabling the visual captcha
     /// </summary>
     public const string OPTION_WEBSERVICE_DISABLE_VISUAL_CAPTCHA = "webservice-disable-visual-captcha";

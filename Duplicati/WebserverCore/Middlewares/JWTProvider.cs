@@ -32,6 +32,7 @@ public record JWTConfig
 public class JWTTokenProvider(JWTConfig jWTConfig) : IJWTTokenProvider
 {
     private const string TemporaryFamilyId = "temporary";
+    private const string ForeverTokenUserId = "forever-token";
     public string CreateSingleOperationToken(string userId, string operation)
         => GenerateToken([
             new Claim(Claims.Type, TokenType.SingleOperationToken.ToString()),
@@ -51,6 +52,13 @@ public class JWTTokenProvider(JWTConfig jWTConfig) : IJWTTokenProvider
             new Claim(Claims.UserId, userId),
             new Claim(Claims.Family, tokenFamilyId)
         ], DateTime.Now, expires: DateTime.Now.AddMinutes(Math.Min(jWTConfig.AccessTokenDurationInMinutes, expiration?.TotalMinutes ?? jWTConfig.AccessTokenDurationInMinutes)));
+
+    public string CreateForeverToken()
+    => GenerateToken([
+            new Claim(Claims.Type, TokenType.AccessToken.ToString()),
+            new Claim(Claims.UserId, ForeverTokenUserId),
+            new Claim(Claims.Family, TemporaryFamilyId)
+        ], DateTime.Now, expires: DateTime.Now.AddYears(10));
 
     public string CreateRefreshToken(string userId, string tokenFamilyId, int counter)
         => GenerateToken([
