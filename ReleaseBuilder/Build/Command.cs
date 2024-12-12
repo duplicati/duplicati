@@ -472,6 +472,9 @@ public static partial class Command
                 throw new Exception($"The following packages cannot be built without Docker: {string.Join(", ", unsupportedBuilds.Select(x => x.PackageTargetString))}");
         }
 
+        // Prevent the system from going to sleep during the build
+        using var _ = new KeepAliveAssertion();
+
         if (rtcfg.UseGithubUpload && !input.GitStashPush)
         {
             Console.WriteLine("Github upload requested, but pushing the tag is disabled");
