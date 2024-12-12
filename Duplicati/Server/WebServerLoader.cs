@@ -68,7 +68,7 @@ public static class WebServerLoader
     /// <summary>
     /// Option for enabling the forever token
     /// </summary>
-    public const string OPTION_WEBSERVICE_ENABLE_FOREVER_TOKEN = "webservice-enable-forver-token";
+    public const string OPTION_WEBSERVICE_ENABLE_FOREVER_TOKEN = "webservice-enable-forever-token";
 
     /// <summary>
     /// Option for disabling the visual captcha
