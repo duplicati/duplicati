@@ -1,3 +1,20 @@
+2024-12-12 - 2.1.0.102_canary_2024-12-12
+==========
+This release is a canary release intended to be used for testing.
+
+**Note that this build is using .NET8, unlike the 2.0.8.1 build**
+
+**Note that this build has a redesigned restore flow**
+Should issues arise, the previous restore engine can be enabled with `--restore-legacy=true`.
+
+## Detailed list of changes:
+- Upgraded FluentFTP to fix a crash on socket timeout
+- Removed named channels to fix a rare exception
+- Rewrote the restore process to be multithreaded and target optimal disk I/O write performance
+- Added missing documentation to the iDrive e2 backend
+- Added activity timeout on backend transfers
+- Added support for generating a "forever token"
+
 2024-12-06 - 2.1.0.101_canary_2024-12-06
 ==========
 This release is a canary release intended to be used for testing.
