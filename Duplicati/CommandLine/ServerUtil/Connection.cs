@@ -454,6 +454,19 @@ public class Connection
     }
 
     /// <summary>
+    /// Creates a forever token
+    /// </summary>
+    /// <returns>The token</returns>
+    public async Task<string> CreateForeverToken()
+    {
+        var response = await client.PostAsync($"auth/issue-forever-token", null);
+        await EnsureSuccessStatusCodeWithParsing(response);
+
+        return await response.Content.ReadAsStringAsync();
+    }
+
+
+    /// <summary>
     /// The server error structure for JSON deserialization
     /// </summary>
     /// <param name="Error">The error message</param>
