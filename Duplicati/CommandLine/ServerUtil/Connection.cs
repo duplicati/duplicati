@@ -239,7 +239,7 @@ public class Connection
     /// <param name="password">The password to use</param>
     /// <param name="obtainRefreshToken">Whether to obtain a refresh token</param>
     /// <returns>The access and refresh tokens</returns>
-    private static Task<(string? AccessToken, string? RefreshToken)> LoginWithPassword(HttpClient client, string password, bool obtainRefreshToken)
+    private static Task<(string AccessToken, string? RefreshToken)> LoginWithPassword(HttpClient client, string password, bool obtainRefreshToken)
         => ParseAuthResponse(
             client.PostAsync($"auth/login", JsonContent.Create(new { Password = password, RememberMe = obtainRefreshToken }))
         );
@@ -250,7 +250,7 @@ public class Connection
     /// <param name="client">The HTTP client</param>
     /// <param name="refreshToken">The refresh token to use</param>
     /// <returns>The access and refresh tokens</returns>
-    private static Task<(string? AccessToken, string? RefreshToken)> LoginWithRefreshToken(HttpClient client, string refreshToken)
+    private static Task<(string AccessToken, string? RefreshToken)> LoginWithRefreshToken(HttpClient client, string refreshToken)
         => ParseAuthResponse(client.SendAsync(new HttpRequestMessage(HttpMethod.Post, "auth/refresh")
         {
             Headers = { { "Cookie", $"RefreshToken_{client.BaseAddress!.Port}={refreshToken}" } },
@@ -262,7 +262,7 @@ public class Connection
     /// </summary>
     /// <param name="response">The response to parse</param>
     /// <returns>The access and refresh tokens</returns>
-    private static async Task<(string? AccessToken, string? RefreshToken)> ParseAuthResponse(Task<HttpResponseMessage> responseTask)
+    private static async Task<(string AccessToken, string? RefreshToken)> ParseAuthResponse(Task<HttpResponseMessage> responseTask)
     {
         var response = await responseTask;
         await EnsureSuccessStatusCodeWithParsing(response);
@@ -455,10 +455,8 @@ public class Connection
     /// <returns>The token</returns>
     public async Task<string> CreateForeverToken()
     {
-        var response = await client.PostAsync($"auth/issue-forever-token", null);
-        await EnsureSuccessStatusCodeWithParsing(response);
-
-        return await response.Content.ReadAsStringAsync();
+        var (accessToken, _) = await ParseAuthResponse(client.PostAsync($"auth/issue-forever-token", null));
+        return accessToken;
     }
 
 
