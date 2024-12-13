@@ -53,6 +53,38 @@ public static class PreloadSettingsLoader
     private static readonly bool PreloadDebug = !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(PreloadSettingsDebugEnvVar));
 
     /// <summary>
+    /// The folder name for the preload settings
+    /// </summary>
+    private const string FOLDER_NAME = "Duplicati";
+    /// <summary>
+    /// The file name for the preload settings
+    /// </summary>
+    private const string FILE_NAME = "preload.json";
+
+    /// <summary>
+    /// The path for preload settings specified with an environment variable
+    /// </summary>
+    private static readonly string PreloadSettingsFile = Environment.GetEnvironmentVariable(PreloadSettingsEnvVar) ?? "";
+
+    /// <summary>
+    /// Paths that are suited for portable installations
+    /// </summary>
+    private static readonly string[] PortablePreloadPaths = new string[] {
+    
+        // The path for preload settings with the install directory
+        Path.Combine(
+            Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location) ?? "",
+            "preload.json"
+        ),
+
+        // The path for preload settings specified with an environment variable
+        PreloadSettingsFile,
+    }
+    .Where(x => !string.IsNullOrEmpty(x))
+    .Distinct()
+    .ToArray();
+
+    /// <summary>
     /// The preload paths to search for settings in.
     /// Each path is checked and applied to obtain the final settings.
     /// Later paths take precedence over earlier ones, so the env variable is most specific.
@@ -61,22 +93,31 @@ public static class PreloadSettingsLoader
     private static readonly string[] PreloadPaths = new string[]
     {
         // The default path for preload settings
-        Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
-            "Duplicati",
-            "preload.json"
+        OperatingSystem.IsMacOS()
+            ? ""
+            : Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
+                FOLDER_NAME,
+                FILE_NAME
         ),
 
-        // The path for preload settings with the install directory
-        Path.Combine(
-            Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location) ?? "",
-            "preload.json"
-        ),
+        // MacOS reports CommonApplicationData as /usr/share, which is not writable
+        // so we use /usr/local/share instead
+        OperatingSystem.IsMacOS() || OperatingSystem.IsLinux()
+            ? Path.Combine("/usr/local/share", FOLDER_NAME, FILE_NAME)
+            : "",
 
-        // The path for preload settings specified with an environment variable
-        Environment.GetEnvironmentVariable(PreloadSettingsEnvVar) ?? "",
+        // User-context path for preload settings,
+        // the same default path as where other data is stored
+        Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            FOLDER_NAME,
+            FILE_NAME
+        )
     }
+    .Concat(PortablePreloadPaths)
     .Where(x => !string.IsNullOrEmpty(x))
+    .Distinct()
     .ToArray();
 
     /// <summary>
@@ -95,7 +136,7 @@ public static class PreloadSettingsLoader
     /// <param name="dbsettings">The database settings</param>
     public static void ConfigurePreloadSettings(ref string[] arguments, PackageHelper.NamedExecutable executable, out Dictionary<string, string?> dbsettings)
     {
-        var (env, args, db) = GetExecutableMergedSettings(executable);
+        var (env, args, db) = GetExecutableMergedSettings(executable, IsPortableModeRequested(arguments));
 
         dbsettings = db;
         ApplyEnvironmentVariables(env);
@@ -111,11 +152,54 @@ public static class PreloadSettingsLoader
         => arg.Split('=', 2)[0];
 
     /// <summary>
+    /// Helper function to check if portable mode is requested.
+    /// This is a rudimentary function that mimics the commandline parser,
+    /// which is not loaded during preload
+    /// </summary>
+    /// <param name="args">The arguments to check</param>
+    /// <returns><c>true</c> if portable mode is requested, <c>false</c> otherwise</returns>
+    private static bool IsPortableModeRequested(string[] args)
+    {
+        var candiate = args.Select((x, i) => (x, i))
+            .Where(x => x.x != null)
+            .Where(x => x.x.Equals("--portable-mode", StringComparison.OrdinalIgnoreCase) || x.x.StartsWith("--portable-mode=", StringComparison.OrdinalIgnoreCase))
+            .LastOrDefault();
+        if (candiate.x == null)
+            return false;
+
+        var value = (string?)null;
+        if (candiate.x.Contains("="))
+            value = candiate.x.Split('=', 2)[1];
+        else
+        {
+            value = args.ElementAtOrDefault(candiate.i + 1);
+            if (value == null || value.StartsWith("--"))
+                value = "true";
+        }
+
+        if (value == null)
+            return false;
+
+        value = value.TrimStart('"').TrimEnd('"').ToLowerInvariant();
+        return value switch
+        {
+            "1" => true,
+            "on" => true,
+            "true" => true,
+            "yes" => true,
+            _ => false,
+        };
+
+    }
+
+    /// <summary>
     /// Gets the merged settings for the given executable
     /// </summary>
     /// <param name="executable">The executable to get settings for</param>
+    /// <param name="sourceargs">The source commandline arguments</param>
+    /// <param name="portableMode">The portable mode flag</param>
     /// <returns>The merged settings</returns>
-    private static (Dictionary<string, string> env, List<string> args, Dictionary<string, string?> db) GetExecutableMergedSettings(PackageHelper.NamedExecutable executable)
+    private static (Dictionary<string, string> env, List<string> args, Dictionary<string, string?> db) GetExecutableMergedSettings(PackageHelper.NamedExecutable executable, bool portableMode)
     {
         // Collect settings in generic and specific dictionaries
         // The executable-specific settings take precedence over the generic ones,
@@ -138,7 +222,22 @@ public static class PreloadSettingsLoader
                     target[kvp.Key] = kvp.Value;
         }
 
-        foreach (var path in PreloadPaths)
+        var paths = PreloadPaths;
+        if (portableMode)
+        {
+            if (PreloadDebug)
+                Console.WriteLine("Portable mode detected, using portable preload paths only");
+            paths = PortablePreloadPaths;
+        }
+
+        if (!string.IsNullOrWhiteSpace(PreloadSettingsFile) && PreloadSettingsFile.StartsWith("!"))
+        {
+            if (PreloadDebug)
+                Console.WriteLine($"Preload settings file specified with environment variable and exclamation mark, ignoring others");
+            paths = new[] { PreloadSettingsFile.Substring(1) };
+        }
+
+        foreach (var path in paths)
         {
             if (!Path.IsPathRooted(path))
             {
@@ -257,16 +356,20 @@ public static class PreloadSettingsLoader
             {
                 if (result == null)
                 {
-                    Console.WriteLine($"Loaded empty preload settings from {path}");
+                    if (PreloadDebug)
+                        Console.WriteLine($"Loaded empty preload settings from {path}");
                     return null;
                 }
 
                 var jsData = JsonSerializer.Deserialize<JsonElement>(File.ReadAllText(path));
                 var unmatched_keys = jsData.EnumerateObject().Select(x => x.Name).Except(["db", "env", "args"]);
-                if (unmatched_keys.Any())
-                    Console.WriteLine($"Unexpected key(s) in preload settings: {string.Join(", ", unmatched_keys)}");
+                if (PreloadDebug)
+                {
+                    if (unmatched_keys.Any())
+                        Console.WriteLine($"Unexpected key(s) in preload settings: {string.Join(", ", unmatched_keys)}");
 
-                Console.WriteLine($"Loaded preload settings from {path}");
+                    Console.WriteLine($"Loaded preload settings from {path}");
+                }
 
                 var allowedSources = Enum.GetValues<PackageHelper.NamedExecutable>()
                     .Select(MapExecutableName)
@@ -277,12 +380,15 @@ public static class PreloadSettingsLoader
                 var unmatched_env = result.env?.Keys.Where(x => !allowedSources.Contains(x)) ?? [];
                 var unmatched_args = result.args?.Keys.Where(x => !allowedSources.Contains(x)) ?? [];
 
-                if (unmatched_db.Any())
-                    Console.WriteLine($"Found unknown executable name(s) in db preload settings: {string.Join(", ", unmatched_db)}");
-                if (unmatched_env.Any())
-                    Console.WriteLine($"Found unknown executable name(s) in env preload settings: {string.Join(", ", unmatched_env)}");
-                if (unmatched_args.Any())
-                    Console.WriteLine($"Found unknown executable name(s) in args preload settings: {string.Join(", ", unmatched_args)}");
+                if (PreloadDebug)
+                {
+                    if (unmatched_db.Any())
+                        Console.WriteLine($"Found unknown executable name(s) in db preload settings: {string.Join(", ", unmatched_db)}");
+                    if (unmatched_env.Any())
+                        Console.WriteLine($"Found unknown executable name(s) in env preload settings: {string.Join(", ", unmatched_env)}");
+                    if (unmatched_args.Any())
+                        Console.WriteLine($"Found unknown executable name(s) in args preload settings: {string.Join(", ", unmatched_args)}");
+                }
             }
 
             return result;
