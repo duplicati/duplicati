@@ -44,7 +44,23 @@ namespace Duplicati.Library.Main.Operation.Backup
         /// </summary>
         private static readonly string FILTER_LOGTAG = Logging.Log.LogTagFromType(typeof(FileEnumerationProcess));
 
-        public static Task Run(Channels channels, IEnumerable<string> sources, Snapshots.ISnapshotService snapshot, UsnJournalService journalService, FileAttributes fileAttributes, Duplicati.Library.Utility.IFilter sourcefilter, Duplicati.Library.Utility.IFilter emitfilter, Options.SymlinkStrategy symlinkPolicy, Options.HardlinkStrategy hardlinkPolicy, bool excludeemptyfolders, string[] ignorenames, HashSet<string> blacklistPaths, string[] changedfilelist, ITaskReader taskreader, CancellationToken token)
+        public static Task Run(
+            Channels channels,
+            IEnumerable<string> sources,
+            ISnapshotService snapshot,
+            UsnJournalService journalService,
+            FileAttributes fileAttributes,
+            Library.Utility.IFilter sourcefilter,
+            Library.Utility.IFilter emitfilter,
+            Options.SymlinkStrategy symlinkPolicy,
+            Options.HardlinkStrategy hardlinkPolicy,
+            bool excludeemptyfolders,
+            string[] ignorenames,
+            HashSet<string> blacklistPaths,
+            string[] changedfilelist,
+            ITaskReader taskreader,
+            Action onStopRequested,
+            CancellationToken token)
         {
             return AutomationExtensions.RunTask(
             new
@@ -122,7 +138,10 @@ namespace Duplicati.Library.Main.Operation.Backup
                     {
                         // Stop if requested
                         if (token.IsCancellationRequested || !await taskreader.ProgressRendevouz().ConfigureAwait(false))
+                        {
+                            onStopRequested?.Invoke();
                             return;
+                        }
 
                         await self.Output.WriteAsync(s);
                     }

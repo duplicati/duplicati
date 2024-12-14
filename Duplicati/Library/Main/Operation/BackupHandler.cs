@@ -310,7 +310,8 @@ namespace Duplicati.Library.Main.Operation
                                 Backup.FileEnumerationProcess.Run(channels, sources, snapshot, journalService,
                                     options.FileAttributeFilter, sourcefilter, filter, options.SymlinkPolicy,
                                     options.HardlinkPolicy, options.ExcludeEmptyFolders, options.IgnoreFilenames,
-                                    GetBlacklistedPaths(options), options.ChangedFilelist, taskreader, CancellationToken.None),
+                                    GetBlacklistedPaths(options), options.ChangedFilelist, taskreader,
+                                    () => result.PartialBackup = true, CancellationToken.None),
                                 Backup.FilePreFilterProcess.Run(channels, snapshot, options, stats, database),
                                 Backup.MetadataPreProcess.Run(channels, snapshot, options, database, lastfilesetid, taskreader),
                                 Backup.SpillCollectorProcess.Run(channels, options, database, taskreader),
@@ -367,12 +368,10 @@ namespace Duplicati.Library.Main.Operation
 
                 if (taskreader.IsStopRequested)
                 {
-                    result.PartialBackup = true;
                     Log.WriteWarningMessage(LOGTAG, "CancellationRequested", null, "Cancellation was requested by user.");
                 }
                 else
                 {
-                    result.PartialBackup = false;
                     await database.UpdateFilesetAndMarkAsFullBackupAsync(filesetid);
                 }
 
