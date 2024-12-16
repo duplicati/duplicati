@@ -76,6 +76,16 @@ namespace Duplicati.Library.Main
         private ControllerMultiLogTarget m_logTarget;
 
         /// <summary>
+        /// Callback method invoked when an operation is started
+        /// </summary>
+        public Action<IBasicResults> OnOperationStarted { get; set; }
+
+        /// <summary>
+        /// Callback method invoked when an operation is completed
+        /// </summary>
+        public Action<IBasicResults, Exception> OnOperationCompleted { get; set; }
+
+        /// <summary>
         /// Constructs a new interface for performing backup and restore operations
         /// </summary>
         /// <param name="backend">The url for the backend to use</param>
@@ -398,7 +408,7 @@ namespace Duplicati.Library.Main
         }
 
         private T RunAction<T>(T result, Action<T> method)
-            where T : ISetCommonOptions, ITaskControlProvider, Logging.ILogDestination
+            where T : ISetCommonOptions, ITaskControlProvider, Logging.ILogDestination, IBasicResults
         {
             var tmp = new string[0];
             IFilter tempfilter = null;
@@ -406,22 +416,24 @@ namespace Duplicati.Library.Main
         }
 
         private T RunAction<T>(T result, ref string[] paths, Action<T> method)
-            where T : ISetCommonOptions, ITaskControlProvider, Logging.ILogDestination
+            where T : ISetCommonOptions, ITaskControlProvider, Logging.ILogDestination, IBasicResults
         {
             IFilter tempfilter = null;
             return RunAction<T>(result, ref paths, ref tempfilter, method);
         }
 
         private T RunAction<T>(T result, ref IFilter filter, Action<T> method)
-            where T : ISetCommonOptions, ITaskControlProvider, Logging.ILogDestination
+            where T : ISetCommonOptions, ITaskControlProvider, Logging.ILogDestination, IBasicResults
         {
             var tmp = new string[0];
             return RunAction<T>(result, ref tmp, ref filter, method);
         }
 
         private T RunAction<T>(T result, ref string[] paths, ref IFilter filter, Action<T> method)
-            where T : ISetCommonOptions, ITaskControlProvider, Logging.ILogDestination
+            where T : ISetCommonOptions, ITaskControlProvider, Logging.ILogDestination, IBasicResults
         {
+            OnOperationStarted?.Invoke(result);
+            var resultSetter = result as ISetCommonOptions;
             m_logTarget = new ControllerMultiLogTarget(result, Logging.LogMessageType.Information, null);
             using (Logging.Log.StartScope(m_logTarget, null))
             {
@@ -442,15 +454,15 @@ namespace Duplicati.Library.Main
                     using (m_options.ConcurrencyMaxThreads <= 0 ? null : new CoCoL.CappedThreadedThreadPool(m_options.ConcurrencyMaxThreads))
                         method(result);
 
-                    if (result.EndTime.Ticks == 0)
-                        result.EndTime = DateTime.UtcNow;
+                    if (resultSetter.EndTime.Ticks == 0)
+                        resultSetter.EndTime = DateTime.UtcNow;
                     result.SetDatabase(null);
                     if (result is BasicResults r)
                     {
                         r.Interrupted = false;
                     }
 
-                    OnOperationComplete(result, null);
+                    OperationComplete(result, null);
 
                     Logging.Log.WriteInformationMessage(LOGTAG, "CompletedOperation", Strings.Controller.CompletedOperationMessage(m_options.MainAction));
 
@@ -458,7 +470,7 @@ namespace Duplicati.Library.Main
                 }
                 catch (Exception ex)
                 {
-                    result.EndTime = DateTime.UtcNow;
+                    resultSetter.EndTime = DateTime.UtcNow;
 
                     if (ex is Library.Interface.OperationAbortException oae)
                     {
@@ -479,14 +491,14 @@ namespace Duplicati.Library.Main
                                 }
 
                                 // Do not propagate the cancel exception
-                                OnOperationComplete(result, null);
+                                OperationComplete(result, null);
                             }
                             catch { }
                         }
                         else
                         {
                             // Perform the module shutdown
-                            OnOperationComplete(ex, ex);
+                            OperationComplete(result, ex);
                         }
 
                         return result;
@@ -512,7 +524,7 @@ namespace Duplicati.Library.Main
                                 }
 
                                 // Report the result, and the failure
-                                OnOperationComplete(result, ex);
+                                OperationComplete(result, ex);
 
                             }
                             catch { }
@@ -520,7 +532,7 @@ namespace Duplicati.Library.Main
                         else
                         {
                             // Perform the module shutdown
-                            OnOperationComplete(ex, ex);
+                            OperationComplete(result, ex);
                         }
 
                         throw;
@@ -554,7 +566,7 @@ namespace Duplicati.Library.Main
             System.Globalization.CultureInfo.DefaultThreadCurrentUICulture = uiLocale;
         }
 
-        private void OnOperationComplete(object result, Exception exception)
+        private void OperationComplete(IBasicResults result, Exception exception)
         {
             if (m_options != null && m_options.LoadedModules != null)
             {
@@ -588,6 +600,8 @@ namespace Duplicati.Library.Main
                 m_logTarget.Dispose();
                 m_logTarget = null;
             }
+
+            OnOperationCompleted?.Invoke(result, exception);
         }
 
         private void SetupCommonOptions(ISetCommonOptions result, ref string[] paths, ref IFilter filter)

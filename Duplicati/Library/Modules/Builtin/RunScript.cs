@@ -184,7 +184,7 @@ namespace Duplicati.Library.Modules.Builtin
             m_localpath = localpath;
         }
 
-        public void OnFinish(object result, Exception exception)
+        public void OnFinish(IBasicResults result, Exception exception)
         {
             // Dispose the current log scope
             if (m_logscope != null)
@@ -198,7 +198,7 @@ namespace Duplicati.Library.Modules.Builtin
                 return;
 
             ParsedResultType level;
-            OperationAbortException oae = result as OperationAbortException ?? exception as OperationAbortException;
+            OperationAbortException oae = exception as OperationAbortException;
             if (oae != null)
             {
                 switch (oae.AbortReason)
@@ -217,10 +217,10 @@ namespace Duplicati.Library.Modules.Builtin
                         break;
                 }
             }
-            else if (result is Exception || exception != null)
+            else if (exception != null)
                 level = ParsedResultType.Fatal;
-            else if (result != null && result is IBasicResults results)
-                level = results.ParsedResult;
+            else if (result != null)
+                level = result.ParsedResult;
             else
                 level = ParsedResultType.Error;
 
@@ -304,9 +304,9 @@ namespace Duplicati.Library.Modules.Builtin
 
                         stderr = cs.StandardError;
                         stdout = cs.StandardOutput;
-                        
+
                         SendStdOutToLogs(stdout);
-                        
+
                         if (p.ExitCode != 0)
                         {
                             if (!requiredScript)
@@ -455,7 +455,7 @@ namespace Duplicati.Library.Modules.Builtin
                 m_task.Wait(TimeSpan.FromSeconds(5));
             }
         }
-        
+
         /// <summary>
         /// Define the log actions for the different prefixes
         /// </summary>
@@ -465,7 +465,7 @@ namespace Duplicati.Library.Modules.Builtin
             ["LOG:ERROR"] = msg => Log.WriteErrorMessage(LOGTAG, "ScriptOutput", null, msg),
             ["LOG:INFO"] = msg => Log.WriteInformationMessage(LOGTAG, "ScriptOutput", msg)
         };
-        
+
         /// <summary>
         /// Parses the STDOUT of the script and sends it to the logs according to the prefix
         /// </summary>

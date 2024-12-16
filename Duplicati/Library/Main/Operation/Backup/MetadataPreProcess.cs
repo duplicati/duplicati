@@ -86,6 +86,9 @@ namespace Duplicati.Library.Main.Operation.Backup
                 {
                     var path = await self.Input.ReadAsync();
 
+                    // We ignore the stop signal, but not the pause and terminate
+                    await taskReader.ProgressRendevouz().ConfigureAwait(false);
+
                     var lastwrite = new DateTime(0, DateTimeKind.Utc);
                     var attributes = default(FileAttributes);
                     try
@@ -164,8 +167,6 @@ namespace Duplicati.Library.Main.Operation.Backup
 
                             Logging.Log.WriteWarningMessage(FILELOGTAG, "ProcessingMetadataFailed", ex,
                                 "Failed to process entry, path: {0}", path);
-
-                            taskReader.ProgressToken.ThrowIfCancellationRequested();
                         }
                     }
                 }

@@ -46,6 +46,14 @@ namespace Duplicati.Library.Main.Operation.Common
         /// <returns><c>true</c> if the progress should continue, <c>false</c> if it should stop</returns>
         Task<bool> ProgressRendevouz();
 
+#if DEBUG
+        /// <summary>
+        /// Callback for testing the task control
+        /// </summary>
+        /// <param name="path">The path being processed</param>
+        Action<string> TestMethodCallback { get; set; }
+#endif
+
     }
 
     /// <summary>
@@ -224,19 +232,16 @@ namespace Duplicati.Library.Main.Operation.Common
             }
         }
 
-        /// <summary>
-        /// Releases all resource used by the <see cref="Duplicati.Library.Main.Operation.Common.TaskControl"/> object.
-        /// </summary>
-        /// <remarks>Call <see cref="Dispose"/> when you are finished using the
-        /// <see cref="Duplicati.Library.Main.Operation.Common.TaskControl"/>. The <see cref="Dispose"/> method leaves
-        /// the <see cref="Duplicati.Library.Main.Operation.Common.TaskControl"/> in an unusable state. After calling
-        /// <see cref="Dispose"/>, you must release all references to the
-        /// <see cref="Duplicati.Library.Main.Operation.Common.TaskControl"/> so the garbage collector can reclaim the
-        /// memory that the <see cref="Duplicati.Library.Main.Operation.Common.TaskControl"/> was occupying.</remarks>
+        /// <inheritdoc />
         public void Dispose()
         {
             Terminate();
         }
+
+#if DEBUG
+        /// <inheritdoc />
+        public Action<string> TestMethodCallback { get; set; }
+#endif
     }
 }
 

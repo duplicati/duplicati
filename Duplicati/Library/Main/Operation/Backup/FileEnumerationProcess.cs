@@ -136,6 +136,15 @@ namespace Duplicati.Library.Main.Operation.Backup
                     // Process each path, and dequeue the mixins with symlinks as we go
                     foreach (var s in source)
                     {
+#if DEBUG
+                        // For testing purposes, we need exact control
+                        // when requesting a process stop.
+                        // The "onStopRequested" callback is used to detect
+                        // if the process is the real file enumeration process
+                        // because the counter processe does not have a callback
+                        if (onStopRequested != null)
+                            taskreader.TestMethodCallback?.Invoke(s);
+#endif
                         // Stop if requested
                         if (token.IsCancellationRequested || !await taskreader.ProgressRendevouz().ConfigureAwait(false))
                         {

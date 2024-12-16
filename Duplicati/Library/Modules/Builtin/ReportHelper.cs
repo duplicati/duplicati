@@ -33,7 +33,7 @@ namespace Duplicati.Library.Modules.Builtin
     /// <summary>
     /// A helper module that contains all shared code used in the various reporting modules
     /// </summary>
-    public abstract class ReportHelper : Interface.IGenericCallbackModule
+    public abstract class ReportHelper : IGenericCallbackModule
     {
         /// <summary>
         /// The tag used for logging
@@ -429,7 +429,7 @@ namespace Duplicati.Library.Modules.Builtin
             }
         }
 
-        public void OnFinish(object result, Exception exception)
+        public void OnFinish(IBasicResults result, Exception exception)
         {
             // Dispose the current log scope
             if (m_logscope != null)
@@ -447,10 +447,10 @@ namespace Duplicati.Library.Modules.Builtin
                 return;
 
             ParsedResultType level;
-            if (result is Exception || exception != null)
+            if (exception != null)
                 level = ParsedResultType.Fatal;
-            else if (result != null && result is IBasicResults results)
-                level = results.ParsedResult;
+            else if (result != null)
+                level = result.ParsedResult;
             else
                 level = ParsedResultType.Error;
 
