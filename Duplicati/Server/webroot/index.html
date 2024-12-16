@@ -28,7 +28,7 @@
         // Make an absolute path redirect, as relative redirects break if the port is non-standard
         var path = window.location.pathname;
         
-        if (path.lastIndexOf('.html') == path.length - '.html'.length)
+        if (path.lastIndexOf('.html') !== -1 && path.lastIndexOf('.html') == path.length - '.html'.length)
             path = path.substr(0, path.lastIndexOf('/'));
         
         if (path.lastIndexOf('/') + 1 != path.length)
