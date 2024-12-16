@@ -247,7 +247,7 @@ namespace Duplicati.Library.Main.Operation
                         if (options.NoBackendverification)
                         {
                             FilelistProcessor.VerifyLocalList(backendManager, database);
-                            UpdateStorageStatsFromDatabase(result, database, options, backendManager);
+                            await UpdateStorageStatsFromDatabase(result, database, options, backendManager, result.TaskControl.ProgressToken).ConfigureAwait(false);
                         }
                         else
                             FilelistProcessor.VerifyRemoteList(backendManager, options, database, result.BackendWriter, new string[] { lastTempFilelist }, logErrors: false);
@@ -427,7 +427,7 @@ namespace Duplicati.Library.Main.Operation
         /// <summary>
         /// Handler for computing backend statistics, without relying on a remote folder listing
         /// </summary>
-        private static void UpdateStorageStatsFromDatabase(BackupResults result, LocalBackupDatabase database, Options options, BackendManager backendManager)
+        private static async Task UpdateStorageStatsFromDatabase(BackupResults result, LocalBackupDatabase database, Options options, BackendManager backendManager, CancellationToken cancelToken)
         {
             if (result.BackendWriter != null)
             {
@@ -442,7 +442,7 @@ namespace Duplicati.Library.Main.Operation
 
                 if (!options.QuotaDisable)
                 {
-                    var quota = backendManager.GetQuotaInfoAsync(CancellationToken.None).Await();
+                    var quota = await backendManager.GetQuotaInfoAsync(cancelToken).ConfigureAwait(false);
                     if (quota != null)
                     {
                         result.BackendWriter.TotalQuotaSpace = quota.TotalQuotaSpace;
@@ -655,7 +655,7 @@ namespace Duplicati.Library.Main.Operation
                         if (await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
                         {
                             if (m_options.NoBackendverification)
-                                UpdateStorageStatsFromDatabase(m_result, m_database, m_options, backendManager);
+                                await UpdateStorageStatsFromDatabase(m_result, m_database, m_options, backendManager, m_taskReader.ProgressToken).ConfigureAwait(false);
                             else
                                 PostBackupVerification(filesetvolume.RemoteFilename);
                         }
