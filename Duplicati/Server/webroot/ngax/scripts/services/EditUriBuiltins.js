@@ -1221,7 +1221,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
 		if(res && scope['storj_auth_method'] == 'API key' && scope['storj_secret'] != scope['storj_secret_verify'])
 			res = EditUriBackendConfig.show_error_dialog(gettextCatalog.getString('The encryption passphrases do not match'));
 		
-		var re = new RegExp('^([a-z0-9]+([a-z0-9\-][a-z0-9])*)+(.[a-z0-9]+([a-z0-9\-][a-z0-9])*)*$');
+		var re = new RegExp('^([a-z0-9]+([a-z0-9-][a-z0-9])*)+(.[a-z0-9]+([a-z0-9-][a-z0-9])*)*$');
 		if(res && scope['storj_bucket'] && (!re.test(scope['storj_bucket']) || !(scope['storj_bucket'].length > 2 && scope['storj_bucket'].length < 64))){
 			res = EditUriBackendConfig.show_error_dialog(gettextCatalog.getString('Bucket name can only be between 3 and 63 characters long and contain only lower-case characters, numbers, periods and dashes'));
 		}
