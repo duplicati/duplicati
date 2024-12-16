@@ -180,6 +180,7 @@ public partial class DuplicatiWebserver
                 options.Audience = jwtConfig.Audience;
                 options.SaveToken = true;
                 options.TokenValidationParameters = JWTTokenProvider.GetTokenValidationParameters(jwtConfig);
+                options.Configuration = new Microsoft.IdentityModel.Protocols.OpenIdConnect.OpenIdConnectConfiguration();
 
                 options.Events = new JwtBearerEvents
                 {
