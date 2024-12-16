@@ -675,7 +675,8 @@ namespace Duplicati.Library.Main
 
         private void HandleProgress(ThrottledStream ts, long pg)
         {
-            m_taskReader?.ProgressToken.ThrowIfCancellationRequested();
+            // This pauses and throws on cancellation, but ignores stop
+            m_taskReader?.TransferRendevouz();
 
             // Update the throttle speeds if they have changed
             string tmp;

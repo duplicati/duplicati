@@ -73,6 +73,11 @@ namespace Duplicati.Server
         private LiveControlState m_state;
 
         /// <summary>
+        /// A value that indicates if the transfers are paused
+        /// </summary>
+        private bool m_transfersPaused = false;
+
+        /// <summary>
         /// A value that indicates if the current pause state is caused by being suspended
         /// </summary>
         private bool m_pausedForSuspend = false;
@@ -87,7 +92,15 @@ namespace Duplicati.Server
         /// </summary>
         public LiveControlState State { get { return m_state; } }
 
+        /// <summary>
+        /// Gets a value that indicates if the backups are running
+        /// </summary>
         public bool IsPaused => State == LiveControlState.Paused;
+
+        /// <summary>
+        /// Gets a value that indicates if the transfers are paused
+        /// </summary>
+        public bool TransfersPaused => m_transfersPaused;
 
         /// <summary>
         /// The internal variable that tracks the the priority
@@ -286,11 +299,12 @@ namespace Duplicati.Server
         /// <summary>
         /// Pauses the backups until resumed
         /// </summary>
-        public void Pause()
+        public void Pause(bool alsoTransfers)
         {
             lock (m_lock)
             {
                 var fireEvent = m_waitTimeExpiration.Ticks != 0 && m_state == LiveControlState.Paused && StateChanged != null;
+                m_transfersPaused = alsoTransfers;
 
                 ResetTimer(null);
 
@@ -313,6 +327,7 @@ namespace Duplicati.Server
                     //Make sure that the timer is cleared
                     ResetTimer(null);
 
+                    m_transfersPaused = false;
                     m_state = LiveControlState.Running;
                     if (StateChanged != null)
                         StateChanged(this, null);
@@ -324,21 +339,24 @@ namespace Duplicati.Server
         /// Suspends the backups for a given period
         /// </summary>
         /// <param name="timeout">The duration to wait</param>
-        public void Pause(string timeout)
+        /// <param name="alsoTransfers">If true, also pause the transfers</param>
+        public void Pause(string timeout, bool alsoTransfers)
         {
-            Pause(Duplicati.Library.Utility.Timeparser.ParseTimeSpan(timeout));
+            Pause(Duplicati.Library.Utility.Timeparser.ParseTimeSpan(timeout), alsoTransfers);
         }
 
         /// <summary>
         /// Suspends the backups for a given period
         /// </summary>
         /// <param name="timeout">The duration to wait</param>
-        public void Pause(TimeSpan timeout)
+        /// <param name="alsoTransfers">If true, also pause the transfers</param>
+        public void Pause(TimeSpan timeout, bool alsoTransfers)
         {
             lock (m_lock)
             {
                 m_waitTimeExpiration = DateTime.Now.AddMilliseconds((long)timeout.TotalMilliseconds);
                 m_waitTimer.Change((long)timeout.TotalMilliseconds, System.Threading.Timeout.Infinite);
+                m_transfersPaused = alsoTransfers;
 
                 //We change the time, so we issue a new event
                 if (m_state == LiveControlState.Paused && StateChanged != null)
@@ -408,7 +426,7 @@ namespace Duplicati.Server
 
                     if (delayTicks > 0)
                     {
-                        this.Pause(TimeSpan.FromTicks(delayTicks));
+                        this.Pause(TimeSpan.FromTicks(delayTicks), true);
                     }
                     else
                     {

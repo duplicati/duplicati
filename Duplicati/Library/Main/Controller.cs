@@ -1141,11 +1141,11 @@ namespace Duplicati.Library.Main
             return null;
         }
 
-        public void Pause()
+        public void Pause(bool alsoTransfers)
         {
             var ct = m_currentTaskControl;
             if (ct != null)
-                ct.Pause();
+                ct.Pause(alsoTransfers);
         }
 
         public void Resume()

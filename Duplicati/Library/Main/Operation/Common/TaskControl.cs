@@ -41,6 +41,17 @@ namespace Duplicati.Library.Main.Operation.Common
         /// <returns><c>true</c> if the progress should continue, <c>false</c> if it should stop</returns>
         Task<bool> ProgressRendevouz();
 
+        /// <summary>
+        /// A cancellation token that can be used to monitor transfer abort
+        /// </summary>
+        CancellationToken TransferToken { get; }
+
+        /// <summary>
+        /// Gets the transfer state, waiting if the state is paused, throws if terminated
+        /// </summary>
+        /// <returns><c>true</c> if the transfer should continue, <c>false</c> if it should stop</returns>
+        Task<bool> TransferRendevouz();
+
 #if DEBUG
         /// <summary>
         /// Callback for testing the task control
@@ -59,14 +70,15 @@ namespace Duplicati.Library.Main.Operation.Common
         /// <summary>
         /// Requests that progress should be paused
         /// </summary>
-        void Pause();
+        /// <param name="alsoTransfer">If <c>true</c>, the transfer should also be paused</param>
+        void Pause(bool alsoTransfer);
         /// <summary>
         /// Resumes running a paused process
         /// </summary>
         void Resume();
         /// <summary>
-        /// Requests that the progress should be stopped in an orderly manner,
-        /// which allows current transfers to be completed.
+        /// Requests that the progress should be stopped in a controlled way.
+        /// This will finalize the current file and transfer.
         /// </summary>
         void Stop();
         /// <summary>
@@ -113,12 +125,22 @@ namespace Duplicati.Library.Main.Operation.Common
         /// <summary>
         /// Internal control state for progress event
         /// </summary>
-        private TaskCompletionSource<bool> m_progress;
+        private TaskCompletionSource<bool> m_progress = new();
+
+        /// <summary>
+        /// Internal control state for transfer event
+        /// </summary>
+        private TaskCompletionSource<bool> m_transfer = new();
 
         /// <summary>
         /// The progress task completion source, cancelled if the operation is terminated
         /// </summary>
         private readonly CancellationTokenSource m_progressTcs = new();
+
+        /// <summary>
+        /// The transfer task completion source, cancelled if the operation is terminated
+        /// </summary>
+        private readonly CancellationTokenSource m_transferTcs = new();
 
         /// <summary>
         /// The control lock instance
@@ -130,6 +152,10 @@ namespace Duplicati.Library.Main.Operation.Common
         /// </summary>
         private State m_progressstate = State.Paused;
 
+        /// <summary>
+        /// The current transfer state
+        /// </summary>
+        private State m_transferstate = State.Paused;
 
         /// <summary>
         /// A cancellation token that is cancelled if the operation is aborted
@@ -137,21 +163,39 @@ namespace Duplicati.Library.Main.Operation.Common
         public CancellationToken ProgressToken => m_progressTcs.Token;
 
         /// <summary>
+        /// A cancellation token that is cancelled if the transfers are aborted
+        /// </summary>
+        public CancellationToken TransferToken => m_transferTcs.Token;
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="Duplicati.Library.Main.Operation.Common.TaskControl"/> class.
         /// </summary>
         public TaskControl()
         {
-            m_progress = new TaskCompletionSource<bool>();
             Resume();
         }
 
         /// <summary>
         /// Gets the progress state, waiting if the state is paused
         /// </summary>
+        /// <returns><c>true</c> if the progress should continue, <c>false</c> if it should stop</returns>
         public async Task<bool> ProgressRendevouz()
         {
             var res = await m_progress.Task.ConfigureAwait(false);
-            m_progressTcs.Token.ThrowIfCancellationRequested();
+            lock (m_lock)
+                m_progressTcs.Token.ThrowIfCancellationRequested();
+            return res;
+        }
+
+        /// <summary>
+        /// Gets the transfer state, waiting if the state is paused
+        /// </summary>
+        /// <returns><c>true</c> if the transfer should continue, <c>false</c> if it should stop</returns>
+        public async Task<bool> TransferRendevouz()
+        {
+            var res = await m_transfer.Task.ConfigureAwait(false);
+            lock (m_lock)
+                m_transferTcs.Token.ThrowIfCancellationRequested();
             return res;
         }
 
@@ -167,13 +211,19 @@ namespace Duplicati.Library.Main.Operation.Common
                     m_progress.SetResult(true);
                     m_progressstate = State.Active;
                 }
+
+                if (m_transferstate == State.Paused)
+                {
+                    m_transfer.SetResult(true);
+                    m_transferstate = State.Active;
+                }
             }
         }
 
         /// <summary>
         /// Requests that progress should be paused
         /// </summary>
-        public void Pause()
+        public void Pause(bool alsoTransfer)
         {
             lock (m_lock)
             {
@@ -181,6 +231,12 @@ namespace Duplicati.Library.Main.Operation.Common
                 {
                     m_progress = new TaskCompletionSource<bool>();
                     m_progressstate = State.Paused;
+                }
+
+                if (alsoTransfer && m_transferstate == State.Active)
+                {
+                    m_transfer = new TaskCompletionSource<bool>();
+                    m_transferstate = State.Paused;
                 }
             }
         }
@@ -201,6 +257,18 @@ namespace Duplicati.Library.Main.Operation.Common
                     m_progress.SetResult(false);
                     m_progressstate = State.Stopped;
                 }
+
+                // For symmetry, we also mark the transfer as stopped
+                // but the transfer logic does not stop transfers
+                // unless they are aborted
+                if (m_transferstate == State.Active || m_transferstate == State.Paused)
+                {
+                    if (m_transferstate != State.Paused)
+                        m_transfer = new TaskCompletionSource<bool>();
+
+                    m_transfer.SetResult(false);
+                    m_transferstate = State.Stopped;
+                }
             }
         }
 
@@ -219,6 +287,16 @@ namespace Duplicati.Library.Main.Operation.Common
                     m_progress.SetCanceled();
                     m_progressstate = State.Terminated;
                     m_progressTcs.Cancel();
+                }
+
+                if (m_transferstate != State.Terminated)
+                {
+                    if (m_transferstate != State.Paused)
+                        m_transfer = new TaskCompletionSource<bool>();
+
+                    m_transfer.SetCanceled();
+                    m_transferstate = State.Terminated;
+                    m_transferTcs.Cancel();
                 }
             }
         }

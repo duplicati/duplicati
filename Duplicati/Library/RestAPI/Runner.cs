@@ -37,7 +37,7 @@ namespace Duplicati.Server
             string[] FilterStrings { get; }
             void Stop();
             void Abort();
-            void Pause();
+            void Pause(bool alsoTransfers);
             void Resume();
             void UpdateThrottleSpeed();
             void SetController(Duplicati.Library.Main.Controller controller);
@@ -72,9 +72,9 @@ namespace Duplicati.Server
                 Controller?.Abort();
             }
 
-            public void Pause()
+            public void Pause(bool alsoTransfers)
             {
-                Controller?.Pause();
+                Controller?.Pause(alsoTransfers);
             }
 
             public void Resume()

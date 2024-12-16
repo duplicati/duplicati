@@ -870,15 +870,13 @@ namespace Duplicati.Server
                 case LiveControls.LiveControlState.Paused:
                     {
                         worker.Pause();
-                        var t = worker.CurrentTask;
-                        t?.Pause();
+                        worker.CurrentTask?.Pause(LiveControl.TransfersPaused);
                         break;
                     }
                 case LiveControls.LiveControlState.Running:
                     {
                         worker.Resume();
-                        var t = worker.CurrentTask;
-                        t?.Resume();
+                        worker.CurrentTask?.Resume();
                         break;
                     }
                 default:

@@ -136,8 +136,10 @@ public class BackupPutDelete : IEndpointV1
                         return new Dto.DeleteBackupOutputDto("failed", "backup-in-progress", nt?.TaskID);
 
 
-                    bool hasPaused = liveControls.State == LiveControls.LiveControlState.Paused;
-                    liveControls.Pause();
+                    bool hasPaused = liveControls.State != LiveControls.LiveControlState.Paused;
+                    if (hasPaused)
+                        liveControls.Pause(true);
+                    nt.Abort();
 
                     for (int i = 0; i < 10; i++)
                         if (workerThreadsManager.WorkerThread.Active)
