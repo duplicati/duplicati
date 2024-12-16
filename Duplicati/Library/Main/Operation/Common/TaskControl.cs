@@ -31,12 +31,7 @@ namespace Duplicati.Library.Main.Operation.Common
     public interface ITaskReader
     {
         /// <summary>
-        /// Gets a flag indicating if the process is stopped
-        /// </summary>
-        bool IsStopRequested { get; }
-
-        /// <summary>
-        /// A cancellation token that can be used to monitor progress
+        /// A cancellation token that can be used to monitor progress abort
         /// </summary>
         CancellationToken ProgressToken { get; }
 
@@ -135,10 +130,6 @@ namespace Duplicati.Library.Main.Operation.Common
         /// </summary>
         private State m_progressstate = State.Paused;
 
-        /// <summary>
-        /// Gets the current progress state.
-        /// </summary>
-        public bool IsStopRequested => m_progressstate == State.Stopped;
 
         /// <summary>
         /// A cancellation token that is cancelled if the operation is aborted

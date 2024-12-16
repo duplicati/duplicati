@@ -352,7 +352,7 @@ namespace Duplicati.Library.Main.Operation
                     });
 
                     // store journal data in database, unless job is being canceled
-                    if (!taskreader.IsStopRequested)
+                    if (!result.PartialBackup)
                     {
                         var data = journalService.VolumeDataList.Where(p => p.JournalData != null).Select(p => p.JournalData).ToList();
                         if (data.Any())
@@ -366,7 +366,7 @@ namespace Duplicati.Library.Main.Operation
                     }
                 }
 
-                if (taskreader.IsStopRequested)
+                if (result.PartialBackup)
                 {
                     Log.WriteWarningMessage(LOGTAG, "CancellationRequested", null, "Cancellation was requested by user.");
                 }
