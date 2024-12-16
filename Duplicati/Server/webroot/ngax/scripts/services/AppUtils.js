@@ -603,7 +603,7 @@ backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, AppServic
             var pre = apputils.replace_all(n.prefix || '', '!', dirsep);
             var suf = apputils.replace_all(n.suffix || '', '!', dirsep);
 
-            if (txt.indexOf(pre) != 0 || txt.lastIndexOf(suf) != txt.length - suf.length)
+            if (txt.indexOf(pre) != 0 || txt.lastIndexOf(suf) != txt.length - suf.length || txt.lastIndexOf(suf) < 0)
                 return null;
 
             var type = n.key;
