@@ -31,6 +31,7 @@ public static class Program
                 Import.Create(),
                 Export.Create(),
                 Health.Create(),
+                IssueForeverToken.Create(),
             };
 
         rootCmd = SettingsBinder.AddGlobalOptions(rootCmd);
