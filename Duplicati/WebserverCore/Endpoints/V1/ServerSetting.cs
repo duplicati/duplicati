@@ -19,6 +19,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
+using Duplicati.Server;
 using Duplicati.Server.Database;
 using Duplicati.WebserverCore.Abstractions;
 using Duplicati.WebserverCore.Exceptions;
@@ -31,10 +32,10 @@ public class ServerSetting : IEndpointV1
     public static void Map(RouteGroupBuilder group)
     {
         group.MapGet("/serversettings", ([FromServices] Connection connection) => GetSettings(connection)).RequireAuthorization();
-        group.MapPatch("/serversettings", ([FromServices] Connection connection, [FromBody] Dictionary<string, object?> values) => UpdateSettings(connection, values)).RequireAuthorization();
+        group.MapPatch("/serversettings", ([FromServices] Connection connection, [FromServices] LiveControls liveControls, [FromBody] Dictionary<string, object?> values) => UpdateSettings(connection, liveControls, values)).RequireAuthorization();
 
         group.MapGet("/serversetting/{key}", ([FromRoute] string key, [FromServices] Connection connection, [FromServices] ISettingsService settingsService) => GetSetting(key, connection, settingsService)).RequireAuthorization();
-        group.MapPut("/serversetting/{key}", ([FromRoute] string key, [FromBody] string value, [FromServices] Connection connection) => UpdateSetting(key, value, connection)).RequireAuthorization();
+        group.MapPut("/serversetting/{key}", ([FromRoute] string key, [FromBody] string value, [FromServices] Connection connection, [FromServices] LiveControls liveControls) => UpdateSetting(key, value, connection, liveControls)).RequireAuthorization();
     }
 
     // Remove sensitive information from the output
@@ -94,7 +95,7 @@ public class ServerSetting : IEndpointV1
         return dict;
     }
 
-    private static void UpdateSettings(Connection connection, Dictionary<string, object?>? values)
+    private static void UpdateSettings(Connection connection, LiveControls liveControls, Dictionary<string, object?>? values)
     {
         if (values == null)
             throw new BadRequestException("No values provided");
@@ -111,6 +112,21 @@ public class ServerSetting : IEndpointV1
 
         if (!string.IsNullOrWhiteSpace(passphrase))
             connection.ApplicationSettings.SetWebserverPassword(passphrase);
+
+        // Handle speed limit through LiveControls so it applies to the running operation as well
+        if (serversettings.TryGetValue(Server.Database.ServerSettings.CONST.DOWNLOAD_SPEED_LIMIT, out var speedlimit))
+        {
+            liveControls.DownloadLimit = speedlimit;
+            serversettings.Remove(Server.Database.ServerSettings.CONST.DOWNLOAD_SPEED_LIMIT);
+        }
+
+        // Handle speed limit through LiveControls so it applies to the running operation as well
+        if (serversettings.TryGetValue(Server.Database.ServerSettings.CONST.UPLOAD_SPEED_LIMIT, out var upspeedlimit))
+        {
+            liveControls.UploadLimit = upspeedlimit;
+            serversettings.Remove(Server.Database.ServerSettings.CONST.UPLOAD_SPEED_LIMIT);
+        }
+
         if (serversettings.Any())
             connection.ApplicationSettings.UpdateSettings(serversettings, false);
 
@@ -156,11 +172,23 @@ public class ServerSetting : IEndpointV1
         }
     }
 
-    private static void UpdateSetting(string key, string value, Connection connection)
+    private static void UpdateSetting(string key, string value, Connection connection, LiveControls liveControls)
     {
         if (key == Server.Database.ServerSettings.CONST.SERVER_PASSPHRASE)
         {
             connection.ApplicationSettings.SetWebserverPassword(value);
+            return;
+        }
+
+        if (key == Server.Database.ServerSettings.CONST.DOWNLOAD_SPEED_LIMIT)
+        {
+            liveControls.DownloadLimit = value;
+            return;
+        }
+
+        if (key == Server.Database.ServerSettings.CONST.UPLOAD_SPEED_LIMIT)
+        {
+            liveControls.UploadLimit = value;
             return;
         }
 

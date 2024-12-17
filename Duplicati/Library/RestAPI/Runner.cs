@@ -39,7 +39,7 @@ namespace Duplicati.Server
             void Abort();
             void Pause(bool alsoTransfers);
             void Resume();
-            void UpdateThrottleSpeed();
+            void UpdateThrottleSpeed(string uploadSpeed, string downloadSpeed);
             void SetController(Duplicati.Library.Main.Controller controller);
         }
 
@@ -85,7 +85,7 @@ namespace Duplicati.Server
             public long OriginalUploadSpeed { get; set; }
             public long OriginalDownloadSpeed { get; set; }
 
-            public void UpdateThrottleSpeed()
+            public void UpdateThrottleSpeed(string uploadSpeed, string downloadSpeed)
             {
                 var controller = this.Controller;
                 if (controller == null)
@@ -99,15 +99,15 @@ namespace Duplicati.Server
 
                 try
                 {
-                    if (!string.IsNullOrWhiteSpace(FIXMEGlobal.DataConnection.ApplicationSettings.UploadSpeedLimit))
-                        server_upload_throttle = Duplicati.Library.Utility.Sizeparser.ParseSize(FIXMEGlobal.DataConnection.ApplicationSettings.UploadSpeedLimit, "kb");
+                    if (!string.IsNullOrWhiteSpace(uploadSpeed))
+                        server_upload_throttle = Duplicati.Library.Utility.Sizeparser.ParseSize(uploadSpeed, "kb");
                 }
                 catch { }
 
                 try
                 {
-                    if (!string.IsNullOrWhiteSpace(FIXMEGlobal.DataConnection.ApplicationSettings.DownloadSpeedLimit))
-                        server_download_throttle = Duplicati.Library.Utility.Sizeparser.ParseSize(FIXMEGlobal.DataConnection.ApplicationSettings.DownloadSpeedLimit, "kb");
+                    if (!string.IsNullOrWhiteSpace(downloadSpeed))
+                        server_download_throttle = Duplicati.Library.Utility.Sizeparser.ParseSize(downloadSpeed, "kb");
                 }
                 catch { }
 
@@ -486,7 +486,7 @@ namespace Duplicati.Server
                     catch { }
 
                     ((RunnerData)data).Controller = controller;
-                    data.UpdateThrottleSpeed();
+                    data.UpdateThrottleSpeed(FIXMEGlobal.DataConnection.ApplicationSettings.UploadSpeedLimit, FIXMEGlobal.DataConnection.ApplicationSettings.DownloadSpeedLimit);
 
                     // Pass on the provider, will be replaced if configured in the backup
                     controller.SetSecretProvider(FIXMEGlobal.SecretProvider);

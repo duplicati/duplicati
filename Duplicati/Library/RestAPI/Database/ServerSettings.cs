@@ -68,6 +68,7 @@ namespace Duplicati.Server.Database
             public const string ENCRYPTED_FIELDS = "encrypted-fields";
             public const string PRELOAD_SETTINGS_HASH = "preload-settings-hash";
             public const string TIMEZONE_OPTION = "server-timezone";
+            public const string PAUSED_UNTIL = "paused-until";
         }
 
         private readonly Dictionary<string, string> settings;
@@ -134,7 +135,7 @@ namespace Duplicati.Server.Database
                 FIXMEGlobal.NotificationUpdateService.IncrementLastDataUpdateId();
                 FIXMEGlobal.StatusEventNotifyer.SignalNewEvent();
                 // If throttle options were changed, update now
-                FIXMEGlobal.WorkerThreadsManager.UpdateThrottleSpeeds();
+                FIXMEGlobal.WorkerThreadsManager.UpdateThrottleSpeeds(UploadSpeedLimit, DownloadSpeedLimit);
             }
 
             // In case the usage reporter is enabled or disabled, refresh now
@@ -174,6 +175,23 @@ namespace Duplicati.Server.Database
             {
                 lock (databaseConnection.m_lock)
                     settings[CONST.THREAD_PRIORITY] = value.HasValue ? Enum.GetName(typeof(System.Threading.ThreadPriority), value.Value) : null;
+            }
+        }
+
+        public DateTime? PausedUntil
+        {
+            get
+            {
+                if (long.TryParse(settings[CONST.PAUSED_UNTIL], out var t))
+                    return new DateTime(t, DateTimeKind.Utc);
+                else
+                    return null;
+            }
+            set
+            {
+                lock (databaseConnection.m_lock)
+                    settings[CONST.PAUSED_UNTIL] = value?.ToUniversalTime().Ticks.ToString();
+                SaveSettings();
             }
         }
 

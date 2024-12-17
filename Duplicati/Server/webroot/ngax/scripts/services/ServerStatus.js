@@ -89,8 +89,14 @@ backupApp.service('ServerStatus', function ($rootScope, $timeout, AppService, Ap
         return AppService.post('/serverstate/resume');
     };
 
-    this.pause = function (duration) {
-        return AppService.post('/serverstate/pause' + (duration == null ? '' : '?duration=' + duration));
+    this.pause = function (duration, pauseTransfers) {
+        var query = '';
+        if (duration != null && duration != 'infinite' && duration != '')
+            query += '?duration=' + duration;
+        if (pauseTransfers === true)
+            query += (query.length > 0 ? '&' : '?') + 'pauseTransfers=true';
+
+        return AppService.post('/serverstate/pause' + query);
     };
 
     function notifyTaskCompleted(taskid) {

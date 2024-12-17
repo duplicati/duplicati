@@ -74,6 +74,8 @@ Error message: {0}", error); }
                 public static string InvalidTimezone(string timezone) { return LC.L(@"The timezone {0} is not valid", timezone); }
                 public static string SettingsencryptionkeyShort { get { return LC.L(@"Set the encryption key for the settings database"); } }
                 public static string SettingsencryptionkeyLong(string envname) { return LC.L(@"Use this option to set the encryption key for the settings database. This option can also be set with the environment variable {0}.", envname); }
+                public static string InvalidPauseResumeState(LiveControls.LiveControlState state) { return LC.L(@"Invalid pause/resume state: {0}", state); }
+                public static string InvalidLiveControlEvent(LiveControls.EventCause ev) { return LC.L(@"Invalid live control event cause: {0}", ev); }
         }
         internal static class Scheduler
         {
