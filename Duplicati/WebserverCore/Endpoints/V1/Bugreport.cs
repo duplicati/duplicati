@@ -9,7 +9,7 @@ public class Bugreport : IEndpointV1
 {
     public static void Map(RouteGroupBuilder group)
     {
-        group.MapGet("/bugreport/{reportid}", ([FromServices] Connection connection, [FromServices] IHttpContextAccessor httpContextAccessor, [FromServices] IJWTTokenProvider jWTTokenProvider, [FromRoute] long reportid, [FromQuery] string token, CancellationToken ct) =>
+        group.MapGet("/bugreport/{reportid}", async ([FromServices] Connection connection, [FromServices] IHttpContextAccessor httpContextAccessor, [FromServices] IJWTTokenProvider jWTTokenProvider, [FromRoute] long reportid, [FromQuery] string token, CancellationToken ct) =>
         {
             // Custom authorization check
             var singleOperationToken = jWTTokenProvider.ReadSingleOperationToken(token);
@@ -30,7 +30,7 @@ public class Bugreport : IEndpointV1
                 response.ContentLength = fs.Length;
                 response.ContentType = "application/octet-stream";
                 response.Headers.Append("Content-Disposition", $"attachment; filename={filename}");
-                fs.CopyToAsync(response.Body, ct);
+                await fs.CopyToAsync(response.Body, ct).ConfigureAwait(false);
             }
         });
     }
