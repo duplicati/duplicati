@@ -216,7 +216,8 @@ public partial class DuplicatiWebserver
                 .AddFilter("Microsoft", LogLevel.Warning)
                 .AddFilter("Microsoft.AspNetCore.DataProtection.KeyManagement.XmlKeyManager", LogLevel.Error)
                 .AddFilter("System", LogLevel.Warning)
-                .AddFilter("Duplicati", LogLevel.Warning);
+                .AddFilter("Duplicati", LogLevel.Warning)
+                .AddFilter("Microsoft.AspNetCore.Diagnostics", LogLevel.None);
         }
 
         builder.Services.AddHttpClient();
@@ -258,6 +259,10 @@ public partial class DuplicatiWebserver
                 }
                 else
                 {
+                    // These are unexpected exceptions, so log them
+                    app.ApplicationServices.GetRequiredService<ILogger<DuplicatiWebserver>>()
+                        .LogError(thrownException, "Unhandled exception");
+
                     context.Response.StatusCode = 500;
                     context.Response.ContentType = "application/json";
                     await context.Response.WriteAsync(JsonSerializer.Serialize(new { Error = "An error occurred", Code = 500 }));
