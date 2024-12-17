@@ -929,7 +929,7 @@ namespace Duplicati.Server
             => (OperatingSystem.IsWindows()
                 ? new[] {
                     new Duplicati.Library.Interface.CommandLineArgument(WINDOWS_EVENTLOG_OPTION, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean, Strings.Program.LogwindowseventlogShort, Strings.Program.LogwindowseventlogLong),
-                    new Duplicati.Library.Interface.CommandLineArgument(WINDOWS_EVENTLOG_LEVEL_OPTION, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Enumeration, Strings.Program.LogwindowseventloglevelShort, Strings.Program.LogwindowseventloglevelLong, Library.Logging.LogMessageType.Information.ToString(), null, Enum.GetNames(typeof(Duplicati.Library.Logging.LogMessageType)))
+                    new Duplicati.Library.Interface.CommandLineArgument(WINDOWS_EVENTLOG_LEVEL_OPTION, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Enumeration, Strings.Program.LogwindowseventloglevelShort, Strings.Program.LogwindowseventloglevelLong, Library.Logging.LogMessageType.Warning.ToString(), null, Enum.GetNames(typeof(Duplicati.Library.Logging.LogMessageType)))
                 }
                 : []
             )
