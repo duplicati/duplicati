@@ -32,10 +32,10 @@ public class ServerSetting : IEndpointV1
     public static void Map(RouteGroupBuilder group)
     {
         group.MapGet("/serversettings", ([FromServices] Connection connection) => GetSettings(connection)).RequireAuthorization();
-        group.MapPatch("/serversettings", ([FromServices] Connection connection, [FromServices] LiveControls liveControls, [FromBody] Dictionary<string, object?> values) => UpdateSettings(connection, liveControls, values)).RequireAuthorization();
+        group.MapPatch("/serversettings", ([FromServices] Connection connection, [FromBody] Dictionary<string, object?> values) => UpdateSettings(connection, values)).RequireAuthorization();
 
         group.MapGet("/serversetting/{key}", ([FromRoute] string key, [FromServices] Connection connection, [FromServices] ISettingsService settingsService) => GetSetting(key, connection, settingsService)).RequireAuthorization();
-        group.MapPut("/serversetting/{key}", ([FromRoute] string key, [FromBody] string value, [FromServices] Connection connection, [FromServices] LiveControls liveControls) => UpdateSetting(key, value, connection, liveControls)).RequireAuthorization();
+        group.MapPut("/serversetting/{key}", ([FromRoute] string key, [FromBody] string value, [FromServices] Connection connection) => UpdateSetting(key, value, connection)).RequireAuthorization();
     }
 
     // Remove sensitive information from the output
@@ -95,7 +95,7 @@ public class ServerSetting : IEndpointV1
         return dict;
     }
 
-    private static void UpdateSettings(Connection connection, LiveControls liveControls, Dictionary<string, object?>? values)
+    private static void UpdateSettings(Connection connection, Dictionary<string, object?>? values)
     {
         if (values == null)
             throw new BadRequestException("No values provided");
@@ -157,7 +157,7 @@ public class ServerSetting : IEndpointV1
         }
     }
 
-    private static void UpdateSetting(string key, string value, Connection connection, LiveControls liveControls)
+    private static void UpdateSetting(string key, string value, Connection connection)
     {
         if (key == Server.Database.ServerSettings.CONST.SERVER_PASSPHRASE)
         {
