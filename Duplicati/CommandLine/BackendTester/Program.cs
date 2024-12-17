@@ -212,7 +212,12 @@ namespace Duplicati.CommandLine.BackendTester
                             else
                                 Console.WriteLine("Specify the --force flag to actually delete files");
 
-                        Console.WriteLine("*** Remote folder is not empty, aborting");
+                        var fileCount = curlist.Where(x => !x.IsFolder).Count();
+                        var filenames = curlist.Where(x => !x.IsFolder).Select(x => x.Name).Take(10).ToList();
+                        Console.WriteLine($"*** Remote folder contains {fileCount} file(s), aborting");
+                        Console.WriteLine($"*** First {filenames.Count} file(s): {Environment.NewLine}{string.Join(Environment.NewLine, filenames)}");
+                        if (fileCount > 10)
+                            Console.WriteLine($"*** ... and {filenames.Count - 10} more file(s)");
                         return false;
                     }
 
