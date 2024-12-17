@@ -225,6 +225,8 @@ namespace Duplicati.CommandLine.BackendTester
                 bool disableStreaming = Library.Utility.Utility.ParseBoolOption(options, "disable-streaming-transfers");
                 bool skipOverwriteTest = Library.Utility.Utility.ParseBoolOption(options, "skip-overwrite-test");
                 bool trimFilenameSpaces = Library.Utility.Utility.ParseBoolOption(options, "trim-filename-spaces");
+                TimeSpan waitAfterUpload = TimeSpan.Zero;
+                TimeSpan waitAfterDelete = TimeSpan.Zero;
 
                 long throttleUpload = 0;
                 if (options.TryGetValue("throttle-upload", out string throttleUploadString))
@@ -259,6 +261,11 @@ namespace Duplicati.CommandLine.BackendTester
                     min_filename_size = int.Parse(options["min-filename-length"]);
                 if (options.ContainsKey("max-filename-length"))
                     max_filename_size = int.Parse(options["max-filename-length"]);
+
+                if (options.ContainsKey("wait-after-upload"))
+                    waitAfterUpload = Timeparser.ParseTimeSpan(options["wait-after-upload"]);
+                if (options.ContainsKey("wait-after-delete"))
+                    waitAfterDelete = Timeparser.ParseTimeSpan(options["wait-after-delete"]);
 
                 Random rnd = new Random();
                 System.Security.Cryptography.SHA256 sha = System.Security.Cryptography.SHA256.Create();
@@ -316,6 +323,9 @@ namespace Duplicati.CommandLine.BackendTester
                         renameEnabledBackend.RenameAsync(originalRenamedFile.remotefilename, renamedFileNewName, CancellationToken.None).Await();
                         files[renameIndex] = new TempFile(renamedFileNewName, originalRenamedFile.localfilename, originalRenamedFile.hash, originalRenamedFile.length);
                     }
+
+                    if (waitAfterUpload > TimeSpan.Zero)
+                        Thread.Sleep(waitAfterUpload);
 
                     Console.WriteLine("Verifying file list ...");
 
@@ -409,6 +419,9 @@ namespace Duplicati.CommandLine.BackendTester
                         {
                             Console.WriteLine("*** Failed to delete file {0}, message: {1}", tx.remotefilename, ex);
                         }
+
+                    if (waitAfterDelete > TimeSpan.Zero)
+                        Thread.Sleep(waitAfterDelete);
 
                     curlist = backend.List();
                     foreach (Library.Interface.IFileEntry fe in curlist)
@@ -601,6 +614,8 @@ namespace Duplicati.CommandLine.BackendTester
                     new CommandLineArgument("skip-overwrite-test", CommandLineArgument.ArgumentType.Boolean, "Bypass the overwrite test", "A value that indicates if dummy files should be uploaded prior to uploading the real files", "false"),
                     new CommandLineArgument("auto-clean", CommandLineArgument.ArgumentType.Boolean, "Remove any files found in target folder", "A value that indicates if all files in the target folder should be deleted before starting the first test", "false"),
                     new CommandLineArgument("force", CommandLineArgument.ArgumentType.Boolean, "Activate file deletion", "A value that indicates if existing files should really be deleted when using auto-clean", "false"),
+                    new CommandLineArgument("wait-after-upload", CommandLineArgument.ArgumentType.Timespan, "Wait after all uploads", "A value that indicates how long to wait after all files are uploaded, to account for the backends eventual consistency", "0s"),
+                    new CommandLineArgument("wait-after-delete", CommandLineArgument.ArgumentType.Timespan, "Wait after all deletes", "A value that indicates how long to wait after each delete operation, to account for the backends eventual consistency", "0s"),
                 });
             }
         }
