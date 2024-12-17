@@ -330,7 +330,10 @@ namespace Duplicati.CommandLine.BackendTester
                     }
 
                     if (waitAfterUpload > TimeSpan.Zero)
+                    {
+                        Console.WriteLine("Waiting {0} after upload", waitAfterUpload);
                         Thread.Sleep(waitAfterUpload);
+                    }
 
                     Console.WriteLine("Verifying file list ...");
 
@@ -426,7 +429,10 @@ namespace Duplicati.CommandLine.BackendTester
                         }
 
                     if (waitAfterDelete > TimeSpan.Zero)
+                    {
+                        Console.WriteLine("Waiting {0} after delete", waitAfterDelete);
                         Thread.Sleep(waitAfterDelete);
+                    }
 
                     curlist = backend.List();
                     foreach (Library.Interface.IFileEntry fe in curlist)
