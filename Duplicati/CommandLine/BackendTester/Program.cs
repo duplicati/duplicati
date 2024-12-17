@@ -216,8 +216,8 @@ namespace Duplicati.CommandLine.BackendTester
                         var filenames = curlist.Where(x => !x.IsFolder).Select(x => x.Name).Take(10).ToList();
                         Console.WriteLine($"*** Remote folder contains {fileCount} file(s), aborting");
                         Console.WriteLine($"*** First {filenames.Count} file(s): {Environment.NewLine}{string.Join(Environment.NewLine, filenames)}");
-                        if (fileCount > 10)
-                            Console.WriteLine($"*** ... and {filenames.Count - 10} more file(s)");
+                        if (fileCount > filenames.Count)
+                            Console.WriteLine($"*** ... and {fileCount - filenames.Count} more file(s)");
                         return false;
                     }
 
