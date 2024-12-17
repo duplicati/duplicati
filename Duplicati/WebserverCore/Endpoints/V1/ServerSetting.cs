@@ -112,21 +112,6 @@ public class ServerSetting : IEndpointV1
 
         if (!string.IsNullOrWhiteSpace(passphrase))
             connection.ApplicationSettings.SetWebserverPassword(passphrase);
-
-        // Handle speed limit through LiveControls so it applies to the running operation as well
-        if (serversettings.TryGetValue(Server.Database.ServerSettings.CONST.DOWNLOAD_SPEED_LIMIT, out var speedlimit))
-        {
-            liveControls.DownloadLimit = speedlimit;
-            serversettings.Remove(Server.Database.ServerSettings.CONST.DOWNLOAD_SPEED_LIMIT);
-        }
-
-        // Handle speed limit through LiveControls so it applies to the running operation as well
-        if (serversettings.TryGetValue(Server.Database.ServerSettings.CONST.UPLOAD_SPEED_LIMIT, out var upspeedlimit))
-        {
-            liveControls.UploadLimit = upspeedlimit;
-            serversettings.Remove(Server.Database.ServerSettings.CONST.UPLOAD_SPEED_LIMIT);
-        }
-
         if (serversettings.Any())
             connection.ApplicationSettings.UpdateSettings(serversettings, false);
 
@@ -177,18 +162,6 @@ public class ServerSetting : IEndpointV1
         if (key == Server.Database.ServerSettings.CONST.SERVER_PASSPHRASE)
         {
             connection.ApplicationSettings.SetWebserverPassword(value);
-            return;
-        }
-
-        if (key == Server.Database.ServerSettings.CONST.DOWNLOAD_SPEED_LIMIT)
-        {
-            liveControls.DownloadLimit = value;
-            return;
-        }
-
-        if (key == Server.Database.ServerSettings.CONST.UPLOAD_SPEED_LIMIT)
-        {
-            liveControls.UploadLimit = value;
             return;
         }
 

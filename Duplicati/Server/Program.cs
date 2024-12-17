@@ -840,45 +840,25 @@ namespace Duplicati.Server
         {
             var worker = FIXMEGlobal.WorkThread;
             var appSettings = FIXMEGlobal.DataConnection.ApplicationSettings;
-            if (e.Cause == LiveControls.EventCause.Pause || e.Cause == LiveControls.EventCause.Resume)
+            switch (e.State)
             {
-                switch (LiveControl.State)
-                {
-                    case LiveControls.LiveControlState.Paused:
-                        {
-                            worker.Pause();
-                            worker.CurrentTask?.Pause(e.TransfersPaused);
-                            appSettings.PausedUntil = e.WaitTimeExpiration;
-                            break;
-                        }
-                    case LiveControls.LiveControlState.Running:
-                        {
-                            worker.Resume();
-                            worker.CurrentTask?.Resume();
-                            appSettings.PausedUntil = null;
-                            break;
-                        }
-                    default:
-                        Log.WriteWarningMessage(LOGTAG, "InvalidPauseResumeState", null, Strings.Program.InvalidPauseResumeState(LiveControl.State));
+                case LiveControls.LiveControlState.Paused:
+                    {
+                        worker.Pause();
+                        worker.CurrentTask?.Pause(e.TransfersPaused);
+                        appSettings.PausedUntil = e.WaitTimeExpiration;
                         break;
-                }
-
-            }
-            else if (e.Cause == LiveControls.EventCause.ThrottleSpeed)
-            {
-                appSettings.UploadSpeedLimit = e.UploadLimit;
-                appSettings.DownloadSpeedLimit = e.DownloadLimit;
-                worker.CurrentTask?.UpdateThrottleSpeed(e.UploadLimit, e.DownloadLimit);
-            }
-            else if (e.Cause == LiveControls.EventCause.ThreadPriority)
-            {
-                appSettings.ThreadPriorityOverride = e.ThreadPriority;
-                // TODO: No longer works, as we are using tasks
-                // worker.CurrentTask?.UpdateThreadPriority();
-            }
-            else
-            {
-                Log.WriteWarningMessage(LOGTAG, "InvalidLiveControlEvent", null, Strings.Program.InvalidLiveControlEvent(e.Cause));
+                    }
+                case LiveControls.LiveControlState.Running:
+                    {
+                        worker.Resume();
+                        worker.CurrentTask?.Resume();
+                        appSettings.PausedUntil = null;
+                        break;
+                    }
+                default:
+                    Log.WriteWarningMessage(LOGTAG, "InvalidPauseResumeState", null, Strings.Program.InvalidPauseResumeState(LiveControl.State));
+                    break;
             }
 
             StatusEventNotifyer.SignalNewEvent();

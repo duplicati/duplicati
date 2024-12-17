@@ -38,10 +38,6 @@ namespace Duplicati.Server
         public sealed record LiveControlEvent
         {
             /// <summary>
-            /// The cause of the event
-            /// </summary>
-            public required EventCause Cause { get; init; }
-            /// <summary>
             /// The new state of the live control
             /// </summary>
             public required LiveControlState State { get; init; }
@@ -53,18 +49,6 @@ namespace Duplicati.Server
             /// The time when processing will resume, or zero if paused indefinitely
             /// </summary>
             public required DateTime WaitTimeExpiration { get; init; }
-            /// <summary>
-            /// The priority of the executing thread
-            /// </summary>
-            public required System.Threading.ThreadPriority? ThreadPriority { get; init; }
-            /// <summary>
-            /// The upload limit in bps
-            /// </summary>
-            public required string UploadLimit { get; init; }
-            /// <summary>
-            /// The download limit in bps
-            /// </summary>
-            public required string DownloadLimit { get; init; }
         }
 
         /// <summary>
@@ -76,29 +60,6 @@ namespace Duplicati.Server
         /// An callback that is activated when the pause state changes
         /// </summary>
         public Action<LiveControlEvent> StateChanged;
-
-        /// <summary>
-        /// The possible causes for the event
-        /// </summary>
-        public enum EventCause
-        {
-            /// <summary>
-            /// The event was caused by a pause request
-            /// </summary>
-            Pause,
-            /// <summary>
-            /// The event was caused by a resume request
-            /// </summary>
-            Resume,
-            /// <summary>
-            /// The event was caused by a thread priority change
-            /// </summary>
-            ThreadPriority,
-            /// <summary>
-            /// The event was caused by a throttle speed change
-            /// </summary>
-            ThrottleSpeed
-        }
 
         /// <summary>
         /// The possible states for the live control
@@ -151,75 +112,9 @@ namespace Duplicati.Server
         public bool TransfersPaused => m_transfersPaused;
 
         /// <summary>
-        /// The internal variable that tracks the the priority
-        /// </summary>
-        private System.Threading.ThreadPriority? m_priority;
-
-        /// <summary>
-        /// The internal variable that tracks the upload limit
-        /// </summary>
-        private string m_uploadLimit;
-
-        /// <summary>
-        /// The internal variable that tracks the download limit
-        /// </summary>
-        private string m_downloadLimit;
-
-        /// <summary>
         /// The object that ensures concurrent operations
         /// </summary>
         private readonly object m_lock = new object();
-
-        /// <summary>
-        /// Gets the current overridden thread priority
-        /// </summary>
-        public System.Threading.ThreadPriority? ThreadPriority
-        {
-            get { return m_priority; }
-            set
-            {
-                if (m_priority != value)
-                {
-                    m_priority = value;
-                    if (StateChanged != null)
-                        StateChanged(CreateEvent(EventCause.ThreadPriority));
-                }
-            }
-        }
-
-        /// <summary>
-        /// Gets the current upload limit in bps
-        /// </summary>
-        public string UploadLimit
-        {
-            get { return m_uploadLimit; }
-            set
-            {
-                if (m_uploadLimit != value)
-                {
-                    m_uploadLimit = value;
-                    if (StateChanged != null)
-                        StateChanged(CreateEvent(EventCause.ThrottleSpeed));
-                }
-            }
-        }
-
-        /// <summary>
-        /// Gets the download limit in bps
-        /// </summary>
-        public string DownloadLimit
-        {
-            get { return m_downloadLimit; }
-            set
-            {
-                if (m_downloadLimit != value)
-                {
-                    m_downloadLimit = value;
-                    if (StateChanged != null)
-                        StateChanged(CreateEvent(EventCause.ThrottleSpeed));
-                }
-            }
-        }
 
         /// <summary>
         /// The timer that is activated after a pause period.
@@ -269,10 +164,6 @@ namespace Duplicati.Server
                 }
             }
 
-            m_priority = settings.ThreadPriorityOverride;
-            m_downloadLimit = settings.DownloadSpeedLimit;
-            m_uploadLimit = settings.UploadSpeedLimit;
-
             var pausedUntil = settings.PausedUntil;
             if (pausedUntil != null)
             {
@@ -315,20 +206,15 @@ namespace Duplicati.Server
         /// <summary>
         /// Creates a new event object
         /// </summary>
-        /// <param name="cause">The trigger cause</param>
         /// <returns>A new event object</returns>
-        private LiveControlEvent CreateEvent(EventCause cause)
+        private LiveControlEvent CreateEvent()
         {
             lock (m_lock)
                 return new LiveControlEvent()
                 {
-                    Cause = cause,
                     State = m_state,
                     TransfersPaused = m_transfersPaused,
-                    WaitTimeExpiration = m_waitTimeExpiration,
-                    ThreadPriority = m_priority,
-                    UploadLimit = m_uploadLimit,
-                    DownloadLimit = m_downloadLimit
+                    WaitTimeExpiration = m_waitTimeExpiration
                 };
         }
 
@@ -364,7 +250,7 @@ namespace Duplicati.Server
                 {
                     m_state = LiveControlState.Paused;
                     if (StateChanged != null)
-                        ev = CreateEvent(EventCause.Pause);
+                        ev = CreateEvent();
                 }
             }
 
@@ -386,7 +272,7 @@ namespace Duplicati.Server
                 ResetTimer(null);
 
                 if (m_state == LiveControlState.Paused)
-                    ev = StateChanged == null ? null : CreateEvent(EventCause.Pause);
+                    ev = StateChanged == null ? null : CreateEvent();
                 else
                     SetPauseMode();
             }
@@ -412,7 +298,7 @@ namespace Duplicati.Server
                     m_waitTimeExpiration = new DateTime(0);
                     m_state = LiveControlState.Running;
                     if (StateChanged != null)
-                        ev = CreateEvent(EventCause.Resume);
+                        ev = CreateEvent();
                 }
             }
 
@@ -447,7 +333,7 @@ namespace Duplicati.Server
 
                 //We change the time, so we issue a new event
                 if (m_state == LiveControlState.Paused)
-                    ev = StateChanged == null ? null : CreateEvent(EventCause.Pause);
+                    ev = StateChanged == null ? null : CreateEvent();
                 else
                     SetPauseMode();
             }
