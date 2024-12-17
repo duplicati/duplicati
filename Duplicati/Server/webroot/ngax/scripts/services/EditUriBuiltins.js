@@ -35,6 +35,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
     EditUriBackendConfig.templates['aliyunoss']   = 'templates/backends/aliyunoss.html';
     EditUriBackendConfig.templates['e2']          = 'templates/backends/e2.html';
     EditUriBackendConfig.templates['pcloud']      = 'templates/backends/pcloud.html';
+    EditUriBackendConfig.templates['cifs']        = 'templates/backends/cifs.html';
     
     EditUriBackendConfig.testers['s3'] = function(scope, callback) {
 
@@ -294,6 +295,11 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
             scope.Server = 'api.pcloud.com';
         }
         return this['oauth-base'].apply(this, arguments); 
+    };
+    EditUriBackendConfig.loaders['cifs']      = function(scope) {
+        if (scope.Transport === undefined || scope.Transport === '') {
+            scope.Transport = 'directtcp';
+        }
     };
 
     EditUriBackendConfig.loaders['openstack'] = function (scope) {
@@ -607,6 +613,25 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
 
         EditUriBackendConfig.mergeServerAndPath(scope);
     }
+
+    EditUriBackendConfig.parsers['cifs'] = function (scope, module, server, path, port, options) {
+        if (options['--transport'])
+            scope.Transport = options['--transport'];
+        else
+            scope.Transport = 'directtcp';
+        
+        if (options['--auth-domain'])
+            scope.Domain = options['--auth-domain'];
+
+        var nukeopts = ['--transport', '--auth-domain'];
+        for (var x in nukeopts)
+            delete options[nukeopts[x]];
+        
+        const slashIndex = path.indexOf('/');
+        scope.ShareName = slashIndex >= 0 ? path.substring(0, slashIndex).replace(/[/\\]+$/, '') : path.replace(/[/\\]+$/, '');
+        scope.Path = slashIndex >= 0 ? path.substring(slashIndex + 1).replace(/[/\\]+$/, '') : "";
+
+    };
 
 
     // Builders take the scope and produce the uri output
@@ -950,8 +975,37 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
 
         return url;
     }
+
+    EditUriBackendConfig.builders['cifs'] = function (scope) {
+        var opts = {
+            'transport': scope.Transport,
+            'auth-domain': scope.Domain
+        };
+
+        EditUriBackendConfig.merge_in_advanced_options(scope, opts, true);
+        // Remove trailing and leading slashes
+        if (scope.ShareName) 
+            scope.ShareName = scope.ShareName.replace(/^[/\\]+/, '').replace(/[/\\]+$/, '');
+        
+        if (scope.Path)
+            scope.Path = scope.Path.replace(/^[/\\]+/, '').replace(/[/\\]+$/, '');
+
+        return AppUtils.format('{0}://{1}/{2}/{3}/{4}',
+            scope.Backend.Key,
+            scope.Server,
+            scope.ShareName,
+            scope.Path,
+            AppUtils.encodeDictAsUrl(opts)
+        );
+    }
+
+    EditUriBackendConfig.validaters['cifs'] = function (scope, continuation) {
+        if (EditUriBackendConfig.require_server(scope)
+            && EditUriBackendConfig.require_username(scope)
+            && EditUriBackendConfig.require_field(scope, 'ShareName', gettextCatalog.getString('Share name')))
+            continuation();
+    };
     
-	
     EditUriBackendConfig.validaters['file'] = function (scope, continuation) {
         if (EditUriBackendConfig.require_path(scope))
             continuation();
