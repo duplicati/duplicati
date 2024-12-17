@@ -61,11 +61,6 @@ namespace Duplicati.Library.Main
         private ITaskControl m_currentTaskControl = null;
 
         /// <summary>
-        /// The thread priority to reset to
-        /// </summary>
-        private System.Threading.ThreadPriority? m_resetPriority;
-
-        /// <summary>
         /// If not null, active locale change that needs to be reset
         /// </summary>
         private LocaleChange m_localeChange = null;
@@ -583,12 +578,6 @@ namespace Duplicati.Library.Main
                 m_options.LoadedModules.Clear();
             }
 
-            if (m_resetPriority != null)
-            {
-                System.Threading.Thread.CurrentThread.Priority = m_resetPriority.Value;
-                m_resetPriority = null;
-            }
-
             if (m_localeChange != null)
             {
                 m_localeChange.Dispose();
@@ -708,12 +697,6 @@ namespace Duplicati.Library.Main
                 {
                     Library.Logging.Log.WriteWarningMessage(LOGTAG, "LocaleChangeError", ex, Strings.Controller.FailedForceLocaleError(ex.Message));
                 }
-            }
-
-            if (!string.IsNullOrEmpty(m_options.ThreadPriority))
-            {
-                m_resetPriority = System.Threading.Thread.CurrentThread.Priority;
-                System.Threading.Thread.CurrentThread.Priority = Library.Utility.Utility.ParsePriority(m_options.ThreadPriority);
             }
 
             if (string.IsNullOrEmpty(m_options.Dbpath))

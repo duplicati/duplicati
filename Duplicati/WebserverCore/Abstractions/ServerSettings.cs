@@ -23,11 +23,6 @@ public class ServerSettings
         get => applicationSettings.UploadSpeedLimit;
         set => applicationSettings.UploadSpeedLimit = value;
     }
-    public ThreadPriority? ThreadPriority
-    {
-        get => applicationSettings.ThreadPriorityOverride;
-        set => applicationSettings.ThreadPriorityOverride = value;
-    }
     public int LastWebserverPort
     {
         get => applicationSettings.LastWebserverPort;

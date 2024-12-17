@@ -38,7 +38,6 @@ namespace Duplicati.Server.Database
             public const string STARTUP_DELAY = "startup-delay";
             public const string DOWNLOAD_SPEED_LIMIT = "max-download-speed";
             public const string UPLOAD_SPEED_LIMIT = "max-upload-speed";
-            public const string THREAD_PRIORITY = "thread-priority";
             public const string LAST_WEBSERVER_PORT = "last-webserver-port";
             public const string IS_FIRST_RUN = "is-first-run";
             public const string SERVER_PORT_CHANGED = "server-port-changed";
@@ -154,27 +153,6 @@ namespace Duplicati.Server.Database
                 lock (databaseConnection.m_lock)
                     settings[CONST.STARTUP_DELAY] = value;
                 SaveSettings();
-            }
-        }
-
-        public System.Threading.ThreadPriority? ThreadPriorityOverride
-        {
-            get
-            {
-                var tp = settings[CONST.THREAD_PRIORITY];
-                if (string.IsNullOrEmpty(tp))
-                    return null;
-
-                System.Threading.ThreadPriority r;
-                if (Enum.TryParse<System.Threading.ThreadPriority>(tp, true, out r))
-                    return r;
-
-                return null;
-            }
-            set
-            {
-                lock (databaseConnection.m_lock)
-                    settings[CONST.THREAD_PRIORITY] = value.HasValue ? Enum.GetName(typeof(System.Threading.ThreadPriority), value.Value) : null;
             }
         }
 
