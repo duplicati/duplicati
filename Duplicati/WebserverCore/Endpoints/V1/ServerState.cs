@@ -18,7 +18,7 @@ public class ServerState : IEndpointV1
 
         group.MapPost("/serverstate/pause",
             ([FromServices] IStatusService statusService, [FromServices] LiveControls liveControls,
-                [FromQuery] string? duration) => ExecutePause(liveControls, duration)).RequireAuthorization();
+                [FromQuery] string? duration, [FromQuery] bool? pauseTransfers) => ExecutePause(liveControls, duration, pauseTransfers)).RequireAuthorization();
 
         group.MapPost("/serverstate/resume",
             ([FromServices] IStatusService statusService, [FromServices] LiveControls liveControls) =>
@@ -60,7 +60,7 @@ public class ServerState : IEndpointV1
         return status;
     }
 
-    private static void ExecutePause(LiveControls liveControls, string? duration)
+    private static void ExecutePause(LiveControls liveControls, string? duration, bool? pauseTransfer)
     {
         var ts = TimeSpan.Zero;
         if (duration != null)
@@ -74,9 +74,9 @@ public class ServerState : IEndpointV1
             }
 
         if (ts.TotalMilliseconds > 0)
-            liveControls.Pause(ts);
+            liveControls.Pause(ts, pauseTransfer ?? false);
         else
-            liveControls.Pause();
+            liveControls.Pause(pauseTransfer ?? false);
     }
 
     private static void ExecuteResume(LiveControls liveControls)

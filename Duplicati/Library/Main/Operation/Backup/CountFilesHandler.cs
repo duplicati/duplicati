@@ -30,13 +30,30 @@ namespace Duplicati.Library.Main.Operation.Backup
 {
     internal static class CountFilesHandler
     {
-        public static async Task Run(IEnumerable<string> sources, Snapshots.ISnapshotService snapshot, UsnJournalService journalService, BackupResults result, Options options, IFilter sourcefilter, IFilter filter, HashSet<string> blacklistPaths, Common.ITaskReader taskreader, System.Threading.CancellationToken token)
+        public static async Task Run(
+            IEnumerable<string> sources,
+            ISnapshotService snapshot,
+            UsnJournalService journalService,
+            BackupResults result,
+            Options options,
+            IFilter sourcefilter,
+            IFilter filter,
+            HashSet<string> blacklistPaths,
+            Common.ITaskReader taskreader,
+            System.Threading.CancellationToken token
+        )
         {
             // Keep the log channel from the parent scope
             using (Logging.Log.StartIsolatingScope(true))
             {
-                Channels channels = new ();
-                var enumeratorTask = Backup.FileEnumerationProcess.Run(channels, sources, snapshot, journalService, options.FileAttributeFilter, sourcefilter, filter, options.SymlinkPolicy, options.HardlinkPolicy, options.ExcludeEmptyFolders, options.IgnoreFilenames, blacklistPaths, options.ChangedFilelist, taskreader, token);
+                Channels channels = new();
+                var enumeratorTask = Backup.FileEnumerationProcess.Run(
+                    channels, sources, snapshot, journalService,
+                    options.FileAttributeFilter, sourcefilter, filter,
+                    options.SymlinkPolicy, options.HardlinkPolicy,
+                    options.ExcludeEmptyFolders, options.IgnoreFilenames,
+                    blacklistPaths, options.ChangedFilelist, taskreader, null, token);
+
                 var counterTask = AutomationExtensions.RunTask(new
                 {
                     Input = channels.SourcePaths.AsRead()
@@ -49,7 +66,7 @@ namespace Duplicati.Library.Main.Operation.Backup
 
                     try
                     {
-                        while (await taskreader.ProgressAsync && !token.IsCancellationRequested)
+                        while (await taskreader.ProgressRendevouz() && !token.IsCancellationRequested)
                         {
                             var path = await self.Input.ReadAsync();
 

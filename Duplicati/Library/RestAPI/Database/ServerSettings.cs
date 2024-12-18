@@ -38,7 +38,6 @@ namespace Duplicati.Server.Database
             public const string STARTUP_DELAY = "startup-delay";
             public const string DOWNLOAD_SPEED_LIMIT = "max-download-speed";
             public const string UPLOAD_SPEED_LIMIT = "max-upload-speed";
-            public const string THREAD_PRIORITY = "thread-priority";
             public const string LAST_WEBSERVER_PORT = "last-webserver-port";
             public const string IS_FIRST_RUN = "is-first-run";
             public const string SERVER_PORT_CHANGED = "server-port-changed";
@@ -68,6 +67,7 @@ namespace Duplicati.Server.Database
             public const string ENCRYPTED_FIELDS = "encrypted-fields";
             public const string PRELOAD_SETTINGS_HASH = "preload-settings-hash";
             public const string TIMEZONE_OPTION = "server-timezone";
+            public const string PAUSED_UNTIL = "paused-until";
         }
 
         private readonly Dictionary<string, string> settings;
@@ -134,7 +134,7 @@ namespace Duplicati.Server.Database
                 FIXMEGlobal.NotificationUpdateService.IncrementLastDataUpdateId();
                 FIXMEGlobal.StatusEventNotifyer.SignalNewEvent();
                 // If throttle options were changed, update now
-                FIXMEGlobal.WorkerThreadsManager.UpdateThrottleSpeeds();
+                FIXMEGlobal.WorkerThreadsManager.UpdateThrottleSpeeds(UploadSpeedLimit, DownloadSpeedLimit);
             }
 
             // In case the usage reporter is enabled or disabled, refresh now
@@ -156,24 +156,20 @@ namespace Duplicati.Server.Database
             }
         }
 
-        public System.Threading.ThreadPriority? ThreadPriorityOverride
+        public DateTime? PausedUntil
         {
             get
             {
-                var tp = settings[CONST.THREAD_PRIORITY];
-                if (string.IsNullOrEmpty(tp))
+                if (long.TryParse(settings[CONST.PAUSED_UNTIL], out var t))
+                    return new DateTime(t, DateTimeKind.Utc);
+                else
                     return null;
-
-                System.Threading.ThreadPriority r;
-                if (Enum.TryParse<System.Threading.ThreadPriority>(tp, true, out r))
-                    return r;
-
-                return null;
             }
             set
             {
                 lock (databaseConnection.m_lock)
-                    settings[CONST.THREAD_PRIORITY] = value.HasValue ? Enum.GetName(typeof(System.Threading.ThreadPriority), value.Value) : null;
+                    settings[CONST.PAUSED_UNTIL] = value?.ToUniversalTime().Ticks.ToString();
+                SaveSettings();
             }
         }
 

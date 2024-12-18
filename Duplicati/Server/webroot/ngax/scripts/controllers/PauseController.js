@@ -2,4 +2,5 @@ backupApp.controller('PauseController', function($scope, $location, gettextCatal
      $scope.selection = $scope.$parent.state.CurrentItem;
 
      $scope.selection.time = 'infinite';
+     $scope.selection.pauseTransfers = false;
 });

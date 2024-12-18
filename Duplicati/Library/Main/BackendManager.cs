@@ -31,6 +31,7 @@ using System.Threading;
 using System.Net;
 using Duplicati.Library.Interface;
 using System.Threading.Tasks;
+using Duplicati.Library.Main.Operation.Common;
 
 namespace Duplicati.Library.Main
 {
@@ -377,7 +378,7 @@ namespace Duplicati.Library.Main
         private readonly string m_backendurl;
         private readonly IBackendWriter m_statwriter;
         private System.Threading.Thread m_thread;
-        private readonly BasicResults m_taskControl;
+        private readonly ITaskReader m_taskReader;
         private readonly DatabaseCollector m_db;
 
         // Cache these
@@ -392,7 +393,7 @@ namespace Duplicati.Library.Main
             m_options = options;
             m_backendurl = backendurl;
             m_statwriter = statwriter;
-            m_taskControl = statwriter as BasicResults;
+            m_taskReader = (statwriter as BasicResults).TaskControl;
             m_numberofretries = options.NumberOfRetries;
             m_retrydelay = options.RetryDelay;
             m_retrywithexponentialbackoff = options.RetryWithExponentialBackoff;
@@ -418,12 +419,6 @@ namespace Duplicati.Library.Main
                     throw new Duplicati.Library.Interface.UserInformationException(string.Format("Encryption method not supported: {0}", m_options.EncryptionModule), "EncryptionMethodNotSupported");
             }
 
-            if (m_taskControl != null)
-                m_taskControl.StateChangedEvent += (state) =>
-                {
-                    if (state == TaskControlState.Abort)
-                        m_thread.Interrupt();
-                };
             m_queue = new BlockingQueue<FileEntryItem>(options.SynchronousUpload ? 1 : (options.AsynchronousUploadLimit == 0 ? int.MaxValue : options.AsynchronousUploadLimit));
             m_thread = new System.Threading.Thread(this.ThreadRun);
             m_thread.Name = "Backend Async Worker";
@@ -460,8 +455,7 @@ namespace Duplicati.Library.Main
                     {
                         try
                         {
-                            if (m_taskControl != null)
-                                m_taskControl.TaskControlRendevouz();
+                            m_taskReader?.ProgressRendevouz().Await();
 
                             if (m_options.NoConnectionReuse && m_backend != null)
                             {
@@ -478,22 +472,22 @@ namespace Duplicati.Library.Main
                                 switch (item.Operation)
                                 {
                                     case OperationType.Put:
-                                        DoPutAsync(item, CancellationToken.None).Await();
+                                        DoPutAsync(item).Await();
                                         // We do not auto create folders,
                                         // because we know the folder exists
                                         uploadSuccess = true;
                                         break;
                                     case OperationType.Get:
-                                        DoGetAsync(item, CancellationToken.None).Await();
+                                        DoGetAsync(item).Await();
                                         break;
                                     case OperationType.List:
                                         DoList(item);
                                         break;
                                     case OperationType.Delete:
-                                        DoDeleteAsync(item, CancellationToken.None).Await();
+                                        DoDeleteAsync(item).Await();
                                         break;
                                     case OperationType.CreateFolder:
-                                        DoCreateFolderAsync(item, CancellationToken.None).Await();
+                                        DoCreateFolderAsync(item).Await();
                                         break;
                                     case OperationType.Terminate:
                                         m_queue.SetCompleted();
@@ -528,7 +522,7 @@ namespace Duplicati.Library.Main
                                 {
                                     try
                                     {
-                                        var names = m_backend.GetDNSNamesAsync(CancellationToken.None).Await() ?? new string[0];
+                                        var names = m_backend.GetDNSNamesAsync(m_taskReader.TransferToken).Await() ?? new string[0];
                                         foreach (var name in names)
                                             if (!string.IsNullOrWhiteSpace(name))
                                                 System.Net.Dns.GetHostEntry(name);
@@ -547,7 +541,7 @@ namespace Duplicati.Library.Main
                                 try
                                 {
                                     // If we successfully create the folder, we can re-use the connection
-                                    m_backend.CreateFolderAsync(CancellationToken.None).Await();
+                                    m_backend.CreateFolderAsync(m_taskReader.TransferToken).Await();
                                     recovered = true;
                                 }
                                 catch (Exception dex)
@@ -574,7 +568,7 @@ namespace Duplicati.Library.Main
 
                                     while (target > DateTime.Now)
                                     {
-                                        if (m_taskControl != null && m_taskControl.IsAbortRequested())
+                                        if (m_taskReader?.ProgressToken.IsCancellationRequested ?? false)
                                             break;
 
                                         System.Threading.Thread.Sleep(500);
@@ -681,10 +675,8 @@ namespace Duplicati.Library.Main
 
         private void HandleProgress(ThrottledStream ts, long pg)
         {
-            // TODO: Should we pause here as well?
-            // It might give annoying timeouts for transfers
-            if (m_taskControl != null)
-                m_taskControl.TaskControlRendevouz();
+            // This pauses and throws on cancellation, but ignores stop
+            m_taskReader?.TransferRendevouz();
 
             // Update the throttle speeds if they have changed
             string tmp;
@@ -705,7 +697,7 @@ namespace Duplicati.Library.Main
             m_statwriter.BackendProgressUpdater.UpdateProgress(pg);
         }
 
-        private async Task DoPutAsync(FileEntryItem item, CancellationToken cancellationToken)
+        private async Task DoPutAsync(FileEntryItem item)
         {
             if (m_encryption != null)
                 lock (m_encryptionLock)
@@ -732,10 +724,10 @@ namespace Duplicati.Library.Main
                 using (var act = new Duplicati.StreamUtil.TimeoutObservingStream(fs) { ReadTimeout = m_options.ReadWriteTimeout })
                 using (var ts = new ThrottledStream(act, m_options.MaxUploadPrSecond, 0))
                 using (var pgs = new Library.Utility.ProgressReportingStream(ts, pg => HandleProgress(ts, pg)))
-                    await streamingBackend.PutAsync(item.RemoteFilename, pgs, cancellationToken);
+                    await streamingBackend.PutAsync(item.RemoteFilename, pgs, m_taskReader.TransferToken);
             }
             else
-                await m_backend.PutAsync(item.RemoteFilename, item.LocalFilename, cancellationToken);
+                await m_backend.PutAsync(item.RemoteFilename, item.LocalFilename, m_taskReader.TransferToken);
 
             var duration = DateTime.Now - begin;
             Logging.Log.WriteProfilingMessage(LOGTAG, "UploadSpeed", "Uploaded {0} in {1}, {2}/s", Library.Utility.Utility.FormatSizeString(item.Size), duration, Library.Utility.Utility.FormatSizeString((long)(item.Size / duration.TotalSeconds)));
@@ -757,7 +749,7 @@ namespace Duplicati.Library.Main
             item.DeleteLocalFile(m_statwriter);
         }
 
-        private async Task<(TempFile tempFile, long downloadSize, string remotehash)> DoGetFile(FileEntryItem item, IEncryption useDecrypter, CancellationToken cancellationToken)
+        private async Task<(TempFile tempFile, long downloadSize, string remotehash)> DoGetFile(FileEntryItem item, IEncryption useDecrypter)
         {
             TempFile retTarget, dlTarget = null, decryptTarget = null;
             long retDownloadSize;
@@ -780,7 +772,7 @@ namespace Duplicati.Library.Main
 
                         using (var ts = new ThrottledStream(ss, 0, m_options.MaxDownloadPrSecond))
                         using (var pgs = new Library.Utility.ProgressReportingStream(ts, pg => HandleProgress(ts, pg)))
-                        { await streamingBackend.GetAsync(item.RemoteFilename, pgs, cancellationToken); }
+                        { await streamingBackend.GetAsync(item.RemoteFilename, pgs, m_taskReader.TransferToken); }
                         ss.Flush();
                         retDownloadSize = ss.TotalBytesWritten;
                         retHashcode = Convert.ToBase64String(hs.GetFinalHash());
@@ -788,7 +780,7 @@ namespace Duplicati.Library.Main
                 }
                 else
                 {
-                    await m_backend.GetAsync(item.RemoteFilename, dlTarget, cancellationToken);
+                    await m_backend.GetAsync(item.RemoteFilename, dlTarget, m_taskReader.TransferToken);
                     retDownloadSize = new System.IO.FileInfo(dlTarget).Length;
                     retHashcode = CalculateFileHash(dlTarget, m_options);
                 }
@@ -824,7 +816,7 @@ namespace Duplicati.Library.Main
             return (retTarget, retDownloadSize, retHashcode);
         }
 
-        private async Task DoGetAsync(FileEntryItem item, CancellationToken cancellationToken)
+        private async Task DoGetAsync(FileEntryItem item)
         {
             Library.Utility.TempFile tmpfile = null;
             m_statwriter.SendEvent(BackendActionType.Get, BackendEventType.Started, item.RemoteFilename, item.Size);
@@ -875,7 +867,7 @@ namespace Duplicati.Library.Main
                     }
                 }
 
-                (tmpfile, var dataSizeDownloaded, var fileHash) = await DoGetFile(item, useDecrypter, cancellationToken);
+                (tmpfile, var dataSizeDownloaded, var fileHash) = await DoGetFile(item, useDecrypter);
 
                 var duration = DateTime.Now - begin;
                 Logging.Log.WriteProfilingMessage(LOGTAG, "DownloadSpeed", "Downloaded {3}{0} in {1}, {2}/s", Library.Utility.Utility.FormatSizeString(dataSizeDownloaded),
@@ -949,14 +941,14 @@ namespace Duplicati.Library.Main
             m_statwriter.SendEvent(BackendActionType.List, BackendEventType.Completed, null, r.Count);
         }
 
-        private async Task DoDeleteAsync(FileEntryItem item, CancellationToken cancellationToken)
+        private async Task DoDeleteAsync(FileEntryItem item)
         {
             m_statwriter.SendEvent(BackendActionType.Delete, BackendEventType.Started, item.RemoteFilename, item.Size);
 
             string result = null;
             try
             {
-                await m_backend.DeleteAsync(item.RemoteFilename, cancellationToken).ConfigureAwait(false);
+                await m_backend.DeleteAsync(item.RemoteFilename, m_taskReader.TransferToken).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -999,14 +991,14 @@ namespace Duplicati.Library.Main
             m_statwriter.SendEvent(BackendActionType.Delete, BackendEventType.Completed, item.RemoteFilename, item.Size);
         }
 
-        private async Task DoCreateFolderAsync(FileEntryItem item, CancellationToken cancelToken)
+        private async Task DoCreateFolderAsync(FileEntryItem item)
         {
             m_statwriter.SendEvent(BackendActionType.CreateFolder, BackendEventType.Started, null, -1);
 
             string result = null;
             try
             {
-                await m_backend.CreateFolderAsync(cancelToken).ConfigureAwait(false);
+                await m_backend.CreateFolderAsync(m_taskReader.TransferToken).ConfigureAwait(false);
             }
             catch (Exception ex)
             {

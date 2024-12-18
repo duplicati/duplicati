@@ -44,7 +44,23 @@ namespace Duplicati.Library.Main.Operation.Backup
         /// </summary>
         private static readonly string FILTER_LOGTAG = Logging.Log.LogTagFromType(typeof(FileEnumerationProcess));
 
-        public static Task Run(Channels channels, IEnumerable<string> sources, Snapshots.ISnapshotService snapshot, UsnJournalService journalService, FileAttributes fileAttributes, Duplicati.Library.Utility.IFilter sourcefilter, Duplicati.Library.Utility.IFilter emitfilter, Options.SymlinkStrategy symlinkPolicy, Options.HardlinkStrategy hardlinkPolicy, bool excludeemptyfolders, string[] ignorenames, HashSet<string> blacklistPaths, string[] changedfilelist, ITaskReader taskreader, CancellationToken token)
+        public static Task Run(
+            Channels channels,
+            IEnumerable<string> sources,
+            ISnapshotService snapshot,
+            UsnJournalService journalService,
+            FileAttributes fileAttributes,
+            Library.Utility.IFilter sourcefilter,
+            Library.Utility.IFilter emitfilter,
+            Options.SymlinkStrategy symlinkPolicy,
+            Options.HardlinkStrategy hardlinkPolicy,
+            bool excludeemptyfolders,
+            string[] ignorenames,
+            HashSet<string> blacklistPaths,
+            string[] changedfilelist,
+            ITaskReader taskreader,
+            Action onStopRequested,
+            CancellationToken token)
         {
             return AutomationExtensions.RunTask(
             new
@@ -120,13 +136,19 @@ namespace Duplicati.Library.Main.Operation.Backup
                     // Process each path, and dequeue the mixins with symlinks as we go
                     foreach (var s in source)
                     {
-                        if (token.IsCancellationRequested)
+#if DEBUG
+                        // For testing purposes, we need exact control
+                        // when requesting a process stop.
+                        // The "onStopRequested" callback is used to detect
+                        // if the process is the real file enumeration process
+                        // because the counter processe does not have a callback
+                        if (onStopRequested != null)
+                            taskreader.TestMethodCallback?.Invoke(s);
+#endif
+                        // Stop if requested
+                        if (token.IsCancellationRequested || !await taskreader.ProgressRendevouz().ConfigureAwait(false))
                         {
-                            break;
-                        }
-
-                        if (!await taskreader.ProgressAsync)
-                        {
+                            onStopRequested?.Invoke();
                             return;
                         }
 

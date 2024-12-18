@@ -20,11 +20,7 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System;
-using Duplicati.Library.Interface;
-using Duplicati.Library.Main.Volumes;
 using Duplicati.Library.Utility;
-using System.IO;
-using System.Security.Cryptography;
 
 namespace Duplicati.Library.Main.Operation.Common
 {

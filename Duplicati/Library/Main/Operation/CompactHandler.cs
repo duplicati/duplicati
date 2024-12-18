@@ -21,6 +21,7 @@
 
 using Duplicati.Library.Main.Database;
 using Duplicati.Library.Main.Volumes;
+using Duplicati.Library.Utility;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -165,7 +166,7 @@ namespace Duplicati.Library.Main.Operation
                             {
                                 using (var tmpfile = entry.TempFile)
                                 {
-                                    if (m_result.TaskControlRendevouz() == TaskControlState.Stop)
+                                    if (!m_result.TaskControl.ProgressRendevouz().Await())
                                     {
                                         backend.WaitForComplete(db, transaction);
                                         return false;
