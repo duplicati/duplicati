@@ -1,5 +1,8 @@
 name: Backend Live Tests
 on: [pull_request, workflow_dispatch]
+concurrency:
+  group: duplicati-ci-livetests
+  cancel-in-progress: false
 jobs:
   check_secrets:
     runs-on: ubuntu-latest
