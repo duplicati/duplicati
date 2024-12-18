@@ -29,8 +29,8 @@ backupApp.controller('AppController', function($scope, $cookies, $location, AppS
         ServerStatus.resume().then(function() {}, AppUtils.connectionError);
     };
 
-    $scope.pause = function(duration) {
-        ServerStatus.pause(duration).then(function() {}, AppUtils.connectionError);
+    $scope.pause = function(duration, pauseTransfers) {
+        ServerStatus.pause(duration, pauseTransfers).then(function() {}, AppUtils.connectionError);
     };
 
     $scope.isLoggedIn = false;
@@ -55,7 +55,8 @@ backupApp.controller('AppController', function($scope, $cookies, $location, AppS
                 function(index, text, cur) {
                     if (index == 0 && cur != null && cur.time != null) {
                         var time = cur.time;
-                        $scope.pause(time == 'infinite' ? '' : time);
+                        var pauseTransfers = cur.pauseTransfers;
+                        $scope.pause(time == 'infinite' ? '' : time, pauseTransfers);
                     }
                 }
             );

@@ -54,7 +54,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                 BlockVolumeWriter blockvolume = null;
                 TemporaryIndexVolume indexvolume = null;
 
-                System.Diagnostics.Stopwatch sw_workload = new ();
+                System.Diagnostics.Stopwatch sw_workload = new();
                 long allowed_workload_ms = options.CPUIntensity * 100;
 
                 try
@@ -67,7 +67,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                         if (options.CPUIntensity < 10 && sw_workload.ElapsedMilliseconds > allowed_workload_ms)
                         {
                             // Sleep the remaining time
-                            int time_to_sleep = 1000 - (int) allowed_workload_ms;
+                            int time_to_sleep = 1000 - (int)allowed_workload_ms;
                             await Task.Delay(time_to_sleep);
                             sw_workload.Reset();
                         }
@@ -152,7 +152,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                         }
 
                         // We ignore the stop signal, but not the pause and terminate
-                        await taskreader.ProgressAsync;
+                        await taskreader.ProgressRendevouz().ConfigureAwait(false);
 
                         sw_workload.Stop();
                     }

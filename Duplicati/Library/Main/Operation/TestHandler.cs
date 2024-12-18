@@ -80,7 +80,7 @@ namespace Duplicati.Library.Main.Operation
                 {
                     try
                     {
-                        if (m_results.TaskControlRendevouz() == TaskControlState.Stop)
+                        if (!m_results.TaskControl.ProgressRendevouz().Await())
                         {
                             backend.WaitForComplete(db, null);
                             m_results.EndTime = DateTime.UtcNow;
@@ -139,7 +139,7 @@ namespace Duplicati.Library.Main.Operation
                 {
                     try
                     {
-                        if (m_results.TaskControlRendevouz() == TaskControlState.Stop)
+                        if (!m_results.TaskControl.ProgressRendevouz().Await())
                         {
                             m_results.EndTime = DateTime.UtcNow;
                             return;

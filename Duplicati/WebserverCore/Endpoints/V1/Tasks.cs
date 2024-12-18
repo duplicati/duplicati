@@ -9,16 +9,14 @@ public class Tasks : IEndpointV1
 {
     private enum TaskStopState
     {
-        StopAfterCurrentFile,
-        StopNow,
+        Stop,
         Abort
     }
     public static void Map(RouteGroupBuilder group)
     {
         group.MapGet("/tasks", Execute).RequireAuthorization();
         group.MapGet("/task/{taskid}", ([FromRoute] long taskId) => ExecuteGet(taskId)).RequireAuthorization();
-        group.MapPost("/task/{taskid}/stopaftercurrentfile", ([FromRoute] long taskId) => ExecutePost(taskId, TaskStopState.StopAfterCurrentFile)).RequireAuthorization();
-        group.MapPost("/task/{taskid}/stopnow", ([FromRoute] long taskId) => ExecutePost(taskId, TaskStopState.StopNow)).RequireAuthorization();
+        group.MapPost("/task/{taskid}/stop", ([FromRoute] long taskId) => ExecutePost(taskId, TaskStopState.Stop)).RequireAuthorization();
         group.MapPost("/task/{taskid}/abort", ([FromRoute] long taskId) => ExecutePost(taskId, TaskStopState.Abort)).RequireAuthorization();
 
     }
@@ -77,11 +75,8 @@ public class Tasks : IEndpointV1
 
         switch (stopState)
         {
-            case TaskStopState.StopAfterCurrentFile:
-                task.Stop(allowCurrentFileToFinish: true);
-                break;
-            case TaskStopState.StopNow:
-                task.Stop(allowCurrentFileToFinish: false);
+            case TaskStopState.Stop:
+                task.Stop();
                 break;
             case TaskStopState.Abort:
                 task.Abort();

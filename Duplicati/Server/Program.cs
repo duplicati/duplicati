@@ -30,6 +30,7 @@ using Duplicati.Library.Common.IO;
 using Duplicati.Library.Crashlog;
 using Duplicati.Library.Encryption;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Logging;
 using Duplicati.Library.Main;
 using Duplicati.Library.Main.Database;
 using Duplicati.Library.RestAPI;
@@ -283,7 +284,7 @@ namespace Duplicati.Server
 
                 SetPurgeTempFilesTimer(commandlineOptions);
 
-                SetLiveControls();
+                LiveControl.StateChanged = LiveControl_StateChanged;
 
                 SetWorkerThread();
 
@@ -459,13 +460,6 @@ namespace Duplicati.Server
 
             FIXMEGlobal.WorkThread.CompletedWork += (worker, task) => { RegisterTaskResult(task.TaskID, null); };
             FIXMEGlobal.WorkThread.OnError += (worker, task, exception) => { RegisterTaskResult(task.TaskID, exception); };
-        }
-
-        private static void SetLiveControls()
-        {
-            LiveControl.StateChanged += LiveControl_StateChanged;
-            LiveControl.ThreadPriorityChanged += LiveControl_ThreadPriorityChanged;
-            LiveControl.ThrottleSpeedChanged += LiveControl_ThrottleSpeedChanged;
         }
 
         private static void SetPurgeTempFilesTimer(Dictionary<string, string> commandlineOptions)
@@ -839,53 +833,36 @@ namespace Duplicati.Server
         }
 
         /// <summary>
-        /// Handles a change in the LiveControl and updates the Runner
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private static void LiveControl_ThreadPriorityChanged(object sender, EventArgs e)
-        {
-            StatusEventNotifyer.SignalNewEvent();
-        }
-
-        /// <summary>
-        /// Handles a change in the LiveControl and updates the Runner
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private static void LiveControl_ThrottleSpeedChanged(object sender, EventArgs e)
-        {
-            StatusEventNotifyer.SignalNewEvent();
-        }
-
-        /// <summary>
         /// This event handler updates the trayicon menu with the current state of the runner.
         /// </summary>
         /// <exception cref="ArgumentOutOfRangeException"></exception>
-        private static void LiveControl_StateChanged(object sender, EventArgs e)
+        private static void LiveControl_StateChanged(LiveControls.LiveControlEvent e)
         {
             var worker = FIXMEGlobal.WorkThread;
-            switch (LiveControl.State)
+            var appSettings = FIXMEGlobal.DataConnection.ApplicationSettings;
+            switch (e.State)
             {
                 case LiveControls.LiveControlState.Paused:
                     {
                         worker.Pause();
-                        var t = worker.CurrentTask;
-                        t?.Pause();
+                        worker.CurrentTask?.Pause(e.TransfersPaused);
+                        appSettings.PausedUntil = e.WaitTimeExpiration;
                         break;
                     }
                 case LiveControls.LiveControlState.Running:
                     {
                         worker.Resume();
-                        var t = worker.CurrentTask;
-                        t?.Resume();
+                        worker.CurrentTask?.Resume();
+                        appSettings.PausedUntil = null;
                         break;
                     }
                 default:
-                    throw new InvalidOperationException($"State of {nameof(LiveControl)} was not recognized!");
+                    Log.WriteWarningMessage(LOGTAG, "InvalidPauseResumeState", null, Strings.Program.InvalidPauseResumeState(LiveControl.State));
+                    break;
             }
 
             StatusEventNotifyer.SignalNewEvent();
+
         }
 
         /// <summary>

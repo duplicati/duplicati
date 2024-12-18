@@ -725,7 +725,7 @@ namespace Duplicati.Library.Backend
             if (cwdFlag ?? _useCwdNames)
                 return string.IsNullOrWhiteSpace(path)
                     ? string.Empty
-                    : path;
+                    : Uri.UnescapeDataString(path);
 
             var remotePath = _url.AbsolutePath.TrimEnd('/');
             if (_relativePaths)
@@ -738,12 +738,12 @@ namespace Duplicati.Library.Backend
             }
 
             if (string.IsNullOrEmpty(path))
-                return remotePath;
+                return Uri.UnescapeDataString(remotePath);
 
             if (path.StartsWith("/", StringComparison.Ordinal))
-                return path;
+                return Uri.UnescapeDataString(path);
 
-            return remotePath + "/" + path;
+            return Uri.UnescapeDataString(remotePath + "/" + path);
         }
 
         /// <summary>

@@ -42,11 +42,11 @@ namespace Duplicati.Library.Main.Operation.Backup
 
             async self =>
             {
-                if (!await taskreader.ProgressAsync)
-                    return;
+                // We ignore the stop signal, but not the pause and terminate
+                await taskreader.ProgressRendevouz().ConfigureAwait(false);
 
                 // Update the reported source and backend changes
-                using(new Logging.Timer(LOGTAG, "UpdateChangeStatistics", "UpdateChangeStatistics"))
+                using (new Logging.Timer(LOGTAG, "UpdateChangeStatistics", "UpdateChangeStatistics"))
                     await db.UpdateChangeStatisticsAsync(result);
 
                 var changeCount =
@@ -57,20 +57,20 @@ namespace Duplicati.Library.Main.Operation.Backup
                 //Changes in the filelist triggers a filelist upload
                 if (options.UploadUnchangedBackups || changeCount > 0)
                 {
-                    using(new Logging.Timer(LOGTAG, "UploadNewFileset", "Uploading a new fileset"))
+                    using (new Logging.Timer(LOGTAG, "UploadNewFileset", "Uploading a new fileset"))
                     {
                         if (!string.IsNullOrEmpty(options.ControlFiles))
-                            foreach(var p in options.ControlFiles.Split(new char[] { System.IO.Path.PathSeparator }, StringSplitOptions.RemoveEmptyEntries))
+                            foreach (var p in options.ControlFiles.Split(new char[] { System.IO.Path.PathSeparator }, StringSplitOptions.RemoveEmptyEntries))
                                 filesetvolume.AddControlFile(p, options.GetCompressionHintFromFilename(p));
 
-                        if (!await taskreader.ProgressAsync)
-                            return;
+                        // We ignore the stop signal, but not the pause and terminate
+                        await taskreader.ProgressRendevouz().ConfigureAwait(false);
 
                         await db.WriteFilesetAsync(filesetvolume, filesetid);
                         filesetvolume.Close();
 
-                        if (!await taskreader.ProgressAsync)
-                            return;
+                        // We ignore the stop signal, but not the pause and terminate
+                        await taskreader.ProgressRendevouz().ConfigureAwait(false);
 
                         await db.UpdateRemoteVolumeAsync(filesetvolume.RemoteFilename, RemoteVolumeState.Uploading, -1, null);
                         await db.CommitTransactionAsync("CommitUpdateRemoteVolume");

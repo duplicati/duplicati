@@ -27,9 +27,9 @@ public class WorkerThreadsManager(ILiveControls liveControls, IScheduler schedul
         }
     }
 
-    public void UpdateThrottleSpeeds()
+    public void UpdateThrottleSpeeds(string uploadSpeed, string downloadSpeed)
     {
-        WorkerThread?.CurrentTask?.UpdateThrottleSpeed();
+        WorkerThread?.CurrentTask?.UpdateThrottleSpeed(uploadSpeed, downloadSpeed);
     }
 
     public long AddTask(Runner.IRunnerData data, bool skipQueue = false)
