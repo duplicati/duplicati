@@ -721,10 +721,11 @@ namespace Duplicati.Library.Main
             if (m_backend is Library.Interface.IStreamingBackend streamingBackend && !m_options.DisableStreamingTransfers)
             {
                 using (var fs = System.IO.File.OpenRead(item.LocalFilename))
-                using (var act = new Duplicati.StreamUtil.TimeoutObservingStream(fs) { ReadTimeout = m_options.ReadWriteTimeout })
+                using (var act = new Duplicati.StreamUtil.TimeoutObservingStream(fs) { ReadTimeout = m_backend is ITimeoutExemptBackend ? -1 : m_options.ReadWriteTimeout })
                 using (var ts = new ThrottledStream(act, m_options.MaxUploadPrSecond, 0))
                 using (var pgs = new Library.Utility.ProgressReportingStream(ts, pg => HandleProgress(ts, pg)))
-                    await streamingBackend.PutAsync(item.RemoteFilename, pgs, m_taskReader.TransferToken);
+                using (var linkedToken = System.Threading.CancellationTokenSource.CreateLinkedTokenSource(m_taskReader.TransferToken, act.TimeoutToken))
+                    await streamingBackend.PutAsync(item.RemoteFilename, pgs, linkedToken.Token);
             }
             else
                 await m_backend.PutAsync(item.RemoteFilename, item.LocalFilename, m_taskReader.TransferToken);
@@ -749,7 +750,7 @@ namespace Duplicati.Library.Main
             item.DeleteLocalFile(m_statwriter);
         }
 
-        private async Task<(TempFile tempFile, long downloadSize, string remotehash)> DoGetFile(FileEntryItem item, IEncryption useDecrypter)
+        private async Task<(TempFile tempFile, long downloadSize, string remotehash)> DoGetFileAsync(FileEntryItem item, IEncryption useDecrypter)
         {
             TempFile retTarget, dlTarget = null, decryptTarget = null;
             long retDownloadSize;
@@ -761,10 +762,11 @@ namespace Duplicati.Library.Main
                 {
                     // extended to use stacked streams
                     using (var fs = System.IO.File.OpenWrite(dlTarget))
-                    using (var act = new Duplicati.StreamUtil.TimeoutObservingStream(fs) { WriteTimeout = m_options.ReadWriteTimeout })
+                    using (var act = new Duplicati.StreamUtil.TimeoutObservingStream(fs) { WriteTimeout = m_backend is ITimeoutExemptBackend ? -1 : m_options.ReadWriteTimeout })
                     using (var hasher = HashFactory.CreateHasher(m_options.FileHashAlgorithm))
                     using (var hs = new HashCalculatingStream(act, hasher))
                     using (var ss = new ShaderStream(hs, true))
+                    using (var linkedToken = System.Threading.CancellationTokenSource.CreateLinkedTokenSource(m_taskReader.TransferToken, act.TimeoutToken))
                     {
                         // NOTE: It is possible to hash the file in parallel with download
                         // but this requires some careful handling of buffers and threads/tasks
@@ -772,7 +774,7 @@ namespace Duplicati.Library.Main
 
                         using (var ts = new ThrottledStream(ss, 0, m_options.MaxDownloadPrSecond))
                         using (var pgs = new Library.Utility.ProgressReportingStream(ts, pg => HandleProgress(ts, pg)))
-                        { await streamingBackend.GetAsync(item.RemoteFilename, pgs, m_taskReader.TransferToken); }
+                        { await streamingBackend.GetAsync(item.RemoteFilename, pgs, linkedToken.Token); }
                         ss.Flush();
                         retDownloadSize = ss.TotalBytesWritten;
                         retHashcode = Convert.ToBase64String(hs.GetFinalHash());
@@ -867,7 +869,7 @@ namespace Duplicati.Library.Main
                     }
                 }
 
-                (tmpfile, var dataSizeDownloaded, var fileHash) = await DoGetFile(item, useDecrypter);
+                (tmpfile, var dataSizeDownloaded, var fileHash) = await DoGetFileAsync(item, useDecrypter);
 
                 var duration = DateTime.Now - begin;
                 Logging.Log.WriteProfilingMessage(LOGTAG, "DownloadSpeed", "Downloaded {3}{0} in {1}, {2}/s", Library.Utility.Utility.FormatSizeString(dataSizeDownloaded),
