@@ -871,7 +871,7 @@ namespace Duplicati.Library.Main
                 if (string.IsNullOrWhiteSpace(v))
                     v = DEFAULT_READ_WRITE_TIMEOUT;
 
-                var res = Library.Utility.Timeparser.ParseTimeSpan(DEFAULT_READ_WRITE_TIMEOUT);
+                var res = Library.Utility.Timeparser.ParseTimeSpan(v);
                 if (res.Ticks <= 0)
                     return -1;
 
