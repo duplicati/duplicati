@@ -27,8 +27,10 @@ namespace Duplicati.Backend.Tests.Azure;
 [TestClass]
 public sealed class AzureTests : BaseTest
 {
+    static readonly string[] AdditionalArguments = ["--wait-after-upload=10s", "--wait-after-delete=10s"];
+
     /// <summary>
-    /// Basic Dropbox test. There are no adicional parameters to be set or tested.
+    /// Basic Azure test.
     /// </summary>
     [TestMethod]
     public Task TestAzureBlob()
@@ -40,11 +42,11 @@ public sealed class AzureTests : BaseTest
             new[]
             {
                 $"azure://{Environment.GetEnvironmentVariable("TESTCREDENTIAL_AZURE_CONTAINERNAME")}?auth-username={Environment.GetEnvironmentVariable("TESTCREDENTIAL_AZURE_ACCOUNTNAME")}&auth-password={Uri.EscapeDataString(Environment.GetEnvironmentVariable("TESTCREDENTIAL_AZURE_ACCESSKEY")!)}"
-            }.Concat(Parameters.GlobalTestParameters).ToArray());
+            }.Concat(Parameters.GlobalTestParameters).Concat(AdditionalArguments).ToArray());
 
         if (exitCode != 0) Assert.Fail("BackendTester is returning non-zero exit code, check logs for details");
 
         return Task.CompletedTask;
     }
-    
+
 }
