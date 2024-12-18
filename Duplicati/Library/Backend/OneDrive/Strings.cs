@@ -39,7 +39,7 @@ namespace Duplicati.Library.Backend.Strings
     internal static class OneDriveV2
     {
         public static string Description(string mssadescription, string mssalink, string msopdescription, string msoplink) { return LC.L(@"Store files in Microsoft OneDrive or Microsoft OneDrive for Business via the Microsoft Graph API. Usage of this backend requires that you agree to the terms in {0} ({1}) and {2} ({3}).", mssadescription, mssalink, msopdescription, msoplink); }
-        public static string DisplayName { get { return LC.L(@"Microsoft OneDrive v2"); } }
+        public static string DisplayName { get { return LC.L(@"Microsoft OneDrive"); } }
         public static string DriveIdLong(string defaultDrive) { return LC.L(@"ID of the drive to store data in. If no drive is specified, the default OneDrive or OneDrive for Business drive will be used via '{0}'.", defaultDrive); }
         public static string DriveIdShort { get { return LC.L(@"Optional ID of the drive"); } }
     }
