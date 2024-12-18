@@ -721,7 +721,7 @@ namespace Duplicati.Library.Main
             if (m_backend is Library.Interface.IStreamingBackend streamingBackend && !m_options.DisableStreamingTransfers)
             {
                 using (var fs = System.IO.File.OpenRead(item.LocalFilename))
-                using (var act = new Duplicati.StreamUtil.TimeoutObservingStream(fs) { ReadTimeout = m_backend is ITimeoutExemptBackend ? -1 : m_options.ReadWriteTimeout })
+                using (var act = new Duplicati.StreamUtil.TimeoutObservingStream(fs) { ReadTimeout = m_backend is ITimeoutExemptBackend ? Timeout.Infinite : m_options.ReadWriteTimeout })
                 using (var ts = new ThrottledStream(act, m_options.MaxUploadPrSecond, 0))
                 using (var pgs = new Library.Utility.ProgressReportingStream(ts, pg => HandleProgress(ts, pg)))
                 using (var linkedToken = System.Threading.CancellationTokenSource.CreateLinkedTokenSource(m_taskReader.TransferToken, act.TimeoutToken))
@@ -762,7 +762,7 @@ namespace Duplicati.Library.Main
                 {
                     // extended to use stacked streams
                     using (var fs = System.IO.File.OpenWrite(dlTarget))
-                    using (var act = new Duplicati.StreamUtil.TimeoutObservingStream(fs) { WriteTimeout = m_backend is ITimeoutExemptBackend ? -1 : m_options.ReadWriteTimeout })
+                    using (var act = new Duplicati.StreamUtil.TimeoutObservingStream(fs) { WriteTimeout = m_backend is ITimeoutExemptBackend ? Timeout.Infinite : m_options.ReadWriteTimeout })
                     using (var hasher = HashFactory.CreateHasher(m_options.FileHashAlgorithm))
                     using (var hs = new HashCalculatingStream(act, hasher))
                     using (var ss = new ShaderStream(hs, true))
