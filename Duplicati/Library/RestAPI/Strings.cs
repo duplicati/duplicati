@@ -56,7 +56,7 @@ Error message: {0}", error); }
                 public static string WebserverTimezoneDescription { get { return LC.L(@"The timezone to use for the webserver. The timezone must be a valid timezone identifier, such as ""America/New_York"" or ""UTC"". Common three-letter abbreviations like ""CET"" are supported, but ambiguous in some cases."); } }
                 public static string DisabledbencryptionLong { get { return LC.L(@"Use this option to disable database encryption of sensitive fields"); } }
                 public static string DisabledbencryptionShort { get { return LC.L(@"Disable database encryption"); } }
-                public static string LogwindowseventlogLong { get { return LC.L(@"Use this option to log to the Windows event log."); } }
+                public static string LogwindowseventlogLong { get { return LC.L(@"Use this option to log to the Windows event log. The provided name is in the format Log:Source. If no log name is provided, Application is used."); } }
                 public static string LogwindowseventlogShort { get { return LC.L(@"Log to the Windows event log"); } }
                 public static string LogwindowseventloglevelLong { get { return LC.L(@"Use this option to set the log level for the Windows event log."); } }
                 public static string LogwindowseventloglevelShort { get { return LC.L(@"Set the log level for the Windows event log"); } }
