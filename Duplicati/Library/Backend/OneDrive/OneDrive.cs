@@ -24,7 +24,7 @@ using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.Backend
 {
-    public class OneDriveV2 : MicrosoftGraphBackend
+    public class OneDrive : MicrosoftGraphBackend
     {
         private const string DRIVE_ID_OPTION = "drive-id";
         private const string DEFAULT_DRIVE_PATH = "/me/drive";
@@ -32,10 +32,10 @@ namespace Duplicati.Library.Backend
 
         private readonly string drivePath;
 
-        public OneDriveV2() { } // Constructor needed for dynamic loading to find it
+        public OneDrive() { } // Constructor needed for dynamic loading to find it
 
-        public OneDriveV2(string url, Dictionary<string, string> options)
-            : base(url, OneDriveV2.PROTOCOL_KEY, options)
+        public OneDrive(string url, Dictionary<string, string> options)
+            : base(url, OneDrive.PROTOCOL_KEY, options)
         {
             string driveId;
             if (options.TryGetValue(DRIVE_ID_OPTION, out driveId))
@@ -50,12 +50,12 @@ namespace Duplicati.Library.Backend
 
         public override string ProtocolKey
         {
-            get { return OneDriveV2.PROTOCOL_KEY; }
+            get { return OneDrive.PROTOCOL_KEY; }
         }
 
         public override string DisplayName
         {
-            get { return Strings.OneDriveV2.DisplayName; }
+            get { return Strings.OneDrive.DisplayName; }
         }
 
         protected override string DrivePath
@@ -67,7 +67,7 @@ namespace Duplicati.Library.Backend
         {
             get
             {
-                return Strings.OneDriveV2.Description;
+                return Strings.OneDrive.Description;
             }
         }
 
@@ -77,7 +77,7 @@ namespace Duplicati.Library.Backend
             {
                 return new ICommandLineArgument[]
                 {
-                    new CommandLineArgument(DRIVE_ID_OPTION, CommandLineArgument.ArgumentType.String, Strings.OneDriveV2.DriveIdShort, Strings.OneDriveV2.DriveIdLong(DEFAULT_DRIVE_PATH)),
+                    new CommandLineArgument(DRIVE_ID_OPTION, CommandLineArgument.ArgumentType.String, Strings.OneDrive.DriveIdShort, Strings.OneDrive.DriveIdLong(DEFAULT_DRIVE_PATH)),
                 };
             }
         }
