@@ -208,7 +208,7 @@ public class CIFSBackend : IStreamingBackend
     /// Download files from remote
     /// </summary>
     /// <param name="remotename">Filename at remote location</param>
-    /// <param name="output">Destination stream to write to</param>
+    /// <param name="localname">Local filename to write to</param>
     /// <param name="cancellationToken">CancellationToken that is combined with internal timeout token</param>
     /// <exception cref="FileMissingException">FileMissingException when file is not found</exception>
     /// <exception cref="Exception">Exceptions arising from either code execution or FileMissingException</exception>
@@ -235,13 +235,13 @@ public class CIFSBackend : IStreamingBackend
     }
 
     /// <summary>
-    /// Delete remote file if it exists, if now, throws FileMissingException
+    /// Delete remote file if it exists, if not, throws FileMissingException
     /// </summary>
     /// <param name="remotename">filename to be deleted on the remote</param>
     /// <param name="cancellationToken">CancellationToken that is combined with internal timeout token</param>
     /// <returns></returns>
     /// <exception cref="FileMissingException">FileMissingException when file is not found</exception>
-    /// <exception cref="Exception">Exceptions arising from either code execution or business logic when return code from pcloud indicates an error.</exception>
+    /// <exception cref="Exception">Exceptions arising from either code execution or business logic errors</exception>
     public async Task DeleteAsync(string remotename, CancellationToken cancellationToken)
     {
         await using var shareConnection = new SMBShareConnection(_connectionParameters);
@@ -268,11 +268,11 @@ public class CIFSBackend : IStreamingBackend
     }
 
     /// <summary>
-    /// Create remote folder
+    /// Creates the configured remote folder path if it doesn't exist
     /// </summary>
     /// <param name="cancellationToken">CancellationToken that will be combined with internal timeout token</param>
-    /// <returns></returns>
-    /// <exception cref="Exception"></exception>
+    /// <returns>Task representing the asynchronous operation</returns>
+    /// <exception cref="Exception">Thrown when folder creation fails</exception>
     public async Task CreateFolderAsync(CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(_connectionParameters.Path) || _connectionParameters.Path.Split(PATH_SEPARATORS, StringSplitOptions.RemoveEmptyEntries).Length == 0)
