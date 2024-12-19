@@ -34,6 +34,7 @@ namespace Duplicati.Library.Backend.Strings
         public static string FragmentRetryDelayShort { get { return LC.L(@"Millisecond delay between fragment errors"); } }
         public static string UseHttpClientLong { get { return LC.L(@"Use this option to set HttpClient class to perform HTTP requests."); } }
         public static string UseHttpClientShort { get { return LC.L(@"Whether the HttpClient class should be used"); } }
+        public static string UseHttpClientDeprecated { get { return LC.L(@"The option --use-http-client is deprecated and has no effect."); } }
     }
 
     internal static class OneDrive
