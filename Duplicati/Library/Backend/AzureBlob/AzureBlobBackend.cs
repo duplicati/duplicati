@@ -20,6 +20,7 @@
 // DEALINGS IN THE SOFTWARE.
 
 using Duplicati.Library.Interface;
+using Microsoft.Azure.Storage.Shared.Protocol;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
@@ -111,9 +112,9 @@ namespace Duplicati.Library.Backend.AzureBlob
             }
         }
 
-        public async Task PutAsync(string remotename, Stream input, CancellationToken cancelToken)
+        public Task PutAsync(string remotename, Stream input, CancellationToken cancelToken)
         {
-            await _azureBlob.AddFileStream(remotename, input, cancelToken);
+            return WrapWithExceptionHandler(_azureBlob.AddFileStream(remotename, input, cancelToken));
         }
 
         public async Task GetAsync(string remotename, string localname, CancellationToken cancellationToken)
@@ -128,12 +129,12 @@ namespace Duplicati.Library.Backend.AzureBlob
 
         public Task GetAsync(string remotename, Stream output, CancellationToken cancellationToken)
         {
-            return _azureBlob.GetFileStreamAsync(remotename, output, cancellationToken);
+            return WrapWithExceptionHandler(_azureBlob.GetFileStreamAsync(remotename, output, cancellationToken));
         }
 
         public Task DeleteAsync(string remotename, CancellationToken cancellationToken)
         {
-            return _azureBlob.DeleteObjectAsync(remotename, cancellationToken);
+            return WrapWithExceptionHandler(_azureBlob.DeleteObjectAsync(remotename, cancellationToken));
         }
 
         public IList<ICommandLineArgument> SupportedCommands
@@ -197,13 +198,33 @@ namespace Duplicati.Library.Backend.AzureBlob
 
         public Task TestAsync(CancellationToken cancellationToken)
         {
-            this.TestList();
-            return Task.CompletedTask;
+            return WrapWithExceptionHandler(Task.Run(() => this.TestList()));
         }
 
         public Task CreateFolderAsync(CancellationToken cancellationToken)
         {
-            return _azureBlob.AddContainerAsync(cancellationToken);
+            return WrapWithExceptionHandler(_azureBlob.AddContainerAsync(cancellationToken));
+        }
+
+        private async Task WrapWithExceptionHandler(Task task)
+        {
+            try
+            {
+                await task.ConfigureAwait(false);
+            }
+            catch (Microsoft.WindowsAzure.Storage.StorageException e)
+                when (e.RequestInformation.HttpStatusCode == 404
+                || e.RequestInformation.HttpStatusMessage == StorageErrorCodeStrings.ResourceNotFound)
+            {
+                throw new FileMissingException(e.Message, e);
+            }
+            catch (Microsoft.WindowsAzure.Storage.StorageException e)
+                when (e.RequestInformation.HttpStatusMessage == StorageErrorCodeStrings.ContainerNotFound
+                || e.RequestInformation.HttpStatusMessage == StorageErrorCodeStrings.ContainerBeingDeleted
+                || e.RequestInformation.HttpStatusMessage == StorageErrorCodeStrings.ContainerDisabled)
+            {
+                throw new FolderMissingException(e.Message, e);
+            }
         }
 
         public void Dispose()

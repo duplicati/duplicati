@@ -28,17 +28,18 @@ namespace Duplicati.Backend.Tests.Google_Drive;
 public sealed class GoogleDriveTests : BaseTest
 {
 
+    static readonly string[] AdditionalArguments = ["--wait-after-upload=10s", "--wait-after-delete=10s"];
     [TestMethod]
     public Task TestGoogleDriveSimple()
     {
-        CheckRequiredEnvironment(["TESTCREDENTIAL_GOOGLEDRIVE_TOKEN","TESTCREDENTIAL_GOOGLEDRIVE_FOLDER"]);
-        
+        CheckRequiredEnvironment(["TESTCREDENTIAL_GOOGLEDRIVE_TOKEN", "TESTCREDENTIAL_GOOGLEDRIVE_FOLDER"]);
+
         var exitCode = CommandLine.BackendTester.Program.Main(
             new[]
             {
                 $"googledrive:///{Environment.GetEnvironmentVariable("TESTCREDENTIAL_GOOGLEDRIVE_FOLDER")}?authid={Environment.GetEnvironmentVariable("TESTCREDENTIAL_GOOGLEDRIVE_TOKEN")}",
 
-            }.Concat(Parameters.GlobalTestParameters).ToArray());
+            }.Concat(Parameters.GlobalTestParameters).Concat(AdditionalArguments).ToArray());
 
         if (exitCode != 0) Assert.Fail("BackendTester is returning non-zero exit code, check logs for details");
 
