@@ -30,8 +30,9 @@ namespace Duplicati.WindowsService
     [SupportedOSPlatform("windows")]
     public class ServiceControl : System.ServiceProcess.ServiceBase
     {
-        private const string LOG_SOURCE = "Duplicati";
-        private const string LOG_NAME = "Application";
+        private const string LOG_SOURCE = "Duplicati Service";
+        private const string LOG_NAME = "Duplicati";
+        private const string SERVER_LOG_NAME = "Duplicati:Duplicati Server";
         public const string SERVICE_NAME = "Duplicati";
         public const string DISPLAY_NAME = "Duplicati service";
         public const string SERVICE_DESCRIPTION = "Duplicati running as a Windows Service";
@@ -88,7 +89,7 @@ namespace Duplicati.WindowsService
                 .ToArray();
 
             if (!startargs.Any(x => x.StartsWith("--windows-eventlog=", StringComparison.OrdinalIgnoreCase)))
-                startargs = startargs.Union(new string[] { "--windows-eventlog=" + LOG_SOURCE }).ToArray();
+                startargs = startargs.Union(new string[] { "--windows-eventlog=" + SERVER_LOG_NAME }).ToArray();
 
             if (m_verbose_messages)
                 m_eventLog.WriteEntry("Starting...");

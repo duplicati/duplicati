@@ -35,6 +35,11 @@ namespace Duplicati.Server
     public class WindowsEventLogSource : ILogDestination, IDisposable
     {
         /// <summary>
+        /// The log tag for the windows events
+        /// </summary>
+        private static readonly string LOGTAG = Log.LogTagFromType<WindowsEventLogSource>();
+
+        /// <summary>
         /// The event log to write to
         /// </summary>
         private readonly EventLog m_eventLog;
@@ -60,7 +65,19 @@ namespace Duplicati.Server
         /// <param name="source">The source to check</param>
         /// <returns>True if the source exists</returns>
         public static bool SourceExists(string source)
-            => EventLog.SourceExists(source);
+        {
+            try
+            {
+                (source, _) = SplitSource(source, null);
+                return EventLog.SourceExists(source);
+            }
+            catch (Exception ex)
+            {
+                Log.WriteWarningMessage(LOGTAG, "EventLogLookupFailure", ex, $"Failed to test if event log {source} exists");
+            }
+
+            return false;
+        }
 
         /// <summary>
         /// Creates a new event source
@@ -97,7 +114,7 @@ namespace Duplicati.Server
             }
 
             if (string.IsNullOrWhiteSpace(log))
-                log = "Application";
+                log = "Duplicati";
 
             return (source, log);
         }
