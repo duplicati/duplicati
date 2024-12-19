@@ -225,14 +225,15 @@ namespace Duplicati.GUI.TrayIcon
             var started = DateTime.Now;
             var errorCount = 0;
 
+            // TODO: Add an upper limit to the number of errors,
+            // or implement a "disconnected" state
             while (!m_shutdown)
             {
-                var waitTime = TimeSpan.FromSeconds(Math.Min(10, errorCount * 2)) - (DateTime.Now - started);
-                if (waitTime.TotalSeconds > 0)
-                    Thread.Sleep(waitTime);
-
                 try
                 {
+                    var waitTime = TimeSpan.FromSeconds(Math.Min(10, errorCount * 2)) - (DateTime.Now - started);
+                    if (waitTime.TotalSeconds > 0)
+                        Thread.Sleep(waitTime);
                     started = DateTime.Now;
                     UpdateStatus(true);
                     errorCount = 0;
