@@ -25,6 +25,7 @@ using System.Collections.Generic;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
 using System.Globalization;
+using System.Threading;
 
 namespace Duplicati.Library.Main
 {
@@ -835,7 +836,7 @@ namespace Duplicati.Library.Main
 
         /// <summary>
         /// The maximum time to allow inactivity before a connection is closed.
-        /// Returns -1 if disabled.
+        /// Returns <c>Timeout.Infinite</c> if disabled.
         /// </summary>
         public int ReadWriteTimeout
         {
@@ -845,9 +846,9 @@ namespace Duplicati.Library.Main
                 if (string.IsNullOrWhiteSpace(v))
                     v = DEFAULT_READ_WRITE_TIMEOUT;
 
-                var res = Library.Utility.Timeparser.ParseTimeSpan(DEFAULT_READ_WRITE_TIMEOUT);
+                var res = Library.Utility.Timeparser.ParseTimeSpan(v);
                 if (res.Ticks <= 0)
-                    return -1;
+                    return Timeout.Infinite;
 
                 return (int)res.TotalMilliseconds;
             }

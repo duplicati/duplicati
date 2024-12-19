@@ -156,7 +156,7 @@ namespace Duplicati.Library
                     "Waiting for {0} to respect Retry-After header",
                     delay);
 
-                await Task.Delay(delay).ConfigureAwait(false);
+                await Task.Delay(delay, cancelToken).ConfigureAwait(false);
             }
         }
 

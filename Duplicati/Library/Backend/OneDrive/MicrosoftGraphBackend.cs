@@ -49,7 +49,7 @@ namespace Duplicati.Library.Backend
     /// Note that instead of using Task.Result to wait for the results of asynchronous operations,
     /// this class uses the Utility.Await() extension method, since it doesn't wrap exceptions in AggregateExceptions.
     /// </remarks>
-    public abstract class MicrosoftGraphBackend : IBackend, IStreamingBackend, IQuotaEnabledBackend, IRenameEnabledBackend
+    public abstract class MicrosoftGraphBackend : IBackend, IStreamingBackend, IQuotaEnabledBackend, IRenameEnabledBackend, ITimeoutExemptBackend
     {
         private static readonly string LOGTAG = Log.LogTagFromType<MicrosoftGraphBackend>();
 
@@ -243,14 +243,15 @@ namespace Duplicati.Library.Backend
                 if (this.m_client != null)
                 {
                     using (var request = new HttpRequestMessage(HttpMethod.Delete, uploadSession.UploadUrl))
-                    using (var response = await this.m_client.SendAsync(request, cancelToken).ConfigureAwait(false))
+                    using (var response = await this.m_client.SendAsync(request, false, cancelToken).ConfigureAwait(false))
                     {
                         this.CheckResponse(response);
                     }
                 }
                 else
                 {
-                    using (var response = await this.m_oAuthHelper.GetResponseWithoutExceptionAsync(uploadSession.UploadUrl, cancelToken, MicrosoftGraphBackend.dummyUploadSession, HttpMethod.Delete.ToString()).ConfigureAwait(false))
+                    var req = this.m_oAuthHelper.CreateRequest(uploadSession.UploadUrl, HttpMethod.Delete.ToString(), true);
+                    using (var response = await this.m_oAuthHelper.GetResponseWithoutExceptionAsync(req, cancelToken).ConfigureAwait(false))
                     {
                         this.CheckResponse(response);
                     }
@@ -384,7 +385,7 @@ namespace Duplicati.Library.Backend
                 string getUrl = string.Format("{0}/root:{1}{2}:/content", this.DrivePrefix, this.RootPath, NormalizeSlashes(remotename));
                 if (this.m_client != null)
                 {
-                    using (var response = await this.m_client.GetAsync(getUrl, cancelToken).ConfigureAwait(false))
+                    using (var response = await this.m_client.GetAsync(getUrl, HttpCompletionOption.ResponseHeadersRead, cancelToken).ConfigureAwait(false))
                     {
                         this.CheckResponse(response);
                         using (var responseStream = await response.Content.ReadAsStreamAsync(cancelToken).ConfigureAwait(false))
