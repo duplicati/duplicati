@@ -33,13 +33,6 @@ namespace Duplicati.CommandLine.BackendTester
 {
     public class Program
     {
-        /// <summary>
-        /// Used to maintain a reference to initialized system settings.
-        /// </summary>
-#pragma warning disable CS0414 // The private field `Duplicati.CommandLine.BackendTester.Program.SystemSettings' is assigned but its value is never used
-        private static IDisposable SystemSettings;
-#pragma warning restore CS0414 // The private field `Duplicati.CommandLine.BackendTester.Program.SystemSettings' is assigned but its value is never used
-
         class TempFile
         {
             public readonly string remotefilename;
@@ -110,7 +103,7 @@ namespace Duplicati.CommandLine.BackendTester
                 if (options.ContainsKey("tempdir") && !string.IsNullOrEmpty(options["tempdir"]))
                     Library.Utility.SystemContextSettings.DefaultTempPath = options["tempdir"];
 
-                SystemSettings = Duplicati.Library.Utility.SystemContextSettings.StartSession();
+                using var SystemSettings = Duplicati.Library.Utility.SystemContextSettings.StartSession();
 
                 if (!options.ContainsKey("auth_password") && !string.IsNullOrEmpty(System.Environment.GetEnvironmentVariable("AUTH_PASSWORD")))
                     options["auth_password"] = System.Environment.GetEnvironmentVariable("AUTH_PASSWORD");
