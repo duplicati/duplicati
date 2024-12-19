@@ -36,7 +36,7 @@ namespace Duplicati.Library.Backend.Strings
         public static string UseHttpClientShort { get { return LC.L(@"Whether the HttpClient class should be used"); } }
     }
 
-    internal static class OneDriveV2
+    internal static class OneDrive
     {
         public static string Description(string mssadescription, string mssalink, string msopdescription, string msoplink) { return LC.L(@"Store files in Microsoft OneDrive or Microsoft OneDrive for Business via the Microsoft Graph API. Usage of this backend requires that you agree to the terms in {0} ({1}) and {2} ({3}).", mssadescription, mssalink, msopdescription, msoplink); }
         public static string DisplayName { get { return LC.L(@"Microsoft OneDrive"); } }
