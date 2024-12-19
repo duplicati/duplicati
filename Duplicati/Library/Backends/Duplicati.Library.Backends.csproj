@@ -10,6 +10,7 @@
 	<ProjectReference Include="..\Backend\AzureBlob\Duplicati.Library.Backend.AzureBlob.csproj" />
 	<ProjectReference Include="..\Backend\Backblaze\Duplicati.Library.Backend.Backblaze.csproj" />
 	<ProjectReference Include="..\Backend\Box\Duplicati.Library.Backend.Box.csproj" />
+	<ProjectReference Include="..\Backend\CIFS\Duplicati.Library.Backend.CIFS.csproj" />
 	<ProjectReference Include="..\Backend\CloudFiles\Duplicati.Library.Backend.CloudFiles.csproj" />
 	<ProjectReference Include="..\Backend\Dropbox\Duplicati.Library.Backend.Dropbox.csproj" />
 	<ProjectReference Include="..\Backend\File\Duplicati.Library.Backend.File.csproj" />
