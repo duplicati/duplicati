@@ -667,7 +667,7 @@ namespace Duplicati.Server
                     if (!WindowsEventLogSource.SourceExists(source))
                     {
                         Library.Logging.Log.WriteInformationMessage(LOGTAG, "WindowsLogMissingCreating", null, Strings.Program.WindowsEventLogSourceNotFound(source));
-                        try 
+                        try
                         {
                             WindowsEventLogSource.CreateEventSource(source);
                         }
@@ -679,7 +679,7 @@ namespace Duplicati.Server
 
                     if (WindowsEventLogSource.SourceExists(source))
                     {
-                        var loglevel = Library.Logging.LogMessageType.Warning;
+                        var loglevel = Library.Logging.LogMessageType.Information;
                         if (commandlineOptions.ContainsKey(WINDOWS_EVENTLOG_LEVEL_OPTION))
                             Enum.TryParse(commandlineOptions[WINDOWS_EVENTLOG_LEVEL_OPTION], true, out loglevel);
 
@@ -941,7 +941,7 @@ namespace Duplicati.Server
             => (OperatingSystem.IsWindows()
                 ? new[] {
                     new Duplicati.Library.Interface.CommandLineArgument(WINDOWS_EVENTLOG_OPTION, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean, Strings.Program.LogwindowseventlogShort, Strings.Program.LogwindowseventlogLong),
-                    new Duplicati.Library.Interface.CommandLineArgument(WINDOWS_EVENTLOG_LEVEL_OPTION, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Enumeration, Strings.Program.LogwindowseventloglevelShort, Strings.Program.LogwindowseventloglevelLong, Library.Logging.LogMessageType.Warning.ToString(), null, Enum.GetNames(typeof(Duplicati.Library.Logging.LogMessageType)))
+                    new Duplicati.Library.Interface.CommandLineArgument(WINDOWS_EVENTLOG_LEVEL_OPTION, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Enumeration, Strings.Program.LogwindowseventloglevelShort, Strings.Program.LogwindowseventloglevelLong, Library.Logging.LogMessageType.Information.ToString(), null, Enum.GetNames(typeof(Duplicati.Library.Logging.LogMessageType)))
                 }
                 : []
             )
