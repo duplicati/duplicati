@@ -322,7 +322,7 @@ public static class Program
 
     private static async Task OnMessage(KeepRemoteConnection.CommandMessage message, CommandLineArguments agentConfig)
     {
-        Log.WriteMessage(LogMessageType.Information, LogTag, "OnMessage", "Received message: {0}", message);
+        Log.WriteMessage(LogMessageType.Verbose, LogTag, "OnMessage", "Received message: {0}", message);
 
         var provider = FIXMEGlobal.Provider.GetRequiredService<IJWTTokenProvider>();
         var token = provider.CreateAccessToken("agent", provider.TemporaryFamilyId, TimeSpan.FromMinutes(2));
@@ -338,7 +338,7 @@ public static class Program
 
     private static Task ReKey(CommandLineArguments agentConfig, ClaimedClientData keydata)
     {
-        Log.WriteMessage(LogMessageType.Information, LogTag, "ReKey", "Rekeying the settings");
+        Log.WriteMessage(LogMessageType.Verbose, LogTag, "ReKey", "Rekeying the settings");
         var settings = Settings.Load(agentConfig.AgentSettingsFile.FullName, agentConfig.AgentSettingsFilePassphrase);
         if (!string.IsNullOrWhiteSpace(keydata.JWT) && settings.JWT != keydata.JWT)
             settings = settings with { JWT = keydata.JWT };
@@ -350,7 +350,7 @@ public static class Program
         {
             if (!string.IsNullOrWhiteSpace(keydata.LocalEncryptionKey) && settings.SettingsEncryptionKey != keydata.LocalEncryptionKey)
             {
-                // Log.WriteMessage(LogMessageType.Information, LogTag, "ReKey", "Changing the local settings encryption key");
+                // Log.WriteMessage(LogMessageType.Verbose, LogTag, "ReKey", "Changing the local settings encryption key");
                 // TODO: Implement changing the database encryption key
                 // FIXMEGlobal.Provider.GetRequiredService<Connection>().ChangeDbKey(keydata.LocalEncryptionKey);
                 // settings = settings with { SettingsEncryptionKey = keydata.LocalEncryptionKey };
