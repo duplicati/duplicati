@@ -62,9 +62,10 @@ namespace Duplicati.Service
         {
             var path = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
             var exec = System.IO.Path.Combine(path, PackageHelper.GetExecutableName(m_executable));
-            var cmdargs = "--ping-pong-keepalive=true";
-            if (m_cmdargs != null && m_cmdargs.Length > 0)
-                cmdargs = Duplicati.Library.Utility.Utility.WrapAsCommandLine(new string[] { cmdargs }.Concat(m_cmdargs));
+            // Preserve order, but ensure the ping-pong-keepalive is set
+            var cmdargs = (m_cmdargs ?? [])
+                .Concat(["--ping-pong-keepalive=true"])
+                .ToArray();
 
             var firstRun = true;
             var startAttempts = 0;
@@ -84,7 +85,7 @@ namespace Duplicati.Service
                         if (!firstRun)
                             m_reportMessage(string.Format("Attempting to restart server process: {0}", exec), true);
 
-                        m_reportMessage(string.Format("Starting process {0} with cmd args {1}", exec, cmdargs), false);
+                        m_reportMessage(string.Format("Starting process {0} with cmd args {1}", exec, string.Join(Environment.NewLine, cmdargs)), false);
 
                         var pr = new System.Diagnostics.ProcessStartInfo(exec, cmdargs)
                         {
