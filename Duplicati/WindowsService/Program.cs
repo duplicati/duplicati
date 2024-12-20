@@ -75,6 +75,15 @@ namespace Duplicati.WindowsService
                 {
                     try
                     {
+                        ServiceInstaller.StopService(ServiceControl.SERVICE_NAME);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine("Duplicati service stop failed, a reboot may be required. Exception: {0}", ex.Message);
+                    }
+
+                    try
+                    {
                         ServiceInstaller.DeleteService(ServiceControl.SERVICE_NAME);
                         Console.WriteLine("Duplicati service delete succeeded.");
                     }
@@ -117,6 +126,15 @@ namespace Duplicati.WindowsService
                 // --uninstall + --install = reinstall
                 if (uninstall_agent)
                 {
+                    try
+                    {
+                        ServiceInstaller.StopService(ServiceControl.SERVICE_NAME_AGENT);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine("Duplicati service stop failed, a reboot may be required. Exception: {0}", ex.Message);
+                    }
+
                     try
                     {
                         ServiceInstaller.DeleteService(ServiceControl.SERVICE_NAME_AGENT);

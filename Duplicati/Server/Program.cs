@@ -349,6 +349,8 @@ namespace Duplicati.Server
             }
             finally
             {
+                Library.Logging.Log.WriteInformationMessage(LOGTAG, "ServerStopping", Strings.Program.ServerStopping);
+
                 var steps = new Action[] {
                     () => StatusEventNotifyer.SignalNewEvent(),
                     () => { if (ShutdownModernWebserver != null) ShutdownModernWebserver(); },
@@ -359,7 +361,11 @@ namespace Duplicati.Server
                     () => PurgeTempFilesTimer?.Dispose(),
                     () => Library.UsageReporter.Reporter.ShutDown(),
                     () => PingPongThread?.Interrupt(),
-                    () => LogHandler?.Dispose()
+                    () =>
+                    {
+                        Library.Logging.Log.WriteInformationMessage(LOGTAG, "ServerStopped", Strings.Program.ServerStopped);
+                        LogHandler?.Dispose();
+                    }
                 };
 
                 foreach (var teardownStep in steps)
@@ -656,17 +662,29 @@ namespace Duplicati.Server
                 {
                     Library.Logging.Log.WriteWarningMessage(LOGTAG, "WindowsLogNotSupported", null, Strings.Program.WindowsEventLogNotSupported);
                 }
-                else if (!WindowsEventLogSource.SourceExists(source))
-                {
-                    Library.Logging.Log.WriteWarningMessage(LOGTAG, "WindowsLogMissing", null, Strings.Program.WindowsEventLogSourceNotFound(source));
-                }
                 else
                 {
-                    var loglevel = Library.Logging.LogMessageType.Information;
-                    if (commandlineOptions.ContainsKey(WINDOWS_EVENTLOG_LEVEL_OPTION))
-                        Enum.TryParse(commandlineOptions[WINDOWS_EVENTLOG_LEVEL_OPTION], true, out loglevel);
+                    if (!WindowsEventLogSource.SourceExists(source))
+                    {
+                        Library.Logging.Log.WriteInformationMessage(LOGTAG, "WindowsLogMissingCreating", null, Strings.Program.WindowsEventLogSourceNotFound(source));
+                        try
+                        {
+                            WindowsEventLogSource.CreateEventSource(source);
+                        }
+                        catch (Exception ex)
+                        {
+                            Library.Logging.Log.WriteWarningMessage(LOGTAG, "WindowsLogFailedCreate", ex, Strings.Program.WindowsEventLogSourceNotCreated(source));
+                        }
+                    }
 
-                    LogHandler.AppendLogDestination(new WindowsEventLogSource(source), loglevel);
+                    if (WindowsEventLogSource.SourceExists(source))
+                    {
+                        var loglevel = Library.Logging.LogMessageType.Information;
+                        if (commandlineOptions.ContainsKey(WINDOWS_EVENTLOG_LEVEL_OPTION))
+                            Enum.TryParse(commandlineOptions[WINDOWS_EVENTLOG_LEVEL_OPTION], true, out loglevel);
+
+                        LogHandler.AppendLogDestination(new WindowsEventLogSource(source), loglevel);
+                    }
                 }
             }
 

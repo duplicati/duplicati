@@ -56,15 +56,18 @@ Error message: {0}", error); }
                 public static string WebserverTimezoneDescription { get { return LC.L(@"The timezone to use for the webserver. The timezone must be a valid timezone identifier, such as ""America/New_York"" or ""UTC"". Common three-letter abbreviations like ""CET"" are supported, but ambiguous in some cases."); } }
                 public static string DisabledbencryptionLong { get { return LC.L(@"Use this option to disable database encryption of sensitive fields"); } }
                 public static string DisabledbencryptionShort { get { return LC.L(@"Disable database encryption"); } }
-                public static string LogwindowseventlogLong { get { return LC.L(@"Use this option to log to the Windows event log."); } }
+                public static string LogwindowseventlogLong { get { return LC.L(@"Use this option to log to the Windows event log. The provided name is in the format Log:Source. If no log name is provided, Duplicati is used."); } }
                 public static string LogwindowseventlogShort { get { return LC.L(@"Log to the Windows event log"); } }
                 public static string LogwindowseventloglevelLong { get { return LC.L(@"Use this option to set the log level for the Windows event log."); } }
                 public static string LogwindowseventloglevelShort { get { return LC.L(@"Set the log level for the Windows event log"); } }
-                public static string WindowsEventLogSourceNotFound(string source) { return LC.L(@"The Windows event log source {0} was not found. The source must be registered before the log can be written.", source); }
+                public static string WindowsEventLogSourceNotFound(string source) { return LC.L(@"The Windows event log source {0} was not found. Attempting to create.", source); }
+                public static string WindowsEventLogSourceNotCreated(string source) { return LC.L(@"The Windows Event Log was not created for: {0}, not logging to eventlog.", source); }
                 public static string WindowsEventLogNotSupported { get { return LC.L(@"The Windows event log is not supported on this platform"); } }
                 public static string ServerStarted(int port) { return LC.L(@"Server has started and is listening on port {0}", port); }
                 public static string ServerStartedSignin(string url) { return LC.L(@"Use the following link to sign in: {0}", url); }
                 public static string ServerCrashed(string message) { return LC.L(@"The server crashed: {0}", message); }
+                public static string ServerStopping { get { return LC.L(@"Server is stopping, tearing down handlers"); } }
+                public static string ServerStopped { get { return LC.L(@"Server has stopped"); } }
                 public static string RequiredbencryptionLong { get { return LC.L(@"Use this option to require a custom provided key for database encryption of sensitive fields and not rely on the serial number."); } }
                 public static string RequiredbencryptionShort { get { return LC.L(@"Require database encryption"); } }
                 public static string DatabaseEncryptionKeyRequired(string envkey, string disableoptionname) { return LC.L(@"Database encryption key is required. Supply an encryption key via the environment variable {0} or disable database encryption with the option --{1}", envkey, disableoptionname); }

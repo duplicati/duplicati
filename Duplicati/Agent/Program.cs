@@ -111,7 +111,7 @@ public static class Program
             new Option<string>("--webservice-port", description: "The port to listen on for the webserver", getDefaultValue: () => "8210"),
             new Option<string?>("--webservice-password", description: "The password for the webserver, not set, or set to \"random\", a random value is used.", getDefaultValue: () => null),
             new Option<string?>("--settings-encryption-key", description: "The encryption key for the database settings", getDefaultValue: () => null),
-            new Option<string>("--windows-eventlog", description: "The Windows event log to write to", getDefaultValue: () => "Duplicati"),
+            new Option<string>("--windows-eventlog", description: "The Windows event log to use as source.", getDefaultValue: () => ""),
             new Option<bool>("--disable-db-encryption", description: "Disable database encryption", getDefaultValue: () => false),
             new Option<bool>("--webservice-reset-jwt-config", description: "Reset the JWT configuration", getDefaultValue: () => true),
             new Option<string>("--webservice-allowed-hostnames", description: "The allowed hostnames for the webserver", getDefaultValue: () => "127.0.0.1"),
@@ -203,7 +203,7 @@ public static class Program
             WebservicePort: "8210",
             WebservicePassword: null!,
             SettingsEncryptionKey: null,
-            WindowsEventLog: "Duplicati",
+            WindowsEventLog: "",
             DisableDbEncryption: false,
             WebserviceResetJwtConfig: false,
             WebserviceAllowedHostnames: "",
@@ -278,13 +278,13 @@ public static class Program
         var target = new ControllerMultiLogTarget(new ConsoleLogDestination(), LogMessageType.Information, null);
         using (Log.StartScope(target))
         {
-            if (OperatingSystem.IsWindows())
+            if (OperatingSystem.IsWindows() && !string.IsNullOrWhiteSpace(agentConfig.WindowsEventLog))
             {
                 if (!WindowsEventLogSource.SourceExists(agentConfig.WindowsEventLog))
                 {
-                    Console.WriteLine("The Windows event log source does not exist, creating it");
+                    Console.WriteLine($"The Windows event log {agentConfig.WindowsEventLog} does not exist, creating it");
                     try { WindowsEventLogSource.CreateEventSource(agentConfig.WindowsEventLog); }
-                    catch (Exception ex) { Console.WriteLine("Failed to create the Windows event log source: {0}", ex.Message); }
+                    catch (Exception ex) { Console.WriteLine($"Failed to create the Windows event log {agentConfig.WindowsEventLog}: {ex.Message}"); }
                 }
 
                 if (WindowsEventLogSource.SourceExists(agentConfig.WindowsEventLog))
@@ -322,7 +322,7 @@ public static class Program
 
     private static async Task OnMessage(KeepRemoteConnection.CommandMessage message, CommandLineArguments agentConfig)
     {
-        Log.WriteMessage(LogMessageType.Information, LogTag, "OnMessage", "Received message: {0}", message);
+        Log.WriteMessage(LogMessageType.Verbose, LogTag, "OnMessage", "Received message: {0}", message);
 
         var provider = FIXMEGlobal.Provider.GetRequiredService<IJWTTokenProvider>();
         var token = provider.CreateAccessToken("agent", provider.TemporaryFamilyId, TimeSpan.FromMinutes(2));
@@ -338,7 +338,7 @@ public static class Program
 
     private static Task ReKey(CommandLineArguments agentConfig, ClaimedClientData keydata)
     {
-        Log.WriteMessage(LogMessageType.Information, LogTag, "ReKey", "Rekeying the settings");
+        Log.WriteMessage(LogMessageType.Verbose, LogTag, "ReKey", "Rekeying the settings");
         var settings = Settings.Load(agentConfig.AgentSettingsFile.FullName, agentConfig.AgentSettingsFilePassphrase);
         if (!string.IsNullOrWhiteSpace(keydata.JWT) && settings.JWT != keydata.JWT)
             settings = settings with { JWT = keydata.JWT };
@@ -350,7 +350,7 @@ public static class Program
         {
             if (!string.IsNullOrWhiteSpace(keydata.LocalEncryptionKey) && settings.SettingsEncryptionKey != keydata.LocalEncryptionKey)
             {
-                // Log.WriteMessage(LogMessageType.Information, LogTag, "ReKey", "Changing the local settings encryption key");
+                // Log.WriteMessage(LogMessageType.Verbose, LogTag, "ReKey", "Changing the local settings encryption key");
                 // TODO: Implement changing the database encryption key
                 // FIXMEGlobal.Provider.GetRequiredService<Connection>().ChangeDbKey(keydata.LocalEncryptionKey);
                 // settings = settings with { SettingsEncryptionKey = keydata.LocalEncryptionKey };
@@ -481,7 +481,6 @@ public static class Program
         var args = new[] {
             EncodeOption("--webservice-listen-interface", agentConfig.WebserviceListenInterface),
             EncodeOption("--webservice-password", agentConfig.WebservicePassword),
-            EncodeOption("--windows-eventlog", OperatingSystem.IsWindows() ? agentConfig.WindowsEventLog : ""),
             EncodeOption("--webservice-port", agentConfig.WebservicePort),
             EncodeOption("--webservice-reset-jwt-config", agentConfig.WebserviceResetJwtConfig.ToString()),
             EncodeOption("--webservice-allowed-hostnames", agentConfig.WebserviceAllowedHostnames),
