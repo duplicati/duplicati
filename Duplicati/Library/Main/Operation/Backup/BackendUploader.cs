@@ -434,10 +434,10 @@ namespace Duplicati.Library.Main.Operation.Backup
             {
                 // A download throttle speed is not given to the ThrottledStream as we are only uploading data here
                 using (var fs = File.OpenRead(item.LocalFilename))
-                using (var act = new Duplicati.StreamUtil.TimeoutObservingStream(fs) { ReadTimeout = backend is ITimeoutExemptBackend ? Timeout.Infinite : m_options.ReadWriteTimeout })
+                using (var act = new StreamUtil.TimeoutObservingStream(fs) { ReadTimeout = backend is ITimeoutExemptBackend ? System.Threading.Timeout.Infinite : m_options.ReadWriteTimeout })
                 using (var ts = new ThrottledStream(act, m_initialUploadThrottleSpeed, 0))
                 using (var pgs = new ProgressReportingStream(ts, pg => HandleProgress(ts, pg, item.RemoteFilename)))
-                using (var linkedToken = System.Threading.CancellationTokenSource.CreateLinkedTokenSource(m_taskReader.TransferToken, act.TimeoutToken))
+                using (var linkedToken = CancellationTokenSource.CreateLinkedTokenSource(m_taskReader.TransferToken, act.TimeoutToken))
                     await streamingBackend.PutAsync(item.RemoteFilename, pgs, linkedToken.Token).ConfigureAwait(false);
             }
             else
