@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+﻿// Copyright (C) 2024, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -481,7 +481,6 @@ public static class Program
         var args = new[] {
             EncodeOption("--webservice-listen-interface", agentConfig.WebserviceListenInterface),
             EncodeOption("--webservice-password", agentConfig.WebservicePassword),
-            EncodeOption("--windows-eventlog", OperatingSystem.IsWindows() ? agentConfig.WindowsEventLog : ""),
             EncodeOption("--webservice-port", agentConfig.WebservicePort),
             EncodeOption("--webservice-reset-jwt-config", agentConfig.WebserviceResetJwtConfig.ToString()),
             EncodeOption("--webservice-allowed-hostnames", agentConfig.WebserviceAllowedHostnames),
