@@ -114,7 +114,7 @@ namespace Duplicati.Server
             }
 
             if (string.IsNullOrWhiteSpace(log))
-                log = "Duplicati";
+                log = "Duplicati 2";
 
             return (source, log);
         }

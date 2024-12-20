@@ -31,8 +31,8 @@ namespace Duplicati.WindowsService
     public class ServiceControl : System.ServiceProcess.ServiceBase
     {
         private const string LOG_SOURCE = "Duplicati Service";
-        private const string LOG_NAME = "Duplicati";
-        private const string SERVER_LOG_NAME = "Duplicati:Duplicati Server";
+        private const string LOG_NAME = "Duplicati 2";
+        private const string SERVER_LOG_NAME = "Duplicati 2:Duplicati Server";
         public const string SERVICE_NAME = "Duplicati";
         public const string DISPLAY_NAME = "Duplicati service";
         public const string SERVICE_DESCRIPTION = "Duplicati running as a Windows Service";
