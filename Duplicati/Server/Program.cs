@@ -348,6 +348,8 @@ namespace Duplicati.Server
             }
             finally
             {
+                Library.Logging.Log.WriteInformationMessage(LOGTAG, "ServerStopping", Strings.Program.ServerStopping);
+
                 var steps = new Action[] {
                     () => StatusEventNotifyer.SignalNewEvent(),
                     () => { if (ShutdownModernWebserver != null) ShutdownModernWebserver(); },
@@ -358,7 +360,11 @@ namespace Duplicati.Server
                     () => PurgeTempFilesTimer?.Dispose(),
                     () => Library.UsageReporter.Reporter.ShutDown(),
                     () => PingPongThread?.Interrupt(),
-                    () => LogHandler?.Dispose()
+                    () =>
+                    {
+                        Library.Logging.Log.WriteInformationMessage(LOGTAG, "ServerStopped", Strings.Program.ServerStopped);
+                        LogHandler?.Dispose();
+                    }
                 };
 
                 foreach (var teardownStep in steps)
