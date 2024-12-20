@@ -1,4 +1,4 @@
-﻿// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2024, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -111,7 +111,7 @@ public static class Program
             new Option<string>("--webservice-port", description: "The port to listen on for the webserver", getDefaultValue: () => "8210"),
             new Option<string?>("--webservice-password", description: "The password for the webserver, not set, or set to \"random\", a random value is used.", getDefaultValue: () => null),
             new Option<string?>("--settings-encryption-key", description: "The encryption key for the database settings", getDefaultValue: () => null),
-            new Option<string>("--windows-eventlog", description: "The Windows event log to use as source.", getDefaultValue: () => "Duplicati 2:Duplicati Agent"),
+            new Option<string>("--windows-eventlog", description: "The Windows event log to use as source.", getDefaultValue: () => ""),
             new Option<bool>("--disable-db-encryption", description: "Disable database encryption", getDefaultValue: () => false),
             new Option<bool>("--webservice-reset-jwt-config", description: "Reset the JWT configuration", getDefaultValue: () => true),
             new Option<string>("--webservice-allowed-hostnames", description: "The allowed hostnames for the webserver", getDefaultValue: () => "127.0.0.1"),
@@ -203,7 +203,7 @@ public static class Program
             WebservicePort: "8210",
             WebservicePassword: null!,
             SettingsEncryptionKey: null,
-            WindowsEventLog: "Duplicati",
+            WindowsEventLog: "",
             DisableDbEncryption: false,
             WebserviceResetJwtConfig: false,
             WebserviceAllowedHostnames: "",
@@ -278,7 +278,7 @@ public static class Program
         var target = new ControllerMultiLogTarget(new ConsoleLogDestination(), LogMessageType.Information, null);
         using (Log.StartScope(target))
         {
-            if (OperatingSystem.IsWindows())
+            if (OperatingSystem.IsWindows() && !string.IsNullOrWhiteSpace(agentConfig.WindowsEventLog))
             {
                 if (!WindowsEventLogSource.SourceExists(agentConfig.WindowsEventLog))
                 {
