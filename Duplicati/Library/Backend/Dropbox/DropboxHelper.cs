@@ -259,8 +259,9 @@ namespace Duplicati.Library.Backend
                     }
                     if (httpResp.StatusCode == HttpStatusCode.Unauthorized)
                         ThrowAuthException(json, exception);
+
                     if ((int)httpResp.StatusCode == 429 || (int)httpResp.StatusCode == 507)
-                        ThrowOverQuotaError();
+                        throw new Duplicati.Library.Interface.UserInformationException(Strings.Dropbox.OverQuotaError(string.IsNullOrWhiteSpace(json) ? exception.Message : json), "DropboxOverQuotaError", ex);
                 }
 
 

@@ -33,13 +33,6 @@ namespace Duplicati.CommandLine.BackendTester
 {
     public class Program
     {
-        /// <summary>
-        /// Used to maintain a reference to initialized system settings.
-        /// </summary>
-#pragma warning disable CS0414 // The private field `Duplicati.CommandLine.BackendTester.Program.SystemSettings' is assigned but its value is never used
-        private static IDisposable SystemSettings;
-#pragma warning restore CS0414 // The private field `Duplicati.CommandLine.BackendTester.Program.SystemSettings' is assigned but its value is never used
-
         class TempFile
         {
             public readonly string remotefilename;
@@ -110,7 +103,7 @@ namespace Duplicati.CommandLine.BackendTester
                 if (options.ContainsKey("tempdir") && !string.IsNullOrEmpty(options["tempdir"]))
                     Library.Utility.SystemContextSettings.DefaultTempPath = options["tempdir"];
 
-                SystemSettings = Duplicati.Library.Utility.SystemContextSettings.StartSession();
+                using var SystemSettings = Duplicati.Library.Utility.SystemContextSettings.StartSession();
 
                 if (!options.ContainsKey("auth_password") && !string.IsNullOrEmpty(System.Environment.GetEnvironmentVariable("AUTH_PASSWORD")))
                     options["auth_password"] = System.Environment.GetEnvironmentVariable("AUTH_PASSWORD");
@@ -211,7 +204,12 @@ namespace Duplicati.CommandLine.BackendTester
                             else
                                 Console.WriteLine("Specify the --force flag to actually delete files");
 
-                        Console.WriteLine("*** Remote folder is not empty, aborting");
+                        var fileCount = curlist.Where(x => !x.IsFolder).Count();
+                        var filenames = curlist.Where(x => !x.IsFolder).Select(x => x.Name).Take(10).ToList();
+                        Console.WriteLine($"*** Remote folder contains {fileCount} file(s), aborting");
+                        Console.WriteLine($"*** First {filenames.Count} file(s): {Environment.NewLine}{string.Join(Environment.NewLine, filenames)}");
+                        if (fileCount > filenames.Count)
+                            Console.WriteLine($"*** ... and {fileCount - filenames.Count} more file(s)");
                         return false;
                     }
 
@@ -224,6 +222,8 @@ namespace Duplicati.CommandLine.BackendTester
                 var disableStreaming = Library.Utility.Utility.ParseBoolOption(options, "disable-streaming-transfers");
                 var skipOverwriteTest = Library.Utility.Utility.ParseBoolOption(options, "skip-overwrite-test");
                 var trimFilenameSpaces = Library.Utility.Utility.ParseBoolOption(options, "trim-filename-spaces");
+                var waitAfterUpload = TimeSpan.Zero;
+                var waitAfterDelete = TimeSpan.Zero;
 
                 var throttleUpload = 0L;
                 if (options.TryGetValue("throttle-upload", out var throttleUploadString))
@@ -269,6 +269,11 @@ namespace Duplicati.CommandLine.BackendTester
                     min_filename_size = int.Parse(options["min-filename-length"]);
                 if (options.ContainsKey("max-filename-length"))
                     max_filename_size = int.Parse(options["max-filename-length"]);
+
+                if (options.ContainsKey("wait-after-upload"))
+                    waitAfterUpload = Timeparser.ParseTimeSpan(options["wait-after-upload"]);
+                if (options.ContainsKey("wait-after-delete"))
+                    waitAfterDelete = Timeparser.ParseTimeSpan(options["wait-after-delete"]);
 
                 var rnd = new Random();
                 var sha = System.Security.Cryptography.SHA256.Create();
@@ -325,6 +330,12 @@ namespace Duplicati.CommandLine.BackendTester
 
                         renameEnabledBackend.RenameAsync(originalRenamedFile.remotefilename, renamedFileNewName, CancellationToken.None).Await();
                         files[renameIndex] = new TempFile(renamedFileNewName, originalRenamedFile.localfilename, originalRenamedFile.hash, originalRenamedFile.length);
+                    }
+
+                    if (waitAfterUpload > TimeSpan.Zero)
+                    {
+                        Console.WriteLine("Waiting {0} after upload", waitAfterUpload);
+                        Thread.Sleep(waitAfterUpload);
                     }
 
                     Console.WriteLine("Verifying file list ...");
@@ -420,6 +431,12 @@ namespace Duplicati.CommandLine.BackendTester
                         {
                             Console.WriteLine("*** Failed to delete file {0}, message: {1}", tx.remotefilename, ex);
                         }
+
+                    if (waitAfterDelete > TimeSpan.Zero)
+                    {
+                        Console.WriteLine("Waiting {0} after delete", waitAfterDelete);
+                        Thread.Sleep(waitAfterDelete);
+                    }
 
                     curlist = backend.List();
                     foreach (var fe in curlist)
@@ -612,6 +629,8 @@ namespace Duplicati.CommandLine.BackendTester
                     new CommandLineArgument("skip-overwrite-test", CommandLineArgument.ArgumentType.Boolean, "Bypass the overwrite test", "A value that indicates if dummy files should be uploaded prior to uploading the real files", "false"),
                     new CommandLineArgument("auto-clean", CommandLineArgument.ArgumentType.Boolean, "Remove any files found in target folder", "A value that indicates if all files in the target folder should be deleted before starting the first test", "false"),
                     new CommandLineArgument("force", CommandLineArgument.ArgumentType.Boolean, "Activate file deletion", "A value that indicates if existing files should really be deleted when using auto-clean", "false"),
+                    new CommandLineArgument("wait-after-upload", CommandLineArgument.ArgumentType.Timespan, "Wait after all uploads", "A value that indicates how long to wait after all files are uploaded, to account for the backends eventual consistency", "0s"),
+                    new CommandLineArgument("wait-after-delete", CommandLineArgument.ArgumentType.Timespan, "Wait after all deletes", "A value that indicates how long to wait after each delete operation, to account for the backends eventual consistency", "0s"),
                 });
             }
         }
