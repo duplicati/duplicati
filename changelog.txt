@@ -1,3 +1,27 @@
+2024-12-21 - 2.1.0.103_canary_2024-12-21
+==========
+This release is a canary release intended to be used for testing.
+
+**Note that this build is using .NET8, unlike the 2.0.8.1 build**
+
+**Note that this build has a redesigned restore flow**
+Should issues arise, the previous restore engine can be enabled with `--restore-legacy=true`.
+
+## Detailed list of changes:
+- Updated MacOS LaunchAgents to run as current user
+- Updated preloader logic to search additional paths
+- Fixed a few potential issues in JS
+- Disabled openid probing on the server
+- Fixed problem with FTP backend not unescaping special characters
+- Reduced amount of logging output from Server
+- Fixed bugreport download
+- Fixed pause/stop/resume/abort and throttle control
+- Fixed issues with timeouts in Microsoft Graph-based backends
+- Fixed a potential exit crash
+- Renamed some strings from "OneDrive v2" to "OneDrive"
+- Removed `--use-http-client` from Microsoft Graph-based backends
+- Logging on Windows moved to separate Windows Log
+
 2024-12-12 - 2.1.0.102_canary_2024-12-12
 ==========
 This release is a canary release intended to be used for testing.
