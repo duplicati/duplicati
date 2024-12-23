@@ -327,10 +327,12 @@ namespace Duplicati.Library.Main.Operation
                             Enumerable.Range(0, options.ConcurrencyCompressors - 1).Select(x =>
                                 Backup.DataBlockProcessor.Run(channels, database, options, taskreader))
                         )
+                        // Spawn additional file processors
                         .Union(
                             Enumerable.Range(0, options.ConcurrencyFileprocessors - 1).Select(x =>
-                                Backup.FileBlockProcessor.Run(snapshot, options, database, stats, taskreader, token))
+                                Backup.FileBlockProcessor.Run(channels, snapshot, options, database, stats, taskreader)
                         )
+                    )
                 );
 
                 await all.ConfigureAwait(false);
