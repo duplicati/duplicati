@@ -1,3 +1,23 @@
+// Copyright (C) 2024, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -37,8 +57,9 @@ namespace Duplicati.Library.Main.Database
 
         private readonly System.Data.IDbCommand m_insertfileOperationCommand;
         private readonly System.Data.IDbCommand m_selectfilemetadatahashandsizeCommand;
+        private readonly System.Data.IDbCommand m_getfirstfilesetwithblockinblockset;
 
-        private Dictionary<string, long> m_blockCache;
+        private HashSet<string> m_blocklistHashes;
 
         private long m_filesetId;
 
@@ -73,6 +94,7 @@ namespace Duplicati.Library.Main.Database
             m_selectfileHashCommand = m_connection.CreateCommand();
             m_insertblocksetentryFastCommand = m_connection.CreateCommand();
             m_selectfilemetadatahashandsizeCommand = m_connection.CreateCommand();
+            m_getfirstfilesetwithblockinblockset = m_connection.CreateCommand();
 
             m_findblockCommand.CommandText = @"SELECT ""ID"" FROM ""Block"" WHERE ""Hash"" = ? AND ""Size"" = ?";
             m_findblockCommand.AddParameters(2);
@@ -209,6 +231,13 @@ namespace Duplicati.Library.Main.Database
 
             m_selectblocklistHashesCommand.CommandText = @"SELECT ""Hash"" FROM ""BlocklistHash"" WHERE ""BlocksetID"" = ? ORDER BY ""Index"" ASC ";
             m_selectblocklistHashesCommand.AddParameters(1);
+
+            m_getfirstfilesetwithblockinblockset.CommandText = @"SELECT MIN(""FilesetEntry"".""FilesetID"") FROM ""FilesetEntry"" WHERE  ""FilesetEntry"".""FileID"" IN (
+SELECT ""File"".""ID"" FROM ""File"" WHERE ""File"".""BlocksetID"" IN(
+SELECT ""BlocklistHash"".""BlocksetID"" FROM ""BlocklistHash"" WHERE ""BlocklistHash"".""Hash"" = ?))";
+            m_getfirstfilesetwithblockinblockset.AddParameters(1);
+
+            m_blocklistHashes = new HashSet<string>();
         }
 
         /// <summary>
@@ -233,17 +262,6 @@ namespace Duplicati.Library.Main.Database
         /// <returns>True if the block should be added to the current output</returns>
         public bool AddBlock(string key, long size, long volumeid, System.Data.IDbTransaction transaction = null)
         {
-            long exsize;
-
-            if (m_blockCache != null && m_blockCache.TryGetValue(key, out exsize))
-            {
-                if (exsize == size)
-                    return false;
-
-                Logging.Log.WriteWarningMessage(LOGTAG, "HashCollisionsFound", null, "Found hash collision on {0}, sizes {1} vs {2}. Disabling cache from now on.", key, size, exsize);
-                m_blockCache = null;
-            }
-
             m_findblockCommand.Transaction = transaction;
             m_findblockCommand.SetParameterValue(0, key);
             m_findblockCommand.SetParameterValue(1, size);
@@ -256,8 +274,6 @@ namespace Duplicati.Library.Main.Database
                 m_insertblockCommand.SetParameterValue(1, volumeid);
                 m_insertblockCommand.SetParameterValue(2, size);
                 m_insertblockCommand.ExecuteScalarInt64(m_logQueries);
-                if (m_blockCache != null)
-                    m_blockCache.Add(key, size);
                 return true;
             }
             else
@@ -601,8 +617,8 @@ namespace Duplicati.Library.Main.Database
 
                     cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" AS " + subqueryFiles, tmpName1), lastFilesetId);
                     cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" AS " + subqueryFiles, tmpName2), m_filesetId);
-                    cmd.ExecuteNonQuery(string.Format(@"CREATE INDEX ""nn_tmpName1"" ON ""{0}"" (""Path"")",tmpName1));
-                    cmd.ExecuteNonQuery(string.Format(@"CREATE INDEX ""nn_tmpName2"" ON ""{0}"" (""Path"")",tmpName2));
+                    cmd.ExecuteNonQuery(string.Format(@"CREATE INDEX ""nn_tmpName1"" ON ""{0}"" (""Path"")", tmpName1));
+                    cmd.ExecuteNonQuery(string.Format(@"CREATE INDEX ""nn_tmpName2"" ON ""{0}"" (""Path"")", tmpName2));
 
 
                     results.AddedFiles = cmd.ExecuteScalarInt64(string.Format(@"SELECT COUNT(*) FROM ""File"" INNER JOIN ""FilesetEntry"" ON ""File"".""ID"" = ""FilesetEntry"".""FileID"" WHERE ""FilesetEntry"".""FilesetID"" = ? AND ""File"".""BlocksetID"" != ? AND ""File"".""BlocksetID"" != ? AND NOT ""File"".""Path"" IN (SELECT ""Path"" FROM ""{0}"")", tmpName1), 0, m_filesetId, FOLDER_BLOCKSET_ID, SYMLINK_BLOCKSET_ID);
@@ -758,7 +774,7 @@ namespace Duplicati.Library.Main.Database
         {
             using (var cmd = m_connection.CreateCommand(transaction))
             {
-                using (var rd = cmd.ExecuteReader(@"SELECT DISTINCT ""Fileset"".""ID"", ""Fileset"".""Timestamp"" FROM ""Fileset"", ""RemoteVolume"" WHERE ""RemoteVolume"".""ID"" = ""Fileset"".""VolumeID"" AND ""Fileset"".""ID"" IN (SELECT ""FilesetID"" FROM ""FilesetEntry"")  AND (""RemoteVolume"".""State"" = ""Uploading"" OR ""RemoteVolume"".""State"" = ""Temporary"")"))
+                using (var rd = cmd.ExecuteReader(@$"SELECT DISTINCT ""Fileset"".""ID"", ""Fileset"".""Timestamp"" FROM ""Fileset"", ""RemoteVolume"" WHERE ""RemoteVolume"".""ID"" = ""Fileset"".""VolumeID"" AND ""Fileset"".""ID"" IN (SELECT ""FilesetID"" FROM ""FilesetEntry"")  AND (""RemoteVolume"".""State"" = '{RemoteVolumeState.Uploading}' OR ""RemoteVolume"".""State"" = '{RemoteVolumeState.Temporary}')"))
                     while (rd.Read())
                     {
                         yield return new KeyValuePair<long, DateTime>(
@@ -955,6 +971,22 @@ namespace Duplicati.Library.Main.Database
                 tr.Commit();
             }
         }
-        
+
+        /// <summary>
+        /// Checks if a blocklist hash is known
+        /// </summary>
+        /// <param name="hash">The hash to check</param>
+        /// <param name="transaction">An optional external transaction</param>
+        /// <returns>True if the hash is known, false otherwise</returns>
+        public bool IsBlocklistHashKnown(string hash, IDbTransaction transaction)
+        {
+            m_getfirstfilesetwithblockinblockset.Transaction = transaction;
+            m_getfirstfilesetwithblockinblockset.SetParameterValue(0, hash);
+            var res = m_getfirstfilesetwithblockinblockset.ExecuteScalarInt64();
+            if (res != -1 && res != m_filesetId)
+                return true;
+            else
+                return !m_blocklistHashes.Add(hash);
+        }
     }
 }

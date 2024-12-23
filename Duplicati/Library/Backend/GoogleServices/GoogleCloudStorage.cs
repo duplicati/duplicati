@@ -1,19 +1,24 @@
-﻿//  Copyright (C) 2015, The Duplicati Team
-//  http://www.duplicati.com, info@duplicati.com
-//
-//  This library is free software; you can redistribute it and/or modify
-//  it under the terms of the GNU Lesser General Public License as
-//  published by the Free Software Foundation; either version 2.1 of the
-//  License, or (at your option) any later version.
-//
-//  This library is distributed in the hope that it will be useful, but
-//  WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-//  Lesser General Public License for more details.
-//
-//  You should have received a copy of the GNU Lesser General Public
-//  License along with this library; if not, write to the Free Software
-//  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+// Copyright (C) 2024, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
+
 using Duplicati.Library.Backend.GoogleServices;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
@@ -142,29 +147,30 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
         public async Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
         {
             using (System.IO.FileStream fs = System.IO.File.OpenRead(filename))
-                await PutAsync(remotename, fs, cancelToken);
+                await PutAsync(remotename, fs, cancelToken).ConfigureAwait(false);
         }
 
-        public void Get(string remotename, string filename)
+        public async Task GetAsync(string remotename, string filename, CancellationToken cancelToken)
         {
             using (System.IO.FileStream fs = System.IO.File.Create(filename))
-                Get(remotename, fs);
+                await GetAsync(remotename, fs, cancelToken).ConfigureAwait(false);
         }
-        public void Delete(string remotename)
+        public Task DeleteAsync(string remotename, CancellationToken cancelToken)
         {
 
             var req = m_oauth.CreateRequest(WebApi.GoogleCloudStorage.DeleteUrl(m_bucket, Library.Utility.Uri.UrlPathEncode(m_prefix + remotename)));
             req.Method = "DELETE";
 
-            m_oauth.ReadJSONResponse<object>(req);
+            return m_oauth.ReadJSONResponseAsync<object>(req, cancelToken);
         }
 
-        public void Test()
+        public Task TestAsync(CancellationToken cancelToken)
         {
             this.TestList();
+            return Task.CompletedTask;
         }
 
-        public void CreateFolder()
+        public async Task CreateFolderAsync(CancellationToken cancelToken)
         {
             if (string.IsNullOrEmpty(m_project))
                 throw new UserInformationException(Strings.GoogleCloudStorage.ProjectIDMissingError(PROJECT_OPTION), "GoogleCloudStorageMissingProjectID");
@@ -184,9 +190,9 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
             var areq = new AsyncHttpRequest(req);
 
             using (var rs = areq.GetRequestStream())
-                rs.Write(data, 0, data.Length);
+                await rs.WriteAsync(data, 0, data.Length, cancelToken);
 
-            m_oauth.ReadJSONResponse<BucketResourceItem>(areq);
+            await m_oauth.ReadJSONResponseAsync<BucketResourceItem>(areq, cancelToken).ConfigureAwait(false);
         }
 
         public string DisplayName
@@ -224,13 +230,7 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
             get { return Strings.GoogleCloudStorage.Description; }
         }
 
-        public string[] DNSName
-        {
-            get
-            {
-                return WebApi.GoogleCloudStorage.Hosts();
-            }
-        }
+        public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(WebApi.GoogleCloudStorage.Hosts());
 
         #endregion
 
@@ -239,23 +239,23 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
             var item = new BucketResourceItem { name = m_prefix + remotename };
 
             var url = WebApi.GoogleCloudStorage.PutUrl(m_bucket);
-            var res = await GoogleCommon.ChunkedUploadWithResumeAsync<BucketResourceItem, BucketResourceItem>(m_oauth, item, url, stream, cancelToken);
+            var res = await GoogleCommon.ChunkedUploadWithResumeAsync<BucketResourceItem, BucketResourceItem>(m_oauth, item, url, stream, cancelToken).ConfigureAwait(false);
 
             if (res == null)
                 throw new Exception("Upload succeeded, but no data was returned");
         }
 
-        public void Get(string remotename, System.IO.Stream stream)
+        public async Task GetAsync(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
         {
             try
             {
-                var url = WebApi.GoogleCloudStorage.GetUrl(m_bucket, Library.Utility.Uri.UrlPathEncode(m_prefix + remotename)); 
+                var url = WebApi.GoogleCloudStorage.GetUrl(m_bucket, Library.Utility.Uri.UrlPathEncode(m_prefix + remotename));
                 var req = m_oauth.CreateRequest(url);
                 var areq = new AsyncHttpRequest(req);
 
                 using (var resp = areq.GetResponse())
                 using (var rs = areq.GetResponseStream())
-                    Library.Utility.Utility.CopyStream(rs, stream);
+                    await Library.Utility.Utility.CopyStreamAsync(rs, stream, cancelToken).ConfigureAwait(false);
             }
             catch (WebException wex)
             {
@@ -266,7 +266,7 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
             }
         }
 
-        public void Rename(string oldname, string newname)
+        public async Task RenameAsync(string oldname, string newname, CancellationToken cancelToken)
         {
             var data = System.Text.Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(new BucketResourceItem
             {
@@ -280,9 +280,9 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
 
             var areq = new AsyncHttpRequest(req);
             using (var rs = areq.GetRequestStream())
-                rs.Write(data, 0, data.Length);
+                await rs.WriteAsync(data, 0, data.Length, cancelToken).ConfigureAwait(false);
 
-            m_oauth.ReadJSONResponse<BucketResourceItem>(req);
+            await m_oauth.ReadJSONResponseAsync<BucketResourceItem>(req, cancelToken).ConfigureAwait(false);
         }
 
         #region IDisposable implementation

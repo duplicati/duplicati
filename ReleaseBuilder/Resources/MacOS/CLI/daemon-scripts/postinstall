@@ -1,0 +1,11 @@
+#!/bin/sh
+
+set -e
+
+# Identify the user installing the package
+USER=$(stat -f%Su /dev/console)
+
+# Package is CLI, so we do not install the server launch agent automatically
+# launchctl bootstrap gui/$(id -u "$USER") "/Library/LaunchAgents/com.duplicati.server.launchagent.plist"
+# launchctl enable gui/$(id -u "$USER")/com.duplicati.server.launchagent
+exit 0

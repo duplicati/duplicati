@@ -1,3 +1,23 @@
+// Copyright (C) 2024, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -10,13 +30,13 @@ namespace Duplicati.Library.Backend
     {
         IEnumerable<IFileEntry> ListBucket(string bucketName, string prefix);
 
-        void AddBucket(string bucketName);
+        Task AddBucketAsync(string bucketName, CancellationToken cancelToken);
 
-        void DeleteObject(string bucketName, string keyName);
+        Task DeleteObjectAsync(string bucketName, string keyName, CancellationToken cancelToken);
 
-        void RenameFile(string bucketName, string source, string target);
+        Task RenameFileAsync(string bucketName, string source, string target, CancellationToken cancelToken);
 
-        void GetFileStream(string bucketName, string keyName, System.IO.Stream target);
+        Task GetFileStreamAsync(string bucketName, string keyName, System.IO.Stream target, CancellationToken cancelToken);
 
         string GetDnsHost();
 

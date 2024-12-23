@@ -1,0 +1,12 @@
+#!/bin/bash
+
+set -e
+if pgrep -x "duplicati-agent"; then
+	RES=`osascript \
+	-e "set question to display dialog \"Duplicati Agent is currently running, you should quit before installing a new version\" with title \"Duplicati Agent is already running\" buttons {\"Stop installation\", \"Continue\"} default button 1" \
+	-e "if button returned of question is equal to \"Stop installation\" then return \"STOP\""`
+	if [ "$RES" == "STOP" ];
+	then
+		exit 1		
+	fi
+fi

@@ -1,4 +1,24 @@
-﻿using Duplicati.Library.Utility;
+// Copyright (C) 2024, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
+using Duplicati.Library.Utility;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
@@ -56,13 +76,13 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public FolderMetadata CreateFolder(string path)
+        public async Task<FolderMetadata> CreateFolderAsync(string path, CancellationToken cancellationToken)
         {
             var pa = new PathArg() { path = path };
 
             try
             {
-                return PostAndGetJSONData<FolderMetadata>(WebApi.Dropbox.CreateFolderUrl(), pa);
+                return await PostAndGetJSONDataAsync<FolderMetadata>(WebApi.Dropbox.CreateFolderUrl(), cancellationToken, pa).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -169,7 +189,7 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public void DownloadFile(string path, Stream fs)
+        public async Task DownloadFileAsync(string path, Stream fs, CancellationToken cancelToken)
         {
             try
             {
@@ -179,7 +199,7 @@ namespace Duplicati.Library.Backend
                 req.Headers[API_ARG_HEADER] = JsonConvert.SerializeObject(pa);
 
                 using (var response = GetResponse(req))
-                    Utility.Utility.CopyStream(response.GetResponseStream(), fs);
+                    await Utility.Utility.CopyStreamAsync(response.GetResponseStream(), fs, cancelToken).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -188,13 +208,13 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public void Delete(string path)
+        public async Task DeleteAsync(string path, CancellationToken cancelToken)
         {
             try
             {
                 var pa = new PathArg() { path = path };
-                using (var response = GetResponse(WebApi.Dropbox.DeleteUrl(), pa))
-                using(var sr = new StreamReader(response.GetResponseStream()))
+                using (var response = await GetResponseAsync(WebApi.Dropbox.DeleteUrl(), cancelToken, pa).ConfigureAwait(false))
+                using (var sr = new StreamReader(response.GetResponseStream()))
                     sr.ReadToEnd();
             }
             catch (Exception ex)
@@ -239,8 +259,9 @@ namespace Duplicati.Library.Backend
                     }
                     if (httpResp.StatusCode == HttpStatusCode.Unauthorized)
                         ThrowAuthException(json, exception);
+
                     if ((int)httpResp.StatusCode == 429 || (int)httpResp.StatusCode == 507)
-                        ThrowOverQuotaError();
+                        throw new Duplicati.Library.Interface.UserInformationException(Strings.Dropbox.OverQuotaError(string.IsNullOrWhiteSpace(json) ? exception.Message : json), "DropboxOverQuotaError", ex);
                 }
 
 
@@ -273,7 +294,7 @@ namespace Duplicati.Library.Backend
 
     public class FolderMetadata : MetaData
     {
-        
+
     }
 
     public class UploadSessionStartArg

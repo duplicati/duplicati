@@ -1,19 +1,24 @@
-﻿//  Copyright (C) 2015, The Duplicati Team
-//  http://www.duplicati.com, info@duplicati.com
-//
-//  This library is free software; you can redistribute it and/or modify
-//  it under the terms of the GNU Lesser General Public License as
-//  published by the Free Software Foundation; either version 2.1 of the
-//  License, or (at your option) any later version.
-//
-//  This library is distributed in the hope that it will be useful, but
-//  WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-//  Lesser General Public License for more details.
-//
-//  You should have received a copy of the GNU Lesser General Public
-//  License along with this library; if not, write to the Free Software
-//  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+// Copyright (C) 2024, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
+
 using Duplicati.Library.Backend.GoogleServices;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
@@ -66,9 +71,9 @@ namespace Duplicati.Library.Backend.GoogleDrive
             m_filecache = new Dictionary<string, GoogleDriveFolderItem[]>();
         }
 
-        private string GetFolderId(string path, bool autocreate = false)
+        private async Task<string> GetFolderIdAsync(string path, bool autocreate, CancellationToken cancelToken)
         {
-            var curparent = m_teamDriveID ?? GetAboutInfo().rootFolderId;
+            var curparent = m_teamDriveID ?? (await GetAboutInfoAsync(cancelToken).ConfigureAwait(false)).rootFolderId;
             var curdisplay = new StringBuilder("/");
 
             foreach (var p in path.Split(new char[] { '/' }, StringSplitOptions.RemoveEmptyEntries))
@@ -80,7 +85,7 @@ namespace Duplicati.Library.Backend.GoogleDrive
                     if (!autocreate)
                         throw new FolderMissingException();
 
-                    curparent = CreateFolder(p, curparent).id;
+                    curparent = (await CreateFolderAsync(p, curparent, cancelToken)).id;
                 }
                 else if (res.Length > 1)
                 {
@@ -97,18 +102,15 @@ namespace Duplicati.Library.Backend.GoogleDrive
             return curparent;
         }
 
-        private string CurrentFolderId
+        private async Task<string> GetCurrentFolderIdAsync(CancellationToken cancelToken)
         {
-            get
-            {
-                if (string.IsNullOrEmpty(m_currentFolderId))
-                    m_currentFolderId = GetFolderId(m_path);
+            if (string.IsNullOrEmpty(m_currentFolderId))
+                m_currentFolderId = await GetFolderIdAsync(m_path, false, cancelToken).ConfigureAwait(false);
 
-                return m_currentFolderId;
-            }
+            return m_currentFolderId;
         }
 
-        private GoogleDriveFolderItem[] GetFileEntries(string remotename, bool throwMissingException = true)
+        private async Task<GoogleDriveFolderItem[]> GetFileEntriesAsync(string remotename, bool throwMissingException, CancellationToken cancelToken)
         {
             GoogleDriveFolderItem[] entries;
             m_filecache.TryGetValue(remotename, out entries);
@@ -116,7 +118,8 @@ namespace Duplicati.Library.Backend.GoogleDrive
             if (entries != null)
                 return entries;
 
-            entries = ListFolder(CurrentFolderId, false, remotename).ToArray();
+            var currentFolderId = await GetCurrentFolderIdAsync(cancelToken).ConfigureAwait(false);
+            entries = ListFolder(currentFolderId, false, remotename).ToArray();
 
             if (entries == null || entries.Length == 0)
             {
@@ -153,12 +156,13 @@ namespace Duplicati.Library.Backend.GoogleDrive
                     if (files.Length == 1)
                         fileId = files[0].id;
                     else
-                        Delete(remotename);
+                        await DeleteAsync(remotename, cancelToken);
                 }
 
                 var isUpdate = !string.IsNullOrWhiteSpace(fileId);
 
                 var url = WebApi.GoogleDrive.PutUrl(fileId, m_teamDriveID != null);
+                var currentFolderId = await GetCurrentFolderIdAsync(cancelToken).ConfigureAwait(false);
 
                 var item = new GoogleDriveFolderItem
                 {
@@ -166,12 +170,12 @@ namespace Duplicati.Library.Backend.GoogleDrive
                     description = remotename,
                     mimeType = "application/octet-stream",
                     labels = new GoogleDriveFolderItemLabels { hidden = true },
-                    parents = new GoogleDriveParentReference[] { new GoogleDriveParentReference { id = CurrentFolderId } },
+                    parents = [new GoogleDriveParentReference { id = currentFolderId }],
                     teamDriveId = m_teamDriveID
                 };
 
-                var res = await GoogleCommon.ChunkedUploadWithResumeAsync<GoogleDriveFolderItem, GoogleDriveFolderItem>(m_oauth, item, url, stream, cancelToken, isUpdate ? "PUT" : "POST");
-                m_filecache[remotename] = new GoogleDriveFolderItem[] { res };
+                var res = await GoogleCommon.ChunkedUploadWithResumeAsync<GoogleDriveFolderItem, GoogleDriveFolderItem>(m_oauth, item, url, stream, cancelToken, isUpdate ? "PUT" : "POST").ConfigureAwait(false);
+                m_filecache[remotename] = [res];
             }
             catch
             {
@@ -180,19 +184,19 @@ namespace Duplicati.Library.Backend.GoogleDrive
             }
         }
 
-        public void Get(string remotename, System.IO.Stream stream)
+        public async Task GetAsync(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
         {
             // Prevent repeated download url lookups
             if (m_filecache.Count == 0)
                 foreach (var file in List()) { /* Enumerate the full listing */ }
 
-            var fileId = GetFileEntries(remotename).OrderByDescending(x => x.createdDate).First().id;
+            var fileId = (await GetFileEntriesAsync(remotename, true, cancelToken).ConfigureAwait(false)).OrderByDescending(x => x.createdDate).First().id;
 
             var req = m_oauth.CreateRequest(WebApi.GoogleDrive.GetUrl(fileId));
             var areq = new AsyncHttpRequest(req);
             using (var resp = (HttpWebResponse)areq.GetResponse())
             using (var rs = areq.GetResponseStream())
-                Duplicati.Library.Utility.Utility.CopyStream(rs, stream);
+                await Duplicati.Library.Utility.Utility.CopyStreamAsync(rs, stream, cancelToken);
         }
 
         #endregion
@@ -207,7 +211,8 @@ namespace Duplicati.Library.Backend.GoogleDrive
                 m_filecache.Clear();
 
                 // For now, this class assumes that List() fully populates the file cache
-                foreach (var n in ListFolder(CurrentFolderId))
+                var currentFolderId = GetCurrentFolderIdAsync(CancellationToken.None).Await();
+                foreach (var n in ListFolder(currentFolderId))
                 {
                     FileEntry fe = null;
 
@@ -255,24 +260,24 @@ namespace Duplicati.Library.Backend.GoogleDrive
 
         public async Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
         {
-            using (System.IO.FileStream fs = System.IO.File.OpenRead(filename))
-                await PutAsync(remotename, fs, cancelToken);
+            using (var fs = System.IO.File.OpenRead(filename))
+                await PutAsync(remotename, fs, cancelToken).ConfigureAwait(false);
         }
 
-        public void Get(string remotename, string filename)
+        public async Task GetAsync(string remotename, string filename, CancellationToken cancelToken)
         {
-            using (System.IO.FileStream fs = System.IO.File.Create(filename))
-                Get(remotename, fs);
+            using (var fs = System.IO.File.Create(filename))
+                await GetAsync(remotename, fs, cancelToken);
         }
 
-        public void Delete(string remotename)
+        public async Task DeleteAsync(string remotename, CancellationToken cancelToken)
         {
             try
             {
-                foreach (var fileid in from n in GetFileEntries(remotename) select n.id)
+                foreach (var fileid in from n in await GetFileEntriesAsync(remotename, true, cancelToken).ConfigureAwait(false) select n.id)
                 {
                     var url = WebApi.GoogleDrive.DeleteUrl(Library.Utility.Uri.UrlPathEncode(fileid), m_teamDriveID);
-                    m_oauth.GetJSONData<object>(url, x =>
+                    await m_oauth.GetJSONDataAsync<object>(url, cancelToken, x =>
                     {
                         x.Method = "DELETE";
                     });
@@ -288,15 +293,16 @@ namespace Duplicati.Library.Backend.GoogleDrive
             }
         }
 
-        public void Test()
+        public Task TestAsync(CancellationToken cancelToken)
         {
             this.TestList();
+            return Task.CompletedTask;
         }
 
-        public void CreateFolder()
+        public async Task CreateFolderAsync(CancellationToken cancelToken)
         {
             m_filecache.Clear();
-            m_currentFolderId = GetFolderId(m_path, true);
+            m_currentFolderId = await GetFolderIdAsync(m_path, true, cancelToken).ConfigureAwait(false);
         }
 
         public string DisplayName
@@ -337,46 +343,37 @@ namespace Duplicati.Library.Backend.GoogleDrive
         #endregion
 
         #region IQuotaEnabledBackend implementation
-        public IQuotaInfo Quota
+        public async Task<IQuotaInfo> GetQuotaInfoAsync(CancellationToken cancelToken)
         {
-            get
+            try
             {
-                try
-                {
-                    GoogleDriveAboutResponse about = this.GetAboutInfo();
-                    return new QuotaInfo(about.quotaBytesTotal ?? -1, about.quotaBytesTotal - about.quotaBytesUsed ?? -1);
-                }
-                catch
-                {
-                    return null;
-                }
+                var about = await this.GetAboutInfoAsync(cancelToken).ConfigureAwait(false);
+                return new QuotaInfo(about.quotaBytesTotal ?? -1, about.quotaBytesTotal - about.quotaBytesUsed ?? -1);
+            }
+            catch
+            {
+                return null;
             }
         }
 
-        public string[] DNSName
-        {
-            get { return WebApi.GoogleDrive.Hosts(); }
-        }
+        public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(WebApi.GoogleDrive.Hosts());
 
         #endregion
 
         #region IRenameEnabledBackend implementation
-        public void Rename(string oldname, string newname)
+        public async Task RenameAsync(string oldname, string newname, CancellationToken cancellationToken)
         {
             try
             {
-                var files = GetFileEntries(oldname, true);
+                var files = await GetFileEntriesAsync(oldname, true, cancellationToken).ConfigureAwait(false);
                 if (files.Length > 1)
                     throw new UserInformationException(string.Format(Strings.GoogleDrive.MultipleEntries(oldname, m_path)),
                                                        "GoogleDriveMultipleEntries");
 
-                using (var cToken = new CancellationTokenSource())
-                {
-                    Stream stream = new MemoryStream();
-                    Get(oldname, stream);
-                    PutAsync(newname, stream, cToken.Token).Wait(cToken.Token);
-                    Delete(oldname);
-                }
+                using var stream = new MemoryStream();
+                await GetAsync(oldname, stream, cancellationToken).ConfigureAwait(false);
+                await PutAsync(newname, stream, cancellationToken).ConfigureAwait(false);
+                await DeleteAsync(oldname, cancellationToken).ConfigureAwait(false);
 
                 m_filecache.Remove(oldname);
             }
@@ -461,12 +458,12 @@ namespace Duplicati.Library.Backend.GoogleDrive
             }
         }
 
-        private GoogleDriveAboutResponse GetAboutInfo()
+        private Task<GoogleDriveAboutResponse> GetAboutInfoAsync(CancellationToken cancelToken)
         {
-            return m_oauth.GetJSONData<GoogleDriveAboutResponse>(WebApi.GoogleDrive.AboutInfoUrl());
+            return m_oauth.GetJSONDataAsync<GoogleDriveAboutResponse>(WebApi.GoogleDrive.AboutInfoUrl(), cancelToken);
         }
 
-        private GoogleDriveFolderItem CreateFolder(string name, string parent)
+        private Task<GoogleDriveFolderItem> CreateFolderAsync(string name, string parent, CancellationToken cancelToken)
         {
             var folder = new GoogleDriveFolderItem()
             {
@@ -479,17 +476,20 @@ namespace Duplicati.Library.Backend.GoogleDrive
 
             var data = System.Text.Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(folder));
 
-            return m_oauth.GetJSONData<GoogleDriveFolderItem>(WebApi.GoogleDrive.CreateFolderUrl(m_teamDriveID), x =>
-            {
-                x.Method = "POST";
-                x.ContentType = "application/json; charset=UTF-8";
-                x.ContentLength = data.Length;
+            return m_oauth.GetJSONDataAsync<GoogleDriveFolderItem>(
+                WebApi.GoogleDrive.CreateFolderUrl(m_teamDriveID),
+                cancelToken,
+                x =>
+                {
+                    x.Method = "POST";
+                    x.ContentType = "application/json; charset=UTF-8";
+                    x.ContentLength = data.Length;
 
-            }, req =>
-            {
-                using (var rs = req.GetRequestStream())
-                    rs.Write(data, 0, data.Length);
-            });
+                }, async (req, ct) =>
+                {
+                    using (var rs = req.GetRequestStream())
+                        await rs.WriteAsync(data, 0, data.Length, ct).ConfigureAwait(false);
+                });
         }
     }
 }

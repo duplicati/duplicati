@@ -1,33 +1,35 @@
-﻿#region Disclaimer / License
+// Copyright (C) 2024, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
 
-// Copyright (C) 2015, The Duplicati Team
-// http://www.duplicati.com, info@duplicati.com
-// 
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 2.1 of the License, or (at your option) any later version.
-// 
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-// 
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-// 
-
-#endregion
 
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.Versioning;
 using System.Threading;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Utility;
+using Duplicati.Library.Common;
 
 namespace Duplicati.Library.Snapshots
 {
@@ -110,6 +112,9 @@ namespace Duplicati.Library.Snapshots
                 try
                 {
                     // prepare journal data entry to store with current fileset
+                    if (!OperatingSystem.IsWindows())
+                        throw new Interface.UserInformationException(Strings.USNHelper.LinuxNotSupportedError, "UsnOnLinuxNotSupported");
+
                     var journal = new USNJournal(volume);
                     var nextData = new USNJournalDataEntry
                     {
@@ -168,7 +173,7 @@ namespace Duplicati.Library.Snapshots
                     // With this, we need still need to do the following:
                     //
                     // 1. Simplify the folder list, such that it only contains the parent-most entries 
-                    //     (eg. { "C:\A\B\", "C:\A\B\C\", "C:\A\B\D\E\" } => { "C:\A\B\" }
+                    //     (e.g. { "C:\A\B\", "C:\A\B\C\", "C:\A\B\D\E\" } => { "C:\A\B\" }
                     volumeData.Folders = Utility.Utility.SimplifyFolderList(changedFolders).ToList();
 
                     // 2. Our list of files may contain entries inside one of the simplified folders (from step 1., above).
@@ -183,7 +188,7 @@ namespace Duplicati.Library.Snapshots
                 }
                 catch (Exception e)
                 {
-                    // full scan is required this time (eg. due to missing journal entries)
+                    // full scan is required this time (e.g. due to missing journal entries)
                     volumeData.Exception = e;
                     volumeData.IsFullScan = true;
                     volumeData.Folders = new List<string>();
@@ -417,6 +422,7 @@ namespace Duplicati.Library.Snapshots
         /// </summary>
         /// <param name="sources">List of sources</param>
         /// <returns>Dictionary of volumes, with list of sources as values</returns>
+        [SupportedOSPlatform("windows")]
         private static Dictionary<string, List<string>> SortByVolume(IEnumerable<string> sources)
         {
             var sourcesByVolume = new Dictionary<string, List<string>>();
@@ -442,6 +448,7 @@ namespace Duplicati.Library.Snapshots
         /// </summary>
         /// <param name="path"></param>
         /// <returns></returns>
+        [SupportedOSPlatform("windows")]
         public bool IsPathEnumerated(string path)
         {
             // get NTFS volume root

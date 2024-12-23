@@ -1,8 +1,29 @@
-﻿using System;
+// Copyright (C) 2024, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-
+using System.Threading;
+using System.Threading.Tasks;
 using Duplicati.Library.Backend.MicrosoftGraph;
 using Duplicati.Library.Interface;
 
@@ -84,7 +105,7 @@ namespace Duplicati.Library.Backend
         /// </summary>
         /// <param name="url">Input URL</param>
         /// <returns>Path within the drive</returns>
-        protected override string GetRootPathFromUrl(string url)
+        protected override async Task<string> GetRootPathFromUrlAsync(string url, CancellationToken cancelToken)
         {
             Uri uri = new Uri(url);
 
@@ -97,16 +118,16 @@ namespace Duplicati.Library.Backend
                 uri = new Uri(string.Format("{0}:{1}", uri.Scheme, uri.LocalPath));
             }
 
-            SharePointSite site = this.GetSharePointSite(uri);
+            var site = await this.GetSharePointSite(uri, cancelToken).ConfigureAwait(false);
             if (site != null)
             {
                 // Get the web URL of the site's main drive
                 try
                 {
-                    Drive drive = this.Get<Drive>(string.Format("{0}/sites/{1}/drive", this.ApiVersion, site.Id));
+                    var drive = await this.GetAsync<Drive>(string.Format("{0}/sites/{1}/drive", this.ApiVersion, site.Id), cancelToken).ConfigureAwait(false);
 
                     this.siteId = site.Id;
-                    Uri driveWebUrl = new Uri(drive.WebUrl);
+                    var driveWebUrl = new Uri(drive.WebUrl);
 
                     // Make sure to replace any "//" in the original path with "/", so the substrings line up.
                     return uri.LocalPath.Replace("//", "/").Substring(driveWebUrl.LocalPath.Length);
@@ -117,12 +138,12 @@ namespace Duplicati.Library.Backend
                 }
             }
 
-            return base.GetRootPathFromUrl(url);
+            return await base.GetRootPathFromUrlAsync(url, cancelToken).ConfigureAwait(false);
         }
 
-        private SharePointSite GetSharePointSite(Uri url)
+        private async Task<SharePointSite> GetSharePointSite(Uri url, CancellationToken cancelToken)
         {
-            UriBuilder uri = new UriBuilder(url);
+            var uri = new UriBuilder(url);
 
             // We can get a SharePoint site's info by querying /v1.0/sites/{hostname}:{siteWebPath}.
             // Since this full URL likely has the web path as some subpart of it, we check against each subpath to see if that is a site,
@@ -135,8 +156,8 @@ namespace Duplicati.Library.Backend
             {
                 try
                 {
-                    string request = string.Format("{0}:/{1}", requestBase, uri.Path.Substring(0, siteHint));
-                    return this.Get<SharePointSite>(request);
+                    var request = string.Format("{0}:/{1}", requestBase, uri.Path.Substring(0, siteHint));
+                    return await this.GetAsync<SharePointSite>(request, cancelToken).ConfigureAwait(false);
                 }
                 catch (MicrosoftGraphException)
                 {
@@ -150,7 +171,7 @@ namespace Duplicati.Library.Backend
                 try
                 {
                     string request = string.Format("{0}:/{1}", requestBase, string.Join("/", pathPieces.Take(i)));
-                    return this.Get<SharePointSite>(request);
+                    return await this.GetAsync<SharePointSite>(request, cancelToken).ConfigureAwait(false);
                 }
                 catch (MicrosoftGraphException)
                 {

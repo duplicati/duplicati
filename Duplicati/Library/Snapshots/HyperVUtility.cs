@@ -1,8 +1,29 @@
-﻿using System;
+// Copyright (C) 2024, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Management;
+using System.Runtime.Versioning;
 using Duplicati.Library.Common;
 using Duplicati.Library.Common.IO;
 
@@ -61,6 +82,7 @@ namespace Duplicati.Library.Snapshots
         }
     }
 
+    [SupportedOSPlatform("windows")]
     public class HyperVUtility
     {
         /// <summary>
@@ -94,7 +116,7 @@ namespace Duplicati.Library.Snapshots
         {
             Guests = new List<HyperVGuest>();
 
-            if (!Platform.IsClientWindows)
+            if (!OperatingSystem.IsWindows())
             {
                 IsHyperVInstalled = false;
                 IsVSSWriterSupported = false;
@@ -102,7 +124,7 @@ namespace Duplicati.Library.Snapshots
             }
 
             //Set the namespace depending off host OS
-            _wmiv2Namespace = Environment.OSVersion.Version.Major > 6 || (Environment.OSVersion.Version.Major == 6 && Environment.OSVersion.Version.Minor >= 2);
+            _wmiv2Namespace = OperatingSystem.IsWindowsVersionAtLeast(6, 2);
 
             //Set the scope to use in WMI. V2 for Server 2012 or newer.
             _wmiScope = _wmiv2Namespace
@@ -196,7 +218,7 @@ namespace Duplicati.Library.Snapshots
         {
             using (var vssBackupComponents = new VssBackupComponents())
             {
-                var writerGUIDS = new [] { HyperVWriterGuid };
+                var writerGUIDS = new[] { HyperVWriterGuid };
 
                 try
                 {
@@ -206,7 +228,8 @@ namespace Duplicati.Library.Snapshots
                 {
                     throw new Interface.UserInformationException("Microsoft Hyper-V VSS Writer not found - cannot backup Hyper-V machines.", "NoHyperVVssWriter");
                 }
-                foreach (var o in vssBackupComponents.ParseWriterMetaData(writerGUIDS)) {
+                foreach (var o in vssBackupComponents.ParseWriterMetaData(writerGUIDS))
+                {
                     yield return o;
                 }
             }

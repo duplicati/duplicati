@@ -1,19 +1,24 @@
-﻿//  Copyright (C) 2016, The Duplicati Team
-//  http://www.duplicati.com, info@duplicati.com
-//
-//  This library is free software; you can redistribute it and/or modify
-//  it under the terms of the GNU Lesser General Public License as
-//  published by the Free Software Foundation; either version 2.1 of the
-//  License, or (at your option) any later version.
-//
-//  This library is distributed in the hope that it will be useful, but
-//  WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-//  Lesser General Public License for more details.
-//
-//  You should have received a copy of the GNU Lesser General Public
-//  License along with this library; if not, write to the Free Software
-//  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+// Copyright (C) 2024, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
+
 using System;
 using System.IO;
 using System.Linq;
@@ -74,10 +79,10 @@ namespace Duplicati.Library.Localization
                 // Load the specialized version first
                 string.Format("localization-{0}.mo", ci.Name.Replace('-', '_')), 
                 // Then try the generic language version
-                string.Format("localization-{0}.mo", ci.TwoLetterISOLanguageName) 
+                string.Format("localization-{0}.mo", ci.TwoLetterISOLanguageName)
             };
 
-            foreach(var fn in filenames)
+            foreach (var fn in filenames)
             {
                 // search first in external files
                 foreach (var sp in SearchPaths)
@@ -86,7 +91,7 @@ namespace Duplicati.Library.Localization
                     {
                         using (var moFileStream = File.OpenRead(Path.Combine(sp, fn)))
                             catalog = new Catalog(moFileStream, ci);
-                        return; 
+                        return;
                     }
                 }
 
@@ -113,13 +118,21 @@ namespace Duplicati.Library.Localization
         }
 
         /// <summary>
+        /// Pre-processes the message to use Linux line endings
+        /// </summary>
+        /// <param name="message">The message to pre-process</param>
+        /// <returns>The pre-processed message</returns>
+        private static string PreFormat(string message)
+            => message?.Replace("\r\n", "\n");
+
+        /// <summary>
         /// Localizes the string similar to how string.Format works
         /// </summary>
         /// <param name="message">The string to localize</param>
         /// <returns>The localized string</returns>
         public string Localize(string message)
         {
-            return catalog.GetString(message);
+            return catalog.GetString(PreFormat(message));
         }
 
         /// <summary>
@@ -130,7 +143,7 @@ namespace Duplicati.Library.Localization
         /// <returns>The localized string</returns>
         public string Localize(string message, object arg0)
         {
-            return catalog.GetString(message, arg0);
+            return catalog.GetString(PreFormat(message), arg0);
         }
 
         /// <summary>
@@ -142,7 +155,7 @@ namespace Duplicati.Library.Localization
         /// <returns>The localized string</returns>
         public string Localize(string message, object arg0, object arg1)
         {
-            return catalog.GetString(message, arg0, arg1);
+            return catalog.GetString(PreFormat(message), arg0, arg1);
         }
 
         /// <summary>
@@ -155,7 +168,7 @@ namespace Duplicati.Library.Localization
         /// <returns>The localized string</returns>
         public string Localize(string message, object arg0, object arg1, object arg2)
         {
-            return catalog.GetString(message, arg0, arg1, arg2);
+            return catalog.GetString(PreFormat(message), arg0, arg1, arg2);
         }
 
         /// <summary>
@@ -165,7 +178,7 @@ namespace Duplicati.Library.Localization
         /// <param name="args">The arguments</param>
         public string Localize(string message, params object[] args)
         {
-            return catalog.GetString(message, args);
+            return catalog.GetString(PreFormat(message), args);
         }
 
         private static IEnumerable<CultureInfo> m_supportedcultures = null;
@@ -214,7 +227,7 @@ namespace Duplicati.Library.Localization
                     .ToList();
             }
         }
-        
+
         /// <summary>
         /// Returns true if the culture has localization support
         /// </summary>
@@ -225,7 +238,7 @@ namespace Duplicati.Library.Localization
                 if (supportedCulture.TwoLetterISOLanguageName == culture.TwoLetterISOLanguageName)
                     return true;
             }
-            return false;            
+            return false;
         }
     }
 }

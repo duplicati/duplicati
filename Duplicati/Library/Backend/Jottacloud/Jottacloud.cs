@@ -1,28 +1,31 @@
-﻿#region Disclaimer / License
-// Copyright (C) 2015, The Duplicati Team
-// http://www.duplicati.com, info@duplicati.com
+// Copyright (C) 2024, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
 // 
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 2.1 of the License, or (at your option) any later version.
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
 // 
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
 // 
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-// 
-#endregion
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
+
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Localization.Short;
 using System;
 using System.Collections.Generic;
 using System.Net;
+using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
 namespace Duplicati.Library.Backend
@@ -51,7 +54,6 @@ namespace Duplicati.Library.Backend
         private readonly string m_url_device;
         private readonly string m_url;
         private readonly string m_url_upload;
-        private readonly byte[] m_copybuffer = new byte[Duplicati.Library.Utility.Utility.DEFAULT_BUFFER_SIZE];
 
         private static readonly string JFS_DEFAULT_CHUNKSIZE = "5mb";
         private static readonly string JFS_DEFAULT_THREADS = "4";
@@ -146,7 +148,7 @@ namespace Duplicati.Library.Backend
             m_path = Util.AppendDirSeparator(m_path, "/");
 
             m_url_device = JFS_ROOT + "/" + m_oauth.Username + "/" + m_device;
-            m_url        = m_url_device + "/" + m_mountPoint + "/" + m_path;
+            m_url = m_url_device + "/" + m_mountPoint + "/" + m_path;
             m_url_upload = JFS_ROOT_UPLOAD + "/" + m_oauth.Username + "/" + m_device + "/" + m_mountPoint + "/" + m_path; // Different hostname, else identical to m_url.
 
             m_threads = int.Parse(options.ContainsKey(JFS_THREADS) ? options[JFS_THREADS] : JFS_DEFAULT_THREADS);
@@ -168,7 +170,7 @@ namespace Duplicati.Library.Backend
             m_chunksize = chunksize;
         }
 
-#region IBackend Members
+        #region IBackend Members
 
         public string DisplayName
         {
@@ -289,34 +291,36 @@ namespace Duplicati.Library.Backend
         public async Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
         {
             using (System.IO.FileStream fs = System.IO.File.OpenRead(filename))
-                await PutAsync(remotename, fs, cancelToken);
+                await PutAsync(remotename, fs, cancelToken).ConfigureAwait(false);
         }
 
-        public void Get(string remotename, string filename)
+        public async Task GetAsync(string remotename, string filename, CancellationToken cancelToken)
         {
             using (System.IO.FileStream fs = System.IO.File.Create(filename))
-                Get(remotename, fs);
+                await GetAsync(remotename, fs, cancelToken).ConfigureAwait(false);
         }
 
-        public void Delete(string remotename)
+        public Task DeleteAsync(string remotename, CancellationToken cancelToken)
         {
             System.Net.HttpWebRequest req = CreateRequest(System.Net.WebRequestMethods.Http.Post, remotename, "rm=true", false); // rm=true means permanent delete, dl=true would be move to trash.
             Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
             using (System.Net.HttpWebResponse resp = (System.Net.HttpWebResponse)areq.GetResponse())
             { }
+
+            return Task.CompletedTask;
         }
 
         public IList<ICommandLineArgument> SupportedCommands
         {
-            get 
+            get
             {
-                return new List<ICommandLineArgument>(new ICommandLineArgument[] {
+                return new List<ICommandLineArgument>([
                     new CommandLineArgument(AUTHID_OPTION, CommandLineArgument.ArgumentType.Password, Strings.Jottacloud.AuthidShort, Strings.Jottacloud.AuthidLong(OAuthHelper.OAUTH_LOGIN_URL("jottacloud"))),
                     new CommandLineArgument(JFS_DEVICE_OPTION, CommandLineArgument.ArgumentType.String, Strings.Jottacloud.DescriptionDeviceShort, Strings.Jottacloud.DescriptionDeviceLong(JFS_MOUNT_POINT_OPTION)),
                     new CommandLineArgument(JFS_MOUNT_POINT_OPTION, CommandLineArgument.ArgumentType.String, Strings.Jottacloud.DescriptionMountPointShort, Strings.Jottacloud.DescriptionMountPointLong(JFS_DEVICE_OPTION)),
                     new CommandLineArgument(JFS_THREADS, CommandLineArgument.ArgumentType.Integer, Strings.Jottacloud.ThreadsShort, Strings.Jottacloud.ThreadsLong, JFS_DEFAULT_THREADS),
                     new CommandLineArgument(JFS_CHUNKSIZE, CommandLineArgument.ArgumentType.Size, Strings.Jottacloud.ChunksizeShort, Strings.Jottacloud.ChunksizeLong, JFS_DEFAULT_CHUNKSIZE),
-                });
+                ]);
             }
         }
 
@@ -325,39 +329,42 @@ namespace Duplicati.Library.Backend
             get { return Strings.Jottacloud.Description; }
         }
 
-        public void Test()
+        public Task TestAsync(CancellationToken cancelToken)
         {
             this.TestList();
+            return Task.CompletedTask;
         }
 
-        public void CreateFolder()
+        public Task CreateFolderAsync(CancellationToken cancelToken)
         {
             // When using custom (backup) device we must create the device first (if not already exists).
             if (!m_device_builtin)
             {
-                System.Net.HttpWebRequest req = CreateRequest(System.Net.WebRequestMethods.Http.Post, m_url_device, "type=WORKSTATION"); // Hard-coding device type. Must be one of "WORKSTATION", "LAPTOP", "IMAC", "MACBOOK", "IPAD", "ANDROID", "IPHONE" or "WINDOWS_PHONE".
-                Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
-                using (System.Net.HttpWebResponse resp = (System.Net.HttpWebResponse)areq.GetResponse())
+                var req = CreateRequest(System.Net.WebRequestMethods.Http.Post, m_url_device, "type=WORKSTATION"); // Hard-coding device type. Must be one of "WORKSTATION", "LAPTOP", "IMAC", "MACBOOK", "IPAD", "ANDROID", "IPHONE" or "WINDOWS_PHONE".
+                var areq = new Utility.AsyncHttpRequest(req);
+                using (var resp = (System.Net.HttpWebResponse)areq.GetResponse())
                 { }
             }
             // Create the folder path, and if using custom mount point it will be created as well in the same operation.
             {
-                System.Net.HttpWebRequest req = CreateRequest(System.Net.WebRequestMethods.Http.Post, "", "mkDir=true", false);
-                Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
-                using (System.Net.HttpWebResponse resp = (System.Net.HttpWebResponse)areq.GetResponse())
+                var req = CreateRequest(System.Net.WebRequestMethods.Http.Post, "", "mkDir=true", false);
+                var areq = new Utility.AsyncHttpRequest(req);
+                using (var resp = (System.Net.HttpWebResponse)areq.GetResponse())
                 { }
             }
+
+            return Task.CompletedTask;
         }
 
-#endregion
+        #endregion
 
-#region IDisposable Members
+        #region IDisposable Members
 
         public void Dispose()
         {
         }
 
-#endregion
+        #endregion
 
         private System.Net.HttpWebRequest CreateRequest(string method, string url, string queryparams)
         {
@@ -370,16 +377,16 @@ namespace Duplicati.Library.Backend
             return CreateRequest(method, url, queryparams);
         }
 
-        public string[] DNSName
-        {
-            get { return new string[] { new Uri(JFS_ROOT).Host, new Uri(JFS_ROOT_UPLOAD).Host }; }
-        }
+        public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(new string[] {
+            new Uri(JFS_ROOT).Host,
+            new Uri(JFS_ROOT_UPLOAD).Host
+        });
 
-        public void Get(string remotename, System.IO.Stream stream)
+        public async Task GetAsync(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
         {
             if (m_threads > 1)
             {
-                ParallelGet(remotename, stream);
+                await ParallelGetAsync(remotename, stream, cancelToken).ConfigureAwait(false);
                 return;
             }
             // Downloading from Jottacloud: Will only succeed if the file has a completed revision,
@@ -388,13 +395,13 @@ namespace Duplicati.Library.Backend
             var req = CreateRequest(System.Net.WebRequestMethods.Http.Get, remotename, "mode=bin", false);
             var areq = new Utility.AsyncHttpRequest(req);
             using (var s = areq.GetResponseStream())
-                Utility.Utility.CopyStream(s, stream, true, m_copybuffer);
+                await Utility.Utility.CopyStreamAsync(s, stream, true, cancelToken).ConfigureAwait(false);
         }
 
         /// <summary>
         /// Fetches the file in chunks (parallelized)
         /// </summary>
-        public void ParallelGet(string remotename, System.IO.Stream stream)
+        public async Task ParallelGetAsync(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
         {
             var size = Info(remotename).Size;
 
@@ -413,6 +420,7 @@ namespace Duplicati.Library.Backend
 
             while (tasks.Count > 0 || chunks.Count > 0)
             {
+                cancelToken.ThrowIfCancellationRequested();
                 while (chunks.Count > 0 && tasks.Count < m_threads)
                 {
                     var item = chunks.Dequeue();
@@ -429,8 +437,8 @@ namespace Duplicati.Library.Backend
                         }
                     }));
                 }
-                var buffer = tasks.Dequeue().Result;
-                stream.Write(buffer, 0, buffer.Length);
+                var buffer = await tasks.Dequeue().ConfigureAwait(false);
+                await stream.WriteAsync(buffer, 0, buffer.Length, cancelToken).ConfigureAwait(false);
             }
         }
 
@@ -470,9 +478,10 @@ namespace Duplicati.Library.Backend
                 // No seeking possible, use a temp file
                 tmpFile = new Duplicati.Library.Utility.TempFile();
                 using (var os = System.IO.File.OpenWrite(tmpFile))
-                using (var md5 = new Utility.MD5CalculatingStream(baseStream))
+                using (var hasher = MD5.Create())
+                using (var md5 = new Utility.HashCalculatingStream(baseStream, hasher))
                 {
-                    await Utility.Utility.CopyStreamAsync(md5, os, true, cancelToken, m_copybuffer);
+                    await Utility.Utility.CopyStreamAsync(md5, os, true, cancelToken).ConfigureAwait(false);
                     md5Hash = md5.GetFinalHashString();
                 }
                 stream = System.IO.File.OpenRead(tmpFile);
@@ -499,7 +508,7 @@ namespace Duplicati.Library.Backend
                 // Write post data request
                 var areq = new Utility.AsyncHttpRequest(req);
                 using (var rs = areq.GetRequestStream())
-                    await Utility.Utility.CopyStreamAsync(stream, rs, true, cancelToken, m_copybuffer);
+                    await Utility.Utility.CopyStreamAsync(stream, rs, true, cancelToken).ConfigureAwait(false);
                 // Send request, and check response
                 using (var resp = (System.Net.HttpWebResponse)areq.GetResponse())
                 {
@@ -529,7 +538,8 @@ namespace Duplicati.Library.Backend
                         if (xFile != null)
                         {
                             var xRevState = xFile.SelectSingleNode("latestRevision");
-                            if (xRevState == null) {
+                            if (xRevState == null)
+                            {
                                 xRevState = xFile.SelectSingleNode("currentRevision/state");
                                 if (xRevState != null)
                                     uploadCompletedSuccessfully = xRevState.InnerText == "COMPLETED"; // Success: There is no "latestRevision", only a "currentRevision" (and it specifies the file is complete, but I think it always will).

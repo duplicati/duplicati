@@ -32,7 +32,6 @@ backupApp.directive('backupEditUri', function(gettextCatalog) {
 
             var hasTriedCreate = false;
             var hasTriedCert = false;
-            var hasTriedMozroots = false;
             var hasTriedHostkey = false;
             var dlg = null;
 
@@ -41,8 +40,8 @@ backupApp.directive('backupEditUri', function(gettextCatalog) {
                 if (dlg != null)
                     dlg.dismiss();
 
-                dlg = DialogService.dialog(gettextCatalog.getString('Testing ...'), gettextCatalog.getString('Testing connection ...'), [], null, function() {
-                    AppService.post('/remoteoperation/test', uri).then(function() {
+                dlg = DialogService.dialog(gettextCatalog.getString('Testing …'), gettextCatalog.getString('Testing connection …'), [], null, function() {
+                    AppService.postJson('/remoteoperation/test', { path: uri }).then(function() {
                         scope.Testing = false;
                         dlg.dismiss();
 
@@ -61,7 +60,7 @@ backupApp.directive('backupEditUri', function(gettextCatalog) {
             var createFolder = function() {
                 hasTriedCreate = true;
                 scope.Testing = true;
-                AppService.post('/remoteoperation/create', uri).then(testConnection, handleError);
+                AppService.postJson('/remoteoperation/create', { path: uri }).then(testConnection, handleError);
             };
 
             var appendApprovedCert = function(hash)
@@ -118,7 +117,7 @@ backupApp.directive('backupEditUri', function(gettextCatalog) {
                 if (dlg != null)
                     dlg.dismiss();
 
-                var message = data.statusText;
+                var message = AppService.responseErrorMessage(data);
 
                 if (!hasTriedCreate && message == 'missing-folder')
                 {
@@ -144,48 +143,7 @@ backupApp.directive('backupEditUri', function(gettextCatalog) {
                         return;                         
                     }
 
-                    if ($scope.SystemInfo.MonoVersion != null && !hasTriedMozroots) {
-                        
-                        hasTriedMozroots = true;
-
-                        AppService.post('/webmodule/check-mono-ssl', {'mono-ssl-config': 'List'}).then(function(data) {
-                            if (data.data.Result.count == 0) {
-                                if (confirm(gettextCatalog.getString('You appear to be running Mono with no SSL certificates loaded.\nDo you want to import the list of trusted certificates from Mozilla?')))
-                                {
-                                    scope.Testing = true;
-                                    AppService.post('/webmodule/check-mono-ssl', {'mono-ssl-config': 'Install'}).then(function(data) {
-                                        scope.Testing = false;
-                                        if (data.data.Result.count == 0) {
-                                            DialogService.dialog(gettextCatalog.getString('Import failed'), gettextCatalog.getString('Import completed, but no certificates were found after the import'));
-                                        } else {
-                                            testConnection();
-                                        }
-                                    }, function(resp) {
-
-                                        scope.Testing = false;
-                                        message = resp.statusText;
-                                        if (data.data != null && data.data.Message != null)
-                                            message = data.data.Message;
-                                        
-                                        DialogService.dialog(gettextCatalog.getString('Error'), gettextCatalog.getString('Failed to import: ') + message);
-
-                                    });
-                                }
-                                else
-                                {
-                                    askApproveCert(hash);
-                                }
-                            } else {
-                                askApproveCert(hash);
-                            }
-
-                        }, AppUtils.connectionError);
-
-                    }
-                    else
-                    {
-                        askApproveCert(hash);
-                    }
+                    askApproveCert(hash);
                 }
                 else if (!hasTriedHostkey && message.indexOf('incorrect-host-key:') == 0)
                 {

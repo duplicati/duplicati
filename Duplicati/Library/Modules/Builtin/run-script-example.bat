@@ -11,6 +11,7 @@ REM --run-script-before = <filename>
 REM --run-script-before-required = <filename>
 REM --run-script-timeout = <time>
 REM --run-script-after = <filename>
+REM --run-script-with-arguments = <boolean>
 REM
 REM --run-script-before = <filename>
 REM Duplicati will run the script before the backup job and waits for its 
@@ -44,6 +45,13 @@ REM warning is logged.
 REM The same exit codes as in --run-script-before are supported, but
 REM the operation will always continue (i.e. 1 => 0, 3 => 2, 5 => 4)
 REM as it has already completed so stopping it during stop is useless.
+REM
+REM --run-script-with-arguments = <boolean>
+REM If set to true, the script path will be parsed as a command line, and the
+REM arguments will be passed to the script. If set to false (default), 
+REM the script path will used as a single path.
+REM Use double- or single-quotes to pass arguments with spaces.
+REM Example: --run-script-before="\"C:\path to\script.bat\" \"arg1 \" arg2"
 
 
 

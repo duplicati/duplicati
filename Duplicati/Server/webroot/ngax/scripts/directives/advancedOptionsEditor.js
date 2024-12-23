@@ -27,6 +27,7 @@ backupApp.directive('advancedOptionsEditor', function() {
 
                 'retry-delay': 'shorttimespan',
                 'web-timeout': 'shorttimespan',
+                'read-write-timeout': 'shorttimespan',
                 'run-script-timeout': 'shorttimespan'
             };
 
@@ -102,6 +103,8 @@ backupApp.directive('advancedOptionsEditor', function() {
                     return 'size';
                 else if (item.Type == 'Timespan')
                     return 'timespan';
+                else if (item.Type == 'Decimal')
+                    return 'decimal';
                 else
                     return 'text';
             };

@@ -1,19 +1,24 @@
-﻿//  Copyright (C) 2015, The Duplicati Team
-//  http://www.duplicati.com, info@duplicati.com
-//
-//  This library is free software; you can redistribute it and/or modify
-//  it under the terms of the GNU Lesser General Public License as
-//  published by the Free Software Foundation; either version 2.1 of the
-//  License, or (at your option) any later version.
-//
-//  This library is distributed in the hope that it will be useful, but
-//  WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-//  Lesser General Public License for more details.
-//
-//  You should have received a copy of the GNU Lesser General Public
-//  License along with this library; if not, write to the Free Software
-//  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+// Copyright (C) 2024, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
+
 using System;
 using System.IO;
 using System.Collections.Generic;
@@ -27,6 +32,7 @@ using Duplicati.Library.Common.IO;
 using NUnit.Framework;
 using System.Runtime.InteropServices;
 using Duplicati.Library.Common;
+using Duplicati.Library.Interface;
 
 namespace Duplicati.UnitTest
 {
@@ -46,7 +52,7 @@ namespace Duplicati.UnitTest
                 string auth_password = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "unittest_authpassword.txt");
                 if (System.IO.File.Exists(auth_password))
                     opts["auth-password"] = File.ReadAllText(auth_password).Trim();
-                
+
                 return opts;
             }
         }
@@ -84,7 +90,7 @@ namespace Duplicati.UnitTest
             else if (other != null)
                 return other;
             else
-                using(var tf = new Library.Utility.TempFolder())
+                using (var tf = new Library.Utility.TempFolder())
                 {
                     tf.Protected = true;
                     return "file://" + tf;
@@ -113,41 +119,41 @@ namespace Duplicati.UnitTest
 
                 if (!Directory.Exists(t))
                     Directory.CreateDirectory(t);
-                
+
                 try { Directory.SetCreationTimeUtc(t, Directory.GetCreationTimeUtc(c)); }
-                catch(Exception ex) 
-                { 
+                catch (Exception ex)
+                {
                     if (timestampfailures++ < 20)
-                        Console.WriteLine("Failed to set creation time on dir {0}: {1}", t, ex.Message); 
+                        Console.WriteLine("Failed to set creation time on dir {0}: {1}", t, ex.Message);
                 }
 
                 try { Directory.SetLastWriteTimeUtc(t, Directory.GetLastWriteTimeUtc(c)); }
-                catch(Exception ex) 
-                { 
+                catch (Exception ex)
+                {
                     if (timestampfailures++ < 20)
-                        Console.WriteLine("Failed to set write time on dir {0}: {1}", t, ex.Message); 
+                        Console.WriteLine("Failed to set write time on dir {0}: {1}", t, ex.Message);
                 }
 
-                
-                foreach(var n in Directory.EnumerateFiles(c))
+
+                foreach (var n in Directory.EnumerateFiles(c))
                 {
                     var tf = Path.Combine(t, Path.GetFileName(n));
                     File.Copy(n, tf, true);
                     try { File.SetCreationTimeUtc(tf, System.IO.File.GetCreationTimeUtc(n)); }
-                    catch(Exception ex)
+                    catch (Exception ex)
                     {
                         if (timestampfailures++ < 20)
-                            Console.WriteLine("Failed to set creation time on file {0}: {1}", n, ex.Message); 
+                            Console.WriteLine("Failed to set creation time on file {0}: {1}", n, ex.Message);
                     }
                     try { File.SetLastWriteTimeUtc(tf, System.IO.File.GetLastWriteTimeUtc(n)); }
-                    catch(Exception ex)
+                    catch (Exception ex)
                     {
                         if (timestampfailures++ < 20)
-                            Console.WriteLine("Failed to set write time on file {0}: {1}", n, ex.Message); 
+                            Console.WriteLine("Failed to set write time on file {0}: {1}", n, ex.Message);
                     }
                 }
 
-                foreach(var n in Directory.EnumerateDirectories(c))
+                foreach (var n in Directory.EnumerateDirectories(c))
                     work.Enqueue(n);
             }
 
@@ -164,7 +170,7 @@ namespace Duplicati.UnitTest
         private static int IndexOf(List<string> lst, string m)
         {
             StringComparison sc = Duplicati.Library.Utility.Utility.ClientFilenameStringComparison;
-            for(int i = 0; i < lst.Count; i++)
+            for (int i = 0; i < lst.Count; i++)
                 if (lst[i].Equals(m, sc))
                     return i;
 
@@ -248,7 +254,7 @@ namespace Duplicati.UnitTest
                 // macOS seem to like to actually set the time to some value different than what you set by hundreds of milliseconds.
                 // Reading the time right after it is set gives the expected value but when read later it is slightly different.
                 // Maybe a bug in .net?
-                int granularity = Platform.IsClientOSX ? 2999 : 1;
+                int granularity = OperatingSystem.IsMacOS() ? 2999 : 1;
                 Assert.That(
                     SystemIO.IO_OS.GetLastWriteTimeUtc(actualFile),
                     Is.EqualTo(SystemIO.IO_OS.GetLastWriteTimeUtc(expectedFile)).Within(granularity).Milliseconds,
@@ -263,14 +269,14 @@ namespace Duplicati.UnitTest
         public static Dictionary<string, string> Expand(this Dictionary<string, string> self, object extra)
         {
             var res = new Dictionary<string, string>(self);
-            foreach(var n in extra.GetType().GetFields())
+            foreach (var n in extra.GetType().GetFields())
             {
                 var name = n.Name.Replace('_', '-');
                 var value = n.GetValue(extra);
                 res[name] = value == null ? "" : value.ToString();
             }
 
-            foreach(var n in extra.GetType().GetProperties())
+            foreach (var n in extra.GetType().GetProperties())
             {
                 var name = n.Name.Replace('_', '-');
                 var value = n.GetValue(extra);
@@ -289,6 +295,26 @@ namespace Duplicati.UnitTest
             {
                 Utility.CopyStream(new MemoryStream(contents), fileStream);
             }
+        }
+
+        public static void WriteTestFile(string path, long size)
+        {
+            var data = new byte[size];
+            new Random(path.GetHashCode()).NextBytes(data);
+            File.WriteAllBytes(path, data);
+        }
+
+        public static void AssertResults(IBasicResults results)
+        {
+            string operation = "Result";
+            // Use dynamic property access for MainOperation, because it is only exposed in internal classes
+            PropertyInfo operationProperty = results.GetType().GetProperty("MainOperation", typeof(Library.Main.OperationMode));
+            if (operationProperty != null)
+            {
+                operation = ((Library.Main.OperationMode)operationProperty.GetValue(results)).ToString();
+            }
+            Assert.AreEqual(0, results.Errors.Count(), "{0} errors:\n{1}", operation, string.Join("\n", results.Errors));
+            Assert.AreEqual(0, results.Warnings.Count(), "{0} warnings:\n{1}", operation, string.Join("\n", results.Warnings));
         }
     }
 }

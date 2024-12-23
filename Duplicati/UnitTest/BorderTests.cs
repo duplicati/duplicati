@@ -1,19 +1,24 @@
-﻿//  Copyright (C) 2015, The Duplicati Team
-//  http://www.duplicati.com, info@duplicati.com
-//
-//  This library is free software; you can redistribute it and/or modify
-//  it under the terms of the GNU Lesser General Public License as
-//  published by the Free Software Foundation; either version 2.1 of the
-//  License, or (at your option) any later version.
-//
-//  This library is distributed in the hope that it will be useful, but
-//  WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-//  Lesser General Public License for more details.
-//
-//  You should have received a copy of the GNU Lesser General Public
-//  License along with this library; if not, write to the Free Software
-//  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+﻿// Copyright (C) 2024, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
+
 using System;
 using NUnit.Framework;
 using System.IO;
@@ -27,10 +32,9 @@ namespace Duplicati.UnitTest
     {
         private readonly string recreatedDatabaseFile = Path.Combine(BASEFOLDER, "recreated-database.sqlite");
 
-        public override void TearDown()
+        [TearDown]
+        public void TearDown()
         {
-            base.TearDown();
-
             if (File.Exists(this.recreatedDatabaseFile))
             {
                 File.Delete(this.recreatedDatabaseFile);
@@ -41,8 +45,9 @@ namespace Duplicati.UnitTest
         [Category("Border")]
         public void Run10kNoProgress()
         {
-            RunCommands(1024 * 10, modifyOptions: opts => { 
-                opts["disable-file-scanner"] = "true"; 
+            RunCommands(1024 * 10, modifyOptions: opts =>
+            {
+                opts["disable-file-scanner"] = "true";
             });
         }
 
@@ -57,7 +62,8 @@ namespace Duplicati.UnitTest
         [Category("Border")]
         public void Run10mb()
         {
-            RunCommands(1024 * 10, modifyOptions: opts => { 
+            RunCommands(1024 * 10, modifyOptions: opts =>
+            {
                 opts["blocksize"] = "10mb";
             });
         }
@@ -87,7 +93,8 @@ namespace Duplicati.UnitTest
         [Category("Border")]
         public void RunNoMetadata()
         {
-            RunCommands(1024 * 10, modifyOptions: opts => {
+            RunCommands(1024 * 10, modifyOptions: opts =>
+            {
                 opts["skip-metadata"] = "true";
             });
         }
@@ -97,17 +104,19 @@ namespace Duplicati.UnitTest
         [Category("Border")]
         public void RunMD5()
         {
-            RunCommands(1024 * 10, modifyOptions: opts => {
+            RunCommands(1024 * 10, modifyOptions: opts =>
+            {
                 opts["block-hash-algorithm"] = "MD5";
                 opts["file-hash-algorithm"] = "MD5";
             });
         }
-            
+
         [Test]
         [Category("Border")]
         public void RunSHA384()
         {
-            RunCommands(1024 * 10, modifyOptions: opts => {
+            RunCommands(1024 * 10, modifyOptions: opts =>
+            {
                 opts["block-hash-algorithm"] = "SHA384";
                 opts["file-hash-algorithm"] = "SHA384";
             });
@@ -117,7 +126,8 @@ namespace Duplicati.UnitTest
         [Category("Border")]
         public void RunMixedBlockFile_1()
         {
-            RunCommands(1024 * 10, modifyOptions: opts => {
+            RunCommands(1024 * 10, modifyOptions: opts =>
+            {
                 opts["block-hash-algorithm"] = "MD5";
                 opts["file-hash-algorithm"] = "SHA1";
             });
@@ -127,7 +137,8 @@ namespace Duplicati.UnitTest
         [Category("Border")]
         public void RunMixedBlockFile_2()
         {
-            RunCommands(1024 * 10, modifyOptions: opts => {
+            RunCommands(1024 * 10, modifyOptions: opts =>
+            {
                 opts["block-hash-algorithm"] = "MD5";
                 opts["file-hash-algorithm"] = "SHA256";
             });
@@ -137,7 +148,8 @@ namespace Duplicati.UnitTest
         [Category("Border")]
         public void RunNoIndexFiles()
         {
-            RunCommands(1024 * 10, modifyOptions: opts => {
+            RunCommands(1024 * 10, modifyOptions: opts =>
+            {
                 opts["index-file-policy"] = "None";
             });
         }
@@ -146,7 +158,8 @@ namespace Duplicati.UnitTest
         [Category("Border")]
         public void RunSlimIndexFiles()
         {
-            RunCommands(1024 * 10, modifyOptions: opts => {
+            RunCommands(1024 * 10, modifyOptions: opts =>
+            {
                 opts["index-file-policy"] = "Lookup";
             });
         }
@@ -215,7 +228,7 @@ namespace Duplicati.UnitTest
 
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
             {
-                IBackupResults backupResults = c.Backup(new string[] {DATAFOLDER});
+                IBackupResults backupResults = c.Backup(new string[] { DATAFOLDER });
                 Assert.AreEqual(0, backupResults.Errors.Count());
 
                 // TODO: This sometimes results in a "No block hash found for file: C:\projects\duplicati\testdata\backup-data\a-0" warning.
@@ -227,7 +240,7 @@ namespace Duplicati.UnitTest
             testopts.Remove("block-hash-algorithm");
             testopts.Remove("file-hash-algorithm");
 
-            using(var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { version = 0 }), null))
+            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { version = 0 }), null))
             {
                 IListResults listResults = c.List("*");
                 Assert.AreEqual(0, listResults.Errors.Count());
@@ -238,12 +251,12 @@ namespace Duplicati.UnitTest
 
             // Do a "touch" on files to trigger a re-scan, which should do nothing
             //foreach (var k in filenames)
-                //if (File.Exists(Path.Combine(DATAFOLDER, "a" + k.Key)))
-                    //File.SetLastWriteTime(Path.Combine(DATAFOLDER, "a" + k.Key), DateTime.Now.AddSeconds(5));
+            //if (File.Exists(Path.Combine(DATAFOLDER, "a" + k.Key)))
+            //File.SetLastWriteTime(Path.Combine(DATAFOLDER, "a" + k.Key), DateTime.Now.AddSeconds(5));
 
             var data = new byte[filenames.Select(x => x.Value).Max()];
             new Random().NextBytes(data);
-            foreach(var k in filenames)
+            foreach (var k in filenames)
                 File.WriteAllBytes(Path.Combine(DATAFOLDER, "b" + k.Key), data.Take(k.Value).ToArray());
 
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
@@ -262,7 +275,7 @@ namespace Duplicati.UnitTest
             }
 
             var rn = new Random();
-            foreach(var k in filenames)
+            foreach (var k in filenames)
             {
                 rn.NextBytes(data);
                 File.WriteAllBytes(Path.Combine(DATAFOLDER, "c" + k.Key), data.Take(k.Value).ToArray());
@@ -271,12 +284,12 @@ namespace Duplicati.UnitTest
 
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
             {
-                IBackupResults backupResults = c.Backup(new string[] {DATAFOLDER});
+                IBackupResults backupResults = c.Backup(new string[] { DATAFOLDER });
                 Assert.AreEqual(0, backupResults.Errors.Count());
                 Assert.AreEqual(0, backupResults.Warnings.Count());
             }
 
-            using(var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { version = 0 }), null))
+            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { version = 0 }), null))
             {
                 var r = c.List("*");
                 Assert.AreEqual(0, r.Errors.Count());
@@ -286,7 +299,7 @@ namespace Duplicati.UnitTest
                 Assert.AreEqual((filenames.Count * 3) + 1, r.Files.Count());
             }
 
-            using(var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { version = 0, no_local_db = true }), null))
+            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { version = 0, no_local_db = true }), null))
             {
                 var r = c.List("*");
                 Assert.AreEqual(0, r.Errors.Count());
@@ -296,13 +309,21 @@ namespace Duplicati.UnitTest
                 Assert.AreEqual((filenames.Count * 3) + 1, r.Files.Count());
             }
 
+            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { full_remote_verification = true }), null))
+            {
+                var r = c.Test(long.MaxValue);
+                Assert.AreEqual(0, r.Errors.Count());
+                Assert.AreEqual(0, r.Warnings.Count());
+                Assert.IsFalse(r.Verifications.Any(p => p.Value.Any()));
+            }
+
             testopts["dbpath"] = this.recreatedDatabaseFile;
 
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
             {
                 IRepairResults repairResults = c.Repair();
                 Assert.AreEqual(0, repairResults.Errors.Count());
-                
+
                 // TODO: This sometimes results in a "No block hash found for file: C:\projects\duplicati\testdata\backup-data\a-0" warning.
                 // Because of this, we don't check for warnings here.
             }
@@ -315,7 +336,7 @@ namespace Duplicati.UnitTest
                 Assert.AreEqual(3, listResults.Filesets.Count());
             }
 
-            using(var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { version = 2 }), null))
+            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { version = 2 }), null))
             {
                 var r = c.List("*");
                 Assert.AreEqual(0, r.Errors.Count());
@@ -325,7 +346,7 @@ namespace Duplicati.UnitTest
                 Assert.AreEqual((filenames.Count * 1) + 1, r.Files.Count());
             }
 
-            using(var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { version = 1 }), null))
+            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { version = 1 }), null))
             {
                 var r = c.List("*");
                 Assert.AreEqual(0, r.Errors.Count());
@@ -335,7 +356,7 @@ namespace Duplicati.UnitTest
                 Assert.AreEqual((filenames.Count * 2) + 1, r.Files.Count());
             }
 
-            using(var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { version = 0 }), null))
+            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { version = 0 }), null))
             {
                 var r = c.List("*");
                 Assert.AreEqual(0, r.Errors.Count());
@@ -345,7 +366,15 @@ namespace Duplicati.UnitTest
                 Assert.AreEqual((filenames.Count * 3) + 1, r.Files.Count());
             }
 
-            using(var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { restore_path = RESTOREFOLDER, no_local_blocks = true }), null))
+            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { full_remote_verification = true }), null))
+            {
+                var r = c.Test(long.MaxValue);
+                Assert.AreEqual(0, r.Errors.Count());
+                Assert.AreEqual(0, r.Warnings.Count());
+                Assert.IsFalse(r.Verifications.Any(p => p.Value.Any()));
+            }
+
+            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { restore_path = RESTOREFOLDER }), null))
             {
                 var r = c.Restore(null);
                 Assert.AreEqual(0, r.Errors.Count());
@@ -355,9 +384,9 @@ namespace Duplicati.UnitTest
 
             TestUtils.AssertDirectoryTreesAreEquivalent(DATAFOLDER, RESTOREFOLDER, !Library.Utility.Utility.ParseBoolOption(testopts, "skip-metadata"), "Restore");
 
-            using(var tf = new Library.Utility.TempFolder())
+            using (var tf = new Library.Utility.TempFolder())
             {
-                using(var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { restore_path = (string)tf, no_local_blocks = true }), null))
+                using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { restore_path = (string)tf }), null))
                 {
                     var r = c.Restore(new string[] { Path.Combine(DATAFOLDER, "a") + "*" });
                     Assert.AreEqual(0, r.Errors.Count());

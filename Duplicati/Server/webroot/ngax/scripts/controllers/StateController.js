@@ -91,11 +91,11 @@ backupApp.controller('StateController', function($scope, $timeout, ServerStatus,
         function handleClick(ix) {
             if (ix == 0) 
             {
-                AppService.post('/task/' + taskId + '/stopaftercurrentfile');
+                AppService.post('/task/' + taskId + '/stop');
                 $scope.StopReqId = taskId;
             }
             else if (ix == 1) {
-                AppService.post('/task/' + taskId + '/stopnow');
+                AppService.post('/task/' + taskId + '/abort');
                 $scope.StopReqId = taskId;
             }
         };
@@ -104,8 +104,8 @@ backupApp.controller('StateController', function($scope, $timeout, ServerStatus,
         {
             DialogService.dialog(
                 gettextCatalog.getString("Stop running backup"),
-                gettextCatalog.getString("You can stop the backup after any file uploads currently in progress have finished."),
-                [gettextCatalog.getString("Stop after current file"), gettextCatalog.getString("Stop now"), gettextCatalog.getString("Cancel")],
+                gettextCatalog.getString("You can stop the backup after any file uploads currently in progress have finished. If you terminate the backup, the next run will need to recover from a failed backup."),
+                [gettextCatalog.getString("Stop after the current file"), gettextCatalog.getString("Terminate"), gettextCatalog.getString("Cancel")],
                 handleClick
             );
         }
@@ -113,8 +113,8 @@ backupApp.controller('StateController', function($scope, $timeout, ServerStatus,
         {
             DialogService.dialog(
                 gettextCatalog.getString("Stop running task"),
-                gettextCatalog.getString("You can stop the task immediately, or allow the process to continue its current file and then stop."),
-                [gettextCatalog.getString("Stop after the current file"), gettextCatalog.getString("Stop now"), gettextCatalog.getString("Cancel")],
+                gettextCatalog.getString("You can stop the task immediately, or allow the process to continue its current file and then stop. If you terminate the task, the backup could be left in an inconsistent state."),
+                [gettextCatalog.getString("Stop after the current file"), gettextCatalog.getString("Terminate"), gettextCatalog.getString("Cancel")],
                 handleClick
             );
         }

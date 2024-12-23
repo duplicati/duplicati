@@ -1,25 +1,31 @@
-﻿//  Copyright (C) 2015, The Duplicati Team
-//  http://www.duplicati.com, info@duplicati.com
-//
-//  This library is free software; you can redistribute it and/or modify
-//  it under the terms of the GNU Lesser General Public License as
-//  published by the Free Software Foundation; either version 2.1 of the
-//  License, or (at your option) any later version.
-//
-//  This library is distributed in the hope that it will be useful, but
-//  WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-//  Lesser General Public License for more details.
-//
-//  You should have received a copy of the GNU Lesser General Public
-//  License along with this library; if not, write to the Free Software
-//  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+﻿// Copyright (C) 2024, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using Duplicati.Library.Interface;
 using Amazon.IdentityManagement;
 using Amazon.IdentityManagement.Model;
+using Duplicati.Library.Localization.Short;
 
 namespace Duplicati.Library.Backend
 {
@@ -62,20 +68,20 @@ namespace Duplicati.Library.Backend
 
         public string Key { get { return "s3-iamconfig"; } }
 
-        public string DisplayName { get { return "S3 IAM support module"; } }
+        public string DisplayName { get { return LC.L("S3 IAM support module"); } }
 
-        public string Description { get { return "Exposes S3 IAM manipulation as a web module"; } }
+        public string Description { get { return LC.L("Expose S3 IAM manipulation as a web module"); } }
 
 
         public IList<ICommandLineArgument> SupportedCommands
         {
             get
             {
-                return new List<ICommandLineArgument>(new ICommandLineArgument[] {
-                    new CommandLineArgument(KEY_OPERATION, CommandLineArgument.ArgumentType.Enumeration, "The operation to perform", "Selects the operation to perform", null, Enum.GetNames(typeof(Operation))),
-                    new CommandLineArgument(KEY_USERNAME, CommandLineArgument.ArgumentType.String, "The username", "The Amazon Access Key ID"),
-                    new CommandLineArgument(KEY_PASSWORD, CommandLineArgument.ArgumentType.String, "The password", "The Amazon Secret Key"),
-                });
+                return new List<ICommandLineArgument>([
+                    new CommandLineArgument(KEY_OPERATION, CommandLineArgument.ArgumentType.Enumeration, LC.L("The operation to perform"), LC.L("Select the operation to perform"), null, Enum.GetNames(typeof(Operation))),
+                    new CommandLineArgument(KEY_USERNAME, CommandLineArgument.ArgumentType.String, LC.L("The username"), LC.L("The Amazon Access Key ID")),
+                    new CommandLineArgument(KEY_PASSWORD, CommandLineArgument.ArgumentType.String, LC.L("The password"), LC.L("The Amazon Secret Key")),
+                ]);
             }
         }
 
@@ -150,10 +156,10 @@ namespace Duplicati.Library.Backend
                 ActionNames = new[] { "iam:CreateUser" }.ToList()
             };
 
-            return cl.SimulatePrincipalPolicy(simulatePrincipalPolicy).
-                                        EvaluationResults.First().
-                                        EvalDecision == PolicyEvaluationDecisionType.Allowed;
-
+            return cl.SimulatePrincipalPolicyAsync(simulatePrincipalPolicy)
+                                        .GetAwaiter().GetResult()
+                                        .EvaluationResults.First()
+                                        .EvalDecision == PolicyEvaluationDecisionType.Allowed;
         }
 
         private static IDictionary<string, string> GetCreateUserDict(User user, AmazonIdentityManagementServiceClient cl)
@@ -190,7 +196,7 @@ namespace Duplicati.Library.Backend
             User user;
             try
             {
-                user = cl.GetUser().User;
+                user = cl.GetUserAsync().GetAwaiter().GetResult().User;
             }
             catch (Exception ex) when (ex is NoSuchEntityException || ex is ServiceFailureException)
             {
@@ -212,13 +218,13 @@ namespace Duplicati.Library.Backend
             var policydoc = GeneratePolicyDoc(path);
 
             var cl = new AmazonIdentityManagementServiceClient(awsid, awskey);
-            var user = cl.CreateUser(new CreateUserRequest(username)).User;
-            cl.PutUserPolicy(new PutUserPolicyRequest(
+            var user = cl.CreateUserAsync(new CreateUserRequest(username)).GetAwaiter().GetResult().User;
+            cl.PutUserPolicyAsync(new PutUserPolicyRequest(
                 user.UserName,
                 policyname,
                 policydoc
-            ));
-            var key = cl.CreateAccessKey(new CreateAccessKeyRequest { UserName = user.UserName }).AccessKey;
+            )).GetAwaiter().GetResult();
+            var key = cl.CreateAccessKeyAsync(new CreateAccessKeyRequest { UserName = user.UserName }).GetAwaiter().GetResult().AccessKey;
 
             return new Dictionary<string, string>
             {
@@ -229,4 +235,3 @@ namespace Duplicati.Library.Backend
         }
     }
 }
-

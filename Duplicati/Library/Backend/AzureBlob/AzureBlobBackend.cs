@@ -1,24 +1,26 @@
-#region Disclaimer / License
-// Copyright (C) 2015, The Duplicati Team
-// http://www.duplicati.com, info@duplicati.com
+// Copyright (C) 2024, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
 // 
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 2.1 of the License, or (at your option) any later version.
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
 // 
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
 // 
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-// 
-#endregion
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
 
 using Duplicati.Library.Interface;
+using Microsoft.Azure.Storage.Shared.Protocol;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
@@ -110,29 +112,29 @@ namespace Duplicati.Library.Backend.AzureBlob
             }
         }
 
-        public async Task PutAsync(string remotename, Stream input, CancellationToken cancelToken)
+        public Task PutAsync(string remotename, Stream input, CancellationToken cancelToken)
         {
-            await _azureBlob.AddFileStream(remotename, input, cancelToken);
+            return WrapWithExceptionHandler(_azureBlob.AddFileStream(remotename, input, cancelToken));
         }
 
-        public void Get(string remotename, string localname)
+        public async Task GetAsync(string remotename, string localname, CancellationToken cancellationToken)
         {
             using (var fs = File.Open(localname,
                 FileMode.Create, FileAccess.Write,
                 FileShare.None))
             {
-                Get(remotename, fs);
+                await GetAsync(remotename, fs, cancellationToken).ConfigureAwait(false);
             }
         }
 
-        public void Get(string remotename, Stream output)
+        public Task GetAsync(string remotename, Stream output, CancellationToken cancellationToken)
         {
-            _azureBlob.GetFileStream(remotename, output);
+            return WrapWithExceptionHandler(_azureBlob.GetFileStreamAsync(remotename, output, cancellationToken));
         }
 
-        public void Delete(string remotename)
+        public Task DeleteAsync(string remotename, CancellationToken cancellationToken)
         {
-            _azureBlob.DeleteObject(remotename);
+            return WrapWithExceptionHandler(_azureBlob.DeleteObjectAsync(remotename, cancellationToken));
         }
 
         public IList<ICommandLineArgument> SupportedCommands
@@ -144,17 +146,17 @@ namespace Duplicati.Library.Backend.AzureBlob
                         CommandLineArgument.ArgumentType.String,
                         Strings.AzureBlobBackend.StorageAccountNameDescriptionShort,
                         Strings.AzureBlobBackend.StorageAccountNameDescriptionLong,
-                        null, null, null, "This is deprecated, use azure-account-name instead"),
+                        null, null, null, "This is deprecated. Use azure-account-name instead."),
                     new CommandLineArgument("azure_access_key",
                         CommandLineArgument.ArgumentType.Password,
                         Strings.AzureBlobBackend.AccessKeyDescriptionShort,
                         Strings.AzureBlobBackend.AccessKeyDescriptionLong,
-                        null, null, null, "This is deprecated, use azure-access-key instead"),
+                        null, null, null, "This is deprecated. Use azure-access-key instead."),
                     new CommandLineArgument("azure_blob_container_name",
                         CommandLineArgument.ArgumentType.String,
                         Strings.AzureBlobBackend.ContainerNameDescriptionShort,
                         Strings.AzureBlobBackend.ContainerNameDescriptionLong,
-                        null, null, null, "This is deprecated, use azure-blob-container-name instead"),
+                        null, null, null, "This is deprecated. Use azure-blob-container-name instead."),
                     new CommandLineArgument("azure-account-name",
                         CommandLineArgument.ArgumentType.String,
                         Strings.AzureBlobBackend.StorageAccountNameDescriptionShort,
@@ -192,19 +194,37 @@ namespace Duplicati.Library.Backend.AzureBlob
             }
         }
 
-        public string[] DNSName
+        public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(_azureBlob.DnsNames);
+
+        public Task TestAsync(CancellationToken cancellationToken)
         {
-            get { return _azureBlob.DnsNames; }
+            return WrapWithExceptionHandler(Task.Run(() => this.TestList()));
         }
 
-        public void Test()
+        public Task CreateFolderAsync(CancellationToken cancellationToken)
         {
-            this.TestList();
+            return WrapWithExceptionHandler(_azureBlob.AddContainerAsync(cancellationToken));
         }
 
-        public void CreateFolder()
+        private async Task WrapWithExceptionHandler(Task task)
         {
-            _azureBlob.AddContainer();
+            try
+            {
+                await task.ConfigureAwait(false);
+            }
+            catch (Microsoft.WindowsAzure.Storage.StorageException e)
+                when (e.RequestInformation.HttpStatusCode == 404
+                || e.RequestInformation.HttpStatusMessage == StorageErrorCodeStrings.ResourceNotFound)
+            {
+                throw new FileMissingException(e.Message, e);
+            }
+            catch (Microsoft.WindowsAzure.Storage.StorageException e)
+                when (e.RequestInformation.HttpStatusMessage == StorageErrorCodeStrings.ContainerNotFound
+                || e.RequestInformation.HttpStatusMessage == StorageErrorCodeStrings.ContainerBeingDeleted
+                || e.RequestInformation.HttpStatusMessage == StorageErrorCodeStrings.ContainerDisabled)
+            {
+                throw new FolderMissingException(e.Message, e);
+            }
         }
 
         public void Dispose()

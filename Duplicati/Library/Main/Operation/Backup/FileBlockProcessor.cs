@@ -1,22 +1,24 @@
-﻿#region Disclaimer / License
-// Copyright (C) 2019, The Duplicati Team
-// http://www.duplicati.com, info@duplicati.com
+// Copyright (C) 2024, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
 //
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 2.1 of the License, or (at your option) any later version.
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the "Software"),
+// to deal in the Software without restriction, including without limitation
+// the rights to use, copy, modify, merge, publish, distribute, sublicense,
+// and/or sell copies of the Software, and to permit persons to whom the
+// Software is furnished to do so, subject to the following conditions:
 //
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
 //
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-//
-#endregion
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+// DEALINGS IN THE SOFTWARE.
+
 using System;
 using CoCoL;
 using Duplicati.Library.Main.Operation.Common;
@@ -35,28 +37,26 @@ namespace Duplicati.Library.Main.Operation.Backup
         /// </summary>
         private static readonly string FILELOGTAG = Logging.Log.LogTagFromType(typeof(FileBlockProcessor)) + ".FileEntry";
 
-        public static Task Run(Snapshots.ISnapshotService snapshot, Options options, BackupDatabase database, BackupStatsCollector stats, ITaskReader taskreader, CancellationToken token)
+        public static Task Run(Channels channels, Snapshots.ISnapshotService snapshot, Options options, BackupDatabase database, BackupStatsCollector stats, ITaskReader taskreader)
         {
             return AutomationExtensions.RunTask(
-            new 
+            new
             {
-                Input = Channels.AcceptedChangedFile.ForRead,
-                StreamBlockChannel = Channels.StreamBlock.ForWrite,
+                Input = channels.AcceptedChangedFile.AsRead(),
+                StreamBlockChannel = channels.StreamBlock.AsWrite(),
             },
 
             async self =>
             {
-                while (await taskreader.ProgressAsync)
+                while (true)
                 {
                     var e = await self.Input.ReadAsync();
 
+                    // We ignore the stop signal, but not the pause and terminate
+                    await taskreader.ProgressRendevouz().ConfigureAwait(false);
+
                     try
                     {
-                        if (token.IsCancellationRequested)
-                        {
-                            break;
-                        }
-
                         var hint = options.GetCompressionHintFromFilename(e.Path);
                         var oldHash = e.OldId < 0 ? null : await database.GetFileHashAsync(e.OldId);
 
@@ -80,7 +80,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                                 return (await MetadataPreProcess.AddMetadataToOutputAsync(e.Path, e.MetaHashAndSize, database, self.StreamBlockChannel)).Item2;
                             });
 
-                        using (var fs = snapshot.OpenRead(e.Path))                            
+                        using (var fs = snapshot.OpenRead(e.Path))
                             filestreamdata = await StreamBlock.ProcessStream(self.StreamBlockChannel, e.Path, fs, false, hint);
 
                         await stats.AddOpenedFile(filestreamdata.Streamlength);
@@ -95,7 +95,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                                 Logging.Log.WriteVerboseMessage(FILELOGTAG, "NewFile", "New file {0}", e.Path);
                             else
                                 Logging.Log.WriteVerboseMessage(FILELOGTAG, "ChangedFile", "File has changed {0}", e.Path);
-                            
+
                             if (e.OldId < 0)
                             {
                                 await stats.AddAddedFile(filesize);
@@ -133,7 +133,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                             }
                         }
                     }
-                    catch(Exception ex)
+                    catch (Exception ex)
                     {
                         if (ex.IsRetiredException())
                             return;

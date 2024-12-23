@@ -1,4 +1,7 @@
 # Duplicati
+
+**English** | [中文](./README.zh-CN.md) | [日本語](./README.ja-JP.md)
+
 Store securely encrypted backups on cloud storage services!
 
 <!---
@@ -13,29 +16,28 @@ Removed Gitter
 -->
 
 [![Backers on Open Collective](https://opencollective.com/duplicati/backers/badge.svg)](#backers) [![Sponsors on Open Collective](https://opencollective.com/duplicati/sponsors/badge.svg)](#sponsors) [![Build Status on Travis-CI](https://travis-ci.org/duplicati/duplicati.svg?branch=master)](https://travis-ci.org/duplicati/duplicati)
-[![Build status on AppVeyor](https://ci.appveyor.com/api/projects/status/h8s5nau9mn311hq0/branch/master?svg=true)](https://ci.appveyor.com/project/kenkendk/duplicati/branch/master)
-[![Bountysource](https://www.bountysource.com/badge/tracker?tracker_id=4870652)](https://www.bountysource.com/teams/duplicati?tracker_ids=4870652&utm_medium=shield&utm_campaign=TRACKER_BADGE)
 [![Coverage Status](https://coveralls.io/repos/github/duplicati/duplicati/badge.svg?branch=HEAD)](https://coveralls.io/github/duplicati/duplicati?branch=HEAD)
-[![License](https://img.shields.io/github/license/duplicati/duplicati.svg)](https://github.com/duplicati/duplicati/blob/master/LICENSE.txt)
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/duplicati/duplicati/blob/master/LICENSE.txt)
+[![Gurubase](https://img.shields.io/badge/Gurubase-Ask%20Duplicati%20Guru-006BFF)](https://gurubase.io/g/duplicati)
 
 
 Duplicati is a free, open source, backup client that securely stores encrypted, incremental, compressed backups on cloud storage services and remote file servers. It works with:
 
-&nbsp;&nbsp; *Amazon S3, [IDrive e2](https://www.idrive.com/e2/duplicati "Using Duplicati with IDrive e2"), [Backblaze (B2)](https://www.backblaze.com/blog/duplicati-backups-cloud-storage/ "Duplicati with Backblaze B2 Cloud Storage"), Box, Dropbox, FTP, Google Cloud and Drive, HubiC, MEGA, Microsoft Azure and OneDrive, Rackspace Cloud Files, OpenStack Storage (Swift), Sia, Storj DCS, SSH (SFTP), WebDAV, Tencent Cloud Object Storage (COS), [and more!](https://duplicati.readthedocs.io/en/latest/01-introduction/#supported-backends)*
+&nbsp;&nbsp; *Amazon S3, [IDrive e2](https://www.idrive.com/e2/duplicati "Using Duplicati with IDrive e2"), [Backblaze (B2)](https://www.backblaze.com/blog/duplicati-backups-cloud-storage/ "Duplicati with Backblaze B2 Cloud Storage"), Box, Dropbox, FTP, Google Cloud and Drive, MEGA, Microsoft Azure and OneDrive, Rackspace Cloud Files, OpenStack Storage (Swift), Sia, Storj DCS, SSH (SFTP), WebDAV, Tencent Cloud Object Storage (COS), Aliyun OSS, [and more!](https://docs.duplicati.com/backup-destinations/destination-overview)*
 
-Duplicati is licensed under LGPL and available for Windows, OSX and Linux (.NET 4.7.1+ or Mono 5.10.0+ required). 
+Duplicati is licensed under the MIT license and available for Windows, OSX and Linux (.NET 4.7.1+ or Mono 5.10.0+ required).
 
 Download
 ========
 
-The latest version of Duplicati is a beta version for the Duplicati 2.0 release. 
+The latest version of Duplicati is a beta version for the Duplicati 2.0 release.
 
-[Click here to download the latest Duplicati 2.0 beta release.](http://www.duplicati.com/download)
+[Click here to download the latest Duplicati 2.0 beta release.](https://duplicati.com/download)
 
 The beta release will automatically notify you of updates and allows you to upgrade with a single click (or command in the terminal).
 For even more [bleeding edge access, check the latest releases](https://github.com/duplicati/duplicati/releases) or choose another update channel in the UI or on the commandline.
 
-All releases are GPG signed with the public key [3DAC703D](https://pgp.mit.edu/pks/lookup?op=get&search=0xC20E90473DAC703D). The latest signature file and latest ASCII signature file are also available from [the Duplicati download page](https://github.com/duplicati/duplicati/releases).
+All releases are GPG signed with the public key [3DAC703D](https://keys.openpgp.org/search?q=0xC20E90473DAC703D). The latest signature file and latest ASCII signature file are also available from [the Duplicati download page](https://github.com/duplicati/duplicati/releases).
 
 Support
 =======
@@ -52,7 +54,7 @@ Features
   * A scheduler keeps backups up-to-date automatically.
   * Integrated updater notifies you when a new release is out
   * Encrypted backup files are transferred to targets like FTP, Cloudfiles, WebDAV, SSH (SFTP), Amazon S3 and others.
-  * Duplicati allows backups of folders, document types like e.g. documents or images, or custom filter rules. 
+  * Duplicati allows backups of folders, document types like e.g. documents or images, or custom filter rules.
   * Duplicati is available as application with an easy-to-use user interface and as command line tool.
   * Duplicati can make proper backups of opened or locked files using the Volume Snapshot Service (VSS) under Windows or the Logical Volume Manager (LVM) under Linux. This allows Duplicati to back up the Microsoft Outlook PST file while Outlook is running.
   * Filters, deletion rules, transfer and bandwidth options, etc
@@ -60,8 +62,8 @@ Features
 Why use Duplicati?
 ==================
 
-Keep your data safe, store it far away, update your backup regularly! 
-This is a simple rule but many backup solutions do not achieve that today. 
+Keep your data safe, store it far away, update your backup regularly!
+This is a simple rule but many backup solutions do not achieve that today.
 But Duplicati does!
 
 Keep your data safe! Bad guys on the Internet seem to look for interesting data everywhere. But people do not want to see any of their private data revealed anywhere. Duplicati provides strong encryption to make sure that your data looks like garbage to others. With a well chosen password your backup files will be more safe on a public webserver than your unencrypted files at home.
@@ -93,14 +95,14 @@ Thank you to all our existing contributors:
 
 ## Backers
 
-Thank you to all our backers! 🙏 [[Become a backer](https://opencollective.com/duplicati#backer)]
+Thank you to all our backers! 🙏
 
 <a href="https://opencollective.com/duplicati#backers" target="_blank"><img src="https://opencollective.com/duplicati/backers.svg?width=890"></a>
 
 
 ## Sponsors
 
-Support this project by becoming a sponsor. Your logo will show up here with a link to your website. [[Become a sponsor](https://opencollective.com/duplicati#sponsor)]
+The list below reflects the sponsors who donated to the open-source project.
 
 <a href="https://opencollective.com/duplicati/sponsor/0/website" target="_blank"><img src="https://opencollective.com/duplicati/sponsor/0/avatar.svg"></a>
 <a href="https://opencollective.com/duplicati/sponsor/1/website" target="_blank"><img src="https://opencollective.com/duplicati/sponsor/1/avatar.svg"></a>
@@ -112,5 +114,3 @@ Support this project by becoming a sponsor. Your logo will show up here with a l
 <a href="https://opencollective.com/duplicati/sponsor/7/website" target="_blank"><img src="https://opencollective.com/duplicati/sponsor/7/avatar.svg"></a>
 <a href="https://opencollective.com/duplicati/sponsor/8/website" target="_blank"><img src="https://opencollective.com/duplicati/sponsor/8/avatar.svg"></a>
 <a href="https://opencollective.com/duplicati/sponsor/9/website" target="_blank"><img src="https://opencollective.com/duplicati/sponsor/9/avatar.svg"></a>
-
-

@@ -1,19 +1,24 @@
-﻿//  Copyright (C) 2015, The Duplicati Team
-//  http://www.duplicati.com, info@duplicati.com
-//
-//  This library is free software; you can redistribute it and/or modify
-//  it under the terms of the GNU Lesser General Public License as
-//  published by the Free Software Foundation; either version 2.1 of the
-//  License, or (at your option) any later version.
-//
-//  This library is distributed in the hope that it will be useful, but
-//  WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-//  Lesser General Public License for more details.
-//
-//  You should have received a copy of the GNU Lesser General Public
-//  License along with this library; if not, write to the Free Software
-//  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+// Copyright (C) 2024, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
+
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
@@ -22,6 +27,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -31,10 +37,10 @@ namespace Duplicati.Library.Backend.Backblaze
     {
         private const string B2_ID_OPTION = "b2-accountid";
         private const string B2_KEY_OPTION = "b2-applicationkey";
-		private const string B2_PAGESIZE_OPTION = "b2-page-size";
+        private const string B2_PAGESIZE_OPTION = "b2-page-size";
         private const string B2_DOWNLOAD_URL_OPTION = "b2-download-url";
 
-		private const string B2_CREATE_BUCKET_TYPE_OPTION = "b2-create-bucket-type";
+        private const string B2_CREATE_BUCKET_TYPE_OPTION = "b2-create-bucket-type";
         private const string DEFAULT_BUCKET_TYPE = "allPrivate";
 
         private const int DEFAULT_PAGE_SIZE = 500;
@@ -64,10 +70,10 @@ namespace Duplicati.Library.Backend.Backblaze
             m_prefix = Util.AppendDirSeparator("/" + uri.Path, "/");
 
             // For B2 we do not use a leading slash
-            while(m_prefix.StartsWith("/", StringComparison.Ordinal))
+            while (m_prefix.StartsWith("/", StringComparison.Ordinal))
                 m_prefix = m_prefix.Substring(1);
 
-            m_urlencodedprefix = string.Join("/", m_prefix.Split(new [] { '/' }).Select(x => Library.Utility.Uri.UrlPathEncode(x)));
+            m_urlencodedprefix = string.Join("/", m_prefix.Split(new[] { '/' }).Select(x => Library.Utility.Uri.UrlPathEncode(x)));
 
             m_bucketType = DEFAULT_BUCKET_TYPE;
             if (options.ContainsKey(B2_CREATE_BUCKET_TYPE_OPTION))
@@ -94,10 +100,10 @@ namespace Duplicati.Library.Backend.Backblaze
                 throw new UserInformationException(Strings.B2.NoB2UserIDError, "B2MissingUserID");
             if (string.IsNullOrEmpty(accountKey))
                 throw new UserInformationException(Strings.B2.NoB2KeyError, "B2MissingKey");
-            
+
             m_helper = new B2AuthHelper(accountId, accountKey);
 
-			m_pagesize = DEFAULT_PAGE_SIZE;
+            m_pagesize = DEFAULT_PAGE_SIZE;
             if (options.ContainsKey(B2_PAGESIZE_OPTION))
             {
                 int.TryParse(options[B2_PAGESIZE_OPTION], out m_pagesize);
@@ -111,7 +117,7 @@ namespace Duplicati.Library.Backend.Backblaze
             {
                 m_downloadUrl = options[B2_DOWNLOAD_URL_OPTION];
             }
-		}
+        }
 
         private BucketEntity Bucket
         {
@@ -121,7 +127,8 @@ namespace Duplicati.Library.Backend.Backblaze
                 {
                     var buckets = m_helper.PostAndGetJSONData<ListBucketsResponse>(
                         string.Format("{0}/b2api/v1/b2_list_buckets", m_helper.APIUrl),
-                        new ListBucketsRequest() {
+                        new ListBucketsRequest()
+                        {
                             AccountID = m_helper.AccountID
                         }
                     );
@@ -163,11 +170,16 @@ namespace Duplicati.Library.Backend.Backblaze
             throw new FileMissingException();
         }
 
-        private string DownloadUrl {
-            get {
-                if (string.IsNullOrEmpty(m_downloadUrl)) {
+        private string DownloadUrl
+        {
+            get
+            {
+                if (string.IsNullOrEmpty(m_downloadUrl))
+                {
                     return m_helper.DownloadUrl;
-                } else {
+                }
+                else
+                {
                     return m_downloadUrl;
                 }
             }
@@ -185,7 +197,7 @@ namespace Duplicati.Library.Backend.Backblaze
                     new CommandLineArgument(B2_CREATE_BUCKET_TYPE_OPTION, CommandLineArgument.ArgumentType.String, Strings.B2.B2createbuckettypeDescriptionShort, Strings.B2.B2createbuckettypeDescriptionLong, DEFAULT_BUCKET_TYPE),
                     new CommandLineArgument(B2_PAGESIZE_OPTION, CommandLineArgument.ArgumentType.Integer, Strings.B2.B2pagesizeDescriptionShort, Strings.B2.B2pagesizeDescriptionLong, DEFAULT_PAGE_SIZE.ToString()),
                     new CommandLineArgument(B2_DOWNLOAD_URL_OPTION, CommandLineArgument.ArgumentType.String, Strings.B2.B2downloadurlDescriptionShort, Strings.B2.B2downloadurlDescriptionLong),
-				});
+                });
 
             }
         }
@@ -207,8 +219,9 @@ namespace Duplicati.Library.Backend.Backblaze
             {
                 var p = measure.Position;
 
-                using(var hashalg = HashAlgorithmHelper.Create("sha1"))
-                    sha1 = Utility.Utility.ByteArrayAsHexString(hashalg.ComputeHash(measure));
+                // Compute the hash
+                using (var hashalg = HashFactory.CreateHasher("SHA1"))
+                    sha1 = Library.Utility.Utility.ByteArrayAsHexString(hashalg.ComputeHash(measure));
 
                 measure.Position = p;
             }
@@ -216,8 +229,9 @@ namespace Duplicati.Library.Backend.Backblaze
             {
                 // No seeking possible, use a temp file
                 tmp = new TempFile();
-                using(var sr = System.IO.File.OpenWrite(tmp))
-                using(var hc = new HashCalculatingStream(measure, "sha1"))
+                using (var sr = System.IO.File.OpenWrite(tmp))
+                using (var hasher = HashFactory.CreateHasher("SHA1"))
+                using (var hc = new HashCalculatingStream(measure, hasher))
                 {
                     await Utility.Utility.CopyStreamAsync(hc, sr, cancelToken).ConfigureAwait(false);
                     sha1 = hc.GetFinalHashString();
@@ -253,25 +267,28 @@ namespace Duplicati.Library.Backend.Backblaze
 
                 // Delete old versions
                 if (m_filecache.ContainsKey(remotename))
-                    Delete(remotename);
+                    await DeleteAsync(remotename, cancelToken).ConfigureAwait(false);
 
-                m_filecache[remotename] = new List<FileEntity>();                
-                m_filecache[remotename].Add(new FileEntity() {
-                    FileID = fileinfo.FileID,
-                    FileName = fileinfo.FileName,
-                    Action = "upload",
-                    Size = fileinfo.ContentLength,
-                    UploadTimestamp = (long)(DateTime.UtcNow - Utility.Utility.EPOCH).TotalMilliseconds
-                });
+                m_filecache[remotename] =
+                [
+                    new FileEntity()
+                    {
+                        FileID = fileinfo.FileID,
+                        FileName = fileinfo.FileName,
+                        Action = "upload",
+                        Size = fileinfo.ContentLength,
+                        UploadTimestamp = (long)(DateTime.UtcNow - Utility.Utility.EPOCH).TotalMilliseconds
+                    }
+                ];
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 m_filecache = null;
 
                 var code = (int)B2AuthHelper.GetExceptionStatusCode(ex);
                 if (code >= 500 && code <= 599)
                     m_uploadUrl = null;
-                
+
                 throw;
             }
             finally
@@ -280,7 +297,7 @@ namespace Duplicati.Library.Backend.Backblaze
             }
         }
 
-        public void Get(string remotename, System.IO.Stream stream)
+        public async Task GetAsync(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
         {
             AsyncHttpRequest req;
             if (m_filecache == null || !m_filecache.ContainsKey(remotename))
@@ -293,9 +310,9 @@ namespace Duplicati.Library.Backend.Backblaze
 
             try
             {
-                using(var resp = req.GetResponse())
-                using(var rs = req.GetResponseStream())
-                    Library.Utility.Utility.CopyStream(rs, stream);
+                using (var resp = req.GetResponse())
+                using (var rs = req.GetResponseStream())
+                    await Library.Utility.Utility.CopyStreamAsync(rs, stream, cancelToken).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -318,7 +335,8 @@ namespace Duplicati.Library.Backend.Backblaze
             {
                 var resp = m_helper.PostAndGetJSONData<ListFilesResponse>(
                     string.Format("{0}/b2api/v1/b2_list_file_versions", m_helper.APIUrl),
-                    new ListFilesRequest() {
+                    new ListFilesRequest()
+                    {
                         BucketID = Bucket.BucketID,
                         MaxFileCount = m_pagesize,
                         Prefix = m_prefix,
@@ -333,7 +351,7 @@ namespace Duplicati.Library.Backend.Backblaze
                 if (resp.Files == null || resp.Files.Length == 0)
                     break;
 
-                foreach(var f in resp.Files)
+                foreach (var f in resp.Files)
                 {
                     if (!f.FileName.StartsWith(m_prefix, StringComparison.Ordinal))
                         continue;
@@ -350,15 +368,15 @@ namespace Duplicati.Library.Backend.Backblaze
                     lst.Add(f);
                 }
 
-            } while(nextFileID != null);
+            } while (nextFileID != null);
 
             m_filecache = cache;
 
-            return 
+            return
                 (from x in m_filecache
-                    let newest = x.Value.OrderByDescending(y => y.UploadTimestamp).First()
-                    let ts = Utility.Utility.EPOCH.AddMilliseconds(newest.UploadTimestamp)
-                    select (IFileEntry)new FileEntry(x.Key, newest.Size, ts, ts)
+                 let newest = x.Value.OrderByDescending(y => y.UploadTimestamp).First()
+                 let ts = Utility.Utility.EPOCH.AddMilliseconds(newest.UploadTimestamp)
+                 select (IFileEntry)new FileEntry(x.Key, newest.Size, ts, ts)
                 ).ToList();
         }
 
@@ -368,13 +386,13 @@ namespace Duplicati.Library.Backend.Backblaze
                 await PutAsync(remotename, fs, cancelToken);
         }
 
-        public void Get(string remotename, string filename)
+        public async Task GetAsync(string remotename, string filename, CancellationToken cancelToken)
         {
             using (System.IO.FileStream fs = System.IO.File.Create(filename))
-                Get(remotename, fs);
+                await GetAsync(remotename, fs, cancelToken).ConfigureAwait(false);
         }
 
-        public void Delete(string remotename)
+        public async Task DeleteAsync(string remotename, CancellationToken cancelToken)
         {
             try
             {
@@ -383,11 +401,13 @@ namespace Duplicati.Library.Backend.Backblaze
 
                 if (!m_filecache.ContainsKey(remotename))
                     throw new FileMissingException();
-                
-                foreach(var n in m_filecache[remotename].OrderBy(x => x.UploadTimestamp))
-                    m_helper.PostAndGetJSONData<DeleteResponse>(
+
+                foreach (var n in m_filecache[remotename].OrderBy(x => x.UploadTimestamp))
+                    await m_helper.PostAndGetJSONDataAsync<DeleteResponse>(
                         string.Format("{0}/b2api/v1/b2_delete_file_version", m_helper.APIUrl),
-                        new DeleteRequest() {
+                        cancelToken,
+                        new DeleteRequest()
+                        {
                             FileName = m_prefix + remotename,
                             FileID = n.FileID
                         }
@@ -402,21 +422,24 @@ namespace Duplicati.Library.Backend.Backblaze
             }
         }
 
-        public void Test()
+        public Task TestAsync(CancellationToken cancelToken)
         {
             this.TestList();
+            return Task.CompletedTask;
         }
 
-        public void CreateFolder()
+        public async Task CreateFolderAsync(CancellationToken cancelToken)
         {
-            m_bucket = m_helper.PostAndGetJSONData<BucketEntity>(
+            m_bucket = await m_helper.PostAndGetJSONDataAsync<BucketEntity>(
                 string.Format("{0}/b2api/v1/b2_create_bucket", m_helper.APIUrl),
-                new BucketEntity() {
+                cancelToken,
+                new BucketEntity()
+                {
                     AccountID = m_helper.AccountID,
                     BucketName = m_bucketname,
                     BucketType = m_bucketType
                 }
-            );
+            ).ConfigureAwait(false);
         }
 
         public string DisplayName
@@ -434,10 +457,12 @@ namespace Duplicati.Library.Backend.Backblaze
             get { return Strings.B2.Description; }
         }
 
-        public string[] DNSName
-        {
-            get { return new string[] { new System.Uri(B2AuthHelper.AUTH_URL).Host, m_helper?.APIDnsName, m_helper?.DownloadDnsName} ; }
-        }
+        public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(new string[] {
+            new System.Uri(B2AuthHelper.AUTH_URL).Host,
+            m_helper?.APIDnsName,
+            m_helper?.DownloadDnsName
+        }.Where(x => !string.IsNullOrEmpty(x))
+        .ToArray());
 
         public void Dispose()
         {
