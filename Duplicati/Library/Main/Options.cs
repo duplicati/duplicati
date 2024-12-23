@@ -87,7 +87,7 @@ namespace Duplicati.Library.Main
         /// <summary>
         /// The default number of file processors instances
         /// </summary>
-        private readonly int DEFAULT_FILE_PROCESSORS = 1;
+        private readonly int DEFAULT_FILE_PROCESSORS = Math.Max(1, Environment.ProcessorCount / 2);
 
         /// <summary>
         /// The default number of hasher instances
