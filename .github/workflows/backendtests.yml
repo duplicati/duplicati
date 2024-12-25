@@ -12,7 +12,23 @@ jobs:
       azure_secrets_available: "${{ steps.check_azure.outputs.available }}"
       testcontainers_secrets_available: "${{ steps.check_testcontainers.outputs.available }}"
       google_secrets_available: "${{ steps.check_google.outputs.available }}"
+      pcloud_secrets_available: "${{ steps.check_pcloud.outputs.available }}"
     steps:
+      - id: check_pcloud
+        name: Check pCloud secrets
+        shell: bash
+        run: |
+          echo "Starting pCloud secrets check..."
+          if [[ -n "${{ secrets.TESTCREDENTIAL_PCLOUD_SERVER }}" ]] && \
+            [[ -n "${{ secrets.TESTCREDENTIAL_PCLOUD_TOKEN }}" ]] && \
+            [[ -n "${{ secrets.TESTCREDENTIAL_PCLOUD_FOLDER }}" ]]; then
+            echo "All pCloud secrets found"
+            echo "available=true" >> $GITHUB_OUTPUT
+          else
+            echo "Missing some pCloud secrets"
+            echo "available=false" >> $GITHUB_OUTPUT
+          fi
+          echo "pCloud check completed"
       - id: check_s3
         name: Check S3 secrets
         shell: bash
@@ -70,7 +86,7 @@ jobs:
             echo "Missing TestContainers token"
             echo "available=false" >> $GITHUB_OUTPUT
           fi
-          echo "Azure check completed"
+          echo "Testcontainers check completed"
 
       - id: check_google
         name: Check Google secrets
@@ -133,6 +149,45 @@ jobs:
           dotnet test --no-build --filter="ClassName~FtpTests"
           --logger:"console;verbosity=detailed"
           LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.sln
+
+  test_pcloud:
+    needs: check_secrets
+    if: needs.check_secrets.outputs.pcloud_secrets_available == 'true'
+    name: pCloud Tests
+    runs-on: "${{ matrix.os }}"
+    strategy:
+      max-parallel: 1
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - windows-latest
+          - macos-latest
+    steps:
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.x
+      - name: Checkout source
+        uses: actions/checkout@v4
+      - name: Restore NuGet dependencies
+        run: >-
+          dotnet restore
+          LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.sln
+      - name: Build project
+        run: >-
+          dotnet build --no-restore
+          LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.sln
+      - name: Run S3 tests
+        env:
+          TESTCREDENTIAL_PCLOUD_SERVER: "${{ secrets.TESTCREDENTIAL_PCLOUD_SERVER }}"
+          TESTCREDENTIAL_PCLOUD_TOKEN: "${{ secrets.TESTCREDENTIAL_PCLOUD_TOKEN }}"
+          TESTCREDENTIAL_PCLOUD_FOLDER: "${{ secrets.TESTCREDENTIAL_PCLOUD_FOLDER }}"
+        run: >-
+          dotnet test --no-build --filter="ClassName~pCloudTests"
+          --logger:"console;verbosity=detailed"
+          LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.sln
+
   test_s3:
     needs: check_secrets
     if: needs.check_secrets.outputs.s3_secrets_available == 'true'
@@ -352,7 +407,7 @@ jobs:
         run: >-
           dotnet build --no-restore
           LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.sln
-      - name: Run Dropbox tests
+      - name: Run Googledrive tests
         env:
           TESTCREDENTIAL_GOOGLEDRIVE_TOKEN: "${{ secrets.TESTCREDENTIAL_GOOGLEDRIVE_TOKEN }}"
           TESTCREDENTIAL_GOOGLEDRIVE_FOLDER: "${{ secrets.TESTCREDENTIAL_GOOGLEDRIVE_FOLDER }}"
