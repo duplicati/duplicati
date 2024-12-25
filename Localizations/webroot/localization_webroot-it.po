@@ -6,13 +6,13 @@
 # Andrea De Lunardi <a.delunardi@arca.com>, 2018
 # Francesco Infantini <infantini.francesco@gmail.com>, 2019
 # albanobattistella <albanobattistella@gmail.com>, 2024
-# Antonio Galiero, 2024
 # Folgore101 <andrea.gramegna@gmail.com>, 2024
+# Antonio Galiero, 2024
 # 
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"Last-Translator: Folgore101 <andrea.gramegna@gmail.com>, 2024\n"
+"Last-Translator: Antonio Galiero, 2024\n"
 "Language-Team: Italian (https://app.transifex.com/duplicati/teams/67655/it/)\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -231,7 +231,7 @@ msgstr "Giorni consentiti"
 
 #: templates/pause.html:52
 msgid "Also pause transfers"
-msgstr ""
+msgstr "Metti in pausa anche i trasferimenti"
 
 #: scripts/controllers/LocalDatabaseController.js:103
 msgid "An existing file was found at the new location"
@@ -267,7 +267,7 @@ msgstr "Applicazioni"
 
 #: scripts/controllers/SystemSettingsController.js:194
 msgid "Are you sure you want to delete the remote control registration?"
-msgstr ""
+msgstr "Sei sicuro di voler eliminare la registrazione del controllo remoto?"
 
 #: templates/export.html:8
 msgid "As Command-line"
@@ -521,7 +521,7 @@ msgstr "Annulla"
 
 #: templates/settings.html:56
 msgid "Cancel registration"
-msgstr ""
+msgstr "Cancella registrazione"
 
 #: scripts/directives/sourceFolderPicker.js:409
 msgid "Cannot include \"{{text}}\""
@@ -909,7 +909,7 @@ msgstr "Cancella database locale"
 
 #: templates/settings.html:68
 msgid "Delete remote control setup"
-msgstr ""
+msgstr "Elimina impostazione di controllo remoto"
 
 #: templates/delete.html:38 templates/delete.html:47
 msgid "Delete remote files"
@@ -980,7 +980,7 @@ msgstr "Percorso cartella"
 
 #: templates/settings.html:60
 msgid "Disable remote control"
-msgstr ""
+msgstr "Disabilita controllo remoto"
 
 #: templates/log.html:32
 msgid "Disabled"
@@ -1115,7 +1115,7 @@ msgstr "Indirizzo email del gruppo Office 365"
 
 #: templates/settings.html:64
 msgid "Enable remote control"
-msgstr ""
+msgstr "Abilita controllo remoto"
 
 #: templates/export.html:22
 msgid "Encrypt file"
@@ -1624,6 +1624,8 @@ msgstr "Se non inserisci una Chiave API, è richiesto il nome del detentore"
 msgid ""
 "If you pause transfers they could time out and cause retries or failures."
 msgstr ""
+"Se si mettono in pausa i trasferimenti, questi potrebbero andare in timeout "
+"e causare tentativi o fallimenti."
 
 #: templates/delete.html:32
 msgid ""
@@ -1857,6 +1859,8 @@ msgstr "MByte/s"
 #: templates/settings.html:51
 msgid "Machine is now registered, open this link to add it to your account:"
 msgstr ""
+"La macchina è ora registrata, apri questo link per aggiungerlo al tuo "
+"account"
 
 #: templates/localdatabase.html:8
 msgid "Maintenance"
@@ -2328,7 +2332,7 @@ msgstr "Precedente"
 
 #: scripts/services/ServerStatus.js:39
 msgid "Processing files to backup …"
-msgstr ""
+msgstr "Elaborazione dei file per il backup ..."
 
 #: templates/home.html:78
 msgid "Progress:"
@@ -2376,15 +2380,15 @@ msgstr "Regione"
 
 #: templates/settings.html:47
 msgid "Register for remote control"
-msgstr ""
+msgstr "Registrazione per il controllo remoto"
 
 #: scripts/controllers/SystemSettingsController.js:213
 msgid "Registered, waiting for accept"
-msgstr ""
+msgstr "Registrato, in attesa di accettazione"
 
 #: scripts/controllers/SystemSettingsController.js:209
 msgid "Registering machine..."
-msgstr ""
+msgstr "Registro macchina..."
 
 #: scripts/controllers/RestoreDirectController.js:40
 msgid "Registering temporary backup …"
@@ -2392,11 +2396,11 @@ msgstr "Registrazione backup temporaneo ..."
 
 #: templates/settings.html:42
 msgid "Registration URL"
-msgstr ""
+msgstr "URL di registrazione"
 
 #: scripts/controllers/SystemSettingsController.js:211
 msgid "Registration failed"
-msgstr ""
+msgstr "Registrazione fallita"
 
 #: scripts/controllers/EditBackupController.js:139
 msgid "Relative paths not allowed"
@@ -2420,23 +2424,23 @@ msgstr "Repository remoto"
 
 #: templates/settings.html:34
 msgid "Remote access control"
-msgstr ""
+msgstr "Controllo dell'accesso remoto"
 
 #: scripts/controllers/SystemSettingsController.js:215
 msgid "Remote control is configured but not enabled"
-msgstr ""
+msgstr "Controllo remoto è configurato ma non è abilitato"
 
 #: scripts/controllers/SystemSettingsController.js:207
 msgid "Remote control is connected"
-msgstr ""
+msgstr "Controllo remoto è connesso"
 
 #: scripts/controllers/SystemSettingsController.js:205
 msgid "Remote control is enabled but not connected"
-msgstr ""
+msgstr "Controllo remoto è abilitato ma non connesso"
 
 #: scripts/controllers/SystemSettingsController.js:219
 msgid "Remote control is not set up"
-msgstr ""
+msgstr "Controllo remoto non è configurato"
 
 #: templates/backends/rclone.html:10
 msgid "Remote path"
@@ -2686,7 +2690,7 @@ msgstr "Proprietà stato del server"
 
 #: templates/settings.html:121
 msgid "Set timezone to default"
-msgstr ""
+msgstr "Imposta il fuso orario predefinito"
 
 #: index.html:221 templates/settings.html:2
 msgid "Settings"
@@ -2759,7 +2763,7 @@ msgstr "Cartella sorgente"
 
 #: templates/home.html:67
 msgid "Source:"
-msgstr "Dimensione sorgente:"
+msgstr "Sorgente:"
 
 #: templates/settings.html:146
 msgid "Specific builds for developers only. Not for use with important data."
@@ -2799,7 +2803,7 @@ msgstr "Avvio del processo di ripristino ..."
 
 #: templates/settings.html:36
 msgid "Status: {{getRemoteControlStatusText()}}"
-msgstr ""
+msgstr "Stato: {{getRemoteControlStatusText()}}"
 
 #: scripts/controllers/StateController.js:108
 #: scripts/controllers/StateController.js:117
@@ -2918,7 +2922,7 @@ msgstr "Documentazione e risorse di Tencent Cloud COS"
 #: scripts/controllers/StateController.js:108
 #: scripts/controllers/StateController.js:117
 msgid "Terminate"
-msgstr ""
+msgstr "Termina"
 
 #: templates/backup-result/phases/test.html:3
 msgid "Test Phase"
@@ -3061,11 +3065,11 @@ msgstr ""
 
 #: templates/backends/s3.html:33
 msgid "The region parameter is only applied when creating a new bucket"
-msgstr "Il parametro area è applicato solo quando si crea un nuovo bucket"
+msgstr "Il parametro regione è applicato solo quando si crea un nuovo bucket"
 
 #: templates/backends/openstack.html:50
 msgid "The region parameter is only used when creating a bucket"
-msgstr "Il parametro area è utilizzato solo quando si crea un bucket"
+msgstr "Il parametro regione è utilizzato solo quando si crea un bucket"
 
 #: scripts/directives/backupEditUri.js:86
 msgid ""
@@ -3132,7 +3136,7 @@ msgstr "Tempo"
 
 #: templates/settings.html:117
 msgid "Time zone"
-msgstr ""
+msgstr "Fuso orario"
 
 #: templates/export.html:14
 msgid "To File"
@@ -3488,6 +3492,9 @@ msgid ""
 "finished. If you terminate the backup, the next run will need to recover "
 "from a failed backup."
 msgstr ""
+"È possibile interrompere il backup al termine del caricamento dei file in "
+"corso. Se si interrompe il backup, l'esecuzione successiva dovrà "
+"ripristinare un backup non riuscito."
 
 #: scripts/controllers/StateController.js:116
 msgid ""
@@ -3495,6 +3502,9 @@ msgid ""
 "current file and then stop. If you terminate the task, the backup could be "
 "left in an inconsistent state."
 msgstr ""
+"È possibile interrompere immediatamente l'attività o consentire al processo "
+"di continuare il suo file corrente e quindi interromperlo. Se si termina "
+"l'attività, il backup potrebbe rimanere in uno stato inconsistente."
 
 #: scripts/controllers/EditBackupController.js:403
 msgid ""
@@ -3671,7 +3681,7 @@ msgstr "fallito"
 
 #: templates/backends/rclone.html:3
 msgid "local repository, leave empty for local"
-msgstr ""
+msgstr "repository locale, lascia vuoto per il locale"
 
 #: scripts/services/EditUriBuiltins.js:1257
 msgid "oss_access_key_id"
@@ -3695,11 +3705,11 @@ msgstr "oss_region"
 
 #: templates/backends/pcloud.html:10
 msgid "pCloud EU (eapi.pcloud.com)"
-msgstr ""
+msgstr "pCloud EU (eapi.pcloud.com)"
 
 #: templates/backends/pcloud.html:7
 msgid "pCloud Global (api.pcloud.com)"
-msgstr ""
+msgstr "pCloud Global (api.pcloud.com)"
 
 #: templates/backends/rclone.html:11
 msgid "remote path, e.g. backup"

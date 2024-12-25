@@ -5,11 +5,11 @@
 # 
 # Translators:
 # Andrea Ricci <rccndr+github@gmail.com>, 2016
-# Francesco Infantini <infantini.francesco@gmail.com>, 2018
 # albanobattistella <albanobattistella@gmail.com>, 2020
-# Andrea De Lunardi <a.delunardi@arca.com>, 2024
 # Antonio Mazzarino <mzzntn95@gmail.com>, 2024
+# Andrea De Lunardi <a.delunardi@arca.com>, 2024
 # Folgore101 <andrea.gramegna@gmail.com>, 2024
+# Francesco Infantini <infantini.francesco@gmail.com>, 2024
 # Antonio Galiero, 2024
 # 
 #, fuzzy
@@ -75,6 +75,12 @@ msgid ""
 "program is available via the PATH environment variable. It is possible to "
 "supply the path to GPG using the option --{0}."
 msgstr ""
+"Il modulo di crittografia GPG utilizza il programma GNU Privacy Guard per "
+"crittografare e decrittografare i file. Richiede che l'eseguibile gpg sia "
+"disponibile sul sistema. In Windows si presume che si trovi nella cartella "
+"di installazione predefinita tra i file di programma, in Linux e OSX si "
+"presume che il programma sia disponibile tramite la variabile d'ambiente "
+"PATH. È possibile fornire il percorso di GPG utilizzando l'opzione --{0}."
 
 #: Library/Encryption/Strings.cs:42
 msgid "GNU Privacy Guard, external"
@@ -137,7 +143,7 @@ msgstr "Usa GPG Armor"
 
 #: Library/Encryption/Strings.cs:52
 msgid "Override the GPG command supplied for decryption."
-msgstr ""
+msgstr "Sovrascrivi il comando GPG fornito per la decrittazione"
 
 #: Library/Encryption/Strings.cs:53
 msgid "The GPG decryption command"
@@ -149,6 +155,8 @@ msgid ""
 "Override the default GPG encryption command \"{0}\". Normal usage is to "
 "request asymetric encryption with the setting {1}."
 msgstr ""
+"Sovrascrive il comando di crittografia GPG predefinito “{0}”. L'uso normale "
+"è quello di richiedere la crittografia asimmetrica con l'impostazione {1}."
 
 #: Library/Encryption/Strings.cs:55
 msgid "The GPG encryption command"
@@ -169,15 +177,15 @@ msgstr "Errore durante la chiamata di GnuPG, programma non terminto"
 
 #: Library/Encryption/Strings.cs:65
 msgid "Key must be at least 8 characters long"
-msgstr ""
+msgstr "La chiave deve essere almeno 8 caratteri"
 
 #: Library/Encryption/Strings.cs:66
 msgid "Key must not be empty"
-msgstr ""
+msgstr "La chiave non deve essere vuota"
 
 #: Library/Encryption/Strings.cs:67
 msgid "Refusing to encrypt with blacklisted key"
-msgstr ""
+msgstr "Rifiuto di crittografare con una chiave da una blacklist"
 
 #: Library/Interface/Strings.cs:26
 msgid "aliases"
@@ -247,10 +255,12 @@ msgstr "Cancellato"
 msgid ""
 "Encryption key used to encrypt target settings does not match current key."
 msgstr ""
+"La chiave di crittografia utilizzata per crittografare le impostazioni di "
+"destinazione non corrisponde alla chiave corrente."
 
 #: Library/Interface/Strings.cs:49
 msgid "Encryption key is missing."
-msgstr ""
+msgstr "Chiave di crittografia mancante"
 
 #: Library/Interface/CustomExceptions.cs:84
 #: Library/Interface/CustomExceptions.cs:92
@@ -427,7 +437,7 @@ msgstr ""
 #: Library/Backend/SharePoint/Strings.cs:31
 #: Library/Backend/WEBDAV/Strings.cs:31
 msgid "Supply the username used to connect to the server"
-msgstr ""
+msgstr "Fornisci lo username utilizzato per connettersi al server"
 
 #: Library/Backend/OpenStack/Strings.cs:36
 msgid ""
@@ -453,7 +463,7 @@ msgstr ""
 
 #: Library/Backend/OpenStack/Strings.cs:39
 msgid "Supply the API key used to connect to the server"
-msgstr ""
+msgstr "Fornisci la chiave API usata per connettersi al server"
 
 #: Library/Backend/OpenStack/Strings.cs:40
 #, csharp-format
@@ -490,7 +500,7 @@ msgstr ""
 
 #: Library/Backend/OpenStack/Strings.cs:45
 msgid "Supply the region used for creating a container"
-msgstr ""
+msgstr "Fornisci la regione usata per creare il container"
 
 #: Library/Backend/OpenStack/OpenStackConfig.cs:67
 msgid "OpenStack configuration module"
@@ -498,7 +508,7 @@ msgstr "Modulo di configurazione OpenStack"
 
 #: Library/Backend/OpenStack/OpenStackConfig.cs:69
 msgid "Expose OpenStack configuration as a web module"
-msgstr ""
+msgstr "Esponi la configurazione OpenStack come un modulo web"
 
 #: Library/Backend/OpenStack/OpenStackConfig.cs:77
 #: Library/Backend/GoogleServices/GCSConfig.cs:81
@@ -659,17 +669,17 @@ msgstr "Aggiunge un ritardo dopo aver caricato un file"
 #: Library/Backend/FTP/Strings.cs:55
 #, csharp-format
 msgid "Error on deleting file: {0}, error: {1}"
-msgstr ""
+msgstr "Errore nel cancellare il file : {0}, errore: {1}"
 
 #: Library/Backend/FTP/Strings.cs:56
 #, csharp-format
 msgid "Error reading file: {0}, error: {1}"
-msgstr ""
+msgstr "Errore di lettura file : {0}, errore: {1}"
 
 #: Library/Backend/FTP/Strings.cs:57
 #, csharp-format
 msgid "Error writing file: {0}, error: {1}"
-msgstr ""
+msgstr "Errore nella scrittura file: {0}, errore: {1}"
 
 #: Library/Backend/FTP/Strings.cs:58
 msgid ""
@@ -718,11 +728,11 @@ msgstr ""
 #: Library/Backend/FTP/Strings.cs:67
 #, csharp-format
 msgid "The file {0} was not found. Message: {1}"
-msgstr ""
+msgstr "Il file {0} non è stato trovato. Messaggio: {1}"
 
 #: Library/Backend/FTP/Strings.cs:68
 msgid "Treat the url path as absolute"
-msgstr ""
+msgstr "Considera il percorso dell'url come assoluto"
 
 #: Library/Backend/FTP/Strings.cs:69
 msgid ""
@@ -734,7 +744,7 @@ msgstr ""
 
 #: Library/Backend/FTP/Strings.cs:70
 msgid "Treat the url path as relative"
-msgstr ""
+msgstr "Considera il percorso dell'url come relativo"
 
 #: Library/Backend/FTP/Strings.cs:71
 msgid ""
@@ -746,7 +756,7 @@ msgstr ""
 
 #: Library/Backend/FTP/Strings.cs:72
 msgid "Use CWD instead of absolute paths"
-msgstr ""
+msgstr "Usa CWD invece dei path assoluti"
 
 #: Library/Backend/FTP/Strings.cs:73
 msgid ""
@@ -758,7 +768,7 @@ msgstr ""
 #: Library/Backend/FTP/Strings.cs:74
 #, csharp-format
 msgid "Error creating folder {0}, gave folder: {1}"
-msgstr ""
+msgstr "Errore creazione cartella {0}, hai dato la cartella: {1}"
 
 #: Library/Backend/GoogleServices/GCSConfig.cs:71
 msgid "Google Cloud Storage configuration module"
@@ -766,7 +776,7 @@ msgstr "Modulo di configurazione Google Cloud Storage"
 
 #: Library/Backend/GoogleServices/GCSConfig.cs:73
 msgid "Expose Google Cloud Storage configuration as a web module"
-msgstr ""
+msgstr "Esponi la configurazione Google Cloud Storage come modulo web"
 
 #: Library/Backend/GoogleServices/Strings.cs:27
 msgid ""
@@ -782,12 +792,12 @@ msgstr "Google Cloud Storage"
 #: Library/Backend/OAuthHelper/Strings.cs:26
 #, csharp-format
 msgid "You need an AuthID. You can get it from: {0}"
-msgstr ""
+msgstr "Hai bisogno di un AuthID. Puoi ottenerlo da: {0}"
 
 #: Library/Backend/GoogleServices/Strings.cs:30
 #, csharp-format
 msgid "You must supply a project ID with --{0} for creating a bucket."
-msgstr ""
+msgstr "Devi fornire un ID progetto con  --{0} per creare un bucket."
 
 #: Library/Backend/GoogleServices/Strings.cs:31
 #: Library/Backend/GoogleServices/Strings.cs:47
@@ -819,7 +829,7 @@ msgstr ""
 
 #: Library/Backend/GoogleServices/Strings.cs:35
 msgid "Specify location option for creating a bucket"
-msgstr ""
+msgstr "Specificare l'opzione di posizione per la creazione di un bucket"
 
 #: Library/Backend/GoogleServices/Strings.cs:36
 #, csharp-format
@@ -832,7 +842,7 @@ msgstr ""
 
 #: Library/Backend/GoogleServices/Strings.cs:38
 msgid "Specify storage class for creating a bucket"
-msgstr ""
+msgstr "Specifica la storage class per creare il bucket"
 
 #: Library/Backend/GoogleServices/Strings.cs:39
 msgid ""
@@ -843,7 +853,7 @@ msgstr ""
 
 #: Library/Backend/GoogleServices/Strings.cs:40
 msgid "Specify project for creating a bucket"
-msgstr ""
+msgstr "Specifica il progetto per creare il bucket"
 
 #: Library/Backend/GoogleServices/Strings.cs:44
 msgid ""
@@ -858,7 +868,7 @@ msgstr "Google Drive"
 #: Library/Backend/GoogleServices/Strings.cs:46
 #, csharp-format
 msgid "There is more than one item named \"{0}\" in the folder \"{1}\"."
-msgstr ""
+msgstr "C'è più di un oggetto con il nome {0}\"  nella cartella \"{1}\"."
 
 #: Library/Backend/GoogleServices/Strings.cs:49
 msgid ""
@@ -875,6 +885,8 @@ msgid ""
 "This backend can read and write data to CloudFiles. Allowed format is "
 "\"cloudfiles://container/folder\"."
 msgstr ""
+"Il backend può leggere e scrivere i dati su CloudFiles. Il formato "
+"consentito è \"cloudfiles://container/folder\"."
 
 #: Library/Backend/CloudFiles/Strings.cs:25
 msgid "Rackspace CloudFiles"
@@ -894,11 +906,11 @@ msgstr "Fornire un altro URL di autenticazione"
 
 #: Library/Backend/CloudFiles/Strings.cs:32
 msgid "The API Access Key used to authenticate with CloudFiles."
-msgstr ""
+msgstr "La chiave d'accesso API usate per autenticarsi con CloudFiles"
 
 #: Library/Backend/CloudFiles/Strings.cs:33
 msgid "Supply the access key used to connect to the server"
-msgstr ""
+msgstr "Fornisci la chiave di accesso usata per connettersi al server"
 
 #: Library/Backend/CloudFiles/Strings.cs:34
 #, csharp-format
@@ -914,11 +926,11 @@ msgstr "Usa un account del Regno Unito"
 
 #: Library/Backend/CloudFiles/Strings.cs:36
 msgid "The username used to authenticate with CloudFiles."
-msgstr ""
+msgstr "Lo username utilizzato per autenticarsi con CloudFiles"
 
 #: Library/Backend/CloudFiles/Strings.cs:37
 msgid "Supply the username used to authenticate with CloudFiles"
-msgstr ""
+msgstr "Fornisci lo username usato per autenticarti con CloudFiles"
 
 #: Library/Backend/CloudFiles/Strings.cs:38
 msgid "MD5 Hash (ETag) verification failed"
@@ -951,7 +963,7 @@ msgstr "Modulo di configurazione S3"
 
 #: Library/Backend/S3/S3Config.cs:77
 msgid "Expose S3 configuration as a web module"
-msgstr ""
+msgstr "Espone la configurazione S3 come modulo web"
 
 #: Library/Backend/S3/Strings.cs:26
 msgid ""
@@ -972,7 +984,7 @@ msgstr ""
 
 #: Library/Backend/S3/Strings.cs:29
 msgid "AWS Secret Access Key"
-msgstr ""
+msgstr "Chiave di accesso segreta AWS"
 
 #: Library/Backend/S3/Strings.cs:30
 #, csharp-format
@@ -1017,7 +1029,7 @@ msgstr ""
 
 #: Library/Backend/S3/Strings.cs:43
 msgid "Specify an alternate S3 server name"
-msgstr ""
+msgstr "Specifica un nome del server S3 alternativo"
 
 #: Library/Backend/S3/Strings.cs:44
 msgid ""
@@ -1029,7 +1041,7 @@ msgstr ""
 
 #: Library/Backend/S3/Strings.cs:45
 msgid "Specify the S3 client library to use"
-msgstr ""
+msgstr "Specifica la libreria client S3 da usare"
 
 #: Library/Backend/S3/Strings.cs:46
 msgid ""
@@ -1071,7 +1083,7 @@ msgstr "Specifica classe archiviazione"
 #: Library/Backend/S3/Strings.cs:52
 #, csharp-format
 msgid "Unknown S3 client: {0}"
-msgstr ""
+msgstr "Client S3 sconosciuto"
 
 #: Library/Backend/S3/S3IAM.cs:71
 msgid "S3 IAM support module"
@@ -1087,7 +1099,7 @@ msgstr "L'operazione da eseguire"
 
 #: Library/Backend/S3/S3IAM.cs:81
 msgid "Select the operation to perform"
-msgstr ""
+msgstr "Seleziona l'operazione da eseguire"
 
 #: Library/Backend/S3/S3IAM.cs:82
 msgid "The username"
@@ -1115,7 +1127,7 @@ msgstr "Generatore Chiavi SSH"
 
 #: Library/Backend/SSHv2/Strings.cs:28
 msgid "A username to append to the public key."
-msgstr ""
+msgstr "Un nome utente da aggiungere alla chiave pubblica."
 
 #: Library/Backend/SSHv2/Strings.cs:29
 msgid "Public key username"
@@ -1123,7 +1135,7 @@ msgstr "Nome utente chiave pubblica"
 
 #: Library/Backend/SSHv2/Strings.cs:30
 msgid "Determines the type of key to generate."
-msgstr ""
+msgstr "Determina il tipo di chiave da generare."
 
 #: Library/Backend/SSHv2/Strings.cs:31
 msgid "The key type"
@@ -1131,7 +1143,7 @@ msgstr "Il tipo di chiave"
 
 #: Library/Backend/SSHv2/Strings.cs:32
 msgid "The length of the key in bits."
-msgstr ""
+msgstr "La lunghezza della chiave in bits."
 
 #: Library/Backend/SSHv2/Strings.cs:33
 msgid "The key length"
@@ -1147,7 +1159,7 @@ msgstr "Carica Chiave SSH"
 
 #: Library/Backend/SSHv2/Strings.cs:39
 msgid "The SSH connection URL used to establish the connection."
-msgstr ""
+msgstr "La URL di connessione SSH usata per stabilire una connessione."
 
 #: Library/Backend/SSHv2/Strings.cs:40
 msgid "The SSH connection URL"
@@ -1158,6 +1170,8 @@ msgid ""
 "The SSH public key must be a valid SSH string, which is appended to the "
 ".ssh/authorized_keys file."
 msgstr ""
+"La chiave pubblica SSH deve essere una stringa SSH valida, che viene "
+"aggiunto al file .ssh/authorized_keys. "
 
 #: Library/Backend/SSHv2/Strings.cs:42
 msgid "The SSH public key to append"
@@ -1197,7 +1211,7 @@ msgstr ""
 
 #: Library/Backend/SSHv2/Strings.cs:55
 msgid "Disable fingerprint validation"
-msgstr ""
+msgstr "Disattiva la validazione delle impronte digitali"
 
 #: Library/Backend/SSHv2/Strings.cs:56
 msgid ""
@@ -1208,7 +1222,7 @@ msgstr ""
 
 #: Library/Backend/SSHv2/Strings.cs:57 Library/Backend/SSHv2/Strings.cs:59
 msgid "Use a SSH private key to authenticate"
-msgstr ""
+msgstr "Usa la chiave privata SSH per autenticarti"
 
 #: Library/Backend/SSHv2/Strings.cs:58
 #, csharp-format
@@ -1238,7 +1252,7 @@ msgstr ""
 
 #: Library/Backend/SSHv2/Strings.cs:63
 msgid "Set a keepalive value"
-msgstr ""
+msgstr "Imposta un valore keepalive"
 
 #: Library/Backend/SSHv2/Strings.cs:64
 #, csharp-format
@@ -1323,7 +1337,7 @@ msgstr "Repository remoto"
 
 #: Library/Backend/Rclone/Strings.cs:32
 msgid "Path on the Remote repository."
-msgstr ""
+msgstr "Percorso sul repository remoto."
 
 #: Library/Backend/Rclone/Strings.cs:33
 msgid "Remote path"
@@ -1335,7 +1349,7 @@ msgstr "Le opzioni saranno trasferite su Rclone."
 
 #: Library/Backend/Rclone/Strings.cs:35
 msgid "Rclone options"
-msgstr ""
+msgstr "opzioni Rclone"
 
 #: Library/Backend/Rclone/Strings.cs:36
 msgid ""
@@ -1452,7 +1466,7 @@ msgstr ""
 
 #: Library/Backend/File/Strings.cs:41
 msgid "Disable length verification"
-msgstr ""
+msgstr "Disattiva verifica lunghezza"
 
 #: Library/Backend/Backblaze/Strings.cs:25
 msgid ""
@@ -1551,7 +1565,7 @@ msgstr "Percorso backup"
 
 #: Library/Backend/Sia/Strings.cs:30
 msgid "Supply a password for Sia server."
-msgstr ""
+msgstr "Fornisci una password per il Sia server"
 
 #: Library/Backend/Sia/Strings.cs:31
 msgid "Sia password"
@@ -1559,11 +1573,11 @@ msgstr "Password Sia"
 
 #: Library/Backend/Sia/Strings.cs:32
 msgid "The minimum value for redundancy is 1.0."
-msgstr ""
+msgstr "Il valore minimo per la ridondanza è 1.0."
 
 #: Library/Backend/Sia/Strings.cs:33
 msgid "Set the minimum redundancy"
-msgstr ""
+msgstr "Imposta la ridondanza minima"
 
 #: Library/Backend/OneDrive/Strings.cs:28
 #, csharp-format
@@ -1609,6 +1623,8 @@ msgstr "Ritardo in millisecondi tra gli errori del frammento"
 #: Library/Backend/OneDrive/Strings.cs:35
 msgid "Use this option to set HttpClient class to perform HTTP requests."
 msgstr ""
+"Usa questa opzione per configurare la classe HttpClient per eseguire "
+"richieste HTTP"
 
 #: Library/Backend/OneDrive/Strings.cs:36
 msgid "Whether the HttpClient class should be used"
@@ -1616,7 +1632,7 @@ msgstr "Se la classe HttpClient deve essere utilizzata"
 
 #: Library/Backend/OneDrive/Strings.cs:37
 msgid "The option --use-http-client is deprecated and has no effect."
-msgstr ""
+msgstr "L'opzione --use-http-client è deprecata e non ha effetti."
 
 #: Library/Backend/OneDrive/Strings.cs:42
 #, csharp-format
@@ -1628,7 +1644,7 @@ msgstr ""
 
 #: Library/Backend/OneDrive/Strings.cs:43
 msgid "Microsoft OneDrive"
-msgstr ""
+msgstr "Microsoft OneDrive"
 
 #: Library/Backend/OneDrive/Strings.cs:44
 #, csharp-format
@@ -1707,7 +1723,7 @@ msgstr "Indirizzo email del gruppo"
 
 #: Library/Backend/OneDrive/Strings.cs:66
 msgid "No group ID or group email address was provided."
-msgstr ""
+msgstr "Nessun gruppo ID o gruppo di indirizzi mail è stato fornito."
 
 #: Library/Backend/OneDrive/Strings.cs:67
 #, csharp-format
@@ -1730,7 +1746,7 @@ msgstr ""
 
 #: Library/Backend/AliyunOSS/Strings.cs:8
 msgid "Aliyun OSS (Object Storage Service)"
-msgstr ""
+msgstr "Aliyun OSS (Object Storage Service)"
 
 #: Library/Backend/AliyunOSS/Strings.cs:9
 msgid "Access Key ID is used to identify the user."
@@ -1765,7 +1781,7 @@ msgstr "Nome bucket"
 
 #: Library/Backend/AliyunOSS/Strings.cs:15
 msgid "Region indicates the physical location of the OSS data center."
-msgstr ""
+msgstr "La regione indica la posizione fisica del data center OSS"
 
 #: Library/Backend/AliyunOSS/Strings.cs:16
 msgid "Region"
@@ -1797,7 +1813,7 @@ msgstr ""
 
 #: Library/Backend/AzureBlob/Strings.cs:28
 msgid "The name of the storage container"
-msgstr ""
+msgstr "Il nome dello storage container"
 
 #: Library/Backend/AzureBlob/Strings.cs:29
 msgid "No Azure storage account name given"
@@ -1872,7 +1888,7 @@ msgstr "Chiave segreta"
 
 #: Library/Backend/TencentCOS/Strings.cs:35
 msgid "Bucket name, format: BucketName-APPID"
-msgstr ""
+msgstr "Nome bucket formato: NomeBucket-APPID"
 
 #: Library/Backend/TencentCOS/Strings.cs:37
 msgid ""
@@ -1907,11 +1923,13 @@ msgstr "Jottacloud"
 
 #: Library/Backend/Jottacloud/Strings.cs:29
 msgid "No username found"
-msgstr ""
+msgstr "Nessun username trovato"
 
 #: Library/Backend/Jottacloud/Strings.cs:30
 msgid "No path given. Files cannot be uploaded to the root folder"
 msgstr ""
+"Nessun percorso inserito. I files non possono essere caricati della cartella"
+" principale"
 
 #: Library/Backend/Jottacloud/Strings.cs:31
 msgid "Illegal mount point given."
@@ -2016,7 +2034,7 @@ msgstr ""
 
 #: Library/Backend/Idrivee2/Strings.cs:27
 msgid "IDrive e2"
-msgstr ""
+msgstr "IDrive e2"
 
 #: Library/Backend/Idrivee2/Strings.cs:28
 #, csharp-format
@@ -2120,7 +2138,7 @@ msgstr ""
 
 #: Library/Backend/SharePoint/Strings.cs:41
 msgid "Set timeout for SharePoint web operations"
-msgstr ""
+msgstr "Imposta un timeout per le operazioni web SharePoint"
 
 #: Library/Backend/SharePoint/Strings.cs:43
 msgid ""
@@ -2244,6 +2262,8 @@ msgid ""
 "Use this option to communicate using Secure Socket Layer (SSL) over http "
 "(https)."
 msgstr ""
+"Usa questa opzione per comunicare usando Secure Socket Layer (SSL) over http"
+" (https)."
 
 #: Library/Backend/WEBDAV/Strings.cs:41
 msgid ""
@@ -2290,7 +2310,7 @@ msgstr ""
 
 #: Library/Backend/pCloud/Strings.cs:28
 msgid "pCloud (Native API)"
-msgstr ""
+msgstr "pCloud(API Nativa)"
 
 #: Library/Backend/pCloud/Strings.cs:29
 msgid ""
@@ -2300,7 +2320,7 @@ msgstr ""
 
 #: Library/Backend/pCloud/Strings.cs:30
 msgid "Supply the oAuth token used to connect to the server"
-msgstr ""
+msgstr "Fornisci il token oAuth usato per connettersi al server"
 
 #: Library/Backend/pCloud/Strings.cs:31
 msgid ""
@@ -2317,7 +2337,7 @@ msgstr ""
 #: Library/Backend/pCloud/Strings.cs:33
 #, csharp-format
 msgid "Operation {0} failed with unexpected result code: {1}"
-msgstr ""
+msgstr "Operazione {0} fallita con un codice di errore inaspettato: {1}"
 
 #: Library/Backend/TahoeLAFS/Strings.cs:24
 msgid ""
@@ -2353,7 +2373,7 @@ msgstr ""
 
 #: Library/Backend/Storj/Strings.cs:29
 msgid "Connection-test failed."
-msgstr ""
+msgstr "Test di connessione fallito."
 
 #: Library/Backend/Storj/Strings.cs:30
 msgid ""
@@ -2445,7 +2465,7 @@ msgstr ""
 
 #: Library/SecretProvider/Strings.cs:7
 msgid "Secrets from environment variables"
-msgstr ""
+msgstr "Secrets da variabili di ambiente"
 
 #: Library/SecretProvider/Strings.cs:9
 msgid ""
@@ -2458,7 +2478,7 @@ msgstr ""
 
 #: Library/SecretProvider/Strings.cs:19
 msgid "Secrets from a file"
-msgstr ""
+msgstr "Secrets da un file"
 
 #: Library/SecretProvider/Strings.cs:21
 msgid ""
@@ -2474,7 +2494,7 @@ msgstr ""
 
 #: Library/SecretProvider/Strings.cs:31
 msgid "The decryption passphrase"
-msgstr ""
+msgstr "passphrase di decrittazione"
 
 #: Library/SecretProvider/Strings.cs:32
 msgid "The passphrase to use for decrypting the file with secrets"
@@ -2482,7 +2502,7 @@ msgstr ""
 
 #: Library/SecretProvider/Strings.cs:37
 msgid "Secrets from AWS Secrets Manager"
-msgstr ""
+msgstr "Secrets dal AWS Secrets Manager"
 
 #: Library/SecretProvider/Strings.cs:39
 msgid ""
@@ -2558,7 +2578,7 @@ msgstr ""
 
 #: Library/SecretProvider/Strings.cs:63
 msgid "Secrets from HashiCorp Vault"
-msgstr ""
+msgstr "Secrets dal Vault HashiCorp "
 
 #: Library/SecretProvider/Strings.cs:65
 msgid ""
@@ -2572,7 +2592,7 @@ msgstr ""
 
 #: Library/SecretProvider/Strings.cs:72
 msgid "The Vault token"
-msgstr ""
+msgstr "Token del Vault"
 
 #: Library/SecretProvider/Strings.cs:73
 msgid "The token to use for authentication with HashiCorp Vault"
@@ -2580,7 +2600,7 @@ msgstr ""
 
 #: Library/SecretProvider/Strings.cs:74
 msgid "The vault server protocol"
-msgstr ""
+msgstr "protocollo del server Vault"
 
 #: Library/SecretProvider/Strings.cs:75
 msgid "The protocol to use for communication with the Vault server"
@@ -2846,7 +2866,7 @@ msgstr ""
 
 #: Library/RestAPI/Strings.cs:9
 msgid "Another instance is running, and was notified"
-msgstr ""
+msgstr "Un'altra istanza è in esecuzione ed è stato notificato"
 
 #: Library/RestAPI/Strings.cs:10
 #, csharp-format
@@ -2866,11 +2886,13 @@ msgid ""
 "Supported commandline arguments:\n"
 "\n"
 msgstr ""
+"Argomenti supportati da riga di comando:\n"
+"\n"
 
 #: Library/RestAPI/Strings.cs:16
 #, csharp-format
 msgid "--{0}: {1}"
-msgstr ""
+msgstr "--{0}: {1}"
 
 #: Library/RestAPI/Strings.cs:17
 #, csharp-format
@@ -2899,6 +2921,10 @@ msgid ""
 "specify filters inside the parameter file. Each filter must be prefixed with"
 " either a + or a -, and multiple filters must be joined with {3}"
 msgstr ""
+"I filtri non possono essere specificati dalla riga di comando se sono "
+"presenti anche nel file parametri. Usa le opzioni speciali --{0}, --{1}, o "
+"--{2} per specificare i filtri all'interno del file parametri. Ogni filtro "
+"deve avere un prefisso + o un -, e più filtri devono essere uniti con {3}"
 
 #: Library/RestAPI/Strings.cs:20 CommandLine/CLI/Strings.cs:41
 #, csharp-format
@@ -2944,6 +2970,8 @@ msgstr ""
 #, csharp-format
 msgid "Unsupported version of SQLite detected ({0}), must be {1} or higher"
 msgstr ""
+"Rilevata una versione non supportata di SQLite ({0}), deve essere {1} o "
+"superiore"
 
 #: Library/RestAPI/Strings.cs:31
 msgid ""
@@ -2956,6 +2984,8 @@ msgid ""
 "The port the webserver listens on. Multiple values may be supplied with a "
 "comma in between."
 msgstr ""
+"La porta su cui il webserver è in ascolto. Valori multipli possono essere "
+"forniti con una virgola in mezzo."
 
 #: Library/RestAPI/Strings.cs:33
 msgid ""
@@ -2984,6 +3014,9 @@ msgid ""
 " means any interface. The special value \"loopback\" means the loopback "
 "adapter."
 msgstr ""
+"L'interfaccia su cui il webserver è in ascolto. I valori speciali \"*\" e "
+"\"any\" significano qualsiasi interfaccia. Il valore speciale \"loopback\" "
+"significa la scheda loopback."
 
 #: Library/RestAPI/Strings.cs:38
 msgid ""
@@ -2991,6 +3024,9 @@ msgid ""
 "do not need to set it on each run. Setting an empty value disables the "
 "password."
 msgstr ""
+"La password necessaria per accedere al webserver. Questa opzione è salvata "
+"in modo che non sia necessario impostarla su ogni volta. L'impostazione di "
+"un valore vuoto disattiva la password."
 
 #: Library/RestAPI/Strings.cs:39
 msgid ""
@@ -3030,6 +3066,10 @@ msgid ""
 " to choose where the settings are stored. This option can also be set with "
 "the environment variable {0}."
 msgstr ""
+"Duplicati ha bisogno di archiviare un piccolo database con tutte le "
+"impostazioni. Usa questa opzione per scegliere la posizione in cui sono "
+"archiviate le impostazioni. Questa opzione può essere impostata anche con la"
+" variabile d'ambiente {0}."
 
 #: Library/RestAPI/Strings.cs:45
 msgid "Set the folder where settings are stored"
@@ -3042,6 +3082,10 @@ msgid ""
 "database. This option can also be set with the environment variable {0}. Use"
 " the option --{1} to disable the database scrambling."
 msgstr ""
+"Questa opzione imposta la chiave di crittografia usata per codificare le "
+"impostazioni locali del database. Questa opzione può essere impostata anche "
+"con la variabile d'ambiente {0}. Usa l'opzione --{1} per disabilitare la "
+"codifica del database."
 
 #: Library/RestAPI/Strings.cs:47
 msgid "Set the database encryption key"
@@ -3226,7 +3270,7 @@ msgstr ""
 #: Library/RestAPI/Strings.cs:88
 #, csharp-format
 msgid "Server has started and is listening on {0}, port {1}"
-msgstr ""
+msgstr "Server avviato e in ascolto su {0}, porta {1}"
 
 #: Library/RestAPI/Strings.cs:89
 msgid ""
@@ -3237,7 +3281,7 @@ msgstr ""
 #: Library/RestAPI/Strings.cs:90
 #, csharp-format
 msgid "Unable to open a socket for listening, tried ports: {0}"
-msgstr ""
+msgstr "Impossibile aprire un socket per l'ascolto, porte provate: {0}"
 
 #: Library/DynamicLoader/Strings.cs:24
 #, csharp-format
@@ -5577,7 +5621,7 @@ msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:91
 msgid "Set the script timeout"
-msgstr ""
+msgstr "imposta il timeout dello script"
 
 #: Library/Modules/Builtin/Strings.cs:92
 msgid ""
@@ -5588,7 +5632,7 @@ msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:93
 msgid "Enable script arguments"
-msgstr ""
+msgstr "Abilita argomenti script"
 
 #: Library/Modules/Builtin/Strings.cs:97
 msgid "This module can send email after an operation completes"
@@ -5825,7 +5869,7 @@ msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:171
 msgid "Telegram report module"
-msgstr ""
+msgstr "modulo di report Telegram"
 
 #: Library/Modules/Builtin/Strings.cs:172
 msgid "Use this option to set the channel ID."
@@ -5851,7 +5895,7 @@ msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:188
 msgid "The Telegram API key"
-msgstr ""
+msgstr "Chiave API Telegram"
 
 #: Library/Modules/Builtin/Strings.cs:194
 msgid "Timeout occurred while sending to Telegram server"
@@ -5874,7 +5918,7 @@ msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:202
 msgid "HTTP report URL"
-msgstr ""
+msgstr "url HTTP per il report"
 
 #: Library/Modules/Builtin/Strings.cs:213
 msgid "Use this option to set a name of the parameter to send the message as."
@@ -5938,7 +5982,7 @@ msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:238
 msgid "Define a log level for messages"
-msgstr ""
+msgstr "Definisci il livello dei log per i messaggi"
 
 #: Library/Modules/Builtin/Strings.cs:239
 msgid ""
@@ -5960,7 +6004,7 @@ msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:242
 msgid "Limit log lines"
-msgstr ""
+msgstr "Limita le righe del log"
 
 #: Library/Modules/Builtin/ResultSerialization/ResultFormatSerializerProvider.cs:39
 #, csharp-format

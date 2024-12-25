@@ -138,7 +138,7 @@ msgstr "Gebruik GPG Armor"
 
 #: Library/Encryption/Strings.cs:52
 msgid "Override the GPG command supplied for decryption."
-msgstr ""
+msgstr "Overschrijf de GPG-opdracht die voor decodering is opgegeven."
 
 #: Library/Encryption/Strings.cs:53
 msgid "The GPG decryption command"
@@ -173,15 +173,15 @@ msgstr "Fout bij het uitvoeren van GnuPG, programma wil niet beëindigen"
 
 #: Library/Encryption/Strings.cs:65
 msgid "Key must be at least 8 characters long"
-msgstr ""
+msgstr "Sleutel moet minstens 8 tekens lang zijn."
 
 #: Library/Encryption/Strings.cs:66
 msgid "Key must not be empty"
-msgstr ""
+msgstr "Sleutel mag niet leeg zijn"
 
 #: Library/Encryption/Strings.cs:67
 msgid "Refusing to encrypt with blacklisted key"
-msgstr ""
+msgstr "Encryptie met een op een zwarte lijst geplaatste sleutel gwweigerd"
 
 #: Library/Interface/Strings.cs:26
 msgid "aliases"
@@ -251,10 +251,12 @@ msgstr "Afgebroken"
 msgid ""
 "Encryption key used to encrypt target settings does not match current key."
 msgstr ""
+"Coderingssleutel die gebruikt wordt voor het coderen van de doelinstellingen"
+" komt niet overeen met de huidige sleutel."
 
 #: Library/Interface/Strings.cs:49
 msgid "Encryption key is missing."
-msgstr ""
+msgstr "Encryptiesleutel ontbreekt."
 
 #: Library/Interface/CustomExceptions.cs:84
 #: Library/Interface/CustomExceptions.cs:92
@@ -438,6 +440,8 @@ msgstr ""
 #: Library/Backend/WEBDAV/Strings.cs:31
 msgid "Supply the username used to connect to the server"
 msgstr ""
+"Geef de gebruikersnaam op die wordt gebruikt om verbinding te maken met de "
+"server"
 
 #: Library/Backend/OpenStack/Strings.cs:36
 msgid ""
@@ -452,6 +456,8 @@ msgstr ""
 #: Library/Backend/OpenStack/Strings.cs:37
 msgid "Supply the Tenant Name used to connect to the server"
 msgstr ""
+"Geef de Tenant-naam op die gebruikt wordt om verbinding te maken met de "
+"server"
 
 #: Library/Backend/OpenStack/Strings.cs:38
 msgid ""
@@ -464,6 +470,8 @@ msgstr ""
 #: Library/Backend/OpenStack/Strings.cs:39
 msgid "Supply the API key used to connect to the server"
 msgstr ""
+"Geef de API sleutel op die gebruikt wordt om verbinding te maken met de "
+"server"
 
 #: Library/Backend/OpenStack/Strings.cs:40
 #, csharp-format
@@ -503,6 +511,7 @@ msgstr ""
 #: Library/Backend/OpenStack/Strings.cs:45
 msgid "Supply the region used for creating a container"
 msgstr ""
+"Geef de regio op die gebruikt wordt voor het aanmaken van een container"
 
 #: Library/Backend/OpenStack/OpenStackConfig.cs:67
 msgid "OpenStack configuration module"
@@ -510,7 +519,7 @@ msgstr "OpenStack configuratiemodule"
 
 #: Library/Backend/OpenStack/OpenStackConfig.cs:69
 msgid "Expose OpenStack configuration as a web module"
-msgstr ""
+msgstr "Toon OpenStack-configuratie als een webmodule"
 
 #: Library/Backend/OpenStack/OpenStackConfig.cs:77
 #: Library/Backend/GoogleServices/GCSConfig.cs:81
@@ -540,6 +549,9 @@ msgid ""
 "formats are \"aftp://hostname/folder\" and "
 "\"aftp://username:password@hostname/folder\"."
 msgstr ""
+"Deze backend kan gegevens lezen en schrijven naar een FTP-gebaseerde "
+"backend. Toegestane formaten zijn \"aftp://hostname/folder\" en "
+"\"aftp://username:password@hostname/folder\"."
 
 #: Library/Backend/FTP/Strings.cs:32
 msgid "FTP"
@@ -679,17 +691,17 @@ msgstr "Voeg een vertraging toe na het uploaden van een bestand"
 #: Library/Backend/FTP/Strings.cs:55
 #, csharp-format
 msgid "Error on deleting file: {0}, error: {1}"
-msgstr ""
+msgstr "Fout bij het verwijderen van bestand: {0}, fout: {1}"
 
 #: Library/Backend/FTP/Strings.cs:56
 #, csharp-format
 msgid "Error reading file: {0}, error: {1}"
-msgstr ""
+msgstr "Fout bij het lezen van bestand: {0}, fout: {1}"
 
 #: Library/Backend/FTP/Strings.cs:57
 #, csharp-format
 msgid "Error writing file: {0}, error: {1}"
-msgstr ""
+msgstr "Fout bij het schrijven naar bestand: {0}, fout: {1}"
 
 #: Library/Backend/FTP/Strings.cs:58
 msgid ""
@@ -701,7 +713,7 @@ msgstr ""
 
 #: Library/Backend/FTP/Strings.cs:59
 msgid "Instruct Duplicati to use an SSL (ftps) connection"
-msgstr ""
+msgstr "Laat Duplicati een SSL (ftps) verbinding gebruiken"
 
 #: Library/Backend/FTP/Strings.cs:60
 #, csharp-format
@@ -715,7 +727,7 @@ msgstr ""
 
 #: Library/Backend/FTP/Strings.cs:61 Library/Backend/FTP/Strings.cs:63
 msgid "Toggle the FTP connections method"
-msgstr ""
+msgstr "Schakel tussen de FTP verbindingmethodes"
 
 #: Library/Backend/FTP/Strings.cs:62
 #, csharp-format
@@ -792,7 +804,7 @@ msgstr "Google Cloud Storage configuratiemodule"
 
 #: Library/Backend/GoogleServices/GCSConfig.cs:73
 msgid "Expose Google Cloud Storage configuration as a web module"
-msgstr ""
+msgstr "Toon de Google Cloud Storage-configuratie als een webmodule"
 
 #: Library/Backend/GoogleServices/Strings.cs:27
 msgid ""
@@ -848,7 +860,7 @@ msgstr ""
 
 #: Library/Backend/GoogleServices/Strings.cs:35
 msgid "Specify location option for creating a bucket"
-msgstr ""
+msgstr "Geef de locatie-optie op voor het aanmaken van een bucket"
 
 #: Library/Backend/GoogleServices/Strings.cs:36
 #, csharp-format
@@ -861,7 +873,7 @@ msgstr ""
 
 #: Library/Backend/GoogleServices/Strings.cs:38
 msgid "Specify storage class for creating a bucket"
-msgstr ""
+msgstr "Geef opslagklasse op voor het aanmaken van een bucket"
 
 #: Library/Backend/GoogleServices/Strings.cs:39
 msgid ""
@@ -875,7 +887,7 @@ msgstr ""
 
 #: Library/Backend/GoogleServices/Strings.cs:40
 msgid "Specify project for creating a bucket"
-msgstr ""
+msgstr "Geef project op voor het aanmaken van een bucket"
 
 #: Library/Backend/GoogleServices/Strings.cs:44
 msgid ""
@@ -941,6 +953,8 @@ msgstr ""
 #: Library/Backend/CloudFiles/Strings.cs:33
 msgid "Supply the access key used to connect to the server"
 msgstr ""
+"Geef de toegangssleutel op die gebruikt wordt om verbinding te maken met de "
+"server"
 
 #: Library/Backend/CloudFiles/Strings.cs:34
 #, csharp-format
@@ -965,6 +979,8 @@ msgstr ""
 #: Library/Backend/CloudFiles/Strings.cs:37
 msgid "Supply the username used to authenticate with CloudFiles"
 msgstr ""
+"Geef de gebruikersnaam op die gebruikt wordt om te authentiseren met "
+"CloudFiles"
 
 #: Library/Backend/CloudFiles/Strings.cs:38
 msgid "MD5 Hash (ETag) verification failed"
@@ -997,7 +1013,7 @@ msgstr "S3 configuratiemodule"
 
 #: Library/Backend/S3/S3Config.cs:77
 msgid "Expose S3 configuration as a web module"
-msgstr ""
+msgstr "Toon de S3 configuratie als een webmodule"
 
 #: Library/Backend/S3/Strings.cs:26
 msgid ""
@@ -1069,7 +1085,7 @@ msgstr ""
 
 #: Library/Backend/S3/Strings.cs:43
 msgid "Specify an alternate S3 server name"
-msgstr ""
+msgstr "Geef een alternatieve S3 servernaam op"
 
 #: Library/Backend/S3/Strings.cs:44
 msgid ""
@@ -1081,7 +1097,7 @@ msgstr ""
 
 #: Library/Backend/S3/Strings.cs:45
 msgid "Specify the S3 client library to use"
-msgstr ""
+msgstr "Geef de S3 client-bibliotheek op die gebruikt moet worden"
 
 #: Library/Backend/S3/Strings.cs:46
 msgid ""
@@ -1096,7 +1112,7 @@ msgstr ""
 #: Library/Backend/S3/Strings.cs:47 Library/Backend/WEBDAV/Strings.cs:40
 #: Library/Backend/TahoeLAFS/Strings.cs:27
 msgid "Instruct Duplicati to use an SSL (https) connection"
-msgstr ""
+msgstr "Geef Duplicati de opdracht om een SSL (https) verbinding te gebruiken"
 
 #: Library/Backend/S3/Strings.cs:48
 msgid ""
@@ -1141,7 +1157,7 @@ msgstr "De uit te voeren bewerking"
 
 #: Library/Backend/S3/S3IAM.cs:81
 msgid "Select the operation to perform"
-msgstr ""
+msgstr "Selecteer de uit te voeren bewerking"
 
 #: Library/Backend/S3/S3IAM.cs:82
 msgid "The username"
@@ -1245,6 +1261,8 @@ msgstr ""
 #: Library/Backend/SSHv2/Strings.cs:53
 msgid "Supply server fingerprint used for validation of server identity"
 msgstr ""
+"Geef server-vingerafdruk op die gebruikt wordt voor validatie van "
+"serveridentiteit"
 
 #: Library/Backend/SSHv2/Strings.cs:54
 msgid ""
@@ -1258,7 +1276,7 @@ msgstr ""
 
 #: Library/Backend/SSHv2/Strings.cs:55
 msgid "Disable fingerprint validation"
-msgstr ""
+msgstr "Schakel vingerafdruk-validatie uit"
 
 #: Library/Backend/SSHv2/Strings.cs:56
 msgid ""
@@ -1266,6 +1284,10 @@ msgid ""
 "supplied is used to decrypt it. If the keyfile is specified, the password is"
 " not used to authenticate."
 msgstr ""
+"Verwijs naar een geldig OpenSSH-sleutelbestand. Als het  bestand is "
+"gecodeerd, wordt het opgegeven wachtwoord gebruikt om het te decoderen. Als "
+"deze optie wordt opgegeven, wordt het wachtwoord niet gebruikt voor "
+"authenticatie."
 
 #: Library/Backend/SSHv2/Strings.cs:57 Library/Backend/SSHv2/Strings.cs:59
 msgid "Use a SSH private key to authenticate"
@@ -1294,7 +1316,7 @@ msgstr ""
 
 #: Library/Backend/SSHv2/Strings.cs:61
 msgid "Set the operation timeout value"
-msgstr ""
+msgstr "Stel de time-out waarde van de bewerking in"
 
 #: Library/Backend/SSHv2/Strings.cs:62
 msgid ""
@@ -1755,7 +1777,7 @@ msgstr ""
 
 #: Library/Backend/OneDrive/Strings.cs:43
 msgid "Microsoft OneDrive"
-msgstr ""
+msgstr "Microsoft OneDrive"
 
 #: Library/Backend/OneDrive/Strings.cs:44
 #, csharp-format
@@ -1778,6 +1800,9 @@ msgid ""
 "Usage of this backend requires that you agree to the terms in {0} ({1}) and "
 "{2} ({3})."
 msgstr ""
+"Sla bestanden op in een Microsoft SharePoint site via de Microsoft Graph "
+"API. Gebruik van deze backend vereist dat u akkoord gaat met de voorwaarden "
+"in {0} ({1}) en {2} ({3})."
 
 #: Library/Backend/OneDrive/Strings.cs:51
 msgid "Microsoft SharePoint v2"
@@ -2036,7 +2061,7 @@ msgstr ""
 
 #: Library/Backend/TencentCOS/Strings.cs:38
 msgid "Specify COS location constraints"
-msgstr ""
+msgstr "Specificeer COS-locatiebeperkingen"
 
 #: Library/Backend/TencentCOS/Strings.cs:39
 msgid ""
@@ -2110,7 +2135,7 @@ msgstr ""
 
 #: Library/Backend/Jottacloud/Strings.cs:36
 msgid "Supply the mount point to use on the server"
-msgstr ""
+msgstr "Geef het koppelpunt op dat gebruikt moet worden op de server."
 
 #: Library/Backend/Jottacloud/Strings.cs:37
 msgid ""
@@ -2552,7 +2577,7 @@ msgstr "Storj DCS configuratiemodule"
 
 #: Library/Backend/Storj/StorjConfig.cs:46
 msgid "Expose Storj DCS configuration as a web module"
-msgstr ""
+msgstr "Toon Storj DCS configuratie als een webmodule"
 
 #: Library/Backend/Storj/Strings.cs:27
 msgid "This backend can read and write data to the Storj DCS."
@@ -3074,7 +3099,7 @@ msgstr ""
 
 #: Library/RestAPI/Strings.cs:9
 msgid "Another instance is running, and was notified"
-msgstr ""
+msgstr "Een andere instance is in uitvoering, en was aangekondigd"
 
 #: Library/RestAPI/Strings.cs:10
 #, csharp-format
@@ -3087,18 +3112,20 @@ msgstr ""
 
 #: Library/RestAPI/Strings.cs:12
 msgid "Display this help"
-msgstr ""
+msgstr "Geef deze helptekst weer"
 
 #: Library/RestAPI/Strings.cs:13
 msgid ""
 "Supported commandline arguments:\n"
 "\n"
 msgstr ""
+"Ondersteunde opdrachtregel argumenten:\n"
+"\n"
 
 #: Library/RestAPI/Strings.cs:16
 #, csharp-format
 msgid "--{0}: {1}"
-msgstr ""
+msgstr "--{0}: {1}"
 
 #: Library/RestAPI/Strings.cs:17
 #, csharp-format
@@ -3139,6 +3166,11 @@ msgid ""
 "specify filters inside the parameter file. Each filter must be prefixed with"
 " either a + or a -, and multiple filters must be joined with {3}"
 msgstr ""
+"Filters kunnen niet worden opgegeven vanaf de opdrachtregel als filters "
+"eveneens aanwezig zijn in het parameterbestand. Gebruik de speciale --{0}, "
+"--{1}, of --{2} opties om filters op te geven binnen het parameterbestand. "
+"Ieder filter moet worden voorafgegaan door een + of een -, en meerdere "
+"filters moeten worden samengevoegd met {3}"
 
 #: Library/RestAPI/Strings.cs:20 CommandLine/CLI/Strings.cs:41
 #, csharp-format
@@ -3152,12 +3184,15 @@ msgstr "Voer log-informatie uit naar een opgegeven bestand"
 #: Library/RestAPI/Strings.cs:23
 msgid "Determine the amount of information written in the log file"
 msgstr ""
+"Bepaal de hoeveelheid informatie die wordt geschreven naar het logbestand"
 
 #: Library/RestAPI/Strings.cs:24
 msgid ""
 "Activate portable mode where the database is placed below the program "
 "executable"
 msgstr ""
+"Activeer portable mode waarbij de database wordt opgeslagen onder het "
+"uitvoerbaar bestand van het programma"
 
 #: Library/RestAPI/Strings.cs:25
 #, csharp-format
@@ -3167,7 +3202,7 @@ msgstr "Een ernstige fout trad op in Duplicati: {0}"
 #: Library/RestAPI/Strings.cs:26
 #, csharp-format
 msgid "An error occurred on server tear down: {0}"
-msgstr ""
+msgstr "Er is een fout opgetreden bij het verwijderen van de server: {0}"
 
 #: Library/RestAPI/Strings.cs:27
 #, csharp-format
@@ -3175,27 +3210,35 @@ msgid ""
 "Unable to start up. Perhaps another process is already running?\n"
 "Error message: {0}"
 msgstr ""
+"Opstarten niet mogelijk. Er loopt wellicht al een ander proces?\n"
+"Foutmelding: {0}"
 
 #: Library/RestAPI/Strings.cs:29 Library/RestAPI/Strings.cs:58
 msgid "Disable database encryption"
-msgstr ""
+msgstr "Schakel database-versleuteling uit"
 
 #: Library/RestAPI/Strings.cs:30
 #, csharp-format
 msgid "Unsupported version of SQLite detected ({0}), must be {1} or higher"
 msgstr ""
+"Niet-ondersteunde versie van SQLite gedetecteerd ({0}), moet {1} zijn of "
+"hoger"
 
 #: Library/RestAPI/Strings.cs:31
 msgid ""
 "The path to the folder where the static files for the webserver is present. "
 "The folder must be located beneath the installation folder."
 msgstr ""
+"Het pad naar de map waar statische bestanden voor de webserver zich "
+"bevinden. De map moet zich bevinden onder de installatiemap."
 
 #: Library/RestAPI/Strings.cs:32
 msgid ""
 "The port the webserver listens on. Multiple values may be supplied with a "
 "comma in between."
 msgstr ""
+"De poort waarop de webserver luistert. Meerdere waarden mogen worden "
+"opgegeven met een komma ertussen."
 
 #: Library/RestAPI/Strings.cs:33
 msgid ""
@@ -3226,6 +3269,9 @@ msgid ""
 " means any interface. The special value \"loopback\" means the loopback "
 "adapter."
 msgstr ""
+"De interface waarop de webserver luistert. De speciale waarden \"*\" en "
+"\"any\" betekent iedere willekeurige interface. De speciale waarde "
+"\"loopback\" betekent de loopback adapter."
 
 #: Library/RestAPI/Strings.cs:38
 msgid ""
@@ -3233,6 +3279,9 @@ msgid ""
 "do not need to set it on each run. Setting an empty value disables the "
 "password."
 msgstr ""
+"Het wachtwoord dat vereist is om de webserver te benaderen. Deze optie wordt"
+" opgeslagen, dus het is niet nodig dit bij iedere uitvoering in te stellen. "
+"Het instellen van een lege waarde schakelt het wachtwoord uit."
 
 #: Library/RestAPI/Strings.cs:39
 msgid ""
@@ -3250,10 +3299,13 @@ msgid ""
 " responding. If this option is enabled, the server reads stdin and writes a "
 "reply to each line read."
 msgstr ""
+"Indien actief als server, moet de service deamon controleren dat het proces "
+"reageert. Als deze optie wordt ingeschakeld, leest de server stdin en "
+"schrijft een antwoord op iedere gelezen regel."
 
 #: Library/RestAPI/Strings.cs:41
 msgid "Enable the ping-pong responder"
-msgstr ""
+msgstr "Schakel de ping-pong responder in"
 
 #: Library/RestAPI/Strings.cs:42 Library/Main/Strings.cs:255
 msgid "Set the time after which log data will be purged from the database."
@@ -3270,6 +3322,9 @@ msgid ""
 " to choose where the settings are stored. This option can also be set with "
 "the environment variable {0}."
 msgstr ""
+"Duplicati moet een kleine database opslaan met alle instellingen. Gebruik "
+"deze optie om te kiezen waar de instellingen worden opgeslagen. Deze optie "
+"kan ook worden ingesteld met de omgevingsvariabele {0}."
 
 #: Library/RestAPI/Strings.cs:45
 msgid "Set the folder where settings are stored"
@@ -3282,6 +3337,10 @@ msgid ""
 "database. This option can also be set with the environment variable {0}. Use"
 " the option --{1} to disable the database scrambling."
 msgstr ""
+"Deze optie stelt de encryptiesleutel in die wordt gebruikt om de lokale "
+"instellingendatabase te versleutelen. Deze optie kan eveneens worden "
+"ingesteld met de omgevingsvariabele {0}. Gebruik de optie --{1} om het "
+"versleutelen van de database uit te schakelen."
 
 #: Library/RestAPI/Strings.cs:47
 msgid "Set the database encryption key"
@@ -3340,6 +3399,8 @@ msgstr ""
 #: Library/RestAPI/Strings.cs:57
 msgid "Use this option to disable database encryption of sensitive fields"
 msgstr ""
+"Gebruik deze optie om database-codering van gevoelige velden uit te "
+"schakelen"
 
 #: Library/RestAPI/Strings.cs:59
 msgid ""
@@ -3357,7 +3418,7 @@ msgstr ""
 
 #: Library/RestAPI/Strings.cs:62
 msgid "Set the log level for the Windows event log"
-msgstr ""
+msgstr "Stel het log-niveau in voor het Windows gebeurtenislogboek"
 
 #: Library/RestAPI/Strings.cs:63
 #, csharp-format
@@ -3377,12 +3438,12 @@ msgstr "Het Windows gebeurtenislogboek wordt niet ondersteund op dit platform"
 #: Library/RestAPI/Strings.cs:66
 #, csharp-format
 msgid "Server has started and is listening on port {0}"
-msgstr ""
+msgstr "Server is gestart en luistert op poort {0}"
 
 #: Library/RestAPI/Strings.cs:67
 #, csharp-format
 msgid "Use the following link to sign in: {0}"
-msgstr ""
+msgstr "Gebruik de volgende link om in te loggen: {0}"
 
 #: Library/RestAPI/Strings.cs:68
 #, csharp-format
@@ -3474,7 +3535,7 @@ msgstr ""
 #: Library/RestAPI/Strings.cs:88
 #, csharp-format
 msgid "Server has started and is listening on {0}, port {1}"
-msgstr ""
+msgstr "Server is gestart en luistert op {0}, poort {1}"
 
 #: Library/RestAPI/Strings.cs:89
 msgid ""
@@ -3485,7 +3546,7 @@ msgstr ""
 #: Library/RestAPI/Strings.cs:90
 #, csharp-format
 msgid "Unable to open a socket for listening, tried ports: {0}"
-msgstr ""
+msgstr "Kan geen socket openen om te luisteren, geprobeerd op poorten: {0}"
 
 #: Library/DynamicLoader/Strings.cs:24
 #, csharp-format
@@ -3554,7 +3615,7 @@ msgstr ""
 
 #: Library/Compression/Strings.cs:34
 msgid "Toggle ZIP64 support"
-msgstr ""
+msgstr "Schakel ZIP64-ondersteuning in en uit"
 
 #: Library/Compression/Strings.cs:35
 msgid ""
@@ -4091,10 +4152,13 @@ msgid ""
 "that transfer progress bars will not show, and bandwidth throttle settings "
 "will be ignored."
 msgstr ""
+"Gebruik deze optie om de streaming interface te blokkeren, wat wil zeggen "
+"dat voortgangsbalken van een overdracht niet worden weergegeven, en "
+"instellingen voor bandbreedtegebruik worden genegeerd."
 
 #: Library/Main/Strings.cs:104
 msgid "Disable use of the streaming transfer method"
-msgstr ""
+msgstr "Schakel het gebruik van de streaming overdrachtsmethode uit"
 
 #: Library/Main/Strings.cs:105
 msgid "Set the read/write timeout for the connection"
@@ -4163,7 +4227,7 @@ msgstr ""
 
 #: Library/Main/Strings.cs:114
 msgid "Disable one or more modules"
-msgstr ""
+msgstr "Schakel één of meer modules uit"
 
 #: Library/Main/Strings.cs:115
 msgid "Supply one or more module names, separated by commas to load them."
@@ -4172,7 +4236,7 @@ msgstr ""
 
 #: Library/Main/Strings.cs:116
 msgid "Enable one or more modules"
-msgstr ""
+msgstr "Schakel één of meer modules in"
 
 #: Library/Main/Strings.cs:117
 msgid ""
@@ -4204,7 +4268,7 @@ msgstr ""
 
 #: Library/Main/Strings.cs:118
 msgid "Control the use of disk snapshots"
-msgstr ""
+msgstr "Bepaal het gebruik van schijf-momentopnames"
 
 #: Library/Main/Strings.cs:119
 msgid ""
@@ -4257,11 +4321,11 @@ msgstr ""
 
 #: Library/Main/Strings.cs:126
 msgid "Enable debugging output"
-msgstr ""
+msgstr "Schakel debug-uitvoer in"
 
 #: Library/Main/Strings.cs:127
 msgid "Log information to the file specified."
-msgstr ""
+msgstr "Schrijf logboekinformatie naar het opgegeven bestand."
 
 #: Library/Main/Strings.cs:128
 msgid "Log internal information to a file"
@@ -4296,7 +4360,7 @@ msgstr ""
 
 #: Library/Main/Strings.cs:133
 msgid "Disable automatic folder creation"
-msgstr ""
+msgstr "Schakel het automatisch aanmaken van mappen uit"
 
 #: Library/Main/Strings.cs:134
 msgid ""
@@ -4382,7 +4446,7 @@ msgstr ""
 
 #: Library/Main/Strings.cs:141
 msgid "Deactivate tolerance when comparing times"
-msgstr ""
+msgstr "Deactiveer tolerantie bij het vergelijken van tijden"
 
 #: Library/Main/Strings.cs:142
 msgid "Use this option to verify uploads by listing contents."
@@ -4749,7 +4813,7 @@ msgstr ""
 
 #: Library/Main/Strings.cs:190
 msgid "Determine usage of index files"
-msgstr ""
+msgstr "Bepaal het gebruik van indexbestanden"
 
 #: Library/Main/Strings.cs:191
 msgid ""
@@ -4777,7 +4841,7 @@ msgstr ""
 
 #: Library/Main/Strings.cs:194
 msgid "Do not perform any modifications"
-msgstr ""
+msgstr "Voer geen enkele wijziging uit"
 
 #: Library/Main/Strings.cs:195
 msgid ""
@@ -5059,7 +5123,7 @@ msgstr ""
 
 #: Library/Main/Strings.cs:232
 msgid "Activate in-depth verification of files"
-msgstr ""
+msgstr "Activeer diepgaande controle van bestanden"
 
 #: Library/Main/Strings.cs:233
 msgid ""
@@ -5241,6 +5305,7 @@ msgstr ""
 #: Library/Main/Strings.cs:262
 msgid "Force the display of the actual date instead of calendar date"
 msgstr ""
+"Dwing de weergave van de werkelijke datum af in plaats van de kalenderdatum"
 
 #: Library/Main/Strings.cs:263
 msgid ""
@@ -5339,7 +5404,7 @@ msgstr ""
 
 #: Library/Main/Strings.cs:276
 msgid "Disable path compression on restore"
-msgstr ""
+msgstr "Schakel pad-compressie uit bij een herstelbewerking"
 
 #: Library/Main/Strings.cs:277
 msgid ""
@@ -5419,6 +5484,11 @@ msgid ""
 "run). If the detected power source is mains (e.g., AC) or unknown, then "
 "scheduled backups will proceed as normal."
 msgstr ""
+"Gebruik deze optie om een geplande back-up uit te schakelen als wordt "
+"gedetecteerd dat het systeem werkt op batterijstroom (handmatige back-ups of"
+" back-ups vanaf de opdrachtregel zullen wel blijven werken). Als netstroom "
+"(bijv. wisselstroom) de gedetecteerde stroombron is, of bij een onbekende "
+"stroombron, zullen de geplande back-ups zoals gebruikelijk doorgaan."
 
 #: Library/Main/Strings.cs:286
 msgid "Disable the backup when on battery power"
@@ -5442,11 +5512,12 @@ msgstr ""
 
 #: Library/Main/Strings.cs:291
 msgid "Apply filters to the file log data"
-msgstr ""
+msgstr "Pas filters toe op de gegevens in het logbestand"
 
 #: Library/Main/Strings.cs:292
 msgid "Specify the amount of log information to output to the console."
 msgstr ""
+"Geef de hoeveelheid log-informatie op die naar de console gestuurd wordt."
 
 #: Library/Main/Strings.cs:293
 msgid "Console information level"
@@ -5454,7 +5525,7 @@ msgstr "Console informatie-niveau"
 
 #: Library/Main/Strings.cs:295
 msgid "Apply filters to the console log data"
-msgstr ""
+msgstr "Pas filters toe op de console log-gegevens"
 
 #: Library/Main/Strings.cs:297
 msgid ""
@@ -5546,7 +5617,7 @@ msgstr ""
 
 #: Library/Main/Strings.cs:310
 msgid "Activate logging of all database queries"
-msgstr ""
+msgstr "Activeer logboekregistratie van alle databasequery's"
 
 #: Library/Main/Strings.cs:311
 msgid ""
@@ -5921,7 +5992,7 @@ msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:53
 msgid "Set allowed SSL versions"
-msgstr ""
+msgstr "Stel toegestane SSL versies in"
 
 #: Library/Modules/Builtin/Strings.cs:54
 msgid ""
@@ -5949,7 +6020,7 @@ msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:57
 msgid "Set readwrite"
-msgstr ""
+msgstr "Stel lezen-schrijven in"
 
 #: Library/Modules/Builtin/Strings.cs:58
 #, csharp-format
@@ -5963,7 +6034,7 @@ msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:59
 msgid "Set HTTP buffering"
-msgstr ""
+msgstr "Stel HTTP-buffering in"
 
 #: Library/Modules/Builtin/Strings.cs:63
 msgid ""
@@ -6039,6 +6110,10 @@ msgid ""
 "until the script has completed or timed out. If the script returns a non-"
 "zero error code or times out, the operation will be aborted."
 msgstr ""
+"Voer een script uit voordat een bewerking wordt gestart. De bewerking zal "
+"onderbroken worden totdat het script is afgerond of er een time-out heeft "
+"plaatsgevonden. Als het script een waarde anders dan 0 teruggeeft of er een "
+"time-out plaatsvindt, zal de bewerking worden afgebroken."
 
 #: Library/Modules/Builtin/Strings.cs:82
 msgid "Run a required script on startup"
@@ -6057,7 +6132,7 @@ msgstr ""
 #: Library/Modules/Builtin/Strings.cs:84
 #: Library/Modules/Builtin/Strings.cs:244
 msgid "Select the output format for results"
-msgstr ""
+msgstr "Selecteer het uitvoerformaat voor de resultaten"
 
 #: Library/Modules/Builtin/Strings.cs:85
 #, csharp-format
@@ -6093,6 +6168,10 @@ msgid ""
 "completed within this time, it will continue to execute but the operation "
 "will continue too, and no script output will be processed."
 msgstr ""
+"Stel in hoeveel tijd een script maximaal in uitvoering mag zijn. Als het "
+"script niet is afgerond binnen deze tijd, zal het verder gaan maar de "
+"bewerking zal ook verder gaan, en uitvoer van het script zal niet worden "
+"verwerkt."
 
 #: Library/Modules/Builtin/Strings.cs:91
 msgid "Set the script timeout"
@@ -6127,6 +6206,8 @@ msgid ""
 "Unable to find the destination mail server through MX lookup. Please use the"
 " option --{0} to specify what SMTP server to use."
 msgstr ""
+"De doel-mailserver kan niet gevonden worden door MX-lookup. Gebruik de optie"
+" {0} om aan te geven welke SMTP-server gebruikt moet worden."
 
 #: Library/Modules/Builtin/Strings.cs:100
 msgid ""
@@ -6398,7 +6479,7 @@ msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:171
 msgid "Telegram report module"
-msgstr ""
+msgstr "Telegram rapportagemodule"
 
 #: Library/Modules/Builtin/Strings.cs:172
 msgid "Use this option to set the channel ID."
@@ -6412,10 +6493,12 @@ msgstr ""
 msgid ""
 "Use this option to set a bot ID for the bot that will send the message."
 msgstr ""
+"Gebruik deze optie om een bot-ID in te stellen van de bot waarmee het "
+"bericht verstuurd wordt."
 
 #: Library/Modules/Builtin/Strings.cs:186
 msgid "The Telegram bot ID"
-msgstr ""
+msgstr "Het Telegram bot-ID"
 
 #: Library/Modules/Builtin/Strings.cs:187
 msgid ""
@@ -6426,7 +6509,7 @@ msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:188
 msgid "The Telegram API key"
-msgstr ""
+msgstr "De Telegram API-sleutel"
 
 #: Library/Modules/Builtin/Strings.cs:194
 msgid "Timeout occurred while sending to Telegram server"
@@ -6483,7 +6566,7 @@ msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:223
 msgid "Set the HTTP verb to use"
-msgstr ""
+msgstr "Stel het te gebruiken HTTP-woord in"
 
 #: Library/Modules/Builtin/Strings.cs:224
 msgid ""
@@ -6555,7 +6638,7 @@ msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:242
 msgid "Limit log lines"
-msgstr ""
+msgstr "Beperk logboekregels"
 
 #: Library/Modules/Builtin/ResultSerialization/ResultFormatSerializerProvider.cs:39
 #, csharp-format
