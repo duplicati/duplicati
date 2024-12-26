@@ -35,7 +35,7 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
 {
     // ReSharper disable once UnusedMember.Global
     // This class is instantiated dynamically in the BackendLoader.
-    public class GoogleCloudStorage : IBackend, IStreamingBackend, IRenameEnabledBackend
+    public class GoogleCloudStorage : IBackend, IStreamingBackend, IRenameEnabledBackend, ITimeoutExemptBackend
     {
         private const string AUTHID_OPTION = "authid";
         private const string PROJECT_OPTION = "gcs-project";
