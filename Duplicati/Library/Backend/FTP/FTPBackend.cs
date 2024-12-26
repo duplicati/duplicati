@@ -348,7 +348,8 @@ namespace Duplicati.Library.Backend
                 EncryptionMode = encryptionMode,
                 SslProtocols = sslProtocols,
                 LogToConsole = _logToConsole,
-                ValidateAnyCertificate = _accepAllCertificates
+                ValidateAnyCertificate = _accepAllCertificates,
+                Noop = true
             };
 
             if (_logPrivateInfoToConsole) _ftpConfig.LogHost = _ftpConfig.LogPassword = _ftpConfig.LogUserName = true;
