@@ -312,9 +312,12 @@ namespace Duplicati.GUI.TrayIcon
                 {
                     return PerformRequestInternal<T>(method, urlfragment, body, timeout);
                 }
-                catch (AggregateException aex)
+                catch (Exception ex)
+                    when (ex is HttpRequestException hex && (hex.StatusCode == HttpStatusCode.Unauthorized || hex.StatusCode == HttpStatusCode.Forbidden)
+                        || ex is AggregateException aex && aex.InnerExceptions.Any(x => x is HttpRequestException hex && (hex.StatusCode == HttpStatusCode.Unauthorized || hex.StatusCode == HttpStatusCode.Forbidden))
+                )
                 {
-                    if (hasTriedPassword || !aex.InnerExceptions.Any(x => x is HttpRequestException hex && hex.StatusCode == HttpStatusCode.Unauthorized))
+                    if (hasTriedPassword)
                         throw;
 
                     // Only try once, and clear the token for the next try
