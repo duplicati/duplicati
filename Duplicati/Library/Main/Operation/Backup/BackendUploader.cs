@@ -244,7 +244,10 @@ namespace Duplicati.Library.Main.Operation.Backup
                     workers.ForEach(w =>
                     {
                         if (w.Backend == m_backend)
+                        {
+                            Interlocked.Exchange(ref m_backendTaken, 0);
                             w.Backend = null;
+                        }
                         w.Dispose();
                     });
                 }
@@ -276,6 +279,12 @@ namespace Duplicati.Library.Main.Operation.Backup
 
                 Worker finishedWorker = workers.Single(w => w.Task == finishedTask);
                 workers.Remove(finishedWorker);
+                if (finishedWorker.Backend == m_backend && !m_backendDisposed)
+                {
+                    finishedWorker.Backend = null;
+                    Interlocked.Exchange(ref m_backendTaken, 0);
+                }
+
                 finishedWorker.Dispose();
             }
         }
