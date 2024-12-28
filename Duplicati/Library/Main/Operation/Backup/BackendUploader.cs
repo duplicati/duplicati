@@ -102,6 +102,9 @@ namespace Duplicati.Library.Main.Operation.Backup
     {
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<BackendUploader>();
         private readonly Func<IBackend> m_backendFactory;
+        private readonly IBackend m_backend;
+        private int m_backendTaken = 0;
+        private bool m_backendDisposed = false;
         private CancellationTokenSource m_cancelTokenSource;
         private readonly DatabaseCommon m_database;
         private long m_initialUploadThrottleSpeed;
@@ -113,9 +116,18 @@ namespace Duplicati.Library.Main.Operation.Backup
         private readonly StatsCollector m_stats;
         private readonly ITaskReader m_taskReader;
 
-        public BackendUploader(Func<IBackend> backendFactory, Options options, DatabaseCommon database, ITaskReader taskReader, StatsCollector stats)
+        public IBackend Backend { get { return m_backendDisposed ? null : m_backend; } }
+
+        public BackendUploader(IBackend backend, Func<IBackend> backendFactory, Options options, DatabaseCommon database, ITaskReader taskReader, StatsCollector stats)
         {
-            m_backendFactory = backendFactory;
+            m_backend = backend;
+            m_backendFactory = () =>
+            {
+                if (Interlocked.Exchange(ref m_backendTaken, 1) == 0)
+                    return m_backend;
+
+                return backendFactory();
+            };
             m_options = options;
             m_taskReader = taskReader;
             m_stats = stats;
@@ -211,7 +223,12 @@ namespace Duplicati.Library.Main.Operation.Backup
                     }
                     finally
                     {
-                        workers.ForEach(w => w.Dispose());
+                        workers.ForEach(w =>
+                        {
+                            if (w.Backend == m_backend)
+                                m_backendDisposed = true;
+                            w.Dispose();
+                        });
                     }
                     throw;
                 }
@@ -224,7 +241,12 @@ namespace Duplicati.Library.Main.Operation.Backup
                 finally
                 {
                     m_stats.SetBlocking(false);
-                    workers.ForEach(w => w.Dispose());
+                    workers.ForEach(w =>
+                    {
+                        if (w.Backend == m_backend)
+                            w.Backend = null;
+                        w.Dispose();
+                    });
                 }
             });
         }
@@ -382,6 +404,8 @@ namespace Duplicati.Library.Main.Operation.Backup
         {
             try
             {
+                if (worker.Backend == m_backend)
+                    m_backendDisposed = true;
                 worker.Backend?.Dispose();
             }
             catch (Exception dex)
