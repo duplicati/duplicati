@@ -41,7 +41,6 @@ public static class ServiceCollectionsExtensions
             .AddSingleton<IScheduler, SchedulerService>()
             .AddSingleton<IWebsocketAccessor, WebsocketAccessor>()
             .AddTransient<ILanguageService, LanguageService>()
-            .AddSingleton<ICaptchaProvider, CaptchaService>()
             .AddSingleton<ICommandlineRunService, CommandlineRunService>()
             .AddTransient<IJWTTokenProvider, JWTTokenProvider>()
             .AddTransient<ITokenFamilyStore, TokenFamilyStore>()
