@@ -387,6 +387,18 @@ namespace Duplicati.Library.Main
         private readonly Boolean m_retrywithexponentialbackoff;
 
         public string BackendUrl { get { return m_backendurl; } }
+        public IBackend BorrowBackend()
+        {
+            var backend = m_backend;
+            m_backend = null;
+            return backend;
+        }
+
+        public void ResetBackend(IBackend instance)
+        {
+            m_backend = instance ?? DynamicLoader.BackendLoader.GetBackend(m_backendurl, m_options.RawOptions);
+        }
+
 
         public BackendManager(string backendurl, Options options, IBackendWriter statwriter, LocalDatabase database)
         {

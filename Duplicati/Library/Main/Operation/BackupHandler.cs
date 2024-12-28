@@ -536,7 +536,7 @@ namespace Duplicati.Library.Main.Operation
                 {
                     long filesetid;
                     using var counterToken = CancellationTokenSource.CreateLinkedTokenSource(m_taskReader.ProgressToken);
-                    var uploader = new Backup.BackendUploader(() => DynamicLoader.BackendLoader.GetBackend(m_backendurl, m_options.RawOptions), m_options, db, m_result.TaskControl, stats);
+                    var uploader = new Backup.BackendUploader(backendManager.BorrowBackend(), () => DynamicLoader.BackendLoader.GetBackend(m_backendurl, m_options.RawOptions), m_options, db, m_result.TaskControl, stats);
                     using (var snapshot = GetSnapshot(sources, m_options))
                     {
                         try
@@ -613,6 +613,9 @@ namespace Duplicati.Library.Main.Operation
 
                     // Make sure we have the database up-to-date
                     await db.CommitTransactionAsync("CommitAfterUpload", false);
+
+                    // Return the backend instance to the manager, if possible
+                    backendManager.ResetBackend(uploader.Backend);
 
                     // TODO: Remove this later
                     m_transaction = m_database.BeginTransaction();
