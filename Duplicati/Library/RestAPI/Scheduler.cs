@@ -94,8 +94,8 @@ namespace Duplicati.Server
         /// <param name="worker">The worker thread</param>
         public void Init(WorkerThread<Runner.IRunnerData> worker)
         {
-            m_thread = new Thread(new ThreadStart(Runner));
             m_worker = worker;
+            m_thread = new Thread(new ThreadStart(Runner));
             m_worker.CompletedWork += OnCompleted;
             m_worker.StartingWork += OnStartingWork;
             m_schedule = new KeyValuePair<DateTime, ISchedule>[0];
