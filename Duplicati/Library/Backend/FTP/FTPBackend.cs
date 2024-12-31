@@ -107,6 +107,10 @@ namespace Duplicati.Library.Backend
         /// </summary>
         protected virtual string CONFIG_KEY_FTP_LOGPRIVATEINFOTOCONSOLE => "ftp-log-privateinfo-to-console";
         /// <summary>
+        /// The configuration key for the FTP log to console
+        /// </summary>
+        protected virtual string CONFIG_KEY_FTP_LOGDIAGNOSTICS => "ftp-log-diagnostics";
+        /// <summary>
         /// The configuration key for the FTP absolute paths option
         /// </summary>
         protected virtual string CONFIG_KEY_FTP_ABSOLUTE_PATH => "ftp-absolute-path";
@@ -198,6 +202,10 @@ namespace Duplicati.Library.Backend
         /// </summary>
         private readonly bool _logPrivateInfoToConsole;
         /// <summary>
+        /// The flag to indicate if diagnostics information should be logged
+        /// </summary>
+        private readonly bool _diagnosticsLog;
+        /// <summary>
         /// The flag to indicate if all certificates should be accepted
         /// </summary>
         private readonly bool _accepAllCertificates;
@@ -240,6 +248,7 @@ namespace Duplicati.Library.Backend
                 new CommandLineArgument(CONFIG_KEY_FTP_UPLOAD_DELAY, CommandLineArgument.ArgumentType.Timespan, Strings.DescriptionUploadDelayShort, Strings.DescriptionUploadDelayLong, DEFAULT_UPLOAD_DELAY_STRING),
                 new CommandLineArgument(CONFIG_KEY_FTP_LOGTOCONSOLE, CommandLineArgument.ArgumentType.Boolean, Strings.DescriptionLogToConsoleShort, Strings.DescriptionLogToConsoleLong),
                 new CommandLineArgument(CONFIG_KEY_FTP_LOGPRIVATEINFOTOCONSOLE, CommandLineArgument.ArgumentType.Boolean, Strings.DescriptionLogPrivateInfoToConsoleShort, Strings.DescriptionLogPrivateInfoToConsoleLong, "false"),
+                new CommandLineArgument(CONFIG_KEY_FTP_LOGDIAGNOSTICS, CommandLineArgument.ArgumentType.Boolean, Strings.DescriptionLogDiagnosticsShort, Strings.DescriptionLogDiagnosticsLong),
                 new CommandLineArgument(CONFIG_KEY_FTP_LEGACY_FTPPASSIVE, CommandLineArgument.ArgumentType.Boolean, Strings.DescriptionFTPPassiveShort, Strings.DescriptionFTPPassiveLong, "false", null, null, Strings.FtpPassiveDeprecated),
                 new CommandLineArgument(CONFIG_KEY_FTP_LEGACY_FTPREGULAR, CommandLineArgument.ArgumentType.Boolean, Strings.DescriptionFTPActiveShort, Strings.DescriptionFTPActiveLong, "true", null, null, Strings.FtpActiveDeprecated),
                 new CommandLineArgument(CONFIG_KEY_FTP_LEGACY_USESSL, CommandLineArgument.ArgumentType.Boolean, Strings.DescriptionUseSSLShort, Strings.DescriptionUseSSLLong, "false", null, null, Strings.UseSslDeprecated),
@@ -341,6 +350,7 @@ namespace Duplicati.Library.Backend
 
             _logToConsole = CoreUtility.ParseBoolOption(options, CONFIG_KEY_FTP_LOGTOCONSOLE);
             _logPrivateInfoToConsole = CoreUtility.ParseBoolOption(options, CONFIG_KEY_FTP_LOGPRIVATEINFOTOCONSOLE);
+            _diagnosticsLog = CoreUtility.ParseBoolOption(options, CONFIG_KEY_FTP_LOGDIAGNOSTICS);
 
             _ftpConfig = new FtpConfig
             {
@@ -661,7 +671,8 @@ namespace Duplicati.Library.Backend
                     Host = _url.Host,
                     Port = _url.Port == -1 ? 21 : _url.Port,
                     Credentials = _userInfo,
-                    Config = _ftpConfig
+                    Config = _ftpConfig,
+                    Logger = _diagnosticsLog ? new DiagnosticsLogger() : null
                 };
 
                 client.ValidateCertificate += HandleValidateCertificate;
@@ -771,6 +782,23 @@ namespace Duplicati.Library.Backend
                 return true;
 
             return false;
+        }
+
+        private sealed class DiagnosticsLogger : IFtpLogger
+        {
+            private static readonly string LOGTAG = Logging.Log.LogTagFromType<DiagnosticsLogger>();
+            public void Log(FtpLogEntry entry)
+            {
+                var type = entry.Severity switch
+                {
+                    FtpTraceLevel.Verbose => Logging.LogMessageType.Verbose,
+                    FtpTraceLevel.Info => Logging.LogMessageType.Information,
+                    FtpTraceLevel.Warn => Logging.LogMessageType.Warning,
+                    FtpTraceLevel.Error => Logging.LogMessageType.Error,
+                    _ => Logging.LogMessageType.Information
+                };
+                Logging.Log.WriteMessage(type, LOGTAG, "FtpLogMessage", entry.Exception, entry.Message);
+            }
         }
     }
 }

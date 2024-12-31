@@ -39,6 +39,8 @@ namespace Duplicati.Library.Backend
         public static string DescriptionLogToConsoleShort { get { return LC.L(@"Log FTP dialog to terminal console"); } }
         public static string DescriptionLogPrivateInfoToConsoleLong { get { return LC.L(@"Use this option to log FTP PRIVATE info (username, password) to console for debugging purposes (DO NOT POST THIS TO THE INTERNET!)"); } }
         public static string DescriptionLogPrivateInfoToConsoleShort { get { return LC.L(@"Log FTP PRIVATE info to console"); } }
+        public static string DescriptionLogDiagnosticsShort { get { return LC.L(@"Log diagnostics information"); } }
+        public static string DescriptionLogDiagnosticsLong { get { return LC.L(@"Use this option to log diagnostics information to the log output. This can be useful for debugging purposes."); } }
         public static string MissingFolderError(string foldername, string message) { return LC.L(@"The folder {0} was not found. Message: {1}", foldername, message); }
         public static string ListVerifyFailure(string filename, IEnumerable<string> files) { return LC.L(@"The file {0} was uploaded but not found afterwards. The file listing returned {1}", filename, string.Join(Environment.NewLine, files)); }
         public static string ListVerifySizeFailure(string filename, long actualsize, long expectedsize) { return LC.L(@"The file {0} was uploaded but the returned size was {1} and it was expected to be {2}", filename, actualsize, expectedsize); }
