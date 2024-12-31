@@ -74,11 +74,11 @@ namespace Duplicati.Library.Backend
 
             if (options.ContainsKey(OPTION_ALTERNATE_PATHS))
             {
-                List<string> paths = new List<string>
-                {
-                    m_path
-                };
-                paths.AddRange(options[OPTION_ALTERNATE_PATHS].Split(new string[] { System.IO.Path.PathSeparator.ToString() }, StringSplitOptions.RemoveEmptyEntries));
+                List<string> paths =
+                [
+                    m_path,
+                    .. options[OPTION_ALTERNATE_PATHS].Split(new string[] { System.IO.Path.PathSeparator.ToString() }, StringSplitOptions.RemoveEmptyEntries),
+                ];
 
                 //On windows we expand the drive letter * to all drives
                 if (OperatingSystem.IsWindows())
@@ -129,12 +129,15 @@ namespace Duplicati.Library.Backend
 
             m_moveFile = Utility.Utility.ParseBoolOption(options, OPTION_MOVE_FILE);
             m_forceReauth = Utility.Utility.ParseBoolOption(options, OPTION_FORCE_REAUTH);
-            m_verifyDestinationLength = Utility.Utility.ParseBoolOption(options, OPTION_DISABLE_LENGTH_VERIFICATION);
+            m_verifyDestinationLength = !Utility.Utility.ParseBoolOption(options, OPTION_DISABLE_LENGTH_VERIFICATION);
             m_hasAutenticated = false;
         }
 
         private void PreAuthenticate()
         {
+            if (!OperatingSystem.IsWindows())
+                return;
+
             try
             {
                 if (!string.IsNullOrEmpty(m_username) && m_password != null && !m_hasAutenticated)
@@ -250,17 +253,22 @@ namespace Duplicati.Library.Backend
         {
             get
             {
-                return new List<ICommandLineArgument>(new ICommandLineArgument[] {
-                    new CommandLineArgument("auth-password", CommandLineArgument.ArgumentType.Password, Strings.FileBackend.DescriptionAuthPasswordShort, Strings.FileBackend.DescriptionAuthPasswordLong),
-                    new CommandLineArgument("auth-username", CommandLineArgument.ArgumentType.String, Strings.FileBackend.DescriptionAuthUsernameShort, Strings.FileBackend.DescriptionAuthUsernameLong),
+                var lst = new List<ICommandLineArgument>();
+                if (OperatingSystem.IsWindows())
+                    lst.AddRange([
+                        new CommandLineArgument("auth-username", CommandLineArgument.ArgumentType.String, Strings.FileBackend.DescriptionAuthUsernameShort, Strings.FileBackend.DescriptionAuthUsernameLong),
+                        new CommandLineArgument("auth-password", CommandLineArgument.ArgumentType.Password, Strings.FileBackend.DescriptionAuthPasswordShort, Strings.FileBackend.DescriptionAuthPasswordLong),
+                        new CommandLineArgument(OPTION_FORCE_REAUTH, CommandLineArgument.ArgumentType.Boolean, Strings.FileBackend.ForceReauthShort, Strings.FileBackend.ForceReauthLong)
+                    ]);
+
+                lst.AddRange([
                     new CommandLineArgument(OPTION_DESTINATION_MARKER, CommandLineArgument.ArgumentType.String, Strings.FileBackend.AlternateDestinationMarkerShort, Strings.FileBackend.AlternateDestinationMarkerLong(OPTION_ALTERNATE_PATHS)),
                     new CommandLineArgument(OPTION_ALTERNATE_PATHS, CommandLineArgument.ArgumentType.Path, Strings.FileBackend.AlternateTargetPathsShort, Strings.FileBackend.AlternateTargetPathsLong(OPTION_DESTINATION_MARKER, System.IO.Path.PathSeparator)),
                     new CommandLineArgument(OPTION_MOVE_FILE, CommandLineArgument.ArgumentType.Boolean, Strings.FileBackend.UseMoveForPutShort, Strings.FileBackend.UseMoveForPutLong),
-                    new CommandLineArgument(OPTION_FORCE_REAUTH, CommandLineArgument.ArgumentType.Boolean, Strings.FileBackend.ForceReauthShort, Strings.FileBackend.ForceReauthLong),
                     new CommandLineArgument(OPTION_DISABLE_LENGTH_VERIFICATION, CommandLineArgument.ArgumentType.Boolean, Strings.FileBackend.DisableLengthVerificationShort, Strings.FileBackend.DisableLengthVerificationLong),
+                ]);
 
-                });
-
+                return lst;
             }
         }
 

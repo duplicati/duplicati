@@ -20,12 +20,12 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 
 namespace Duplicati.Library.Backend
 {
+    [SupportedOSPlatform("windows")]
     internal class Win32
     {
         [DllImport("mpr.dll")]
