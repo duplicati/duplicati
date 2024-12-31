@@ -1,3 +1,24 @@
+2024-12-31 - 2.1.0.104_canary_2024-12-31
+==========
+This release is a canary release intended to be used for testing.
+
+**Note that this build is using .NET8, unlike the 2.0.8.1 build**
+
+**Note that this build has a redesigned restore flow**
+Should issues arise, the previous restore engine can be enabled with `--restore-legacy=true`.
+
+## Detailed list of changes:
+- Fixed issue with launchAgent for CLI server not taking an argument
+- Added simultaneous file processors, thanks @gpatel-fr
+- Updated translations, thansk to many contributors!
+- Added NOOP Daemon for FTP backend
+- Excluded Google Drive and GCS from timeout streams
+- Fixed an issue with the TrayIcon being disconnected after 15 minutes
+- Removed the captcha fro full backup removal
+- Reduced number of backend instances created
+- Removed Windows-only options on the File backend on non-Windows
+- Added option to log FTP messages to regular log
+
 2024-12-21 - 2.1.0.103_canary_2024-12-21
 ==========
 This release is a canary release intended to be used for testing.
