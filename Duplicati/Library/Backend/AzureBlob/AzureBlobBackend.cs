@@ -57,16 +57,10 @@ namespace Duplicati.Library.Backend.AzureBlob
             if (options.ContainsKey("auth-password"))
                 accessKey = options["auth-password"];
 
-            if (options.ContainsKey("azure_account_name"))
-                storageAccountName = options["azure_account_name"];
             if (options.ContainsKey("azure-account-name"))
                 storageAccountName = options["azure-account-name"];
-
-            if (options.ContainsKey("azure_access_key"))
-                accessKey = options["azure_access_key"];
             if (options.ContainsKey("azure-access-key"))
                 accessKey = options["azure-access-key"];
-
             if (options.ContainsKey("azure-access-sas-token"))
                 sasToken = options["azure-access-sas-token"];
 
@@ -142,21 +136,6 @@ namespace Duplicati.Library.Backend.AzureBlob
             get
             {
                 return new List<ICommandLineArgument>(new ICommandLineArgument[] {
-                    new CommandLineArgument("azure_account_name",
-                        CommandLineArgument.ArgumentType.String,
-                        Strings.AzureBlobBackend.StorageAccountNameDescriptionShort,
-                        Strings.AzureBlobBackend.StorageAccountNameDescriptionLong,
-                        null, null, null, "This is deprecated. Use azure-account-name instead."),
-                    new CommandLineArgument("azure_access_key",
-                        CommandLineArgument.ArgumentType.Password,
-                        Strings.AzureBlobBackend.AccessKeyDescriptionShort,
-                        Strings.AzureBlobBackend.AccessKeyDescriptionLong,
-                        null, null, null, "This is deprecated. Use azure-access-key instead."),
-                    new CommandLineArgument("azure_blob_container_name",
-                        CommandLineArgument.ArgumentType.String,
-                        Strings.AzureBlobBackend.ContainerNameDescriptionShort,
-                        Strings.AzureBlobBackend.ContainerNameDescriptionLong,
-                        null, null, null, "This is deprecated. Use azure-blob-container-name instead."),
                     new CommandLineArgument("azure-account-name",
                         CommandLineArgument.ArgumentType.String,
                         Strings.AzureBlobBackend.StorageAccountNameDescriptionShort,
@@ -169,10 +148,6 @@ namespace Duplicati.Library.Backend.AzureBlob
                         CommandLineArgument.ArgumentType.Password,
                         Strings.AzureBlobBackend.SasTokenDescriptionShort,
                         Strings.AzureBlobBackend.SasTokenDescriptionLong),
-                    new CommandLineArgument("azure-blob-container-name",
-                        CommandLineArgument.ArgumentType.String,
-                        Strings.AzureBlobBackend.ContainerNameDescriptionShort,
-                        Strings.AzureBlobBackend.ContainerNameDescriptionLong),
                     new CommandLineArgument("auth-password",
                         CommandLineArgument.ArgumentType.Password,
                         Strings.AzureBlobBackend.AuthPasswordDescriptionShort,
