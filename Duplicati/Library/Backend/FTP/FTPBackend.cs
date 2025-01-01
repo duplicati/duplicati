@@ -676,6 +676,7 @@ namespace Duplicati.Library.Backend
                 };
 
                 client.ValidateCertificate += HandleValidateCertificate;
+                await client.Connect(cancellationToken).ConfigureAwait(false);
 
                 // Set up for relative paths
                 if (_relativePaths)
