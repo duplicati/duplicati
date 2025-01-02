@@ -63,7 +63,15 @@ public class CIFSBackend : IStreamingBackend
     /// </summary>
     private static readonly char[] PATH_SEPARATORS = ['/', '\\'];
 
+    /// <summary>
+    /// Cache of parsed connection parameters
+    /// </summary>
     private SMBConnectionParameters _connectionParameters;
+
+    /// <summary>
+    /// Shared connection between all methods to avoid re-authentication
+    /// </summary>
+    private SMBShareConnection _shareConnection;
 
     /// <summary>
     /// Backend option for controlling the transport (directtcp or netbios)
@@ -113,6 +121,11 @@ public class CIFSBackend : IStreamingBackend
     /// <param name="options">options to be used in the backend</param>
     public CIFSBackend(string url, Dictionary<string, string> options)
     {
+        if (string.IsNullOrEmpty(url))
+            throw new ArgumentNullException(nameof(url));
+        if (options == null)
+            throw new ArgumentNullException(nameof(options));
+
         var uri = new Utility.Uri(url);
         uri.RequireHost();
         _DnsName = uri.Host;
@@ -165,8 +178,7 @@ public class CIFSBackend : IStreamingBackend
     /// <returns>List of IFileEntry with directory listing result</returns>
     private async Task<IEnumerable<IFileEntry>> ListAsync(CancellationToken cancellationToken)
     {
-        await using var shareConnection = new SMBShareConnection(_connectionParameters);
-        return await shareConnection.ListAsync(cancellationToken).ConfigureAwait(false);
+        return await GetConnection().ListAsync(cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -200,8 +212,7 @@ public class CIFSBackend : IStreamingBackend
     /// <exception cref="Exception">Exceptions arising from either code execution</exception>
     public async Task PutAsync(string remotename, Stream input, CancellationToken cancellationToken)
     {
-        await using var shareConnection = new SMBShareConnection(_connectionParameters);
-        await shareConnection.PutAsync(remotename, input, cancellationToken).ConfigureAwait(false);
+        await GetConnection().PutAsync(remotename, input, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -230,8 +241,7 @@ public class CIFSBackend : IStreamingBackend
     /// <exception cref="Exception">Exceptions arising from either code execution or FileMissingException</exception>
     public async Task GetAsync(string remotename, Stream output, CancellationToken cancellationToken)
     {
-        await using var shareConnection = new SMBShareConnection(_connectionParameters);
-        await shareConnection.GetAsync(remotename, output, cancellationToken).ConfigureAwait(false);
+        await GetConnection().GetAsync(remotename, output, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -244,8 +254,7 @@ public class CIFSBackend : IStreamingBackend
     /// <exception cref="Exception">Exceptions arising from either code execution or business logic errors</exception>
     public async Task DeleteAsync(string remotename, CancellationToken cancellationToken)
     {
-        await using var shareConnection = new SMBShareConnection(_connectionParameters);
-        await shareConnection.DeleteAsync(remotename, cancellationToken).ConfigureAwait(false);
+        await GetConnection().DeleteAsync(remotename, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -253,7 +262,8 @@ public class CIFSBackend : IStreamingBackend
     /// </summary>
     /// <param name="cancellationToken">CancellationToken, in this call not used.</param>
     /// <returns></returns>
-    public Task<string[]> GetDNSNamesAsync(CancellationToken cancellationToken) => Task.FromResult(new[] { _DnsName });
+    public Task<string[]> GetDNSNamesAsync(CancellationToken cancellationToken) => 
+        Task.FromResult(new[] { _DnsName ?? string.Empty });
 
     /// <summary>
     /// Tests backend connectivity by verifying the configured path exists
@@ -262,9 +272,8 @@ public class CIFSBackend : IStreamingBackend
     /// <exception cref="FolderMissingException">Thrown when configured path does not exist</exception>
     public async Task TestAsync(CancellationToken cancellationToken)
     {
-        await using var shareConnection = new SMBShareConnection(_connectionParameters);
         // This will throw an exception if the folder is missing
-        await shareConnection.ListAsync(cancellationToken).ConfigureAwait(false);
+        await GetConnection().ListAsync(cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -275,11 +284,23 @@ public class CIFSBackend : IStreamingBackend
     /// <exception cref="Exception">Thrown when folder creation fails</exception>
     public async Task CreateFolderAsync(CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(_connectionParameters.Path) || _connectionParameters.Path.Split(PATH_SEPARATORS, StringSplitOptions.RemoveEmptyEntries).Length == 0)
+        var pathParts = _connectionParameters.Path?
+            .Split(PATH_SEPARATORS, StringSplitOptions.RemoveEmptyEntries);
+        
+        if (pathParts == null || pathParts.Length == 0)
             return;
         
-        await using var shareConnection = new SMBShareConnection(_connectionParameters);
-        await shareConnection.CreateFolderAsync(_connectionParameters.Path, cancellationToken).ConfigureAwait(false);
+        await GetConnection().CreateFolderAsync(_connectionParameters.Path, cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Gets or creates a shared SMB connection
+    /// </summary>
+    /// <returns>An SMB connection that can be used for file operations</returns>
+    private SMBShareConnection GetConnection()
+    {
+        return _shareConnection ??= new SMBShareConnection(_connectionParameters);
     }
 
     /// <summary>
@@ -288,5 +309,14 @@ public class CIFSBackend : IStreamingBackend
     /// </summary>
     public void Dispose()
     {
+        try
+        {
+            _shareConnection?.Dispose();
+        }
+        catch (Exception ex)
+        {
+            // Log the exception but don't rethrow since we're in Dispose
+            System.Diagnostics.Debug.WriteLine($"Error disposing CIFS connection: {ex.Message}");
+        }
     }
 }

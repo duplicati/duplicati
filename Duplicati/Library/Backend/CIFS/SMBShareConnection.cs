@@ -353,13 +353,14 @@ public class SMBShareConnection : IDisposable, IAsyncDisposable
                 byte[] buffer = new byte[_smb2Client.MaxWriteSize];
                 int bytesRead;
                 int numberOfBytesWritten;
+                int offset = 0;
                 while (!cancellationToken.IsCancellationRequested && sourceStream.Position < sourceStream.Length)
                 {
                     bytesRead = await sourceStream.ReadAsync(buffer, cancellationToken);
                     if (bytesRead == 0)
-                        throw new UserInformationException(LC.L("Failed to read from source stream on PutAsync"),"StreamReadError");
-                    
-                    status = _smbFileStore.WriteFile(out numberOfBytesWritten, fileHandle, 0, buffer.Take(bytesRead).ToArray());
+                        break;
+                    status = _smbFileStore.WriteFile(out numberOfBytesWritten, fileHandle, offset, buffer.Take(bytesRead).ToArray());
+                    offset += numberOfBytesWritten;
                     if (numberOfBytesWritten != bytesRead)
                         throw new UserInformationException(LC.L("Failed to write to file, difference between bytes read and bytes written"), "HandleWriteError");
                     if (status != NTStatus.STATUS_SUCCESS)
