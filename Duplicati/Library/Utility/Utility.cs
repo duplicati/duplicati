@@ -1,19 +1,26 @@
-﻿// Copyright (C) 2015, The Duplicati Team
-// http://www.duplicati.com, info@duplicati.com
+﻿// Copyright (C) 2024, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
 // 
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 2.1 of the License, or (at your option) any later version.
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
 // 
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
 // 
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
+
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -23,8 +30,9 @@ using System.Threading.Tasks;
 using System.Text;
 using System.Text.RegularExpressions;
 using Duplicati.Library.Common.IO;
-using Duplicati.Library.Common;
 using System.Globalization;
+using System.Runtime.Versioning;
+using System.Security.Cryptography.X509Certificates;
 
 namespace Duplicati.Library.Utility
 {
@@ -34,16 +42,11 @@ namespace Duplicati.Library.Utility
         /// Size of buffers for copying stream
         /// </summary>
         public static long DEFAULT_BUFFER_SIZE => SystemContextSettings.Buffersize;
-        
+
         /// <summary>
         /// A cache of the FileSystemCaseSensitive property, which is computed upon the first access.
         /// </summary>
         private static bool? CachedIsFSCaseSensitive;
-
-        /// <summary>
-        /// Gets the hash algorithm used for calculating a hash
-        /// </summary>
-        public static string HashAlgorithm => "SHA256";
 
         /// <summary>
         /// The EPOCH offset (unix style)
@@ -91,15 +94,15 @@ namespace Duplicati.Library.Utility
                 }
 
             buf = buf ?? new byte[DEFAULT_BUFFER_SIZE];
-            
+
             int read;
-			long total = 0;
-			while ((read = source.Read(buf, 0, buf.Length)) != 0)
-			{
-				target.Write(buf, 0, read);
-				total += read;
+            long total = 0;
+            while ((read = source.Read(buf, 0, buf.Length)) != 0)
+            {
+                target.Write(buf, 0, read);
+                total += read;
             }
-            
+
             return total;
         }
 
@@ -126,7 +129,7 @@ namespace Duplicati.Library.Utility
         {
             if (tryRewindSource && source.CanSeek)
                 try { source.Position = 0; }
-                catch {}
+                catch { }
 
             buf = buf ?? new byte[DEFAULT_BUFFER_SIZE];
 
@@ -139,8 +142,47 @@ namespace Duplicati.Library.Utility
                 await target.WriteAsync(buf, 0, read, cancelToken).ConfigureAwait(false);
                 total += read;
             }
-            
+
             return total;
+        }
+
+        /// <summary>
+        /// Get the length of a stream.
+        /// Attempt to use the stream's Position property if allowPositionFallback is <c>true</c> (only valid if stream is at the end).
+        /// </summary>
+        /// <param name="stream">Stream to get the length of.</param>
+        /// <param name="allowPositionFallback">Attempt to use the Position property if <c>true</c> and the Length property is not available (only valid if stream is at the end).</param>
+        /// <returns>Returns the stream's length, if available, or null if not supported by the stream.</returns>
+        public static long? GetStreamLength(Stream stream, bool allowPositionFallback = true)
+        {
+            return GetStreamLength(stream, out bool _, allowPositionFallback);
+        }
+
+        /// <summary>
+        /// Get the length of a stream.
+        /// Attempt to use the stream's Position property if allowPositionFallback is <c>true</c> (only valid if stream is at the end).
+        /// </summary>
+        /// <param name="stream">Stream to get the length of.</param>
+        /// <param name="isStreamPosition">Indicates if the Position value was used instead of Length.</param>
+        /// <param name="allowPositionFallback">Attempt to use the Position property if <c>true</c> and the Length property is not available (only valid if stream is at the end).</param>
+        /// <returns>Returns the stream's length, if available, or null if not supported by the stream.</returns>
+        public static long? GetStreamLength(Stream stream, out bool isStreamPosition, bool allowPositionFallback = true)
+        {
+            isStreamPosition = false;
+            long? streamLength = null;
+            try { streamLength = stream.Length; } catch { }
+            if (!streamLength.HasValue && allowPositionFallback)
+            {
+                try
+                {
+                    // Hack: This is a fall-back method to detect the source stream size, assuming the current position is the end of the stream.
+                    streamLength = stream.Position;
+                    isStreamPosition = true;
+                }
+                catch { } // 
+            }
+
+            return streamLength;
         }
 
         /// <summary>
@@ -397,7 +439,7 @@ namespace Duplicati.Library.Utility
         public static bool IsPathBelowFolder(string fileOrFolderPath, string parentFolder)
         {
             var sanitizedParentFolder = Util.AppendDirSeparator(parentFolder);
-            return fileOrFolderPath.StartsWith(sanitizedParentFolder, ClientFilenameStringComparison) && 
+            return fileOrFolderPath.StartsWith(sanitizedParentFolder, ClientFilenameStringComparison) &&
                    !fileOrFolderPath.Equals(sanitizedParentFolder, ClientFilenameStringComparison);
         }
 
@@ -418,14 +460,14 @@ namespace Duplicati.Library.Utility
             var last = path.LastIndexOf(Path.DirectorySeparatorChar, len);
             if (last == -1 || last == 0 && len == 0)
                 return null;
-            
-            if (last == 0 && !Platform.IsClientWindows)
+
+            if (last == 0 && !OperatingSystem.IsWindows())
                 return Util.DirectorySeparatorString;
 
             var parent = path.Substring(0, last);
 
             if (forceTrailingDirectorySeparator ||
-                Platform.IsClientWindows && parent.Length == 2 && parent[1] == ':' && char.IsLetter(parent[0]))
+                OperatingSystem.IsWindows() && parent.Length == 2 && parent[1] == ':' && char.IsLetter(parent[0]))
             {
                 parent += Path.DirectorySeparatorChar;
             }
@@ -433,7 +475,7 @@ namespace Duplicati.Library.Utility
             return parent;
         }
 
-        
+
 
         /// <summary>
         /// Given a collection of unique folders, returns only parent-most folders
@@ -479,7 +521,7 @@ namespace Duplicati.Library.Utility
 
             return result.Distinct();
         }
-        
+
         /// <summary>
         /// Given a collection of file paths, return those NOT contained within specified collection of folders
         /// </summary>
@@ -597,16 +639,6 @@ namespace Duplicati.Library.Utility
         }
 
         /// <summary>
-        /// Calculates the hash of a given stream, and returns the results as an base64 encoded string
-        /// </summary>
-        /// <param name="stream">The stream to calculate the hash for</param>
-        /// <returns>The base64 encoded hash</returns>
-        public static string CalculateHash(Stream stream)
-        {
-            return Convert.ToBase64String(HashAlgorithmHelper.Create(HashAlgorithm).ComputeHash(stream));
-        }
-
-        /// <summary>
         /// Reads a file, attempts to detect encoding
         /// </summary>
         /// <param name="filename">The path to the file to read</param>
@@ -643,7 +675,7 @@ namespace Duplicati.Library.Utility
         }
 
         /// <summary>
-        /// Formats a size into a human readable format, eg. 2048 becomes &quot;2 KB&quot; or -2283 becomes &quot;-2.23 KB%quot.
+        /// Formats a size into a human readable format, e.g. 2048 becomes &quot;2 KB&quot; or -2283 becomes &quot;-2.23 KB%quot.
         /// </summary>
         /// <param name="size">The size to format</param>
         /// <returns>A human readable string representing the size</returns>
@@ -659,38 +691,7 @@ namespace Duplicati.Library.Utility
             else if (sizeAbs >= 1024)
                 return Strings.Utility.FormatStringKB(size / 1024);
             else
-                return Strings.Utility.FormatStringB((long) size); // safe to cast because lower than 1024 and thus well within range of long
-        }
-
-        public static System.Threading.ThreadPriority ParsePriority(string value)
-        {
-            if (string.IsNullOrEmpty(value) || value.Trim().Length == 0)
-                return System.Threading.ThreadPriority.Normal;
-
-            switch (value.ToLower(CultureInfo.InvariantCulture).Trim())
-            {
-                case "+2":
-                case "high":
-                case "highest":
-                    return System.Threading.ThreadPriority.Highest;
-                case "+1":
-                case "abovenormal":
-                case "above normal":
-                    return System.Threading.ThreadPriority.AboveNormal;
-
-                case "-1":
-                case "belownormal":
-                case "below normal":
-                    return System.Threading.ThreadPriority.BelowNormal;
-                case "-2":
-                case "low":
-                case "lowest":
-                case "idle":
-                    return System.Threading.ThreadPriority.Lowest;
-
-                default:
-                    return System.Threading.ThreadPriority.Normal;
-            }
+                return Strings.Utility.FormatStringB((long)size); // safe to cast because lower than 1024 and thus well within range of long
         }
 
         /// <summary>
@@ -740,7 +741,7 @@ namespace Duplicati.Library.Utility
         /// <param name="options">The set of options to look for the setting in</param>
         /// <param name="value">The value to look for in the settings</param>
         /// <returns></returns>
-        public static bool ParseBoolOption(IDictionary<string, string> options, string value)
+        public static bool ParseBoolOption(IReadOnlyDictionary<string, string> options, string value)
         {
             string opt;
             if (options.TryGetValue(value, out opt))
@@ -757,7 +758,7 @@ namespace Duplicati.Library.Utility
         /// <param name="value">The value to look for in the settings</param>
         /// <param name="default">The default value to return if there are no matches.</param>
         /// <typeparam name="T">The enum type parameter.</typeparam>
-        public static T ParseEnumOption<T>(IDictionary<string, string> options, string value, T @default)
+        public static T ParseEnumOption<T>(IReadOnlyDictionary<string, string> options, string value, T @default)
         {
             return options.TryGetValue(value, out var opt) ? ParseEnum(opt, @default) : @default;
         }
@@ -800,9 +801,27 @@ namespace Duplicati.Library.Utility
                 data[i / 2] = Convert.ToByte(hex.Substring(i, 2), 16);
         }
 
+        /// <summary>
+        /// Converts a hex string to a byte array, as a function so no variable declaration on caller's side is needed
+        /// </summary>
+        /// <returns>The string as byte array.</returns>
+        /// <param name="hex">The hex string</param>
+        public static byte[] HexStringAsByteArray(string hex)
+        {
+            var data = new byte[hex.Length / 2];
+            HexStringAsByteArray(hex, data);
+            return data;
+        }
+
+        [SupportedOSPlatform("linux")]
+        [SupportedOSPlatform("macos")]
+        /// <summary>
+        /// Invokes the &quot;which&quot; command to determine if a given application is available in the path
+        /// </summary>
+        /// <param name="appname">The name of the application to look for</param>
         public static bool Which(string appname)
         {
-            if (!Platform.IsClientPosix)
+            if (!(OperatingSystem.IsLinux() || OperatingSystem.IsMacOS()))
                 return false;
 
             try
@@ -843,68 +862,10 @@ namespace Duplicati.Library.Utility
 
                     // TODO: This should probably be determined by filesystem rather than OS,
                     // OSX can actually have the disks formatted as Case Sensitive, but insensitive is default
-                    CachedIsFSCaseSensitive = ParseBool(str, () => Platform.IsClientPosix && !Platform.IsClientOSX);
+                    CachedIsFSCaseSensitive = ParseBool(str, () => OperatingSystem.IsLinux());
                 }
 
                 return CachedIsFSCaseSensitive.Value;
-            }
-        }
-
-        /// <summary>
-        /// Returns a value indicating if the app is running under Mono
-        /// </summary>
-        public static bool IsMono => Type.GetType("Mono.Runtime") != null;
-
-        /// <summary>
-        /// Gets the current Mono runtime version, will return 0.0 if not running Mono
-        /// </summary>
-        public static Version MonoVersion
-        {
-            get
-            {
-                try
-                {
-                    var v = MonoDisplayVersion;
-                    if (v != null)
-                    {
-                        var regex = new Regex(@"\d+\.\d+(\.\d+)?(\.\d+)?");
-                        var match = regex.Match(v);
-                        if (match.Success)
-                            return new Version(match.Value);
-                    }
-                }
-                catch
-                {
-                    // ignored
-                }
-
-                return new Version();
-            }
-        }
-
-        /// <summary>
-        /// Gets the Mono display version, or null if not running Mono
-        /// </summary>
-        public static string MonoDisplayVersion
-        {
-            get
-            {
-                try
-                {
-                    var t = Type.GetType("Mono.Runtime");
-                    if (t != null)
-                    {
-                        var mi = t.GetMethod("GetDisplayName", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
-                        if (mi != null)
-                            return (string)mi.Invoke(null, null);
-                    }
-                }
-                catch
-                {
-                    // ignored
-                }
-
-                return null;
             }
         }
 
@@ -921,7 +882,7 @@ namespace Duplicati.Library.Utility
         /// <summary>
         /// The path to the users home directory
         /// </summary>
-        public static readonly string HOME_PATH = Environment.GetFolderPath(Platform.IsClientPosix ? Environment.SpecialFolder.Personal : Environment.SpecialFolder.UserProfile);
+        public static readonly string HOME_PATH = Environment.GetFolderPath(!OperatingSystem.IsWindows() ? Environment.SpecialFolder.Personal : Environment.SpecialFolder.UserProfile);
 
         /// <summary>
         /// Regexp for matching environment variables on Windows (%VAR%)
@@ -946,7 +907,7 @@ namespace Duplicati.Library.Utility
 
                 ENVIRONMENT_VARIABLE_MATCHER_WINDOWS.Replace(str, m => Regex.Escape(lookup(m.Groups["name"].Value)));
         }
-        
+
         /// <summary>
         /// Normalizes a DateTime instance by converting to UTC and flooring to seconds.
         /// </summary>
@@ -958,22 +919,22 @@ namespace Duplicati.Library.Utility
             ticks -= ticks % TimeSpan.TicksPerSecond;
             return new DateTime(ticks, DateTimeKind.Utc);
         }
-        
-	/// <summary>
-	/// Given a DateTime instance, return the number of elapsed seconds since the Unix epoch
-	/// </summary>
-	/// <returns>The number of elapsed seconds since the Unix epoch</returns>
-	/// <param name="input">The input time</param>
+
+        /// <summary>
+        /// Given a DateTime instance, return the number of elapsed seconds since the Unix epoch
+        /// </summary>
+        /// <returns>The number of elapsed seconds since the Unix epoch</returns>
+        /// <param name="input">The input time</param>
         public static long NormalizeDateTimeToEpochSeconds(DateTime input)
         {
             // Note that we cannot return (new DateTimeOffset(input)).ToUnixTimeSeconds() here.
             // The DateTimeOffset constructor will convert the provided DateTime to the UTC
-            // equivalent.  However, if DateTime.MinValue is provided (for example, when creating
+            // equivalent. However, if DateTime.MinValue is provided (for example, when creating
             // a new backup), this can result in values that fall outside the DateTimeOffset.MinValue
             // and DateTimeOffset.MaxValue bounds.
-            return (long) Math.Floor((NormalizeDateTime(input) - EPOCH).TotalSeconds);
+            return (long)Math.Floor((NormalizeDateTime(input) - EPOCH).TotalSeconds);
         }
-        
+
         /// <summary>
         /// The format string for a DateTime
         /// </summary>
@@ -1049,7 +1010,7 @@ namespace Duplicati.Library.Utility
 
         // <summary>
         // Returns the entry assembly or reasonable approximation if no entry assembly is available.
-        // This is the case in NUnit tests.  The following approach does not work w/ Mono due to unimplemented members:
+        // This is the case in NUnit tests. The following approach does not work w/ Mono due to unimplemented members:
         // http://social.msdn.microsoft.com/Forums/nb-NO/clr/thread/db44fe1a-3bb4-41d4-a0e0-f3021f30e56f
         // so this layer of indirection is necessary
         // </summary>
@@ -1342,6 +1303,7 @@ namespace Duplicati.Library.Utility
         /// <param name="volumeGuid">Volume guid</param>
         /// <returns>Drive letter, as a single character, or null if the volume wasn't found</returns>
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+        [SupportedOSPlatform("windows")]
         public static string GetDriveLetterFromVolumeGuid(Guid volumeGuid)
         {
             // Based on this answer:
@@ -1376,6 +1338,7 @@ namespace Duplicati.Library.Utility
         /// </summary>
         /// <returns>Pairs of drive letter to volume guids</returns>
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+        [SupportedOSPlatform("windows")]
         public static IEnumerable<KeyValuePair<string, string>> GetVolumeGuidsAndDriveLetters()
         {
             using (var searcher = new System.Management.ManagementObjectSearcher("Select * from Win32_Volume"))
@@ -1417,7 +1380,7 @@ namespace Duplicati.Library.Utility
             if (string.IsNullOrWhiteSpace(arg))
                 return arg;
 
-            if (!Platform.IsClientWindows)
+            if (!OperatingSystem.IsWindows())
             {
                 // We could consider using single quotes that prevents all expansions
                 //if (!allowEnvExpansion)
@@ -1481,7 +1444,7 @@ namespace Duplicati.Library.Utility
         /// <param name="task">Task to await</param>
         public static void Await(this Task task)
         {
-            task.GetAwaiter().GetResult();
+            task.ConfigureAwait(false).GetAwaiter().GetResult();
         }
 
         /// <summary>
@@ -1495,7 +1458,73 @@ namespace Duplicati.Library.Utility
         /// <returns>Task result</returns>
         public static T Await<T>(this Task<T> task)
         {
-            return task.GetAwaiter().GetResult();
+            return task.ConfigureAwait(false).GetAwaiter().GetResult();
+        }
+
+        /// <summary>
+        /// Utility that computes the delay before the next retry of an operation, optionally using exponential backoff.
+        /// Note: when using exponential backoff, the exponent is clamped at 10.
+        /// </summary>
+        /// <param name="retryDelay">Value of one delay unit</param>
+        /// <param name="retryAttempt">The attempt number (e.g. 1 for the first retry, 2 for the second retry, etc.)</param>
+        /// <param name="useExponentialBackoff">Whether to use exponential backoff</param>
+        /// <returns>The computed delay</returns>
+        public static TimeSpan GetRetryDelay(TimeSpan retryDelay, int retryAttempt, bool useExponentialBackoff)
+        {
+            if (retryAttempt < 1)
+            {
+                throw new ArgumentException("The attempt number must not be less than 1.", nameof(retryAttempt));
+            }
+
+            TimeSpan delay;
+            if (useExponentialBackoff)
+            {
+                var delayTicks = retryDelay.Ticks << Math.Min(retryAttempt - 1, 10);
+                delay = TimeSpan.FromTicks(delayTicks);
+            }
+            else
+            {
+                delay = retryDelay;
+            }
+
+            return delay;
+        }
+
+        /// <summary>
+        /// Loads the pfxcertificate from bytes into an exportable format.
+        /// </summary>
+        /// <remarks>This method masks a problem with loading certificates with EC based keys by using a temporary file</remarks>
+        /// <param name="pfxcertificate">The certificate as a byte array</param>
+        /// <param name="password">The password used to protect the PFX file</param>
+        /// <param name="allowUnsafeCertificateLoad">A flag indicating if unsafe certificate loading is allowed</param>
+        /// <returns>The loaded certificate</returns>
+        public static X509Certificate2Collection LoadPfxCertificate(ReadOnlySpan<byte> pfxcertificate, string? password, bool allowUnsafeCertificateLoad = false)
+        {
+            if (string.IsNullOrWhiteSpace(password) && !allowUnsafeCertificateLoad)
+                throw new ArgumentException("Refusing to write unencryped certificate to disk");
+
+            using var tempfile = new TempFile();
+            File.WriteAllBytes(tempfile, pfxcertificate.ToArray());
+            return LoadPfxCertificate(tempfile, password);
+        }
+
+        /// <summary>
+        /// Loads a PFX certificate from a file into an exportable format.
+        /// </summary>
+        /// <param name="pfxPath">The path to the file</param>
+        /// <param name="password">The password used to protect the PFX file</param>
+        /// <returns>The loaded certificate</returns>
+        public static X509Certificate2Collection LoadPfxCertificate(string pfxPath, string? password)
+        {
+            if (string.IsNullOrEmpty(pfxPath))
+                throw new ArgumentNullException(nameof(pfxPath));
+
+            if (!File.Exists(pfxPath))
+                throw new FileNotFoundException("The specified PFX file does not exist.", pfxPath);
+
+            var collection = new X509Certificate2Collection();
+            collection.Import(pfxPath, password, X509KeyStorageFlags.Exportable | X509KeyStorageFlags.PersistKeySet);
+            return collection;
         }
     }
 }

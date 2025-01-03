@@ -1,28 +1,31 @@
-﻿#region Disclaimer / License
-// Copyright (C) 2015, The Duplicati Team
-// http://www.duplicati.com, info@duplicati.com
+// Copyright (C) 2024, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
 // 
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 2.1 of the License, or (at your option) any later version.
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
 // 
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
 // 
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-// 
-#endregion
-using Duplicati.Library.Common;
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
+
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -36,6 +39,7 @@ namespace Duplicati.Library.Backend
         private const string OPTION_ALTERNATE_PATHS = "alternate-target-paths";
         private const string OPTION_MOVE_FILE = "use-move-for-put";
         private const string OPTION_FORCE_REAUTH = "force-smb-authentication";
+        private const string OPTION_DISABLE_LENGTH_VERIFICATION = "disable-length-verification";
 
         private readonly string m_path;
         private string m_username;
@@ -43,8 +47,7 @@ namespace Duplicati.Library.Backend
         private readonly bool m_moveFile;
         private bool m_hasAutenticated;
         private readonly bool m_forceReauth;
-
-        private readonly byte[] m_copybuffer = new byte[Utility.Utility.DEFAULT_BUFFER_SIZE];
+        private readonly bool m_verifyDestinationLength;
 
         private static readonly ISystemIO systemIO = SystemIO.IO_OS;
 
@@ -56,7 +59,7 @@ namespace Duplicati.Library.Backend
         {
             var uri = new Utility.Uri(url);
             m_path = uri.HostAndPath;
-            
+
             if (options.ContainsKey("auth-username"))
                 m_username = options["auth-username"];
             if (options.ContainsKey("auth-password"))
@@ -65,23 +68,23 @@ namespace Duplicati.Library.Backend
                 m_username = uri.Username;
             if (!string.IsNullOrEmpty(uri.Password))
                 m_password = uri.Password;
-            
+
             if (!System.IO.Path.IsPathRooted(m_path))
                 m_path = systemIO.PathGetFullPath(m_path);
 
             if (options.ContainsKey(OPTION_ALTERNATE_PATHS))
             {
-                List<string> paths = new List<string>
-                {
-                    m_path
-                };
-                paths.AddRange(options[OPTION_ALTERNATE_PATHS].Split(new string[] { System.IO.Path.PathSeparator.ToString() }, StringSplitOptions.RemoveEmptyEntries));
+                List<string> paths =
+                [
+                    m_path,
+                    .. options[OPTION_ALTERNATE_PATHS].Split(new string[] { System.IO.Path.PathSeparator.ToString() }, StringSplitOptions.RemoveEmptyEntries),
+                ];
 
                 //On windows we expand the drive letter * to all drives
-                if (!Platform.IsClientPosix)
+                if (OperatingSystem.IsWindows())
                 {
                     System.IO.DriveInfo[] drives = System.IO.DriveInfo.GetDrives();
-                    
+
                     for (int i = 0; i < paths.Count; i++)
                     {
                         if (paths[i].StartsWith("*:", StringComparison.Ordinal))
@@ -126,11 +129,15 @@ namespace Duplicati.Library.Backend
 
             m_moveFile = Utility.Utility.ParseBoolOption(options, OPTION_MOVE_FILE);
             m_forceReauth = Utility.Utility.ParseBoolOption(options, OPTION_FORCE_REAUTH);
+            m_verifyDestinationLength = !Utility.Utility.ParseBoolOption(options, OPTION_DISABLE_LENGTH_VERIFICATION);
             m_hasAutenticated = false;
         }
 
         private void PreAuthenticate()
         {
+            if (!OperatingSystem.IsWindows())
+                return;
+
             try
             {
                 if (!string.IsNullOrEmpty(m_username) && m_password != null && !m_hasAutenticated)
@@ -172,15 +179,7 @@ namespace Duplicati.Library.Backend
             if (!systemIO.DirectoryExists(m_path))
                 throw new FolderMissingException(Strings.FileBackend.FolderMissingError(m_path));
 
-            foreach (string s in systemIO.EnumerateFiles(m_path))
-            {
-                yield return systemIO.FileEntry(s);
-            }
-
-            foreach (string s in systemIO.EnumerateDirectories(m_path))
-            {
-                yield return systemIO.DirectoryEntry(s);
-            }
+            return systemIO.EnumerateFileEntries(m_path);
         }
 
 #if DEBUG_RETRY
@@ -191,63 +190,85 @@ namespace Duplicati.Library.Backend
             {
                 if (random.NextDouble() > 0.6666)
                     throw new Exception("Random upload failure");
-                await Utility.Utility.CopyStreamAsync(stream, writestream, cancelToken);
+                await Utility.Utility.CopyStreamAsync(stream, writestream, cancelToken).ConfigureAwait(false);
             }
         }
 #else
-        public async Task PutAsync(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
+        public async Task PutAsync(string targetFilename, Stream sourceStream, CancellationToken cancelToken)
         {
-            using (System.IO.FileStream writestream = systemIO.FileCreate(GetRemoteName(remotename)))
-                await Utility.Utility.CopyStreamAsync(stream, writestream, true, cancelToken, m_copybuffer);
+            string targetFilePath = GetRemoteName(targetFilename);
+            long copiedBytes = 0;
+            using (var targetStream = systemIO.FileCreate(targetFilePath))
+                copiedBytes = await Utility.Utility.CopyStreamAsync(sourceStream, targetStream, true, cancelToken).ConfigureAwait(false);
+
+            VerifyMatchingSize(targetFilePath, sourceStream, copiedBytes);
         }
 #endif
 
-        public void Get(string remotename, System.IO.Stream stream)
+        public async Task GetAsync(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
         {
             // FileOpenRead has flags System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.Read
-            using (System.IO.FileStream readstream = systemIO.FileOpenRead(GetRemoteName(remotename)))
-                Utility.Utility.CopyStream(readstream, stream, true, m_copybuffer);
+            using (var readstream = systemIO.FileOpenRead(GetRemoteName(remotename)))
+                await Utility.Utility.CopyStreamAsync(readstream, stream, true, cancelToken).ConfigureAwait(false);
         }
 
-        public Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
+        public Task PutAsync(string targetFilename, string sourceFilePath, CancellationToken cancelToken)
         {
-            string path = GetRemoteName(remotename);
+            string targetFilePath = GetRemoteName(targetFilename);
             if (m_moveFile)
             {
-                if (systemIO.FileExists(path))
-                    systemIO.FileDelete(path);
-                
-                systemIO.FileMove(filename, path);
+                if (systemIO.FileExists(targetFilePath))
+                    systemIO.FileDelete(targetFilePath);
+
+                var sourceFileInfo = new FileInfo(sourceFilePath);
+                var sourceFileLength = sourceFileInfo.Exists ? (long?)sourceFileInfo.Length : null;
+
+                systemIO.FileMove(sourceFilePath, targetFilePath);
+                if (m_verifyDestinationLength)
+                    VerifyMatchingSize(targetFilePath, null, sourceFileLength);
             }
             else
-                systemIO.FileCopy(filename, path, true);
+            {
+                systemIO.FileCopy(sourceFilePath, targetFilePath, true);
+                if (m_verifyDestinationLength)
+                    VerifyMatchingSize(targetFilePath, sourceFilePath);
+            }
 
-            return Task.FromResult(true);
+            return Task.CompletedTask;
         }
 
-        public void Get(string remotename, string filename)
+        public Task GetAsync(string remotename, string filename, CancellationToken cancelToken)
         {
             systemIO.FileCopy(GetRemoteName(remotename), filename, true);
+            return Task.CompletedTask;
         }
 
-        public void Delete(string remotename)
+        public Task DeleteAsync(string remotename, CancellationToken cancelToken)
         {
             systemIO.FileDelete(GetRemoteName(remotename));
+            return Task.CompletedTask;
         }
 
         public IList<ICommandLineArgument> SupportedCommands
         {
             get
             {
-                return new List<ICommandLineArgument>(new ICommandLineArgument[] {
-                    new CommandLineArgument("auth-password", CommandLineArgument.ArgumentType.Password, Strings.FileBackend.DescriptionAuthPasswordShort, Strings.FileBackend.DescriptionAuthPasswordLong),
-                    new CommandLineArgument("auth-username", CommandLineArgument.ArgumentType.String, Strings.FileBackend.DescriptionAuthUsernameShort, Strings.FileBackend.DescriptionAuthUsernameLong),
+                var lst = new List<ICommandLineArgument>();
+                if (OperatingSystem.IsWindows())
+                    lst.AddRange([
+                        new CommandLineArgument("auth-username", CommandLineArgument.ArgumentType.String, Strings.FileBackend.DescriptionAuthUsernameShort, Strings.FileBackend.DescriptionAuthUsernameLong),
+                        new CommandLineArgument("auth-password", CommandLineArgument.ArgumentType.Password, Strings.FileBackend.DescriptionAuthPasswordShort, Strings.FileBackend.DescriptionAuthPasswordLong),
+                        new CommandLineArgument(OPTION_FORCE_REAUTH, CommandLineArgument.ArgumentType.Boolean, Strings.FileBackend.ForceReauthShort, Strings.FileBackend.ForceReauthLong)
+                    ]);
+
+                lst.AddRange([
                     new CommandLineArgument(OPTION_DESTINATION_MARKER, CommandLineArgument.ArgumentType.String, Strings.FileBackend.AlternateDestinationMarkerShort, Strings.FileBackend.AlternateDestinationMarkerLong(OPTION_ALTERNATE_PATHS)),
                     new CommandLineArgument(OPTION_ALTERNATE_PATHS, CommandLineArgument.ArgumentType.Path, Strings.FileBackend.AlternateTargetPathsShort, Strings.FileBackend.AlternateTargetPathsLong(OPTION_DESTINATION_MARKER, System.IO.Path.PathSeparator)),
                     new CommandLineArgument(OPTION_MOVE_FILE, CommandLineArgument.ArgumentType.Boolean, Strings.FileBackend.UseMoveForPutShort, Strings.FileBackend.UseMoveForPutLong),
-                    new CommandLineArgument(OPTION_FORCE_REAUTH, CommandLineArgument.ArgumentType.Boolean, Strings.FileBackend.ForceReauthShort, Strings.FileBackend.ForceReauthLong),
-                });
+                    new CommandLineArgument(OPTION_DISABLE_LENGTH_VERIFICATION, CommandLineArgument.ArgumentType.Boolean, Strings.FileBackend.DisableLengthVerificationShort, Strings.FileBackend.DisableLengthVerificationLong),
+                ]);
 
+                return lst;
             }
         }
 
@@ -259,17 +280,19 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public void Test()
+        public Task TestAsync(CancellationToken cancelToken)
         {
             this.TestList();
+            return Task.CompletedTask;
         }
 
-        public void CreateFolder()
+        public Task CreateFolderAsync(CancellationToken cancelToken)
         {
             if (systemIO.DirectoryExists(m_path))
                 throw new FolderAreadyExistedException();
 
             systemIO.DirectoryCreate(m_path);
+            return Task.CompletedTask;
         }
 
         #endregion
@@ -287,9 +310,14 @@ namespace Duplicati.Library.Backend
         private System.IO.DriveInfo GetDrive()
         {
             string root;
-            if (Platform.IsClientPosix)
+            if (!OperatingSystem.IsWindows())
             {
                 string path = Util.AppendDirSeparator(systemIO.PathGetFullPath(m_path));
+
+                // If the built-in .NET DriveInfo works, use it
+                try { return new System.IO.DriveInfo(path); }
+                catch { }
+
                 root = "/";
 
                 //Find longest common prefix from mounted devices
@@ -306,7 +334,7 @@ namespace Duplicati.Library.Backend
 
             // On Windows, DriveInfo is only valid for lettered drives. (e.g., not for UNC paths and shares)
             // So only attempt to get it if we aren't on Windows or if the root starts with a letter.
-            if (!Platform.IsClientWindows || (root.Length > 0 && char.IsLetter(root[0])))
+            if (!OperatingSystem.IsWindows() || (root.Length > 0 && char.IsLetter(root[0])))
             {
                 try
                 {
@@ -321,39 +349,40 @@ namespace Duplicati.Library.Backend
             return null;
         }
 
-        public IQuotaInfo Quota
+        public Task<IQuotaInfo> GetQuotaInfoAsync(CancellationToken cancelToken)
         {
-            get
+            var driveInfo = this.GetDrive();
+            if (driveInfo != null)
             {
-                System.IO.DriveInfo driveInfo = this.GetDrive();
-                if (driveInfo != null)
+                // Check that the total space is above 0, because Mono sometimes reports 0 for unknown file systems
+                // If the drive actually has a total size of 0, this should be obvious immediately due to write errors
+                if (driveInfo.TotalSize > 0)
                 {
-                    return new QuotaInfo(driveInfo.TotalSize, driveInfo.AvailableFreeSpace);
+                    return Task.FromResult<IQuotaInfo>(new QuotaInfo(driveInfo.TotalSize, driveInfo.AvailableFreeSpace));
                 }
-
-                if (Platform.IsClientWindows)
-                {
-                    // If we can't get the DriveInfo on Windows, fallback to GetFreeDiskSpaceEx
-                    // https://stackoverflow.com/questions/2050343/programmatically-determining-space-available-from-unc-path
-                    return GetDiskFreeSpace(m_path);
-                }
-
-                return null;
             }
+
+            if (OperatingSystem.IsWindows())
+            {
+                // If we can't get the DriveInfo on Windows, fallback to GetFreeDiskSpaceEx
+                // https://stackoverflow.com/questions/2050343/programmatically-determining-space-available-from-unc-path
+                return Task.FromResult<IQuotaInfo>(GetDiskFreeSpace(m_path));
+            }
+
+            return null;
         }
 
-        public string[] DNSName
-        {
-            get { return null; }
-        }
+        public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(Array.Empty<string>());
 
-        public void Rename(string oldname, string newname)
+        public Task RenameAsync(string oldname, string newname, CancellationToken cancellationToken)
         {
             var source = GetRemoteName(oldname);
             var target = GetRemoteName(newname);
             if (systemIO.FileExists(target))
                 systemIO.FileDelete(target);
             systemIO.FileMove(source, target);
+
+            return Task.CompletedTask;
         }
 
         /// <summary>
@@ -362,6 +391,7 @@ namespace Duplicati.Library.Backend
         /// <param name="directory">Directory</param>
         /// <returns>Quota info</returns>
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+        [SupportedOSPlatform("windows")]
         public static QuotaInfo GetDiskFreeSpace(string directory)
         {
             ulong available;
@@ -376,6 +406,7 @@ namespace Duplicati.Library.Backend
             }
         }
 
+        [SupportedOSPlatform("windows")]
         private static class WindowsDriveHelper
         {
             [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Auto)]
@@ -385,6 +416,52 @@ namespace Duplicati.Library.Backend
                 out ulong lpFreeBytesAvailable,
                 out ulong lpTotalNumberOfBytes,
                 out ulong lpTotalNumberOfFreeBytes);
+        }
+
+        private static void VerifyMatchingSize(string targetFilePath, string sourceFilePath)
+        {
+            try
+            {
+                var targetFileInfo = new FileInfo(targetFilePath);
+                if (!targetFileInfo.Exists)
+                    throw new FileMissingException($"Target file does not exist. Target: {targetFilePath}");
+
+                var sourceFileInfo = new FileInfo(sourceFilePath);
+                if (!sourceFileInfo.Exists)
+                    throw new FileMissingException($"Source file does not exist. Source: {sourceFilePath}");
+
+                if (targetFileInfo.Length != sourceFileInfo.Length)
+                    throw new FileMissingException($"Target file size ({targetFileInfo.Length:n0}) is different from source file size ({sourceFileInfo.Length:n0}). Target: {targetFilePath}");
+            }
+            catch
+            {
+                try { System.IO.File.Delete(targetFilePath); } catch { }
+                throw;
+            }
+        }
+
+        private static void VerifyMatchingSize(string targetFilePath, Stream sourceStream, long? expectedLength)
+        {
+            try
+            {
+                var targetFileInfo = new FileInfo(targetFilePath);
+                if (!targetFileInfo.Exists)
+                    throw new FileMissingException($"Target file does not exist. Target: {targetFilePath}");
+
+                bool isStreamPostion = false;
+                long? sourceStreamLength = sourceStream == null ? null : Utility.Utility.GetStreamLength(sourceStream, out isStreamPostion);
+
+                if (sourceStreamLength.HasValue && targetFileInfo.Length != sourceStreamLength.Value)
+                    throw new FileMissingException($"Target file size ({targetFileInfo.Length:n0}) is different from the source length ({sourceStreamLength.Value:n0}){(isStreamPostion ? " - ending stream position)" : "")}. Target: {targetFilePath}");
+
+                if (expectedLength.HasValue && targetFileInfo.Length != expectedLength.Value)
+                    throw new FileMissingException($"Target file size ({targetFileInfo.Length:n0}) is different from the expected length ({expectedLength.Value:n0}). Target: {targetFilePath}");
+            }
+            catch
+            {
+                try { System.IO.File.Delete(targetFilePath); } catch { }
+                throw;
+            }
         }
     }
 }

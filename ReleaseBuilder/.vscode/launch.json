@@ -1,0 +1,86 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": ".NET Core Launch (console)",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "dotnet: build",
+            "program": "${workspaceFolder}/bin/Debug/net8.0/ReleaseBuilder.dll",
+            // "args": ["create-key", "testfile.key1", "--password", "test1234"],
+
+            // "args": ["build", "canary"],
+            // "args": ["build", "experimental"],
+            // "args": ["build", "beta"],
+            // "args": ["build", "stable"],
+
+            "args": [ 
+                "build", 
+                "debug",
+                "--git-stash-push", "false", 
+                "--targets", "win-arm64-gui.zip",
+                "--targets", "win-arm64-gui.msi",
+                "--targets", "win-x86-gui.zip",
+                "--targets", "win-x86-gui.msi",
+                "--targets", "win-x64-gui.msi",
+                "--targets", "win-x64-gui.zip",                
+                "--targets", "win-x64-agent.msi",
+                "--targets", "win-arm64-agent.msi",
+                "--targets", "linux-x64-gui.zip",
+                "--targets", "linux-arm64-gui.zip",
+                "--targets", "osx-x64-gui.dmg",
+                "--targets", "osx-arm64-gui.dmg",
+                "--targets", "osx-x64-gui.pkg", 
+                "--targets", "osx-arm64-gui.pkg",
+                "--targets", "osx-arm64-agent.pkg",
+                "--targets", "osx-x64-agent.pkg",
+                "--targets", "osx-arm64-cli.pkg",
+                "--targets", "osx-x64-cli.pkg",
+                "--targets", "linux-x64-gui.deb", 
+                "--targets", "linux-x64-cli.deb", 
+                "--targets", "linux-arm64-gui.deb", 
+                "--targets", "linux-arm64-cli.deb", 
+                "--targets", "linux-arm7-gui.deb", 
+                "--targets", "linux-arm7-cli.deb", 
+                "--targets", "linux-x64-cli.docker", 
+                "--targets", "linux-arm64-cli.docker", 
+                "--targets", "linux-arm7-cli.docker", 
+                "--targets", "linux-x64-gui.rpm", 
+                "--targets", "linux-arm64-gui.rpm", 
+                "--targets", "linux-x64-cli.rpm", 
+                "--targets", "linux-arm64-cli.rpm", 
+                "--targets", "linux-x64-agent.zip",
+                "--targets", "linux-x64-agent.deb",
+                "--targets", "linux-x64-agent.rpm",
+                "--targets", "linux-x64-agent.docker",
+                "--targets", "linux-arm64-agent.zip",
+                "--targets", "linux-arm64-agent.deb",
+                "--targets", "linux-arm64-agent.rpm",
+                "--targets", "linux-arm64-agent.docker",
+                "--targets", "win-x64-agent.zip",
+                "--targets", "win-arm64-agent.zip",
+                "--disable-docker-push", "true",
+                "--keep-builds", "true",
+                "--disable-authenticode", "true",
+                "--disable-signcode", "true",
+                "--disable-notarize-signing", "true",
+                "--disable-gpg-signing", "true",
+                "--disable-s3-upload", "true",
+                "--disable-github-upload", "true",
+                "--disable-update-server-reload", "true",
+                "--disable-discourse-announce", "true",
+                "--password", "test1234",
+                "--version", "2.0.8.104"                
+            ],
+            "env": {
+                "UPDATER_KEYFILE": "${workspaceFolder}/testfile.key1:${workspaceFolder}/testfile.key2"
+            },
+            "cwd": "${workspaceFolder}",
+            "stopAtEntry": false,
+            "console": "internalConsole"
+        }
+    ]
+}

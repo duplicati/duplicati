@@ -1,28 +1,35 @@
-//  Copyright (C) 2015, The Duplicati Team
+// Copyright (C) 2024, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
 
-//  http://www.duplicati.com, info@duplicati.com
-//
-//  This library is free software; you can redistribute it and/or modify
-//  it under the terms of the GNU Lesser General Public License as
-//  published by the Free Software Foundation; either version 2.1 of the
-//  License, or (at your option) any later version.
-//
-//  This library is distributed in the hope that it will be useful, but
-//  WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-//  Lesser General Public License for more details.
-//
-//  You should have received a copy of the GNU Lesser General Public
-//  License along with this library; if not, write to the Free Software
-//  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 using System;
 using System.IO;
 using System.Linq;
 using System.Collections.Generic;
 using Duplicati.Library.Interface;
+using System.Runtime.Versioning;
 
 namespace Duplicati.Library.Common.IO
 {
+    [SupportedOSPlatform("linux")]
+    [SupportedOSPlatform("macOS")]
     public struct SystemIOLinux : ISystemIO
     {
         #region ISystemIO implementation
@@ -55,6 +62,11 @@ namespace Duplicati.Library.Common.IO
         public void FileSetLastWriteTimeUtc(string path, DateTime time)
         {
             File.SetLastWriteTimeUtc(path, time);
+
+            var gtime = FileGetLastWriteTimeUtc(path);
+            if(gtime != time) {
+                Console.Error.WriteLine($"DISS: {path} {gtime.ToFileTimeUtc() - time.ToFileTimeUtc()}");
+            }
         }
 
         public void FileSetCreationTimeUtc(string path, DateTime time)
@@ -104,12 +116,12 @@ namespace Duplicati.Library.Common.IO
 
         public void CreateSymlink(string symlinkfile, string target, bool asDir)
         {
-            UnixSupport.File.CreateSymlink(symlinkfile, target);
+            PosixFile.CreateSymlink(symlinkfile, target);
         }
 
         public string GetSymlinkTarget(string path)
         {
-            return UnixSupport.File.GetSymlinkTarget(NormalizePath(path));
+            return PosixFile.GetSymlinkTarget(NormalizePath(path));
         }
         
         public string PathGetDirectoryName(string path)
@@ -130,6 +142,22 @@ namespace Duplicati.Library.Common.IO
         public IEnumerable<string> EnumerateFiles(string path, string searchPattern, SearchOption searchOption)
         {
             return Directory.EnumerateFiles(path, searchPattern, searchOption);
+        }
+
+        public IEnumerable<IFileEntry> EnumerateFileEntries(string path)
+        {
+            // For consistency with previous implementation, enumerate files first and directories after
+            DirectoryInfo dir = new DirectoryInfo(path);
+
+            foreach (FileInfo file in dir.EnumerateFiles())
+            {
+                yield return FileEntry(file);
+            }
+
+            foreach (DirectoryInfo d in dir.EnumerateDirectories())
+            {
+                yield return DirectoryEntry(d);
+            }
         }
 
         public string PathGetFileName(string path)
@@ -177,12 +205,12 @@ namespace Duplicati.Library.Common.IO
             var f = NormalizePath(file);
             var dict = new Dictionary<string, string>();
 
-            var n = UnixSupport.File.GetExtendedAttributes(f, isSymlink, followSymlink);
+            var n = PosixFile.GetExtendedAttributes(f, isSymlink, followSymlink);
             if (n != null)
                 foreach(var x in n)
                     dict["unix-ext:" + x.Key] = Convert.ToBase64String(x.Value);
 
-            var fse = UnixSupport.File.GetUserGroupAndPermissions(f);
+            var fse = PosixFile.GetUserGroupAndPermissions(f);
             dict["unix:uid-gid-perm"] = string.Format("{0}-{1}-{2}", fse.UID, fse.GID, fse.Permissions);
             if (fse.OwnerName != null)
             {
@@ -204,7 +232,7 @@ namespace Duplicati.Library.Common.IO
             var f = NormalizePath(file);
 
             foreach(var x in data.Where(x => x.Key.StartsWith("unix-ext:", StringComparison.Ordinal)).Select(x => new KeyValuePair<string, byte[]>(x.Key.Substring("unix-ext:".Length), Convert.FromBase64String(x.Value))))
-                UnixSupport.File.SetExtendedAttribute(f, x.Key, x.Value);
+                PosixFile.SetExtendedAttribute(f, x.Key, x.Value);
 
             if (restorePermissions && data.ContainsKey("unix:uid-gid-perm"))
             {
@@ -218,14 +246,14 @@ namespace Duplicati.Library.Common.IO
                     if (long.TryParse(parts[0], out uid) && long.TryParse(parts[1], out gid) && long.TryParse(parts[2], out perm))
                     {
                         if (data.ContainsKey("unix:owner-name"))
-                            try { uid = UnixSupport.File.GetUserID(data["unix:owner-name"]); }
+                            try { uid = PosixFile.GetUserID(data["unix:owner-name"]); }
                             catch { }
 
                         if (data.ContainsKey("unix:group-name"))
-                            try { gid = UnixSupport.File.GetGroupID(data["unix:group-name"]); }
+                            try { gid = PosixFile.GetGroupID(data["unix:group-name"]); }
                             catch { }
 
-                        UnixSupport.File.SetUserGroupAndPermissions(f, uid, gid, perm);
+                        PosixFile.SetUserGroupAndPermissions(f, uid, gid, perm);
                     }
                 }
             }
@@ -293,7 +321,10 @@ namespace Duplicati.Library.Common.IO
 
         public IFileEntry DirectoryEntry(string path)
         {
-            var dInfo = new DirectoryInfo(path);
+            return DirectoryEntry(new DirectoryInfo(path));
+        }
+        public IFileEntry DirectoryEntry(DirectoryInfo dInfo)
+        {
             return new FileEntry(dInfo.Name, 0, dInfo.LastAccessTime, dInfo.LastWriteTime)
             {
                 IsFolder = true
@@ -302,7 +333,10 @@ namespace Duplicati.Library.Common.IO
 
         public IFileEntry FileEntry(string path)
         {
-            var fileInfo = new FileInfo(path);
+            return FileEntry(new FileInfo(path));
+        }
+        public IFileEntry FileEntry(FileInfo fileInfo)
+        {
             return new FileEntry(fileInfo.Name, fileInfo.Length, fileInfo.LastAccessTime, fileInfo.LastWriteTime);
         }
     }

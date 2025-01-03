@@ -1,0 +1,44 @@
+﻿<!-- Copyright (c) .NET Foundation and contributors. All rights reserved. Licensed under the Microsoft Reciprocal License. See LICENSE.txt file in this directory for full license information. -->
+
+
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+    <Fragment>
+        <Binary Id="WixUI_Bmp_Banner" SourceFile="Resources/InstallerSmall.bmp" />
+        <Binary Id="WixUI_Bmp_Dialog" SourceFile="Resources/InstallerLarge.bmp" />
+        <Binary Id="WixUI_Ico_Exclam" SourceFile="ui/bitmaps/exclamic.ico" />
+        <Binary Id="WixUI_Ico_Info" SourceFile="ui/bitmaps/info.ico" />
+        <Binary Id="WixUI_Bmp_New" SourceFile="ui/bitmaps/New.ico" />
+        <Binary Id="WixUI_Bmp_Up" SourceFile="ui/bitmaps/Up.ico" />
+
+        <UI Id="WixUI_Common">
+            <!-- ui text -->
+            <UIText Id="AbsentPath" />
+            <UIText Id="bytes" Value="bytes" />
+            <UIText Id="GB" Value="GB" />
+            <UIText Id="KB" Value="KB" />
+            <UIText Id="MB" Value="MB" />
+
+            <!-- ui text, missing from Wixl, copied from https://github.com/wixtoolset/UI.wixext/tree/master/src/wixlib/WixUI_en-US.wxl -->
+            <UIText Id="SelParentCostNegNeg" Value="This feature frees up [1] on your hard drive. It has [2] of [3] subfeatures selected. The subfeatures free up [4] on your hard drive." />
+            <UIText Id="SelParentCostNegPos" Value="This feature frees up [1] on your hard drive. It has [2] of [3] subfeatures selected. The subfeatures require [4] on your hard drive." />
+            <UIText Id="SelParentCostPosNeg" Value="This feature requires [1] on your hard drive. It has [2] of [3] subfeatures selected. The subfeatures free up [4] on your hard drive." />
+            <UIText Id="SelParentCostPosPos" Value="This feature requires [1] on your hard drive. It has [2] of [3] subfeatures selected. The subfeatures require [4] on your hard drive." />
+            <UIText Id="MenuLocal" Value="Will be installed on local hard drive" />
+            <UIText Id="MenuAllLocal" Value="Entire feature will be installed on local hard drive" />
+            <UIText Id="MenuAdvertise" Value="Feature will be installed when required" />
+            <UIText Id="MenuAbsent" Value="Entire feature will be unavailable" />
+
+            <UIText Id="SelChildCostNeg" Value="This feature frees up [1] on your hard drive." />
+            <UIText Id="SelChildCostPos" Value="This feature requires [1] on your hard drive." />
+            <UIText Id="SelCostPending" Value="Compiling cost for this feature..." />
+            <UIText Id="SelLocalAbsent" Value="This feature will be completely removed" />
+            <UIText Id="TimeRemaining" Value="Time remaining:{ [1] minutes}{ [2] seconds}" />
+                        
+            <UIText Id="VolumeCostAvailable" Value="Available" />
+            <UIText Id="VolumeCostDifference" Value="Difference" />
+            <UIText Id="VolumeCostRequired" Value="Required" />
+            <UIText Id="VolumeCostSize" Value="Disk Size" />
+            <UIText Id="VolumeCostVolume" Value="Volume" />
+        </UI>
+    </Fragment>
+</Wix>

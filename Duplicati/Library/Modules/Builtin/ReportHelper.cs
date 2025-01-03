@@ -1,19 +1,24 @@
-﻿//  Copyright (C) 2018, The Duplicati Team
-//  http://www.duplicati.com, info@duplicati.com
-//
-//  This library is free software; you can redistribute it and/or modify
-//  it under the terms of the GNU Lesser General Public License as
-//  published by the Free Software Foundation; either version 2.1 of the
-//  License, or (at your option) any later version.
-//
-//  This library is distributed in the hope that it will be useful, but
-//  WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-//  Lesser General Public License for more details.
-//
-//  You should have received a copy of the GNU Lesser General Public
-//  License along with this library; if not, write to the Free Software
-//  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+// Copyright (C) 2024, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -28,13 +33,17 @@ namespace Duplicati.Library.Modules.Builtin
     /// <summary>
     /// A helper module that contains all shared code used in the various reporting modules
     /// </summary>
-    public abstract class ReportHelper : Interface.IGenericCallbackModule
+    public abstract class ReportHelper : IGenericCallbackModule
     {
         /// <summary>
         /// The tag used for logging
         /// </summary>
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<ReportHelper>();
 
+        /// <summary>
+        /// The salt used for calculating a backup Id from the remote URL
+        /// </summary>
+        private const string SALT = "DUPL";
 
         /// <summary>
         /// Name of the option used to specify subject
@@ -78,7 +87,7 @@ namespace Duplicati.Library.Modules.Builtin
         /// <summary>
         /// The default subject or title line
         /// </summary>
-        protected virtual string DEFAULT_SUBJECT { get; }= "Duplicati %OPERATIONNAME% report for %backup-name%";
+        protected virtual string DEFAULT_SUBJECT { get; } = "Duplicati %OPERATIONNAME% report for %backup-name%";
         /// <summary>
         /// The default report level
         /// </summary>
@@ -144,7 +153,7 @@ namespace Duplicati.Library.Modules.Builtin
         /// <summary>
         /// The cached set of options
         /// </summary>
-        protected IDictionary<string, string> m_options;
+        protected IReadOnlyDictionary<string, string> m_options;
         /// <summary>
         /// The parsed result level
         /// </summary>
@@ -211,13 +220,13 @@ namespace Duplicati.Library.Modules.Builtin
             if (!ConfigureModule(commandlineOptions))
                 return;
 
+            m_options = commandlineOptions.AsReadOnly();
             m_isConfigured = true;
-            commandlineOptions.TryGetValue(SubjectOptionName, out m_subject);
-            commandlineOptions.TryGetValue(BodyOptionName, out m_body);
-            m_options = commandlineOptions;
+            m_options.TryGetValue(SubjectOptionName, out m_subject);
+            m_options.TryGetValue(BodyOptionName, out m_body);
 
             string tmp;
-            commandlineOptions.TryGetValue(ActionLevelOptionName, out tmp);
+            m_options.TryGetValue(ActionLevelOptionName, out tmp);
             if (!string.IsNullOrEmpty(tmp))
                 m_levels =
                     tmp
@@ -234,17 +243,17 @@ namespace Duplicati.Library.Modules.Builtin
                     .Select(x => x.Trim())
                     .ToArray();
 
-            m_sendAll = Utility.Utility.ParseBoolOption(commandlineOptions, ActionOnAnyOperationOptionName);
+            m_sendAll = Utility.Utility.ParseBoolOption(m_options, ActionOnAnyOperationOptionName);
 
             ResultExportFormat resultFormat;
-            if (!commandlineOptions.TryGetValue(ResultFormatOptionName, out var tmpResultFormat))
+            if (!m_options.TryGetValue(ResultFormatOptionName, out var tmpResultFormat))
                 resultFormat = DEFAULT_EXPORT_FORMAT;
             else if (!Enum.TryParse(tmpResultFormat, true, out resultFormat))
                 resultFormat = DEFAULT_EXPORT_FORMAT;
 
             m_resultFormatSerializer = ResultFormatSerializerProvider.GetSerializer(resultFormat);
 
-            commandlineOptions.TryGetValue(LogLinesOptionName, out var loglinestr);
+            m_options.TryGetValue(LogLinesOptionName, out var loglinestr);
             if (!int.TryParse(loglinestr, out m_maxmimumLogLines))
                 m_maxmimumLogLines = DEFAULT_LOGLINES;
 
@@ -258,7 +267,8 @@ namespace Duplicati.Library.Modules.Builtin
             var logLevel = Utility.Utility.ParseEnumOption(m_options, LogLevelOptionName, DEFAULT_LOG_LEVEL);
 
             m_logstorage = new FileBackedStringList();
-            m_logscope = Logging.Log.StartScope(m => m_logstorage.Add(m.AsString(true)), m => {
+            m_logscope = Logging.Log.StartScope(m => m_logstorage.Add(m.AsString(true)), m =>
+            {
 
                 if (filter.Matches(m.FilterTag, out var result, out var match))
                     return result;
@@ -288,11 +298,36 @@ namespace Duplicati.Library.Modules.Builtin
         /// <returns>The expanded template.</returns>
         /// <param name="input">The input template.</param>
         /// <param name="result">The result object.</param>
+        /// <param name="exception">An optional exception that has stopped the backup</param>
         /// <param name="subjectline">If set to <c>true</c>, the result is intended for a subject or title line.</param>
-        protected virtual string ReplaceTemplate(string input, object result, bool subjectline)
+        protected virtual string ReplaceTemplate(string input, object result, Exception exception, bool subjectline)
+            => ReplaceTemplate(input, result, exception, subjectline, m_resultFormatSerializer);
+
+        /// <summary>
+        /// Helper method to perform template expansion
+        /// </summary>
+        /// <returns>The expanded template.</returns>
+        /// <param name="input">The input template.</param>
+        /// <param name="result">The result object.</param>
+        /// <param name="exception">An optional exception that has stopped the backup</param>
+        /// <param name="subjectline">If set to <c>true</c>, the result is intended for a subject or title line.</param>
+        /// <param name="format">The format to use when serializing the result</param>
+        protected virtual string ReplaceTemplate(string input, object result, Exception exception, bool subjectline, ResultExportFormat format)
+            => ReplaceTemplate(input, result, exception, subjectline, ResultFormatSerializerProvider.GetSerializer(format));
+
+        /// <summary>
+        /// Helper method to perform template expansion
+        /// </summary>
+        /// <returns>The expanded template.</returns>
+        /// <param name="input">The input template.</param>
+        /// <param name="result">The result object.</param>
+        /// <param name="exception">An optional exception that has stopped the backup</param>
+        /// <param name="subjectline">If set to <c>true</c>, the result is intended for a subject or title line.</param>
+        /// <param name="resultFormatSerializer">The serializer to use when serializing the result</param>
+        protected virtual string ReplaceTemplate(string input, object result, Exception exception, bool subjectline, IResultFormatSerializer resultFormatSerializer)
         {
             // For JSON, ignore the template and just use the contents
-            if (ExportFormat == ResultExportFormat.Json && !subjectline)
+            if (resultFormatSerializer.Format == ResultExportFormat.Json && !subjectline)
             {
                 var extra = new Dictionary<string, string>();
 
@@ -305,19 +340,38 @@ namespace Duplicati.Library.Modules.Builtin
                 if (input.IndexOf("%PARSEDRESULT%", StringComparison.OrdinalIgnoreCase) >= 0)
                     extra["ParsedResult"] = m_parsedresultlevel;
 
+                // If the options contains the key, it is captured by the loop over m_options
+                // so we only patch it in case it is missing
+
+                if (input.IndexOf("%machine-id%", StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    if (!m_options.ContainsKey("machine-id"))
+                        extra["machine-id"] = Library.AutoUpdater.UpdaterManager.MachineID;
+                }
+
+                if (input.IndexOf("%backup-id%", StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    if (!m_options.ContainsKey("backup-id"))
+                        extra["backup-id"] = Library.Utility.Utility.ByteArrayAsHexString(Library.Utility.Utility.RepeatedHashWithSalt(m_remoteurl, SALT));
+                }
+
                 if (input.IndexOf("%backup-name%", StringComparison.OrdinalIgnoreCase) >= 0)
                 {
-                    if (m_options.ContainsKey("backup-name"))
-                        extra["backup-name"] = m_options["backup-name"];
-                    else
+                    if (!m_options.ContainsKey("backup-name"))
                         extra["backup-name"] = System.IO.Path.GetFileNameWithoutExtension(Duplicati.Library.Utility.Utility.getEntryAssembly().Location);
+                }
+
+                if (input.IndexOf("%machine-name%", StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    if (!m_options.ContainsKey("machine-name"))
+                        extra["machine-name"] = Library.AutoUpdater.UpdaterManager.MachineName;
                 }
 
                 foreach (KeyValuePair<string, string> kv in m_options)
                     if (input.IndexOf($"%{kv.Key}%", StringComparison.OrdinalIgnoreCase) >= 0)
                         extra[kv.Key] = kv.Value;
 
-                return m_resultFormatSerializer.Serialize(result, LogLines, extra);
+                return resultFormatSerializer.Serialize(result, exception, LogLines, extra);
             }
             else
             {
@@ -333,7 +387,7 @@ namespace Duplicati.Library.Modules.Builtin
                 else
                 {
                     if (input.IndexOf("%RESULT%", StringComparison.OrdinalIgnoreCase) >= 0)
-                        input = Regex.Replace(input, "\\%RESULT\\%", m_resultFormatSerializer.Serialize(result, LogLines, null), RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+                        input = Regex.Replace(input, "\\%RESULT\\%", resultFormatSerializer.Serialize(result, exception, LogLines, null), RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
                 }
 
                 foreach (KeyValuePair<string, string> kv in m_options)
@@ -341,6 +395,15 @@ namespace Duplicati.Library.Modules.Builtin
 
                 if (!m_options.ContainsKey("backup-name"))
                     input = Regex.Replace(input, "\\%backup-name\\%", System.IO.Path.GetFileNameWithoutExtension(Duplicati.Library.Utility.Utility.getEntryAssembly().Location) ?? "", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+
+                if (!m_options.ContainsKey("machine-name"))
+                    input = Regex.Replace(input, "\\%machine-name\\%", Library.AutoUpdater.UpdaterManager.MachineName, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+
+                if (!m_options.ContainsKey("backup-id"))
+                    input = Regex.Replace(input, "\\%backup-id\\%", Library.Utility.Utility.ByteArrayAsHexString(Library.Utility.Utility.RepeatedHashWithSalt(m_remoteurl, SALT)), RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+
+                if (!m_options.ContainsKey("machine-id"))
+                    input = Regex.Replace(input, "\\%machine-id\\%", Library.AutoUpdater.UpdaterManager.MachineID, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
                 input = Regex.Replace(input, "\\%[^\\%]+\\%", "");
                 return input;
@@ -366,7 +429,7 @@ namespace Duplicati.Library.Modules.Builtin
             }
         }
 
-        public void OnFinish(object result)
+        public void OnFinish(IBasicResults result, Exception exception)
         {
             // Dispose the current log scope
             if (m_logscope != null)
@@ -384,10 +447,10 @@ namespace Duplicati.Library.Modules.Builtin
                 return;
 
             ParsedResultType level;
-            if (result is Exception)
+            if (exception != null)
                 level = ParsedResultType.Fatal;
-            else if (result != null && result is IBasicResults results)
-                level = results.ParsedResult;
+            else if (result != null)
+                level = result.ParsedResult;
             else
                 level = ParsedResultType.Error;
 
@@ -407,17 +470,27 @@ namespace Duplicati.Library.Modules.Builtin
             {
                 string body = m_body;
                 string subject = m_subject;
-                if (body != DEFAULT_BODY && System.IO.Path.IsPathRooted(body) && System.IO.File.Exists(body))
-                    body = System.IO.File.ReadAllText(body);
+                if (body != DEFAULT_BODY)
+                {
+                    try
+                    {
+                        if (System.IO.File.Exists(body) && System.IO.Path.IsPathRooted(body))
+                            body = System.IO.File.ReadAllText(body);
+                    }
+                    catch (Exception ex)
+                    {
+                        Logging.Log.WriteWarningMessage(LOGTAG, "ReportSubmitError", ex, "Invalid path, or unable to read file given as body");
+                    }
+                }
 
-                body = ReplaceTemplate(body, result, false);
-                subject = ReplaceTemplate(subject, result, true);
+                body = ReplaceTemplate(body, result, exception, false);
+                subject = ReplaceTemplate(subject, result, exception, true);
 
                 SendMessage(subject, body);
             }
             catch (Exception ex)
             {
-                Exception top = ex; 
+                Exception top = ex;
                 var sb = new StringBuilder();
                 while (top != null)
                 {

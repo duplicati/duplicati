@@ -1,22 +1,24 @@
-﻿#region Disclaimer / License
-// Copyright (C) 2015, The Duplicati Team
-// http://www.duplicati.com, info@duplicati.com
+// Copyright (C) 2024, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
 // 
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 2.1 of the License, or (at your option) any later version.
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
 // 
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
 // 
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-// 
-#endregion
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
+
 
 using System;
 using System.Collections;
@@ -25,8 +27,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
-using System.Runtime.Serialization;
-using Duplicati.Library.Common;
+using System.Runtime.Versioning;
 using Duplicati.Library.Common.IO;
 using Microsoft.Win32.SafeHandles;
 
@@ -35,6 +36,7 @@ namespace Duplicati.Library.Snapshots
     /// <summary>
     /// Class that encapsulates USN journal access to a single volume
     /// </summary>
+    [SupportedOSPlatform("windows")]
     public sealed class USNJournal : IDisposable
     {
         /// <summary>
@@ -98,9 +100,6 @@ namespace Duplicati.Library.Snapshots
         /// <param name="volumeRoot">The root volume where the USN lookup is performed</param>
         internal USNJournal(string volumeRoot)
         {
-            if (Platform.IsClientPosix)
-                throw new Interface.UserInformationException(Strings.USNHelper.LinuxNotSupportedError, "UsnOnLinuxNotSupported");
-
             m_volume = Util.AppendDirSeparator(volumeRoot);
 
             try
@@ -285,7 +284,7 @@ namespace Duplicati.Library.Snapshots
 
                     if (m_offset >= m_entryData.Count)
                         return false;
-                    
+
                     var entry = GetBufferedEntry(m_bufferPointer, m_offset, out var fileName);
                     Current = new Record(entry, fileName);
                     m_offset += entry.RecordLength;
@@ -383,7 +382,7 @@ namespace Duplicati.Library.Snapshots
                 records.AddRange(EnumerateRecords(entryData)
                                     .TakeWhile(rec => rec.UsnRecord.Usn < m_journal.NextUsn)
                                     .Where(rec => rec.UsnRecord.Usn >= startUsn && (inclusionPredicate == null || inclusionPredicate(rec))));
-                readData.StartUsn = Marshal.ReadInt64(entryData, 0);
+                readData.StartUsn = BitConverter.ToInt64(entryData, 0);
             }
 
             return records;
@@ -409,7 +408,7 @@ namespace Duplicati.Library.Snapshots
                 ref enumData, bufferSize, out entryData))
             {
                 var e = Marshal.GetLastWin32Error();
-                if (e != Win32USN.ERROR_INSUFFICIENT_BUFFER) 
+                if (e != Win32USN.ERROR_INSUFFICIENT_BUFFER)
                     return null;
 
                 // retry, increasing buffer size
@@ -650,7 +649,7 @@ namespace Duplicati.Library.Snapshots
                 Sort();
 
                 // perform binary search
-                int index = m_records.BinarySearch(usnRecord, 
+                int index = m_records.BinarySearch(usnRecord,
                     Comparer<Record>.Create(
                         (left, right) =>
                         {
@@ -717,10 +716,6 @@ namespace Duplicati.Library.Snapshots
         }
 
         public UsnJournalSoftFailureException(string message, Exception innerException) : base(message, innerException)
-        {
-        }
-
-        protected UsnJournalSoftFailureException(SerializationInfo info, StreamingContext context) : base(info, context)
         {
         }
     }

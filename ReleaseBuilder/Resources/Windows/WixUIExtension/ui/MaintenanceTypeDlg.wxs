@@ -1,0 +1,58 @@
+﻿<!-- Copyright (c) .NET Foundation and contributors. All rights reserved. Licensed under the Microsoft Reciprocal License. See LICENSE.txt file in this directory for full license information. -->
+
+
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+    <Fragment>
+        <UI>
+            <Property Id="BURNMSIMODIFY" Secure="yes" />
+            <Property Id="BURNMSIREPAIR" Secure="yes" />
+            <Property Id="BURNMSIUNINSTALL" Secure="yes" />
+
+            <Dialog Id="MaintenanceTypeDlg" Width="370" Height="270" Title="[ProductName] Setup">
+
+                <Control Id="ChangeButton" Type="PushButton" X="40" Y="65" Width="80" Height="17" ToolTip="yes" Default="yes" Text="Change"
+                    DisableCondition="ARPNOMODIFY OR BURNMSIREPAIR OR BURNMSIUNINSTALL">
+                    <Publish Property="WixUI_InstallMode" Value="Change" />
+                </Control>
+                <Control Id="ChangeText" Type="Text" X="60" Y="85" Width="280" Height="20" Text="Lets you change the way features are installed."
+                    HideCondition="ARPNOMODIFY OR BURNMSIREPAIR OR BURNMSIUNINSTALL"
+                    />
+                <Control Id="ChangeDisabledText" Type="Text" X="60" Y="85" Width="280" Height="20" NoPrefix="yes" Text="[ProductName] has no independently selectable features."
+                    Hidden="yes" ShowCondition="ARPNOMODIFY OR BURNMSIREPAIR OR BURNMSIUNINSTALL"
+                    />
+
+                <Control Id="RepairButton" Type="PushButton" X="40" Y="118" Width="80" Height="17" ToolTip="yes" Text="Repair"
+                    DisableCondition="ARPNOREPAIR OR BURNMSIMODIFY OR BURNMSIUNINSTALL">
+                    <Publish Property="WixUI_InstallMode" Value="Repair" />
+                </Control>
+                <Control Id="RepairText" Type="Text" X="60" Y="138" Width="280" Height="30" Text="Repairs errors in the most recent installation by fixing missing and corrupt files, shortcuts, and registry entries."
+                    HideCondition="ARPNOREPAIR OR BURNMSIMODIFY OR BURNMSIUNINSTALL"
+                    />
+                <Control Id="RepairDisabledText" Type="Text" X="60" Y="138" Width="280" Height="30" NoPrefix="yes" Text="[ProductName] cannot be repaired."
+                    Hidden="yes" ShowCondition="ARPNOREPAIR OR BURNMSIMODIFY OR BURNMSIUNINSTALL" />
+
+                <Control Id="RemoveButton" Type="PushButton" X="40" Y="171" Width="80" Height="17" ToolTip="yes" Text="Remove"
+                    DisableCondition="ARPNOREMOVE OR BURNMSIREPAIR OR BURNMSIMODIFY">
+                    <Publish Property="WixUI_InstallMode" Value="Remove" />
+                </Control>
+                <Control Id="RemoveText" Type="Text" X="60" Y="191" Width="280" Height="20" NoPrefix="yes" Text="Removes [ProductName] from your computer."
+                    HideCondition="ARPNOREMOVE OR BURNMSIREPAIR OR BURNMSIMODIFY"
+                    />
+                <Control Id="RemoveDisabledText" Type="Text" X="60" Y="191" Width="280" Height="20" NoPrefix="yes" Text="[ProductName] cannot be removed." Hidden="yes"
+                    ShowCondition="ARPNOREMOVE OR BURNMSIREPAIR OR BURNMSIMODIFY"
+                    />
+
+                <Control Id="Back" Type="PushButton" X="180" Y="243" Width="56" Height="17" Text="Back" />
+                <Control Id="Next" Type="PushButton" X="236" Y="243" Width="56" Height="17" Disabled="yes" Text="Next" />
+                <Control Id="Cancel" Type="PushButton" X="304" Y="243" Width="56" Height="17" Cancel="yes" Text="Cancel">
+                    <Publish Event="SpawnDialog" Value="CancelDlg" />
+                </Control>
+                <Control Id="BannerBitmap" Type="Bitmap" X="0" Y="0" Width="370" Height="44" TabSkip="no" Text="WixUI_Bmp_Banner" />
+                <Control Id="BannerLine" Type="Line" X="0" Y="44" Width="370" Height="0" />
+                <Control Id="BottomLine" Type="Line" X="0" Y="234" Width="370" Height="0" />
+                <Control Id="Title" Type="Text" X="15" Y="6" Width="340" Height="15" Transparent="yes" NoPrefix="yes" Text="{\WixUI_Font_Title}Change, repair, or remove installation" />
+                <Control Id="Description" Type="Text" X="25" Y="23" Width="340" Height="20" Transparent="yes" NoPrefix="yes" Text="Select the operation you wish to perform." />
+            </Dialog>
+        </UI>
+    </Fragment>
+</Wix>

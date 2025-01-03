@@ -1,19 +1,24 @@
-﻿//  Copyright (C) 2015, The Duplicati Team
-//  http://www.duplicati.com, info@duplicati.com
+// Copyright (C) 2024, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
 //
-//  This library is free software; you can redistribute it and/or modify
-//  it under the terms of the GNU Lesser General Public License as
-//  published by the Free Software Foundation; either version 2.1 of the
-//  License, or (at your option) any later version.
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the "Software"),
+// to deal in the Software without restriction, including without limitation
+// the rights to use, copy, modify, merge, publish, distribute, sublicense,
+// and/or sell copies of the Software, and to permit persons to whom the
+// Software is furnished to do so, subject to the following conditions:
 //
-//  This library is distributed in the hope that it will be useful, but
-//  WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-//  Lesser General Public License for more details.
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
 //
-//  You should have received a copy of the GNU Lesser General Public
-//  License along with this library; if not, write to the Free Software
-//  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+// DEALINGS IN THE SOFTWARE.
+
 using CoCoL;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main.Operation.Common;
@@ -97,6 +102,9 @@ namespace Duplicati.Library.Main.Operation.Backup
     {
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<BackendUploader>();
         private readonly Func<IBackend> m_backendFactory;
+        private readonly IBackend m_backend;
+        private int m_backendTaken = 0;
+        private bool m_backendDisposed = false;
         private CancellationTokenSource m_cancelTokenSource;
         private readonly DatabaseCommon m_database;
         private long m_initialUploadThrottleSpeed;
@@ -108,9 +116,18 @@ namespace Duplicati.Library.Main.Operation.Backup
         private readonly StatsCollector m_stats;
         private readonly ITaskReader m_taskReader;
 
-        public BackendUploader(Func<IBackend> backendFactory, Options options, DatabaseCommon database, ITaskReader taskReader, StatsCollector stats)
+        public IBackend Backend { get { return m_backendDisposed ? null : m_backend; } }
+
+        public BackendUploader(IBackend backend, Func<IBackend> backendFactory, Options options, DatabaseCommon database, ITaskReader taskReader, StatsCollector stats)
         {
-            m_backendFactory = backendFactory;
+            m_backend = backend;
+            m_backendFactory = () =>
+            {
+                if (Interlocked.Exchange(ref m_backendTaken, 1) == 0)
+                    return m_backend;
+
+                return backendFactory();
+            };
             m_options = options;
             m_taskReader = taskReader;
             m_stats = stats;
@@ -118,11 +135,11 @@ namespace Duplicati.Library.Main.Operation.Backup
             m_progressUpdater = new FileProgressThrottler(stats, options.MaxUploadPrSecond);
         }
 
-        public Task Run()
+        public Task Run(Channels channels)
         {
             return AutomationExtensions.RunTask(new
             {
-                Input = Channels.BackendRequest.ForRead,
+                Input = channels.BackendRequest.AsRead()
             },
 
             async self =>
@@ -138,12 +155,12 @@ namespace Duplicati.Library.Main.Operation.Backup
 
                 try
                 {
-                    while (!await self.Input.IsRetiredAsync && await m_taskReader.ProgressAsync)
+                    while (true)
                     {
                         var req = await self.Input.ReadAsync();
 
-                        if (!await m_taskReader.ProgressAsync)
-                            break;
+                        // Listen to pause/resume and abort, but ignore stop requests
+                        await m_taskReader.ProgressRendevouz().ConfigureAwait(false);
 
                         Worker worker = GetWorker(workers);
 
@@ -206,7 +223,12 @@ namespace Duplicati.Library.Main.Operation.Backup
                     }
                     finally
                     {
-                        workers.ForEach(w => w.Dispose());
+                        workers.ForEach(w =>
+                        {
+                            if (w.Backend == m_backend)
+                                m_backendDisposed = true;
+                            w.Dispose();
+                        });
                     }
                     throw;
                 }
@@ -219,7 +241,15 @@ namespace Duplicati.Library.Main.Operation.Backup
                 finally
                 {
                     m_stats.SetBlocking(false);
-                    workers.ForEach(w => w.Dispose());
+                    workers.ForEach(w =>
+                    {
+                        if (w.Backend == m_backend)
+                        {
+                            Interlocked.Exchange(ref m_backendTaken, 0);
+                            w.Backend = null;
+                        }
+                        w.Dispose();
+                    });
                 }
             });
         }
@@ -249,6 +279,12 @@ namespace Duplicati.Library.Main.Operation.Backup
 
                 Worker finishedWorker = workers.Single(w => w.Task == finishedTask);
                 workers.Remove(finishedWorker);
+                if (finishedWorker.Backend == m_backend && !m_backendDisposed)
+                {
+                    finishedWorker.Backend = null;
+                    Interlocked.Exchange(ref m_backendTaken, 0);
+                }
+
                 finishedWorker.Dispose();
             }
         }
@@ -278,11 +314,11 @@ namespace Duplicati.Library.Main.Operation.Backup
                 // We must use the BlockEntry's RemoteFilename and not the BlockVolume's since the
                 // BlockEntry's' RemoteFilename reflects renamed files due to retries after errors.
                 IndexVolumeWriter indexVolumeWriter = await upload.IndexVolume.CreateVolume(upload.BlockEntry.RemoteFilename, upload.BlockEntry.Hash, upload.BlockEntry.Size, upload.Options, upload.Database);
+                // Create link before upload is started, it will be removed later if upload fails
+                await m_database.AddIndexBlockLinkAsync(indexVolumeWriter.VolumeID, upload.BlockVolume.VolumeID).ConfigureAwait(false);
+
                 FileEntryItem indexEntry = indexVolumeWriter.CreateFileEntryForUpload(upload.Options);
-                if (await UploadFileAsync(indexEntry, worker, cancelToken).ConfigureAwait(false))
-                {
-                    await m_database.AddIndexBlockLinkAsync(indexVolumeWriter.VolumeID, upload.BlockVolume.VolumeID).ConfigureAwait(false);
-                }
+                await UploadFileAsync(indexEntry, worker, cancelToken).ConfigureAwait(false);
             }
         }
 
@@ -318,7 +354,10 @@ namespace Duplicati.Library.Main.Operation.Backup
             for (retryCount = 0; retryCount <= m_options.NumberOfRetries; retryCount++)
             {
                 if (m_options.RetryDelay.Ticks != 0 && retryCount != 0)
-                    await Task.Delay(m_options.RetryDelay).ConfigureAwait(false);
+                {
+                    var delay = Library.Utility.Utility.GetRetryDelay(m_options.RetryDelay, retryCount, m_options.RetryWithExponentialBackoff);
+                    await Task.Delay(delay).ConfigureAwait(false);
+                }
 
                 if (cancelToken.IsCancellationRequested)
                     return false;
@@ -345,7 +384,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                         try
                         {
                             // If we successfully create the folder, we can re-use the connection
-                            worker.Backend.CreateFolder();
+                            await worker.Backend.CreateFolderAsync(cancelToken).ConfigureAwait(false);
                             recovered = true;
                         }
                         catch (Exception dex)
@@ -374,6 +413,8 @@ namespace Duplicati.Library.Main.Operation.Backup
         {
             try
             {
+                if (worker.Backend == m_backend)
+                    m_backendDisposed = true;
                 worker.Backend?.Dispose();
             }
             catch (Exception dex)
@@ -426,9 +467,11 @@ namespace Duplicati.Library.Main.Operation.Backup
             {
                 // A download throttle speed is not given to the ThrottledStream as we are only uploading data here
                 using (var fs = File.OpenRead(item.LocalFilename))
-                using (var ts = new ThrottledStream(fs, m_initialUploadThrottleSpeed, 0))
+                using (var act = new StreamUtil.TimeoutObservingStream(fs) { ReadTimeout = backend is ITimeoutExemptBackend ? System.Threading.Timeout.Infinite : m_options.ReadWriteTimeout })
+                using (var ts = new ThrottledStream(act, m_initialUploadThrottleSpeed, 0))
                 using (var pgs = new ProgressReportingStream(ts, pg => HandleProgress(ts, pg, item.RemoteFilename)))
-                    await streamingBackend.PutAsync(item.RemoteFilename, pgs, cancelToken).ConfigureAwait(false);
+                using (var linkedToken = CancellationTokenSource.CreateLinkedTokenSource(m_taskReader.TransferToken, act.TimeoutToken))
+                    await streamingBackend.PutAsync(item.RemoteFilename, pgs, linkedToken.Token).ConfigureAwait(false);
             }
             else
                 await backend.PutAsync(item.RemoteFilename, item.LocalFilename, cancelToken).ConfigureAwait(false);

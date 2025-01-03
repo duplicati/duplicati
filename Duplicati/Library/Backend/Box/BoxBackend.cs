@@ -1,21 +1,27 @@
-﻿//  Copyright (C) 2015, The Duplicati Team
-//  http://www.duplicati.com, info@duplicati.com
-//
-//  This library is free software; you can redistribute it and/or modify
-//  it under the terms of the GNU Lesser General Public License as
-//  published by the Free Software Foundation; either version 2.1 of the
-//  License, or (at your option) any later version.
-//
-//  This library is distributed in the hope that it will be useful, but
-//  WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-//  Lesser General Public License for more details.
-//
-//  You should have received a copy of the GNU Lesser General Public
-//  License along with this library; if not, write to the Free Software
-//  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+// Copyright (C) 2024, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
+
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Utility;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -30,7 +36,7 @@ namespace Duplicati.Library.Backend.Box
     // This class is instantiated dynamically in the BackendLoader.
     public class BoxBackend : IBackend, IStreamingBackend
     {
-		private static readonly string LOGTAG = Logging.Log.LogTagFromType<BoxBackend>();
+        private static readonly string LOGTAG = Logging.Log.LogTagFromType<BoxBackend>();
 
         private const string AUTHID_OPTION = "authid";
         private const string REALLY_DELETE_OPTION = "box-delete-from-trash";
@@ -63,13 +69,13 @@ namespace Duplicati.Library.Backend.Box
                     if (ex is WebException exception && exception.Response is HttpWebResponse hs)
                     {
                         string rawdata = null;
-                        using(var rs = Library.Utility.AsyncHttpRequest.TrySetTimeout(hs.GetResponseStream()))
-                        using(var sr = new System.IO.StreamReader(rs))
+                        using (var rs = Library.Utility.AsyncHttpRequest.TrySetTimeout(hs.GetResponseStream()))
+                        using (var sr = new System.IO.StreamReader(rs))
                             rawdata = sr.ReadToEnd();
 
                         if (string.IsNullOrWhiteSpace(rawdata))
                             return;
-                        
+
                         newex = new Exception("Raw message: " + rawdata);
 
                         var msg = JsonConvert.DeserializeObject<ErrorResponse>(rawdata);
@@ -80,13 +86,13 @@ namespace Duplicati.Library.Backend.Box
                         */
                     }
                 }
-                catch(Exception ex2)
+                catch (Exception ex2)
                 {
-					Library.Logging.Log.WriteWarningMessage(LOGTAG, "BoxErrorParser", ex2, "Failed to parse error from Box");
+                    Library.Logging.Log.WriteWarningMessage(LOGTAG, "BoxErrorParser", ex2, "Failed to parse error from Box");
                 }
 
                 if (newex != null)
-                    throw newex;                
+                    throw newex;
             }
         }
 
@@ -113,22 +119,19 @@ namespace Duplicati.Library.Backend.Box
             m_oauth = new BoxHelper(authid);
         }
 
-        private string CurrentFolder
+        private async Task<string> GetCurrentFolderWithCacheAsync(CancellationToken cancelToken)
         {
-            get
-            {
-                if (m_currentfolder == null)
-                    GetCurrentFolder(false);
-                
-                return m_currentfolder;
-            }
+            if (m_currentfolder == null)
+                await GetCurrentFolderAsync(false, cancelToken).ConfigureAwait(false);
+
+            return m_currentfolder;
         }
 
-        private void GetCurrentFolder(bool create)
+        private async Task GetCurrentFolderAsync(bool create, CancellationToken cancelToken)
         {
             var parentid = "0";
 
-            foreach(var p in m_path.Split(new string[] {"/"}, StringSplitOptions.RemoveEmptyEntries))
+            foreach (var p in m_path.Split(new string[] { "/" }, StringSplitOptions.RemoveEmptyEntries))
             {
                 var el = (MiniFolder)PagedFileListResponse(parentid, true).FirstOrDefault(x => x.Name == p);
                 if (el == null)
@@ -136,10 +139,11 @@ namespace Duplicati.Library.Backend.Box
                     if (!create)
                         throw new FolderMissingException();
 
-                    el = m_oauth.PostAndGetJSONData<ListFolderResponse>(
+                    el = await m_oauth.PostAndGetJSONDataAsync<ListFolderResponse>(
                         string.Format("{0}/folders", BOX_API_URL),
+                        cancelToken,
                         new CreateItemRequest() { Name = p, Parent = new IDReference() { ID = parentid } }
-                    );
+                    ).ConfigureAwait(false);
                 }
 
                 parentid = el.ID;
@@ -148,13 +152,14 @@ namespace Duplicati.Library.Backend.Box
             m_currentfolder = parentid;
         }
 
-        private string GetFileID(string name)
+        private async Task<string> GetFileIDAsync(string name, CancellationToken cancelToken)
         {
             if (m_filecache.ContainsKey(name))
                 return m_filecache[name];
 
             // Make sure we enumerate this, otherwise the m_filecache is empty.
-            PagedFileListResponse(CurrentFolder, false).LastOrDefault();
+            var currentFolder = await GetCurrentFolderWithCacheAsync(cancelToken).ConfigureAwait(false);
+            PagedFileListResponse(currentFolder, false).LastOrDefault();
 
             if (m_filecache.ContainsKey(name))
                 return m_filecache[name];
@@ -169,7 +174,7 @@ namespace Duplicati.Library.Backend.Box
 
             if (!onlyfolders)
                 m_filecache.Clear();
-            
+
             do
             {
                 var resp = m_oauth.GetJSONData<ShortListResponse>(string.Format("{0}/folders/{1}/items?limit={2}&offset={3}&fields=name,size,modified_at", BOX_API_URL, parentid, PAGE_SIZE, offset));
@@ -177,7 +182,7 @@ namespace Duplicati.Library.Backend.Box
                 if (resp.Entries == null || resp.Entries.Length == 0)
                     break;
 
-                foreach(var f in resp.Entries)
+                foreach (var f in resp.Entries)
                 {
                     if (onlyfolders && f.Type != "folder")
                     {
@@ -188,7 +193,7 @@ namespace Duplicati.Library.Backend.Box
                     {
                         if (!onlyfolders && f.Type == "file")
                             m_filecache[f.Name] = f.ID;
-                        
+
                         yield return f;
                     }
                 }
@@ -198,22 +203,25 @@ namespace Duplicati.Library.Backend.Box
                 if (offset >= resp.TotalCount)
                     break;
 
-            } while(!done);
+            } while (!done);
         }
 
         #region IStreamingBackend implementation
 
         public async Task PutAsync(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
         {
-            var createreq = new CreateItemRequest() {
+            var currentFolder = await GetCurrentFolderWithCacheAsync(cancelToken).ConfigureAwait(false);
+            var createreq = new CreateItemRequest()
+            {
                 Name = remotename,
-                Parent = new IDReference() {
-                    ID = CurrentFolder
+                Parent = new IDReference()
+                {
+                    ID = currentFolder
                 }
             };
 
             if (m_filecache.Count == 0)
-                PagedFileListResponse(CurrentFolder, false);
+                PagedFileListResponse(currentFolder, false);
 
             var existing = m_filecache.ContainsKey(remotename);
 
@@ -242,11 +250,12 @@ namespace Duplicati.Library.Backend.Box
             }
         }
 
-        public void Get(string remotename, System.IO.Stream stream)
+        public async Task GetAsync(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
         {
-            using (var resp = m_oauth.GetResponse(string.Format("{0}/files/{1}/content", BOX_API_URL, GetFileID(remotename))))
-            using(var rs = Duplicati.Library.Utility.AsyncHttpRequest.TrySetTimeout(resp.GetResponseStream()))
-                Library.Utility.Utility.CopyStream(rs, stream);
+            var fileId = await GetFileIDAsync(remotename, cancelToken).ConfigureAwait(false);
+            using (var resp = await m_oauth.GetResponseAsync(string.Format("{0}/files/{1}/content", BOX_API_URL, fileId), cancelToken).ConfigureAwait(false))
+            using (var rs = Duplicati.Library.Utility.AsyncHttpRequest.TrySetTimeout(resp.GetResponseStream()))
+                await Library.Utility.Utility.CopyStreamAsync(rs, stream, cancelToken).ConfigureAwait(false);
         }
 
         #endregion
@@ -255,8 +264,9 @@ namespace Duplicati.Library.Backend.Box
 
         public System.Collections.Generic.IEnumerable<IFileEntry> List()
         {
+            var currentFolder = GetCurrentFolderWithCacheAsync(CancellationToken.None).Await();
             return
-                from n in PagedFileListResponse(CurrentFolder, false)
+                from n in PagedFileListResponse(currentFolder, false)
                 select (IFileEntry)new FileEntry(n.Name, n.Size, n.ModifiedAt, n.ModifiedAt) { IsFolder = n.Type == "folder" };
         }
 
@@ -266,23 +276,23 @@ namespace Duplicati.Library.Backend.Box
                 await PutAsync(remotename, fs, cancelToken);
         }
 
-        public void Get(string remotename, string filename)
+        public async Task GetAsync(string remotename, string filename, CancellationToken cancelToken)
         {
             using (System.IO.FileStream fs = System.IO.File.Create(filename))
-                Get(remotename, fs);
+                await GetAsync(remotename, fs, cancelToken).ConfigureAwait(false);
         }
 
-        public void Delete(string remotename)
+        public async Task DeleteAsync(string remotename, CancellationToken cancelToken)
         {
-            var fileid = GetFileID(remotename);
+            var fileid = await GetFileIDAsync(remotename, cancelToken).ConfigureAwait(false);
             try
             {
-                using(var r = m_oauth.GetResponse(string.Format("{0}/files/{1}", BOX_API_URL, fileid), null, "DELETE"))
+                using (var r = await m_oauth.GetResponseAsync(string.Format("{0}/files/{1}", BOX_API_URL, fileid), cancelToken, null, "DELETE").ConfigureAwait(false))
                 {
                 }
 
                 if (m_deleteFromTrash)
-                    using(var r = m_oauth.GetResponse(string.Format("{0}/files/{1}/trash", BOX_API_URL, fileid), null, "DELETE"))
+                    using (var r = await m_oauth.GetResponseAsync(string.Format("{0}/files/{1}/trash", BOX_API_URL, fileid), cancelToken, null, "DELETE").ConfigureAwait(false))
                     {
                     }
             }
@@ -293,14 +303,15 @@ namespace Duplicati.Library.Backend.Box
             }
         }
 
-        public void Test()
+        public Task TestAsync(CancellationToken cancelToken)
         {
             this.TestList();
+            return Task.CompletedTask;
         }
 
-        public void CreateFolder()
+        public Task CreateFolderAsync(CancellationToken cancellationToken)
         {
-            GetCurrentFolder(true);
+            return GetCurrentFolderAsync(true, cancellationToken);
         }
 
         public string DisplayName
@@ -321,7 +332,8 @@ namespace Duplicati.Library.Backend.Box
 
         public IList<ICommandLineArgument> SupportedCommands
         {
-            get {
+            get
+            {
                 return new List<ICommandLineArgument>(new ICommandLineArgument[] {
                     new CommandLineArgument(AUTHID_OPTION, CommandLineArgument.ArgumentType.Password, Strings.Box.AuthidShort, Strings.Box.AuthidLong(OAuthHelper.OAUTH_LOGIN_URL("box.com"))),
                     new CommandLineArgument(REALLY_DELETE_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.Box.ReallydeleteShort, Strings.Box.ReallydeleteLong),
@@ -337,10 +349,10 @@ namespace Duplicati.Library.Backend.Box
             }
         }
 
-        public string[] DNSName
-        {
-            get { return new string[] { new Uri(BOX_API_URL).Host, new Uri(BOX_UPLOAD_URL).Host }; }
-        }
+        public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(new string[] {
+            new System.Uri(BOX_API_URL).Host,
+            new System.Uri(BOX_UPLOAD_URL).Host
+        });
 
         #endregion
 

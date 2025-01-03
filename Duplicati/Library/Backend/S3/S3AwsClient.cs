@@ -1,28 +1,30 @@
-#region Disclaimer / License
+// Copyright (C) 2024, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
 
-// Copyright (C) 2015, The Duplicati Team
-// http://www.duplicati.com, info@duplicati.com
-// 
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 2.1 of the License, or (at your option) any later version.
-// 
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-// 
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-// 
-
-#endregion
 
 using Amazon.S3;
 using Amazon.S3.Model;
+using Duplicati.Library.Backend.Strings;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Utility;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -39,52 +41,33 @@ namespace Duplicati.Library.Backend
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<S3AwsClient>();
         private const int ITEM_LIST_LIMIT = 1000;
 
+        private const string EXT_OPTION_PREFIX = "s3-ext-";
+
         private readonly string m_locationConstraint;
         private readonly string m_storageClass;
         private AmazonS3Client m_client;
+        private readonly bool m_useChunkEncoding;
 
         private readonly string m_dnsHost;
 
         public S3AwsClient(string awsID, string awsKey, string locationConstraint, string servername,
-            string storageClass, bool useSSL, Dictionary<string, string> options)
+            string storageClass, bool useSSL, bool disableChunkEncoding, Dictionary<string, string> options)
         {
-            var cfg = new AmazonS3Config
-            {
-                UseHttp = !useSSL,
-                ServiceURL = (useSSL ? "https://" : "http://") + servername,
-                BufferSize = (int) Utility.Utility.DEFAULT_BUFFER_SIZE,
-            };
+            var cfg = S3AwsClient.GetDefaultAmazonS3Config();
+            cfg.UseHttp = !useSSL;
+            cfg.ServiceURL = (useSSL ? "https://" : "http://") + servername;
 
-            foreach (var opt in options.Keys.Where(x => x.StartsWith("s3-ext-", StringComparison.OrdinalIgnoreCase)))
-            {
-                var prop = cfg.GetType().GetProperties().FirstOrDefault(x =>
-                    string.Equals(x.Name, opt.Substring("s3-ext-".Length), StringComparison.OrdinalIgnoreCase));
-                if (prop != null && prop.CanWrite)
-                {
-                    if (prop.PropertyType == typeof(bool))
-                        prop.SetValue(cfg, Utility.Utility.ParseBoolOption(options, opt));
-                    else if (prop.PropertyType.IsEnum)
-                        prop.SetValue(cfg, Enum.Parse(prop.PropertyType, options[opt], true));
-                    else if (prop.PropertyType == typeof(int))
-                        prop.SetValue(cfg, int.Parse(options[opt]));
-                    else if (prop.PropertyType == typeof(long))
-                        prop.SetValue(cfg, long.Parse(options[opt]));
-                    else if (prop.PropertyType == typeof(string))
-                        prop.SetValue(cfg, options[opt]);
-                }
-
-                if (prop == null)
-                    Logging.Log.WriteWarningMessage(LOGTAG, "UnsupportedOption", null, "Unsupported option: {0}", opt);
-            }
+            CommandLineArgumentMapper.ApplyArguments(cfg, options, EXT_OPTION_PREFIX);
 
             m_client = new AmazonS3Client(awsID, awsKey, cfg);
 
             m_locationConstraint = locationConstraint;
             m_storageClass = storageClass;
-            m_dnsHost = string.IsNullOrWhiteSpace(cfg.ServiceURL) ? null : new Uri(cfg.ServiceURL).Host;
+            m_dnsHost = string.IsNullOrWhiteSpace(cfg.ServiceURL) ? null : new System.Uri(cfg.ServiceURL).Host;
+            m_useChunkEncoding = !disableChunkEncoding;
         }
 
-        public void AddBucket(string bucketName)
+        public Task AddBucketAsync(string bucketName, CancellationToken cancelToken)
         {
             var request = new PutBucketRequest
             {
@@ -94,31 +77,75 @@ namespace Duplicati.Library.Backend
             if (!string.IsNullOrEmpty(m_locationConstraint))
                 request.BucketRegionName = m_locationConstraint;
 
-            m_client.PutBucket(request);
+            return m_client.PutBucketAsync(request, cancelToken);
         }
 
-        public virtual void GetFileStream(string bucketName, string keyName, System.IO.Stream target)
+        public static AmazonS3Config GetDefaultAmazonS3Config()
         {
-            var objectGetRequest = new GetObjectRequest
+            return new AmazonS3Config()
             {
-                BucketName = bucketName,
-                Key = keyName
+                BufferSize = (int)Utility.Utility.DEFAULT_BUFFER_SIZE,
+
+                // If this is not set, accessing the property will trigger an expensive operation (~30 seconds)
+                // to get the region endpoint. The use of ARNs (Amazon Resource Names) doesn't appear to be
+                // critical for our usages.
+                // See: https://docs.aws.amazon.com/general/latest/gr/aws-arns-and-namespaces.html
+                UseArnRegion = false,
             };
+        }
 
-            using (GetObjectResponse objectGetResponse = m_client.GetObject(objectGetRequest))
-            using (System.IO.Stream s = objectGetResponse.ResponseStream)
+        private static readonly HashSet<string> EXCLUDED_EXTENDED_OPTIONS = new HashSet<string>([
+            nameof(AmazonS3Config.USEast1RegionalEndpointValue)
+        ]);
+
+        /// <summary>
+        /// List of properties that are slow to read the default value from
+        /// </summary>
+        /// <remarks>Changes in this list will likely need to be reflected in AWSSecretProvider.cs</remarks>
+        private static readonly HashSet<string> SLOW_LOADING_PROPERTIES = new[] {
+            nameof(AmazonS3Config.RegionEndpoint),
+            nameof(AmazonS3Config.ServiceURL),
+            nameof(AmazonS3Config.MaxErrorRetry),
+            nameof(AmazonS3Config.DefaultConfigurationMode),
+            nameof(AmazonS3Config.Timeout),
+            nameof(AmazonS3Config.RetryMode),
+        }.ToHashSet();
+
+        public static IEnumerable<ICommandLineArgument> GetAwsExtendedOptions()
+            => CommandLineArgumentMapper.MapArguments(GetDefaultAmazonS3Config(), prefix: EXT_OPTION_PREFIX, exclude: EXCLUDED_EXTENDED_OPTIONS, excludeDefaultValue: SLOW_LOADING_PROPERTIES)
+                .Cast<CommandLineArgument>()
+                .Select(x =>
+                {
+                    x.LongDescription = $"Extended option {x.LongDescription}";
+                    return x;
+                });
+
+        public virtual async Task GetFileStreamAsync(string bucketName, string keyName, System.IO.Stream target, CancellationToken cancelToken)
+        {
+            try
             {
-                try
+                var objectGetRequest = new GetObjectRequest
                 {
-                    s.ReadTimeout = (int) TimeSpan.FromMinutes(1).TotalMilliseconds;
-                }
-                catch
-                {
-                    // We don't care about this timeout
-                }
+                    BucketName = bucketName,
+                    Key = keyName
+                };
 
-                Utility.Utility.CopyStream(s, target);
+                using (var objectGetResponse = await m_client.GetObjectAsync(objectGetRequest).ConfigureAwait(false))
+                using (var s = objectGetResponse.ResponseStream)
+                {
+                    // TODO: This does not work and throws InvalidOperationException()
+                    try { s.ReadTimeout = (int)TimeSpan.FromMinutes(1).TotalMilliseconds; }
+                    catch { }
+
+                    await Utility.Utility.CopyStreamAsync(s, target, cancelToken).ConfigureAwait(false);
+                }
             }
+            catch (AmazonS3Exception s3Ex)
+            {
+                if (s3Ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+                    throw new FileMissingException(string.Format("File {0} not found", keyName), s3Ex);
+            }
+
         }
 
         public string GetDnsHost()
@@ -133,7 +160,8 @@ namespace Duplicati.Library.Backend
             {
                 BucketName = bucketName,
                 Key = keyName,
-                InputStream = source
+                InputStream = source,
+                UseChunkEncoding = m_useChunkEncoding
             };
             if (!string.IsNullOrWhiteSpace(m_storageClass))
                 objectAddRequest.StorageClass = new S3StorageClass(m_storageClass);
@@ -153,7 +181,7 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public void DeleteObject(string bucketName, string keyName)
+        public Task DeleteObjectAsync(string bucketName, string keyName, CancellationToken cancellationToken)
         {
             var objectDeleteRequest = new DeleteObjectRequest
             {
@@ -161,7 +189,7 @@ namespace Duplicati.Library.Backend
                 Key = keyName
             };
 
-            m_client.DeleteObject(objectDeleteRequest);
+            return m_client.DeleteObjectAsync(objectDeleteRequest, cancellationToken);
         }
 
         public virtual IEnumerable<IFileEntry> ListBucket(string bucketName, string prefix)
@@ -177,7 +205,7 @@ namespace Duplicati.Library.Backend
             //We truncate after ITEM_LIST_LIMIT elements, and then repeat
             while (isTruncated)
             {
-                var listRequest = new ListObjectsRequest {BucketName = bucketName};
+                var listRequest = new ListObjectsRequest { BucketName = bucketName };
 
                 if (!string.IsNullOrEmpty(filename))
                     listRequest.Marker = filename;
@@ -189,7 +217,7 @@ namespace Duplicati.Library.Backend
                 ListObjectsResponse listResponse;
                 try
                 {
-                    listResponse = m_client.ListObjects(listRequest);
+                    listResponse = m_client.ListObjectsAsync(listRequest).Await();
                 }
                 catch (AmazonS3Exception e)
                 {
@@ -217,7 +245,7 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public void RenameFile(string bucketName, string source, string target)
+        public async Task RenameFileAsync(string bucketName, string source, string target, CancellationToken cancelToken)
         {
             var copyObjectRequest = new CopyObjectRequest
             {
@@ -227,9 +255,8 @@ namespace Duplicati.Library.Backend
                 DestinationKey = target
             };
 
-            m_client.CopyObject(copyObjectRequest);
-
-            DeleteObject(bucketName, source);
+            await m_client.CopyObjectAsync(copyObjectRequest, cancelToken).ConfigureAwait(false);
+            await DeleteObjectAsync(bucketName, source, cancelToken).ConfigureAwait(false);
         }
 
         #region IDisposable Members

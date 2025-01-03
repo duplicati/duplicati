@@ -1,9 +1,30 @@
-﻿using System;
+// Copyright (C) 2024, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the "Software"),
+// to deal in the Software without restriction, including without limitation
+// the rights to use, copy, modify, merge, publish, distribute, sublicense,
+// and/or sell copies of the Software, and to permit persons to whom the
+// Software is furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+// DEALINGS IN THE SOFTWARE.
+using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Text;
-using Duplicati.Library.Common;
 using Duplicati.Library.Common.IO;
+using Duplicati.Library.Main.Operation.Restore;
 using Duplicati.Library.Main.Volumes;
 using Duplicati.Library.Utility;
 
@@ -17,6 +38,9 @@ namespace Duplicati.Library.Main.Database
         private static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(LocalRestoreDatabase));
 
         protected readonly string m_temptabsetguid = Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
+        /// <summary>
+        /// The name of the temporary table in the database, which is used to store the list of files to restore.
+        /// </summary>
         protected string m_tempfiletable;
         protected string m_tempblocktable;
         protected string m_latestblocktable;
@@ -26,7 +50,7 @@ namespace Duplicati.Library.Main.Database
 
         protected DateTime m_restoreTime;
 
-        public DateTime RestoreTime { get { return m_restoreTime; } } 
+        public DateTime RestoreTime { get { return m_restoreTime; } }
 
         public LocalRestoreDatabase(string path)
             : this(new LocalDatabase(path, "Restore", false))
@@ -194,18 +218,18 @@ namespace Duplicati.Library.Main.Database
                 {
                     var filesetId = filesetIds[0];
                     filesetIds.RemoveAt(0);
-                    
+
                     m_restoreTime = ParseFromEpochSeconds(cmd.ExecuteScalarInt64(@"SELECT ""Timestamp"" FROM ""Fileset"" WHERE ""ID"" = ?", 0, filesetId));
-                    
+
                     var ix = this.FilesetTimes.Select((value, index) => new { value.Key, index })
                             .Where(n => n.Key == filesetId)
                             .Select(pair => pair.index + 1)
                             .FirstOrDefault() - 1;
-                            
+
                     Logging.Log.WriteInformationMessage(LOGTAG, "SearchingBackup", "Searching backup {0} ({1}) ...", ix, m_restoreTime);
-                    
+
                     cmd.Parameters.Clear();
-    
+
                     cmd.ExecuteNonQuery(string.Format(@"DROP TABLE IF EXISTS ""{0}"" ", m_tempfiletable));
                     cmd.ExecuteNonQuery(string.Format(@"DROP TABLE IF EXISTS ""{0}"" ", m_tempblocktable));
                     cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" (""ID"" INTEGER PRIMARY KEY, ""Path"" TEXT NOT NULL, ""BlocksetID"" INTEGER NOT NULL, ""MetadataID"" INTEGER NOT NULL, ""TargetPath"" TEXT NULL, ""DataVerified"" BOOLEAN NOT NULL, ""LatestBlocksetId"" INTEGER, ""LocalSourceExists"" BOOLEAN) ", m_tempfiletable));
@@ -233,7 +257,7 @@ namespace Duplicati.Library.Main.Database
                             cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" (""Path"" TEXT NOT NULL) ", m_filenamestable));
                             cmd.CommandText = string.Format(@"INSERT INTO ""{0}"" (""Path"") VALUES (?)", m_filenamestable);
                             cmd.AddParameter();
-                            
+
                             foreach(var s in p)
                             {
                                 cmd.SetParameterValue(0, s);
@@ -243,25 +267,25 @@ namespace Duplicati.Library.Main.Database
                             cmd.CommandText = string.Format(@"INSERT INTO ""{0}"" (""Path"", ""BlocksetID"", ""MetadataID"", ""DataVerified"") SELECT ""File"".""Path"", ""File"".""BlocksetID"", ""File"".""MetadataID"", 0 FROM ""File"", ""FilesetEntry"" WHERE ""File"".""ID"" = ""FilesetEntry"".""FileID"" AND ""FilesetEntry"".""FilesetID"" = ? AND ""Path"" IN (SELECT DISTINCT ""Path"" FROM ""{1}"") ", m_tempfiletable, m_filenamestable);
                             cmd.SetParameterValue(0, filesetId);
                             var c = cmd.ExecuteNonQuery();
-                            
+
                             cmd.Parameters.Clear();
-                            
+
                             if (c != p.Length && c != 0)
                             {
                                 var sb = new StringBuilder();
                                 sb.AppendLine();
-                                
+
                                 using(var rd = cmd.ExecuteReader(string.Format(@"SELECT ""Path"" FROM ""{0}"" WHERE ""Path"" NOT IN (SELECT ""Path"" FROM ""{1}"")", m_filenamestable, m_tempfiletable)))
                                     while (rd.Read())
                                         sb.AppendLine(rd.GetValue(0).ToString());
-    
+
                                 var actualrestoretime = ParseFromEpochSeconds(cmd.ExecuteScalarInt64(@"SELECT ""Timestamp"" FROM ""Fileset"" WHERE ""ID"" = ?", 0, filesetId));
                                 Logging.Log.WriteWarningMessage(LOGTAG, "FilesNotFoundInBackupList", null, "{0} File(s) were not found in list of files for backup at {1}, will not be restored: {2}", p.Length - c, actualrestoretime.ToLocalTime(), sb);
                                 cmd.Parameters.Clear();
                             }
-                            
+
                             cmd.ExecuteNonQuery(string.Format(@"DROP TABLE IF EXISTS ""{0}"" ", m_filenamestable));
-                            
+
                             using(new Logging.Timer(LOGTAG, "CommitPrepareFileset", "CommitPrepareFileset"))
                                 tr.Commit();
                         }
@@ -272,7 +296,7 @@ namespace Duplicati.Library.Main.Database
                         // If this is too slow, we could add a special handler for wildcard searches too
                         cmd.CommandText = @"SELECT ""File"".""Path"", ""File"".""BlocksetID"", ""File"".""MetadataID"" FROM ""File"", ""FilesetEntry"" WHERE ""File"".""ID"" = ""FilesetEntry"".""FileID"" AND ""FilesetID"" = ?";
                         cmd.AddParameter(filesetId);
-    
+
                         object[] values = new object[3];
                         using(var cmd2 = m_connection.CreateCommand())
                         {
@@ -280,7 +304,7 @@ namespace Duplicati.Library.Main.Database
                             cmd2.AddParameter();
                             cmd2.AddParameter();
                             cmd2.AddParameter();
-    
+
                             using(var rd = cmd.ExecuteReader())
                                 while (rd.Read())
                                 {
@@ -316,10 +340,10 @@ namespace Duplicati.Library.Main.Database
                             Logging.Log.WriteVerboseMessage(LOGTAG, "RestoreTargetFileCount", "Needs to restore {0} files ({1})", filecount, Library.Utility.Utility.FormatSizeString(filesize));
                             return new Tuple<long, long>(filecount, filesize);
                         }
-                    }                
+                    }
                 }
             }
-            
+
             return new Tuple<long, long>(0, 0);
         }
 
@@ -331,7 +355,7 @@ namespace Duplicati.Library.Main.Database
                 var v0 = cmd.ExecuteScalar();
                 if (v0 == null || v0 == DBNull.Value)
                     return null;
-                
+
                 return v0.ToString();
             }
         }
@@ -391,17 +415,17 @@ namespace Duplicati.Library.Main.Database
                     // defaults when restoring cross OS, e.g. backup on Linux, restore on Windows
                     //This is mostly meaningless, and the user really should use --restore-path
 
-                    if (Platform.IsClientPosix && dirsep == "\\")
+                    if ((OperatingSystem.IsMacOS() || OperatingSystem.IsLinux()) && dirsep == "\\")
                     {
                         // For Win -> Linux, we remove the colon from the drive letter, and use the drive letter as root folder
-                        cmd.ExecuteNonQuery(string.Format(@"UPDATE ""{0}"" SET ""Targetpath"" = CASE WHEN SUBSTR(""Path"", 2, 1) == "":"" THEN ""\\"" || SUBSTR(""Path"", 1, 1) || SUBSTR(""Path"", 3) ELSE ""Path"" END", m_tempfiletable));
-                        cmd.ExecuteNonQuery(string.Format(@"UPDATE ""{0}"" SET ""Targetpath"" = CASE WHEN SUBSTR(""Path"", 1, 2) == ""\\"" THEN ""\\"" || SUBSTR(""Path"", 2) ELSE ""Path"" END", m_tempfiletable));
+                        cmd.ExecuteNonQuery(string.Format(@"UPDATE ""{0}"" SET ""Targetpath"" = CASE WHEN SUBSTR(""Path"", 2, 1) == ':' THEN '\\' || SUBSTR(""Path"", 1, 1) || SUBSTR(""Path"", 3) ELSE ""Path"" END", m_tempfiletable));
+                        cmd.ExecuteNonQuery(string.Format(@"UPDATE ""{0}"" SET ""Targetpath"" = CASE WHEN SUBSTR(""Path"", 1, 2) == '\\' THEN '\\' || SUBSTR(""Path"", 2) ELSE ""Path"" END", m_tempfiletable));
 
                     }
-                    else if (Platform.IsClientWindows && dirsep == "/")
+                    else if (OperatingSystem.IsWindows() && dirsep == "/")
                     {
                         // For Linux -> Win, we use the temporary folder's drive as the root path
-                        cmd.ExecuteNonQuery(string.Format(@"UPDATE ""{0}"" SET ""Targetpath"" = CASE WHEN SUBSTR(""Path"", 1, 1) == ""/"" THEN ? || SUBSTR(""Path"", 2) ELSE ""Path"" END", m_tempfiletable), Util.AppendDirSeparator(System.IO.Path.GetPathRoot(Library.Utility.TempFolder.SystemTempPath)).Replace("\\", "/"));
+                        cmd.ExecuteNonQuery(string.Format(@"UPDATE ""{0}"" SET ""Targetpath"" = CASE WHEN SUBSTR(""Path"", 1, 1) == '/' THEN ? || SUBSTR(""Path"", 2) ELSE ""Path"" END", m_tempfiletable), Util.AppendDirSeparator(System.IO.Path.GetPathRoot(Library.Utility.TempFolder.SystemTempPath)).Replace("\\", "/"));
                     }
                     else
                     {
@@ -410,16 +434,16 @@ namespace Duplicati.Library.Main.Database
                     }
                 }
                 else
-                {                        
+                {
                     if (string.IsNullOrEmpty(largest_prefix))
                     {
                         //Special case, restoring to new folder, but files are from different drives (no shared root on Windows)
 
                         // We use the format <restore path> / <drive letter> / <source path>
-                        cmd.ExecuteNonQuery(string.Format(@"UPDATE ""{0}"" SET ""TargetPath"" = CASE WHEN SUBSTR(""Path"", 2, 1) == "":"" THEN SUBSTR(""Path"", 1, 1) || SUBSTR(""Path"", 3) ELSE ""Path"" END", m_tempfiletable));
+                        cmd.ExecuteNonQuery(string.Format(@"UPDATE ""{0}"" SET ""TargetPath"" = CASE WHEN SUBSTR(""Path"", 2, 1) == ':' THEN SUBSTR(""Path"", 1, 1) || SUBSTR(""Path"", 3) ELSE ""Path"" END", m_tempfiletable));
 
                         // For UNC paths, we use \\server\folder -> <restore path> / <servername> / <source path>
-                        cmd.ExecuteNonQuery(string.Format(@"UPDATE ""{0}"" SET ""TargetPath"" = CASE WHEN SUBSTR(""Path"", 1, 2) == ""\\"" THEN SUBSTR(""Path"", 2) ELSE ""TargetPath"" END", m_tempfiletable));
+                        cmd.ExecuteNonQuery(string.Format(@"UPDATE ""{0}"" SET ""TargetPath"" = CASE WHEN SUBSTR(""Path"", 1, 2) == '\\' THEN SUBSTR(""Path"", 2) ELSE ""TargetPath"" END", m_tempfiletable));
                     }
                     else
                     {
@@ -429,12 +453,12 @@ namespace Duplicati.Library.Main.Database
                 }
 
                 // Cross-os path remapping support
-                if (Platform.IsClientPosix && dirsep == "\\")
+                if ((OperatingSystem.IsMacOS() || OperatingSystem.IsLinux()) && dirsep == "\\")
                     // For Win paths on Linux
-                    cmd.ExecuteNonQuery(string.Format(@"UPDATE ""{0}"" SET ""TargetPath"" = REPLACE(""TargetPath"", ""\"", ""/"")", m_tempfiletable));
-                else if (Platform.IsClientWindows && dirsep == "/")
+                    cmd.ExecuteNonQuery(string.Format(@"UPDATE ""{0}"" SET ""TargetPath"" = REPLACE(""TargetPath"", '\', '/')", m_tempfiletable));
+                else if (OperatingSystem.IsWindows() && dirsep == "/")
                     // For Linux paths on Windows
-                    cmd.ExecuteNonQuery(string.Format(@"UPDATE ""{0}"" SET ""TargetPath"" = REPLACE(REPLACE(""TargetPath"", ""\"", ""_""), ""/"", ""\"")", m_tempfiletable));
+                    cmd.ExecuteNonQuery(string.Format(@"UPDATE ""{0}"" SET ""TargetPath"" = REPLACE(REPLACE(""TargetPath"", '\', '_'), '/', '\')", m_tempfiletable));
 
                 if (!string.IsNullOrEmpty(destination))
                 {
@@ -520,6 +544,9 @@ namespace Duplicati.Library.Main.Database
             IEnumerable<IBlockDescriptor> Blocks { get; }
         }
 
+        /// <summary>
+        /// Interface for an object describing a file to restore.
+        /// </summary>
         public interface IFileToRestore
         {
             string Path { get; }
@@ -565,7 +592,7 @@ namespace Duplicati.Library.Main.Database
                 public long Size { get { return m_reader.ConvertValueToInt64(6); } }
             }
 
-            public IEnumerable<IExistingFileBlock> Blocks 
+            public IEnumerable<IExistingFileBlock> Blocks
             {
                 get
                 {
@@ -661,7 +688,7 @@ namespace Duplicati.Library.Main.Database
 
             public IEnumerable<IBlockDescriptor> Blocks
             {
-                get 
+                get
                 {
                     var p = this.TargetPath;
                     while (HasMore && p == this.TargetPath)
@@ -822,7 +849,7 @@ namespace Duplicati.Library.Main.Database
 
                 public string Path { get { return m_reader.ConvertValueToString(0); } }
                 public long FileID { get { return m_reader.ConvertValueToInt64(1); } }
-                public bool HasMore { get; private set; } 
+                public bool HasMore { get; private set; }
 
                 public IEnumerable<IPatchBlock> Blocks
                 {
@@ -876,7 +903,7 @@ namespace Duplicati.Library.Main.Database
             public IEnumerable<IVolumePatch> MetadataWithMissingBlocks
             {
                 get
-                { 
+                {
                     using(var cmd = m_connection.CreateCommand())
                     {
                         // The IN-clause with subquery enables SQLite to use indexes better. Three way join (A,B,C) is slow here!
@@ -919,7 +946,7 @@ namespace Duplicati.Library.Main.Database
             public string Path { get; private set; }
             public string Hash { get; private set; }
             public long Length { get; private set; }
-            
+
             public FileToRestore(long id, string path, string hash, long length)
             {
                 this.Path = path;
@@ -937,6 +964,114 @@ namespace Duplicati.Library.Main.Database
                     while (rd.Read())
                         yield return new FileToRestore(rd.ConvertValueToInt64(0), rd.ConvertValueToString(1), rd.ConvertValueToString(2), rd.ConvertValueToInt64(3));
             }
+        }
+
+        /// <summary>
+        /// Returns a list of files and symlinks to restore.
+        /// </summary>
+        /// <param name="onlyNonVerified">Flag to indicate if only files with non-verified data should be returned.</param>
+        /// <returns>A list of files and symlinks to restore.</returns>
+        public IEnumerable<FileRequest> GetFilesAndSymlinksToRestore(bool onlyNonVerified)
+        {
+            using var cmd = m_connection.CreateCommand();
+            cmd.AddParameter(!onlyNonVerified);
+            using var rd = cmd.ExecuteReader($@"
+                SELECT F.ID, F.Path, F.TargetPath, IFNULL(B.FullHash, ''), IFNULL(B.Length, 0), F.BlocksetID
+                FROM ""{m_tempfiletable}"" F
+                LEFT JOIN Blockset B ON F.BlocksetID = B.ID
+                WHERE F.BlocksetID != {FOLDER_BLOCKSET_ID}");
+            while (rd.Read())
+                yield return new FileRequest(rd.ConvertValueToInt64(0), rd.ConvertValueToString(1), rd.ConvertValueToString(2), rd.ConvertValueToString(3), rd.ConvertValueToInt64(4), rd.ConvertValueToInt64(5));
+        }
+
+        /// <summary>
+        /// Returns a list of blocks and their volume IDs. Used by the <see cref="BlockManager"/> to keep track of blocks and volumes to automatically evict them from the respective caches.
+        /// </summary>
+        /// <param name="skipMetadata">Flag indicating whether the returned blocks should exclude the metadata blocks.</param>
+        /// <returns>A list of tuples containing the block ID and the volume ID of the block.</returns>
+        public IEnumerable<(long, long)> GetBlocksAndVolumeIDs(bool skipMetadata)
+        {
+            using var cmd = Connection.CreateCommand();
+            using var reader = cmd.ExecuteReader($@"
+                SELECT Block.ID, Block.VolumeID
+                FROM BlocksetEntry
+                INNER JOIN ""{m_tempfiletable}"" ON BlocksetEntry.BlocksetID = ""{m_tempfiletable}"".BlocksetID
+                INNER JOIN Block ON BlocksetEntry.BlockID = Block.ID
+                "
+                + (skipMetadata ? "" : $@"
+                UNION ALL
+                SELECT Block.ID, Block.VolumeID
+                FROM ""{m_tempfiletable}""
+                INNER JOIN Metadataset ON ""{m_tempfiletable}"".MetadataID = Metadataset.ID
+                INNER JOIN BlocksetEntry ON Metadataset.BlocksetID = BlocksetEntry.BlocksetID
+                INNER JOIN Block ON BlocksetEntry.BlockID = Block.ID
+                WHERE ""{m_tempfiletable}"".BlocksetID IS NOT {FOLDER_BLOCKSET_ID}
+            "));
+            while (reader.Read())
+                yield return (reader.ConvertValueToInt64(0), reader.ConvertValueToInt64(1));
+        }
+
+        /// <summary>
+        /// Returns a list of <see cref="BlockRequest"/> for the given blockset ID. It is used by the <see cref="FileProcessor"/> to restore the blocks of a file.
+        /// </summary>
+        /// <param name="blocksetID">The BlocksetID of the file.</param>
+        /// <returns>A list of <see cref="BlockRequest"/> needed to restore the given file.</returns>
+        public IEnumerable<BlockRequest> GetBlocksFromFile(long blocksetID)
+        {
+            using var cmd = m_connection.CreateCommand();
+            cmd.CommandText = @$"
+                SELECT Block.ID, Block.Hash, Block.Size, Block.VolumeID
+                FROM BlocksetEntry INNER JOIN Block
+                ON BlocksetEntry.BlockID = Block.ID
+                WHERE BlocksetEntry.BlocksetID = ?";
+            cmd.AddParameter();
+            cmd.SetParameterValue(0, blocksetID);
+            using var reader = cmd.ExecuteReader();
+            for (long i = 0; reader.Read(); i++)
+            {
+                yield return new BlockRequest(reader.GetInt64(0), i, reader.GetString(1), reader.GetInt64(2), reader.GetInt64(3), false);
+            }
+        }
+
+        /// <summary>
+        /// Returns a list of <see cref="BlockRequest"/> for the metadata blocks of the given file. It is used by the <see cref="FileProcessor"/> to restore the metadata of a file.
+        /// </summary>
+        /// <param name="fileID">The ID of the file.</param>
+        /// <returns>A list of <see cref="BlockRequest"/> needed to restore the metadata of the given file.</returns>
+        public IEnumerable<BlockRequest> GetMetadataBlocksFromFile(long fileID)
+        {
+            using var cmd = m_connection.CreateCommand();
+            cmd.CommandText = $@"
+                SELECT Block.ID, Block.Hash, Block.Size, Block.VolumeID
+                FROM ""{m_tempfiletable}""
+                INNER JOIN Metadataset ON ""{m_tempfiletable}"".MetadataID = Metadataset.ID
+                INNER JOIN BlocksetEntry ON Metadataset.BlocksetID = BlocksetEntry.BlocksetID
+                INNER JOIN Block ON BlocksetEntry.BlockID = Block.ID
+                WHERE ""{m_tempfiletable}"".ID = ?
+            ";
+            cmd.AddParameter();
+            cmd.SetParameterValue(0, fileID);
+            using var reader = cmd.ExecuteReader();
+            for (long i = 0; reader.Read(); i++)
+            {
+                yield return new BlockRequest(reader.GetInt64(0), i, reader.GetString(1), reader.GetInt64(2), reader.GetInt64(3), false);
+            }
+        }
+
+        /// <summary>
+        /// Returns the volume information for the given volume ID. It is used by the <see cref="VolumeManager"/> to get the volume information for the given volume ID.
+        /// </summary>
+        /// <param name="VolumeID">The ID of the volume.</param>
+        /// <returns>A tuple containing the name, size, and hash of the volume.</returns>
+        public IEnumerable<(string,long,string)> GetVolumeInfo(long VolumeID)
+        {
+            using var cmd = m_connection.CreateCommand();
+            cmd.CommandText = "SELECT Name, Size, Hash FROM RemoteVolume WHERE ID = ?";
+            cmd.AddParameter();
+            cmd.SetParameterValue(0, VolumeID);
+            using var reader = cmd.ExecuteReader();
+            while (reader.Read())
+                yield return (reader.GetString(0), reader.GetInt64(1), reader.GetString(2));
         }
 
         public void DropRestoreTable()
@@ -996,7 +1131,7 @@ namespace Duplicati.Library.Main.Database
                     }
                     catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, "CleanupError", ex, "Cleanup error: {0}", ex.Message); }
                     finally { m_filesnewlydonetable = null; }
-            
+
             }
         }
 
@@ -1063,7 +1198,7 @@ namespace Duplicati.Library.Main.Database
                 m_updateFileAsDataVerifiedCommand.CommandText = string.Format(
                       @"UPDATE ""{0}"" SET ""DataVerified"" = 1 WHERE ""ID"" = ?"
                     , m_filetablename);
-                m_updateFileAsDataVerifiedCommand.AddParameters(1); 
+                m_updateFileAsDataVerifiedCommand.AddParameters(1);
 
                 if (statstablename != null)
                 {
@@ -1204,7 +1339,7 @@ namespace Duplicati.Library.Main.Database
             string SourcePath { get; }
             IEnumerable<IBlockEntry> Blocks { get; }
         }
-        
+
         public interface IBlockEntry
         {
             long Offset { get; }
@@ -1233,18 +1368,18 @@ namespace Duplicati.Library.Main.Database
             public string TargetPath { get { return m_rd.GetValue(0).ToString(); } }
             public long TargetFileID { get { return m_rd.GetInt64(2); } }
             public string SourcePath { get { return m_rd.GetValue(1).ToString(); } }
-            
+
             public IEnumerable<IBlockEntry> Blocks
             {
                 get
                 {
                     var tid = this.TargetFileID;
-                    
+
                     do
                     {
                         yield return new BlockEntry(m_rd, m_blocksize);
                     } while((MoreData = m_rd.Read()) && tid == this.TargetFileID);
-                    
+
                 }
             }
         }
@@ -1260,7 +1395,7 @@ namespace Duplicati.Library.Main.Database
                         cmd.CommandText = string.Format(@"UPDATE ""{0}"" SET ""LocalSourceExists"" = 1 WHERE Path = ?", m_tempfiletable);
                         cmd.AddParameters(1);
                         cmd.Transaction = transaction;
-                        
+
                         var fileset = string.Format(@"SELECT DISTINCT ""{0}"".""Path"" FROM ""{0}""", m_tempfiletable);
                         using (var rd = cmdReader.ExecuteReader(fileset))
                         {
@@ -1300,7 +1435,7 @@ namespace Duplicati.Library.Main.Database
                 @"      MAX(""Fileset"".""Timestamp"") AS ""Timestamp""" +
                 @"  FROM " +
                 @"      ""File"", " +
-                @"      ""FilesetEntry"", " + 
+                @"      ""FilesetEntry"", " +
                 @"      ""Fileset""" +
                 @"  WHERE " +
                 @"      ""File"".""ID"" = ""FilesetEntry"".""FileID"" AND" +
@@ -1356,7 +1491,7 @@ namespace Duplicati.Library.Main.Database
                         var n = new FastSource(rd, blocksize);
                         var tid = n.TargetFileID;
                         yield return n;
-                        
+
                         more = n.MoreData;
                         while(more && n.TargetFileID == tid)
                             more = rd.Read();

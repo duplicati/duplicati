@@ -1,4 +1,24 @@
-﻿using Duplicati.Library.Common.IO;
+// Copyright (C) 2024, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
+using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 using System;
 using System.Collections.Generic;
@@ -95,7 +115,7 @@ namespace Duplicati.Library.Backend
         public IEnumerable<IFileEntry> List()
         {
             var lfr = HandleListExceptions(() => dbx.ListFiles(m_path));
-              
+
             foreach (var md in lfr.entries)
                 yield return ParseEntry(md);
 
@@ -109,22 +129,22 @@ namespace Duplicati.Library.Backend
 
         public async Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
         {
-            using(FileStream fs = File.OpenRead(filename))
-                await PutAsync(remotename, fs, cancelToken);
+            using (var fs = File.OpenRead(filename))
+                await PutAsync(remotename, fs, cancelToken).ConfigureAwait(false);
         }
 
-        public void Get(string remotename, string filename)
+        public async Task GetAsync(string remotename, string filename, CancellationToken cancelToken)
         {
-            using(FileStream fs = File.Create(filename))
-                Get(remotename, fs);
+            using (var fs = File.Create(filename))
+                await GetAsync(remotename, fs, cancelToken).ConfigureAwait(false);
         }
 
-        public void Delete(string remotename)
+        public async Task DeleteAsync(string remotename, CancellationToken cancelToken)
         {
             try
             {
                 string path = String.Format("{0}/{1}", m_path, remotename);
-                dbx.Delete(path);
+                await dbx.DeleteAsync(path, cancelToken).ConfigureAwait(false);
             }
             catch (DropboxException)
             {
@@ -137,29 +157,27 @@ namespace Duplicati.Library.Backend
         {
             get
             {
-                return new List<ICommandLineArgument>(new ICommandLineArgument[] {
+                return new List<ICommandLineArgument>([
                     new CommandLineArgument(AUTHID_OPTION, CommandLineArgument.ArgumentType.Password, Strings.Dropbox.AuthidShort, Strings.Dropbox.AuthidLong(OAuthHelper.OAUTH_LOGIN_URL("dropbox"))),
-                });
+                ]);
             }
         }
 
         public string Description { get { return Strings.Dropbox.Description; } }
 
-        public string[] DNSName
-        {
-            get { return WebApi.Dropbox.Hosts(); }
-        }
+        public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(WebApi.Dropbox.Hosts());
 
-        public void Test()
+        public Task TestAsync(CancellationToken cancelToken)
         {
             this.TestList();
+            return Task.CompletedTask;
         }
 
-        public void CreateFolder()
+        public async Task CreateFolderAsync(CancellationToken cancelToken)
         {
             try
             {
-                dbx.CreateFolder(m_path);
+                await dbx.CreateFolderAsync(m_path, cancelToken).ConfigureAwait(false);
             }
             catch (DropboxException de)
             {
@@ -184,12 +202,12 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public void Get(string remotename, Stream stream)
+        public async Task GetAsync(string remotename, Stream stream, CancellationToken cancelToken)
         {
             try
             {
                 string path = string.Format("{0}/{1}", m_path, remotename);
-                dbx.DownloadFile(path, stream);
+                await dbx.DownloadFileAsync(path, stream, cancelToken).ConfigureAwait(false);
             }
             catch (DropboxException)
             {

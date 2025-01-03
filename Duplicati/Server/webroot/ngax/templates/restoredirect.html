@@ -2,12 +2,12 @@
     <form id="restore" class="styled">
         <div ng-show="!connecting">
             <div class="steps">
-                <div class="step step1" ng-class="{active: CurrentStep == 0}" ng-click="CurrentStep = 0">
+                <button class="step step1" ng-class="{active: CurrentStep == 0}" ng-click="CurrentStep = 0" aria-labelledby="steps-legend__1">
                     <span>1</span>
-                </div>
-                <div class="step step2" ng-class="{active: CurrentStep == 1}"  ng-click="CurrentStep = 1">
+                </button>
+                <button class="step step2" ng-class="{active: CurrentStep == 1}" ng-click="CurrentStep = 1" aria-labelledby="steps-legend__2">
                     <span>2</span>
-                </div>
+                </button>
                 <div class="step step3 not-clickable">
                     <span>3</span>
                 </div>
@@ -18,8 +18,8 @@
             <!-- .steps -->
 
             <ol class="steps-legend">
-                <li ng-class="{active: CurrentStep == 0}" class="step1" ng-click="CurrentStep = 0" translate>Backup location</li>
-                <li ng-class="{active: CurrentStep == 1}" class="step2" ng-click="CurrentStep = 1" translate>Encryption</li>
+                <li id="steps-legend__1" ng-class="{active: CurrentStep == 0}" class="step1" ng-click="CurrentStep = 0" translate>Backup location</li>
+                <li id="steps-legend__2" ng-class="{active: CurrentStep == 1}" class="step2" ng-click="CurrentStep = 1" translate>Encryption</li>
                 <li class="step3 not-clickable" translate>Select files</li>
                 <li class="step4 not-clickable" translate>Restore options</li>
             </ol>

@@ -1,85 +1,132 @@
 # 
 # Translators:
 # AlbireoGT, 2017
-# Shuuji TAKAHASHI <shuuji3@gmail.com>, 2018
+# Shuuji TAKAHASHI (shuuji3) <shuuji3@gmail.com>, 2018
 # yu hi <yuhisa@gmail.com>, 2019
+# あわしろいくや <ikunya@gmail.com>, 2020
+# Suguru Hirahara, 2024
 # 
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"Last-Translator: yu hi <yuhisa@gmail.com>, 2019\n"
-"Language-Team: Japanese (Japan) (https://www.transifex.com/duplicati/teams/67655/ja_JP/)\n"
+"Last-Translator: Suguru Hirahara, 2024\n"
+"Language-Team: Japanese (Japan) (https://app.transifex.com/duplicati/teams/67655/ja_JP/)\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Language: ja_JP\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
 
-#: templates/advancedoptionseditor.html:48
+#: templates/backup-result/entryline.html:5
+msgid "(1 error{{item.Result.Interrupted? (', interrupted'|translate) : ''}})"
+msgid_plural ""
+"({{$count}} errors{{item.Result.Interrupted? (', interrupted'|translate) : "
+"''}})"
+msgstr[0] ""
+"（{{$count}}件のエラー{{item.Result.Interrupted? ('、中断されました'|translate) : ''}}）"
+
+#: templates/backup-result/entryline.html:10
+msgid ""
+"(1 warning{{item.Result.Interrupted? (', interrupted'|translate) : ''}})"
+msgid_plural ""
+"({{$count}} warnings{{item.Result.Interrupted? (', interrupted'|translate) :"
+" ''}})"
+msgstr[0] ""
+"（{{$count}}件の警告{{item.Result.Interrupted? ('、中断されました'|translate) : ''}}）"
+
+#: templates/backup-result/entryline.html:15
+msgid "(interrupted)"
+msgstr "（中断されました）"
+
+#: templates/advancedoptionseditor.html:50
 msgid "- pick an option -"
-msgstr "- オプションを選んでください -"
+msgstr "- オプションを選択してください -"
 
-#: templates/delete.html:7
+#: scripts/controllers/SystemSettingsController.js:217 templates/delete.html:7
 msgid "...loading..."
-msgstr "...読み込み中..."
+msgstr "…読み込んでいます…"
 
-#: templates/backends/openstack.html:44
-msgid "API Key"
-msgstr "API Key"
+#: templates/backends/sia.html:19
+msgid ""
+"<b>Note:</b> Sia will still boost redundancy later as long as you're "
+"connected to your hosts."
+msgstr "<b>注意：</b>ホストに接続している間、Siaは後から冗長性を増加させます。"
 
-#: templates/backends/tardigrade.html:21
-msgid "API key"
+#: templates/commandline.html:25
+msgid "<i class=\"fa fa-check\"></i> Edit as text"
+msgstr "<i class=\"fa fa-check\"></i> テキストで編集"
+
+#: templates/commandline.html:32
+msgid "<i class=\"fa\"></i> Edit as text"
+msgstr "<i class=\"fa\"></i> テキストで編集"
+
+#: index.html:295
+msgid ""
+"<p>Connection to server was rejected due to invalid authentication.</p>\n"
+"                <p>Log in again, or re-open the page from the TrayIcon (if applicable)</p>"
 msgstr ""
+"<p>不正認証のためサーバーへの接続は拒否されました。</p>\n"
+"                <p>再度ログインするか、トレイのアイコンからページを再度開いてください（該当する場合）。</p>"
 
-#: scripts/services/EditUriBuiltins.js:945 templates/backends/s3.html:67
-#: templates/backends/s3.html:69
+#: scripts/services/EditUriBuiltins.js:1212
+#: templates/backends/openstack.html:44 templates/backends/storj.html:21
+#: templates/backends/storj.html:22
+msgid "API key"
+msgstr "APIキー"
+
+#: scripts/services/EditUriBuiltins.js:1086 templates/backends/s3.html:66
+#: templates/backends/s3.html:68
 msgid "AWS Access ID"
-msgstr "AWS Access ID"
+msgstr "AWSのアクセスID"
 
-#: scripts/services/EditUriBuiltins.js:946 templates/backends/s3.html:72
-#: templates/backends/s3.html:74
+#: scripts/services/EditUriBuiltins.js:1087 templates/backends/s3.html:71
+#: templates/backends/s3.html:73
 msgid "AWS Access Key"
-msgstr "AWS Access Key"
+msgstr "AWSのアクセスキー"
 
-#: scripts/services/EditUriBuiltins.js:150
+#: scripts/services/EditUriBuiltins.js:154
 msgid "AWS IAM Policy"
-msgstr "AWS IAM Policy"
+msgstr "AWSのIAMポリシー"
 
-#: index.html:234 index.html:250
+#: index.html:224 index.html:240
 msgid "About"
 msgstr "概要"
 
 #: templates/about.html:2
 msgid "About {{appname}}"
-msgstr "{{appname}} について"
+msgstr "{{appname}}について"
 
-#: scripts/services/EditUriBuiltins.js:894 templates/backends/azure.html:11
+#: scripts/services/EditUriBuiltins.js:1035
 msgid "Access Key"
-msgstr "Access Key"
+msgstr "アクセスキー"
+
+#: templates/backends/e2.html:2
+msgid "Access Key ID"
+msgstr "アクセスキーのID"
+
+#: templates/backends/e2.html:6
+msgid "Access Key Secret"
+msgstr "アクセスキーのシークレット"
 
 #: scripts/services/AppUtils.js:70
 msgid "Access denied"
-msgstr ""
+msgstr "アクセスが拒否されました"
 
-#: templates/backends/tardigrade.html:29
+#: templates/backends/storj.html:33 templates/backends/storj.html:34
 msgid "Access grant"
-msgstr ""
+msgstr "アクセス権"
+
+#: templates/backends/azure.html:11 templates/backends/azure.html:12
+msgid "Access key"
+msgstr "アクセスキー"
 
 #: templates/settings.html:5
 msgid "Access to user interface"
-msgstr ""
+msgstr "ユーザーインターフェースへのアクセス"
 
-#: scripts/services/EditUriBuiltins.js:893 templates/backends/azure.html:7
+#: scripts/services/EditUriBuiltins.js:1034 templates/backends/azure.html:7
+#: templates/backends/azure.html:8
 msgid "Account name"
 msgstr "アカウント名"
-
-#: templates/notificationarea.html:29 templates/updatechangelog.html:11
-msgid "Activate"
-msgstr "有効化する"
-
-#: scripts/controllers/AboutController.js:54
-#: scripts/controllers/UpdateChangelogController.js:18
-msgid "Activate failed:"
-msgstr "有効化に失敗しました:"
 
 #: templates/addwizard.html:3
 msgid "Add a new backup"
@@ -87,58 +134,63 @@ msgstr "新しいバックアップを作成"
 
 #: templates/addoredit.html:153
 msgid "Add a path directly"
-msgstr ""
+msgstr "パスディレクトリを追加"
 
-#: templates/advancedoptionseditor.html:46
+#: templates/advancedoptionseditor.html:48
 msgid "Add advanced option"
-msgstr ""
+msgstr "高度な設定を追加"
 
-#: index.html:222
+#: index.html:212
 msgid "Add backup"
-msgstr "バックアップを追加する"
+msgstr "バックアップを追加"
 
 #: templates/addoredit.html:207
 msgid "Add filter"
-msgstr "フィルターを追加する"
+msgstr "フィルターを追加"
 
 #: templates/addoredit.html:156
 msgid "Add path"
-msgstr "パスを追加する"
+msgstr "パスを追加"
 
-#: templates/backup-result/top-right-box.html:11
+#: templates/backup-result/top-right-box.html:18
 msgid "Added"
-msgstr ""
+msgstr "追加済"
 
-#: scripts/services/EditUriBuiltins.js:956
-#: scripts/services/EditUriBuiltins.js:972
+#: scripts/services/EditUriBuiltins.js:1097
+#: scripts/services/EditUriBuiltins.js:1113
 msgid "Adjust bucket name?"
-msgstr ""
-
-#: scripts/services/EditUriBuiltins.js:871
-msgid "Adjust path name?"
-msgstr ""
+msgstr "バケットの名称を変更しますか？"
 
 #: templates/restoredirect.html:66 templates/restoredirect.html:74
 msgid "Advanced Options"
-msgstr "拡張設定"
+msgstr "高度な設定"
 
-#: templates/addoredit.html:376 templates/edituri.html:28
+#: templates/addoredit.html:376 templates/commandline.html:23
+#: templates/commandline.html:31 templates/edituri.html:28
 msgid "Advanced options"
-msgstr "拡張設定"
+msgstr "高度な設定"
 
-#: templates/home.html:37
+#: templates/home.html:35
 msgid "Advanced:"
-msgstr ""
+msgstr "高度："
 
-#: scripts/directives/sourceFolderPicker.js:423
+#: templates/backends/aliyunoss.html:4
+msgid "Aliyun OSS Endpoint"
+msgstr "Aliyun OSSのエンドポイント"
+
+#: templates/backends/aliyunoss.html:35
+msgid "Aliyun OSS documents and resources"
+msgstr "Aliyun OSSのドキュメントと参考資料"
+
+#: scripts/directives/sourceFolderPicker.js:575
 msgid "All Hyper-V Machines"
-msgstr ""
+msgstr "全てのHyper-Vマシン"
 
-#: scripts/directives/sourceFolderPicker.js:455
+#: scripts/directives/sourceFolderPicker.js:607
 msgid "All Microsoft SQL Databases"
-msgstr ""
+msgstr "全てのMicrosoft SQLデータベース"
 
-#: templates/settings.html:134
+#: templates/settings.html:175
 msgid ""
 "All usage reports are sent anonymously and do not contain any personal "
 "information. They contain information about hardware and operating system, "
@@ -146,108 +198,129 @@ msgid ""
 "similar data. They do not contain paths, filenames, usernames, passwords or "
 "similar sensitive information."
 msgstr ""
+"使用状況に関する報告は全て匿名で送信され、個人情報を含みません。報告には、ハードウェア、OS、バックエンドの種類、バックアップの保持期間、バックアップ元のデータなどの全体のサイズに関するデータが含まれます。パス、ファイル名、ユーザー名、パスワードなどの機密情報は含まれません。"
 
-#: templates/settings.html:17
+#: templates/settings.html:20
 msgid "Allow remote access (requires restart)"
-msgstr "リモートアクセスを許可 (要再起動)"
+msgstr "リモートアクセスを許可（要再起動）"
 
 #: templates/addoredit.html:278
 msgid "Allowed days"
+msgstr "実行を許可する日"
+
+#: templates/pause.html:52
+msgid "Also pause transfers"
 msgstr ""
 
 #: scripts/controllers/LocalDatabaseController.js:103
 msgid "An existing file was found at the new location"
-msgstr ""
+msgstr "既存のファイルが新しい場所で見つかりました"
 
 #: scripts/controllers/LocalDatabaseController.js:72
 msgid ""
 "An existing file was found at the new location\n"
 "Are you sure you want the database to point to an existing file?"
 msgstr ""
+"既存のファイルが新しい場所で見つかりました。\n"
+"データベースを既存のファイルに指定してよろしいですか？"
 
-#: scripts/controllers/EditBackupController.js:450
+#: scripts/controllers/EditBackupController.js:451
 msgid ""
 "An existing local database for the storage has been found.\n"
 "Re-using the database will allow the command-line and server instances to work on the same remote storage.\n"
 "\n"
 " Do you wish to use the existing database?"
 msgstr ""
+"保存領域のデータベースがローカルに存在しています。データベースを再利用すると、コマンドラインと、サーバーのインスタンスが、リモートの同じ保存領域で作業できるようになります。\n"
+"\n"
+"ローカルに存在するデータベースを使用しますか？"
 
-#: templates/settings.html:122
+#: templates/settings.html:163
 msgid "Anonymous usage reports"
-msgstr ""
+msgstr "使用状況に関する匿名の報告"
 
-#: scripts/services/AppUtils.js:204
+#: scripts/services/AppUtils.js:206
 msgid "Applications"
+msgstr "アプリケーション"
+
+#: scripts/controllers/SystemSettingsController.js:194
+msgid "Are you sure you want to delete the remote control registration?"
 msgstr ""
 
 #: templates/export.html:8
 msgid "As Command-line"
-msgstr ""
+msgstr "コマンドライン"
 
-#: scripts/services/EditUriBuiltins.js:825 templates/backends/gcs.html:8
-#: templates/backends/gcs.html:9 templates/backends/msgroup.html:13
+#: scripts/services/EditUriBuiltins.js:1002
+#: scripts/services/EditUriBuiltins.js:992 templates/backends/gcs.html:8
+#: templates/backends/gcs.html:9 templates/backends/jottacloud.html:8
+#: templates/backends/jottacloud.html:9 templates/backends/msgroup.html:13
 #: templates/backends/msgroup.html:14 templates/backends/oauth.html:8
-#: templates/backends/oauth.html:9 templates/backends/sharepoint.html:8
+#: templates/backends/oauth.html:9 templates/backends/pcloud.html:21
+#: templates/backends/pcloud.html:22 templates/backends/sharepoint.html:8
 #: templates/backends/sharepoint.html:9
 msgid "AuthID"
-msgstr ""
+msgstr "認証ID"
 
-#: templates/backends/tardigrade.html:2
+#: scripts/services/EditUriBuiltins.js:1203 templates/backends/storj.html:2
 msgid "Authentication method"
-msgstr ""
+msgstr "認証方法"
 
-#: templates/backends/tardigrade.html:5
+#: templates/backends/storj.html:5
 msgid "Authentication method ({{auth_method}})"
-msgstr ""
+msgstr "認証方法（{{auth_method}}）"
 
 #: templates/backends/generic.html:23 templates/backends/openstack.html:35
 msgid "Authentication password"
-msgstr ""
+msgstr "認証パスワード"
 
 #: templates/backends/generic.html:19 templates/backends/openstack.html:31
 msgid "Authentication username"
-msgstr ""
+msgstr "認証ユーザー名"
 
-#: scripts/controllers/EditBackupController.js:359
+#: scripts/controllers/EditBackupController.js:360
 msgid "Autogenerated passphrase"
-msgstr ""
+msgstr "自動生成したパスフレーズ"
 
 #: templates/addoredit.html:258
-msgid "Automatically run backups."
-msgstr "バックアップを自動化する"
+msgid "Automatically run backups"
+msgstr "バックアップを自動的に実行"
 
 #: templates/backends/b2.html:12
 msgid "B2 Application ID"
-msgstr ""
+msgstr "B2 アプリケーションのID"
 
 #: templates/backends/b2.html:16
 msgid "B2 Application Key"
-msgstr "B2 Application Key"
+msgstr "B2 アプリケーションのキー"
 
-#: scripts/services/EditUriBuiltins.js:991
+#: scripts/services/EditUriBuiltins.js:1132
 msgid "B2 Cloud Storage Account ID"
-msgstr "B2 Cloud Storage Account ID"
+msgstr "B2 クラウドストレージのアカウントのID"
 
 #: templates/backends/b2.html:13
 msgid "B2 Cloud Storage Application ID"
-msgstr ""
+msgstr "B2 クラウドストレージのアプリケーションのID"
 
-#: scripts/services/EditUriBuiltins.js:992 templates/backends/b2.html:17
+#: scripts/services/EditUriBuiltins.js:1133 templates/backends/b2.html:17
 msgid "B2 Cloud Storage Application Key"
-msgstr "B2 Cloud Storage Application Key"
+msgstr "B2 クラウドストレージのアプリケーションのキー"
 
-#: templates/restore.html:143 templates/restore.html:70
+#: templates/restore.html:138 templates/restore.html:70
 msgid "Back"
 msgstr "戻る"
 
-#: templates/about.html:67
-msgid "Backend modules:"
+#: templates/about.html:66
+msgid ""
+"Backend modules: <p style=\"display: inline\" ng-repeat=\"item in "
+"sysinfo.BackendModules\">{{item.Key}} </p>"
 msgstr ""
+"バックエンドモジュール：<p style=\"display: inline\" ng-repeat=\"item in "
+"sysinfo.BackendModules\">{{item.Key}} </p>"
 
-#: scripts/services/ServerStatus.js:44
+#: scripts/services/ServerStatus.js:46
 msgid "Backup complete!"
-msgstr "バックアップ完了!"
+msgstr "バックアップが完了しました！"
 
 #: templates/addoredit.html:92
 msgid "Backup destination"
@@ -255,90 +328,105 @@ msgstr "バックアップ先"
 
 #: templates/restore.html:131
 msgid ""
-"Backup is encrypted but no passphrase is available.\n"
-"                    Type a passphrase below to use for restoring your files,\n"
-"                    or, in case of GPG encryption, leave blank to let gpg retrieve the passphrase by\n"
-"                    invoking your system's keychain."
+"Backup is encrypted but no passphrase is available. Type a passphrase below "
+"to use for restoring your files, or, in case of GPG encryption, leave blank "
+"to let gpg retrieve the passphrase by invoking your system's keychain."
 msgstr ""
+"バックアップは暗号化されていますが、パスフレーズが指定されていません。ファイルを復元するには、以下にパスフレーズを入力するか、GPGによる暗号化を行っている場合は、以下を空欄のままにして、gpgでシステムのキーチェーンからパスフレーズを取得してください。"
 
 #: templates/restore.html:21 templates/restoredirect.html:21
 #: templates/restoredirect.html:31
 msgid "Backup location"
-msgstr ""
+msgstr "バックアップの場所"
 
 #: templates/addoredit.html:319
 msgid "Backup retention"
-msgstr ""
+msgstr "バックアップの保持期間"
 
-#: templates/home.html:73
+#: templates/home.html:71
 msgid "Backup:"
-msgstr "バックアップ:"
+msgstr "バックアップ："
 
-#: templates/settings.html:99
+#: templates/settings.html:140
 msgid "Beta"
-msgstr "Beta"
+msgstr "ベータ版"
 
 #: scripts/services/AppUtils.js:68
 msgid "Broken access"
-msgstr ""
+msgstr "アクセスが壊れています"
 
 #: templates/backends/file.html:8 templates/restore.html:91
 msgid "Browse"
 msgstr "参照"
 
-#: scripts/controllers/SystemSettingsController.js:33
+#: scripts/controllers/SystemSettingsController.js:39
 msgid "Browser default"
 msgstr "ブラウザ設定"
 
-#: templates/backends/tardigrade.html:33
-msgid "Bucket"
-msgstr ""
-
-#: scripts/services/EditUriBuiltins.js:1004
-#: scripts/services/EditUriBuiltins.js:904
-#: scripts/services/EditUriBuiltins.js:944
-#: scripts/services/EditUriBuiltins.js:990
-msgid "Bucket Name"
-msgstr "バケット名"
-
 #: templates/backends/gcs.html:15
 msgid "Bucket create location"
-msgstr "バケット作成場所"
+msgstr "バケットを作成する場所"
 
-#: templates/backends/s3.html:29
-msgid "Bucket create region"
-msgstr "バケット作成リージョン"
-
-#: templates/backends/b2.html:2 templates/backends/b2.html:3
+#: scripts/services/EditUriBuiltins.js:1045
+#: scripts/services/EditUriBuiltins.js:1085
+#: scripts/services/EditUriBuiltins.js:1131
+#: scripts/services/EditUriBuiltins.js:1145
+#: scripts/services/EditUriBuiltins.js:1208
+#: scripts/services/EditUriBuiltins.js:1214
+#: scripts/services/EditUriBuiltins.js:1270
+#: scripts/services/EditUriBuiltins.js:1282 templates/backends/b2.html:2
+#: templates/backends/b2.html:3 templates/backends/cos.html:25
+#: templates/backends/e2.html:11 templates/backends/e2.html:12
 #: templates/backends/gcs.html:2 templates/backends/openstack.html:2
 #: templates/backends/s3.html:22 templates/backends/s3.html:23
+#: templates/backends/storj.html:37 templates/backends/storj.html:38
 msgid "Bucket name"
 msgstr "バケット名"
 
+#: scripts/services/EditUriBuiltins.js:1226
+msgid ""
+"Bucket name can only be between 3 and 63 characters long and contain only "
+"lower-case characters, numbers, periods and dashes"
+msgstr ""
+"バケット名は3文字から63文字までの間で指定してください。バケット名には、アルファベットの小文字、数字、点、ダッシュのみを含めることができます。"
+
+#: templates/backends/s3.html:29
+msgid "Bucket region"
+msgstr "バケットのリージョン"
+
+#: templates/backends/cos.html:21
+msgid "Bucket region ap-guangzhou"
+msgstr "バケットのリージョン ap-guangzhou"
+
 #: templates/backends/gcs.html:26
 msgid "Bucket storage class"
-msgstr "バケットストレージクラス"
+msgstr "バケットのストレージクラス"
 
-#: scripts/services/ServerStatus.js:48
+#: templates/backends/cos.html:26
+msgid "Bucket, format: BucketName-APPID"
+msgstr "バケット名。形式：BucketName-APPID"
+
+#: scripts/services/ServerStatus.js:50
 msgid "Building list of files to restore …"
-msgstr ""
+msgstr "復元するファイルの一覧を作成しています…"
 
-#: scripts/controllers/RestoreController.js:366
+#: scripts/controllers/RestoreController.js:373
 msgid "Building partial temporary database …"
-msgstr ""
+msgstr "一時的なデータベースを構築しています…"
 
 #: templates/restore.html:59
-msgid "Busy ..."
-msgstr ""
+msgid "Busy …"
+msgstr "取り込み中…"
 
-#: templates/settings.html:18
+#: templates/settings.html:21
 msgid ""
 "By allowing remote access, the server listens to requests from any machine "
 "on your network. If you enable this option, make sure you are always using "
 "the computer on a secure firewall protected network."
 msgstr ""
+"遠隔アクセスを許可すると、サーバーはあなたのネットワークの任意のコンピューターからのリクエストを受け付けます。このオプションを有効にする場合は、ファイヤーウォールで安全に保護されているネットワークのコンピューターを使用してください。"
 
-#: templates/settings.html:29
+#: templates/settings.html:31
 msgid ""
 "By default, the tray icon will open the user interface with a token that "
 "unlocks the user interface. This ensures that you can access the user "
@@ -346,43 +434,80 @@ msgid ""
 " you prefer having to type in the password, even when accessing the user "
 "interface from the tray icon, enable this option."
 msgstr ""
+"トレイアイコンは既定で、トークンでロックを解除してユーザーインターフェースを開きます。この場合、他のユーザーはパスワードを入力する必要がありますが、ユーザーはトレイアイコンからユーザーインターフェースにアクセスすることができます。トレイアイコンからアクセスする場合にパスワードを入力するよう設定したい場合は、このオプションを有効にしてください。"
 
-#: scripts/services/AppUtils.js:198
+#: templates/backends/cos.html:2
+msgid "COS App ID"
+msgstr "COS AppのID"
+
+#: templates/backends/cos.html:32
+msgid "COS Path or subfolder in the bucket"
+msgstr "COSのパスあるいはバケットのサブフォルダー"
+
+#: templates/backends/cos.html:8
+msgid "COS Secret ID"
+msgstr "COSのシークレットのID"
+
+#: templates/backends/cos.html:14
+msgid "COS Secret Key"
+msgstr "COSの秘密鍵"
+
+#: scripts/services/AppUtils.js:200
 msgid "Cache Files"
 msgstr "キャッシュファイル"
 
-#: templates/settings.html:109
+#: templates/settings.html:150
 msgid "Canary"
-msgstr "実験的"
+msgstr "実験的（カナリア）"
 
-#: scripts/controllers/AppController.js:44
-#: scripts/controllers/AppController.js:59
-#: scripts/controllers/EditBackupController.js:344
-#: scripts/controllers/EditBackupController.js:359
-#: scripts/controllers/EditBackupController.js:393
-#: scripts/controllers/EditBackupController.js:402
-#: scripts/controllers/EditBackupController.js:429
-#: scripts/controllers/EditBackupController.js:450
-#: scripts/controllers/EditBackupController.js:95
+#: scripts/controllers/AppController.js:197
+#: scripts/controllers/AppController.js:54
+#: scripts/controllers/AppController.js:70
+#: scripts/controllers/EditBackupController.js:345
+#: scripts/controllers/EditBackupController.js:360
+#: scripts/controllers/EditBackupController.js:394
+#: scripts/controllers/EditBackupController.js:403
+#: scripts/controllers/EditBackupController.js:430
+#: scripts/controllers/EditBackupController.js:451
+#: scripts/controllers/EditBackupController.js:96
 #: scripts/controllers/ExportController.js:13
 #: scripts/controllers/LocalDatabaseController.js:72
 #: scripts/controllers/LocalDatabaseController.js:88
 #: scripts/controllers/RestoreDirectController.js:24
-#: scripts/controllers/StateController.js:106
-#: scripts/controllers/StateController.js:115
+#: scripts/controllers/StateController.js:108
+#: scripts/controllers/StateController.js:117
 #: scripts/services/CaptchaService.js:22 scripts/services/DialogService.js:50
-#: scripts/services/EditUriBuiltins.js:54
-#: scripts/services/EditUriBuiltins.js:874
-#: scripts/services/EditUriBuiltins.js:956
-#: scripts/services/EditUriBuiltins.js:972 templates/delete.html:54
-#: templates/export.html:34 templates/settings.html:164
+#: scripts/services/EditUriBuiltins.js:1097
+#: scripts/services/EditUriBuiltins.js:1113
+#: scripts/services/EditUriBuiltins.js:58 templates/delete.html:54
+#: templates/export.html:34 templates/settings.html:205
 #: templates/waitarea.html:19
 msgid "Cancel"
 msgstr "キャンセル"
 
+#: templates/settings.html:56
+msgid "Cancel registration"
+msgstr ""
+
+#: scripts/directives/sourceFolderPicker.js:409
+msgid "Cannot include \"{{text}}\""
+msgstr "「{{text}}」を含めることはできません"
+
 #: scripts/controllers/LocalDatabaseController.js:103
 msgid "Cannot move to existing file"
 msgstr "既にファイルがあるため移動できません"
+
+#: scripts/services/AppUtils.js:342
+msgid "Cannot specify filter include or excludes in extra options"
+msgstr "追加のオプションに、含めたり除外したりするフィルターを指定することはできません"
+
+#: templates/settings.html:8
+msgid "Change server passphrase"
+msgstr "サーバーのパスフレーズを変更"
+
+#: scripts/controllers/AppController.js:195
+msgid "Change server password"
+msgstr "サーバーのパスワードを変更"
 
 #: templates/about.html:5
 msgid "Changelog"
@@ -392,161 +517,185 @@ msgstr "更新履歴"
 msgid "Changelog for {{appname}} {{version}}"
 msgstr "更新履歴 {{appname}} {{version}}"
 
-#: scripts/controllers/UpdateChangelogController.js:24
+#: scripts/controllers/UpdateChangelogController.js:16
 msgid "Check failed:"
-msgstr "確認失敗:"
+msgstr "確認できませんでした："
 
-#: templates/about.html:36
+#: templates/about.html:34
 msgid "Check for updates now"
-msgstr "今すぐアップデートを確認する"
+msgstr "アップデートを確認"
 
-#: templates/captcha.html:10
-msgid "Checking ..."
-msgstr "確認しています ..."
-
-#: templates/about.html:37
+#: templates/about.html:35
 msgid "Checking for updates …"
-msgstr ""
+msgstr "アップデートを確認しています…"
+
+#: templates/captcha.html:11
+msgid "Checking …"
+msgstr "確認しています…"
+
+#: templates/backends/sia.html:18
+msgid ""
+"Choose 1.0 for fast backup, 1.5 for decent reliability, 2.0 for safer upload"
+" but slow backup."
+msgstr "高速なバックアップには1.0、安定性を求める場合は1.5、速度に代えて安全性を求める場合は2.0を指定してください。"
 
 #: templates/edituri.html:16
 msgid "Chose a storage type to get started"
-msgstr ""
+msgstr "初めにストレージの種類を選択してください"
 
-#: templates/backends/gcs.html:11 templates/backends/msgroup.html:16
-#: templates/backends/oauth.html:11 templates/backends/sharepoint.html:11
+#: templates/backends/gcs.html:11 templates/backends/jottacloud.html:11
+#: templates/backends/msgroup.html:16 templates/backends/oauth.html:11
+#: templates/backends/pcloud.html:24 templates/backends/sharepoint.html:11
 msgid "Click the AuthID link to create an AuthID"
-msgstr ""
+msgstr "認証IDのリンクをクリックして作成してください"
 
-#: index.html:159 index.html:210
+#: index.html:149 index.html:200
 msgid "Click to set throttle options"
-msgstr ""
+msgstr "クリックで速度制限のオプションを設定"
 
-#: templates/backends/s3.html:79
+#: templates/backends/s3.html:78
 msgid "Client library to use"
-msgstr ""
+msgstr "使用するクライアントライブラリー"
 
-#: templates/home.html:42
+#: templates/backends/cos.html:10
+msgid "Cloud API Secret ID"
+msgstr "Cloud APIのシークレットID"
+
+#: templates/backends/cos.html:16
+msgid "Cloud API Secret Key"
+msgstr "Cloud APIの秘密鍵"
+
+#: templates/commandline.html:8
+msgid "Command"
+msgstr "コマンド"
+
+#: templates/commandline.html:18
+msgid "Commandline arguments"
+msgstr "コマンドラインの引数"
+
+#: templates/home.html:40
 msgid "Commandline …"
-msgstr ""
+msgstr "コマンドライン…"
 
 #: templates/backup-result/phases/compact.html:3
 msgid "Compact Phase"
-msgstr ""
+msgstr "圧縮化の段階"
 
-#: templates/home.html:41
+#: templates/home.html:39
 msgid "Compact now"
-msgstr ""
+msgstr "圧縮"
 
-#: scripts/services/ServerStatus.js:41
-msgid "Compacting remote data ..."
-msgstr ""
-
-#: scripts/services/ServerStatus.js:65
+#: scripts/services/ServerStatus.js:43 scripts/services/ServerStatus.js:67
 msgid "Compacting remote data …"
-msgstr ""
+msgstr "リモートデータを圧縮しています…"
 
-#: templates/backup-result/box.html:34
+#: templates/backup-result/box.html:35
 msgid "Complete log"
-msgstr ""
+msgstr "完全なログ"
+
+#: scripts/services/ServerStatus.js:40
+msgid "Completing backup …"
+msgstr "バックアップを完了しています…"
 
 #: scripts/services/ServerStatus.js:38
-msgid "Completing backup …"
-msgstr ""
-
-#: scripts/services/ServerStatus.js:36
 msgid "Completing previous backup …"
+msgstr "以前のバックアップを完了しています…"
+
+#: templates/about.html:67
+msgid ""
+"Compression modules: <p style=\"display: inline\" ng-repeat=\"item in "
+"sysinfo.CompressionModules\">{{item.Key}} </p>"
 msgstr ""
+"圧縮モジュール：<p style=\"display: inline\" ng-repeat=\"item in "
+"sysinfo.CompressionModules\">{{item.Key}} </p>"
 
-#: templates/about.html:68
-msgid "Compression modules:"
-msgstr "圧縮モジュール"
-
-#: scripts/directives/sourceFolderPicker.js:381
+#: scripts/directives/sourceFolderPicker.js:533
 msgid "Computer"
-msgstr "コンピュータ"
+msgstr "コンピューター"
 
 #: templates/import.html:9
 msgid "Configuration file:"
-msgstr "設定ファイル:"
+msgstr "設定ファイル："
 
-#: templates/home.html:29
+#: templates/home.html:27
 msgid "Configuration:"
-msgstr "設定:"
+msgstr "設定："
 
 #: templates/addwizard.html:9
 msgid "Configure a new backup"
-msgstr "新しいバックアップ設定"
+msgstr "新しいバックアップを設定"
 
 #: scripts/controllers/DeleteController.js:65
 #: scripts/controllers/DeleteController.js:77
 #: scripts/controllers/LocalDatabaseController.js:28
 msgid "Confirm delete"
-msgstr ""
+msgstr "削除を確認"
 
 #: templates/export.html:30
 msgid "Confirm encryption passphrase"
-msgstr ""
+msgstr "暗号化用パスフレーズを確認"
+
+#: templates/changepassword.html:14 templates/settings.html:15
+msgid "Confirm new password"
+msgstr "新しいパスワードを再度入力してください"
 
 #: templates/export.html:29
 msgid "Confirm passphrase"
-msgstr ""
+msgstr "パスフレーズを確認"
 
-#: templates/settings.html:12
-msgid "Confirm password"
-msgstr "パスワード確認"
-
-#: scripts/services/EditUriBackendConfig.js:66
+#: scripts/services/EditUriBackendConfig.js:73
 msgid "Confirmation required"
-msgstr "確認が必要"
+msgstr "確認が必要です"
 
 #: templates/restoredirect.html:80
 msgid "Connect"
 msgstr "接続"
 
-#: index.html:319
+#: index.html:308
 msgid "Connect now"
 msgstr "今すぐ接続"
 
-#: index.html:315
+#: index.html:302
 msgid "Connecting to server …"
-msgstr ""
+msgstr "サーバーに接続しています…"
 
-#: templates/commandline.html:51
-msgid "Connecting to task ...."
-msgstr ""
+#: templates/commandline.html:48
+msgid "Connecting to task …"
+msgstr "タスクに接続しています…"
 
-#: index.html:320
-msgid "Connecting..."
-msgstr "接続中 ..."
+#: index.html:309
+msgid "Connecting …"
+msgstr "接続しています…"
 
-#: index.html:311
+#: index.html:294
 msgid "Connection lost"
 msgstr "切断しました"
 
-#: scripts/directives/backupEditUri.js:51
-#: scripts/directives/backupEditUri.js:54
+#: scripts/directives/backupEditUri.js:50
+#: scripts/directives/backupEditUri.js:53
 msgid "Connection worked!"
-msgstr "接続完了!"
+msgstr "接続できました！"
 
-#: scripts/services/EditUriBuiltins.js:895 templates/backends/azure.html:2
+#: scripts/services/EditUriBuiltins.js:1036 templates/backends/azure.html:2
+#: templates/backends/azure.html:3
 msgid "Container name"
 msgstr "コンテナ名"
 
 #: templates/backends/openstack.html:49
 msgid "Container region"
-msgstr "コンテナリージョン"
+msgstr "コンテナのリージョン"
 
 #: templates/restore.html:69
 msgid "Continue"
-msgstr "続ける"
+msgstr "続行"
 
-#: scripts/controllers/EditBackupController.js:429
+#: scripts/controllers/EditBackupController.js:430
 msgid "Continue without encryption"
-msgstr "暗号化なしで続ける"
+msgstr "暗号化なしで続行"
 
 #: scripts/controllers/DialogController.js:16
 msgid "Copied!"
-msgstr "コピーしました!"
+msgstr "コピーしました！"
 
 #: templates/copy_clipboard_buttons.html:3
 msgid "Copy"
@@ -554,145 +703,160 @@ msgstr "コピー"
 
 #: templates/addoredit.html:103 templates/restoredirect.html:42
 msgid "Copy Destination URL to Clipboard"
-msgstr "コピー先URLをクリップボードにコピーする"
+msgstr "バックアップ先のURLをクリップボードにコピー"
+
+#: scripts/controllers/EditBackupController.js:104
+#: scripts/controllers/RestoreDirectController.js:33
+msgid "Copy URL"
+msgstr "URLをコピー"
 
 #: scripts/controllers/DialogController.js:20
 msgid "Copy failed. Please manually copy the URL"
-msgstr "コピー失敗。URLを手動でコピーしてください"
+msgstr "コピーできませんでした。URLを手動でコピーしてください"
 
-#: scripts/services/AppUtils.js:639
+#: templates/backup-result/box.html:41
+msgid "Copy log"
+msgstr "ログをコピー"
+
+#: scripts/services/AppUtils.js:735
 msgid "Core options"
-msgstr ""
+msgstr "中心のオプション"
 
 #: scripts/controllers/StateController.js:34
 msgid "Counting ({{files}} files found, {{size}})"
-msgstr ""
+msgstr "計測中（{{files}}個のファイルが見つかりました。サイズは{{size}}）"
 
-#: templates/settings.html:129
+#: templates/settings.html:170
 msgid "Crashes only"
-msgstr ""
+msgstr "クラッシュのみ"
 
-#: templates/home.html:48
+#: templates/home.html:46
 msgid "Create bug report …"
-msgstr ""
+msgstr "バグレポートを作成…"
 
-#: scripts/directives/backupEditUri.js:131
+#: scripts/directives/backupEditUri.js:130
 msgid "Create folder?"
-msgstr "フォルダを作成しますか？"
+msgstr "フォルダーを作成しますか？"
 
-#: scripts/services/EditUriBuiltins.js:133
+#: scripts/services/EditUriBuiltins.js:137
 msgid "Created new limited user"
-msgstr ""
+msgstr "新規の制限ユーザーを作成しました"
 
-#: scripts/services/ServerStatus.js:60
+#: scripts/services/ServerStatus.js:62
 msgid "Creating bug report …"
-msgstr ""
+msgstr "バグレポートを作成しています…"
 
-#: scripts/services/EditUriBuiltins.js:119
+#: scripts/services/EditUriBuiltins.js:123
 msgid "Creating new user with limited access …"
-msgstr ""
+msgstr "アクセスが制限されている新規ユーザーを作成しています…"
 
-#: scripts/services/ServerStatus.js:49
+#: scripts/services/ServerStatus.js:51
 msgid "Creating target folders …"
-msgstr ""
+msgstr "バックアップ先のフォルダーを作成しています…"
 
-#: scripts/controllers/RestoreController.js:361
+#: scripts/controllers/RestoreController.js:368
 msgid "Creating temporary backup …"
-msgstr ""
+msgstr "一時的なバックアップを作成しています…"
 
-#: scripts/services/EditUriBuiltins.js:119
-msgid "Creating user..."
-msgstr "ユーザーを作成中 ..."
+#: scripts/services/EditUriBuiltins.js:123
+msgid "Creating user …"
+msgstr "ユーザーを作成しています…"
 
-#: templates/home.html:78
+#: templates/home.html:76
 msgid "Current action:"
-msgstr ""
+msgstr "現在のアクション："
 
-#: templates/home.html:88
+#: templates/home.html:86
 msgid "Current file:"
-msgstr "現在のファイル:"
+msgstr "現在のファイル："
 
 #: templates/updatechangelog.html:4
 msgid "Current version is {{versionname}} ({{versionnumber}})"
-msgstr "現在のバージョンは {{versionname}} ({{versionnumber}})"
+msgstr "現在のバージョンは {{versionname}}（{{versionnumber}}）"
 
 #: templates/backends/s3.html:17
 msgid "Custom S3 endpoint"
-msgstr "カスタム S3 エンドポイント"
+msgstr "ユーザー定義のS3エンドポイント"
 
-#: templates/backends/tardigrade.html:18
+#: scripts/services/EditUriBuiltins.js:1218 templates/backends/storj.html:18
 msgid "Custom Satellite"
-msgstr ""
+msgstr "ユーザー定義のサテライト"
 
-#: templates/backends/tardigrade.html:13
+#: templates/backends/storj.html:13
 msgid "Custom Satellite ({{satellite}})"
-msgstr ""
+msgstr "ユーザー定義のサテライト（{{satellite}}）"
 
 #: templates/backends/openstack.html:13
 msgid "Custom authentication url"
-msgstr "カスタム認証URL"
+msgstr "ユーザー定義の認証用URL"
 
 #: templates/addoredit.html:325
 msgid "Custom backup retention"
-msgstr ""
+msgstr "ユーザー定義のバックアップの保持期間"
+
+#: templates/backends/s3.html:55
+msgid "Custom bucket storage class"
+msgstr "ユーザー定義のバケットストレージのクラス"
 
 #: templates/backends/gcs.html:18
 msgid "Custom location ({{server}})"
-msgstr ""
+msgstr "ユーザー定義の場所（{{server}}）"
 
 #: templates/backends/s3.html:39
 msgid "Custom region for creating buckets"
-msgstr ""
+msgstr "バケットを作成するユーザー定義のリージョン"
 
 #: templates/backends/s3.html:34
 msgid "Custom region value ({{region}})"
-msgstr ""
+msgstr "ユーザー定義のリージョンの値（{{region}}）"
 
 #: templates/backends/openstack.html:10 templates/backends/s3.html:12
 msgid "Custom server url ({{server}})"
-msgstr ""
+msgstr "ユーザー定義のサーバーURL ({{server}})"
 
-#: templates/backends/s3.html:50
-msgid ""
-"Custom storage class\n"
-"            ({{class}})"
-msgstr ""
-
-#: templates/backends/gcs.html:29
+#: templates/backends/gcs.html:29 templates/backends/s3.html:50
 msgid "Custom storage class ({{class}})"
-msgstr ""
+msgstr "ユーザー定義の保存領域のクラス（{{class}}）"
 
-#: templates/home.html:39
+#: templates/advancedoptionseditor.html:43
+msgid "DEPRECATED: {{getDeprecationMessage(item)}}"
+msgstr "非推奨：{{getDeprecationMessage(item)}}"
+
+#: templates/home.html:37
 msgid "Database …"
-msgstr ""
+msgstr "データベース…"
 
 #: scripts/services/AppUtils.js:91 templates/addoredit.html:351
 msgid "Days"
 msgstr "日"
 
-#: scripts/controllers/SystemSettingsController.js:34
+#: scripts/controllers/SystemSettingsController.js:40
 msgid "Default"
 msgstr "初期設定"
 
-#: templates/settings.html:86
+#: templates/settings.html:129
 msgid "Default ({{channelname}})"
-msgstr ""
+msgstr "既定（{{channelname}}）"
 
-#: scripts/services/AppUtils.js:185
+#: scripts/services/AppUtils.js:187
 msgid "Default excludes"
-msgstr ""
+msgstr "既定で除外するアイテム"
 
-#: templates/settings.html:149
+#: templates/settings.html:190
 msgid "Default options"
-msgstr ""
+msgstr "既定のオプション"
 
-#: templates/localdatabase.html:19
+#: templates/advancedoptionseditor.html:44
+msgid "Default value: \"{{getDefaultValue(item)}}\""
+msgstr "既定値：「{{getDefaultValue(item)}}」"
+
+#: templates/localdatabase.html:16
 msgid "Delete"
 msgstr "削除"
 
 #: templates/backup-result/phases/delete.html:3
 msgid "Delete Phase (Old Backup Versions)"
-msgstr ""
+msgstr "削除の段階"
 
 #: templates/delete.html:5 templates/delete.html:53
 msgid "Delete backup"
@@ -700,11 +864,15 @@ msgstr "バックアップを削除"
 
 #: templates/addoredit.html:322
 msgid "Delete backups that are older than"
-msgstr "古いものからバックアップを削除"
+msgstr "古いバックアップから削除"
 
 #: templates/delete.html:13
 msgid "Delete local database"
 msgstr "ローカルデータベースを削除"
+
+#: templates/settings.html:68
+msgid "Delete remote control setup"
+msgstr ""
 
 #: templates/delete.html:38 templates/delete.html:47
 msgid "Delete remote files"
@@ -716,15 +884,15 @@ msgstr "ローカルデータベースを削除"
 
 #: templates/delete.html:41
 msgid "Delete {{filecount}} files ({{filesize}}) from the remote storage?"
-msgstr ""
+msgstr "{{filecount}}個のファイル（{{filesize}}）をリモートの保存領域から削除しますか？"
 
-#: templates/home.html:33
+#: templates/home.html:31
 msgid "Delete …"
-msgstr ""
+msgstr "削除..."
 
-#: templates/backup-result/top-right-box.html:19
+#: templates/backup-result/top-right-box.html:26
 msgid "Deleted"
-msgstr "削除しました"
+msgstr "削除済"
 
 #: templates/backup-result/phases/delete.html:24
 msgid "Deleted Versions"
@@ -734,21 +902,21 @@ msgstr "削除されたバージョン"
 msgid "Deleted files"
 msgstr "削除されたファイル"
 
-#: scripts/services/ServerStatus.js:62
+#: scripts/services/ServerStatus.js:64
 msgid "Deleting remote files …"
-msgstr ""
+msgstr "リモートファイルを削除しています…"
 
-#: scripts/services/ServerStatus.js:40
+#: scripts/services/ServerStatus.js:42
 msgid "Deleting unwanted files …"
-msgstr ""
+msgstr "不要なファイルを削除しています…"
 
 #: templates/addoredit.html:43
 msgid "Description (optional)"
-msgstr "概要 (任意)"
+msgstr "概要（任意）"
 
 #: templates/home.html:17
 msgid "Description:"
-msgstr "概要:"
+msgstr "概要："
 
 #: scripts/services/AppUtils.js:60
 msgid "Desktop"
@@ -758,107 +926,104 @@ msgstr "デスクトップ"
 msgid "Destination"
 msgstr "バックアップ先"
 
+#: templates/backends/file.html:7 templates/backends/generic.html:14
+#: templates/backends/jottacloud.html:3 templates/backends/msgroup.html:8
+#: templates/backends/oauth.html:3 templates/backends/pcloud.html:16
 #: templates/backends/sharepoint.html:2
 msgid "Destination path"
-msgstr ""
-
-#: templates/restore.html:151
-msgid ""
-"Did we help save your files? If so, please consider supporting Duplicati "
-"with a donation. We suggest {{smallamount}} for private use and "
-"{{largeamount}} for commercial use."
-msgstr ""
+msgstr "バックアップ先のパス"
 
 #: templates/restorewizard.html:9
-msgid "Direct restore from backup files ..."
+msgid "Direct restore from backup files …"
+msgstr "バックアップファイルから直接復元…"
+
+#: templates/backends/idrive.html:3
+msgid "Directory path"
+msgstr "ディレクトリーのパス"
+
+#: templates/settings.html:60
+msgid "Disable remote control"
 msgstr ""
 
 #: templates/log.html:32
 msgid "Disabled"
 msgstr "無効"
 
-#: templates/notificationarea.html:10 templates/notificationarea.html:27
+#: templates/notificationarea.html:10 templates/notificationarea.html:26
+#: templates/notificationarea.html:37
 msgid "Dismiss"
-msgstr "非表示"
+msgstr "表示しない"
 
-#: templates/notificationarea.html:41
+#: templates/notificationarea.html:47
 msgid "Dismiss all"
-msgstr "すべて非表示"
+msgstr "すべて表示しない"
 
-#: templates/settings.html:68
+#: templates/settings.html:108
 msgid "Display and color theme"
 msgstr "テーマカラー"
 
 #: scripts/controllers/DeleteController.js:77
 msgid "Do you really want to delete the backup: \"{{name}}\" ?"
-msgstr ""
+msgstr "バックアップ \"{{name}}\" を削除してよろしいですか？"
 
 #: scripts/controllers/LocalDatabaseController.js:28
 msgid "Do you really want to delete the local database for: {{name}}"
-msgstr ""
+msgstr "{{name}} のデータベースを削除してよろしいですか？"
 
 #: templates/backends/openstack.html:26
-msgid "Domain Name"
+msgid "Domain name"
 msgstr "ドメイン名"
-
-#: index.html:151 index.html:258
-msgid "Donate"
-msgstr "寄付"
-
-#: templates/settings.html:76 templates/settings.html:78
-msgid "Donation messages"
-msgstr "寄付メッセージ"
-
-#: templates/settings.html:80
-msgid "Donation messages are hidden, click to show"
-msgstr "寄付メッセージが非表示です。クリックで表示"
-
-#: templates/settings.html:79
-msgid "Donation messages are visible, click to hide"
-msgstr "寄付メッセージが表示されています。クリックで非表示"
 
 #: templates/export.html:53
 msgid "Done"
 msgstr "完了"
 
-#: templates/notificationarea.html:16
+#: templates/notificationarea.html:16 templates/notificationarea.html:27
+#: templates/updatechangelog.html:10
 msgid "Download"
 msgstr "ダウンロード"
 
 #: templates/backup-result/phases/compact.html:28
 msgid "Downloaded files"
-msgstr "ダウンロード済みファイル"
+msgstr "ダウンロードされたファイル"
 
-#: scripts/services/ServerStatus.js:53
+#: scripts/services/ServerStatus.js:55
 msgid "Downloading files …"
-msgstr ""
+msgstr "ファイルをダウンロードしています…"
 
-#: templates/notificationarea.html:24
+#: templates/notificationarea.html:23
 msgid "Downloading update…"
-msgstr ""
+msgstr "アップデートをダウンロードしています…"
 
-#: templates/notificationarea.html:30
-msgid "Downloading …"
-msgstr ""
-
-#: scripts/services/AppUtils.js:301
+#: scripts/services/AppUtils.js:337
 msgid "Duplicate option {{opt}}"
-msgstr ""
+msgstr "複製に関するオプション {{opt}}"
 
-#: index.html:275
+#: index.html:255
 msgid "Duplicati Website"
-msgstr "Duplicati ウェブサイト"
+msgstr "Duplicatiのウェブサイト"
 
-#: index.html:266
+#: index.html:249
 msgid "Duplicati forum"
-msgstr "Duplicati フォーラム"
+msgstr "Duplicatiのフォーラム"
 
-#: templates/settings.html:53
+#: scripts/controllers/AppController.js:185
+msgid ""
+"Duplicati needs to be secured with a passphrase and a random passphrase has been generated for you.\n"
+"If you open Duplicati from the tray icon, you do not need a passphrase, but if you plan to open it from another location you need to set a passphrase you know.\n"
+"Do you want to set a passphrase now?"
+msgstr ""
+"Duplicatiはパスフレーズで保護する必要があります。ランダムなパスフレーズを作成しました。\n"
+"Duplicatiをトレイアイコンから開く場合はパスフレーズは必要ありませんが、別の場所から開くにはパスフレーズを入力する必要があります。\n"
+"パスフレーズを設定しますか？"
+
+#: templates/settings.html:93
 msgid ""
 "Duplicati will run when started, but will remain in a paused state for the "
 "duration. Duplicati will occupy minimal system resources and no backups will"
 " be run."
 msgstr ""
+"Duplicatiは起動と同時に実行しますが、ここで指定した時間が経過するまで一時停止の状態を維持します。一時停止の間、Duplicatiは最低限のシステムの処理能力しか使用せず、その間バックアップは実行されません。"
 
 #: templates/backup-result/phases/compact.html:16
 #: templates/backup-result/phases/delete.html:16
@@ -868,7 +1033,7 @@ msgstr ""
 #: templates/backup-result/phases/test.html:16
 #: templates/backup-result/top-left-box.html:11
 msgid "Duration"
-msgstr ""
+msgstr "経過"
 
 #: templates/delete.html:15
 msgid ""
@@ -876,49 +1041,70 @@ msgid ""
 "            When deleting a backup, you can also delete the local database without affecting the ability to restore the remote files.\n"
 "            If you are using the local database for backups from the commandline, you should keep the database."
 msgstr ""
+"それぞれのバックアップには、ローカルのコンピューターに保存されるデータベースがあります。\n"
+"バックアップを削除する際、リモートファイルの復元に影響を与えずにローカルのデータベースを削除することもできます。\n"
+"コマンドラインからバックアップ用のローカルのデータベースを使用している場合は、データベースを削除しないでください。"
 
-#: templates/localdatabase.html:8
+#: templates/localdatabase.html:5
 msgid ""
 "Each backup has a local database associated with it, which stores "
-"information about the remote backup on the local machine.\\nThis makes it "
+"information about the remote backup on the local machine. This makes it "
 "faster to perform many operations, and reduces the amount of data that needs"
 " to be downloaded for each operation."
 msgstr ""
+"それぞれのバックアップには、ローカルのコンピューターに保存されるデータベースがあります。このデータベースには、リモートバックアップに関する情報が保存されており、操作の速度を改善したり、その都度の操作でダウンロードするデータ量を減らしたりする効果があります。"
 
 #: templates/addoredit.html:174 templates/addoredit.html:387
-#: templates/edituri.html:39 templates/settings.html:153
+#: templates/edituri.html:39 templates/settings.html:194
 msgid "Edit as list"
-msgstr ""
+msgstr "一覧で編集"
 
 #: templates/addoredit.html:177 templates/addoredit.html:390
-#: templates/edituri.html:42 templates/settings.html:159
+#: templates/edituri.html:42 templates/settings.html:200
 msgid "Edit as text"
 msgstr "テキストで編集"
 
-#: templates/home.html:31
+#: templates/home.html:29
 msgid "Edit …"
+msgstr "編集..."
+
+#: templates/backends/msgroup.html:3
+msgid "Email address of the Office 365 group"
+msgstr "Office 365グループのメールアドレス"
+
+#: templates/settings.html:64
+msgid "Enable remote control"
 msgstr ""
 
 #: templates/export.html:22
 msgid "Encrypt file"
-msgstr "暗号化ファイル"
+msgstr "ファイルを暗号化"
 
 #: templates/addoredit.html:47 templates/restore.html:22
 #: templates/restoredirect.html:22 templates/restoredirect.html:58
 msgid "Encryption"
-msgstr "暗号化方式"
+msgstr "暗号化の方式"
 
-#: scripts/controllers/EditBackupController.js:402
+#: scripts/controllers/EditBackupController.js:403
 msgid "Encryption changed"
-msgstr "暗号化方式が変更されました"
+msgstr "暗号化の方式が変更されました"
 
-#: templates/about.html:69
-msgid "Encryption modules:"
-msgstr "暗号化モジュール"
-
-#: templates/backends/tardigrade.html:25
-msgid "Encryption passphrase"
+#: templates/about.html:68
+msgid ""
+"Encryption modules: <p style=\"display: inline\" ng-repeat=\"item in "
+"sysinfo.EncryptionModules\">{{item.Key}} </p>"
 msgstr ""
+"暗号化モジュール：<p style=\"display: inline\" ng-repeat=\"item in "
+"sysinfo.EncryptionModules\">{{item.Key}} </p>"
+
+#: scripts/services/EditUriBuiltins.js:1213 templates/backends/storj.html:25
+#: templates/backends/storj.html:26
+msgid "Encryption passphrase"
+msgstr "暗号化用のパスフレーズ"
+
+#: templates/backends/storj.html:30
+msgid "Encryption passphrase (for verification)"
+msgstr "暗号化用のパスフレーズ（確認用）"
 
 #: templates/backup-result/phases/compact.html:12
 #: templates/backup-result/phases/delete.html:12
@@ -930,10 +1116,15 @@ msgstr ""
 msgid "End"
 msgstr "終了"
 
-#: scripts/controllers/EditBackupController.js:95
+#: scripts/controllers/EditBackupController.js:96
 #: scripts/controllers/RestoreDirectController.js:24
 msgid "Enter URL"
-msgstr "URLを入力"
+msgstr "URLを入力してください"
+
+#: scripts/controllers/EditBackupController.js:96
+#: scripts/controllers/RestoreDirectController.js:24
+msgid "Enter a backup destination URL:"
+msgstr "バックアップ先のURLを入力してください。"
 
 #: templates/addoredit.html:339
 msgid ""
@@ -943,95 +1134,86 @@ msgid ""
 "the next 4 weeks, and one for each of the next 36 months. This can also be "
 "written as 1W:1D,1M:1W,3Y:1M."
 msgstr ""
+"バックアップの保持期間の方針を手動で設定できます。使用できる文字にはD、W、Y、Uがあり、それぞれ日、週、年、無制限（Unlimited）を指します。構文の形式は「7D:1D,4W:1W,36M:1M」となります。この例では、今後7日間にわたり毎日1個ずつ、今後4週間にわたり毎週1個ずつ、今後36か月にわたり毎月1個ずつバックアップが作成、保存されます。これはまた「1W:1D,1M:1W,3Y:1M」と表記することもできます。"
 
-#: templates/backends/azure.html:12
-msgid "Enter access key"
-msgstr "アクセスキーを入力"
-
-#: templates/backends/azure.html:8
-msgid "Enter account name"
-msgstr "アカウント名を入力"
+#: templates/commandline.html:14
+msgid "Enter a url, or click the &quot;Target URL &gt;&quot; link"
+msgstr "URLを入力するか、「バックアップ用のURL &gt;」のリンクをクリック"
 
 #: templates/restoredirect.html:61
 msgid "Enter backup passphrase, if any"
-msgstr "パスフレーズがある場合は入力してください"
+msgstr "バックアップのパスフレーズがある場合は入力してください"
 
 #: templates/addwizard.html:10
 msgid "Enter configuration details"
-msgstr ""
+msgstr "設定の詳細を入力"
 
-#: templates/backends/azure.html:3
-msgid "Enter container name"
-msgstr "コンテナ名を入力"
-
-#: templates/export.html:26 templates/import.html:15
+#: templates/export.html:26
 msgid "Enter encryption passphrase"
-msgstr "パスフレーズを入力"
+msgstr "暗号化用のパスフレーズを入力してください"
 
 #: templates/addoredit.html:196
 msgid "Enter expression here"
-msgstr "ここに式を入力してください"
+msgstr "式をここに入力してください"
 
-#: templates/backends/jottacloud.html:3 templates/backends/mega.html:3
-msgid "Enter folder path name"
-msgstr "フォルダパスを入力"
+#: templates/commandline.html:19
+msgid "Enter one argument per line without quotes, e.g. *.txt"
+msgstr "各行に1個の引数を、引用符を付けずに入力してください（例：*.txt）。"
+
+#: templates/commandline.html:26
+msgid ""
+"Enter one option per line in command-line format, e.g. --dblock-size=100MB"
+msgstr "コマンドラインの形式で1行に1つのオプションを入力してください。例：--dblock-size=100MB"
 
 #: scripts/services/AppUtils.js:122
-msgid "Enter one option per line in command-line format, eg. {0}"
-msgstr ""
+msgid "Enter one option per line in command-line format, e.g. {0}"
+msgstr "コマンドラインの形式で1行に1つのオプションを入力してください。例：{0}"
 
-#: templates/backends/file.html:7 templates/backends/generic.html:14
-#: templates/backends/msgroup.html:8 templates/backends/oauth.html:3
 #: templates/restore.html:90
 msgid "Enter the destination path"
-msgstr ""
+msgstr "バックアップ先のパスを入力してください"
 
-#: templates/backends/msgroup.html:3
-msgid "Enter the email address of the Office 365 group"
-msgstr ""
-
-#: templates/backends/sharepoint.html:3
-msgid ""
-"Enter the full destination path, including the server name, but without "
-"https"
-msgstr ""
-
-#: scripts/controllers/CommandlineController.js:170
-#: scripts/controllers/CommandlineController.js:74
-#: scripts/controllers/ExportController.js:43
-#: scripts/controllers/ExportController.js:60
-#: scripts/controllers/RestoreController.js:118
-#: scripts/controllers/RestoreController.js:148
-#: scripts/controllers/RestoreController.js:295
-#: scripts/controllers/RestoreController.js:335
-#: scripts/controllers/RestoreController.js:383
-#: scripts/controllers/RestoreController.js:416
-#: scripts/controllers/RestoreController.js:426
-#: scripts/controllers/RestoreController.js:92
-#: scripts/controllers/RestoreDirectController.js:110
-#: scripts/controllers/RestoreDirectController.js:74
-#: scripts/directives/backupEditUri.js:143
-#: scripts/directives/backupEditUri.js:170
-#: scripts/directives/backupEditUri.js:205
-#: scripts/directives/backupEditUri.js:239
+#: scripts/controllers/CommandlineController.js:174
+#: scripts/controllers/CommandlineController.js:80
+#: scripts/controllers/ExportController.js:40
+#: scripts/controllers/ExportController.js:57
+#: scripts/controllers/ExportController.js:70
+#: scripts/controllers/ImportController.js:17
+#: scripts/controllers/ImportController.js:39
+#: scripts/controllers/ImportController.js:43
+#: scripts/controllers/ImportController.js:49
+#: scripts/controllers/RestoreController.js:114
+#: scripts/controllers/RestoreController.js:144
+#: scripts/controllers/RestoreController.js:294
+#: scripts/controllers/RestoreController.js:332
+#: scripts/controllers/RestoreController.js:390
+#: scripts/controllers/RestoreController.js:423
+#: scripts/controllers/RestoreController.js:431
+#: scripts/controllers/RestoreController.js:90
+#: scripts/controllers/RestoreDirectController.js:106
+#: scripts/controllers/RestoreDirectController.js:72
+#: scripts/directives/backupEditUri.js:142
+#: scripts/directives/backupEditUri.js:163
+#: scripts/directives/backupEditUri.js:197
 #: scripts/directives/notificationArea.js:41
-#: scripts/directives/notificationArea.js:43 scripts/services/AppUtils.js:301
-#: scripts/services/AppUtils.js:347 scripts/services/AppUtils.js:349
-#: scripts/services/AppUtils.js:357 scripts/services/AppUtils.js:359
+#: scripts/directives/notificationArea.js:43
+#: scripts/directives/notificationArea.js:68 scripts/services/AppUtils.js:337
+#: scripts/services/AppUtils.js:342 scripts/services/AppUtils.js:388
+#: scripts/services/AppUtils.js:396
 msgid "Error"
 msgstr "エラー"
 
-#: scripts/services/ServerStatus.js:67
+#: scripts/services/ServerStatus.js:69
 msgid "Error!"
-msgstr "エラー!"
+msgstr "エラー！"
 
-#: templates/settings.html:128
+#: templates/settings.html:169
 msgid "Errors and crashes"
 msgstr "エラーとクラッシュ"
 
-#: templates/backup-result/top-right-box.html:3
+#: templates/backup-result/top-right-box.html:10
 msgid "Examined"
-msgstr ""
+msgstr "検査済"
 
 #: templates/addoredit.html:214
 msgid "Exclude"
@@ -1041,15 +1223,15 @@ msgstr "除外"
 msgid "Exclude directories whose names contain"
 msgstr "次の文字を含むディレクトリを除外"
 
-#: scripts/services/AppUtils.js:179
+#: scripts/services/AppUtils.js:181
 msgid "Exclude expression"
 msgstr "次の文字を含むファイル・ディレクトリを除外"
 
-#: scripts/services/AppUtils.js:143
+#: scripts/services/AppUtils.js:144
 msgid "Exclude file"
 msgstr "除外するファイル名"
 
-#: scripts/services/AppUtils.js:149
+#: scripts/services/AppUtils.js:151
 msgid "Exclude file extension"
 msgstr "除外する拡張子"
 
@@ -1057,23 +1239,23 @@ msgstr "除外する拡張子"
 msgid "Exclude files whose names contain"
 msgstr "次の文字を含むファイルを除外"
 
-#: scripts/services/AppUtils.js:164
+#: scripts/services/AppUtils.js:166
 msgid "Exclude filter group"
-msgstr "グループで除外する"
+msgstr "グループで除外"
 
 #: scripts/services/AppUtils.js:137
 msgid "Exclude folder"
 msgstr "除外するディレクトリ名"
 
-#: scripts/services/AppUtils.js:154
+#: scripts/services/AppUtils.js:156
 msgid "Exclude regular expression"
-msgstr "正規表現で除外する"
+msgstr "正規表現で除外"
 
 #: scripts/controllers/LocalDatabaseController.js:72
 msgid "Existing file found"
 msgstr "既存のファイルが見つかりました"
 
-#: templates/settings.html:104
+#: templates/settings.html:145
 msgid "Experimental"
 msgstr "実験的"
 
@@ -1083,7 +1265,7 @@ msgstr "エクスポート"
 
 #: templates/export.html:2
 msgid "Export backup configuration"
-msgstr "バックアップ設定をエクスポート"
+msgstr "バックアップの設定をエクスポート"
 
 #: templates/delete.html:31 templates/delete.html:34
 msgid "Export configuration"
@@ -1093,13 +1275,13 @@ msgstr "設定をエクスポート"
 msgid "Export passwords"
 msgstr "パスワードをエクスポート"
 
-#: templates/home.html:32
+#: templates/home.html:30
 msgid "Export …"
-msgstr ""
+msgstr "エクスポート…"
 
 #: templates/export.html:39
 msgid "Exporting …"
-msgstr ""
+msgstr "エクスポートしています…"
 
 #: templates/externallink.html:1
 msgid "External link"
@@ -1107,64 +1289,78 @@ msgstr "外部リンク"
 
 #: scripts/services/SystemInfo.js:52
 msgid "FTP (Alternative)"
-msgstr "FTP (代替)"
+msgstr "FTP（代替）"
 
-#: scripts/controllers/RestoreController.js:383
+#: scripts/controllers/RestoreController.js:390
 msgid "Failed to build temporary database: {{message}}"
-msgstr ""
+msgstr "一時的なデータベースを構築できませんでした：{{message}}"
 
-#: scripts/directives/backupEditUri.js:143
-#: scripts/directives/backupEditUri.js:205
-#: scripts/directives/backupEditUri.js:239
+#: scripts/directives/backupEditUri.js:142
+#: scripts/directives/backupEditUri.js:163
+#: scripts/directives/backupEditUri.js:197
 msgid "Failed to connect:"
-msgstr "接続に失敗:"
+msgstr "接続できませんでした："
 
-#: scripts/controllers/CommandlineController.js:170
-#: scripts/controllers/CommandlineController.js:74
-#: scripts/controllers/ExportController.js:43
-#: scripts/controllers/RestoreController.js:295
-#: scripts/controllers/RestoreController.js:335
-#: scripts/controllers/RestoreController.js:426
-#: scripts/controllers/RestoreController.js:92
-#: scripts/controllers/RestoreDirectController.js:110
-#: scripts/controllers/RestoreDirectController.js:74
-#: scripts/services/LogService.js:31
+#: scripts/controllers/CommandlineController.js:174
+#: scripts/controllers/CommandlineController.js:80
+#: scripts/controllers/ExportController.js:40
+#: scripts/controllers/ExportController.js:57
+#: scripts/controllers/RestoreController.js:294
+#: scripts/controllers/RestoreController.js:332
+#: scripts/controllers/RestoreController.js:431
+#: scripts/controllers/RestoreController.js:90
+#: scripts/controllers/RestoreDirectController.js:106
+#: scripts/controllers/RestoreDirectController.js:72
+#: scripts/services/LogService.js:29
 msgid "Failed to connect: {{message}}"
-msgstr "接続に失敗: {{message}}"
+msgstr "接続できませんでした。{{message}}"
 
 #: scripts/controllers/LocalDatabaseController.js:38
 msgid "Failed to delete:"
-msgstr "削除に失敗:"
+msgstr "削除できませんでした："
 
-#: scripts/controllers/RestoreController.js:118
-#: scripts/controllers/RestoreController.js:148
+#: scripts/controllers/RestoreController.js:114
+#: scripts/controllers/RestoreController.js:144
 msgid "Failed to fetch path information: {{message}}"
-msgstr ""
+msgstr "パスの情報を取得できませんでした：{{message}}"
 
 #: scripts/directives/notificationArea.js:45
 msgid "Failed to find backup:"
-msgstr ""
+msgstr "バックアップが見つかりませんでした："
 
-#: scripts/directives/backupEditUri.js:170
-msgid "Failed to import:"
-msgstr "インポートに失敗:"
+#: scripts/directives/notificationArea.js:68
+msgid "Failed to get bug report URL: {{message}}"
+msgstr "バグレポートのURLを取得できませんでした：{{message}}"
 
-#: scripts/controllers/EditBackupController.js:697
+#: scripts/controllers/ImportController.js:39
+#: scripts/controllers/ImportController.js:43
+msgid "Failed to import: {{message}}"
+msgstr "インポートできませんでした：{{message}}"
+
+#: scripts/controllers/EditBackupController.js:707
 msgid "Failed to read backup defaults:"
-msgstr ""
+msgstr "バックアップの既定の設定を読み込めませんでした："
 
-#: scripts/controllers/RestoreController.js:416
+#: scripts/controllers/ImportController.js:49
+msgid "Failed to read file: {{message}}"
+msgstr "ファイルを読み込めませんでした：{{message}}"
+
+#: scripts/controllers/RestoreController.js:423
 msgid "Failed to restore files: {{message}}"
-msgstr ""
+msgstr "ファイルを復元できませんでした：{{message}}"
 
-#: scripts/controllers/SystemSettingsController.js:116
+#: scripts/controllers/SystemSettingsController.js:263
 msgid "Failed to save:"
-msgstr "保存に失敗しました："
+msgstr "保存できませんでした："
 
-#: scripts/controllers/RestoreController.js:124
-#: scripts/controllers/RestoreController.js:163
+#: templates/backup-result/top-right-box.html:6
+msgid "Fatal error, no statistics collected"
+msgstr "深刻なエラーが発生しました。統計は収集されていません"
+
+#: scripts/controllers/RestoreController.js:120
+#: scripts/controllers/RestoreController.js:159
 msgid "Fetching path information …"
-msgstr ""
+msgstr "パスの情報を取得しています…"
 
 #: scripts/services/AppUtils.js:74
 msgid "File"
@@ -1172,56 +1368,70 @@ msgstr "ファイル"
 
 #: templates/addoredit.html:237
 msgid "Files larger than:"
-msgstr "閾値より大きなファイル:"
+msgstr "閾値より大きなファイル："
 
 #: templates/addoredit.html:163
 msgid "Filters"
 msgstr "フィルター"
 
-#: templates/commandline.html:60
+#: templates/commandline.html:57
 msgid "Finished!"
-msgstr "完了!"
+msgstr "完了しました!"
 
-#: scripts/controllers/AppController.js:172
+#: scripts/controllers/AppController.js:184
 msgid "First run setup"
 msgstr "初回実行セットアップ"
 
 #: scripts/services/AppUtils.js:51
 msgid "Folder"
-msgstr "フォルダ"
+msgstr "フォルダー"
 
-#: templates/backends/b2.html:7 templates/backends/file.html:22
-#: templates/backends/file.html:6 templates/backends/jottacloud.html:2
-#: templates/backends/mega.html:2 templates/backends/s3.html:61
-#: templates/backends/sia.html:6 templates/backends/tardigrade.html:37
-#: templates/restore.html:105 templates/restore.html:89
+#: templates/backends/storj.html:42
+msgid "Folder in the bucket"
+msgstr "バケット内のフォルダー"
+
+#: templates/backends/aliyunoss.html:30 templates/backends/b2.html:7
+#: templates/backends/cos.html:30 templates/backends/e2.html:16
+#: templates/backends/file.html:22 templates/backends/file.html:6
+#: templates/backends/jottacloud.html:2 templates/backends/mega.html:2
+#: templates/backends/s3.html:60 templates/backends/sia.html:6
+#: templates/backends/storj.html:41 templates/restore.html:105
+#: templates/restore.html:89
 msgid "Folder path"
-msgstr "フォルダパス"
+msgstr "フォルダーのパス"
+
+#: templates/backends/mega.html:3
+msgid "Folder path name"
+msgstr "フォルダーのパスの名称"
 
 #: scripts/services/AppUtils.js:108
 msgid "Fri"
 msgstr "金曜日"
 
+#: templates/backends/sharepoint.html:3
+msgid "Full destination path, including the server name, but without https"
+msgstr "サーバーの名称を含む、バックアップ先の完全なパス（httpsは除く）"
+
 #: scripts/services/AppUtils.js:84
 msgid "GByte"
-msgstr "GByte"
+msgstr "ギガバイト"
 
 #: scripts/services/AppUtils.js:117
 msgid "GByte/s"
-msgstr "GByte/s"
+msgstr "ギガバイト秒"
 
 #: templates/backends/gcs.html:38
 msgid "GCS Project ID"
-msgstr "GCS プロジェクト ID"
+msgstr "GCS プロジェクトID"
 
 #: templates/about.html:4 templates/addoredit.html:24
 #: templates/backuplog.html:6
 msgid "General"
-msgstr "一般"
+msgstr "全般"
 
 #: templates/addoredit.html:36
 msgid "General backup settings"
-msgstr "バックアップ設定"
+msgstr "バックアップの設定"
 
 #: templates/addoredit.html:305
 msgid "General options"
@@ -1231,22 +1441,19 @@ msgstr "設定"
 msgid "Generate"
 msgstr "生成"
 
-#: templates/backends/s3.html:89
-msgid ""
-"Generate IAM\n"
-"        access policy"
-msgstr ""
+#: templates/backends/s3.html:88
+msgid "Generate IAM access policy"
+msgstr "IAMアクセスポリシーを生成"
 
 #: scripts/controllers/RestoreController.js:70
 msgid "Getting file versions …"
-msgstr ""
+msgstr "ファイルのバージョンを取得しています…"
 
-#: scripts/services/EditUriBuiltins.js:843
-#: scripts/services/EditUriBuiltins.js:854 templates/backends/msgroup.html:2
+#: scripts/services/EditUriBuiltins.js:1025 templates/backends/msgroup.html:2
 msgid "Group email"
-msgstr ""
+msgstr "グループの電子メール"
 
-#: scripts/controllers/EditBackupController.js:19
+#: scripts/controllers/EditBackupController.js:20
 msgid "Hidden files"
 msgstr "隠しファイル"
 
@@ -1256,115 +1463,130 @@ msgstr "隠す"
 
 #: templates/backends/file.html:15 templates/restore.html:98
 msgid "Hide hidden folders"
-msgstr "隠しフォルダ"
+msgstr "隠しフォルダーを表示しない"
 
-#: index.html:219 scripts/services/AppUtils.js:62
+#: index.html:209 scripts/services/AppUtils.js:62
 msgid "Home"
-msgstr "Home"
+msgstr "ホーム"
 
-#: templates/settings.html:21
+#: templates/settings.html:24
 msgid "Hostnames"
 msgstr "ホスト名"
 
 #: scripts/services/AppUtils.js:100 scripts/services/AppUtils.js:90
-#: templates/settings.html:51
+#: templates/settings.html:91
 msgid "Hours"
 msgstr "時間"
 
 #: templates/restore.html:111
 msgid "How do you want to handle existing files?"
-msgstr ""
+msgstr "既存のファイルはどのように扱いますか？"
 
 #: scripts/services/AppUtils.js:64
 msgid "Hyper-V Machine"
 msgstr "Hyper-V マシン"
 
-#: scripts/directives/sourceFolderPicker.js:438
+#: scripts/directives/sourceFolderPicker.js:590
 msgid "Hyper-V Machine:"
-msgstr "Hyper-V マシン:"
+msgstr "Hyper-V マシン："
 
-#: scripts/directives/sourceFolderPicker.js:417
+#: scripts/directives/sourceFolderPicker.js:569
 #: scripts/services/AppUtils.js:66
 msgid "Hyper-V Machines"
 msgstr "Hyper-V マシン"
 
-#: scripts/directives/sourceFolderPicker.js:56
-#: scripts/directives/sourceFolderPicker.js:62
+#: scripts/directives/sourceFolderPicker.js:59
+#: scripts/directives/sourceFolderPicker.js:65
 msgid "ID:"
-msgstr "ID:"
+msgstr "ID："
+
+#: templates/backends/idrive.html:2
+msgid "IDrive Sync directory path"
+msgstr "IDrive Syncのディレクトリーのパス"
+
+#: scripts/services/EditUriBuiltins.js:1268 templates/backends/e2.html:3
+msgid "IDrive e2 Access Key ID"
+msgstr "IDrive e2のアクセスキーのID"
+
+#: scripts/services/EditUriBuiltins.js:1269 templates/backends/e2.html:7
+msgid "IDrive e2 Access Key Secret"
+msgstr "IDrive e2のアクセスキーのシークレット"
 
 #: templates/addoredit.html:261
 msgid "If a date was missed, the job will run as soon as possible."
-msgstr ""
+msgstr "予定の日時を逃してしまった場合、ジョブは即座に実行します。"
 
 #: templates/addoredit.html:359
 msgid ""
 "If at least one newer backup is found, all backups older than this date are "
 "deleted."
-msgstr ""
+msgstr "最低1つ以上のより新しいバックアップが存在する場合、この日付よりも古い全てのバックアップを削除します。"
 
-#: templates/localdatabase.html:13
+#: templates/localdatabase.html:10
 msgid ""
 "If the backup and the remote storage is out of sync, Duplicati will require "
-"that you perform a repair operation to synchronize the database.\\nIf the "
-"repair is unsuccesful, you can delete the local database and re-generate."
+"that you perform a repair operation to synchronize the database. If the "
+"repair is unsuccessful, you can delete the local database and re-generate."
 msgstr ""
+"バックアップとリモートの保存領域が同期していない場合、データベースを修復して同期させる必要があります。修復が上手く行かない場合は、ローカルのデータベースを削除して、改めてこれを作成してください。"
 
 #: templates/export.html:49
 msgid ""
 "If the backup file was not downloaded automatically, <a "
 "href=\"{{DownloadURL}}\" target=\"_blank\">right click and choose &quot;Save"
-" as …&quot;</a>"
+" as …&quot;</a>."
 msgstr ""
+"バックアップのファイルが自動的にダウンロードされなかった場合は、 <a href=\"{{DownloadURL}}\" "
+"target=\"_blank\">&quot;名前を付けて保存&quot;を右クリックして選択してください</a>。"
 
 #: templates/notificationarea.html:7
 msgid ""
 "If the backup file was not downloaded automatically, <a "
 "href=\"{{item.DownloadLink}}\" target=\"_blank\">right click and choose "
-"&quot;Save as …&quot;</a>"
+"&quot;Save as …&quot;</a>."
 msgstr ""
+"バックアップのファイルが自動的にダウンロードされなかった場合は、 <a href=\"{{item.DownloadLink}}\" "
+"target=\"_blank\">&quot;名前を付けて保存&quot;を右クリックして選択してください</a>。"
 
-#: scripts/services/EditUriBackendConfig.js:106
+#: scripts/services/EditUriBackendConfig.js:113
 msgid ""
 "If you do not enter a path, all files will be stored in the login folder.\n"
 "Are you sure this is what you want?"
 msgstr ""
+"パスを入力しない場合、全てのファイルはログインフォルダーに保存されます。\n"
+"続行してよろしいですか？"
 
 #: templates/backends/openstack.html:40
 msgid "If you do not enter an API Key, the tenant name is required"
+msgstr "APIを入力しない場合、テナント名が必要です"
+
+#: templates/pause.html:53
+msgid ""
+"If you pause transfers they could time out and cause retries or failures."
 msgstr ""
 
 #: templates/delete.html:32
 msgid ""
 "If you want to use the backup later, you can export the configuration before"
-" deleting it"
-msgstr ""
+" deleting it."
+msgstr "後にバックアップを使用したい場合は、削除する前に設定をエクスポートできます。"
 
-#: scripts/controllers/AppController.js:173
-msgid ""
-"If your machine is in a multi-user environment (i.e. the machine has more than one account), you need to set a password to prevent other users from accessing data on your account.\n"
-"Do you want to set a password now?"
-msgstr ""
-
-#: templates/import.html:31
+#: templates/import.html:29
 msgid "Import"
 msgstr "インポート"
 
 #: templates/addoredit.html:100 templates/restoredirect.html:39
 msgid "Import Destination URL"
-msgstr "コピー先URLをインポート"
+msgstr "バックアップ先のURLをインポート"
+
+#: scripts/controllers/EditBackupController.js:96
+#: scripts/controllers/RestoreDirectController.js:24
+msgid "Import URL"
+msgstr "URLをインポート"
 
 #: templates/import.html:3
 msgid "Import backup configuration"
-msgstr "バックアップ設定をインポート"
-
-#: scripts/directives/backupEditUri.js:159
-msgid "Import completed, but no certificates were found after the import"
-msgstr ""
-
-#: scripts/directives/backupEditUri.js:159
-msgid "Import failed"
-msgstr "インポート失敗"
+msgstr "バックアップの設定をインポート"
 
 #: templates/addwizard.html:15
 msgid "Import from a file"
@@ -1374,82 +1596,78 @@ msgstr "ファイルからインポート"
 msgid "Import metadata"
 msgstr "メタデータをインポート"
 
-#: templates/import.html:35
+#: templates/import.html:33
 msgid "Importing …"
-msgstr ""
+msgstr "インポートしています…"
 
-#: scripts/controllers/EditBackupController.js:163
+#: scripts/controllers/EditBackupController.js:164
 msgid "Include a file?"
-msgstr "含むファイル"
+msgstr "ファイルを含めますか？"
 
-#: scripts/services/AppUtils.js:175
+#: scripts/services/AppUtils.js:177
 msgid "Include expression"
 msgstr "次の文字列を含む"
 
-#: scripts/services/AppUtils.js:159
+#: scripts/services/AppUtils.js:161
 msgid "Include regular expression"
 msgstr "次の正規表現を含む"
 
-#: templates/captcha.html:11
+#: templates/captcha.html:12
 msgid "Incorrect answer, try again"
-msgstr ""
+msgstr "答えが正しくありません。もう一度試してください"
 
-#: templates/settings.html:110
+#: templates/settings.html:151
 msgid ""
 "Individual builds for developers only. Not for use with important data."
-msgstr ""
+msgstr "開発者用の個別のビルドです。重要なデータのバックアップには使用しないでください。"
 
 #: scripts/services/DialogService.js:27
 msgid "Information"
 msgstr "情報"
 
-#: templates/notificationarea.html:28 templates/updatechangelog.html:10
-msgid "Install"
-msgstr "インストール"
+#: templates/backup-result/top-right-box.html:3
+msgid "Interrupted, no statistics collected"
+msgstr "中断されました。統計は収集されていません"
 
-#: scripts/controllers/UpdateChangelogController.js:14
-msgid "Install failed:"
-msgstr "インストール失敗:"
-
-#: scripts/services/EditUriBuiltins.js:1058
+#: scripts/services/EditUriBuiltins.js:1189
 msgid "Invalid characters in path"
 msgstr "無効な文字がパスに含まれています"
 
-#: scripts/controllers/EditBackupController.js:288
-#: scripts/controllers/EditBackupController.js:295
-#: scripts/controllers/EditBackupController.js:305
+#: scripts/controllers/EditBackupController.js:289
+#: scripts/controllers/EditBackupController.js:296
+#: scripts/controllers/EditBackupController.js:306
 msgid "Invalid retention time"
-msgstr "無効な保持期間"
+msgstr "無効な保持期間が設定されています"
 
-#: scripts/services/EditUriBuiltins.js:801
+#: scripts/services/EditUriBuiltins.js:968
 msgid ""
 "It is possible to connect to some FTP without a password.\n"
 "Are you sure your FTP server supports password-less logins?"
 msgstr ""
-"パスワードなしで FTP 接続できる必要があります。\n"
-"この FTP サーバーはパスワード無しのログインをサポートしていますか？"
+"FTPサーバーの中にはパスワードを入力せずに接続できるものがあります。\n"
+"このFTPサーバーは、パスワード無しのログインをサポートしていますか？"
 
 #: scripts/services/AppUtils.js:82
 msgid "KByte"
-msgstr "KByte"
+msgstr "キロバイト"
 
 #: scripts/services/AppUtils.js:115
 msgid "KByte/s"
-msgstr "KByte/s"
+msgstr "キロバイト秒"
 
 #: templates/addoredit.html:323
 msgid "Keep a specific number of backups"
-msgstr "指定した数のバックアップを残す"
+msgstr "指定した数のバックアップを保存"
 
 #: templates/addoredit.html:321
 msgid "Keep all backups"
-msgstr "全てのバックアップを残す"
+msgstr "全てのバックアップを保存"
 
 #: templates/backends/openstack.html:18
 msgid "Keystone API version"
-msgstr "Keystone API version"
+msgstr "Keystone APIのバージョン"
 
-#: templates/settings.html:58
+#: templates/settings.html:98
 msgid "Language in user interface"
 msgstr "言語設定"
 
@@ -1457,13 +1675,13 @@ msgstr "言語設定"
 msgid "Last month"
 msgstr "先月"
 
-#: templates/home.html:53
+#: templates/home.html:51
 msgid "Last successful backup:"
-msgstr "最後に成功したバックアップ:"
+msgstr "最後に成功したバックアップ："
 
 #: templates/restorewizard.html:27
 msgid "Last successful restore: {{time}} (took {{duration || '0 seconds'}})"
-msgstr "最後に成功した復元：{{time}}（{{duration || '0秒'}} 間）"
+msgstr "最後に成功した復元：{{time}}（完了までの時間 {{duration || '0秒'}}）"
 
 #: scripts/controllers/RestoreController.js:60
 msgid "Latest"
@@ -1471,108 +1689,127 @@ msgstr "最新"
 
 #: templates/about.html:6
 msgid "Libraries"
-msgstr "ライブラリ"
+msgstr "ライブラリー"
 
 #: scripts/controllers/RestoreDirectController.js:64
 msgid "Listing backup dates …"
-msgstr ""
+msgstr "バックアップの日付を一覧表示しています…"
+
+#: scripts/services/ServerStatus.js:65
+msgid "Listing remote files for purge …"
+msgstr "削除するリモートファイルの一覧を作成しています…"
 
 #: scripts/services/ServerStatus.js:63
-msgid "Listing remote files for purge …"
-msgstr ""
-
-#: scripts/services/ServerStatus.js:61
 msgid "Listing remote files …"
-msgstr ""
+msgstr "リモートファイルの一覧を作成しています…"
 
 #: templates/log.html:7
 msgid "Live"
-msgstr ""
+msgstr "ライブ"
 
 #: templates/addwizard.html:16
 msgid "Load a configuration from an exported job or a storage provider"
-msgstr ""
+msgstr "エクスポートしたジョブまたはストレージ提供者から、設定を読み込む"
 
 #: templates/restorewizard.html:16
 msgid "Load destination from an exported job or a storage provider"
-msgstr ""
+msgstr "エクスポートしたジョブまたはストレージ提供者から、バックアップ先を読み込む"
 
-#: templates/backuplog.html:26 templates/backuplog.html:44
+#: templates/backuplog.html:23 templates/backuplog.html:41
 #: templates/log.html:24
 msgid "Load older data"
-msgstr ""
-
-#: templates/captcha.html:14
-msgid "Loading ..."
-msgstr "読み込み中 ..."
+msgstr "さらに古いデータを読み込む"
 
 #: templates/delete.html:40
-msgid "Loading remote storage usage ..."
-msgstr "リモートストレージの使用量を読み込み中 ..."
+msgid "Loading remote storage usage …"
+msgstr "リモートストレージの使用量を読み込んでいます…"
 
-#: templates/about.html:45 templates/about.html:50 templates/about.html:56
-#: templates/backuplog.html:12 templates/backuplog.html:25
-#: templates/backuplog.html:32 templates/backuplog.html:43
-#: templates/log.html:12 templates/log.html:23
+#: templates/about.html:43 templates/about.html:49 templates/about.html:55
+#: templates/backuplog.html:12 templates/backuplog.html:22
+#: templates/backuplog.html:29 templates/backuplog.html:40
+#: templates/captcha.html:15 templates/log.html:12 templates/log.html:23
 #: templates/updatechangelog.html:7
 msgid "Loading …"
-msgstr ""
-
-#: scripts/services/EditUriBuiltins.js:1075
-msgid "Local Repository"
-msgstr ""
+msgstr "読み込んでいます…"
 
 #: templates/localdatabase.html:2
-msgid "Local database for"
+msgid ""
+"Local database for <b ng-"
+"show=\"Backup.Backup.Name\">{{Backup.Backup.Name}}</b><b ng-"
+"hide=\"Backup.Backup.Name\">…loading…</b>"
 msgstr ""
+"<b ng-show=\"Backup.Backup.Name\">{{Backup.Backup.Name}}</b><b ng-"
+"hide=\"Backup.Backup.Name\">…読み込んでいます…</b>のローカルのデータベース"
 
-#: templates/localdatabase.html:26
+#: templates/localdatabase.html:23
 msgid "Local database path:"
-msgstr ""
+msgstr "ローカルのデータベースのパス："
 
 #: templates/backends/rclone.html:2
 msgid "Local repository"
-msgstr ""
+msgstr "ローカルのリポジトリー"
 
-#: scripts/services/SystemInfo.js:81
+#: scripts/services/SystemInfo.js:85
 msgid "Local storage"
 msgstr "ローカルストレージ"
 
-#: templates/localdatabase.html:23
+#: templates/localdatabase.html:20
 msgid "Location"
 msgstr "場所"
 
 #: templates/backends/gcs.html:21
 msgid "Location where buckets are created"
-msgstr ""
+msgstr "バケットを作成する場所"
 
 #: templates/backuplog.html:3
 msgid "Log data for <b>{{Backup.Backup.Name}}</b>"
-msgstr ""
+msgstr "<b>{{Backup.Backup.Name}}</b>のログデータ"
 
 #: templates/log.html:3
 msgid "Log data from the server"
-msgstr ""
+msgstr "サーバー上のログデータ"
 
-#: index.html:237
+#: index.html:307
+msgid "Log in"
+msgstr "ログイン"
+
+#: index.html:227
 msgid "Log out"
 msgstr "ログアウト"
 
 #: scripts/services/AppUtils.js:83
 msgid "MByte"
-msgstr "MByte"
+msgstr "メガバイト"
 
 #: scripts/services/AppUtils.js:116
 msgid "MByte/s"
-msgstr "MByte/s"
+msgstr "メガバイト秒"
 
-#: templates/localdatabase.html:11
+#: templates/settings.html:51
+msgid "Machine is now registered, open this link to add it to your account:"
+msgstr ""
+
+#: templates/localdatabase.html:8
 msgid "Maintenance"
 msgstr "メンテナンス"
 
+#: templates/backends/rclone.html:13
+msgid ""
+"Make sure that rclone is in your path, or add the location to rclone via the"
+" advanced options."
+msgstr "Rcloneの実行ファイルをパスで指定するか、実行ファイルの場所を「高度な設定」で指定してください。"
+
+#: index.html:260
+msgid "Manual"
+msgstr "マニュアル"
+
+#: templates/notificationarea.html:34
+msgid "Manual update found:"
+msgstr "手動アップデートが見つかりました："
+
 #: templates/backends/file.html:19 templates/restore.html:102
 msgid "Manually type path"
-msgstr ""
+msgstr "手動でパスを入力"
 
 #: templates/throttle.html:15
 msgid "Max download speed"
@@ -1582,48 +1819,48 @@ msgstr "最大ダウンロード速度"
 msgid "Max upload speed"
 msgstr "最大アップロード速度"
 
-#: index.html:155 templates/addoredit.html:127 templates/addoredit.html:169
+#: index.html:145 templates/addoredit.html:127 templates/addoredit.html:169
 #: templates/addoredit.html:382 templates/addoredit.html:95
 #: templates/edituri.html:34 templates/restoredirect.html:34
 msgid "Menu"
 msgstr "メニュー"
 
-#: scripts/directives/sourceFolderPicker.js:471
+#: scripts/directives/sourceFolderPicker.js:623
 msgid "Microsoft SQL Database:"
-msgstr ""
+msgstr "Microsoft SQLデータベース："
 
-#: scripts/directives/sourceFolderPicker.js:449
+#: scripts/directives/sourceFolderPicker.js:601
 msgid "Microsoft SQL Databases"
-msgstr ""
+msgstr "Microsoft SQLデータベース"
 
 #: templates/backends/sia.html:14
 msgid "Minimum redundancy"
-msgstr ""
+msgstr "最小の冗長性"
 
-#: scripts/services/EditUriBuiltins.js:1062
+#: scripts/services/EditUriBuiltins.js:1193
 msgid "Minimum redundancy is 1.0"
-msgstr ""
+msgstr "最小の冗長性は1.0です"
 
 #: scripts/services/AppUtils.js:89 scripts/services/AppUtils.js:99
-#: templates/settings.html:50
+#: templates/settings.html:90
 msgid "Minutes"
 msgstr "分"
 
-#: scripts/controllers/EditBackupController.js:239
+#: scripts/controllers/EditBackupController.js:240
 msgid "Missing name"
 msgstr "名前がありません"
 
-#: scripts/controllers/EditBackupController.js:246
+#: scripts/controllers/EditBackupController.js:247
 msgid "Missing passphrase"
 msgstr "パスフレーズがありません"
 
-#: scripts/controllers/EditBackupController.js:259
+#: scripts/controllers/EditBackupController.js:260
 msgid "Missing sources"
-msgstr ""
+msgstr "バックアップ元のファイルがありません"
 
-#: templates/backup-result/top-right-box.html:15
+#: templates/backup-result/top-right-box.html:22
 msgid "Modified"
-msgstr "更新"
+msgstr "変更済"
 
 #: scripts/services/AppUtils.js:104
 msgid "Mon"
@@ -1631,15 +1868,15 @@ msgstr "月曜日"
 
 #: scripts/services/AppUtils.js:93 templates/addoredit.html:353
 msgid "Months"
-msgstr ""
+msgstr "月"
 
-#: templates/localdatabase.html:34
+#: templates/localdatabase.html:31
 msgid "Move existing database"
-msgstr ""
+msgstr "既存のデータベースを移動"
 
 #: scripts/controllers/LocalDatabaseController.js:66
 msgid "Move failed:"
-msgstr ""
+msgstr "移動できませんでした："
 
 #: scripts/services/AppUtils.js:54
 msgid "My Documents"
@@ -1651,7 +1888,7 @@ msgstr "マイミュージック"
 
 #: templates/addoredit.html:40
 msgid "My Photos"
-msgstr "マイピフォト"
+msgstr "マイフォト"
 
 #: scripts/services/AppUtils.js:58
 msgid "My Pictures"
@@ -1661,19 +1898,26 @@ msgstr "マイピクチャ"
 msgid "Name"
 msgstr "名前"
 
-#: templates/home.html:60
+#: templates/home.html:58
 msgid "Never"
-msgstr ""
+msgstr "未実行"
 
-#: templates/notificationarea.html:22
-msgid "New update found: {{message}}"
-msgstr ""
+#: templates/changepassword.html:5 templates/settings.html:11
+msgid "New Password"
+msgstr "新しいパスワードを入力してください"
 
-#: scripts/services/EditUriBuiltins.js:133
+#: templates/notificationarea.html:21
+msgid "New update found: <a href=\"{{state.updateDownloadLink}}\">{{message}}</a>"
+msgstr ""
+"新しいアップデートが見つかりました：<a href=\"{{state.updateDownloadLink}}\">{{message}}</a>"
+
+#: scripts/services/EditUriBuiltins.js:137
 msgid ""
 "New user name is {{user}}.\n"
 "Updated credentials to use the new limited user"
 msgstr ""
+"新しいユーザー名は{{user}}です。\n"
+"新規の制限ユーザーを使用するためのログイン情報を更新しました"
 
 #: templates/addoredit.html:113 templates/addoredit.html:246
 #: templates/addoredit.html:296 templates/addoredit.html:82
@@ -1682,170 +1926,217 @@ msgstr ""
 msgid "Next"
 msgstr "次へ"
 
-#: templates/home.html:64
+#: templates/home.html:62
 msgid "Next scheduled run:"
-msgstr "次の実行予定"
+msgstr "次の実行予定日時："
 
-#: index.html:194
+#: index.html:184
 msgid "Next scheduled task:"
-msgstr ""
+msgstr "次に予定されているタスク："
 
-#: index.html:191
+#: index.html:181
 msgid "Next task:"
-msgstr ""
+msgstr "次のタスク："
 
 #: templates/addoredit.html:264
 msgid "Next time"
-msgstr ""
+msgstr "次回"
 
+#: scripts/controllers/AppController.js:186
 #: scripts/controllers/DeleteController.js:77
-#: scripts/controllers/EditBackupController.js:153
-#: scripts/controllers/EditBackupController.js:163
-#: scripts/controllers/EditBackupController.js:450
+#: scripts/controllers/EditBackupController.js:154
+#: scripts/controllers/EditBackupController.js:164
+#: scripts/controllers/EditBackupController.js:451
 #: scripts/controllers/HomeController.js:7
 #: scripts/controllers/LocalDatabaseController.js:28
 #: scripts/controllers/LocalDatabaseController.js:72
 #: scripts/controllers/LocalDatabaseController.js:88
-#: scripts/directives/backupEditUri.js:131
-#: scripts/directives/backupEditUri.js:214
-#: scripts/directives/backupEditUri.js:87
-#: scripts/services/EditUriBackendConfig.js:66
-#: scripts/services/EditUriBuiltins.js:54
-#: scripts/services/EditUriBuiltins.js:874
-#: scripts/services/EditUriBuiltins.js:956
-#: scripts/services/EditUriBuiltins.js:972
+#: scripts/directives/backupEditUri.js:130
+#: scripts/directives/backupEditUri.js:172
+#: scripts/directives/backupEditUri.js:86
+#: scripts/services/EditUriBackendConfig.js:73
+#: scripts/services/EditUriBuiltins.js:1097
+#: scripts/services/EditUriBuiltins.js:1113
+#: scripts/services/EditUriBuiltins.js:58
 msgid "No"
-msgstr ""
+msgstr "いいえ"
 
-#: scripts/directives/backupEditUri.js:210
+#: scripts/directives/backupEditUri.js:168
 msgid ""
 "No certificate was specified previously, please verify with the server administrator that the key is correct: {{key}} \n"
 "\n"
 "Do you want to approve the reported host key?"
 msgstr ""
+"以前に指定された証明書はありません。鍵が正しいかどうか、サーバーの管理者に確認してください：{{key}} \n"
+"\n"
+"報告されたホストの鍵を承認してよろしいですか？"
 
 #: templates/edituri.html:12
 msgid "No editor found for the &quot;{{backend}}&quot; storage type"
-msgstr ""
+msgstr "&quot;{{backend}}&quot; の保存領域の種類に関するエディターが見つかりませんでした"
 
-#: scripts/controllers/EditBackupController.js:429 templates/addoredit.html:49
+#: scripts/controllers/EditBackupController.js:430 templates/addoredit.html:49
 msgid "No encryption"
 msgstr "暗号化なし"
 
-#: scripts/controllers/RestoreController.js:196
+#: scripts/controllers/RestoreController.js:192
 msgid "No items selected"
 msgstr "アイテムが選択されていません"
 
-#: scripts/controllers/RestoreController.js:196
+#: scripts/controllers/RestoreController.js:192
 msgid "No items to restore, please select one or more items"
-msgstr ""
+msgstr "復元するアイテムがありません。1つ以上のアイテムを選択してください"
 
-#: scripts/controllers/ExportController.js:57
+#: scripts/controllers/ExportController.js:67
 msgid "No passphrase entered"
 msgstr "パスフレーズが入力されていません"
 
-#: index.html:196
+#: index.html:186
 msgid "No scheduled tasks"
-msgstr ""
+msgstr "予定されているタスクはありません"
 
-#: scripts/controllers/AppController.js:174
-msgid "No, my machine has only a single account"
-msgstr ""
-
-#: scripts/controllers/EditBackupController.js:252
+#: scripts/controllers/EditBackupController.js:253
 msgid "Non-matching passphrase"
-msgstr ""
+msgstr "パスフレーズが一致しません"
 
-#: templates/settings.html:130
+#: templates/settings.html:171
 msgid "None / disabled"
-msgstr ""
+msgstr "なし / 無効"
 
 #: scripts/controllers/ExportController.js:13
 msgid "Not using encryption"
-msgstr "暗号化していません"
+msgstr "暗号化を行っていません"
+
+#: templates/throttle.html:22
+msgid ""
+"Note that speeds are entered in bytes, and line speeds are typically "
+"reported in bits. Use a factor of 8 to convert, such that an 8 mbit/s line "
+"is equivalent to 1 MByte/s."
+msgstr ""
+"ここで入力する速度はバイト表記ですが、回線速度は通常、ビットで報告されます。ビットからバイトへと数値を換算するには、これを8で割ってください。8メガビット秒の回線は1メガバイト秒に相当します。"
 
 #: templates/addoredit.html:328
 msgid "Nothing will be deleted. The backup size will grow with each change."
-msgstr ""
+msgstr "バックアップは削除されません。バックアップのサイズはその都度の変更に従って大きくなります。"
 
-#: scripts/controllers/AppController.js:44
-#: scripts/controllers/AppController.js:59
-#: scripts/controllers/EditBackupController.js:103
-#: scripts/controllers/EditBackupController.js:95
+#: scripts/controllers/AppController.js:197
+#: scripts/controllers/AppController.js:54
+#: scripts/controllers/AppController.js:70
+#: scripts/controllers/EditBackupController.js:104
+#: scripts/controllers/EditBackupController.js:96
 #: scripts/controllers/RestoreDirectController.js:24
 #: scripts/controllers/RestoreDirectController.js:33
 #: scripts/services/CaptchaService.js:22 scripts/services/DialogService.js:28
 #: scripts/services/DialogService.js:50 scripts/services/DialogService.js:58
-#: scripts/services/EditUriBuiltins.js:133 templates/restore.html:156
-#: templates/settings.html:165
+#: scripts/services/EditUriBuiltins.js:137 templates/restore.html:147
+#: templates/settings.html:206
 msgid "OK"
-msgstr ""
+msgstr "OK"
+
+#: templates/backends/aliyunoss.html:10 templates/backends/aliyunoss.html:8
+msgid "OSS Access Key ID"
+msgstr "OSSのアクセスキーのID"
+
+#: templates/backends/aliyunoss.html:14 templates/backends/aliyunoss.html:16
+msgid "OSS Access Key Secret"
+msgstr "OSSのアクセスキーのシークレット"
+
+#: templates/backends/aliyunoss.html:21
+msgid "OSS Bucket Region"
+msgstr "OSSのバケットのリージョン"
+
+#: templates/backends/aliyunoss.html:25 templates/backends/aliyunoss.html:26
+msgid "OSS Bucket name"
+msgstr "OSSのバケット名"
+
+#: templates/backends/aliyunoss.html:2
+msgid "OSS Endpoint"
+msgstr "OSSのエンドポイント"
+
+#: templates/backends/aliyunoss.html:32
+msgid "OSS Path or subfolder in the bucket"
+msgstr "OSSのパスあるいはバケットのサブフォルダー"
+
+#: templates/backends/aliyunoss.html:20
+msgid "OSS Region"
+msgstr "OSSのリージョン"
+
+#: templates/settings.html:136
+msgid "Official releases"
+msgstr "公式リリース版"
 
 #: templates/addoredit.html:346
 msgid ""
 "Once there are more backups than the specified number, the oldest backups "
 "are deleted."
-msgstr ""
+msgstr "指定した数以上のバックアップが作成された場合、古いバックアップから削除されます。"
 
 #: templates/backends/openstack.html:7
 msgid "OpenStack AuthURI"
-msgstr ""
+msgstr "OpenStack AuthURI"
 
 #: scripts/services/SystemInfo.js:50
 msgid "OpenStack Object Storage / Swift"
-msgstr ""
+msgstr "OpenStack オブジェクトストレージ / Swift"
 
-#: templates/backup-result/top-right-box.html:7
+#: templates/backup-result/top-right-box.html:14
 msgid "Opened"
-msgstr ""
+msgstr "展開済"
 
-#: scripts/services/EditUriBuiltins.js:920
-msgid "Openstack API Key are not supported in v3 keystone API."
-msgstr ""
+#: scripts/services/EditUriBuiltins.js:1061
+msgid "Openstack API key are not supported in v3 keystone API"
+msgstr "OpenstackのAPIキーは、バージョン3のkeystone APIではサポートされていません。"
 
-#: scripts/services/AppUtils.js:195
+#: scripts/services/AppUtils.js:197
 msgid "Operating System"
-msgstr ""
+msgstr "オペレーティングシステム"
 
-#: templates/backuplog.html:16
+#: templates/backup-result/entryline.html:2
 msgid "Operation"
-msgstr ""
+msgstr "操作"
 
-#: scripts/controllers/SystemSettingsController.js:127
-#: scripts/controllers/SystemSettingsController.js:138
-msgid "Operation failed:"
-msgstr ""
-
-#: templates/home.html:23
+#: templates/home.html:21
 msgid "Operations:"
-msgstr ""
+msgstr "操作："
+
+#: templates/backends/openstack.html:45
+msgid "Optional API key"
+msgstr "APIのキー（オプション）"
 
 #: templates/backends/file.html:34
 msgid "Optional authentication password"
-msgstr ""
+msgstr "認証に必要なパスワード（オプション）"
 
 #: templates/backends/file.html:30
 msgid "Optional authentication username"
-msgstr ""
+msgstr "認証に必要なユーザー名（オプション）"
+
+#: templates/backends/openstack.html:50
+msgid "Optional region"
+msgstr "リージョン（オプション）"
+
+#: templates/backends/openstack.html:40
+msgid "Optional tenant name"
+msgstr "テナント名（オプション）"
 
 #: templates/addoredit.html:28 templates/edituri.html:51
-#: templates/settings.html:152 templates/settings.html:158
+#: templates/settings.html:193 templates/settings.html:199
 msgid "Options"
-msgstr ""
+msgstr "オプション"
 
-#: templates/settings.html:150
+#: templates/settings.html:191
 msgid ""
 "Options added here are applied to all backups, but can be overridden in each"
-" individual backup"
-msgstr ""
+" individual backup."
+msgstr "ここで追加したオプションは全てのバックアップに適用されますが、それぞれのバックアップの設定で上書きすることができます。"
 
 #: templates/restore.html:81
 msgid "Original location"
-msgstr ""
+msgstr "元の場所"
 
-#: scripts/services/SystemInfo.js:84
+#: scripts/services/SystemInfo.js:88
 msgid "Others"
-msgstr ""
+msgstr "その他"
 
 #: templates/addoredit.html:332
 msgid ""
@@ -1853,10 +2144,11 @@ msgid ""
 "backup for each of the last 7 days, each of the last 4 weeks, each of the "
 "last 12 months. There will always be at least one remaining backup."
 msgstr ""
+"バックアップは時間の経過につれて自動的に削除されます。7日ごと、4週ごと、12ヶ月ごとのバックアップはそれぞれ保持されます。最低でも1つはバックアップが残ります。"
 
 #: templates/restore.html:114
 msgid "Overwrite"
-msgstr ""
+msgstr "上書き"
 
 #: templates/addoredit.html:58 templates/export.html:25
 #: templates/restore.html:130 templates/restoredirect.html:60
@@ -1865,137 +2157,169 @@ msgstr "パスフレーズ"
 
 #: templates/import.html:14
 msgid "Passphrase (if encrypted)"
-msgstr ""
+msgstr "パスフレーズ（暗号化されている場合）"
 
-#: scripts/controllers/EditBackupController.js:393
+#: scripts/controllers/EditBackupController.js:394
 msgid "Passphrase changed"
-msgstr ""
+msgstr "パスフレーズを変更しました"
 
-#: scripts/controllers/EditBackupController.js:252
+#: scripts/controllers/EditBackupController.js:253
 msgid "Passphrases are not matching"
-msgstr ""
+msgstr "パスフレーズが一致しません"
 
-#: scripts/controllers/EditBackupController.js:29
+#: scripts/controllers/EditBackupController.js:30
 msgid "Passphrases do not match"
-msgstr ""
+msgstr "パスフレーズが一致しません"
 
-#: scripts/services/EditUriBuiltins.js:1036
-#: scripts/services/EditUriBuiltins.js:1046 templates/backends/file.html:33
-#: templates/backends/generic.html:22 templates/backends/jottacloud.html:11
-#: templates/backends/jottacloud.html:12 templates/backends/mega.html:11
+#: scripts/services/EditUriBuiltins.js:1177 templates/backends/file.html:33
+#: templates/backends/generic.html:22 templates/backends/idrive.html:11
+#: templates/backends/idrive.html:12 templates/backends/mega.html:11
 #: templates/backends/mega.html:12 templates/backends/openstack.html:34
-#: templates/settings.html:8
 msgid "Password"
 msgstr "パスワード"
 
-#: scripts/services/ServerStatus.js:52
+#: scripts/services/ServerStatus.js:54
 msgid "Patching files with local blocks …"
-msgstr ""
+msgstr "ファイルをローカルのブロックで修復しています…"
 
-#: scripts/services/EditUriBuiltins.js:1020
+#: scripts/services/EditUriBuiltins.js:1161
+#: scripts/services/EditUriBuiltins.js:1298
 msgid "Path"
 msgstr "パス"
 
-#: scripts/controllers/EditBackupController.js:153
+#: scripts/controllers/EditBackupController.js:154
 msgid "Path not found"
 msgstr "パスが見つかりません"
 
 #: templates/backends/generic.html:13 templates/backends/msgroup.html:7
-#: templates/backends/oauth.html:2
+#: templates/backends/oauth.html:2 templates/backends/pcloud.html:15
 msgid "Path on server"
 msgstr "サーバー上のパス"
 
-#: templates/backends/b2.html:8 templates/backends/s3.html:63
+#: templates/backends/b2.html:8 templates/backends/e2.html:17
+#: templates/backends/s3.html:62
 msgid "Path or subfolder in the bucket"
-msgstr ""
+msgstr "パスまたはバケットのサブフォルダー"
 
-#: templates/settings.html:35
+#: templates/settings.html:75
 msgid "Pause"
 msgstr "一時停止"
 
-#: templates/settings.html:33
+#: templates/settings.html:73
 msgid "Pause after startup or hibernation"
-msgstr ""
+msgstr "起動時またはハイバネート時に一時停止"
 
-#: scripts/controllers/AppController.js:42
+#: scripts/controllers/AppController.js:52
 msgid "Pause options"
-msgstr "一時停止設定"
+msgstr "一時停止の設定"
 
 #: templates/restore.html:123
 msgid "Permissions"
-msgstr ""
+msgstr "権限"
 
 #: templates/restore.html:85
 msgid "Pick location"
-msgstr ""
+msgstr "場所を入力"
+
+#: scripts/controllers/ImportController.js:17
+msgid "Please select a file to import"
+msgstr "インポートするファイルを選択してください"
 
 #: templates/restorewizard.html:10
 msgid "Point to your backup files and restore from there"
-msgstr ""
+msgstr "バックアップファイルを指定し、そこから復元"
 
 #: templates/backends/generic.html:9
 msgid "Port"
 msgstr "ポート"
 
-#: templates/settings.html:28
+#: templates/settings.html:30
 msgid "Prevent tray icon automatic log-in"
-msgstr ""
+msgstr "トレイアイコンの自動ログインを行わない"
 
 #: templates/addoredit.html:114 templates/addoredit.html:247
 #: templates/addoredit.html:297 templates/addoredit.html:409
 #: templates/restoredirect.html:81
 msgid "Previous"
+msgstr "前へ"
+
+#: scripts/services/ServerStatus.js:39
+msgid "Processing files to backup …"
 msgstr ""
 
-#: templates/home.html:80
+#: templates/home.html:78
 msgid "Progress:"
-msgstr "進行度:"
+msgstr "進行度："
 
 #: templates/backends/gcs.html:39
 msgid "ProjectID is optional if the bucket exist"
-msgstr ""
+msgstr "バケットが存在する場合、ProjectIDはオプションです"
 
-#: scripts/services/SystemInfo.js:83
+#: scripts/services/SystemInfo.js:87
 msgid "Proprietary"
-msgstr ""
+msgstr "独自プロトコル"
 
 #: templates/backup-result/phases/purge.html:3
 msgid "Purge Phase"
-msgstr ""
+msgstr "削除の段階"
+
+#: scripts/services/ServerStatus.js:68
+msgid "Purging files complete!"
+msgstr "ファイルを削除しました！"
 
 #: scripts/services/ServerStatus.js:66
-msgid "Purging files complete!"
-msgstr ""
-
-#: scripts/services/ServerStatus.js:64
 msgid "Purging files …"
-msgstr ""
+msgstr "ファイルを削除しています…"
 
-#: scripts/services/ServerStatus.js:46
+#: scripts/services/ServerStatus.js:48
 msgid "Rebuilding local database …"
-msgstr ""
+msgstr "ローカルデータベースを再構築しています…"
 
-#: templates/localdatabase.html:20
+#: templates/localdatabase.html:17
 msgid "Recreate (delete and repair)"
-msgstr ""
+msgstr "改めて作成（削除して修復）"
 
 #: templates/backup-result/phases/recreate-database.html:3
 msgid "Recreate Database Phase"
+msgstr "データベースの再構築の段階"
+
+#: scripts/services/ServerStatus.js:58
+msgid "Recreating database …"
+msgstr "データベースを改めて作成しています…"
+
+#: templates/backends/cos.html:20
+msgid "Region"
+msgstr "リージョン"
+
+#: templates/settings.html:47
+msgid "Register for remote control"
 msgstr ""
 
-#: scripts/services/ServerStatus.js:56
-msgid "Recreating database …"
+#: scripts/controllers/SystemSettingsController.js:213
+msgid "Registered, waiting for accept"
+msgstr ""
+
+#: scripts/controllers/SystemSettingsController.js:209
+msgid "Registering machine..."
 msgstr ""
 
 #: scripts/controllers/RestoreDirectController.js:40
 msgid "Registering temporary backup …"
+msgstr "一時的なバックアップを登録しています…"
+
+#: templates/settings.html:42
+msgid "Registration URL"
 msgstr ""
 
-#: scripts/controllers/EditBackupController.js:138
+#: scripts/controllers/SystemSettingsController.js:211
+msgid "Registration failed"
+msgstr ""
+
+#: scripts/controllers/EditBackupController.js:139
 msgid "Relative paths not allowed"
-msgstr ""
+msgstr "相対パスは許可されていません"
 
-#: templates/captcha.html:7
+#: index.html:306 templates/captcha.html:8
 msgid "Reload"
 msgstr "更新"
 
@@ -2003,327 +2327,362 @@ msgstr "更新"
 msgid "Remote"
 msgstr "リモート"
 
-#: scripts/services/EditUriBuiltins.js:1076
+#: scripts/services/EditUriBuiltins.js:1236
 msgid "Remote Path"
-msgstr "リモートパス"
+msgstr "リモートのパス"
 
-#: scripts/services/EditUriBuiltins.js:1074
+#: scripts/services/EditUriBuiltins.js:1235
 msgid "Remote Repository"
-msgstr "リモートリポジトリ"
+msgstr "リモートのリポジトリー"
+
+#: templates/settings.html:34
+msgid "Remote access control"
+msgstr ""
+
+#: scripts/controllers/SystemSettingsController.js:215
+msgid "Remote control is configured but not enabled"
+msgstr ""
+
+#: scripts/controllers/SystemSettingsController.js:207
+msgid "Remote control is connected"
+msgstr ""
+
+#: scripts/controllers/SystemSettingsController.js:205
+msgid "Remote control is enabled but not connected"
+msgstr ""
+
+#: scripts/controllers/SystemSettingsController.js:219
+msgid "Remote control is not set up"
+msgstr ""
 
 #: templates/backends/rclone.html:10
 msgid "Remote path"
-msgstr "リモートパス"
+msgstr "リモートのパス"
 
 #: templates/backends/rclone.html:6
 msgid "Remote repository"
-msgstr "リモートリポジトリ"
+msgstr "リモートのリポジトリー"
 
 #: templates/addoredit.html:307
 msgid "Remote volume size"
-msgstr ""
+msgstr "リモートのボリュームのサイズ"
 
 #: templates/addoredit.html:203
 msgid "Remove"
 msgstr "削除"
 
-#: templates/advancedoptionseditor.html:40
+#: templates/advancedoptionseditor.html:41
 msgid "Remove option"
-msgstr "削除設定"
+msgstr "設定を削除"
 
 #: templates/backup-result/phases/purge.html:23
 msgid "Removed files"
-msgstr "削除されたファイル"
+msgstr "削除したファイル"
 
-#: templates/localdatabase.html:18 templates/notificationarea.html:14
+#: templates/localdatabase.html:15 templates/notificationarea.html:14
 msgid "Repair"
-msgstr ""
+msgstr "修復"
 
 #: templates/backup-result/phases/repair.html:3
 msgid "Repair Phase"
-msgstr ""
+msgstr "修復の段階"
 
-#: scripts/services/ServerStatus.js:58
+#: scripts/services/ServerStatus.js:60
 msgid "Repairing database …"
-msgstr ""
+msgstr "データベースを修復しています…"
 
 #: templates/addoredit.html:62
 msgid "Repeat Passphrase"
-msgstr ""
+msgstr "パスフレーズ（再度）"
 
-#: templates/home.html:45
+#: templates/home.html:43
 msgid "Reporting:"
-msgstr ""
+msgstr "報告："
 
-#: templates/localdatabase.html:31
+#: templates/localdatabase.html:28
 msgid "Reset"
-msgstr ""
+msgstr "リセット"
 
-#: index.html:225 templates/restore.html:142
+#: index.html:215 templates/restore.html:137
 msgid "Restore"
-msgstr ""
+msgstr "復元"
 
-#: scripts/services/ServerStatus.js:55
+#: scripts/services/ServerStatus.js:57
 msgid "Restore complete!"
-msgstr ""
+msgstr "復元しました！"
 
 #: templates/restore.html:45
 msgid "Restore files"
-msgstr ""
+msgstr "ファイルの復元"
 
 #: templates/restore.html:46
-msgid "Restore files from {{backupname}}"
-msgstr ""
+msgid "Restore files from:"
+msgstr "ファイルの復元："
 
-#: templates/home.html:26
+#: templates/home.html:24
 msgid "Restore files …"
-msgstr ""
+msgstr "ファイルを復元…"
 
 #: templates/restore.html:48
 msgid "Restore from"
-msgstr ""
+msgstr "データを復元するバックアップ"
 
 #: templates/import.html:4
 msgid "Restore from backup configuration"
-msgstr ""
+msgstr "バックアップの設定から復元"
 
 #: templates/restorewizard.html:15
-msgid "Restore from configuration ..."
-msgstr ""
+msgid "Restore from configuration …"
+msgstr "設定から復元…"
 
 #: templates/restore.html:24 templates/restore.html:39
 #: templates/restore.html:76 templates/restoredirect.html:24
 msgid "Restore options"
-msgstr ""
+msgstr "復元オプション"
 
 #: templates/restore.html:126
 msgid "Restore read/write permissions"
-msgstr ""
+msgstr "読み込み/書き込み権限を復元"
 
 #: templates/backup-result/restore-items.html:2
 msgid "Restored Files"
-msgstr ""
+msgstr "復元されたファイル"
 
 #: templates/backup-result/restore-items.html:6
 msgid "Restored Folders"
-msgstr ""
+msgstr "復元されたフォルダー"
 
 #: templates/backup-result/restore-items.html:10
 msgid "Restored Symlinks"
-msgstr ""
+msgstr "復元されたシンボリックリンク"
 
-#: scripts/controllers/RestoreController.js:376
-#: scripts/controllers/RestoreController.js:398
+#: scripts/controllers/RestoreController.js:383
+#: scripts/controllers/RestoreController.js:405
 msgid "Restoring files …"
-msgstr ""
+msgstr "ファイルを復元しています…"
 
-#: index.html:228
+#: index.html:218
 msgid "Resume"
-msgstr ""
+msgstr "再開"
 
 #: templates/backup-result/phases/purge.html:28
 msgid "Rewritten File Lists"
-msgstr ""
+msgstr "ファイルの一覧を書き換えました"
 
 #: templates/addoredit.html:269
 msgid "Run again every"
-msgstr ""
+msgstr "実行タイミング"
 
-#: templates/home.html:25 templates/home.html:60
+#: templates/home.html:23 templates/home.html:58
 msgid "Run now"
-msgstr ""
+msgstr "すぐに実行"
 
-#: templates/commandline.html:58
-msgid "Running ...."
-msgstr ""
-
-#: templates/commandline.html:47
+#: templates/commandline.html:44
 msgid "Running commandline entry"
-msgstr ""
+msgstr "コマンドラインのエントリーを実行しています"
 
-#: index.html:183
+#: index.html:173
 msgid "Running task:"
-msgstr ""
+msgstr "タスクを実行しています："
 
 #: scripts/controllers/StateController.js:25
 msgid "Running …"
-msgstr ""
+msgstr "実行しています…"
+
+#: templates/commandline.html:54
+msgid "Running … <a href ng-click=\"Abort()\" ng-hide=\"RawFinished\">stop now</a>"
+msgstr "実行しています … <a href ng-click=\"Abort()\" ng-hide=\"RawFinished\">停止</a>"
 
 #: scripts/services/SystemInfo.js:51
 msgid "S3 Compatible"
-msgstr ""
+msgstr "S3互換"
 
-#: templates/settings.html:87
+#: templates/settings.html:130
 msgid "Same as the base install version: {{channelname}}"
-msgstr ""
+msgstr "基本インストールのバージョンと同じです：{{channelname}}"
 
 #: scripts/services/AppUtils.js:109
 msgid "Sat"
 msgstr "土曜日"
 
-#: templates/backends/tardigrade.html:10
+#: templates/backends/storj.html:10
 msgid "Satellite"
-msgstr ""
+msgstr "サテライト"
 
-#: templates/addoredit.html:408 templates/localdatabase.html:32
+#: templates/addoredit.html:408 templates/localdatabase.html:29
 msgid "Save"
-msgstr ""
+msgstr "保存"
 
-#: templates/localdatabase.html:33
+#: templates/localdatabase.html:30
 msgid "Save and repair"
-msgstr ""
+msgstr "保存して修復"
 
 #: templates/restore.html:118
 msgid "Save different versions with timestamp in file name"
-msgstr ""
+msgstr "ファイル名にタイムスタンプを入れて、異なるバージョンとして保存"
 
 #: templates/import.html:24
 msgid "Save immediately"
-msgstr ""
+msgstr "即座に保存"
 
-#: scripts/services/ServerStatus.js:50
+#: scripts/services/ServerStatus.js:52
 msgid "Scanning existing files …"
-msgstr ""
+msgstr "ファイルをスキャンしています…"
 
-#: scripts/services/ServerStatus.js:51
+#: scripts/services/ServerStatus.js:53
 msgid "Scanning for local blocks …"
-msgstr ""
+msgstr "ローカルのブロックをスキャンしています…"
 
 #: templates/addoredit.html:255 templates/addoredit.html:27
 msgid "Schedule"
-msgstr ""
+msgstr "スケジュール"
 
 #: templates/restore.html:60
 msgid "Search"
-msgstr ""
+msgstr "検索"
 
 #: templates/restore.html:56
 msgid "Search for files"
-msgstr ""
+msgstr "ファイルの検索"
 
-#: scripts/services/AppUtils.js:98 templates/settings.html:49
+#: scripts/services/AppUtils.js:98 templates/settings.html:89
 msgid "Seconds"
-msgstr ""
+msgstr "秒"
 
 #: templates/log.html:30
 msgid "Select a log level and see messages as they happen:"
-msgstr ""
+msgstr "ログの水準を選択すると、メッセージを出力順に表示します。"
 
 #: templates/restore.html:23 templates/restore.html:38
 #: templates/restoredirect.html:23
 msgid "Select files"
-msgstr ""
+msgstr "ファイルの選択"
 
-#: scripts/services/EditUriBuiltins.js:1054 templates/backends/s3.html:8
-#: templates/backends/sia.html:2
+#: scripts/services/EditUriBuiltins.js:1185 templates/backends/pcloud.html:2
+#: templates/backends/s3.html:8 templates/backends/sia.html:2
 msgid "Server"
-msgstr ""
+msgstr "サーバー"
 
 #: templates/backends/generic.html:7
 msgid "Server and port"
-msgstr ""
+msgstr "サーバーとポート"
 
 #: templates/backends/generic.html:8
 msgid "Server hostname or IP"
-msgstr ""
+msgstr "サーバーのホスト名またはIPアドレス"
 
-#: templates/commandline.html:49 templates/restoredirect.html:95
-#: templates/waitarea.html:15
+#: templates/restoredirect.html:95 templates/waitarea.html:15
 msgid "Server is currently paused,"
+msgstr "サーバーは現在停止中です。"
+
+#: templates/commandline.html:45
+msgid ""
+"Server is currently paused, <a style=\"cursor: pointer\" ng-"
+"click=\"ServerStatus.resume()\">resume now</a>"
 msgstr ""
+"サーバーは現在停止中です。<a style=\"cursor: pointer\" ng-"
+"click=\"ServerStatus.resume()\">再開</a>"
 
 #: scripts/controllers/HomeController.js:7
 msgid "Server is currently paused, do you want to resume now?"
-msgstr ""
+msgstr "サーバーは現在停止中です。再開しますか？"
 
 #: templates/backends/sia.html:10
 msgid "Server password"
-msgstr ""
+msgstr "サーバーのパスワード"
 
 #: scripts/controllers/HomeController.js:7
 msgid "Server paused"
-msgstr ""
+msgstr "サーバーを一時停止しました"
 
-#: templates/about.html:72
+#: templates/about.html:71
 msgid "Server state properties"
+msgstr "サーバーの状態に関するプロパティー"
+
+#: templates/settings.html:121
+msgid "Set timezone to default"
 msgstr ""
 
-#: index.html:231 templates/settings.html:2
+#: index.html:221 templates/settings.html:2
 msgid "Settings"
-msgstr ""
+msgstr "設定"
 
 #: templates/addoredit.html:69 templates/notificationarea.html:12
-#: templates/notificationarea.html:32
+#: templates/notificationarea.html:28 templates/notificationarea.html:38
 msgid "Show"
-msgstr ""
+msgstr "表示"
 
 #: templates/addoredit.html:132
 msgid "Show advanced editor"
-msgstr ""
+msgstr "拡張エディターを表示"
 
 #: templates/addoredit.html:143 templates/backends/file.html:16
 #: templates/restore.html:99
 msgid "Show hidden folders"
-msgstr ""
+msgstr "隠しフォルダーを表示"
 
 #: templates/about.html:8
 msgid "Show log"
-msgstr ""
+msgstr "ログを表示"
 
-#: templates/home.html:47
+#: templates/home.html:45
 msgid "Show log …"
-msgstr ""
+msgstr "ログを表示..."
 
 #: templates/addoredit.html:135
 msgid "Show treeview"
-msgstr ""
+msgstr "フォルダーツリーを表示"
 
 #: templates/backends/sia.html:11
 msgid "Sia server password"
-msgstr ""
+msgstr "Siaサーバーのパスワード"
 
 #: templates/addoredit.html:324
 msgid "Smart backup retention"
-msgstr ""
+msgstr "スマートなバックアップ保持期間"
 
 #: templates/backends/openstack.html:45
 msgid ""
 "Some OpenStack providers allow an API key instead of a password and tenant "
 "name"
-msgstr ""
+msgstr "OpenStackのサービス提供者の中には、パスワードとテナント名の代わりにAPIキーを許可するものもあります"
 
-#: templates/backends/s3.html:83
+#: templates/backends/s3.html:82
 msgid ""
 "Some S3 providers might only be compatible with a certain client library"
-msgstr ""
+msgstr "いくつかのS3プロバイダーは特定のクライアントライブラリーにしか対応していないおそれがあります"
 
 #: templates/addoredit.html:26
 msgid "Source Data"
-msgstr ""
+msgstr "バックアップ元"
 
 #: templates/backup-result/top-right-box.html:1
 msgid "Source Files"
-msgstr ""
+msgstr "バックアップ元のファイル"
 
-#: scripts/directives/sourceFolderPicker.js:387 templates/addoredit.html:124
+#: scripts/directives/sourceFolderPicker.js:539 templates/addoredit.html:124
 msgid "Source data"
-msgstr ""
+msgstr "バックアップ元"
 
 #: templates/addoredit.html:149
 msgid "Source folders"
-msgstr ""
+msgstr "バックアップ元のフォルダー"
 
-#: templates/home.html:69
+#: templates/home.html:67
 msgid "Source:"
-msgstr ""
+msgstr "バックアップ元："
 
-#: templates/settings.html:105
+#: templates/settings.html:146
 msgid "Specific builds for developers only. Not for use with important data."
-msgstr ""
+msgstr "開発者用の特定のビルドです。重要なデータのパックアップには使用しないでください。"
 
-#: scripts/services/SystemInfo.js:82
+#: templates/settings.html:135
+msgid "Stable"
+msgstr "安定版"
+
+#: scripts/services/SystemInfo.js:86
 msgid "Standard protocols"
-msgstr ""
+msgstr "標準プロトコル"
 
 #: templates/backup-result/phases/compact.html:8
 #: templates/backup-result/phases/delete.html:8
@@ -2333,74 +2692,70 @@ msgstr ""
 #: templates/backup-result/phases/test.html:8
 #: templates/backup-result/top-left-box.html:3
 msgid "Start"
-msgstr ""
+msgstr "開始"
 
-#: scripts/services/ServerStatus.js:33
+#: scripts/services/ServerStatus.js:35
 msgid "Starting backup …"
-msgstr ""
+msgstr "バックアップを開始しています…"
 
-#: scripts/services/ServerStatus.js:45
+#: scripts/services/ServerStatus.js:47
 msgid "Starting restore …"
-msgstr ""
+msgstr "復元を開始しています…"
 
-#: scripts/controllers/RestoreController.js:372
-#: scripts/controllers/RestoreController.js:396
+#: scripts/controllers/RestoreController.js:379
+#: scripts/controllers/RestoreController.js:403
 msgid "Starting the restore process …"
+msgstr "復元プロセスを開始しています…"
+
+#: templates/settings.html:36
+msgid "Status: {{getRemoteControlStatusText()}}"
 msgstr ""
 
-#: scripts/controllers/StateController.js:106
-msgid "Stop after current file"
-msgstr ""
-
-#: scripts/controllers/StateController.js:115
+#: scripts/controllers/StateController.js:108
+#: scripts/controllers/StateController.js:117
 msgid "Stop after the current file"
-msgstr ""
+msgstr "現在のファイルの後で停止"
 
 #: scripts/controllers/StateController.js:106
-#: scripts/controllers/StateController.js:115
-msgid "Stop now"
-msgstr ""
-
-#: scripts/controllers/StateController.js:104
 msgid "Stop running backup"
-msgstr ""
+msgstr "実行中のバックアップを停止"
 
-#: scripts/controllers/StateController.js:113
+#: scripts/controllers/StateController.js:115
 msgid "Stop running task"
-msgstr ""
+msgstr "実行中のタスクを停止"
 
-#: index.html:179
+#: index.html:169
 msgid "Stopping after the current file:"
-msgstr ""
+msgstr "現在のファイルの後で停止："
 
-#: index.html:184
+#: index.html:174
 msgid "Stopping task:"
-msgstr ""
+msgstr "タスクを停止しています："
 
 #: templates/edituri.html:3
 msgid "Storage Type"
-msgstr ""
+msgstr "ストレージの種類"
 
 #: templates/backends/s3.html:45
 msgid "Storage class"
-msgstr ""
+msgstr "ストレージのクラス"
 
 #: templates/backends/gcs.html:32
 msgid "Storage class for creating a bucket"
-msgstr ""
+msgstr "バケットを作成する際のストレージのクラス"
 
 #: templates/log.html:6
 msgid "Stored"
-msgstr ""
+msgstr "保存済"
 
-#: scripts/controllers/EditBackupController.js:33
+#: scripts/controllers/EditBackupController.js:34
 msgid "Strong"
-msgstr ""
+msgstr "強"
 
-#: scripts/directives/backupEditUri.js:51
-#: scripts/directives/backupEditUri.js:54
+#: scripts/directives/backupEditUri.js:50
+#: scripts/directives/backupEditUri.js:53
 msgid "Success"
-msgstr ""
+msgstr "成功"
 
 #: scripts/services/AppUtils.js:110
 msgid "Sun"
@@ -2408,234 +2763,250 @@ msgstr "日曜日"
 
 #: scripts/services/AppUtils.js:72
 msgid "Symbolic link"
-msgstr ""
+msgstr "シンボリックリンク"
 
-#: scripts/services/AppUtils.js:192
+#: scripts/services/AppUtils.js:194
 msgid "System Files"
-msgstr ""
+msgstr "システムファイル"
 
-#: templates/settings.html:125
+#: templates/settings.html:166
 msgid "System default ({{levelname}})"
-msgstr ""
+msgstr "システムの既定値（{{levelname}}）"
 
-#: scripts/controllers/EditBackupController.js:20
+#: scripts/controllers/EditBackupController.js:21
 msgid "System files"
-msgstr ""
+msgstr "システムファイル"
 
 #: templates/about.html:7
 msgid "System info"
-msgstr ""
+msgstr "システムの情報"
 
-#: templates/about.html:64
+#: templates/about.html:63
 msgid "System properties"
-msgstr ""
+msgstr "システムのプロパティー"
 
 #: scripts/services/AppUtils.js:85
 msgid "TByte"
-msgstr ""
+msgstr "テラバイト"
 
 #: scripts/services/AppUtils.js:118
 msgid "TByte/s"
-msgstr ""
+msgstr "テラバイト秒"
+
+#: templates/commandline.html:13
+msgid "Target URL &gt;"
+msgstr "バックアップ用のURL &gt;"
 
 #: templates/backends/sia.html:7
-msgid "Target path, ie /backup"
-msgstr ""
+msgid "Target path. Example: /backup"
+msgstr "バックアップ先のパス。例：/backup"
 
 #: templates/waitarea.html:5
 msgid "Task is running"
-msgstr ""
+msgstr "タスクは実行中です"
 
-#: scripts/services/AppUtils.js:201
+#: scripts/services/AppUtils.js:203
 msgid "Temporary Files"
-msgstr ""
+msgstr "一時ファイル"
 
-#: scripts/controllers/EditBackupController.js:21
+#: scripts/controllers/EditBackupController.js:22
 msgid "Temporary files"
-msgstr ""
+msgstr "一時ファイル"
 
 #: templates/backends/openstack.html:39
-msgid "Tenant Name"
+msgid "Tenant name"
+msgstr "テナント名"
+
+#: templates/backends/cos.html:4
+msgid "Tencent Cloud Account APPID"
+msgstr "Tencent CloudアカウントのAPPID"
+
+#: templates/backends/cos.html:35
+msgid "Tencent Cloud COS documents and resources"
+msgstr "Tencent Cloud COSのドキュメントと参考資料"
+
+#: scripts/controllers/StateController.js:108
+#: scripts/controllers/StateController.js:117
+msgid "Terminate"
 msgstr ""
 
 #: templates/backup-result/phases/test.html:3
 msgid "Test Phase"
-msgstr ""
+msgstr "テストの段階"
 
 #: templates/edituri.html:21
 msgid "Test connection"
-msgstr ""
+msgstr "接続をテスト"
 
-#: scripts/directives/backupEditUri.js:44
-msgid "Testing ..."
-msgstr ""
+#: scripts/directives/backupEditUri.js:43
+msgid "Testing connection …"
+msgstr "接続をテストしています…"
 
-#: scripts/directives/backupEditUri.js:44
-msgid "Testing connection ..."
-msgstr ""
-
-#: scripts/services/EditUriBuiltins.js:45
+#: scripts/services/EditUriBuiltins.js:49
 msgid "Testing permissions …"
-msgstr ""
+msgstr "権限をテストしています…"
 
-#: scripts/services/EditUriBuiltins.js:45
-msgid "Testing permissions..."
-msgstr ""
-
-#: templates/edituri.html:22
+#: scripts/directives/backupEditUri.js:43 templates/edituri.html:22
 msgid "Testing …"
-msgstr ""
+msgstr "テストしています…"
 
-#: scripts/services/EditUriBuiltins.js:1000
-#: scripts/services/EditUriBuiltins.js:1016
+#: scripts/services/EditUriBuiltins.js:1141
+#: scripts/services/EditUriBuiltins.js:1157
+#: scripts/services/EditUriBuiltins.js:1278
+#: scripts/services/EditUriBuiltins.js:1294
 msgid ""
 "The '{{fieldname}}' field contains an invalid character: {{character}} "
 "(value: {{value}}, index: {{pos}})"
 msgstr ""
-
-#: templates/backends/tardigrade.html:22
-msgid "The API key"
-msgstr ""
+"「{{fieldname}}」のフィールドには不正な文字「{{character}}」が含まれています（値：{{value}}、インデックス：{{pos}}）"
 
 #: scripts/directives/notificationArea.js:43
 msgid "The backup is missing, has it been deleted?"
-msgstr ""
+msgstr "バックアップがありません。削除された模様です"
 
 #: scripts/directives/notificationArea.js:41
 msgid ""
 "The backup was temporary and does not exist anymore, so the log data is lost"
-msgstr ""
+msgstr "バックアップは一時的で既に存在しないため、ログデータは削除されています"
 
-#: scripts/services/EditUriBuiltins.js:972
-msgid "The bucket name should be all lower-case, convert automatically?"
-msgstr ""
-
-#: scripts/services/EditUriBuiltins.js:956
+#: templates/addoredit.html:312
 msgid ""
-"The bucket name should start with your username, prepend automatically?"
+"The backups will be split up into multiple files called volumes. Here you "
+"can set the maximum size of the individual volume files. <external-link "
+"link=\"'https://www.duplicati.com/articles/Choosing-Sizes/#remote-volume-"
+"size'\">See this page for more information.</external-link>"
 msgstr ""
+"バックアップは「ボリューム」と呼ばれる複数のファイルに分割されます。ここで、各ボリュームの最大のサイズを設定できます。<external-link "
+"link=\"'https://www.duplicati.com/articles/Choosing-Sizes/#remote-volume-"
+"size'\">詳細についてはこのページを確認してください。</external-link>"
+
+#: scripts/services/EditUriBuiltins.js:1113
+msgid "The bucket name should be all lower-case, convert automatically?"
+msgstr "バケット名には小文字のみが使用できます。自動的に変換しますか？"
 
 #: scripts/controllers/ExportController.js:13
 msgid ""
 "The configuration should be kept safe. Are you sure you want to save an "
 "unencrypted file containing your passwords?"
-msgstr ""
+msgstr "設定ファイルは安全に保存すべきです。ファイルにはパスワードが含まれていますが、暗号化せずに保存してよろしいですか？"
 
-#: index.html:312
-msgid "The connection to the server is lost, attempting again in {{time}} ..."
-msgstr ""
+#: index.html:299
+msgid "The connection to the server is lost, attempting again in {{time}} …"
+msgstr "サーバーとの接続が失われました。{{time}}後に再試行します…"
 
-#: templates/settings.html:72
+#: templates/settings.html:112
 msgid "The dark theme (by Michal)"
-msgstr ""
+msgstr "ダークテーマ（by Michal）"
 
-#: templates/settings.html:71
+#: templates/settings.html:111
 msgid "The default blue on white theme (by Alex)"
-msgstr ""
+msgstr "既定の白地に青テーマ（by Alex）"
 
-#: templates/backends/tardigrade.html:26
-msgid "The encryption passphrase"
-msgstr ""
+#: scripts/services/EditUriBuiltins.js:1222
+msgid "The encryption passphrases do not match"
+msgstr "暗号化用のパスフレーズが一致しません"
 
-#: scripts/directives/backupEditUri.js:131
+#: scripts/directives/sourceFolderPicker.js:410
+msgid ""
+"The file size is {{size}}, larger than the maximum specified size. If the "
+"file size decreases, it will be included in future backups."
+msgstr ""
+"ファイルのサイズが{{size}}であり、指定されている最大のサイズを超えています。サイズが指定されている最大のサイズよりも小さくなると、このファイルは以後のバックアップに含まれます。"
+
+#: scripts/directives/backupEditUri.js:130
 msgid ""
 "The folder {{folder}} does not exist.\n"
 "Create it now?"
 msgstr ""
+"フォルダー「{{folder}}」は存在しません。\n"
+"作成しますか？"
 
-#: scripts/directives/backupEditUri.js:212
+#: scripts/directives/backupEditUri.js:170
 msgid ""
 "The host key has changed, please check with the server administrator if this is correct, otherwise you could be the victim of a MAN-IN-THE-MIDDLE attack.\n"
 "\n"
 "Do you want to REPLACE your CURRENT host key \"{{prev}}\" with the REPORTED host key: {{key}}?"
 msgstr ""
+"ホストの鍵が変更されました。変更が正しいかどうか、サーバーの管理者に問い合わせてください。変更が正しくない場合、中間車攻撃を受けているおそれがあります。\n"
+"\n"
+"現在のホストの鍵「{{prev}}」を、報告されたホストの鍵「{{key}}」で置き換えますか？"
 
-#: scripts/controllers/ExportController.js:60
-#: scripts/controllers/SystemSettingsController.js:90
+#: scripts/controllers/ExportController.js:70
+#: scripts/controllers/SystemSettingsController.js:242
 msgid "The passwords do not match"
-msgstr ""
+msgstr "パスワードが一致しません"
 
-#: scripts/controllers/EditBackupController.js:153
+#: scripts/controllers/EditBackupController.js:154
 msgid "The path does not appear to exist, do you want to add it anyway?"
-msgstr ""
+msgstr "パスは存在しないようですが、追加してよろしいですか？"
 
-#: scripts/controllers/EditBackupController.js:163
+#: scripts/controllers/EditBackupController.js:164
 msgid ""
 "The path does not end with a '{{dirsep}}' character, which means that you include a file, not a folder.\n"
 "\n"
 "Do you want to include the specified file?"
 msgstr ""
+"パスは「{{dirsep}}」で終わっていません。フォルダーではなく、ファイルが含まれています。\n"
+"\n"
+"指定したファイルを含めますか？"
 
-#: scripts/controllers/EditBackupController.js:138
+#: scripts/controllers/EditBackupController.js:139
 msgid ""
 "The path must be an absolute path, i.e. it must start with a forward slash "
 "'/'"
-msgstr ""
-
-#: scripts/services/EditUriBuiltins.js:871
-msgid ""
-"The path should start with \"{{prefix1}}\" or \"{{prefix2}}\", otherwise you will not be able to see the files in the HubiC web interface.\n"
-"\n"
-"Do you want to add the prefix to the path automatically?"
-msgstr ""
+msgstr "パスにはスラッシュから始まる絶対パスを指定してください"
 
 #: templates/backends/s3.html:33
 msgid "The region parameter is only applied when creating a new bucket"
-msgstr ""
+msgstr "リージョンパラメーターは、バケットを新たに作成する際にのみ適用されます"
 
 #: templates/backends/openstack.html:50
 msgid "The region parameter is only used when creating a bucket"
-msgstr ""
+msgstr "リージョンパラメーターは、バケットを作成する際にのみ使用されます"
 
-#: scripts/directives/backupEditUri.js:87
+#: scripts/directives/backupEditUri.js:86
 msgid ""
 "The server certificate could not be validated.\n"
 "Do you want to approve the SSL certificate with the hash: {{hash}}?"
 msgstr ""
+"サーバーの証明書を検証できませんでした。\n"
+"次のハッシュ値をもつSSLの証明書を承認してよろしいですか：{{hash}}"
 
 #: templates/backends/s3.html:49
 msgid "The storage class affects the availability and price for a stored file"
-msgstr ""
+msgstr "保存領域のクラスは、保存されているファイルの利用可能性と価格に影響します"
 
-#: scripts/controllers/RestoreDirectController.js:106
+#: scripts/controllers/RestoreDirectController.js:102
 msgid ""
 "The target folder contains encrypted files, please supply the passphrase"
-msgstr ""
+msgstr "バックアップ先のフォルダーには暗号化されているファイルがあります。パスフレーズを指定してください。"
 
-#: scripts/services/EditUriBuiltins.js:54
+#: scripts/services/EditUriBuiltins.js:58
 msgid ""
 "The user has too many permissions. Do you want to create a new limited user,"
 " with only permissions to the selected path?"
-msgstr ""
+msgstr "ユーザーに付与されている権限が多すぎます。選択したパスに関する権限のみを有する制限ユーザーを新たに作成しますか？"
 
-#: scripts/controllers/RestoreController.js:309
+#: scripts/controllers/RestoreController.js:308
 msgid ""
 "This backup was created on another operating system. Restoring files without"
 " specifying a destination folder can cause files to be restored in "
 "unexpected places. Are you sure you want to continue without choosing a "
 "destination folder?"
 msgstr ""
+"このバックアップは別のオペレーティングシステムで作成されました。バックアップの復元先となるフォルダーを指定せずにファイルを復元すると、予期しない場所にファイルが復元される可能性があります。復元先のフォルダーを選択せず続行してよろしいですか？"
 
 #: scripts/controllers/RestoreController.js:37
 msgid "This month"
-msgstr ""
-
-#: templates/addoredit.html:312
-msgid ""
-"This option does not relate to your maximum backup or file size, nor does it"
-" affect deduplication rates. <external-link "
-"link=\"'https://www.duplicati.com/articles/Choosing-Sizes/#remote-volume-"
-"size'\">See this page before you change the remote volume size.</external-"
-"link>"
-msgstr ""
+msgstr "当月"
 
 #: scripts/controllers/RestoreController.js:36
 msgid "This week"
-msgstr ""
+msgstr "この週"
 
-#: scripts/controllers/AppController.js:57
+#: scripts/controllers/AppController.js:68
 msgid "Throttle settings"
-msgstr ""
+msgstr "速度制限の設定"
 
 #: scripts/services/AppUtils.js:107
 msgid "Thu"
@@ -2644,23 +3015,33 @@ msgstr "木曜日"
 #: templates/backup-result/phases/delete.html:33
 #: templates/backup-result/top-left-box.html:1
 msgid "Time"
+msgstr "時間"
+
+#: templates/settings.html:117
+msgid "Time zone"
 msgstr ""
 
 #: templates/export.html:14
 msgid "To File"
-msgstr ""
+msgstr "ファイルへ"
 
 #: scripts/controllers/DeleteController.js:66
 msgid ""
 "To confirm you want to delete all remote files for \"{{name}}\", please "
 "enter the word you see below"
-msgstr ""
+msgstr "「{{name}}」の全てのリモートファイルを本当に削除したい場合は、表示されている語を以下に入力してください"
 
-#: scripts/controllers/ExportController.js:57
+#: scripts/controllers/ExportController.js:67
 msgid "To export without a passphrase, uncheck the \"Encrypt file\" box"
-msgstr ""
+msgstr "パスフレーズなしでエクスポートするには、「ファイルを暗号化」のチェックを外してください"
 
-#: templates/settings.html:23
+#: scripts/services/EditUriBuiltins.js:1097
+msgid ""
+"To prevent bucket naming conflicts, it is recommended to prepend your "
+"account ID to the bucket name. Prepend automatically?"
+msgstr "バケット名の競合を防ぐため、バケット名の先頭にはアカウントIDを付けることが推奨されます。アカウントIDを自動的に付けますか？"
+
+#: templates/settings.html:26
 msgid ""
 "To prevent various DNS based attacks, Duplicati limits the allowed hostnames"
 " to the ones listed here. Direct IP access and localhost is always allowed. "
@@ -2669,228 +3050,235 @@ msgid ""
 "feature is disabled. If the field is empty, only IP address and localhost "
 "access is allowed."
 msgstr ""
+"DNSに基づく攻撃を防ぐため、Duplicatiは、ここに入力されたホスト名しか許可しません。IPアドレスまたはlocalhostによるアクセスは常に許可されます。複数のホスト名を指定する場合は、セミコロンで区切ってください。ただし、アスタリスク（*）がホスト名として入力されている場合は、どのホスト名も許可され、この機能は無効となります。また、ホスト名が入力されていない場合は、IPアドレスまたはlocalhostによるアクセスのみが許可されます。"
 
 #: scripts/controllers/RestoreController.js:34
 msgid "Today"
 msgstr "今日"
 
-#: scripts/directives/backupEditUri.js:214
+#: scripts/directives/backupEditUri.js:172
 msgid "Trust host certificate?"
-msgstr ""
+msgstr "ホストの証明書を信用しますか？"
 
-#: scripts/directives/backupEditUri.js:87
+#: scripts/directives/backupEditUri.js:86
 msgid "Trust server certificate?"
-msgstr ""
+msgstr "サーバーの証明書を信用しますか？"
 
-#: templates/settings.html:100
+#: templates/settings.html:141
 msgid ""
 "Try out the new features that we are working on. Currently the most stable "
 "version available. Test Restore data before using this in production "
 "environments."
 msgstr ""
+"開発中の新機能を試してみてください。現在、最も安定したバージョンが利用できます。本番環境で使用する前に、データの復元のテストを行ってください。"
 
 #: scripts/services/AppUtils.js:105
 msgid "Tue"
 msgstr "火曜日"
 
-#: templates/restore.html:138
+#: templates/restore.html:133
 msgid "Type passphrase here."
-msgstr ""
+msgstr "ここにパスフレーズを入力してください。"
 
 #: templates/restore.html:57
 msgid "Type to highlight files"
-msgstr ""
+msgstr "見つけたいファイル名を入力してください"
 
 #: templates/restorewizard.html:25
 msgid "Unknown backup size and versions"
-msgstr ""
+msgstr "バックアップのサイズとバージョンが不明です"
 
 #: templates/pause.html:46
 msgid "Until resumed"
-msgstr ""
+msgstr "再開するまで"
 
-#: templates/settings.html:83
-msgid "Update channel"
+#: templates/about.html:30
+msgid ""
+"Update <a href ng-"
+"click=\"doShowUpdateChangelog()\">{{state.updatedVersion}}</a> is available."
+" <a href=\"{{state.updateDownloadLink}}\">Download now</a>"
 msgstr ""
+"アップデート <a href ng-"
+"click=\"doShowUpdateChangelog()\">{{state.updatedVersion}}</a> が利用できます。<a "
+"href=\"{{state.updateDownloadLink}}\">ダウンロード</a>"
+
+#: templates/settings.html:126
+msgid "Update channel"
+msgstr "アップデートチャンネル"
 
 #: scripts/controllers/LocalDatabaseController.js:66
 msgid "Update failed:"
-msgstr ""
+msgstr "アップデートできませんでした："
 
 #: scripts/controllers/LocalDatabaseController.js:88
 msgid "Updating with existing database"
-msgstr ""
+msgstr "既存のデータベースでアップデートしています"
 
 #: templates/backup-result/phases/compact.html:33
 msgid "Uploaded files"
-msgstr ""
+msgstr "アップロードされたファイル"
 
-#: scripts/services/ServerStatus.js:42
+#: scripts/services/ServerStatus.js:44
 msgid "Uploading verification file …"
-msgstr ""
+msgstr "検証用ファイルをアップロードしています…"
 
-#: templates/settings.html:132
+#: templates/settings.html:173
 msgid ""
 "Usage reports help us improve the user experience and evaluate impact of new"
 " features. We use them to generate <external-link link=\"'https://usage-"
-"reporter.duplicati.com/'\">{{'public usage statistics' | translate"
-"}}</external-link>"
+"reporter.duplicati.com/'\">public usage statistics</external-link>."
 msgstr ""
+"使用状況に関する報告は、ソフトウェアの使い勝手を改善したり、新しい機能の効果を評価したりする際に参照されます。また、私達はこの報告を用いて、<external-"
+"link link=\"'https://usage-"
+"reporter.duplicati.com/'\">使用状況に関する公開の統計</external-link>を作成しています。"
 
-#: templates/settings.html:120
+#: templates/settings.html:161
 msgid "Usage statistics"
-msgstr ""
+msgstr "使用状況に関する統計"
 
-#: templates/settings.html:126
+#: templates/settings.html:167
 msgid "Usage statistics, warnings, errors, and crashes"
-msgstr ""
+msgstr "使用状況に関する統計、警告、エラー、クラッシュ"
 
 #: templates/backends/generic.html:2 templates/backends/s3.html:2
 msgid "Use SSL"
-msgstr ""
+msgstr "SSLを使用"
 
-#: scripts/controllers/EditBackupController.js:450
+#: scripts/controllers/EditBackupController.js:451
 msgid "Use existing database?"
-msgstr ""
+msgstr "既存のデータベースを使用しますか？"
 
-#: scripts/controllers/EditBackupController.js:344
+#: scripts/controllers/EditBackupController.js:345
 msgid "Use weak passphrase"
-msgstr ""
+msgstr "弱いパスフレーズを使用"
 
-#: scripts/controllers/EditBackupController.js:30
+#: scripts/controllers/EditBackupController.js:31
 msgid "Useless"
-msgstr ""
+msgstr "弱すぎます"
 
-#: scripts/directives/sourceFolderPicker.js:374
+#: scripts/directives/sourceFolderPicker.js:526
 msgid "User data"
-msgstr ""
+msgstr "ユーザーデータ"
 
 #: templates/backends/openstack.html:27
 msgid "User domain name"
-msgstr ""
+msgstr "ユーザーのドメイン名"
 
-#: scripts/services/EditUriBuiltins.js:54
+#: scripts/services/EditUriBuiltins.js:58
 msgid "User has too many permissions"
-msgstr ""
+msgstr "ユーザーに付与されている権限が多すぎます"
 
-#: templates/settings.html:56
+#: templates/settings.html:96
 msgid "User interface settings"
-msgstr ""
+msgstr "インターフェースの設定"
 
-#: scripts/services/EditUriBuiltins.js:1035
-#: scripts/services/EditUriBuiltins.js:1045
-#: scripts/services/EditUriBuiltins.js:796
-#: scripts/services/EditUriBuiltins.js:903 templates/backends/file.html:29
-#: templates/backends/generic.html:18 templates/backends/jottacloud.html:7
-#: templates/backends/jottacloud.html:8 templates/backends/mega.html:7
+#: scripts/services/EditUriBuiltins.js:1044
+#: scripts/services/EditUriBuiltins.js:1176
+#: scripts/services/EditUriBuiltins.js:963 templates/backends/file.html:29
+#: templates/backends/generic.html:18 templates/backends/idrive.html:7
+#: templates/backends/idrive.html:8 templates/backends/mega.html:7
 #: templates/backends/mega.html:8 templates/backends/openstack.html:30
 msgid "Username"
-msgstr ""
+msgstr "ユーザー名"
 
-#: scripts/services/ServerStatus.js:57
+#: scripts/services/ServerStatus.js:59
 msgid "Vacuuming database …"
-msgstr ""
+msgstr "データベースのバキュームを行っています…"
 
 #: templates/addoredit.html:155
 msgid "Validating …"
-msgstr ""
+msgstr "検証しています…"
 
 #: templates/backup-result/phases/test.html:20
 #: templates/backup-result/test-items.html:2
 msgid "Verifications"
-msgstr ""
+msgstr "検証"
 
-#: templates/home.html:40
+#: templates/backends/storj.html:29
+msgid "Verify encryption passphrase"
+msgstr "暗号化用のパスフレーズを再入力"
+
+#: templates/home.html:38
 msgid "Verify files"
-msgstr ""
-
-#: scripts/services/CaptchaService.js:32
-msgid "Verifying ..."
-msgstr ""
+msgstr "ファイルを検証"
 
 #: scripts/services/CaptchaService.js:32
 msgid "Verifying answer"
-msgstr ""
+msgstr "回答を検証しています"
 
-#: scripts/services/ServerStatus.js:34 scripts/services/ServerStatus.js:43
+#: scripts/services/ServerStatus.js:36 scripts/services/ServerStatus.js:45
 msgid "Verifying backend data …"
-msgstr ""
+msgstr "バックエンドのデータを検証しています…"
 
-#: scripts/services/ServerStatus.js:59
+#: scripts/services/ServerStatus.js:61
 msgid "Verifying files …"
-msgstr ""
+msgstr "ファイルを検証しています…"
 
-#: scripts/services/ServerStatus.js:35 scripts/services/ServerStatus.js:47
+#: scripts/services/ServerStatus.js:37 scripts/services/ServerStatus.js:49
 msgid "Verifying remote data …"
-msgstr ""
+msgstr "リモートデータを検証しています…"
 
-#: scripts/services/ServerStatus.js:54
+#: scripts/services/ServerStatus.js:56
 msgid "Verifying restored files …"
-msgstr ""
+msgstr "復元したファイルを検証しています…"
 
-#: templates/notificationarea.html:31
+#: scripts/services/CaptchaService.js:32
 msgid "Verifying …"
-msgstr ""
+msgstr "検証しています…"
 
 #: templates/backup-result/phases/delete.html:33
 msgid "Version ID"
-msgstr ""
+msgstr "バージョンID"
 
-#: scripts/controllers/EditBackupController.js:34
+#: scripts/controllers/EditBackupController.js:35
 msgid "Very strong"
-msgstr ""
+msgstr "最強"
 
-#: scripts/controllers/EditBackupController.js:31
+#: scripts/controllers/EditBackupController.js:32
 msgid "Very weak"
-msgstr ""
+msgstr "最弱"
 
-#: index.html:263
+#: index.html:246
 msgid "Visit us on"
-msgstr ""
+msgstr "関連リンク"
 
 #: templates/delete.html:21
 msgid ""
 "WARNING: The remote database is found to be in use by the commandline "
-"library"
-msgstr ""
+"library."
+msgstr "警告：リモートのデータベースはコマンドラインのライブラリーによって使用されています。"
 
 #: templates/delete.html:44
 msgid "WARNING: This will prevent you from restoring the data in the future."
-msgstr ""
+msgstr "警告：これを行うと将来データを復元できなくなります。"
 
 #: templates/waitarea.html:2
 msgid "Waiting for task to begin"
-msgstr ""
+msgstr "タスクが開始するのを待機しています"
 
-#: templates/commandline.html:54
-msgid "Waiting for task to start ...."
-msgstr ""
+#: templates/commandline.html:51
+msgid "Waiting for task to start …"
+msgstr "タスクの開始を待機しています…"
 
-#: scripts/services/ServerStatus.js:39
+#: scripts/services/ServerStatus.js:41
 msgid "Waiting for upload to finish …"
-msgstr ""
+msgstr "アップロードの完了を待機しています…"
 
-#: templates/settings.html:127
+#: templates/settings.html:168
 msgid "Warnings, errors and crashes"
-msgstr ""
-
-#: templates/restore.html:152
-msgid ""
-"We accept donations via different services, such as OpenCollective, PayPal, "
-"BountySource and various crypto currencies."
-msgstr ""
+msgstr "警告、エラー、クラッシュ"
 
 #: templates/addoredit.html:54
 msgid "We recommend that you encrypt all backups stored outside your system"
-msgstr ""
+msgstr "システム外に保存する全てのバックアップに関しては、暗号化を行うことを推奨します"
 
-#: scripts/controllers/EditBackupController.js:32
+#: scripts/controllers/EditBackupController.js:33
 msgid "Weak"
-msgstr ""
+msgstr "弱"
 
-#: scripts/controllers/EditBackupController.js:344
+#: scripts/controllers/EditBackupController.js:345
 msgid "Weak passphrase"
-msgstr ""
+msgstr "弱いパスフレーズ"
 
 #: scripts/services/AppUtils.js:106
 msgid "Wed"
@@ -2898,237 +3286,296 @@ msgstr "水曜日"
 
 #: scripts/services/AppUtils.js:92 templates/addoredit.html:352
 msgid "Weeks"
-msgstr ""
+msgstr "週"
 
 #: templates/restorewizard.html:3
 msgid "Where do you want to restore from?"
-msgstr ""
+msgstr "どこから復元しますか？"
 
 #: templates/restore.html:78
 msgid "Where do you want to restore the files to?"
-msgstr ""
+msgstr "復元したファイルはどこに保存しますか？"
 
 #: scripts/services/AppUtils.js:94 templates/addoredit.html:354
 msgid "Years"
-msgstr ""
+msgstr "年"
 
-#: scripts/controllers/AppController.js:174
+#: scripts/controllers/AppController.js:186
 #: scripts/controllers/DeleteController.js:77
-#: scripts/controllers/EditBackupController.js:153
-#: scripts/controllers/EditBackupController.js:163
-#: scripts/controllers/EditBackupController.js:450
+#: scripts/controllers/EditBackupController.js:154
+#: scripts/controllers/EditBackupController.js:164
+#: scripts/controllers/EditBackupController.js:451
 #: scripts/controllers/HomeController.js:7
 #: scripts/controllers/LocalDatabaseController.js:28
 #: scripts/controllers/LocalDatabaseController.js:72
 #: scripts/controllers/LocalDatabaseController.js:88
-#: scripts/directives/backupEditUri.js:131
-#: scripts/directives/backupEditUri.js:214
-#: scripts/directives/backupEditUri.js:87
-#: scripts/services/EditUriBackendConfig.js:66
-#: scripts/services/EditUriBuiltins.js:54
-#: scripts/services/EditUriBuiltins.js:874
-#: scripts/services/EditUriBuiltins.js:956
-#: scripts/services/EditUriBuiltins.js:972
+#: scripts/directives/backupEditUri.js:130
+#: scripts/directives/backupEditUri.js:172
+#: scripts/directives/backupEditUri.js:86
+#: scripts/services/EditUriBackendConfig.js:73
+#: scripts/services/EditUriBuiltins.js:1097
+#: scripts/services/EditUriBuiltins.js:1113
+#: scripts/services/EditUriBuiltins.js:58
 msgid "Yes"
-msgstr ""
+msgstr "はい"
 
-#: scripts/controllers/EditBackupController.js:359
+#: scripts/controllers/EditBackupController.js:360
 msgid "Yes, I have stored the passphrase safely"
-msgstr ""
+msgstr "はい、パスフレーズを安全な場所に保存しました"
 
 #: scripts/controllers/ExportController.js:13
 msgid "Yes, I understand the risk"
-msgstr ""
+msgstr "はい、リスクを理解しました"
 
-#: scripts/controllers/EditBackupController.js:402
+#: scripts/controllers/EditBackupController.js:403
 msgid "Yes, I'm brave!"
-msgstr ""
+msgstr "はい、問題ありません！"
 
-#: scripts/controllers/EditBackupController.js:393
+#: scripts/controllers/EditBackupController.js:394
 msgid "Yes, please break my backup!"
-msgstr ""
+msgstr "バックアップが壊れることを了承して続行"
 
 #: scripts/controllers/RestoreController.js:35
 msgid "Yesterday"
 msgstr "昨日"
-
-#: scripts/directives/backupEditUri.js:153
-msgid ""
-"You appear to be running Mono with no SSL certificates loaded.\n"
-"Do you want to import the list of trusted certificates from Mozilla?"
-msgstr ""
 
 #: scripts/controllers/LocalDatabaseController.js:88
 msgid ""
 "You are changing the database path away from an existing database.\n"
 "Are you sure this is what you want?"
 msgstr ""
+"既存のデータベースからデータベースのパスを変更しようとしています。\n"
+"続行してよろしいですか？"
 
-#: templates/about.html:27
+#: templates/about.html:28
 msgid "You are currently running {{appname}} {{version}}"
-msgstr ""
+msgstr "あなたは現在 {{appname}} {{version}}を使用しています。"
 
-#: scripts/controllers/StateController.js:105
+#: scripts/controllers/StateController.js:107
 msgid ""
 "You can stop the backup after any file uploads currently in progress have "
-"finished."
+"finished. If you terminate the backup, the next run will need to recover "
+"from a failed backup."
 msgstr ""
 
-#: scripts/controllers/StateController.js:114
+#: scripts/controllers/StateController.js:116
 msgid ""
 "You can stop the task immediately, or allow the process to continue its "
-"current file and then stop."
+"current file and then stop. If you terminate the task, the backup could be "
+"left in an inconsistent state."
 msgstr ""
 
-#: scripts/controllers/EditBackupController.js:402
+#: scripts/controllers/EditBackupController.js:403
 msgid ""
 "You have changed the encryption mode. This may break stuff. You are "
 "encouraged to create a new backup instead"
-msgstr ""
+msgstr "暗号化モードが変更されています。データが壊れる可能性があるため、新しいバックアップを代わりに作成することを推奨します"
 
-#: scripts/controllers/EditBackupController.js:393
+#: scripts/controllers/EditBackupController.js:394
 msgid ""
 "You have changed the passphrase, which is not supported. You are encouraged "
 "to create a new backup instead."
-msgstr ""
+msgstr "パスフレーズが変更されましたが、これはサポートされていません。新しいバックアップを代わりに作成することを推奨します。"
 
-#: scripts/controllers/EditBackupController.js:429
+#: scripts/controllers/EditBackupController.js:430
 msgid ""
 "You have chosen not to encrypt the backup. Encryption is recommended for all"
 " data stored on a remote server."
-msgstr ""
+msgstr "バックアップを暗号化しない設定となっていますが、リモートサーバーに保存する全てのデータに関して、暗号化を行うことを推奨します。"
 
-#: scripts/controllers/RestoreController.js:303
+#: scripts/controllers/RestoreController.js:302
 msgid "You have chosen to restore to a new location, but not entered one"
-msgstr ""
+msgstr "新しい場所に復元するよう選択しましたが、場所が入力されていません"
 
-#: scripts/controllers/EditBackupController.js:359
+#: scripts/controllers/EditBackupController.js:360
 msgid ""
 "You have generated a strong passphrase. Make sure you have made a safe copy "
 "of the passphrase, as the data cannot be recovered if you lose the "
 "passphrase."
-msgstr ""
+msgstr "強力なパスフレーズを生成しました。パスフレーズの紛失時にもデータを復元できるよう、パスフレーズを安全な場所にコピーして保存してください。"
 
-#: scripts/controllers/EditBackupController.js:259
+#: scripts/controllers/EditBackupController.js:260
 msgid "You must choose at least one source folder"
-msgstr ""
+msgstr "最低1つのバックアップ元のフォルダーを選択してください"
 
-#: scripts/services/EditUriBuiltins.js:914
+#: scripts/services/EditUriBuiltins.js:1055
 msgid "You must enter a domain name to use v3 API"
-msgstr ""
+msgstr "バージョン3のAPIを使用するにはドメイン名を入力してください"
 
-#: scripts/controllers/EditBackupController.js:239
+#: scripts/controllers/EditBackupController.js:240
 msgid "You must enter a name for the backup"
-msgstr ""
+msgstr "バックアップの名称を入力してください"
 
-#: scripts/controllers/EditBackupController.js:246
+#: scripts/controllers/EditBackupController.js:247
 msgid "You must enter a passphrase or disable encryption"
-msgstr ""
+msgstr "パスフレーズを入力するか、暗号化を無効にしてください"
 
-#: scripts/services/EditUriBuiltins.js:911
+#: scripts/services/EditUriBuiltins.js:1052
 msgid "You must enter a password to use v3 API"
-msgstr ""
+msgstr "バージョン3のAPIを使用するにはパスワードを入力してください"
 
-#: scripts/controllers/EditBackupController.js:295
+#: scripts/controllers/EditBackupController.js:296
 msgid "You must enter a positive number of backups to keep"
-msgstr ""
+msgstr "保存するバックアップの数を入力してください"
 
-#: scripts/services/EditUriBuiltins.js:917
+#: scripts/services/EditUriBuiltins.js:1058
 msgid "You must enter a tenant (aka project) name to use v3 API"
-msgstr ""
+msgstr "バージョン3のAPIを使用するにはテナント（プロジェクト）名を入力してください"
 
-#: scripts/services/EditUriBuiltins.js:931
-msgid "You must enter a tenant name if you do not provide an API Key"
-msgstr ""
+#: scripts/services/EditUriBuiltins.js:1072
+msgid "You must enter a tenant name if you do not provide an API key"
+msgstr "APIキーを指定しない場合はテナント名の入力が必要です"
 
-#: scripts/controllers/EditBackupController.js:288
+#: scripts/controllers/EditBackupController.js:289
 msgid "You must enter a valid duration for the time to keep backups"
-msgstr ""
+msgstr "バックアップを保持する期間を正しく指定してください"
 
-#: scripts/controllers/EditBackupController.js:305
+#: scripts/controllers/EditBackupController.js:306
 msgid "You must enter a valid retention policy string"
-msgstr ""
+msgstr "保持期間のポリシーを正しく入力してください"
 
-#: scripts/services/EditUriBuiltins.js:928
-msgid "You must enter either a password or an API Key"
-msgstr ""
+#: scripts/services/EditUriBuiltins.js:1069
+msgid "You must enter either a password or an API key"
+msgstr "パスワードかAPIキーを入力してください"
 
-#: scripts/services/EditUriBuiltins.js:935
-msgid "You must enter either a password or an API Key, not both"
-msgstr ""
+#: scripts/services/EditUriBuiltins.js:1076
+msgid "You must enter either a password or an API key, not both"
+msgstr "パスワードまたはAPIキーのどちらかを入力してください"
 
-#: scripts/services/EditUriBackendConfig.js:115
-msgid "You must fill in the password"
-msgstr ""
-
-#: scripts/services/EditUriBackendConfig.js:92
-msgid "You must fill in the server name or address"
-msgstr ""
-
-#: scripts/services/EditUriBackendConfig.js:113
 #: scripts/services/EditUriBackendConfig.js:122
-msgid "You must fill in the username"
-msgstr ""
-
-#: scripts/services/EditUriBackendConfig.js:78
-msgid "You must fill in {{field}}"
-msgstr ""
-
-#: scripts/services/EditUriBuiltins.js:907
-msgid "You must select or fill in the AuthURI"
-msgstr ""
-
-#: scripts/services/EditUriBuiltins.js:949
-msgid "You must select or fill in the server"
-msgstr ""
+msgid "You must fill in the password"
+msgstr "パスワードを入力してください"
 
 #: scripts/services/EditUriBackendConfig.js:99
-msgid "You must specify a path"
-msgstr ""
+msgid "You must fill in the server name or address"
+msgstr "サーバー名またはアドレスを入力してください"
+
+#: scripts/services/EditUriBackendConfig.js:120
+#: scripts/services/EditUriBackendConfig.js:129
+msgid "You must fill in the username"
+msgstr "ユーザー名を入力してください"
 
 #: scripts/services/EditUriBackendConfig.js:85
-msgid "You should fill in {{field}}{{reason}}"
-msgstr ""
+msgid "You must fill in {{field}}"
+msgstr "{{field}}を入力してください"
 
-#: templates/restore.html:149
+#: scripts/services/EditUriBuiltins.js:1048
+msgid "You must select or fill in the AuthURI"
+msgstr "AuthURIを選択または入力してください"
+
+#: scripts/services/EditUriBuiltins.js:1090
+msgid "You must select or fill in the server"
+msgstr "サーバーを選択または入力してください"
+
+#: scripts/services/EditUriBackendConfig.js:106
+msgid "You must specify a path"
+msgstr "パスを指定してください"
+
+#: scripts/services/EditUriBackendConfig.js:92
+msgid "You should fill in {{field}} {{reason}}"
+msgstr "{{reason}}{{field}}を入力してください。"
+
+#: templates/restore.html:144
 msgid "Your files and folders have been restored successfully."
-msgstr ""
+msgstr "ファイルとフォルダーを復元しました。"
 
-#: scripts/controllers/EditBackupController.js:344
+#: scripts/controllers/EditBackupController.js:345
 msgid "Your passphrase is easy to guess. Consider changing passphrase."
-msgstr ""
+msgstr "設定したパスフレーズは容易に推測できます。パスフレーズの変更を考慮してください。"
 
 #: templates/backends/gcs.html:3 templates/backends/openstack.html:3
 msgid "bucket/folder/subfolder"
-msgstr ""
+msgstr "バケット/フォルダー/サブフォルダー"
 
 #: scripts/services/AppUtils.js:81
 msgid "byte"
-msgstr ""
+msgstr "バイト"
 
 #: scripts/services/AppUtils.js:114
 msgid "byte/s"
-msgstr ""
+msgstr "バイト秒"
+
+#: scripts/services/EditUriBuiltins.js:1244
+msgid "cos_app_id"
+msgstr "COS AppのID"
+
+#: scripts/services/EditUriBuiltins.js:1248
+msgid "cos_bucket"
+msgstr "バケット名"
+
+#: scripts/services/EditUriBuiltins.js:1247
+msgid "cos_region"
+msgstr "リージョン"
+
+#: scripts/services/EditUriBuiltins.js:1245
+msgid "cos_secret_id"
+msgstr "COSのシークレットのID"
+
+#: scripts/services/EditUriBuiltins.js:1246
+msgid "cos_secret_key"
+msgstr "COSの秘密鍵"
 
 #: templates/addoredit.html:272 templates/addoredit.html:355
-#: templates/advancedoptionseditor.html:28
-#: templates/advancedoptionseditor.html:35
+#: templates/advancedoptionseditor.html:29
+#: templates/advancedoptionseditor.html:36
 msgid "custom"
+msgstr "ユーザー定義"
+
+#: templates/backup-result/entryline.html:4
+msgid "failed"
+msgstr "失敗しました"
+
+#: templates/backends/rclone.html:3
+msgid "local repository, leave empty for local"
 msgstr ""
 
-#: templates/settings.html:132
-msgid "public usage statistics"
+#: scripts/services/EditUriBuiltins.js:1257
+msgid "oss_access_key_id"
+msgstr "OSSのアクセスキーのID"
+
+#: scripts/services/EditUriBuiltins.js:1258
+msgid "oss_access_key_secret"
+msgstr "OSSのアクセスキーのシークレット"
+
+#: scripts/services/EditUriBuiltins.js:1260
+msgid "oss_bucket_name"
+msgstr "OSSのバケット名"
+
+#: scripts/services/EditUriBuiltins.js:1256
+msgid "oss_endpoint"
+msgstr "OSSのエンドポイント"
+
+#: scripts/services/EditUriBuiltins.js:1259
+msgid "oss_region"
+msgstr "OSSのリージョン"
+
+#: templates/backends/pcloud.html:10
+msgid "pCloud EU (eapi.pcloud.com)"
 msgstr ""
 
-#: templates/commandline.html:49 templates/restoredirect.html:95
-#: templates/waitarea.html:15
+#: templates/backends/pcloud.html:7
+msgid "pCloud Global (api.pcloud.com)"
+msgstr ""
+
+#: templates/backends/rclone.html:11
+msgid "remote path, e.g. backup"
+msgstr "リモートのパス（例：backup）"
+
+#: templates/backends/rclone.html:7
+msgid "remote repository, e.g. remote"
+msgstr "リモートのリポジトリー名（例：remote）"
+
+#: templates/restoredirect.html:95 templates/waitarea.html:15
 msgid "resume now"
-msgstr ""
+msgstr "再開"
 
-#: scripts/services/EditUriBuiltins.js:843
-#: scripts/services/EditUriBuiltins.js:854
+#: scripts/services/EditUriBuiltins.js:1207
+msgid "storj_shared_access"
+msgstr "アクセス権"
+
+#: scripts/services/EditUriBuiltins.js:1025
 msgid "unless you are explicitly specifying --group-id"
-msgstr ""
+msgstr "--group-idを明示的に指定しているのでない限り、"
 
 #: templates/about.html:12
 msgid ""
@@ -3137,33 +3584,38 @@ msgid ""
 "<a href=\"{{websitelink}}\">{{websitename}}</a>. {{appname}} is licensed "
 "under the <a href=\"{{licenselink}}\">{{licensename}}</a>."
 msgstr ""
+"{{appname}}は最初に<a href=\"{{mail1}}\">{{dev1}}</a>と<a "
+"href=\"{{mail2}}\">{{dev2}}</a>によって開発されました。{{appname}}は<a "
+"href=\"{{websitelink}}\">{{websitename}}</a>からダウンロードできます。{{appname}}は<a "
+"href=\"{{licenselink}}\">{{licensename}}</a>によってライセンスされています。"
 
-#: scripts/controllers/StateController.js:51
+#: templates/about.html:53
+msgid ""
+"{{brandingService.appName}} is using the following third party libraries:"
+msgstr "{{brandingService.appName}}は以下のサードパーティー製のライブラリーを使用しています。"
+
+#: scripts/controllers/StateController.js:53
 msgid "{{files}} files ({{size}}) to go {{speed_txt}}"
-msgstr ""
+msgstr "残り{{files}}個のファイル ({{size}})  {{speed_txt}}"
 
-#: templates/home.html:74 templates/restorewizard.html:23
+#: templates/home.html:72 templates/restorewizard.html:23
 msgid "{{item.Backup.Metadata.TargetSizeString}} / {{$count}} Version"
 msgid_plural "{{item.Backup.Metadata.TargetSizeString}} / {{$count}} Versions"
-msgstr[0] ""
+msgstr[0] "{{item.Backup.Metadata.TargetSizeString}} / {{$count}}個のバージョン"
 
 #: templates/pause.html:26
 msgid "{{number}} Hour"
-msgstr ""
+msgstr "{{number}}時間"
 
 #: templates/pause.html:31 templates/pause.html:36 templates/pause.html:41
 msgid "{{number}} Hours"
-msgstr ""
+msgstr "{{number}}時間"
 
 #: templates/pause.html:11 templates/pause.html:16 templates/pause.html:21
 #: templates/pause.html:6
 msgid "{{number}} Minutes"
-msgstr ""
+msgstr "{{number}}分"
 
-#: templates/home.html:54
+#: templates/home.html:52
 msgid "{{time}} (took {{duration}})"
-msgstr ""
-
-#: templates/localdatabase.html:4
-msgid "…loading…"
-msgstr ""
+msgstr "{{time}}（完了までの時間 {{duration}}）"

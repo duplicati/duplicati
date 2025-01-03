@@ -1,4 +1,24 @@
-﻿using System;
+﻿// Copyright (C) 2024, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
@@ -6,6 +26,11 @@ using System.Text;
 using System.IO;
 using Duplicati.Library.Modules.Builtin.ResultSerialization;
 using Duplicati.Library.Utility;
+using System.Runtime.CompilerServices;
+
+
+// Expose internal classes to UnitTests, so that Database classes can be tested
+[assembly: InternalsVisibleTo("Duplicati.UnitTest")]
 
 namespace Duplicati.Library.Main.Database
 {
@@ -56,16 +81,30 @@ namespace Duplicati.Library.Main.Database
 
             var c = Duplicati.Library.SQLiteHelper.SQLiteLoader.LoadConnection(path);
 
-            Library.SQLiteHelper.DatabaseUpgrader.UpgradeDatabase(c, path, typeof(LocalDatabase));
+            try
+            {
+                Library.SQLiteHelper.DatabaseUpgrader.UpgradeDatabase(c, path, typeof(LocalDatabase));
+            }
+            catch
+            {
+                //Don't leak database connections when something goes wrong
+                c.Dispose();
+                throw;
+            }
 
             return c;
+        }
+
+        public static bool Exists(string path)
+        {
+            return File.Exists(path);
         }
 
         /// <summary>
         /// Creates a new database instance and starts a new operation
         /// </summary>
         /// <param name="path">The path to the database</param>
-        /// <param name="operation">The name of the operation</param>
+        /// <param name="operation">The name of the operation. If null, continues last operation</param>
         public LocalDatabase(string path, string operation, bool shouldclose)
             : this(CreateConnection(path), operation)
         {
@@ -87,7 +126,7 @@ namespace Duplicati.Library.Main.Database
         /// <summary>
         /// Creates a new database instance and starts a new operation
         /// </summary>
-        /// <param name="operation">The name of the operation</param>
+        /// <param name="operation">The name of the operation. If null, continues last operation</param>
         public LocalDatabase(System.Data.IDbConnection connection, string operation)
             : this(connection)
         {
@@ -97,8 +136,25 @@ namespace Duplicati.Library.Main.Database
             if (m_connection.State != System.Data.ConnectionState.Open)
                 m_connection.Open();
 
-            using (var cmd = m_connection.CreateCommand())
-                m_operationid = cmd.ExecuteScalarInt64( @"INSERT INTO ""Operation"" (""Description"", ""Timestamp"") VALUES (?, ?); SELECT last_insert_rowid();", -1, operation, Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(OperationTimestamp));
+            if (operation != null)
+            {
+                using (var cmd = m_connection.CreateCommand())
+                    m_operationid = cmd.ExecuteScalarInt64(@"INSERT INTO ""Operation"" (""Description"", ""Timestamp"") VALUES (?, ?); SELECT last_insert_rowid();", -1, operation, Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(OperationTimestamp));
+            }
+            else
+            {
+                // Get last operation
+                using (var cmd = m_connection.CreateCommand())
+                using (var rd = cmd.ExecuteReader(@"SELECT ""ID"", ""Timestamp"" FROM ""Operation"" ORDER BY ""Timestamp"" DESC LIMIT 1"))
+                {
+                    if (!rd.Read())
+                    {
+                        throw new Exception("LocalDatabase does not contain a previous operation.");
+                    }
+                    m_operationid = rd.GetInt64(0);
+                    OperationTimestamp = ParseFromEpochSeconds(rd.GetInt64(1));
+                }
+            }
         }
 
         private LocalDatabase(System.Data.IDbConnection connection)
@@ -129,14 +185,14 @@ namespace Duplicati.Library.Main.Database
             m_selectremotevolumesCommand.CommandText = @"SELECT ""ID"", ""Name"", ""Type"", ""Size"", ""Hash"", ""State"", ""DeleteGraceTime"" FROM ""Remotevolume""";
 
             m_selectremotevolumeCommand.CommandText = m_selectremotevolumesCommand.CommandText + @" WHERE ""Name"" = ?";
-            m_selectduplicateRemoteVolumesCommand.CommandText = string.Format(@"SELECT DISTINCT ""Name"", ""State"" FROM ""Remotevolume"" WHERE ""Name"" IN (SELECT ""Name"" FROM ""Remotevolume"" WHERE ""State"" IN (""{0}"", ""{1}"")) AND NOT ""State"" IN (""{0}"", ""{1}"")", RemoteVolumeState.Deleted.ToString(), RemoteVolumeState.Deleting.ToString());
+            m_selectduplicateRemoteVolumesCommand.CommandText = string.Format(@"SELECT DISTINCT ""Name"", ""State"" FROM ""Remotevolume"" WHERE ""Name"" IN (SELECT ""Name"" FROM ""Remotevolume"" WHERE ""State"" IN ('{0}', '{1}')) AND NOT ""State"" IN ('{0}', '{1}')", RemoteVolumeState.Deleted.ToString(), RemoteVolumeState.Deleting.ToString());
 
             m_selectremotevolumeCommand.AddParameter();
 
             m_removeremotevolumeCommand.CommandText = @"DELETE FROM ""Remotevolume"" WHERE ""Name"" = ? AND (""DeleteGraceTime"" < ? OR ""State"" != ?)";
             m_removeremotevolumeCommand.AddParameters(3);
 
-            m_removedeletedremotevolumeCommand.CommandText = $@"DELETE FROM ""Remotevolume"" WHERE ""State"" == ""{RemoteVolumeState.Deleted.ToString()}"" AND (""DeleteGraceTime"" < ? OR LENGTH(""DeleteGraceTime"") > 12) "; // >12 is to handle removal of old records that were in ticks
+            m_removedeletedremotevolumeCommand.CommandText = $@"DELETE FROM ""Remotevolume"" WHERE ""State"" == '{RemoteVolumeState.Deleted.ToString()}' AND (""DeleteGraceTime"" < ? OR LENGTH(""DeleteGraceTime"") > 12) "; // >12 is to handle removal of old records that were in ticks
             m_removedeletedremotevolumeCommand.AddParameter();
 
             m_selectremotevolumeIdCommand.CommandText = @"SELECT ""ID"" FROM ""Remotevolume"" WHERE ""Name"" = ?";
@@ -212,13 +268,13 @@ namespace Duplicati.Library.Main.Database
                 RemoveRemoteVolume(name, transaction);
             }
         }
-        
+
         public IEnumerable<KeyValuePair<long, DateTime>> FilesetTimes
         {
             get
             {
                 using (var cmd = m_connection.CreateCommand())
-                using(var rd = cmd.ExecuteReader(@"SELECT ""ID"", ""Timestamp"" FROM ""Fileset"" ORDER BY ""Timestamp"" DESC"))
+                using (var rd = cmd.ExecuteReader(@"SELECT ""ID"", ""Timestamp"" FROM ""Fileset"" ORDER BY ""Timestamp"" DESC"))
                     while (rd.Read())
                         yield return new KeyValuePair<long, DateTime>(rd.GetInt64(0), ParseFromEpochSeconds(rd.GetInt64(1)).ToLocalTime());
             }
@@ -280,6 +336,20 @@ namespace Duplicati.Library.Main.Database
         {
             m_selectremotevolumeIdCommand.Transaction = transaction;
             return m_selectremotevolumeIdCommand.ExecuteScalarInt64(null, -1, file);
+        }
+
+        public IEnumerable<KeyValuePair<string, long>> GetRemoteVolumeIDs(IEnumerable<string> files, System.Data.IDbTransaction transaction = null)
+        {
+            using (var cmd = m_connection.CreateCommand(transaction))
+            {
+                cmd.CommandText = @"SELECT ""Name"", ""ID"" FROM ""RemoteVolume"" WHERE ""Name"" IN (?)";
+                cmd.AddParameters(1);
+                cmd.SetParameterValue(0, files);
+
+                using (var rd = cmd.ExecuteReader())
+                    while (rd.Read())
+                        yield return new KeyValuePair<string, long>(rd.GetString(0), rd.GetInt64(1));
+            }
         }
 
         public RemoteVolumeEntry GetRemoteVolume(string file, System.Data.IDbTransaction transaction = null)
@@ -796,6 +866,7 @@ ON
 
                 if (verifyfilelists)
                 {
+                    var anyError = new List<string>();
                     using (var cmd2 = m_connection.CreateCommand(transaction))
                         foreach (var filesetid in cmd.ExecuteReaderEnumerable(@"SELECT ""ID"" FROM ""Fileset"" ").Select(x => x.ConvertValueToInt64(0, -1)))
                         {
@@ -810,9 +881,13 @@ ON
                                 var fileset = FilesetTimes.Zip(Enumerable.Range(0, FilesetTimes.Count()), (a, b) => new Tuple<long, long, DateTime>(b, a.Key, a.Value)).FirstOrDefault(x => x.Item2 == filesetid);
                                 if (fileset != null)
                                     filesetname = string.Format("version {0}: {1} (database id: {2})", fileset.Item1, fileset.Item3, fileset.Item2);
-                                throw new Interface.UserInformationException(string.Format("Unexpected difference in fileset {0}, found {1} entries, but expected {2}", filesetname, expandedlist, storedlist), "FilesetDifferences");
+                                anyError.Add(string.Format("Unexpected difference in fileset {0}, found {1} entries, but expected {2}", filesetname, expandedlist, storedlist));
                             }
                         }
+                    if (anyError.Any())
+                    {
+                        throw new Interface.UserInformationException(string.Join("\n\r", anyError), "FilesetDifferences");
+                    }
                 }
             }
         }
@@ -1154,6 +1229,16 @@ ORDER BY
                 if (type != Library.Utility.FilterType.Regexp && !Library.Utility.Utility.IsFSCaseSensitive && filter.ToString().Any(x => x > 127))
                     type = Library.Utility.FilterType.Regexp;
 
+                if (filter.Empty)
+                {
+                    using (var cmd = m_connection.CreateCommand())
+                    {
+                        cmd.Transaction = transaction;
+                        cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" AS SELECT DISTINCT ""Path"" FROM ""File"" ", Tablename));
+                        return;
+                    }
+                }
+
                 if (type == Library.Utility.FilterType.Regexp || type == Library.Utility.FilterType.Group)
                 {
                     using (var cmd = m_connection.CreateCommand())
@@ -1268,7 +1353,7 @@ ORDER BY
                 return id;
             }
         }
-        
+
         public void AddIndexBlockLink(long indexVolumeID, long blockVolumeID, System.Data.IDbTransaction transaction)
         {
             m_insertIndexBlockLink.Transaction = transaction;
@@ -1277,12 +1362,21 @@ ORDER BY
             m_insertIndexBlockLink.ExecuteNonQuery();
         }
 
+        /// <summary>
+        /// Returns all unique blocklists for a given volume
+        /// </summary>
+        /// <param name="volumeid">The volume ID to get blocklists for</param>
+        /// <param name="blocksize">The blocksize</param>
+        /// <param name="hashsize">The size of the hash</param>
+        /// <param name="transaction">An optional external transaction</param>
+        /// <returns>An enumerable of tuples containing the blocklist hash, the blocklist data and the length of the data</returns>
         public IEnumerable<Tuple<string, byte[], int>> GetBlocklists(long volumeid, long blocksize, int hashsize, System.Data.IDbTransaction transaction = null)
         {
             using (var cmd = m_connection.CreateCommand(transaction))
             {
+                // Group subquery by hash to ensure that each blocklist hash appears only once in the result
                 var sql = string.Format(@"SELECT ""A"".""Hash"", ""C"".""Hash"" FROM " +
-                    @"(SELECT ""BlocklistHash"".""BlocksetID"", ""Block"".""Hash"", * FROM  ""BlocklistHash"",""Block"" WHERE  ""BlocklistHash"".""Hash"" = ""Block"".""Hash"" AND ""Block"".""VolumeID"" = ?) A, " +
+                    @"(SELECT ""BlocklistHash"".""BlocksetID"", ""Block"".""Hash"", ""BlocklistHash"".""Index"" FROM  ""BlocklistHash"",""Block"" WHERE  ""BlocklistHash"".""Hash"" = ""Block"".""Hash"" AND ""Block"".""VolumeID"" = ? GROUP BY ""Block"".""Hash"", ""Block"".""Size"") A, " +
                     @" ""BlocksetEntry"" B, ""Block"" C WHERE ""B"".""BlocksetID"" = ""A"".""BlocksetID"" AND " +
                     @" ""B"".""Index"" >= (""A"".""Index"" * {0}) AND ""B"".""Index"" < ((""A"".""Index"" + 1) * {0}) AND ""C"".""ID"" = ""B"".""BlockID"" " +
                     @" ORDER BY ""A"".""BlocksetID"", ""B"".""Index""",
@@ -1290,28 +1384,28 @@ ORDER BY
                 );
 
                 string curHash = null;
-                int index = 0;
+                int count = 0;
                 byte[] buffer = new byte[blocksize];
 
                 using (var rd = cmd.ExecuteReader(sql, volumeid))
                     while (rd.Read())
                     {
                         var blockhash = rd.GetValue(0).ToString();
-                        if ((blockhash != curHash && curHash != null) || index + hashsize > buffer.Length)
+                        if ((blockhash != curHash && curHash != null) || count + hashsize > buffer.Length)
                         {
-                            yield return new Tuple<string, byte[], int>(curHash, buffer, index);
+                            yield return new Tuple<string, byte[], int>(curHash, buffer, count);
                             buffer = new byte[blocksize];
-                            index = 0;
+                            count = 0;
                         }
 
                         var hash = Convert.FromBase64String(rd.GetValue(1).ToString());
-                        Array.Copy(hash, 0, buffer, index, hashsize);
+                        Array.Copy(hash, 0, buffer, count, hashsize);
                         curHash = blockhash;
-                        index += hashsize;
+                        count += hashsize;
                     }
 
                 if (curHash != null)
-                    yield return new Tuple<string, byte[], int>(curHash, buffer, index);
+                    yield return new Tuple<string, byte[], int>(curHash, buffer, count);
             }
         }
 

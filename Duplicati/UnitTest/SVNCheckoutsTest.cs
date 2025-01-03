@@ -1,25 +1,24 @@
-﻿#region Disclaimer / License
-// Copyright (C) 2015, The Duplicati Team
-// http://www.duplicati.com, info@duplicati.com
+// Copyright (C) 2024, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
 // 
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 2.1 of the License, or (at your option) any later version.
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
 // 
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
 // 
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-// 
-using NUnit.Framework;
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
 
-
-#endregion
 
 using System;
 using System.Collections.Generic;
@@ -48,10 +47,10 @@ namespace Duplicati.UnitTest
         {
             public static long WarningCount = 0;
             public static long ErrorCount = 0;
-            
+
             public LogHelper(string file)
                 : base(file)
-            {}
+            { }
 
             public override void WriteMessage(LogEntry entry)
             {
@@ -62,7 +61,7 @@ namespace Duplicati.UnitTest
                 base.WriteMessage(entry);
             }
         }
-            
+
         /// <summary>
         /// Running the unit test confirms the correctness of duplicati
         /// </summary>
@@ -176,7 +175,7 @@ namespace Duplicati.UnitTest
                                 using (var bk = Duplicati.Library.DynamicLoader.BackendLoader.GetBackend(target, options))
                                     foreach (var f in bk.List())
                                         if (!f.IsFolder)
-                                            bk.Delete(f.Name);
+                                            Utility.Await(bk.DeleteAsync(f.Name, System.Threading.CancellationToken.None));
                             }
                             catch (Duplicati.Library.Interface.FolderMissingException)
                             {
@@ -354,7 +353,7 @@ namespace Duplicati.UnitTest
                         if (s == options["dbpath"])
                             continue;
                         if (s == logfilename)
-                            continue;                        
+                            continue;
                         if (s.StartsWith(Util.AppendDirSeparator(tf), StringComparison.Ordinal))
                             continue;
 
@@ -440,7 +439,7 @@ namespace Duplicati.UnitTest
             BasicSetupHelper.ProgressWriteLine("Backing up the copy: " + sourcename);
             using (new Timer(LOGTAG, "BackupRun", "Backup of " + sourcename))
             using (var console = new CommandLine.ConsoleOutput(Console.Out, options))
-            using(var i = new Duplicati.Library.Main.Controller(target, options, console))
+            using (var i = new Duplicati.Library.Main.Controller(target, options, console))
                 Log.WriteInformationMessage(LOGTAG, "BackupOutput", i.Backup(source.Split(System.IO.Path.PathSeparator)).ToString());
         }
 
@@ -450,7 +449,7 @@ namespace Duplicati.UnitTest
             tops["restore-path"] = tempfolder;
             using (new Timer(LOGTAG, "RestoreRun", "Restore of " + source))
             using (var console = new CommandLine.ConsoleOutput(Console.Out, options))
-            using(var i = new Duplicati.Library.Main.Controller(target, tops, console))
+            using (var i = new Duplicati.Library.Main.Controller(target, tops, console))
                 Log.WriteInformationMessage(LOGTAG, "RestoreOutput", i.Restore(null).ToString());
         }
 
@@ -460,7 +459,7 @@ namespace Duplicati.UnitTest
             tops["restore-path"] = tempfolder;
             using (new Timer(LOGTAG, "PartialRestore", "Partial restore of " + source))
             using (var console = new CommandLine.ConsoleOutput(Console.Out, options))
-            using(var i = new Duplicati.Library.Main.Controller(target, tops, console))
+            using (var i = new Duplicati.Library.Main.Controller(target, tops, console))
                 Log.WriteInformationMessage(LOGTAG, "PartialRestoreOutput", i.Restore(files).ToString());
         }
     }

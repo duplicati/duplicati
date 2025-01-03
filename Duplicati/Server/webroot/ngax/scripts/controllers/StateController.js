@@ -29,7 +29,7 @@ backupApp.controller('StateController', function($scope, $timeout, ServerStatus,
             text = ServerStatus.progress_state_text[$scope.state.lastPgEvent.Phase || ''] || $scope.state.lastPgEvent.Phase;
 
 
-            if ($scope.state.lastPgEvent.Phase == 'Backup_ProcessingFiles') {
+            if ($scope.state.lastPgEvent.Phase == 'Backup_ProcessingFiles' || $scope.state.lastPgEvent.Phase == 'Restore_DownloadingRemoteFiles') {
                 if ($scope.state.lastPgEvent.StillCounting) {
                     text = gettextCatalog.getString('Counting ({{files}} files found, {{size}})', { files: $scope.state.lastPgEvent.TotalFileCount, size: AppUtils.formatSizeString($scope.state.lastPgEvent.TotalFileSize) });
                     pg = 0;
@@ -47,8 +47,10 @@ backupApp.controller('StateController', function($scope, $timeout, ServerStatus,
                     // If we have a speed append it
                     var speed_txt = ($scope.state.lastPgEvent.BackendSpeed < 0) ? "" : " at "+AppUtils.formatSizeString($scope.state.lastPgEvent.BackendSpeed)+"/s";
                     
+                    var restoring_text = $scope.state.lastPgEvent.Phase == 'Restore_DownloadingRemoteFiles' ? 'Restoring: ' : '';
+
                     // Finally construct the whole text
-                    text = gettextCatalog.getString('{{files}} files ({{size}}) to go {{speed_txt}}', { files: filesleft, size: AppUtils.formatSizeString(sizeleft), speed_txt: speed_txt});
+                    text = gettextCatalog.getString(restoring_text + '{{files}} files ({{size}}) to go {{speed_txt}}', { files: filesleft, size: AppUtils.formatSizeString(sizeleft), speed_txt: speed_txt});
                 }
             }
             else if ($scope.state.lastPgEvent.Phase == 'Backup_Finalize' || $scope.state.lastPgEvent.Phase == 'Backup_WaitForUpload')
@@ -89,11 +91,11 @@ backupApp.controller('StateController', function($scope, $timeout, ServerStatus,
         function handleClick(ix) {
             if (ix == 0) 
             {
-                AppService.post('/task/' + taskId + '/stopaftercurrentfile');
+                AppService.post('/task/' + taskId + '/stop');
                 $scope.StopReqId = taskId;
             }
             else if (ix == 1) {
-                AppService.post('/task/' + taskId + '/stopnow');
+                AppService.post('/task/' + taskId + '/abort');
                 $scope.StopReqId = taskId;
             }
         };
@@ -102,8 +104,8 @@ backupApp.controller('StateController', function($scope, $timeout, ServerStatus,
         {
             DialogService.dialog(
                 gettextCatalog.getString("Stop running backup"),
-                gettextCatalog.getString("You can stop the backup after any file uploads currently in progress have finished."),
-                [gettextCatalog.getString("Stop after current file"), gettextCatalog.getString("Stop now"), gettextCatalog.getString("Cancel")],
+                gettextCatalog.getString("You can stop the backup after any file uploads currently in progress have finished. If you terminate the backup, the next run will need to recover from a failed backup."),
+                [gettextCatalog.getString("Stop after the current file"), gettextCatalog.getString("Terminate"), gettextCatalog.getString("Cancel")],
                 handleClick
             );
         }
@@ -111,8 +113,8 @@ backupApp.controller('StateController', function($scope, $timeout, ServerStatus,
         {
             DialogService.dialog(
                 gettextCatalog.getString("Stop running task"),
-                gettextCatalog.getString("You can stop the task immediately, or allow the process to continue its current file and then stop."),
-                [gettextCatalog.getString("Stop after the current file"), gettextCatalog.getString("Stop now"), gettextCatalog.getString("Cancel")],
+                gettextCatalog.getString("You can stop the task immediately, or allow the process to continue its current file and then stop. If you terminate the task, the backup could be left in an inconsistent state."),
+                [gettextCatalog.getString("Stop after the current file"), gettextCatalog.getString("Terminate"), gettextCatalog.getString("Cancel")],
                 handleClick
             );
         }

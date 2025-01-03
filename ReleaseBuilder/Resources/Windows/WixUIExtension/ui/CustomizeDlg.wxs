@@ -1,0 +1,52 @@
+﻿<!-- Copyright (c) .NET Foundation and contributors. All rights reserved. Licensed under the Microsoft Reciprocal License. See LICENSE.TXT file in the project root for full license information. -->
+
+
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+    <Fragment>
+        <UI>
+            <Dialog Id="CustomizeDlg" Width="370" Height="270" Title="Customize [ProductName]" TrackDiskSpace="yes">
+                <!-- Note: Buttons need to go first, or it will create "Error 2834: The next pointers on the dialog BrowseDlg do not form a single loop" -->
+                <Control Id="Next" Type="PushButton" X="236" Y="243" Width="56" Height="17" Default="yes" Text="Next">
+                    <Subscribe Event="SelectionNoItems" Attribute="Enabled" />
+                </Control>
+                <Control Id="Back" Type="PushButton" X="180" Y="243" Width="56" Height="17" Text="Back" />
+
+                <Control Id="Tree" Type="SelectionTree" X="25" Y="85" Width="175" Height="115" Property="_BrowseProperty" Sunken="yes" TabSkip="no" Text="Tree of selections" />
+                <Control Id="Browse" Type="PushButton" X="294" Y="210" Width="66" Height="17" Text="B&amp;rowse..." HideCondition="Installed" DisableCondition="Installed">
+                    <Publish Event="SelectionBrowse" Value="BrowseDlg" />
+                </Control>
+                <Control Id="Reset" Type="PushButton" X="10" Y="243" Width="81" Height="17" Text="Re&amp;set">
+                    <Publish Event="Reset" Value="0" />
+                    <Subscribe Event="SelectionNoItems" Attribute="Enabled" />
+                </Control>
+                <Control Id="DiskCost" Type="PushButton" X="91" Y="243" Width="80" Height="17" Text="Disk &amp;Usage">
+                    <Publish Event="SpawnDialog" Value="DiskCostDlg" />
+                    <Subscribe Event="SelectionNoItems" Attribute="Enabled" />
+                </Control>
+                <Control Id="Cancel" Type="PushButton" X="304" Y="243" Width="56" Height="17" Cancel="yes" Text="Cancel">
+                    <Publish Event="SpawnDialog" Value="CancelDlg" />
+                </Control>
+                <Control Id="BannerBitmap" Type="Bitmap" X="0" Y="0" Width="370" Height="44" TabSkip="no" Text="WixUI_Bmp_Banner" />
+                <Control Id="Text" Type="Text" X="25" Y="55" Width="320" Height="20" Text="Click the icons in the tree below to change the way features will be installed." />
+                <Control Id="BannerLine" Type="Line" X="0" Y="44" Width="370" Height="0" />
+                <Control Id="BottomLine" Type="Line" X="0" Y="234" Width="370" Height="0" />
+                <Control Id="Description" Type="Text" X="25" Y="23" Width="280" Height="15" Transparent="yes" NoPrefix="yes" Text="Select the way you want features to be installed." />
+                <Control Id="Title" Type="Text" X="15" Y="6" Width="210" Height="15" Transparent="yes" NoPrefix="yes" Text="Customize the installation components" />
+                <Control Id="Box" Type="GroupBox" X="210" Y="81" Width="150" Height="118" />
+                <Control Id="ItemDescription" Type="Text" X="215" Y="90" Width="131" Height="50" Text="CustomizeDlgItemDescription-CustomizeDlgItemDescription">
+                    <Subscribe Event="SelectionDescription" Attribute="Text" />
+                </Control>
+                <Control Id="ItemSize" Type="Text" X="215" Y="140" Width="131" Height="50" Text="CustomizeDlgItemSize-CustomizeDlgItemSize">
+                    <Subscribe Event="SelectionSize" Attribute="Text" />
+                </Control>
+                <Control Id="Location" Type="Text" X="90" Y="210" Width="200" Height="20" Text="CustomizeDlgLocation-CustomizeDlgLocation" HideCondition="Installed">
+                    <Subscribe Event="SelectionPath" Attribute="Text" />
+                    <Subscribe Event="SelectionPathOn" Attribute="Visible" />
+                </Control>
+                <Control Id="LocationLabel" Type="Text" X="25" Y="210" Width="65" Height="10" Text="Location:" HideCondition="Installed">
+                    <Subscribe Event="SelectionPathOn" Attribute="Visible" />
+                </Control>
+            </Dialog>
+        </UI>
+    </Fragment>
+</Wix>
