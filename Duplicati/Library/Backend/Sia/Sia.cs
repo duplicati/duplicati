@@ -24,6 +24,7 @@ using Duplicati.Library.Utility;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
@@ -60,7 +61,7 @@ namespace Duplicati.Library.Backend.Sia
 
             m_redundancy = 1.5F;
             if (options.ContainsKey(SIA_REDUNDANCY))
-                m_redundancy = float.Parse(options[SIA_REDUNDANCY]);
+                m_redundancy = (float)decimal.Parse(options[SIA_REDUNDANCY], CultureInfo.InvariantCulture);
 
             if (m_apiport <= 0)
                 m_apiport = 9980;
@@ -463,7 +464,7 @@ namespace Duplicati.Library.Backend.Sia
                 return new List<ICommandLineArgument>([
                     new CommandLineArgument(SIA_TARGETPATH, CommandLineArgument.ArgumentType.String, Strings.Sia.SiaPathDescriptionShort, Strings.Sia.SiaPathDescriptionLong, "/backup"),
                     new CommandLineArgument(SIA_PASSWORD, CommandLineArgument.ArgumentType.Password, Strings.Sia.SiaPasswordShort, Strings.Sia.SiaPasswordLong, null),
-                    new CommandLineArgument(SIA_REDUNDANCY, CommandLineArgument.ArgumentType.String, Strings.Sia.SiaRedundancyDescriptionShort, Strings.Sia.SiaRedundancyDescriptionLong, "1.5"),
+                    new CommandLineArgument(SIA_REDUNDANCY, CommandLineArgument.ArgumentType.Decimal, Strings.Sia.SiaRedundancyDescriptionShort, Strings.Sia.SiaRedundancyDescriptionLong, "1.5"),
                 ]);
             }
         }
