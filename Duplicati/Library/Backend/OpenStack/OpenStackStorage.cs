@@ -353,6 +353,9 @@ namespace Duplicati.Library.Backend.OpenStack
             if (string.IsNullOrWhiteSpace(m_authUri))
                 throw new UserInformationException(Strings.OpenStack.MissingOptionError(AUTHURI_OPTION), "OpenStackMissingAuthUri");
 
+            if (string.IsNullOrWhiteSpace(m_version) && m_authUri.EndsWith("/v3", StringComparison.OrdinalIgnoreCase))
+                m_version = "v3";
+
             switch (m_version)
             {
                 case "v3":
