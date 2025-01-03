@@ -1,9 +1,7 @@
 
 # Environment variables for tests
 
-On github actions these are mapped 1:1 to secrets, even the non password fields are stored in secrets.
-
-Tests like FTP, SSH and Webdav are self-contained, they do not require any environment variable.
+On Github actions these are mapped 1:1 to secrets, even the non password fields are stored in secrets.
 
 ## General
 
@@ -13,6 +11,17 @@ These control the size and number of files generated.
 MAX_FILE_SIZE    default is 1000kb
 NUMBER_OF_FILES  default is 20
 ```
+
+## Backends that do not require Environment variables
+
+* FTP _(TestContainers required)_
+* SSH _(TestContainers required)_
+* Webdav _(TestContainers required)_
+* CIFS _(TestContainers required)_
+
+Please note that TestContainers token has to be configured in secrets/Github actions yml.
+
+## Backends that require Environment variables
 
 ## Google Drive:
 
@@ -63,7 +72,6 @@ TESTCREDENTIAL_PCLOUD_TOKEN
 TESTCREDENTIAL_PCLOUD_FOLDER
 ```
 For PCloud the server is the API server(eapi.pcloud.com for EU hosted account or api.pcloud.com for non EU). The token is the OAuth token.
-
 
 ## Running the tests
 
