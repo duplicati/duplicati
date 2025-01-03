@@ -115,6 +115,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                                 if (!Directory.Exists(foldername))
                                 {
                                     Directory.CreateDirectory(foldername);
+                                    Logging.Log.WriteWarningMessage(LOGTAG, "CreateMissingFolder", null, @$"Creating missing folder ""{foldername}"" for file ""{file.TargetPath}""");
                                 }
 
                                 // Create an empty file, or truncate to 0
@@ -155,6 +156,12 @@ namespace Duplicati.Library.Main.Operation.Restore
                                 }
                                 else
                                 {
+                                    var foldername = SystemIO.IO_OS.PathGetDirectoryName(file.TargetPath);
+                                    if (!Directory.Exists(foldername))
+                                    {
+                                        Directory.CreateDirectory(foldername);
+                                        Logging.Log.WriteWarningMessage(LOGTAG, "CreateMissingFolder", null, @$"Creating missing folder ""{foldername}"" for file ""{file.TargetPath}""");
+                                    }
                                     fs = SystemIO.IO_OS.FileOpenWrite(file.TargetPath);
                                 }
 
