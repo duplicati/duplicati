@@ -44,6 +44,13 @@ namespace Duplicati.Library.Backend.Storj
         private const string PROTOCOL_KEY = "storj";
         private const string STORJ_PARTNER_ID = "duplicati";
 
+        private const string STORJ_AUTH_METHOD_API_KEY = "API key";
+        private const string STORJ_AUTH_METHOD_ACCESS_GRANT = "Access grant";
+
+        private const string STORJ_DEFAULT_BUCKET = "duplicati";
+        private const string STORJ_DEFAULT_SATELLITE = "us1.storj.io:7777";
+        private const string STORJ_DEFAULT_AUTH_METHOD = STORJ_AUTH_METHOD_API_KEY;
+
         private readonly string _satellite;
         private readonly string _api_key;
         private readonly string _secret;
@@ -86,8 +93,8 @@ namespace Duplicati.Library.Backend.Storj
         {
             InitStorjLibrary();
 
-            var auth_method = options[STORJ_AUTH_METHOD];
-            if (auth_method == "Access grant")
+            var auth_method = options.GetValueOrDefault(STORJ_AUTH_METHOD, STORJ_DEFAULT_AUTH_METHOD);
+            if (string.Equals(auth_method, STORJ_AUTH_METHOD_ACCESS_GRANT, StringComparison.OrdinalIgnoreCase))
             {
                 //Create an access from the access grant
                 var shared_access = options[STORJ_SHARED_ACCESS];
@@ -95,8 +102,8 @@ namespace Duplicati.Library.Backend.Storj
             }
             else
             {
-                //Create an access for a satellite, API key and encryption passphrase
-                _satellite = options[STORJ_SATELLITE];
+                //Create an access for a satellite, API key and encryption passphrase                    
+                _satellite = options.GetValueOrDefault(STORJ_SATELLITE, STORJ_DEFAULT_SATELLITE);
 
                 if (options.ContainsKey(STORJ_API_KEY))
                 {
@@ -141,12 +148,12 @@ namespace Duplicati.Library.Backend.Storj
             get
             {
                 return new List<ICommandLineArgument>(new ICommandLineArgument[] {
-                    new CommandLineArgument(STORJ_AUTH_METHOD, CommandLineArgument.ArgumentType.String, Strings.Storj.StorjAuthMethodDescriptionShort, Strings.Storj.StorjAuthMethodDescriptionLong, "API key"),
-                    new CommandLineArgument(STORJ_SATELLITE, CommandLineArgument.ArgumentType.String, Strings.Storj.StorjSatelliteDescriptionShort, Strings.Storj.StorjSatelliteDescriptionLong, "us1.storj.io:7777"),
+                    new CommandLineArgument(STORJ_AUTH_METHOD, CommandLineArgument.ArgumentType.String, Strings.Storj.StorjAuthMethodDescriptionShort, Strings.Storj.StorjAuthMethodDescriptionLong, STORJ_DEFAULT_AUTH_METHOD, null, [STORJ_AUTH_METHOD_API_KEY, STORJ_AUTH_METHOD_ACCESS_GRANT]),
+                    new CommandLineArgument(STORJ_SATELLITE, CommandLineArgument.ArgumentType.String, Strings.Storj.StorjSatelliteDescriptionShort, Strings.Storj.StorjSatelliteDescriptionLong, STORJ_DEFAULT_SATELLITE),
                     new CommandLineArgument(STORJ_API_KEY, CommandLineArgument.ArgumentType.String, Strings.Storj.StorjAPIKeyDescriptionShort, Strings.Storj.StorjAPIKeyDescriptionLong),
                     new CommandLineArgument(STORJ_SECRET, CommandLineArgument.ArgumentType.Password, Strings.Storj.StorjSecretDescriptionShort, Strings.Storj.StorjSecretDescriptionLong),
                     new CommandLineArgument(STORJ_SHARED_ACCESS, CommandLineArgument.ArgumentType.String, Strings.Storj.StorjSharedAccessDescriptionShort, Strings.Storj.StorjSharedAccessDescriptionLong),
-                    new CommandLineArgument(STORJ_BUCKET, CommandLineArgument.ArgumentType.String, Strings.Storj.StorjBucketDescriptionShort, Strings.Storj.StorjBucketDescriptionLong),
+                    new CommandLineArgument(STORJ_BUCKET, CommandLineArgument.ArgumentType.String, Strings.Storj.StorjBucketDescriptionShort, Strings.Storj.StorjBucketDescriptionLong, STORJ_DEFAULT_BUCKET),
                     new CommandLineArgument(STORJ_FOLDER, CommandLineArgument.ArgumentType.String, Strings.Storj.StorjFolderDescriptionShort, Strings.Storj.StorjFolderDescriptionLong),
                 });
             }
