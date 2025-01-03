@@ -1423,33 +1423,35 @@ namespace Duplicati.Library.Main.Database
 
             m_latestblocktable = "LatestBlocksetIds-" + m_temptabsetguid;
 
-            var whereclause = string.Format(
-                @"  ""{0}"".""LocalSourceExists"" = 1 AND" +
-                @"  ""{1}"".""Restored"" = 0 AND ""{1}"".""Metadata"" = 0 AND" +
-                @"  ""{0}"".""TargetPath"" != ""{0}"".""Path""", m_tempfiletable, m_tempblocktable);
+            var whereclause = string.Format(@"
+                ""{0}"".""LocalSourceExists"" = 1 AND
+                ""{1}"".""Restored"" = 0 AND ""{1}"".""Metadata"" = 0 AND
+                ""{0}"".""TargetPath"" != ""{0}"".""Path""",
+                m_tempfiletable, m_tempblocktable);
 
-            var latestBlocksetIds = string.Format(
-                @"  SELECT " +
-                @"      ""File"".""Path"" AS ""PATH""," +
-                @"      ""File"".""BlocksetID"" AS ""BlocksetID""," +
-                @"      MAX(""Fileset"".""Timestamp"") AS ""Timestamp""" +
-                @"  FROM " +
-                @"      ""File"", " +
-                @"      ""FilesetEntry"", " +
-                @"      ""Fileset""" +
-                @"  WHERE " +
-                @"      ""File"".""ID"" = ""FilesetEntry"".""FileID"" AND" +
-                @"      ""FilesetEntry"".""FilesetID"" = ""Fileset"".""ID"" AND" +
-                @"      ""File"".""Path"" IN " +
-                @"          (SELECT DISTINCT" +
-                @"              ""{0}"".""Path"" " +
-                @"          FROM" +
-                @"              ""{0}""," +
-                @"              ""{1}""" +
-                @"          WHERE" +
-                @"              ""{0}"".""ID"" = ""{1}"".""FileID"" AND" +
-                @"              " + whereclause + ")" +
-                @"  GROUP BY ""File"".""Path"" ", m_tempfiletable, m_tempblocktable);
+            var latestBlocksetIds = string.Format(@"
+                SELECT
+                    ""File"".""Path"" AS ""PATH"",
+                    ""File"".""BlocksetID"" AS ""BlocksetID"",
+                    MAX(""Fileset"".""Timestamp"") AS ""Timestamp""
+                FROM
+                    ""File"",
+                    ""FilesetEntry"",
+                    ""Fileset""
+                WHERE
+                    ""File"".""ID"" = ""FilesetEntry"".""FileID"" AND
+                    ""FilesetEntry"".""FilesetID"" = ""Fileset"".""ID"" AND
+                    ""File"".""Path"" IN
+                        (SELECT DISTINCT
+                            ""{0}"".""Path""
+                        FROM
+                            ""{0}"",
+                            ""{1}""
+                        WHERE
+                            ""{0}"".""ID"" = ""{1}"".""FileID"" AND
+                            {2})
+                GROUP BY ""File"".""Path""",
+                m_tempfiletable, m_tempblocktable, whereclause);
 
             using (var cmd = m_connection.CreateCommand())
             {
