@@ -14,12 +14,6 @@
         public string BucketName { get; set; }
 
         /// <summary>
-        /// Region represents the physical location of the OSS data center.
-        /// 地域表示 OSS 的数据中心所在物理位置。
-        /// </summary>
-        public string Region { get; set; }
-
-        /// <summary>
         /// AccessKeyId is used to identify the user. AccessKeySecret is the key used by the user to encrypt signature strings and by OSS to verify signature strings. The AccessKeySecret must be kept confidential.
         /// AccessKeyId用于标识用户，AccessKeySecret是用户用于加密签名字符串和OSS用来验证签名字符串的密钥，其中AccessKeySecret 必须保密。
         /// </summary>

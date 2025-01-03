@@ -14,14 +14,13 @@ namespace Duplicati.Library.Backend.AliyunOSS
 {
     /// <summary>
     /// Aliyun Object Storage Service(OSS) is a massive, secure, low-cost, and highly reliable cloud storage service, offering up to 99.995% service availability.It offers a variety of storage types to choose from, comprehensively optimizing storage costs.
-    /// en: https://www.alibabacloud.com/zh/product/object-storage-service
+    /// en: https://www.alibabacloud.com/en/product/object-storage-service
     /// zh: https://www.aliyun.com/product/oss
     /// </summary>
     public class OSS : IBackend, IStreamingBackend, IRenameEnabledBackend
     {
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<OSS>();
 
-        private const string OSS_REGION = "oss-region";
         private const string OSS_BUCKET_NAME = "oss-bucket-name";
         private const string OSS_ENDPOINT = "oss-endpoint";
         private const string OSS_ACCESS_KEY_ID = "oss-access-key-id";
@@ -42,11 +41,6 @@ namespace Duplicati.Library.Backend.AliyunOSS
             if (!string.IsNullOrEmpty(prefix))
             {
                 _ossOptions.Path = prefix;
-            }
-
-            if (options.ContainsKey(OSS_REGION))
-            {
-                _ossOptions.Region = options[OSS_REGION];
             }
 
             if (options.ContainsKey(OSS_ACCESS_KEY_ID))
@@ -297,13 +291,12 @@ namespace Duplicati.Library.Backend.AliyunOSS
         {
             get
             {
-                return new List<ICommandLineArgument>(new ICommandLineArgument[] {
-                    new CommandLineArgument(OSS_REGION, CommandLineArgument.ArgumentType.String, Strings.OSSBackend.OSSRegionDescriptionShort, Strings.OSSBackend.OSSRegionDescriptionLong),
+                return new List<ICommandLineArgument>([
                     new CommandLineArgument(OSS_ACCESS_KEY_ID, CommandLineArgument.ArgumentType.String, Strings.OSSBackend.OSSAccessKeyIdDescriptionShort, Strings.OSSBackend.OSSAccessKeyIdDescriptionLong),
                     new CommandLineArgument(OSS_ACCESS_KEY_SECRET, CommandLineArgument.ArgumentType.Password, Strings.OSSBackend.OSSAccessKeySecretDescriptionShort, Strings.OSSBackend.OSSAccessKeySecretDescriptionLong),
                     new CommandLineArgument(OSS_BUCKET_NAME, CommandLineArgument.ArgumentType.String, Strings.OSSBackend.OSSBucketNameDescriptionShort, Strings.OSSBackend.OSSBucketNameDescriptionLong),
                     new CommandLineArgument(OSS_ENDPOINT, CommandLineArgument.ArgumentType.String, Strings.OSSBackend.OSSEndpointDescriptionShort, Strings.OSSBackend.OSSEndpointDescriptionLong)
-                });
+                ]);
             }
         }
 
