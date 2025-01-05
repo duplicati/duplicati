@@ -273,6 +273,8 @@ namespace Duplicati.Library.Main.Operation.Restore
                             results.SizeOfRestoredFiles += bytes_written;
                         }
                         sw_work?.Stop();
+
+                        Logging.Log.WriteVerboseMessage(LOGTAG, "RestoredFile", "Restored file {0}", file.TargetPath);
                     }
                 }
                 catch (RetiredException)
