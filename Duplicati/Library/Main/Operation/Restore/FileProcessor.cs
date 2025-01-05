@@ -462,7 +462,11 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                 // Open both files, as the target file is still being read to produce the overall file hash, if all the blocks are present across both the target and original files.
                 using var f_original = SystemIO.IO_OS.FileOpenRead(file.OriginalPath);
-                using var f_target = SystemIO.IO_OS.FileOpenWrite(file.TargetPath);
+                using var f_target = options.Dryrun ?
+                    (SystemIO.IO_OS.FileExists(file.TargetPath) ?
+                        SystemIO.IO_OS.FileOpenRead(file.TargetPath) :
+                        null) :
+                    SystemIO.IO_OS.FileOpenWrite(file.TargetPath);
                 var buffer = new byte[options.Blocksize];
                 long bytes_read = 0;
                 long bytes_written = 0;
@@ -497,6 +501,8 @@ namespace Duplicati.Library.Main.Operation.Restore
                             }
                             else
                             {
+                                if (!options.Dryrun)
+                            {
                                 try
                                 {
                                     f_target.Seek(blocks[j].BlockOffset * options.Blocksize, SeekOrigin.Begin);
@@ -509,6 +515,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                                         results.BrokenLocalFiles.Add(file.TargetPath);
                                     }
                                     throw;
+                                    }
                                 }
                                 bytes_read += read;
                                 bytes_written += read;
@@ -533,8 +540,8 @@ namespace Duplicati.Library.Main.Operation.Restore
                         // The current block is not a missing block - read from the target file.
                         try
                         {
-                            f_target.Seek(i * options.Blocksize, SeekOrigin.Begin);
-                            read = await f_target.ReadAsync(buffer, 0, options.Blocksize);
+                            f_target?.Seek(i * options.Blocksize, SeekOrigin.Begin);
+                            read = await f_target?.ReadAsync(buffer, 0, options.Blocksize);
                         }
                         catch (Exception)
                         {
@@ -555,7 +562,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                     if (Convert.ToBase64String(filehasher.Hash) == file.Hash)
                     {
                         // Truncate the file if it is larger than the expected size.
-                        if (file.Length < f_target.Length)
+                        if (file.Length < f_target?.Length)
                         {
                             if (options.Dryrun)
                             {
@@ -586,6 +593,11 @@ namespace Duplicati.Library.Main.Operation.Restore
                             results.BrokenLocalFiles.Add(file.TargetPath);
                         }
                     }
+                }
+
+                if (options.Dryrun)
+                {
+                    Logging.Log.WriteDryrunMessage(LOGTAG, "DryrunRestore", @$"Would have restored {verified_blocks.Count} blocks ({bytes_written} bytes) from ""{file.OriginalPath}"" to ""{file.TargetPath}""");
                 }
 
                 return (bytes_written, missing_blocks);
