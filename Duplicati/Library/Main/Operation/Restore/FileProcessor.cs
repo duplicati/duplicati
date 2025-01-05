@@ -98,9 +98,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                         if (missing_blocks.Count > 0 && options.UseLocalBlocks && missing_blocks.Count > 0)
                         {
                             // Verify the local blocks at the original restore path that may be used to restore the file.
-                            var (bw, new_missing_blocks) = await VerifyLocalBlocks(file, missing_blocks, blocks.Length, filehasher, blockhasher, options, results, block_request);
-                            bytes_written = bw;
-                            missing_blocks = new_missing_blocks;
+                            (bytes_written, missing_blocks) = await VerifyLocalBlocks(file, missing_blocks, blocks.Length, filehasher, blockhasher, options, results, block_request);
                         }
 
                         if (file.BlocksetID != LocalDatabase.SYMLINK_BLOCKSET_ID && (blocks.Length == 0 || (blocks.Length == 1 && blocks[0].BlockSize == 0)))
