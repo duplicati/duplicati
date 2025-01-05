@@ -137,8 +137,10 @@ namespace Duplicati.Library.Main.Operation.Restore
                             (bytes_written, missing_blocks) = await VerifyLocalBlocks(file, missing_blocks, blocks.Length, filehasher, blockhasher, options, results, block_request);
                         }
 
+                        bool empty_file = false;
                         if (file.BlocksetID != LocalDatabase.SYMLINK_BLOCKSET_ID && (blocks.Length == 0 || (blocks.Length == 1 && blocks[0].BlockSize == 0)))
                         {
+                            empty_file = true;
                             if (options.Dryrun)
                             {
                                 Logging.Log.WriteDryrunMessage(LOGTAG, "DryrunRestore", @$"Would have created empty file ""{file.TargetPath}""");
@@ -299,7 +301,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                         }
 
                         // TODO legacy restore doesn't count metadata restore as a restored file.
-                        if (bytes_written > 0)
+                        if (empty_file || bytes_written > 0)
                         {
                             // Keep track of the restored files and their sizes
                             lock (results)
