@@ -454,6 +454,7 @@ namespace Duplicati.Library.Main.Operation.Restore
         private static async Task<(long, List<BlockRequest>)> VerifyLocalBlocks(FileRequest file, List<BlockRequest> blocks, long total_blocks, System.Security.Cryptography.HashAlgorithm filehasher, System.Security.Cryptography.HashAlgorithm blockhasher, Options options, RestoreResults results, IChannel<BlockRequest> block_request)
         {
             List<BlockRequest> missing_blocks = [];
+            List<BlockRequest> verified_blocks = [];
 
             // Check if the file exists
             if (File.Exists(file.OriginalPath))
@@ -521,6 +522,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                                 bytes_written += read;
                                 blocks[j].CacheDecrEvict = true;
                                 await block_request.WriteAsync(blocks[j]);
+                                verified_blocks.Add(blocks[j]);
                             }
                         }
                         else
