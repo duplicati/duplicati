@@ -93,7 +93,8 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                         sw_work?.Start();
                         // Verify the target file blocks that may already exist.
-                        var (bytes_written, missing_blocks, verified_blocks) = await VerifyTargetBlocks(file, blocks, filehasher, blockhasher, options, results, block_request);
+                        var (bytes_verified, missing_blocks, verified_blocks) = await VerifyTargetBlocks(file, blocks, filehasher, blockhasher, options, results, block_request);
+                        long bytes_written = 0;
                         if (blocks.Length != missing_blocks.Count + verified_blocks.Count)
                         {
                             Logging.Log.WriteErrorMessage(LOGTAG, "BlockCountMismatch", null, $"Block count mismatch for {file.TargetPath} - expected: {blocks.Length}, actual: {missing_blocks.Count + verified_blocks.Count}");
@@ -288,11 +289,15 @@ namespace Duplicati.Library.Main.Operation.Restore
                             await RestoreMetadata(db, file, block_request, block_response, options, sw_meta, sw_work, sw_req, sw_resp);
                         }
 
-                        // Keep track of the restored files and their sizes
-                        lock (results)
+                        // TODO legacy restore doesn't count metadata restore as a restored file.
+                        if (bytes_written > 0)
                         {
-                            results.RestoredFiles++;
-                            results.SizeOfRestoredFiles += bytes_written;
+                            // Keep track of the restored files and their sizes
+                            lock (results)
+                            {
+                                results.RestoredFiles++;
+                                results.SizeOfRestoredFiles += bytes_written;
+                            }
                         }
                         sw_work?.Stop();
 
