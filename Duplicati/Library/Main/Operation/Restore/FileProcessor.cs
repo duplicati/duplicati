@@ -326,9 +326,15 @@ namespace Duplicati.Library.Main.Operation.Restore
             });
         }
 
-        private static void CopyOldTargetBlocksToNewTarget(FileRequest file, FileRequest new_file, List<BlockRequest> verified_blocks)
+        /// <summary>
+        /// Copies the blocks that were verified in the old target to the new target file.
+        /// </summary>
+        /// <param name="old_file">The old target file.</param>
+        /// <param name="new_file">The new target file.</param>
+        /// <param name="verified_blocks">The blocks in the old file that were verified.</param>
+        private static void CopyOldTargetBlocksToNewTarget(FileRequest old_file, FileRequest new_file, List<BlockRequest> verified_blocks)
         {
-            using var fs_old = SystemIO.IO_OS.FileOpenRead(file.TargetPath);
+            using var fs_old = SystemIO.IO_OS.FileOpenRead(old_file.TargetPath);
             using var fs_new = SystemIO.IO_OS.FileOpenWrite(new_file.TargetPath);
 
             foreach (var block in verified_blocks)
@@ -342,6 +348,18 @@ namespace Duplicati.Library.Main.Operation.Restore
             }
         }
 
+        /// <summary>
+        /// Generates a new name for the target file. It starts by appending
+        /// the restore time to the file name. If that name is also already
+        /// taken, it appends a number to the name. It keeps incrementing the
+        /// number until it finds a name that is not taken. If it encounters a
+        /// file with the same name and the correct hash, it will retarget the
+        /// filename to that file, assuming that the file is the correct one.
+        /// </summary>
+        /// <param name="request">The original target file.</param>
+        /// <param name="database">The restore database.</param>
+        /// <param name="filehasher">The file hasher used to verify whether any of the </param>
+        /// <returns>The new filename. If the file already exists, its file hash matches the target hash.</returns>
         private static string GenerateNewName(FileRequest request, LocalRestoreDatabase database, System.Security.Cryptography.HashAlgorithm filehasher)
         {
             var ext = SystemIO.IO_OS.PathGetExtension(request.TargetPath) ?? "";
