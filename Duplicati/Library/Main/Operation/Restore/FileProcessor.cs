@@ -100,6 +100,28 @@ namespace Duplicati.Library.Main.Operation.Restore
                             sw_work?.Stop();
                             continue;
                         }
+
+                        // Check if the target file needs to be retargeted
+                        if (missing_blocks.Count > 0 && !options.Overwrite)
+                        {
+                            var new_name = GenerateNewName(file, db, filehasher);
+                            Logging.Log.WriteVerboseMessage(LOGTAG, "RetargetingFile", "Retargeting file {0} to {1}", file.TargetPath, new_name);
+                            var new_file = new FileRequest(file.ID, file.OriginalPath, new_name, file.Hash, file.Length, file.BlocksetID);
+                            if (options.UseLocalBlocks)
+                            {
+                                if (options.Dryrun)
+                                {
+                                    Logging.Log.WriteDryrunMessage(LOGTAG, "DryrunRestore", @$"Would have copied {verified_blocks.Count} blocks ({verified_blocks.Count * options.Blocksize} bytes) from ""{file.TargetPath}"" to ""{new_file.TargetPath}""");
+                                }
+                                else
+                                {
+                                    CopyOldTargetBlocksToNewTarget(file, new_file, verified_blocks);
+                                }
+                            }
+                            file = new_file;
+                        }
+
+                        if (missing_blocks.Count > 0 && options.UseLocalBlocks)
                         {
                             // Verify the local blocks at the original restore path that may be used to restore the file.
                             (bytes_written, missing_blocks) = await VerifyLocalBlocks(file, missing_blocks, blocks.Length, filehasher, blockhasher, options, results, block_request);
@@ -297,6 +319,63 @@ namespace Duplicati.Library.Main.Operation.Restore
                     throw;
                 }
             });
+        }
+
+        private static void CopyOldTargetBlocksToNewTarget(FileRequest file, FileRequest new_file, List<BlockRequest> verified_blocks)
+        {
+            using var fs_old = SystemIO.IO_OS.FileOpenRead(file.TargetPath);
+            using var fs_new = SystemIO.IO_OS.FileOpenWrite(new_file.TargetPath);
+
+            foreach (var block in verified_blocks)
+            {
+                fs_old.Seek(block.BlockOffset * block.BlockSize, SeekOrigin.Begin);
+                fs_new.Seek(block.BlockOffset * block.BlockSize, SeekOrigin.Begin);
+
+                var buffer = new byte[block.BlockSize];
+                fs_old.Read(buffer, 0, buffer.Length);
+                fs_new.Write(buffer, 0, buffer.Length);
+            }
+        }
+
+        private static string GenerateNewName(FileRequest request, LocalRestoreDatabase database, System.Security.Cryptography.HashAlgorithm filehasher)
+        {
+            var ext = SystemIO.IO_OS.PathGetExtension(request.TargetPath) ?? "";
+            if (!string.IsNullOrEmpty(ext) && !ext.StartsWith(".", StringComparison.Ordinal))
+                ext = "." + ext;
+
+            // First we try with a simple date append, assuming that there are not many conflicts there
+            var newname = SystemIO.IO_OS.PathChangeExtension(request.TargetPath, null) + "." + database.RestoreTime.ToLocalTime().ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+            var tr = newname + ext;
+            var c = 0;
+            while (SystemIO.IO_OS.FileExists(tr) && c < 1000)
+            {
+                try
+                {
+                    // If we have a file with the correct name,
+                    // it is most likely the file we want
+                    filehasher.Initialize();
+
+                    string key;
+                    using (var file = SystemIO.IO_OS.FileOpenRead(tr))
+                        key = Convert.ToBase64String(filehasher.ComputeHash(file));
+
+                    if (key == request.Hash)
+                    {
+                        //TODO: Also needs metadata check to make correct decision.
+                        //      We stick to the policy to restore metadata in place, if data ok. So, metadata block may be restored.
+                        break;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Logging.Log.WriteWarningMessage(LOGTAG, "FailedToReadRestoreTarget", ex, "Failed to read candidate restore target {0}", tr);
+                }
+                tr = newname + " (" + (c++).ToString() + ")" + ext;
+            }
+
+            newname = tr;
+
+            return newname;
         }
 
         /// <summary>
