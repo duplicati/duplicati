@@ -102,7 +102,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                         }
 
                         // Check if the target file needs to be retargeted
-                        if (missing_blocks.Count > 0 && !options.Overwrite)
+                        if (missing_blocks.Count > 0 && !options.Overwrite && SystemIO.IO_OS.FileExists(file.TargetPath))
                         {
                             var new_name = GenerateNewName(file, db, filehasher);
                             Logging.Log.WriteVerboseMessage(LOGTAG, "RetargetingFile", "Retargeting file {0} to {1}", file.TargetPath, new_name);
