@@ -149,7 +149,7 @@ namespace Duplicati.UnitTest
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
             {
                 var restoreResults = c.Restore([f]);
-                Assert.That(restoreResults.RestoredFiles, Is.EqualTo(1), "File should be restored with legacy engine");
+                Assert.That(restoreResults.RestoredFiles, Is.EqualTo(1), "File should have been restored.");
                 Assert.That(restoreResults.Warnings.Count(), Is.EqualTo(compressRestorePaths ? 0 : 1), "Warning should be generated for missing folder");
             }
         }
