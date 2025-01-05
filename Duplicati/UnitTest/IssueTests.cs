@@ -1,4 +1,4 @@
-using Duplicati.Library.DynamicLoader;
+﻿using Duplicati.Library.DynamicLoader;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main;
 using NUnit.Framework;
@@ -132,11 +132,12 @@ namespace Duplicati.UnitTest
                 ["restore-legacy"] = legacy.ToString().ToLower(),
                 ["restore-with-local-blocks"] = local_blocks.ToString().ToLower()
             };
+            int test_filesize = 1024;
 
             var original_dir = Path.Combine(DATAFOLDER, "some_original_dir");
             Directory.CreateDirectory(original_dir);
             string f0 = Path.Combine(original_dir, "some_file");
-            TestUtils.WriteTestFile(f0, 1024 * 20);
+            TestUtils.WriteTestFile(f0, test_filesize);
 
             // Backup the files
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
@@ -158,7 +159,7 @@ namespace Duplicati.UnitTest
             Assert.That(File.ReadAllBytes(f0), Is.EqualTo(File.ReadAllBytes(f1)), "Restored file should be equal to original file");
 
             // Modify the restored file
-            TestUtils.WriteTestFile(f1, 1024 * 20);
+            TestUtils.WriteTestFile(f1, test_filesize);
 
             // Restore the file again, with overwrite.
             testopts["overwrite"] = "true";
@@ -193,7 +194,7 @@ namespace Duplicati.UnitTest
             Assert.That(File.GetLastWriteTime(f1), Is.EqualTo(timestamp), "Timestamp should be restored");
 
             // Modify the restored file
-            TestUtils.WriteTestFile(f1, 1024 * 20);
+            TestUtils.WriteTestFile(f1, test_filesize);
 
             // Restore the file again, without overwrite.
             testopts["overwrite"] = "false";
@@ -209,7 +210,7 @@ namespace Duplicati.UnitTest
             var f2 = files.FirstOrDefault(v => v != f1);
 
             // Modify the new restored file as well
-            TestUtils.WriteTestFile(f2, 1024 * 20);
+            TestUtils.WriteTestFile(f2, test_filesize);
 
             // Restore the file again, without overwrite.
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
