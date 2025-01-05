@@ -1,4 +1,4 @@
-﻿using Duplicati.Library.DynamicLoader;
+using Duplicati.Library.DynamicLoader;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main;
 using NUnit.Framework;
@@ -225,6 +225,16 @@ namespace Duplicati.UnitTest
             // Verify that the files are equal
             var f3 = files.FirstOrDefault(v => v != f1 && v != f2);
             Assert.That(File.ReadAllBytes(f0), Is.EqualTo(File.ReadAllBytes(f3)), "Restored file should be equal to original file");
+
+            // Modify the second file to match the original file - should not restore any files
+            File.WriteAllBytes(f2, File.ReadAllBytes(f0));
+
+            // Restore the file again, without overwrite.
+            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
+            {
+                var restoreResults = c.Restore([f0]);
+                Assert.That(restoreResults.RestoredFiles, Is.EqualTo(0), "File should not have been restored");
+            }
         }
 
 
