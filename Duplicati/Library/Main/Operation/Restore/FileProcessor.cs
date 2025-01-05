@@ -106,20 +106,29 @@ namespace Duplicati.Library.Main.Operation.Restore
                         if (missing_blocks.Count > 0 && !options.Overwrite && SystemIO.IO_OS.FileExists(file.TargetPath))
                         {
                             var new_name = GenerateNewName(file, db, filehasher);
-                            Logging.Log.WriteVerboseMessage(LOGTAG, "RetargetingFile", "Retargeting file {0} to {1}", file.TargetPath, new_name);
-                            var new_file = new FileRequest(file.ID, file.OriginalPath, new_name, file.Hash, file.Length, file.BlocksetID);
-                            if (options.UseLocalBlocks)
+                            if (SystemIO.IO_OS.FileExists(new_name))
                             {
-                                if (options.Dryrun)
-                                {
-                                    Logging.Log.WriteDryrunMessage(LOGTAG, "DryrunRestore", @$"Would have copied {verified_blocks.Count} blocks ({verified_blocks.Count * options.Blocksize} bytes) from ""{file.TargetPath}"" to ""{new_file.TargetPath}""");
-                                }
-                                else
-                                {
-                                    CopyOldTargetBlocksToNewTarget(file, new_file, verified_blocks);
-                                }
+                                // The file already exists, which it only does when it matches the target hash. So we can skip the file.
+                                Logging.Log.WriteInformationMessage(LOGTAG, "FileAlreadyExists", null, $"File {file.TargetPath} already exists and matches the target hash as a copy: {new_name}");
+                                missing_blocks.Clear();
                             }
-                            file = new_file;
+                            else
+                            {
+                                Logging.Log.WriteVerboseMessage(LOGTAG, "RetargetingFile", "Retargeting file {0} to {1}", file.TargetPath, new_name);
+                                var new_file = new FileRequest(file.ID, file.OriginalPath, new_name, file.Hash, file.Length, file.BlocksetID);
+                                if (options.UseLocalBlocks)
+                                {
+                                    if (options.Dryrun)
+                                    {
+                                        Logging.Log.WriteDryrunMessage(LOGTAG, "DryrunRestore", @$"Would have copied {verified_blocks.Count} blocks ({verified_blocks.Count * options.Blocksize} bytes) from ""{file.TargetPath}"" to ""{new_file.TargetPath}""");
+                                    }
+                                    else
+                                    {
+                                        CopyOldTargetBlocksToNewTarget(file, new_file, verified_blocks);
+                                    }
+                                }
+                                file = new_file;
+                            }
                         }
 
                         if (missing_blocks.Count > 0 && options.UseLocalBlocks)
