@@ -93,9 +93,13 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                         sw_work?.Start();
                         // Verify the target file blocks that may already exist.
-                        var (bytes_written, missing_blocks) = await VerifyTargetBlocks(file, blocks, filehasher, blockhasher, options, results, block_request);
-
-                        if (missing_blocks.Count > 0 && options.UseLocalBlocks && missing_blocks.Count > 0)
+                        var (bytes_written, missing_blocks, verified_blocks) = await VerifyTargetBlocks(file, blocks, filehasher, blockhasher, options, results, block_request);
+                        if (blocks.Length != missing_blocks.Count + verified_blocks.Count)
+                        {
+                            Logging.Log.WriteErrorMessage(LOGTAG, "BlockCountMismatch", null, $"Block count mismatch for {file.TargetPath} - expected: {blocks.Length}, actual: {missing_blocks.Count + verified_blocks.Count}");
+                            sw_work?.Stop();
+                            continue;
+                        }
                         {
                             // Verify the local blocks at the original restore path that may be used to restore the file.
                             (bytes_written, missing_blocks) = await VerifyLocalBlocks(file, missing_blocks, blocks.Length, filehasher, blockhasher, options, results, block_request);
@@ -343,10 +347,11 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// <param name="results">The restoration results.</param>
         /// <param name="block_request">The channel to request blocks from the block manager. Used to inform the block manager which blocks are already present.</param>
         /// <returns>An awaitable `Task`, which returns a collection of data blocks that are missing.</returns>
-        private static async Task<(long,List<BlockRequest>)> VerifyTargetBlocks(FileRequest file, BlockRequest[] blocks, System.Security.Cryptography.HashAlgorithm filehasher, System.Security.Cryptography.HashAlgorithm blockhasher, Options options, RestoreResults results, IChannel<BlockRequest> block_request)
+        private static async Task<(long,List<BlockRequest>,List<BlockRequest>)> VerifyTargetBlocks(FileRequest file, BlockRequest[] blocks, System.Security.Cryptography.HashAlgorithm filehasher, System.Security.Cryptography.HashAlgorithm blockhasher, Options options, RestoreResults results, IChannel<BlockRequest> block_request)
         {
             long bytes_read = 0;
             List<BlockRequest> missing_blocks = [];
+            List<BlockRequest> verified_blocks = [];
 
             // Check if the file exists
             if (File.Exists(file.TargetPath))
@@ -370,6 +375,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                                 bytes_read += read;
                                 blocks[i].CacheDecrEvict = true;
                                 await block_request.WriteAsync(blocks[i]);
+                                verified_blocks.Add(blocks[i]);
                             }
                             else
                             {
@@ -430,7 +436,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                 missing_blocks.AddRange(blocks);
             }
 
-            return (bytes_read, missing_blocks);
+            return (bytes_read, missing_blocks, verified_blocks);
         }
 
         /// <summary>
