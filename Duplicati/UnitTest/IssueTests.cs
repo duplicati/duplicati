@@ -134,6 +134,8 @@ namespace Duplicati.UnitTest
             };
             int test_filesize = 1024;
 
+            // TODO tjek om de gamle filer forbliver urørte.
+
             var original_dir = Path.Combine(DATAFOLDER, "some_original_dir");
             Directory.CreateDirectory(original_dir);
             string f0 = Path.Combine(original_dir, "some_file");
@@ -195,6 +197,7 @@ namespace Duplicati.UnitTest
 
             // Modify the restored file
             TestUtils.WriteTestFile(f1, test_filesize);
+            var f1_original = File.ReadAllBytes(f1);
 
             // Restore the file again, without overwrite.
             testopts["overwrite"] = "false";
@@ -204,6 +207,9 @@ namespace Duplicati.UnitTest
                 Assert.That(restoreResults.RestoredFiles, Is.EqualTo(1), "File should have been restored");
             }
 
+            // Verify that f1 is still the same
+            Assert.That(File.ReadAllBytes(f1), Is.EqualTo(f1_original), "The first restored file should remain untouched");
+
             // Verify that there exists a new file with a timestamp
             var files = Directory.GetFiles(RESTOREFOLDER, "*", SearchOption.TopDirectoryOnly);
             Assert.That(files.Length, Is.EqualTo(2), "There should be two files in the folder");
@@ -211,6 +217,7 @@ namespace Duplicati.UnitTest
 
             // Modify the new restored file as well
             TestUtils.WriteTestFile(f2, test_filesize);
+            var f2_original = File.ReadAllBytes(f2);
 
             // Restore the file again, without overwrite.
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
@@ -218,6 +225,10 @@ namespace Duplicati.UnitTest
                 var restoreResults = c.Restore([f0]);
                 Assert.That(restoreResults.RestoredFiles, Is.EqualTo(1), "File should have been restored");
             }
+
+            // Verify that f1 and f2 are still the same
+            Assert.That(File.ReadAllBytes(f1), Is.EqualTo(f1_original), "The first restored file should remain untouched");
+            Assert.That(File.ReadAllBytes(f2), Is.EqualTo(f2_original), "The second restored file should remain untouched");
 
             // Verify that there exists a new file with a timestamp
             files = Directory.GetFiles(RESTOREFOLDER, "*", SearchOption.TopDirectoryOnly);
@@ -236,6 +247,9 @@ namespace Duplicati.UnitTest
                 var restoreResults = c.Restore([f0]);
                 Assert.That(restoreResults.RestoredFiles, Is.EqualTo(0), "File should not have been restored");
             }
+
+            // Verify that f1 is still untouched
+            Assert.That(File.ReadAllBytes(f1), Is.EqualTo(f1_original), "The first restored file should remain untouched");
         }
 
 
