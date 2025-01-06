@@ -66,7 +66,8 @@ public static class BackendModules
         new Backend.TahoeBackend(),
         new Backend.TencentCOS.COS(),
         new Backend.WEBDAV(),
-        new Backend.pCloudBackend()
+        new Backend.pCloudBackend(),
+        new Backend.CIFSBackend()
     }
     .Where(x => x != null)
     .ToList();
