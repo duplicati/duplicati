@@ -1169,7 +1169,7 @@ public static partial class Command
             }
 
             var tags = new List<string> { rtcfg.ReleaseInfo.Channel.ToString(), rtcfg.ReleaseInfo.Version.ToString() };
-            if (rtcfg.ReleaseInfo.Channel == ReleaseChannel.Stable)
+            if (rtcfg.ReleaseInfo.Channel == ReleaseChannel.Stable || rtcfg.ReleaseInfo.Channel == ReleaseChannel.Beta)
                 tags.Add("latest");
 
             if (!dockerArchs.Any())
