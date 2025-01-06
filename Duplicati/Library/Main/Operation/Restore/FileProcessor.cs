@@ -87,6 +87,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                         sw_file?.Stop();
 
                         // Get information about the blocks for the file
+                        // TODO rather than keeping all of the blocks in memory, we could do a single pass over the blocks using a cursor, only keeping the relevant block requests in memory. Maybe even only a single block request at a time.
                         sw_block?.Start();
                         var blocks = db.GetBlocksFromFile(file.BlocksetID).ToArray();
                         sw_block?.Stop();
