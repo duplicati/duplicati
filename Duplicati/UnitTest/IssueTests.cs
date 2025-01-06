@@ -254,6 +254,43 @@ namespace Duplicati.UnitTest
 
 
         [Test]
+        [Category("Restore"), Category("Bug")]
+        public void Issue5826RestoreMissingFolder([Values] bool compressRestorePaths, [Values] bool restoreLegacy)
+        {
+            // Reproduction of Issue #5826
+            // With the new restore engine, it looks like a file will not be restored if the folder is not selected for restore.
+            // See forum issue for details: https://forum.duplicati.com/t/could-not-find-a-part-of-the-path/19775
+
+            var testopts = new Dictionary<string, string>(TestOptions)
+            {
+                ["dont-compress-restore-paths"] = (!compressRestorePaths).ToString().ToLower(),
+                ["restore-legacy"] = restoreLegacy.ToString().ToLower()
+            };
+
+            var original_dir = Path.Combine(DATAFOLDER, "some_original_dir");
+            Directory.CreateDirectory(original_dir);
+            string f = Path.Combine(original_dir, "some_file");
+            TestUtils.WriteTestFile(f, 1024 * 20);
+
+            // Backup the files
+            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
+            {
+                IBackupResults backupResults = c.Backup([DATAFOLDER]);
+                TestUtils.AssertResults(backupResults);
+            }
+
+            // Attempt to restore a file without selecting its parent folder
+            testopts["restore-path"] = RESTOREFOLDER;
+            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
+            {
+                var restoreResults = c.Restore([f]);
+                Assert.That(restoreResults.RestoredFiles, Is.EqualTo(1), "File should have been restored.");
+                Assert.That(restoreResults.Warnings.Count(), Is.EqualTo(compressRestorePaths ? 0 : 1), "Warning should be generated for missing folder");
+            }
+        }
+
+
+        [Test]
         [Category("Disruption"), Category("Bug")]
         public void TestSystematicErrors5023()
         {
