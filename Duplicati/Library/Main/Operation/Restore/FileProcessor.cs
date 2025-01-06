@@ -137,10 +137,10 @@ namespace Duplicati.Library.Main.Operation.Restore
                             (bytes_written, missing_blocks) = await VerifyLocalBlocks(file, missing_blocks, blocks.Length, filehasher, blockhasher, options, results, block_request);
                         }
 
-                        bool empty_file = false;
+                        bool empty_file_or_symlink = false;
                         if (file.BlocksetID != LocalDatabase.SYMLINK_BLOCKSET_ID && (blocks.Length == 0 || (blocks.Length == 1 && blocks[0].BlockSize == 0)))
                         {
-                            empty_file = true;
+                            empty_file_or_symlink = true;
                             if (options.Dryrun)
                             {
                                 Logging.Log.WriteDryrunMessage(LOGTAG, "DryrunRestore", @$"Would have created empty file ""{file.TargetPath}""");
@@ -297,11 +297,11 @@ namespace Duplicati.Library.Main.Operation.Restore
                         }
 
                         if (!options.SkipMetadata) {
-                            await RestoreMetadata(db, file, block_request, block_response, options, sw_meta, sw_work, sw_req, sw_resp);
+                            empty_file_or_symlink |= await RestoreMetadata(db, file, block_request, block_response, options, sw_meta, sw_work, sw_req, sw_resp);
                         }
 
                         // TODO legacy restore doesn't count metadata restore as a restored file.
-                        if (empty_file || bytes_written > 0)
+                        if (empty_file_or_symlink || bytes_written > 0)
                         {
                             // Keep track of the restored files and their sizes
                             lock (results)
@@ -424,7 +424,7 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// <param name="sw_work">The stopwatch for internal profiling of the general processing.</param>
         /// <param name="sw_req">The stopwatch for internal profiling of the block requests.</param>
         /// <param name="sw_resp">The stopwatch for internal profiling of the block responses.</param>
-        private static async Task RestoreMetadata(LocalRestoreDatabase db, FileRequest file, IChannel<BlockRequest> block_request, IChannel<byte[]> block_response, Options options, Stopwatch sw_meta, Stopwatch sw_work, Stopwatch sw_req, Stopwatch sw_resp)
+        private static async Task<bool> RestoreMetadata(LocalRestoreDatabase db, FileRequest file, IChannel<BlockRequest> block_request, IChannel<byte[]> block_response, Options options, Stopwatch sw_meta, Stopwatch sw_work, Stopwatch sw_req, Stopwatch sw_resp)
         {
             sw_work?.Stop();
             sw_meta?.Start();
@@ -448,7 +448,7 @@ namespace Duplicati.Library.Main.Operation.Restore
             }
             ms.Seek(0, SeekOrigin.Begin);
 
-            RestoreHandler.ApplyMetadata(file.TargetPath, ms, options.RestorePermissions, options.RestoreSymlinkMetadata, options.Dryrun);
+            return RestoreHandler.ApplyMetadata(file.TargetPath, ms, options.RestorePermissions, options.RestoreSymlinkMetadata, options.Dryrun);
         }
 
         /// <summary>
