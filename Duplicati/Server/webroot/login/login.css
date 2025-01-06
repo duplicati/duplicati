@@ -76,3 +76,10 @@ input {
 #login fieldset input[type="submit"]:hover {
     background: #65b1dd;
 }
+
+#login a.helplink {
+    display: inline-block;
+    margin-top: 16px;
+    margin-left: 16px;
+    color: #777;
+}
