@@ -382,6 +382,9 @@ namespace Duplicati.Library.Main.Operation
 
         private static void CheckQuota(BackendManager backend, Options options, IBackendWriter log, long knownFileSize)
         {
+            if (options.QuotaDisable)
+                return;
+
             var quota = backend.GetQuotaInfoAsync(CancellationToken.None).Await();
             if (quota != null)
             {
