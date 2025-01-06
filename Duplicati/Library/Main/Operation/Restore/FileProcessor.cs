@@ -389,7 +389,8 @@ namespace Duplicati.Library.Main.Operation.Restore
             var newname = SystemIO.IO_OS.PathChangeExtension(request.TargetPath, null) + "." + database.RestoreTime.ToLocalTime().ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
             var tr = newname + ext;
             var c = 0;
-            while (SystemIO.IO_OS.FileExists(tr) && c < 1000)
+            var max_tries = 100;
+            while (SystemIO.IO_OS.FileExists(tr) && c < max_tries)
             {
                 try
                 {
@@ -413,6 +414,12 @@ namespace Duplicati.Library.Main.Operation.Restore
                     Logging.Log.WriteWarningMessage(LOGTAG, "FailedToReadRestoreTarget", ex, "Failed to read candidate restore target {0}", tr);
                 }
                 tr = newname + " (" + (c++).ToString() + ")" + ext;
+            }
+
+            if (c >= max_tries)
+            {
+                Logging.Log.WriteErrorMessage(LOGTAG, "TooManyConflicts", null, "Too many conflicts when trying to find a new name for the target file");
+                throw new Exception("Too many conflicts when trying to find a new name for the target file");
             }
 
             newname = tr;
