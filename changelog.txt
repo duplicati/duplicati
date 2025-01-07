@@ -1,3 +1,23 @@
+2025-01-07 - 2.1.0.105_canary_2025-01-07
+==========
+This release is a canary release intended to be used for testing.
+
+**Note that this build has a redesigned restore flow**
+Should issues arise, the previous restore engine can be enabled with `--restore-legacy=true`.
+
+## Detailed list of changes:
+- Fix issue with FTP not connecting correctly
+- Improved large restore speed (+5TiB), thanks @snamds
+- Corrected reported options for Azure, Aliyun, OpenStack and Storj
+- OpenStack detects protocol version from URL
+- Sia redundancy option is now a decimal (culture invariant parsing)
+- Added help links to connection dialog and login pages
+- Fixed issue with new restore not auto-creating missing folder structure
+- Fixed issue with new restore without overwrite
+- Fixed a place not honoring disabled quota
+- Added CIFS / SMB backend
+- Updated MacOS DMG image
+
 2024-12-31 - 2.1.0.104_canary_2024-12-31
 ==========
 This release is a canary release intended to be used for testing.
