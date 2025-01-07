@@ -989,6 +989,8 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
         
         if (scope.Path)
             scope.Path = scope.Path.replace(/^[/\\]+/, '').replace(/[/\\]+$/, '');
+        else 
+            scope.Path = '';
 
         return AppUtils.format('{0}://{1}/{2}/{3}/{4}',
             scope.Backend.Key,
