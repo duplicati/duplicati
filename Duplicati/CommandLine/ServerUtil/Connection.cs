@@ -86,6 +86,18 @@ public class Connection
     );
 
     /// <summary>
+    /// The server state
+    /// </summary>
+    /// <param name="ActiveTask">The active task, if any</param>
+    /// <param name="ProgramState">The state of the server</param>
+    /// <param name="SchedulerQueueIds">The IDs of the tasks in the scheduler queue</param>
+    public sealed record ServerState(
+        Tuple<long, string>? ActiveTask,
+        string ProgramState,
+        IList<Tuple<long, string>> SchedulerQueueIds
+    );
+
+    /// <summary>
     /// The stop level
     /// </summary>
     public enum StopLevel
@@ -364,6 +376,19 @@ public class Connection
         var response = await client.PostAsync($"backup/{Uri.EscapeDataString(backupId)}/run", null);
         await EnsureSuccessStatusCodeWithParsing(response);
     }
+
+    /// <summary>
+    /// Gets the server state
+    /// </summary>
+    /// <returns>The server state</returns>
+    public async Task<ServerState> GetServerState()
+    {
+        var response = await client.GetAsync($"serverstate");
+        await EnsureSuccessStatusCodeWithParsing(response);
+        return await response.Content.ReadFromJsonAsync<ServerState>()
+            ?? throw new InvalidDataException("Failed to parse server response");
+    }
+
 
     /// <summary>
     /// Lists the active tasks
