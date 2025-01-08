@@ -389,6 +389,41 @@ public class Connection
             ?? throw new InvalidDataException("Failed to parse server response");
     }
 
+    /// <summary>
+    /// Runs a backup
+    /// </summary>
+    /// <param name="backupId">The ID of the backup</param>
+    /// <returns>The task</returns>
+    public async Task WaitForBackup(string backupId, TimeSpan delay, Action<string> statusMessage)
+    {
+        var state = await GetServerState();
+
+        if (!state.SchedulerQueueIds.Any(x => x.Item2 == backupId) && state.ActiveTask?.Item2 != backupId)
+            throw new UserReportedException("Backup is not queued or running");
+
+        var hasStarted = state.ActiveTask?.Item2 == backupId;
+
+        while (true)
+        {
+            await Task.Delay(delay);
+            state = await GetServerState();
+
+            if (state.ActiveTask?.Item2 == backupId)
+            {
+                statusMessage("Backup is running ...");
+                hasStarted = true;
+                continue;
+            }
+
+            if (!hasStarted && state.SchedulerQueueIds.Any(x => x.Item2 == backupId))
+            {
+                statusMessage("Backup is queued ...");
+                continue;
+            }
+
+            break;
+        }
+    }
 
     /// <summary>
     /// Lists the active tasks
