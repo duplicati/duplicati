@@ -232,7 +232,11 @@ public class SharpCompressZipArchive : IZipArchive
             {
                 var d = new Dictionary<string, IEntry>(Duplicati.Library.Utility.Utility.ClientFilenameStringComparer);
                 foreach (var en in Archive.Entries)
+                {
+                    if (d.ContainsKey(en.Key))
+                        Logging.Log.WriteWarningMessage(LOGTAG, "DuplicateArchiveEntry", null, $"Found duplicate entry in archive: {en.Key}");
                     d[en.Key] = en;
+                }
                 m_entryDict = d;
             }
             catch (Exception ex)
