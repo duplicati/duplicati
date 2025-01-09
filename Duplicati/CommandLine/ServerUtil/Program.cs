@@ -32,6 +32,7 @@ public static class Program
                 Export.Create(),
                 Health.Create(),
                 IssueForeverToken.Create(),
+                ServerStatus.Create(),
             };
 
         rootCmd = SettingsBinder.AddGlobalOptions(rootCmd);
