@@ -731,7 +731,7 @@ namespace Duplicati.Library.Utility
         /// <param name="value">The value to parse.</param>
         /// <param name="default">The default value, in case <paramref name="value"/> is not a valid boolean value.</param>
         /// <returns>The parsed value, or the default value.</returns>
-        public static bool ParseBool(string value, bool @default)
+        public static bool ParseBool(string? value, bool @default)
         {
             return ParseBool(value, () => @default);
         }
@@ -742,7 +742,7 @@ namespace Duplicati.Library.Utility
         /// <param name="options">The set of options to look for the setting in</param>
         /// <param name="value">The value to look for in the settings</param>
         /// <returns></returns>
-        public static bool ParseBoolOption(IReadOnlyDictionary<string, string> options, string value)
+        public static bool ParseBoolOption(IReadOnlyDictionary<string, string?> options, string value)
         {
             if (options.TryGetValue(value, out var opt))
                 return ParseBool(opt, true);
@@ -758,7 +758,7 @@ namespace Duplicati.Library.Utility
         /// <param name="value">The value to look for in the settings</param>
         /// <param name="default">The default value to return if there are no matches.</param>
         /// <typeparam name="T">The enum type parameter.</typeparam>
-        public static T ParseEnumOption<T>(IReadOnlyDictionary<string, string> options, string value, T @default)
+        public static T ParseEnumOption<T>(IReadOnlyDictionary<string, string?> options, string value, T @default)
         {
             return options.TryGetValue(value, out var opt) ? ParseEnum(opt, @default) : @default;
         }
@@ -770,8 +770,10 @@ namespace Duplicati.Library.Utility
         /// <param name="value">The string to parse.</param>
         /// <param name="default">The default value to return if there are no matches.</param>
         /// <typeparam name="T">The enum type parameter.</typeparam>
-        public static T ParseEnum<T>(string value, T @default)
+        public static T ParseEnum<T>(string? value, T @default)
         {
+            if (string.IsNullOrWhiteSpace(value))
+                return @default;
             foreach (var s in Enum.GetNames(typeof(T)))
                 if (s.Equals(value, StringComparison.OrdinalIgnoreCase))
                     return (T)Enum.Parse(typeof(T), s);
