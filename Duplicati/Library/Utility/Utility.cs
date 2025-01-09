@@ -33,6 +33,7 @@ using Duplicati.Library.Common.IO;
 using System.Globalization;
 using System.Runtime.Versioning;
 using System.Security.Cryptography.X509Certificates;
+using System.Security.Cryptography;
 
 namespace Duplicati.Library.Utility
 {
@@ -84,7 +85,7 @@ namespace Duplicati.Library.Utility
         /// <param name="target">The stream to write to</param>
         /// <param name="tryRewindSource">True if an attempt should be made to rewind the source stream, false otherwise</param>
         /// <param name="buf">Temporary buffer to use (optional)</param>
-        public static long CopyStream(Stream source, Stream target, bool tryRewindSource, byte[] buf = null)
+        public static long CopyStream(Stream source, Stream target, bool tryRewindSource, byte[]? buf = null)
         {
             if (tryRewindSource && source.CanSeek)
                 try { source.Position = 0; }
@@ -125,7 +126,7 @@ namespace Duplicati.Library.Utility
         /// <param name="tryRewindSource">True if an attempt should be made to rewind the source stream, false otherwise</param>
         /// <param name="cancelToken">Token to cancel the operation.</param>
         /// <param name="buf">Temporary buffer to use (optional)</param>
-        public static async Task<long> CopyStreamAsync(Stream source, Stream target, bool tryRewindSource, CancellationToken cancelToken, byte[] buf = null)
+        public static async Task<long> CopyStreamAsync(Stream source, Stream target, bool tryRewindSource, CancellationToken cancelToken, byte[]? buf = null)
         {
             if (tryRewindSource && source.CanSeek)
                 try { source.Position = 0; }
@@ -281,7 +282,7 @@ namespace Duplicati.Library.Utility
         /// <param name="attributeReader">A function to call that obtains the attributes for an element, set to null to avoid reading attributes</param>
         /// <param name="errorCallback">An optional function to call with error messages.</param>
         /// <returns>A list of the full filenames</returns>
-        public static IEnumerable<string> EnumerateFileSystemEntries(string rootpath, EnumerationFilterDelegate callback, FileSystemInteraction folderList, FileSystemInteraction fileList, ExtractFileAttributes attributeReader, ReportAccessError errorCallback = null)
+        public static IEnumerable<string> EnumerateFileSystemEntries(string rootpath, EnumerationFilterDelegate callback, FileSystemInteraction folderList, FileSystemInteraction fileList, ExtractFileAttributes? attributeReader, ReportAccessError? errorCallback = null)
         {
             var lst = new Stack<string>();
 
@@ -342,7 +343,7 @@ namespace Duplicati.Library.Utility
                         callback(rootpath, f, FileAttributes.Directory | ATTRIBUTE_ERROR);
                     }
 
-                    string[] files = null;
+                    string[]? files = null;
                     if (fileList != null)
                     {
                         try
@@ -414,7 +415,7 @@ namespace Duplicati.Library.Utility
         /// <param name="path">Path to test</param>
         /// <param name="attributeReader">Function to use for testing path</param>
         /// <returns>True if path is refers to a folder</returns>
-        public static bool IsFolder(string path, ExtractFileAttributes attributeReader)
+        public static bool IsFolder(string path, ExtractFileAttributes? attributeReader)
         {
             if (attributeReader == null)
                 return true;
@@ -449,7 +450,7 @@ namespace Duplicati.Library.Utility
         /// <param name="path">Full file or folder path</param>
         /// <param name="forceTrailingDirectorySeparator">If true, return value always has trailing separator</param>
         /// <returns>Parent folder of path (containing folder for file paths, parent folder for folder paths)</returns>
-        public static string GetParent(string path, bool forceTrailingDirectorySeparator)
+        public static string? GetParent(string path, bool forceTrailingDirectorySeparator)
         {
             var len = path.Length - 1;
             if (len > 1 && path[len] == Path.DirectorySeparatorChar)
@@ -493,7 +494,7 @@ namespace Duplicati.Library.Utility
             foreach (var folder1 in folders)
             {
                 bool addFolder = true;
-                LinkedListNode<string> next;
+                LinkedListNode<string>? next;
                 for (var node = result.First; node != null; node = next)
                 {
                     next = node.Next;
@@ -700,7 +701,7 @@ namespace Duplicati.Library.Utility
         /// <param name="value">The value to parse.</param>
         /// <param name="defaultFunc">A delegate that returns the default value if <paramref name="value"/> is not a valid boolean value.</param>
         /// <returns>The parsed value, or the value returned by <paramref name="defaultFunc"/>.</returns>
-        public static bool ParseBool(string value, Func<bool> defaultFunc)
+        public static bool ParseBool(string? value, Func<bool> defaultFunc)
         {
             if (String.IsNullOrWhiteSpace(value))
             {
@@ -743,8 +744,7 @@ namespace Duplicati.Library.Utility
         /// <returns></returns>
         public static bool ParseBoolOption(IReadOnlyDictionary<string, string> options, string value)
         {
-            string opt;
-            if (options.TryGetValue(value, out opt))
+            if (options.TryGetValue(value, out var opt))
                 return ParseBool(opt, true);
             else
                 return false;
@@ -834,7 +834,8 @@ namespace Duplicati.Library.Utility
                     UseShellExecute = false
                 };
 
-                var pi = System.Diagnostics.Process.Start(psi);
+                var pi = System.Diagnostics.Process.Start(psi)
+                    ?? throw new Exception("Unexpected failure to start process");
                 pi.WaitForExit(5000);
                 if (pi.HasExited)
                     return pi.ExitCode == 0;
@@ -895,17 +896,20 @@ namespace Duplicati.Library.Utility
         /// <returns>The expanded string.</returns>
         /// <param name="str">The string to expand.</param>
         /// <param name="lookup">A lookup method that converts an environment key to an expanded string</param>
-        public static string ExpandEnvironmentVariablesRegexp(string str, Func<string, string> lookup = null)
+        public static string? ExpandEnvironmentVariablesRegexp(string? str, Func<string?, string?>? lookup = null)
         {
+            if (string.IsNullOrWhiteSpace(str))
+                return str;
+
             if (lookup == null)
-                lookup = Environment.GetEnvironmentVariable;
+                lookup = x => Environment.GetEnvironmentVariable(x ?? string.Empty);
 
             return
 
                 // TODO: Should we switch to using the native format ($VAR or ${VAR}), instead of following the Windows scheme?
                 // IsClientLinux ? new Regex(@"\$(?<name>\w+)|(\{(?<name>[^\}]+)\})") : ENVIRONMENT_VARIABLE_MATCHER_WINDOWS
 
-                ENVIRONMENT_VARIABLE_MATCHER_WINDOWS.Replace(str, m => Regex.Escape(lookup(m.Groups["name"].Value)));
+                ENVIRONMENT_VARIABLE_MATCHER_WINDOWS.Replace(str, m => Regex.Escape(lookup(m.Groups["name"].Value) ?? string.Empty));
         }
 
         /// <summary>
@@ -1083,7 +1087,7 @@ namespace Duplicati.Library.Utility
         /// <returns><c>true</c>, the item was printed, <c>false</c> otherwise.</returns>
         /// <param name="item">The item to write.</param>
         /// <param name="writer">The target writer.</param>
-        private static bool PrintSerializeIfPrimitive(object item, TextWriter writer)
+        private static bool PrintSerializeIfPrimitive(object? item, TextWriter writer)
         {
             if (item == null)
             {
@@ -1119,13 +1123,12 @@ namespace Duplicati.Library.Utility
         /// <param name="indentation">The string indentation</param>
         /// <param name="visited">A lookup table with visited objects, used to avoid infinite recursion</param>
         /// <param name="collectionlimit">The maximum number of items to report from an IEnumerable instance</param>
-        public static void PrintSerializeObject(object item, TextWriter writer, Func<System.Reflection.PropertyInfo, object, bool> filter = null, bool recurseobjects = false, int indentation = 0, int collectionlimit = 0, Dictionary<object, object> visited = null)
+        public static void PrintSerializeObject(object? item, TextWriter writer, Func<System.Reflection.PropertyInfo, object, bool>? filter = null, bool recurseobjects = false, int indentation = 0, int collectionlimit = 0, Dictionary<object, object?>? visited = null)
         {
-            visited = visited ?? new Dictionary<object, object>();
+            visited = visited ?? new Dictionary<object, object?>();
             var indentstring = new string(' ', indentation);
 
             var first = true;
-
 
             if (item == null || IsPrimitiveTypeForSerialization(item.GetType()))
             {
@@ -1133,6 +1136,9 @@ namespace Duplicati.Library.Utility
                 if (PrintSerializeIfPrimitive(item, writer))
                     return;
             }
+
+            if (item == null)
+                return;
 
             foreach (var p in item.GetType().GetProperties())
             {
@@ -1156,7 +1162,7 @@ namespace Duplicati.Library.Utility
                 }
                 else if (typeof(System.Collections.IEnumerable).IsAssignableFrom(p.PropertyType))
                 {
-                    var enumerable = (System.Collections.IEnumerable)p.GetValue(item, null);
+                    var enumerable = p.GetValue(item, null) as System.Collections.IEnumerable;
                     var any = false;
                     if (enumerable != null)
                     {
@@ -1240,7 +1246,7 @@ namespace Duplicati.Library.Utility
         /// <param name="recurseobjects">A value indicating if non-primitive values are recursed</param>
         /// <param name="indentation">The string indentation</param>
         /// <param name="collectionlimit">The maximum number of items to report from an IEnumerable instance, set to zero or less for reporting all</param>
-        public static StringBuilder PrintSerializeObject(object item, StringBuilder sb = null, Func<System.Reflection.PropertyInfo, object, bool> filter = null, bool recurseobjects = false, int indentation = 0, int collectionlimit = 10)
+        public static StringBuilder PrintSerializeObject(object? item, StringBuilder? sb = null, Func<System.Reflection.PropertyInfo, object, bool>? filter = null, bool recurseobjects = false, int indentation = 0, int collectionlimit = 10)
         {
             sb = sb ?? new StringBuilder();
             using (var sw = new StringWriter(sb))
@@ -1282,7 +1288,7 @@ namespace Duplicati.Library.Utility
                 h.Initialize();
                 h.TransformBlock(salt, 0, salt.Length, salt, 0);
                 h.TransformFinalBlock(data, 0, data.Length);
-                var buf = h.Hash;
+                var buf = h.Hash ?? throw new CryptographicUnexpectedOperationException("Computed hash was null?");
 
                 for (var i = 0; i < repeats; i++)
                 {
@@ -1304,14 +1310,14 @@ namespace Duplicati.Library.Utility
         /// <returns>Drive letter, as a single character, or null if the volume wasn't found</returns>
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
         [SupportedOSPlatform("windows")]
-        public static string GetDriveLetterFromVolumeGuid(Guid volumeGuid)
+        public static string? GetDriveLetterFromVolumeGuid(Guid volumeGuid)
         {
             // Based on this answer:
             // https://stackoverflow.com/questions/10186277/how-to-get-drive-information-by-volume-id
-            using (System.Management.ManagementObjectSearcher searcher = new System.Management.ManagementObjectSearcher("Select * from Win32_Volume"))
+            using (var searcher = new System.Management.ManagementObjectSearcher("Select * from Win32_Volume"))
             {
                 string targetId = string.Format(@"\\?\Volume{{{0}}}\", volumeGuid);
-                foreach (System.Management.ManagementObject obj in searcher.Get())
+                foreach (var obj in searcher.Get())
                 {
                     if (string.Equals(obj["DeviceID"].ToString(), targetId, StringComparison.OrdinalIgnoreCase))
                     {
