@@ -72,6 +72,11 @@ public class CIFSBackend : IStreamingBackend
     /// Shared connection between all methods to avoid re-authentication
     /// </summary>
     private SMBShareConnection _shareConnection;
+    
+    /// <summary>
+    /// Connection reuse control flag
+    /// </summary>
+    private bool _noReuseConnection;
 
     /// <summary>
     /// Backend option for controlling the transport (directtcp or netbios)
@@ -97,6 +102,11 @@ public class CIFSBackend : IStreamingBackend
     /// Defines the default transport to be used in CIFS connection
     /// </summary>
     private const string DEFAULT_TRANSPORT = "directtcp";
+    
+    /// <summary>
+    /// Backend option for disabling connection reuse
+    /// </summary>
+    private const string NO_REUSE_CONNECTION_OPTION = "no-reuse-connection";
 
     /// <summary>
     /// Mapping of transport string to SMBTransportType enum to be used in parsing the option string
@@ -138,6 +148,8 @@ public class CIFSBackend : IStreamingBackend
         options.TryGetValue(AUTH_DOMAIN_OPTION, out string authDomain);
         options.TryGetValue(TRANSPORT_OPTION, out string transport);
         
+        _noReuseConnection = Library.Utility.Utility.ParseBoolOption(options, NO_REUSE_CONNECTION_OPTION);
+
         SMBTransportType transportType = _transportMap.TryGetValue(
             string.IsNullOrEmpty(transport) ? DEFAULT_TRANSPORT : transport.ToLower(), 
             out SMBTransportType type)
@@ -158,20 +170,15 @@ public class CIFSBackend : IStreamingBackend
     /// <summary>
     /// Implementation of interface property to return supported command parameters
     /// </summary>
-    public IList<ICommandLineArgument> SupportedCommands
-    {
-        get
-        {
-            return new List<ICommandLineArgument>(new ICommandLineArgument[]
-            {
-                new CommandLineArgument(AUTH_PASSWORD_OPTION, CommandLineArgument.ArgumentType.Password, Strings.CIFSBackend.DescriptionAuthPasswordShort, Strings.CIFSBackend.DescriptionAuthPasswordLong),
-                new CommandLineArgument(AUTH_USERNAME_OPTION, CommandLineArgument.ArgumentType.String, Strings.CIFSBackend.DescriptionAuthUsernameShort, Strings.CIFSBackend.DescriptionAuthUsernameLong),
-                new CommandLineArgument(AUTH_DOMAIN_OPTION, CommandLineArgument.ArgumentType.String, Strings.CIFSBackend.DescriptionAuthDomainShort, Strings.CIFSBackend.DescriptionAuthDomainLong),
-                new CommandLineArgument(TRANSPORT_OPTION, CommandLineArgument.ArgumentType.Enumeration, Strings.Options.TransportShort, Strings.Options.TransportLong, DEFAULT_TRANSPORT, null, _transportMap.Keys.ToArray()),
-                });
-        }
-    }
-    
+    public IList<ICommandLineArgument> SupportedCommands =>
+        new List<ICommandLineArgument>([
+            new CommandLineArgument(AUTH_PASSWORD_OPTION, CommandLineArgument.ArgumentType.Password, Strings.CIFSBackend.DescriptionAuthPasswordShort, Strings.CIFSBackend.DescriptionAuthPasswordLong),
+            new CommandLineArgument(AUTH_USERNAME_OPTION, CommandLineArgument.ArgumentType.String, Strings.CIFSBackend.DescriptionAuthUsernameShort, Strings.CIFSBackend.DescriptionAuthUsernameLong),
+            new CommandLineArgument(AUTH_DOMAIN_OPTION, CommandLineArgument.ArgumentType.String, Strings.CIFSBackend.DescriptionAuthDomainShort, Strings.CIFSBackend.DescriptionAuthDomainLong),
+            new CommandLineArgument(TRANSPORT_OPTION, CommandLineArgument.ArgumentType.Enumeration, Strings.Options.TransportShort, Strings.Options.TransportLong, DEFAULT_TRANSPORT, null, _transportMap.Keys.ToArray()),
+            new CommandLineArgument(NO_REUSE_CONNECTION_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.Options.DescriptionNoReuseConnectionShort, Strings.Options.DescriptionNoReuseConnectionLong)
+        ]);
+
     /// <summary>
     /// Implementation of interface method for listing remote folder contents
     /// </summary>
@@ -298,10 +305,10 @@ public class CIFSBackend : IStreamingBackend
     /// Gets or creates a shared SMB connection
     /// </summary>
     /// <returns>An SMB connection that can be used for file operations</returns>
-    private SMBShareConnection GetConnection()
-    {
-        return _shareConnection ??= new SMBShareConnection(_connectionParameters);
-    }
+    private SMBShareConnection GetConnection() => 
+        _noReuseConnection 
+            ? new SMBShareConnection(_connectionParameters)
+            : _shareConnection ??= new SMBShareConnection(_connectionParameters);
 
     /// <summary>
     /// Implementation of Dispose pattern enforced by interface
