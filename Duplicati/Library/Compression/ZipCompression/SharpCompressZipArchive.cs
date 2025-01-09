@@ -77,9 +77,22 @@ public class SharpCompressZipArchive : IZipArchive
     /// </summary>
     private long m_flushBufferSize = 0;
 
+    /// <summary>
+    /// Flag indicating if we are using Zip64 extensions
+    /// </summary>
     private readonly bool m_usingZip64;
+    /// <summary>
+    /// The default compression level to use
+    /// </summary>
     private readonly CompressionLevel m_defaultCompressionLevel;
+    /// <summary>
+    /// The compression algorithm
+    /// </summary>
     private readonly CompressionType m_compressionType;
+    /// <summary>
+    /// Flag indicating if we are in unittest mode
+    /// </summary>
+    private readonly bool m_unittestMode;
 
     /// <summary>
     /// Constructs a new Zip instance.
@@ -99,6 +112,7 @@ public class SharpCompressZipArchive : IZipArchive
         m_defaultCompressionLevel = options.DeflateCompressionLevel;
         m_compressionType = options.CompressionType;
         m_mode = mode;
+        m_unittestMode = options.UnittestMode;
 
         if (mode == ArchiveMode.Write)
         {
@@ -234,7 +248,14 @@ public class SharpCompressZipArchive : IZipArchive
                 foreach (var en in Archive.Entries)
                 {
                     if (d.ContainsKey(en.Key))
-                        Logging.Log.WriteWarningMessage(LOGTAG, "DuplicateArchiveEntry", null, $"Found duplicate entry in archive: {en.Key}");
+                        Logging.Log.WriteMessage(
+                            // Warning in unittest mode to trip tests, verbose otherwise
+                            m_unittestMode ? Logging.LogMessageType.Warning : Logging.LogMessageType.Verbose,
+                            LOGTAG,
+                            "DuplicateArchiveEntry",
+                            null,
+                            $"Found duplicate entry in archive: {en.Key}");
+
                     d[en.Key] = en;
                 }
                 m_entryDict = d;
