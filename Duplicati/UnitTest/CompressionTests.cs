@@ -148,6 +148,7 @@ namespace Duplicati.UnitTest
             {
                 var opts = new Dictionary<string, string>();
                 opts["zip-compression-level"] = "9";
+                opts["unittest-mode"] = "true";
 
                 if (module == "zip-sc")
                 {
