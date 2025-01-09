@@ -298,17 +298,24 @@ public static partial class Command
                 _ => throw new Exception($"Architeture not supported: {target.ArchString}")
             };
 
-            await ProcessHelper.Execute([
+            List<string> wixArgs = [
                 Program.Configuration.Commands.Wix!,
-                "--ext", "ui",
-                "--extdir", Path.Combine(resourcesDir, "WixUIExtension"),
                 "--define", $"HarvestPath={sourceFiles}",
                 "--arch", msiArch,
                 "--output", msiFile,
                 Path.Combine(resourcesSubDir, "Shortcuts.wxs"),
                 binFiles,
                 Path.Combine(resourcesSubDir, "Duplicati.wxs")
-            ], workingDirectory: buildRoot);
+            ];
+
+            // Add wixl specific extensions
+            if (!OperatingSystem.IsWindows())
+                wixArgs.InsertRange(1, [
+                    "--ext", "ui",
+                    "--extdir", Path.Combine(resourcesDir, "WixUIExtension"),
+                ]);
+
+            await ProcessHelper.Execute(wixArgs, workingDirectory: buildRoot);
 
             if (rtcfg.UseAuthenticodeSigning)
                 await rtcfg.AuthenticodeSign(msiFile);

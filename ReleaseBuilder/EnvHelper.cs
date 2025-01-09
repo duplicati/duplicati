@@ -64,16 +64,21 @@ public static class EnvHelper
     }
 
     /// <summary>
+    /// Extensions that are considered Windows executables
+    /// </summary>
+    private static readonly string[] WindowsExecutables = new[] { ".exe", ".cmd", ".ps1", ".bat" };
+
+    /// <summary>
     /// Returns an executable path
     /// </summary>
     /// <param name="path">The path to expand</param>
     /// <returns>The executable path</returns>
-    public static string GetExecutablePath(string path)
+    public static string[] GetExecutablePaths(string path)
         => string.IsNullOrWhiteSpace(path)
-            ? path
+            ? []
             : OperatingSystem.IsWindows()
-                ? Path.ChangeExtension(path, ".exe")
-                : path;
+                ? WindowsExecutables.Select(x => Path.ChangeExtension(path, x)).ToArray()
+                : [path];
 
     /// <summary>
     /// Returns a value if the path is executable
@@ -86,7 +91,7 @@ public static class EnvHelper
             return false;
 
         if (OperatingSystem.IsWindows())
-            return path.EndsWith(".exe");
+            return WindowsExecutables.Any(x => path.EndsWith(x, StringComparison.OrdinalIgnoreCase));
 
         return File.GetUnixFileMode(path).HasFlag(UnixFileMode.OtherExecute);
     }
@@ -102,23 +107,26 @@ public static class EnvHelper
     {
         if (!string.IsNullOrWhiteSpace(envkey))
         {
-            var target = GetExecutablePath(ExpandEnv(envkey, ""));
+            var targets = GetExecutablePaths(ExpandEnv(envkey, ""));
 
-            if (!string.IsNullOrWhiteSpace(target))
+            foreach (var target in targets)
             {
-                if (!File.Exists(target))
-                    throw new Exception($"Executable specified for {envkey} but not found: {target}");
-                if (!IsExecutable(target))
-                    throw new Exception($"File specified for {envkey} found but is not executable: {target}");
+                if (!string.IsNullOrWhiteSpace(target))
+                {
+                    if (!File.Exists(target))
+                        throw new Exception($"Executable specified for {envkey} but not found: {target}");
+                    if (!IsExecutable(target))
+                        throw new Exception($"File specified for {envkey} found but is not executable: {target}");
 
-                return target;
+                    return target;
+                }
             }
         }
 
         var folders = (Environment.GetEnvironmentVariable("PATH") ?? string.Empty).Split(Path.PathSeparator);
         return folders
             .Where(x => !string.IsNullOrWhiteSpace(x))
-            .Select(x => GetExecutablePath(Path.Combine(x, command)))
+            .SelectMany(x => GetExecutablePaths(Path.Combine(x, command)))
             .FirstOrDefault(IsExecutable)
                 ?? defaultValue;
     }
