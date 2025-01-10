@@ -44,8 +44,5 @@ namespace Duplicati.Library.Backend.Strings
         public static string TransportLong =>
             LC.L(
                 @"Defines the transport to be used in CIFS connection. Can be DirectTCP or NetBios");
-        
-        public static string DescriptionNoReuseConnectionShort => LC.L(@"CIFS connection reuse control");
-        public static string DescriptionNoReuseConnectionLong => LC.L(@"If set to true, a new connection will be used for each file operation. If set to false, the connection is reused for all file operations of the backup.");
     }
 }
