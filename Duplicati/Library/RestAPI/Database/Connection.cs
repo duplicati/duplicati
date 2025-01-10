@@ -1317,7 +1317,9 @@ namespace Duplicati.Server.Database
                     if (r == null)
                         continue;
 
-                    cmd.AddAndSetParameters(r);
+                    if (cmd.Parameters.Count < r.Length)
+                        cmd.AddParameters(r.Length - cmd.Parameters.Count);
+                    cmd.SetParameterValues(r);
                     cmd.ExecuteNonQuery();
                 }
             }
