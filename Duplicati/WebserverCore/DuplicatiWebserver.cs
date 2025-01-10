@@ -39,16 +39,16 @@ using Microsoft.OpenApi.Models;
 
 namespace Duplicati.WebserverCore;
 
-public partial class DuplicatiWebserver
+public class DuplicatiWebserver
 {
     private static readonly string LOGTAG = Library.Logging.Log.LogTagFromType<DuplicatiWebserver>();
-    public IConfiguration Configuration { get; private set; }
+    public required IConfiguration Configuration { get; init; }
 
-    public WebApplication App { get; private set; }
+    public required WebApplication App { get; init; }
 
-    public IServiceProvider Provider { get; private set; }
+    public IServiceProvider Provider => App.Services;
 
-    public int Port { get; private set; }
+    public required int Port { get; init; }
 
     public Task TerminationTask { get; private set; } = Task.CompletedTask;
 
@@ -80,9 +80,8 @@ public partial class DuplicatiWebserver
         IEnumerable<string> SPAPaths
     );
 
-    public void InitWebServer(InitSettings settings, Connection connection)
+    public static DuplicatiWebserver CreateWebServer(InitSettings settings, Connection connection)
     {
-        Port = settings.Port;
         var builder = WebApplication.CreateBuilder(new WebApplicationOptions()
         {
             ContentRootPath = settings.WebRoot,
@@ -224,28 +223,25 @@ public partial class DuplicatiWebserver
 
         builder.Services.AddHttpClient();
 
-        Configuration = builder.Configuration;
-        App = builder.Build();
-        Provider = App.Services;
+        var app = builder.Build();
+        HttpClientHelper.Configure(app.Services.GetRequiredService<IHttpClientFactory>());
 
-        HttpClientHelper.Configure(App.Services.GetRequiredService<IHttpClientFactory>());
-
-        App.UseAuthentication();
-        App.UseAuthorization();
+        app.UseAuthentication();
+        app.UseAuthorization();
 
         if (EnableSwagger)
         {
-            App.UseSwagger();
-            App.UseSwaggerUI(c =>
+            app.UseSwagger();
+            app.UseSwaggerUI(c =>
             {
                 c.SwaggerEndpoint("/swagger/v1/swagger.json", "Duplicati");
             });
         }
 
         if (!settings.DisableStaticFiles)
-            App.UseDefaultStaticFiles(settings.WebRoot, settings.SPAPaths);
+            app.UseDefaultStaticFiles(settings.WebRoot, settings.SPAPaths);
 
-        App.UseExceptionHandler(app =>
+        app.UseExceptionHandler(app =>
         {
             app.Run(async context =>
             {
@@ -273,10 +269,18 @@ public partial class DuplicatiWebserver
         });
 
         if (connection.ApplicationSettings.RemoteControlEnabled)
-            App.Services.GetRequiredService<IRemoteController>().Enable();
+            app.Services.GetRequiredService<IRemoteController>().Enable();
 
         // Preload static system info, for better first-load experience
-        var _ = Task.Run(() => App.Services.GetRequiredService<ISystemInfoProvider>().GetSystemInfo(null));
+        var _ = Task.Run(() => app.Services.GetRequiredService<ISystemInfoProvider>().GetSystemInfo(null));
+
+        return new DuplicatiWebserver()
+        {
+            Configuration = builder.Configuration,
+            App = app,
+            Port = settings.Port
+        };
+
     }
 
     private static void ConfigureHttps(Microsoft.AspNetCore.Server.Kestrel.Core.ListenOptions listenOptions, X509Certificate2Collection? certificates)
