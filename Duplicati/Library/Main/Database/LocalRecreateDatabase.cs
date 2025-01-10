@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -698,7 +698,7 @@ SELECT ""A"".""ID"" AS ""BlockID"", ""A"".""VolumeID"" AS ""SourceVolumeID"", ""
 
 UPDATE ""Block"" SET ""VolumeID"" = (SELECT ""TargetVolumeID"" FROM ""{tablename}"" WHERE ""Block"".""ID"" = ""{tablename}"".""BlockID"") WHERE ""Block"".""ID"" IN (SELECT ""BlockID"" FROM ""{tablename}"");
 
-UPDATE ""DuplicateBlock"" SET ""VolumeID"" = (SELECT ""SourceVolumeID"" FROM ""{tablename}"" WHERE ""DuplicateBlock"".""BlockID"" = ""{tablename}"".""BlockID"") WHERE ""DuplicateBlock"".""BlockID"" IN (SELECT ""BlockID"" FROM ""{tablename}"");
+UPDATE ""DuplicateBlock"" SET ""VolumeID"" = (SELECT ""SourceVolumeID"" FROM ""{tablename}"" WHERE ""DuplicateBlock"".""BlockID"" = ""{tablename}"".""BlockID"") WHERE (""DuplicateBlock"".""BlockID"", ""DuplicateBlock"".""VolumeID"") IN (SELECT ""BlockID"", ""TargetVolumeID"" FROM ""{tablename}"");
 DROP TABLE ""{tablename}"";
 
 DELETE FROM ""IndexBlockLink"" WHERE ""BlockVolumeID"" IN (SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""Type"" = '{RemoteVolumeType.Blocks}' AND ""State"" = '{RemoteVolumeState.Temporary}' AND ""ID"" NOT IN (SELECT DISTINCT ""VolumeID"" FROM ""Block""));
