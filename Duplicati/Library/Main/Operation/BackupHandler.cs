@@ -115,6 +115,8 @@ namespace Duplicati.Library.Main.Operation
         private UsnJournalService GetJournalService(IEnumerable<string> sources, ISnapshotService snapshot, IFilter filter, long lastfilesetid)
         {
             if (m_options.UsnStrategy == Options.OptimizationStrategy.Off) return null;
+            if (!OperatingSystem.IsWindows())
+                throw new UserInformationException("USN journal is only supported on Windows", "UsnJournalNotSupported");
 
             var journalData = m_database.GetChangeJournalData(lastfilesetid);
             var service = new UsnJournalService(sources, snapshot, filter, m_options.FileAttributeFilter, m_options.SkipFilesLargerThan,
@@ -343,9 +345,15 @@ namespace Duplicati.Library.Main.Operation
                 }
                 else if (journalService != null)
                 {
+                    if (!OperatingSystem.IsWindows())
+                        throw new UserInformationException("USN journal is only supported on Windows", "USNJournalNotSupported");
+
                     // append files from previous fileset, unless part of modifiedSources, which we've just scanned
                     await database.AppendFilesFromPreviousSetWithPredicateAsync((path, fileSize) =>
                     {
+                        if (!OperatingSystem.IsWindows())
+                            throw new UserInformationException("USN journal is only supported on Windows", "USNJournalNotSupported");
+
                         // TODO: This is technically unsupported, but the method itself works cross-platform
                         if (journalService.IsPathEnumerated(path))
                             return true;

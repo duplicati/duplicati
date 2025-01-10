@@ -29,10 +29,10 @@ using System.Threading;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Utility;
-using Duplicati.Library.Common;
 
 namespace Duplicati.Library.Snapshots
 {
+    [SupportedOSPlatform("windows")]
     public class UsnJournalService
     {
         /// <summary>
@@ -139,7 +139,7 @@ namespace Duplicati.Library.Snapshots
 
                     if (prevData.NextUsn == 0)
                         throw new UsnJournalSoftFailureException(Strings.USNHelper.NextUsnZero);
-                    
+
                     if (prevData.ConfigHash != nextData.ConfigHash)
                         throw new UsnJournalSoftFailureException(Strings.USNHelper.ConfigHashChanged);
 
@@ -413,7 +413,7 @@ namespace Duplicati.Library.Snapshots
                 // update cache
                 parents?.ForEach(p => cache[p] = false);
             }
- 
+
             return folder != null;
         }
 

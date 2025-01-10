@@ -47,7 +47,7 @@ public class WorkerThreadsManager(ILiveControls liveControls, IScheduler schedul
         }
     }
 
-    public void UpdateThrottleSpeeds(string uploadSpeed, string downloadSpeed)
+    public void UpdateThrottleSpeeds(string? uploadSpeed, string? downloadSpeed)
     {
         WorkerThread?.CurrentTask?.UpdateThrottleSpeed(uploadSpeed, downloadSpeed);
     }

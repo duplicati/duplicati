@@ -27,18 +27,18 @@ public class ServerSettings
     public ServerSettings(Server.Database.ServerSettings applicationSettings)
         => this.applicationSettings = applicationSettings;
 
-    public string StartupDelay
+    public string? StartupDelay
     {
         get => applicationSettings.StartupDelayDuration;
         set => applicationSettings.StartupDelayDuration = value;
     }
 
-    public string DownloadSpeedLimit
+    public string? DownloadSpeedLimit
     {
         get => applicationSettings.DownloadSpeedLimit;
         set => applicationSettings.DownloadSpeedLimit = value;
     }
-    public string UploadSpeedLimit
+    public string? UploadSpeedLimit
     {
         get => applicationSettings.UploadSpeedLimit;
         set => applicationSettings.UploadSpeedLimit = value;
@@ -90,7 +90,7 @@ public class ServerSettings
         get => applicationSettings.UnackedWarning;
         set => applicationSettings.UnackedWarning = value;
     }
-    public string ServerListenInterface
+    public string? ServerListenInterface
     {
         get => applicationSettings.ServerListenInterface;
         set => applicationSettings.ServerListenInterface = value;
@@ -100,12 +100,12 @@ public class ServerSettings
         get => applicationSettings.FixedInvalidBackupId;
         set => applicationSettings.FixedInvalidBackupId = value;
     }
-    public string UpdateChannel
+    public string? UpdateChannel
     {
         get => applicationSettings.UpdateChannel;
         set => applicationSettings.UpdateChannel = value;
     }
-    public string UsageReporterLevel
+    public string? UsageReporterLevel
     {
         get => applicationSettings.UsageReporterLevel;
         set => applicationSettings.UsageReporterLevel = value;
@@ -115,7 +115,7 @@ public class ServerSettings
         get => applicationSettings.DisableTrayIconLogin;
         set => applicationSettings.DisableTrayIconLogin = value;
     }
-    public string ServerAllowedHostnames
+    public string? ServerAllowedHostnames
     {
         get => applicationSettings.AllowedHostnames;
         set => applicationSettings.SetAllowedHostnames(value);

@@ -31,7 +31,7 @@ public interface IWorkerThreadsManager
 
     Tuple<long, string>? CurrentTask { get; }
     WorkerThread<Runner.IRunnerData>? WorkerThread { get; }
-    void UpdateThrottleSpeeds(string uploadSpeed, string downloadSpeed);
+    void UpdateThrottleSpeeds(string? uploadSpeed, string? downloadSpeed);
 
     long AddTask(Runner.IRunnerData data, bool skipQueue = false);
 }

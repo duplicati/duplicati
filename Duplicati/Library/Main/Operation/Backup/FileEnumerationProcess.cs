@@ -29,6 +29,7 @@ using System.Threading;
 using Duplicati.Library.Main.Operation.Common;
 using Duplicati.Library.Snapshots;
 using Duplicati.Library.Common.IO;
+using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.Main.Operation.Backup
 {
@@ -114,6 +115,8 @@ namespace Duplicati.Library.Main.Operation.Backup
 
                         if (journalService != null)
                         {
+                            if (!OperatingSystem.IsWindows())
+                                throw new UserInformationException("USN journal is only supported on Windows", "USNJournalNotSupported");
                             // filter sources using USN journal, to obtain a sub-set of files / folders that may have been modified
                             sources = journalService.GetModifiedSources(attributeFilter);
                         }

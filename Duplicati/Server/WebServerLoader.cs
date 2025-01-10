@@ -28,6 +28,8 @@ using Duplicati.Server.Database;
 using Microsoft.AspNetCore.Connections;
 using Duplicati.Library.Utility;
 
+#nullable enable
+
 namespace Duplicati.Server;
 
 /// <summary>
@@ -169,7 +171,7 @@ public static class WebServerLoader
     /// </summary>
     /// <param name="options">A set of options</param>
     /// <param name="createServer">The method to start the server</param>
-    public static async Task<TServer> TryRunServer<TServer>(IReadOnlyDictionary<string, string> options, Connection connection, Func<ParsedWebserverSettings, Task<TServer>> createServer)
+    public static async Task<TServer> TryRunServer<TServer>(IReadOnlyDictionary<string, string?> options, Connection connection, Func<ParsedWebserverSettings, Task<TServer>> createServer)
     {
         var ports = Enumerable.Empty<int>();
         options.TryGetValue(OPTION_PORT, out var portstring);
@@ -225,7 +227,7 @@ public static class WebServerLoader
 
         if (options.ContainsKey(OPTION_WEBROOT))
         {
-            string userroot = options[OPTION_WEBROOT];
+            var userroot = options[OPTION_WEBROOT];
 #if DEBUG
             //In debug mode we do not care where the path points
 #else
