@@ -29,6 +29,7 @@ using Duplicati.Library.Interface;
 using Duplicati.Library.Main.Database;
 using System.Threading.Tasks;
 using Duplicati.Library.Main.Operation.Common;
+using Duplicati.Library.Logging;
 
 namespace Duplicati.Library.Main
 {
@@ -430,7 +431,7 @@ namespace Duplicati.Library.Main
             OnOperationStarted?.Invoke(result);
             var resultSetter = result as ISetCommonOptions;
             m_logTarget = new ControllerMultiLogTarget(result, Logging.LogMessageType.Information, null);
-            using (Logging.Log.StartScope(m_logTarget, null))
+            using (var logScope = Log.StartScope(m_logTarget, null))
             {
                 m_logTarget.AddTarget(m_messageSink, m_options.ConsoleLoglevel, m_options.ConsoleLogFilter);
                 result.MessageSink = m_messageSink;
@@ -441,7 +442,7 @@ namespace Duplicati.Library.Main
                     m_options.MainAction = result.MainOperation;
                     ApplySecretProvider(CancellationToken.None).Await();
                     SetupCommonOptions(result, ref paths, ref filter);
-                    Logging.Log.WriteInformationMessage(LOGTAG, "StartingOperation", Strings.Controller.StartingOperationMessage(m_options.MainAction));
+                    logScope.WriteMessage(new LogEntry(Strings.Controller.StartingOperationMessage(m_options.MainAction), null, LogMessageType.Information, LOGTAG, "StartingOperation", null));
 
                     using (new ProcessController(m_options))
                     using (new Logging.Timer(LOGTAG, string.Format("Run{0}", result.MainOperation), string.Format("Running {0}", result.MainOperation)))
@@ -459,7 +460,7 @@ namespace Duplicati.Library.Main
 
                     OperationComplete(result, null);
 
-                    Logging.Log.WriteInformationMessage(LOGTAG, "CompletedOperation", Strings.Controller.CompletedOperationMessage(m_options.MainAction));
+                    logScope.WriteMessage(new LogEntry(Strings.Controller.CompletedOperationMessage(m_options.MainAction), null, LogMessageType.Information, LOGTAG, "CompletedOperation", null));
 
                     return result;
                 }
