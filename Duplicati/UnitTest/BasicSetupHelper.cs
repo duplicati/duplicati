@@ -25,9 +25,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Collections.Generic;
 using System.IO.Compression;
-using Duplicati.Library.Common;
 using Duplicati.Library.Common.IO;
-using Duplicati.Library.Utility;
 using System.Timers;
 
 namespace Duplicati.UnitTest
@@ -89,7 +87,7 @@ namespace Duplicati.UnitTest
 
         [OneTimeSetUp]
         public void BasicHelperOneTimeSetUp()
-        {   
+        {
             TestContext.Progress.WriteLine("One Time Setup {0}", TestContext.CurrentContext.Test.Name);
             if (DEBUG_OUTPUT)
             {
@@ -103,16 +101,18 @@ namespace Duplicati.UnitTest
         private static int count = 1;
 
 
-        private static Timer SetupTimer() {
+        private static Timer SetupTimer()
+        {
             var timer = new Timer();
-            
+
             timer.Interval = 2000;
-            timer.Elapsed += delegate(object obj, ElapsedEventArgs e){
-                var nogc = GC.GetTotalMemory(false)/1000/1000;
-                var yesgc = GC.GetTotalMemory(true)/1000/1000;
-                
+            timer.Elapsed += delegate (object obj, ElapsedEventArgs e)
+            {
+                var nogc = GC.GetTotalMemory(false) / 1000 / 1000;
+                var yesgc = GC.GetTotalMemory(true) / 1000 / 1000;
+
                 var me = Process.GetCurrentProcess();
-                var process = me.WorkingSet64/1000/1000;
+                var process = me.WorkingSet64 / 1000 / 1000;
                 TestContext.Progress.WriteLine("Memory: {0}MB -> {1}MB ({2}MB)", nogc, yesgc, process);
             };
             timer.AutoReset = true;
@@ -125,19 +125,20 @@ namespace Duplicati.UnitTest
         {
             memoryTimer.Enabled = true;
             var me = Process.GetCurrentProcess();
-            TestContext.Progress.WriteLine("Setup {0} {1}MB {2}MB", TestContext.CurrentContext.Test.Name, GC.GetTotalMemory(true)/1000/1000, me.WorkingSet64/1000/1000);
+            TestContext.Progress.WriteLine("Setup {0} {1}MB {2}MB", TestContext.CurrentContext.Test.Name, GC.GetTotalMemory(true) / 1000 / 1000, me.WorkingSet64 / 1000 / 1000);
             systemIO.DirectoryCreate(this.DATAFOLDER);
             systemIO.DirectoryCreate(this.TARGETFOLDER);
-            systemIO.DirectoryCreate(this.RESTOREFOLDER);  
+            systemIO.DirectoryCreate(this.RESTOREFOLDER);
         }
 
         [TearDown]
         public void BasicHelperTearDown()
         {
             memoryTimer.Enabled = false;
-            if( TestContext.CurrentContext.Test.MethodName != null){
+            if (TestContext.CurrentContext.Test.MethodName != null)
+            {
                 var me = Process.GetCurrentProcess();
-               TestContext.Progress.WriteLine("TearDown {0} {1}MB {2}MB", TestContext.CurrentContext.Test.MethodName, GC.GetTotalMemory(true)/1000/1000, me.WorkingSet64/1000/1000);
+                TestContext.Progress.WriteLine("TearDown {0} {1}MB {2}MB", TestContext.CurrentContext.Test.MethodName, GC.GetTotalMemory(true) / 1000 / 1000, me.WorkingSet64 / 1000 / 1000);
             }
             if (systemIO.DirectoryExists(this.DATAFOLDER))
             {
