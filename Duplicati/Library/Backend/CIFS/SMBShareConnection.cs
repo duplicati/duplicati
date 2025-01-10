@@ -290,7 +290,9 @@ public class SMBShareConnection : IDisposable, IAsyncDisposable
                 long bytesRead = 0;
                 while (!cancellationToken.IsCancellationRequested)
                 {
-                    status = _smbFileStore.ReadFile(out data, fileHandle, bytesRead, (int)_smb2Client.MaxReadSize);
+                    // Use the provided read buffer size if set, otherwise use the protocol negotiated maximum. Never exceed the negotiated maximum.
+                    int readBufferSize = Math.Min(_connectionParameters.ReadBufferSize ?? (int)_smb2Client.MaxReadSize, (int)_smb2Client.MaxReadSize);
+                    status = _smbFileStore.ReadFile(out data, fileHandle, bytesRead, readBufferSize);
                     if (status != NTStatus.STATUS_SUCCESS && status != NTStatus.STATUS_END_OF_FILE)
                         throw new UserInformationException($"{LC.L("Failed to read file on GetAsync")} {filename} with status {status.ToString()}","FileReadError");
 
@@ -349,8 +351,8 @@ public class SMBShareConnection : IDisposable, IAsyncDisposable
                 null);
             if (status == NTStatus.STATUS_SUCCESS)
             {
-
-                byte[] buffer = new byte[_smb2Client.MaxWriteSize];
+                // Use the provided write buffer size if set, otherwise use the protocol negotiated maximum. Never exceed the negotiated maximum.
+                byte[] buffer = new byte[Math.Min(_connectionParameters.WriteBufferSize ?? (int)_smb2Client.MaxWriteSize, _smb2Client.MaxWriteSize)];
                 int bytesRead;
                 int numberOfBytesWritten;
                 int offset = 0;

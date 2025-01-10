@@ -72,6 +72,16 @@ public class CIFSBackend : IStreamingBackend
     /// Shared connection between all methods to avoid re-authentication
     /// </summary>
     private SMBShareConnection _sharedConnection;
+    
+    /// <summary>
+    /// Read buffer size for SMB operations (will be capped automatically by SMB negotiated values)
+    /// </summary>
+    private const string READ_BUFFER_SIZE_OPTION = "read-buffer-size";
+    
+    /// <summary>
+    /// Write buffer size for SMB operations (will be capped automatically by SMB negotiated values)
+    /// </summary>
+    private const string WRITE_BUFFER_SIZE_OPTION = "write-buffer-size";
 
     /// <summary>
     /// Backend option for controlling the transport (directtcp or netbios)
@@ -137,6 +147,18 @@ public class CIFSBackend : IStreamingBackend
         options.TryGetValue(AUTH_PASSWORD_OPTION, out string authPassword);
         options.TryGetValue(AUTH_DOMAIN_OPTION, out string authDomain);
         options.TryGetValue(TRANSPORT_OPTION, out string transport);
+        
+        int? readBufferSize = null, writeBufferSize = null;
+        
+        options.TryGetValue(READ_BUFFER_SIZE_OPTION, out string readBufferSizeConfig);
+        if (!string.IsNullOrWhiteSpace(readBufferSizeConfig)) readBufferSize = Int32.TryParse(readBufferSizeConfig, out int value) ? value : null;
+        
+        options.TryGetValue(WRITE_BUFFER_SIZE_OPTION, out string writeBufferSizeConfig);
+        if (!string.IsNullOrWhiteSpace(writeBufferSizeConfig)) writeBufferSize = Int32.TryParse(readBufferSizeConfig, out int value) ? value : null;
+        
+        // Normalize to 10KB minimum buffers size
+        readBufferSize = readBufferSize < 1024 * 10 ? null : readBufferSize;
+        writeBufferSize = writeBufferSize < 1024 * 10 ? null : writeBufferSize;
 
         SMBTransportType transportType = _transportMap.TryGetValue(
             string.IsNullOrEmpty(transport) ? DEFAULT_TRANSPORT : transport.ToLower(), 
@@ -151,7 +173,9 @@ public class CIFSBackend : IStreamingBackend
             slashIndex >= 0 ? input[(slashIndex + 1)..] : "",
             authDomain,
             authUsername,
-            authPassword
+            authPassword,
+            readBufferSize,
+            writeBufferSize
         );
     }
 
@@ -163,7 +187,9 @@ public class CIFSBackend : IStreamingBackend
             new CommandLineArgument(AUTH_PASSWORD_OPTION, CommandLineArgument.ArgumentType.Password, Strings.CIFSBackend.DescriptionAuthPasswordShort, Strings.CIFSBackend.DescriptionAuthPasswordLong),
             new CommandLineArgument(AUTH_USERNAME_OPTION, CommandLineArgument.ArgumentType.String, Strings.CIFSBackend.DescriptionAuthUsernameShort, Strings.CIFSBackend.DescriptionAuthUsernameLong),
             new CommandLineArgument(AUTH_DOMAIN_OPTION, CommandLineArgument.ArgumentType.String, Strings.CIFSBackend.DescriptionAuthDomainShort, Strings.CIFSBackend.DescriptionAuthDomainLong),
-            new CommandLineArgument(TRANSPORT_OPTION, CommandLineArgument.ArgumentType.Enumeration, Strings.Options.TransportShort, Strings.Options.TransportLong, DEFAULT_TRANSPORT, null, _transportMap.Keys.ToArray())
+            new CommandLineArgument(TRANSPORT_OPTION, CommandLineArgument.ArgumentType.Enumeration, Strings.Options.TransportShort, Strings.Options.TransportLong, DEFAULT_TRANSPORT, null, _transportMap.Keys.ToArray()),
+            new CommandLineArgument(READ_BUFFER_SIZE_OPTION, CommandLineArgument.ArgumentType.String, Strings.Options.DescriptionReadBufferSizeShort, Strings.Options.DescriptionReadBufferSizeLong),
+            new CommandLineArgument(WRITE_BUFFER_SIZE_OPTION, CommandLineArgument.ArgumentType.String, Strings.Options.DescriptionWriteBufferSizeShort, Strings.Options.DescriptionWriteBufferSizeLong)
         ]);
 
     /// <summary>
