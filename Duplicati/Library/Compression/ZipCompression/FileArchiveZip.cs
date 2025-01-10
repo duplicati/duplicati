@@ -139,7 +139,8 @@ namespace Duplicati.Library.Compression.ZipCompression
             if (options.ContainsKey(COMPRESSION_LIBRARY_OPTION) && options.TryGetValue(COMPRESSION_LIBRARY_OPTION, out var cplib) && Enum.TryParse<CompressionLibrary>(cplib, true, out var tmpcplib))
                 compressionLibrary = tmpcplib;
 
-            var parsedOptions = new ParsedZipOptions(compressionLevel, compressionType, usingZip64);
+            var unittestMode = Utility.Utility.ParseBoolOption(options.AsReadOnly(), "unittest-mode");
+            var parsedOptions = new ParsedZipOptions(compressionLevel, compressionType, usingZip64, unittestMode);
 
             if (compressionLibrary == CompressionLibrary.Auto)
             {

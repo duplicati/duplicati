@@ -20,8 +20,6 @@
 // DEALINGS IN THE SOFTWARE.
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.IO;
 using Newtonsoft.Json;
 using Duplicati.Library.Interface;
@@ -32,6 +30,9 @@ namespace Duplicati.Library.Main.Volumes
     {
         private StreamWriter m_streamwriter = null;
         private JsonWriter m_writer = null;
+#if DEBUG
+        private readonly HashSet<string> m_knownBlocklisthashes = new();
+#endif
 
         private long m_volumes = 0;
         private long m_blocks = 0;
@@ -87,10 +88,17 @@ namespace Duplicati.Library.Main.Volumes
             finally { m_streamwriter = null; }
         }
 
-		public void WriteBlocklist(string hash, byte[] data, int offset, int size)
+        public void WriteBlocklist(string hash, byte[] data, int offset, int size)
         {
-			if (size % m_blockhashsize != 0)
-				throw new InvalidDataException($"Attempted to write a blocklist with {size} bytes which is not evenly divisible with {m_blockhashsize}");
+#if DEBUG
+            // Nothing breaks with duplicates, but it should not be there
+            if (m_knownBlocklisthashes.Contains(hash))
+                throw new InvalidOperationException($"Attempted to write a blocklist with hash {hash} more than once");
+            m_knownBlocklisthashes.Add(hash);
+#endif
+
+            if (size % m_blockhashsize != 0)
+                throw new InvalidDataException($"Attempted to write a blocklist with {size} bytes which is not evenly divisible with {m_blockhashsize}");
             m_blocklists++;
             //Filenames are encoded with "modified Base64 for URL" https://en.wikipedia.org/wiki/Base64#URL_applications, 
             using (var s = m_compression.CreateFile(INDEX_BLOCKLIST_FOLDER + Library.Utility.Utility.Base64PlainToBase64Url(hash), CompressionHint.Noncompressible, DateTime.UtcNow))
@@ -99,28 +107,35 @@ namespace Duplicati.Library.Main.Volumes
 
         public void WriteBlocklist(string hash, Stream source)
         {
+#if DEBUG
+            // Nothing breaks with duplicates, but it should not be there
+            if (m_knownBlocklisthashes.Contains(hash))
+                throw new InvalidOperationException($"Attempted to write a blocklist with hash {hash} more than once");
+            m_knownBlocklisthashes.Add(hash);
+#endif
+
             m_blocklists++;
-			//Filenames are encoded with "modified Base64 for URL" https://en.wikipedia.org/wiki/Base64#URL_applications, 
-			using (var s = m_compression.CreateFile(INDEX_BLOCKLIST_FOLDER + Library.Utility.Utility.Base64PlainToBase64Url(hash), CompressionHint.Noncompressible, DateTime.UtcNow))
-			{
-				var size = Library.Utility.Utility.CopyStream(source, s);
-				if (size % m_blockhashsize != 0)
-					throw new InvalidDataException($"Wrote a blocklist with {size} bytes which is not evenly divisible with {m_blockhashsize}");
-			}
+            //Filenames are encoded with "modified Base64 for URL" https://en.wikipedia.org/wiki/Base64#URL_applications, 
+            using (var s = m_compression.CreateFile(INDEX_BLOCKLIST_FOLDER + Library.Utility.Utility.Base64PlainToBase64Url(hash), CompressionHint.Noncompressible, DateTime.UtcNow))
+            {
+                var size = Library.Utility.Utility.CopyStream(source, s);
+                if (size % m_blockhashsize != 0)
+                    throw new InvalidDataException($"Wrote a blocklist with {size} bytes which is not evenly divisible with {m_blockhashsize}");
+            }
         }
 
         public void CopyFrom(IndexVolumeReader rd, Func<string, string> filename_mapping)
         {
-            foreach(var n in rd.Volumes)
+            foreach (var n in rd.Volumes)
             {
                 this.StartVolume(filename_mapping(n.Filename));
-                foreach(var x in n.Blocks)
+                foreach (var x in n.Blocks)
                     this.AddBlock(x.Key, x.Value);
                 this.FinishVolume(n.Hash, n.Length);
             }
-            
-            foreach(var b in rd.BlockLists)
-                using(var s = b.Data)
+
+            foreach (var b in rd.BlockLists)
+                using (var s = b.Data)
                     this.WriteBlocklist(b.Hash, s);
         }
 
