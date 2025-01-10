@@ -408,7 +408,7 @@ namespace Duplicati.Server
                 var server = DuplicatiWebserver.CreateWebServer(mappedSettings, connection);
 
                 // Start the server, but catch any configuration issues
-                var task = server.Start(mappedSettings);
+                var task = server.Start();
                 await Task.WhenAny(task, Task.Delay(500));
                 if (task.IsCompleted)
                     await task;

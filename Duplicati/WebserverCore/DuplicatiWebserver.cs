@@ -39,19 +39,43 @@ using Microsoft.OpenApi.Models;
 
 namespace Duplicati.WebserverCore;
 
+/// <summary>
+/// Instance of the Duplicati webserver
+/// </summary>
 public class DuplicatiWebserver
 {
+    /// <summary>
+    /// The log tag for this class
+    /// </summary>
     private static readonly string LOGTAG = Library.Logging.Log.LogTagFromType<DuplicatiWebserver>();
+    /// <summary>
+    /// The configuration for the server
+    /// </summary>
     public required IConfiguration Configuration { get; init; }
 
+    /// <summary>
+    /// The web application
+    /// </summary>
     public required WebApplication App { get; init; }
 
+    /// <summary>
+    /// The service provider
+    /// </summary>
     public IServiceProvider Provider => App.Services;
 
+    /// <summary>
+    /// The port the server is listening on
+    /// </summary>
     public required int Port { get; init; }
 
+    /// <summary>
+    /// The task that will be set when the server is terminated
+    /// </summary>
     public Task TerminationTask { get; private set; } = Task.CompletedTask;
 
+    /// <summary>
+    /// If Swagger should be enabled
+    /// </summary>
 #if DEBUG
     private static readonly bool EnableSwagger = true;
 #else
@@ -80,6 +104,12 @@ public class DuplicatiWebserver
         IEnumerable<string> SPAPaths
     );
 
+    /// <summary>
+    /// Creates a new webserver instance
+    /// </summary>
+    /// <param name="settings">The settings for the server</param>
+    /// <param name="connection">The connection to the database</param>
+    /// <returns>The new webserver instance</returns>
     public static DuplicatiWebserver CreateWebServer(InitSettings settings, Connection connection)
     {
         var builder = WebApplication.CreateBuilder(new WebApplicationOptions()
@@ -283,6 +313,11 @@ public class DuplicatiWebserver
 
     }
 
+    /// <summary>
+    /// Configures HTTPS for the server
+    /// </summary>
+    /// <param name="listenOptions">The listen options</param>
+    /// <param name="certificates">The certificates to use</param>
     private static void ConfigureHttps(Microsoft.AspNetCore.Server.Kestrel.Core.ListenOptions listenOptions, X509Certificate2Collection? certificates)
     {
         var servedCert = certificates?.FirstOrDefault(x => x.HasPrivateKey)
@@ -303,7 +338,11 @@ public class DuplicatiWebserver
         });
     }
 
-    public Task Start(InitSettings settings)
+    /// <summary>
+    /// Starts the webserver
+    /// </summary>
+    /// <returns>The task that will be set when the server is terminated</returns>
+    public Task Start()
     {
         App.MapHealthChecks("/health");
         App.AddEndpoints()
@@ -312,6 +351,10 @@ public class DuplicatiWebserver
         return TerminationTask = App.RunAsync();
     }
 
+    /// <summary>
+    /// Stops the webserver
+    /// </summary>
+    /// <returns>An awaitable task</returns>
     public async Task Stop()
     {
         await App.StopAsync();
