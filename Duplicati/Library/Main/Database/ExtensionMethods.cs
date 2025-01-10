@@ -67,6 +67,12 @@ namespace Duplicati.Library.Main.Database
             self.Parameters.Add(p);
         }
 
+        public static void SetParameterValues(this System.Data.IDbCommand self, params object?[] values)
+        {
+            for (var i = 0; i < values.Length; i++)
+                ((System.Data.IDataParameter)self.Parameters[i]!).Value = values[i];
+        }
+
         public static void SetParameterValue<T>(this System.Data.IDbCommand self, int index, T value)
         {
             ((System.Data.IDataParameter)self.Parameters[index]!).Value = value;

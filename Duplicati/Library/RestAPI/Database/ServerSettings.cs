@@ -96,10 +96,10 @@ namespace Duplicati.Server.Database
             }
         }
 
-        public void UpdateSettings(Dictionary<string, string> newsettings, bool clearExisting)
+        public void UpdateSettings(Dictionary<string, string?> newsettings, bool clearExisting)
         {
             if (newsettings == null)
-                throw new ArgumentNullException();
+                throw new ArgumentNullException(nameof(newsettings));
 
             lock (databaseConnection.m_lock)
             {
@@ -475,7 +475,7 @@ namespace Duplicati.Server.Database
             SaveSettings();
         }
 
-        public void SetAllowedHostnames(string allowedHostnames)
+        public void SetAllowedHostnames(string? allowedHostnames)
         {
             lock (databaseConnection.m_lock)
                 settings[CONST.SERVER_ALLOWED_HOSTNAMES] = allowedHostnames;

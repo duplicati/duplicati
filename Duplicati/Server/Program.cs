@@ -405,9 +405,7 @@ namespace Duplicati.Server
                     parsedOptions.SPAPaths
                 );
 
-                var server = new DuplicatiWebserver();
-
-                server.InitWebServer(mappedSettings, connection);
+                var server = DuplicatiWebserver.InitWebServer(mappedSettings, connection);
 
                 // Start the server, but catch any configuration issues
                 var task = server.Start(mappedSettings);

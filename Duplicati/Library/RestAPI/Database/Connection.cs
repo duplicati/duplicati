@@ -466,12 +466,12 @@ namespace Duplicati.Server.Database
                 }
         }
 
-        public void AddOrUpdateBackupAndSchedule(IBackup item, ISchedule schedule)
+        public void AddOrUpdateBackupAndSchedule(IBackup item, ISchedule? schedule)
         {
             AddOrUpdateBackup(item, true, schedule);
         }
 
-        public string? ValidateBackup(IBackup item, ISchedule schedule)
+        public string? ValidateBackup(IBackup item, ISchedule? schedule)
         {
             if (string.IsNullOrWhiteSpace(item.Name))
                 return "Missing a name";

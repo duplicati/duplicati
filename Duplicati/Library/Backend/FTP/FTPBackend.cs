@@ -272,7 +272,7 @@ namespace Duplicati.Library.Backend
         /// <param name="url">Configured url.</param>
         /// <param name="options">Configured options. cannot be null.</param>
         [SuppressMessage("ReSharper", "VirtualMemberCallInConstructor")] // The behavior of accessing the virtual properties is as expected
-        public FTP(string url, Dictionary<string, string> options)
+        public FTP(string url, Dictionary<string, string?> options)
         {
             _accepAllCertificates = CoreUtility.ParseBoolOption(options, OPTION_ACCEPT_ANY_CERTIFICATE);
 

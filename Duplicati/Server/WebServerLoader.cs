@@ -227,7 +227,7 @@ public static class WebServerLoader
 
         if (options.ContainsKey(OPTION_WEBROOT))
         {
-            string userroot = options[OPTION_WEBROOT];
+            var userroot = options[OPTION_WEBROOT];
 #if DEBUG
             //In debug mode we do not care where the path points
 #else
