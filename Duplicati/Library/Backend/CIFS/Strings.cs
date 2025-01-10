@@ -44,5 +44,9 @@ namespace Duplicati.Library.Backend.Strings
         public static string TransportLong =>
             LC.L(
                 @"Defines the transport to be used in CIFS connection. Can be DirectTCP or NetBios");
+        public static string DescriptionReadBufferSizeShort => LC.L(@"Read buffer size for SMB operations.");
+        public static string DescriptionReadBufferSizeLong => LC.L(@"Read buffer size for SMB operations (Will be capped automatically by SMB negotiated values, values bellow 10000 bytes will be ignored)");
+        public static string DescriptionWriteBufferSizeShort => LC.L(@"Write buffer size for SMB operations.");
+        public static string DescriptionWriteBufferSizeLong => LC.L(@"Write buffer size for SMB operations (Will be capped automatically by SMB negotiated values, values bellow 10000 bytes will be ignored)");
     }
 }

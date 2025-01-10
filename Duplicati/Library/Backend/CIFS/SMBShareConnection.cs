@@ -102,7 +102,7 @@ public class SMBShareConnection : IDisposable, IAsyncDisposable
             NTStatus status;
             object fileHandle;
             FileStatus fileStatus;
-            status = _smbFileStore.CreateFile(out fileHandle, out fileStatus, Path.Combine(_connectionParameters.Path, fileName),
+            status = _smbFileStore.CreateFile(out fileHandle, out fileStatus, NormalizeSlashes(Path.Combine(_connectionParameters.Path, fileName)),
                 AccessMask.GENERIC_WRITE | AccessMask.DELETE | AccessMask.SYNCHRONIZE,
                 FileAttributes.Normal,
                 ShareAccess.None,
@@ -145,15 +145,15 @@ public class SMBShareConnection : IDisposable, IAsyncDisposable
         try
         {
             // Normalize path separators to forward slashes and trim any trailing separators
-            string normalizedPath = path.Replace('\\', '/').TrimEnd('/');
+            string linuxNormalizedPath = path.Replace('/', '\\').TrimEnd('\\');
             string currentPath = "";
 
-            foreach (string part in normalizedPath.Split('/', StringSplitOptions.RemoveEmptyEntries))
+            foreach (string part in linuxNormalizedPath.Split('\\', StringSplitOptions.RemoveEmptyEntries))
             {
                 if (string.IsNullOrWhiteSpace(part) || part == ".")
                     continue;
 
-                currentPath = currentPath.Length == 0 ? part : $"{currentPath}/{part}";
+                currentPath = currentPath.Length == 0 ? part : $"{currentPath}\\{part}";
                 object? fileHandle = null;
                 try
                 {
@@ -208,7 +208,7 @@ public class SMBShareConnection : IDisposable, IAsyncDisposable
                 var status = _smbFileStore.CreateFile(
                     out directoryHandle,
                     out fileStatus,
-                    _connectionParameters.Path,
+                    NormalizeSlashes(_connectionParameters.Path),
                     AccessMask.GENERIC_READ,
                     FileAttributes.Directory,
                     ShareAccess.Read | ShareAccess.Write,
@@ -220,7 +220,7 @@ public class SMBShareConnection : IDisposable, IAsyncDisposable
                     if (status == NTStatus.STATUS_OBJECT_PATH_NOT_FOUND || status == NTStatus.STATUS_OBJECT_NAME_NOT_FOUND)
                         throw new FolderMissingException();
                     else
-                        throw new UserInformationException($"{LC.L("Failed to open directory")} {_connectionParameters.Path} with status {status.ToString()}","DirectoryOpenError");
+                        throw new UserInformationException($"{LC.L("Failed to open directory")} { NormalizeSlashes(_connectionParameters.Path)} with status {status.ToString()}","DirectoryOpenError");
 
                 List<QueryDirectoryFileInformation> fileList;
                 status = _smbFileStore.QueryDirectory(
@@ -279,7 +279,7 @@ public class SMBShareConnection : IDisposable, IAsyncDisposable
             object? fileHandle;
             FileStatus fileStatus;
             NTStatus status = _smbFileStore.CreateFile(out fileHandle, out fileStatus,
-                Path.Combine(_connectionParameters.Path, filename), // This is where the file name is concatenated with the path
+                NormalizeSlashes(Path.Combine(_connectionParameters.Path, filename)),
                 AccessMask.GENERIC_READ | AccessMask.SYNCHRONIZE, FileAttributes.Normal, ShareAccess.Read,
                 CreateDisposition.FILE_OPEN,
                 CreateOptions.FILE_NON_DIRECTORY_FILE | CreateOptions.FILE_SYNCHRONOUS_IO_ALERT, null);
@@ -290,7 +290,9 @@ public class SMBShareConnection : IDisposable, IAsyncDisposable
                 long bytesRead = 0;
                 while (!cancellationToken.IsCancellationRequested)
                 {
-                    status = _smbFileStore.ReadFile(out data, fileHandle, bytesRead, (int)_smb2Client.MaxReadSize);
+                    // Use the provided read buffer size if set, otherwise use the protocol negotiated maximum. Never exceed the negotiated maximum.
+                    int readBufferSize = Math.Min(_connectionParameters.ReadBufferSize ?? (int)_smb2Client.MaxReadSize, (int)_smb2Client.MaxReadSize);
+                    status = _smbFileStore.ReadFile(out data, fileHandle, bytesRead, readBufferSize);
                     if (status != NTStatus.STATUS_SUCCESS && status != NTStatus.STATUS_END_OF_FILE)
                         throw new UserInformationException($"{LC.L("Failed to read file on GetAsync")} {filename} with status {status.ToString()}","FileReadError");
 
@@ -341,7 +343,7 @@ public class SMBShareConnection : IDisposable, IAsyncDisposable
             object fileHandle;
             FileStatus fileStatus;
             NTStatus status = _smbFileStore.CreateFile(out fileHandle, out fileStatus,
-                Path.Combine(_connectionParameters.Path, filename), // This is where the file name is concatenated with the path
+                NormalizeSlashes(Path.Combine(_connectionParameters.Path, filename)),
                 AccessMask.GENERIC_WRITE | AccessMask.SYNCHRONIZE,
                 FileAttributes.Normal, ShareAccess.None,
                 CreateDisposition.FILE_SUPERSEDE,
@@ -349,8 +351,8 @@ public class SMBShareConnection : IDisposable, IAsyncDisposable
                 null);
             if (status == NTStatus.STATUS_SUCCESS)
             {
-
-                byte[] buffer = new byte[_smb2Client.MaxWriteSize];
+                // Use the provided write buffer size if set, otherwise use the protocol negotiated maximum. Never exceed the negotiated maximum.
+                byte[] buffer = new byte[Math.Min(_connectionParameters.WriteBufferSize ?? (int)_smb2Client.MaxWriteSize, _smb2Client.MaxWriteSize)];
                 int bytesRead;
                 int numberOfBytesWritten;
                 int offset = 0;
@@ -382,6 +384,18 @@ public class SMBShareConnection : IDisposable, IAsyncDisposable
         {
             _semaphore.Release();
         }
+    }
+    
+    /// <summary>
+    /// Normalizes paths to use backslashes (for Windows shares compatibility) and removes trailing slashes.
+    ///
+    /// Samba deals with \ and / in paths, but Windows shares require backslashes.
+    /// </summary>
+    /// <param name="path">Path to be normalized</param>
+    /// <returns></returns>
+    private string NormalizeSlashes(string path)
+    {
+        return path.Replace('/', '\\').TrimEnd('\\');
     }
 
     /// <summary>
