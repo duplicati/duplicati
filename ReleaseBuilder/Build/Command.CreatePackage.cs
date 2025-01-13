@@ -298,22 +298,31 @@ public static partial class Command
                 _ => throw new Exception($"Architeture not supported: {target.ArchString}")
             };
 
-            List<string> wixArgs = [
-                Program.Configuration.Commands.Wix!,
-                "--define", $"HarvestPath={sourceFiles}",
-                "--arch", msiArch,
-                "--output", msiFile,
-                Path.Combine(resourcesSubDir, "Shortcuts.wxs"),
-                binFiles,
-                Path.Combine(resourcesSubDir, "Duplicati.wxs")
-            ];
+            var argPrefix = OperatingSystem.IsWindows() ? "-" : "--";
 
-            // Add wixl specific extensions
-            if (!OperatingSystem.IsWindows())
-                wixArgs.InsertRange(1, [
+            string[] wixArgs =
+                OperatingSystem.IsWindows() ?
+                [
+                    Program.Configuration.Commands.Wix!,
+                    "-define", $"HarvestPath={sourceFiles}",
+                    "-arch", msiArch,
+                    "-out", msiFile,
+                    Path.Combine(resourcesSubDir, "Shortcuts.wxs"),
+                    binFiles,
+                    Path.Combine(resourcesSubDir, "Duplicati.wxs")
+                ]
+                :
+                [
+                    Program.Configuration.Commands.Wix!,
                     "--ext", "ui",
                     "--extdir", Path.Combine(resourcesDir, "WixUIExtension"),
-                ]);
+                    "--define", $"HarvestPath={sourceFiles}",
+                    "--arch", msiArch,
+                    "--output", msiFile,
+                    Path.Combine(resourcesSubDir, "Shortcuts.wxs"),
+                    binFiles,
+                    Path.Combine(resourcesSubDir, "Duplicati.wxs")
+                ];
 
             await ProcessHelper.Execute(wixArgs, workingDirectory: buildRoot);
 
