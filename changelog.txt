@@ -1,3 +1,17 @@
+2025-01-11 - 2.1.0.106_canary_2025-01-11
+==========
+This release is a canary release intended to be used for testing.
+
+**Note that this build has a redesigned restore flow**
+Should issues arise, the previous restore engine can be enabled with `--restore-legacy=true`.
+
+## Detailed list of changes:
+- Added server status and wait to ServerUtil
+- Fixed an issue where index files would contain replicated blocklists
+- Fixed an issue with duplicate blocks preventing repair
+- Size strings are now formatted as kikibytes
+- Fixed some issues with CIFS/SMB backend
+
 2025-01-07 - 2.1.0.105_canary_2025-01-07
 ==========
 This release is a canary release intended to be used for testing.
