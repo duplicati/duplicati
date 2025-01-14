@@ -1,4 +1,4 @@
-// Copyright (C) 2025, The Duplicati Team
+// Copyright (C) 2024, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -19,188 +19,202 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
-using System;
 using System.Net;
 using System.Text;
+using Duplicati.Library.Backend.Backblaze.Model;
+using Duplicati.Library.Interface;
 using Newtonsoft.Json;
-using Duplicati.Library.Utility;
+using Exception = System.Exception;
+using Uri = System.Uri;
 
-namespace Duplicati.Library.Backend.Backblaze
+namespace Duplicati.Library.Backend.Backblaze;
+
+/// <summary>
+/// Helper class for handling Backblaze B2 authorization
+/// </summary>
+/// <param name="userid">Username</param>
+/// <param name="password">Password</param>
+/// <param name="httpClient">HttpClient instance to use and pass along to JsonWebHelperHttpClient</param>
+public class B2AuthHelper(string userid, string password, HttpClient httpClient) : JsonWebHelperHttpClient(httpClient)
 {
-    public class B2AuthHelper : JSONWebHelper
+    /// <summary>
+    /// Cached authorization response
+    /// </summary>
+    private AuthResponse _CachedAuthResponse;
+
+    /// <summary>
+    /// Cached authorization response expiration time
+    /// </summary>
+    private DateTime _configExpires;
+
+    /// <summary>
+    /// Defines lifetime of cached authorization response
+    /// </summary>
+    private const int CACHE_EXPIRATION_MINUTES = 60;
+
+    /// <summary>
+    /// Authorization URL
+    /// </summary>
+    internal const string AUTH_URL = "https://api.backblazeb2.com/b2api/v1/b2_authorize_account";
+
+    /// <summary>
+    /// Timeout for authentication requests
+    /// </summary>
+    private const int AUTHENTICATION_TIMEOUT_SECONDS = 10;
+
+    /// <summary>
+    /// Maximum number of retries for authorization
+    /// </summary>
+    private const int MAX_AUTHORIZATION_RETRIES = 5;
+
+    /// <summary>
+    /// Authorization token (fetches from Config, which will refresh if needed)
+    /// </summary>
+    private string AuthorizationToken => Config.AuthorizationToken;
+
+    /// <summary>
+    /// API URL (fetches from Config, which will refresh if needed)
+    /// </summary>
+    public string ApiUrl => Config.APIUrl;
+
+    /// <summary>
+    /// Download URL (fetches from Config, which will refresh if needed)
+    /// </summary>
+    public string DownloadUrl => Config.DownloadUrl;
+
+    /// <summary>
+    /// Account ID (fetches from Config, which will refresh if needed)
+    /// </summary>
+    public string AccountId => Config.AccountID;
+
+    /// <summary>
+    /// Creates an HTTP request message with authorization header
+    /// </summary>
+    /// <param name="url">The URL for the request</param>
+    /// <param name="method">HTTP method (defaults to GET if null)</param>
+    /// <returns>Configured HttpRequestMessage</returns>
+    public override HttpRequestMessage CreateRequest(string url, string method = null)
     {
-        private readonly string m_credentials;
-        private AuthResponse m_config;
-        private DateTime m_configExpires;
-        internal const string AUTH_URL = "https://api.backblazeb2.com/b2api/v1/b2_authorize_account";
-
-        public B2AuthHelper(string userid, string password)
-            : base()
-        {
-            m_credentials = Convert.ToBase64String(Encoding.UTF8.GetBytes(userid + ":" + password));
-        }
-
-        public override HttpWebRequest CreateRequest(string url, string method = null)
-        {
-            var r = base.CreateRequest(url, method);
-            r.Headers["Authorization"] = AuthorizationToken;
-            return r;
-        }
-
-        public string AuthorizationToken { get { return Config.AuthorizationToken; } }
-        public string APIUrl { get { return Config.APIUrl; } }
-        public string DownloadUrl { get { return Config.DownloadUrl; } }
-        public string AccountID { get { return Config.AccountID; } }
-
-        private string DropTrailingSlashes(string url)
-        {
-            while(url.EndsWith("/", StringComparison.Ordinal))
-                url = url.Substring(0, url.Length - 1);
-            return url;
-        }
-
-        public string APIDnsName
-        {
-            get
-            {
-                if (m_config == null || string.IsNullOrWhiteSpace(m_config.APIUrl))
-                    return null;
-                return new System.Uri(m_config.APIUrl).Host;
-            }
-        }
-
-        public string DownloadDnsName
-        {
-            get
-            {
-                if (m_config == null || string.IsNullOrWhiteSpace(m_config.DownloadUrl))
-                    return null;
-                return new System.Uri(m_config.DownloadUrl).Host;
-            }
-        }
-
-        private AuthResponse Config
-        {
-            get
-            {
-                if (m_config == null || m_configExpires < DateTime.UtcNow)
-                {
-                    var retries = 0;
-
-                    while(true)
-                    {
-                        try
-                        {
-                            var req = base.CreateRequest(AUTH_URL);
-                            req.Headers.Add("Authorization", string.Format("Basic {0}", m_credentials));
-                            req.ContentType = "application/json; charset=utf-8";
-
-                            using(var resp = (HttpWebResponse)new AsyncHttpRequest(req).GetResponse())
-                                m_config = ReadJSONResponse<AuthResponse>(resp);
-
-                            m_config.APIUrl = DropTrailingSlashes(m_config.APIUrl);
-                            m_config.DownloadUrl = DropTrailingSlashes(m_config.DownloadUrl);
-
-                            m_configExpires = DateTime.UtcNow + TimeSpan.FromHours(1);
-                            return m_config;
-                        }
-                        catch (Exception ex)
-                        {
-                            var clienterror = false;
-
-                            try
-                            {
-                                // Only retry once on client errors
-                                if (ex is WebException exception && exception.Response is HttpWebResponse response)
-                                {
-                                    var sc = (int)response.StatusCode;
-                                    clienterror = (sc >= 400 && sc <= 499);
-                                }
-                            }
-                            catch
-                            {
-                            }
-
-                            if (retries >= (clienterror ? 1 : 5))
-                            {
-                                AttemptParseAndThrowException(ex);
-                                throw;
-                            }
-
-                            System.Threading.Thread.Sleep(TimeSpan.FromSeconds(Math.Pow(2, retries)));
-                            retries++;
-                        }
-                    }
-                }
-
-                return m_config;
-            }
-        }
-
-        public static void AttemptParseAndThrowException(Exception ex)
-        {
-            Exception newex = null;
-            try
-            {
-                if (ex is WebException exception && exception.Response is HttpWebResponse hs)
-                {
-                    string rawdata = null;
-                    using(var rs = Library.Utility.AsyncHttpRequest.TrySetTimeout(hs.GetResponseStream()))
-                    using(var sr = new System.IO.StreamReader(rs))
-                        rawdata = sr.ReadToEnd();
-
-                    newex = new Exception("Raw message: " + rawdata);
-
-                    var msg = JsonConvert.DeserializeObject<ErrorResponse>(rawdata);
-                    newex = new Exception(string.Format("{0} - {1}: {2}", msg.Status, msg.Code, msg.Message));
-                }
-            }
-            catch
-            {
-            }
-
-            if (newex != null)
-                throw newex;
-        }
-
-        protected override void ParseException(Exception ex)
-        {
-            AttemptParseAndThrowException(ex);
-        }
-
-        public static HttpStatusCode GetExceptionStatusCode(Exception ex)
-        {
-            if (ex is WebException exception && exception.Response is HttpWebResponse response)
-                return response.StatusCode;
-            else
-                return default(HttpStatusCode);
-        }
-            
-
-        private class ErrorResponse
-        {
-            [JsonProperty("code")]
-            public string Code { get; set; }
-            [JsonProperty("message")]
-            public string Message { get; set; }
-            [JsonProperty("status")]
-            public long Status { get; set; }
-
-        }
-
-        private class AuthResponse 
-        {
-            [JsonProperty("accountId")]
-            public string AccountID { get; set; }
-            [JsonProperty("apiUrl")]
-            public string APIUrl { get; set; }
-            [JsonProperty("authorizationToken")]
-            public string AuthorizationToken { get; set; }
-            [JsonProperty("downloadUrl")]
-            public string DownloadUrl { get; set; }
-        }
-
+        HttpRequestMessage request = base.CreateRequest(url, method);
+        request.Headers.TryAddWithoutValidation("Authorization", AuthorizationToken);
+        request.Headers.Add("User-Agent", UserAgent);
+        return request;
     }
 
-}
+    /// <summary>
+    /// Cleans the url to remove trailing slashes
+    /// </summary>
+    /// <param name="url">URL</param>
+    private string DropTrailingSlashes(string url)
+    {
+        while (url.EndsWith("/", StringComparison.Ordinal))
+            url = url.Substring(0, url.Length - 1);
+        return url;
+    }
 
+    /// <summary>
+    /// API DNS Name
+    /// </summary>
+    public string ApiDnsName =>
+        _CachedAuthResponse == null || string.IsNullOrWhiteSpace(_CachedAuthResponse.APIUrl)
+            ? null
+            : new Uri(_CachedAuthResponse.APIUrl).Host;
+
+    /// <summary>
+    /// Download DNS Name
+    /// </summary>
+    public string DownloadDnsName =>
+        _CachedAuthResponse == null || string.IsNullOrWhiteSpace(_CachedAuthResponse.DownloadUrl)
+            ? null
+            : new Uri(_CachedAuthResponse.DownloadUrl).Host;
+
+    private AuthResponse Config
+    {
+        get
+        {
+            if (_CachedAuthResponse != null && _configExpires >= DateTime.UtcNow) return _CachedAuthResponse;
+            var retries = 0;
+
+            while (true)
+            {
+                HttpResponseMessage response = null;
+                try
+                {
+
+                    using var request = base.CreateRequest(AUTH_URL);
+
+                    request.Headers.Add("Authorization", $"Basic {Convert.ToBase64String(Encoding.UTF8.GetBytes(userid + ":" + password))}");
+                    request.Headers.Add("ContentType", "application/json; charset=utf-8");
+
+                    using var timeoutToken = new CancellationTokenSource();
+                    timeoutToken.CancelAfter(TimeSpan.FromSeconds(AUTHENTICATION_TIMEOUT_SECONDS));
+
+                    response = _httpClient.Send(request, timeoutToken.Token);
+                    response.EnsureSuccessStatusCode();
+
+                    _CachedAuthResponse = ReadJsonResponse<AuthResponse>(response);
+                    _CachedAuthResponse.APIUrl = DropTrailingSlashes(_CachedAuthResponse.APIUrl);
+                    _CachedAuthResponse.DownloadUrl = DropTrailingSlashes(_CachedAuthResponse.DownloadUrl);
+                    _configExpires = DateTime.UtcNow + TimeSpan.FromMinutes(CACHE_EXPIRATION_MINUTES);
+
+                    response.Dispose();
+                    return _CachedAuthResponse;
+                }
+                catch (Exception ex)
+                {
+                    var clientError = false;
+
+                    try
+                    {
+                        // Only retry once on client errors
+                        if (ex is HttpRequestException { StatusCode: not null } exception)
+                        {
+                            var sc = (int)exception.StatusCode;
+                            clientError = sc is >= 400 and <= 499;
+                        }
+                    }
+                    catch
+                    {
+                        // ignored
+                    }
+
+                    if (retries >= (clientError ? 1 : MAX_AUTHORIZATION_RETRIES))
+                    {
+                        AttemptParseAndThrowException(ex, response);
+                        throw;
+                    }
+
+                    Thread.Sleep(TimeSpan.FromSeconds(Math.Pow(2, retries)));
+                    retries++;
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// Parses the exception and throws a new exception with the error message
+    /// </summary>
+    /// <param name="ex">Exception to be parsed</param>
+    /// <param name="responseContext">Response context</param>
+    /// <exception cref="Exception">New detailed exception</exception>
+    public override void AttemptParseAndThrowException(Exception ex, HttpResponseMessage responseContext = null)
+    {
+        if (ex is not HttpRequestException || responseContext == null)
+            return;
+
+        using var stream = responseContext.Content.ReadAsStream();
+        using var reader = new StreamReader(stream);
+        var rawData = reader.ReadToEnd();
+        var errorResponse = JsonConvert.DeserializeObject<ErrorResponse>(rawData);
+        throw new UserInformationException($"Backblaze ErrorResponse: {errorResponse.Status} - {errorResponse.Code}: {errorResponse.Message}", "BackblazeErrorResponse");
+    }
+
+    /// <summary>
+    /// Extract Http status code from exception
+    /// </summary>
+    /// <param name="ex">Exception to be parsed</param>
+    public static HttpStatusCode GetExceptionStatusCode(Exception ex)
+    {
+        return ex is HttpRequestException { StatusCode: not null } httpEx ? httpEx.StatusCode.Value : default;
+    }
+}
