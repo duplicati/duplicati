@@ -1,4 +1,4 @@
-﻿// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -43,6 +43,7 @@ namespace Duplicati.Library.Main.Database
 
         protected readonly System.Data.IDbConnection m_connection;
         protected readonly long m_operationid = -1;
+        private bool m_hasExecutedVacuum;
 
         private readonly System.Data.IDbCommand m_updateremotevolumeCommand;
         private readonly System.Data.IDbCommand m_selectremotevolumesCommand;
@@ -573,6 +574,7 @@ AND Fileset.ID NOT IN
 
         public void Vacuum()
         {
+            m_hasExecutedVacuum = true;
             using (var cmd = m_connection.CreateCommand())
                 cmd.ExecuteNonQuery("VACUUM");
         }
@@ -1463,7 +1465,7 @@ ORDER BY
 
             if (ShouldCloseConnection && m_connection != null)
             {
-                if (m_connection.State == System.Data.ConnectionState.Open)
+                if (m_connection.State == System.Data.ConnectionState.Open && !m_hasExecutedVacuum)
                 {
                     using (IDbTransaction transaction = m_connection.BeginTransaction())
                     {
