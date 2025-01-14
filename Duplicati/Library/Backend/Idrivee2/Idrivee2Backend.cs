@@ -110,7 +110,7 @@ namespace Duplicati.Library.Backend
             catch (System.Net.WebException wex)
             {
                 //Convert to better exception
-                throw new Exception("Failed to fetch region endpoint");
+                throw new Exception("Failed to fetch region endpoint", wex);
             }
         }
 
