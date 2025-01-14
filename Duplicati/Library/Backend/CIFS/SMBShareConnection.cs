@@ -19,6 +19,8 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -81,7 +83,7 @@ public class SMBShareConnection : IDisposable, IAsyncDisposable
 
         if (status != NTStatus.STATUS_SUCCESS)
             throw new UserInformationException($"{LC.L("Failed to authenticate to server")} {connectionParameters.ServerName} with status {status}", "ConnectionError");
-        
+
         _smbFileStore = _smb2Client.TreeConnect(connectionParameters.ShareName, out status);
 
         if (status != NTStatus.STATUS_SUCCESS)
@@ -220,7 +222,7 @@ public class SMBShareConnection : IDisposable, IAsyncDisposable
                     if (status == NTStatus.STATUS_OBJECT_PATH_NOT_FOUND || status == NTStatus.STATUS_OBJECT_NAME_NOT_FOUND)
                         throw new FolderMissingException();
                     else
-                        throw new UserInformationException($"{LC.L("Failed to open directory")} { NormalizeSlashes(_connectionParameters.Path)} with status {status.ToString()}","DirectoryOpenError");
+                        throw new UserInformationException($"{LC.L("Failed to open directory")} {NormalizeSlashes(_connectionParameters.Path)} with status {status.ToString()}", "DirectoryOpenError");
 
                 List<QueryDirectoryFileInformation> fileList;
                 status = _smbFileStore.QueryDirectory(
@@ -229,9 +231,9 @@ public class SMBShareConnection : IDisposable, IAsyncDisposable
                     "*",
                     FileInformationClass.FileDirectoryInformation);
 
-                 if (status != NTStatus.STATUS_NO_MORE_FILES)
-                    throw new UserInformationException($"{LC.L("Failed to query directory contents")} with status {status.ToString()}","DirectoryQueryError");
-                 
+                if (status != NTStatus.STATUS_NO_MORE_FILES)
+                    throw new UserInformationException($"{LC.L("Failed to query directory contents")} with status {status.ToString()}", "DirectoryQueryError");
+
                 return
                 [
                     ..fileList
@@ -294,7 +296,7 @@ public class SMBShareConnection : IDisposable, IAsyncDisposable
                     int readBufferSize = Math.Min(_connectionParameters.ReadBufferSize ?? (int)_smb2Client.MaxReadSize, (int)_smb2Client.MaxReadSize);
                     status = _smbFileStore.ReadFile(out data, fileHandle, bytesRead, readBufferSize);
                     if (status != NTStatus.STATUS_SUCCESS && status != NTStatus.STATUS_END_OF_FILE)
-                        throw new UserInformationException($"{LC.L("Failed to read file on GetAsync")} {filename} with status {status.ToString()}","FileReadError");
+                        throw new UserInformationException($"{LC.L("Failed to read file on GetAsync")} {filename} with status {status.ToString()}", "FileReadError");
 
                     if (status == NTStatus.STATUS_END_OF_FILE || data.Length == 0)
                         break;
@@ -385,7 +387,7 @@ public class SMBShareConnection : IDisposable, IAsyncDisposable
             _semaphore.Release();
         }
     }
-    
+
     /// <summary>
     /// Normalizes paths to use backslashes (for Windows shares compatibility) and removes trailing slashes.
     ///
