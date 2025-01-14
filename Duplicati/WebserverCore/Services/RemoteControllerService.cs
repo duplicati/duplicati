@@ -74,7 +74,7 @@ public class RemoteControllerService(Connection connection, IHttpClientFactory h
         if (!CanEnable)
             throw new InvalidOperationException("Remote control is not configured");
 
-        var config = JsonConvert.DeserializeObject<RemoteControlConfig>(connection.ApplicationSettings.RemoteControlConfig)
+        var config = JsonConvert.DeserializeObject<RemoteControlConfig>(connection.ApplicationSettings.RemoteControlConfig ?? string.Empty)
             ?? throw new InvalidOperationException("Invalid remote control configuration");
 
         _keepRemoteConnection = KeepRemoteConnection.CreateRemoteListener(

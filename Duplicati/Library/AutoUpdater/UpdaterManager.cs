@@ -24,7 +24,6 @@ using System.Linq;
 using System.Collections.Generic;
 using System.IO;
 using Duplicati.Library.Utility;
-using Duplicati.Library.Common;
 using System.Diagnostics;
 using System.Text.Json;
 using System.Net.Http;

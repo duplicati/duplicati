@@ -186,7 +186,7 @@ public class ServerSetting : IEndpointV1
             if (prop == null)
                 throw new NotFoundException("Key not found");
 
-            var dict = new Dictionary<string, string>
+            var dict = new Dictionary<string, string?>
             {
                 { key,  value }
             };

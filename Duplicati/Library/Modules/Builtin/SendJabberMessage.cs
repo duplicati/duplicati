@@ -193,7 +193,7 @@ namespace Duplicati.Library.Modules.Builtin
             return base.ReplaceTemplate(input, result, exception, subjectline);
         }
 
-        protected override async void SendMessage(string subject, string body)
+        protected override void SendMessage(string subject, string body)
         {
 
             var uri = new Library.Utility.Uri(m_username.Contains("://") ? m_username : "http://" + m_username);

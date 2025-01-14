@@ -20,14 +20,16 @@
 // DEALINGS IN THE SOFTWARE.
 using System.Collections.Generic;
 
+#nullable enable
+
 namespace Duplicati.Server.Serializable
 {
     public class ImportExportStructure
     {
-        public string CreatedByVersion { get; set; }
-        public Duplicati.Server.Database.Schedule Schedule { get; set; }
-        public Duplicati.Server.Database.Backup Backup { get; set; }
-        public Dictionary<string, string> DisplayNames { get; set; }
+        public required string CreatedByVersion { get; init; }
+        public required Duplicati.Server.Database.Schedule? Schedule { get; init; }
+        public required Duplicati.Server.Database.Backup Backup { get; init; }
+        public required Dictionary<string, string> DisplayNames { get; init; }
     }
 }
 

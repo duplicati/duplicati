@@ -117,7 +117,7 @@ namespace Duplicati.Library.Compression.ZipCompression
         /// <param name="stream">The stream to read or write depending access mode</param>
         /// <param name="mode">The archive access mode</param>
         /// <param name="options">The options passed on the commandline</param>
-        public FileArchiveZip(Stream stream, ArchiveMode mode, IDictionary<string, string> options)
+        public FileArchiveZip(Stream stream, ArchiveMode mode, IDictionary<string, string?> options)
         {
             var compressionType = DEFAULT_COMPRESSION_METHOD;
             var compressionLevel = DEFAULT_COMPRESSION_LEVEL;
