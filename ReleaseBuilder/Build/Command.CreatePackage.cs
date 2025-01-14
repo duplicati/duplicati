@@ -304,6 +304,7 @@ public static partial class Command
                 OperatingSystem.IsWindows() ?
                 [
                     Program.Configuration.Commands.Wix!,
+                    "build",
                     "-define", $"HarvestPath={sourceFiles}",
                     "-arch", msiArch,
                     "-out", msiFile,
