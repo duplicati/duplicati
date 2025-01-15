@@ -65,6 +65,18 @@ namespace Duplicati.Library.Logging
     }
 
     /// <summary>
+    /// A disposable log scope
+    /// </summary>
+    public interface ILogScope : IDisposable
+    {
+        /// <summary>
+        /// Writes a message to the log
+        /// </summary>
+        /// <param name="entry">The log entry to write</param>
+        void WriteMessage(LogEntry entry);
+    }
+
+    /// <summary>
     /// This static class is used to write log messages
     /// </summary>
     public static class Log
@@ -78,11 +90,6 @@ namespace Duplicati.Library.Logging
         /// The root scope
         /// </summary>
         private static readonly LogScope m_root = new LogScope(null, new LogTagFilter(LogMessageType.Error, null, null), null, true);
-
-        /// <summary>
-        /// The stored log instances
-        /// </summary>
-        private static readonly Dictionary<string, LogScope> m_log_instances = new Dictionary<string, LogScope>();
 
         /// <summary>
         /// Static lock object to provide thread safe logging
@@ -216,15 +223,15 @@ namespace Duplicati.Library.Logging
             WriteMessage(LogMessageType.Verbose, tag, id, null, message, arguments);
         }
 
-		/// <summary>
+        /// <summary>
         /// Writes a verbose message to the current log destination
         /// </summary>
         /// <param name="message">The message to write</param>
         /// <param name="tag">The tag-type for this message</param>
         /// <param name="id">The message id</param>
-		/// <param name="ex">The exception to log</param>
+        /// <param name="ex">The exception to log</param>
         /// <param name="arguments">The message format arguments</param>
-		public static void WriteVerboseMessage(string tag, string id, Exception ex, string message, params object[] arguments)
+        public static void WriteVerboseMessage(string tag, string id, Exception ex, string message, params object[] arguments)
         {
             WriteMessage(LogMessageType.Verbose, tag, id, ex, message, arguments);
         }
@@ -332,11 +339,7 @@ namespace Duplicati.Library.Logging
             lock (m_lock)
             {
                 var cs = CurrentScope;
-                while (cs != null && !cs.IsolatingScope)
-                {
-                    cs.WriteMessage(msg);
-                    cs = cs.Parent;
-                }
+                cs?.WriteMessage(msg);
             }
         }
 
@@ -345,7 +348,7 @@ namespace Duplicati.Library.Logging
         /// </summary>
         /// <param name="detached">Flag indicating if the scope should be detached from the parent</param>
         /// <returns>The new scope.</returns>
-        public static IDisposable StartIsolatingScope(bool detached)
+        public static ILogScope StartIsolatingScope(bool detached)
         {
             lock (m_lock)
             {
@@ -397,7 +400,7 @@ namespace Duplicati.Library.Logging
         /// <param name="log">The log target</param>
         /// <param name="filter">The log filter</param>
         /// <returns>The new scope.</returns>
-        public static IDisposable StartScope(ILogDestination log, ILogFilter filter = null, bool isolating = false)
+        public static ILogScope StartScope(ILogDestination log, ILogFilter filter = null, bool isolating = false)
         {
             return new LogScope(log, filter, CurrentScope, isolating);
         }
@@ -408,7 +411,7 @@ namespace Duplicati.Library.Logging
         /// <param name="log">The log target</param>
         /// <param name="filter">The log filter</param>
         /// <returns>The new scope.</returns>
-        public static IDisposable StartScope(Action<LogEntry> log, Func<LogEntry, bool> filter = null)
+        public static ILogScope StartScope(Action<LogEntry> log, Func<LogEntry, bool> filter = null)
         {
             return new LogScope(new FunctionLogDestination(log), filter == null ? null : new FunctionFilter(filter), CurrentScope, false);
         }
@@ -428,11 +431,10 @@ namespace Duplicati.Library.Logging
         /// <param name="scope">The scope to finish.</param>
         internal static void CloseScope(LogScope scope)
         {
-            lock(m_lock)
+            lock (m_lock)
             {
                 if (CurrentScope == scope && scope != m_root)
                     CurrentScope = scope.Parent;
-                m_log_instances.Remove(scope.InstanceID);
             }
         }
 
@@ -444,32 +446,12 @@ namespace Duplicati.Library.Logging
             get
             {
                 lock (m_lock)
-                {
-                    var cur = CallContext.GetData(LOGICAL_CONTEXT_KEY) as string;
-                    if (cur == null || cur == m_root.InstanceID)
-                        return m_root;
-                    
-                    LogScope sc;
-                    if (!m_log_instances.TryGetValue(cur, out sc))
-                        throw new Exception("Unable to find log in lookup table, this may be caused by attempting to transport call contexts between AppDomains (e.g. with remoting calls)");
-
-                    return sc;
-                }
+                    return CallContext.GetData(LOGICAL_CONTEXT_KEY) as LogScope ?? m_root;
             }
             private set
             {
                 lock (m_lock)
-                {
-                    if (value != null)
-                    {
-                        m_log_instances[value.InstanceID] = value;
-                        CallContext.SetData(LOGICAL_CONTEXT_KEY, value.InstanceID);
-                    }
-                    else
-                    {
-                        CallContext.SetData(LOGICAL_CONTEXT_KEY, null);
-                    }
-                }
+                    CallContext.SetData(LOGICAL_CONTEXT_KEY, value);
             }
         }
     }

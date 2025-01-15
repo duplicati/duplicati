@@ -20,14 +20,13 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System;
-using System.Linq;
 
 namespace Duplicati.Library.Logging
 {
     /// <summary>
     /// Internal class for keeping log instance relations
     /// </summary>
-    internal class LogScope : IDisposable
+    internal class LogScope : ILogScope
     {
         /// <summary>
         /// The unique ID of this log instance
@@ -84,8 +83,14 @@ namespace Duplicati.Library.Logging
         /// <param name="entry">The log entry</param>
         public void WriteMessage(LogEntry entry)
         {
+            if (m_isDisposed)
+                throw new ObjectDisposedException("LogScope");
+
             if (m_log != null && (m_filter == null || m_filter.Accepts(entry)))
                 m_log.WriteMessage(entry);
+
+            if (Parent != null && !IsolatingScope)
+                Parent.WriteMessage(entry);
         }
 
         /// <summary>
