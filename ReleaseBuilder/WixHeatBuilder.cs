@@ -38,7 +38,7 @@ public static class WixHeatBuilder
     public static string CreateWixFilelist(string sourceFolder, string version, string folderPrefix = "$(var.HarvestPath)", string directoryRefName = "INSTALLLOCATION", string componentGroupId = "DUPLICATIBIN", Func<string, string>? fileIdGenerator = null)
     {
         var itemIds = new Dictionary<string, string>();
-        fileIdGenerator ??= (x) => Path.GetRelativePath(sourceFolder, x).Replace("\\", "_").Replace("/", "_").Replace(":", "_").Replace(" ", "_");
+        fileIdGenerator ??= (x) => Path.GetRelativePath(sourceFolder, x).Replace("\\", "_").Replace("/", "_").Replace(":", "_").Replace(" ", "_").Replace("-", "_");
         Func<string, string> pathTransformer = (x) => $"{folderPrefix}{Path.GetRelativePath(sourceFolder, x)}";
 
         var doc = new XmlDocument();
