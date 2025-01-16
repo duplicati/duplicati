@@ -81,9 +81,12 @@ namespace Duplicati.Library.Main.Operation.Common
                     return;
                 }
 
-                using (new Logging.Timer(LOGTAG, "CommitTransactionAsync", message))
-                    m_transaction.Commit();
-                m_transaction = null;
+                if (m_transaction != null)
+                {
+                    using (new Logging.Timer(LOGTAG, "CommitTransactionAsync", message))
+                        m_transaction.Commit();
+                    m_transaction = null;
+                }
             });
         }
 
@@ -91,8 +94,11 @@ namespace Duplicati.Library.Main.Operation.Common
         {
             return RunOnMain(() =>
             {
-                m_transaction.Rollback();
-                m_transaction = null;
+                if (m_transaction != null)
+                {
+                    m_transaction.Rollback();
+                    m_transaction = null;
+                }
             });
         }
 
