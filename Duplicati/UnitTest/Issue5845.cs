@@ -83,7 +83,7 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("Targeted")]
-        public void RunCommands()
+        public void TestDuplicatedBlocksInOrphanIndex()
         {
             var testopts = TestOptions;
             testopts.Add("no-encryption", "true");
@@ -176,6 +176,101 @@ namespace Duplicati.UnitTest
                 Assert.AreEqual(0, listResults.Errors.Count());
                 Assert.AreEqual(0, listResults.Warnings.Count());
                 Assert.AreEqual(listResults.Filesets.Count(), 1);
+            }
+        }
+
+        [Test]
+        [Category("Targeted")]
+        public void TestReplicatedBlocksInOrphanIndex()
+        {
+            var replicas = 16;
+            var goodExtras = 1;
+            var testopts = TestOptions;
+            testopts.Add("no-encryption", "true");
+
+            var opts = new Library.Main.Options(testopts);
+
+            // Make a backup
+            var data = new byte[1024 * 1024 * 10];
+            File.WriteAllBytes(Path.Combine(DATAFOLDER, "a"), data);
+            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
+            {
+                IBackupResults backupResults = c.Backup(new string[] { DATAFOLDER });
+                Assert.AreEqual(0, backupResults.Errors.Count());
+                Assert.AreEqual(0, backupResults.Warnings.Count());
+            }
+
+            var blockfilename = Directory.EnumerateFiles(TARGETFOLDER, $"*.dblock.{opts.CompressionModule}").First();
+            var indexfilename = Directory.EnumerateFiles(TARGETFOLDER, $"*.dindex.{opts.CompressionModule}").First();
+
+            (string indexfile, string blockfile) CreateDuplicatedFiles()
+            {
+                // Create a copy of the block file
+                var newblockfilename = Path.Combine(TARGETFOLDER, Library.Main.Volumes.VolumeBase.GenerateFilename(Library.Main.RemoteVolumeType.Blocks, opts.Prefix, Library.Main.Volumes.VolumeWriterBase.GenerateGuid(), DateTime.Now, opts.CompressionModule, opts.EncryptionModule));
+                if (File.Exists(newblockfilename))
+                    File.Delete(newblockfilename);
+                File.Copy(blockfilename, newblockfilename);
+
+                // Create a duplicated index file
+                var newindexfilename = Path.Combine(TARGETFOLDER, Library.Main.Volumes.VolumeBase.GenerateFilename(Library.Main.RemoteVolumeType.Index, opts.Prefix, Library.Main.Volumes.VolumeWriterBase.GenerateGuid(), DateTime.Now, opts.CompressionModule, opts.EncryptionModule));
+                if (File.Exists(newindexfilename))
+                    File.Delete(newindexfilename);
+
+                using (var writer = new Library.Main.Volumes.IndexVolumeWriter(opts))
+                using (var fs = File.OpenRead(indexfilename))
+                using (var cmp = CompressionLoader.GetModule(opts.CompressionModule, fs, ArchiveMode.Read, testopts))
+                using (var reader = new Library.Main.Volumes.IndexVolumeReader(cmp, opts, opts.BlockhashSize))
+                {
+                    foreach (var v in reader.Volumes)
+                    {
+                        writer.StartVolume(v.Filename == Path.GetFileName(blockfilename) ? Path.GetFileName(newblockfilename) : v.Filename);
+                        foreach (var b in v.Blocks)
+                            writer.AddBlock(b.Key, b.Value);
+                        writer.FinishVolume(v.Hash, v.Length);
+                    }
+
+                    foreach (var bl in reader.BlockLists)
+                        writer.WriteBlocklist(bl.Hash, bl.Data);
+
+                    writer.Close();
+                    File.Copy(writer.LocalFilename, newindexfilename);
+                }
+
+                return (newindexfilename, newblockfilename);
+            }
+
+            var sets = Enumerable.Range(0, replicas).Select(x => CreateDuplicatedFiles()).ToList();
+            sets.Skip(goodExtras).ToList().ForEach(x => File.Delete(x.blockfile));
+
+            // Make sure the index files that point to non-existing blocks are returned first
+            var mustBeLastOrder = sets.Take(goodExtras).Select(x => Path.GetFileName(x.indexfile))
+                .Append(Path.GetFileName(indexfilename))
+                .ToList();
+
+            ListSortingBackend.RealKey = "file";
+            ListSortingBackend.Sorter = files =>
+            {
+                var lst = files.ToList();
+                var entries = mustBeLastOrder.Select(x => lst.First(y => y.Name == x)).ToList();
+                return lst.Except(entries).Concat(entries).ToList();
+            };
+            BackendLoader.AddBackend(new ListSortingBackend());
+
+            // Delete the local database, and recreate
+            File.Delete(DBFILE);
+            using (var c = new Library.Main.Controller(ListSortingBackend.Key + "://" + TARGETFOLDER, testopts, null))
+            {
+                IRepairResults repairResults = c.Repair();
+                Assert.AreEqual(replicas - goodExtras, repairResults.Errors.Count());
+                Assert.AreEqual(1, repairResults.Warnings.Count());
+            }
+
+            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
+            {
+                IListResults listResults = c.List();
+                Assert.AreEqual(0, listResults.Errors.Count());
+                Assert.AreEqual(0, listResults.Warnings.Count());
+                Assert.AreEqual(1, listResults.Filesets.Count());
             }
         }
     }
