@@ -18,6 +18,7 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
+using System.Text.RegularExpressions;
 using System.Xml;
 
 namespace ReleaseBuilder;
@@ -27,6 +28,27 @@ namespace ReleaseBuilder;
 /// </summary>
 public static class WixHeatBuilder
 {
+
+    /// <summary>
+    /// Converts a string to a valid Wix identifier.
+    /// </summary>
+    /// <param name="input">The input string.</param>
+    /// <returns>The WiX identifier.</returns>
+    public static string ConvertToIdentifier(string input)
+    {
+        if (string.IsNullOrEmpty(input))
+            throw new ArgumentException("Input string cannot be null or empty.");
+
+        // Remove invalid characters (only allow A-Z, a-z, 0-9, _, .)
+        string cleanedInput = Regex.Replace(input, @"[^A-Za-z0-9_.]", "_");
+
+        // Ensure the identifier starts with a letter or underscore
+        if (!char.IsLetter(cleanedInput[0]) && cleanedInput[0] != '_')
+            cleanedInput = "_" + cleanedInput;
+
+        return cleanedInput;
+    }
+
     /// <summary>
     /// Creates a Wix filelist from a directory
     /// </summary>
@@ -38,7 +60,7 @@ public static class WixHeatBuilder
     public static string CreateWixFilelist(string sourceFolder, string version, string folderPrefix = "$(var.HarvestPath)", string directoryRefName = "INSTALLLOCATION", string componentGroupId = "DUPLICATIBIN", string wixNs = "http://schemas.microsoft.com/wix/2006/wi", Func<string, string>? fileIdGenerator = null)
     {
         var itemIds = new Dictionary<string, string>();
-        fileIdGenerator ??= (x) => Path.GetRelativePath(sourceFolder, x).Replace("\\", "_").Replace("/", "_").Replace(":", "_").Replace(" ", "_").Replace("-", "_");
+        fileIdGenerator ??= (x) => ConvertToIdentifier(Path.GetRelativePath(sourceFolder, x));
         Func<string, string> pathTransformer = (x) => $"{folderPrefix}{Path.GetRelativePath(sourceFolder, x)}";
 
         var doc = new XmlDocument();
