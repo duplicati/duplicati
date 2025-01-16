@@ -35,14 +35,14 @@ public static class WixHeatBuilder
     /// <param name="componentGroupId">The name of the component group</param>
     /// <param name="fileIdGenerator">A function to generate file IDs.</param>
     /// <returns>The wix file xml contents</returns>
-    public static string CreateWixFilelist(string sourceFolder, string version, string folderPrefix = "$(var.HarvestPath)", string directoryRefName = "INSTALLLOCATION", string componentGroupId = "DUPLICATIBIN", Func<string, string>? fileIdGenerator = null)
+    public static string CreateWixFilelist(string sourceFolder, string version, string folderPrefix = "$(var.HarvestPath)", string directoryRefName = "INSTALLLOCATION", string componentGroupId = "DUPLICATIBIN", string wixNs = "http://schemas.microsoft.com/wix/2006/wi", Func<string, string>? fileIdGenerator = null)
     {
         var itemIds = new Dictionary<string, string>();
         fileIdGenerator ??= (x) => Path.GetRelativePath(sourceFolder, x).Replace("\\", "_").Replace("/", "_").Replace(":", "_").Replace(" ", "_").Replace("-", "_");
         Func<string, string> pathTransformer = (x) => $"{folderPrefix}{Path.GetRelativePath(sourceFolder, x)}";
 
         var doc = new XmlDocument();
-        doc.LoadXml("<Wix xmlns=\"http://schemas.microsoft.com/wix/2006/wi\"></Wix>");
+        doc.LoadXml($"<Wix xmlns=\"{wixNs}\"></Wix>");
         var root = doc.DocumentElement!;
         var fragment = doc.CreateElement("Fragment");
         root.AppendChild(fragment);
