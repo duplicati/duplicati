@@ -1,4 +1,4 @@
-﻿// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -26,6 +26,7 @@ using Duplicati.Library.Interface;
 using Amazon.IdentityManagement;
 using Amazon.IdentityManagement.Model;
 using Duplicati.Library.Localization.Short;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Backend
 {
@@ -196,12 +197,13 @@ namespace Duplicati.Library.Backend
             User user;
             try
             {
-                user = cl.GetUserAsync().GetAwaiter().GetResult().User;
+                user = cl.GetUserAsync().Await().User;
             }
-            catch (Exception ex) when (ex is NoSuchEntityException || ex is ServiceFailureException)
+            catch (Exception ex)
             {
                 return new Dictionary<string, string>
                 {
+                    ["isroot"] = false.ToString(),
                     ["ex"] = ex.ToString(),
                     ["error"] = $"Exception occurred while retrieving user {awsid} : {ex.Message}"
                 };
