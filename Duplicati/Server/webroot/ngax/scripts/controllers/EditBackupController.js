@@ -49,6 +49,9 @@ backupApp.controller('EditBackupController', function ($rootScope, $scope, $rout
 
     $scope.$watch('Options["passphrase"]', computePassPhraseStrength);
     $scope.$watch('RepeatPasshrase', computePassPhraseStrength);
+    $scope.parseSizeString = function(v) { 
+        return AppUtils.parseSizeString(v);
+    }
 
     $scope.checkGpgAsymmetric = function() {
         if (!this.Options) {
