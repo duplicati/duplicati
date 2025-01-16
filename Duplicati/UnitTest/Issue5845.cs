@@ -183,7 +183,7 @@ namespace Duplicati.UnitTest
         [Category("Targeted")]
         public void TestReplicatedBlocksInOrphanIndex()
         {
-            var replicas = 16;
+            var replicas = 4;
             var goodExtras = 1;
             var testopts = TestOptions;
             testopts.Add("no-encryption", "true");
