@@ -62,10 +62,17 @@ public class ProcessBasedActionDelay : IDisposable
     /// </summary>
     /// <param name="action">The action to execute</param>
     public void ExecuteAction(Action action)
+    {
         // Note: WriteNoWait() is used to avoid waiting for the action to be read,
         // as this would cause deadlocks if called from within the processor.
         // The buffer size should be sufficient to allow for a reasonable number of actions to be queued.
-        => m_inboundActionChannel.WriteNoWait(action);
+        var task = m_inboundActionChannel.WriteAsync(action);
+
+        // Observe if the channel is full or retired
+        Task.WaitAny(task, Task.Delay(500));
+        if (task.IsCompleted)
+            task.Await();
+    }
 
     /// <summary>
     /// Signals the start of the processor
