@@ -409,7 +409,8 @@ namespace Duplicati.Library.Backend
 
             var request = new HttpRequestMessage(HttpMethod.Get, $"{m_url}{Utility.Uri.UrlEncode(remotename).Replace("+", "%20")}");
             request.Headers.Add(HttpRequestHeader.UserAgent.ToString(), "Duplicati WEBDAV Client v" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version);
-            request.Headers.ConnectionClose = true; // Equivalent to KeepAlive = false
+            
+            request.Headers.ConnectionClose = !m_useIntegratedAuthentication; // ConnectionClose is incompatible with integrated authentication
 
             if (method != null)
                 request.Method = method;
