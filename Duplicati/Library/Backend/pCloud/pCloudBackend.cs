@@ -323,7 +323,7 @@ public class pCloudBackend : IStreamingBackend
         timeoutToken.CancelAfter(TimeSpan.FromSeconds(SHORT_OPERATION_TIMEOUT_SECONDS));
         using var combinedTokens =
             CancellationTokenSource.CreateLinkedTokenSource(timeoutToken.Token, cancellationToken);
-        
+
         using var requestResources = CreateRequest($"/getfilelink?fileid={await GetFileId(filename, cancellationToken).ConfigureAwait(false)}", HttpMethod.Get);
 
         using var response = await requestResources.HttpClient.SendAsync(
@@ -513,15 +513,15 @@ public class pCloudBackend : IStreamingBackend
     /// </summary>
     /// <param name="name">The filename</param>
     /// <param name="cancellationToken">Cancellation Token</param>
-    /// <returns></returns>
-    /// <exception cref="FileNotFoundException"></exception>
+    /// <returns>The fileID</returns>
+    /// <exception cref="FileMissingException"></exception>
     private async Task<ulong> GetFileId(string name, CancellationToken cancellationToken)
     {
         _CachedFolderID ??= await GetFolderId(cancellationToken).ConfigureAwait(false);
 
         var result = await ListWithMetadata((ulong)_CachedFolderID, cancellationToken).ConfigureAwait(false);
 
-        return result.FirstOrDefault(x => !x.isfolder && x.name == name)?.fileid ?? throw new FileNotFoundException(name);
+        return result.FirstOrDefault(x => !x.isfolder && x.name == name)?.fileid ?? throw new FileMissingException(name);
 
     }
 
