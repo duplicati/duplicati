@@ -18,6 +18,8 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Xml;
 
@@ -40,7 +42,14 @@ public static class WixHeatBuilder
             throw new ArgumentException("Input string cannot be null or empty.");
 
         // Remove invalid characters (only allow A-Z, a-z, 0-9, _, .)
-        string cleanedInput = Regex.Replace(input, @"[^A-Za-z0-9_.]", "_");
+        var cleanedInput = Regex.Replace(input, @"[^A-Za-z0-9_.]", "_");
+
+        if (cleanedInput.Length > 72)
+        {
+            var hash = BitConverter.ToString(SHA256.HashData(Encoding.UTF8.GetBytes(cleanedInput)))
+                .Replace("-", string.Empty)[..12];
+            cleanedInput = cleanedInput[..(72 - hash.Length)] + hash;
+        }
 
         // Ensure the identifier starts with a letter or underscore
         if (!char.IsLetter(cleanedInput[0]) && cleanedInput[0] != '_')
