@@ -1,3 +1,24 @@
+2025-01-17 - 2.1.0.107_canary_2025-01-17
+==========
+This release is a canary release intended to be used for testing.
+
+**Note that this build has a redesigned restore flow**
+Should issues arise, the previous restore engine can be enabled with `--restore-legacy=true`.
+
+This release contains a substantially updated version of the new UI.
+In the url, change `ngax` to `ngclient` to try the new UI.
+
+## Detailed list of changes:
+- Avoid optimize after vacuum
+- Prevent inifinite shutdown loop
+- Fixed a recreate database issue
+- Added a warning in the UI if the volume size is excessive
+- Fixed an issue with AWS S3 permission check
+- Prevent a termination error caused by unused transactions
+- Updated B2 backend to use HttpClient
+- Changed timeouts for WebDAV
+- Updated new UI (ngclient)
+
 2025-01-11 - 2.1.0.106_canary_2025-01-11
 ==========
 This release is a canary release intended to be used for testing.
