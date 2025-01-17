@@ -258,7 +258,7 @@ public class BackupGet : IEndpointV1
 
         byte[] data = EncodeDataForExport(connection, backup, passphrase);
 
-        string filename = Library.Utility.Uri.UrlEncode(backup.Name + "-duplicati-config.json");
+        string filename = Uri.EscapeDataString(backup.Name + "-duplicati-config.json");
         if (!string.IsNullOrWhiteSpace(passphrase))
             filename += ".aes";
 
