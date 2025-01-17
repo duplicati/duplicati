@@ -311,7 +311,7 @@ namespace Duplicati.UnitTest
 
 
         [Test]
-        public void IssueXRestoreModifiedMiddleBlock()
+        public void Issue5886RestoreModifiedMiddleBlock()
         {
             var blocksize = 1024;
             var n_blocks = 5;
