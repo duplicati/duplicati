@@ -74,7 +74,8 @@ namespace Duplicati.CommandLine.BackendTool
                 }
 
 
-                if (args.Count < 2 || String.Equals(args[0], "help", StringComparison.OrdinalIgnoreCase) || args[0] == "?" || command == null)
+                if (args.Count < 2 || HelpOptionExtensions.AlternativeHelpStrings.Any(helpString => 
+                        args.Contains(helpString, StringComparer.OrdinalIgnoreCase)) || command == null)
                 {
                     if (command == null && args.Count >= 2)
                     {

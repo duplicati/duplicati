@@ -32,7 +32,7 @@ using Duplicati.StreamUtil;
 namespace Duplicati.CommandLine.BackendTester
 {
     public class Program
-    {
+    { 
         class TempFile
         {
             public readonly string remotefilename;
@@ -82,7 +82,8 @@ namespace Duplicati.CommandLine.BackendTester
                 List<string> args = new List<string>(_args);
                 Dictionary<string, string> options = Library.Utility.CommandLineParser.ExtractOptions(args);
 
-                if (args.Count != 1 || String.Equals(args[0], "help", StringComparison.OrdinalIgnoreCase) || args[0] == "?")
+                if (args.Count != 1 || HelpOptionExtensions.AlternativeHelpStrings.Any(helpString => 
+                        args.Contains(helpString, StringComparer.OrdinalIgnoreCase)))
                 {
                     Console.WriteLine("Usage: <protocol>://<username>:<password>@<path>");
                     Console.WriteLine("Example: ftp://user:pass@server/folder");

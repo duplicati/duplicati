@@ -24,11 +24,13 @@ using System.Linq;
 using System.Reflection;
 using System.ServiceProcess;
 using Duplicati.Library.AutoUpdater;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.WindowsService
 {
     public class Program
     {
+        
         [STAThread]
         public static int Main(string[] args)
         {
@@ -40,7 +42,7 @@ namespace Duplicati.WindowsService
             var uninstall = args != null && args.Any(x => string.Equals("uninstall", x, StringComparison.OrdinalIgnoreCase));
             var install_agent = args != null && args.Any(x => string.Equals("install-agent", x, StringComparison.OrdinalIgnoreCase) || string.Equals("install-only-agent", x, StringComparison.OrdinalIgnoreCase));
             var uninstall_agent = args != null && args.Any(x => string.Equals("uninstall-agent", x, StringComparison.OrdinalIgnoreCase));
-            var help = args != null && args.Any(x => string.Equals("help", x, StringComparison.OrdinalIgnoreCase));
+            var help = args != null && HelpOptionExtensions.AlternativeHelpStrings.Any(helpString => args.Contains(helpString, StringComparer.OrdinalIgnoreCase));;
 
             if (help)
             {
