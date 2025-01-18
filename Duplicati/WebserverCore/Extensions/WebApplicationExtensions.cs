@@ -26,12 +26,12 @@ namespace Duplicati.WebserverCore.Extensions;
 
 public static class WebApplicationExtensions
 {
-    public static WebApplication AddEndpoints(this WebApplication application)
+    public static WebApplication AddEndpoints(this WebApplication application, bool useCors)
     {
-        return AddV1(application);
+        return AddV1(application, useCors);
     }
 
-    private static WebApplication AddV1(WebApplication application)
+    private static WebApplication AddV1(WebApplication application, bool useCors)
     {
         var mapperInterfaceType = typeof(IEndpointV1);
         var endpoints =
@@ -45,6 +45,9 @@ public static class WebApplicationExtensions
 
         if (!string.IsNullOrWhiteSpace(PreSharedKeyFilter.PreSharedKey))
             group = group.AddEndpointFilter<PreSharedKeyFilter>();
+
+        if (useCors)
+            group.RequireCors(DuplicatiWebserver.CorsPolicyName);
 
         foreach (var endpoint in endpoints)
         {
