@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Duplicati.Library.Main;
@@ -56,18 +56,7 @@ namespace RemoteSynchronization
                     Console.WriteLine($"Found {files2.Count()} remote files in {l2}");
                     if (files1.Count() >= files2.Count())
                     {
-                        foreach (var f1 in files1)
-                        {
-                            if (!files2.Any(f2 => f2.Name == f1.Name))
-                            {
-                                var s = new MemoryStream();
-                                var s1 = b1s.GetAsync(f1.Name, s, CancellationToken.None);
-                                s1.Wait();
-                                var s2 = b2s.PutAsync(f1.Name, s, CancellationToken.None);
-                                s2.Wait();
-                                count++;
-                            }
-                        }
+                        count = Copy(b1s, b2s, files1);
                     }
                     else
                     {
@@ -92,6 +81,31 @@ namespace RemoteSynchronization
                 var results = c.Restore([]);
                 Console.WriteLine($"Restored {results.RestoredFiles} files to {options["restore-path"]}");
             }
+        }
+
+
+        // Forcefully synchronize the remote backends
+        private static long Copy(IStreamingBackend bsrc, IStreamingBackend bdst, IEnumerable<IFileEntry> files)
+        {
+            long successful_copies = 0;
+            foreach (var f in files)
+            {
+                try
+                {
+                    var s = new MemoryStream();
+                    var s1 = bsrc.GetAsync(f.Name, s, CancellationToken.None);
+                    s1.Wait();
+                    var s2 = bdst.PutAsync(f.Name, s, CancellationToken.None);
+                    s2.Wait();
+                    successful_copies++;
+                }
+                catch (Exception e)
+                {
+                    // TODO log the error
+                    Console.WriteLine($"Error copying {f.Name}: {e.Message}");
+                }
+            }
+            return successful_copies;
         }
     }
 }
