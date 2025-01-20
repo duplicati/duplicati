@@ -1,22 +1,22 @@
 // Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
-// 
-// Permission is hereby granted, free of charge, to any person obtaining a 
-// copy of this software and associated documentation files (the "Software"), 
-// to deal in the Software without restriction, including without limitation 
-// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
-// and/or sell copies of the Software, and to permit persons to whom the 
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the "Software"),
+// to deal in the Software without restriction, including without limitation
+// the rights to use, copy, modify, merge, publish, distribute, sublicense,
+// and/or sell copies of the Software, and to permit persons to whom the
 // Software is furnished to do so, subject to the following conditions:
-// 
-// The above copyright notice and this permission notice shall be included in 
+//
+// The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
-// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 using Duplicati.Library.DynamicLoader;
 using Duplicati.Library.Interface;
@@ -306,6 +306,71 @@ namespace Duplicati.UnitTest
                 var restoreResults = c.Restore([f]);
                 Assert.That(restoreResults.RestoredFiles, Is.EqualTo(1), "File should have been restored.");
                 Assert.That(restoreResults.Warnings.Count(), Is.EqualTo(compressRestorePaths ? 0 : 1), "Warning should be generated for missing folder");
+            }
+        }
+
+
+        [Test]
+        public void Issue5886RestoreModifiedMiddleBlock()
+        {
+            var blocksize = 1024;
+            var n_blocks = 5;
+            var testopts = new Dictionary<string, string>(TestOptions)
+            {
+                ["blocksize"] = $"{blocksize}b",
+                ["overwrite"] = "true"
+            };
+
+            var original_dir = Path.Combine(DATAFOLDER, "some_original_dir");
+            Directory.CreateDirectory(original_dir);
+            string f = Path.Combine(original_dir, "some_file");
+            TestUtils.WriteTestFile(f, n_blocks * blocksize);
+
+            // Backup the files
+            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
+            {
+                IBackupResults backupResults = c.Backup([DATAFOLDER]);
+                TestUtils.AssertResults(backupResults);
+            }
+
+            var original_contents = File.ReadAllBytes(f);
+            var new_block = new byte[blocksize];
+            new Random(5888).NextBytes(new_block);
+            var new_contents = new byte[n_blocks * blocksize];
+
+            for (int i = 0; i < n_blocks; i++)
+            {
+                for (int j = i; j < n_blocks; j++)
+                {
+                    // Modify the blocks
+                    for (int k = 0; k < n_blocks; k++)
+                    {
+                        if (k == i || k == j)
+                        {
+                            Array.Copy(new_block, 0, new_contents, k * blocksize, blocksize);
+                        }
+                        else
+                        {
+                            Array.Copy(original_contents, k * blocksize, new_contents, k * blocksize, blocksize);
+                        }
+                    }
+
+                    // Write the modified file
+                    File.WriteAllBytes(f, new_contents);
+                    var restored_contents = File.ReadAllBytes(f);
+                    Assert.That(restored_contents, Is.Not.EqualTo(original_contents), "Restored file should not be equal to original file");
+
+                    // Attempt to restore the file
+                    using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
+                    {
+                        var restoreResults = c.Restore([f]);
+                        Assert.That(restoreResults.RestoredFiles, Is.EqualTo(1), "File should have been restored.");
+                    }
+
+                    // Verify that the files are equal
+                    restored_contents = File.ReadAllBytes(f);
+                    Assert.That(restored_contents, Is.EqualTo(original_contents), "Restored file should be equal to original file");
+                }
             }
         }
 
