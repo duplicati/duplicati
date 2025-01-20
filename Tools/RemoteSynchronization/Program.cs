@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using Duplicati.Library.Main;
@@ -14,6 +14,7 @@ namespace RemoteSynchronization
     {
         static void Main(string[] args)
         {
+            // TODO testing start
             var home = Environment.GetEnvironmentVariable("HOME");
             var base_path = $"{home}/git/duplicati-carl/rsync";
             var l1 = $"{base_path}/l1";
@@ -39,6 +40,8 @@ namespace RemoteSynchronization
                 var results = c.Backup([backup_path]);
                 Console.WriteLine($"Backed up {results.AddedFiles} files to {l1}");
             }
+
+            // TODO testing end
 
             // Sync the first level to the second level
             long count = 0;
@@ -66,6 +69,7 @@ namespace RemoteSynchronization
             }
             Console.WriteLine($"Synced {count} files from {l1} to {l2}");
 
+            // TODO testing start
             // Try to restore the first level
             options["restore-path"] = l1r;
             using (var c = new Controller($"file://{l1}", options, null))
@@ -81,8 +85,16 @@ namespace RemoteSynchronization
                 var results = c.Restore([]);
                 Console.WriteLine($"Restored {results.RestoredFiles} files to {options["restore-path"]}");
             }
+            // TODO testing end
         }
 
+        // TODO check whether a backend is empty
+        // TODO check whether the backend versions "match": src.version >= dst.version
+        // TODO check whether the backend files are consistent: src.files.count >= dst.files.count
+        // TODO handle files deleted from src, which should also be deleted in dst
+        // TODO maximum retention?: don't delete files, only rename old ones.
+        // TODO check database consistency. I.e. have both databases, check that the block, volume, files, etc match up.
+        // TODO introduce these checks as a post processing step? Especially the database consistency check, as that is often recreated from the index files.
 
         // Forcefully synchronize the remote backends
         private static long Copy(IStreamingBackend bsrc, IStreamingBackend bdst, IEnumerable<IFileEntry> files)
