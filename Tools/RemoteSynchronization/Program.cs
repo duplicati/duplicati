@@ -53,6 +53,8 @@ namespace RemoteSynchronization
                     var b2s = b2 as IStreamingBackend;
                     System.Diagnostics.Debug.Assert(b2s != null);
                     var (to_copy, to_delete) = PrepareFileLists(b1s, b2s);
+                    var deleted = Delete(b2s, to_delete);
+                    Console.WriteLine($"Deleted {deleted} files from {l2}");
                     var copied = Copy(b1s, b2s, to_copy);
                     Console.WriteLine($"Copied {copied} files from {l1} to {l2}");
                 }
@@ -78,7 +80,6 @@ namespace RemoteSynchronization
         }
 
         // TODO check whether a backend is empty
-        // TODO check whether the backend versions "match": src.version >= dst.version
         // TODO check whether the backend files are consistent: src.files.count >= dst.files.count
         // TODO handle files deleted from src, which should also be deleted in dst
         // TODO maximum retention?: don't delete files, only rename old ones.
@@ -108,6 +109,26 @@ namespace RemoteSynchronization
                 }
             }
             return successful_copies;
+        }
+
+        private static long Delete(IStreamingBackend b, IEnumerable<IFileEntry> files)
+        {
+            long successful_deletes = 0;
+            foreach (var f in files)
+            {
+                try
+                {
+                    b.DeleteAsync(f.Name, CancellationToken.None).Wait();
+                    successful_deletes++;
+                }
+                catch (Exception e)
+                {
+                    // TODO log the error
+                    // TODO return failed files count?
+                    Console.WriteLine($"Error deleting {f.Name}: {e.Message}");
+                }
+            }
+            return successful_deletes;
         }
 
         private static (IEnumerable<IFileEntry>,IEnumerable<IFileEntry>) PrepareFileLists(IStreamingBackend b_src, IStreamingBackend b_dst)
