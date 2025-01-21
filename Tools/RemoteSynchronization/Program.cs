@@ -179,5 +179,29 @@ namespace RemoteSynchronization
 
             return (to_copy, to_delete.Select(x => lookup_dst[x]));
         }
+
+        private static long Rename(IStreamingBackend b, IEnumerable<FileEntry> files)
+        {
+            long successful_renames = 0;
+            string suffix = $"{System.DateTime.Now:yyyyMMddHHmmss}.old";
+            foreach (var f in files)
+            {
+                try
+                {
+                    var downloaded = new MemoryStream();
+                    b.GetAsync(f.Name, downloaded, CancellationToken.None).Wait();
+                    b.PutAsync($"{f.Name}.{suffix}", downloaded, CancellationToken.None).Wait();
+                    successful_renames++;
+                }
+                catch (Exception e)
+                {
+                    // TODO log the error
+                    // TODO return failed files count?
+                    Console.WriteLine($"Error renaming {f.Name}: {e.Message}");
+                }
+            }
+            return successful_renames;
+        }
+
     }
 }
