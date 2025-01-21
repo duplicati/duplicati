@@ -21,6 +21,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Text;
 using Duplicati.Library.Interface;
 using System.Linq;
@@ -134,6 +135,7 @@ namespace Duplicati.CommandLine.BackendTester
 
         static bool Run(List<string> args, Dictionary<string, string> options, bool first)
         {
+            bool failAfterFinished = false;
             var backend = Library.DynamicLoader.BackendLoader.GetBackend(args[0], options);
             if (backend == null)
             {
@@ -383,6 +385,8 @@ namespace Duplicati.CommandLine.BackendTester
                             Exception e = null;
                             Console.Write("Downloading file {0} ... ", i);
 
+                            var sw = Stopwatch.StartNew();
+
                             try
                             {
                                 if (backend is IStreamingBackend streamingBackend && !disableStreaming)
@@ -404,9 +408,12 @@ namespace Duplicati.CommandLine.BackendTester
                             }
 
                             if (e != null)
-                                Console.WriteLine("failed\n*** Error: {0}", e);
+                            {
+                                failAfterFinished = true;
+                                Console.WriteLine($"failed\n*** Error: {e} after {sw.ElapsedMilliseconds} ms");
+                            }
                             else
-                                Console.WriteLine("done");
+                                Console.WriteLine($"done in {sw.ElapsedMilliseconds} ms");
 
                             Console.Write("Checking hash ... ");
 
@@ -414,9 +421,12 @@ namespace Duplicati.CommandLine.BackendTester
                                 if (Convert.ToBase64String(sha.ComputeHash(fs)) != Convert.ToBase64String(files[i].hash))
                                 {
                                     if (dummyFileHash != null && Convert.ToBase64String(sha.ComputeHash(fs)) == Convert.ToBase64String(dummyFileHash))
-                                        Console.WriteLine("failed\n*** Downloaded file was the dummy file");
+                                        Console.WriteLine("failed\n*** Downloaded file was the dummy file"); // Should this be failed?
                                     else
+                                    {
+                                        failAfterFinished = true;
                                         Console.WriteLine("failed\n*** Downloaded file was corrupt");
+                                    }
                                 }
                                 else
                                     Console.WriteLine("done");
@@ -429,6 +439,7 @@ namespace Duplicati.CommandLine.BackendTester
                         try { backend.DeleteAsync(tx.remotefilename, CancellationToken.None).Await(); }
                         catch (Exception ex)
                         {
+                            failAfterFinished = true;
                             Console.WriteLine("*** Failed to delete file {0}, message: {1}", tx.remotefilename, ex);
                         }
 
@@ -467,6 +478,7 @@ namespace Duplicati.CommandLine.BackendTester
 
                     if (!caughtExpectedException)
                     {
+                        failAfterFinished = true;
                         Console.WriteLine("*** Retrieval of non-existent file should have failed with FileMissingException");
                     }
                 }
@@ -531,13 +543,15 @@ namespace Duplicati.CommandLine.BackendTester
                         disposable.Dispose();
             }
 
-            return true;
+            return !failAfterFinished;
         }
 
         private static void Uploadfile(string localfilename, int i, string remotefilename, IBackend backend, bool disableStreaming, long throttle, int readWriteTimeout)
         {
             Console.Write("Uploading file {0}, {1} ... ", i, Duplicati.Library.Utility.Utility.FormatSizeString(new System.IO.FileInfo(localfilename).Length));
             Exception e = null;
+
+            var sw = Stopwatch.StartNew();
 
             try
             {
@@ -561,7 +575,7 @@ namespace Duplicati.CommandLine.BackendTester
 
             if (e != null)
             {
-                Console.WriteLine("Failed to upload file {0}, error message: {1}, remote name: {2}", i, e, remotefilename);
+                Console.WriteLine($"Failed to upload file {i}, error message: {e}, remote name: {remotefilename} after {sw.ElapsedMilliseconds} ms");
                 while (e.InnerException != null)
                 {
                     e = e.InnerException;
@@ -570,7 +584,7 @@ namespace Duplicati.CommandLine.BackendTester
             }
             else
             {
-                Console.WriteLine(" done!");
+                Console.WriteLine($" done! in {sw.ElapsedMilliseconds} ms");
             }
         }
 
