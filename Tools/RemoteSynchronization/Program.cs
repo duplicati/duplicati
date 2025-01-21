@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Duplicati.Library.Main;
@@ -44,7 +44,6 @@ namespace RemoteSynchronization
             // TODO testing end
 
             // Sync the first level to the second level
-            long count = 0;
             using (var b1 = Duplicati.Library.DynamicLoader.BackendLoader.GetBackend($"file://{l1}", options))
             {
                 var b1s = b1 as IStreamingBackend;
@@ -53,21 +52,11 @@ namespace RemoteSynchronization
                 {
                     var b2s = b2 as IStreamingBackend;
                     System.Diagnostics.Debug.Assert(b2s != null);
-                    var files1 = b1s.List();
-                    Console.WriteLine($"Found {files1.Count()} remote files in {l1}");
-                    var files2 = b2s.List();
-                    Console.WriteLine($"Found {files2.Count()} remote files in {l2}");
-                    if (files1.Count() >= files2.Count())
-                    {
-                        count = Copy(b1s, b2s, files1);
-                    }
-                    else
-                    {
-                        Console.WriteLine("Error: l1 has less files than l2 - something is wrong");
-                    }
+                    var (to_copy, to_delete) = PrepareFileLists(b1s, b2s);
+                    var copied = Copy(b1s, b2s, to_copy);
+                    Console.WriteLine($"Copied {copied} files from {l1} to {l2}");
                 }
             }
-            Console.WriteLine($"Synced {count} files from {l1} to {l2}");
 
             // TODO testing start
             // Try to restore the first level
@@ -97,7 +86,7 @@ namespace RemoteSynchronization
         // TODO introduce these checks as a post processing step? Especially the database consistency check, as that is often recreated from the index files.
 
         // Forcefully synchronize the remote backends
-        private static long Copy(IStreamingBackend bsrc, IStreamingBackend bdst, IEnumerable<IFileEntry> files)
+        private static long Copy(IStreamingBackend b_src, IStreamingBackend b_dst, IEnumerable<IFileEntry> files)
         {
             long successful_copies = 0;
             foreach (var f in files)
@@ -105,19 +94,69 @@ namespace RemoteSynchronization
                 try
                 {
                     var s = new MemoryStream();
-                    var s1 = bsrc.GetAsync(f.Name, s, CancellationToken.None);
+                    var s1 = b_src.GetAsync(f.Name, s, CancellationToken.None);
                     s1.Wait();
-                    var s2 = bdst.PutAsync(f.Name, s, CancellationToken.None);
+                    var s2 = b_dst.PutAsync(f.Name, s, CancellationToken.None);
                     s2.Wait();
                     successful_copies++;
                 }
                 catch (Exception e)
                 {
                     // TODO log the error
+                    // TODO return failed files count?
                     Console.WriteLine($"Error copying {f.Name}: {e.Message}");
                 }
             }
             return successful_copies;
+        }
+
+        private static (IEnumerable<IFileEntry>,IEnumerable<IFileEntry>) PrepareFileLists(IStreamingBackend b_src, IStreamingBackend b_dst)
+        {
+            var files_src = b_src.List();
+            var files_dst = b_dst.List();
+
+            // Shortcut for empty destination
+            if (!files_dst.Any())
+            {
+                return (files_src, []);
+            }
+
+            var lookup_src = files_src.ToDictionary(x => x.Name);
+            var lookup_dst = files_dst.ToDictionary(x => x.Name);
+
+            var to_copy = new List<IFileEntry>();
+            var to_delete = new HashSet<string>();
+
+            // Find all of the files in src that are not in dst, have a different size or have a more recent modification date
+            foreach (var f_src in files_src)
+            {
+                if (lookup_dst.TryGetValue(f_src.Name, out var f_dst))
+                {
+                    if (f_src.Size != f_dst.Size || f_src.LastModification > f_dst.LastModification)
+                    {
+                        to_copy.Add(f_src);
+                        to_delete.Add(f_dst.Name);
+                    }
+                }
+                else
+                {
+                    to_copy.Add(f_src);
+                }
+            }
+
+            // Find all of the files in dst that are not in src
+            foreach (var f_dst in files_dst)
+            {
+                if (to_delete.Contains(f_dst.Name))
+                    continue;
+
+                if (!lookup_src.ContainsKey(f_dst.Name))
+                {
+                    to_delete.Add(f_dst.Name);
+                }
+            }
+
+            return (to_copy, to_delete.Select(x => lookup_dst[x]));
         }
     }
 }
