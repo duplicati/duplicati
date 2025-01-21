@@ -1,4 +1,4 @@
-﻿// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -39,19 +39,43 @@ using Microsoft.OpenApi.Models;
 
 namespace Duplicati.WebserverCore;
 
-public partial class DuplicatiWebserver
+/// <summary>
+/// Instance of the Duplicati webserver
+/// </summary>
+public class DuplicatiWebserver
 {
+    /// <summary>
+    /// The log tag for this class
+    /// </summary>
     private static readonly string LOGTAG = Library.Logging.Log.LogTagFromType<DuplicatiWebserver>();
-    public IConfiguration Configuration { get; private set; }
+    /// <summary>
+    /// The configuration for the server
+    /// </summary>
+    public required IConfiguration Configuration { get; init; }
 
-    public WebApplication App { get; private set; }
+    /// <summary>
+    /// The web application
+    /// </summary>
+    public required WebApplication App { get; init; }
 
-    public IServiceProvider Provider { get; private set; }
+    /// <summary>
+    /// The service provider
+    /// </summary>
+    public IServiceProvider Provider => App.Services;
 
-    public int Port { get; private set; }
+    /// <summary>
+    /// The port the server is listening on
+    /// </summary>
+    public required int Port { get; init; }
 
+    /// <summary>
+    /// The task that will be set when the server is terminated
+    /// </summary>
     public Task TerminationTask { get; private set; } = Task.CompletedTask;
 
+    /// <summary>
+    /// If Swagger should be enabled
+    /// </summary>
 #if DEBUG
     private static readonly bool EnableSwagger = true;
 #else
@@ -80,9 +104,14 @@ public partial class DuplicatiWebserver
         IEnumerable<string> SPAPaths
     );
 
-    public void InitWebServer(InitSettings settings, Connection connection)
+    /// <summary>
+    /// Creates a new webserver instance
+    /// </summary>
+    /// <param name="settings">The settings for the server</param>
+    /// <param name="connection">The connection to the database</param>
+    /// <returns>The new webserver instance</returns>
+    public static DuplicatiWebserver CreateWebServer(InitSettings settings, Connection connection)
     {
-        Port = settings.Port;
         var builder = WebApplication.CreateBuilder(new WebApplicationOptions()
         {
             ContentRootPath = settings.WebRoot,
@@ -224,28 +253,25 @@ public partial class DuplicatiWebserver
 
         builder.Services.AddHttpClient();
 
-        Configuration = builder.Configuration;
-        App = builder.Build();
-        Provider = App.Services;
+        var app = builder.Build();
+        HttpClientHelper.Configure(app.Services.GetRequiredService<IHttpClientFactory>());
 
-        HttpClientHelper.Configure(App.Services.GetRequiredService<IHttpClientFactory>());
-
-        App.UseAuthentication();
-        App.UseAuthorization();
+        app.UseAuthentication();
+        app.UseAuthorization();
 
         if (EnableSwagger)
         {
-            App.UseSwagger();
-            App.UseSwaggerUI(c =>
+            app.UseSwagger();
+            app.UseSwaggerUI(c =>
             {
                 c.SwaggerEndpoint("/swagger/v1/swagger.json", "Duplicati");
             });
         }
 
         if (!settings.DisableStaticFiles)
-            App.UseDefaultStaticFiles(settings.WebRoot, settings.SPAPaths);
+            app.UseDefaultStaticFiles(settings.WebRoot, settings.SPAPaths);
 
-        App.UseExceptionHandler(app =>
+        app.UseExceptionHandler(app =>
         {
             app.Run(async context =>
             {
@@ -273,12 +299,25 @@ public partial class DuplicatiWebserver
         });
 
         if (connection.ApplicationSettings.RemoteControlEnabled)
-            App.Services.GetRequiredService<IRemoteController>().Enable();
+            app.Services.GetRequiredService<IRemoteController>().Enable();
 
         // Preload static system info, for better first-load experience
-        var _ = Task.Run(() => App.Services.GetRequiredService<ISystemInfoProvider>().GetSystemInfo(null));
+        var _ = Task.Run(() => app.Services.GetRequiredService<ISystemInfoProvider>().GetSystemInfo(null));
+
+        return new DuplicatiWebserver()
+        {
+            Configuration = builder.Configuration,
+            App = app,
+            Port = settings.Port
+        };
+
     }
 
+    /// <summary>
+    /// Configures HTTPS for the server
+    /// </summary>
+    /// <param name="listenOptions">The listen options</param>
+    /// <param name="certificates">The certificates to use</param>
     private static void ConfigureHttps(Microsoft.AspNetCore.Server.Kestrel.Core.ListenOptions listenOptions, X509Certificate2Collection? certificates)
     {
         var servedCert = certificates?.FirstOrDefault(x => x.HasPrivateKey)
@@ -299,7 +338,11 @@ public partial class DuplicatiWebserver
         });
     }
 
-    public Task Start(InitSettings settings)
+    /// <summary>
+    /// Starts the webserver
+    /// </summary>
+    /// <returns>The task that will be set when the server is terminated</returns>
+    public Task Start()
     {
         App.MapHealthChecks("/health");
         App.AddEndpoints()
@@ -308,6 +351,10 @@ public partial class DuplicatiWebserver
         return TerminationTask = App.RunAsync();
     }
 
+    /// <summary>
+    /// Stops the webserver
+    /// </summary>
+    /// <returns>An awaitable task</returns>
     public async Task Stop()
     {
         await App.StopAsync();

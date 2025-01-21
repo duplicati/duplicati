@@ -1,4 +1,4 @@
-﻿// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -466,9 +466,7 @@ namespace Duplicati.Library.Main.Operation
                         // if we are lucky and pick the right ones
                     }
 
-                    // In some cases we have a stale reference from an index file to a deleted block file
-                    if (!m_options.UnittestMode)
-                        restoredb.CleanupMissingVolumes();
+                    restoredb.CleanupMissingVolumes();
 
                     // Update the real tables from the temp tables
                     if (expRecreateDb)
@@ -590,9 +588,7 @@ namespace Duplicati.Library.Main.Operation
                     restoredb.CleanupDeletedBlocks(null);
                 }
 
-                // In some cases we have a stale reference from an index file to a deleted block file
-                if (!m_options.UnittestMode)
-                    restoredb.CleanupMissingVolumes();
+                restoredb.CleanupMissingVolumes();
 
                 if (m_options.RepairOnlyPaths)
                 {

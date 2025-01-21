@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -405,12 +405,10 @@ namespace Duplicati.Server
                     parsedOptions.SPAPaths
                 );
 
-                var server = new DuplicatiWebserver();
-
-                server.InitWebServer(mappedSettings, connection);
+                var server = DuplicatiWebserver.CreateWebServer(mappedSettings, connection);
 
                 // Start the server, but catch any configuration issues
-                var task = server.Start(mappedSettings);
+                var task = server.Start();
                 await Task.WhenAny(task, Task.Delay(500));
                 if (task.IsCompleted)
                     await task;

@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -193,7 +193,7 @@ namespace Duplicati.Library.Modules.Builtin
             return base.ReplaceTemplate(input, result, exception, subjectline);
         }
 
-        protected override async void SendMessage(string subject, string body)
+        protected override void SendMessage(string subject, string body)
         {
 
             var uri = new Library.Utility.Uri(m_username.Contains("://") ? m_username : "http://" + m_username);

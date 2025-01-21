@@ -1,3 +1,23 @@
+// Copyright (C) 2025, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
 using System.CommandLine;
 using System.CommandLine.NamingConventionBinder;
 using System.Security.Cryptography;
@@ -273,6 +293,12 @@ public static partial class Command
             getDefaultValue: () => false
         );
 
+        var resumeFromUploadOption = new Option<bool>(
+            name: "--resume-from-upload",
+            description: "Resumes the build process from the upload step",
+            getDefaultValue: () => false
+        );
+
         var command = new System.CommandLine.Command("build", "Builds the packages for a release") {
             gitStashPushOption,
             releaseChannelArgument,
@@ -295,7 +321,8 @@ public static partial class Command
             disableGithubUploadOption,
             disableUpdateServerReloadOption,
             disableDiscordAnnounceOption,
-            useHostedBuildsOption
+            useHostedBuildsOption,
+            resumeFromUploadOption
         };
 
         command.Handler = CommandHandler.Create<CommandInput>(DoBuild);
@@ -327,6 +354,7 @@ public static partial class Command
     /// <param name="DisableUpdateServerReload">If the update server should not be reloaded</param>
     /// <param name="DisableDiscordAnnounce">If forum posting should be disabled</param>
     /// <param name="UseHostedBuilds">If hosted builds should be used</param>
+    /// <param name="ResumeFromUpload">If the process should resume from the upload step</param>
     record CommandInput(
         PackageTarget[] Targets,
         DirectoryInfo BuildPath,
@@ -349,7 +377,8 @@ public static partial class Command
         bool DisableGithubUpload,
         bool DisableUpdateServerReload,
         bool DisableDiscordAnnounce,
-        bool UseHostedBuilds
+        bool UseHostedBuilds,
+        bool ResumeFromUpload
     );
 
     static async Task DoBuild(CommandInput input)
@@ -492,7 +521,7 @@ public static partial class Command
 
         // Generally, the builds should happen with a clean source tree, 
         // but this can be disabled for debugging
-        if (input.GitStashPush)
+        if (input.GitStashPush && !input.ResumeFromUpload)
             await ProcessHelper.Execute(["git", "stash", "save", $"auto-build-{releaseInfo.Timestamp:yyyy-MM-dd}"], workingDirectory: baseDir);
 
         // Inject various files that will be embedded into the build artifacts
@@ -587,7 +616,7 @@ public static partial class Command
 
         // Ensure the tag is pushed before uploading, so the uploaded files
         // are associated with the release tag
-        if (input.GitStashPush)
+        if (input.GitStashPush && !input.ResumeFromUpload)
             await GitPush.TagAndPush(baseDir, releaseInfo);
 
         if (rtcfg.UseS3Upload || rtcfg.UseGithubUpload)
@@ -612,7 +641,7 @@ public static partial class Command
 
             if (rtcfg.UseGithubUpload)
             {
-                if (!rtcfg.UseS3Upload && input.GitStashPush)
+                if (!rtcfg.UseS3Upload && input.GitStashPush && !input.ResumeFromUpload)
                 {
                     Console.WriteLine("Waiting for Github to create the release tag ...");
                     await Task.Delay(TimeSpan.FromSeconds(30));

@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -694,11 +694,38 @@ namespace Duplicati.Library.Main.Database
             // and marks the index files that pointed to them, such that they will be removed later on
             var sql = $@"
 CREATE TEMPORARY TABLE ""{tablename}"" AS
-SELECT ""A"".""ID"" AS ""BlockID"", ""A"".""VolumeID"" AS ""SourceVolumeID"", ""A"".""State"" AS ""SourceVolumeState"", ""B"".""VolumeID"" AS ""TargetVolumeID"", ""B"".""State"" AS ""TargetVolumeState"" FROM (SELECT ""Block"".""ID"", ""Block"".""VolumeID"", ""Remotevolume"".""State"" FROM ""Block"", ""Remotevolume"" WHERE ""Block"".""VolumeID"" = ""Remotevolume"".""ID"" and ""Remotevolume"".""State"" = '{RemoteVolumeState.Temporary}') A, (SELECT ""DuplicateBlock"".""BlockID"",  ""DuplicateBlock"".""VolumeID"", ""Remotevolume"".""State"" FROM ""DuplicateBlock"", ""Remotevolume"" WHERE ""DuplicateBlock"".""VolumeID"" = ""Remotevolume"".""ID"" and ""Remotevolume"".""State"" = '{RemoteVolumeState.Verified}') B WHERE ""A"".""ID"" = ""B"".""BlockID"";
+SELECT 
+  ""A"".""ID"" AS ""BlockID"", ""A"".""VolumeID"" AS ""SourceVolumeID"", ""A"".""State"" AS ""SourceVolumeState"", ""B"".""VolumeID"" AS ""TargetVolumeID"", ""B"".""State"" AS ""TargetVolumeState"" 
+FROM 
+  (SELECT 
+    ""Block"".""ID"", ""Block"".""VolumeID"", ""Remotevolume"".""State"" 
+    FROM ""Block"", ""Remotevolume"" 
+    WHERE ""Block"".""VolumeID"" = ""Remotevolume"".""ID"" AND ""Remotevolume"".""State"" = '{RemoteVolumeState.Temporary}'
+  ) A, 
+  (SELECT 
+    ""DuplicateBlock"".""BlockID"",  MIN(""DuplicateBlock"".""VolumeID"") AS ""VolumeID"", ""Remotevolume"".""State"" 
+    FROM ""DuplicateBlock"", ""Remotevolume"" 
+    WHERE ""DuplicateBlock"".""VolumeID"" = ""Remotevolume"".""ID"" AND ""Remotevolume"".""State"" = '{RemoteVolumeState.Verified}' 
+    GROUP BY ""DuplicateBlock"".""BlockID"", ""Remotevolume"".""State"" 
+  ) B 
+WHERE ""A"".""ID"" = ""B"".""BlockID"";
 
-UPDATE ""Block"" SET ""VolumeID"" = (SELECT ""TargetVolumeID"" FROM ""{tablename}"" WHERE ""Block"".""ID"" = ""{tablename}"".""BlockID"") WHERE ""Block"".""ID"" IN (SELECT ""BlockID"" FROM ""{tablename}"");
+UPDATE ""Block"" 
+  SET ""VolumeID"" = (SELECT 
+    ""TargetVolumeID"" FROM ""{tablename}"" 
+    WHERE ""Block"".""ID"" = ""{tablename}"".""BlockID""
+  ) 
+  WHERE ""Block"".""ID"" IN (SELECT ""BlockID"" FROM ""{tablename}"");
 
-UPDATE ""DuplicateBlock"" SET ""VolumeID"" = (SELECT ""SourceVolumeID"" FROM ""{tablename}"" WHERE ""DuplicateBlock"".""BlockID"" = ""{tablename}"".""BlockID"") WHERE ""DuplicateBlock"".""BlockID"" IN (SELECT ""BlockID"" FROM ""{tablename}"");
+UPDATE ""DuplicateBlock"" 
+  SET ""VolumeID"" = (SELECT 
+    ""SourceVolumeID"" FROM ""{tablename}"" 
+    WHERE ""DuplicateBlock"".""BlockID"" = ""{tablename}"".""BlockID""
+  ) 
+WHERE 
+  (""DuplicateBlock"".""BlockID"", ""DuplicateBlock"".""VolumeID"") 
+  IN (SELECT ""BlockID"", ""TargetVolumeID"" FROM ""{tablename}"");
+
 DROP TABLE ""{tablename}"";
 
 DELETE FROM ""IndexBlockLink"" WHERE ""BlockVolumeID"" IN (SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""Type"" = '{RemoteVolumeType.Blocks}' AND ""State"" = '{RemoteVolumeState.Temporary}' AND ""ID"" NOT IN (SELECT DISTINCT ""VolumeID"" FROM ""Block""));

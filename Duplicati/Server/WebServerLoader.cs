@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -27,6 +27,8 @@ using System.Threading.Tasks;
 using Duplicati.Server.Database;
 using Microsoft.AspNetCore.Connections;
 using Duplicati.Library.Utility;
+
+#nullable enable
 
 namespace Duplicati.Server;
 
@@ -169,7 +171,7 @@ public static class WebServerLoader
     /// </summary>
     /// <param name="options">A set of options</param>
     /// <param name="createServer">The method to start the server</param>
-    public static async Task<TServer> TryRunServer<TServer>(IReadOnlyDictionary<string, string> options, Connection connection, Func<ParsedWebserverSettings, Task<TServer>> createServer)
+    public static async Task<TServer> TryRunServer<TServer>(IReadOnlyDictionary<string, string?> options, Connection connection, Func<ParsedWebserverSettings, Task<TServer>> createServer)
     {
         var ports = Enumerable.Empty<int>();
         options.TryGetValue(OPTION_PORT, out var portstring);
@@ -225,7 +227,7 @@ public static class WebServerLoader
 
         if (options.ContainsKey(OPTION_WEBROOT))
         {
-            string userroot = options[OPTION_WEBROOT];
+            var userroot = options[OPTION_WEBROOT];
 #if DEBUG
             //In debug mode we do not care where the path points
 #else

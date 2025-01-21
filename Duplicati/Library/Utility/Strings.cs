@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -52,10 +52,10 @@ namespace Duplicati.Library.Utility.Strings
     internal static class Utility
     {
         public static string FormatStringB(long size) { return LC.L(@"{0} bytes", size); }
-        public static string FormatStringGB(double size) { return LC.L(@"{0:N} GB", size); }
-        public static string FormatStringKB(double size) { return LC.L(@"{0:N} KB", size); }
-        public static string FormatStringMB(double size) { return LC.L(@"{0:N} MB", size); }
-        public static string FormatStringTB(double size) { return LC.L(@"{0:N} TB", size); }
+        public static string FormatStringGB(double size) { return LC.L(@"{0:N} GiB", size); }
+        public static string FormatStringKB(double size) { return LC.L(@"{0:N} KiB", size); }
+        public static string FormatStringMB(double size) { return LC.L(@"{0:N} MiB", size); }
+        public static string FormatStringTB(double size) { return LC.L(@"{0:N} TiB", size); }
         public static string InvalidDateError(string data) { return LC.L(@"The string ""{0}"" could not be parsed into a date", data); }
     }
     internal static class HashCalculatingStream

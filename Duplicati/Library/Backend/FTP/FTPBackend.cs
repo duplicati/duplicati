@@ -1,4 +1,4 @@
-﻿// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -272,7 +272,7 @@ namespace Duplicati.Library.Backend
         /// <param name="url">Configured url.</param>
         /// <param name="options">Configured options. cannot be null.</param>
         [SuppressMessage("ReSharper", "VirtualMemberCallInConstructor")] // The behavior of accessing the virtual properties is as expected
-        public FTP(string url, Dictionary<string, string> options)
+        public FTP(string url, Dictionary<string, string?> options)
         {
             _accepAllCertificates = CoreUtility.ParseBoolOption(options, OPTION_ACCEPT_ANY_CERTIFICATE);
 

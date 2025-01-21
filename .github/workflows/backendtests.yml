@@ -178,7 +178,7 @@ jobs:
         run: >-
           dotnet build --no-restore
           LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.sln
-      - name: Run S3 tests
+      - name: Run pCloud tests
         env:
           TESTCREDENTIAL_PCLOUD_SERVER: "${{ secrets.TESTCREDENTIAL_PCLOUD_SERVER }}"
           TESTCREDENTIAL_PCLOUD_TOKEN: "${{ secrets.TESTCREDENTIAL_PCLOUD_TOKEN }}"

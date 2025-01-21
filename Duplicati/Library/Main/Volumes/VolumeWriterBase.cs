@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -79,9 +79,6 @@ namespace Duplicati.Library.Main.Volumes
 
             if (m_compression == null)
                 throw new UserInformationException(string.Format("Unsupported compression module: {0}", options.CompressionModule), "UnsupportedCompressionModule");
-
-            if ((this is IndexVolumeWriter || this is FilesetVolumeWriter) && this.m_compression is ICompressionHinting hinting)
-                hinting.LowOverheadMode = true;
 
             AddManifestFile();
         }

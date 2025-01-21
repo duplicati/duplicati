@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -117,7 +117,7 @@ namespace Duplicati.Library.Compression.ZipCompression
         /// <param name="stream">The stream to read or write depending access mode</param>
         /// <param name="mode">The archive access mode</param>
         /// <param name="options">The options passed on the commandline</param>
-        public FileArchiveZip(Stream stream, ArchiveMode mode, IDictionary<string, string> options)
+        public FileArchiveZip(Stream stream, ArchiveMode mode, IDictionary<string, string?> options)
         {
             var compressionType = DEFAULT_COMPRESSION_METHOD;
             var compressionLevel = DEFAULT_COMPRESSION_LEVEL;
@@ -139,7 +139,8 @@ namespace Duplicati.Library.Compression.ZipCompression
             if (options.ContainsKey(COMPRESSION_LIBRARY_OPTION) && options.TryGetValue(COMPRESSION_LIBRARY_OPTION, out var cplib) && Enum.TryParse<CompressionLibrary>(cplib, true, out var tmpcplib))
                 compressionLibrary = tmpcplib;
 
-            var parsedOptions = new ParsedZipOptions(compressionLevel, compressionType, usingZip64);
+            var unittestMode = Utility.Utility.ParseBoolOption(options.AsReadOnly(), "unittest-mode");
+            var parsedOptions = new ParsedZipOptions(compressionLevel, compressionType, usingZip64, unittestMode);
 
             if (compressionLibrary == CompressionLibrary.Auto)
             {

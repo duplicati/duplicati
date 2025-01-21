@@ -989,6 +989,8 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
         
         if (scope.Path)
             scope.Path = scope.Path.replace(/^[/\\]+/, '').replace(/[/\\]+$/, '');
+        else 
+            scope.Path = '';
 
         return AppUtils.format('{0}://{1}/{2}/{3}/{4}',
             scope.Backend.Key,
@@ -1035,8 +1037,17 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
         if (res)
             EditUriBackendConfig.recommend_path(scope, continuation);
     };
+    
+    EditUriBackendConfig.validaters['webdav'] = function (scope, continuation) {
+        var res =
+            EditUriBackendConfig.require_server(scope) &&
+            EditUriBackendConfig.require_username(scope);
 
-    EditUriBackendConfig.validaters['webdav'] = EditUriBackendConfig.validaters['ssh'];
+        if (res)
+            EditUriBackendConfig.recommend_path(scope, continuation);
+    };
+
+    EditUriBackendConfig.validaters['webdav'] = EditUriBackendConfig.validaters['webdav'];
     EditUriBackendConfig.validaters['cloudfiles'] = EditUriBackendConfig.validaters['ssh'];
     EditUriBackendConfig.validaters['tahoe'] = EditUriBackendConfig.validaters['ssh'];
 

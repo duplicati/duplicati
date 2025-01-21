@@ -1,22 +1,22 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
-//
-// Permission is hereby granted, free of charge, to any person obtaining a
-// copy of this software and associated documentation files (the "Software"),
-// to deal in the Software without restriction, including without limitation
-// the rights to use, copy, modify, merge, publish, distribute, sublicense,
-// and/or sell copies of the Software, and to permit persons to whom the
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
 // Software is furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
+// 
+// The above copyright notice and this permission notice shall be included in 
 // all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
 using System;
@@ -607,8 +607,9 @@ namespace Duplicati.Library.Main.Operation
             m_result.EndTime = DateTime.UtcNow;
         }
 
-        public static void ApplyMetadata(string path, System.IO.Stream stream, bool restorePermissions, bool restoreSymlinkMetadata, bool dryrun)
+        public static bool ApplyMetadata(string path, System.IO.Stream stream, bool restorePermissions, bool restoreSymlinkMetadata, bool dryrun)
         {
+            // TODO This has been modified to return a bool indicating if anything was written to properly report the number of files restored. The legacy restore doesn't check this, which produces an error in the CI where it reports that no files have been restored, even though one have. It's in Duplicati/UnitTests/SymLinkTests.cs the test SymLinkTests.SymLinkExists() that fails on the very last assert that there are 0 warnings.
             using (var tr = new System.IO.StreamReader(stream))
             using (var jr = new Newtonsoft.Json.JsonTextReader(tr))
             {
@@ -616,10 +617,11 @@ namespace Duplicati.Library.Main.Operation
                 string k;
                 long t;
                 System.IO.FileAttributes fa;
+                var wrote_something = false;
 
                 // If this is dry-run, we stop after having deserialized the metadata
                 if (dryrun)
-                    return;
+                    return wrote_something;
 
                 var isDirTarget = path.EndsWith(DIRSEP, StringComparison.Ordinal);
                 var targetpath = isDirTarget ? path.Substring(0, path.Length - 1) : path;
@@ -637,6 +639,7 @@ namespace Duplicati.Library.Main.Operation
                         SystemIO.IO_OS.DirectoryDelete(targetpath, false);
                     }
                     SystemIO.IO_OS.CreateSymlink(targetpath, k, isDirTarget);
+                    wrote_something = true;
                 }
                 // If the target is a folder, make sure we create it first
                 else if (isDirTarget && !SystemIO.IO_OS.DirectoryExists(targetpath))
@@ -646,7 +649,7 @@ namespace Duplicati.Library.Main.Operation
                 if (!restoreSymlinkMetadata && Snapshots.SnapshotUtility.IsSymlink(SystemIO.IO_OS, targetpath))
                 {
                     Logging.Log.WriteVerboseMessage(LOGTAG, "no-symlink-metadata-restored", "Not applying metadata to symlink: {0}", targetpath);
-                    return;
+                    return wrote_something;
                 }
 
                 if (metadata.TryGetValue("CoreLastWritetime", out k) && long.TryParse(k, out t))
@@ -669,6 +672,7 @@ namespace Duplicati.Library.Main.Operation
                     SystemIO.IO_OS.SetFileAttributes(targetpath, fa);
 
                 SystemIO.IO_OS.SetMetadata(path, metadata, restorePermissions);
+                return wrote_something;
             }
         }
 

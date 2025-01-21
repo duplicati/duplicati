@@ -1,4 +1,24 @@
-﻿using Duplicati.Library.DynamicLoader;
+// Copyright (C) 2025, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the "Software"),
+// to deal in the Software without restriction, including without limitation
+// the rights to use, copy, modify, merge, publish, distribute, sublicense,
+// and/or sell copies of the Software, and to permit persons to whom the
+// Software is furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+// DEALINGS IN THE SOFTWARE.
+using Duplicati.Library.DynamicLoader;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main;
 using NUnit.Framework;
@@ -120,6 +140,141 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("Restore"), Category("Bug")]
+        public void Issue5825RestoreNoOverwrite([Values] bool legacy, [Values] bool local_blocks)
+        {
+            // Reproduction of Issue #5825
+            // The logic in the previous version was to create a timestamped version of the file being restored to, if it already exists.
+            // It appears the new restore flow is not correctly doing the same.
+            // See forum thread: https://forum.duplicati.com/t/save-different-versions-with-timestamp-in-file-name-broken/19805
+
+            var testopts = new Dictionary<string, string>(TestOptions)
+            {
+                ["restore-legacy"] = legacy.ToString().ToLower(),
+                ["restore-with-local-blocks"] = local_blocks.ToString().ToLower()
+            };
+            int test_filesize = 1024;
+
+            // TODO tjek om de gamle filer forbliver urørte.
+
+            var original_dir = Path.Combine(DATAFOLDER, "some_original_dir");
+            Directory.CreateDirectory(original_dir);
+            string f0 = Path.Combine(original_dir, "some_file");
+            TestUtils.WriteTestFile(f0, test_filesize);
+
+            // Backup the files
+            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
+            {
+                IBackupResults backupResults = c.Backup([DATAFOLDER]);
+                TestUtils.AssertResults(backupResults);
+            }
+
+            // Attempt to restore the file
+            testopts["restore-path"] = RESTOREFOLDER;
+            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
+            {
+                var restoreResults = c.Restore([f0]);
+                Assert.That(restoreResults.RestoredFiles, Is.EqualTo(1), "File should have been restored");
+            }
+
+            // Verify that the files are equal
+            string f1 = Path.Combine(RESTOREFOLDER, "some_file");
+            Assert.That(File.ReadAllBytes(f0), Is.EqualTo(File.ReadAllBytes(f1)), "Restored file should be equal to original file");
+
+            // Modify the restored file
+            TestUtils.WriteTestFile(f1, test_filesize);
+
+            // Restore the file again, with overwrite.
+            testopts["overwrite"] = "true";
+            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
+            {
+                var restoreResults = c.Restore([f0]);
+                Assert.That(restoreResults.RestoredFiles, Is.EqualTo(1), "File should have been restored");
+            }
+
+            // Verify that the files are equal
+            Assert.That(File.ReadAllBytes(f0), Is.EqualTo(File.ReadAllBytes(f1)), "Restored file should be equal to original file");
+
+            // Save the timestamp of the file
+            var timestamp = File.GetLastWriteTime(f1);
+
+            // Touch the file
+            File.SetLastWriteTime(f1, DateTime.Now);
+
+            // Check that the timestamp has changed, but the file is still equal
+            Assert.That(File.GetLastWriteTime(f1), Is.Not.EqualTo(timestamp), "Timestamp should have changed");
+            Assert.That(File.ReadAllBytes(f0), Is.EqualTo(File.ReadAllBytes(f1)), "Restored file should be equal to original file");
+
+            // Restore the file again, with overwrite, should restore the timestamp of the file
+            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
+            {
+                var restoreResults = c.Restore([f0]);
+                Assert.That(restoreResults.RestoredFiles, Is.EqualTo(0), "File should not have been restored, only the metadata.");
+            }
+
+            // Verify that the files are equal and the timestamp is restored
+            Assert.That(File.ReadAllBytes(f0), Is.EqualTo(File.ReadAllBytes(f1)), "Restored file should be equal to original file");
+            Assert.That(File.GetLastWriteTime(f1), Is.EqualTo(timestamp), "Timestamp should be restored");
+
+            // Modify the restored file
+            TestUtils.WriteTestFile(f1, test_filesize);
+            var f1_original = File.ReadAllBytes(f1);
+
+            // Restore the file again, without overwrite.
+            testopts["overwrite"] = "false";
+            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
+            {
+                var restoreResults = c.Restore([f0]);
+                Assert.That(restoreResults.RestoredFiles, Is.EqualTo(1), "File should have been restored");
+            }
+
+            // Verify that f1 is still the same
+            Assert.That(File.ReadAllBytes(f1), Is.EqualTo(f1_original), "The first restored file should remain untouched");
+
+            // Verify that there exists a new file with a timestamp
+            var files = Directory.GetFiles(RESTOREFOLDER, "*", SearchOption.TopDirectoryOnly);
+            Assert.That(files.Length, Is.EqualTo(2), "There should be two files in the folder");
+            var f2 = files.FirstOrDefault(v => v != f1);
+
+            // Modify the new restored file as well
+            TestUtils.WriteTestFile(f2, test_filesize);
+            var f2_original = File.ReadAllBytes(f2);
+
+            // Restore the file again, without overwrite.
+            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
+            {
+                var restoreResults = c.Restore([f0]);
+                Assert.That(restoreResults.RestoredFiles, Is.EqualTo(1), "File should have been restored");
+            }
+
+            // Verify that f1 and f2 are still the same
+            Assert.That(File.ReadAllBytes(f1), Is.EqualTo(f1_original), "The first restored file should remain untouched");
+            Assert.That(File.ReadAllBytes(f2), Is.EqualTo(f2_original), "The second restored file should remain untouched");
+
+            // Verify that there exists a new file with a timestamp
+            files = Directory.GetFiles(RESTOREFOLDER, "*", SearchOption.TopDirectoryOnly);
+            Assert.That(files.Length, Is.EqualTo(3), "There should be three files in the folder");
+
+            // Verify that the files are equal
+            var f3 = files.FirstOrDefault(v => v != f1 && v != f2);
+            Assert.That(File.ReadAllBytes(f0), Is.EqualTo(File.ReadAllBytes(f3)), "Restored file should be equal to original file");
+
+            // Modify the second file to match the original file - should not restore any files
+            File.WriteAllBytes(f2, File.ReadAllBytes(f0));
+
+            // Restore the file again, without overwrite.
+            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
+            {
+                var restoreResults = c.Restore([f0]);
+                Assert.That(restoreResults.RestoredFiles, Is.EqualTo(0), "File should not have been restored");
+            }
+
+            // Verify that f1 is still untouched
+            Assert.That(File.ReadAllBytes(f1), Is.EqualTo(f1_original), "The first restored file should remain untouched");
+        }
+
+
+        [Test]
+        [Category("Restore"), Category("Bug")]
         public void Issue5826RestoreMissingFolder([Values] bool compressRestorePaths, [Values] bool restoreLegacy)
         {
             // Reproduction of Issue #5826
@@ -151,6 +306,71 @@ namespace Duplicati.UnitTest
                 var restoreResults = c.Restore([f]);
                 Assert.That(restoreResults.RestoredFiles, Is.EqualTo(1), "File should have been restored.");
                 Assert.That(restoreResults.Warnings.Count(), Is.EqualTo(compressRestorePaths ? 0 : 1), "Warning should be generated for missing folder");
+            }
+        }
+
+
+        [Test]
+        public void Issue5886RestoreModifiedMiddleBlock()
+        {
+            var blocksize = 1024;
+            var n_blocks = 5;
+            var testopts = new Dictionary<string, string>(TestOptions)
+            {
+                ["blocksize"] = $"{blocksize}b",
+                ["overwrite"] = "true"
+            };
+
+            var original_dir = Path.Combine(DATAFOLDER, "some_original_dir");
+            Directory.CreateDirectory(original_dir);
+            string f = Path.Combine(original_dir, "some_file");
+            TestUtils.WriteTestFile(f, n_blocks * blocksize);
+
+            // Backup the files
+            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
+            {
+                IBackupResults backupResults = c.Backup([DATAFOLDER]);
+                TestUtils.AssertResults(backupResults);
+            }
+
+            var original_contents = File.ReadAllBytes(f);
+            var new_block = new byte[blocksize];
+            new Random(5888).NextBytes(new_block);
+            var new_contents = new byte[n_blocks * blocksize];
+
+            for (int i = 0; i < n_blocks; i++)
+            {
+                for (int j = i; j < n_blocks; j++)
+                {
+                    // Modify the blocks
+                    for (int k = 0; k < n_blocks; k++)
+                    {
+                        if (k == i || k == j)
+                        {
+                            Array.Copy(new_block, 0, new_contents, k * blocksize, blocksize);
+                        }
+                        else
+                        {
+                            Array.Copy(original_contents, k * blocksize, new_contents, k * blocksize, blocksize);
+                        }
+                    }
+
+                    // Write the modified file
+                    File.WriteAllBytes(f, new_contents);
+                    var restored_contents = File.ReadAllBytes(f);
+                    Assert.That(restored_contents, Is.Not.EqualTo(original_contents), "Restored file should not be equal to original file");
+
+                    // Attempt to restore the file
+                    using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
+                    {
+                        var restoreResults = c.Restore([f]);
+                        Assert.That(restoreResults.RestoredFiles, Is.EqualTo(1), "File should have been restored.");
+                    }
+
+                    // Verify that the files are equal
+                    restored_contents = File.ReadAllBytes(f);
+                    Assert.That(restored_contents, Is.EqualTo(original_contents), "Restored file should be equal to original file");
+                }
             }
         }
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -62,6 +62,16 @@ public record SMBConnectionParameters
    /// The password for authentication
    /// </summary>
    public string AuthPassword { get; init; }
+   
+   /// <summary>
+   /// Write buffer size for SMB operations (will be capped automatically by SMB negotiated values)
+   /// </summary>
+   public int? WriteBufferSize { get; init; }
+   
+   /// <summary>
+   /// Read buffer size for SMB operations (will be capped automatically by SMB negotiated values)
+   /// </summary>
+   public int? ReadBufferSize { get; init; }
 
    /// <summary>
    /// Creates a new instance of SMB connection parameters
@@ -73,6 +83,8 @@ public record SMBConnectionParameters
    /// <param name="authDomain">The authentication domain name</param>
    /// <param name="authUser">The username for authentication</param>
    /// <param name="authPassword">The password for authentication</param>
+   /// <param name="readBufferSize">Read buffer size for SMB operations (will be capped automatically by SMB negotiated values)</param>
+   /// <param name="writeBufferSize">Write buffer size for SMB operations (will be capped automatically by SMB negotiated values)</param>
    public SMBConnectionParameters(
        string serverName,
        SMBTransportType transportType,
@@ -80,7 +92,9 @@ public record SMBConnectionParameters
        string path,
        string authDomain,
        string authUser,
-       string authPassword)
+       string authPassword,
+       int? readBufferSize,
+       int? writeBufferSize)
    {
        ServerName = serverName;
        TransportType = transportType;
@@ -89,5 +103,7 @@ public record SMBConnectionParameters
        AuthDomain = authDomain;
        AuthUser = authUser;
        AuthPassword = authPassword;
+       ReadBufferSize = readBufferSize;
+       WriteBufferSize = writeBufferSize;
    }
 }

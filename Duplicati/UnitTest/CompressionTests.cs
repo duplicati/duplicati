@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -23,6 +23,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Duplicati.Library.Logging;
 using NUnit.Framework;
 
 namespace Duplicati.UnitTest
@@ -134,5 +135,63 @@ namespace Duplicati.UnitTest
                 }
             }
         }
+
+        /// <summary>
+        /// Despite archives being able to store multiple files with the same name, this should not leak into the application
+        /// </summary>
+        /// <param name="module">The compression module</param>
+        [TestCase("zip-sc")]
+        [TestCase("zip-io")]
+        public void TestMaskingDuplicates(string module)
+        {
+            using (var stream = new MemoryStream())
+            {
+                var opts = new Dictionary<string, string>();
+                opts["zip-compression-level"] = "9";
+                opts["unittest-mode"] = "true";
+
+                if (module == "zip-sc")
+                {
+                    module = "zip";
+                    opts["zip-compression-library"] = "SharpCompress";
+                }
+                else if (module == "zip-io")
+                {
+                    module = "zip";
+                    opts["zip-compression-library"] = "BuiltIn";
+                }
+
+                // Build archive with duplicate entries
+                using (var z0 = Library.DynamicLoader.CompressionLoader.GetModule(module, stream, Library.Interface.ArchiveMode.Write, opts))
+                {
+                    // Add two identical files to the archive
+                    using (var fs = z0.CreateFile("sample", Library.Interface.CompressionHint.Compressible, DateTime.Now))
+                        fs.Write(new byte[1024]);
+
+                    try
+                    {
+                        using (var fs = z0.CreateFile("sample", Library.Interface.CompressionHint.Compressible, DateTime.Now))
+                            fs.Write(new byte[1024]);
+                    }
+                    catch
+                    {
+                        Assert.Inconclusive("Unable to create faulty archive for testing");
+                    }
+                }
+
+                // Check only a single file is reported
+                var logMessages = new List<LogEntry>();
+                using (var rootscope = Library.Logging.Log.StartIsolatingScope(true))
+                using (var scope = Library.Logging.Log.StartScope(logMessages.Add))
+                using (var z0 = Library.DynamicLoader.CompressionLoader.GetModule(module, stream, Library.Interface.ArchiveMode.Read, opts))
+                {
+                    // Get files list
+                    var files = z0.ListFiles(null);
+                    Assert.AreEqual(1, files.Length);
+                    Assert.That(logMessages.Any(x => x.Level == LogMessageType.Warning && x.Message.Contains("duplicate", StringComparison.OrdinalIgnoreCase)));
+                }
+            }
+        }
+
     }
 }

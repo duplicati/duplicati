@@ -1,3 +1,23 @@
+// Copyright (C) 2025, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
 using System.Net.Http.Json;
 using System.Net.Security;
 using System.Text.Json;
@@ -63,6 +83,18 @@ public class Connection
         long TaskID,
         string BackupID,
         string Operation
+    );
+
+    /// <summary>
+    /// The server state
+    /// </summary>
+    /// <param name="ActiveTask">The active task, if any</param>
+    /// <param name="ProgramState">The state of the server</param>
+    /// <param name="SchedulerQueueIds">The IDs of the tasks in the scheduler queue</param>
+    public sealed record ServerState(
+        Tuple<long, string>? ActiveTask,
+        string ProgramState,
+        IList<Tuple<long, string>> SchedulerQueueIds
     );
 
     /// <summary>
@@ -343,6 +375,54 @@ public class Connection
     {
         var response = await client.PostAsync($"backup/{Uri.EscapeDataString(backupId)}/run", null);
         await EnsureSuccessStatusCodeWithParsing(response);
+    }
+
+    /// <summary>
+    /// Gets the server state
+    /// </summary>
+    /// <returns>The server state</returns>
+    public async Task<ServerState> GetServerState()
+    {
+        var response = await client.GetAsync($"serverstate");
+        await EnsureSuccessStatusCodeWithParsing(response);
+        return await response.Content.ReadFromJsonAsync<ServerState>()
+            ?? throw new InvalidDataException("Failed to parse server response");
+    }
+
+    /// <summary>
+    /// Runs a backup
+    /// </summary>
+    /// <param name="backupId">The ID of the backup</param>
+    /// <returns>The task</returns>
+    public async Task WaitForBackup(string backupId, TimeSpan delay, Action<string> statusMessage)
+    {
+        var state = await GetServerState();
+
+        if (!state.SchedulerQueueIds.Any(x => x.Item2 == backupId) && state.ActiveTask?.Item2 != backupId)
+            throw new UserReportedException("Backup is not queued or running");
+
+        var hasStarted = state.ActiveTask?.Item2 == backupId;
+
+        while (true)
+        {
+            await Task.Delay(delay);
+            state = await GetServerState();
+
+            if (state.ActiveTask?.Item2 == backupId)
+            {
+                statusMessage("Backup is running ...");
+                hasStarted = true;
+                continue;
+            }
+
+            if (!hasStarted && state.SchedulerQueueIds.Any(x => x.Item2 == backupId))
+            {
+                statusMessage("Backup is queued ...");
+                continue;
+            }
+
+            break;
+        }
     }
 
     /// <summary>
