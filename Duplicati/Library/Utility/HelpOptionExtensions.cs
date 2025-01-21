@@ -19,6 +19,8 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
+using System;
+using System.Collections.Generic;
 using System.CommandLine.Builder;
 using System.Linq;
 
@@ -29,7 +31,7 @@ public static class HelpOptionExtensions
     /// <summary>
     /// Aliases to support for help command
     /// </summary>
-    public static readonly string[] AlternativeHelpStrings = ["help", "/help","--help", "usage", "/usage", "--usage", "/h", "-h"];
+    private static readonly string[] AlternativeHelpStrings = ["help", "/help","--help", "usage", "/usage", "--usage", "/h", "-h"];
 
     /// <summary>
     /// Adds the following aliases: "help", "/help", "--usage", "/usage".
@@ -47,4 +49,11 @@ public static class HelpOptionExtensions
 
         return builder;
     }
+    
+    /// <summary>
+    /// Returns true if any of the arguments are any of the help strings.
+    /// </summary>
+    /// <param name="args">Arguments</param>
+    public static bool IsArgumentAnyHelpString(IEnumerable<string> args) 
+        => args != null && AlternativeHelpStrings.Any(x => args.Contains(x, StringComparer.OrdinalIgnoreCase));
 }

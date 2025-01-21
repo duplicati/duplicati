@@ -223,7 +223,7 @@ namespace Duplicati.Server
             var commandlineOptions = optionsWithFilter.Item1;
             var filter = optionsWithFilter.Item2;
 
-            if (HelpOptionExtensions.AlternativeHelpStrings.Any(helpString => args.Contains(helpString, StringComparer.OrdinalIgnoreCase)))
+            if (HelpOptionExtensions.IsArgumentAnyHelpString(args))
             {
                 return ShowHelp(writeToConsoleOnException);
             }

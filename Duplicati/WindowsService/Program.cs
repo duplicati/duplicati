@@ -42,7 +42,7 @@ namespace Duplicati.WindowsService
             var uninstall = args != null && args.Any(x => string.Equals("uninstall", x, StringComparison.OrdinalIgnoreCase));
             var install_agent = args != null && args.Any(x => string.Equals("install-agent", x, StringComparison.OrdinalIgnoreCase) || string.Equals("install-only-agent", x, StringComparison.OrdinalIgnoreCase));
             var uninstall_agent = args != null && args.Any(x => string.Equals("uninstall-agent", x, StringComparison.OrdinalIgnoreCase));
-            var help = args != null && HelpOptionExtensions.AlternativeHelpStrings.Any(helpString => args.Contains(helpString, StringComparer.OrdinalIgnoreCase));;
+            var help = args != null && HelpOptionExtensions.IsArgumentAnyHelpString(args);
 
             if (help)
             {

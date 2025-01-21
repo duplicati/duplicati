@@ -165,8 +165,7 @@ namespace Duplicati.CommandLine
                 }
 
             // Probe for "help" to avoid extra processing
-            if (cargs.Count == 0 || HelpOptionExtensions.AlternativeHelpStrings.Any(helpString => 
-                    cargs.Contains(helpString, StringComparer.OrdinalIgnoreCase)))
+            if (cargs.Count == 0 || HelpOptionExtensions.IsArgumentAnyHelpString(cargs))
             {
                 return Commands.Help(outwriter, setup, cargs, options, filter);
             }

@@ -85,8 +85,7 @@ namespace Duplicati.GUI.TrayIcon
             if (OperatingSystem.IsWindows() && !Library.Utility.Utility.ParseBoolOption(options, DETACHED_PROCESS))
                 Library.Utility.Win32.AttachConsole(Library.Utility.Win32.ATTACH_PARENT_PROCESS);
             
-            if (HelpOptionExtensions.AlternativeHelpStrings.Any(helpString => 
-                    args.Contains(helpString, StringComparer.OrdinalIgnoreCase)))
+            if (HelpOptionExtensions.IsArgumentAnyHelpString(args))
             {
                 Console.WriteLine("Supported commandline arguments:");
                 Console.WriteLine();
