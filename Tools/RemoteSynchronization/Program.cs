@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using Duplicati.Library.Main;
@@ -83,8 +83,16 @@ namespace RemoteSynchronization
         // TODO check whether the backend files are consistent: src.files.count >= dst.files.count
         // TODO handle files deleted from src, which should also be deleted in dst
         // TODO maximum retention?: don't delete files, only rename old ones.
+        // TODO have concurrency parameters: uploaders, downloaders
+        // TODO low memory mode, where things aren't kept in memory. Maybe utilize SQLite?
+        // TODO Force parameter
+        // TODO Progress reporting
+        // TODO Dry run
+        // TODO Logging
+
         // TODO check database consistency. I.e. have both databases, check that the block, volume, files, etc match up.
         // TODO introduce these checks as a post processing step? Especially the database consistency check, as that is often recreated from the index files.
+        // TODO This tool shouldn't handle it, but for convenience, it should support making the seperate call to the regular Duplicati on the destination backend, which alread carries this functionality.
 
         // Forcefully synchronize the remote backends
         private static long Copy(IStreamingBackend b_src, IStreamingBackend b_dst, IEnumerable<IFileEntry> files)
@@ -103,8 +111,6 @@ namespace RemoteSynchronization
                 }
                 catch (Exception e)
                 {
-                    // TODO log the error
-                    // TODO return failed files count?
                     Console.WriteLine($"Error copying {f.Name}: {e.Message}");
                 }
             }
@@ -123,8 +129,6 @@ namespace RemoteSynchronization
                 }
                 catch (Exception e)
                 {
-                    // TODO log the error
-                    // TODO return failed files count?
                     Console.WriteLine($"Error deleting {f.Name}: {e.Message}");
                 }
             }
@@ -195,8 +199,6 @@ namespace RemoteSynchronization
                 }
                 catch (Exception e)
                 {
-                    // TODO log the error
-                    // TODO return failed files count?
                     Console.WriteLine($"Error renaming {f.Name}: {e.Message}");
                 }
             }
