@@ -136,7 +136,10 @@ public static class JSONSignature
 
         source.Position = 0;
         var buffer = new byte["//SIGJSON".Length];
-        await source.ReadAsync(buffer, 0, buffer.Length);
+        var r = await source.ReadAsync(buffer, 0, buffer.Length);
+        if (r != buffer.Length)
+            throw new InvalidOperationException($"Cannot read from the source stream; expected {buffer.Length} bytes, got {r}");
+
         if (Encoding.UTF8.GetString(buffer) == "//SIGJSON")
             throw new Exception("Cannot sign data with an existing signature");
 

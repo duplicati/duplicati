@@ -413,7 +413,7 @@ public static partial class Command
         if (!File.Exists(versionFilePath))
             throw new FileNotFoundException($"Version file not found: {versionFilePath}");
 
-        var sourceProjects = Directory.EnumerateDirectories(Path.Combine(baseDir, "Executables", "net8"), "*", SearchOption.TopDirectoryOnly)
+        var sourceProjects = Directory.EnumerateDirectories(Path.Combine(baseDir, "Executables", "net9"), "*", SearchOption.TopDirectoryOnly)
             .SelectMany(x => Directory.EnumerateFiles(x, "*.csproj", SearchOption.TopDirectoryOnly))
             .ToList();
 

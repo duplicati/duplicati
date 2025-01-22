@@ -99,25 +99,25 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.Backend.T
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Executables", "Executables", "{FA88A246-EF8E-46E3-90AF-539B8C0A6ADE}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "net8", "net8", "{6B46F6B1-1898-49B8-ADA7-5CAF68EB77E3}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "net9", "net9", "{6B46F6B1-1898-49B8-ADA7-5CAF68EB77E3}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.CommandLine.AutoUpdater", "Executables\net8\Duplicati.CommandLine.AutoUpdater\Duplicati.CommandLine.AutoUpdater.csproj", "{95B7DD83-2C5A-4F1E-8EA7-39654B2B236A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.CommandLine.AutoUpdater", "Executables\net9\Duplicati.CommandLine.AutoUpdater\Duplicati.CommandLine.AutoUpdater.csproj", "{95B7DD83-2C5A-4F1E-8EA7-39654B2B236A}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Service", "Executables\net8\Duplicati.Service\Duplicati.Service.csproj", "{34149709-F3ED-4FB5-A087-43EB195C948B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Service", "Executables\net9\Duplicati.Service\Duplicati.Service.csproj", "{34149709-F3ED-4FB5-A087-43EB195C948B}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.CommandLine.BackendTester", "Executables\net8\Duplicati.CommandLine.BackendTester\Duplicati.CommandLine.BackendTester.csproj", "{2F1C0C8D-5C15-4BC0-811F-87F2C98D9790}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.CommandLine.BackendTester", "Executables\net9\Duplicati.CommandLine.BackendTester\Duplicati.CommandLine.BackendTester.csproj", "{2F1C0C8D-5C15-4BC0-811F-87F2C98D9790}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.CommandLine.BackendTool", "Executables\net8\Duplicati.CommandLine.BackendTool\Duplicati.CommandLine.BackendTool.csproj", "{31FA5B9B-4CD6-4BF3-B7A9-12C1E30DCAF6}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.CommandLine.BackendTool", "Executables\net9\Duplicati.CommandLine.BackendTool\Duplicati.CommandLine.BackendTool.csproj", "{31FA5B9B-4CD6-4BF3-B7A9-12C1E30DCAF6}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.CommandLine.RecoveryTool", "Executables\net8\Duplicati.CommandLine.RecoveryTool\Duplicati.CommandLine.RecoveryTool.csproj", "{0FFC557E-1B84-46A2-B6E8-06064FA7EA58}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.CommandLine.RecoveryTool", "Executables\net9\Duplicati.CommandLine.RecoveryTool\Duplicati.CommandLine.RecoveryTool.csproj", "{0FFC557E-1B84-46A2-B6E8-06064FA7EA58}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.GUI.TrayIcon", "Executables\net8\Duplicati.GUI.TrayIcon\Duplicati.GUI.TrayIcon.csproj", "{AF32C621-30DC-40F5-8CE6-DD69053068E9}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.GUI.TrayIcon", "Executables\net9\Duplicati.GUI.TrayIcon\Duplicati.GUI.TrayIcon.csproj", "{AF32C621-30DC-40F5-8CE6-DD69053068E9}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Server", "Executables\net8\Duplicati.Server\Duplicati.Server.csproj", "{55EEEBD2-CE45-45D6-9838-958F1C7354E4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Server", "Executables\net9\Duplicati.Server\Duplicati.Server.csproj", "{55EEEBD2-CE45-45D6-9838-958F1C7354E4}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.WindowsService", "Executables\net8\Duplicati.WindowsService\Duplicati.WindowsService.csproj", "{5D20B150-C445-47BE-8CE8-C9F74F19A4F2}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.WindowsService", "Executables\net9\Duplicati.WindowsService\Duplicati.WindowsService.csproj", "{5D20B150-C445-47BE-8CE8-C9F74F19A4F2}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.CommandLine", "Executables\net8\Duplicati.CommandLine\Duplicati.CommandLine.csproj", "{0F5A1F4E-25FA-4D02-920D-CA2138498081}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.CommandLine", "Executables\net9\Duplicati.CommandLine\Duplicati.CommandLine.csproj", "{0F5A1F4E-25FA-4D02-920D-CA2138498081}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.Backend.Idrivee2", "Duplicati\Library\Backend\Idrivee2\Duplicati.Library.Backend.Idrivee2.csproj", "{6B594D23-B629-465C-B799-70EE9E56C218}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -138,19 +138,19 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.RestAPI",
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duplicati.Library.Backend.AliyunOSS", "Duplicati\Library\Backend\AliyunOSS\Duplicati.Library.Backend.AliyunOSS.csproj", "{4EB3DABC-D412-4C12-8876-41A1427A389E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.CommandLine.SharpAESCrypt", "Executables\net8\Duplicati.CommandLine.SharpAESCrypt\Duplicati.CommandLine.SharpAESCrypt.csproj", "{FE6FD36C-E171-4599-8D55-62DA579C0864}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.CommandLine.SharpAESCrypt", "Executables\net9\Duplicati.CommandLine.SharpAESCrypt\Duplicati.CommandLine.SharpAESCrypt.csproj", "{FE6FD36C-E171-4599-8D55-62DA579C0864}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.CommandLine.Snapshots", "Executables\net8\Duplicati.CommandLine.Snapshots\Duplicati.CommandLine.Snapshots.csproj", "{0364E724-1929-445E-9145-90A70B01DDC0}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.CommandLine.Snapshots", "Executables\net9\Duplicati.CommandLine.Snapshots\Duplicati.CommandLine.Snapshots.csproj", "{0364E724-1929-445E-9145-90A70B01DDC0}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.CommandLine.ServerUtil", "Duplicati\CommandLine\ServerUtil\Duplicati.CommandLine.ServerUtil.csproj", "{5AF834B1-D227-4A98-9377-6BFA6BCF99A7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.CommandLine.ServerUtil", "Executables\net8\Duplicati.CommandLine.ServerUtil\Duplicati.CommandLine.ServerUtil.csproj", "{C09A7DE2-F0F3-4FA4-B36C-A0DE7844739B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.CommandLine.ServerUtil", "Executables\net9\Duplicati.CommandLine.ServerUtil\Duplicati.CommandLine.ServerUtil.csproj", "{C09A7DE2-F0F3-4FA4-B36C-A0DE7844739B}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.WindowsService", "Duplicati\WindowsService\Duplicati.WindowsService.csproj", "{3476A88B-4123-45F4-AC96-700B747367EB}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Agent", "Duplicati\Agent\Duplicati.Agent.csproj", "{0C1AD03C-89D8-4C47-82FF-25D5470055B4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Agent", "Executables\net8\Duplicati.Agent\Duplicati.Agent.csproj", "{A2957269-C11F-44CE-B355-CC9BA342295D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Agent", "Executables\net9\Duplicati.Agent\Duplicati.Agent.csproj", "{A2957269-C11F-44CE-B355-CC9BA342295D}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.RemoteControl", "Duplicati\Library\RemoteControl\Duplicati.Library.RemoteControl.csproj", "{BB3A6E17-FC2E-42E3-B697-10D0972AFE81}"
 EndProject
@@ -158,7 +158,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.SecretPro
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.CommandLine.SecretTool", "Duplicati\CommandLine\SecretTool\Duplicati.CommandLine.SecretTool.csproj", "{D6417FD3-1645-4AB4-9F42-A1EC4A262B37}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.CommandLine.SecretTool", "Executables\net8\Duplicati.CommandLine.SecretTool\Duplicati.CommandLine.SecretTool.csproj", "{E1D32EF7-368E-4148-9367-B328E78C871B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.CommandLine.SecretTool", "Executables\net9\Duplicati.CommandLine.SecretTool\Duplicati.CommandLine.SecretTool.csproj", "{E1D32EF7-368E-4148-9367-B328E78C871B}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.pCloud", "Duplicati\Library\Backend\pCloud\Duplicati.Library.Backend.pCloud.csproj", "{CA1A0EE8-DFFF-42AF-B15D-EF538357A2DE}"
 EndProject
