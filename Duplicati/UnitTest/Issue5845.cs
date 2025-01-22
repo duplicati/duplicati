@@ -166,8 +166,8 @@ namespace Duplicati.UnitTest
             using (var c = new Library.Main.Controller(ListSortingBackend.Key + "://" + TARGETFOLDER, testopts, null))
             {
                 IRepairResults repairResults = c.Repair();
-                Assert.AreEqual(2, repairResults.Errors.Count());
-                Assert.AreEqual(1, repairResults.Warnings.Count());
+                Assert.AreEqual(0, repairResults.Errors.Count());
+                Assert.AreEqual(3, repairResults.Warnings.Count());
             }
 
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
@@ -261,8 +261,8 @@ namespace Duplicati.UnitTest
             using (var c = new Library.Main.Controller(ListSortingBackend.Key + "://" + TARGETFOLDER, testopts, null))
             {
                 IRepairResults repairResults = c.Repair();
-                Assert.AreEqual(replicas - goodExtras, repairResults.Errors.Count());
-                Assert.AreEqual(1, repairResults.Warnings.Count());
+                Assert.AreEqual(0, repairResults.Errors.Count());
+                Assert.AreEqual(1 + replicas - goodExtras, repairResults.Warnings.Count());
             }
 
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
