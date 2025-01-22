@@ -1,3 +1,49 @@
+2025-01-22 - 2.1.0.3_beta_2025-01-22
+==========
+This release is a beta release, considered to be stable for general use.
+This release is expected to progress to a stable release if no major blockers are found.
+
+**Unlike 2.0.8.1 and earlier Duplicati now runs on .NET8.**
+The builds are self-contained so Mono or .NET installations are not required to install.
+Automatic updating to this version is not supported.
+
+**Important changes from 2.0.8.1**
+- Updated to .NET8 with OS specific builds
+- Using Kestrel as the API/UI server
+- Mandatory password and new authentication scheme for server
+- Settings database version updated to v8
+- Backup database updated to v13
+
+# New tool to manage a running server
+Due to incompatibility with `duplicati_client` a new tool is included, named `Duplicati.CommandLine.ServerUtil.exe`/`duplicati-server-util`.
+
+This update builds on 2.1.0.2 and fixes a number of issues that were reported and fixed with the help of the incredible Duplicati community.
+
+# Summary of changes from 2.1.0.2
+- WebSocket path is proxy aware
+- Removed most of the noisy log messages
+- Fixed some issues with QuotaInfo on the file-based backend
+- Multiple fixes to the FTP backend
+- Agent can now register-then-exit and retain password
+- Updated SSH.NET to fix an issue with missing HMAC algorithm
+- Changed docs link to point to new docs site
+- Added read-write timeout to most backends
+- Added option to issue a "forever token" for use in authenticated environments
+- Updated MacOS launchAgents in `.pkg` files
+- Preload configuration now supports the data folder
+- Fixed bugreport download
+- Fixed shutdown crashes in TrayIcon
+- Updated translations, thanks to the translation community!
+- Fixed TrayIcon disconnecting after 15 minutes
+- Removed the Captcha for deleting remote files
+- Added help links to login pages to explain how to get access
+- Support for self-signed certificates when sending http reports
+- Extended ServerUtil with a status command and option to wait for backups to complete
+- Fixed a bug preventing database recreate in special cases
+- Prevent optimize calls after calling vacuum on the SQLite database
+- Added a warning if the volume size is excessive
+- Fixed a logic test for AWS S3 permissions
+
 2024-11-29 - 2.1.0.2_beta_2024-11-29
 ==========
 This release is a beta release, considered to be stable for general use.
