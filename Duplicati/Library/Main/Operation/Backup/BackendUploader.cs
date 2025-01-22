@@ -437,8 +437,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                 using (var act = new StreamUtil.TimeoutObservingStream(fs) { ReadTimeout = backend is ITimeoutExemptBackend ? System.Threading.Timeout.Infinite : m_options.ReadWriteTimeout })
                 using (var ts = new ThrottledStream(act, m_initialUploadThrottleSpeed, 0))
                 using (var pgs = new ProgressReportingStream(ts, pg => HandleProgress(ts, pg, item.RemoteFilename)))
-                using (var linkedToken = CancellationTokenSource.CreateLinkedTokenSource(m_taskReader.TransferToken, act.TimeoutToken))
-                    await streamingBackend.PutAsync(item.RemoteFilename, pgs, linkedToken.Token).ConfigureAwait(false);
+                    await streamingBackend.PutAsync(item.RemoteFilename, pgs, act.TimeoutToken).ConfigureAwait(false);
             }
             else
                 await backend.PutAsync(item.RemoteFilename, item.LocalFilename, cancelToken).ConfigureAwait(false);
