@@ -5,7 +5,7 @@
     <TargetFramework>net8.0</TargetFramework>
     <Description>The Server Snapshots implementation</Description>
     <AssemblyName>Duplicati.CommandLine.Snapshots</AssemblyName>
-    <Copyright>Copyright © 2024 Team Duplicati, MIT license</Copyright>
+    <Copyright>Copyright © 2025 Team Duplicati, MIT license</Copyright>
   </PropertyGroup>
 
   <ItemGroup>
