@@ -1,10 +1,10 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <OutputType>Library</OutputType>
 		<Description>Storj backend for Duplicati</Description>
-	  <Copyright>Copyright © 2024 Team Duplicati, MIT license</Copyright>
+	  <Copyright>Copyright © 2025 Team Duplicati, MIT license</Copyright>
   </PropertyGroup>
 
 	<ItemGroup>

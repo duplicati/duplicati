@@ -30,7 +30,8 @@ if (!Directory.Exists(startpath))
     throw new Exception($"Start path not found: {startpath}");
 
 var target_extensions = new[] {
-    ".cs"
+    ".cs",
+    ".csproj"
     // ".html",
     // ".js",
     // ".css"
@@ -71,6 +72,15 @@ foreach (var file in candidates)
         // Console.WriteLine($"{file} updated!");
         continue;
     }
+
+    if (string.Equals(Path.GetExtension(file), ".csproj", StringComparison.OrdinalIgnoreCase))
+    {
+        data = Fragments.CSPROJ_COPYRIGHT_MATCH.Replace(data, $"<Copyright>{Fragments.CopyrightText}</Copyright>");
+        File.WriteAllText(file, data);
+        // Console.WriteLine($"{file} updated!");
+        continue;
+    }
+
 
     Console.WriteLine($"{file} skipped, no match");
 }
