@@ -23,34 +23,50 @@ using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 using System;
 using System.Collections.Generic;
+using System.CommandLine;
 using System.IO;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 
 
 namespace RemoteSynchronization
 {
     public class Program
     {
-        public static void Main(string[] args)
+        public static async Task<int> Main(string[] args)
         {
+            var src_arg = new Argument<string>(name: "backend_src", description: "The source backend string");
+            var dst_arg = new Argument<string>(name: "backend_dst", description: "The destination backend string");
 
+            var root_cmd = new RootCommand("Remote Synchronization Tool");
+            root_cmd.AddArgument(src_arg);
+            root_cmd.AddArgument(dst_arg);
 
-            using (var b1 = Duplicati.Library.DynamicLoader.BackendLoader.GetBackend($"file://{l1}", options))
+            root_cmd.SetHandler(Run, src_arg, dst_arg);
+
+            return await root_cmd.InvokeAsync(args);
+        }
+
+        private static async Task<int> Run(string src, string dst)
+        {
+            var options = new Dictionary<string, string>();
+            using (var b1 = Duplicati.Library.DynamicLoader.BackendLoader.GetBackend(src, options))
             {
-                var b1s = b1 as IStreamingBackend;
-                System.Diagnostics.Debug.Assert(b1s != null);
-                using (var b2 = Duplicati.Library.DynamicLoader.BackendLoader.GetBackend($"file://{l2}", options))
-                {
-                    var b2s = b2 as IStreamingBackend;
-                    System.Diagnostics.Debug.Assert(b2s != null);
-                    var (to_copy, to_delete) = PrepareFileLists(b1s, b2s);
-                    var deleted = Delete(b2s, to_delete);
-                    Console.WriteLine($"Deleted {deleted} files from {l2}");
-                    var copied = Copy(b1s, b2s, to_copy);
-                    Console.WriteLine($"Copied {copied} files from {l1} to {l2}");
-                }
+               var b1s = b1 as IStreamingBackend;
+               System.Diagnostics.Debug.Assert(b1s != null);
+               using (var b2 = Duplicati.Library.DynamicLoader.BackendLoader.GetBackend(dst, options))
+               {
+                   var b2s = b2 as IStreamingBackend;
+                   System.Diagnostics.Debug.Assert(b2s != null);
+                   var (to_copy, to_delete) = PrepareFileLists(b1s, b2s);
+                   var deleted = Delete(b2s, to_delete);
+                   Console.WriteLine($"Deleted {deleted} files from {dst}");
+                   var copied = Copy(b1s, b2s, to_copy);
+                   Console.WriteLine($"Copied {copied} files from {src} to {dst}");
+               }
             }
+            return 42;
         }
 
         // TODO maximum retention?: don't delete files, only rename old ones.
