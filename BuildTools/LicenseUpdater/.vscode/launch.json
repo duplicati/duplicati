@@ -10,7 +10,7 @@
             "request": "launch",
             "preLaunchTask": "dotnet: build",
             "program": "${workspaceFolder}/bin/Debug/net9.0/LicenseUpdater.dll",
-            "args": ["../../Duplicati"],
+            "args": ["../.."],
             "cwd": "${workspaceFolder}",
             "stopAtEntry": false,
             "console": "internalConsole"
