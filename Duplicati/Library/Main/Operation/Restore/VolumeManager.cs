@@ -50,7 +50,7 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// <param name="backend">The backend manager, used to fetch the volumes from the backend.</param>
         /// <param name="options">The restore options.</param>
         /// <param name="results">The restore results.</param>
-        public static Task Run(Channels channels, LocalRestoreDatabase db, BackendManager backend, Options options, RestoreResults results)
+        public static Task Run(Channels channels, LocalRestoreDatabase db, IBackendManager backend, Options options, RestoreResults results)
         {
             return AutomationExtensions.RunTask(
                 new
@@ -65,12 +65,12 @@ namespace Duplicati.Library.Main.Operation.Restore
                     Dictionary<long, TempFile> files = [];
                     Dictionary<long, List<BlockRequest>> in_flight = [];
 
-                    Stopwatch sw_cache_set = options.InternalProfiling ? new () : null;
-                    Stopwatch sw_cache_evict = options.InternalProfiling ? new () : null;
-                    Stopwatch sw_query = options.InternalProfiling ? new () : null;
-                    Stopwatch sw_backend = options.InternalProfiling ? new () : null;
-                    Stopwatch sw_request = options.InternalProfiling ? new () : null;
-                    Stopwatch sw_wakeup = options.InternalProfiling ? new () : null;
+                    Stopwatch sw_cache_set = options.InternalProfiling ? new() : null;
+                    Stopwatch sw_cache_evict = options.InternalProfiling ? new() : null;
+                    Stopwatch sw_query = options.InternalProfiling ? new() : null;
+                    Stopwatch sw_backend = options.InternalProfiling ? new() : null;
+                    Stopwatch sw_request = options.InternalProfiling ? new() : null;
+                    Stopwatch sw_wakeup = options.InternalProfiling ? new() : null;
 
                     try
                     {
@@ -110,12 +110,13 @@ namespace Duplicati.Library.Main.Operation.Restore
                                                     var (volume_name, volume_size, volume_hash) = db.GetVolumeInfo(request.VolumeID).First();
                                                     sw_query?.Stop();
                                                     sw_backend?.Start();
-                                                    var handle = backend.GetAsync(volume_name, volume_size, volume_hash);
+                                                    var handle = backend.GetAsync(volume_name, volume_size, volume_hash, results.TaskControl.TransferToken);
                                                     sw_backend?.Stop();
                                                     await self.DownloadRequest.WriteAsync((request.VolumeID, handle));
                                                     in_flight[request.VolumeID] = [request];
                                                 }
-                                            };
+                                            }
+                                            ;
                                             sw_request?.Stop();
                                         }
                                         break;

@@ -21,8 +21,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Cryptography;
-using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main.Database;
 using Duplicati.Library.Main.Volumes;
@@ -36,13 +36,11 @@ namespace Duplicati.Library.Main.Operation
         /// The tag used for logging
         /// </summary>
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<RepairHandler>();
-        private readonly string m_backendurl;
         private readonly Options m_options;
         private readonly RepairResults m_result;
 
-        public RepairHandler(string backend, Options options, RepairResults result)
+        public RepairHandler(Options options, RepairResults result)
         {
-            m_backendurl = backend;
             m_options = options;
             m_result = result;
 
@@ -50,11 +48,11 @@ namespace Duplicati.Library.Main.Operation
                 throw new UserInformationException(Strings.Common.PassphraseChangeUnsupported, "PassphraseChangeUnsupported");
         }
 
-        public void Run(Library.Utility.IFilter filter = null)
+        public void Run(IBackendManager backendManager, IFilter filter)
         {
             if (!System.IO.File.Exists(m_options.Dbpath))
             {
-                RunRepairLocal(filter);
+                RunRepairLocal(backendManager, filter);
                 RunRepairCommon();
                 m_result.EndTime = DateTime.UtcNow;
                 return;
@@ -88,20 +86,20 @@ namespace Duplicati.Library.Main.Operation
                     System.IO.File.Move(m_options.Dbpath, baseName);
                 }
 
-                RunRepairLocal(filter);
+                RunRepairLocal(backendManager, filter);
                 RunRepairCommon();
             }
             else
             {
                 RunRepairCommon();
-                RunRepairRemote();
+                RunRepairRemote(backendManager, m_result.TaskControl.ProgressToken).Await();
             }
 
             m_result.EndTime = DateTime.UtcNow;
 
         }
 
-        public void RunRepairLocal(Library.Utility.IFilter filter = null)
+        public void RunRepairLocal(IBackendManager backendManager, Library.Utility.IFilter filter)
         {
             m_result.RecreateDatabaseResults = new RecreateDatabaseResults(m_result);
             using (new Logging.Timer(LOGTAG, "RecreateDbForRepair", "Recreate database for repair"))
@@ -112,12 +110,12 @@ namespace Duplicati.Library.Main.Operation
 
                 var filelistfilter = RestoreHandler.FilterNumberedFilelist(m_options.Time, m_options.Version);
 
-                new RecreateDatabaseHandler(m_backendurl, m_options, (RecreateDatabaseResults)m_result.RecreateDatabaseResults)
-                    .Run(m_options.Dryrun ? (string)f : m_options.Dbpath, filter, filelistfilter);
+                new RecreateDatabaseHandler(m_options, (RecreateDatabaseResults)m_result.RecreateDatabaseResults)
+                    .Run(m_options.Dryrun ? (string)f : m_options.Dbpath, backendManager, filter, filelistfilter, null);
             }
         }
 
-        public void RunRepairRemote()
+        public async Task RunRepairRemote(IBackendManager backendManager, CancellationToken cancellationToken)
         {
             if (!System.IO.File.Exists(m_options.Dbpath))
                 throw new UserInformationException(string.Format("Database file does not exist: {0}", m_options.Dbpath), "RepairDatabaseFileDoesNotExist");
@@ -125,7 +123,6 @@ namespace Duplicati.Library.Main.Operation
             m_result.OperationProgressUpdater.UpdateProgress(0);
 
             using (var db = new LocalRepairDatabase(m_options.Dbpath))
-            using (var backend = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, db))
             {
                 m_result.SetDatabase(db);
                 Utility.UpdateOptionsFromDb(db, m_options);
@@ -137,7 +134,7 @@ namespace Duplicati.Library.Main.Operation
                 if (db.RepairInProgress)
                     throw new UserInformationException("The database was attempted repaired, but the repair did not complete. This database may be incomplete and the repair process is not allowed to alter remote files as that could result in data loss.", "DatabaseIsInRepairState");
 
-                var tp = FilelistProcessor.RemoteListAnalysis(backend, m_options, db, m_result.BackendWriter, null);
+                var tp = await FilelistProcessor.RemoteListAnalysis(backendManager, m_options, db, m_result.BackendWriter, null).ConfigureAwait(false);
                 var buffer = new byte[m_options.Blocksize];
                 var hashsize = HashFactory.HashSizeBytes(m_options.BlockHashAlgorithm);
 
@@ -168,20 +165,18 @@ namespace Duplicati.Library.Main.Operation
                             foreach (var n in tp.VerificationRequiredVolumes)
                                 try
                                 {
-                                    if (!m_result.TaskControl.ProgressRendevouz().Await())
+                                    if (!await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
                                     {
-                                        backend.WaitForComplete(db, null);
+                                        await backendManager.WaitForEmptyAsync(testdb, null, cancellationToken).ConfigureAwait(false);
                                         return;
                                     }
 
                                     progress++;
                                     m_result.OperationProgressUpdater.UpdateProgress((float)progress / targetProgess);
 
-                                    long size;
-                                    string hash;
                                     KeyValuePair<string, IEnumerable<KeyValuePair<Duplicati.Library.Interface.TestEntryStatus, string>>> res;
-
-                                    using (var tf = backend.GetWithInfo(n.Name, out size, out hash))
+                                    (var tf, var hash, var size) = await backendManager.GetWithInfoAsync(n.Name, cancellationToken).ConfigureAwait(false);
+                                    using (tf)
                                         res = TestHandler.TestVolumeInternals(testdb, n, tf, m_options, 1);
 
                                     if (res.Value.Any())
@@ -207,9 +202,9 @@ namespace Duplicati.Library.Main.Operation
                     foreach (var n in tp.ExtraVolumes)
                         try
                         {
-                            if (!m_result.TaskControl.ProgressRendevouz().Await())
+                            if (!await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
                             {
-                                backend.WaitForComplete(db, null);
+                                await backendManager.WaitForEmptyAsync(db, null, cancellationToken).ConfigureAwait(false);
                                 return;
                             }
 
@@ -222,9 +217,8 @@ namespace Duplicati.Library.Main.Operation
                             {
                                 try
                                 {
-                                    string hash;
-                                    long size;
-                                    using (var tf = backend.GetWithInfo(n.File.Name, out size, out hash))
+                                    (var tf, var hash, var size) = await backendManager.GetWithInfoAsync(n.File.Name, cancellationToken).ConfigureAwait(false);
+                                    using (tf)
                                     using (var ifr = new IndexVolumeReader(n.CompressionModule, tf, m_options, m_options.BlockhashSize))
                                     {
                                         foreach (var rv in ifr.Volumes)
@@ -277,7 +271,7 @@ namespace Duplicati.Library.Main.Operation
                             if (!m_options.Dryrun)
                             {
                                 db.RegisterRemoteVolume(n.File.Name, n.FileType, n.File.Size, RemoteVolumeState.Deleting);
-                                backend.Delete(n.File.Name, n.File.Size);
+                                await backendManager.DeleteAsync(n.File.Name, n.File.Size, false, cancellationToken).ConfigureAwait(false);
                             }
                             else
                                 Logging.Log.WriteDryrunMessage(LOGTAG, "WouldDeleteFile", "would delete file {0}", n.File.Name);
@@ -302,9 +296,9 @@ namespace Duplicati.Library.Main.Operation
 
                         try
                         {
-                            if (!m_result.TaskControl.ProgressRendevouz().Await())
+                            if (!await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
                             {
-                                backend.WaitForComplete(db, null);
+                                await backendManager.WaitForEmptyAsync(db, null, cancellationToken).ConfigureAwait(false);
                                 return;
                             }
 
@@ -331,7 +325,7 @@ namespace Duplicati.Library.Main.Operation
                                 else
                                 {
                                     db.UpdateRemoteVolume(volumeWriter.RemoteFilename, RemoteVolumeState.Uploading, -1, null, null);
-                                    backend.Put(volumeWriter);
+                                    await backendManager.PutAsync(volumeWriter, null, null, false, cancellationToken).ConfigureAwait(false);
                                 }
                             }
                             else if (n.Type == RemoteVolumeType.Index)
@@ -372,7 +366,7 @@ namespace Duplicati.Library.Main.Operation
                                 else
                                 {
                                     db.UpdateRemoteVolume(w.RemoteFilename, RemoteVolumeState.Uploading, -1, null, null);
-                                    backend.Put(w);
+                                    await backendManager.PutAsync(w, null, null, false, cancellationToken).ConfigureAwait(false);
                                 }
                             }
                             else if (n.Type == RemoteVolumeType.Blocks)
@@ -423,11 +417,11 @@ namespace Duplicati.Library.Main.Operation
                                     }
 
                                     //Then we grab all remote volumes that have the missing blocks
-                                    foreach (var vol in new AsyncDownloader(mbl.GetMissingBlockSources().ToList(), backend))
+                                    await foreach ((var tmpfile, var vol) in backendManager.GetFilesOverlappedAsync(mbl.GetMissingBlockSources().ToList(), cancellationToken))
                                     {
                                         try
                                         {
-                                            using (var tmpfile = vol.TempFile)
+                                            using (tmpfile)
                                             using (var f = new BlockVolumeReader(RestoreHandler.GetCompressionModule(vol.Name), tmpfile, m_options))
                                                 foreach (var b in f.Blocks)
                                                     if (mbl.SetBlockRestored(b.Key, b.Value))
@@ -468,7 +462,7 @@ namespace Duplicati.Library.Main.Operation
                                         else
                                         {
                                             db.UpdateRemoteVolume(w.RemoteFilename, RemoteVolumeState.Uploading, -1, null, null);
-                                            backend.Put(w);
+                                            await backendManager.PutAsync(w, null, null, false, cancellationToken).ConfigureAwait(false);
                                         }
                                     }
                                 }
@@ -494,7 +488,7 @@ namespace Duplicati.Library.Main.Operation
                 }
 
                 m_result.OperationProgressUpdater.UpdateProgress(1);
-                backend.WaitForComplete(db, null);
+                await backendManager.WaitForEmptyAsync(db, null, cancellationToken).ConfigureAwait(false);
                 db.WriteResults();
             }
         }

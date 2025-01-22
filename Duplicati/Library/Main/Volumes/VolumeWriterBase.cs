@@ -89,15 +89,6 @@ namespace Duplicati.Library.Main.Volumes
                 sr.Write(ManifestData.GetManifestInstance(m_blocksize, m_blockhash, m_filehash));
         }
 
-        internal BackendHandler.FileEntryItem CreateFileEntryForUpload(Options options)
-        {
-            var fileEntry = new BackendHandler.FileEntryItem(BackendActionType.Put, this.RemoteFilename);
-            fileEntry.SetLocalfilename(this.LocalFilename);
-            fileEntry.Encrypt(options);
-            fileEntry.UpdateHashAndSize(options);
-            return fileEntry;
-        }
-
         public virtual void Dispose()
         {
             if (m_compression != null)

@@ -27,6 +27,7 @@ using System.Linq;
 using Duplicati.Library.Interface;
 using System.Threading;
 using Duplicati.Library.Utility;
+using System.Threading.Tasks;
 
 namespace Duplicati.Library.Main.Operation
 {
@@ -42,7 +43,7 @@ namespace Duplicati.Library.Main.Operation
         /// Throws an error if there are issues with the remote storage
         /// </summary>
         /// <param name="database">The database to compare with</param>
-        public static void VerifyLocalList(BackendManager backend, LocalDatabase database)
+        public static async Task VerifyLocalList(IBackendManager backendManager, LocalDatabase database, CancellationToken cancellationToken)
         {
             var locallist = database.GetRemoteVolumes();
             foreach (var i in locallist)
@@ -60,7 +61,7 @@ namespace Duplicati.Library.Main.Operation
                         Logging.Log.WriteInformationMessage(LOGTAG, "RemovingStaleFile", "Removing remote file listed as {0}: {1}", i.State, i.Name);
                         try
                         {
-                            backend.Delete(i.Name, i.Size, true);
+                            await backendManager.DeleteAsync(i.Name, i.Size, true, cancellationToken).ConfigureAwait(false);
                         }
                         catch (Exception ex)
                         {
@@ -74,17 +75,17 @@ namespace Duplicati.Library.Main.Operation
                         break;
                 }
 
-                backend.FlushDbMessages();
+                await backendManager.WaitForEmptyAsync(database, null, cancellationToken).ConfigureAwait(false);
             }
         }
 
-        public static void VerifyRemoteList(BackendManager backend, Options options, LocalDatabase database, IBackendWriter backendWriter, bool latestVolumesOnly, IDbTransaction transaction)
+        public static async Task VerifyRemoteList(IBackendManager backend, Options options, LocalDatabase database, IBackendWriter backendWriter, bool latestVolumesOnly, IDbTransaction transaction)
         {
             if (!options.NoBackendverification)
             {
                 LocalBackupDatabase backupDatabase = new LocalBackupDatabase(database, options);
                 IEnumerable<string> protectedFiles = backupDatabase.GetTemporaryFilelistVolumeNames(latestVolumesOnly, transaction);
-                FilelistProcessor.VerifyRemoteList(backend, options, database, backendWriter, protectedFiles);
+                await VerifyRemoteList(backend, options, database, backendWriter, protectedFiles).ConfigureAwait(false);
             }
         }
 
@@ -98,9 +99,9 @@ namespace Duplicati.Library.Main.Operation
         /// <param name="log">The log instance to use</param>
         /// <param name="protectedFiles">Filenames that should be exempted from deletion</param>
         /// <param name="logErrors">Disable the logging of errors to prevent spamming the log; exceptions will be thrown regardless</param>
-        public static void VerifyRemoteList(BackendManager backend, Options options, LocalDatabase database, IBackendWriter log, IEnumerable<string> protectedFiles = null, bool logErrors = true)
+        public static async Task VerifyRemoteList(IBackendManager backend, Options options, LocalDatabase database, IBackendWriter log, IEnumerable<string> protectedFiles = null, bool logErrors = true)
         {
-            var tp = RemoteListAnalysis(backend, options, database, log, protectedFiles);
+            var tp = await RemoteListAnalysis(backend, options, database, log, protectedFiles).ConfigureAwait(false);
             long extraCount = 0;
             long missingCount = 0;
 
@@ -177,17 +178,15 @@ namespace Duplicati.Library.Main.Operation
         /// </summary>
         /// <param name="backendurl">The backend url</param>
         /// <param name="options">The options to use</param>
-        /// <param name="result">The result writer</param>
         /// <param name="db">The attached database</param>
         /// <param name="transaction">An optional transaction object</param>
-        public static void UploadVerificationFile(string backendurl, Options options, IBackendWriter result, LocalDatabase db, System.Data.IDbTransaction transaction)
+        public static async Task UploadVerificationFile(IBackendManager backendManager, Options options, LocalDatabase db, IDbTransaction transaction)
         {
-            using (var backend = new BackendManager(backendurl, options, result, db))
             using (var tempfile = new Library.Utility.TempFile())
             {
                 var remotename = options.Prefix + "-verification.json";
-                using (var stream = new System.IO.StreamWriter(tempfile, false, System.Text.Encoding.UTF8))
-                    FilelistProcessor.CreateVerificationFile(db, stream);
+                await using (var stream = new System.IO.StreamWriter(tempfile, false, System.Text.Encoding.UTF8))
+                    CreateVerificationFile(db, stream);
 
                 if (options.Dryrun)
                 {
@@ -195,8 +194,8 @@ namespace Duplicati.Library.Main.Operation
                 }
                 else
                 {
-                    backend.PutUnencrypted(remotename, tempfile);
-                    backend.WaitForComplete(db, transaction);
+                    await backendManager.PutUnencryptedAsync(remotename, tempfile, CancellationToken.None).ConfigureAwait(false);
+                    await backendManager.WaitForEmptyAsync(db, transaction, CancellationToken.None).ConfigureAwait(false);
                 }
             }
         }
@@ -209,9 +208,9 @@ namespace Duplicati.Library.Main.Operation
         /// <param name="options">The options used</param>
         /// <param name="database">The database to compare with</param>
         /// <param name="protectedFiles">Filenames that should be exempted from deletion</param>
-        public static RemoteAnalysisResult RemoteListAnalysis(BackendManager backend, Options options, LocalDatabase database, IBackendWriter log, IEnumerable<string> protectedFiles)
+        public static async Task<RemoteAnalysisResult> RemoteListAnalysis(IBackendManager backendManager, Options options, LocalDatabase database, IBackendWriter log, IEnumerable<string> protectedFiles)
         {
-            var rawlist = backend.List();
+            var rawlist = await backendManager.ListAsync(CancellationToken.None).ConfigureAwait(false);
             var lookup = new Dictionary<string, Volumes.IParsedVolume>();
             protectedFiles = protectedFiles ?? Enumerable.Empty<string>();
 
@@ -243,7 +242,7 @@ namespace Duplicati.Library.Main.Operation
             log.BackupListCount = database.FilesetTimes.Count();
             log.LastBackupDate = filesets.Count == 0 ? new DateTime(0) : filesets[0].Time.ToLocalTime();
 
-            CheckQuota(backend, options, log, knownFileSize);
+            await CheckQuota(backendManager, options, log, knownFileSize).ConfigureAwait(false);
 
             foreach (var s in remotelist)
                 lookup[s.File.Name] = s;
@@ -282,7 +281,7 @@ namespace Duplicati.Library.Main.Operation
                         if (remoteFound)
                         {
                             Logging.Log.WriteInformationMessage(LOGTAG, "RemoveUnwantedRemoteFile", "removing remote file listed as {0}: {1}", i.State, i.Name);
-                            backend.Delete(i.Name, i.Size, true);
+                            await backendManager.DeleteAsync(i.Name, i.Size, true, CancellationToken.None).ConfigureAwait(false);
                         }
                         else
                         {
@@ -333,7 +332,7 @@ namespace Duplicati.Library.Main.Operation
                             else
                             {
                                 Logging.Log.WriteInformationMessage(LOGTAG, "Remove incomplete file", "removing incomplete remote file listed as {0}: {1}", i.State, i.Name);
-                                backend.Delete(i.Name, i.Size, true);
+                                await backendManager.DeleteAsync(i.Name, i.Size, true, CancellationToken.None).ConfigureAwait(false);
                             }
                         }
                         break;
@@ -361,7 +360,7 @@ namespace Duplicati.Library.Main.Operation
                         break;
                 }
 
-                backend.FlushDbMessages();
+                await backendManager.WaitForEmptyAsync(database, null, CancellationToken.None).ConfigureAwait(false);
             }
 
             // cleanup deleted volumes in DB en block
@@ -380,12 +379,12 @@ namespace Duplicati.Library.Main.Operation
             };
         }
 
-        private static void CheckQuota(BackendManager backend, Options options, IBackendWriter log, long knownFileSize)
+        private static async Task CheckQuota(IBackendManager backendManager, Options options, IBackendWriter log, long knownFileSize)
         {
             if (options.QuotaDisable)
                 return;
 
-            var quota = backend.GetQuotaInfoAsync(CancellationToken.None).Await();
+            var quota = await backendManager.GetQuotaInfoAsync(CancellationToken.None).ConfigureAwait(false);
             if (quota != null)
             {
                 log.TotalQuotaSpace = quota.TotalQuotaSpace;

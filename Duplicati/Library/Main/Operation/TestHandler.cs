@@ -24,8 +24,9 @@ using Duplicati.Library.Main.Database;
 using System.Linq;
 using System.Collections.Generic;
 using Duplicati.Library.Interface;
-using System.Security.Cryptography;
 using Duplicati.Library.Utility;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Duplicati.Library.Main.Operation
 {
@@ -37,36 +38,33 @@ namespace Duplicati.Library.Main.Operation
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<TestHandler>();
 
         private readonly Options m_options;
-        private readonly string m_backendurl;
         private readonly TestResults m_results;
 
-        public TestHandler(string backendurl, Options options, TestResults results)
+        public TestHandler(Options options, TestResults results)
         {
             m_options = options;
-            m_backendurl = backendurl;
             m_results = results;
         }
 
-        public void Run(long samples)
+        public void Run(long samples, IBackendManager backendManager)
         {
             if (!System.IO.File.Exists(m_options.Dbpath))
                 throw new UserInformationException(string.Format("Database file does not exist: {0}", m_options.Dbpath), "DatabaseDoesNotExist");
 
             using (var db = new LocalTestDatabase(m_options.Dbpath))
-            using (var backend = new BackendManager(m_backendurl, m_options, m_results.BackendWriter, db))
             {
                 db.SetResult(m_results);
                 Utility.UpdateOptionsFromDb(db, m_options);
                 Utility.VerifyOptionsAndUpdateDatabase(db, m_options);
                 db.VerifyConsistency(m_options.Blocksize, m_options.BlockhashSize, !m_options.DisableFilelistConsistencyChecks, null);
-                FilelistProcessor.VerifyRemoteList(backend, m_options, db, m_results.BackendWriter, true, null);
+                FilelistProcessor.VerifyRemoteList(backendManager, m_options, db, m_results.BackendWriter, true, null).Await();
 
-                DoRun(samples, db, backend);
+                DoRun(samples, db, backendManager).Await();
                 db.WriteResults();
             }
         }
 
-        public void DoRun(long samples, LocalTestDatabase db, BackendManager backend)
+        public async Task DoRun(long samples, LocalTestDatabase db, IBackendManager backend)
         {
             var files = db.SelectTestTargets(samples, m_options).ToList();
 
@@ -76,13 +74,13 @@ namespace Duplicati.Library.Main.Operation
 
             if (m_options.FullRemoteVerification != Options.RemoteTestStrategy.False)
             {
-                foreach (var vol in new AsyncDownloader(files, backend))
+                await foreach ((var tf, var vol) in backend.GetFilesOverlappedAsync(files, CancellationToken.None))
                 {
                     try
                     {
                         if (!m_results.TaskControl.ProgressRendevouz().Await())
                         {
-                            backend.WaitForComplete(db, null);
+                            backend.WaitForEmptyAsync(db, null, CancellationToken.None).Await();
                             m_results.EndTime = DateTime.UtcNow;
                             return;
                         }
@@ -91,7 +89,7 @@ namespace Duplicati.Library.Main.Operation
                         m_results.OperationProgressUpdater.UpdateProgress((float)progress / files.Count);
 
                         KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>> res;
-                        using (var tf = vol.TempFile)
+                        using (tf)
                             res = TestVolumeInternals(db, vol, tf, m_options, m_options.FullBlockVerification ? 1.0 : 0.2);
                         m_results.AddResult(res.Key, res.Value);
 
@@ -152,10 +150,10 @@ namespace Duplicati.Library.Main.Operation
                         {
                             Logging.Log.WriteInformationMessage(LOGTAG, "MissingRemoteHash", "No hash or size recorded for {0}, performing full verification", f.Name);
                             KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>> res;
-                            string hash;
-                            long size;
 
-                            using (var tf = backend.GetWithInfo(f.Name, out size, out hash))
+                            (var tf, var hash, var size) = backend.GetWithInfoAsync(f.Name, CancellationToken.None).Await();
+
+                            using (tf)
                                 res = TestVolumeInternals(db, f, tf, m_options, 1);
                             m_results.AddResult(res.Key, res.Value);
 
@@ -176,16 +174,19 @@ namespace Duplicati.Library.Main.Operation
                             }
                         }
                         else
-                            backend.GetForTesting(f.Name, f.Size, f.Hash);
+                        {
+                            using (var tf = backend.GetAsync(f.Name, f.Size, f.Hash, CancellationToken.None).Await())
+                            { }
+                        }
 
                         db.UpdateVerificationCount(f.Name);
-                        m_results.AddResult(f.Name, new KeyValuePair<Duplicati.Library.Interface.TestEntryStatus, string>[0]);
+                        m_results.AddResult(f.Name, []);
                     }
                     catch (Exception ex)
                     {
-                        m_results.AddResult(f.Name, new KeyValuePair<Duplicati.Library.Interface.TestEntryStatus, string>[] { new KeyValuePair<Duplicati.Library.Interface.TestEntryStatus, string>(Duplicati.Library.Interface.TestEntryStatus.Error, ex.Message) });
+                        m_results.AddResult(f.Name, [new KeyValuePair<TestEntryStatus, string>(TestEntryStatus.Error, ex.Message)]);
                         Logging.Log.WriteErrorMessage(LOGTAG, "FailedToProcessFile", ex, "Failed to process file {0}", f.Name);
-                        if (ex is System.Threading.ThreadAbortException)
+                        if (ex is ThreadAbortException || ex is TaskCanceledException)
                         {
                             m_results.EndTime = DateTime.UtcNow;
                             throw;

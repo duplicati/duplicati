@@ -122,12 +122,12 @@ namespace Duplicati.Library.Main
             CheckAutoCompactInterval();
             CheckAutoVacuumInterval();
 
-            return RunAction(new BackupResults(), ref inputsources, ref filter, (result) =>
+            return RunAction(new BackupResults(), ref inputsources, ref filter, (result, backend) =>
             {
 
                 using (var h = new Operation.BackupHandler(m_backend, m_options, result))
                 {
-                    h.RunAsync(ExpandInputSources(inputsources, filter), filter).Await();
+                    h.RunAsync(ExpandInputSources(inputsources, filter), backend, filter).Await();
                 }
 
                 Library.UsageReporter.Reporter.Report("BACKUP_FILECOUNT", result.ExaminedFiles);
@@ -138,9 +138,9 @@ namespace Duplicati.Library.Main
 
         public Library.Interface.IRestoreResults Restore(string[] paths, Library.Utility.IFilter filter = null)
         {
-            return RunAction(new RestoreResults(), ref paths, ref filter, (result) =>
+            return RunAction(new RestoreResults(), ref paths, ref filter, (result, backendManager) =>
             {
-                new Operation.RestoreHandler(m_backend, m_options, result).Run(paths, filter);
+                new Operation.RestoreHandler(m_options, result).Run(paths, backendManager, filter);
 
                 Library.UsageReporter.Reporter.Report("RESTORE_FILECOUNT", result.RestoredFiles);
                 Library.UsageReporter.Reporter.Report("RESTORE_FILESIZE", result.SizeOfRestoredFiles);
@@ -150,25 +150,25 @@ namespace Duplicati.Library.Main
 
         public Duplicati.Library.Interface.IRestoreControlFilesResults RestoreControlFiles(IEnumerable<string> files = null, Library.Utility.IFilter filter = null)
         {
-            return RunAction(new RestoreControlFilesResults(), ref filter, (result) =>
+            return RunAction(new RestoreControlFilesResults(), ref filter, (result, backendManager) =>
             {
-                new Operation.RestoreControlFilesHandler(m_backend, m_options, result).Run(files, filter);
+                new Operation.RestoreControlFilesHandler(m_options, result).Run(files, backendManager, filter);
             });
         }
 
         public Duplicati.Library.Interface.IDeleteResults Delete()
         {
-            return RunAction(new DeleteResults(), (result) =>
+            return RunAction(new DeleteResults(), (result, backendManager) =>
             {
-                new Operation.DeleteHandler(m_backend, m_options, result).Run();
+                new Operation.DeleteHandler(m_options, result).Run(backendManager);
             });
         }
 
         public Duplicati.Library.Interface.IRepairResults Repair(Library.Utility.IFilter filter = null)
         {
-            return RunAction(new RepairResults(), ref filter, (result) =>
+            return RunAction(new RepairResults(), ref filter, (result, backendManager) =>
             {
-                new Operation.RepairHandler(m_backend, m_options, result).Run(filter);
+                new Operation.RepairHandler(m_options, result).Run(backendManager, filter);
             });
         }
 
@@ -184,40 +184,39 @@ namespace Duplicati.Library.Main
 
         public Duplicati.Library.Interface.IListResults List(IEnumerable<string> filterstrings, Library.Utility.IFilter filter)
         {
-            return RunAction(new ListResults(), ref filter, (result) =>
+            return RunAction(new ListResults(), ref filter, (result, backendManager) =>
             {
-                new Operation.ListFilesHandler(m_backend, m_options, result).Run(filterstrings, filter);
+                new Operation.ListFilesHandler(m_options, result).Run(backendManager, filterstrings, filter).Await();
             });
         }
 
         public Duplicati.Library.Interface.IListResults ListControlFiles(IEnumerable<string> filterstrings, Library.Utility.IFilter filter)
         {
-            return RunAction(new ListResults(), ref filter, (result) =>
+            return RunAction(new ListResults(), ref filter, (result, backendManager) =>
             {
-                new Operation.ListControlFilesHandler(m_backend, m_options, result).Run(filterstrings, filter);
+                new Operation.ListControlFilesHandler(m_options, result).Run(backendManager, filterstrings, filter);
             });
         }
 
         public Duplicati.Library.Interface.IListRemoteResults ListRemote()
         {
-            return RunAction(new ListRemoteResults(), (result) =>
+            return RunAction(new ListRemoteResults(), (result, backendManager) =>
             {
                 using (var tf = System.IO.File.Exists(m_options.Dbpath) ? null : new Library.Utility.TempFile())
                 using (var db = new Database.LocalDatabase(((string)tf) ?? m_options.Dbpath, "list-remote", true))
-                using (var bk = new BackendManager(m_backend, m_options, result.BackendWriter, null))
-                    result.SetResult(bk.List());
+                    result.SetResult(backendManager.ListAsync(CancellationToken.None).Await());
             });
         }
 
         public Duplicati.Library.Interface.IListRemoteResults DeleteAllRemoteFiles()
         {
-            return RunAction(new ListRemoteResults(), (result) =>
+            return RunAction(new ListRemoteResults(), (result, backendManager) =>
             {
+                var cancelToken = CancellationToken.None;
                 result.OperationProgressUpdater.UpdatePhase(OperationPhase.Delete_Listing);
-                using (var bk = new BackendManager(m_backend, m_options, result.BackendWriter, null))
                 {
                     // Only delete files that match the expected pattern and prefix
-                    var list = bk.List()
+                    var list = backendManager.ListAsync(cancelToken).Await()
                         .Select(x => Volumes.VolumeBase.ParseFilename(x))
                         .Where(x => x != null)
                         .Where(x => x.Prefix == m_options.Prefix)
@@ -243,7 +242,7 @@ namespace Duplicati.Library.Main
                     {
                         try
                         {
-                            bk.Delete(list[i].File.Name, list[i].File.Size, true);
+                            backendManager.DeleteAsync(list[i].File.Name, list[i].File.Size, true, cancelToken).Await();
                         }
                         catch (Exception ex)
                         {
@@ -260,9 +259,9 @@ namespace Duplicati.Library.Main
         {
             CheckAutoVacuumInterval();
 
-            return RunAction(new CompactResults(), (result) =>
+            return RunAction(new CompactResults(), (result, backendManager) =>
             {
-                new Operation.CompactHandler(m_backend, m_options, result).Run();
+                new Operation.CompactHandler(m_options, result).Run(backendManager);
             });
         }
 
@@ -270,10 +269,10 @@ namespace Duplicati.Library.Main
         {
             var filelistfilter = Operation.RestoreHandler.FilterNumberedFilelist(m_options.Time, m_options.Version, singleTimeMatch: true);
 
-            return RunAction(new RecreateDatabaseResults(), ref filter, (result) =>
+            return RunAction(new RecreateDatabaseResults(), ref filter, (result, backendManager) =>
             {
-                using (var h = new Operation.RecreateDatabaseHandler(m_backend, m_options, result))
-                    h.RunUpdate(filter, filelistfilter);
+                using (var h = new Operation.RecreateDatabaseHandler(m_options, result))
+                    h.RunUpdate(backendManager, filter, filelistfilter, null);
             });
         }
 
@@ -281,7 +280,7 @@ namespace Duplicati.Library.Main
         {
             var t = new string[] { targetpath };
 
-            return RunAction(new CreateLogDatabaseResults(), ref t, (result) =>
+            return RunAction(new CreateLogDatabaseResults(), ref t, (result, backendManager) =>
             {
                 new Operation.CreateBugReportHandler(t[0], m_options, result).Run();
             });
@@ -291,15 +290,15 @@ namespace Duplicati.Library.Main
         {
             var t = new string[] { baseVersion, targetVersion };
 
-            return RunAction(new ListChangesResults(), ref t, ref filter, (result) =>
+            return RunAction(new ListChangesResults(), ref t, ref filter, (result, backendManager) =>
             {
-                new Operation.ListChangesHandler(m_backend, m_options, result).Run(t[0], t[1], filterstrings, filter, callback);
+                new Operation.ListChangesHandler(m_options, result).Run(t[0], t[1], backendManager, filterstrings, filter, callback);
             });
         }
 
         public Duplicati.Library.Interface.IListAffectedResults ListAffected(List<string> args, Action<Duplicati.Library.Interface.IListAffectedResults> callback = null)
         {
-            return RunAction(new ListAffectedResults(), (result) =>
+            return RunAction(new ListAffectedResults(), (result, backendManager) =>
             {
                 new Operation.ListAffected(m_options, result).Run(args, callback);
             });
@@ -310,9 +309,9 @@ namespace Duplicati.Library.Main
             if (!m_options.RawOptions.ContainsKey("full-remote-verification"))
                 m_options.RawOptions["full-remote-verification"] = "true";
 
-            return RunAction(new TestResults(), (result) =>
+            return RunAction(new TestResults(), (result, backendManager) =>
             {
-                new Operation.TestHandler(m_backend, m_options, result).Run(samples);
+                new Operation.TestHandler(m_options, result).Run(samples, backendManager);
             });
         }
 
@@ -325,7 +324,7 @@ namespace Duplicati.Library.Main
             var filtertag = Logging.Log.LogTagFromType(typeof(Operation.Backup.FileEnumerationProcess));
             using (Logging.Log.StartScope(m_messageSink.WriteMessage, x => x.FilterTag.Contains(filtertag)))
             {
-                return RunAction(new TestFilterResults(), ref paths, ref filter, (result) =>
+                return RunAction(new TestFilterResults(), ref paths, ref filter, (result, backendManager) =>
                 {
                     new Operation.TestFilterHandler(m_options, result).RunAsync(ExpandInputSources(paths, filter), filter).Await();
                 });
@@ -334,7 +333,7 @@ namespace Duplicati.Library.Main
 
         public Library.Interface.ISystemInfoResults SystemInfo()
         {
-            return RunAction(new SystemInfoResults(), result =>
+            return RunAction(new SystemInfoResults(), (result, backendManager) =>
             {
                 Operation.SystemInfoHandler.Run(result);
             });
@@ -342,25 +341,25 @@ namespace Duplicati.Library.Main
 
         public Library.Interface.IPurgeFilesResults PurgeFiles(Library.Utility.IFilter filter)
         {
-            return RunAction(new PurgeFilesResults(), result =>
+            return RunAction(new PurgeFilesResults(), (result, backendManager) =>
             {
-                new Operation.PurgeFilesHandler(m_backend, m_options, result).Run(filter);
+                new Operation.PurgeFilesHandler(m_options, result).Run(backendManager, filter);
             });
         }
 
         public Library.Interface.IListBrokenFilesResults ListBrokenFiles(Library.Utility.IFilter filter, Func<long, DateTime, long, string, long, bool> callbackhandler = null)
         {
-            return RunAction(new ListBrokenFilesResults(), result =>
+            return RunAction(new ListBrokenFilesResults(), (result, backendManager) =>
             {
-                new Operation.ListBrokenFilesHandler(m_backend, m_options, result).Run(filter, callbackhandler);
+                new Operation.ListBrokenFilesHandler(m_options, result).Run(backendManager, filter, callbackhandler);
             });
         }
 
         public Library.Interface.IPurgeBrokenFilesResults PurgeBrokenFiles(Library.Utility.IFilter filter)
         {
-            return RunAction(new PurgeBrokenFilesResults(), result =>
+            return RunAction(new PurgeBrokenFilesResults(), (result, backendManager) =>
             {
-                new Operation.PurgeBrokenFilesHandler(m_backend, m_options, result).Run(filter);
+                new Operation.PurgeBrokenFilesHandler(m_options, result).Run(backendManager, filter);
             });
         }
 
@@ -386,7 +385,7 @@ namespace Duplicati.Library.Main
             var filtertag = Logging.Log.LogTagFromType<Modules.Builtin.SendMail>();
             using (Logging.Log.StartScope(m_messageSink.WriteMessage, x => x.FilterTag.Contains(filtertag)))
             {
-                return RunAction(new SendMailResults(), result =>
+                return RunAction(new SendMailResults(), (result, backendManager) =>
                 {
                     result.Lines = new string[0];
                     System.Threading.Thread.Sleep(5);
@@ -396,36 +395,36 @@ namespace Duplicati.Library.Main
 
         public Library.Interface.IVacuumResults Vacuum()
         {
-            return RunAction(new VacuumResults(), result =>
+            return RunAction(new VacuumResults(), (result, backendManager) =>
             {
                 new Operation.VacuumHandler(m_options, result).Run();
             });
         }
 
-        private T RunAction<T>(T result, Action<T> method)
-            where T : ISetCommonOptions, ITaskControlProvider, Logging.ILogDestination, IBasicResults
+        private T RunAction<T>(T result, Action<T, IBackendManager> method)
+            where T : ISetCommonOptions, ITaskControlProvider, Logging.ILogDestination, IBasicResults, IBackendWriterProvider
         {
             var tmp = new string[0];
             IFilter tempfilter = null;
             return RunAction<T>(result, ref tmp, ref tempfilter, method);
         }
 
-        private T RunAction<T>(T result, ref string[] paths, Action<T> method)
-            where T : ISetCommonOptions, ITaskControlProvider, Logging.ILogDestination, IBasicResults
+        private T RunAction<T>(T result, ref string[] paths, Action<T, IBackendManager> method)
+            where T : ISetCommonOptions, ITaskControlProvider, Logging.ILogDestination, IBasicResults, IBackendWriterProvider
         {
             IFilter tempfilter = null;
             return RunAction<T>(result, ref paths, ref tempfilter, method);
         }
 
-        private T RunAction<T>(T result, ref IFilter filter, Action<T> method)
-            where T : ISetCommonOptions, ITaskControlProvider, Logging.ILogDestination, IBasicResults
+        private T RunAction<T>(T result, ref IFilter filter, Action<T, IBackendManager> method)
+            where T : ISetCommonOptions, ITaskControlProvider, Logging.ILogDestination, IBasicResults, IBackendWriterProvider
         {
             var tmp = new string[0];
             return RunAction<T>(result, ref tmp, ref filter, method);
         }
 
-        private T RunAction<T>(T result, ref string[] paths, ref IFilter filter, Action<T> method)
-            where T : ISetCommonOptions, ITaskControlProvider, Logging.ILogDestination, IBasicResults
+        private T RunAction<T>(T result, ref string[] paths, ref IFilter filter, Action<T, IBackendManager> method)
+            where T : ISetCommonOptions, ITaskControlProvider, Logging.ILogDestination, IBasicResults, IBackendWriterProvider
         {
             OnOperationStarted?.Invoke(result);
             var resultSetter = result as ISetCommonOptions;
@@ -447,7 +446,18 @@ namespace Duplicati.Library.Main
                     using (new Logging.Timer(LOGTAG, string.Format("Run{0}", result.MainOperation), string.Format("Running {0}", result.MainOperation)))
                     using (new CoCoL.IsolatedChannelScope())
                     using (m_options.ConcurrencyMaxThreads <= 0 ? null : new CoCoL.CappedThreadedThreadPool(m_options.ConcurrencyMaxThreads))
-                        method(result);
+                    using (var backend = new Backend.BackendManager(m_backend, m_options, result.BackendWriter, result.TaskControl))
+                    {
+                        method(result, backend);
+
+                        // TODO: Should also have a single shared database connection for all operations
+                        // The transactions should be managed inside the connection, and not passed around
+
+                        // This would allow us to pass the database instance to the backend manager
+                        // And safeguard against remote operations not being logged in the database
+                        using (var db = new LocalDatabase(m_options.Dbpath, result.MainOperation.ToString(), true))
+                            backend.WaitForEmptyAsync(db, null, result.TaskControl.ProgressToken).Await();
+                    }
 
                     if (resultSetter.EndTime.Ticks == 0)
                         resultSetter.EndTime = DateTime.UtcNow;

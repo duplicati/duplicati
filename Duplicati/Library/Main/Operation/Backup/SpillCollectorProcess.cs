@@ -25,7 +25,6 @@ using Duplicati.Library.Main.Volumes;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using static Duplicati.Library.Main.Operation.Common.BackendHandler;
 
 namespace Duplicati.Library.Main.Operation.Backup
 {
@@ -49,13 +48,12 @@ namespace Duplicati.Library.Main.Operation.Backup
     /// </summary>
     internal static class SpillCollectorProcess
     {
-        public static Task Run(Channels channels, Options options, BackupDatabase database, ITaskReader taskreader)
+        public static Task Run(Channels channels, Options options, BackupDatabase database, IBackendManager backendManager, ITaskReader taskreader)
         {
             return AutomationExtensions.RunTask(
             new
             {
-                Input = channels.SpillPickup.AsRead(),
-                Output = channels.BackendRequest.AsWrite(),
+                Input = channels.SpillPickup.AsRead()
             },
 
             async self =>
@@ -135,7 +133,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                             if (target.BlockVolume.Filesize > options.VolumeSize - options.Blocksize)
                             {
                                 target.BlockVolume.Close();
-                                await UploadVolumeAndIndex(target, self.Output, options, database).ConfigureAwait(false);
+                                await UploadVolumeAndIndex(target, options, database, backendManager, taskreader).ConfigureAwait(false);
                                 target = null;
                             }
                         }
@@ -156,25 +154,25 @@ namespace Duplicati.Library.Main.Operation.Backup
                     await taskreader.ProgressRendevouz().ConfigureAwait(false);
 
                     n.BlockVolume.Close();
-                    await UploadVolumeAndIndex(n, self.Output, options, database).ConfigureAwait(false);
+                    await UploadVolumeAndIndex(n, options, database, backendManager, taskreader).ConfigureAwait(false);
                 }
 
             });
         }
 
-        private static async Task UploadVolumeAndIndex(SpillVolumeRequest target, IWriteChannel<IUploadRequest> outputChannel, Options options, BackupDatabase database)
+        private static async Task UploadVolumeAndIndex(SpillVolumeRequest target, Options options, BackupDatabase database, IBackendManager backendManager, ITaskReader taskreader)
         {
-            var blockEntry = target.BlockVolume.CreateFileEntryForUpload(options);
-
-            TemporaryIndexVolume indexVolumeCopy = null;
+            IndexVolumeWriter indexVolumeCopy = null;
             if (target.IndexVolume != null)
             {
-                indexVolumeCopy = new TemporaryIndexVolume(options);
-                target.IndexVolume.CopyTo(indexVolumeCopy, false);
+                // TODO: It is much easier to let the BackendManager deal with index files,
+                // but it adds a bit of strain to the database
+                indexVolumeCopy = await target.IndexVolume.CreateVolume(target.BlockVolume.RemoteFilename, options, database).ConfigureAwait(false);
+                // Create link before upload is started, it will be removed later if upload fails
+                await database.AddIndexBlockLinkAsync(indexVolumeCopy.VolumeID, target.BlockVolume.VolumeID).ConfigureAwait(false);
             }
 
-            var uploadRequest = new VolumeUploadRequest(target.BlockVolume, blockEntry, indexVolumeCopy, options, database);
-            await outputChannel.WriteAsync(uploadRequest).ConfigureAwait(false);
+            await backendManager.PutAsync(target.BlockVolume, indexVolumeCopy, null, false, taskreader.ProgressToken).ConfigureAwait(false);
         }
     }
 }

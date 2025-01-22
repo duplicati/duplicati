@@ -21,6 +21,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main.Database;
 using Duplicati.Library.Main.Volumes;
@@ -35,17 +37,15 @@ namespace Duplicati.Library.Main.Operation
         /// </summary>
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<RecreateDatabaseHandler>();
 
-        private readonly string m_backendurl;
         private readonly Options m_options;
         private readonly RecreateDatabaseResults m_result;
 
         public delegate IEnumerable<KeyValuePair<long, IParsedVolume>> NumberedFilterFilelistDelegate(IEnumerable<IParsedVolume> filelist);
         public delegate void BlockVolumePostProcessor(string volumename, BlockVolumeReader reader);
 
-        public RecreateDatabaseHandler(string backendurl, Options options, RecreateDatabaseResults result)
+        public RecreateDatabaseHandler(Options options, RecreateDatabaseResults result)
         {
             m_options = options;
-            m_backendurl = backendurl;
             m_result = result;
         }
 
@@ -53,10 +53,11 @@ namespace Duplicati.Library.Main.Operation
         /// Run the recreate procedure
         /// </summary>
         /// <param name="path">Path to the database that will be created</param>
+        /// <param name="backendManager">The backend manager to use for downloading files</param>
         /// <param name="filelistfilter">A filter that can be used to disregard certain remote files, intended to be used to select a certain filelist</param>
         /// <param name="filter">Filters the files in a filelist to prevent downloading unwanted data</param>
         /// <param name="blockprocessor">A callback hook that can be used to work with downloaded block volumes, intended to be use to recover data blocks while processing blocklists</param>
-        public void Run(string path, Library.Utility.IFilter filter = null, NumberedFilterFilelistDelegate filelistfilter = null, BlockVolumePostProcessor blockprocessor = null)
+        public void Run(string path, IBackendManager backendManager, IFilter filter, NumberedFilterFilelistDelegate filelistfilter, BlockVolumePostProcessor blockprocessor)
         {
             if (System.IO.File.Exists(path))
                 throw new UserInformationException(string.Format("Cannot recreate database because file already exists: {0}", path), "RecreateTargetDatabaseExists");
@@ -64,7 +65,7 @@ namespace Duplicati.Library.Main.Operation
             using (var db = new LocalDatabase(path, "Recreate", true))
             {
                 m_result.SetDatabase(db);
-                DoRun(db, false, filter, filelistfilter, blockprocessor);
+                DoRun(backendManager, db, false, filter, filelistfilter, blockprocessor).Await();
                 db.WriteResults();
             }
         }
@@ -75,7 +76,7 @@ namespace Duplicati.Library.Main.Operation
         /// <param name="filelistfilter">A filter that can be used to disregard certain remote files, intended to be used to select a certain filelist</param>
         /// <param name="filter">Filters the files in a filelist to prevent downloading unwanted data</param>
         /// <param name="blockprocessor">A callback hook that can be used to work with downloaded block volumes, intended to be use to recover data blocks while processing blocklists</param>
-        public void RunUpdate(Library.Utility.IFilter filter = null, NumberedFilterFilelistDelegate filelistfilter = null, BlockVolumePostProcessor blockprocessor = null)
+        public void RunUpdate(IBackendManager backendManager, Library.Utility.IFilter filter, NumberedFilterFilelistDelegate filelistfilter, BlockVolumePostProcessor blockprocessor)
         {
             if (!m_options.RepairOnlyPaths)
                 throw new UserInformationException(string.Format("Can only update with paths, try setting --{0}", "repair-only-paths"), "RepairUpdateRequiresPathsOnly");
@@ -97,7 +98,7 @@ namespace Duplicati.Library.Main.Operation
                 if (preexistingOptionsInDatabase)
                     Utility.VerifyOptionsAndUpdateDatabase(db, m_options, null);
 
-                DoRun(db, true, filter, filelistfilter, blockprocessor);
+                DoRun(backendManager, db, true, filter, filelistfilter, blockprocessor).Await();
                 db.WriteResults();
             }
         }
@@ -110,13 +111,13 @@ namespace Duplicati.Library.Main.Operation
         /// <param name="filter">A filter that can be used to disregard certain remote files, intended to be used to select a certain filelist</param>
         /// <param name="filelistfilter">Filters the files in a filelist to prevent downloading unwanted data</param>
         /// <param name="blockprocessor">A callback hook that can be used to work with downloaded block volumes, intended to be use to recover data blocks while processing blocklists</param>
-        internal void DoRun(LocalDatabase dbparent, bool updating, Library.Utility.IFilter filter = null, NumberedFilterFilelistDelegate filelistfilter = null, BlockVolumePostProcessor blockprocessor = null)
+        internal async Task DoRun(IBackendManager backendManager, LocalDatabase dbparent, bool updating, IFilter filter = null, NumberedFilterFilelistDelegate filelistfilter = null, BlockVolumePostProcessor blockprocessor = null)
         {
+            var cancellationToken = CancellationToken.None;
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Recreate_Running);
 
             //We build a local database in steps.
             using (var restoredb = new LocalRecreateDatabase(dbparent, m_options))
-            using (var backend = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, restoredb))
             {
                 restoredb.RepairInProgress = true;
                 var expRecreateDb = false; // experimental recreate db code flag
@@ -127,7 +128,7 @@ namespace Duplicati.Library.Main.Operation
                     expRecreateDb = true;
                 }
 
-                var rawlist = backend.List();
+                var rawlist = await backendManager.ListAsync(cancellationToken);
 
                 //First step is to examine the remote storage to see what
                 // kind of data we can find
@@ -142,7 +143,7 @@ namespace Duplicati.Library.Main.Operation
 
                 if (remotefiles.Length == 0)
                 {
-                    if (rawlist.Count == 0)
+                    if (rawlist.Count() == 0)
                         throw new UserInformationException("No files were found at the remote location, perhaps the target url is incorrect?", "EmptyRemoteLocation");
                     else
                     {
@@ -155,11 +156,11 @@ namespace Duplicati.Library.Main.Operation
 
                         var types = tmp.Distinct().ToArray();
                         if (tmp.Length == 0)
-                            throw new UserInformationException(string.Format("Found {0} files at the remote storage, but none that could be parsed", rawlist.Count), "EmptyRemoteLocation");
+                            throw new UserInformationException(string.Format("Found {0} files at the remote storage, but none that could be parsed", rawlist.Count()), "EmptyRemoteLocation");
                         else if (types.Length == 1)
                             throw new UserInformationException(string.Format("Found {0} parse-able files with the prefix {1}, did you forget to set the backup prefix?", tmp.Length, types[0]), "EmptyRemoteLocationWithPrefix");
                         else
-                            throw new UserInformationException(string.Format("Found {0} parse-able files (of {1} files) with different prefixes: {2}, did you forget to set the backup prefix?", tmp.Length, rawlist.Count, string.Join(", ", types)), "EmptyRemoteLocationWithPrefix");
+                            throw new UserInformationException(string.Format("Found {0} parse-able files (of {1} files) with different prefixes: {2}, did you forget to set the backup prefix?", tmp.Length, rawlist.Count(), string.Join(", ", types)), "EmptyRemoteLocationWithPrefix");
                     }
                 }
 
@@ -206,12 +207,13 @@ namespace Duplicati.Library.Main.Operation
                     var blocksize = m_options.Blocksize;
                     var hashes_pr_block = blocksize / m_options.BlockhashSize;
 
-                    foreach (var entry in new AsyncDownloader(filelistWork, backend))
+                    await foreach (var (tmpfile, entry) in backendManager.GetFilesOverlappedAsync(filelistWork, m_result.TaskControl.ProgressToken))
+                    {
                         try
                         {
-                            if (!m_result.TaskControl.ProgressRendevouz().Await())
+                            if (!await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
                             {
-                                backend.WaitForComplete(restoredb, null);
+                                await backendManager.WaitForEmptyAsync(restoredb, tr, cancellationToken).ConfigureAwait(false);
                                 m_result.EndTime = DateTime.UtcNow;
                                 return;
                             }
@@ -227,7 +229,7 @@ namespace Duplicati.Library.Main.Operation
                                 Logging.Log.WriteVerboseMessage(LOGTAG, "ProcessingFilelistVolumes", "Processing filelist volume {0} of {1}", progress, filelistWork.Count);
                             }
 
-                            using (var tmpfile = entry.TempFile)
+                            using (tmpfile)
                             {
                                 isFirstFilelist = false;
 
@@ -288,7 +290,7 @@ namespace Duplicati.Library.Main.Operation
                                                             restoredb.AddSmallBlocksetLink(fe.Hash, fe.Blockhash, fe.Blocksize, tr);
                                                         else if (m_options.BlockHashAlgorithm == m_options.FileHashAlgorithm)
                                                             restoredb.AddSmallBlocksetLink(fe.Hash, fe.Hash, fe.Size, tr);
-                                                        else
+                                                        else if (fe.Size > 0)
                                                             Logging.Log.WriteWarningMessage(LOGTAG, "MissingBlockHash", null, "No block hash found for file: {0}", fe.Path);
                                                     }
 
@@ -338,6 +340,7 @@ namespace Duplicati.Library.Main.Operation
                                 throw;
 
                         }
+                    }
 
                     //Make sure we write the config if it has been read from a manifest
                     if (hasUpdatedOptions)
@@ -368,12 +371,13 @@ namespace Duplicati.Library.Main.Operation
 
                         var progress = 0;
 
-                        foreach (var sf in new AsyncDownloader(indexfiles, backend))
+                        await foreach (var (tmpfile, sf) in backendManager.GetFilesOverlappedAsync(indexfiles, m_result.TaskControl.ProgressToken))
+                        {
                             try
                             {
-                                if (!m_result.TaskControl.ProgressRendevouz().Await())
+                                if (!await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
                                 {
-                                    backend.WaitForComplete(restoredb, null);
+                                    await backendManager.WaitForEmptyAsync(restoredb, tr, cancellationToken).ConfigureAwait(false);
                                     m_result.EndTime = DateTime.UtcNow;
                                     return;
                                 }
@@ -382,7 +386,7 @@ namespace Duplicati.Library.Main.Operation
                                 m_result.OperationProgressUpdater.UpdateProgress((((float)progress / indexfiles.Count) * 0.5f) + 0.2f);
                                 Logging.Log.WriteVerboseMessage(LOGTAG, "ProcessingIndexlistVolumes", "Processing indexlist volume {0} of {1}", progress, indexfiles.Count);
 
-                                using (var tmpfile = sf.TempFile)
+                                using (tmpfile)
                                 {
                                     if (sf.Hash != null && sf.Size > 0)
                                         restoredb.UpdateRemoteVolume(sf.Name, RemoteVolumeState.Verified, sf.Size, sf.Hash, tr);
@@ -458,6 +462,7 @@ namespace Duplicati.Library.Main.Operation
                                 if (m_options.UnittestMode)
                                     throw;
                             }
+                        }
 
                         using (new Logging.Timer(LOGTAG, "CommitRecreateDb", "CommitRecreatedDb"))
                             tr.Commit();
@@ -504,17 +509,17 @@ namespace Duplicati.Library.Main.Operation
                         }
 
                         var progress = 0;
-                        foreach (var sf in new AsyncDownloader(lst, backend))
+                        await foreach (var (tmpfile, sf) in backendManager.GetFilesOverlappedAsync(lst, m_result.TaskControl.ProgressToken))
                         {
                             try
                             {
-                                using (var tmpfile = sf.TempFile)
+                                using (tmpfile)
                                 using (var rd = new BlockVolumeReader(RestoreHandler.GetCompressionModule(sf.Name), tmpfile, m_options))
                                 using (var tr = restoredb.BeginTransaction())
                                 {
                                     if (!m_result.TaskControl.ProgressRendevouz().Await())
                                     {
-                                        backend.WaitForComplete(restoredb, null);
+                                        backendManager.WaitForEmptyAsync(restoredb, tr, cancellationToken).Await();
                                         m_result.EndTime = DateTime.UtcNow;
                                         return;
                                     }
@@ -578,7 +583,7 @@ namespace Duplicati.Library.Main.Operation
                     }
                 }
 
-                backend.WaitForComplete(restoredb, null);
+                backendManager.WaitForEmptyAsync(restoredb, null, cancellationToken).Await();
 
                 if (!m_options.RepairOnlyPaths)
                 {
