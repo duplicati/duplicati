@@ -179,15 +179,13 @@ namespace Duplicati.Library.Backend
         private void ParseAndThrowNotFoundException(MinioException e, string keyName, string bucketName)
         {
             if (e.ServerResponse?.StatusCode == System.Net.HttpStatusCode.NotFound || e.Response?.Code == "NoSuchKey")
-                throw new FileNotFoundException($"File {keyName} not found in bucket {bucketName}");
+                throw new FileMissingException($"File {keyName} not found in bucket {bucketName}");
         }
 
         private void ThrowExceptionIfBucketDoesNotExist(string bucketName)
         {
             if (!m_client.BucketExistsAsync(bucketName).Await())
-            {
                 throw new FolderMissingException($"Bucket {bucketName} does not exist.");
-            }
         }
 
 
