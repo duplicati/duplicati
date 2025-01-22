@@ -442,7 +442,7 @@ namespace Duplicati.Library.Main.Operation
                 using (var blockhasher = HashFactory.CreateHasher(m_options.BlockHashAlgorithm))
                 using (var filehasher = HashFactory.CreateHasher(m_options.FileHashAlgorithm))
                 using (new Logging.Timer(LOGTAG, "ScanForExistingTargetBlocks", "ScanForExistingTargetBlocks"))
-                    ScanForExistingTargetBlocks(database, m_blockbuffer, blockhasher, filehasher, m_options, m_result);
+                    await ScanForExistingTargetBlocks(database, m_blockbuffer, blockhasher, filehasher, m_options, m_result).ConfigureAwait(false);
 
                 //Look for existing blocks in the original source files only
                 if (m_options.UseLocalBlocks && !string.IsNullOrEmpty(m_options.Restorepath))
@@ -963,7 +963,7 @@ namespace Duplicati.Library.Main.Operation
             }
         }
 
-        private static async void ScanForExistingTargetBlocks(LocalRestoreDatabase database, byte[] blockbuffer, System.Security.Cryptography.HashAlgorithm blockhasher, System.Security.Cryptography.HashAlgorithm filehasher, Options options, RestoreResults result)
+        private static async Task ScanForExistingTargetBlocks(LocalRestoreDatabase database, byte[] blockbuffer, System.Security.Cryptography.HashAlgorithm blockhasher, System.Security.Cryptography.HashAlgorithm filehasher, Options options, RestoreResults result)
         {
             // Scan existing files for existing BLOCKS
             using (var blockmarker = database.CreateBlockMarker())

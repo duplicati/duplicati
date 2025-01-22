@@ -22,6 +22,10 @@ namespace Duplicati.Library.Main.Backend;
 internal partial class BackendManager : IBackendManager
 {
     /// <summary>
+    /// The log tag for the class
+    /// </summary>
+    private static readonly string LOGTAG = Logging.Log.LogTagFromType<BackendManager>();
+    /// <summary>
     /// List of backend instances that are currently in use
     /// </summary>
     private readonly List<IBackend> backendPool = [];
@@ -274,6 +278,19 @@ internal partial class BackendManager : IBackendManager
     }
 
     /// <summary>
+    /// Flushes any pending messages to the database
+    /// </summary>
+    /// <param name="database">The database to write pending messages to</param>
+    /// <param name="transaction">The transaction to use, if any</param>
+    public async Task StopRunnerAndFlushMessages(LocalDatabase database, IDbTransaction? transaction)
+    {
+        await requestChannel.RetireAsync().ConfigureAwait(false);
+        context.Database.FlushDbMessages(database, transaction);
+        if (queueRunner.IsFaulted)
+            Logging.Log.WriteWarningMessage(LOGTAG, "BackendManagerShutdown", queueRunner.Exception, "Backend manager queue runner crashed");
+    }
+
+    /// <summary>
     /// Performs a download of the files specified, with pre-fetch to overlap the download and processing
     /// </summary>
     /// <param name="volumes">The volumes to download</param>
@@ -286,21 +303,26 @@ internal partial class BackendManager : IBackendManager
         if (prevVolume == null)
             yield break;
 
-        var prevtask = GetAsync(prevVolume.Name, prevVolume.Size, prevVolume.Hash, cancelToken).ConfigureAwait(false);
+        // Get the first volume, so we do not have pending parallel transfers
+        var prevResult = await GetAsync(prevVolume.Name, prevVolume.Size, prevVolume.Hash, cancelToken);
+
         foreach (var volume in volumes.Skip(1))
         {
-            var nextTask = GetAsync(volume.Name, volume.Size, volume.Hash, cancelToken).ConfigureAwait(false);
-            var tempFile = await prevtask;
-            yield return (tempFile, prevVolume);
-            tempFile.Dispose();
+            // Prepare the next volume, while processing the previous one
+            var nextTask = GetAsync(volume.Name, volume.Size, volume.Hash, cancelToken);
 
-            prevtask = nextTask;
+            // Assuming we do not throw while yielding, otherwise we would need to dispose nextTask
+            yield return (prevResult, prevVolume);
+            prevResult.Dispose();
+
+            // Set up for next iteration
             prevVolume = volume;
+            prevResult = await nextTask;
         }
 
-        var lastTempFile = await prevtask;
-        yield return (lastTempFile, prevVolume);
-        lastTempFile.Dispose();
+        // Return the last result
+        yield return (prevResult, prevVolume);
+        prevResult.Dispose();
     }
 
     /// <summary>
@@ -313,6 +335,17 @@ internal partial class BackendManager : IBackendManager
 
         isDisposed = true;
         requestChannel.RetireAsync().Await();
-        queueRunner.Await();
+        context.Database.FlushMessagesToLog();
+
+        if (!queueRunner.IsCompleted)
+        {
+            Task.WhenAny(queueRunner, Task.Delay(1000)).Await();
+
+            if (!queueRunner.IsCompleted)
+                Logging.Log.WriteWarningMessage(LOGTAG, "BackendManagerShutdown", null, "Backend manager queue runner did not stop");
+            if (queueRunner.IsFaulted)
+                Logging.Log.WriteWarningMessage(LOGTAG, "BackendManagerShutdown", queueRunner.Exception, "Backend manager queue runner crashed");
+
+        }
     }
 }

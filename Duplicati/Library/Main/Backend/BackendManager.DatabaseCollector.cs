@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Duplicati.Library.Logging;
 using Duplicati.Library.Main.Database;
 
@@ -167,6 +168,28 @@ partial class BackendManager
                 db.RemoveRemoteVolumes(volsRemoved);
 
             return true;
+        }
+
+        /// <summary>
+        /// Flushes all messages to the log after stopping the processing
+        /// </summary>
+        public void FlushMessagesToLog()
+        {
+            if (m_dbqueue.Count == 0)
+                return;
+
+            string message;
+            lock (m_dbqueuelock)
+                message = string.Join("\n", m_dbqueue.Select(e => e switch
+                {
+                    DbOperation operation => $"Operation: {operation.Action} File: {operation.File} Result: {operation.Result}",
+                    DbUpdate update => $"Update: {update.Remotename} State: {update.State} Size: {update.Size} Hash: {update.Hash}",
+                    DbRename rename => $"Rename: {rename.Oldname} -> {rename.Newname}",
+                    _ => $"InvalidQueueElement: {e.GetType()} {e}"
+                }));
+
+            Log.WriteWarningMessage(LOGTAG, "FlushingMessagesToLog", null, message);
+
         }
     }
 }

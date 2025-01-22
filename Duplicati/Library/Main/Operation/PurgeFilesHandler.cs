@@ -210,7 +210,7 @@ namespace Duplicati.Library.Main.Operation
                                     tr.Commit();
                                     backendManager.PutAsync(vol, null, null, true, cancellationToken).Await();
                                     backendManager.DeleteAsync(prevfilename, -1, true, cancellationToken).Await();
-                                    backendManager.WaitForEmptyAsync(db, tr, cancellationToken).Await();
+                                    backendManager.WaitForEmptyAsync(db, null, cancellationToken).Await();
                                 }
                             }
                         }

@@ -261,7 +261,7 @@ namespace Duplicati.Library.Main
 
             return RunAction(new CompactResults(), (result, backendManager) =>
             {
-                new Operation.CompactHandler(m_options, result).Run(backendManager);
+                new Operation.CompactHandler(m_options, result).Run(backendManager).Await();
             });
         }
 
@@ -456,7 +456,7 @@ namespace Duplicati.Library.Main
                         // This would allow us to pass the database instance to the backend manager
                         // And safeguard against remote operations not being logged in the database
                         using (var db = new LocalDatabase(m_options.Dbpath, result.MainOperation.ToString(), true))
-                            backend.WaitForEmptyAsync(db, null, result.TaskControl.ProgressToken).Await();
+                            backend.StopRunnerAndFlushMessages(db, null).Await();
                     }
 
                     if (resultSetter.EndTime.Ticks == 0)
