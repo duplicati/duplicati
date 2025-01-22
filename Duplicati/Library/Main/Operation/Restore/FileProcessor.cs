@@ -66,12 +66,12 @@ namespace Duplicati.Library.Main.Operation.Restore
             },
             async self =>
             {
-                Stopwatch sw_file  = options.InternalProfiling ? new () : null;
-                Stopwatch sw_block = options.InternalProfiling ? new () : null;
-                Stopwatch sw_meta  = options.InternalProfiling ? new () : null;
-                Stopwatch sw_req   = options.InternalProfiling ? new () : null;
-                Stopwatch sw_resp  = options.InternalProfiling ? new () : null;
-                Stopwatch sw_work  = options.InternalProfiling ? new () : null;
+                Stopwatch sw_file = options.InternalProfiling ? new() : null;
+                Stopwatch sw_block = options.InternalProfiling ? new() : null;
+                Stopwatch sw_meta = options.InternalProfiling ? new() : null;
+                Stopwatch sw_req = options.InternalProfiling ? new() : null;
+                Stopwatch sw_resp = options.InternalProfiling ? new() : null;
+                Stopwatch sw_work = options.InternalProfiling ? new() : null;
 
                 try
                 {
@@ -206,7 +206,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                                 // Burst the block requests to speed up the restore
                                 int burst = Channels.BufferSize;
                                 int j = 0;
-                                for (int i = 0; i < (int) Math.Min(missing_blocks.Count, burst); i++)
+                                for (int i = 0; i < Math.Min(missing_blocks.Count, burst); i++)
                                 {
                                     await block_request.WriteAsync(missing_blocks[i]);
                                 }
@@ -303,7 +303,8 @@ namespace Duplicati.Library.Main.Operation.Restore
                             }
                         }
 
-                        if (!options.SkipMetadata) {
+                        if (!options.SkipMetadata)
+                        {
                             empty_file_or_symlink |= await RestoreMetadata(db, file, block_request, block_response, options, sw_meta, sw_work, sw_req, sw_resp);
                         }
 
@@ -361,7 +362,12 @@ namespace Duplicati.Library.Main.Operation.Restore
                 fs_new.Seek(block.BlockOffset * block.BlockSize, SeekOrigin.Begin);
 
                 var buffer = new byte[block.BlockSize];
-                fs_old.Read(buffer, 0, buffer.Length);
+                var r = fs_old.Read(buffer, 0, buffer.Length);
+                if (r != buffer.Length)
+                {
+                    Logging.Log.WriteWarningMessage(LOGTAG, "FailedToReadBlock", null, "Failed to read block {0} from {1}", block.BlockOffset, old_file.TargetPath);
+                    throw new Exception("Failed to read block");
+                }
                 fs_new.Write(buffer, 0, buffer.Length);
             }
         }
@@ -476,7 +482,7 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// <param name="results">The restoration results.</param>
         /// <param name="block_request">The channel to request blocks from the block manager. Used to inform the block manager which blocks are already present.</param>
         /// <returns>An awaitable `Task`, which returns a collection of data blocks that are missing.</returns>
-        private static async Task<(long,List<BlockRequest>,List<BlockRequest>)> VerifyTargetBlocks(FileRequest file, BlockRequest[] blocks, System.Security.Cryptography.HashAlgorithm filehasher, System.Security.Cryptography.HashAlgorithm blockhasher, Options options, RestoreResults results, IChannel<BlockRequest> block_request)
+        private static async Task<(long, List<BlockRequest>, List<BlockRequest>)> VerifyTargetBlocks(FileRequest file, BlockRequest[] blocks, System.Security.Cryptography.HashAlgorithm filehasher, System.Security.Cryptography.HashAlgorithm blockhasher, Options options, RestoreResults results, IChannel<BlockRequest> block_request)
         {
             long bytes_read = 0;
             List<BlockRequest> missing_blocks = [];
@@ -541,7 +547,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                     if (Convert.ToBase64String(filehasher.Hash) == file.Hash)
                     {
                         // Truncate the file if it is larger than the expected size.
-                        FileInfo fi = new (file.TargetPath);
+                        FileInfo fi = new(file.TargetPath);
                         if (file.Length < fi.Length)
                         {
                             if (options.Dryrun)
@@ -611,7 +617,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                         try
                         {
                             f_original.Seek(i * options.Blocksize, SeekOrigin.Begin);
-                            read = await f_original.ReadAsync(buffer, 0, (int) blocks[j].BlockSize);
+                            read = await f_original.ReadAsync(buffer, 0, (int)blocks[j].BlockSize);
                         }
                         catch (Exception)
                         {
@@ -632,19 +638,19 @@ namespace Duplicati.Library.Main.Operation.Restore
                             else
                             {
                                 if (!options.Dryrun)
-                            {
-                                try
                                 {
-                                    f_target.Seek(blocks[j].BlockOffset * options.Blocksize, SeekOrigin.Begin);
-                                    await f_target.WriteAsync(buffer, 0, read);
-                                }
-                                catch (Exception)
-                                {
-                                    lock (results)
+                                    try
                                     {
-                                        results.BrokenLocalFiles.Add(file.TargetPath);
+                                        f_target.Seek(blocks[j].BlockOffset * options.Blocksize, SeekOrigin.Begin);
+                                        await f_target.WriteAsync(buffer, 0, read);
                                     }
-                                    throw;
+                                    catch (Exception)
+                                    {
+                                        lock (results)
+                                        {
+                                            results.BrokenLocalFiles.Add(file.TargetPath);
+                                        }
+                                        throw;
                                     }
                                 }
                                 bytes_read += read;

@@ -76,7 +76,9 @@ public static class SQLiteRC4Decrypter
         using (var probefs = new FileStream(databasePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete))
         {
             var probebuf = new byte[MAGIC_HEADER.Length];
-            probefs.Read(probebuf, 0, probebuf.Length);
+            var r = probefs.Read(probebuf, 0, probebuf.Length);
+            if (r != probebuf.Length)
+                return false;
             return !MAGIC_HEADER.SequenceEqual(probebuf);
         }
     }
