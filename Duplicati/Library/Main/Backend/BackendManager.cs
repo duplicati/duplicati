@@ -278,7 +278,7 @@ internal partial class BackendManager : IBackendManager
     }
 
     /// <summary>
-    /// Flushes any pending messages to the database
+    /// Stops the backend manager and flushes any pending messages to the database
     /// </summary>
     /// <param name="database">The database to write pending messages to</param>
     /// <param name="transaction">The transaction to use, if any</param>
@@ -288,6 +288,17 @@ internal partial class BackendManager : IBackendManager
         context.Database.FlushDbMessages(database, transaction);
         if (queueRunner.IsFaulted)
             Logging.Log.WriteWarningMessage(LOGTAG, "BackendManagerShutdown", queueRunner.Exception, "Backend manager queue runner crashed");
+    }
+
+    /// <summary>
+    /// Stops the backend manager and discards any pending messages
+    /// </summary>
+    public void StopRunnerAndDiscardMessages()
+    {
+        requestChannel.RetireAsync().Await();
+        if (queueRunner.IsFaulted)
+            Logging.Log.WriteWarningMessage(LOGTAG, "BackendManagerShutdown", queueRunner.Exception, "Backend manager queue runner crashed");
+        context.Database.ClearDbMessages();
     }
 
     /// <summary>

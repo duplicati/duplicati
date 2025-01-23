@@ -127,6 +127,15 @@ partial class BackendManager
         }
 
         /// <summary>
+        /// Drops all pending messages from the queue
+        /// </summary>
+        public void ClearDbMessages()
+        {
+            lock (m_dbqueuelock)
+                m_dbqueue = [];
+        }
+
+        /// <summary>
         /// Flushes all messages to the database
         /// </summary>
         /// <param name="db">The database to write pending messages to</param>

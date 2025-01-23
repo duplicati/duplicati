@@ -29,6 +29,7 @@ using Duplicati.Library.Interface;
 using Duplicati.Library.Main.Database;
 using System.Threading.Tasks;
 using Duplicati.Library.Main.Operation.Common;
+using System.IO;
 
 namespace Duplicati.Library.Main
 {
@@ -455,8 +456,15 @@ namespace Duplicati.Library.Main
 
                         // This would allow us to pass the database instance to the backend manager
                         // And safeguard against remote operations not being logged in the database
-                        using (var db = new LocalDatabase(m_options.Dbpath, result.MainOperation.ToString(), true))
-                            backend.StopRunnerAndFlushMessages(db, null).Await();
+                        if (File.Exists(m_options.Dbpath))
+                        {
+                            using (var db = new LocalDatabase(m_options.Dbpath, result.MainOperation.ToString(), true))
+                                backend.StopRunnerAndFlushMessages(db, null).Await();
+                        }
+                        else
+                        {
+                            backend.StopRunnerAndDiscardMessages();
+                        }
                     }
 
                     if (resultSetter.EndTime.Ticks == 0)
