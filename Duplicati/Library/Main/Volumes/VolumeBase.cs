@@ -20,6 +20,7 @@
 // DEALINGS IN THE SOFTWARE.
 using System;
 using System.Collections.Generic;
+using Duplicati.Library.Main.Database;
 using Newtonsoft.Json;
 
 namespace Duplicati.Library.Main.Volumes

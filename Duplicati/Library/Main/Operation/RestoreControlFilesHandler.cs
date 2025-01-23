@@ -72,7 +72,7 @@ namespace Duplicati.Library.Main.Operation
                             var entry = db.GetRemoteVolume(file.Name);
 
                             var res = new List<string>();
-                            using (var tmpfile = backendManager.GetAsync(file.Name, entry.Size < 0 ? file.Size : entry.Size, entry.Hash, cancellationToken).Await())
+                            using (var tmpfile = backendManager.GetAsync(file.Name, entry.Hash, entry.Size < 0 ? file.Size : entry.Size, cancellationToken).Await())
                             using (var tmp = new Volumes.FilesetVolumeReader(RestoreHandler.GetCompressionModule(file.Name), tmpfile, m_options))
                                 foreach (var cf in tmp.ControlFiles)
                                     if (Library.Utility.FilterExpression.Matches(filter, cf.Key))

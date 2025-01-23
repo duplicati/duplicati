@@ -123,37 +123,37 @@ namespace Duplicati.Library.Main.Operation
                     numberedList.Remove(bt);
                     SelectTime(compareVersion, numberedList, out compareVersionIndex, out compareVersionTime, out compareFile);
 
-                    Func<FilelistEntryType, Library.Interface.ListChangesElementType> conv = (x) =>
+                    Func<FilelistEntryType, ListChangesElementType> conv = (x) =>
                     {
                         switch (x)
                         {
                             case FilelistEntryType.File:
-                                return Library.Interface.ListChangesElementType.File;
+                                return ListChangesElementType.File;
                             case FilelistEntryType.Folder:
-                                return Library.Interface.ListChangesElementType.Folder;
+                                return ListChangesElementType.Folder;
                             case FilelistEntryType.Symlink:
-                                return Library.Interface.ListChangesElementType.Symlink;
+                                return ListChangesElementType.Symlink;
                             default:
-                                return (Library.Interface.ListChangesElementType)(-1);
+                                return (ListChangesElementType)(-1);
                         }
                     };
 
                     if (!m_result.TaskControl.ProgressRendevouz().Await())
                         return;
 
-                    using (var tmpfile = backendManager.GetAsync(baseFile.File.Name, baseFile.File.Size, null, cancellationToken).Await())
+                    using (var tmpfile = backendManager.GetAsync(baseFile.File.Name, null, baseFile.File.Size, cancellationToken).Await())
                     using (var rd = new Volumes.FilesetVolumeReader(RestoreHandler.GetCompressionModule(baseFile.File.Name), tmpfile, m_options))
                         foreach (var f in rd.Files)
-                            if (Library.Utility.FilterExpression.Matches(filter, f.Path))
+                            if (FilterExpression.Matches(filter, f.Path))
                                 storageKeeper.AddElement(f.Path, f.Hash, f.Metahash, f.Size, conv(f.Type), false);
 
                     if (!m_result.TaskControl.ProgressRendevouz().Await())
                         return;
 
-                    using (var tmpfile = backendManager.GetAsync(compareFile.File.Name, compareFile.File.Size, null, cancellationToken).Await())
+                    using (var tmpfile = backendManager.GetAsync(compareFile.File.Name, null, compareFile.File.Size, cancellationToken).Await())
                     using (var rd = new Volumes.FilesetVolumeReader(RestoreHandler.GetCompressionModule(compareFile.File.Name), tmpfile, m_options))
                         foreach (var f in rd.Files)
-                            if (Library.Utility.FilterExpression.Matches(filter, f.Path))
+                            if (FilterExpression.Matches(filter, f.Path))
                                 storageKeeper.AddElement(f.Path, f.Hash, f.Metahash, f.Size, conv(f.Type), true);
                 }
 

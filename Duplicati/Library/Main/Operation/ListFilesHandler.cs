@@ -143,8 +143,8 @@ namespace Duplicati.Library.Main.Operation
                 if (!await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
                     return;
 
-                using (var tmpfile = await backendManager.GetAsync(firstEntry.File.Name, firstEntry.File.Size, null, cancellationToken).ConfigureAwait(false))
-                using (var rd = new Volumes.FilesetVolumeReader(RestoreHandler.GetCompressionModule(firstEntry.File.Name), tmpfile, m_options))
+                using (var tmpfile = await backendManager.GetAsync(firstEntry.File.Name, null, firstEntry.File.Size, cancellationToken).ConfigureAwait(false))
+                using (var rd = new FilesetVolumeReader(RestoreHandler.GetCompressionModule(firstEntry.File.Name), tmpfile, m_options))
                     if (simpleList)
                     {
                         m_result.SetResult(
@@ -175,10 +175,12 @@ namespace Duplicati.Library.Main.Operation
                     }
 
                 long flindex = 1;
-                await foreach ((var tmpfile, var flentry) in backendManager.GetFilesOverlappedAsync(filteredList.Select(x => new RemoteVolumeMapper() { Volume = x.Value, Version = x.Key }), cancellationToken))
+                var filteredListMap = filteredList.ToDictionary(x => x.Value.File.Name, x => x.Value);
+                await foreach (var (tmpfile, hash, size, name) in backendManager.GetFilesOverlappedAsync(filteredList.Select(x => new RemoteVolumeMapper(x.Value)), cancellationToken))
                 {
+                    var flentry = filteredListMap[name];
                     using (tmpfile)
-                    using (var rd = new Volumes.FilesetVolumeReader(flentry.Volume.CompressionModule, tmpfile, m_options))
+                    using (var rd = new FilesetVolumeReader(flentry.CompressionModule, tmpfile, m_options))
                     {
                         if (!await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
                             return;
@@ -224,23 +226,18 @@ namespace Duplicati.Library.Main.Operation
             return filelistFilter(parsedlist).ToList();
         }
 
-        private class RemoteVolumeMapper : IRemoteVolume
+        private class RemoteVolumeMapper(IParsedVolume Volume) : IRemoteVolume
         {
             public string Name => Volume.File.Name;
-
             public string Hash => null;
-
             public long Size => Volume.File.Size;
-
-            public required IParsedVolume Volume { get; init; }
-            public required long Version { get; init; }
         }
 
         private static async Task<IEnumerable<IListResultFileset>> CreateResultSequence(IEnumerable<KeyValuePair<long, IParsedVolume>> filteredList, IBackendManager backendManager, Options options, CancellationToken cancelToken)
         {
-            List<IListResultFileset> list = new List<IListResultFileset>();
-            var files = filteredList.Select(x => new RemoteVolumeMapper() { Volume = x.Value, Version = x.Key });
-            await foreach ((var file, var ent) in backendManager.GetFilesOverlappedAsync<RemoteVolumeMapper>(files, cancelToken))
+            var list = new List<IListResultFileset>();
+            var map = filteredList.ToDictionary(x => x.Value.File.Name, x => x);
+            await foreach (var (file, hash, size, name) in backendManager.GetFilesOverlappedAsync(filteredList.Select(x => new RemoteVolumeMapper(x.Value)), cancelToken))
             {
                 // We must obtain the partial/full status from the fileset file in the dlist files.
                 // Without this, the restore dialog will show all versions as full, or all versions
@@ -250,8 +247,9 @@ namespace Duplicati.Library.Main.Operation
                 // rare event, we can work on improving the performance later.
                 using (file)
                 {
-                    VolumeBase.FilesetData filesetData = VolumeReaderBase.GetFilesetData(ent.Volume.CompressionModule, file, options);
-                    list.Add(new ListResultFileset(ent.Version, filesetData.IsFullBackup ? BackupType.FULL_BACKUP : BackupType.PARTIAL_BACKUP, ent.Volume.Time.ToLocalTime(), -1, -1));
+                    var ent = map[name];
+                    var filesetData = VolumeReaderBase.GetFilesetData(ent.Value.CompressionModule, file, options);
+                    list.Add(new ListResultFileset(ent.Key, filesetData.IsFullBackup ? BackupType.FULL_BACKUP : BackupType.PARTIAL_BACKUP, ent.Value.Time.ToLocalTime(), -1, -1));
                 }
             }
 

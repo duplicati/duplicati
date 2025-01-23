@@ -489,7 +489,7 @@ namespace Duplicati.Library.Main.Operation
 
                 var brokenFiles = new List<string>();
 
-                await foreach ((var tmpfile, var blockvolume) in backendManager.GetFilesOverlappedAsync(volumes, cancellationToken))
+                await foreach (var (tmpfile, _, _, name) in backendManager.GetFilesOverlappedAsync(volumes, cancellationToken))
                 {
                     try
                     {
@@ -500,13 +500,13 @@ namespace Duplicati.Library.Main.Operation
                         }
 
                         using (tmpfile)
-                        using (var blocks = new BlockVolumeReader(GetCompressionModule(blockvolume.Name), tmpfile, m_options))
+                        using (var blocks = new BlockVolumeReader(GetCompressionModule(name), tmpfile, m_options))
                             PatchWithBlocklist(database, blocks, m_options, m_result, m_blockbuffer, metadatastorage);
                     }
                     catch (Exception ex)
                     {
-                        brokenFiles.Add(blockvolume.Name);
-                        Logging.Log.WriteErrorMessage(LOGTAG, "PatchingFailed", ex, "Failed to patch with remote file: \"{0}\", message: {1}", blockvolume.Name, ex.Message);
+                        brokenFiles.Add(name);
+                        Logging.Log.WriteErrorMessage(LOGTAG, "PatchingFailed", ex, "Failed to patch with remote file: \"{0}\", message: {1}", name, ex.Message);
                         if (ex is System.Threading.ThreadAbortException)
                             throw;
                     }

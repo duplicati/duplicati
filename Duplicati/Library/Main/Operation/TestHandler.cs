@@ -74,8 +74,9 @@ namespace Duplicati.Library.Main.Operation
 
             if (m_options.FullRemoteVerification != Options.RemoteTestStrategy.False)
             {
-                await foreach ((var tf, var vol) in backend.GetFilesOverlappedAsync(files, CancellationToken.None))
+                await foreach (var (tf, hash, size, name) in backend.GetFilesOverlappedAsync(files, CancellationToken.None))
                 {
+                    var vol = new RemoteVolume(name, hash, size);
                     try
                     {
                         if (!m_results.TaskControl.ProgressRendevouz().Await())
@@ -151,7 +152,7 @@ namespace Duplicati.Library.Main.Operation
                             Logging.Log.WriteInformationMessage(LOGTAG, "MissingRemoteHash", "No hash or size recorded for {0}, performing full verification", f.Name);
                             KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>> res;
 
-                            (var tf, var hash, var size) = backend.GetWithInfoAsync(f.Name, CancellationToken.None).Await();
+                            (var tf, var hash, var size) = backend.GetWithInfoAsync(f.Name, f.Hash, f.Size, CancellationToken.None).Await();
 
                             using (tf)
                                 res = TestVolumeInternals(db, f, tf, m_options, 1);
@@ -175,7 +176,7 @@ namespace Duplicati.Library.Main.Operation
                         }
                         else
                         {
-                            using (var tf = backend.GetAsync(f.Name, f.Size, f.Hash, CancellationToken.None).Await())
+                            using (var tf = backend.GetAsync(f.Name, f.Hash, f.Size, CancellationToken.None).Await())
                             { }
                         }
 

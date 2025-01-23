@@ -110,7 +110,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                                                     var (volume_name, volume_size, volume_hash) = db.GetVolumeInfo(request.VolumeID).First();
                                                     sw_query?.Stop();
                                                     sw_backend?.Start();
-                                                    var handle = backend.GetAsync(volume_name, volume_size, volume_hash, results.TaskControl.TransferToken);
+                                                    var handle = backend.GetAsync(volume_name, volume_hash, volume_size, results.TaskControl.TransferToken);
                                                     sw_backend?.Stop();
                                                     await self.DownloadRequest.WriteAsync((request.VolumeID, handle));
                                                     in_flight[request.VolumeID] = [request];

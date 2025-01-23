@@ -175,7 +175,7 @@ namespace Duplicati.Library.Main.Operation
                                     m_result.OperationProgressUpdater.UpdateProgress((float)progress / targetProgess);
 
                                     KeyValuePair<string, IEnumerable<KeyValuePair<Duplicati.Library.Interface.TestEntryStatus, string>>> res;
-                                    (var tf, var hash, var size) = await backendManager.GetWithInfoAsync(n.Name, cancellationToken).ConfigureAwait(false);
+                                    (var tf, var hash, var size) = await backendManager.GetWithInfoAsync(n.Name, n.Hash, n.Size, cancellationToken).ConfigureAwait(false);
                                     using (tf)
                                         res = TestHandler.TestVolumeInternals(testdb, n, tf, m_options, 1);
 
@@ -217,7 +217,7 @@ namespace Duplicati.Library.Main.Operation
                             {
                                 try
                                 {
-                                    (var tf, var hash, var size) = await backendManager.GetWithInfoAsync(n.File.Name, cancellationToken).ConfigureAwait(false);
+                                    (var tf, var hash, var size) = await backendManager.GetWithInfoAsync(n.File.Name, null, n.File.Size, cancellationToken).ConfigureAwait(false);
                                     using (tf)
                                     using (var ifr = new IndexVolumeReader(n.CompressionModule, tf, m_options, m_options.BlockhashSize))
                                     {
@@ -417,20 +417,20 @@ namespace Duplicati.Library.Main.Operation
                                     }
 
                                     //Then we grab all remote volumes that have the missing blocks
-                                    await foreach ((var tmpfile, var vol) in backendManager.GetFilesOverlappedAsync(mbl.GetMissingBlockSources().ToList(), cancellationToken))
+                                    await foreach (var (tmpfile, _, _, name) in backendManager.GetFilesOverlappedAsync(mbl.GetMissingBlockSources().ToList(), cancellationToken))
                                     {
                                         try
                                         {
                                             using (tmpfile)
-                                            using (var f = new BlockVolumeReader(RestoreHandler.GetCompressionModule(vol.Name), tmpfile, m_options))
+                                            using (var f = new BlockVolumeReader(RestoreHandler.GetCompressionModule(name), tmpfile, m_options))
                                                 foreach (var b in f.Blocks)
                                                     if (mbl.SetBlockRestored(b.Key, b.Value))
                                                         if (f.ReadBlock(b.Key, buffer) == b.Value)
-                                                            w.AddBlock(b.Key, buffer, 0, (int)b.Value, Duplicati.Library.Interface.CompressionHint.Default);
+                                                            w.AddBlock(b.Key, buffer, 0, (int)b.Value, CompressionHint.Default);
                                         }
                                         catch (Exception ex)
                                         {
-                                            Logging.Log.WriteErrorMessage(LOGTAG, "RemoteFileAccessError", ex, "Failed to access remote file: {0}", vol.Name);
+                                            Logging.Log.WriteErrorMessage(LOGTAG, "RemoteFileAccessError", ex, "Failed to access remote file: {0}", name);
                                         }
                                     }
 

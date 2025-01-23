@@ -75,28 +75,29 @@ internal interface IBackendManager : IDisposable
     /// Gets a file with the hash and size
     /// </summary>
     /// <param name="remotename">The name of the file to get</param>
+    /// <param name="hash">The hash of the file to get, or <c>null</c> if not known</param>
+    /// <param name="size">The size of the file to get, or -1 if not known</param>
     /// <param name="cancelToken">The cancellation token</param>
     /// <returns>The file, hash, and size</returns>
-    Task<(TempFile file, string Hash, long Size)> GetWithInfoAsync(string remotename, CancellationToken cancelToken);
+    Task<(TempFile File, string Hash, long Size)> GetWithInfoAsync(string remotename, string hash, long size, CancellationToken cancelToken);
 
     /// <summary>
     /// Gets a file from the backend
     /// </summary>
     /// <param name="remotename">The name of the file to get</param>
-    /// <param name="size">The size of the file to get, or -1 if not known</param>
     /// <param name="hash">The hash of the file to get, or <c>null</c> if not known</param>
+    /// <param name="size">The size of the file to get, or -1 if not known</param>
     /// <param name="cancelToken">The cancellation token</param>
     /// <returns></returns>
-    Task<TempFile> GetAsync(string remotename, long size, string hash, CancellationToken cancelToken);
+    Task<TempFile> GetAsync(string remotename, string hash, long size, CancellationToken cancelToken);
 
     /// <summary>
     /// Performs a download of the files specified, with pre-fetch to overlap the download and processing
     /// </summary>
     /// <param name="volumes">The volumes to download</param>
     /// <param name="cancelToken">The cancellation token</param>
-    /// <returns>The downloaded files and the volume they came from</returns>
-    IAsyncEnumerable<(TempFile, T)> GetFilesOverlappedAsync<T>(IEnumerable<T> volumes, CancellationToken cancelToken)
-        where T : IRemoteVolume;
+    /// <returns>The downloaded files, hash, size, and name</returns>
+    IAsyncEnumerable<(TempFile File, string Hash, long Size, string Name)> GetFilesOverlappedAsync(IEnumerable<IRemoteVolume> volumes, CancellationToken cancelToken);
 
     /// <summary>
     /// Gets the size of the last read operation

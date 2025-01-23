@@ -160,10 +160,11 @@ namespace Duplicati.Library.Main.Operation
 
                     using (var q = db.CreateBlockQueryHelper(transaction))
                     {
-                        await foreach (var (tmpfile, entry) in backendManager.GetFilesOverlappedAsync(volumesToDownload, m_result.TaskControl.ProgressToken))
+                        await foreach (var (tmpfile, hash, size, name) in backendManager.GetFilesOverlappedAsync(volumesToDownload, m_result.TaskControl.ProgressToken))
                         {
                             using (tmpfile)
                             {
+                                var entry = new RemoteVolume(name, hash, size);
                                 if (!m_result.TaskControl.ProgressRendevouz().Await())
                                 {
                                     backendManager.WaitForEmptyAsync(db, transaction, cancellationToken).Await();
