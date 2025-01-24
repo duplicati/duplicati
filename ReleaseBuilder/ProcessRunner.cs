@@ -25,7 +25,7 @@ public static class ProcessRunner
     /// <summary>
     /// The hash algorithms used for signing with Authenticode
     /// </summary>
-    private static readonly IReadOnlyList<string> OSSLHashAlgs = new[] { "sha1", "sha256" };
+    private static readonly IReadOnlyList<string> OSSLHashAlgs = ["sha256"];
 
     /// <summary>
     /// The company name to encode in the Authenticode certificate
