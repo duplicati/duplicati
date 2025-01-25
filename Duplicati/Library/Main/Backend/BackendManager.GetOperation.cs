@@ -72,47 +72,14 @@ partial class BackendManager
 
             try
             {
+                // Start and time the donwload
                 var begin = DateTime.Now;
 
-                // We already know the filename, so we put the decision about if and which decryptor to
-                // use prior to download. This allows to set up stacked streams or a pipe doing decryption
-                IEncryption? useDecrypter = encryption;
-                try
-                {
-                    // Auto-guess the encryption module
-                    var ext = (System.IO.Path.GetExtension(RemoteFilename) ?? "").TrimStart('.');
-                    if (!ext.Equals(encryption?.FilenameExtension, StringComparison.OrdinalIgnoreCase))
-                    {
-                        // Check if the file is not encrypted
-                        if (DynamicLoader.CompressionLoader.Keys.Contains(ext, StringComparer.OrdinalIgnoreCase))
-                        {
-                            Logging.Log.WriteVerboseMessage(LOGTAG, "AutomaticDecryptionDetection", "Filename extension \"{0}\" does not match encryption module \"{1}\", guessing that it is not encrypted", ext, Context.Options.EncryptionModule);
-                            useDecrypter = null;
-                        }
-                        // Check if the file is encrypted with something else
-                        else if (DynamicLoader.EncryptionLoader.Keys.Contains(ext, StringComparer.OrdinalIgnoreCase))
-                        {
-                            Logging.Log.WriteVerboseMessage(LOGTAG, "AutomaticDecryptionDetection", "Filename extension \"{0}\" does not match encryption module \"{1}\", using matching encryption module", ext, Context.Options.EncryptionModule);
-                            useDecrypter = DynamicLoader.EncryptionLoader.GetModule(ext, Context.Options.Passphrase, Context.Options.RawOptions);
-                            useDecrypter = useDecrypter ?? encryption;
-                        }
-                        // Fallback, lets see what happens...
-                        else
-                        {
-                            Logging.Log.WriteVerboseMessage(LOGTAG, "AutomaticDecryptionDetection", "Filename extension \"{0}\" does not match encryption module \"{1}\", attempting to use specified encryption module as no others match", ext, Context.Options.EncryptionModule);
-                        }
-                    }
-                }
-                // If we fail here, make sure that we throw a crypto exception
-                catch (System.Security.Cryptography.CryptographicException) { throw; }
-                catch (Exception ex) { throw new System.Security.Cryptography.CryptographicException(ex.Message, ex); }
-
-                (tmpfile, var dataSizeDownloaded, var fileHash) = await DoGetFileAsync(backend, useDecrypter, cancelToken).ConfigureAwait(false);
+                (tmpfile, var dataSizeDownloaded, var fileHash) = await DoGetFileAsync(backend, cancelToken).ConfigureAwait(false);
 
                 var duration = DateTime.Now - begin;
-                Logging.Log.WriteProfilingMessage(LOGTAG, "DownloadSpeed", "Downloaded {3}{0} in {1}, {2}/s", Library.Utility.Utility.FormatSizeString(dataSizeDownloaded),
-                    duration, Library.Utility.Utility.FormatSizeString((long)(dataSizeDownloaded / duration.TotalSeconds)),
-                    useDecrypter == null ? "" : "and decrypted ");
+                Logging.Log.WriteProfilingMessage(LOGTAG, "DownloadSpeed", "Downloaded {0} in {1}, {2}/s", Library.Utility.Utility.FormatSizeString(dataSizeDownloaded),
+                    duration, Library.Utility.Utility.FormatSizeString((long)(dataSizeDownloaded / duration.TotalSeconds)));
 
                 Context.Database.LogDbOperation("get", RemoteFilename, System.Text.Json.JsonSerializer.Serialize(new { Size = dataSizeDownloaded, Hash = fileHash }));
                 Context.Statwriter.SendEvent(BackendActionType.Get, BackendEventType.Completed, RemoteFilename, dataSizeDownloaded);
@@ -125,6 +92,9 @@ partial class BackendManager
                     if (!string.IsNullOrEmpty(Hash) && fileHash != Hash)
                         throw new HashMismatchException(Strings.Controller.HashMismatchError(tmpfile, Hash, fileHash));
                 }
+
+                // Perform decryption after hash validation, if needed
+                tmpfile = DecryptFile(tmpfile, DetectEncryptionModule(encryption));
 
                 return (tmpfile, fileHash, dataSizeDownloaded);
             }
@@ -139,17 +109,15 @@ partial class BackendManager
         /// Downloads a file from the backend
         /// </summary>
         /// <param name="backend">The backend to download from</param>
-        /// <param name="useDecrypter">The decrypter to use, or null if no decryption is needed</param>
         /// <param name="cancelToken">The cancellation token</param>
         /// <returns>The downloaded file, the size of the file, and the hash of the file</returns>
-        private async Task<(TempFile tempFile, long downloadSize, string remotehash)> DoGetFileAsync(IBackend backend, IEncryption? useDecrypter, CancellationToken cancelToken)
+        private async Task<(TempFile tempFile, long downloadSize, string remotehash)> DoGetFileAsync(IBackend backend, CancellationToken cancelToken)
         {
-            TempFile retTarget;
-            TempFile? dlTarget = null, decryptTarget = null;
-            long retDownloadSize;
-            string retHashcode;
+            TempFile? dlTarget = null;
             try
             {
+                long retDownloadSize;
+                string retHashcode;
                 dlTarget = new TempFile();
                 if (backend is IStreamingBackend streamingBackend && !Context.Options.DisableStreamingTransfers)
                 {
@@ -178,33 +146,105 @@ partial class BackendManager
                     retHashcode = CalculateFileHash(dlTarget, Context.Options);
                 }
 
-                // Decryption is not placed in the stream stack because there seemed to be an effort
-                // to throw a CryptographicException on fail. If in main stack, we cannot differentiate
-                // in which part of the stack the source of an exception resides.
-                if (useDecrypter != null)
+                var retTarget = dlTarget;
+                dlTarget = null;
+                return (retTarget, retDownloadSize, retHashcode);
+            }
+            finally
+            {
+                // Remove temp files on failure
+                dlTarget?.Dispose();
+            }
+        }
+
+        /// <summary>
+        /// Detects the encryption module to use, based on the filename.
+        /// This makes it possible to restore from a folder with mixed encryption modules.
+        /// </summary>
+        /// <param name="encryption">The default encryption module</param>
+        /// <returns>The encryption module to use</returns>
+        private IEncryption? DetectEncryptionModule(IEncryption? encryption)
+        {
+            try
+            {
+                // Auto-guess the encryption module
+                var ext = (System.IO.Path.GetExtension(RemoteFilename) ?? "").TrimStart('.');
+                if (!ext.Equals(encryption?.FilenameExtension, StringComparison.OrdinalIgnoreCase))
+                {
+                    // Check if the file is not encrypted
+                    if (DynamicLoader.CompressionLoader.Keys.Contains(ext, StringComparer.OrdinalIgnoreCase))
+                    {
+                        if (encryption != null)
+                            Logging.Log.WriteVerboseMessage(LOGTAG, "AutomaticDecryptionDetection", "Filename extension \"{0}\" does not match encryption module \"{1}\", guessing that it is not encrypted", ext, Context.Options.EncryptionModule);
+                        return null;
+                    }
+                    // Check if the file is encrypted with something else
+                    else if (DynamicLoader.EncryptionLoader.Keys.Contains(ext, StringComparer.OrdinalIgnoreCase))
+                    {
+                        Logging.Log.WriteVerboseMessage(LOGTAG, "AutomaticDecryptionDetection", "Filename extension \"{0}\" does not match encryption module \"{1}\", attempting to use matching encryption module", ext, Context.Options.EncryptionModule);
+
+                        try
+                        {
+                            return DynamicLoader.EncryptionLoader.GetModule(ext, Context.Options.Passphrase, Context.Options.RawOptions)
+                                ?? encryption;
+                        }
+                        catch (Exception ex)
+                        {
+                            Logging.Log.WriteWarningMessage(LOGTAG, "AutomaticDecryptionDetection", ex, "Failed to load encryption module \"{0}\", using specified encryption module \"{1}\"", ext, Context.Options.EncryptionModule);
+                        }
+                    }
+                    // Fallback, lets see what happens...
+                    else
+                    {
+                        Logging.Log.WriteVerboseMessage(LOGTAG, "AutomaticDecryptionDetection", "Filename extension \"{0}\" does not match encryption module \"{1}\", attempting to use specified encryption module as no others match", ext, Context.Options.EncryptionModule);
+                    }
+                }
+
+                return encryption;
+            }
+            // If we fail here, make sure that we throw a crypto exception
+            catch (System.Security.Cryptography.CryptographicException) { throw; }
+            catch (Exception ex) { throw new System.Security.Cryptography.CryptographicException(ex.Message, ex); }
+        }
+
+        /// <summary>
+        /// Performs decryption of a file. This could be more efficient if we decrypt while downloading,
+        /// but that would prevent us from verifying the hash of the encrypted file, before decrypting it.
+        /// Decrypting afterwards also ensures we can control the thrown exceptions.
+        /// </summary>
+        /// <param name="tempFile">The encrypted file</param>
+        /// <param name="decrypter">Then encryption module to use, or <c>null</c> for no encryption</param>
+        /// <returns>The decrypted file</returns>
+        private TempFile DecryptFile(TempFile tempFile, IEncryption? decrypter)
+        {
+            // Support no encryption
+            if (decrypter == null)
+                return tempFile;
+
+            TempFile? decryptTarget = null;
+
+            // Always dispose the source file
+            using (tempFile)
+            using (new Logging.Timer(LOGTAG, "DecryptFile", "Decrypting " + tempFile))
+            {
+                try
                 {
                     decryptTarget = new TempFile();
-                    try { useDecrypter.Decrypt(dlTarget, decryptTarget); }
+                    try { decrypter.Decrypt(tempFile, decryptTarget); }
                     // If we fail here, make sure that we throw a crypto exception
                     catch (System.Security.Cryptography.CryptographicException) { throw; }
                     catch (Exception ex) { throw new System.Security.Cryptography.CryptographicException(ex.Message, ex); }
 
-                    retTarget = decryptTarget;
+                    var result = decryptTarget;
                     decryptTarget = null;
+                    return result;
                 }
-                else
+                finally
                 {
-                    retTarget = dlTarget;
-                    dlTarget = null;
+                    // Remove temp files on failure
+                    decryptTarget?.Dispose();
                 }
             }
-            finally
-            {
-                if (dlTarget != null) dlTarget.Dispose();
-                if (decryptTarget != null) decryptTarget.Dispose();
-            }
-
-            return (retTarget, retDownloadSize, retHashcode);
         }
     }
 }
