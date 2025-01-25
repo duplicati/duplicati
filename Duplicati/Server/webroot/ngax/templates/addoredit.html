@@ -140,7 +140,7 @@
                     </div>
 
                     <div class="input checklinks">
-                        <a href class="{{EditSourceAdvanced ? 'inactive' : ''}}" ng-click="showhiddenfolders = !showhiddenfolders"><i class="fa {{showhiddenfolders ? 'fa-check' : ''}}"></i> {{'Show hidden folders' | translate}}</a>
+                        <a href class="{{EditSourceAdvanced ? 'inactive' : ''}}" ng-click="showhiddenfolders = !showhiddenfolders"><i class="fa {{showhiddenfolders ? 'fa-check' : ''}}"></i> {{'Show hidden items' | translate}}</a>
                     </div>
                     <div class="resizable filepicker" ng-hide="EditSourceAdvanced">
                         <source-folder-picker ng-sources="Backup.Sources" ng-filters="Backup.Filters" ng-show-hidden="showhiddenfolders" ng-exclude-attributes="ExcludeAttributes" ng-exclude-size="ExcludeFileSize"></source-folder-picker>
