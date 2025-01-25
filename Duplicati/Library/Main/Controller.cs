@@ -42,7 +42,7 @@ namespace Duplicati.Library.Main
         /// <summary>
         /// The backend url
         /// </summary>
-        private string m_backend;
+        private string m_backendUrl;
         /// <summary>
         /// The parsed type-safe version of the commandline options
         /// </summary>
@@ -84,11 +84,11 @@ namespace Duplicati.Library.Main
         /// <summary>
         /// Constructs a new interface for performing backup and restore operations
         /// </summary>
-        /// <param name="backend">The url for the backend to use</param>
+        /// <param name="backendUrl">The url for the backend to use</param>
         /// <param name="options">All required options</param>
-        public Controller(string backend, Dictionary<string, string> options, IMessageSink messageSink)
+        public Controller(string backendUrl, Dictionary<string, string> options, IMessageSink messageSink)
         {
-            m_backend = backend;
+            m_backendUrl = backendUrl;
             m_options = new Options(options);
             m_messageSink = messageSink;
         }
@@ -116,19 +116,19 @@ namespace Duplicati.Library.Main
 
         public Duplicati.Library.Interface.IBackupResults Backup(string[] inputsources, IFilter filter = null)
         {
-            Library.UsageReporter.Reporter.Report("USE_BACKEND", new Library.Utility.Uri(m_backend).Scheme);
+            Library.UsageReporter.Reporter.Report("USE_BACKEND", new Library.Utility.Uri(m_backendUrl).Scheme);
             Library.UsageReporter.Reporter.Report("USE_COMPRESSION", m_options.CompressionModule);
             Library.UsageReporter.Reporter.Report("USE_ENCRYPTION", m_options.EncryptionModule);
 
             CheckAutoCompactInterval();
             CheckAutoVacuumInterval();
 
-            return RunAction(new BackupResults(), ref inputsources, ref filter, (result, backend) =>
+            return RunAction(new BackupResults(), ref inputsources, ref filter, (result, backendManager) =>
             {
 
-                using (var h = new Operation.BackupHandler(m_backend, m_options, result))
+                using (var h = new Operation.BackupHandler(m_backendUrl, m_options, result))
                 {
-                    h.RunAsync(ExpandInputSources(inputsources, filter), backend, filter).Await();
+                    h.RunAsync(ExpandInputSources(inputsources, filter), backendManager, filter).Await();
                 }
 
                 Library.UsageReporter.Reporter.Report("BACKUP_FILECOUNT", result.ExaminedFiles);
@@ -447,7 +447,7 @@ namespace Duplicati.Library.Main
                     using (new Logging.Timer(LOGTAG, string.Format("Run{0}", result.MainOperation), string.Format("Running {0}", result.MainOperation)))
                     using (new CoCoL.IsolatedChannelScope())
                     using (m_options.ConcurrencyMaxThreads <= 0 ? null : new CoCoL.CappedThreadedThreadPool(m_options.ConcurrencyMaxThreads))
-                    using (var backend = new Backend.BackendManager(m_backend, m_options, result.BackendWriter, result.TaskControl))
+                    using (var backend = new Backend.BackendManager(m_backendUrl, m_options, result.BackendWriter, result.TaskControl))
                     {
                         method(result, backend);
 
@@ -639,7 +639,7 @@ namespace Duplicati.Library.Main
 
             // Store the URL connection options separately, as these should only be visible to modules implementing IConnectionModule
             var conopts = new Dictionary<string, string>(m_options.RawOptions);
-            var qp = new Library.Utility.Uri(m_backend).QueryParameters;
+            var qp = new Library.Utility.Uri(m_backendUrl).QueryParameters;
             foreach (var k in qp.Keys)
                 conopts[(string)k] = qp[(string)k];
 
@@ -675,7 +675,7 @@ namespace Duplicati.Library.Main
                     }
 
                     if (mx.Value is IGenericCallbackModule module)
-                        module.OnStart(result.MainOperation.ToString(), ref m_backend, ref paths);
+                        module.OnStart(result.MainOperation.ToString(), ref m_backendUrl, ref paths);
                 }
 
             // If the filters were changed by a module, read them back in
@@ -718,17 +718,17 @@ namespace Duplicati.Library.Main
             }
 
             if (string.IsNullOrEmpty(m_options.Dbpath))
-                m_options.Dbpath = DatabaseLocator.GetDatabasePath(m_backend, m_options);
+                m_options.Dbpath = DatabaseLocator.GetDatabasePath(m_backendUrl, m_options);
 
             ValidateOptions();
         }
 
         private async Task ApplySecretProvider(CancellationToken cancellationToken)
         {
-            var args = new[] { new Library.Utility.Uri(m_backend) };
+            var args = new[] { new Library.Utility.Uri(m_backendUrl) };
             await SecretProviderHelper.ApplySecretProviderAsync([], args, m_options.RawOptions, TempFolder.SystemTempPath, SecretProvider, cancellationToken);
             // Write back the backend argument, if it was modified by the secret provider
-            m_backend = args[0].ToString();
+            m_backendUrl = args[0].ToString();
         }
 
         /// <summary>
@@ -812,14 +812,14 @@ namespace Duplicati.Library.Main
 
             // Throw url-encoded options into the mix
             //TODO: This can hide values if both commandline and url-parameters supply the same key
-            var ext = new Library.Utility.Uri(m_backend).QueryParameters;
+            var ext = new Library.Utility.Uri(m_backendUrl).QueryParameters;
             foreach (var k in ext.AllKeys)
                 ropts[k] = ext[k];
 
             //Now run through all supported options, and look for deprecated options
             foreach (var l in new IEnumerable<ICommandLineArgument>[] {
                 m_options.SupportedCommands,
-                DynamicLoader.BackendLoader.GetSupportedCommands(m_backend),
+                DynamicLoader.BackendLoader.GetSupportedCommands(m_backendUrl),
                 m_options.NoEncryption ? null : DynamicLoader.EncryptionLoader.GetSupportedCommands(m_options.EncryptionModule),
                 moduleOptions,
                 DynamicLoader.CompressionLoader.GetSupportedCommands(m_options.CompressionModule) })
@@ -883,7 +883,7 @@ namespace Duplicati.Library.Main
             }
 
             //Inform the user about the deprecated Tardigrade-Backend. They should switch to Storj DCS instead.
-            if (string.Equals(new Library.Utility.Uri(m_backend).Scheme, "tardigrade", StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(new Library.Utility.Uri(m_backendUrl).Scheme, "tardigrade", StringComparison.OrdinalIgnoreCase))
                 Logging.Log.WriteWarningMessage(LOGTAG, "TardigradeRename", null, "The Tardigrade-backend got renamed to Storj DCS - please migrate your backups to the new configuration by changing the destination storage type to Storj DCS.");
 
             //TODO: Based on the action, see if all options are relevant

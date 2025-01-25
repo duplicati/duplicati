@@ -34,7 +34,7 @@ partial class BackendManager
         private interface IDbEntry { }
 
         /// <summary>
-        /// A database remmote operation entry
+        /// A database remote operation entry
         /// </summary>
         private class DbOperation : IDbEntry
         {
@@ -153,10 +153,10 @@ partial class BackendManager
                     m_dbqueue = [];
                 }
 
-            // collect removed volumes for final db cleanup.
+            // Collect removed volumes for final db cleanup.
             var volsRemoved = new HashSet<string>();
 
-            //As we replace the list, we can now freely access the elements without locking
+            // As we replace the list, we can now freely access the elements without locking
             foreach (var e in entries)
                 if (e is DbOperation operation)
                     db.LogRemoteOperation(operation.Action, operation.File, operation.Result, transaction);

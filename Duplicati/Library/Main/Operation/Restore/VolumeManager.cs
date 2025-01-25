@@ -116,7 +116,6 @@ namespace Duplicati.Library.Main.Operation.Restore
                                                     in_flight[request.VolumeID] = [request];
                                                 }
                                             }
-                                            ;
                                             sw_request?.Stop();
                                         }
                                         break;

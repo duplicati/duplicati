@@ -257,27 +257,6 @@ partial class BackendManager
         }
 
         /// <summary>
-        /// Flattens an exception and its inner exceptions
-        /// </summary>
-        /// <param name="ex">The exception to flatten</param>
-        /// <returns>An enumerable of exceptions</returns>
-        private IEnumerable<Exception> FlattenException(Exception? ex)
-        {
-            if (ex == null)
-                yield break;
-
-            yield return ex;
-
-            if (ex is AggregateException aex)
-                foreach (var iex in aex.Flatten().InnerExceptions)
-                    foreach (var iex2 in FlattenException(iex))
-                        yield return iex2;
-
-            foreach (var iex in FlattenException(ex.InnerException))
-                yield return iex;
-        }
-
-        /// <summary>
         /// Tries to create a folder, handling errors
         /// </summary>
         /// <returns><c>true</c> if the folder was created, <c>false</c> otherwise</returns>
@@ -335,7 +314,7 @@ partial class BackendManager
                     }
 
                     // Refresh DNS name if we fail to connect in order to prevent issues with incorrect DNS entries
-                    var dnsFailure = FlattenException(ex).Any(x => x is System.Net.WebException wex && wex.Status == System.Net.WebExceptionStatus.NameResolutionFailure);
+                    var dnsFailure = Library.Utility.Utility.FlattenException(ex).Any(x => x is System.Net.WebException wex && wex.Status == System.Net.WebExceptionStatus.NameResolutionFailure);
                     if (dnsFailure)
                     {
                         try
@@ -356,7 +335,7 @@ partial class BackendManager
                     var recovered = false;
 
                     // Check if this was a folder missing exception and we are allowed to autocreate folders
-                    if (!(anyDownloaded || anyUploaded) && context.Options.AutocreateFolders && FlattenException(ex).Any(x => x is FolderMissingException))
+                    if (!(anyDownloaded || anyUploaded) && context.Options.AutocreateFolders && Library.Utility.Utility.FlattenException(ex).Any(x => x is FolderMissingException))
                     {
                         if (await TryCreateFolder().ConfigureAwait(false))
                             recovered = true;
