@@ -60,6 +60,12 @@ backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, AppServic
             res = gettextCatalog.getString('Desktop');
         else if (cls == 'x-tree-icon-home')
             res = gettextCatalog.getString('Home');
+        else if (cls == 'x-tree-icon-mymovies')
+            res = gettextCatalog.getString('My Movies');
+        else if (cls == 'x-tree-icon-mydownloads')
+            res = gettextCatalog.getString('My Downloads');
+        else if (cls == 'x-tree-icon-mypublic')
+            res = gettextCatalog.getString('Public');
         else if (cls == 'x-tree-icon-hypervmachine')
             res = gettextCatalog.getString('Hyper-V Machine');
         else if (cls == 'x-tree-icon-hyperv')

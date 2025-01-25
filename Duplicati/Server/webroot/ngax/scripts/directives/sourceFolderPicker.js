@@ -54,6 +54,12 @@ backupApp.directive('sourceFolderPicker', function() {
                 n.iconCls = 'x-tree-icon-desktop';
             else if (cp == compareablePath('%HOME%'))
                 n.iconCls = 'x-tree-icon-home';
+            else if (cp == compareablePath('%MY_MOVIES%'))
+                n.iconCls = 'x-tree-icon-mymovies';
+            else if (cp == compareablePath('%MY_DOWNLOADS%'))
+                n.iconCls = 'x-tree-icon-mydownloads';
+            else if (cp == compareablePath('%MY_PUBLIC%'))
+                n.iconCls = 'x-tree-icon-mypublic';
             else if (n.id.substr(0, 9) == "%HYPERV%\\" && n.id.length >= 10) {
                 n.iconCls = 'x-tree-icon-hypervmachine';
                 n.tooltip = gettextCatalog.getString("ID:") + " " + n.id.substring(9, n.id.length);
