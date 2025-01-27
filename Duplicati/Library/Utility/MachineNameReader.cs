@@ -1,4 +1,5 @@
 using System;
+using System.Management;
 using System.Runtime.Versioning;
 
 #nullable enable
@@ -85,7 +86,22 @@ public static class MachineNameReader
     {
         try
         {
-            var machineName = RegistryUtility.GetDataByValueName("SYSTEM\\CurrentControlSet\\Control\\ComputerName", "ComputerName");
+            // Use WMI if possible
+            foreach (var obj in new ManagementObjectSearcher("SELECT Name FROM Win32_ComputerSystem").Get())
+            {
+                var wmiMachineName = obj["Name"] as string;
+                if (!string.IsNullOrEmpty(wmiMachineName))
+                    return wmiMachineName;
+            }
+        }
+        catch
+        {
+        }
+        
+        try
+        {
+            // Otherwise use registry
+            var machineName = RegistryUtility.GetDataByValueName("SYSTEM\\CurrentControlSet\\Control\\ComputerName\\ComputerName", "ComputerName");
             if (!string.IsNullOrWhiteSpace(machineName))
                 return machineName;
         }
@@ -93,7 +109,8 @@ public static class MachineNameReader
         {
         }
 
-        return ExecuteAndReadOutput("md.exe", "/C hostname");
+        // Or use cmd.exe
+        return ExecuteAndReadOutput("cmd.exe", "/C hostname");
     }
 
     /// <summary>
