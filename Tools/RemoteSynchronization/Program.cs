@@ -1,4 +1,4 @@
-// Copyright (C) 2025, The Duplicati Team
+﻿// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -181,6 +181,7 @@ namespace RemoteSynchronization
                 {
                     await b.GetAsync(f.Name, downloaded, CancellationToken.None);
                     await b.PutAsync($"{f.Name}.{suffix}", downloaded, CancellationToken.None);
+                    await b.DeleteAsync(f.Name, CancellationToken.None);
                     downloaded.SetLength(0);
                     successful_renames++;
                 }
