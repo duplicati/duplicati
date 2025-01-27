@@ -1,4 +1,4 @@
-﻿// Copyright (C) 2025, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -24,6 +24,7 @@ using Duplicati.Library.Interface;
 using System;
 using System.Collections.Generic;
 using System.CommandLine;
+using System.CommandLine.Invocation;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -43,12 +44,19 @@ namespace RemoteSynchronization
             root_cmd.AddArgument(src_arg);
             root_cmd.AddArgument(dst_arg);
 
-            root_cmd.SetHandler(Run, src_arg, dst_arg);
+            root_cmd.SetHandler((InvocationContext ctx) =>
+            {
+                var parsed = ctx.ParseResult;
+
+                Dictionary<string, object?> options = parsed.CommandResult.Command.Options.ToDictionary(x => x.Name, x => parsed.GetValueForOption(x));
+
+                Run(parsed.GetValueForArgument(src_arg), parsed.GetValueForArgument(dst_arg), options).Wait();
+            });
 
             return await root_cmd.InvokeAsync(args);
         }
 
-        private static async Task<int> Run(string src, string dst)
+        private static async Task<int> Run(string src, string dst, Dictionary<string, object?> options)
         {
             var options = new Dictionary<string, string>();
 
