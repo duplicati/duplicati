@@ -1,4 +1,4 @@
-﻿// Copyright (C) 2025, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -85,13 +85,14 @@ namespace RemoteSynchronization
         private static async Task<long> CopyAsync(IStreamingBackend b_src, IStreamingBackend b_dst, IEnumerable<IFileEntry> files)
         {
             long successful_copies = 0;
+            using var s = new MemoryStream();
             foreach (var f in files)
             {
                 try
                 {
-                    var s = new MemoryStream();
                     await b_src.GetAsync(f.Name, s, CancellationToken.None);
                     await b_dst.PutAsync(f.Name, s, CancellationToken.None);
+                    s.SetLength(0);
                     successful_copies++;
                 }
                 catch (Exception e)
@@ -172,14 +173,14 @@ namespace RemoteSynchronization
         private static async Task<long> RenameAsync(IStreamingBackend b, IEnumerable<FileEntry> files)
         {
             long successful_renames = 0;
-            string suffix = $"{System.DateTime.Now:yyyyMMddHHmmss}.old";
+            using var downloaded = new MemoryStream();
             foreach (var f in files)
             {
                 try
                 {
-                    var downloaded = new MemoryStream();
                     await b.GetAsync(f.Name, downloaded, CancellationToken.None);
                     await b.PutAsync($"{f.Name}.{suffix}", downloaded, CancellationToken.None);
+                    downloaded.SetLength(0);
                     successful_renames++;
                 }
                 catch (Exception e)
