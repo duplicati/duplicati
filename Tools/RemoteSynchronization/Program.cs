@@ -51,21 +51,21 @@ namespace RemoteSynchronization
         private static async Task<int> Run(string src, string dst)
         {
             var options = new Dictionary<string, string>();
-            using (var b1 = Duplicati.Library.DynamicLoader.BackendLoader.GetBackend(src, options))
-            {
-               var b1s = b1 as IStreamingBackend;
-               System.Diagnostics.Debug.Assert(b1s != null);
-               using (var b2 = Duplicati.Library.DynamicLoader.BackendLoader.GetBackend(dst, options))
-               {
-                   var b2s = b2 as IStreamingBackend;
-                   System.Diagnostics.Debug.Assert(b2s != null);
-                   var (to_copy, to_delete) = PrepareFileLists(b1s, b2s);
-                   var deleted = await DeleteAsync(b2s, to_delete);
-                   Console.WriteLine($"Deleted {deleted} files from {dst}");
-                   var copied = await CopyAsync(b1s, b2s, to_copy);
-                   Console.WriteLine($"Copied {copied} files from {src} to {dst}");
-               }
-            }
+
+            using var b1 = Duplicati.Library.DynamicLoader.BackendLoader.GetBackend(src, options);
+            var b1s = b1 as IStreamingBackend;
+            System.Diagnostics.Debug.Assert(b1s != null);
+
+            using var b2 = Duplicati.Library.DynamicLoader.BackendLoader.GetBackend(dst, options);
+            var b2s = b2 as IStreamingBackend;
+            System.Diagnostics.Debug.Assert(b2s != null);
+
+            var (to_copy, to_delete) = PrepareFileLists(b1s, b2s);
+            var deleted = await DeleteAsync(b2s, to_delete);
+            Console.WriteLine($"Deleted {deleted} files from {dst}");
+            var copied = await CopyAsync(b1s, b2s, to_copy);
+            Console.WriteLine($"Copied {copied} files from {src} to {dst}");
+
             return 42;
         }
 
@@ -121,7 +121,7 @@ namespace RemoteSynchronization
             return successful_deletes;
         }
 
-        private static (IEnumerable<IFileEntry>,IEnumerable<IFileEntry>) PrepareFileLists(IStreamingBackend b_src, IStreamingBackend b_dst)
+        private static (IEnumerable<IFileEntry>, IEnumerable<IFileEntry>) PrepareFileLists(IStreamingBackend b_src, IStreamingBackend b_dst)
         {
             var files_src = b_src.List();
             var files_dst = b_dst.List();
