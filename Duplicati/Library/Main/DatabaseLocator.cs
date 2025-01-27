@@ -166,6 +166,22 @@ namespace Duplicati.Library.Main
                     folder = configfolder;
             }
 
+            if (OperatingSystem.IsLinux() && (folder == $"/{appName}" || folder == appName))
+            {
+                // Special handling for Linux with no home folder:
+                //   - Older versions use /
+                //   - but new versions use /var/lib/
+                var libfolder = System.IO.Path.Combine("var", "lib", appName);
+
+                var curfile = System.IO.Path.Combine(libfolder, targetfilename);
+                var prevfile = System.IO.Path.Combine(folder, targetfilename);
+
+                // If the old file exists, and not the new file, we use the old
+                // Otherwise we use the new location
+                if (System.IO.File.Exists(curfile) || !System.IO.File.Exists(prevfile))
+                    folder = libfolder;
+            }
+
             return folder;
         }
 
