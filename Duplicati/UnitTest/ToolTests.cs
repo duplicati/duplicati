@@ -43,21 +43,17 @@ namespace Duplicati.UnitTest
         [Category("Tools")]
         public void TestRemoteSynchronization()
         {
-            var home = Environment.GetEnvironmentVariable("HOME");
-            var base_path = $"{home}/git/duplicati-carl/rsync";
-            var l1 = $"{base_path}/l1";
-            var l2 = $"{base_path}/l2";
-            var l1r = $"{base_path}/l1_restore";
-            var l2r = $"{base_path}/l2_restore";
-            var path_to_backup = $"{home}/tmp/adaptivecpp";
+            var l1 = $"{TARGETFOLDER}/l1";
+            var l2 = $"{TARGETFOLDER}/l2";
+            var l1r = $"{RESTOREFOLDER}/l1_restore";
+            var l2r = $"{RESTOREFOLDER}/l2_restore";
 
-            Dictionary<string, string> options = new()
-            {
-                ["passphrase"] = "1234"
-            };
+            var options = TestOptions;
+
+            GenerateTestData(DATAFOLDER, 10, 3, 3, 1024 * 1024);
 
             // Create the directories if they do not exist
-            foreach (var p in new string[] { base_path, l1, l2, l1r, l2r })
+            foreach (var p in new string[] { l1, l2, l1r, l2r })
             {
                 if (!SystemIO.IO_OS.DirectoryExists(p))
                     SystemIO.IO_OS.DirectoryCreate(p);
@@ -66,7 +62,7 @@ namespace Duplicati.UnitTest
             // Backup the first level
             using (var c = new Controller($"file://{l1}", options, null))
             {
-                var results = c.Backup([path_to_backup]);
+                var results = c.Backup([DATAFOLDER]);
                 Assert.AreEqual(0, results.Errors.Count());
                 Assert.AreEqual(0, results.Warnings.Count());
                 Console.WriteLine($"Backed up {results.AddedFiles} files to {l1}");
@@ -86,12 +82,12 @@ namespace Duplicati.UnitTest
             options["restore-path"] = l1r;
             using (var c = new Controller($"file://{l1}", options, null))
             {
-                var results = c.Restore([Path.Combine(path_to_backup, "*")]);
+                var results = c.Restore([Path.Combine(DATAFOLDER, "*")]);
                 Assert.AreEqual(0, results.Errors.Count());
                 Assert.AreEqual(0, results.Warnings.Count());
                 Console.WriteLine($"Restored {results.RestoredFiles} files to {options["restore-path"]}");
             }
-            Assert.IsTrue(DirectoriesAndContentsAreEqual(path_to_backup, l1r), "Restored first level files is not equal to original files");
+            Assert.IsTrue(DirectoriesAndContentsAreEqual(DATAFOLDER, l1r), "Restored first level files is not equal to original files");
 
             // Try to restore the second level
             options["restore-path"] = l2r;
@@ -102,7 +98,7 @@ namespace Duplicati.UnitTest
                 Assert.AreEqual(0, results.Warnings.Count());
                 Console.WriteLine($"Restored {results.RestoredFiles} files to {options["restore-path"]}");
             }
-            Assert.IsTrue(DirectoriesAndContentsAreEqual(path_to_backup, l2r), "Restored second level files is not equal to original files");
+            Assert.IsTrue(DirectoriesAndContentsAreEqual(DATAFOLDER, l2r), "Restored second level files is not equal to original files");
         }
 
         /// <summary>
@@ -140,6 +136,39 @@ namespace Duplicati.UnitTest
             }
 
             return true;
+        }
+
+        /// <summary>
+        /// Generates test data in the specified directory.
+        /// </summary>
+        /// <param name="dir">The directory to fill with the generated data.</param>
+        /// <param name="n_files">How many files the directory should have.</param>
+        /// <param name="n_dirs">How many subdirectories the directory should have.</param>
+        /// <param name="n_levels">How deep the number of subdirectories within subdirectories should go.</param>
+        /// <param name="max_file_size">The maximum size of the files to generate.</param>
+        public static void GenerateTestData(string dir, int n_files, int n_dirs, int n_levels, int max_file_size)
+        {
+            if (!SystemIO.IO_OS.DirectoryExists(dir))
+                SystemIO.IO_OS.DirectoryCreate(dir);
+
+            var rnd = new Random();
+            for (int i = 0; i < n_files; i++)
+            {
+                var file = Path.Combine(dir, $"file_{i}.txt");
+                var size = rnd.Next(1, max_file_size);
+                var data = new byte[size];
+                rnd.NextBytes(data);
+                File.WriteAllBytes(file, data);
+            }
+
+            if (n_levels > 0)
+            {
+                for (int i = 0; i < n_dirs; i++)
+                {
+                    var subdir = Path.Combine(dir, $"dir_{i}");
+                    GenerateTestData(subdir, n_files, n_dirs, n_levels - 1, max_file_size);
+                }
+            }
         }
 
     }
