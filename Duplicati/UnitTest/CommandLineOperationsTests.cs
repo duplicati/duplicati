@@ -32,7 +32,7 @@ namespace Duplicati.UnitTest
 {
     public class CommandLineOperationsTests : BasicSetupHelper
     {
-        private static readonly string S3_URL = $"https://testfiles.duplicati.com/";
+        public const string S3_URL = $"https://testfiles.duplicati.com/";
 
         /// <summary>
         /// The log tag
@@ -79,7 +79,7 @@ namespace Duplicati.UnitTest
         private void DownloadS3FileIfNewer(string destinationFilePath, string url, int retries = 5)
             => DownloadS3FileIfNewerAsync(destinationFilePath, url, retries).Await();
 
-        private async Task DownloadS3FileIfNewerAsync(string destinationFilePath, string url, int retries = 5)
+        public static async Task DownloadS3FileIfNewerAsync(string destinationFilePath, string url, int retries = 5)
         {
             do
             {
@@ -126,6 +126,13 @@ namespace Duplicati.UnitTest
                         throw;
 
                     await Task.Delay(TimeSpan.FromSeconds(1)).ConfigureAwait(false);
+                    try
+                    {
+                        System.Net.Dns.GetHostEntry(new System.Uri(url).Host);
+                    }
+                    catch (Exception)
+                    {
+                    }
                     Console.WriteLine($"Retrying download, {retries} retries left.");
                 }
             } while (retries > 0);
