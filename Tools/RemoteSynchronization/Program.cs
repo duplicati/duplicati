@@ -66,7 +66,7 @@ namespace RemoteSynchronization
             var copied = await CopyAsync(b1s, b2s, to_copy);
             Console.WriteLine($"Copied {copied} files from {src} to {dst}");
 
-            return 42;
+            return 0;
         }
 
         // TODO maximum retention?: don't delete files, only rename old ones.

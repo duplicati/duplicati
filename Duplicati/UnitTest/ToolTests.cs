@@ -1,16 +1,44 @@
+// Copyright (C) 2025, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the "Software"),
+// to deal in the Software without restriction, including without limitation
+// the rights to use, copy, modify, merge, publish, distribute, sublicense,
+// and/or sell copies of the Software, and to permit persons to whom the
+// Software is furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+// DEALINGS IN THE SOFTWARE.
+
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Main;
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace Duplicati.UnitTest
 {
 
+    /// <summary>
+    /// Tests the tools.
+    /// </summary>
     public class ToolTests : BasicSetupHelper
     {
 
+        /// <summary>
+        /// Tests the remote synchronization tool.
+        /// </summary>
         [Test]
         [Category("Tools")]
         public void TestRemoteSynchronization()
@@ -21,9 +49,9 @@ namespace Duplicati.UnitTest
             var l2 = $"{base_path}/l2";
             var l1r = $"{base_path}/l1_restore";
             var l2r = $"{base_path}/l2_restore";
-            var backup_path = $"{home}/tmp/adaptivecpp";
+            var path_to_backup = $"{home}/tmp/adaptivecpp";
 
-            Dictionary<string, string> options = new ()
+            Dictionary<string, string> options = new()
             {
                 ["passphrase"] = "1234"
             };
@@ -38,28 +66,81 @@ namespace Duplicati.UnitTest
             // Backup the first level
             using (var c = new Controller($"file://{l1}", options, null))
             {
-                var results = c.Backup([backup_path]);
+                var results = c.Backup([path_to_backup]);
+                Assert.AreEqual(0, results.Errors.Count());
+                Assert.AreEqual(0, results.Warnings.Count());
                 Console.WriteLine($"Backed up {results.AddedFiles} files to {l1}");
             }
 
-            // TODO Call the remote synchronization tool
+            // Call the tool
             var exe = RemoteSynchronization.Program.Main;
+            var args = new string[] { $"file://{l1}", $"file://{l2}" };
+            var async_call = exe(args);
+            async_call.Wait();
+            Assert.AreEqual(0, async_call.Result, "Remote synchronization tool did not return 0.");
 
+            // Verify that the directories are equal
+            Assert.IsTrue(DirectoriesAndContentsAreEqual(l1, l2), "Synchronized directories are not equal");
+
+            // Try to restore the first level
             options["restore-path"] = l1r;
             using (var c = new Controller($"file://{l1}", options, null))
             {
-                var results = c.Restore([Path.Combine(backup_path, "*")]);
+                var results = c.Restore([Path.Combine(path_to_backup, "*")]);
+                Assert.AreEqual(0, results.Errors.Count());
+                Assert.AreEqual(0, results.Warnings.Count());
                 Console.WriteLine($"Restored {results.RestoredFiles} files to {options["restore-path"]}");
             }
+            Assert.IsTrue(DirectoriesAndContentsAreEqual(path_to_backup, l1r), "Restored first level files is not equal to original files");
 
             // Try to restore the second level
             options["restore-path"] = l2r;
             using (var c = new Controller($"file://{l2}", options, null))
             {
                 var results = c.Restore([]);
+                Assert.AreEqual(0, results.Errors.Count());
+                Assert.AreEqual(0, results.Warnings.Count());
                 Console.WriteLine($"Restored {results.RestoredFiles} files to {options["restore-path"]}");
             }
+            Assert.IsTrue(DirectoriesAndContentsAreEqual(path_to_backup, l2r), "Restored second level files is not equal to original files");
         }
-    }
 
+        /// <summary>
+        /// Compares two directories and their contents.
+        /// </summary>
+        /// <param name="d1">The first directory.</param>
+        /// <param name="d2">The second directory.</param>
+        /// <returns>`true` if the two directories contain exactly the same files and if the contents of the files are equivalent. `false` otherwise.</returns>
+        public static bool DirectoriesAndContentsAreEqual(string d1, string d2)
+        {
+            // Recursively get the files in the two directories
+            var f1s = Directory.EnumerateFiles(d1, "*", SearchOption.AllDirectories).Select(x => x[(d1.Length + 1)..]).OrderDescending();
+            var f2s = Directory.EnumerateFiles(d2, "*", SearchOption.AllDirectories).Select(x => x[(d2.Length + 1)..]).OrderDescending();
+
+            // If the two directories do not contain the same files, return false
+            if (!f1s.SequenceEqual(f2s))
+                return false;
+
+            // Check that each file pair exist and have the same content
+            foreach (var f1 in f1s)
+            {
+                var f1full = Path.Combine(d1, f1);
+                if (!File.Exists(f1full))
+                    return false;
+
+                var f2full = Path.Combine(d2, f1);
+                if (!File.Exists(f2full))
+                    return false;
+
+                var c1 = File.ReadAllText(f1full);
+                var c2 = File.ReadAllText(f2full);
+
+                if (!c1.SequenceEqual(c2))
+                    return false;
+            }
+
+            return true;
+        }
+
+    }
 }
