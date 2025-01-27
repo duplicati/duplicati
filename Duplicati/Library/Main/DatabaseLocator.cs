@@ -71,7 +71,7 @@ namespace Duplicati.Library.Main
         /// <param name="targetfilename">The filename to look for</param>
         /// <param name="appName">The name of the application</param>
         /// <returns>The default storage folder</returns>
-        public static string GetDefaultStorageFolder(string targetfilename, string appName = "Duplicati")
+        public static string GetDefaultStorageFolderDirect(string targetfilename, string appName = "Duplicati")
         {
             //Normal mode uses the systems "(Local) Application Data" folder
             // %LOCALAPPDATA% on Windows, ~/.config on Linux
@@ -113,10 +113,19 @@ namespace Duplicati.Library.Main
             return folder;
         }
 
-        public static string GetDatabasePath(string backend, Options options, bool autoCreate = true, bool anyUsername = false)
+        /// <summary>
+        /// Gets the database path for a given backend url, using the JSON configuration file lookup.
+        /// If <paramref name="autoCreate"/> is <c>true</c>, a new database is created if none is found.
+        /// Otherwise, <c>null</c> is returned if no database is found.
+        /// </summary>
+        /// <param name="backend">The backend url</param>
+        /// <param name="options">The options to use</param>
+        /// <param name="autoCreate">If <c>true</c>, a new database is created if none is found</param>
+        /// <param name="anyUsername">If <c>true</c>, any username is accepted</param>
+        /// <returns>The database path or null</returns>
+        public static string? GetDatabasePathForCLI(string backend, Options? options, bool autoCreate = true, bool anyUsername = false)
         {
-            if (options == null)
-                options = new Options(new Dictionary<string, string>());
+            options ??= new Options(new Dictionary<string, string>());
 
             if (!string.IsNullOrEmpty(options.Dbpath))
                 return options.Dbpath;

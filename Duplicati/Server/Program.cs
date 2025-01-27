@@ -762,7 +762,7 @@ namespace Duplicati.Server
                 {
                     //Normal release mode uses the systems "(Local) Application Data" folder
                     // %LOCALAPPDATA% on Windows, ~/.config on Linux, ~/Library/Application\ Support on MacOS
-                    return DatabaseLocator.GetDefaultStorageFolder(SERVER_DATABASE_FILENAME, Library.AutoUpdater.AutoUpdateSettings.AppName);
+                    return DatabaseLocator.GetDefaultStorageFolderDirect(SERVER_DATABASE_FILENAME, Library.AutoUpdater.AutoUpdateSettings.AppName);
                 }
             }
             else
