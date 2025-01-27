@@ -23,21 +23,54 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 
+#nullable enable
+
 namespace Duplicati.Library.Main
 {
     public static class DatabaseLocator
     {
+        /// <summary>
+        /// The log tag for this class
+        /// </summary>
+        public static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(DatabaseLocator));
+
+        /// <summary>
+        /// The entry for a backend configuration, used for serialization
+        /// </summary>
         public class BackendEntry
         {
-            public string Type;
-            public string Server;
-            public string Path;
-            public string Prefix;
-            public string Username;
-            //public string Passwordhash;
-            public int Port;
-            public string Databasepath;
-            public string ParameterFile;
+            /// <summary>
+            /// The type of the backend
+            /// </summary>
+            public required string Type;
+            /// <summary>
+            /// The server/hostname of the backend
+            /// </summary>
+            public required string Server;
+            /// <summary>
+            /// The path of the backend
+            /// </summary>
+            public required string Path;
+            /// <summary>
+            /// The prefix of the backup
+            /// </summary>
+            public required string Prefix;
+            /// <summary>
+            /// The username of the backend
+            /// </summary>
+            public required string? Username;
+            /// <summary>
+            /// The port of the backend
+            /// </summary>
+            public required int Port;
+            /// <summary>
+            /// The path to the database
+            /// </summary>
+            public required string Databasepath;
+            /// <summary>
+            /// The path to the parameter file
+            /// </summary>
+            public required string? ParameterFile;
         }
 
         /// <summary>
@@ -49,7 +82,8 @@ namespace Duplicati.Library.Main
         /// Finds a default storage folder, using the operating system specific locations.
         /// The targetfilename is used to detect locations that are used in previous versions.
         /// If the targetfilename is found in an old location, but not the current, the old location is used.
-        /// If running with DEBUG defined, the storage folder is placed in the same folder as the executable
+        /// If running with DEBUG defined, the storage folder is placed in the same folder as the executable.
+        /// Note that the folder is not created, only the path is returned.
         /// </summary>
         /// <param name="targetfilename">The filename to look for</param>
         /// <param name="appName">The name of the application</param>
@@ -59,7 +93,7 @@ namespace Duplicati.Library.Main
 #if DEBUG
             return System.IO.Path.GetDirectoryName(typeof(DatabaseLocator).Assembly.Location) ?? string.Empty;
 #else
-            return GetDefaultStorageFolder(targetfilename, appName);
+            return GetDefaultStorageFolderDirect(targetfilename, appName);
 #endif
         }
 
@@ -67,6 +101,7 @@ namespace Duplicati.Library.Main
         /// Finds a default storage folder, using the operating system specific locations.
         /// The targetfilename is used to detect locations that are used in previous versions.
         /// If the targetfilename is found in an old location, but not the current, the old location is used.
+        /// Note that the folder is not created, only the path is returned.
         /// </summary>
         /// <param name="targetfilename">The filename to look for</param>
         /// <param name="appName">The name of the application</param>
@@ -81,17 +116,38 @@ namespace Duplicati.Library.Main
             {
                 // Special handling for Windows:
                 //   - Older versions use %APPDATA%
-                //   - but new versions use %LOCALAPPDATA%
+                //   - New versions use %LOCALAPPDATA%
+                //   - And prevent using C:\Windows\
                 var newlocation = System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), appName);
 
-                var prevfile = System.IO.Path.Combine(folder, targetfilename);
-                var curfile = System.IO.Path.Combine(newlocation, targetfilename);
+                var folderOrder = new List<string>() {
+                    folder,
+                    newlocation
+                };
 
-                // If the new file exists, we use that
-                // If the new file does not exist, and the old file exists we use the old
-                // Otherwise we use the new location
-                if (System.IO.File.Exists(curfile) || !System.IO.File.Exists(prevfile))
-                    folder = newlocation;
+                // If %LOCALAPPDATA% is inside the Windows folder, prefer a LocalService folder instead
+                var windowsFolder = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
+                if (newlocation.StartsWith(windowsFolder, StringComparison.OrdinalIgnoreCase))
+                {
+                    var userProfilesFolder = Library.Utility.SHGetFolder.UserProfilesFolder;
+                    if (!string.IsNullOrWhiteSpace(userProfilesFolder))
+                        folderOrder.Add(System.IO.Path.Combine(userProfilesFolder, "LocalService", appName));
+                }
+
+                // Prefer the most recent location
+                var matches = folderOrder.AsEnumerable()
+                    .Reverse()
+                    .Select(x => System.IO.Path.Combine(x, targetfilename))
+                    .Where(System.IO.File.Exists)
+                    .ToList();
+
+                // Use the most recent location found with content
+                // If none are found, use the most recent location
+                folder = matches.FirstOrDefault() ?? folderOrder.Last();
+
+                // Emit a warning if the database is stored in the Windows folder
+                if (folder.StartsWith(windowsFolder, StringComparison.OrdinalIgnoreCase))
+                    Logging.Log.WriteWarningMessage(LOGTAG, "DatabaseInWindowsFolder", null, "The database is stored in the Windows folder, this is not recommended as it will be deleted on Windows upgrades.");
             }
 
             if (OperatingSystem.IsMacOS())
@@ -137,22 +193,24 @@ namespace Duplicati.Library.Main
             if (!System.IO.File.Exists(file))
                 configs = new List<BackendEntry>();
             else
-                configs = Newtonsoft.Json.JsonConvert.DeserializeObject<List<BackendEntry>>(System.IO.File.ReadAllText(file, System.Text.Encoding.UTF8));
+                configs = Newtonsoft.Json.JsonConvert.DeserializeObject<List<BackendEntry>>(System.IO.File.ReadAllText(file, System.Text.Encoding.UTF8))
+                    ?? new List<BackendEntry>();
 
             var uri = new Library.Utility.Uri(backend);
-            string server = uri.Host;
-            string path = uri.Path;
-            string type = uri.Scheme;
-            int port = uri.Port;
-            string username = uri.Username;
-            string prefix = options.Prefix;
+            var server = uri.Host;
+            var path = uri.Path;
+            var type = uri.Scheme;
+            var port = uri.Port;
+            var username = uri.Username;
+            var prefix = options.Prefix;
 
             if (username == null || uri.Password == null)
             {
                 var sopts = DynamicLoader.BackendLoader.GetSupportedCommands(backend);
-                var ropts = new Dictionary<string, string>(options.RawOptions);
+                var ropts = new Dictionary<string, string?>(options.RawOptions);
                 foreach (var k in uri.QueryParameters.AllKeys)
-                    ropts[k] = uri.QueryParameters[k];
+                    if (k != null)
+                        ropts[k] = uri.QueryParameters[k];
 
                 if (sopts != null)
                 {
@@ -174,7 +232,6 @@ namespace Duplicati.Library.Main
             var matches = (from n in configs
                            where
                                n.Type == type &&
-                               //n.Passwordhash == password && 
                                n.Username == username &&
                                n.Port == port &&
                                n.Server == server &&
@@ -250,27 +307,38 @@ namespace Duplicati.Library.Main
             {
                 return matches[0].Databasepath;
             }
-
         }
 
+        /// <summary>
+        /// Generates a random name for a database
+        /// </summary>
+        /// <returns>A random name</returns>
         public static string GenerateRandomName()
         {
             var rnd = new Random();
 
-            System.Text.StringBuilder backupName = new System.Text.StringBuilder();
+            var backupName = new System.Text.StringBuilder();
             for (var i = 0; i < 10; i++)
                 backupName.Append((char)rnd.Next('A', 'Z' + 1));
 
             return backupName.ToString();
         }
 
+        /// <summary>
+        /// Checks if a database path is in use by any backup.
+        /// If the file does not exist, it is assumed to be free.
+        /// If the file exists, it is checked if it is in use by any backup.
+        /// </summary>
+        /// <param name="path">The path to check</param>
+        /// <returns><c>true</c> if the path is in use, <c>false</c> otherwise</returns>
         public static bool IsDatabasePathInUse(string path)
         {
             var file = System.IO.Path.Combine(GetDefaultStorageFolderWithDebugSupport(CONFIG_FILE), CONFIG_FILE);
             if (!System.IO.File.Exists(file))
                 return false;
 
-            return Newtonsoft.Json.JsonConvert.DeserializeObject<List<BackendEntry>>(System.IO.File.ReadAllText(file, System.Text.Encoding.UTF8)).Any(x => string.Equals(path, x.Databasepath, Library.Utility.Utility.ClientFilenameStringComparison));
+            return (Newtonsoft.Json.JsonConvert.DeserializeObject<List<BackendEntry>>(System.IO.File.ReadAllText(file, System.Text.Encoding.UTF8)) ?? [])
+                .Any(x => string.Equals(path, x.Databasepath, Library.Utility.Utility.ClientFilenameStringComparison));
         }
     }
 }

@@ -603,6 +603,25 @@ namespace Duplicati.Server
                     );
                 }
 
+                if (OperatingSystem.IsWindows() && DataFolder.StartsWith(Environment.GetFolderPath(Environment.SpecialFolder.Windows), StringComparison.OrdinalIgnoreCase))
+                {
+                    DataConnection.RegisterNotification(
+                        Serialization.NotificationType.Warning,
+                        "Incorrect storage folder",
+                        "The configuration is stored in the Windows folder, which will be deleted on Windows updates.",
+                        null,
+                        null,
+                        "config:issue:windows-folder-used",
+                        null,
+                        "UnencryptedDatabase",
+                        null,
+                        (self, all) =>
+                        {
+                            return all.FirstOrDefault(x => x.Action == "config:issue:windows-folder-used") ?? self;
+                        }
+                    );
+                }
+
                 DataConnection.ApplicationSettings.LastConfigIssueCheckVersion = UpdaterManager.SelfVersion.Version;
             }
         }

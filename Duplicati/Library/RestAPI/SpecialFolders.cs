@@ -133,7 +133,7 @@ namespace Duplicati.Server
                 try
                 {
                     // PInvoke to get the download folder
-                    TryAdd(lst, SHGetFolder.DownloadFolder, "%MY_DOWNLOADS%", "Downloads");
+                    TryAdd(lst, Library.Utility.SHGetFolder.DownloadFolder, "%MY_DOWNLOADS%", "Downloads");
                 }
                 catch
                 {
@@ -207,49 +207,6 @@ namespace Duplicati.Server
                 result[x.Key] = x.Value;
 
             return result;
-        }
-
-        /// <summary>
-        /// Wrapper for SHGetKnownFolderPath to get the download folder on Windows
-        /// </summary>
-        [SupportedOSPlatform("windows")]
-        private static class SHGetFolder
-        {
-            /// <summary>
-            /// Gets the download folder path
-            /// </summary>
-            public static string DownloadFolder => GetKnownFolderPath(new Guid("374DE290-123F-4565-9164-39C4925E467B"));
-
-            /// <summary>
-            /// SHGetKnownFolderPath function to get the folder path
-            /// </summary>
-            /// <param name="rfid">The folder GUID</param>
-            /// <param name="dwFlags">Get folder flags</param>
-            /// <param name="hToken">The access token</param>
-            /// <param name="ppszPath">The folder path</param>
-            /// <returns>The HRESULT error code</returns>
-            [DllImport("Shell32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
-            private static extern int SHGetKnownFolderPath(
-                  [MarshalAs(UnmanagedType.LPStruct)] Guid rfid,
-                  uint dwFlags,
-                  IntPtr hToken,
-                  out IntPtr ppszPath);
-
-            /// <summary>
-            /// Gets the folder path using SHGetKnownFolderPath
-            /// </summary>
-            /// <param name="folderGuid">The folder GUID</param>
-            /// <returns>The folder path</returns>
-            private static string GetKnownFolderPath(Guid folderGuid)
-            {
-                var result = SHGetKnownFolderPath(folderGuid, 0, IntPtr.Zero, out var outPath);
-                if (result != 0)
-                    Marshal.ThrowExceptionForHR(result); // Throws an exception for the HRESULT error code
-
-                var path = Marshal.PtrToStringUni(outPath);
-                Marshal.FreeCoTaskMem(outPath); // Free the memory allocated by SHGetKnownFolderPath
-                return path;
-            }
         }
     }
 }
