@@ -83,35 +83,7 @@ public static class MachineNameReader
     /// <returns>The machine name</returns>
     [SupportedOSPlatform("windows")]
     private static string? GetMachineNameWindows()
-    {
-        try
-        {
-            // Use WMI if possible
-            foreach (var obj in new ManagementObjectSearcher("SELECT Name FROM Win32_ComputerSystem").Get())
-            {
-                var wmiMachineName = obj["Name"] as string;
-                if (!string.IsNullOrEmpty(wmiMachineName))
-                    return wmiMachineName;
-            }
-        }
-        catch
-        {
-        }
-        
-        try
-        {
-            // Otherwise use registry
-            var machineName = RegistryUtility.GetDataByValueName("SYSTEM\\CurrentControlSet\\Control\\ComputerName\\ComputerName", "ComputerName");
-            if (!string.IsNullOrWhiteSpace(machineName))
-                return machineName;
-        }
-        catch
-        {
-        }
-
-        // Or use cmd.exe
-        return ExecuteAndReadOutput("cmd.exe", "/C hostname");
-    }
+        => null; // No special handling for Windows, always uses NetBIOS name
 
     /// <summary>
     /// Gets the machine name if running Linux
@@ -119,5 +91,5 @@ public static class MachineNameReader
     /// <returns>The machine name</returns>
     [SupportedOSPlatform("linux")]
     private static string? GetMachineNameLinux()
-        => null; // No special handling for Linux
+        => null; // No special handling for Linux, always uses hostname
 }
