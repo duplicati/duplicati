@@ -409,9 +409,9 @@ namespace Duplicati.Library.Modules.Builtin
                 case INSTALLATION_TYPE:
                     return AutoUpdater.UpdaterManager.PackageTypeId;
                 case DESTINATION_TYPE:
-                    return m_remoteurl?.IndexOf("://", StringComparison.OrdinalIgnoreCase) >= 0
-                        ? m_remoteurl.Substring(0, m_remoteurl.IndexOf("://", StringComparison.OrdinalIgnoreCase))
-                        : "file";
+                    // Only return the url scheme, as the rest could contain sensitive information
+                    var ix = m_remoteurl?.IndexOf("://", StringComparison.OrdinalIgnoreCase) ?? -1;
+                    return ix >= 0 && ix < 15 ? m_remoteurl.Substring(0, ix) : "file";
                 default:
                     return null;
             }
