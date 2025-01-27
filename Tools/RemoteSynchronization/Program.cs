@@ -173,6 +173,7 @@ namespace RemoteSynchronization
         private static async Task<long> RenameAsync(IStreamingBackend b, IEnumerable<FileEntry> files)
         {
             long successful_renames = 0;
+            string suffix = $"{DateTime.Now:yyyyMMddHHmmss}.old";
             using var downloaded = new MemoryStream();
             foreach (var f in files)
             {
