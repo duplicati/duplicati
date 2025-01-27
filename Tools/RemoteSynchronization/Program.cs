@@ -60,9 +60,9 @@ namespace RemoteSynchronization
                    var b2s = b2 as IStreamingBackend;
                    System.Diagnostics.Debug.Assert(b2s != null);
                    var (to_copy, to_delete) = PrepareFileLists(b1s, b2s);
-                   var deleted = Delete(b2s, to_delete);
+                   var deleted = await DeleteAsync(b2s, to_delete);
                    Console.WriteLine($"Deleted {deleted} files from {dst}");
-                   var copied = Copy(b1s, b2s, to_copy);
+                   var copied = await CopyAsync(b1s, b2s, to_copy);
                    Console.WriteLine($"Copied {copied} files from {src} to {dst}");
                }
             }
@@ -82,7 +82,7 @@ namespace RemoteSynchronization
         // TODO This tool shouldn't handle it, but for convenience, it should support making the seperate call to the regular Duplicati on the destination backend, which alread carries this functionality.
 
         // Forcefully synchronize the remote backends
-        private static long Copy(IStreamingBackend b_src, IStreamingBackend b_dst, IEnumerable<IFileEntry> files)
+        private static async Task<long> CopyAsync(IStreamingBackend b_src, IStreamingBackend b_dst, IEnumerable<IFileEntry> files)
         {
             long successful_copies = 0;
             foreach (var f in files)
@@ -90,10 +90,8 @@ namespace RemoteSynchronization
                 try
                 {
                     var s = new MemoryStream();
-                    var s1 = b_src.GetAsync(f.Name, s, CancellationToken.None);
-                    s1.Wait();
-                    var s2 = b_dst.PutAsync(f.Name, s, CancellationToken.None);
-                    s2.Wait();
+                    await b_src.GetAsync(f.Name, s, CancellationToken.None);
+                    await b_dst.PutAsync(f.Name, s, CancellationToken.None);
                     successful_copies++;
                 }
                 catch (Exception e)
@@ -104,14 +102,14 @@ namespace RemoteSynchronization
             return successful_copies;
         }
 
-        private static long Delete(IStreamingBackend b, IEnumerable<IFileEntry> files)
+        private static async Task<long> DeleteAsync(IStreamingBackend b, IEnumerable<IFileEntry> files)
         {
             long successful_deletes = 0;
             foreach (var f in files)
             {
                 try
                 {
-                    b.DeleteAsync(f.Name, CancellationToken.None).Wait();
+                    await b.DeleteAsync(f.Name, CancellationToken.None);
                     successful_deletes++;
                 }
                 catch (Exception e)
@@ -171,7 +169,7 @@ namespace RemoteSynchronization
             return (to_copy, to_delete.Select(x => lookup_dst[x]));
         }
 
-        private static long Rename(IStreamingBackend b, IEnumerable<FileEntry> files)
+        private static async Task<long> RenameAsync(IStreamingBackend b, IEnumerable<FileEntry> files)
         {
             long successful_renames = 0;
             string suffix = $"{System.DateTime.Now:yyyyMMddHHmmss}.old";
@@ -180,8 +178,8 @@ namespace RemoteSynchronization
                 try
                 {
                     var downloaded = new MemoryStream();
-                    b.GetAsync(f.Name, downloaded, CancellationToken.None).Wait();
-                    b.PutAsync($"{f.Name}.{suffix}", downloaded, CancellationToken.None).Wait();
+                    await b.GetAsync(f.Name, downloaded, CancellationToken.None);
+                    await b.PutAsync($"{f.Name}.{suffix}", downloaded, CancellationToken.None);
                     successful_renames++;
                 }
                 catch (Exception e)
