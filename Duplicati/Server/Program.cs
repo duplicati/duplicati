@@ -330,6 +330,7 @@ namespace Duplicati.Server
             catch (SingleInstance.MultipleInstanceException mex)
             {
                 crashed = true;
+                Log.WriteErrorMessage(LOGTAG, "MultipleInstanceError", mex, Strings.Program.ServerCrashed(mex.Message));
                 System.Diagnostics.Trace.WriteLine(Strings.Program.SeriousError(mex.ToString()));
                 if (!writeToConsoleOnException) throw;
 
@@ -339,6 +340,7 @@ namespace Duplicati.Server
             catch (Exception ex)
             {
                 crashed = true;
+                Log.WriteErrorMessage(LOGTAG, "ServerCrashed", ex, Strings.Program.ServerCrashed(ex.Message));
                 System.Diagnostics.Trace.WriteLine(Strings.Program.SeriousError(ex.ToString()));
                 if (writeToConsoleOnException)
                 {
@@ -350,7 +352,7 @@ namespace Duplicati.Server
             }
             finally
             {
-                Library.Logging.Log.WriteInformationMessage(LOGTAG, "ServerStopping", Strings.Program.ServerStopping);
+                Log.WriteInformationMessage(LOGTAG, "ServerStopping", Strings.Program.ServerStopping);
 
                 var steps = new Action[] {
                     () => StatusEventNotifyer.SignalNewEvent(),
