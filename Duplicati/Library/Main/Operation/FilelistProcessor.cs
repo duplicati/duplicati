@@ -194,7 +194,7 @@ namespace Duplicati.Library.Main.Operation
                 }
                 else
                 {
-                    await backendManager.PutUnencryptedAsync(remotename, tempfile, CancellationToken.None).ConfigureAwait(false);
+                    await backendManager.PutVerificationFileAsync(remotename, tempfile, CancellationToken.None).ConfigureAwait(false);
                     await backendManager.WaitForEmptyAsync(db, transaction, CancellationToken.None).ConfigureAwait(false);
                 }
             }

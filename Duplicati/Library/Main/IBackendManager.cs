@@ -36,7 +36,7 @@ internal interface IBackendManager : IDisposable
     /// <param name="tempFile">The file to upload</param>
     /// <param name="cancelToken">The cancellation token</param>
     /// <returns>An awaitable task</returns>
-    Task PutUnencryptedAsync(string remotename, TempFile tempFile, CancellationToken cancelToken);
+    Task PutVerificationFileAsync(string remotename, TempFile tempFile, CancellationToken cancelToken);
 
     /// <summary>
     /// Waits for the backend queue to be empty and flushes any pending messages to the database

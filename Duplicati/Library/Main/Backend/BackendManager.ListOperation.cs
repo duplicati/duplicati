@@ -39,6 +39,7 @@ partial class BackendManager
 
             var r = backend.List().ToList();
 
+            // TODO: Investigate better way to solve this so we do not use memory for large lists
             var sb = new StringBuilder();
             sb.AppendLine("[");
             long count = 0;

@@ -240,13 +240,13 @@ internal partial class BackendManager : IBackendManager
     }
 
     /// <summary>
-    /// Uploads a file to the remote location without encryption
+    /// Uploads a verification file to the remote location without encryption
     /// </summary>
     /// <param name="remotename">The name of the remote file</param>
     /// <param name="tempFile">The temporary file to upload</param>
     /// <param name="cancelToken">The cancellation token</param>
     /// <returns>An awaitable task</returns>
-    public async Task PutUnencryptedAsync(string remotename, TempFile tempFile, CancellationToken cancelToken)
+    public async Task PutVerificationFileAsync(string remotename, TempFile tempFile, CancellationToken cancelToken)
     {
         var op = new PutOperation(remotename, context, true, cancelToken)
         {

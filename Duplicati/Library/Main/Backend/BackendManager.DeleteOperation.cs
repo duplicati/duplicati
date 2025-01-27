@@ -92,10 +92,14 @@ partial class BackendManager
             }
             finally
             {
+                // Here, we do not know if the file was actually deleted or not
+                // We log that the operation was performed, and the result
                 Context.Database.LogRemoteOperation("delete", RemoteFilename, result);
+
+                // We also log the new state of the file, so it will be attempted to be re-deleted on later listings
+                Context.Database.LogRemoteVolumeUpdated(RemoteFilename, RemoteVolumeState.Deleted, -1, null);
             }
 
-            Context.Database.LogRemoteVolumeUpdated(RemoteFilename, RemoteVolumeState.Deleted, -1, null);
             Context.Statwriter.SendEvent(BackendActionType.Delete, BackendEventType.Completed, RemoteFilename, Size);
             return true;
         }

@@ -8,7 +8,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using CoCoL;
 using Duplicati.Library.Interface;
-using Duplicati.Library.Localization.Short;
 
 namespace Duplicati.Library.Main.Backend;
 
@@ -374,7 +373,7 @@ partial class BackendManager
         private async Task Execute(PendingOperationBase op)
         {
             await context.TaskReader.ProgressRendevouz().ConfigureAwait(false);
-            using (new Logging.Timer(LOGTAG, string.Format("RemoteOperation{0}", op.Operation), string.Format("RemoteOperation{0}", op.Operation)))
+            using (new Logging.Timer(LOGTAG, $"RemoteOperation{op.Operation}", $"RemoteOperation{op.Operation}"))
                 switch (op)
                 {
                     case PutOperation putOp:
