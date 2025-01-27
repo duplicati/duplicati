@@ -92,10 +92,10 @@ partial class BackendManager
             }
             finally
             {
-                Context.Database.LogDbOperation("delete", RemoteFilename, result);
+                Context.Database.LogRemoteOperation("delete", RemoteFilename, result);
             }
 
-            Context.Database.LogDbUpdate(RemoteFilename, RemoteVolumeState.Deleted, -1, null);
+            Context.Database.LogRemoteVolumeUpdated(RemoteFilename, RemoteVolumeState.Deleted, -1, null);
             Context.Statwriter.SendEvent(BackendActionType.Delete, BackendEventType.Completed, RemoteFilename, Size);
             return true;
         }

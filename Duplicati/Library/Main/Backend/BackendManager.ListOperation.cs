@@ -52,7 +52,7 @@ partial class BackendManager
 
             sb.AppendLine();
             sb.Append("]");
-            Context.Database.LogDbOperation("list", "", sb.ToString());
+            Context.Database.LogRemoteOperation("list", "", sb.ToString());
 
             Context.Statwriter.SendEvent(BackendActionType.List, BackendEventType.Completed, null, r.Count);
 

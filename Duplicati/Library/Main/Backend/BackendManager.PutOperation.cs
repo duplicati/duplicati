@@ -201,12 +201,12 @@ partial class BackendManager
 
             // On first upload attempt, calculate the hash and size
             if (operationState == OperationState.None && TrackedInDb)
-                Context.Database.LogDbUpdate(RemoteFilename, RemoteVolumeState.Uploading, size, hash);
+                Context.Database.LogRemoteVolumeUpdated(RemoteFilename, RemoteVolumeState.Uploading, size, hash);
 
             // First attempt here, finish the index file now that all information is known
             if (OriginalIndexFile != null && indexOperation == null)
             {
-                Context.Database.LogDbUpdate(OriginalIndexFile.RemoteFilename, RemoteVolumeState.Uploading, -1, null);
+                Context.Database.LogRemoteVolumeUpdated(OriginalIndexFile.RemoteFilename, RemoteVolumeState.Uploading, -1, null);
 
                 // Prepare an upload operation for the index file
                 var req2 = new PutOperation(OriginalIndexFile.RemoteFilename, Context, false, cancelToken)
@@ -261,7 +261,7 @@ partial class BackendManager
         /// <returns>An awaitable task</returns>
         private async Task PerformUpload(IBackend backend, string Hash, long Size, CancellationToken cancelToken)
         {
-            Context.Database.LogDbOperation("put", RemoteFilename, JsonConvert.SerializeObject(new { Size = Size, Hash = Hash }));
+            Context.Database.LogRemoteOperation("put", RemoteFilename, JsonConvert.SerializeObject(new { Size = Size, Hash = Hash }));
             Context.Statwriter.SendEvent(BackendActionType.Put, BackendEventType.Started, RemoteFilename, Size);
 
             var begin = DateTime.Now;
@@ -282,7 +282,7 @@ partial class BackendManager
             Logging.Log.WriteProfilingMessage(LOGTAG, "UploadSpeed", "Uploaded {0} in {1}, {2}/s", Library.Utility.Utility.FormatSizeString(Size), duration, Library.Utility.Utility.FormatSizeString((long)(Size / duration.TotalSeconds)));
 
             if (TrackedInDb)
-                Context.Database.LogDbUpdate(RemoteFilename, RemoteVolumeState.Uploaded, Size, Hash);
+                Context.Database.LogRemoteVolumeUpdated(RemoteFilename, RemoteVolumeState.Uploaded, Size, Hash);
 
             Context.Statwriter.SendEvent(BackendActionType.Put, BackendEventType.Completed, RemoteFilename, Size);
 
@@ -313,7 +313,7 @@ partial class BackendManager
             Context.Statwriter.SendEvent(BackendActionType.Put, BackendEventType.Rename, oldname, Size);
             Context.Statwriter.SendEvent(BackendActionType.Put, BackendEventType.Rename, newname, Size);
             Logging.Log.WriteInformationMessage(LOGTAG, "RenameRemoteTargetFile", "Renaming \"{0}\" to \"{1}\"", oldname, newname);
-            Context.Database.LogDbRename(oldname, newname);
+            Context.Database.LogRemoteVolumeRenamed(oldname, newname);
             remoteFilename = newname;
 
             // If there is an index file attached to the block file, 

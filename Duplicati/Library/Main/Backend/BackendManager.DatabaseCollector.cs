@@ -11,7 +11,14 @@ namespace Duplicati.Library.Main.Backend;
 partial class BackendManager
 {
     /// <summary>
-    /// A class to collect database operations and flush them in a single transaction
+    /// A class to collect operations performed on the remote destination.
+    /// This class is used to log operations so they can later be written to the database.
+    /// The goal is to keep the database state as close as possible to the remote operation state.
+    /// Since the backend communication is done in parallel with the actual operations,
+    /// we store the performed operations in a queue and flush them to the database when the database is available.
+    /// The main operations are responsible for flushing the messages when comitting a transaction.
+    /// If the operation fails, the logged messages here should still be flushed to the database, 
+    /// as they have already been performed on the remote destination.
     /// </summary>
     private class DatabaseCollector
     {
@@ -26,93 +33,61 @@ partial class BackendManager
         /// <summary>
         /// The queue of database operations
         /// </summary>
-        private List<IDbEntry> m_dbqueue = [];
+        private List<IRemoteOperationEntry> m_dbqueue = [];
 
         /// <summary>
         /// Interface for database entries
         /// </summary>
-        private interface IDbEntry { }
+        private interface IRemoteOperationEntry { }
 
         /// <summary>
-        /// A database remote operation entry
+        /// Logs an operation performed on the remote destination
         /// </summary>
-        private class DbOperation : IDbEntry
-        {
-            /// <summary>
-            /// The action of the operation
-            /// </summary>
-            public required string Action { get; init; }
-            /// <summary>
-            /// The file of the operation
-            /// </summary>
-            public required string File { get; init; }
-            /// <summary>
-            /// The result of the operation
-            /// </summary>
-            public required string? Result { get; init; }
-        }
+        /// <param name="Action">The performed action</param>
+        /// <param name="File">The file the operation is performed on</param>
+        /// <param name="Result">The result of the operation</param>
+        private sealed record RemoteOperationLogEntry(string Action, string File, string? Result) : IRemoteOperationEntry;
+
 
         /// <summary>
-        /// A database update entry
+        /// Logs a database update after a remote file operation
         /// </summary>
-        private class DbUpdate : IDbEntry
-        {
-            /// <summary>
-            /// The remote name of the volume
-            /// </summary>
-            public required string Remotename { get; init; }
-            /// <summary>
-            /// The new state of the volume
-            /// </summary>
-            public required RemoteVolumeState State { get; init; }
-            /// <summary>
-            /// The new size of the volume
-            /// </summary>
-            public required long Size { get; init; }
-            /// <summary>
-            /// The new hash of the volume
-            /// </summary>
-            public required string? Hash { get; init; }
-        }
+        /// <param name="Remotename">The remote name of the volume</param>
+        /// <param name="State">The new state of the volume</param>
+        /// <param name="Size">The new size of the volume</param>
+        /// <param name="Hash">The new hash of the volume</param>
+        private sealed record RemoteVolumeUpdate(string Remotename, RemoteVolumeState State, long Size, string? Hash) : IRemoteOperationEntry;
 
         /// <summary>
-        /// A database rename entry
+        /// Logs a rename of a remote file
         /// </summary>
-        private class DbRename : IDbEntry
-        {
-            /// <summary>
-            /// The old name of the file
-            /// </summary>
-            public required string Oldname { get; init; }
-            /// <summary>
-            /// The new name of the file
-            /// </summary>
-            public required string Newname { get; init; }
-        }
+        /// <param name="Oldname">The old name of the file</param>
+        /// <param name="Newname">The new name of the file</param>
+        private sealed record RenameRemoteVolume(string Oldname, string Newname) : IRemoteOperationEntry;
 
         /// <summary>
-        /// Logs a database operation
+        /// Logs an operation performed on the remote destination
         /// </summary>
         /// <param name="action">The action of the operation</param>
         /// <param name="file">The file of the operation</param>
         /// <param name="result">The result of the operation</param>
-        public void LogDbOperation(string action, string file, string? result)
+        public void LogRemoteOperation(string action, string file, string? result)
         {
             lock (m_dbqueuelock)
-                m_dbqueue.Add(new DbOperation() { Action = action, File = file, Result = result });
+                m_dbqueue.Add(new RemoteOperationLogEntry(action, file, result));
         }
 
         /// <summary>
-        /// Logs a remote file update
+        /// Logs a database update after a remote file operation
         /// </summary>
         /// <param name="remotename">The remote name of the volume</param>
         /// <param name="state">The new state of the volume</param>
         /// <param name="size">The new size of the volume</param>
         /// <param name="hash">The new hash of the volume</param>
-        public void LogDbUpdate(string remotename, RemoteVolumeState state, long size, string? hash)
+        public void LogRemoteVolumeUpdated(string remotename, RemoteVolumeState state, long size, string? hash)
         {
             lock (m_dbqueuelock)
-                m_dbqueue.Add(new DbUpdate() { Remotename = remotename, State = state, Size = size, Hash = hash });
+                m_dbqueue.Add(new RemoteVolumeUpdate(remotename, state, size, hash));
         }
 
         /// <summary>
@@ -120,16 +95,16 @@ partial class BackendManager
         /// </summary>
         /// <param name="oldname">The old name of the file</param>
         /// <param name="newname">The new name of the file</param>
-        public void LogDbRename(string oldname, string newname)
+        public void LogRemoteVolumeRenamed(string oldname, string newname)
         {
             lock (m_dbqueuelock)
-                m_dbqueue.Add(new DbRename() { Oldname = oldname, Newname = newname });
+                m_dbqueue.Add(new RenameRemoteVolume(oldname, newname));
         }
 
         /// <summary>
         /// Drops all pending messages from the queue
         /// </summary>
-        public void ClearDbMessages()
+        public void ClearPendingMessages()
         {
             lock (m_dbqueuelock)
                 m_dbqueue = [];
@@ -141,9 +116,9 @@ partial class BackendManager
         /// <param name="db">The database to write pending messages to</param>
         /// <param name="transaction">The transaction to use, if any</param>
         /// <returns>Whether any messages were flushed</returns>
-        public bool FlushDbMessages(LocalDatabase db, System.Data.IDbTransaction? transaction)
+        public bool FlushPendingMessages(LocalDatabase db, System.Data.IDbTransaction? transaction)
         {
-            List<IDbEntry> entries;
+            List<IRemoteOperationEntry> entries;
             lock (m_dbqueuelock)
                 if (m_dbqueue.Count == 0)
                     return false;
@@ -158,16 +133,16 @@ partial class BackendManager
 
             // As we replace the list, we can now freely access the elements without locking
             foreach (var e in entries)
-                if (e is DbOperation operation)
+                if (e is RemoteOperationLogEntry operation)
                     db.LogRemoteOperation(operation.Action, operation.File, operation.Result, transaction);
-                else if (e is DbUpdate update && update.State == RemoteVolumeState.Deleted)
+                else if (e is RemoteVolumeUpdate update && update.State == RemoteVolumeState.Deleted)
                 {
                     db.UpdateRemoteVolume(update.Remotename, RemoteVolumeState.Deleted, update.Size, update.Hash, true, TimeSpan.FromHours(2), transaction);
                     volsRemoved.Add(update.Remotename);
                 }
-                else if (e is DbUpdate dbUpdate)
+                else if (e is RemoteVolumeUpdate dbUpdate)
                     db.UpdateRemoteVolume(dbUpdate.Remotename, dbUpdate.State, dbUpdate.Size, dbUpdate.Hash, transaction);
-                else if (e is DbRename rename)
+                else if (e is RenameRemoteVolume rename)
                     db.RenameRemoteFile(rename.Oldname, rename.Newname, transaction);
                 else if (e != null)
                     Log.WriteErrorMessage(LOGTAG, "InvalidQueueElement", null, "Queue had element of type: {0}, {1}", e.GetType(), e);
@@ -191,9 +166,9 @@ partial class BackendManager
             lock (m_dbqueuelock)
                 message = string.Join("\n", m_dbqueue.Select(e => e switch
                 {
-                    DbOperation operation => $"Operation: {operation.Action} File: {operation.File} Result: {operation.Result}",
-                    DbUpdate update => $"Update: {update.Remotename} State: {update.State} Size: {update.Size} Hash: {update.Hash}",
-                    DbRename rename => $"Rename: {rename.Oldname} -> {rename.Newname}",
+                    RemoteOperationLogEntry operation => $"Operation: {operation.Action} File: {operation.File} Result: {operation.Result}",
+                    RemoteVolumeUpdate update => $"Update: {update.Remotename} State: {update.State} Size: {update.Size} Hash: {update.Hash}",
+                    RenameRemoteVolume rename => $"Rename: {rename.Oldname} -> {rename.Newname}",
                     _ => $"InvalidQueueElement: {e.GetType()} {e}"
                 }));
 
