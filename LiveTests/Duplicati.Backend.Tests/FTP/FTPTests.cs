@@ -60,13 +60,13 @@ public sealed class FtpTests : BaseSftpgoTest
 
             .WithOutputConsumer(outputConsumer);
 
-        container = Enumerable.Range(20000, 1000)
+        container = Enumerable.Range(20000, 1001)
             .Aggregate(container, (current, port) => current.WithPortBinding(port, port));
 
         var builtContainer = container
             .WithOutputConsumer(outputConsumer)
             .Build();
-        
+
         Console.WriteLine("Starting container");
         await builtContainer.StartAsync();
 
@@ -88,7 +88,7 @@ public sealed class FtpTests : BaseSftpgoTest
             Console.WriteLine(await outputConsumer.GetStreamsOutput());
             Assert.Fail("BackendTester is returning non-zero exit code, check logs for details");
         }
-        
+
         await builtContainer.StopAsync();
     }
 
@@ -152,5 +152,5 @@ public sealed class FtpTests : BaseSftpgoTest
 
         await builtContainer.StopAsync();
     }
-    
+
 }
