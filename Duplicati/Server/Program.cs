@@ -605,12 +605,12 @@ namespace Duplicati.Server
                     );
                 }
 
-                if (OperatingSystem.IsWindows() && DataFolder.StartsWith(Environment.GetFolderPath(Environment.SpecialFolder.Windows), StringComparison.OrdinalIgnoreCase))
+                if (OperatingSystem.IsWindows() && DataFolder.StartsWith(Util.AppendDirSeparator(Environment.GetFolderPath(Environment.SpecialFolder.Windows)), StringComparison.OrdinalIgnoreCase))
                 {
                     DataConnection.RegisterNotification(
                         Serialization.NotificationType.Warning,
                         "Incorrect storage folder",
-                        "The configuration is stored in the Windows folder, which will be deleted on Windows updates.",
+                        "The server configuraion is stored inside the Windows folder. Please move the configuration to a different location, or it may be deleted on Windows version upgrades.",
                         null,
                         null,
                         "config:issue:windows-folder-used",
