@@ -65,8 +65,9 @@ namespace Duplicati.UnitTest
                 {
                     if (path.EndsWith(this.fileSizes[2] + "MB"))
                     {
-                        stopped.TrySetResult(true);
+                        Thread.Sleep(500);
                         controller.Stop();
+                        stopped.TrySetResult(true);
                     }
                 };
 #endif
@@ -102,7 +103,8 @@ namespace Duplicati.UnitTest
 
                 // This allows us to inspect the dlist files without needing the BackendManager (which is inaccessible here) to decrypt them.
                 ["no-encryption"] = "true",
-                ["disable-file-scanner"] = "true"
+                ["disable-file-scanner"] = "true",
+                ["concurrency-fileprocessors"] = "1",
             };
 
             // Run a full backup.
@@ -206,7 +208,8 @@ namespace Duplicati.UnitTest
             Dictionary<string, string> options = new Dictionary<string, string>(this.TestOptions)
             {
                 ["dblock-size"] = "10mb",
-                ["disable-file-scanner"] = "true"
+                ["disable-file-scanner"] = "true",
+                ["concurrency-fileprocessors"] = "1",
             };
 
             // First, run two complete backups followed by a partial backup. We will then set the keep-time
@@ -300,6 +303,7 @@ namespace Duplicati.UnitTest
             {
                 ["dblock-size"] = "10mb",
                 ["disable-file-scanner"] = "true",
+                ["concurrency-fileprocessors"] = "1",
             };
 
             // Run a full backup.
@@ -394,7 +398,8 @@ namespace Duplicati.UnitTest
             {
                 ["dblock-size"] = "10mb",
                 ["no-local-db"] = "true",
-                ["disable-file-scanner"] = "true"
+                ["disable-file-scanner"] = "true",
+                ["concurrency-fileprocessors"] = "1",
             };
 
             // Run a full backup.
@@ -435,7 +440,8 @@ namespace Duplicati.UnitTest
                 // This test assumes that we can perform 3 backups within 1 minute.
                 ["retention-policy"] = "1m:59s,U:1m",
                 ["no-backend-verification"] = "true",
-                ["disable-file-scanner"] = "true"
+                ["disable-file-scanner"] = "true",
+                ["concurrency-fileprocessors"] = "1"
             };
 
             DateTime firstBackupTime;
@@ -573,6 +579,7 @@ namespace Duplicati.UnitTest
                 // Choose a dblock size that is small enough so that more than one volume is needed.
                 ["dblock-size"] = "10mb",
                 ["disable-file-scanner"] = "true",
+                ["concurrency-fileprocessors"] = "1"
             };
 
             // Run a complete backup.
@@ -676,7 +683,8 @@ namespace Duplicati.UnitTest
             {
                 ["dblock-size"] = "10mb",
                 ["disable-synthetic-filelist"] = "true",
-                ["disable-file-scanner"] = "true"
+                ["disable-file-scanner"] = "true",
+                ["concurrency-fileprocessors"] = "1",
             };
 
             // Run a complete backup.
