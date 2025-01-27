@@ -270,7 +270,6 @@ namespace Duplicati.Server
                 StartOrStopUsageReporter();
 
                 AdjustApplicationSettings(commandlineOptions);
-                EmitWarningsForConfigurationIssues(commandlineOptions);
 
                 ApplicationExitEvent = new System.Threading.ManualResetEvent(false);
 
@@ -297,6 +296,7 @@ namespace Duplicati.Server
 
                 DataConnection.ReWriteAllFieldsIfEncryptionChanged();
                 DataConnection.SetPreloadSettingsIfChanged(preloadDbSettings);
+                EmitWarningsForConfigurationIssues(commandlineOptions);
 
                 Library.Logging.Log.WriteInformationMessage(LOGTAG, "ServerStarted", Strings.Program.ServerStarted(DuplicatiWebserver.Port));
                 logMessageToConsole(Strings.Program.ServerStarted(DuplicatiWebserver.Port));
