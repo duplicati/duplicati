@@ -206,7 +206,7 @@ public class Backups : IEndpointV1
             {
                 if (existingDb)
                 {
-                    backup.DBPathSetter = Library.Main.DatabaseLocator.GetDatabasePathForCLI(data.Backup.TargetURL, null, false, false);
+                    backup.DBPathSetter = Library.Main.CLIDatabaseLocator.GetDatabasePathForCLI(data.Backup.TargetURL, null, false, false);
                     if (string.IsNullOrWhiteSpace(data.Backup.DBPath))
                         throw new Exception("Unable to find remote db path?");
                 }

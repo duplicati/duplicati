@@ -1,4 +1,4 @@
-// Copyright (C) 2025, The Duplicati Team
+﻿// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -38,7 +38,7 @@ namespace Duplicati.Library.Main.Operation
             yield return string.Format("Duplicati: {0} ({1})", Library.Utility.Utility.getEntryAssembly().FullName, System.Reflection.Assembly.GetExecutingAssembly().FullName);
 
             yield return string.Format("Autoupdate urls: {0}", string.Join(";", AutoUpdater.AutoUpdateSettings.URLs));
-            yield return string.Format("Update folder: {0}", AutoUpdater.UpdaterManager.UPDATEDIR);
+            yield return string.Format("Default data folder: {0}", AutoUpdater.UpdaterManager.DATAFOLDER);
             yield return string.Format("Install folder: {0}", AutoUpdater.UpdaterManager.INSTALLATIONDIR);
             yield return string.Format("Version name: \"{0}\" ({1})", AutoUpdater.UpdaterManager.SelfVersion.Displayname, System.Reflection.Assembly.GetExecutingAssembly().GetName().Version);
             yield return string.Format("Current Version folder {0}", System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location));

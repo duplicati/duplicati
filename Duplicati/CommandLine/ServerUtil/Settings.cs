@@ -66,7 +66,7 @@ public sealed record Settings(
     );
     private static string GetDefaultStorageFolder(string filename)
     {
-        var folder = DatabaseLocator.GetDefaultStorageFolderWithDebugSupport(filename);
+        var folder = Library.AutoUpdater.DatabaseLocator.GetDefaultStorageFolderWithDebugSupport(filename);
         if (!Directory.Exists(folder))
             Directory.CreateDirectory(folder);
 

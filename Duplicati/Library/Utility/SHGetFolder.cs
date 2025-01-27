@@ -7,7 +7,7 @@ using System.Runtime.Versioning;
 
 namespace Duplicati.Library.Utility;
 /// <summary>
-/// Wrapper for SHGetKnownFolderPath to get the download folder on Windows
+/// Wrapper for SHGetKnownFolderPath to various system folders on Windows
 /// </summary>
 /// <remarks>List of GUIDs: https://learn.microsoft.com/en-us/windows/win32/shell/knownfolderid</remarks>
 [SupportedOSPlatform("windows")]

@@ -1,4 +1,4 @@
-// Copyright (C) 2025, The Duplicati Team
+﻿// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -52,7 +52,7 @@ namespace Duplicati.Library.AutoUpdater
         /// <summary>
         /// The folder where the machine id is placed
         /// </summary>
-        public static readonly string UPDATEDIR;
+        public static readonly string DATAFOLDER;
         /// <summary>
         /// The directory where the program is running from
         /// </summary>
@@ -92,12 +92,12 @@ namespace Duplicati.Library.AutoUpdater
         /// </summary>
         private const string PACKAGE_TYPE_FILE = "package_type_id.txt";
         /// <summary>
-        /// The installation ID filename stored in <see cref="UPDATEDIR"/>
+        /// The installation ID filename stored in <see cref="DATAFOLDER"/>
         /// </summary>
         private const string INSTALL_FILE = "installation.txt";
 
         /// <summary>
-        /// The machine ID filename stored in <see cref="UPDATEDIR"/>
+        /// The machine ID filename stored in <see cref="DATAFOLDER"/>
         /// </summary>
         private const string MACHINE_FILE = "machineid.txt";
 
@@ -122,60 +122,35 @@ namespace Duplicati.Library.AutoUpdater
         static UpdaterManager()
         {
             // Set the installation path
-            INSTALLATIONDIR = Path.GetDirectoryName(Duplicati.Library.Utility.Utility.getEntryAssembly().Location);
+            INSTALLATIONDIR = Path.GetDirectoryName(Utility.Utility.getEntryAssembly().Location);
 
             // Check for override
-            if (string.IsNullOrWhiteSpace(System.Environment.GetEnvironmentVariable(string.Format(UPDATEINSTALLDIR_ENVNAME_TEMPLATE, APPNAME))))
+            if (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(string.Format(UPDATEINSTALLDIR_ENVNAME_TEMPLATE, APPNAME))))
             {
-                // OS specific folders for probing
-                var candidates = new List<string>();
-                if (OperatingSystem.IsWindows())
-                {
-                    candidates.Add(System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), APPNAME));
-                    candidates.Add(System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), APPNAME));
-                }
-                else
-                {
-                    candidates.Add(System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), APPNAME));
-                }
-
-                if (OperatingSystem.IsMacOS())
-                    candidates.Add(System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Personal), "Library", "Application Support", APPNAME));
-
-                // Find the first writeable directory in the list
-                UPDATEDIR = candidates.FirstOrDefault(p => !string.IsNullOrWhiteSpace(p) && System.IO.Directory.Exists(p) && TestDirectoryIsWriteable(p));
-
-                // Try to create a writeable folder, if none is found
-                if (string.IsNullOrWhiteSpace(UPDATEDIR))
-                    UPDATEDIR = candidates.Where(p => !string.IsNullOrWhiteSpace(p) && !System.IO.Directory.Exists(p))
-                        .Select(p =>
-                        {
-                            try { System.IO.Directory.CreateDirectory(p); }
-                            catch { }
-                            return p;
-                        })
-                        .Where(p => System.IO.Directory.Exists(p) && TestDirectoryIsWriteable(p))
-                        .FirstOrDefault();
+                DATAFOLDER = DatabaseLocator.GetDefaultStorageFolderWithDebugSupport(INSTALL_FILE, APPNAME);
             }
             else
             {
                 // Use override, no checks
-                UPDATEDIR = Environment.ExpandEnvironmentVariables(System.Environment.GetEnvironmentVariable(string.Format(UPDATEINSTALLDIR_ENVNAME_TEMPLATE, APPNAME)));
+                DATAFOLDER = Environment.ExpandEnvironmentVariables(Environment.GetEnvironmentVariable(string.Format(UPDATEINSTALLDIR_ENVNAME_TEMPLATE, APPNAME)));
             }
 
-            if (!string.IsNullOrWhiteSpace(UPDATEDIR))
+            if (!string.IsNullOrWhiteSpace(DATAFOLDER))
             {
-                if (!System.IO.File.Exists(System.IO.Path.Combine(UPDATEDIR, INSTALL_FILE)))
+                if (!Directory.Exists(DATAFOLDER))
+                    Directory.CreateDirectory(DATAFOLDER);
+
+                if (!File.Exists(Path.Combine(DATAFOLDER, INSTALL_FILE)))
                 {
-                    // In case there was already a machine id file, copy it to the new location
-                    if (System.IO.File.Exists(System.IO.Path.Combine(UPDATEDIR, "updates", INSTALL_FILE)))
-                        System.IO.File.Copy(System.IO.Path.Combine(UPDATEDIR, "updates", INSTALL_FILE), System.IO.Path.Combine(UPDATEDIR, INSTALL_FILE), true);
+                    // In case there was already a machine id file from 2.0.8.1 or older, copy it to the new location
+                    if (File.Exists(Path.Combine(DATAFOLDER, "updates", INSTALL_FILE)))
+                        File.Copy(Path.Combine(DATAFOLDER, "updates", INSTALL_FILE), Path.Combine(DATAFOLDER, INSTALL_FILE), true);
                     else
-                        System.IO.File.WriteAllText(System.IO.Path.Combine(UPDATEDIR, INSTALL_FILE), AutoUpdateSettings.UpdateInstallFileText);
+                        File.WriteAllText(Path.Combine(DATAFOLDER, INSTALL_FILE), AutoUpdateSettings.UpdateInstallFileText);
                 }
 
-                if (!System.IO.File.Exists(System.IO.Path.Combine(UPDATEDIR, MACHINE_FILE)))
-                    System.IO.File.WriteAllText(System.IO.Path.Combine(UPDATEDIR, MACHINE_FILE), AutoUpdateSettings.UpdateMachineFileText(InstallID));
+                if (!File.Exists(Path.Combine(DATAFOLDER, MACHINE_FILE)))
+                    File.WriteAllText(Path.Combine(DATAFOLDER, MACHINE_FILE), AutoUpdateSettings.UpdateMachineFileText(InstallID));
 
             }
 
@@ -200,7 +175,7 @@ namespace Duplicati.Library.AutoUpdater
                     UpdateSeverity: null,
                     ChangeInfo: null,
                     Packages: null,
-                    Displayname: string.IsNullOrWhiteSpace(Duplicati.License.VersionNumbers.TAG) ? "Current" : Duplicati.License.VersionNumbers.TAG,
+                    Displayname: string.IsNullOrWhiteSpace(License.VersionNumbers.TAG) ? "Current" : License.VersionNumbers.TAG,
                     Version: System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString(),
                     ReleaseTime: new DateTime(0),
                     ReleaseType:
@@ -222,28 +197,6 @@ namespace Duplicati.Library.AutoUpdater
                 return new Version(0, 0);
         }
 
-        private static bool TestDirectoryIsWriteable(string path)
-        {
-            var p2 = System.IO.Path.Combine(path, "test-" + DateTime.UtcNow.ToString(DATETIME_FORMAT, System.Globalization.CultureInfo.InvariantCulture));
-            var probe = System.IO.Directory.Exists(path) ? p2 : path;
-
-            if (!System.IO.Directory.Exists(probe))
-            {
-                try
-                {
-                    System.IO.Directory.CreateDirectory(probe);
-                    if (probe != path)
-                        System.IO.Directory.Delete(probe);
-                    return true;
-                }
-                catch
-                {
-                }
-            }
-
-            return false;
-        }
-
         /// <summary>
         /// The unique machine installation ID
         /// </summary>
@@ -251,7 +204,7 @@ namespace Duplicati.Library.AutoUpdater
         {
             get
             {
-                try { return System.IO.File.ReadAllLines(System.IO.Path.Combine(UPDATEDIR, INSTALL_FILE)).FirstOrDefault(x => !string.IsNullOrWhiteSpace(x))?.Trim() ?? ""; }
+                try { return System.IO.File.ReadAllLines(Path.Combine(DATAFOLDER, INSTALL_FILE)).FirstOrDefault(x => !string.IsNullOrWhiteSpace(x))?.Trim() ?? ""; }
                 catch { }
 
                 return "";
@@ -266,7 +219,7 @@ namespace Duplicati.Library.AutoUpdater
             get
             {
                 string machinedId = null;
-                try { machinedId = System.IO.File.ReadAllLines(System.IO.Path.Combine(UPDATEDIR, MACHINE_FILE)).FirstOrDefault(x => !string.IsNullOrWhiteSpace(x))?.Trim() ?? ""; }
+                try { machinedId = System.IO.File.ReadAllLines(Path.Combine(DATAFOLDER, MACHINE_FILE)).FirstOrDefault(x => !string.IsNullOrWhiteSpace(x))?.Trim() ?? ""; }
                 catch { }
 
                 return string.IsNullOrWhiteSpace(machinedId)
@@ -278,7 +231,7 @@ namespace Duplicati.Library.AutoUpdater
         /// <summary>
         /// The machine name
         /// </summary>
-        public static string MachineName => System.Environment.MachineName;
+        public static string MachineName => Environment.MachineName;
 
         /// <summary>
         /// The package type ID
@@ -287,7 +240,7 @@ namespace Duplicati.Library.AutoUpdater
         {
             get
             {
-                try { return System.IO.File.ReadAllLines(System.IO.Path.Combine(INSTALLATIONDIR, PACKAGE_TYPE_FILE)).FirstOrDefault(x => !string.IsNullOrWhiteSpace(x))?.Trim() ?? ""; }
+                try { return File.ReadAllLines(Path.Combine(INSTALLATIONDIR, PACKAGE_TYPE_FILE)).FirstOrDefault(x => !string.IsNullOrWhiteSpace(x))?.Trim() ?? ""; }
                 catch { }
 
 #if DEBUG
@@ -343,7 +296,7 @@ namespace Duplicati.Library.AutoUpdater
                         timeoutToken.CancelAfter(TimeSpan.FromSeconds(SHORT_OPERATION_TIMEOUT_SECONDS));
                         HttpClientHelper.DefaultClient.DownloadFile(request, tmpfile, null, timeoutToken.Token).ConfigureAwait(false).GetAwaiter().GetResult();
 
-                        using (var fs = System.IO.File.OpenRead(tmpfile))
+                        using (var fs = File.OpenRead(tmpfile))
                         {
                             var verifyOps = SIGN_KEYS.Select(k => new JSONSignature.VerifyOperation(
                                 Algorithm: JSONSignature.RSA_SHA256,
@@ -396,8 +349,8 @@ namespace Duplicati.Library.AutoUpdater
 
         private static UpdateInfo ReadInstalledManifest(string folder)
         {
-            var manifest = System.IO.Path.Combine(folder, UPDATE_MANIFEST_FILENAME);
-            if (System.IO.File.Exists(manifest))
+            var manifest = Path.Combine(folder, UPDATE_MANIFEST_FILENAME);
+            if (File.Exists(manifest))
             {
                 try
                 {
@@ -406,7 +359,7 @@ namespace Duplicati.Library.AutoUpdater
                         PublicKey: k.ToXmlString(false)
                     ));
 
-                    using (var fs = System.IO.File.OpenRead(manifest))
+                    using (var fs = File.OpenRead(manifest))
                     {
                         if (!JSONSignature.VerifyAtLeastOne(fs, verifyOps))
                             throw new Exception("Installed manifest signature is invalid");
@@ -426,7 +379,7 @@ namespace Duplicati.Library.AutoUpdater
 
         public static bool DownloadUpdate(UpdateInfo version, PackageEntry package, string targetPath, Action<double> progress = null)
         {
-            if (UPDATEDIR == null)
+            if (DATAFOLDER == null)
                 return false;
 
             var updates = package.RemoteUrls.ToList();
@@ -455,7 +408,7 @@ namespace Duplicati.Library.AutoUpdater
                 {
                     try
                     {
-                        using (var tempfile = System.IO.File.Open(tempfilename, FileMode.Create, FileAccess.ReadWrite, FileShare.None))
+                        using (var tempfile = File.Open(tempfilename, FileMode.Create, FileAccess.ReadWrite, FileShare.None))
                         {
                             Action<long> cb = null;
                             if (progress != null)

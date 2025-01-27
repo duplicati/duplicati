@@ -163,7 +163,7 @@ namespace Duplicati.CommandLine
             options.TryGetValue("dbpath", out dbpath);
             if (string.IsNullOrEmpty(dbpath))
             {
-                dbpath = Library.Main.DatabaseLocator.GetDatabasePathForCLI(backend, new Duplicati.Library.Main.Options(options), false, true);
+                dbpath = Library.Main.CLIDatabaseLocator.GetDatabasePathForCLI(backend, new Library.Main.Options(options), false, true);
                 if (dbpath != null)
                     options["dbpath"] = dbpath;
             }
@@ -366,7 +366,7 @@ namespace Duplicati.CommandLine
                 options.TryGetValue("dbpath", out dbpath);
                 if (string.IsNullOrEmpty(dbpath))
                 {
-                    dbpath = Library.Main.DatabaseLocator.GetDatabasePathForCLI(backend, new Duplicati.Library.Main.Options(options), false, true);
+                    dbpath = Library.Main.CLIDatabaseLocator.GetDatabasePathForCLI(backend, new Duplicati.Library.Main.Options(options), false, true);
                     if (dbpath != null)
                         options["dbpath"] = dbpath;
                 }
@@ -820,7 +820,7 @@ namespace Duplicati.CommandLine
             if (string.IsNullOrEmpty(dbpath))
             {
                 if (args.Count > 0)
-                    dbpath = Library.Main.DatabaseLocator.GetDatabasePathForCLI(args[0], new Duplicati.Library.Main.Options(options), false, true);
+                    dbpath = Library.Main.CLIDatabaseLocator.GetDatabasePathForCLI(args[0], new Duplicati.Library.Main.Options(options), false, true);
 
                 if (dbpath == null)
                 {
@@ -866,7 +866,7 @@ namespace Duplicati.CommandLine
             options.TryGetValue("dbpath", out dbpath);
             if (string.IsNullOrEmpty(dbpath))
             {
-                dbpath = Library.Main.DatabaseLocator.GetDatabasePathForCLI(args[0], new Duplicati.Library.Main.Options(options), false, true);
+                dbpath = Library.Main.CLIDatabaseLocator.GetDatabasePathForCLI(args[0], new Duplicati.Library.Main.Options(options), false, true);
                 if (dbpath != null)
                     options["dbpath"] = dbpath;
             }

@@ -292,7 +292,7 @@ public class BackupGet : IEndpointV1
     }
 
     private static Dto.IsDbUsedElsewhereDto ExecuteGetIsdbUsedElsewhere(IBackup bk)
-        => new Dto.IsDbUsedElsewhereDto(Library.Main.DatabaseLocator.IsDatabasePathInUse(bk.DBPath));
+        => new Dto.IsDbUsedElsewhereDto(Library.Main.CLIDatabaseLocator.IsDatabasePathInUse(bk.DBPath));
 
     private static Dto.IsBackupActiveDto ExecuteGetIsActive(IWorkerThreadsManager workerThreadsManager, IBackup bk)
     {

@@ -700,7 +700,7 @@ namespace Duplicati.Library.Main
             }
 
             if (string.IsNullOrEmpty(m_options.Dbpath))
-                m_options.Dbpath = DatabaseLocator.GetDatabasePathForCLI(m_backend, m_options);
+                m_options.Dbpath = CLIDatabaseLocator.GetDatabasePathForCLI(m_backend, m_options);
 
             ValidateOptions();
         }

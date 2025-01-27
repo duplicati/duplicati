@@ -74,7 +74,7 @@ public static class PreloadSettingsLoader
         // The path for preload settings with the install directory
         Path.Combine(
             Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location) ?? "",
-            "preload.json"
+            FILE_NAME
         ),
 
         // The path for preload settings specified with an environment variable
@@ -109,11 +109,7 @@ public static class PreloadSettingsLoader
 
         // User-context path for preload settings,
         // the same default path as where other data is stored
-        Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            FOLDER_NAME,
-            FILE_NAME
-        )
+        Path.Combine(UpdaterManager.DATAFOLDER, FILE_NAME),
     }
     .Concat(PortablePreloadPaths)
     .Where(x => !string.IsNullOrEmpty(x))

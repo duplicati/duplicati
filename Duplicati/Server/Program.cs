@@ -781,9 +781,12 @@ namespace Duplicati.Server
                 }
                 else
                 {
-                    //Normal release mode uses the systems "(Local) Application Data" folder
-                    // %LOCALAPPDATA% on Windows, ~/.config on Linux, ~/Library/Application\ Support on MacOS
-                    return DatabaseLocator.GetDefaultStorageFolderDirect(SERVER_DATABASE_FILENAME, Library.AutoUpdater.AutoUpdateSettings.AppName);
+                    //Normal release mode uses 
+                    // %LOCALAPPDATA% on Windows, 
+                    // ~/.config on Linux, 
+                    // ~/Library/Application\ Support on MacOS
+                    // with additional rules for special cases and probing for older locations
+                    return DatabaseLocator.GetDefaultStorageFolderDirect(SERVER_DATABASE_FILENAME, AutoUpdateSettings.AppName);
                 }
             }
             else

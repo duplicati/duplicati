@@ -116,7 +116,7 @@ namespace Duplicati.Library.AutoUpdater
             Console.WriteLine("{0} - Choose different channel than the default {1}, valid settings: {2}", string.Format(AutoUpdateSettings.UPDATECHANNEL_ENVNAME_TEMPLATE, AutoUpdateSettings.AppName), AutoUpdater.AutoUpdateSettings.DefaultUpdateChannel, string.Join(",", Enum.GetNames(typeof(ReleaseType)).Where(x => x != ReleaseType.Unknown.ToString())));
             Console.WriteLine();
             Console.WriteLine("Updates are downloaded from: {0}", string.Join(";", AutoUpdateSettings.URLs));
-            Console.WriteLine("Machine settings are installed in: {0}", UpdaterManager.UPDATEDIR);
+            Console.WriteLine("Machine settings are installed in: {0}", UpdaterManager.DATAFOLDER);
             Console.WriteLine("This version is \"{0}\" ({1}) and is installed in: {2}", UpdaterManager.SelfVersion.Displayname, UpdaterManager.SelfVersion.Version, UpdaterManager.INSTALLATIONDIR);
             Console.WriteLine();
         }
