@@ -126,7 +126,7 @@ namespace Duplicati.Library.Main
                 };
 
                 // If %LOCALAPPDATA% is inside the Windows folder, prefer a LocalService folder instead
-                var windowsFolder = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
+                var windowsFolder = Library.Common.IO.Util.AppendDirSeparator(Environment.GetFolderPath(Environment.SpecialFolder.Windows));
                 if (newlocation.StartsWith(windowsFolder, StringComparison.OrdinalIgnoreCase))
                 {
                     var userProfilesFolder = Library.Utility.SHGetFolder.UserProfilesFolder;
