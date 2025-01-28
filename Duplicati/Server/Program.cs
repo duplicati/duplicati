@@ -296,6 +296,7 @@ namespace Duplicati.Server
 
                 DataConnection.ReWriteAllFieldsIfEncryptionChanged();
                 DataConnection.SetPreloadSettingsIfChanged(preloadDbSettings);
+                EmitWarningsForConfigurationIssues(commandlineOptions);
 
                 Library.Logging.Log.WriteInformationMessage(LOGTAG, "ServerStarted", Strings.Program.ServerStarted(DuplicatiWebserver.Port));
                 logMessageToConsole(Strings.Program.ServerStarted(DuplicatiWebserver.Port));
@@ -573,7 +574,37 @@ namespace Duplicati.Server
                     DataConnection.ApplicationSettings.UpdatedVersion = null;
                 }
             }
+        }
 
+        private static void EmitWarningsForConfigurationIssues(Dictionary<string, string> commandlineOptions)
+        {
+            if (DataConnection.ApplicationSettings.LastConfigIssueCheckVersion != UpdaterManager.SelfVersion.Version)
+            {
+                var updateNotifications = DataConnection.GetNotifications().Where(x => x.Action.StartsWith("config:issue:")).ToList();
+                foreach (var n in updateNotifications)
+                    DataConnection.DismissNotification(n.ID);
+
+                if (!DataConnection.IsEncryptingFields && !Library.Utility.Utility.ParseBoolOption(commandlineOptions, DISABLE_DB_ENCRYPTION_OPTION))
+                {
+                    DataConnection.RegisterNotification(
+                        Serialization.NotificationType.Warning,
+                        "Unencrypted database",
+                        "The database is not encrypted. This is a security risk and should be fixed as soon as possible.",
+                        null,
+                        null,
+                        "config:issue:unencrypted-database",
+                        null,
+                        "UnencryptedDatabase",
+                        null,
+                        (self, all) =>
+                        {
+                            return all.FirstOrDefault(x => x.Action == "config:issue:unencrypted-database") ?? self;
+                        }
+                    );
+                }
+
+                DataConnection.ApplicationSettings.LastConfigIssueCheckVersion = UpdaterManager.SelfVersion.Version;
+            }
         }
 
         private static void CreateApplicationInstance(bool writeToConsoleOnExceptionw)
