@@ -46,6 +46,11 @@ namespace RemoteSynchronization
         private const bool DEFAULT_CONFIRM = false;
 
         /// <summary>
+        /// The log tag for this tool.
+        /// </summary>
+        private static readonly string LOGTAG = Duplicati.Library.Logging.Log.LogTagFromType<Program>();
+
+        /// <summary>
         /// Main entry point for the tool.
         /// </summary>
         /// <param name="args">The commandline arguments</param>
@@ -164,7 +169,7 @@ destination will be verified before being overwritten (if they seemingly match).
                     var response = Console.ReadLine();
                     if (!response?.Equals("y", StringComparison.CurrentCultureIgnoreCase) ?? true)
                     {
-                        Console.WriteLine("Aborted");
+                        Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "rsync", "Aborted");
                         return -1;
                     }
                 }
@@ -173,7 +178,7 @@ destination will be verified before being overwritten (if they seemingly match).
 
                 if (not_verified.Any())
                 {
-                    Console.WriteLine($"{not_verified.Count()} files failed verification. They will be deleted and copied again.");
+                    Duplicati.Library.Logging.Log.WriteWarningMessage(LOGTAG, "rsync", null, "{0} files failed verification. They will be deleted and copied again.", not_verified.Count());
                     to_delete = to_delete.Concat(not_verified);
                     to_copy = to_copy.Concat(not_verified);
                 }
@@ -192,7 +197,7 @@ destination will be verified before being overwritten (if they seemingly match).
                 var response = Console.ReadLine();
                 if (!response?.Equals("y", StringComparison.CurrentCultureIgnoreCase) ?? true)
                 {
-                    Console.WriteLine("Aborted");
+                    Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "rsync", "Aborted");
                     return -1;
                 }
             }
@@ -201,29 +206,30 @@ destination will be verified before being overwritten (if they seemingly match).
             if (retention)
             {
                 var renamed = await RenameAsync(b2s, to_delete, dry_run);
-                Console.WriteLine($"Renamed {renamed} files in {dst}");
+                Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "rsync", "Renamed {0} files in {1}", renamed, b2s.DisplayName);
             }
             else
             {
                 var deleted = await DeleteAsync(b2s, to_delete, dry_run);
-                Console.WriteLine($"Deleted {deleted} files from {dst}");
+                Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "rsync", "Deleted {0} files from {1}", deleted, b2s.DisplayName);
             }
 
             // Copy the files
             var (copied, copy_errors) = await CopyAsync(b1s, b2s, to_copy, dry_run, verify);
-            Console.WriteLine($"Copied {copied} files from {src} to {dst}");
+            Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "rsync", "Copied {0} files from {1} to {2}", copied, b1s, b2s);
 
             // If there are still errors, retry a few times
             if (copy_errors.Any())
             {
+                Duplicati.Library.Logging.Log.WriteWarningMessage(LOGTAG, "rsync", null, "Could not copy {0} files.", copy_errors.Count());
                 if (retries > 0)
                 {
-                    Console.WriteLine($"Retrying {retries} more times to copy the {copy_errors.Count()} files that failed");
+                    Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "rsync", "Retrying {0} more times to copy the {1} files that failed", retries, copy_errors.Count());
                     for (int i = 0; i < retries; i++)
                     {
                         Thread.Sleep(5000); // Wait 5 seconds before retrying
                         (copied, copy_errors) = await CopyAsync(b1s, b2s, copy_errors, dry_run, verify);
-                        Console.WriteLine($"Copied {copied} files from {src} to {dst}");
+                        Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "rsync", "Copied {0} files from {1} to {2}", copied, b1s, b2s);
                         if (!copy_errors.Any())
                             break;
                     }
@@ -231,12 +237,12 @@ destination will be verified before being overwritten (if they seemingly match).
 
                 if (copy_errors.Any())
                 {
-                    Console.WriteLine($"Could not copy {copy_errors.Count()} files: {string.Join(", ", copy_errors)}");
+                    Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "rsync", null, "Could not copy {0} files. Not retrying any more.", copy_errors.Count());
                     return copy_errors.Count();
                 }
             }
 
-            Console.WriteLine($"Remote synchronization completed successfully");
+            Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "rsync", "Remote synchronization completed successfully");
 
             return 0;
         }
@@ -244,7 +250,6 @@ destination will be verified before being overwritten (if they seemingly match).
         // TODO have concurrency parameters: uploaders, downloaders
         // TODO low memory mode, where things aren't kept in memory. Maybe utilize SQLite?
         // TODO Progress reporting
-        // TODO Logging
 
         // check database consistency. I.e. have both databases, check that the block, volume, files, etc match up.
         // introduce these checks as a post processing step? Especially the database consistency check, as that is often recreated from the index files.
@@ -273,7 +278,7 @@ destination will be verified before being overwritten (if they seemingly match).
                     await b_src.GetAsync(f.Name, s_src, CancellationToken.None);
                     if (dry_run)
                     {
-                        Console.WriteLine($"Would write {s_src.Length} bytes of {f.Name} to {b_dst.DisplayName}");
+                        Duplicati.Library.Logging.Log.WriteDryrunMessage(LOGTAG, "rsync", "Would write {0} bytes of {1} to {2}", s_src.Length, f.Name, b_dst.DisplayName);
                     }
                     else
                     {
@@ -281,21 +286,35 @@ destination will be verified before being overwritten (if they seemingly match).
                         if (verify)
                         {
                             await b_dst.GetAsync(f.Name, s_dst, CancellationToken.None);
-                            if (s_src.Length != s_dst.Length || !s_src.ToArray().SequenceEqual(s_dst.ToArray()))
+
+                            string? err_string = null;
+                            if (s_src.Length != s_dst.Length)
                             {
-                                Console.WriteLine($"Error verifying {f.Name}: The file was not copied correctly");
-                                errors.Add(f);
+                                err_string = $"The sizes of the files do not match: {s_src.Length} != {s_dst.Length}.";
                             }
-                            s_dst.SetLength(0);
+
+                            if (!s_src.ToArray().SequenceEqual(s_dst.ToArray()))
+                            {
+                                err_string = (err_string is null ? "" : err_string + " ") + "The contents of the files do not match.";
+                            }
+
+                            if (err_string is not null)
+                            {
+                                throw new Exception(err_string);
+                            }
                         }
                     }
-                    s_src.SetLength(0);
                     successful_copies++;
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine($"Error copying {f.Name}: {e.Message}");
+                    Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "rsync", e, "Error copying {0}: {1}", f.Name, e.Message);
                     errors.Add(f);
+                }
+                finally
+                {
+                    s_src.SetLength(0);
+                    s_dst.SetLength(0);
                 }
             }
             return (successful_copies, errors);
@@ -317,7 +336,7 @@ destination will be verified before being overwritten (if they seemingly match).
                 {
                     if (dry_run)
                     {
-                        Console.WriteLine($"Would delete {f.Name} from {b.DisplayName}");
+                        Duplicati.Library.Logging.Log.WriteDryrunMessage(LOGTAG, "rsync", "Would delete {0} from {1}", f.Name, b.DisplayName);
                     }
                     else
                     {
@@ -327,7 +346,7 @@ destination will be verified before being overwritten (if they seemingly match).
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine($"Error deleting {f.Name}: {e.Message}");
+                    Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "rsync", e, "Error deleting {0}: {1}", f.Name, e.Message);
                 }
             }
             return successful_deletes;
@@ -441,19 +460,23 @@ destination will be verified before being overwritten (if they seemingly match).
                     await b.GetAsync(f.Name, downloaded, CancellationToken.None);
                     if (dry_run)
                     {
-                        Console.WriteLine($"Would rename {f.Name} to {f.Name}.{suffix} by deleting and re-uploading {downloaded.Length} bytes to {b.DisplayName}");
+                        Duplicati.Library.Logging.Log.WriteDryrunMessage(LOGTAG, "rsync", "Would rename {0} to {0}.{1} by deleting and re-uploading {2} bytes to {3}", f.Name, suffix, downloaded.Length, b.DisplayName);
                     }
                     else
                     {
                         await b.PutAsync($"{f.Name}.{suffix}", downloaded, CancellationToken.None);
                         await b.DeleteAsync(f.Name, CancellationToken.None);
                     }
-                    downloaded.SetLength(0);
                     successful_renames++;
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine($"Error during renaming of {f.Name}: {e.Message}");
+                    Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "rsync", e, "Error renaming {0}: {1}", f.Name, e.Message);
+                }
+                finally
+                {
+                    // Reset the stream
+                    downloaded.SetLength(0);
                 }
             }
             return successful_renames;
@@ -487,15 +510,17 @@ destination will be verified before being overwritten (if they seemingly match).
                     {
                         errors.Add(f);
                     }
-
-                    // Reset the streams
-                    s_src.SetLength(0);
-                    s_dst.SetLength(0);
                 }
                 catch (Exception e)
                 {
                     errors.Add(f);
-                    Console.WriteLine($"Error during verification of {f.Name}: {e.Message}");
+                    Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "rsync", e, "Error during verification of {0}: {1}", f.Name, e.Message);
+                }
+                finally
+                {
+                    // Reset the streams
+                    s_src.SetLength(0);
+                    s_dst.SetLength(0);
                 }
             }
 
