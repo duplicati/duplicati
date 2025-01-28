@@ -19,7 +19,6 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
-using CoCoL;
 using Duplicati.Library.Main.Operation.Common;
 using Duplicati.Library.Main.Volumes;
 using System;
@@ -38,114 +37,105 @@ namespace Duplicati.Library.Main.Operation.Backup
         /// </summary>
         private static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(UploadSyntheticFilelist));
 
-        public static Task Run(Channels channels, BackupDatabase database, Options options, BackupResults result, ITaskReader taskreader, string lastTempFilelist, long lastTempFilesetId)
+        public static async Task Run(BackupDatabase database, Options options, BackupResults result, ITaskReader taskreader, IBackendManager backendManager, string lastTempFilelist, long lastTempFilesetId)
         {
-            return AutomationExtensions.RunTask(new
+            // Check if we should upload a synthetic filelist
+            if (options.DisableSyntheticFilelist || string.IsNullOrWhiteSpace(lastTempFilelist) || lastTempFilesetId <= 0)
+                return;
+
+            // Check that we still need to process this after the cleanup has performed its duties
+            var syntbase = await database.GetRemoteVolumeFromFilesetIDAsync(lastTempFilesetId);
+
+            // If we do not have a valid entry, warn and quit
+            if (syntbase.Name == null)
             {
-                UploadChannel = channels.BackendRequest.AsWrite()
-            },
+                // TODO: If the repair succeeds, this could give a false warning?
+                Logging.Log.WriteWarningMessage(LOGTAG, "MissingTemporaryFilelist", null, "Expected there to be a temporary fileset for synthetic filelist ({0}, {1}), but none was found?", lastTempFilesetId, lastTempFilelist);
+                return;
+            }
 
-            async self =>
+            // Files is missing or repaired
+            if (syntbase.State != RemoteVolumeState.Uploading && syntbase.State != RemoteVolumeState.Temporary)
             {
-                // Check if we should upload a synthetic filelist
-                if (options.DisableSyntheticFilelist || string.IsNullOrWhiteSpace(lastTempFilelist) || lastTempFilesetId <= 0)
-                    return;
+                Logging.Log.WriteInformationMessage(LOGTAG, "SkippingSyntheticListUpload", "Skipping synthetic upload because temporary fileset appers to be complete: ({0}, {1}, {2})", lastTempFilesetId, lastTempFilelist, syntbase.State);
+                return;
+            }
 
-                // Check that we still need to process this after the cleanup has performed its duties
-                var syntbase = await database.GetRemoteVolumeFromFilesetIDAsync(lastTempFilesetId);
+            // Ready to build and upload the synthetic list
+            await database.CommitTransactionAsync("PreSyntheticFilelist");
+            var incompleteFilesets = (await database.GetIncompleteFilesetsAsync()).OrderBy(x => x.Value).ToList();
 
-                // If we do not have a valid entry, warn and quit
-                if (syntbase.Name == null)
+            if (!incompleteFilesets.Any())
+            {
+                return;
+            }
+
+            if (!await taskreader.ProgressRendevouz().ConfigureAwait(false))
+                return;
+
+            result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_PreviousBackupFinalize);
+            Logging.Log.WriteInformationMessage(LOGTAG, "PreviousBackupFilelistUpload", "Uploading filelist from previous interrupted backup");
+
+            var incompleteSet = incompleteFilesets.Last();
+            var badIds = from n in incompleteFilesets select n.Key;
+
+            var prevs = (from n in await database.GetFilesetTimesAsync()
+                         where
+                         n.Key < incompleteSet.Key
+                         &&
+                         !badIds.Contains(n.Key)
+                         orderby n.Key
+                         select n.Key).ToArray();
+
+            var prevId = prevs.Length == 0 ? -1 : prevs.Last();
+
+            FilesetVolumeWriter fsw = null;
+            try
+            {
+                var s = 1;
+                var fileTime = incompleteSet.Value + TimeSpan.FromSeconds(s);
+
+                // Probe for an unused filename
+                while (s < 60)
                 {
-                    // TODO: If the repair succeeds, this could give a false warning?
-                    Logging.Log.WriteWarningMessage(LOGTAG, "MissingTemporaryFilelist", null, "Expected there to be a temporary fileset for synthetic filelist ({0}, {1}), but none was found?", lastTempFilesetId, lastTempFilelist);
-                    return;
+                    var id = await database.GetRemoteVolumeIDAsync(VolumeBase.GenerateFilename(RemoteVolumeType.Files, options, null, fileTime));
+                    if (id < 0)
+                        break;
+
+                    fileTime = incompleteSet.Value + TimeSpan.FromSeconds(++s);
                 }
 
-                // Files is missing or repaired
-                if (syntbase.State != RemoteVolumeState.Uploading && syntbase.State != RemoteVolumeState.Temporary)
-                {
-                    Logging.Log.WriteInformationMessage(LOGTAG, "SkippingSyntheticListUpload", "Skipping synthetic upload because temporary fileset appers to be complete: ({0}, {1}, {2})", lastTempFilesetId, lastTempFilelist, syntbase.State);
-                    return;
-                }
+                fsw = new FilesetVolumeWriter(options, fileTime);
+                fsw.VolumeID = await database.RegisterRemoteVolumeAsync(fsw.RemoteFilename, RemoteVolumeType.Files, RemoteVolumeState.Temporary);
 
-                // Ready to build and upload the synthetic list
-                await database.CommitTransactionAsync("PreSyntheticFilelist");
-                var incompleteFilesets = (await database.GetIncompleteFilesetsAsync()).OrderBy(x => x.Value).ToList();
+                if (!string.IsNullOrEmpty(options.ControlFiles))
+                    foreach (var p in options.ControlFiles.Split(new char[] { System.IO.Path.PathSeparator }, StringSplitOptions.RemoveEmptyEntries))
+                        fsw.AddControlFile(p, options.GetCompressionHintFromFilename(p));
 
-                if (!incompleteFilesets.Any())
-                {
-                    return;
-                }
+                // We declare this to be a partial backup since the synthetic filelist is only created
+                // when a backup is interrupted.
+                fsw.CreateFilesetFile(false);
+                var newFilesetID = await database.CreateFilesetAsync(fsw.VolumeID, fileTime);
+                await database.LinkFilesetToVolumeAsync(newFilesetID, fsw.VolumeID);
+                await database.AppendFilesFromPreviousSetAsync(null, newFilesetID, prevId, fileTime);
+
+                await database.WriteFilesetAsync(fsw, newFilesetID);
+                fsw.Close();
 
                 if (!await taskreader.ProgressRendevouz().ConfigureAwait(false))
                     return;
 
-                result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_PreviousBackupFinalize);
-                Logging.Log.WriteInformationMessage(LOGTAG, "PreviousBackupFilelistUpload", "Uploading filelist from previous interrupted backup");
+                await database.UpdateRemoteVolumeAsync(fsw.RemoteFilename, RemoteVolumeState.Uploading, -1, null);
+                await database.CommitTransactionAsync("CommitUpdateFilelistVolume");
 
-                var incompleteSet = incompleteFilesets.Last();
-                var badIds = from n in incompleteFilesets select n.Key;
-
-                var prevs = (from n in await database.GetFilesetTimesAsync()
-                             where
-                             n.Key < incompleteSet.Key
-                             &&
-                             !badIds.Contains(n.Key)
-                             orderby n.Key
-                             select n.Key).ToArray();
-
-                var prevId = prevs.Length == 0 ? -1 : prevs.Last();
-
-                FilesetVolumeWriter fsw = null;
-                try
-                {
-                    var s = 1;
-                    var fileTime = incompleteSet.Value + TimeSpan.FromSeconds(s);
-
-                    // Probe for an unused filename
-                    while (s < 60)
-                    {
-                        var id = await database.GetRemoteVolumeIDAsync(VolumeBase.GenerateFilename(RemoteVolumeType.Files, options, null, fileTime));
-                        if (id < 0)
-                            break;
-
-                        fileTime = incompleteSet.Value + TimeSpan.FromSeconds(++s);
-                    }
-
-                    fsw = new FilesetVolumeWriter(options, fileTime);
-                    fsw.VolumeID = await database.RegisterRemoteVolumeAsync(fsw.RemoteFilename, RemoteVolumeType.Files, RemoteVolumeState.Temporary);
-
-                    if (!string.IsNullOrEmpty(options.ControlFiles))
-                        foreach (var p in options.ControlFiles.Split(new char[] { System.IO.Path.PathSeparator }, StringSplitOptions.RemoveEmptyEntries))
-                            fsw.AddControlFile(p, options.GetCompressionHintFromFilename(p));
-
-                    // We declare this to be a partial backup since the synthetic filelist is only created
-                    // when a backup is interrupted.
-                    fsw.CreateFilesetFile(false);
-                    var newFilesetID = await database.CreateFilesetAsync(fsw.VolumeID, fileTime);
-                    await database.LinkFilesetToVolumeAsync(newFilesetID, fsw.VolumeID);
-                    await database.AppendFilesFromPreviousSetAsync(null, newFilesetID, prevId, fileTime);
-
-                    await database.WriteFilesetAsync(fsw, newFilesetID);
-                    fsw.Close();
-
-                    if (!await taskreader.ProgressRendevouz().ConfigureAwait(false))
-                        return;
-
-                    await database.UpdateRemoteVolumeAsync(fsw.RemoteFilename, RemoteVolumeState.Uploading, -1, null);
-                    await database.CommitTransactionAsync("CommitUpdateFilelistVolume");
-
-                    await self.UploadChannel.WriteAsync(new FilesetUploadRequest(fsw));
-                }
-                catch
-                {
-                    await database.RollbackTransactionAsync();
-                    fsw?.Dispose();
-                    throw;
-                }
+                await backendManager.PutAsync(fsw, null, null, false, taskreader.ProgressToken);
             }
-            );
+            catch
+            {
+                await database.RollbackTransactionAsync();
+                fsw?.Dispose();
+                throw;
+            }
         }
     }
 }

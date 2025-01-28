@@ -21,71 +21,63 @@
 
 using System;
 using System.Threading.Tasks;
-using CoCoL;
 using Duplicati.Library.Main.Volumes;
 
-namespace Duplicati.Library.Main.Operation.Backup
+namespace Duplicati.Library.Main.Operation.Backup;
+
+internal static class UploadRealFilelist
 {
-    internal static class UploadRealFilelist
+    /// <summary>
+    /// The tag used for log messages
+    /// </summary>
+    private static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(UploadRealFilelist));
+
+    public static async Task Run(BackupResults result, BackupDatabase db, IBackendManager backendManager, Options options, FilesetVolumeWriter filesetvolume, long filesetid, Common.ITaskReader taskreader)
     {
-        /// <summary>
-        /// The tag used for log messages
-        /// </summary>
-        private static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(UploadRealFilelist));
+        // We ignore the stop signal, but not the pause and terminate
+        await taskreader.ProgressRendevouz().ConfigureAwait(false);
 
-        public static Task Run(Channels channels, BackupResults result, BackupDatabase db, Options options, FilesetVolumeWriter filesetvolume, long filesetid, Common.ITaskReader taskreader)
+        // Update the reported source and backend changes
+        using (new Logging.Timer(LOGTAG, "UpdateChangeStatistics", "UpdateChangeStatistics"))
+            await db.UpdateChangeStatisticsAsync(result);
+
+        var changeCount =
+            result.AddedFiles + result.ModifiedFiles + result.DeletedFiles +
+            result.AddedFolders + result.ModifiedFolders + result.DeletedFolders +
+            result.AddedSymlinks + result.ModifiedSymlinks + result.DeletedSymlinks;
+
+        //Changes in the filelist triggers a filelist upload
+        if (options.UploadUnchangedBackups || changeCount > 0)
         {
-            return AutomationExtensions.RunTask(new
+            using (new Logging.Timer(LOGTAG, "UploadNewFileset", "Uploading a new fileset"))
             {
-                Output = channels.BackendRequest.AsWrite()
-            },
+                if (!string.IsNullOrEmpty(options.ControlFiles))
+                    foreach (var p in options.ControlFiles.Split(new char[] { System.IO.Path.PathSeparator }, StringSplitOptions.RemoveEmptyEntries))
+                        filesetvolume.AddControlFile(p, options.GetCompressionHintFromFilename(p));
 
-            async self =>
-            {
                 // We ignore the stop signal, but not the pause and terminate
                 await taskreader.ProgressRendevouz().ConfigureAwait(false);
 
-                // Update the reported source and backend changes
-                using (new Logging.Timer(LOGTAG, "UpdateChangeStatistics", "UpdateChangeStatistics"))
-                    await db.UpdateChangeStatisticsAsync(result);
+                await db.WriteFilesetAsync(filesetvolume, filesetid).ConfigureAwait(false);
+                filesetvolume.Close();
 
-                var changeCount =
-                    result.AddedFiles + result.ModifiedFiles + result.DeletedFiles +
-                    result.AddedFolders + result.ModifiedFolders + result.DeletedFolders +
-                    result.AddedSymlinks + result.ModifiedSymlinks + result.DeletedSymlinks;
+                // We ignore the stop signal, but not the pause and terminate
+                await taskreader.ProgressRendevouz().ConfigureAwait(false);
 
-                //Changes in the filelist triggers a filelist upload
-                if (options.UploadUnchangedBackups || changeCount > 0)
-                {
-                    using (new Logging.Timer(LOGTAG, "UploadNewFileset", "Uploading a new fileset"))
-                    {
-                        if (!string.IsNullOrEmpty(options.ControlFiles))
-                            foreach (var p in options.ControlFiles.Split(new char[] { System.IO.Path.PathSeparator }, StringSplitOptions.RemoveEmptyEntries))
-                                filesetvolume.AddControlFile(p, options.GetCompressionHintFromFilename(p));
+                await db.UpdateRemoteVolumeAsync(filesetvolume.RemoteFilename, RemoteVolumeState.Uploading, -1, null).ConfigureAwait(false);
+                await db.CommitTransactionAsync("CommitUpdateRemoteVolume").ConfigureAwait(false);
 
-                        // We ignore the stop signal, but not the pause and terminate
-                        await taskreader.ProgressRendevouz().ConfigureAwait(false);
-
-                        await db.WriteFilesetAsync(filesetvolume, filesetid);
-                        filesetvolume.Close();
-
-                        // We ignore the stop signal, but not the pause and terminate
-                        await taskreader.ProgressRendevouz().ConfigureAwait(false);
-
-                        await db.UpdateRemoteVolumeAsync(filesetvolume.RemoteFilename, RemoteVolumeState.Uploading, -1, null);
-                        await db.CommitTransactionAsync("CommitUpdateRemoteVolume");
-                        await self.Output.WriteAsync(new FilesetUploadRequest(filesetvolume));
-                    }
-                }
-                else
-                {
-                    Logging.Log.WriteVerboseMessage(LOGTAG, "RemovingLeftoverTempFile", "removing temp files, as no data needs to be uploaded");
-                    await db.RemoveRemoteVolumeAsync(filesetvolume.RemoteFilename);
-                }
-
-                await db.CommitTransactionAsync("CommitUpdateRemoteVolume");
-            });
+                await backendManager.PutAsync(filesetvolume, null, null, false, taskreader.ProgressToken).ConfigureAwait(false);
+            }
         }
+        else
+        {
+            Logging.Log.WriteVerboseMessage(LOGTAG, "RemovingLeftoverTempFile", "removing temp files, as no data needs to be uploaded");
+            await db.RemoveRemoteVolumeAsync(filesetvolume.RemoteFilename);
+        }
+
+        await db.CommitTransactionAsync("CommitUpdateRemoteVolume");
     }
 }
+
 

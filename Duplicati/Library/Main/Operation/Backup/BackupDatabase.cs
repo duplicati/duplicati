@@ -260,6 +260,7 @@ namespace Duplicati.Library.Main.Operation.Backup
             return RunOnMain(() => m_database.UpdateFullBackupStateInFileset(filesetid, true, GetTransaction()));
         }
 
+        // TODO: Make IAsyncEnumerable or get rid of the SingleRunner setup
         public Task<string[]> GetMissingIndexFilesAsync()
         {
             return RunOnMain(() => m_database.GetMissingIndexFiles(GetTransaction()).ToArray());

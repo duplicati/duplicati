@@ -22,6 +22,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
 
@@ -34,13 +35,11 @@ namespace Duplicati.Library.Main.Operation
         /// </summary>
         private static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(ListChangesHandler));
 
-        private readonly string m_backendurl;
         private readonly Options m_options;
         private readonly ListChangesResults m_result;
 
-        public ListChangesHandler(string backend, Options options, ListChangesResults result)
+        public ListChangesHandler(Options options, ListChangesResults result)
         {
-            m_backendurl = backend;
             m_options = options;
             m_result = result;
         }
@@ -65,8 +64,9 @@ namespace Duplicati.Library.Main.Operation
             return res;
         }
 
-        public void Run(string baseVersion, string compareVersion, IEnumerable<string> filterstrings = null, Library.Utility.IFilter compositefilter = null, Action<IListChangesResults, IEnumerable<Tuple<Library.Interface.ListChangesChangeType, Library.Interface.ListChangesElementType, string>>> callback = null)
+        public void Run(string baseVersion, string compareVersion, IBackendManager backendManager, IEnumerable<string> filterstrings, IFilter compositefilter, Action<IListChangesResults, IEnumerable<Tuple<ListChangesChangeType, ListChangesElementType, string>>> callback)
         {
+            var cancellationToken = CancellationToken.None;
             var filter = Library.Utility.JoinedFilterExpression.Join(new Library.Utility.FilterExpression(filterstrings), compositefilter);
 
             var useLocalDb = !m_options.NoLocalDb && System.IO.File.Exists(m_options.Dbpath);
@@ -81,7 +81,6 @@ namespace Duplicati.Library.Main.Operation
 
             using (var tmpdb = useLocalDb ? null : new Library.Utility.TempFile())
             using (var db = new Database.LocalListChangesDatabase(useLocalDb ? m_options.Dbpath : (string)tmpdb))
-            using (var backend = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, db))
             using (var storageKeeper = db.CreateStorageHelper())
             {
                 m_result.SetDatabase(db);
@@ -107,7 +106,7 @@ namespace Duplicati.Library.Main.Operation
                 {
                     Logging.Log.WriteInformationMessage(LOGTAG, "NoLocalDatabase", "No local database, accessing remote store");
 
-                    var parsedlist = (from n in backend.List()
+                    var parsedlist = (from n in backendManager.ListAsync(cancellationToken).Await()
                                       let p = Volumes.VolumeBase.ParseFilename(n)
                                       where p != null && p.FileType == RemoteVolumeType.Files
                                       orderby p.Time descending
@@ -124,37 +123,37 @@ namespace Duplicati.Library.Main.Operation
                     numberedList.Remove(bt);
                     SelectTime(compareVersion, numberedList, out compareVersionIndex, out compareVersionTime, out compareFile);
 
-                    Func<FilelistEntryType, Library.Interface.ListChangesElementType> conv = (x) =>
+                    Func<FilelistEntryType, ListChangesElementType> conv = (x) =>
                     {
                         switch (x)
                         {
                             case FilelistEntryType.File:
-                                return Library.Interface.ListChangesElementType.File;
+                                return ListChangesElementType.File;
                             case FilelistEntryType.Folder:
-                                return Library.Interface.ListChangesElementType.Folder;
+                                return ListChangesElementType.Folder;
                             case FilelistEntryType.Symlink:
-                                return Library.Interface.ListChangesElementType.Symlink;
+                                return ListChangesElementType.Symlink;
                             default:
-                                return (Library.Interface.ListChangesElementType)(-1);
+                                return (ListChangesElementType)(-1);
                         }
                     };
 
                     if (!m_result.TaskControl.ProgressRendevouz().Await())
                         return;
 
-                    using (var tmpfile = backend.Get(baseFile.File.Name, baseFile.File.Size, null))
+                    using (var tmpfile = backendManager.GetAsync(baseFile.File.Name, null, baseFile.File.Size, cancellationToken).Await())
                     using (var rd = new Volumes.FilesetVolumeReader(RestoreHandler.GetCompressionModule(baseFile.File.Name), tmpfile, m_options))
                         foreach (var f in rd.Files)
-                            if (Library.Utility.FilterExpression.Matches(filter, f.Path))
+                            if (FilterExpression.Matches(filter, f.Path))
                                 storageKeeper.AddElement(f.Path, f.Hash, f.Metahash, f.Size, conv(f.Type), false);
 
                     if (!m_result.TaskControl.ProgressRendevouz().Await())
                         return;
 
-                    using (var tmpfile = backend.Get(compareFile.File.Name, compareFile.File.Size, null))
+                    using (var tmpfile = backendManager.GetAsync(compareFile.File.Name, null, compareFile.File.Size, cancellationToken).Await())
                     using (var rd = new Volumes.FilesetVolumeReader(RestoreHandler.GetCompressionModule(compareFile.File.Name), tmpfile, m_options))
                         foreach (var f in rd.Files)
-                            if (Library.Utility.FilterExpression.Matches(filter, f.Path))
+                            if (FilterExpression.Matches(filter, f.Path))
                                 storageKeeper.AddElement(f.Path, f.Hash, f.Metahash, f.Size, conv(f.Type), true);
                 }
 

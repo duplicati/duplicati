@@ -18,10 +18,6 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 namespace Duplicati.Library.Main
 {
@@ -32,9 +28,11 @@ namespace Duplicati.Library.Main
         Get,
         Put,
         Delete,
-        CreateFolder
+        CreateFolder,
+        QuotaInfo,
+        WaitForEmpty
     }
-    
+
     public enum BackendEventType
     {
         Started,
@@ -150,5 +148,5 @@ namespace Duplicati.Library.Main
         /// The entry is a symbolic link
         /// </summary>
         Symlink
-    }   
+    }
 }
