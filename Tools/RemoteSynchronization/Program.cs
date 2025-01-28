@@ -38,6 +38,7 @@ namespace RemoteSynchronization
         private const bool DEFAULT_DRY_RUN = false;
         private const bool DEFAULT_VERIFY = false;
         private const int DEFAULT_RETRY = 3;
+        private const bool DEFAULT_FORCE = false;
 
         public static async Task<int> Main(string[] args)
         {
@@ -48,6 +49,7 @@ namespace RemoteSynchronization
             var dst_opts = OptionWithMultipleTokens(aliases: ["--dst-options"], description: "Options for the destination backend");
             var verify_opt = new Option<bool>(aliases: ["--verify"], description: "Verify the files after copying", getDefaultValue: () => DEFAULT_VERIFY);
             var retry_opt = new Option<int>(aliases: ["--retry"], description: "Number of times to retry on errors", getDefaultValue: () => DEFAULT_RETRY) { Arity = ArgumentArity.ExactlyOne };
+            var force_opt = new Option<bool>(aliases: ["--force"], description: "Force the synchronization", getDefaultValue: () => DEFAULT_FORCE);
 
             var root_cmd = new RootCommand("Remote Synchronization Tool");
             root_cmd.AddArgument(src_arg);
@@ -57,6 +59,7 @@ namespace RemoteSynchronization
             root_cmd.AddOption(dst_opts);
             root_cmd.AddOption(verify_opt);
             root_cmd.AddOption(retry_opt);
+            root_cmd.AddOption(force_opt);
 
             root_cmd.SetHandler((InvocationContext ctx) =>
             {
@@ -75,6 +78,7 @@ namespace RemoteSynchronization
             var dry_run = options["dry-run"] as bool? ?? DEFAULT_DRY_RUN;
             var verify = options["verify"] as bool? ?? DEFAULT_VERIFY;
             var retries = options["retry"] as int? ?? DEFAULT_RETRY;
+            var force = options["force"] as bool? ?? DEFAULT_FORCE;
             var duplicati_options = new Dictionary<string, string>()
             {
                 ["dry-run"] = dry_run.ToString()
@@ -98,7 +102,10 @@ namespace RemoteSynchronization
             var b2s = b2 as IStreamingBackend;
             System.Diagnostics.Debug.Assert(b2s != null);
 
-            var (to_copy, to_delete, to_verify) = PrepareFileLists(b1s, b2s);
+            var (to_copy, to_delete, to_verify) = PrepareFileLists(b1s, b2s, force);
+
+            // TODO if confirm is not set, present the plan to the user and ask for confirmation
+
             var deleted = await DeleteAsync(b2s, to_delete, dry_run);
             Console.WriteLine($"Deleted {deleted} files from {dst}");
             var (copied, copy_errors) = await CopyAsync(b1s, b2s, to_copy, dry_run, verify);
@@ -141,7 +148,6 @@ namespace RemoteSynchronization
         // TODO maximum retention?: don't delete files, only rename old ones.
         // TODO have concurrency parameters: uploaders, downloaders
         // TODO low memory mode, where things aren't kept in memory. Maybe utilize SQLite?
-        // TODO Force parameter
         // TODO Progress reporting
         // TODO Logging
 
@@ -225,10 +231,16 @@ namespace RemoteSynchronization
             };
         }
 
-        private static (IEnumerable<IFileEntry>, IEnumerable<IFileEntry>, IEnumerable<IFileEntry>) PrepareFileLists(IStreamingBackend b_src, IStreamingBackend b_dst)
+        private static (IEnumerable<IFileEntry>, IEnumerable<IFileEntry>, IEnumerable<IFileEntry>) PrepareFileLists(IStreamingBackend b_src, IStreamingBackend b_dst, bool force)
         {
             var files_src = b_src.List();
             var files_dst = b_dst.List();
+
+            // Shortcut for force
+            if (force)
+            {
+                return (files_src, files_dst, []);
+            }
 
             // Shortcut for empty destination
             if (!files_dst.Any())
