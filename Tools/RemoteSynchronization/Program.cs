@@ -1,4 +1,4 @@
-// Copyright (C) 2025, The Duplicati Team
+﻿// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -37,6 +37,7 @@ namespace RemoteSynchronization
     {
         private const bool DEFAULT_DRY_RUN = false;
         private const bool DEFAULT_VERIFY = false;
+        private const int DEFAULT_RETRY = 3;
 
         public static async Task<int> Main(string[] args)
         {
@@ -46,6 +47,7 @@ namespace RemoteSynchronization
             var src_opts = OptionWithMultipleTokens(aliases: ["--src-options"], description: "Options for the source backend");
             var dst_opts = OptionWithMultipleTokens(aliases: ["--dst-options"], description: "Options for the destination backend");
             var verify_opt = new Option<bool>(aliases: ["--verify"], description: "Verify the files after copying", getDefaultValue: () => DEFAULT_VERIFY);
+            var retry_opt = new Option<int>(aliases: ["--retry"], description: "Number of times to retry on errors", getDefaultValue: () => DEFAULT_RETRY) { Arity = ArgumentArity.ExactlyOne };
 
             var root_cmd = new RootCommand("Remote Synchronization Tool");
             root_cmd.AddArgument(src_arg);
@@ -54,6 +56,7 @@ namespace RemoteSynchronization
             root_cmd.AddOption(src_opts);
             root_cmd.AddOption(dst_opts);
             root_cmd.AddOption(verify_opt);
+            root_cmd.AddOption(retry_opt);
 
             root_cmd.SetHandler((InvocationContext ctx) =>
             {
@@ -71,6 +74,7 @@ namespace RemoteSynchronization
         {
             var dry_run = options["dry-run"] as bool? ?? DEFAULT_DRY_RUN;
             var verify = options["verify"] as bool? ?? DEFAULT_VERIFY;
+            var retries = options["retry"] as int? ?? DEFAULT_RETRY;
             var duplicati_options = new Dictionary<string, string>()
             {
                 ["dry-run"] = dry_run.ToString()
@@ -102,8 +106,24 @@ namespace RemoteSynchronization
 
             if (copy_errors.Any())
             {
-                Console.WriteLine($"Could not copy {copy_errors.Count()} files: {string.Join(", ", copy_errors)}");
-                return copy_errors.Count();
+                if (retries > 0)
+                {
+                    Console.WriteLine($"Retrying {retries} more times to copy the {copy_errors.Count()} files that failed");
+                    for (int i = 0; i < retries; i++)
+                    {
+                        Thread.Sleep(5000); // Wait 5 seconds before retrying
+                        (copied, copy_errors) = await CopyAsync(b1s, b2s, copy_errors, dry_run, verify);
+                        Console.WriteLine($"Copied {copied} files from {src} to {dst}");
+                        if (!copy_errors.Any())
+                            break;
+                    }
+                }
+
+                if (copy_errors.Any())
+                {
+                    Console.WriteLine($"Could not copy {copy_errors.Count()} files: {string.Join(", ", copy_errors)}");
+                    return copy_errors.Count();
+                }
             }
 
             if (verify)
@@ -124,17 +144,16 @@ namespace RemoteSynchronization
         // TODO Force parameter
         // TODO Progress reporting
         // TODO Logging
-        // TODO Retry on errors
 
         // check database consistency. I.e. have both databases, check that the block, volume, files, etc match up.
         // introduce these checks as a post processing step? Especially the database consistency check, as that is often recreated from the index files.
         // TODO This tool shouldn't handle it, but for convenience, it should support making the seperate call to the regular Duplicati on the destination backend, which alread carries this functionality.
 
         // Forcefully synchronize the remote backends
-        private static async Task<(long, IEnumerable<string>)> CopyAsync(IStreamingBackend b_src, IStreamingBackend b_dst, IEnumerable<IFileEntry> files, bool dry_run, bool verify)
+        private static async Task<(long, IEnumerable<IFileEntry>)> CopyAsync(IStreamingBackend b_src, IStreamingBackend b_dst, IEnumerable<IFileEntry> files, bool dry_run, bool verify)
         {
             long successful_copies = 0;
-            List<string> errors = [];
+            List<IFileEntry> errors = [];
             using var s_src = new MemoryStream();
             using var s_dst = new MemoryStream();
             foreach (var f in files)
@@ -155,7 +174,7 @@ namespace RemoteSynchronization
                             if (s_src.Length != s_dst.Length || !s_src.ToArray().SequenceEqual(s_dst.ToArray()))
                             {
                                 Console.WriteLine($"Error verifying {f.Name}: The file was not copied correctly");
-                                errors.Add(f.Name);
+                                errors.Add(f);
                             }
                             s_dst.SetLength(0);
                         }
@@ -166,7 +185,7 @@ namespace RemoteSynchronization
                 catch (Exception e)
                 {
                     Console.WriteLine($"Error copying {f.Name}: {e.Message}");
-                    errors.Add(f.Name);
+                    errors.Add(f);
                 }
             }
             return (successful_copies, errors);
