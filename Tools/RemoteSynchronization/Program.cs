@@ -115,7 +115,33 @@ namespace RemoteSynchronization
             var b2s = b2 as IStreamingBackend;
             System.Diagnostics.Debug.Assert(b2s != null);
 
+            // Prepare the operations
             var (to_copy, to_delete, to_verify) = PrepareFileLists(b1s, b2s, force);
+
+            // Verify the files if requested. If the files are not verified, they will be deleted and copied again.
+            if (verify)
+            {
+                // As this is a potentially slow operation, ask for confirmation of the verification)
+                if (!confirm)
+                {
+                    Console.WriteLine($"This will verify {to_verify.Count()} files before copying them. Do you want to continue? [y/N]");
+                    var response = Console.ReadLine();
+                    if (!response?.Equals("y", StringComparison.CurrentCultureIgnoreCase) ?? true)
+                    {
+                        Console.WriteLine("Aborted");
+                        return -1;
+                    }
+                }
+
+                var not_verified = await VerifyAsync(b1s, b2s, to_verify);
+
+                if (not_verified.Any())
+                {
+                    Console.WriteLine($"{not_verified.Count()} files failed verification. They will be deleted and copied again.");
+                    to_delete = to_delete.Concat(not_verified);
+                    to_copy = to_copy.Concat(not_verified);
+                }
+            }
 
             // As this is a potentially destructive operation, ask for confirmation
             if (!confirm)
@@ -124,8 +150,6 @@ namespace RemoteSynchronization
                 Console.WriteLine($"This will perform the following actions (in order):");
                 Console.WriteLine($"    - {delete_rename} {to_delete.Count()} files from {dst}");
                 Console.WriteLine($"    - Copy {to_copy.Count()} files from {src} to {dst}");
-                if (verify)
-                    Console.WriteLine($"    - Download and verify {to_verify.Count()} files in {dst}");
                 Console.WriteLine();
                 Console.WriteLine("Do you want to continue? [y/N]");
 
@@ -174,14 +198,6 @@ namespace RemoteSynchronization
                     Console.WriteLine($"Could not copy {copy_errors.Count()} files: {string.Join(", ", copy_errors)}");
                     return copy_errors.Count();
                 }
-            }
-
-            // Verify the files if requested
-            if (verify)
-            {
-                var not_verified = await VerifyAsync(b1s, b2s, to_verify);
-                Console.WriteLine($"Could not verify {not_verified.Count()} files: {string.Join(", ", not_verified)}");
-                return not_verified.Count();
             }
 
             Console.WriteLine($"Remote synchronization completed successfully");
@@ -367,10 +383,9 @@ namespace RemoteSynchronization
             return successful_renames;
         }
 
-        // Post comparison
-        private static async Task<IEnumerable<string>> VerifyAsync(IStreamingBackend b_src, IStreamingBackend b_dst, IEnumerable<IFileEntry> files)
+        private static async Task<IEnumerable<IFileEntry>> VerifyAsync(IStreamingBackend b_src, IStreamingBackend b_dst, IEnumerable<IFileEntry> files)
         {
-            var errors = new List<string>();
+            var errors = new List<IFileEntry>();
             using var s_src = new MemoryStream();
             using var s_dst = new MemoryStream();
 
@@ -386,7 +401,7 @@ namespace RemoteSynchronization
                     // Compare the contents
                     if (s_src.Length != s_dst.Length || !s_src.ToArray().SequenceEqual(s_dst.ToArray()))
                     {
-                        errors.Add(f.Name);
+                        errors.Add(f);
                     }
 
                     // Reset the streams
@@ -395,7 +410,7 @@ namespace RemoteSynchronization
                 }
                 catch (Exception e)
                 {
-                    errors.Add($"{f.Name}");
+                    errors.Add(f);
                     Console.WriteLine($"Error verifying {f.Name}: {e.Message}");
                 }
             }
