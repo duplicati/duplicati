@@ -1,4 +1,4 @@
-﻿// Copyright (C) 2025, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -35,6 +35,8 @@ namespace RemoteSynchronization
 {
     public class Program
     {
+        private const bool DEFAULT_VERIFY = false;
+
         public static async Task<int> Main(string[] args)
         {
             var src_arg = new Argument<string>(name: "backend_src", description: "The source backend string");
@@ -42,6 +44,7 @@ namespace RemoteSynchronization
             var dry_run_opt = new Option<bool>(aliases: ["--dry-run", "-d"], description: "Do not actually write or delete files");
             var src_opts = OptionWithMultipleTokens(aliases: ["--src-options"], description: "Options for the source backend");
             var dst_opts = OptionWithMultipleTokens(aliases: ["--dst-options"], description: "Options for the destination backend");
+            var verify_opt = new Option<bool>(aliases: ["--verify"], description: "Verify the files after copying", getDefaultValue: () => DEFAULT_VERIFY);
 
             var root_cmd = new RootCommand("Remote Synchronization Tool");
             root_cmd.AddArgument(src_arg);
@@ -49,6 +52,7 @@ namespace RemoteSynchronization
             root_cmd.AddOption(dry_run_opt);
             root_cmd.AddOption(src_opts);
             root_cmd.AddOption(dst_opts);
+            root_cmd.AddOption(verify_opt);
 
             root_cmd.SetHandler((InvocationContext ctx) =>
             {
@@ -64,7 +68,7 @@ namespace RemoteSynchronization
 
         private static async Task<int> Run(string src, string dst, Dictionary<string, object?> options)
         {
-            var dry_run = options["dry-run"] as bool? ?? false;
+            var verify = options["verify"] as bool? ?? DEFAULT_VERIFY;
             var duplicati_options = new Dictionary<string, string>()
             {
                 ["dry-run"] = dry_run.ToString()
@@ -88,11 +92,26 @@ namespace RemoteSynchronization
             var b2s = b2 as IStreamingBackend;
             System.Diagnostics.Debug.Assert(b2s != null);
 
-            var (to_copy, to_delete) = PrepareFileLists(b1s, b2s);
+            var (to_copy, to_delete, to_verify) = PrepareFileLists(b1s, b2s);
             var deleted = await DeleteAsync(b2s, to_delete, dry_run);
             Console.WriteLine($"Deleted {deleted} files from {dst}");
-            var copied = await CopyAsync(b1s, b2s, to_copy, dry_run);
+            var (copied, copy_errors) = await CopyAsync(b1s, b2s, to_copy, dry_run, verify);
             Console.WriteLine($"Copied {copied} files from {src} to {dst}");
+
+            if (copy_errors.Any())
+            {
+                Console.WriteLine($"Could not copy {copy_errors.Count()} files: {string.Join(", ", copy_errors)}");
+                return copy_errors.Count();
+            }
+
+            if (verify)
+            {
+                var not_verified = await VerifyAsync(b1s, b2s, to_verify);
+                Console.WriteLine($"Could not verify {not_verified.Count()} files: {string.Join(", ", not_verified)}");
+                return not_verified.Count();
+            }
+
+            Console.WriteLine("Done");
 
             return 0;
         }
@@ -103,38 +122,52 @@ namespace RemoteSynchronization
         // TODO Force parameter
         // TODO Progress reporting
         // TODO Logging
+        // TODO Retry on errors
 
         // check database consistency. I.e. have both databases, check that the block, volume, files, etc match up.
         // introduce these checks as a post processing step? Especially the database consistency check, as that is often recreated from the index files.
         // TODO This tool shouldn't handle it, but for convenience, it should support making the seperate call to the regular Duplicati on the destination backend, which alread carries this functionality.
 
         // Forcefully synchronize the remote backends
-        private static async Task<long> CopyAsync(IStreamingBackend b_src, IStreamingBackend b_dst, IEnumerable<IFileEntry> files, bool dry_run)
+        private static async Task<(long, IEnumerable<string>)> CopyAsync(IStreamingBackend b_src, IStreamingBackend b_dst, IEnumerable<IFileEntry> files, bool dry_run, bool verify)
         {
             long successful_copies = 0;
-            using var s = new MemoryStream();
+            List<string> errors = [];
+            using var s_src = new MemoryStream();
+            using var s_dst = new MemoryStream();
             foreach (var f in files)
             {
                 try
                 {
-                    await b_src.GetAsync(f.Name, s, CancellationToken.None);
+                    await b_src.GetAsync(f.Name, s_src, CancellationToken.None);
                     if (dry_run)
                     {
-                        Console.WriteLine($"Would write {s.Length} bytes of {f.Name} to {b_dst.DisplayName}");
+                        Console.WriteLine($"Would write {s_src.Length} bytes of {f.Name} to {b_dst.DisplayName}");
                     }
                     else
                     {
-                        await b_dst.PutAsync(f.Name, s, CancellationToken.None);
+                        await b_dst.PutAsync(f.Name, s_src, CancellationToken.None);
+                        if (verify)
+                        {
+                            await b_dst.GetAsync(f.Name, s_dst, CancellationToken.None);
+                            if (s_src.Length != s_dst.Length || !s_src.ToArray().SequenceEqual(s_dst.ToArray()))
+                            {
+                                Console.WriteLine($"Error verifying {f.Name}: The file was not copied correctly");
+                                errors.Add(f.Name);
+                            }
+                            s_dst.SetLength(0);
+                        }
                     }
-                    s.SetLength(0);
+                    s_src.SetLength(0);
                     successful_copies++;
                 }
                 catch (Exception e)
                 {
                     Console.WriteLine($"Error copying {f.Name}: {e.Message}");
+                    errors.Add(f.Name);
                 }
             }
-            return successful_copies;
+            return (successful_copies, errors);
         }
 
         private static async Task<long> DeleteAsync(IStreamingBackend b, IEnumerable<IFileEntry> files, bool dry_run)
@@ -171,7 +204,7 @@ namespace RemoteSynchronization
             };
         }
 
-        private static (IEnumerable<IFileEntry>, IEnumerable<IFileEntry>) PrepareFileLists(IStreamingBackend b_src, IStreamingBackend b_dst)
+        private static (IEnumerable<IFileEntry>, IEnumerable<IFileEntry>, IEnumerable<IFileEntry>) PrepareFileLists(IStreamingBackend b_src, IStreamingBackend b_dst)
         {
             var files_src = b_src.List();
             var files_dst = b_dst.List();
@@ -179,7 +212,7 @@ namespace RemoteSynchronization
             // Shortcut for empty destination
             if (!files_dst.Any())
             {
-                return (files_src, []);
+                return (files_src, [], []);
             }
 
             var lookup_src = files_src.ToDictionary(x => x.Name);
@@ -187,6 +220,7 @@ namespace RemoteSynchronization
 
             var to_copy = new List<IFileEntry>();
             var to_delete = new HashSet<string>();
+            var to_verify = new List<IFileEntry>();
 
             // Find all of the files in src that are not in dst, have a different size or have a more recent modification date
             foreach (var f_src in files_src)
@@ -195,12 +229,19 @@ namespace RemoteSynchronization
                 {
                     if (f_src.Size != f_dst.Size || f_src.LastModification > f_dst.LastModification)
                     {
+                        // The file is different, so we need to copy it
                         to_copy.Add(f_src);
                         to_delete.Add(f_dst.Name);
+                    }
+                    else
+                    {
+                        // The file seems to be the same, so we need to verify it if the user wants to
+                        to_verify.Add(f_src);
                     }
                 }
                 else
                 {
+                    // The file is not in the destination, so we need to copy it
                     to_copy.Add(f_src);
                 }
             }
@@ -217,7 +258,7 @@ namespace RemoteSynchronization
                 }
             }
 
-            return (to_copy, to_delete.Select(x => lookup_dst[x]));
+            return (to_copy, to_delete.Select(x => lookup_dst[x]), to_verify);
         }
 
         private static async Task<long> RenameAsync(IStreamingBackend b, IEnumerable<FileEntry> files, bool dry_run)
@@ -248,6 +289,42 @@ namespace RemoteSynchronization
                 }
             }
             return successful_renames;
+        }
+
+        // Post comparison
+        private static async Task<IEnumerable<string>> VerifyAsync(IStreamingBackend b_src, IStreamingBackend b_dst, IEnumerable<IFileEntry> files)
+        {
+            var errors = new List<string>();
+            using var s_src = new MemoryStream();
+            using var s_dst = new MemoryStream();
+
+            foreach (var f in files)
+            {
+                try
+                {
+                    // Get both files
+                    var fs = b_src.GetAsync(f.Name, s_src, CancellationToken.None);
+                    var ds = b_dst.GetAsync(f.Name, s_dst, CancellationToken.None);
+                    await Task.WhenAll(fs, ds);
+
+                    // Compare the contents
+                    if (s_src.Length != s_dst.Length || !s_src.ToArray().SequenceEqual(s_dst.ToArray()))
+                    {
+                        errors.Add(f.Name);
+                    }
+
+                    // Reset the streams
+                    s_src.SetLength(0);
+                    s_dst.SetLength(0);
+                }
+                catch (Exception e)
+                {
+                    errors.Add($"{f.Name}");
+                    Console.WriteLine($"Error verifying {f.Name}: {e.Message}");
+                }
+            }
+
+            return errors;
         }
 
     }
