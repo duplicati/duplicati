@@ -92,7 +92,6 @@ namespace Duplicati.UnitTest
                         request.Headers.IfModifiedSince = systemIO.FileGetLastWriteTimeUtc(destinationFilePath);
 
                     using var response = await httpClient.SendAsync(request);
-                    using var tmpFile = new TempFile();
 
                     if (response.StatusCode == System.Net.HttpStatusCode.NotModified)
                     {
@@ -101,6 +100,7 @@ namespace Duplicati.UnitTest
                     }
                     else
                     {
+                        using var tmpFile = new TempFile();
                         Console.WriteLine($"Downloading file from {url} to: {tmpFile}");
                         var contentStream = await response.Content.ReadAsStreamAsync();
                         var fileInfo = new FileInfo(tmpFile);
