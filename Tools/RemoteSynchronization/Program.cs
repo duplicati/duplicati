@@ -40,6 +40,7 @@ namespace RemoteSynchronization
         private const int DEFAULT_RETRY = 3;
         private const bool DEFAULT_FORCE = false;
         private const bool DEFAULT_RETENTION = false;
+        private const bool DEFAULT_CONFIRM = false;
 
         public static async Task<int> Main(string[] args)
         {
@@ -52,6 +53,7 @@ namespace RemoteSynchronization
             var retry_opt = new Option<int>(aliases: ["--retry"], description: "Number of times to retry on errors", getDefaultValue: () => DEFAULT_RETRY) { Arity = ArgumentArity.ExactlyOne };
             var force_opt = new Option<bool>(aliases: ["--force"], description: "Force the synchronization", getDefaultValue: () => DEFAULT_FORCE);
             var retention_opt = new Option<bool>(aliases: ["--retention"], description: "Toggles whether to keep old files. Any deletes will be renames instead", getDefaultValue: () => DEFAULT_RETENTION);
+            var confirm_opt = new Option<bool>(aliases: ["--confirm"], description: "Ask for confirmation before starting the synchronization", getDefaultValue: () => DEFAULT_CONFIRM);
 
             var root_cmd = new RootCommand("Remote Synchronization Tool");
             root_cmd.AddArgument(src_arg);
@@ -63,6 +65,7 @@ namespace RemoteSynchronization
             root_cmd.AddOption(retry_opt);
             root_cmd.AddOption(force_opt);
             root_cmd.AddOption(retention_opt);
+            root_cmd.AddOption(confirm_opt);
 
             root_cmd.SetHandler((InvocationContext ctx) =>
             {
@@ -83,6 +86,8 @@ namespace RemoteSynchronization
             var retries = options["retry"] as int? ?? DEFAULT_RETRY;
             var force = options["force"] as bool? ?? DEFAULT_FORCE;
             var retention = options["retention"] as bool? ?? DEFAULT_RETENTION;
+            var confirm = options["confirm"] as bool? ?? DEFAULT_CONFIRM;
+
             var duplicati_options = new Dictionary<string, string>()
             {
                 ["dry-run"] = dry_run.ToString()
@@ -108,7 +113,25 @@ namespace RemoteSynchronization
 
             var (to_copy, to_delete, to_verify) = PrepareFileLists(b1s, b2s, force);
 
-            // TODO if confirm is not set, present the plan to the user and ask for confirmation
+            // As this is a potentially destructive operation, ask for confirmation
+            if (!confirm)
+            {
+                var delete_rename = retention ? "Rename" : "Delete";
+                Console.WriteLine($"This will perform the following actions (in order):");
+                Console.WriteLine($"    - {delete_rename} {to_delete.Count()} files from {dst}");
+                Console.WriteLine($"    - Copy {to_copy.Count()} files from {src} to {dst}");
+                if (verify)
+                    Console.WriteLine($"    - Download and verify {to_verify.Count()} files in {dst}");
+                Console.WriteLine();
+                Console.WriteLine("Do you want to continue? [y/N]");
+
+                var response = Console.ReadLine();
+                if (!response?.Equals("y", StringComparison.CurrentCultureIgnoreCase) ?? true)
+                {
+                    Console.WriteLine("Aborted");
+                    return -1;
+                }
+            }
 
             // Delete or rename the files that are not needed
             if (retention)
