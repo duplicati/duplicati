@@ -25,6 +25,7 @@ using System.CommandLine.NamingConventionBinder;
 using System.CommandLine.Parsing;
 using System.Reactive.Linq;
 using System.Security.Cryptography;
+using Duplicati.Library.AutoUpdater;
 using Duplicati.Library.Encryption;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Logging;
@@ -123,6 +124,8 @@ public static class Program
             new Option<string?>("--secret-provider", description: "The secret provider to use", getDefaultValue: () => null),
             new Option<SecretProviderHelper.CachingLevel>("--secret-provider-cache", description: "The secret provider cache level", getDefaultValue: () => SecretProviderHelper.CachingLevel.None),
             new Option<string>("--secret-provider-pattern", description: "The secret provider pattern", getDefaultValue: () => SecretProviderHelper.DEFAULT_PATTERN),
+            new Option<bool>($"--{DataFolderManager.PORTABLE_MODE_OPTION}", description: "Use portable mode for locating the database and storing configuration", getDefaultValue: () => DataFolderManager.PORTABLE_MODE),
+            new Option<DirectoryInfo?>($"--{DataFolderManager.SERVER_DATAFOLDER_OPTION}", description: "The datafolder to use for locating the database and storing configuration", getDefaultValue: () => new DirectoryInfo(DataFolderManager.DATAFOLDER)),
         };
         runcmd.Handler = CommandHandler.Create<CommandLineArguments>(RunAgent);
 

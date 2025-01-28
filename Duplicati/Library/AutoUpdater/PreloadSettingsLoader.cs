@@ -109,7 +109,7 @@ public static class PreloadSettingsLoader
 
         // User-context path for preload settings,
         // the same default path as where other data is stored
-        Path.Combine(UpdaterManager.DATAFOLDER, FILE_NAME),
+        Path.Combine(DataFolderManager.DATAFOLDER, FILE_NAME),
     }
     .Concat(PortablePreloadPaths)
     .Where(x => !string.IsNullOrEmpty(x))
@@ -132,7 +132,7 @@ public static class PreloadSettingsLoader
     /// <param name="dbsettings">The database settings</param>
     public static void ConfigurePreloadSettings(ref string[] arguments, PackageHelper.NamedExecutable executable, out Dictionary<string, string?> dbsettings)
     {
-        var (env, args, db) = GetExecutableMergedSettings(executable, IsPortableModeRequested(arguments));
+        var (env, args, db) = GetExecutableMergedSettings(executable, DataFolderManager.PORTABLE_MODE);
 
         dbsettings = db;
         ApplyEnvironmentVariables(env);
@@ -147,46 +147,6 @@ public static class PreloadSettingsLoader
     private static string GetArgumentName(string arg)
         => arg.Split('=', 2)[0];
 
-    /// <summary>
-    /// Helper function to check if portable mode is requested.
-    /// This is a rudimentary function that mimics the commandline parser,
-    /// which is not loaded during preload
-    /// </summary>
-    /// <param name="args">The arguments to check</param>
-    /// <returns><c>true</c> if portable mode is requested, <c>false</c> otherwise</returns>
-    private static bool IsPortableModeRequested(string[] args)
-    {
-        var candiate = args.Select((x, i) => (x, i))
-            .Where(x => x.x != null)
-            .Where(x => x.x.Equals("--portable-mode", StringComparison.OrdinalIgnoreCase) || x.x.StartsWith("--portable-mode=", StringComparison.OrdinalIgnoreCase))
-            .LastOrDefault();
-        if (candiate.x == null)
-            return false;
-
-        var value = (string?)null;
-        if (candiate.x.Contains("="))
-            value = candiate.x.Split('=', 2)[1];
-        else
-        {
-            value = args.ElementAtOrDefault(candiate.i + 1);
-            if (value == null || value.StartsWith("--"))
-                value = "true";
-        }
-
-        if (value == null)
-            return false;
-
-        value = value.TrimStart('"').TrimEnd('"').ToLowerInvariant();
-        return value switch
-        {
-            "1" => true,
-            "on" => true,
-            "true" => true,
-            "yes" => true,
-            _ => false,
-        };
-
-    }
 
     /// <summary>
     /// Gets the merged settings for the given executable

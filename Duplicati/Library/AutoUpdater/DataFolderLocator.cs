@@ -27,33 +27,12 @@ using System.Collections.Generic;
 
 namespace Duplicati.Library.AutoUpdater;
 
-public static class DatabaseLocator
+/// <summary>
+/// Helper class to locate the default storage folder for the application
+/// </summary>
+public static class DataFolderLocator
 {
     /// <summary>
-    /// The log tag for this class
-    /// </summary>
-    public static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(DatabaseLocator));
-
-    /// <summary>
-    /// Finds a default storage folder, using the operating system specific locations.
-    /// The targetfilename is used to detect locations that are used in previous versions.
-    /// If the targetfilename is found in an old location, but not the current, the old location is used.
-    /// If running with DEBUG defined, the storage folder is placed in the same folder as the executable.
-    /// Note that the folder is not created, only the path is returned.
-    /// </summary>
-    /// <param name="targetfilename">The filename to look for</param>
-    /// <param name="appName">The name of the application</param>
-    /// <returns>The default storage folder</returns>
-    public static string GetDefaultStorageFolderWithDebugSupport(string targetfilename, string appName = "Duplicati")
-    {
-#if DEBUG
-        return System.IO.Path.GetDirectoryName(typeof(DatabaseLocator).Assembly.Location) ?? string.Empty;
-#else
-        return GetDefaultStorageFolderDirect(targetfilename, appName);
-#endif
-    }
-
-    /// <summary>
     /// Finds a default storage folder, using the operating system specific locations.
     /// The targetfilename is used to detect locations that are used in previous versions.
     /// If the targetfilename is found in an old location, but not the current, the old location is used.
@@ -62,7 +41,7 @@ public static class DatabaseLocator
     /// <param name="targetfilename">The filename to look for</param>
     /// <param name="appName">The name of the application</param>
     /// <returns>The default storage folder</returns>
-    public static string GetDefaultStorageFolderDirect(string targetfilename, string appName = "Duplicati")
+    public static string GetDefaultStorageFolder(string targetfilename, string appName = "Duplicati")
     {
         //Normal mode uses the systems "(Local) Application Data" folder
         // %LOCALAPPDATA% on Windows, ~/.config on Linux
@@ -82,8 +61,7 @@ public static class DatabaseLocator
                 };
 
             // If %LOCALAPPDATA% is inside the Windows folder, prefer a LocalService folder instead
-            var windowsFolder = Library.Common.IO.Util.AppendDirSeparator(Environment.GetFolderPath(Environment.SpecialFolder.Windows));
-            if (newlocation.StartsWith(windowsFolder, StringComparison.OrdinalIgnoreCase))
+            if (Common.IO.Util.IsPathUnderWindowsFolder(newlocation))
             {
                 var userProfilesFolder = Library.Utility.SHGetFolder.UserProfilesFolder;
                 if (!string.IsNullOrWhiteSpace(userProfilesFolder))
@@ -99,10 +77,6 @@ public static class DatabaseLocator
             // Use the most recent location found with content
             // If none are found, use the most recent location
             folder = matches.FirstOrDefault() ?? folderOrder.Last();
-
-            // Emit a warning if the database is stored in the Windows folder
-            if (folder.StartsWith(windowsFolder, StringComparison.OrdinalIgnoreCase))
-                Logging.Log.WriteWarningMessage(LOGTAG, "DatabaseInWindowsFolder", null, "The database is stored in the Windows folder, this is not recommended as it will be deleted on Windows upgrades.");
         }
 
         if (OperatingSystem.IsMacOS())

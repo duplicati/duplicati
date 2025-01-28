@@ -22,10 +22,7 @@
 using System;
 using CoCoL;
 using System.Threading.Tasks;
-using System.Collections.Generic;
-using System.Linq;
 using System.IO;
-using System.Net;
 using System.Net.Http;
 using Duplicati.Library.Utility;
 using System.Threading;
@@ -62,7 +59,7 @@ namespace Duplicati.Library.UsageReporter
         public static Tuple<Task, IWriteChannel<string>> Run()
         {
             var channel = ChannelManager.CreateChannel<string>(
-                buffersize: MAX_PENDING_UPLOADS, 
+                buffersize: MAX_PENDING_UPLOADS,
                 pendingWritersOverflowStrategy: QueueOverflowStrategy.LIFO
             );
 
@@ -85,13 +82,14 @@ namespace Duplicati.Library.UsageReporter
                                     if (fs.Length > 0)
                                     {
                                         using var request = new HttpRequestMessage(HttpMethod.Post, UPLOAD_URL);
-                  
+
                                         request.Content = new StreamContent(fs);
 
                                         using var timeoutToken = new CancellationTokenSource();
                                         timeoutToken.CancelAfter(TimeSpan.FromSeconds(UPLOAD_OPERATION_TIMEOUT_SECONDS));
-                                
-                                        var response = await HttpClientHelper.DefaultClient.UploadStream(request, timeoutToken.Token);
+
+                                        using var client = HttpClientHelper.CreateClient();
+                                        using var response = await client.UploadStream(request, timeoutToken.Token);
                                         rc = (int)response.StatusCode;
                                     }
                                     else

@@ -22,6 +22,7 @@
 using System;
 using System.Linq;
 using System.Collections.Generic;
+using Duplicati.Library.Common.IO;
 
 #nullable enable
 
@@ -95,7 +96,12 @@ namespace Duplicati.Library.Main
             if (!string.IsNullOrEmpty(options.Dbpath))
                 return options.Dbpath;
 
-            var folder = AutoUpdater.DatabaseLocator.GetDefaultStorageFolderWithDebugSupport(CONFIG_FILE);
+            // Ideally, this should use DataFolderManager.DATAFOLDER, but we cannot due to backwards compatibility
+            var folder = AutoUpdater.DataFolderLocator.GetDefaultStorageFolder(CONFIG_FILE);
+            // Emit a warning if the database is stored in the Windows folder
+            if (Util.IsPathUnderWindowsFolder(folder))
+                Logging.Log.WriteWarningMessage(LOGTAG, "DatabaseInWindowsFolder", null, "The database config is stored in the Windows folder, this is not recommended as it will be deleted on Windows upgrades.");
+
 
             var file = System.IO.Path.Combine(folder, CONFIG_FILE);
             List<BackendEntry> configs;
@@ -242,7 +248,8 @@ namespace Duplicati.Library.Main
         /// <returns><c>true</c> if the path is in use, <c>false</c> otherwise</returns>
         public static bool IsDatabasePathInUse(string path)
         {
-            var file = System.IO.Path.Combine(AutoUpdater.DatabaseLocator.GetDefaultStorageFolderWithDebugSupport(CONFIG_FILE), CONFIG_FILE);
+            // Ideally, this should use DataFolderManager.DATAFOLDER, but we cannot due to backwards compatibility
+            var file = System.IO.Path.Combine(AutoUpdater.DataFolderLocator.GetDefaultStorageFolder(CONFIG_FILE), CONFIG_FILE);
             if (!System.IO.File.Exists(file))
                 return false;
 

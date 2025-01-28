@@ -19,6 +19,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 using System.Text.Json;
+using Duplicati.Library.AutoUpdater;
 using Duplicati.Library.DynamicLoader;
 using Duplicati.Library.Encryption;
 using Duplicati.Library.Interface;
@@ -33,7 +34,6 @@ namespace Duplicati.CommandLine.ServerUtil;
 /// <param name="Password">The commandline password</param>
 /// <param name="RefreshToken">The saved refresh token</param>
 /// <param name="HostUrl">The host url to connect to</param>
-/// <param name="ServerDatafolder">The server datafolder for password-free connections</param>
 /// <param name="SettingsFile">The settings file where data is loaded/saved</param>
 /// <param name="Insecure">Whether to disable TLS/SSL certificate trust check</param>
 /// <param name="Key">The encryption key to use for the settings file</param>
@@ -44,7 +44,6 @@ public sealed record Settings(
     string? Password,
     string? RefreshToken,
     System.Uri HostUrl,
-    string? ServerDatafolder,
     string SettingsFile,
     bool Insecure,
     EncryptedFieldHelper.KeyInstance? Key,
@@ -64,9 +63,16 @@ public sealed record Settings(
         System.Uri HostUrl,
         string? ServerDatafolder
     );
+
+    /// <summary>
+    /// Gets the default data folder for the settings file
+    /// </summary>
+    /// <param name="filename">The filename to use</param>
+    /// <returns>The default storage folder</returns>
     private static string GetDefaultStorageFolder(string filename)
     {
-        var folder = Library.AutoUpdater.DatabaseLocator.GetDefaultStorageFolderWithDebugSupport(filename);
+        // Ideally, this should use DataFolderManager.DATAFOLDER, but we cannot due to backwards compatibility
+        var folder = DataFolderLocator.GetDefaultStorageFolder(filename);
         if (!Directory.Exists(folder))
             Directory.CreateDirectory(folder);
 
@@ -78,7 +84,6 @@ public sealed record Settings(
     /// </summary>
     /// <param name="password">The password to use</param>
     /// <param name="hostUrl">The host URL to use</param>
-    /// <param name="serverDataFolder">The server data folder to use</param>
     /// <param name="settingsFile">The settings file to use</param>
     /// <param name="insecure">Whether to disable TLS/SSL certificate trust check</param>
     /// <param name="settingsPassphrase">The encryption key to use</param>
@@ -87,7 +92,7 @@ public sealed record Settings(
     /// <param name="secretProviderPattern">The secret provider pattern to use</param>
     /// <param name="acceptedHostCertificate">The SHA1 hash of the host certificate to accept</param>
     /// <returns>The loaded settings</returns>
-    public static Settings Load(string? password, System.Uri? hostUrl, string? serverDataFolder, string settingsFile, bool insecure, string? settingsPassphrase, string? secretProvider, SecretProviderHelper.CachingLevel secretProviderCache, string secretProviderPattern, string? acceptedHostCertificate)
+    public static Settings Load(string? password, System.Uri? hostUrl, string settingsFile, bool insecure, string? settingsPassphrase, string? secretProvider, SecretProviderHelper.CachingLevel secretProviderCache, string secretProviderPattern, string? acceptedHostCertificate)
     {
         hostUrl ??= new System.Uri("http://localhost:8200");
 
@@ -115,9 +120,6 @@ public sealed record Settings(
             settingsPassphrase = opts["settings-encryption-key"];
         }
 
-        if (string.IsNullOrWhiteSpace(serverDataFolder))
-            serverDataFolder = GetDefaultStorageFolder("Duplicati-server.sqlite");
-
         if (!string.IsNullOrWhiteSpace(settingsFile) && !Path.IsPathRooted(settingsFile))
             settingsFile = Path.Combine(GetDefaultStorageFolder(settingsFile), settingsFile);
 
@@ -129,7 +131,6 @@ public sealed record Settings(
             password,
             persistedSettings?.RefreshToken,
             hostUrl,
-            serverDataFolder,
             settingsFile,
             insecure,
             key,
@@ -175,7 +176,7 @@ public sealed record Settings(
 
         File.WriteAllText(SettingsFile, JsonSerializer.Serialize(LoadSettings(SettingsFile, thisKey)
             .Where(x => x.HostUrl != HostUrl)
-            .Append(new PersistedSettings(RefreshToken, HostUrl, ServerDatafolder))
+            .Append(new PersistedSettings(RefreshToken, HostUrl, DataFolderManager.DATAFOLDER))
             .Select(x => x with
             {
                 RefreshToken = string.IsNullOrWhiteSpace(x.RefreshToken) || thisKey == null

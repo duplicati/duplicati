@@ -24,6 +24,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using Duplicati.Library.AutoUpdater;
 using Duplicati.Library.Interface;
 using Duplicati.Library.RestAPI;
 using Duplicati.Server;
@@ -154,7 +155,7 @@ namespace Duplicati.GUI.TrayIcon
             }
             else if (Library.Utility.Utility.ParseBoolOption(options, READCONFIGFROMDB_OPTION))
             {
-                if (File.Exists(Path.Combine(Server.Program.GetDataFolderPath(options), Server.Program.SERVER_DATABASE_FILENAME)))
+                if (File.Exists(Path.Combine(DataFolderManager.DATAFOLDER, DataFolderManager.SERVER_DATABASE_FILENAME)))
                 {
                     passwordSource = PasswordSource.Database;
                     databaseConnection = Server.Program.GetDatabaseConnection(options, true);
