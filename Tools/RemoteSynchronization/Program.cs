@@ -1,4 +1,4 @@
-// Copyright (C) 2025, The Duplicati Team
+﻿// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -145,9 +145,11 @@ namespace RemoteSynchronization
                 Console.WriteLine($"Deleted {deleted} files from {dst}");
             }
 
+            // Copy the files
             var (copied, copy_errors) = await CopyAsync(b1s, b2s, to_copy, dry_run, verify);
             Console.WriteLine($"Copied {copied} files from {src} to {dst}");
 
+            // If there are still errors, retry a few times
             if (copy_errors.Any())
             {
                 if (retries > 0)
@@ -170,6 +172,7 @@ namespace RemoteSynchronization
                 }
             }
 
+            // Verify the files if requested
             if (verify)
             {
                 var not_verified = await VerifyAsync(b1s, b2s, to_verify);
@@ -177,7 +180,7 @@ namespace RemoteSynchronization
                 return not_verified.Count();
             }
 
-            Console.WriteLine("Done");
+            Console.WriteLine($"Remote synchronization completed successfully");
 
             return 0;
         }
