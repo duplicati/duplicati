@@ -23,9 +23,9 @@ using Duplicati.Library.Common.IO;
 using Duplicati.Library.Main;
 using NUnit.Framework;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace Duplicati.UnitTest
 {
@@ -50,7 +50,9 @@ namespace Duplicati.UnitTest
 
             var options = TestOptions;
 
-            GenerateTestData(DATAFOLDER, 10, 3, 3, 1024 * 1024);
+            var now = DateTime.Now;
+            GenerateTestData(DATAFOLDER, 10, 3, 3, 1024 * 1024).Wait();
+            Console.WriteLine($"Generated test data in {DATAFOLDER} in {DateTime.Now - now}");
 
             // Create the directories if they do not exist
             foreach (var p in new string[] { l1, l2, l1r, l2r })
@@ -151,29 +153,33 @@ namespace Duplicati.UnitTest
         /// <param name="n_dirs">How many subdirectories the directory should have.</param>
         /// <param name="n_levels">How deep the number of subdirectories within subdirectories should go.</param>
         /// <param name="max_file_size">The maximum size of the files to generate.</param>
-        public static void GenerateTestData(string dir, int n_files, int n_dirs, int n_levels, int max_file_size)
+        public static async Task GenerateTestData(string dir, int n_files, int n_dirs, int n_levels, int max_file_size)
         {
             if (!SystemIO.IO_OS.DirectoryExists(dir))
                 SystemIO.IO_OS.DirectoryCreate(dir);
 
-            var rnd = new Random();
-            for (int i = 0; i < n_files; i++)
-            {
-                var file = Path.Combine(dir, $"file_{i}.txt");
-                var size = rnd.Next(1, max_file_size);
-                var data = new byte[size];
-                rnd.NextBytes(data);
-                File.WriteAllBytes(file, data);
-            }
+            var fs = Enumerable.Range(0, n_files)
+                .Select(i => GenerateTestFile(dir, i, max_file_size));
+            var ds = n_levels > 0 ?
+                Enumerable.Range(0, n_dirs)
+                    .Select(i =>
+                    {
+                        var subdir = Path.Combine(dir, $"dir_{i}");
+                        return GenerateTestData(subdir, n_files, n_dirs, n_levels - 1, max_file_size);
+                    })
+                : [];
 
-            if (n_levels > 0)
-            {
-                for (int i = 0; i < n_dirs; i++)
-                {
-                    var subdir = Path.Combine(dir, $"dir_{i}");
-                    GenerateTestData(subdir, n_files, n_dirs, n_levels - 1, max_file_size);
-                }
-            }
+            await Task.WhenAll([.. fs, .. ds]);
+        }
+
+        public static async Task GenerateTestFile(string dir, int i, int max_file_size)
+        {
+            var rnd = new Random();
+            var file = Path.Combine(dir, $"file_{i}.txt");
+            var size = rnd.Next(1, max_file_size);
+            var data = new byte[size];
+            rnd.NextBytes(data);
+            await File.WriteAllBytesAsync(file, data);
         }
 
     }
