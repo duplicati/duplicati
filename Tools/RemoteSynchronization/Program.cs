@@ -1,4 +1,4 @@
-﻿// Copyright (C) 2025, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -19,7 +19,6 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 using System;
 using System.Collections.Generic;
@@ -35,10 +34,12 @@ namespace RemoteSynchronization
 {
     public class Program
     {
+        // Default values for the options
         private const bool DEFAULT_DRY_RUN = false;
         private const bool DEFAULT_VERIFY = false;
         private const int DEFAULT_RETRY = 3;
         private const bool DEFAULT_FORCE = false;
+        private const bool DEFAULT_RETENTION = false;
 
         public static async Task<int> Main(string[] args)
         {
@@ -50,6 +51,7 @@ namespace RemoteSynchronization
             var verify_opt = new Option<bool>(aliases: ["--verify"], description: "Verify the files after copying", getDefaultValue: () => DEFAULT_VERIFY);
             var retry_opt = new Option<int>(aliases: ["--retry"], description: "Number of times to retry on errors", getDefaultValue: () => DEFAULT_RETRY) { Arity = ArgumentArity.ExactlyOne };
             var force_opt = new Option<bool>(aliases: ["--force"], description: "Force the synchronization", getDefaultValue: () => DEFAULT_FORCE);
+            var retention_opt = new Option<bool>(aliases: ["--retention"], description: "Toggles whether to keep old files. Any deletes will be renames instead", getDefaultValue: () => DEFAULT_RETENTION);
 
             var root_cmd = new RootCommand("Remote Synchronization Tool");
             root_cmd.AddArgument(src_arg);
@@ -60,6 +62,7 @@ namespace RemoteSynchronization
             root_cmd.AddOption(verify_opt);
             root_cmd.AddOption(retry_opt);
             root_cmd.AddOption(force_opt);
+            root_cmd.AddOption(retention_opt);
 
             root_cmd.SetHandler((InvocationContext ctx) =>
             {
@@ -79,6 +82,7 @@ namespace RemoteSynchronization
             var verify = options["verify"] as bool? ?? DEFAULT_VERIFY;
             var retries = options["retry"] as int? ?? DEFAULT_RETRY;
             var force = options["force"] as bool? ?? DEFAULT_FORCE;
+            var retention = options["retention"] as bool? ?? DEFAULT_RETENTION;
             var duplicati_options = new Dictionary<string, string>()
             {
                 ["dry-run"] = dry_run.ToString()
@@ -106,8 +110,18 @@ namespace RemoteSynchronization
 
             // TODO if confirm is not set, present the plan to the user and ask for confirmation
 
-            var deleted = await DeleteAsync(b2s, to_delete, dry_run);
-            Console.WriteLine($"Deleted {deleted} files from {dst}");
+            // Delete or rename the files that are not needed
+            if (retention)
+            {
+                var renamed = await RenameAsync(b2s, to_delete, dry_run);
+                Console.WriteLine($"Renamed {renamed} files in {dst}");
+            }
+            else
+            {
+                var deleted = await DeleteAsync(b2s, to_delete, dry_run);
+                Console.WriteLine($"Deleted {deleted} files from {dst}");
+            }
+
             var (copied, copy_errors) = await CopyAsync(b1s, b2s, to_copy, dry_run, verify);
             Console.WriteLine($"Copied {copied} files from {src} to {dst}");
 
@@ -145,7 +159,6 @@ namespace RemoteSynchronization
             return 0;
         }
 
-        // TODO maximum retention?: don't delete files, only rename old ones.
         // TODO have concurrency parameters: uploaders, downloaders
         // TODO low memory mode, where things aren't kept in memory. Maybe utilize SQLite?
         // TODO Progress reporting
@@ -294,10 +307,10 @@ namespace RemoteSynchronization
             return (to_copy, to_delete.Select(x => lookup_dst[x]), to_verify);
         }
 
-        private static async Task<long> RenameAsync(IStreamingBackend b, IEnumerable<FileEntry> files, bool dry_run)
+        private static async Task<long> RenameAsync(IStreamingBackend b, IEnumerable<IFileEntry> files, bool dry_run)
         {
             long successful_renames = 0;
-            string suffix = $"{DateTime.Now:yyyyMMddHHmmss}.old";
+            string suffix = $"{System.DateTime.Now:yyyyMMddHHmmss}.old";
             using var downloaded = new MemoryStream();
             foreach (var f in files)
             {
