@@ -1534,5 +1534,26 @@ namespace Duplicati.Library.Utility
             collection.Import(pfxPath, password, X509KeyStorageFlags.Exportable | X509KeyStorageFlags.PersistKeySet);
             return collection;
         }
+
+        /// <summary>
+        /// Flattens an exception and its inner exceptions
+        /// </summary>
+        /// <param name="ex">The exception to flatten</param>
+        /// <returns>An enumerable of exceptions</returns>
+        public static IEnumerable<Exception> FlattenException(Exception? ex)
+        {
+            if (ex == null)
+                yield break;
+
+            yield return ex;
+
+            if (ex is AggregateException aex)
+                foreach (var iex in aex.Flatten().InnerExceptions)
+                    foreach (var iex2 in FlattenException(iex))
+                        yield return iex2;
+
+            foreach (var iex in FlattenException(ex.InnerException))
+                yield return iex;
+        }
     }
 }

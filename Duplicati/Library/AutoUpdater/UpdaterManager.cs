@@ -231,7 +231,7 @@ namespace Duplicati.Library.AutoUpdater
         /// <summary>
         /// The machine name
         /// </summary>
-        public static string MachineName => Environment.MachineName;
+        public static readonly string MachineName = MachineNameReader.GetMachineName();
 
         /// <summary>
         /// The package type ID

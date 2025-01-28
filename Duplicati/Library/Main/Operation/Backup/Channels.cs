@@ -29,10 +29,6 @@ namespace Duplicati.Library.Main.Operation.Backup
     internal class Channels
     {
         /// <summary>
-        /// Requests to the backend are send over this channel and picked up by the <see cref="BackendUploader" /> class
-        /// </summary>
-        public readonly IChannel<IUploadRequest> BackendRequest = ChannelManager.CreateChannel<IUploadRequest>();
-        /// <summary>
         /// When the backup completes, all in-progress archives are sent from the <see cref="DataBlockProcessor"/> to the <see cref="SpillCollectorProcess"/>
         /// </summary>
         public readonly IChannel<SpillVolumeRequest> SpillPickup = ChannelManager.CreateChannel<SpillVolumeRequest>();

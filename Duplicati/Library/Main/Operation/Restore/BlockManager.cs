@@ -92,11 +92,15 @@ namespace Duplicati.Library.Main.Operation.Restore
             /// <summary>
             /// Dictionary for keeping track of how many times each block is requested. Used to determine when a block is no longer needed.
             /// </summary>
-            private readonly Dictionary<long, long> m_blockcount = new ();
+            private readonly Dictionary<long, long> m_blockcount = new();
+            /// <summary>
+            /// Lock for the block count dictionary.
+            /// </summary>
+            private readonly object m_blockcount_lock = new();
             /// <summary>
             /// Dictionary for keeping track of how many times each volume is requested. Used to determine when a volume is no longer needed.
             /// </summary>
-            private readonly Dictionary<long, long> m_volumecount = new ();
+            private readonly Dictionary<long, long> m_volumecount = new();
             /// <summary>
             /// The options for the restore.
             /// </summary>
@@ -118,9 +122,9 @@ namespace Duplicati.Library.Main.Operation.Restore
                     m_block_cache = new MemoryCache(cache_options);
                 }
                 this.readers = readers;
-                sw_cacheevict = options.InternalProfiling ? new () : null;
-                sw_checkcounts = options.InternalProfiling ? new () : null;
-                sw_get_wait = options.InternalProfiling ? new () : null;
+                sw_cacheevict = options.InternalProfiling ? new() : null;
+                sw_checkcounts = options.InternalProfiling ? new() : null;
+                sw_get_wait = options.InternalProfiling ? new() : null;
 
                 foreach (var (block_id, volume_id) in db.GetBlocksAndVolumeIDs(options.SkipMetadata))
                 {
@@ -143,12 +147,13 @@ namespace Duplicati.Library.Main.Operation.Restore
             {
                 long error_block_id = -1;
                 long error_volume_id = -1;
+                var emit_evict = false;
 
-                lock (m_blockcount)
+                lock (m_blockcount_lock)
                 {
                     sw_checkcounts?.Start();
 
-                    var block_count = m_blockcount.TryGetValue(blockRequest.BlockID, out var c) ? c-1 : 0;
+                    var block_count = m_blockcount.TryGetValue(blockRequest.BlockID, out var c) ? c - 1 : 0;
 
                     if (block_count > 0)
                     {
@@ -165,7 +170,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                         error_block_id = blockRequest.BlockID;
                     }
 
-                    var vol_count = m_volumecount.TryGetValue(blockRequest.VolumeID, out var vc) ? vc-1 : 0;
+                    var vol_count = m_volumecount.TryGetValue(blockRequest.VolumeID, out var vc) ? vc - 1 : 0;
                     if (vol_count > 0)
                     {
                         m_volumecount[blockRequest.VolumeID] = vol_count;
@@ -175,7 +180,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                         // Notify the `VolumeManager` that it should evict the volume.
                         m_volumecount.Remove(blockRequest.VolumeID);
                         blockRequest.CacheDecrEvict = true;
-                        m_volume_request.Write(blockRequest);
+                        emit_evict = true;
                     }
                     else // vol_count < 0
                     {
@@ -183,6 +188,9 @@ namespace Duplicati.Library.Main.Operation.Restore
                     }
                     sw_checkcounts?.Stop();
                 }
+
+                if (emit_evict)
+                    m_volume_request.Write(blockRequest);
 
                 if (error_block_id != -1)
                 {
@@ -222,8 +230,10 @@ namespace Duplicati.Library.Main.Operation.Restore
                 }
                 sw_get_wait?.Stop();
 
-                return new_tcs.Task.ContinueWith(t => {
-                    CheckCounts(block_request);
+                return new_tcs.Task.ContinueWith(t =>
+                {
+                    if (t.IsCompletedSuccessfully)
+                        CheckCounts(block_request);
                     return t.Result;
                 });
             }
@@ -264,7 +274,8 @@ namespace Duplicati.Library.Main.Operation.Restore
             /// </summary>
             public void Retire()
             {
-                if (Interlocked.Decrement(ref readers) <= 0) {
+                if (Interlocked.Decrement(ref readers) <= 0)
+                {
                     m_volume_request.Retire();
                 }
             }
@@ -338,15 +349,16 @@ namespace Duplicati.Library.Main.Operation.Restore
                 using SleepableDictionary cache = new(db, self.Output, options, fp_requests.Length);
 
                 // The volume consumer will read blocks from the input channel (data blocks from the volumes) and store them in the cache.
-                var volume_consumer = Task.Run(async () => {
-                    Stopwatch sw_read = options.InternalProfiling ? new () : null;
-                    Stopwatch sw_set  = options.InternalProfiling ? new () : null;
+                var volume_consumer = Task.Run(async () =>
+                {
+                    Stopwatch sw_read = options.InternalProfiling ? new() : null;
+                    Stopwatch sw_set = options.InternalProfiling ? new() : null;
                     try
                     {
                         while (true)
                         {
                             sw_read?.Start();
-                            var (block_request, data) = await self.Input.ReadAsync();
+                            var (block_request, data) = await self.Input.ReadAsync().ConfigureAwait(false);
                             sw_read?.Stop();
 
                             sw_set?.Start();
@@ -376,17 +388,18 @@ namespace Duplicati.Library.Main.Operation.Restore
                 });
 
                 // The block handlers will read block requests from the `FileProcessor`, access the cache for the blocks, and write the resulting blocks to the `FileProcessor`.
-                var block_handlers = fp_requests.Zip(fp_responses, (req, res) => Task.Run(async () => {
-                    Stopwatch sw_req   = options.InternalProfiling ? new () : null;
-                    Stopwatch sw_resp  = options.InternalProfiling ? new () : null;
-                    Stopwatch sw_cache = options.InternalProfiling ? new () : null;
-                    Stopwatch sw_get   = options.InternalProfiling ? new () : null;
+                var block_handlers = fp_requests.Zip(fp_responses, (req, res) => Task.Run(async () =>
+                {
+                    Stopwatch sw_req = options.InternalProfiling ? new() : null;
+                    Stopwatch sw_resp = options.InternalProfiling ? new() : null;
+                    Stopwatch sw_cache = options.InternalProfiling ? new() : null;
+                    Stopwatch sw_get = options.InternalProfiling ? new() : null;
                     try
                     {
                         while (true)
                         {
                             sw_req?.Start();
-                            var block_request = await req.ReadAsync();
+                            var block_request = await req.ReadAsync().ConfigureAwait(false);
                             sw_req?.Stop();
                             if (block_request.CacheDecrEvict)
                             {
@@ -398,11 +411,11 @@ namespace Duplicati.Library.Main.Operation.Restore
                             else
                             {
                                 sw_get?.Start();
-                                var data = await cache.Get(block_request);
+                                var data = await cache.Get(block_request).ConfigureAwait(false);
                                 sw_get?.Stop();
 
                                 sw_resp?.Start();
-                                await res.WriteAsync(data);
+                                await res.WriteAsync(data).ConfigureAwait(false);
                                 sw_resp?.Stop();
                             }
                         }
@@ -420,7 +433,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                     }
                 })).ToArray();
 
-                await Task.WhenAll([volume_consumer, ..block_handlers]);
+                await Task.WhenAll([volume_consumer, .. block_handlers]).ConfigureAwait(false);
             });
         }
     }

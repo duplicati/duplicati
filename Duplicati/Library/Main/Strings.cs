@@ -171,6 +171,8 @@ namespace Duplicati.Library.Main.Strings
         public static string MachineidShort { get { return LC.L(@"Machine ID"); } }
         public static string MachinenameLong { get { return LC.L(@"The name of the machine running the backup. This can be used to identify the machine when sending mail or running scripts."); } }
         public static string MachinenameShort { get { return LC.L(@"Machine name"); } }
+        public static string NextscheduledrunShort { get { return LC.L(@"The time of the next scheduled run"); } }
+        public static string NextscheduledrunLong { get { return LC.L(@"This property is a reporting option and does not affect the actual scheduled time. Use this option to inform a reporting destination about the next expected time the backup will run."); } }
         public static string CompressionextensionfileLong(string path) { return LC.L(@"Use this option to point to a text file where each line contains a file extension that indicates a non-compressible file. Files that have an extension found in the file will not be compressed, but simply stored in the archive. The file format ignores any lines that do not start with a period, and considers a space to indicate the end of the extension. A default file is supplied, that also serves as an example. The default file is placed in {0}.", path); }
         public static string CompressionextensionfileShort { get { return LC.L(@"Manage non-compressible file extensions"); } }
         public static string BlocksizeLong { get { return LC.L(@"The block size determines how files are fragmented. Choosing a large value will cause a larger overhead on file changes, choosing a small value will cause a large overhead on storage of file lists. Note that the value cannot be changed after remote files are created."); } }
@@ -268,7 +270,7 @@ namespace Duplicati.Library.Main.Strings
         public static string ConcurrencyblockhashersShort { get { return LC.L(@"Specify the number of concurrent hashing processes"); } }
         public static string ConcurrencycompressorsLong { get { return LC.L(@"Use this option to set the number of processes that perform compression of output data."); } }
         public static string ConcurrencycompressorsShort { get { return LC.L(@"Specify the number of concurrent compression processes"); } }
-        public static string ConcurrencyfileprocessorsShort{ get { return LC.L(@"[EXPERIMENTAL]Specify the number of concurrent files to open"); } }
+        public static string ConcurrencyfileprocessorsShort { get { return LC.L(@"[EXPERIMENTAL]Specify the number of concurrent files to open"); } }
         public static string ConcurrencyfileprocessorsLong { get { return LC.L(@"Use this option to set the number of concurrent files to open. This could accelerate big backups involving lot of files, such as an initial backup"); } }
         public static string DisablesyntehticfilelistLong { get { return LC.L(@"If Duplicati detects that the previous backup did not complete, it will generate a filelist that is a merge of the last completed backup and the contents that were uploaded in the incomplete backup session."); } }
         public static string DisablesyntheticfilelistShort { get { return LC.L(@"Disable synthetic filelist"); } }
@@ -353,6 +355,11 @@ namespace Duplicati.Library.Main.Strings
         public static string InvalidHashAlgorithm(string algorithm) { return LC.L(@"The cryptolibrary does not support the hash algorithm {0}", algorithm); }
         public static string PassphraseChangeUnsupported { get { return LC.L(@"The passphrase cannot be changed for an existing backup"); } }
         public static string SnapshotFailedError(string message) { return LC.L(@"Failed to create a snapshot: {0}", message); }
+    }
+
+    internal static class BackendMananger
+    {
+        public static string EncryptionModuleNotFound(string name) { return LC.L(@"The encryption module {0} was not found", name); }
     }
 
 }

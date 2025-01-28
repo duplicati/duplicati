@@ -20,47 +20,37 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System.Threading.Tasks;
-using CoCoL;
 using Duplicati.Library.Main.Operation.Common;
 
-namespace Duplicati.Library.Main.Operation.Backup
+namespace Duplicati.Library.Main.Operation.Backup;
+
+internal static class RecreateMissingIndexFiles
 {
-	internal static class RecreateMissingIndexFiles
+	/// <summary>
+	/// The tag used for log messages
+	/// </summary>
+	private static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(RecreateMissingIndexFiles));
+
+	public static async Task Run(BackupDatabase database, IBackendManager backendManager, Options options, ITaskReader taskreader)
 	{
-		/// <summary>
-		/// The tag used for log messages
-		/// </summary>
-		private static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(RecreateMissingIndexFiles));
-
-		public static Task Run(Channels channels, BackupDatabase database, Options options, ITaskReader taskreader)
+		if (options.IndexfilePolicy != Options.IndexFileStrategy.None)
 		{
-			return AutomationExtensions.RunTask(new
+			foreach (var blockfile in await database.GetMissingIndexFilesAsync().ConfigureAwait(false))
 			{
-				UploadChannel = channels.BackendRequest.AsWrite()
-			},
+				if (!await taskreader.ProgressRendevouz().ConfigureAwait(false))
+					return;
 
-			async self =>
-			{
-				if (options.IndexfilePolicy != Options.IndexFileStrategy.None)
-				{
-					foreach (var blockfile in await database.GetMissingIndexFilesAsync())
-					{
-						if (!await taskreader.ProgressRendevouz().ConfigureAwait(false))
-							return;
+				Logging.Log.WriteInformationMessage(LOGTAG, "RecreateMissingIndexFile", "Re-creating missing index file for {0}", blockfile);
+				var w = await Common.IndexVolumeCreator.CreateIndexVolume(blockfile, options, database).ConfigureAwait(false);
 
-						Logging.Log.WriteInformationMessage(LOGTAG, "RecreateMissingIndexFile", "Re-creating missing index file for {0}", blockfile);
-						var w = await Common.IndexVolumeCreator.CreateIndexVolume(blockfile, options, database);
+				if (!await taskreader.ProgressRendevouz().ConfigureAwait(false))
+					return;
 
-						if (!await taskreader.ProgressRendevouz().ConfigureAwait(false))
-							return;
-
-						await database.UpdateRemoteVolumeAsync(w.RemoteFilename, RemoteVolumeState.Uploading, -1, null);
-						await self.UploadChannel.WriteAsync(new IndexVolumeUploadRequest(w));
-					}
-				}
-			});
-
+				await database.UpdateRemoteVolumeAsync(w.RemoteFilename, RemoteVolumeState.Uploading, -1, null).ConfigureAwait(false);
+				await backendManager.PutAsync(w, null, null, false, taskreader.ProgressToken).ConfigureAwait(false);
+			}
 		}
-
 	}
+
 }
+

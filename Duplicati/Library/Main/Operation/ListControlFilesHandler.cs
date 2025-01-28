@@ -20,39 +20,37 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System;
-using System.Linq;
 using System.Collections.Generic;
 using Duplicati.Library.Main.Database;
 using Duplicati.Library.Utility;
+using System.Threading;
 
 namespace Duplicati.Library.Main.Operation
 {
     internal class ListControlFilesHandler
     {
         private readonly Options m_options;
-        private readonly string m_backendurl;
         private readonly ListResults m_result;
 
-        public ListControlFilesHandler(string backendurl, Options options, ListResults result)
+        public ListControlFilesHandler(Options options, ListResults result)
         {
             m_options = options;
-            m_backendurl = backendurl;
             m_result = result;
         }
 
-        public void Run(IEnumerable<string> filterstrings = null, Library.Utility.IFilter compositefilter = null)
+        public void Run(IBackendManager backendManager, IEnumerable<string> filterstrings, Library.Utility.IFilter compositefilter)
         {
-            using (var tmpdb = new Library.Utility.TempFile())
-            using (var db = new Database.LocalDatabase(System.IO.File.Exists(m_options.Dbpath) ? m_options.Dbpath : (string)tmpdb, "ListControlFiles", true))
-            using (var backend = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, db))
+            var cancellationToken = CancellationToken.None;
+            using (var tmpdb = new TempFile())
+            using (var db = new LocalDatabase(System.IO.File.Exists(m_options.Dbpath) ? m_options.Dbpath : (string)tmpdb, "ListControlFiles", true))
             {
                 m_result.SetDatabase(db);
 
-                var filter = Library.Utility.JoinedFilterExpression.Join(new Library.Utility.FilterExpression(filterstrings), compositefilter);
+                var filter = JoinedFilterExpression.Join(new Library.Utility.FilterExpression(filterstrings), compositefilter);
 
                 try
                 {
-                    var filteredList = ListFilesHandler.ParseAndFilterFilesets(backend.List(), m_options);
+                    var filteredList = ListFilesHandler.ParseAndFilterFilesets(backendManager.ListAsync(cancellationToken).Await(), m_options);
                     if (filteredList.Count == 0)
                         throw new Exception("No filesets found on remote target");
 
@@ -68,7 +66,7 @@ namespace Duplicati.Library.Main.Operation
                             var entry = db.GetRemoteVolume(file.Name);
 
                             var files = new List<Library.Interface.IListResultFile>();
-                            using (var tmpfile = backend.Get(file.Name, entry.Size < 0 ? file.Size : entry.Size, entry.Hash))
+                            using (var tmpfile = backendManager.GetAsync(file.Name, entry.Hash, entry.Size < 0 ? file.Size : entry.Size, cancellationToken).Await())
                             using (var tmp = new Volumes.FilesetVolumeReader(RestoreHandler.GetCompressionModule(file.Name), tmpfile, m_options))
                                 foreach (var cf in tmp.ControlFiles)
                                     if (Library.Utility.FilterExpression.Matches(filter, cf.Key))
@@ -90,7 +88,7 @@ namespace Duplicati.Library.Main.Operation
                 }
                 finally
                 {
-                    backend.WaitForComplete(db, null);
+                    backendManager.WaitForEmptyAsync(db, null, cancellationToken).Await();
                 }
             }
         }
