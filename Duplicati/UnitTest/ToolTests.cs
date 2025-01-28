@@ -76,7 +76,8 @@ namespace Duplicati.UnitTest
                 $"file://{l1}", $"file://{l2}",
                 // Pass along multi token options to test that the parser won't fail
                 "--src-options", "ssh-accept-any-fingerprints=true", "ssh-keyfile=/path/to/keyfile",
-                "--dst-options", "some-other-key=value", "another-key=value2"
+                "--dst-options", "some-other-key=value", "another-key=value2",
+                "--confirm"
                 };
             var async_call = exe(args);
             async_call.Wait();

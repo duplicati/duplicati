@@ -53,7 +53,7 @@ namespace RemoteSynchronization
             var retry_opt = new Option<int>(aliases: ["--retry"], description: "Number of times to retry on errors", getDefaultValue: () => DEFAULT_RETRY) { Arity = ArgumentArity.ExactlyOne };
             var force_opt = new Option<bool>(aliases: ["--force"], description: "Force the synchronization", getDefaultValue: () => DEFAULT_FORCE);
             var retention_opt = new Option<bool>(aliases: ["--retention"], description: "Toggles whether to keep old files. Any deletes will be renames instead", getDefaultValue: () => DEFAULT_RETENTION);
-            var confirm_opt = new Option<bool>(aliases: ["--confirm"], description: "Ask for confirmation before starting the synchronization", getDefaultValue: () => DEFAULT_CONFIRM);
+            var confirm_opt = new Option<bool>(aliases: ["--confirm"], description: "Automatically confirm the operation", getDefaultValue: () => DEFAULT_CONFIRM);
 
             var root_cmd = new RootCommand("Remote Synchronization Tool");
             root_cmd.AddArgument(src_arg);
