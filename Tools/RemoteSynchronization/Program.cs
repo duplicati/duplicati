@@ -35,13 +35,14 @@ namespace RemoteSynchronization
 {
     public class Program
     {
+        private const bool DEFAULT_DRY_RUN = false;
         private const bool DEFAULT_VERIFY = false;
 
         public static async Task<int> Main(string[] args)
         {
             var src_arg = new Argument<string>(name: "backend_src", description: "The source backend string");
             var dst_arg = new Argument<string>(name: "backend_dst", description: "The destination backend string");
-            var dry_run_opt = new Option<bool>(aliases: ["--dry-run", "-d"], description: "Do not actually write or delete files");
+            var dry_run_opt = new Option<bool>(aliases: ["--dry-run", "-d"], description: "Do not actually write or delete files", getDefaultValue: () => DEFAULT_DRY_RUN);
             var src_opts = OptionWithMultipleTokens(aliases: ["--src-options"], description: "Options for the source backend");
             var dst_opts = OptionWithMultipleTokens(aliases: ["--dst-options"], description: "Options for the destination backend");
             var verify_opt = new Option<bool>(aliases: ["--verify"], description: "Verify the files after copying", getDefaultValue: () => DEFAULT_VERIFY);
@@ -68,6 +69,7 @@ namespace RemoteSynchronization
 
         private static async Task<int> Run(string src, string dst, Dictionary<string, object?> options)
         {
+            var dry_run = options["dry-run"] as bool? ?? DEFAULT_DRY_RUN;
             var verify = options["verify"] as bool? ?? DEFAULT_VERIFY;
             var duplicati_options = new Dictionary<string, string>()
             {
