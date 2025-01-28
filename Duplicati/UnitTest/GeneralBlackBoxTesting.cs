@@ -69,7 +69,7 @@ namespace Duplicati.UnitTest
         public void OneTimeSetUp()
         {
             this.OneTimeTearDown();
-            CommandLineOperationsTests.DownloadS3FileIfNewerAsync($"{CommandLineOperationsTests.S3_URL}{this.zipFilename}", this.zipFilepath).Await();
+            CommandLineOperationsTests.DownloadS3FileIfNewerAsync(this.zipFilepath, $"{CommandLineOperationsTests.S3_URL}{this.zipFilename}").Await();
             System.IO.Compression.ZipFile.ExtractToDirectory(this.zipFilepath, BASEFOLDER);
         }
 
