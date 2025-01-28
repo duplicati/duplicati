@@ -1,4 +1,4 @@
-// Copyright (C) 2025, The Duplicati Team
+﻿// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -32,6 +32,9 @@ using System.Threading.Tasks;
 
 namespace RemoteSynchronization
 {
+    /// <summary>
+    /// Remote synchronization tool.
+    /// </summary>
     public class Program
     {
         // Default values for the options
@@ -56,7 +59,25 @@ namespace RemoteSynchronization
             var confirm_opt = new Option<bool>(aliases: ["--confirm"], description: "Automatically confirm the operation", getDefaultValue: () => DEFAULT_CONFIRM);
             var global_opts = OptionWithMultipleTokens(aliases: ["--global-options"], description: "Global options all backends. May be overridden by backend specific options (src-options, dst-options)");
 
-            var root_cmd = new RootCommand("Remote Synchronization Tool");
+            var root_cmd = new RootCommand(@"Remote Synchronization Tool
+
+This tool synchronizes two remote backends. The tool assumes that the intent is
+to have the destination match the source.
+
+If the destination has files that are not in the source, they will be deleted
+(or renamed if the retention option is set).
+
+If the destination has files that are in the source but are different in size or
+has a newer timestamp, they will be overwritten by the source files.
+
+If the force option is set, the destination will be overwritten by the source,
+regardless of the state of the files. It will also skip the initial comparison,
+and delete (or rename) all files in the destination.
+
+If the verify option is set, the files will be downloaded and compared after
+uploading to ensure that the files are correct. Files that already exist in the
+destination will be verified before being overwritten (if they seemingly match).
+            ");
             root_cmd.AddArgument(src_arg);
             root_cmd.AddArgument(dst_arg);
             root_cmd.AddOption(dry_run_opt);
@@ -83,6 +104,7 @@ namespace RemoteSynchronization
 
         private static async Task<int> Run(string src, string dst, Dictionary<string, object?> options)
         {
+            // Parse the known options for this tool
             var dry_run = options["dry-run"] as bool? ?? DEFAULT_DRY_RUN;
             var verify = options["verify"] as bool? ?? DEFAULT_VERIFY;
             var retries = options["retry"] as int? ?? DEFAULT_RETRY;
@@ -90,6 +112,7 @@ namespace RemoteSynchronization
             var retention = options["retention"] as bool? ?? DEFAULT_RETENTION;
             var confirm = options["confirm"] as bool? ?? DEFAULT_CONFIRM;
 
+            // Unpack and parse the multi token options
             Dictionary<string, string> global_options = (options["global-options"] as List<string>)
                 ?.Select(x => x.Split("="))
                 .ToDictionary(x => x[0], x => x[1])
@@ -107,6 +130,7 @@ namespace RemoteSynchronization
             foreach (var x in global_options)
                 src_opts[x.Key] = dst_opts[x.Key] = x.Value;
 
+            // Load the backends
             using var b1 = Duplicati.Library.DynamicLoader.BackendLoader.GetBackend(src, src_opts);
             var b1s = b1 as IStreamingBackend;
             System.Diagnostics.Debug.Assert(b1s != null);
@@ -214,7 +238,6 @@ namespace RemoteSynchronization
         // introduce these checks as a post processing step? Especially the database consistency check, as that is often recreated from the index files.
         // TODO This tool shouldn't handle it, but for convenience, it should support making the seperate call to the regular Duplicati on the destination backend, which alread carries this functionality.
 
-        // Forcefully synchronize the remote backends
         private static async Task<(long, IEnumerable<IFileEntry>)> CopyAsync(IStreamingBackend b_src, IStreamingBackend b_dst, IEnumerable<IFileEntry> files, bool dry_run, bool verify)
         {
             long successful_copies = 0;
@@ -377,7 +400,7 @@ namespace RemoteSynchronization
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine($"Error renaming {f.Name}: {e.Message}");
+                    Console.WriteLine($"Error during renaming of {f.Name}: {e.Message}");
                 }
             }
             return successful_renames;
@@ -411,7 +434,7 @@ namespace RemoteSynchronization
                 catch (Exception e)
                 {
                     errors.Add(f);
-                    Console.WriteLine($"Error verifying {f.Name}: {e.Message}");
+                    Console.WriteLine($"Error during verification of {f.Name}: {e.Message}");
                 }
             }
 
