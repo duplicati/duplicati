@@ -45,6 +45,11 @@ namespace RemoteSynchronization
         private const bool DEFAULT_RETENTION = false;
         private const bool DEFAULT_CONFIRM = false;
 
+        /// <summary>
+        /// Main entry point for the tool.
+        /// </summary>
+        /// <param name="args">The commandline arguments</param>
+        /// <returns>0 on success, -1 on abort, and the number of errors encountered otherwise.</returns>
         public static async Task<int> Main(string[] args)
         {
             var src_arg = new Argument<string>(name: "backend_src", description: "The source backend string");
@@ -102,6 +107,13 @@ destination will be verified before being overwritten (if they seemingly match).
             return await root_cmd.InvokeAsync(args);
         }
 
+        /// <summary>
+        /// The main logic of the tool.
+        /// </summary>
+        /// <param name="src">The connection string for the source backend.</param>
+        /// <param name="dst">The connection string for the destination backend.</param>
+        /// <param name="options">Various options for the tool</param>
+        /// <returns>The return code for the main entry; 0 on success.</returns>
         private static async Task<int> Run(string src, string dst, Dictionary<string, object?> options)
         {
             // Parse the known options for this tool
@@ -238,6 +250,16 @@ destination will be verified before being overwritten (if they seemingly match).
         // introduce these checks as a post processing step? Especially the database consistency check, as that is often recreated from the index files.
         // TODO This tool shouldn't handle it, but for convenience, it should support making the seperate call to the regular Duplicati on the destination backend, which alread carries this functionality.
 
+        /// <summary>
+        /// Copies the files from one backend to another.
+        /// The files are copied one by one, and each file is verified after uploading if the verify flag is set.
+        /// </summary>
+        /// <param name="b_src">The source backend.</param>
+        /// <param name="b_dst">The destination backend.</param>
+        /// <param name="files">The files that will be copied.</param>
+        /// <param name="dry_run">Flag for whether destructive actions (writes) should be printed rather than performed. Downloads (reads) are still being performed.</param>
+        /// <param name="verify">Flag for whether to verify each upload to the destination backend.</param>
+        /// <returns>A tuple holding the number of succesful copies and a List of the files that failed.</returns>
         private static async Task<(long, IEnumerable<IFileEntry>)> CopyAsync(IStreamingBackend b_src, IStreamingBackend b_dst, IEnumerable<IFileEntry> files, bool dry_run, bool verify)
         {
             long successful_copies = 0;
@@ -279,6 +301,13 @@ destination will be verified before being overwritten (if they seemingly match).
             return (successful_copies, errors);
         }
 
+        /// <summary>
+        /// Deletes the files from a backend.
+        /// </summary>
+        /// <param name="b">The backend to delete the files from.</param>
+        /// <param name="files">The files to delete.</param>
+        /// <param name="dry_run">Flag for whether the deletion should be printed rather than performed.</param>
+        /// <returns>The number of successful deletions.</returns>
         private static async Task<long> DeleteAsync(IStreamingBackend b, IEnumerable<IFileEntry> files, bool dry_run)
         {
             long successful_deletes = 0;
@@ -304,6 +333,12 @@ destination will be verified before being overwritten (if they seemingly match).
             return successful_deletes;
         }
 
+        /// <summary>
+        /// Creates an option that allows multiple tokens and multiple arguments per token.
+        /// </summary>
+        /// <param name="aliases">The aliases for the option.</param>
+        /// <param name="description">The description for the option.</param>
+        /// <returns>The created option.</returns>
         private static Option<List<string>> OptionWithMultipleTokens(string[] aliases, string description)
         {
             return new Option<List<string>>(aliases: aliases, description: description)
@@ -313,6 +348,16 @@ destination will be verified before being overwritten (if they seemingly match).
             };
         }
 
+        /// <summary>
+        /// Prepares the lists of files to copy, delete and verify.
+        /// The files to copy are the files that are not in the destination, have a different size or have a more recent modification date.
+        /// The files to delete are the files that are found in the destination but not found in the source.
+        /// The files to verify are the files that are found in both the source and the destination, and that have the same size and modification date.
+        /// </summary>
+        /// <param name="b_src">The source backend.</param>
+        /// <param name="b_dst">The destination backend.</param>
+        /// <param name="force">Flag for whether to force the synchronization.</param>
+        /// <returns>A tuple of Lists each holding the files to copy, delete and verify.</returns>
         private static (IEnumerable<IFileEntry>, IEnumerable<IFileEntry>, IEnumerable<IFileEntry>) PrepareFileLists(IStreamingBackend b_src, IStreamingBackend b_dst, bool force)
         {
             var files_src = b_src.List();
@@ -376,6 +421,14 @@ destination will be verified before being overwritten (if they seemingly match).
             return (to_copy, to_delete.Select(x => lookup_dst[x]), to_verify);
         }
 
+        /// <summary>
+        /// Renames the files in a backend.
+        /// The renaming is done by deleting the file and re-uploading it with a new name.
+        /// </summary>
+        /// <param name="b">The backend to rename the files in.</param>
+        /// <param name="files">The files to rename.</param>
+        /// <param name="dry_run">Flag for whether the renaming should be printed rather than performed.</param>
+        /// <returns>The number of successful renames.</returns>
         private static async Task<long> RenameAsync(IStreamingBackend b, IEnumerable<IFileEntry> files, bool dry_run)
         {
             long successful_renames = 0;
@@ -406,6 +459,14 @@ destination will be verified before being overwritten (if they seemingly match).
             return successful_renames;
         }
 
+        /// <summary>
+        /// Verifies the files in the destination backend.
+        /// The verification is done by downloading the files from the destination backend and comparing them to the source files.
+        /// </summary>
+        /// <param name="b_src">The source backend.</param>
+        /// <param name="b_dst">The destination backend.</param>
+        /// <param name="files">The files to verify.</param>
+        /// <returns>A list of the files that failed verification.</returns>
         private static async Task<IEnumerable<IFileEntry>> VerifyAsync(IStreamingBackend b_src, IStreamingBackend b_dst, IEnumerable<IFileEntry> files)
         {
             var errors = new List<IFileEntry>();
