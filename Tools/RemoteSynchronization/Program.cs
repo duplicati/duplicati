@@ -1,4 +1,4 @@
-﻿// Copyright (C) 2025, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -54,6 +54,7 @@ namespace RemoteSynchronization
             var force_opt = new Option<bool>(aliases: ["--force"], description: "Force the synchronization", getDefaultValue: () => DEFAULT_FORCE);
             var retention_opt = new Option<bool>(aliases: ["--retention"], description: "Toggles whether to keep old files. Any deletes will be renames instead", getDefaultValue: () => DEFAULT_RETENTION);
             var confirm_opt = new Option<bool>(aliases: ["--confirm"], description: "Automatically confirm the operation", getDefaultValue: () => DEFAULT_CONFIRM);
+            var global_opts = OptionWithMultipleTokens(aliases: ["--global-options"], description: "Global options all backends. May be overridden by backend specific options (src-options, dst-options)");
 
             var root_cmd = new RootCommand("Remote Synchronization Tool");
             root_cmd.AddArgument(src_arg);
@@ -66,6 +67,7 @@ namespace RemoteSynchronization
             root_cmd.AddOption(force_opt);
             root_cmd.AddOption(retention_opt);
             root_cmd.AddOption(confirm_opt);
+            root_cmd.AddOption(global_opts);
 
             root_cmd.SetHandler((InvocationContext ctx) =>
             {
@@ -88,10 +90,10 @@ namespace RemoteSynchronization
             var retention = options["retention"] as bool? ?? DEFAULT_RETENTION;
             var confirm = options["confirm"] as bool? ?? DEFAULT_CONFIRM;
 
-            var duplicati_options = new Dictionary<string, string>()
-            {
-                ["dry-run"] = dry_run.ToString()
-            };
+            Dictionary<string, string> global_options = (options["global-options"] as List<string>)
+                ?.Select(x => x.Split("="))
+                .ToDictionary(x => x[0], x => x[1])
+                ?? [];
             Dictionary<string, string> src_opts = (options["src-options"] as List<string>)
                 ?.Select(x => x.Split("="))
                 .ToDictionary(x => x[0], x => x[1])
@@ -100,7 +102,9 @@ namespace RemoteSynchronization
                 ?.Select(x => x.Split("="))
                 .ToDictionary(x => x[0], x => x[1])
                 ?? [];
-            foreach (var x in duplicati_options)
+
+            // Merge the global options into the source and destination options
+            foreach (var x in global_options)
                 src_opts[x.Key] = dst_opts[x.Key] = x.Value;
 
             using var b1 = Duplicati.Library.DynamicLoader.BackendLoader.GetBackend(src, src_opts);
