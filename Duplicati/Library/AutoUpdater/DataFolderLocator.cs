@@ -32,6 +32,21 @@ namespace Duplicati.Library.AutoUpdater;
 /// </summary>
 public static class DataFolderLocator
 {
+
+    /// <summary>
+    /// Finds a default storage folder, using the operating system specific locations.
+    /// The targetfilename is used to detect locations that are used in previous versions.
+    /// If the targetfilename is found in an old location, but not the current, the old location is used.
+    /// Note that the folder is not created, only the path is returned.
+    /// If the data folder is overriden, the overriden folder is used, and no search is performed.
+    /// </summary>
+    /// <param name="targetfilename">The filename to look for</param>
+    /// <returns>The default storage folder</returns>
+    public static string GetDefaultStorageFolder(string targetfilename)
+        => DataFolderManager.OVERRIDEN_DATAFOLDER
+            ? DataFolderManager.DATAFOLDER
+            : GetDefaultStorageFolderInternal(targetfilename, AutoUpdateSettings.AppName);
+
     /// <summary>
     /// Finds a default storage folder, using the operating system specific locations.
     /// The targetfilename is used to detect locations that are used in previous versions.
@@ -41,7 +56,7 @@ public static class DataFolderLocator
     /// <param name="targetfilename">The filename to look for</param>
     /// <param name="appName">The name of the application</param>
     /// <returns>The default storage folder</returns>
-    public static string GetDefaultStorageFolder(string targetfilename, string appName = "Duplicati")
+    internal static string GetDefaultStorageFolderInternal(string targetfilename, string appName)
     {
         //Normal mode uses the systems "(Local) Application Data" folder
         // %LOCALAPPDATA% on Windows, ~/.config on Linux

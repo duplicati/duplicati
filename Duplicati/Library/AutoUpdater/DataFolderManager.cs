@@ -35,16 +35,6 @@ namespace Duplicati.Library.AutoUpdater;
 public static class DataFolderManager
 {
     /// <summary>
-    /// The debug flag, set to true if the application is running in debug mode,
-    /// preventing littering of DEBUG statements in the code
-    /// </summary>
-#if DEBUG
-    private static readonly bool DEBUG_MODE = true;
-#else
-        private static readonly bool DEBUG_MODE = false;
-#endif
-
-    /// <summary>
     /// The folder where the machine id is placed
     /// </summary>
     public static readonly string DATAFOLDER;
@@ -87,6 +77,11 @@ public static class DataFolderManager
     /// Flag to indicate if the application is running in portable mode
     /// </summary>
     public static readonly bool PORTABLE_MODE;
+
+    /// <summary>
+    /// Flag to indicate if the data folder was overriden
+    /// </summary>
+    public static readonly bool OVERRIDEN_DATAFOLDER;
 
     /// <summary>
     /// Replication of the argument parsing from the main Duplicati codebase
@@ -133,7 +128,11 @@ public static class DataFolderManager
     {
         // In debug builds, we default to portable mode
         if (value == null)
-            return DEBUG_MODE ? true : false;
+#if DEBUG
+            return true;
+#else
+            return false;
+#endif
 
         if (
             value.Equals("false", StringComparison.OrdinalIgnoreCase)
@@ -160,26 +159,26 @@ public static class DataFolderManager
         // Prefer the command line argument over the environment variable
         if (!string.IsNullOrWhiteSpace(datafolderArg))
         {
+            OVERRIDEN_DATAFOLDER = true;
             DATAFOLDER = Util.AppendDirSeparator(Environment.ExpandEnvironmentVariables(datafolderArg).Trim('"'));
         }
         // Portable mode is prefered over the environment variable
         else if (PORTABLE_MODE)
         {
-            DATAFOLDER = DEBUG_MODE
-                // Use the build folder for portable mode in debug builds
-                ? UpdaterManager.INSTALLATIONDIR
-                // Use the data folder in the installation directory for portable mode
-                : Util.AppendDirSeparator(Path.Combine(UpdaterManager.INSTALLATIONDIR, "data"));
+            OVERRIDEN_DATAFOLDER = true;
+            DATAFOLDER = Util.AppendDirSeparator(Path.Combine(UpdaterManager.INSTALLATIONDIR, "data"));
         }
         // Use the legacy environment variable, if set
         else if (!string.IsNullOrWhiteSpace(envOverride))
         {
+            OVERRIDEN_DATAFOLDER = true;
             DATAFOLDER = Util.AppendDirSeparator(Environment.ExpandEnvironmentVariables(envOverride).Trim('"'));
         }
         // Use the default location
         else
         {
-            DATAFOLDER = Util.AppendDirSeparator(DataFolderLocator.GetDefaultStorageFolder(SERVER_DATABASE_FILENAME, APPNAME));
+            OVERRIDEN_DATAFOLDER = false;
+            DATAFOLDER = Util.AppendDirSeparator(DataFolderLocator.GetDefaultStorageFolderInternal(SERVER_DATABASE_FILENAME, APPNAME));
         }
 
         if (!Directory.Exists(DATAFOLDER))
