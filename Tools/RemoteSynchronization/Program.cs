@@ -40,11 +40,15 @@ namespace RemoteSynchronization
             var src_arg = new Argument<string>(name: "backend_src", description: "The source backend string");
             var dst_arg = new Argument<string>(name: "backend_dst", description: "The destination backend string");
             var dry_run_opt = new Option<bool>(aliases: ["--dry-run", "-d"], description: "Do not actually write or delete files");
+            var src_opts = OptionWithMultipleTokens(aliases: ["--src-options"], description: "Options for the source backend");
+            var dst_opts = OptionWithMultipleTokens(aliases: ["--dst-options"], description: "Options for the destination backend");
 
             var root_cmd = new RootCommand("Remote Synchronization Tool");
             root_cmd.AddArgument(src_arg);
             root_cmd.AddArgument(dst_arg);
             root_cmd.AddOption(dry_run_opt);
+            root_cmd.AddOption(src_opts);
+            root_cmd.AddOption(dst_opts);
 
             root_cmd.SetHandler((InvocationContext ctx) =>
             {
@@ -65,12 +69,22 @@ namespace RemoteSynchronization
             {
                 ["dry-run"] = dry_run.ToString()
             };
+            Dictionary<string, string> src_opts = (options["src-options"] as List<string>)
+                ?.Select(x => x.Split("="))
+                .ToDictionary(x => x[0], x => x[1])
+                ?? [];
+            Dictionary<string, string> dst_opts = (options["dst-options"] as List<string>)
+                ?.Select(x => x.Split("="))
+                .ToDictionary(x => x[0], x => x[1])
+                ?? [];
+            foreach (var x in duplicati_options)
+                src_opts[x.Key] = dst_opts[x.Key] = x.Value;
 
-            using var b1 = Duplicati.Library.DynamicLoader.BackendLoader.GetBackend(src, duplicati_options);
+            using var b1 = Duplicati.Library.DynamicLoader.BackendLoader.GetBackend(src, src_opts);
             var b1s = b1 as IStreamingBackend;
             System.Diagnostics.Debug.Assert(b1s != null);
 
-            using var b2 = Duplicati.Library.DynamicLoader.BackendLoader.GetBackend(dst, duplicati_options);
+            using var b2 = Duplicati.Library.DynamicLoader.BackendLoader.GetBackend(dst, dst_opts);
             var b2s = b2 as IStreamingBackend;
             System.Diagnostics.Debug.Assert(b2s != null);
 
@@ -146,6 +160,15 @@ namespace RemoteSynchronization
                 }
             }
             return successful_deletes;
+        }
+
+        private static Option<List<string>> OptionWithMultipleTokens(string[] aliases, string description)
+        {
+            return new Option<List<string>>(aliases: aliases, description: description)
+            {
+                Arity = ArgumentArity.OneOrMore,
+                AllowMultipleArgumentsPerToken = true
+            };
         }
 
         private static (IEnumerable<IFileEntry>, IEnumerable<IFileEntry>) PrepareFileLists(IStreamingBackend b_src, IStreamingBackend b_dst)

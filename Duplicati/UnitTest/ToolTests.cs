@@ -70,7 +70,12 @@ namespace Duplicati.UnitTest
 
             // Call the tool
             var exe = RemoteSynchronization.Program.Main;
-            var args = new string[] { $"file://{l1}", $"file://{l2}" };
+            var args = new string[] {
+                $"file://{l1}", $"file://{l2}",
+                // Pass along multi token options to test that the parser won't fail
+                "--src-options", "ssh-accept-any-fingerprints=true", "ssh-keyfile=/path/to/keyfile",
+                "--dst-options", "some-other-key=value", "another-key=value2"
+                };
             var async_call = exe(args);
             async_call.Wait();
             Assert.AreEqual(0, async_call.Result, "Remote synchronization tool did not return 0.");
