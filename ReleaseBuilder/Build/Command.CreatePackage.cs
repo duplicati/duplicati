@@ -264,6 +264,10 @@ public static partial class Command
         /// <returns>A task representing the asynchronous operation.</returns>
         static async Task BuildMsiPackage(string baseDir, string buildRoot, string msiFile, PackageTarget target, RuntimeConfig rtcfg)
         {
+            var isWindows = OperatingSystem.IsWindows();
+            const string originalNamespace = "http://schemas.microsoft.com/wix/2006/wi";
+            const string wixv4Namespace = "http://wixtoolset.org/schemas/v4/wxs";
+
             var resourcesDir = Path.Combine(baseDir, "ReleaseBuilder", "Resources", "Windows");
             var resourcesSubDir = Path.Combine(resourcesDir,
                 target.Interface switch
@@ -288,7 +292,11 @@ public static partial class Command
             if (File.Exists(binFiles))
                 File.Delete(binFiles);
 
-            File.WriteAllText(binFiles, WixHeatBuilder.CreateWixFilelist(sourceFiles, version: rtcfg.ReleaseInfo.Version.ToString()));
+            File.WriteAllText(binFiles, WixHeatBuilder.CreateWixFilelist(
+                sourceFiles,
+                version: rtcfg.ReleaseInfo.Version.ToString(),
+                wixNs: isWindows ? wixv4Namespace : originalNamespace
+            ));
 
             var msiArch = target.Arch switch
             {
@@ -298,22 +306,47 @@ public static partial class Command
                 _ => throw new Exception($"Architeture not supported: {target.ArchString}")
             };
 
-            List<string> wixArgs = [
-                Program.Configuration.Commands.Wix!,
-                "--define", $"HarvestPath={sourceFiles}",
-                "--arch", msiArch,
-                "--output", msiFile,
-                Path.Combine(resourcesSubDir, "Shortcuts.wxs"),
-                binFiles,
-                Path.Combine(resourcesSubDir, "Duplicati.wxs")
-            ];
+            // Prepare the Wix arguments, different for WiX (Windows) and wixl (Linux/MacOS)
+            string[] wixArgs;
 
-            // Add wixl specific extensions
-            if (!OperatingSystem.IsWindows())
-                wixArgs.InsertRange(1, [
+            if (isWindows)
+            {
+                // Update namespace in the .wxs files for WiX v4
+                var shortcutsTempfile = Path.Combine(buildTmp, "Shortcuts.wxs");
+                var entryTempfile = Path.Combine(buildTmp, "Duplicati.wxs");
+
+                File.WriteAllText(shortcutsTempfile, File.ReadAllText(Path.Combine(resourcesSubDir, "Shortcuts.wxs"))
+                    .Replace(originalNamespace, wixv4Namespace));
+
+                File.WriteAllText(entryTempfile, File.ReadAllText(Path.Combine(resourcesSubDir, "Duplicati.wxs"))
+                    .Replace(originalNamespace, wixv4Namespace));
+
+                wixArgs = [
+                    Program.Configuration.Commands.Wix!,
+                    "build",
+                    "-define", $"HarvestPath={sourceFiles}",
+                    "-arch", msiArch,
+                    "-out", msiFile,
+                    shortcutsTempfile,
+                    binFiles,
+                    entryTempfile
+                ];
+            }
+            else
+            {
+                // wixl needs the UI extension
+                wixArgs = [
+                    Program.Configuration.Commands.Wix!,
                     "--ext", "ui",
                     "--extdir", Path.Combine(resourcesDir, "WixUIExtension"),
-                ]);
+                    "--define", $"HarvestPath={sourceFiles}",
+                    "--arch", msiArch,
+                    "--output", msiFile,
+                    Path.Combine(resourcesSubDir, "Shortcuts.wxs"),
+                    binFiles,
+                    Path.Combine(resourcesSubDir, "Duplicati.wxs")
+                ];
+            }
 
             await ProcessHelper.Execute(wixArgs, workingDirectory: buildRoot);
 
