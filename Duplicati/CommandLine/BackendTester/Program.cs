@@ -258,7 +258,7 @@ namespace Duplicati.CommandLine.BackendTester
                     : Environment.GetEnvironmentVariable("READ_WRITE_TIMEOUT_SECONDS") is { } timeoutRetry 
                       && int.TryParse(timeoutRetry, out var secondsRetry)
                         ? (int)TimeSpan.FromSeconds(secondsRetry).TotalMilliseconds
-                        : (int)TimeSpan.FromSeconds(10).TotalMilliseconds;
+                        : (int)TimeSpan.FromSeconds(60).TotalMilliseconds;
 
                 Console.WriteLine(LogTimeStamp + "Read Write Timeout set to {0}{1}", 
                     readWriteTimeout == Timeout.Infinite ? "infinite" : readWriteTimeout + " ms",
