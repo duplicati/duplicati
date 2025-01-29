@@ -43,10 +43,10 @@ namespace Duplicati.UnitTest
         [Category("Tools")]
         public void TestRemoteSynchronization()
         {
-            var l1 = $"{TARGETFOLDER}/l1";
-            var l2 = $"{TARGETFOLDER}/l2";
-            var l1r = $"{RESTOREFOLDER}/l1_restore";
-            var l2r = $"{RESTOREFOLDER}/l2_restore";
+            var l1 = Path.Combine(TARGETFOLDER, "l1");
+            var l2 = Path.Combine(TARGETFOLDER, "l2");
+            var l1r = Path.Combine(RESTOREFOLDER, "l1_restore");
+            var l2r = Path.Combine(RESTOREFOLDER, "l2_restore");
 
             var options = TestOptions;
 
