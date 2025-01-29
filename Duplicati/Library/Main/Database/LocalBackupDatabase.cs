@@ -788,7 +788,7 @@ SELECT ""BlocklistHash"".""BlocksetID"" FROM ""BlocklistHash"" WHERE ""Blocklist
         public RemoteVolumeEntry GetRemoteVolumeFromFilesetID(long filesetID, IDbTransaction transaction = null)
         {
             using (var cmd = m_connection.CreateCommand(transaction))
-            using (var rd = cmd.ExecuteReader(@"SELECT ""RemoteVolume"".""ID"", ""Name"", ""Type"", ""Size"", ""Hash"", ""State"", ""DeleteGraceTime"" FROM ""RemoteVolume"", ""Fileset"" WHERE ""Fileset"".""VolumeID"" = ""RemoteVolume"".""ID"" AND ""Fileset"".""ID"" = ?", filesetID))
+            using (var rd = cmd.ExecuteReader(@"SELECT ""RemoteVolume"".""ID"", ""Name"", ""Type"", ""Size"", ""Hash"", ""State"", ""DeleteGraceTime"", ""ArchiveTime"" FROM ""RemoteVolume"", ""Fileset"" WHERE ""Fileset"".""VolumeID"" = ""RemoteVolume"".""ID"" AND ""Fileset"".""ID"" = ?", filesetID))
                 if (rd.Read())
                     return new RemoteVolumeEntry(
                         rd.ConvertValueToInt64(0, -1),
@@ -797,7 +797,8 @@ SELECT ""BlocklistHash"".""BlocksetID"" FROM ""BlocklistHash"" WHERE ""Blocklist
                         rd.ConvertValueToInt64(3, -1),
                         (RemoteVolumeType)Enum.Parse(typeof(RemoteVolumeType), rd.GetValue(2).ToString()),
                         (RemoteVolumeState)Enum.Parse(typeof(RemoteVolumeState), rd.GetValue(5).ToString()),
-                        new DateTime(rd.ConvertValueToInt64(6, 0), DateTimeKind.Utc)
+                        new DateTime(rd.ConvertValueToInt64(6, 0), DateTimeKind.Utc),
+                        new DateTime(rd.ConvertValueToInt64(7, 0), DateTimeKind.Utc)
                     );
                 else
                     return default(RemoteVolumeEntry);

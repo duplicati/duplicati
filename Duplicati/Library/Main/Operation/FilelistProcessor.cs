@@ -262,9 +262,11 @@ namespace Duplicati.Library.Main.Operation
             var locallist = database.GetRemoteVolumes();
             foreach (var i in locallist)
             {
-                Volumes.IParsedVolume r;
-                var remoteFound = lookup.TryGetValue(i.Name, out r);
+                var remoteFound = lookup.TryGetValue(i.Name, out var r);
                 var correctSize = remoteFound && i.Size >= 0 && (i.Size == r.File.Size || r.File.Size < 0);
+                var archived = remoteFound && r.File.IsArchived;
+                if (archived && i.ArchiveTime == default)
+                    database.UpdateRemoteVolume(i.Name, i.State, i.Size, i.Hash, true, TimeSpan.Zero, true);
 
                 lookup.Remove(i.Name);
 
@@ -314,13 +316,13 @@ namespace Duplicati.Library.Main.Operation
                             if (protectedFiles.Any(pf => pf == i.Name))
                             {
                                 Logging.Log.WriteInformationMessage(LOGTAG, "KeepIncompleteFile", "keeping protected incomplete remote file listed as {0}: {1}", i.State, i.Name);
-                                database.UpdateRemoteVolume(i.Name, RemoteVolumeState.Temporary, i.Size, i.Hash, false, new TimeSpan(0), null);
+                                database.UpdateRemoteVolume(i.Name, RemoteVolumeState.Temporary, i.Size, i.Hash, false, new TimeSpan(0), false, null);
                             }
                             else
                             {
                                 Logging.Log.WriteInformationMessage(LOGTAG, "SchedulingMissingFileForDelete", "scheduling missing file for deletion, currently listed as {0}: {1}", i.State, i.Name);
                                 cleanupRemovedRemoteVolumes.Add(i.Name);
-                                database.UpdateRemoteVolume(i.Name, RemoteVolumeState.Deleting, i.Size, i.Hash, false, TimeSpan.FromHours(2), null);
+                                database.UpdateRemoteVolume(i.Name, RemoteVolumeState.Deleting, i.Size, i.Hash, false, TimeSpan.FromHours(2), false, null);
                             }
                         }
                         else

@@ -183,7 +183,7 @@ namespace Duplicati.Library.Main.Database
             m_updateremotevolumeCommand.CommandText = @"UPDATE ""Remotevolume"" SET ""OperationID"" = ?, ""State"" = ?, ""Hash"" = ?, ""Size"" = ? WHERE ""Name"" = ?";
             m_updateremotevolumeCommand.AddParameters(5);
 
-            m_selectremotevolumesCommand.CommandText = @"SELECT ""ID"", ""Name"", ""Type"", ""Size"", ""Hash"", ""State"", ""DeleteGraceTime"" FROM ""Remotevolume""";
+            m_selectremotevolumesCommand.CommandText = @"SELECT ""ID"", ""Name"", ""Type"", ""Size"", ""Hash"", ""State"", ""DeleteGraceTime"", ""ArchiveTime"" FROM ""Remotevolume""";
 
             m_selectremotevolumeCommand.CommandText = m_selectremotevolumesCommand.CommandText + @" WHERE ""Name"" = ?";
             m_selectduplicateRemoteVolumesCommand.CommandText = string.Format(@"SELECT DISTINCT ""Name"", ""State"" FROM ""Remotevolume"" WHERE ""Name"" IN (SELECT ""Name"" FROM ""Remotevolume"" WHERE ""State"" IN ('{0}', '{1}')) AND NOT ""State"" IN ('{0}', '{1}')", RemoteVolumeState.Deleted.ToString(), RemoteVolumeState.Deleting.ToString());
@@ -231,10 +231,10 @@ namespace Duplicati.Library.Main.Database
 
         public void UpdateRemoteVolume(string name, RemoteVolumeState state, long size, string hash, bool suppressCleanup, System.Data.IDbTransaction transaction = null)
         {
-            UpdateRemoteVolume(name, state, size, hash, suppressCleanup, new TimeSpan(0), transaction);
+            UpdateRemoteVolume(name, state, size, hash, suppressCleanup, new TimeSpan(0), false, transaction);
         }
 
-        public void UpdateRemoteVolume(string name, RemoteVolumeState state, long size, string hash, bool suppressCleanup, TimeSpan deleteGraceTime, System.Data.IDbTransaction transaction = null)
+        public void UpdateRemoteVolume(string name, RemoteVolumeState state, long size, string hash, bool suppressCleanup, TimeSpan deleteGraceTime, bool setArchived, System.Data.IDbTransaction transaction = null)
         {
             m_updateremotevolumeCommand.Transaction = transaction;
             m_updateremotevolumeCommand.SetParameterValue(0, m_operationid);
@@ -259,7 +259,21 @@ namespace Duplicati.Library.Main.Database
                             Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(DateTime.UtcNow + deleteGraceTime),
                             name)) != 1)
                     {
-                        throw new Exception($"Unexpected number of updates when recording remote volume updates: {c}!");
+                        throw new Exception($"Unexpected number of updates when recording remote volume grace-time updates: {c}!");
+                    }
+                }
+            }
+
+            if (setArchived)
+            {
+                using (var cmd = m_connection.CreateCommand(transaction))
+                {
+                    if ((c = cmd.ExecuteNonQuery(
+                            @"UPDATE ""RemoteVolume"" SET ""ArchiveTime"" = ? WHERE ""Name"" = ? ",
+                            Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(DateTime.UtcNow),
+                            name)) != 1)
+                    {
+                        throw new Exception($"Unexpected number of updates when recording remote volume archive-time updates: {c}!");
                     }
                 }
             }
@@ -366,7 +380,8 @@ namespace Duplicati.Library.Main.Database
                         rd.ConvertValueToInt64(3, -1),
                         (RemoteVolumeType)Enum.Parse(typeof(RemoteVolumeType), rd.GetValue(2).ToString()),
                         (RemoteVolumeState)Enum.Parse(typeof(RemoteVolumeState), rd.GetValue(5).ToString()),
-                        new DateTime(rd.ConvertValueToInt64(6, 0), DateTimeKind.Utc)
+                        new DateTime(rd.ConvertValueToInt64(6, 0), DateTimeKind.Utc),
+                        new DateTime(rd.ConvertValueToInt64(7, 0), DateTimeKind.Utc)
                     );
 
             return RemoteVolumeEntry.Empty;
@@ -397,7 +412,8 @@ namespace Duplicati.Library.Main.Database
                         rd.ConvertValueToInt64(3, -1),
                         (RemoteVolumeType)Enum.Parse(typeof(RemoteVolumeType), rd.GetValue(2).ToString()),
                         (RemoteVolumeState)Enum.Parse(typeof(RemoteVolumeState), rd.GetValue(5).ToString()),
-                        new DateTime(rd.ConvertValueToInt64(6, 0), DateTimeKind.Utc)
+                        new DateTime(rd.ConvertValueToInt64(6, 0), DateTimeKind.Utc),
+                        new DateTime(rd.ConvertValueToInt64(7, 0), DateTimeKind.Utc)
                     );
                 }
             }
