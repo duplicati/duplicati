@@ -67,11 +67,12 @@ namespace Duplicati.Library.Backend
 
             foreach (var obj in observable.ToEnumerable())
             {
-                yield return new Common.IO.FileEntry(
+                yield return new FileEntry(
                     obj.Key,
                     (long)obj.Size,
                     Convert.ToDateTime(obj.LastModified),
-                    Convert.ToDateTime(obj.LastModified)
+                    Convert.ToDateTime(obj.LastModified),
+                    obj.IsDir
                 );
             }
         }
