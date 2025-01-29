@@ -1,3 +1,23 @@
+// Copyright (C) 2025, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the "Software"),
+// to deal in the Software without restriction, including without limitation
+// the rights to use, copy, modify, merge, publish, distribute, sublicense,
+// and/or sell copies of the Software, and to permit persons to whom the
+// Software is furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+// DEALINGS IN THE SOFTWARE.
 using System.Globalization;
 using System.IO.Compression;
 using System.Text;
@@ -741,7 +761,7 @@ public static partial class Command
         {
             // The approach here is based on:
             // https://www.internalpointers.com/post/build-binary-deb-package-practical-guide
-            // 
+            //
             // It is not the recommended way to build a package,
             // but since the build is from a pre-build binary,
             // it is easier than trying to hack debhelper.
@@ -1188,8 +1208,8 @@ public static partial class Command
                 await PackageSupport.SetPermissionFlags(tgfolder, rtcfg);
             }
 
-            var tags = new List<string> { rtcfg.ReleaseInfo.Channel.ToString(), rtcfg.ReleaseInfo.Version.ToString() };
-            if (rtcfg.ReleaseInfo.Channel == ReleaseChannel.Stable || rtcfg.ReleaseInfo.Channel == ReleaseChannel.Beta)
+            var tags = new List<string> { rtcfg.ReleaseInfo.Channel.ToString(), rtcfg.ReleaseInfo.Version.ToString(), $"{rtcfg.ReleaseInfo.Version}-{rtcfg.ReleaseInfo.Channel}" };
+            if (rtcfg.ReleaseInfo.Channel == ReleaseChannel.Stable)
                 tags.Add("latest");
 
             if (!dockerArchs.Any())
