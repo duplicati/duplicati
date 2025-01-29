@@ -231,10 +231,10 @@ namespace Duplicati.Library.Main.Database
 
         public void UpdateRemoteVolume(string name, RemoteVolumeState state, long size, string hash, bool suppressCleanup, System.Data.IDbTransaction transaction = null)
         {
-            UpdateRemoteVolume(name, state, size, hash, suppressCleanup, new TimeSpan(0), false, transaction);
+            UpdateRemoteVolume(name, state, size, hash, suppressCleanup, new TimeSpan(0), null, transaction);
         }
 
-        public void UpdateRemoteVolume(string name, RemoteVolumeState state, long size, string hash, bool suppressCleanup, TimeSpan deleteGraceTime, bool setArchived, System.Data.IDbTransaction transaction = null)
+        public void UpdateRemoteVolume(string name, RemoteVolumeState state, long size, string hash, bool suppressCleanup, TimeSpan deleteGraceTime, bool? setArchived, System.Data.IDbTransaction transaction = null)
         {
             m_updateremotevolumeCommand.Transaction = transaction;
             m_updateremotevolumeCommand.SetParameterValue(0, m_operationid);
@@ -264,13 +264,13 @@ namespace Duplicati.Library.Main.Database
                 }
             }
 
-            if (setArchived)
+            if (setArchived.HasValue)
             {
                 using (var cmd = m_connection.CreateCommand(transaction))
                 {
                     if ((c = cmd.ExecuteNonQuery(
                             @"UPDATE ""RemoteVolume"" SET ""ArchiveTime"" = ? WHERE ""Name"" = ? ",
-                            Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(DateTime.UtcNow),
+                            setArchived.Value ? Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(DateTime.UtcNow) : null,
                             name)) != 1)
                     {
                         throw new Exception($"Unexpected number of updates when recording remote volume archive-time updates: {c}!");

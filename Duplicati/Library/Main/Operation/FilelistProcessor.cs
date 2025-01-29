@@ -267,6 +267,8 @@ namespace Duplicati.Library.Main.Operation
                 var archived = remoteFound && r.File.IsArchived;
                 if (archived && i.ArchiveTime == default)
                     database.UpdateRemoteVolume(i.Name, i.State, i.Size, i.Hash, true, TimeSpan.Zero, true);
+                else if (!archived && i.ArchiveTime.Ticks != 0)
+                    database.UpdateRemoteVolume(i.Name, i.State, i.Size, i.Hash, true, TimeSpan.Zero, false);
 
                 lookup.Remove(i.Name);
 
@@ -316,13 +318,13 @@ namespace Duplicati.Library.Main.Operation
                             if (protectedFiles.Any(pf => pf == i.Name))
                             {
                                 Logging.Log.WriteInformationMessage(LOGTAG, "KeepIncompleteFile", "keeping protected incomplete remote file listed as {0}: {1}", i.State, i.Name);
-                                database.UpdateRemoteVolume(i.Name, RemoteVolumeState.Temporary, i.Size, i.Hash, false, new TimeSpan(0), false, null);
+                                database.UpdateRemoteVolume(i.Name, RemoteVolumeState.Temporary, i.Size, i.Hash, false, new TimeSpan(0), null, null);
                             }
                             else
                             {
                                 Logging.Log.WriteInformationMessage(LOGTAG, "SchedulingMissingFileForDelete", "scheduling missing file for deletion, currently listed as {0}: {1}", i.State, i.Name);
                                 cleanupRemovedRemoteVolumes.Add(i.Name);
-                                database.UpdateRemoteVolume(i.Name, RemoteVolumeState.Deleting, i.Size, i.Hash, false, TimeSpan.FromHours(2), false, null);
+                                database.UpdateRemoteVolume(i.Name, RemoteVolumeState.Deleting, i.Size, i.Hash, false, TimeSpan.FromHours(2), null, null);
                             }
                         }
                         else

@@ -137,7 +137,7 @@ partial class BackendManager
                     db.LogRemoteOperation(operation.Action, operation.File, operation.Result, transaction);
                 else if (e is RemoteVolumeUpdate update && update.State == RemoteVolumeState.Deleted)
                 {
-                    db.UpdateRemoteVolume(update.Remotename, RemoteVolumeState.Deleted, update.Size, update.Hash, true, TimeSpan.FromHours(2), false, transaction);
+                    db.UpdateRemoteVolume(update.Remotename, RemoteVolumeState.Deleted, update.Size, update.Hash, true, TimeSpan.FromHours(2), null, transaction);
                     volsRemoved.Add(update.Remotename);
                 }
                 else if (e is RemoteVolumeUpdate dbUpdate)
