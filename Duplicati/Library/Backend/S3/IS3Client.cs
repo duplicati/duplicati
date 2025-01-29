@@ -26,7 +26,7 @@ using Duplicati.Library.Common.IO;
 
 namespace Duplicati.Library.Backend
 {
-    internal interface IS3Client : IDisposable
+    public interface IS3Client : IDisposable
     {
         IEnumerable<FileEntry> ListBucket(string bucketName, string prefix);
 
