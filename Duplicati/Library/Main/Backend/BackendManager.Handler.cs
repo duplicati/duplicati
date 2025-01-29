@@ -218,40 +218,72 @@ partial class BackendManager
         /// <returns>An awaitable task</returns>
         private async Task Run(IReadChannel<PendingOperationBase> requestChannel)
         {
-            while (true)
+            using var tcs = new CancellationTokenSource();
+            try
             {
-                // Get next operation
-                var op = await requestChannel.ReadAsync().ConfigureAwait(false);
-
-                try
+                while (true)
                 {
-                    // Clean up completed uploads, if any
-                    await ReclaimCompletedUploads().ConfigureAwait(false);
+                    // Get next operation
+                    var op = await requestChannel.ReadAsync().ConfigureAwait(false);
 
-                    // Allow PUT operations to be queued, if requested
-                    if (op is PutOperation putOp && !putOp.WaitForComplete)
+                    try
                     {
-                        await EnsureAtMostNPendingUploads(maxParallelUploads).ConfigureAwait(false);
+                        // Clean up completed uploads, if any
+                        await ReclaimCompletedUploads().ConfigureAwait(false);
 
-                        // Operation is accepted into queue, so we can signal completion
-                        putOp.SetComplete(true);
-                        activeUploads.Add(ExecuteWithRetry(putOp));
+                        // Allow PUT operations to be queued, if requested
+                        if (op is PutOperation putOp && !putOp.WaitForComplete)
+                        {
+                            await EnsureAtMostNPendingUploads(maxParallelUploads).ConfigureAwait(false);
+
+                            // Operation is accepted into queue, so we can signal completion
+                            putOp.SetComplete(true);
+                            activeUploads.Add(ExecuteWithRetry(putOp, tcs.Token));
+                        }
+                        else
+                        {
+                            // Wait for all pending uploads to complete
+                            await EnsureAtMostNPendingUploads(1).ConfigureAwait(false);
+                            // Execute the operation
+                            await ExecuteWithRetry(op, tcs.Token).ConfigureAwait(false);
+                        }
                     }
-                    else
+                    catch (Exception ex)
                     {
-                        // Wait for all pending uploads to complete
-                        await EnsureAtMostNPendingUploads(1).ConfigureAwait(false);
-                        // Execute the operation
-                        await ExecuteWithRetry(op).ConfigureAwait(false);
+                        Logging.Log.WriteWarningMessage(LOGTAG, "BackendManagerHandlerFailure", ex, "Error in handler: {0}", ex.Message);
+                        // If we fail, the task may "hang", so we ensure it is completed here
+                        op.SetFailed(ex);
+                        throw;
                     }
                 }
-                catch (Exception ex)
+            }
+            finally
+            {
+                // Terminate any pending uploads
+                tcs.Cancel();
+
+                if (activeUploads.Count > 0)
                 {
-                    Logging.Log.WriteWarningMessage(LOGTAG, "HandlerError", ex, "Error in handler: {0}", ex.Message);
-                    // If we fail, the task may "hang", so we ensure it is completed here
-                    op.SetFailed(ex);
-                    throw;
+                    Logging.Log.WriteWarningMessage(LOGTAG, "BackendManagerDisposeWhileActive", null, "Terminating {0} pending uploads", activeUploads.Count);
+
+                    // Wait for all pending uploads to complete
+                    await Task.WhenAny(Task.Delay(1000), Task.WhenAll(activeUploads)).ConfigureAwait(false);
+                    for (int i = activeUploads.Count - 1; i >= 0; i--)
+                    {
+                        var t = activeUploads[i];
+                        activeUploads.RemoveAt(i);
+                        if (t.IsCompleted && !t.IsCanceled && t.Exception != null)
+                            Logging.Log.WriteWarningMessage(LOGTAG, "BackendManagerDisposeError", t.Exception, "Error in pending upload: {0}", t.Exception.Message);
+                    }
+
+                    if (activeUploads.Count > 0)
+                        Logging.Log.WriteWarningMessage(LOGTAG, "BackendManagerDisposeError", null, "Terminating, but {0} pending uploads are still active", activeUploads.Count);
                 }
+
+                // Dispose of any remaining backends
+                while (backendPool.TryDequeue(out var backend))
+                    try { backend.Dispose(); }
+                    catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, "BackendManagerDisposeError", ex, "Failed to dispose backend instance: {0}", ex.Message); }
             }
         }
 
@@ -282,8 +314,9 @@ partial class BackendManager
         /// Executes an operation with retries and error handling
         /// </summary>
         /// <param name="op">The operation to execute</param>
+        /// <param name="cancellationToken">The cancellation token</param>
         /// <returns>An awaitable task</returns>
-        private async Task ExecuteWithRetry(PendingOperationBase op)
+        private async Task ExecuteWithRetry(PendingOperationBase op, CancellationToken cancellationToken)
         {
             // Once in this method, we MUST set the op result,
             // or the program will hang waiting for the operation to complete
@@ -296,7 +329,7 @@ partial class BackendManager
                 try
                 {
                     // Happy case is execute and return
-                    await Execute(op).ConfigureAwait(false);
+                    await Execute(op, cancellationToken).ConfigureAwait(false);
                     return;
                 }
                 catch (Exception ex)
@@ -369,29 +402,30 @@ partial class BackendManager
         /// but avoids a reflection-based dispatch.
         /// </summary>
         /// <param name="op">The operation to execute</param>
+        /// <param name="cancellationToken">The cancellation token</param>
         /// <returns>An awaitable task</returns>
-        private async Task Execute(PendingOperationBase op)
+        private async Task Execute(PendingOperationBase op, CancellationToken cancellationToken)
         {
             await context.TaskReader.ProgressRendevouz().ConfigureAwait(false);
             using (new Logging.Timer(LOGTAG, $"RemoteOperation{op.Operation}", $"RemoteOperation{op.Operation}"))
                 switch (op)
                 {
                     case PutOperation putOp:
-                        await Execute(putOp).ConfigureAwait(false);
+                        await Execute(putOp, cancellationToken).ConfigureAwait(false);
                         anyUploaded = true;
                         return;
                     case GetOperation getOp:
-                        await Execute(getOp).ConfigureAwait(false);
+                        await Execute(getOp, cancellationToken).ConfigureAwait(false);
                         anyDownloaded = true;
                         return;
                     case DeleteOperation deleteOp:
-                        await Execute(deleteOp).ConfigureAwait(false);
+                        await Execute(deleteOp, cancellationToken).ConfigureAwait(false);
                         return;
                     case ListOperation listOp:
-                        await Execute(listOp).ConfigureAwait(false);
+                        await Execute(listOp, cancellationToken).ConfigureAwait(false);
                         return;
                     case QuotaInfoOperation quotaOp:
-                        await Execute(quotaOp).ConfigureAwait(false);
+                        await Execute(quotaOp, cancellationToken).ConfigureAwait(false);
                         return;
                     case WaitForEmptyOperation waitOp:
                         waitOp.SetComplete(true);
@@ -406,11 +440,12 @@ partial class BackendManager
         /// </summary>
         /// <typeparam name="TResult">The return value type of the operation</typeparam>
         /// <param name="op">The operation to execute</param>
+        /// <param name="cancellationToken">The cancellation token</param>
         /// <returns>An awaitable task</returns>
-        private async Task Execute<TResult>(PendingOperation<TResult> op)
+        private async Task Execute<TResult>(PendingOperation<TResult> op, CancellationToken cancellationToken)
         {
             using var backend = CreateBackend();
-            using var token = CancellationTokenSource.CreateLinkedTokenSource(op.CancelToken, context.TaskReader.TransferToken);
+            using var token = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, op.CancelToken, context.TaskReader.TransferToken);
 
             try
             {
