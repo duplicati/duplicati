@@ -64,13 +64,15 @@ namespace Duplicati.UnitTest
             // Backup the first level
             using (var c = new Controller($"file://{l1}", options, null))
             {
+                now = DateTime.Now;
                 var results = c.Backup([DATAFOLDER]);
                 Assert.AreEqual(0, results.Errors.Count());
                 Assert.AreEqual(0, results.Warnings.Count());
-                Console.WriteLine($"Backed up {results.AddedFiles} files to {l1}");
+                Console.WriteLine($"Backed up {results.AddedFiles} files to {l1} in {DateTime.Now - now}");
             }
 
             // Call the tool
+            now = DateTime.Now;
             var exe = RemoteSynchronization.Program.Main;
             string[] args = [
                 $"file://{l1}", $"file://{l2}",
@@ -83,6 +85,7 @@ namespace Duplicati.UnitTest
             var async_call = exe(args);
             async_call.Wait();
             Assert.AreEqual(0, async_call.Result, "Remote synchronization tool did not return 0.");
+            Console.WriteLine($"Remote synchronization tool returned 0 in {DateTime.Now - now}");
 
             // Verify that the directories are equal
             Assert.IsTrue(DirectoriesAndContentsAreEqual(l1, l2), "Synchronized directories are not equal");
@@ -91,10 +94,11 @@ namespace Duplicati.UnitTest
             options["restore-path"] = l1r;
             using (var c = new Controller($"file://{l1}", options, null))
             {
+                now = DateTime.Now;
                 var results = c.Restore([Path.Combine(DATAFOLDER, "*")]);
                 Assert.AreEqual(0, results.Errors.Count());
                 Assert.AreEqual(0, results.Warnings.Count());
-                Console.WriteLine($"Restored {results.RestoredFiles} files to {options["restore-path"]}");
+                Console.WriteLine($"Restored {results.RestoredFiles} files to {options["restore-path"]} in {DateTime.Now - now}");
             }
             Assert.IsTrue(DirectoriesAndContentsAreEqual(DATAFOLDER, l1r), "Restored first level files is not equal to original files");
 
@@ -102,10 +106,11 @@ namespace Duplicati.UnitTest
             options["restore-path"] = l2r;
             using (var c = new Controller($"file://{l2}", options, null))
             {
+                now = DateTime.Now;
                 var results = c.Restore([]);
                 Assert.AreEqual(0, results.Errors.Count());
                 Assert.AreEqual(0, results.Warnings.Count());
-                Console.WriteLine($"Restored {results.RestoredFiles} files to {options["restore-path"]}");
+                Console.WriteLine($"Restored {results.RestoredFiles} files to {options["restore-path"]} in {DateTime.Now - now}");
             }
             Assert.IsTrue(DirectoriesAndContentsAreEqual(DATAFOLDER, l2r), "Restored second level files is not equal to original files");
         }
