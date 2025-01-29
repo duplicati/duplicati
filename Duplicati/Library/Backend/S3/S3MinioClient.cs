@@ -24,6 +24,7 @@ using System.IO;
 using System.Reactive.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
 using Minio;
@@ -58,7 +59,7 @@ namespace Duplicati.Library.Backend
             m_dnsHost = servername;
         }
 
-        public IEnumerable<IFileEntry> ListBucket(string bucketName, string prefix)
+        public IEnumerable<FileEntry> ListBucket(string bucketName, string prefix)
         {
             ThrowExceptionIfBucketDoesNotExist(bucketName);
 

@@ -22,13 +22,13 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Duplicati.Library.Interface;
+using Duplicati.Library.Common.IO;
 
 namespace Duplicati.Library.Backend
 {
-    public interface IS3Client : IDisposable
+    internal interface IS3Client : IDisposable
     {
-        IEnumerable<IFileEntry> ListBucket(string bucketName, string prefix);
+        IEnumerable<FileEntry> ListBucket(string bucketName, string prefix);
 
         Task AddBucketAsync(string bucketName, CancellationToken cancelToken);
 

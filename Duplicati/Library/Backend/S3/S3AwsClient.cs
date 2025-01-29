@@ -22,7 +22,7 @@
 
 using Amazon.S3;
 using Amazon.S3.Model;
-using Duplicati.Library.Backend.Strings;
+using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
 using System;
@@ -192,7 +192,7 @@ namespace Duplicati.Library.Backend
             return m_client.DeleteObjectAsync(objectDeleteRequest, cancellationToken);
         }
 
-        public virtual IEnumerable<IFileEntry> ListBucket(string bucketName, string prefix)
+        public virtual IEnumerable<FileEntry> ListBucket(string bucketName, string prefix)
         {
             bool isTruncated = true;
             string filename = null;
@@ -239,10 +239,20 @@ namespace Duplicati.Library.Backend
                         obj.Key,
                         obj.Size,
                         obj.LastModified,
-                        obj.LastModified
+                        obj.LastModified,
+                        false,
+                        IsStorageClassArchive(obj.StorageClass)
                     );
                 }
             }
+        }
+
+        private bool IsStorageClassArchive(S3StorageClass storageClass)
+        {
+            return storageClass == S3StorageClass.DeepArchive
+                || storageClass == S3StorageClass.Glacier
+                || storageClass == S3StorageClass.GlacierInstantRetrieval
+                || storageClass == S3StorageClass.Snow;
         }
 
         public async Task RenameFileAsync(string bucketName, string source, string target, CancellationToken cancelToken)
