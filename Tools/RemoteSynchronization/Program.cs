@@ -1,4 +1,4 @@
-﻿// Copyright (C) 2025, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -205,7 +205,7 @@ destination will be verified before being overwritten (if they seemingly match).
             // Delete or rename the files that are not needed
             if (retention)
             {
-                var renamed = await RenameAsync(b2s, to_delete, dry_run);
+                var renamed = await RenameAsync(b2, to_delete, dry_run);
                 Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "rsync", "Renamed {0} files in {1}", renamed, b2s.DisplayName);
             }
             else
@@ -448,38 +448,69 @@ destination will be verified before being overwritten (if they seemingly match).
         /// <param name="files">The files to rename.</param>
         /// <param name="dry_run">Flag for whether the renaming should be printed rather than performed.</param>
         /// <returns>The number of successful renames.</returns>
-        private static async Task<long> RenameAsync(IStreamingBackend b, IEnumerable<IFileEntry> files, bool dry_run)
+        private static async Task<long> RenameAsync(IBackend b, IEnumerable<IFileEntry> files, bool dry_run)
         {
             long successful_renames = 0;
             string suffix = $"{System.DateTime.Now:yyyyMMddHHmmss}.old";
             using var downloaded = new MemoryStream();
-            foreach (var f in files)
+            switch (b)
             {
-                try
-                {
-                    await b.GetAsync(f.Name, downloaded, CancellationToken.None);
-                    if (dry_run)
+                case IStreamingBackend sb:
                     {
-                        Duplicati.Library.Logging.Log.WriteDryrunMessage(LOGTAG, "rsync", "Would rename {0} to {0}.{1} by deleting and re-uploading {2} bytes to {3}", f.Name, suffix, downloaded.Length, b.DisplayName);
+                        foreach (var f in files)
+                        {
+                            try
+                            {
+                                await sb.GetAsync(f.Name, downloaded, CancellationToken.None);
+                                if (dry_run)
+                                {
+                                    Duplicati.Library.Logging.Log.WriteDryrunMessage(LOGTAG, "rsync", "Would rename {0} to {0}.{1} by deleting and re-uploading {2} bytes to {3}", f.Name, suffix, downloaded.Length, sb.DisplayName);
+                                }
+                                else
+                                {
+                                    await sb.PutAsync($"{f.Name}.{suffix}", downloaded, CancellationToken.None);
+                                    await sb.DeleteAsync(f.Name, CancellationToken.None);
+                                }
+                                successful_renames++;
+                            }
+                            catch (Exception e)
+                            {
+                                Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "rsync", e, "Error renaming {0}: {1}", f.Name, e.Message);
+                            }
+                            finally
+                            {
+                                // Reset the stream
+                                downloaded.SetLength(0);
+                            }
+                        }
+                        return successful_renames;
                     }
-                    else
+                case IRenameEnabledBackend rb:
                     {
-                        await b.PutAsync($"{f.Name}.{suffix}", downloaded, CancellationToken.None);
-                        await b.DeleteAsync(f.Name, CancellationToken.None);
+                        foreach (var f in files)
+                        {
+                            try
+                            {
+                                if (dry_run)
+                                {
+                                    Duplicati.Library.Logging.Log.WriteDryrunMessage(LOGTAG, "rsync", "Would rename {0} to {0}.{1} by calling Rename on {2}", f.Name, suffix, rb.DisplayName);
+                                }
+                                else
+                                {
+                                    await rb.RenameAsync(f.Name, $"{f.Name}.{suffix}", CancellationToken.None);
+                                }
+                                successful_renames++;
+                            }
+                            catch (Exception e)
+                            {
+                                Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "rsync", e, "Error renaming {0}: {1}", f.Name, e.Message);
+                            }
+                        }
+                        return successful_renames;
                     }
-                    successful_renames++;
-                }
-                catch (Exception e)
-                {
-                    Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "rsync", e, "Error renaming {0}: {1}", f.Name, e.Message);
-                }
-                finally
-                {
-                    // Reset the stream
-                    downloaded.SetLength(0);
-                }
+                default:
+                    throw new NotSupportedException("The backend does not support renaming");
             }
-            return successful_renames;
         }
 
         /// <summary>
