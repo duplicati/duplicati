@@ -141,20 +141,20 @@ destination will be verified before being overwritten (if they seemingly match).
                 .ToDictionary(x => x[0], x => x[1])
                 ?? [];
 
-            var log_file = options["log-file"] as string ?? DEFAULT_LOG_FILE;
-
             // Parse the log level
             var log_level = options["log-level"] as string ?? DEFAULT_LOG_LEVEL;
-            Enum.TryParse<Duplicati.Library.Logging.LogMessageType>(log_level, true, out var log_level_enum);
-            // TODO Du er naaet hertil
-            Duplicati.Library.Logging.Log.LogLevel = log_level_enum;
-            else
-                foreach (string s in Enum.GetNames(typeof(Duplicati.Library.Logging.LogMessageType)))
-                    if (s.Equals(log_level, StringComparison.OrdinalIgnoreCase))
-                        return (Duplicati.Library.Logging.LogMessageType)Enum.Parse(typeof(Duplicati.Library.Logging.LogMessageType), s);
+            var log_level_parsed = Enum.TryParse<Duplicati.Library.Logging.LogMessageType>(log_level, true, out var log_level_enum);
+            log_level_enum = log_level_parsed ? log_level_enum : Duplicati.Library.Logging.LogMessageType.Information;
 
-            //var log_target = string.IsNullOrEmpty(log_file) ? new Duplicati.Library.Logging.
-            using Duplicati.Library.Logging.Log.StartScope();
+            // Parse the log file
+            var log_file = options["log-file"] as string ?? DEFAULT_LOG_FILE;
+            var file_sink = (Duplicati.Library.Main.IMessageSink?)(log_file != "" ? new Duplicati.Library.Logging.StreamLogDestination(log_file) : null);
+            var console_sink = new Duplicati.CommandLine.ConsoleOutput(Console.Out, global_options);
+            Duplicati.Library.Main.IMessageSink[] sinks = file_sink is null ? [console_sink] : [file_sink, console_sink];
+            var multi_sink = new Duplicati.Library.Main.MultiMessageSink(sinks);
+
+            // Start the logging scope
+            using var _ = Duplicati.Library.Logging.Log.StartScope(multi_sink, log_level_enum);
 
             Dictionary<string, string> src_opts = (options["src-options"] as List<string>)
                 ?.Select(x => x.Split("="))
@@ -277,7 +277,6 @@ destination will be verified before being overwritten (if they seemingly match).
         // TODO Profiling logging
         // TODO Progress reporting
         // TODO Duplicati Results
-        // TODO Log-level and log-file
 
         /// <summary>
         /// Copies the files from one backend to another.
