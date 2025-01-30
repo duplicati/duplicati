@@ -357,8 +357,23 @@ namespace Duplicati.Server
                                         }
                                         else
                                         {
+                                            Dictionary<string, string> taskOptions = null;
+                                            try
+                                            {
+                                                var nextRun = GetNextValidTime(start,
+                                                    new DateTime(
+                                                        Math.Max(DateTime.UtcNow.AddSeconds(1).Ticks, start.AddSeconds(1).Ticks),
+                                                        DateTimeKind.Utc), sc.Repeat, sc.AllowedDays, timeZoneInfo);
+
+                                                taskOptions = new Dictionary<string, string>()
+                                                { { "next-scheduled-run", Utility.SerializeDateTime(nextRun.ToUniversalTime()) } };
+                                            }
+                                            catch
+                                            {
+                                            }
+
                                             jobsToRun.Add(Server.Runner.CreateTask(
-                                                Duplicati.Server.Serialization.DuplicatiOperation.Backup, entry));
+                                                Serialization.DuplicatiOperation.Backup, entry, taskOptions));
                                         }
                                     }
                                 }

@@ -70,6 +70,7 @@ namespace Duplicati.Server.Database
             public const string PRELOAD_SETTINGS_HASH = "preload-settings-hash";
             public const string TIMEZONE_OPTION = "server-timezone";
             public const string PAUSED_UNTIL = "paused-until";
+            public const string LAST_UPDATE_CHECK_VERSION = "last-update-check-version";
         }
 
         private readonly Dictionary<string, string?> settings;
@@ -829,6 +830,20 @@ namespace Duplicati.Server.Database
             {
                 lock (databaseConnection.m_lock)
                     settings[CONST.TIMEZONE_OPTION] = value?.Id;
+                SaveSettings();
+            }
+        }
+
+        public string? LastConfigIssueCheckVersion
+        {
+            get
+            {
+                return settings[CONST.LAST_UPDATE_CHECK_VERSION];
+            }
+            set
+            {
+                lock (databaseConnection.m_lock)
+                    settings[CONST.LAST_UPDATE_CHECK_VERSION] = value;
                 SaveSettings();
             }
         }

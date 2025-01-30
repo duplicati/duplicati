@@ -50,7 +50,7 @@ public sealed class FtpTests : BaseSftpgoTest
             .WithEnvironment("SFTPGO_LOADDATA_FROM", "/var/lib/sftpgo/users.json")
             .WithEnvironment("SFTPGO_LOADDATA_CLEAN", "0")
             .WithEnvironment("SFTPGO_FTPD__BINDINGS__0__PORT", "2121")
-            .WithEnvironment("SFTPGO_FTPD__PASSIVE_PORT_RANGE__END", "21000")
+            .WithEnvironment("SFTPGO_FTPD__PASSIVE_PORT_RANGE__END", "20999")
             .WithEnvironment("SFTPGO_FTPD__PASSIVE_PORT_RANGE__START", "20000")
             .WithEnvironment("SFTPGO_FTPD__BINDINGS__0__ACTIVE_CONNECTIONS_SECURITY", "1")
             .WithEnvironment("SFTPGO_FTPD__BINDINGS__0__CERTIFICATE_FILE", CERTIFICATE_FILE)
@@ -60,13 +60,13 @@ public sealed class FtpTests : BaseSftpgoTest
 
             .WithOutputConsumer(outputConsumer);
 
-        container = Enumerable.Range(20000, 1000)
+        container = Enumerable.Range(20000, 1001)
             .Aggregate(container, (current, port) => current.WithPortBinding(port, port));
 
         var builtContainer = container
             .WithOutputConsumer(outputConsumer)
             .Build();
-        
+
         Console.WriteLine("Starting container");
         await builtContainer.StartAsync();
 
@@ -88,7 +88,7 @@ public sealed class FtpTests : BaseSftpgoTest
             Console.WriteLine(await outputConsumer.GetStreamsOutput());
             Assert.Fail("BackendTester is returning non-zero exit code, check logs for details");
         }
-        
+
         await builtContainer.StopAsync();
     }
 
@@ -114,7 +114,7 @@ public sealed class FtpTests : BaseSftpgoTest
             .WithEnvironment("SFTPGO_LOADDATA_FROM", "/var/lib/sftpgo/users.json")
             .WithEnvironment("SFTPGO_LOADDATA_CLEAN", "0")
             .WithEnvironment("SFTPGO_FTPD__BINDINGS__0__PORT", "2121")
-            .WithEnvironment("SFTPGO_FTPD__PASSIVE_PORT_RANGE__END", "23000")
+            .WithEnvironment("SFTPGO_FTPD__PASSIVE_PORT_RANGE__END", "22999")
             .WithEnvironment("SFTPGO_FTPD__PASSIVE_PORT_RANGE__START", "22000")
             .WithEnvironment("SFTPGO_FTPD__BINDINGS__0__ACTIVE_CONNECTIONS_SECURITY", "1")
             .WithEnvironment("SFTPGO_FTPD__BINDINGS__0__CERTIFICATE_FILE", CERTIFICATE_FILE)
@@ -152,5 +152,5 @@ public sealed class FtpTests : BaseSftpgoTest
 
         await builtContainer.StopAsync();
     }
-    
+
 }

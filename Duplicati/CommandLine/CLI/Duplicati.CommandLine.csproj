@@ -5,7 +5,7 @@
     <Description>A commandline version of Duplicati</Description>
     <AssemblyName>Duplicati.CommandLine.Implementation</AssemblyName>
     <ApplicationIcon>TrayWarning.ico</ApplicationIcon>
-    <Copyright>Copyright © 2024 Team Duplicati, MIT license</Copyright>
+    <Copyright>Copyright © 2025 Team Duplicati, MIT license</Copyright>
   </PropertyGroup>
   
   <ItemGroup>

@@ -321,6 +321,13 @@ namespace Duplicati.Library.Common.IO
             return System.IO.File.Open(AddExtendedDevicePathPrefix(path), System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.ReadWrite);
         }
 
+        public System.IO.FileStream FileOpenReadWrite(string path)
+        {
+            return !FileExists(path)
+                ? FileCreate(path)
+                : System.IO.File.Open(AddExtendedDevicePathPrefix(path), System.IO.FileMode.Open, System.IO.FileAccess.ReadWrite);
+        }
+
         public System.IO.FileStream FileOpenWrite(string path)
         {
             return !FileExists(path)

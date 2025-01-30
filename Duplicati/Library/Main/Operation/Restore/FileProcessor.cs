@@ -21,7 +21,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Data;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -199,7 +198,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                                         SystemIO.IO_OS.DirectoryCreate(foldername);
                                         Logging.Log.WriteWarningMessage(LOGTAG, "CreateMissingFolder", null, @$"Creating missing folder ""{foldername}"" for file ""{file.TargetPath}""");
                                     }
-                                    fs = SystemIO.IO_OS.FileOpenWrite(file.TargetPath);
+                                    fs = SystemIO.IO_OS.FileOpenReadWrite(file.TargetPath);
                                 }
 
                                 sw_work?.Stop();
@@ -257,7 +256,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                                     }
                                     else
                                     {
-                                        // No more blocks are missing, so read the rest of the blocks to verify the file hash.
+                                        // Not a missing block, so read from the file
                                         var data = new byte[blocks[i].BlockSize];
                                         var read = await fs?.ReadAsync(data, 0, data.Length);
                                         filehasher.TransformBlock(data, 0, read, data, 0);

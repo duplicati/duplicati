@@ -3,7 +3,7 @@
     <TargetFramework>net8.0</TargetFramework>    
     <Description>Central reference to all backends</Description>
 	<RootNamespace>Duplicati.Library.Backend</RootNamespace>
-    <Copyright>Copyright © 2024 Team Duplicati, MIT license</Copyright>
+    <Copyright>Copyright © 2025 Team Duplicati, MIT license</Copyright>
   </PropertyGroup>
 
   <ItemGroup>

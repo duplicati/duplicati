@@ -161,7 +161,9 @@ namespace Duplicati.Server
                 TryAdd(lst, Environment.SpecialFolder.DesktopDirectory, "%DESKTOP%", "Desktop");
                 TryAdd(lst, Environment.GetEnvironmentVariable("HOME"), "%HOME%", "Home");
                 TryAdd(lst, Environment.SpecialFolder.UserProfile, "%HOME%", "Home");
+                TryAdd(lst, Path.Combine(homedir, "Movies"), "%MY_MOVIES%", "Movies");
                 TryAdd(lst, Path.Combine(homedir, "Downloads"), "%MY_DOWNLOADS%", "Downloads");
+                TryAdd(lst, Path.Combine(homedir, "Public"), "%MY_PUBLIC%", "Public");
             }
 
             Nodes = lst.ToArray();

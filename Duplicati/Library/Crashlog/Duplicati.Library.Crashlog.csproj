@@ -3,6 +3,6 @@
     <TargetFramework>net8.0</TargetFramework>    
     <Description>Crashlog implementation</Description>
 	<RootNamespace>Duplicati.Library.Crashlog</RootNamespace>
-    <Copyright>Copyright © 2024 Team Duplicati, MIT license</Copyright>
+    <Copyright>Copyright © 2025 Team Duplicati, MIT license</Copyright>
   </PropertyGroup>
 </Project>

@@ -77,6 +77,8 @@ namespace Duplicati.Server.Database
             this.ApplicationSettings = new ServerSettings(this);
         }
 
+        public bool IsEncryptingFields => m_encryptSensitiveFields;
+
         public void ReWriteAllFieldsIfEncryptionChanged()
         {
             // The token is automatically decrypted when the settings are loaded  

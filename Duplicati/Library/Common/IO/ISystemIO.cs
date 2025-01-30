@@ -52,6 +52,7 @@ namespace Duplicati.Library.Common.IO
         bool FileExists(string path);
         long FileLength(string path);
         FileStream FileOpenRead(string path);
+        FileStream FileOpenReadWrite(string path);
         FileStream FileOpenWrite(string path);
         FileStream FileCreate(string path);
         FileAttributes GetFileAttributes(string path);

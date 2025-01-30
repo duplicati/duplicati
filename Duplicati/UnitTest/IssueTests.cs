@@ -311,6 +311,71 @@ namespace Duplicati.UnitTest
 
 
         [Test]
+        public void Issue5886RestoreModifiedMiddleBlock()
+        {
+            var blocksize = 1024;
+            var n_blocks = 5;
+            var testopts = new Dictionary<string, string>(TestOptions)
+            {
+                ["blocksize"] = $"{blocksize}b",
+                ["overwrite"] = "true"
+            };
+
+            var original_dir = Path.Combine(DATAFOLDER, "some_original_dir");
+            Directory.CreateDirectory(original_dir);
+            string f = Path.Combine(original_dir, "some_file");
+            TestUtils.WriteTestFile(f, n_blocks * blocksize);
+
+            // Backup the files
+            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
+            {
+                IBackupResults backupResults = c.Backup([DATAFOLDER]);
+                TestUtils.AssertResults(backupResults);
+            }
+
+            var original_contents = File.ReadAllBytes(f);
+            var new_block = new byte[blocksize];
+            new Random(5888).NextBytes(new_block);
+            var new_contents = new byte[n_blocks * blocksize];
+
+            for (int i = 0; i < n_blocks; i++)
+            {
+                for (int j = i; j < n_blocks; j++)
+                {
+                    // Modify the blocks
+                    for (int k = 0; k < n_blocks; k++)
+                    {
+                        if (k == i || k == j)
+                        {
+                            Array.Copy(new_block, 0, new_contents, k * blocksize, blocksize);
+                        }
+                        else
+                        {
+                            Array.Copy(original_contents, k * blocksize, new_contents, k * blocksize, blocksize);
+                        }
+                    }
+
+                    // Write the modified file
+                    File.WriteAllBytes(f, new_contents);
+                    var restored_contents = File.ReadAllBytes(f);
+                    Assert.That(restored_contents, Is.Not.EqualTo(original_contents), "Restored file should not be equal to original file");
+
+                    // Attempt to restore the file
+                    using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
+                    {
+                        var restoreResults = c.Restore([f]);
+                        Assert.That(restoreResults.RestoredFiles, Is.EqualTo(1), "File should have been restored.");
+                    }
+
+                    // Verify that the files are equal
+                    restored_contents = File.ReadAllBytes(f);
+                    Assert.That(restored_contents, Is.EqualTo(original_contents), "Restored file should be equal to original file");
+                }
+            }
+        }
+
+
+        [Test]
         [Category("Disruption"), Category("Bug")]
         public void TestSystematicErrors5023()
         {

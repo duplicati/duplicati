@@ -68,6 +68,11 @@ namespace Duplicati.Library.Main
         ITaskControl TaskControl { get; }
     }
 
+    internal interface IBackendWriterProvider
+    {
+        IBackendWriter BackendWriter { get; }
+    }
+
     internal class BackendWriter : BasicResults, IBackendWriter, IBackendStatstics, IParsedBackendStatistics
     {
         public BackendWriter(BasicResults p) : base(p) { }
@@ -145,7 +150,7 @@ namespace Duplicati.Library.Main
     }
 
 
-    internal abstract class BasicResults : IBasicResults, ISetCommonOptions, Logging.ILogDestination, ITaskControlProvider
+    internal abstract class BasicResults : IBasicResults, ISetCommonOptions, Logging.ILogDestination, ITaskControlProvider, IBackendWriterProvider
     {
         /// <summary>
         /// The tag used for logging

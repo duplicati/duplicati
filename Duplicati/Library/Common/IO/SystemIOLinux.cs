@@ -94,6 +94,13 @@ namespace Duplicati.Library.Common.IO
             return File.OpenRead(path);
         }
 
+        public FileStream FileOpenReadWrite(string path)
+        {
+            return File.Exists(path)
+                ? File.Open(path, FileMode.Open, FileAccess.ReadWrite)
+                : File.Create(path);
+        }
+
         public FileStream FileOpenWrite(string path)
         {
             return File.OpenWrite(path);
@@ -123,7 +130,7 @@ namespace Duplicati.Library.Common.IO
         {
             return PosixFile.GetSymlinkTarget(NormalizePath(path));
         }
-        
+
         public string PathGetDirectoryName(string path)
         {
             return Path.GetDirectoryName(NormalizePath(path));
@@ -169,7 +176,7 @@ namespace Duplicati.Library.Common.IO
         {
             return Path.GetExtension(path);
         }
-        
+
         public string PathChangeExtension(string path, string extension)
         {
             return Path.ChangeExtension(path, extension);

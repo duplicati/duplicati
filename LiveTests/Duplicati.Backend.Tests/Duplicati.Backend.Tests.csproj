@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <Nullable>enable</Nullable>
@@ -7,7 +7,7 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <Description>Commandline implementation of Duplicati</Description>
-        <Copyright>Copyright © 2024 Team Duplicati, MIT license</Copyright>
+        <Copyright>Copyright © 2025 Team Duplicati, MIT license</Copyright>
     </PropertyGroup>
     
     <ItemGroup>

@@ -18,6 +18,9 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.RegularExpressions;
 using System.Xml;
 
 namespace ReleaseBuilder;
@@ -27,6 +30,34 @@ namespace ReleaseBuilder;
 /// </summary>
 public static class WixHeatBuilder
 {
+
+    /// <summary>
+    /// Converts a string to a valid Wix identifier.
+    /// </summary>
+    /// <param name="input">The input string.</param>
+    /// <returns>The WiX identifier.</returns>
+    public static string ConvertToIdentifier(string input)
+    {
+        if (string.IsNullOrEmpty(input))
+            throw new ArgumentException("Input string cannot be null or empty.");
+
+        // Remove invalid characters (only allow A-Z, a-z, 0-9, _, .)
+        var cleanedInput = Regex.Replace(input, @"[^A-Za-z0-9_.]", "_");
+
+        if (cleanedInput.Length > 72)
+        {
+            var hash = BitConverter.ToString(SHA256.HashData(Encoding.UTF8.GetBytes(cleanedInput)))
+                .Replace("-", string.Empty)[..12];
+            cleanedInput = cleanedInput[..(72 - hash.Length)] + hash;
+        }
+
+        // Ensure the identifier starts with a letter or underscore
+        if (!char.IsLetter(cleanedInput[0]) && cleanedInput[0] != '_')
+            cleanedInput = "_" + cleanedInput;
+
+        return cleanedInput;
+    }
+
     /// <summary>
     /// Creates a Wix filelist from a directory
     /// </summary>
@@ -35,14 +66,14 @@ public static class WixHeatBuilder
     /// <param name="componentGroupId">The name of the component group</param>
     /// <param name="fileIdGenerator">A function to generate file IDs.</param>
     /// <returns>The wix file xml contents</returns>
-    public static string CreateWixFilelist(string sourceFolder, string version, string folderPrefix = "$(var.HarvestPath)", string directoryRefName = "INSTALLLOCATION", string componentGroupId = "DUPLICATIBIN", Func<string, string>? fileIdGenerator = null)
+    public static string CreateWixFilelist(string sourceFolder, string version, string folderPrefix = "$(var.HarvestPath)", string directoryRefName = "INSTALLLOCATION", string componentGroupId = "DUPLICATIBIN", string wixNs = "http://schemas.microsoft.com/wix/2006/wi", Func<string, string>? fileIdGenerator = null)
     {
         var itemIds = new Dictionary<string, string>();
-        fileIdGenerator ??= (x) => Path.GetRelativePath(sourceFolder, x).Replace("\\", "_").Replace("/", "_").Replace(":", "_").Replace(" ", "_");
+        fileIdGenerator ??= (x) => ConvertToIdentifier(Path.GetRelativePath(sourceFolder, x));
         Func<string, string> pathTransformer = (x) => $"{folderPrefix}{Path.GetRelativePath(sourceFolder, x)}";
 
         var doc = new XmlDocument();
-        doc.LoadXml("<Wix xmlns=\"http://schemas.microsoft.com/wix/2006/wi\"></Wix>");
+        doc.LoadXml($"<Wix xmlns=\"{wixNs}\"></Wix>");
         var root = doc.DocumentElement!;
         var fragment = doc.CreateElement("Fragment");
         root.AppendChild(fragment);

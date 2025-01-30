@@ -1,22 +1,22 @@
 // Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
-// 
-// Permission is hereby granted, free of charge, to any person obtaining a 
-// copy of this software and associated documentation files (the "Software"), 
-// to deal in the Software without restriction, including without limitation 
-// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
-// and/or sell copies of the Software, and to permit persons to whom the 
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the "Software"),
+// to deal in the Software without restriction, including without limitation
+// the rights to use, copy, modify, merge, publish, distribute, sublicense,
+// and/or sell copies of the Software, and to permit persons to whom the
 // Software is furnished to do so, subject to the following conditions:
-// 
-// The above copyright notice and this permission notice shall be included in 
+//
+// The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
-// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 using System.Globalization;
 using System.IO.Compression;
@@ -264,6 +264,10 @@ public static partial class Command
         /// <returns>A task representing the asynchronous operation.</returns>
         static async Task BuildMsiPackage(string baseDir, string buildRoot, string msiFile, PackageTarget target, RuntimeConfig rtcfg)
         {
+            var isWindows = OperatingSystem.IsWindows();
+            const string originalNamespace = "http://schemas.microsoft.com/wix/2006/wi";
+            const string wixv4Namespace = "http://wixtoolset.org/schemas/v4/wxs";
+
             var resourcesDir = Path.Combine(baseDir, "ReleaseBuilder", "Resources", "Windows");
             var resourcesSubDir = Path.Combine(resourcesDir,
                 target.Interface switch
@@ -288,7 +292,11 @@ public static partial class Command
             if (File.Exists(binFiles))
                 File.Delete(binFiles);
 
-            File.WriteAllText(binFiles, WixHeatBuilder.CreateWixFilelist(sourceFiles, version: rtcfg.ReleaseInfo.Version.ToString()));
+            File.WriteAllText(binFiles, WixHeatBuilder.CreateWixFilelist(
+                sourceFiles,
+                version: rtcfg.ReleaseInfo.Version.ToString(),
+                wixNs: isWindows ? wixv4Namespace : originalNamespace
+            ));
 
             var msiArch = target.Arch switch
             {
@@ -298,22 +306,47 @@ public static partial class Command
                 _ => throw new Exception($"Architeture not supported: {target.ArchString}")
             };
 
-            List<string> wixArgs = [
-                Program.Configuration.Commands.Wix!,
-                "--define", $"HarvestPath={sourceFiles}",
-                "--arch", msiArch,
-                "--output", msiFile,
-                Path.Combine(resourcesSubDir, "Shortcuts.wxs"),
-                binFiles,
-                Path.Combine(resourcesSubDir, "Duplicati.wxs")
-            ];
+            // Prepare the Wix arguments, different for WiX (Windows) and wixl (Linux/MacOS)
+            string[] wixArgs;
 
-            // Add wixl specific extensions
-            if (!OperatingSystem.IsWindows())
-                wixArgs.InsertRange(1, [
+            if (isWindows)
+            {
+                // Update namespace in the .wxs files for WiX v4
+                var shortcutsTempfile = Path.Combine(buildTmp, "Shortcuts.wxs");
+                var entryTempfile = Path.Combine(buildTmp, "Duplicati.wxs");
+
+                File.WriteAllText(shortcutsTempfile, File.ReadAllText(Path.Combine(resourcesSubDir, "Shortcuts.wxs"))
+                    .Replace(originalNamespace, wixv4Namespace));
+
+                File.WriteAllText(entryTempfile, File.ReadAllText(Path.Combine(resourcesSubDir, "Duplicati.wxs"))
+                    .Replace(originalNamespace, wixv4Namespace));
+
+                wixArgs = [
+                    Program.Configuration.Commands.Wix!,
+                    "build",
+                    "-define", $"HarvestPath={sourceFiles}",
+                    "-arch", msiArch,
+                    "-out", msiFile,
+                    shortcutsTempfile,
+                    binFiles,
+                    entryTempfile
+                ];
+            }
+            else
+            {
+                // wixl needs the UI extension
+                wixArgs = [
+                    Program.Configuration.Commands.Wix!,
                     "--ext", "ui",
                     "--extdir", Path.Combine(resourcesDir, "WixUIExtension"),
-                ]);
+                    "--define", $"HarvestPath={sourceFiles}",
+                    "--arch", msiArch,
+                    "--output", msiFile,
+                    Path.Combine(resourcesSubDir, "Shortcuts.wxs"),
+                    binFiles,
+                    Path.Combine(resourcesSubDir, "Duplicati.wxs")
+                ];
+            }
 
             await ProcessHelper.Execute(wixArgs, workingDirectory: buildRoot);
 
@@ -748,7 +781,7 @@ public static partial class Command
         {
             // The approach here is based on:
             // https://www.internalpointers.com/post/build-binary-deb-package-practical-guide
-            // 
+            //
             // It is not the recommended way to build a package,
             // but since the build is from a pre-build binary,
             // it is easier than trying to hack debhelper.
@@ -1195,7 +1228,7 @@ public static partial class Command
                 await PackageSupport.SetPermissionFlags(tgfolder, rtcfg);
             }
 
-            var tags = new List<string> { rtcfg.ReleaseInfo.Channel.ToString(), rtcfg.ReleaseInfo.Version.ToString() };
+            var tags = new List<string> { rtcfg.ReleaseInfo.Channel.ToString(), rtcfg.ReleaseInfo.Version.ToString(), $"{rtcfg.ReleaseInfo.Version}-{rtcfg.ReleaseInfo.Channel}" };
             if (rtcfg.ReleaseInfo.Channel == ReleaseChannel.Stable)
                 tags.Add("latest");
 
