@@ -44,11 +44,7 @@ namespace Duplicati.Server
 {
     public class Program
     {
-
-        private static readonly string[] AlternativeHelpStrings = ["help", "/help", "usage", "/usage", "--help"];
-
         private static readonly string[] ParameterFileOptionStrings = ["parameters-file", "parameterfile"];
-
         private const string PING_PONG_KEEPALIVE_OPTION = "ping-pong-keepalive";
         private const string WINDOWS_EVENTLOG_OPTION = "windows-eventlog";
         private const string WINDOWS_EVENTLOG_LEVEL_OPTION = "windows-eventlog-level";
@@ -227,7 +223,7 @@ namespace Duplicati.Server
             var commandlineOptions = optionsWithFilter.Item1;
             var filter = optionsWithFilter.Item2;
 
-            if (_args.Select(s => s.ToLower()).Intersect(AlternativeHelpStrings.Select(x => x.ToLower())).Any())
+            if (HelpOptionExtensions.IsArgumentAnyHelpString(args))
             {
                 return ShowHelp(writeToConsoleOnException);
             }

@@ -21,8 +21,10 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Duplicati.Library.AutoUpdater;
 using Duplicati.Library.Common;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Snapshots
 {
@@ -72,7 +74,7 @@ namespace Duplicati.Library.Snapshots
                 if (args.Count == 0)
                     args = new List<string> { System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location) };
 
-                if (args.Count != 1)
+                if (args.Count != 1 || HelpOptionExtensions.IsArgumentAnyHelpString(args))
                 {
                     Console.WriteLine(@$"Usage:
 {PackageHelper.GetExecutableName(PackageHelper.NamedExecutable.Snapshots)} [test-folder]

@@ -166,6 +166,7 @@ public static class Program
                     context.ExitCode = 1;
                 }
             })
+            .UseAdditionalHelpAliases()
             .Build()
             .InvokeAsync(args);
     }

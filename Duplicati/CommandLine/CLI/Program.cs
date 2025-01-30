@@ -27,11 +27,13 @@ using System.IO;
 using Duplicati.Library.Interface;
 using Duplicati.Library.AutoUpdater;
 using Duplicati.Library.Crashlog;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.CommandLine
 {
     public class Program
     {
+        
         private static readonly string LOGTAG = Library.Logging.Log.LogTagFromType<Program>();
 
         public static bool FROM_COMMANDLINE = false;
@@ -163,7 +165,7 @@ namespace Duplicati.CommandLine
                 }
 
             // Probe for "help" to avoid extra processing
-            if (cargs.Count == 0 || (string.Equals(cargs[0], "help", StringComparison.OrdinalIgnoreCase)))
+            if (cargs.Count == 0 || HelpOptionExtensions.IsArgumentAnyHelpString(cargs))
             {
                 return Commands.Help(outwriter, setup, cargs, options, filter);
             }

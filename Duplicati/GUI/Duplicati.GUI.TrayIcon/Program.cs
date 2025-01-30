@@ -26,7 +26,9 @@ using System.Linq;
 using System.Net;
 using Duplicati.Library.Interface;
 using Duplicati.Library.RestAPI;
+using Duplicati.Library.Utility;
 using Duplicati.Server;
+using Uri = System.Uri;
 
 namespace Duplicati.GUI.TrayIcon
 {
@@ -67,8 +69,6 @@ namespace Duplicati.GUI.TrayIcon
         private static bool disableTrayIconLogin = false;
         private static bool openui = false;
         private static Uri serverURL = new Uri(DEFAULT_HOSTURL);
-
-
         public static string BrowserCommand { get { return _browser_command; } }
         public static Server.Database.Connection databaseConnection = null;
 
@@ -84,16 +84,8 @@ namespace Duplicati.GUI.TrayIcon
 
             if (OperatingSystem.IsWindows() && !Library.Utility.Utility.ParseBoolOption(options, DETACHED_PROCESS))
                 Library.Utility.Win32.AttachConsole(Library.Utility.Win32.ATTACH_PARENT_PROCESS);
-
-            foreach (string s in args)
-                if (
-                    s.Equals("help", StringComparison.OrdinalIgnoreCase) ||
-                    s.Equals("/help", StringComparison.OrdinalIgnoreCase) ||
-                    s.Equals("usage", StringComparison.OrdinalIgnoreCase) ||
-                    s.Equals("/usage", StringComparison.OrdinalIgnoreCase))
-                    options["help"] = "";
-
-            if (options.ContainsKey("help"))
+            
+            if (HelpOptionExtensions.IsArgumentAnyHelpString(args))
             {
                 Console.WriteLine("Supported commandline arguments:");
                 Console.WriteLine();
