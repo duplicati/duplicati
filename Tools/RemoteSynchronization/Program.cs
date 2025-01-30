@@ -249,11 +249,13 @@ destination will be verified before being overwritten (if they seemingly match).
 
         // TODO have concurrency parameters: uploaders, downloaders
         // TODO low memory mode, where things aren't kept in memory. Maybe utilize SQLite?
-        // TODO Progress reporting
+        // TODO For convenience, have the option to launch a "duplicati test" on the destination backend after the synchronization
+        // TODO Save hash to minimize redownload
 
-        // check database consistency. I.e. have both databases, check that the block, volume, files, etc match up.
-        // introduce these checks as a post processing step? Especially the database consistency check, as that is often recreated from the index files.
-        // TODO This tool shouldn't handle it, but for convenience, it should support making the seperate call to the regular Duplicati on the destination backend, which alread carries this functionality.
+        // TODO Profiling logging
+        // TODO Progress reporting
+        // TODO Duplicati Results
+        // TODO Log-level and log-file
 
         /// <summary>
         /// Copies the files from one backend to another.
