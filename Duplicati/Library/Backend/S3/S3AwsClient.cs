@@ -38,17 +38,54 @@ namespace Duplicati.Library.Backend
     /// </summary>
     public class S3AwsClient : IS3Client
     {
-        private static readonly string LOGTAG = Logging.Log.LogTagFromType<S3AwsClient>();
+        /// <summary>
+        /// The maximum number of items to list in a single request
+        /// </summary>
         private const int ITEM_LIST_LIMIT = 1000;
 
+        /// <summary>
+        /// The prefix for extended options
+        /// </summary>
         private const string EXT_OPTION_PREFIX = "s3-ext-";
 
+        /// <summary>
+        /// The location constraint for the bucket
+        /// </summary>
         private readonly string m_locationConstraint;
+        /// <summary>
+        /// The storage class for the bucket
+        /// </summary>
         private readonly string m_storageClass;
+        /// <summary>
+        /// The S3 client
+        /// </summary>
         private AmazonS3Client m_client;
+        /// <summary>
+        /// The option to specify if chunk encoding should be used
+        /// </summary>
         private readonly bool m_useChunkEncoding;
 
+        /// <summary>
+        /// The DNS host of the S3 server
+        /// </summary>
         private readonly string m_dnsHost;
+
+        /// <summary>
+        /// The archive classes that are considered archive classes
+        /// </summary>
+        private readonly IReadOnlySet<S3StorageClass> m_archiveClasses;
+
+        /// <summary>
+        /// The option to specify the archive classes
+        /// </summary>
+        public const string S3_ARCHIVE_CLASSES_OPTION = "s3-archive-classes";
+
+        /// <summary>
+        /// The default storage classes that are considered archive classes
+        /// </summary>
+        public static readonly IReadOnlySet<S3StorageClass> DEFAULT_ARCHIVE_CLASSES = new HashSet<S3StorageClass>([
+            S3StorageClass.DeepArchive, S3StorageClass.Glacier, S3StorageClass.GlacierInstantRetrieval, S3StorageClass.Snow
+        ]);
 
         public S3AwsClient(string awsID, string awsKey, string locationConstraint, string servername,
             string storageClass, bool useSSL, bool disableChunkEncoding, Dictionary<string, string> options)
@@ -65,6 +102,20 @@ namespace Duplicati.Library.Backend
             m_storageClass = storageClass;
             m_dnsHost = string.IsNullOrWhiteSpace(cfg.ServiceURL) ? null : new System.Uri(cfg.ServiceURL).Host;
             m_useChunkEncoding = !disableChunkEncoding;
+            m_archiveClasses = ParseStorageClasses(options.GetValueOrDefault(S3_ARCHIVE_CLASSES_OPTION));
+        }
+
+        /// <summary>
+        /// Parses the storage classes from the string
+        /// </summary>
+        /// <param name="storageClass">The storage class string</param>
+        /// <returns>The storage classes</returns>
+        private static IReadOnlySet<S3StorageClass> ParseStorageClasses(string storageClass)
+        {
+            if (string.IsNullOrWhiteSpace(storageClass))
+                return DEFAULT_ARCHIVE_CLASSES;
+
+            return new HashSet<S3StorageClass>(storageClass.Split([','], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Select(x => new S3StorageClass(x)));
         }
 
         public Task AddBucketAsync(string bucketName, CancellationToken cancelToken)
@@ -241,18 +292,10 @@ namespace Duplicati.Library.Backend
                         obj.LastModified,
                         obj.LastModified,
                         false,
-                        IsStorageClassArchive(obj.StorageClass)
+                        m_archiveClasses.Contains(obj.StorageClass)
                     );
                 }
             }
-        }
-
-        private bool IsStorageClassArchive(S3StorageClass storageClass)
-        {
-            return storageClass == S3StorageClass.DeepArchive
-                || storageClass == S3StorageClass.Glacier
-                || storageClass == S3StorageClass.GlacierInstantRetrieval
-                || storageClass == S3StorageClass.Snow;
         }
 
         public async Task RenameFileAsync(string bucketName, string source, string target, CancellationToken cancelToken)
