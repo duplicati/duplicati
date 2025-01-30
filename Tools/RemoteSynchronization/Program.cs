@@ -1,4 +1,4 @@
-// Copyright (C) 2025, The Duplicati Team
+﻿// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -44,6 +44,8 @@ namespace RemoteSynchronization
         private const bool DEFAULT_FORCE = false;
         private const bool DEFAULT_RETENTION = false;
         private const bool DEFAULT_CONFIRM = false;
+        private const string DEFAULT_LOG_LEVEL = "Information";
+        private const string DEFAULT_LOG_FILE = "";
 
         /// <summary>
         /// The log tag for this tool.
@@ -59,7 +61,7 @@ namespace RemoteSynchronization
         {
             var src_arg = new Argument<string>(name: "backend_src", description: "The source backend string");
             var dst_arg = new Argument<string>(name: "backend_dst", description: "The destination backend string");
-            var dry_run_opt = new Option<bool>(aliases: ["--dry-run", "-d"], description: "Do not actually write or delete files", getDefaultValue: () => DEFAULT_DRY_RUN);
+            var dry_run_opt = new Option<bool>(aliases: ["--dry-run", "-d"], description: "Do not actually write or delete files. If not set here, the global options will be checked", getDefaultValue: () => DEFAULT_DRY_RUN);
             var src_opts = OptionWithMultipleTokens(aliases: ["--src-options"], description: "Options for the source backend");
             var dst_opts = OptionWithMultipleTokens(aliases: ["--dst-options"], description: "Options for the destination backend");
             var verify_opt = new Option<bool>(aliases: ["--verify"], description: "Verify the files after copying", getDefaultValue: () => DEFAULT_VERIFY);
@@ -68,6 +70,8 @@ namespace RemoteSynchronization
             var retention_opt = new Option<bool>(aliases: ["--retention"], description: "Toggles whether to keep old files. Any deletes will be renames instead", getDefaultValue: () => DEFAULT_RETENTION);
             var confirm_opt = new Option<bool>(aliases: ["--confirm"], description: "Automatically confirm the operation", getDefaultValue: () => DEFAULT_CONFIRM);
             var global_opts = OptionWithMultipleTokens(aliases: ["--global-options"], description: "Global options all backends. May be overridden by backend specific options (src-options, dst-options)");
+            var log_level_opt = new Option<string>(aliases: ["--log-level"], description: "The log level to use. If not set here, global options will be checked", getDefaultValue: () => DEFAULT_LOG_LEVEL) { Arity = ArgumentArity.ExactlyOne };
+            var log_file_opt = new Option<string>(aliases: ["--log-file"], description: "The log file to write to. If not set here, global options will be checked", getDefaultValue: () => DEFAULT_LOG_FILE) { Arity = ArgumentArity.ExactlyOne };
 
             var root_cmd = new RootCommand(@"Remote Synchronization Tool
 
@@ -99,6 +103,8 @@ destination will be verified before being overwritten (if they seemingly match).
             root_cmd.AddOption(retention_opt);
             root_cmd.AddOption(confirm_opt);
             root_cmd.AddOption(global_opts);
+            root_cmd.AddOption(log_level_opt);
+            root_cmd.AddOption(log_file_opt);
 
             root_cmd.SetHandler((InvocationContext ctx) =>
             {
@@ -134,6 +140,22 @@ destination will be verified before being overwritten (if they seemingly match).
                 ?.Select(x => x.Split("="))
                 .ToDictionary(x => x[0], x => x[1])
                 ?? [];
+
+            var log_file = options["log-file"] as string ?? DEFAULT_LOG_FILE;
+
+            // Parse the log level
+            var log_level = options["log-level"] as string ?? DEFAULT_LOG_LEVEL;
+            Enum.TryParse<Duplicati.Library.Logging.LogMessageType>(log_level, true, out var log_level_enum);
+            // TODO Du er naaet hertil
+            Duplicati.Library.Logging.Log.LogLevel = log_level_enum;
+            else
+                foreach (string s in Enum.GetNames(typeof(Duplicati.Library.Logging.LogMessageType)))
+                    if (s.Equals(log_level, StringComparison.OrdinalIgnoreCase))
+                        return (Duplicati.Library.Logging.LogMessageType)Enum.Parse(typeof(Duplicati.Library.Logging.LogMessageType), s);
+
+            //var log_target = string.IsNullOrEmpty(log_file) ? new Duplicati.Library.Logging.
+            using Duplicati.Library.Logging.Log.StartScope();
+
             Dictionary<string, string> src_opts = (options["src-options"] as List<string>)
                 ?.Select(x => x.Split("="))
                 .ToDictionary(x => x[0], x => x[1])
