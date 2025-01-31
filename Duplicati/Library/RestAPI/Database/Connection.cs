@@ -605,7 +605,7 @@ namespace Duplicati.Server.Database
 
                     for (var i = 0; i < 100; i++)
                     {
-                        var guess = System.IO.Path.Combine(folder, System.IO.Path.ChangeExtension(Duplicati.Library.Main.DatabaseLocator.GenerateRandomName(), ".sqlite"));
+                        var guess = System.IO.Path.Combine(folder, System.IO.Path.ChangeExtension(CLIDatabaseLocator.GenerateRandomName(), ".sqlite"));
                         if (!System.IO.File.Exists(guess))
                         {
                             ((Backup)item).DBPath = guess;

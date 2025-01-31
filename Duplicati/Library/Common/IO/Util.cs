@@ -66,5 +66,18 @@ namespace Duplicati.Library.Common.IO
         {
             return string.IsNullOrWhiteSpace(path) || path.StartsWith("/", StringComparison.Ordinal) ? "/" : "\\";
         }
+
+        /// <summary>
+        /// Checks if the path is inside the Windows folder
+        /// </summary>
+        /// <param name="path">The path to check</param>
+        /// <returns><c>true</c> if the path is inside the Windows folder, <c>false</c> otherwise</returns>
+        public static bool IsPathUnderWindowsFolder(string path)
+        {
+            if (!OperatingSystem.IsWindows())
+                return false;
+
+            return path.StartsWith(AppendDirSeparator(Environment.GetFolderPath(Environment.SpecialFolder.Windows)), StringComparison.OrdinalIgnoreCase);
+        }
     }
 }

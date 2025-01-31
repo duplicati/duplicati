@@ -68,19 +68,9 @@ namespace Duplicati.Server
         public static readonly string StartupPath = Duplicati.Library.AutoUpdater.UpdaterManager.INSTALLATIONDIR;
 
         /// <summary>
-        /// Name of the database file
-        /// </summary>
-        public const string SERVER_DATABASE_FILENAME = "Duplicati-server.sqlite";
-
-        /// <summary>
         /// The environment variable prefix
         /// </summary>
-        private static readonly string ENV_NAME_PREFIX = Duplicati.Library.AutoUpdater.AutoUpdateSettings.AppName.ToUpper(CultureInfo.InvariantCulture);
-
-        /// <summary>
-        /// The name of the environment variable that holds the path to the data folder used by Duplicati
-        /// </summary>
-        private static readonly string DATAFOLDER_ENV_NAME = ENV_NAME_PREFIX + "_HOME";
+        private static readonly string ENV_NAME_PREFIX = AutoUpdateSettings.AppName.ToUpperInvariant();
 
         /// <summary>
         /// Gets the folder where Duplicati data is stored
@@ -326,6 +316,7 @@ namespace Duplicati.Server
             catch (SingleInstance.MultipleInstanceException mex)
             {
                 crashed = true;
+                Log.WriteErrorMessage(LOGTAG, "MultipleInstanceError", mex, Strings.Program.ServerCrashed(mex.Message));
                 System.Diagnostics.Trace.WriteLine(Strings.Program.SeriousError(mex.ToString()));
                 if (!writeToConsoleOnException) throw;
 
@@ -335,6 +326,7 @@ namespace Duplicati.Server
             catch (Exception ex)
             {
                 crashed = true;
+                Log.WriteErrorMessage(LOGTAG, "ServerCrashed", ex, Strings.Program.ServerCrashed(ex.Message));
                 System.Diagnostics.Trace.WriteLine(Strings.Program.SeriousError(ex.ToString()));
                 if (writeToConsoleOnException)
                 {
@@ -346,7 +338,7 @@ namespace Duplicati.Server
             }
             finally
             {
-                Library.Logging.Log.WriteInformationMessage(LOGTAG, "ServerStopping", Strings.Program.ServerStopping);
+                Log.WriteInformationMessage(LOGTAG, "ServerStopping", Strings.Program.ServerStopping);
 
                 var steps = new Action[] {
                     () => StatusEventNotifyer.SignalNewEvent(),
@@ -600,6 +592,25 @@ namespace Duplicati.Server
                     );
                 }
 
+                if (OperatingSystem.IsWindows() && DataFolder.StartsWith(Util.AppendDirSeparator(Environment.GetFolderPath(Environment.SpecialFolder.Windows)), StringComparison.OrdinalIgnoreCase))
+                {
+                    DataConnection.RegisterNotification(
+                        Serialization.NotificationType.Warning,
+                        "Incorrect storage folder",
+                        "The server configuraion is stored inside the Windows folder. Please move the configuration to a different location, or it may be deleted on Windows version upgrades.",
+                        null,
+                        null,
+                        "config:issue:windows-folder-used",
+                        null,
+                        "UnencryptedDatabase",
+                        null,
+                        (self, all) =>
+                        {
+                            return all.FirstOrDefault(x => x.Action == "config:issue:windows-folder-used") ?? self;
+                        }
+                    );
+                }
+
                 DataConnection.ApplicationSettings.LastConfigIssueCheckVersion = UpdaterManager.SelfVersion.Version;
             }
         }
@@ -732,43 +743,14 @@ namespace Duplicati.Server
             throw new Exception("Server invoked with --help");
         }
 
-        public static string GetDataFolderPath(Dictionary<string, string> commandlineOptions)
+        public static Connection GetDatabaseConnection(Dictionary<string, string> commandlineOptions, bool silentConsole)
         {
-            var serverDataFolder = Environment.GetEnvironmentVariable(DATAFOLDER_ENV_NAME);
-            if (commandlineOptions.ContainsKey("server-datafolder"))
-                serverDataFolder = commandlineOptions["server-datafolder"];
+            DataFolder = DataFolderManager.DATAFOLDER;
 
-            if (string.IsNullOrEmpty(serverDataFolder))
-            {
-                bool portableMode = commandlineOptions.ContainsKey("portable-mode")
-                    ? Library.Utility.Utility.ParseBool(commandlineOptions["portable-mode"], true)
-                    : (DEBUG_MODE ? true : false); // Default to portable mode in debug mode
+            // Emit a warning if the database is stored in the Windows folder
+            if (Util.IsPathUnderWindowsFolder(DataFolder))
+                Log.WriteWarningMessage(LOGTAG, "DatabaseInWindowsFolder", null, "The database is stored in the Windows folder, this is not recommended as it will be deleted on Windows upgrades.");
 
-                if (DEBUG_MODE && portableMode)
-                {
-                    //debug mode uses a lock file located in the app folder
-                    return StartupPath;
-                }
-                else if (portableMode)
-                {
-                    //Portable mode uses a data folder in the application home dir
-                    System.IO.Directory.SetCurrentDirectory(StartupPath);
-                    return System.IO.Path.Combine(StartupPath, "data");
-                }
-                else
-                {
-                    //Normal release mode uses the systems "(Local) Application Data" folder
-                    // %LOCALAPPDATA% on Windows, ~/.config on Linux, ~/Library/Application\ Support on MacOS
-                    return DatabaseLocator.GetDefaultStorageFolder(SERVER_DATABASE_FILENAME, Library.AutoUpdater.AutoUpdateSettings.AppName);
-                }
-            }
-            else
-                return Util.AppendDirSeparator(Environment.ExpandEnvironmentVariables(serverDataFolder).Trim('"'));
-        }
-
-        public static Database.Connection GetDatabaseConnection(Dictionary<string, string> commandlineOptions, bool silentConsole)
-        {
-            DataFolder = GetDataFolderPath(commandlineOptions);
             CrashlogHelper.DefaultLogDir = DataFolder;
 
             var sqliteVersion = new Version(Duplicati.Library.SQLiteHelper.SQLiteLoader.SQLiteVersion);
@@ -783,7 +765,7 @@ namespace Duplicati.Server
 
             try
             {
-                DatabasePath = System.IO.Path.Combine(DataFolder, SERVER_DATABASE_FILENAME);
+                DatabasePath = System.IO.Path.Combine(DataFolder, DataFolderManager.SERVER_DATABASE_FILENAME);
 
                 if (!System.IO.Directory.Exists(System.IO.Path.GetDirectoryName(DatabasePath)))
                     System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(DatabasePath));
@@ -958,7 +940,7 @@ namespace Duplicati.Server
                 new Duplicati.Library.Interface.CommandLineArgument("tempdir", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Path, Strings.Program.TempdirShort, Strings.Program.TempdirLong, System.IO.Path.GetTempPath()),
                 new Duplicati.Library.Interface.CommandLineArgument("help", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean, Strings.Program.HelpCommandDescription, Strings.Program.HelpCommandDescription),
                 new Duplicati.Library.Interface.CommandLineArgument("parameters-file", Library.Interface.CommandLineArgument.ArgumentType.Path, Strings.Program.ParametersFileOptionShort, Strings.Program.ParametersFileOptionLong2, "", ParameterFileOptionStrings),
-                new Duplicati.Library.Interface.CommandLineArgument("portable-mode", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean, Strings.Program.PortablemodeCommandDescription, Strings.Program.PortablemodeCommandDescription),
+                new Duplicati.Library.Interface.CommandLineArgument(DataFolderManager.PORTABLE_MODE_OPTION, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean, Strings.Program.PortablemodeCommandDescription, Strings.Program.PortablemodeCommandDescription, DataFolderManager.PORTABLE_MODE.ToString().ToLowerInvariant()),
                 new Duplicati.Library.Interface.CommandLineArgument("log-file", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Path, Strings.Program.LogfileCommandDescription, Strings.Program.LogfileCommandDescription),
                 new Duplicati.Library.Interface.CommandLineArgument("log-level", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Enumeration, Strings.Program.LoglevelCommandDescription, Strings.Program.LoglevelCommandDescription, Library.Logging.LogMessageType.Warning.ToString(), null, Enum.GetNames(typeof(Duplicati.Library.Logging.LogMessageType))),
                 new Duplicati.Library.Interface.CommandLineArgument(WebServerLoader.OPTION_WEBROOT, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Path, Strings.Program.WebserverWebrootDescription, Strings.Program.WebserverWebrootDescription, WebServerLoader.DEFAULT_OPTION_WEBROOT),
@@ -980,7 +962,7 @@ namespace Duplicati.Server
                 new Duplicati.Library.Interface.CommandLineArgument(WebServerLoader.OPTION_WEBSERVICE_CORS_ORIGINS, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Path, Strings.Program.WebserverCorsOriginsDescription, Strings.Program.WebserverCorsOriginsDescription, WebServerLoader.DEFAULT_OPTION_SPAPATHS),
                 new Duplicati.Library.Interface.CommandLineArgument(PING_PONG_KEEPALIVE_OPTION, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean, Strings.Program.PingpongkeepaliveShort, Strings.Program.PingpongkeepaliveLong),
                 new Duplicati.Library.Interface.CommandLineArgument("log-retention", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Timespan, Strings.Program.LogretentionShort, Strings.Program.LogretentionLong, DEFAULT_LOG_RETENTION),
-                new Duplicati.Library.Interface.CommandLineArgument("server-datafolder", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Path, Strings.Program.ServerdatafolderShort, Strings.Program.ServerdatafolderLong(DATAFOLDER_ENV_NAME), System.IO.Path.Combine(System.Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), Library.AutoUpdater.AutoUpdateSettings.AppName)),
+                new Duplicati.Library.Interface.CommandLineArgument(DataFolderManager.SERVER_DATAFOLDER_OPTION, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Path, Strings.Program.ServerdatafolderShort, Strings.Program.ServerdatafolderLong(DataFolderManager.DATAFOLDER_ENV_NAME), DataFolderManager.DATAFOLDER),
                 new Duplicati.Library.Interface.CommandLineArgument(DISABLE_DB_ENCRYPTION_OPTION, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean, Strings.Program.DisabledbencryptionShort, Strings.Program.DisabledbencryptionLong),
                 new Duplicati.Library.Interface.CommandLineArgument(REQUIRE_DB_ENCRYPTION_KEY_OPTION, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean, Strings.Program.RequiredbencryptionShort, Strings.Program.RequiredbencryptionLong),
                 new Duplicati.Library.Interface.CommandLineArgument(SETTINGS_ENCRYPTION_KEY_OPTION, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Password, Strings.Program.SettingsencryptionkeyShort, Strings.Program.SettingsencryptionkeyLong(EncryptedFieldHelper.ENVIROMENT_VARIABLE_NAME)),

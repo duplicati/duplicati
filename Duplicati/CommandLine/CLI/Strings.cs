@@ -54,6 +54,12 @@ namespace Duplicati.CommandLine.Strings
         public static string QuietConsoleOptionLong { get { return LC.L(@"If this option is set, progress reports and other messages that would normally go to the console will be redirected to the log."); } }
         public static string QuietConsoleOptionShort { get { return LC.L(@"Disable console output"); } }
         public static string SkippingSourceArgumentsOnNonBackupOperation { get { return @"The --source argument was specified in the parameter file, but the current operation is not a backup operation, so the argument is ignored."; } }
+        public static string AutoUpdateOptionShort { get { return LC.L(@"Toggle automatic updates"); } }
+        public static string AutoUpdateOptionLong { get { return LC.L(@"Set this option if you prefer to have the commandline version automatically update"); } }
+        public static string PortableModeOptionShort { get { return LC.L(@"Use portable mode"); } }
+        public static string PortableModeOptionLong { get { return LC.L(@"If this option is set, the configuration files will be stored in a data subfolder of the Duplicati installation folder. This is useful for running from a USB stick or other portable media."); } }
+        public static string DataFolderOptionShort { get { return LC.L(@"Data folder"); } }
+        public static string DataFolderOptionLong { get { return LC.L(@"The folder where data is stored. This is the folder where the database and other files are stored."); } }
 
         // ReSharper disable once UnusedMember.Global
         // This is a placeholder message that is intended to be used with the code

@@ -559,26 +559,6 @@ namespace Duplicati.Library.Main
             }
         }
 
-        /// <summary>
-        /// Attempts to get the locale, but delays linking to the calls as they are missing in some environments
-        /// </summary>
-        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
-        private static void DoGetLocale(out System.Globalization.CultureInfo locale, out System.Globalization.CultureInfo uiLocale)
-        {
-            locale = System.Globalization.CultureInfo.DefaultThreadCurrentCulture;
-            uiLocale = System.Globalization.CultureInfo.DefaultThreadCurrentUICulture;
-        }
-
-        /// <summary>
-        /// Attempts to set the locale, but delays linking to the calls as they are missing in some environments
-        /// </summary>
-        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
-        private static void DoSetLocale(System.Globalization.CultureInfo locale, System.Globalization.CultureInfo uiLocale)
-        {
-            System.Globalization.CultureInfo.DefaultThreadCurrentCulture = locale;
-            System.Globalization.CultureInfo.DefaultThreadCurrentUICulture = uiLocale;
-        }
-
         private void OperationComplete(IBasicResults result, Exception exception)
         {
             if (m_options != null && m_options.LoadedModules != null)
@@ -718,7 +698,7 @@ namespace Duplicati.Library.Main
             }
 
             if (string.IsNullOrEmpty(m_options.Dbpath))
-                m_options.Dbpath = DatabaseLocator.GetDatabasePath(m_backendUrl, m_options);
+                m_options.Dbpath = CLIDatabaseLocator.GetDatabasePathForCLI(m_backendUrl, m_options);
 
             ValidateOptions();
         }
@@ -783,20 +763,20 @@ namespace Duplicati.Library.Main
             }
 
             //Keep a list of all supplied options
-            Dictionary<string, string> ropts = new Dictionary<string, string>(m_options.RawOptions);
+            var ropts = new Dictionary<string, string>(m_options.RawOptions);
 
             //Keep a list of all supported options
-            Dictionary<string, Library.Interface.ICommandLineArgument> supportedOptions = new Dictionary<string, Library.Interface.ICommandLineArgument>();
+            var supportedOptions = new Dictionary<string, Library.Interface.ICommandLineArgument>();
 
             //There are a few internal options that are not accessible from outside, and thus not listed
             foreach (string s in Options.InternalOptions)
                 supportedOptions[s] = null;
 
             //Figure out what module options are supported in the current setup
-            List<Library.Interface.ICommandLineArgument> moduleOptions = new List<Duplicati.Library.Interface.ICommandLineArgument>();
-            Dictionary<string, string> disabledModuleOptions = new Dictionary<string, string>();
+            var moduleOptions = new List<Duplicati.Library.Interface.ICommandLineArgument>();
+            var disabledModuleOptions = new Dictionary<string, string>();
 
-            foreach (KeyValuePair<bool, Library.Interface.IGenericModule> m in m_options.LoadedModules)
+            foreach (var m in m_options.LoadedModules)
                 if (m.Value.SupportedCommands != null)
                     if (m.Key)
                         moduleOptions.AddRange(m.Value.SupportedCommands);
@@ -863,7 +843,7 @@ namespace Duplicati.Library.Main
             }
 
             //Now look for options that were supplied but not supported
-            foreach (string s in ropts.Keys)
+            foreach (var s in ropts.Keys)
                 if (!supportedOptions.ContainsKey(s))
                     if (disabledModuleOptions.ContainsKey(s))
                         Logging.Log.WriteWarningMessage(LOGTAG, "UnsupportedDisabledModule", null, Strings.Controller.UnsupportedOptionDisabledModuleWarning(s, disabledModuleOptions[s]), null);
@@ -871,10 +851,9 @@ namespace Duplicati.Library.Main
                         Logging.Log.WriteWarningMessage(LOGTAG, "UnsupportedOption", null, Strings.Controller.UnsupportedOptionWarning(s), null);
 
             //Look at the value supplied for each argument and see if is valid according to its type
-            foreach (string s in ropts.Keys)
+            foreach (var s in ropts.Keys)
             {
-                Library.Interface.ICommandLineArgument arg;
-                if (supportedOptions.TryGetValue(s, out arg) && arg != null)
+                if (supportedOptions.TryGetValue(s, out var arg) && arg != null)
                 {
                     string validationMessage = ValidateOptionValue(arg, s, ropts[s]);
                     if (validationMessage != null)

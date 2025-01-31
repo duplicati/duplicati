@@ -116,7 +116,7 @@ namespace Duplicati.CommandLine
                 Library.Main.Options opts = new Library.Main.Options(new Dictionary<string, string>());
 
                 tp = tp.Replace("%CLI_EXE%", PackageHelper.GetExecutableName(PackageHelper.NamedExecutable.CommandLine));
-                tp = tp.Replace("%VERSION%", License.VersionNumbers.Version);
+                tp = tp.Replace("%VERSION%", License.VersionNumbers.VERSION_NAME);
                 tp = tp.Replace("%BACKENDS%", string.Join(", ", Library.DynamicLoader.BackendLoader.Keys));
                 tp = tp.Replace("%APP_PATH%", Path.Combine(UpdaterManager.INSTALLATIONDIR, PackageHelper.GetExecutableName(PackageHelper.NamedExecutable.CommandLine)));
                 tp = tp.Replace("%PATH_SEPARATOR%", System.IO.Path.PathSeparator.ToString());

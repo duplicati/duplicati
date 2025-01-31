@@ -117,6 +117,11 @@ namespace Duplicati.Service
                                     PingProcess();
                             }
                         }
+
+                        if (m_process.ExitCode != 0)
+                            m_reportMessage(string.Format("Process has exited with code {0}", m_process.ExitCode), true);
+                        else if (!m_terminate)
+                            m_reportMessage("Process has exited without an error code", true);
                     }
                     catch (Exception ex)
                     {
@@ -131,11 +136,11 @@ namespace Duplicati.Service
                                 m_terminate = true;
                             }
                         }
-
-                        // Throttle restarts
-                        if (!m_terminate)
-                            System.Threading.Thread.Sleep(TimeSpan.FromSeconds(10));
                     }
+
+                    // Throttle restarts
+                    if (!m_terminate)
+                        System.Threading.Thread.Sleep(TimeSpan.FromSeconds(10));
                 }
             }
             finally

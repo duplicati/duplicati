@@ -384,8 +384,8 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("exclude-files-attributes", CommandLineArgument.ArgumentType.String, Strings.Options.ExcludefilesattributesShort, Strings.Options.ExcludefilesattributesLong(Enum.GetNames(typeof(System.IO.FileAttributes)))),
                     new CommandLineArgument("compression-extension-file", CommandLineArgument.ArgumentType.Path, Strings.Options.CompressionextensionfileShort, Strings.Options.CompressionextensionfileLong(DEFAULT_COMPRESSED_EXTENSION_FILE), DEFAULT_COMPRESSED_EXTENSION_FILE),
 
-                    new CommandLineArgument("machine-id", CommandLineArgument.ArgumentType.String, Strings.Options.MachineidShort, Strings.Options.MachineidLong, Library.AutoUpdater.UpdaterManager.InstallID),
-                    new CommandLineArgument("machine-name", CommandLineArgument.ArgumentType.String, Strings.Options.MachinenameShort, Strings.Options.MachinenameLong, Library.AutoUpdater.UpdaterManager.MachineName),
+                    new CommandLineArgument("machine-id", CommandLineArgument.ArgumentType.String, Strings.Options.MachineidShort, Strings.Options.MachineidLong, Library.AutoUpdater.DataFolderManager.InstallID),
+                    new CommandLineArgument("machine-name", CommandLineArgument.ArgumentType.String, Strings.Options.MachinenameShort, Strings.Options.MachinenameLong, Library.AutoUpdater.DataFolderManager.MachineName),
                     new CommandLineArgument("backup-id", CommandLineArgument.ArgumentType.String, Strings.Options.BackupidShort, Strings.Options.BackupidLong, ""),
                     new CommandLineArgument("backup-name", CommandLineArgument.ArgumentType.String, Strings.Options.BackupnameShort, Strings.Options.BackupnameLong, DefaultBackupName),
                     new CommandLineArgument("next-scheduled-run", CommandLineArgument.ArgumentType.String, Strings.Options.NextscheduledrunShort, Strings.Options.NextscheduledrunLong),
@@ -1367,7 +1367,7 @@ namespace Duplicati.Library.Main
             {
                 if (m_options.TryGetValue("machine-id", out var tmp))
                     return tmp;
-                return Library.AutoUpdater.UpdaterManager.InstallID;
+                return Library.AutoUpdater.DataFolderManager.InstallID;
             }
         }
         /// <summary>

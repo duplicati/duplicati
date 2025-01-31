@@ -397,15 +397,15 @@ namespace Duplicati.Library.Modules.Builtin
                 case PARSEDRESULT:
                     return m_parsedresultlevel;
                 case MACHINE_ID:
-                    return AutoUpdater.UpdaterManager.MachineID;
+                    return AutoUpdater.DataFolderManager.MachineID;
                 case BACKUP_ID:
                     return Utility.Utility.ByteArrayAsHexString(Utility.Utility.RepeatedHashWithSalt(m_remoteurl, SALT));
                 case BACKUP_NAME:
                     return System.IO.Path.GetFileNameWithoutExtension(Utility.Utility.getEntryAssembly().Location);
                 case MACHINE_NAME:
-                    return AutoUpdater.UpdaterManager.MachineName;
+                    return AutoUpdater.DataFolderManager.MachineName;
                 case OPERATING_SYSTEM:
-                    return OperatingSystem.IsWindows() ? "Windows" : OperatingSystem.IsLinux() ? "Linux" : OperatingSystem.IsMacOS() ? "MacOS" : "Unknown";
+                    return AutoUpdater.UpdaterManager.OperatingSystemName;
                 case INSTALLATION_TYPE:
                     return AutoUpdater.UpdaterManager.PackageTypeId;
                 case DESTINATION_TYPE:
