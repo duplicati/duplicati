@@ -1,4 +1,4 @@
-﻿// Copyright (C) 2025, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -46,6 +46,18 @@ namespace RemoteSynchronization
         private const bool DEFAULT_CONFIRM = false;
         private const string DEFAULT_LOG_LEVEL = "Information";
         private const string DEFAULT_LOG_FILE = "";
+
+        /// <summary>
+        /// Global configuration for the tool. Should be set after parsing the commandline arguments.
+        /// </summary>
+        private class GlobalConfig
+        {
+            internal static bool DryRun = DEFAULT_DRY_RUN;
+            internal static bool Force = DEFAULT_FORCE;
+            internal static string LogLevel = DEFAULT_LOG_LEVEL;
+            internal static string LogFile = DEFAULT_LOG_FILE;
+            internal static bool Verify = DEFAULT_VERIFY;
+        }
 
         /// <summary>
         /// The log tag for this tool.
@@ -128,10 +140,12 @@ destination will be verified before being overwritten (if they seemingly match).
         private static async Task<int> Run(string src, string dst, Dictionary<string, object?> options)
         {
             // Parse the known options for this tool
-            var dry_run = options["dry-run"] as bool? ?? DEFAULT_DRY_RUN;
-            var verify = options["verify"] as bool? ?? DEFAULT_VERIFY;
+            GlobalConfig.Force = options["force"] as bool? ?? DEFAULT_FORCE;
+            GlobalConfig.DryRun = options["dry-run"] as bool? ?? DEFAULT_DRY_RUN;
+            GlobalConfig.LogLevel = options["log-level"] as string ?? DEFAULT_LOG_LEVEL;
+            GlobalConfig.LogFile = options["log-file"] as string ?? DEFAULT_LOG_FILE;
+            GlobalConfig.Verify = options["verify"] as bool? ?? DEFAULT_VERIFY;
             var retries = options["retry"] as int? ?? DEFAULT_RETRY;
-            var force = options["force"] as bool? ?? DEFAULT_FORCE;
             var retention = options["retention"] as bool? ?? DEFAULT_RETENTION;
             var confirm = options["confirm"] as bool? ?? DEFAULT_CONFIRM;
 
@@ -179,10 +193,10 @@ destination will be verified before being overwritten (if they seemingly match).
             System.Diagnostics.Debug.Assert(b2s != null);
 
             // Prepare the operations
-            var (to_copy, to_delete, to_verify) = PrepareFileLists(b1s, b2s, force);
+            var (to_copy, to_delete, to_verify) = PrepareFileLists(b1s, b2s);
 
             // Verify the files if requested. If the files are not verified, they will be deleted and copied again.
-            if (verify)
+            if (GlobalConfig.Verify)
             {
                 // As this is a potentially slow operation, ask for confirmation of the verification)
                 if (!confirm)
@@ -227,17 +241,17 @@ destination will be verified before being overwritten (if they seemingly match).
             // Delete or rename the files that are not needed
             if (retention)
             {
-                var renamed = await RenameAsync(b2, to_delete, dry_run);
+                var renamed = await RenameAsync(b2, to_delete);
                 Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "rsync", "Renamed {0} files in {1}", renamed, b2s.DisplayName);
             }
             else
             {
-                var deleted = await DeleteAsync(b2s, to_delete, dry_run);
+                var deleted = await DeleteAsync(b2s, to_delete);
                 Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "rsync", "Deleted {0} files from {1}", deleted, b2s.DisplayName);
             }
 
             // Copy the files
-            var (copied, copy_errors) = await CopyAsync(b1s, b2s, to_copy, dry_run, verify);
+            var (copied, copy_errors) = await CopyAsync(b1s, b2s, to_copy);
             Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "rsync", "Copied {0} files from {1} to {2}", copied, b1s, b2s);
 
             // If there are still errors, retry a few times
@@ -250,7 +264,7 @@ destination will be verified before being overwritten (if they seemingly match).
                     for (int i = 0; i < retries; i++)
                     {
                         Thread.Sleep(5000); // Wait 5 seconds before retrying
-                        (copied, copy_errors) = await CopyAsync(b1s, b2s, copy_errors, dry_run, verify);
+                        (copied, copy_errors) = await CopyAsync(b1s, b2s, copy_errors);
                         Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "rsync", "Copied {0} files from {1} to {2}", copied, b1s, b2s);
                         if (!copy_errors.Any())
                             break;
@@ -278,6 +292,8 @@ destination will be verified before being overwritten (if they seemingly match).
         // TODO Progress reporting
         // TODO Duplicati Results
 
+        // TODO Should the "get after put" verification be extracted out to be its own flag, as the "verify destination matches source" check is a desiredly separate operation?
+
         /// <summary>
         /// Copies the files from one backend to another.
         /// The files are copied one by one, and each file is verified after uploading if the verify flag is set.
@@ -288,7 +304,7 @@ destination will be verified before being overwritten (if they seemingly match).
         /// <param name="dry_run">Flag for whether destructive actions (writes) should be printed rather than performed. Downloads (reads) are still being performed.</param>
         /// <param name="verify">Flag for whether to verify each upload to the destination backend.</param>
         /// <returns>A tuple holding the number of succesful copies and a List of the files that failed.</returns>
-        private static async Task<(long, IEnumerable<IFileEntry>)> CopyAsync(IStreamingBackend b_src, IStreamingBackend b_dst, IEnumerable<IFileEntry> files, bool dry_run, bool verify)
+        private static async Task<(long, IEnumerable<IFileEntry>)> CopyAsync(IStreamingBackend b_src, IStreamingBackend b_dst, IEnumerable<IFileEntry> files)
         {
             long successful_copies = 0;
             List<IFileEntry> errors = [];
@@ -299,14 +315,14 @@ destination will be verified before being overwritten (if they seemingly match).
                 try
                 {
                     await b_src.GetAsync(f.Name, s_src, CancellationToken.None);
-                    if (dry_run)
+                    if (GlobalConfig.DryRun)
                     {
                         Duplicati.Library.Logging.Log.WriteDryrunMessage(LOGTAG, "rsync", "Would write {0} bytes of {1} to {2}", s_src.Length, f.Name, b_dst.DisplayName);
                     }
                     else
                     {
                         await b_dst.PutAsync(f.Name, s_src, CancellationToken.None);
-                        if (verify)
+                        if (GlobalConfig.Verify)
                         {
                             await b_dst.GetAsync(f.Name, s_dst, CancellationToken.None);
 
@@ -350,14 +366,14 @@ destination will be verified before being overwritten (if they seemingly match).
         /// <param name="files">The files to delete.</param>
         /// <param name="dry_run">Flag for whether the deletion should be printed rather than performed.</param>
         /// <returns>The number of successful deletions.</returns>
-        private static async Task<long> DeleteAsync(IStreamingBackend b, IEnumerable<IFileEntry> files, bool dry_run)
+        private static async Task<long> DeleteAsync(IStreamingBackend b, IEnumerable<IFileEntry> files)
         {
             long successful_deletes = 0;
             foreach (var f in files)
             {
                 try
                 {
-                    if (dry_run)
+                    if (GlobalConfig.DryRun)
                     {
                         Duplicati.Library.Logging.Log.WriteDryrunMessage(LOGTAG, "rsync", "Would delete {0} from {1}", f.Name, b.DisplayName);
                     }
@@ -400,13 +416,13 @@ destination will be verified before being overwritten (if they seemingly match).
         /// <param name="b_dst">The destination backend.</param>
         /// <param name="force">Flag for whether to force the synchronization.</param>
         /// <returns>A tuple of Lists each holding the files to copy, delete and verify.</returns>
-        private static (IEnumerable<IFileEntry>, IEnumerable<IFileEntry>, IEnumerable<IFileEntry>) PrepareFileLists(IStreamingBackend b_src, IStreamingBackend b_dst, bool force)
+        private static (IEnumerable<IFileEntry>, IEnumerable<IFileEntry>, IEnumerable<IFileEntry>) PrepareFileLists(IStreamingBackend b_src, IStreamingBackend b_dst)
         {
             var files_src = b_src.List();
             var files_dst = b_dst.List();
 
             // Shortcut for force
-            if (force)
+            if (GlobalConfig.Force)
             {
                 return (files_src, files_dst, []);
             }
@@ -471,7 +487,7 @@ destination will be verified before being overwritten (if they seemingly match).
         /// <param name="files">The files to rename.</param>
         /// <param name="dry_run">Flag for whether the renaming should be printed rather than performed.</param>
         /// <returns>The number of successful renames.</returns>
-        private static async Task<long> RenameAsync(IBackend b, IEnumerable<IFileEntry> files, bool dry_run)
+        private static async Task<long> RenameAsync(IBackend b, IEnumerable<IFileEntry> files)
         {
             long successful_renames = 0;
             string suffix = $"{System.DateTime.Now:yyyyMMddHHmmss}.old";
@@ -485,7 +501,7 @@ destination will be verified before being overwritten (if they seemingly match).
                             try
                             {
                                 await sb.GetAsync(f.Name, downloaded, CancellationToken.None);
-                                if (dry_run)
+                                if (GlobalConfig.DryRun)
                                 {
                                     Duplicati.Library.Logging.Log.WriteDryrunMessage(LOGTAG, "rsync", "Would rename {0} to {0}.{1} by deleting and re-uploading {2} bytes to {3}", f.Name, suffix, downloaded.Length, sb.DisplayName);
                                 }
@@ -514,7 +530,7 @@ destination will be verified before being overwritten (if they seemingly match).
                         {
                             try
                             {
-                                if (dry_run)
+                                if (GlobalConfig.DryRun)
                                 {
                                     Duplicati.Library.Logging.Log.WriteDryrunMessage(LOGTAG, "rsync", "Would rename {0} to {0}.{1} by calling Rename on {2}", f.Name, suffix, rb.DisplayName);
                                 }
