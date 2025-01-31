@@ -758,7 +758,20 @@ namespace Duplicati.Library.Utility
         /// <param name="value">The value to look for in the settings</param>
         /// <param name="default">The default value to return if there are no matches.</param>
         /// <typeparam name="T">The enum type parameter.</typeparam>
-        public static T ParseEnumOption<T>(IReadOnlyDictionary<string, string?> options, string value, T @default)
+        public static T ParseEnumOption<T>(IReadOnlyDictionary<string, string?> options, string value, T @default) where T : struct, Enum
+        {
+            return options.TryGetValue(value, out var opt) ? ParseEnum(opt, @default) : @default;
+        }
+
+        /// <summary>
+        /// Parses a flags-type enum found in the options dictionary
+        /// </summary>
+        /// <returns>The parsed or default enum value.</returns>
+        /// <param name="options">The set of options to look for the setting in</param>
+        /// <param name="value">The value to look for in the settings</param>
+        /// <param name="default">The default value to return if there are no matches.</param>
+        /// <typeparam name="T">The enum type parameter.</typeparam>
+        public static T ParseFlagsOption<T>(IReadOnlyDictionary<string, string?> options, string value, T @default) where T : struct, Enum
         {
             return options.TryGetValue(value, out var opt) ? ParseEnum(opt, @default) : @default;
         }
@@ -770,7 +783,7 @@ namespace Duplicati.Library.Utility
         /// <param name="value">The string to parse.</param>
         /// <param name="default">The default value to return if there are no matches.</param>
         /// <typeparam name="T">The enum type parameter.</typeparam>
-        public static T ParseEnum<T>(string? value, T @default)
+        public static T ParseEnum<T>(string? value, T @default) where T : struct, Enum
         {
             if (string.IsNullOrWhiteSpace(value))
                 return @default;
@@ -779,6 +792,29 @@ namespace Duplicati.Library.Utility
                     return (T)Enum.Parse(typeof(T), s);
 
             return @default;
+        }
+
+        /// <summary>
+        /// Parses a string into a flags enum value.
+        /// </summary>
+        /// <typeparam name="T">The enum type to parse.</typeparam>
+        /// <param name="value">The value to parse.</param>
+        /// <param name="default">The default value to return if there are no matches.</param>
+        /// <returns></returns>
+        public static T ParseFlags<T>(string? value, T @default) where T : struct, Enum
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                return @default;
+
+            var flags = 0;
+            foreach (var s in value.Split([','], StringSplitOptions.RemoveEmptyEntries))
+            {
+                var trimmed = s.Trim();
+                if (Enum.TryParse(trimmed, true, out T flag))
+                    flags = flags | (int)(object)flag;
+            }
+
+            return (T)(object)flags;
         }
 
         /// <summary>

@@ -324,7 +324,7 @@ namespace Duplicati.Library.Backend
 
             var dataConnectionType = CoreUtility.ParseEnumOption(options, CONFIG_KEY_FTP_DATA_CONNECTION_TYPE, DEFAULT_DATA_CONNECTION_TYPE);
             var encryptionMode = CoreUtility.ParseEnumOption(options, CONFIG_KEY_FTP_ENCRYPTION_MODE, DEFAULT_ENCRYPTION_MODE);
-            var sslProtocols = CoreUtility.ParseEnumOption(options, CONFIG_KEY_FTP_SSL_PROTOCOLS, DEFAULT_SSL_PROTOCOLS);
+            var sslProtocols = CoreUtility.ParseFlagsOption(options, CONFIG_KEY_FTP_SSL_PROTOCOLS, DEFAULT_SSL_PROTOCOLS);
 
             // Process options of the legacy FTP backend
             if (ProtocolKey == "ftp")
