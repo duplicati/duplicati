@@ -200,6 +200,7 @@ destination will be verified before being overwritten (if they seemingly match).
             var (to_copy, to_delete, to_verify) = PrepareFileLists(b1s, b2s);
 
             // Verify the files if requested. If the files are not verified, they will be deleted and copied again.
+            long verified = 0, failed_verify = 0;
             if (GlobalConfig.Verify)
             {
                 // As this is a potentially slow operation, ask for confirmation of the verification)
@@ -215,6 +216,8 @@ destination will be verified before being overwritten (if they seemingly match).
                 }
 
                 var not_verified = await VerifyAsync(b1s, b2s, to_verify);
+                failed_verify = not_verified.Count();
+                verified = to_verify.Count() - failed_verify;
 
                 if (not_verified.Any())
                 {
@@ -243,14 +246,15 @@ destination will be verified before being overwritten (if they seemingly match).
             }
 
             // Delete or rename the files that are not needed
+            long renamed = 0, deleted = 0;
             if (retention)
             {
-                var renamed = await RenameAsync(b2, to_delete);
+                renamed = await RenameAsync(b2, to_delete);
                 Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "rsync", "Renamed {0} files in {1}", renamed, b2s.DisplayName);
             }
             else
             {
-                var deleted = await DeleteAsync(b2s, to_delete);
+                deleted = await DeleteAsync(b2s, to_delete);
                 Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "rsync", "Deleted {0} files from {1}", deleted, b2s.DisplayName);
             }
 
@@ -281,6 +285,18 @@ destination will be verified before being overwritten (if they seemingly match).
                     return copy_errors.Count();
                 }
             }
+
+            // Results reporting
+            if (verified > 0)
+                Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "rsync", "Verified {0} files in {1} that didn't need to be copied", verified, b2s.DisplayName);
+            if (failed_verify > 0)
+                Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "rsync", "Failed to verify {0} files in {1}, which were then attempted to be copied", failed_verify, b2s.DisplayName);
+            if (copied > 0)
+                Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "rsync", "Copied {0} files from {1} to {2}", copied, b1s.DisplayName, b2s.DisplayName);
+            if (deleted > 0)
+                Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "rsync", "Deleted {0} files from {1}", deleted, b2s.DisplayName);
+            if (renamed > 0)
+                Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "rsync", "Renamed {0} files in {1}", renamed, b2s.DisplayName);
 
             Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "rsync", "Remote synchronization completed successfully");
 
