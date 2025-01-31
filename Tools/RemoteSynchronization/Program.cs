@@ -1,4 +1,4 @@
-// Copyright (C) 2025, The Duplicati Team
+﻿// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -46,6 +46,7 @@ namespace RemoteSynchronization
         private const bool DEFAULT_CONFIRM = false;
         private const string DEFAULT_LOG_LEVEL = "Information";
         private const string DEFAULT_LOG_FILE = "";
+        private const bool DEFAULT_PROGRESS = false;
 
         /// <summary>
         /// Global configuration for the tool. Should be set after parsing the commandline arguments.
@@ -56,6 +57,7 @@ namespace RemoteSynchronization
             internal static bool Force = DEFAULT_FORCE;
             internal static string LogLevel = DEFAULT_LOG_LEVEL;
             internal static string LogFile = DEFAULT_LOG_FILE;
+            internal static bool Progress = DEFAULT_PROGRESS;
             internal static bool Verify = DEFAULT_VERIFY;
         }
 
@@ -84,6 +86,7 @@ namespace RemoteSynchronization
             var global_opts = OptionWithMultipleTokens(aliases: ["--global-options"], description: "Global options all backends. May be overridden by backend specific options (src-options, dst-options)");
             var log_level_opt = new Option<string>(aliases: ["--log-level"], description: "The log level to use. If not set here, global options will be checked", getDefaultValue: () => DEFAULT_LOG_LEVEL) { Arity = ArgumentArity.ExactlyOne };
             var log_file_opt = new Option<string>(aliases: ["--log-file"], description: "The log file to write to. If not set here, global options will be checked", getDefaultValue: () => DEFAULT_LOG_FILE) { Arity = ArgumentArity.ExactlyOne };
+            var progress_opt = new Option<bool>(aliases: ["--progress"], description: "Print progress to STDOUT", getDefaultValue: () => DEFAULT_PROGRESS);
 
             var root_cmd = new RootCommand(@"Remote Synchronization Tool
 
@@ -117,6 +120,7 @@ destination will be verified before being overwritten (if they seemingly match).
             root_cmd.AddOption(global_opts);
             root_cmd.AddOption(log_level_opt);
             root_cmd.AddOption(log_file_opt);
+            root_cmd.AddOption(progress_opt);
 
             root_cmd.SetHandler((InvocationContext ctx) =>
             {
@@ -287,11 +291,9 @@ destination will be verified before being overwritten (if they seemingly match).
         // TODO low memory mode, where things aren't kept in memory. Maybe utilize SQLite?
         // TODO For convenience, have the option to launch a "duplicati test" on the destination backend after the synchronization
         // TODO Save hash to minimize redownload
-
-        // TODO Profiling logging
-        // TODO Progress reporting
         // TODO Duplicati Results
 
+        // TODO Profiling logging
         // TODO Should the "get after put" verification be extracted out to be its own flag, as the "verify destination matches source" check is a desiredly separate operation?
 
         /// <summary>
@@ -310,8 +312,12 @@ destination will be verified before being overwritten (if they seemingly match).
             List<IFileEntry> errors = [];
             using var s_src = new MemoryStream();
             using var s_dst = new MemoryStream();
+            long i = 0, n = files.Count();
+
             foreach (var f in files)
             {
+                if (GlobalConfig.Progress)
+                    Console.Write($"\nCopying: {i}/{n}");
                 try
                 {
                     await b_src.GetAsync(f.Name, s_src, CancellationToken.None);
@@ -354,8 +360,13 @@ destination will be verified before being overwritten (if they seemingly match).
                 {
                     s_src.SetLength(0);
                     s_dst.SetLength(0);
+                    i++;
                 }
             }
+
+            if (GlobalConfig.Progress)
+                Console.WriteLine($"\rCopying: {n}/{n}");
+
             return (successful_copies, errors);
         }
 
@@ -369,8 +380,14 @@ destination will be verified before being overwritten (if they seemingly match).
         private static async Task<long> DeleteAsync(IStreamingBackend b, IEnumerable<IFileEntry> files)
         {
             long successful_deletes = 0;
+            long i = 0, n = files.Count();
+
             foreach (var f in files)
             {
+                if (n > 1)
+                {
+                    Console.Write($"\nDeleting: {i}/{n}");
+                }
                 try
                 {
                     if (GlobalConfig.DryRun)
@@ -387,7 +404,9 @@ destination will be verified before being overwritten (if they seemingly match).
                 {
                     Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "rsync", e, "Error deleting {0}: {1}", f.Name, e.Message);
                 }
+                i++;
             }
+            Console.WriteLine($"\rDeleting: {n}/{n}");
             return successful_deletes;
         }
 
@@ -492,12 +511,17 @@ destination will be verified before being overwritten (if they seemingly match).
             long successful_renames = 0;
             string suffix = $"{System.DateTime.Now:yyyyMMddHHmmss}.old";
             using var downloaded = new MemoryStream();
+            long i = 0, n = files.Count();
+
             switch (b)
             {
                 case IStreamingBackend sb:
                     {
                         foreach (var f in files)
                         {
+                            if (GlobalConfig.Progress)
+                                Console.Write($"\nRenaming: {i}/{n}");
+
                             try
                             {
                                 await sb.GetAsync(f.Name, downloaded, CancellationToken.None);
@@ -521,13 +545,22 @@ destination will be verified before being overwritten (if they seemingly match).
                                 // Reset the stream
                                 downloaded.SetLength(0);
                             }
+
+                            i++;
                         }
+
+                        if (GlobalConfig.Progress)
+                            Console.WriteLine($"\rRenaming: {n}/{n}");
+
                         return successful_renames;
                     }
                 case IRenameEnabledBackend rb:
                     {
                         foreach (var f in files)
                         {
+                            if (GlobalConfig.Progress)
+                                Console.Write($"\nRenaming: {i}/{n}");
+
                             try
                             {
                                 if (GlobalConfig.DryRun)
@@ -544,7 +577,13 @@ destination will be verified before being overwritten (if they seemingly match).
                             {
                                 Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "rsync", e, "Error renaming {0}: {1}", f.Name, e.Message);
                             }
+
+                            i++;
                         }
+
+                        if (GlobalConfig.Progress)
+                            Console.WriteLine($"\rRenaming: {n}/{n}");
+
                         return successful_renames;
                     }
                 default:
@@ -565,9 +604,13 @@ destination will be verified before being overwritten (if they seemingly match).
             var errors = new List<IFileEntry>();
             using var s_src = new MemoryStream();
             using var s_dst = new MemoryStream();
+            long i = 0, n = files.Count();
 
             foreach (var f in files)
             {
+                if (GlobalConfig.Progress)
+                    Console.Write($"\nVerifying: {i}/{n}");
+
                 try
                 {
                     // Get both files
@@ -592,7 +635,12 @@ destination will be verified before being overwritten (if they seemingly match).
                     s_src.SetLength(0);
                     s_dst.SetLength(0);
                 }
+
+                i++;
             }
+
+            if (GlobalConfig.Progress)
+                Console.WriteLine($"\rVerifying: {n}/{n}");
 
             return errors;
         }
