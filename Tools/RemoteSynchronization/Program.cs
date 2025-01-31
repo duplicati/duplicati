@@ -39,7 +39,8 @@ namespace RemoteSynchronization
     {
         // Default values for the options
         private const bool DEFAULT_DRY_RUN = false;
-        private const bool DEFAULT_VERIFY = false;
+        private const bool DEFAULT_VERIFY_CONTENTS = false;
+        private const bool DEFAULT_VERIFY_GET_AFTER_PUT = false;
         private const int DEFAULT_RETRY = 3;
         private const bool DEFAULT_FORCE = false;
         private const bool DEFAULT_RETENTION = false;
@@ -58,7 +59,8 @@ namespace RemoteSynchronization
             internal static string LogLevel = DEFAULT_LOG_LEVEL;
             internal static string LogFile = DEFAULT_LOG_FILE;
             internal static bool Progress = DEFAULT_PROGRESS;
-            internal static bool Verify = DEFAULT_VERIFY;
+            internal static bool VerifyContents = DEFAULT_VERIFY_CONTENTS;
+            internal static bool VerifyGetAfterPut = DEFAULT_VERIFY_GET_AFTER_PUT;
         }
 
         /// <summary>
@@ -78,7 +80,8 @@ namespace RemoteSynchronization
             var dry_run_opt = new Option<bool>(aliases: ["--dry-run", "-d"], description: "Do not actually write or delete files. If not set here, the global options will be checked", getDefaultValue: () => DEFAULT_DRY_RUN);
             var src_opts = OptionWithMultipleTokens(aliases: ["--src-options"], description: "Options for the source backend");
             var dst_opts = OptionWithMultipleTokens(aliases: ["--dst-options"], description: "Options for the destination backend");
-            var verify_opt = new Option<bool>(aliases: ["--verify"], description: "Verify the files after copying", getDefaultValue: () => DEFAULT_VERIFY);
+            var verify_contents_opt = new Option<bool>(aliases: ["--verify-contents"], description: "Verify the contents of the files to decide whether the pre-existing destination files should be overwritten", getDefaultValue: () => DEFAULT_VERIFY_CONTENTS);
+            var verify_get_after_put_opt = new Option<bool>(aliases: ["--verify-get-after-put"], description: "Verify the files after uploading them to ensure that they were uploaded correctly", getDefaultValue: () => DEFAULT_VERIFY_GET_AFTER_PUT);
             var retry_opt = new Option<int>(aliases: ["--retry"], description: "Number of times to retry on errors", getDefaultValue: () => DEFAULT_RETRY) { Arity = ArgumentArity.ExactlyOne };
             var force_opt = new Option<bool>(aliases: ["--force"], description: "Force the synchronization", getDefaultValue: () => DEFAULT_FORCE);
             var retention_opt = new Option<bool>(aliases: ["--retention"], description: "Toggles whether to keep old files. Any deletes will be renames instead", getDefaultValue: () => DEFAULT_RETENTION);
@@ -112,7 +115,8 @@ destination will be verified before being overwritten (if they seemingly match).
             root_cmd.AddOption(dry_run_opt);
             root_cmd.AddOption(src_opts);
             root_cmd.AddOption(dst_opts);
-            root_cmd.AddOption(verify_opt);
+            root_cmd.AddOption(verify_contents_opt);
+            root_cmd.AddOption(verify_get_after_put_opt);
             root_cmd.AddOption(retry_opt);
             root_cmd.AddOption(force_opt);
             root_cmd.AddOption(retention_opt);
@@ -148,7 +152,8 @@ destination will be verified before being overwritten (if they seemingly match).
             GlobalConfig.DryRun = options["dry-run"] as bool? ?? DEFAULT_DRY_RUN;
             GlobalConfig.LogLevel = options["log-level"] as string ?? DEFAULT_LOG_LEVEL;
             GlobalConfig.LogFile = options["log-file"] as string ?? DEFAULT_LOG_FILE;
-            GlobalConfig.Verify = options["verify"] as bool? ?? DEFAULT_VERIFY;
+            GlobalConfig.VerifyContents = options["verify"] as bool? ?? DEFAULT_VERIFY_CONTENTS;
+            GlobalConfig.VerifyGetAfterPut = options["verify-get-after-put"] as bool? ?? DEFAULT_VERIFY_GET_AFTER_PUT;
             var retries = options["retry"] as int? ?? DEFAULT_RETRY;
             var retention = options["retention"] as bool? ?? DEFAULT_RETENTION;
             var confirm = options["confirm"] as bool? ?? DEFAULT_CONFIRM;
@@ -201,7 +206,7 @@ destination will be verified before being overwritten (if they seemingly match).
 
             // Verify the files if requested. If the files are not verified, they will be deleted and copied again.
             long verified = 0, failed_verify = 0;
-            if (GlobalConfig.Verify)
+            if (GlobalConfig.VerifyContents)
             {
                 // As this is a potentially slow operation, ask for confirmation of the verification)
                 if (!confirm)
@@ -310,7 +315,6 @@ destination will be verified before being overwritten (if they seemingly match).
         // TODO Duplicati Results
 
         // TODO Profiling logging
-        // TODO Should the "get after put" verification be extracted out to be its own flag, as the "verify destination matches source" check is a desiredly separate operation?
 
         /// <summary>
         /// Copies the files from one backend to another.
@@ -344,7 +348,7 @@ destination will be verified before being overwritten (if they seemingly match).
                     else
                     {
                         await b_dst.PutAsync(f.Name, s_src, CancellationToken.None);
-                        if (GlobalConfig.Verify)
+                        if (GlobalConfig.VerifyGetAfterPut)
                         {
                             await b_dst.GetAsync(f.Name, s_dst, CancellationToken.None);
 
