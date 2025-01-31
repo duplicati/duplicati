@@ -54,12 +54,33 @@ namespace RemoteSynchronization
         /// </summary>
         private class GlobalConfig
         {
+            /// <summary>
+            /// Whether the tool should not actually write or delete files. Defaults to false.
+            /// </summary>
             internal static bool DryRun = DEFAULT_DRY_RUN;
+            /// <summary>
+            /// Whether the tool should force the synchronization. Defaults to false.
+            /// </summary>
             internal static bool Force = DEFAULT_FORCE;
+            /// <summary>
+            /// The log level to use. Defaults to "Information".
+            /// </summary>
             internal static string LogLevel = DEFAULT_LOG_LEVEL;
+            /// <summary>
+            /// The log file to write to. Defaults to an empty string.
+            /// </summary>
             internal static string LogFile = DEFAULT_LOG_FILE;
+            /// <summary>
+            /// Whether the tool should print progress to STDOUT. Defaults to false.
+            /// </summary>
             internal static bool Progress = DEFAULT_PROGRESS;
+            /// <summary>
+            /// Whether the tool should verify the contents of the files to decide whether the pre-existing destination files should be overwritten. Defaults to false.
+            /// </summary>
             internal static bool VerifyContents = DEFAULT_VERIFY_CONTENTS;
+            /// <summary>
+            /// Whether the tool should verify the files after uploading them to ensure that they were uploaded correctly. Defaults to false.
+            /// </summary>
             internal static bool VerifyGetAfterPut = DEFAULT_VERIFY_GET_AFTER_PUT;
         }
 
