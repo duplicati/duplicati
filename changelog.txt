@@ -1,3 +1,44 @@
+2025-01-31 - 2.1.0.108_canary_2025-01-31
+==========
+This release is a canary release intended to be used for testing.
+
+# Important change 
+This build changes the folder locations for the `Duplicati-server.sqlite` file on Windows and Linux when running as a service.
+There is support for backwards compatibility, so existing installations should not be affected.
+
+The detailed changes are:
+Windows: Avoid storing data in `C:\Windows\System32\config\systemprofile\AppData\Local\Duplicati` and prefer `{SystemRoot}\Users\LocalService\Duplicati`
+Linux: Avoid storing data in `/Duplicati` and prefer `/var/lib/Duplicati`.
+
+If you are not running Duplicati as a service, this has no effect.
+If you are using `--server-datafolder` or `DUPLICATI_HOME`, this has no effect on the database, but may cause your machineid and installid to change.
+
+The `machineid.txt` and `installid.txt` would previously be stored in the local app data folder, even when using portable mode or choosing a specific data folder.
+This has been fixed, so the files will now follow the database.
+If you are using the Duplicati console or otherwise depend on these values, you need to move them into the folder where the database is stored.
+
+# New UI
+This release contains an updated version of the new UI.
+In the url, change `ngax` to `ngclient` to try the new UI.
+
+## Detailed list of changes:
+- Fixed encoding of exported files
+- Fixed issue with restore trying to read files opened with write-only
+- Improved backend tester
+- Missing file detection during recreate is now a warning
+- Fixed Minio backend not throwing exceptions
+- Fixed hidden files display in source picker
+- Added additional source folders for MacOS
+- Removed SHA1 signatures on Windows signing
+- Rewrote the backend manager to better control backend (re-)use
+- Updated reporting to support sending OS type and backend type
+- Tagging Docker images with channel, thanks @stavros-k
+- Added support for CORS headers in the Webserver
+- Unified help arguments across all executables
+- Fixed parsing flags as multiple values for FTP SSL type
+- Added guard against storing files in Windows folder
+- Fixed crash in AutoUpdater
+
 2025-01-17 - 2.1.0.107_canary_2025-01-17
 ==========
 This release is a canary release intended to be used for testing.
