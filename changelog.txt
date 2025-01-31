@@ -1,3 +1,30 @@
+2025-01-31 - 2.1.0.4_stable_2025-01-31
+==========
+This is the first stable release of the Duplicati 2.x codebase!
+
+Thanks to the amazing Duplicati community who continue to contribute in force.
+
+**Important changes from 2.0.8.1**
+- Updated to .NET8 with OS specific builds
+- Using Kestrel as the API/UI server
+- Mandatory password and new authentication scheme for server
+- Settings database version updated to v8
+- Backup database updated to v13
+- Automatic updating not supported
+
+This update builds on beta 2.1.0.3 with only a minor tweak to WebDAV timeouts.
+
+# High-level view of changes from beta 2.0.8.1
+- Updated to .NET8 and Kestrel/ASP.NET Core
+- Updated the authentication system
+- Added support for encrypting database fields
+- Fixed a number of stability issues
+- Added support for remote control
+- Added secret providers
+- Updated blocksize to 1MiB by default 
+- Removed RC4 database encryption (auto-decrypt)
+- Added read-write timeout to most backends
+
 2025-01-22 - 2.1.0.3_beta_2025-01-22
 ==========
 This release is a beta release, considered to be stable for general use.
