@@ -148,6 +148,9 @@ public static partial class Command
         /// <returns>An awaitable task</returns>
         public static async Task UploadToGithub(IEnumerable<UploadFile> files, RuntimeConfig rtcfg)
         {
+            var commithash = (await ProcessHelper.ExecuteWithOutput(["git", "rev-parse", "HEAD"]))?.Trim()
+                ?? throw new Exception("Failed to get the current commit hash");
+
             using var httpClient = new HttpClient();
             var totalSize = files.Sum(f => new FileInfo(f.Path).Length);
             Console.WriteLine($"Uploading {files.Count()} files ({Duplicati.Library.Utility.Utility.FormatSizeString(totalSize)}) to Github...");
@@ -163,7 +166,7 @@ public static partial class Command
             request.Headers.Add("User-Agent", "Duplicati Release Builder v1");
             request.Content = JsonContent.Create(new GhReleaseInfo(
                 tag_name: $"v{rtcfg.ReleaseInfo.ReleaseName}",
-                target_commitish: "master",
+                target_commitish: commithash,
                 name: $"v{rtcfg.ReleaseInfo.ReleaseName}",
                 body: rtcfg.ChangelogNews,
                 draft: false,
