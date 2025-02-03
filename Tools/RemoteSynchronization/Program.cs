@@ -632,7 +632,7 @@ destination will be verified before being overwritten (if they seemingly match).
         private static async Task<long> RenameAsync(IBackend b, IEnumerable<IFileEntry> files)
         {
             long successful_renames = 0;
-            string suffix = $"{System.DateTime.Now:yyyyMMddHHmmss}.old";
+            string prefix = $"{System.DateTime.Now:yyyyMMddHHmmss}.old";
             using var downloaded = new MemoryStream();
             long i = 0, n = files.Count();
 
@@ -649,7 +649,7 @@ destination will be verified before being overwritten (if they seemingly match).
                             if (GlobalConfig.Progress)
                                 Console.Write($"\rRenaming: {i}/{n}");
 
-                            Duplicati.Library.Logging.Log.WriteVerboseMessage(LOGTAG, "rsync", "Renaming {0} to {0}.{1} by deleting and re-uploading {2} bytes to {3}", f.Name, suffix, downloaded.Length, sb.DisplayName);
+                            Duplicati.Library.Logging.Log.WriteVerboseMessage(LOGTAG, "rsync", "Renaming {0} to {1}.{0} by deleting and re-uploading {2} bytes to {3}", f.Name, prefix, downloaded.Length, sb.DisplayName);
 
                             try
                             {
@@ -659,12 +659,12 @@ destination will be verified before being overwritten (if they seemingly match).
 
                                 if (GlobalConfig.DryRun)
                                 {
-                                    Duplicati.Library.Logging.Log.WriteDryrunMessage(LOGTAG, "rsync", "Would rename {0} to {0}.{1} by deleting and re-uploading {2} bytes to {3}", f.Name, suffix, downloaded.Length, sb.DisplayName);
+                                    Duplicati.Library.Logging.Log.WriteDryrunMessage(LOGTAG, "rsync", "Would rename {0} to {1}.{0} by deleting and re-uploading {2} bytes to {3}", f.Name, prefix, downloaded.Length, sb.DisplayName);
                                 }
                                 else
                                 {
                                     sw_put_dst.Start();
-                                    await sb.PutAsync($"{f.Name}.{suffix}", downloaded, CancellationToken.None);
+                                    await sb.PutAsync($"{prefix}.{f.Name}", downloaded, CancellationToken.None);
                                     sw_put_dst.Stop();
                                     sw_del_src.Start();
                                     await sb.DeleteAsync(f.Name, CancellationToken.None);
@@ -706,18 +706,18 @@ destination will be verified before being overwritten (if they seemingly match).
                             if (GlobalConfig.Progress)
                                 Console.Write($"\rRenaming: {i}/{n}");
 
-                            Duplicati.Library.Logging.Log.WriteVerboseMessage(LOGTAG, "rsync", "Renaming {0} to {0}.{1} by calling Rename on {2}", f.Name, suffix, rb.DisplayName);
+                            Duplicati.Library.Logging.Log.WriteVerboseMessage(LOGTAG, "rsync", "Renaming {0} to {1}.{0} by calling Rename on {2}", f.Name, prefix, rb.DisplayName);
 
                             try
                             {
                                 if (GlobalConfig.DryRun)
                                 {
-                                    Duplicati.Library.Logging.Log.WriteDryrunMessage(LOGTAG, "rsync", "Would rename {0} to {0}.{1} by calling Rename on {2}", f.Name, suffix, rb.DisplayName);
+                                    Duplicati.Library.Logging.Log.WriteDryrunMessage(LOGTAG, "rsync", "Would rename {0} to {1}.{0} by calling Rename on {2}", f.Name, prefix, rb.DisplayName);
                                 }
                                 else
                                 {
                                     sw.Start();
-                                    await rb.RenameAsync(f.Name, $"{f.Name}.{suffix}", CancellationToken.None);
+                                    await rb.RenameAsync(f.Name, $"{prefix}.{f.Name}", CancellationToken.None);
                                     sw.Stop();
                                 }
                                 successful_renames++;
