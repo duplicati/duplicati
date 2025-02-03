@@ -278,6 +278,8 @@ destination will be verified before being overwritten (if they seemingly match).
                 }
             }
 
+            Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "rsync", "The remote synchronization plan is to {0} {1} files from {2}, then copy {3} files from {4} to {2}.", retention ? "rename" : "delete", to_delete.Count(), b2s.DisplayName, to_copy.Count(), b1s.DisplayName);
+
             // As this is a potentially destructive operation, ask for confirmation
             if (!confirm)
             {
@@ -386,6 +388,9 @@ destination will be verified before being overwritten (if they seemingly match).
             {
                 if (GlobalConfig.Progress)
                     Console.Write($"\rCopying: {i}/{n}");
+
+                Duplicati.Library.Logging.Log.WriteVerboseMessage(LOGTAG, "rsync", "Copying {0} from {1} to {2}", f.Name, b_src.DisplayName, b_dst.DisplayName);
+
                 try
                 {
                     sw_get_src.Start();
@@ -425,6 +430,7 @@ destination will be verified before being overwritten (if they seemingly match).
                             }
                         }
                     }
+
                     successful_copies++;
                 }
                 catch (Exception e)
@@ -474,6 +480,8 @@ destination will be verified before being overwritten (if they seemingly match).
                 {
                     Console.Write($"\rDeleting: {i}/{n}");
                 }
+
+                Duplicati.Library.Logging.Log.WriteVerboseMessage(LOGTAG, "rsync", "Deleting {0} from {1}", f.Name, b.DisplayName);
 
                 try
                 {
@@ -641,6 +649,8 @@ destination will be verified before being overwritten (if they seemingly match).
                             if (GlobalConfig.Progress)
                                 Console.Write($"\rRenaming: {i}/{n}");
 
+                            Duplicati.Library.Logging.Log.WriteVerboseMessage(LOGTAG, "rsync", "Renaming {0} to {0}.{1} by deleting and re-uploading {2} bytes to {3}", f.Name, suffix, downloaded.Length, sb.DisplayName);
+
                             try
                             {
                                 sw_get_src.Start();
@@ -695,6 +705,8 @@ destination will be verified before being overwritten (if they seemingly match).
                         {
                             if (GlobalConfig.Progress)
                                 Console.Write($"\rRenaming: {i}/{n}");
+
+                            Duplicati.Library.Logging.Log.WriteVerboseMessage(LOGTAG, "rsync", "Renaming {0} to {0}.{1} by calling Rename on {2}", f.Name, suffix, rb.DisplayName);
 
                             try
                             {
@@ -752,6 +764,8 @@ destination will be verified before being overwritten (if they seemingly match).
             {
                 if (GlobalConfig.Progress)
                     Console.Write($"\rVerifying: {i}/{n}");
+
+                Duplicati.Library.Logging.Log.WriteVerboseMessage(LOGTAG, "rsync", "Verifying {0} by downloading and comparing {1} bytes from {2} and {3}", f.Name, s_src.Length, b_dst.DisplayName, b_src.DisplayName);
 
                 try
                 {
