@@ -128,6 +128,39 @@ namespace Duplicati.UnitTest
         }
 
         /// <summary>
+        /// Test that remote synchronizing an empty source to a non-empty destination renames the destination files when the `--retention` option is used.
+        /// </summary>
+        [Test]
+        [Category("Tools")]
+        public void TestEmptySourceRenamesDestination()
+        {
+            var l1 = Path.Combine(TARGETFOLDER, "empty_src");
+            var l2 = Path.Combine(TARGETFOLDER, "l2");
+
+            Directory.CreateDirectory(l1);
+            Directory.CreateDirectory(l2);
+
+            GenerateTestData(l2, 5, 0, 0, 1024).Wait();
+
+            var filelist = Directory.EnumerateFiles(l2).ToList();
+            var files = filelist.Select(x => File.ReadAllBytes(x)).ToList();
+
+            var args = new string[] { $"file://{l1}", $"file://{l2}", "--confirm", "--retention" };
+
+            var async_call = RemoteSynchronization.Program.Main(args);
+            var return_code = async_call.ConfigureAwait(false).GetAwaiter().GetResult();
+
+            Assert.AreEqual(0, return_code, "Remote synchronization tool did not return 0.");
+
+            var newfilelist = Directory.EnumerateFiles(l2).ToList();
+            foreach (var (name, contents) in filelist.Zip(files))
+            {
+                var newcontents = File.ReadAllBytes(newfilelist.FirstOrDefault(x => x.StartsWith(name)));
+                Assert.AreEqual(contents, newcontents, "File contents are not equal");
+            }
+        }
+
+        /// <summary>
         /// Tests the original inded use of the remote synchronization tool on an empty destination.
         /// </summary>
         [Test]
