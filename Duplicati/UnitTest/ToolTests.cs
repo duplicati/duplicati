@@ -36,49 +36,26 @@ namespace Duplicati.UnitTest
     public class ToolTests : BasicSetupHelper
     {
 
-        /// <summary>
-        /// Tests passing all arguments to the main method of the remote synchronization tool.
-        /// </summary>
         [Test]
-        public void TestMainMethodParsesArgumentsCorrectly()
+        [Category("Tools")]
+        public void TestDryRun()
         {
-            string[][] testCases =
-            {
-                ["source", "destination", "--parse-arguments-only"],
-                ["source", "destination", "--parse-arguments-only", "--dry-run"],
-                ["source", "destination", "--parse-arguments-only", "--force"],
-                ["source", "destination", "--parse-arguments-only", "--dry-run", "--force"],
-                ["source", "destination", "--parse-arguments-only", "--verify-contents"],
-                ["source", "destination", "--parse-arguments-only", "--verify-get-after-put"],
-                ["source", "destination", "--parse-arguments-only", "--retry", "3"],
-                ["source", "destination", "--parse-arguments-only", "--log-level", "Debug"],
-                ["source", "destination", "--parse-arguments-only", "--log-level", "Information"],
-                ["source", "destination", "--parse-arguments-only", "--log-level", "Profiling"],
-                ["source", "destination", "--parse-arguments-only", "--log-level", "Verbose"],
-                ["source", "destination", "--parse-arguments-only", "--log-file", "somefile.log"],
-                ["source", "destination", "--parse-arguments-only", "--progress"],
-                ["source", "destination", "--parse-arguments-only", "--retention"],
-                ["source", "destination", "--parse-arguments-only", "--confirm"],
-                ["source", "destination", "--parse-arguments-only", "--global-options", "someglobalkey=someglobalvalue", "anotherglobalkey=anotherglobalvalue"],
-                ["source", "destination", "--parse-arguments-only", "--src-options", "somesrckey=somesrcvalue", "anothersrckey=anothersrcvalue"],
-                ["source", "destination", "--parse-arguments-only", "--dst-options", "somedstkey=somedstvalue", "anotherdstkey=anotherdstvalue"],
-                [
-                    "source", "destination", "--parse-arguments-only",
-                    "--dry-run", "--force", "--verify-contents", "--retry", "3", "--log-level", "Debug", "--log-file", "somefile.log", "--progress", "--retention", "--confirm",
-                    "--global-options", "someglobalkey=someglobalvalue", "anotherglobalkey=anotherglobalvalue",
-                    "--src-options", "somesrckey=somesrcvalue", "anothersrckey=anothersrcvalue",
-                    "--dst-options", "somedstkey=somedstvalue", "anotherdstkey=anotherdstvalue"
-                ],
-            };
+            var l1 = Path.Combine(TARGETFOLDER, "l1");
+            var l2 = Path.Combine(TARGETFOLDER, "l2");
 
-            foreach (var args in testCases)
-            {
-                int result = RemoteSynchronization.Program.Main(args).ConfigureAwait(false).GetAwaiter().GetResult();
-                Assert.AreEqual(0, result, $"Failed for args: {string.Join(" ", args)}");
-            }
+            Directory.CreateDirectory(l1);
+            Directory.CreateDirectory(l2);
 
-            int failed_result = RemoteSynchronization.Program.Main(["source", "destination", "--bogus-option"]).ConfigureAwait(false).GetAwaiter().GetResult();
-            Assert.AreEqual(1, failed_result, "Invalid option did not return 1");
+            GenerateTestData(l1, 5, 0, 0, 1024).Wait();
+
+            var args = new string[] { $"file://{l1}", $"file://{l2}", "--confirm", "--dry-run" };
+
+            var async_call = RemoteSynchronization.Program.Main(args);
+            var return_code = async_call.ConfigureAwait(false).GetAwaiter().GetResult();
+
+            Assert.AreEqual(0, return_code, "Remote synchronization tool did not return 0.");
+            Assert.IsFalse(DirectoriesAndContentsAreEqual(l1, l2), "Synchronized directories are equal");
+            Assert.IsTrue(!Directory.EnumerateFiles(l2).Any(), "Destination directory is not empty");
         }
 
         /// <summary>
@@ -158,6 +135,51 @@ namespace Duplicati.UnitTest
                 var newcontents = File.ReadAllBytes(newfilelist.FirstOrDefault(x => x.StartsWith(name)));
                 Assert.AreEqual(contents, newcontents, "File contents are not equal");
             }
+        }
+
+        /// <summary>
+        /// Tests passing all arguments to the main method of the remote synchronization tool.
+        /// </summary>
+        [Test]
+        public void TestMainMethodParsesArgumentsCorrectly()
+        {
+            string[][] testCases =
+            {
+                ["source", "destination", "--parse-arguments-only"],
+                ["source", "destination", "--parse-arguments-only", "--dry-run"],
+                ["source", "destination", "--parse-arguments-only", "--force"],
+                ["source", "destination", "--parse-arguments-only", "--dry-run", "--force"],
+                ["source", "destination", "--parse-arguments-only", "--verify-contents"],
+                ["source", "destination", "--parse-arguments-only", "--verify-get-after-put"],
+                ["source", "destination", "--parse-arguments-only", "--retry", "3"],
+                ["source", "destination", "--parse-arguments-only", "--log-level", "Debug"],
+                ["source", "destination", "--parse-arguments-only", "--log-level", "Information"],
+                ["source", "destination", "--parse-arguments-only", "--log-level", "Profiling"],
+                ["source", "destination", "--parse-arguments-only", "--log-level", "Verbose"],
+                ["source", "destination", "--parse-arguments-only", "--log-file", "somefile.log"],
+                ["source", "destination", "--parse-arguments-only", "--progress"],
+                ["source", "destination", "--parse-arguments-only", "--retention"],
+                ["source", "destination", "--parse-arguments-only", "--confirm"],
+                ["source", "destination", "--parse-arguments-only", "--global-options", "someglobalkey=someglobalvalue", "anotherglobalkey=anotherglobalvalue"],
+                ["source", "destination", "--parse-arguments-only", "--src-options", "somesrckey=somesrcvalue", "anothersrckey=anothersrcvalue"],
+                ["source", "destination", "--parse-arguments-only", "--dst-options", "somedstkey=somedstvalue", "anotherdstkey=anotherdstvalue"],
+                [
+                    "source", "destination", "--parse-arguments-only",
+                    "--dry-run", "--force", "--verify-contents", "--retry", "3", "--log-level", "Debug", "--log-file", "somefile.log", "--progress", "--retention", "--confirm",
+                    "--global-options", "someglobalkey=someglobalvalue", "anotherglobalkey=anotherglobalvalue",
+                    "--src-options", "somesrckey=somesrcvalue", "anothersrckey=anothersrcvalue",
+                    "--dst-options", "somedstkey=somedstvalue", "anotherdstkey=anotherdstvalue"
+                ],
+            };
+
+            foreach (var args in testCases)
+            {
+                int result = RemoteSynchronization.Program.Main(args).ConfigureAwait(false).GetAwaiter().GetResult();
+                Assert.AreEqual(0, result, $"Failed for args: {string.Join(" ", args)}");
+            }
+
+            int failed_result = RemoteSynchronization.Program.Main(["source", "destination", "--bogus-option"]).ConfigureAwait(false).GetAwaiter().GetResult();
+            Assert.AreEqual(1, failed_result, "Invalid option did not return 1");
         }
 
         /// <summary>
