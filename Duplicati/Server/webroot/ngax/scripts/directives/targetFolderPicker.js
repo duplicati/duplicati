@@ -45,6 +45,12 @@ backupApp.directive('destinationFolderPicker', function() {
                 n.iconCls = 'x-tree-icon-desktop';
             else if (cp == compareablePath('%HOME%'))
                 n.iconCls = 'x-tree-icon-home';
+            else if (cp == compareablePath('%MY_MOVIES%'))
+                n.iconCls = 'x-tree-icon-mymovies';
+            else if (cp == compareablePath('%MY_DOWNLOADS%'))
+                n.iconCls = 'x-tree-icon-mydownloads';
+            else if (cp == compareablePath('%MY_PUBLIC%'))
+                n.iconCls = 'x-tree-icon-mypublic';
             else if (cp.substr(cp.length - 1, 1) != dirsep)
                 n.iconCls = 'x-tree-icon-leaf';
 

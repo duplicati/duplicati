@@ -30,17 +30,6 @@ namespace Duplicati.UnitTest
 {
     public class BorderTests : BasicSetupHelper
     {
-        private readonly string recreatedDatabaseFile = Path.Combine(BASEFOLDER, "recreated-database.sqlite");
-
-        [TearDown]
-        public void TearDown()
-        {
-            if (File.Exists(this.recreatedDatabaseFile))
-            {
-                File.Delete(this.recreatedDatabaseFile);
-            }
-        }
-
         [Test]
         [Category("Border")]
         public void Run10kNoProgress()
@@ -317,15 +306,17 @@ namespace Duplicati.UnitTest
                 Assert.IsFalse(r.Verifications.Any(p => p.Value.Any()));
             }
 
-            testopts["dbpath"] = this.recreatedDatabaseFile;
+            var recreatedDatabaseFile = Path.Combine(BASEFOLDER, "recreated-database.sqlite");
+            if (File.Exists(recreatedDatabaseFile))
+                File.Delete(recreatedDatabaseFile);
+
+            testopts["dbpath"] = recreatedDatabaseFile;
 
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
             {
                 IRepairResults repairResults = c.Repair();
                 Assert.AreEqual(0, repairResults.Errors.Count());
-
-                // TODO: This sometimes results in a "No block hash found for file: C:\projects\duplicati\testdata\backup-data\a-0" warning.
-                // Because of this, we don't check for warnings here.
+                Assert.AreEqual(0, repairResults.Warnings.Count());
             }
 
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))

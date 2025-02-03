@@ -20,8 +20,7 @@
 // DEALINGS IN THE SOFTWARE.
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+using System.Threading;
 using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Main.Operation
@@ -29,18 +28,17 @@ namespace Duplicati.Library.Main.Operation
     internal class RestoreControlFilesHandler
     {
         private readonly Options m_options;
-        private readonly string m_backendurl;
         private readonly RestoreControlFilesResults m_result;
 
-        public RestoreControlFilesHandler(string backendurl, Options options, RestoreControlFilesResults result)
+        public RestoreControlFilesHandler(Options options, RestoreControlFilesResults result)
         {
             m_options = options;
-            m_backendurl = backendurl;
             m_result = result;
         }
 
-        public void Run(IEnumerable<string> filterstrings = null, Library.Utility.IFilter compositefilter = null)
+        public void Run(IEnumerable<string> filterstrings, IBackendManager backendManager, Library.Utility.IFilter compositefilter)
         {
+            var cancellationToken = CancellationToken.None;
             if (string.IsNullOrEmpty(m_options.Restorepath))
                 throw new Exception("Cannot restore control files without --restore-path");
             if (!System.IO.Directory.Exists(m_options.Restorepath))
@@ -48,7 +46,6 @@ namespace Duplicati.Library.Main.Operation
 
             using (var tmpdb = new Library.Utility.TempFile())
             using (var db = new Database.LocalDatabase(System.IO.File.Exists(m_options.Dbpath) ? m_options.Dbpath : (string)tmpdb, "RestoreControlFiles", true))
-            using (var backend = new BackendManager(m_backendurl, m_options, m_result.BackendWriter, db))
             {
                 m_result.SetDatabase(db);
 
@@ -56,7 +53,7 @@ namespace Duplicati.Library.Main.Operation
 
                 try
                 {
-                    var filteredList = ListFilesHandler.ParseAndFilterFilesets(backend.List(), m_options);
+                    var filteredList = ListFilesHandler.ParseAndFilterFilesets(backendManager.ListAsync(cancellationToken).Await(), m_options);
                     if (filteredList.Count == 0)
                         throw new Exception("No filesets found on remote target");
 
@@ -67,7 +64,7 @@ namespace Duplicati.Library.Main.Operation
                         {
                             if (!m_result.TaskControl.ProgressRendevouz().Await())
                             {
-                                backend.WaitForComplete(db, null);
+                                backendManager.WaitForEmptyAsync(db, null, cancellationToken).Await();
                                 return;
                             }
 
@@ -75,7 +72,7 @@ namespace Duplicati.Library.Main.Operation
                             var entry = db.GetRemoteVolume(file.Name);
 
                             var res = new List<string>();
-                            using (var tmpfile = backend.Get(file.Name, entry.Size < 0 ? file.Size : entry.Size, entry.Hash))
+                            using (var tmpfile = backendManager.GetAsync(file.Name, entry.Hash, entry.Size < 0 ? file.Size : entry.Size, cancellationToken).Await())
                             using (var tmp = new Volumes.FilesetVolumeReader(RestoreHandler.GetCompressionModule(file.Name), tmpfile, m_options))
                                 foreach (var cf in tmp.ControlFiles)
                                     if (Library.Utility.FilterExpression.Matches(filter, cf.Key))
@@ -103,7 +100,7 @@ namespace Duplicati.Library.Main.Operation
                 }
                 finally
                 {
-                    backend.WaitForComplete(db, null);
+                    backendManager.WaitForEmptyAsync(db, null, cancellationToken).Await();
                 }
 
                 db.WriteResults();

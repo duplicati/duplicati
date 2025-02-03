@@ -55,9 +55,9 @@ namespace Duplicati.Library.Main.Operation.Restore
             },
             async self =>
             {
-                Stopwatch sw_read  = options.InternalProfiling ? new () : null;
-                Stopwatch sw_write = options.InternalProfiling ? new () : null;
-                Stopwatch sw_wait  = options.InternalProfiling ? new () : null;
+                Stopwatch sw_read = options.InternalProfiling ? new() : null;
+                Stopwatch sw_write = options.InternalProfiling ? new() : null;
+                Stopwatch sw_wait = options.InternalProfiling ? new() : null;
 
                 try
                 {
@@ -65,23 +65,22 @@ namespace Duplicati.Library.Main.Operation.Restore
                     {
                         // Get the block request from the `BlockManager` process.
                         sw_read?.Start();
-                        var (volume_id, handle) = await self.Input.ReadAsync();
+                        var (volume_id, waittask) = await self.Input.ReadAsync();
                         sw_read?.Stop();
 
-                         // Trigger the download.
+                        // Trigger the download.
                         sw_wait?.Start();
                         TempFile f = null;
                         try
                         {
-                            f = handle.Wait();
+                            f = await waittask.ConfigureAwait(false);
                         }
                         catch (Exception)
                         {
                             var (volume_name, _, _) = db.GetVolumeInfo(volume_id).First();
                             lock (results)
-                            {
                                 results.BrokenRemoteFiles.Add(volume_name);
-                            }
+
                             throw;
                         }
                         sw_wait?.Stop();

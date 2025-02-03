@@ -22,6 +22,7 @@ using System.CommandLine;
 using System.CommandLine.Builder;
 using System.CommandLine.Parsing;
 using Duplicati.CommandLine.ServerUtil.Commands;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.CommandLine.ServerUtil;
 
@@ -80,6 +81,7 @@ public static class Program
 
                 await next(context);
             })
+            .UseAdditionalHelpAliases()
             .Build()
             .InvokeAsync(args);
     }

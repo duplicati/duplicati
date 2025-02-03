@@ -25,6 +25,8 @@ using System.CommandLine.NamingConventionBinder;
 using System.CommandLine.Parsing;
 using Duplicati.Library.DynamicLoader;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Utility;
+using Uri = System.Uri;
 
 namespace Duplicati.CommandLine.SecretTool;
 
@@ -74,7 +76,9 @@ public static class Program
                     Console.WriteLine("Exception: " + ex);
                     context.ExitCode = 1;
                 }
-            }).Build()
+            })
+            .UseAdditionalHelpAliases()
+            .Build()
             .InvokeAsync(args);
     }
 

@@ -54,10 +54,14 @@ DEALINGS IN THE SOFTWARE.".Replace("YYYY", DateTime.UtcNow.Year.ToString());
 
     public static Regex CS_MIT_MATCH = new Regex(@"(?<license>//\s+Copyright \(C\) \d{4}, The Duplicati Team.+(?:copyright notice and this permission notice).+IN THE SOFTWARE\.)", RE_OPTS);
 
+    public static Regex CSPROJ_COPYRIGHT_MATCH = new Regex(@"<Copyright>(.*?)<\/Copyright>");
+
     public static string GetLicenseTextWithPrefixedLines(string linePrefix = "// ")
         => string.Join("\n", Fragments.NEW_LICENSE.Split("\n").Select(x => linePrefix + x).Append(string.Empty));
 
-    private static string LicenseTextWithPrefixedLines = GetLicenseTextWithPrefixedLines();
+    private static readonly string LicenseTextWithPrefixedLines = GetLicenseTextWithPrefixedLines();
+
+    public static readonly string CopyrightText = $"Copyright © {DateTime.UtcNow.Year.ToString()} Team Duplicati, MIT license";
 
     public static bool MatchAndReplace(ref string data)
     {

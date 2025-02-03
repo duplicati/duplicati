@@ -316,6 +316,108 @@ namespace Duplicati.Library.Modules.Builtin
             => ReplaceTemplate(input, result, exception, subjectline, ResultFormatSerializerProvider.GetSerializer(format));
 
         /// <summary>
+        /// The operation name template key
+        /// </summary>
+        private const string OPERATIONNAME = "OperationName";
+        /// <summary>
+        /// The remote url template key
+        /// </summary>
+        private const string REMOTEURL = "RemoteUrl";
+        /// <summary>
+        /// The local path template key
+        /// </summary>
+        private const string LOCALPATH = "LocalPath";
+        /// <summary>
+        /// The parsed result template key
+        /// </summary>
+        private const string PARSEDRESULT = "ParsedResult";
+        /// <summary>
+        /// The machine id template key
+        /// </summary>
+        private const string MACHINE_ID = "machine-id";
+        /// <summary>
+        /// The backup id template key
+        /// </summary>
+        private const string BACKUP_ID = "backup-id";
+        /// <summary>
+        /// The backup name template key
+        /// </summary>
+        private const string BACKUP_NAME = "backup-name";
+        /// <summary>
+        /// The machine name template key
+        /// </summary>
+        private const string MACHINE_NAME = "machine-name";
+        /// <summary>
+        /// The operating system template key
+        /// </summary>
+        private const string OPERATING_SYSTEM = "operating-system";
+        /// <summary>
+        /// The installation type template key
+        /// </summary>
+        private const string INSTALLATION_TYPE = "installation-type";
+        /// <summary>
+        /// The destination type template key
+        /// </summary>
+        private const string DESTINATION_TYPE = "destination-type";
+        /// <summary>
+        /// The next scheduled run template key
+        /// </summary>
+        private const string NEXT_SCHEDULED_RUN = "next-scheduled-run";
+
+        /// <summary>
+        /// The list of regular template keys
+        /// </summary>
+        private static readonly IReadOnlySet<string> OPERATION_TEMPLATE_KEYS = new HashSet<string>([
+            OPERATIONNAME, REMOTEURL, LOCALPATH, PARSEDRESULT
+        ], StringComparer.OrdinalIgnoreCase);
+
+        /// <summary>
+        /// The list of extra template keys
+        /// </summary>
+        private static readonly IReadOnlySet<string> EXTRA_TEMPLATE_KEYS = new HashSet<string>([
+            MACHINE_ID, BACKUP_ID, BACKUP_NAME, MACHINE_NAME,
+            OPERATING_SYSTEM, INSTALLATION_TYPE, DESTINATION_TYPE, NEXT_SCHEDULED_RUN
+        ], StringComparer.OrdinalIgnoreCase);
+
+        /// <summary>
+        /// Gets the default value for a template key
+        /// </summary>
+        /// <param name="name">The name of the template key</param>
+        /// <returns>The default value</returns>
+        private string GetDefaultValue(string name)
+        {
+            switch (name)
+            {
+                case OPERATIONNAME:
+                    return m_operationname;
+                case REMOTEURL:
+                    return m_remoteurl;
+                case LOCALPATH:
+                    return m_localpath == null ? "" : string.Join(System.IO.Path.PathSeparator.ToString(), m_localpath);
+                case PARSEDRESULT:
+                    return m_parsedresultlevel;
+                case MACHINE_ID:
+                    return AutoUpdater.DataFolderManager.MachineID;
+                case BACKUP_ID:
+                    return Utility.Utility.ByteArrayAsHexString(Utility.Utility.RepeatedHashWithSalt(m_remoteurl, SALT));
+                case BACKUP_NAME:
+                    return System.IO.Path.GetFileNameWithoutExtension(Utility.Utility.getEntryAssembly().Location);
+                case MACHINE_NAME:
+                    return AutoUpdater.DataFolderManager.MachineName;
+                case OPERATING_SYSTEM:
+                    return AutoUpdater.UpdaterManager.OperatingSystemName;
+                case INSTALLATION_TYPE:
+                    return AutoUpdater.UpdaterManager.PackageTypeId;
+                case DESTINATION_TYPE:
+                    // Only return the url scheme, as the rest could contain sensitive information
+                    var ix = m_remoteurl?.IndexOf("://", StringComparison.OrdinalIgnoreCase) ?? -1;
+                    return ix >= 0 && ix < 15 ? m_remoteurl.Substring(0, ix) : "file";
+                default:
+                    return null;
+            }
+        }
+
+        /// <summary>
         /// Helper method to perform template expansion
         /// </summary>
         /// <returns>The expanded template.</returns>
@@ -331,55 +433,29 @@ namespace Duplicati.Library.Modules.Builtin
             {
                 var extra = new Dictionary<string, string>();
 
-                if (input.IndexOf("%OPERATIONNAME%", StringComparison.OrdinalIgnoreCase) >= 0)
-                    extra["OperationName"] = m_operationname;
-                if (input.IndexOf("%REMOTEURL%", StringComparison.OrdinalIgnoreCase) >= 0)
-                    extra["RemoteUrl"] = m_remoteurl;
-                if (input.IndexOf("%LOCALPATH%", StringComparison.OrdinalIgnoreCase) >= 0 && m_localpath != null)
-                    extra["LocalPath"] = string.Join(System.IO.Path.PathSeparator.ToString(), m_localpath);
-                if (input.IndexOf("%PARSEDRESULT%", StringComparison.OrdinalIgnoreCase) >= 0)
-                    extra["ParsedResult"] = m_parsedresultlevel;
+                // Add the default values, if found in the template
+                foreach (var key in OPERATION_TEMPLATE_KEYS)
+                    if (input.IndexOf($"%{key}%", StringComparison.OrdinalIgnoreCase) >= 0)
+                        extra[key] = GetDefaultValue(key);
 
-                // If the options contains the key, it is captured by the loop over m_options
-                // so we only patch it in case it is missing
-
-                if (input.IndexOf("%machine-id%", StringComparison.OrdinalIgnoreCase) >= 0)
-                {
-                    if (!m_options.ContainsKey("machine-id"))
-                        extra["machine-id"] = Library.AutoUpdater.UpdaterManager.MachineID;
-                }
-
-                if (input.IndexOf("%backup-id%", StringComparison.OrdinalIgnoreCase) >= 0)
-                {
-                    if (!m_options.ContainsKey("backup-id"))
-                        extra["backup-id"] = Library.Utility.Utility.ByteArrayAsHexString(Library.Utility.Utility.RepeatedHashWithSalt(m_remoteurl, SALT));
-                }
-
-                if (input.IndexOf("%backup-name%", StringComparison.OrdinalIgnoreCase) >= 0)
-                {
-                    if (!m_options.ContainsKey("backup-name"))
-                        extra["backup-name"] = System.IO.Path.GetFileNameWithoutExtension(Duplicati.Library.Utility.Utility.getEntryAssembly().Location);
-                }
-
-                if (input.IndexOf("%machine-name%", StringComparison.OrdinalIgnoreCase) >= 0)
-                {
-                    if (!m_options.ContainsKey("machine-name"))
-                        extra["machine-name"] = Library.AutoUpdater.UpdaterManager.MachineName;
-                }
-
+                // Add any options that are whitelisted or used in the template
                 foreach (KeyValuePair<string, string> kv in m_options)
-                    if (input.IndexOf($"%{kv.Key}%", StringComparison.OrdinalIgnoreCase) >= 0)
+                    if (EXTRA_TEMPLATE_KEYS.Contains(kv.Key) || input.IndexOf($"%{kv.Key}%", StringComparison.OrdinalIgnoreCase) >= 0)
                         extra[kv.Key] = kv.Value;
+
+                // Add any missing default values
+                foreach (var key in EXTRA_TEMPLATE_KEYS)
+                    if (!extra.ContainsKey(key))
+                        extra[key] = GetDefaultValue(key);
 
                 return resultFormatSerializer.Serialize(result, exception, LogLines, extra);
             }
             else
             {
 
-                input = Regex.Replace(input, "\\%OPERATIONNAME\\%", m_operationname ?? "", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
-                input = Regex.Replace(input, "\\%REMOTEURL\\%", m_remoteurl ?? "", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
-                input = Regex.Replace(input, "\\%LOCALPATH\\%", m_localpath == null ? "" : string.Join(System.IO.Path.PathSeparator.ToString(), m_localpath), RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
-                input = Regex.Replace(input, "\\%PARSEDRESULT\\%", m_parsedresultlevel ?? "", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+                foreach (var key in OPERATION_TEMPLATE_KEYS)
+                    input = Regex.Replace(input, $"%{key}%", GetDefaultValue(key) ?? "", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+
                 if (subjectline)
                 {
                     input = Regex.Replace(input, "\\%RESULT\\%", m_parsedresultlevel ?? "", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
@@ -393,18 +469,11 @@ namespace Duplicati.Library.Modules.Builtin
                 foreach (KeyValuePair<string, string> kv in m_options)
                     input = Regex.Replace(input, "\\%" + kv.Key + "\\%", kv.Value ?? "", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
-                if (!m_options.ContainsKey("backup-name"))
-                    input = Regex.Replace(input, "\\%backup-name\\%", System.IO.Path.GetFileNameWithoutExtension(Duplicati.Library.Utility.Utility.getEntryAssembly().Location) ?? "", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+                foreach (var key in EXTRA_TEMPLATE_KEYS)
+                    if (!m_options.ContainsKey(key))
+                        input = Regex.Replace(input, $"%{key}%", GetDefaultValue(key) ?? "", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
-                if (!m_options.ContainsKey("machine-name"))
-                    input = Regex.Replace(input, "\\%machine-name\\%", Library.AutoUpdater.UpdaterManager.MachineName, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
-
-                if (!m_options.ContainsKey("backup-id"))
-                    input = Regex.Replace(input, "\\%backup-id\\%", Library.Utility.Utility.ByteArrayAsHexString(Library.Utility.Utility.RepeatedHashWithSalt(m_remoteurl, SALT)), RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
-
-                if (!m_options.ContainsKey("machine-id"))
-                    input = Regex.Replace(input, "\\%machine-id\\%", Library.AutoUpdater.UpdaterManager.MachineID, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
-
+                // Remove any remaining template keys
                 input = Regex.Replace(input, "\\%[^\\%]+\\%", "");
                 return input;
             }

@@ -1467,13 +1467,19 @@ ORDER BY
             {
                 if (m_connection.State == System.Data.ConnectionState.Open && !m_hasExecutedVacuum)
                 {
-                    using (IDbTransaction transaction = m_connection.BeginTransaction())
+                    using (var transaction = m_connection.BeginTransaction())
+                    using (var command = m_connection.CreateCommand(transaction))
                     {
-                        using (IDbCommand command = m_connection.CreateCommand(transaction))
+                        // SQLite recommends that PRAGMA optimize is run just before closing each database connection.
+                        command.ExecuteNonQuery("PRAGMA optimize");
+
+                        try
                         {
-                            // SQLite recommends that PRAGMA optimize is run just before closing each database connection.
-                            command.ExecuteNonQuery("PRAGMA optimize");
                             transaction.Commit();
+                        }
+                        catch (System.Data.SQLite.SQLiteException ex)
+                        {
+                            Logging.Log.WriteVerboseMessage(LOGTAG, "FailedToCommitTransaction", ex, "Failed to commit transaction after pragma optimize, usually caused by the a no-op transaction");
                         }
                     }
 
