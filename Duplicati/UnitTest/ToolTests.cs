@@ -36,6 +36,9 @@ namespace Duplicati.UnitTest
     public class ToolTests : BasicSetupHelper
     {
 
+        /// <summary>
+        /// Tests that the remote synchronization tool doesn't do anything when the dry run option is used.
+        /// </summary>
         [Test]
         [Category("Tools")]
         public void TestDryRun()
@@ -259,6 +262,45 @@ namespace Duplicati.UnitTest
                 Console.WriteLine($"Restored {results.RestoredFiles} files to {options["restore-path"]} in {DateTime.Now - now}");
             }
             Assert.IsTrue(DirectoriesAndContentsAreEqual(DATAFOLDER, l2r), "Restored second level files is not equal to original files");
+        }
+
+        /// <summary>
+        /// Tests that the remote synchronization tool verifies the contents of the files.
+        /// </summary>
+        [Test]
+        [Category("Tools")]
+        public void TestVerifies()
+        {
+            var l1 = Path.Combine(TARGETFOLDER, "l1");
+            var l2 = Path.Combine(TARGETFOLDER, "l2");
+
+            Directory.CreateDirectory(l1);
+            Directory.CreateDirectory(l2);
+
+            GenerateTestData(l1, 5, 0, 0, 1024).Wait();
+
+            var filenames = Directory.EnumerateFiles(l1).Take(2).ToList();
+            var first_file = filenames.First();
+            var second_file = filenames.Skip(1).First();
+
+            File.Copy(first_file, Path.Combine(l2, Path.GetFileName(first_file)));
+            File.Copy(second_file, Path.Combine(l2, Path.GetFileName(second_file)));
+
+            // Touch the first file to give it a different timestamp
+            File.SetLastWriteTime(first_file, DateTime.Now.AddMinutes(1));
+
+            // Modify the second file to give it different contents, but the same size
+            var second_file_contents = File.ReadAllBytes(second_file);
+            second_file_contents[0] = (byte)(second_file_contents[0] + 1);
+            File.WriteAllBytes(second_file, second_file_contents);
+
+            var args = new string[] { $"file://{l1}", $"file://{l2}", "--confirm", "--verify-contents", "--verify-get-after-put" };
+
+            var async_call = RemoteSynchronization.Program.Main(args);
+            var return_code = async_call.ConfigureAwait(false).GetAwaiter().GetResult();
+
+            Assert.AreEqual(0, return_code, "Remote synchronization tool did not return 0.");
+            Assert.IsTrue(DirectoriesAndContentsAreEqual(l1, l2), "Synchronized directories are not equal");
         }
 
         //
