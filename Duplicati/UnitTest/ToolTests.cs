@@ -104,6 +104,30 @@ namespace Duplicati.UnitTest
         }
 
         /// <summary>
+        /// Test that remote synchronizing an empty source to a non-empty destination deletes the destination files.
+        /// </summary>
+        [Test]
+        [Category("Tools")]
+        public void TestEmptySourceDeletesDestination()
+        {
+            var l1 = Path.Combine(TARGETFOLDER, "empty_src");
+            var l2 = Path.Combine(TARGETFOLDER, "l2");
+
+            Directory.CreateDirectory(l1);
+            Directory.CreateDirectory(l2);
+
+            GenerateTestData(l2, 5, 0, 0, 1024).Wait();
+
+            var args = new string[] { $"file://{l1}", $"file://{l2}", "--confirm" };
+
+            var async_call = RemoteSynchronization.Program.Main(args);
+            var return_code = async_call.ConfigureAwait(false).GetAwaiter().GetResult();
+
+            Assert.AreEqual(0, return_code, "Remote synchronization tool did not return 0.");
+            Assert.IsTrue(DirectoriesAndContentsAreEqual(l1, l2), "Synchronized directories are not equal");
+        }
+
+        /// <summary>
         /// Tests the original inded use of the remote synchronization tool on an empty destination.
         /// </summary>
         [Test]
