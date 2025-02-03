@@ -335,8 +335,6 @@ destination will be verified before being overwritten (if they seemingly match).
         // TODO Save hash to minimize redownload
         // TODO Duplicati Results
 
-        // TODO Profiling logging
-
         /// <summary>
         /// Copies the files from one backend to another.
         /// The files are copied one by one, and each file is verified after uploading if the verify flag is set.
@@ -354,6 +352,10 @@ destination will be verified before being overwritten (if they seemingly match).
             using var s_src = new MemoryStream();
             using var s_dst = new MemoryStream();
             long i = 0, n = files.Count();
+            var sw_get_src = new System.Diagnostics.Stopwatch();
+            var sw_put_dst = new System.Diagnostics.Stopwatch();
+            var sw_get_dst = new System.Diagnostics.Stopwatch();
+            var sw_get_cmp = new System.Diagnostics.Stopwatch();
 
             foreach (var f in files)
             {
@@ -361,18 +363,25 @@ destination will be verified before being overwritten (if they seemingly match).
                     Console.Write($"\rCopying: {i}/{n}");
                 try
                 {
+                    sw_get_src.Start();
                     await b_src.GetAsync(f.Name, s_src, CancellationToken.None);
+                    sw_get_src.Stop();
                     if (GlobalConfig.DryRun)
                     {
                         Duplicati.Library.Logging.Log.WriteDryrunMessage(LOGTAG, "rsync", "Would write {0} bytes of {1} to {2}", s_src.Length, f.Name, b_dst.DisplayName);
                     }
                     else
                     {
+                        sw_put_dst.Start();
                         await b_dst.PutAsync(f.Name, s_src, CancellationToken.None);
+                        sw_put_dst.Stop();
                         if (GlobalConfig.VerifyGetAfterPut)
                         {
+                            sw_get_dst.Start();
                             await b_dst.GetAsync(f.Name, s_dst, CancellationToken.None);
+                            sw_get_dst.Stop();
 
+                            sw_get_cmp.Start();
                             string? err_string = null;
                             if (s_src.Length != s_dst.Length)
                             {
@@ -383,6 +392,7 @@ destination will be verified before being overwritten (if they seemingly match).
                             {
                                 err_string = (err_string is null ? "" : err_string + " ") + "The contents of the files do not match.";
                             }
+                            sw_get_cmp.Stop();
 
                             if (err_string is not null)
                             {
@@ -402,11 +412,19 @@ destination will be verified before being overwritten (if they seemingly match).
                     s_src.SetLength(0);
                     s_dst.SetLength(0);
                     i++;
+
+                    // Stop any running timers
+                    sw_get_src.Stop();
+                    sw_put_dst.Stop();
+                    sw_get_dst.Stop();
+                    sw_get_cmp.Stop();
                 }
             }
 
             if (GlobalConfig.Progress)
                 Console.WriteLine($"\rCopying: {n}/{n}");
+
+            Duplicati.Library.Logging.Log.WriteProfilingMessage(LOGTAG, "rsync", "Copy | Get source: {0} ms, Put destination: {1} ms, Get destination: {2} ms, Get compare: {3} ms", sw_get_src.ElapsedMilliseconds, sw_put_dst.ElapsedMilliseconds, sw_get_dst.ElapsedMilliseconds, sw_get_cmp.ElapsedMilliseconds);
 
             return (successful_copies, errors);
         }
@@ -422,6 +440,8 @@ destination will be verified before being overwritten (if they seemingly match).
         {
             long successful_deletes = 0;
             long i = 0, n = files.Count();
+            var sw = new System.Diagnostics.Stopwatch();
+            sw.Restart();
 
             foreach (var f in files)
             {
@@ -447,6 +467,10 @@ destination will be verified before being overwritten (if they seemingly match).
                 }
                 i++;
             }
+
+            sw.Stop();
+            Duplicati.Library.Logging.Log.WriteProfilingMessage(LOGTAG, "rsync", "Delete: {0} ms", sw.ElapsedMilliseconds);
+
             Console.WriteLine($"\rDeleting: {n}/{n}");
             return successful_deletes;
         }
@@ -478,8 +502,16 @@ destination will be verified before being overwritten (if they seemingly match).
         /// <returns>A tuple of Lists each holding the files to copy, delete and verify.</returns>
         private static (IEnumerable<IFileEntry>, IEnumerable<IFileEntry>, IEnumerable<IFileEntry>) PrepareFileLists(IStreamingBackend b_src, IStreamingBackend b_dst)
         {
+            var sw = new System.Diagnostics.Stopwatch();
+
+            sw.Restart();
             var files_src = b_src.List();
+            sw.Stop();
+            Duplicati.Library.Logging.Log.WriteProfilingMessage(LOGTAG, "rsync", "Prepare | List source: {0} ms", sw.ElapsedMilliseconds);
+            sw.Restart();
             var files_dst = b_dst.List();
+            sw.Stop();
+            Duplicati.Library.Logging.Log.WriteProfilingMessage(LOGTAG, "rsync", "Prepare | List destination: {0} ms", sw.ElapsedMilliseconds);
 
             // Shortcut for force
             if (GlobalConfig.Force)
@@ -493,14 +525,18 @@ destination will be verified before being overwritten (if they seemingly match).
                 return (files_src, [], []);
             }
 
+            sw.Restart();
             var lookup_src = files_src.ToDictionary(x => x.Name);
             var lookup_dst = files_dst.ToDictionary(x => x.Name);
+            sw.Stop();
+            Duplicati.Library.Logging.Log.WriteProfilingMessage(LOGTAG, "rsync", "Prepare | Build lookup for source and destination: {0} ms", sw.ElapsedMilliseconds);
 
             var to_copy = new List<IFileEntry>();
             var to_delete = new HashSet<string>();
             var to_verify = new List<IFileEntry>();
 
             // Find all of the files in src that are not in dst, have a different size or have a more recent modification date
+            sw.Restart();
             foreach (var f_src in files_src)
             {
                 if (lookup_dst.TryGetValue(f_src.Name, out var f_dst))
@@ -523,8 +559,11 @@ destination will be verified before being overwritten (if they seemingly match).
                     to_copy.Add(f_src);
                 }
             }
+            sw.Stop();
+            Duplicati.Library.Logging.Log.WriteProfilingMessage(LOGTAG, "rsync", "Prepare | Check the files that are present in source against destination: {0} ms", sw.ElapsedMilliseconds);
 
             // Find all of the files in dst that are not in src
+            sw.Start();
             foreach (var f_dst in files_dst)
             {
                 if (to_delete.Contains(f_dst.Name))
@@ -535,8 +574,15 @@ destination will be verified before being overwritten (if they seemingly match).
                     to_delete.Add(f_dst.Name);
                 }
             }
+            sw.Stop();
+            Duplicati.Library.Logging.Log.WriteProfilingMessage(LOGTAG, "rsync", "Prepare | Check the files that are present in destination against source: {0} ms", sw.ElapsedMilliseconds);
 
-            return (to_copy, to_delete.Select(x => lookup_dst[x]), to_verify);
+            sw.Restart();
+            var to_delete_lookedup = to_delete.Select(x => lookup_dst[x]).ToList();
+            sw.Stop();
+            Duplicati.Library.Logging.Log.WriteProfilingMessage(LOGTAG, "rsync", "Prepare | Lookup the files to delete: {0} ms", sw.ElapsedMilliseconds);
+
+            return (to_copy, to_delete_lookedup, to_verify);
         }
 
         /// <summary>
@@ -558,6 +604,10 @@ destination will be verified before being overwritten (if they seemingly match).
             {
                 case IStreamingBackend sb:
                     {
+                        var sw_get_src = new System.Diagnostics.Stopwatch();
+                        var sw_put_dst = new System.Diagnostics.Stopwatch();
+                        var sw_del_src = new System.Diagnostics.Stopwatch();
+
                         foreach (var f in files)
                         {
                             if (GlobalConfig.Progress)
@@ -565,15 +615,22 @@ destination will be verified before being overwritten (if they seemingly match).
 
                             try
                             {
+                                sw_get_src.Start();
                                 await sb.GetAsync(f.Name, downloaded, CancellationToken.None);
+                                sw_get_src.Stop();
+
                                 if (GlobalConfig.DryRun)
                                 {
                                     Duplicati.Library.Logging.Log.WriteDryrunMessage(LOGTAG, "rsync", "Would rename {0} to {0}.{1} by deleting and re-uploading {2} bytes to {3}", f.Name, suffix, downloaded.Length, sb.DisplayName);
                                 }
                                 else
                                 {
+                                    sw_put_dst.Start();
                                     await sb.PutAsync($"{f.Name}.{suffix}", downloaded, CancellationToken.None);
+                                    sw_put_dst.Stop();
+                                    sw_del_src.Start();
                                     await sb.DeleteAsync(f.Name, CancellationToken.None);
+                                    sw_del_src.Stop();
                                 }
                                 successful_renames++;
                             }
@@ -585,10 +642,17 @@ destination will be verified before being overwritten (if they seemingly match).
                             {
                                 // Reset the stream
                                 downloaded.SetLength(0);
+
+                                // Stop any running timers
+                                sw_get_src.Stop();
+                                sw_put_dst.Stop();
+                                sw_del_src.Stop();
                             }
 
                             i++;
                         }
+
+                        Duplicati.Library.Logging.Log.WriteProfilingMessage(LOGTAG, "rsync", "Rename | Get source: {0} ms, Put destination: {1} ms, Delete source: {2} ms", sw_get_src.ElapsedMilliseconds, sw_put_dst.ElapsedMilliseconds, sw_del_src.ElapsedMilliseconds);
 
                         if (GlobalConfig.Progress)
                             Console.WriteLine($"\rRenaming: {n}/{n}");
@@ -597,6 +661,8 @@ destination will be verified before being overwritten (if they seemingly match).
                     }
                 case IRenameEnabledBackend rb:
                     {
+                        var sw = new System.Diagnostics.Stopwatch();
+
                         foreach (var f in files)
                         {
                             if (GlobalConfig.Progress)
@@ -610,17 +676,22 @@ destination will be verified before being overwritten (if they seemingly match).
                                 }
                                 else
                                 {
+                                    sw.Start();
                                     await rb.RenameAsync(f.Name, $"{f.Name}.{suffix}", CancellationToken.None);
+                                    sw.Stop();
                                 }
                                 successful_renames++;
                             }
                             catch (Exception e)
                             {
                                 Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "rsync", e, "Error renaming {0}: {1}", f.Name, e.Message);
+                                sw.Stop();
                             }
 
                             i++;
                         }
+
+                        Duplicati.Library.Logging.Log.WriteProfilingMessage(LOGTAG, "rsync", "Rename: {0} ms", sw.ElapsedMilliseconds);
 
                         if (GlobalConfig.Progress)
                             Console.WriteLine($"\rRenaming: {n}/{n}");
@@ -646,6 +717,8 @@ destination will be verified before being overwritten (if they seemingly match).
             using var s_src = new MemoryStream();
             using var s_dst = new MemoryStream();
             long i = 0, n = files.Count();
+            var sw_get = new System.Diagnostics.Stopwatch();
+            var sw_cmp = new System.Diagnostics.Stopwatch();
 
             foreach (var f in files)
             {
@@ -655,15 +728,19 @@ destination will be verified before being overwritten (if they seemingly match).
                 try
                 {
                     // Get both files
+                    sw_get.Start();
                     var fs = b_src.GetAsync(f.Name, s_src, CancellationToken.None);
                     var ds = b_dst.GetAsync(f.Name, s_dst, CancellationToken.None);
                     await Task.WhenAll(fs, ds);
+                    sw_get.Stop();
 
                     // Compare the contents
+                    sw_cmp.Start();
                     if (s_src.Length != s_dst.Length || !s_src.ToArray().SequenceEqual(s_dst.ToArray()))
                     {
                         errors.Add(f);
                     }
+                    sw_cmp.Stop();
                 }
                 catch (Exception e)
                 {
@@ -675,10 +752,16 @@ destination will be verified before being overwritten (if they seemingly match).
                     // Reset the streams
                     s_src.SetLength(0);
                     s_dst.SetLength(0);
+
+                    // Stop any running timers
+                    sw_get.Stop();
+                    sw_cmp.Stop();
                 }
 
                 i++;
             }
+
+            Duplicati.Library.Logging.Log.WriteProfilingMessage(LOGTAG, "rsync", "Verify | Get: {0} ms, Compare: {1} ms", sw_get.ElapsedMilliseconds, sw_cmp.ElapsedMilliseconds);
 
             if (GlobalConfig.Progress)
                 Console.WriteLine($"\rVerifying: {n}/{n}");
