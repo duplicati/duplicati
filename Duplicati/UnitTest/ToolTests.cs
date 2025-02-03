@@ -136,7 +136,8 @@ namespace Duplicati.UnitTest
             var newfilelist = Directory.EnumerateFiles(l2).ToList();
             foreach (var (name, contents) in filelist.Zip(files))
             {
-                var newcontents = File.ReadAllBytes(newfilelist.FirstOrDefault(x => x.StartsWith(name)));
+                var filename = Path.GetFileName(name);
+                var newcontents = File.ReadAllBytes(newfilelist.FirstOrDefault(x => x.EndsWith(filename)));
                 Assert.AreEqual(contents, newcontents, "File contents are not equal");
             }
         }
