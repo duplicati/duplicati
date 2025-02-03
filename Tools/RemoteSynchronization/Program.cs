@@ -1,4 +1,4 @@
-﻿// Copyright (C) 2025, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -358,7 +358,7 @@ destination will be verified before being overwritten (if they seemingly match).
             foreach (var f in files)
             {
                 if (GlobalConfig.Progress)
-                    Console.Write($"\nCopying: {i}/{n}");
+                    Console.Write($"\rCopying: {i}/{n}");
                 try
                 {
                     await b_src.GetAsync(f.Name, s_src, CancellationToken.None);
@@ -427,7 +427,7 @@ destination will be verified before being overwritten (if they seemingly match).
             {
                 if (n > 1)
                 {
-                    Console.Write($"\nDeleting: {i}/{n}");
+                    Console.Write($"\rDeleting: {i}/{n}");
                 }
                 try
                 {
@@ -561,7 +561,7 @@ destination will be verified before being overwritten (if they seemingly match).
                         foreach (var f in files)
                         {
                             if (GlobalConfig.Progress)
-                                Console.Write($"\nRenaming: {i}/{n}");
+                                Console.Write($"\rRenaming: {i}/{n}");
 
                             try
                             {
@@ -600,7 +600,7 @@ destination will be verified before being overwritten (if they seemingly match).
                         foreach (var f in files)
                         {
                             if (GlobalConfig.Progress)
-                                Console.Write($"\nRenaming: {i}/{n}");
+                                Console.Write($"\rRenaming: {i}/{n}");
 
                             try
                             {
@@ -650,7 +650,7 @@ destination will be verified before being overwritten (if they seemingly match).
             foreach (var f in files)
             {
                 if (GlobalConfig.Progress)
-                    Console.Write($"\nVerifying: {i}/{n}");
+                    Console.Write($"\rVerifying: {i}/{n}");
 
                 try
                 {
