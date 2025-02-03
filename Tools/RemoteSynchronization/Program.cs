@@ -470,10 +470,11 @@ destination will be verified before being overwritten (if they seemingly match).
 
             foreach (var f in files)
             {
-                if (n > 1)
+                if (n > 1 && GlobalConfig.Progress)
                 {
                     Console.Write($"\rDeleting: {i}/{n}");
                 }
+
                 try
                 {
                     if (GlobalConfig.DryRun)
@@ -490,13 +491,15 @@ destination will be verified before being overwritten (if they seemingly match).
                 {
                     Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "rsync", e, "Error deleting {0}: {1}", f.Name, e.Message);
                 }
+
                 i++;
             }
 
             sw.Stop();
             Duplicati.Library.Logging.Log.WriteProfilingMessage(LOGTAG, "rsync", "Delete: {0} ms", sw.ElapsedMilliseconds);
 
-            Console.WriteLine($"\rDeleting: {n}/{n}");
+            if (GlobalConfig.Progress)
+                Console.WriteLine($"\rDeleting: {n}/{n}");
             return successful_deletes;
         }
 
