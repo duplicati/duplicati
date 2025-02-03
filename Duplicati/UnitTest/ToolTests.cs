@@ -20,6 +20,7 @@
 // DEALINGS IN THE SOFTWARE.
 
 using Duplicati.Library.Common.IO;
+using Duplicati.Library.Interface;
 using Duplicati.Library.Main;
 using NUnit.Framework;
 using System;
@@ -261,6 +262,148 @@ namespace Duplicati.UnitTest
                 Assert.AreEqual(0, results.Warnings.Count());
                 Console.WriteLine($"Restored {results.RestoredFiles} files to {options["restore-path"]} in {DateTime.Now - now}");
             }
+            Assert.IsTrue(DirectoriesAndContentsAreEqual(DATAFOLDER, l2r), "Restored second level files is not equal to original files");
+
+            // Delete the l2r directory
+            SystemIO.IO_OS.DirectoryDelete(l2r, true);
+
+            // Delete one file from the l2 backup
+            var files = Directory.EnumerateFiles(l2).ToList();
+            File.Delete(files.First());
+
+            // Check that the restore fails
+            options["restore-path"] = l2r;
+            using (var c = new Controller($"file://{l2}", options, null))
+            {
+                now = DateTime.Now;
+                try
+                {
+                    var results = c.Restore([]);
+                }
+                catch (RemoteListVerificationException)
+                {
+                    Console.WriteLine($"Failed (as expected) to restore files to {options["restore-path"]} in {DateTime.Now - now}");
+                }
+            }
+
+            // Run the tool again to copy the missing file
+            now = DateTime.Now;
+            async_call = exe(args);
+            async_call.Wait();
+            Assert.AreEqual(0, async_call.Result, "Remote synchronization tool did not return 0.");
+            Console.WriteLine($"Remote synchronization tool returned 0 in {DateTime.Now - now}");
+
+            // Try to restore the second level again
+            options["restore-path"] = l2r;
+            using (var c = new Controller($"file://{l2}", options, null))
+            {
+                now = DateTime.Now;
+                var results = c.Restore([]);
+                Assert.AreEqual(0, results.Errors.Count());
+                Assert.AreEqual(0, results.Warnings.Count());
+                Console.WriteLine($"Restored {results.RestoredFiles} files to {options["restore-path"]} in {DateTime.Now - now}");
+            }
+
+            Assert.IsTrue(DirectoriesAndContentsAreEqual(DATAFOLDER, l2r), "Restored second level files is not equal to original files");
+
+            // Add some more files to the source
+            GenerateTestData(Path.Combine(DATAFOLDER, "brand_new_files"), 5, 2, 2, 1024 * 1024).Wait();
+
+            // Backup the new files to l1
+            using (var c = new Controller($"file://{l1}", options, null))
+            {
+                now = DateTime.Now;
+                var results = c.Backup([DATAFOLDER]);
+                Assert.AreEqual(0, results.Errors.Count());
+                Assert.AreEqual(0, results.Warnings.Count());
+                Console.WriteLine($"Backed up {results.AddedFiles} files to {l1} in {DateTime.Now - now}");
+            }
+
+            // Run the tool again to copy the new files
+            now = DateTime.Now;
+            async_call = exe(args);
+            async_call.Wait();
+            Assert.AreEqual(0, async_call.Result, "Remote synchronization tool did not return 0.");
+            Console.WriteLine($"Remote synchronization tool returned 0 in {DateTime.Now - now}");
+
+            // Try to restore the second level again
+            options["restore-path"] = l2r;
+            using (var c = new Controller($"file://{l2}", options, null))
+            {
+                now = DateTime.Now;
+                var results = c.Restore([]);
+                Assert.AreEqual(0, results.Errors.Count());
+                Assert.AreEqual(0, results.Warnings.Count());
+                Console.WriteLine($"Restored {results.RestoredFiles} files to {options["restore-path"]} in {DateTime.Now - now}");
+            }
+
+            Assert.IsTrue(DirectoriesAndContentsAreEqual(DATAFOLDER, l2r), "Restored second level files is not equal to original files");
+
+            // Delete the l2r directory
+            SystemIO.IO_OS.DirectoryDelete(l2r, true);
+
+            // Remove a directory from the source
+            SystemIO.IO_OS.DirectoryDelete(Path.Combine(DATAFOLDER, "dir_0"), true);
+
+            // Backup the new files to l1
+            using (var c = new Controller($"file://{l1}", options, null))
+            {
+                now = DateTime.Now;
+                var results = c.Backup([DATAFOLDER]);
+                Assert.AreEqual(0, results.Errors.Count());
+                Assert.AreEqual(0, results.Warnings.Count());
+                Console.WriteLine($"Backed up {results.AddedFiles} files to {l1} in {DateTime.Now - now}");
+            }
+
+            // Compact the backup
+            using (var c = new Controller($"file://{l1}", options, null))
+            {
+                now = DateTime.Now;
+                var results = c.Compact();
+                Assert.AreEqual(0, results.Errors.Count());
+                Assert.AreEqual(0, results.Warnings.Count());
+                Console.WriteLine($"Compacted backup in {DateTime.Now - now}");
+            }
+
+            // Run the tool again to copy the new files
+            now = DateTime.Now;
+            async_call = exe(args);
+            async_call.Wait();
+            Assert.AreEqual(0, async_call.Result, "Remote synchronization tool did not return 0.");
+
+            // Try to restore the second level again
+            options["restore-path"] = l2r;
+            using (var c = new Controller($"file://{l2}", options, null))
+            {
+                now = DateTime.Now;
+                var results = c.Restore([]);
+                Assert.AreEqual(0, results.Errors.Count());
+                Assert.AreEqual(0, results.Warnings.Count());
+                Console.WriteLine($"Restored {results.RestoredFiles} files to {options["restore-path"]} in {DateTime.Now - now}");
+            }
+
+            Assert.IsTrue(DirectoriesAndContentsAreEqual(DATAFOLDER, l2r), "Restored second level files is not equal to original files");
+
+            // Delete the l2r directory
+            SystemIO.IO_OS.DirectoryDelete(l2r, true);
+
+            // Perform a forced synchronization with retention to check that retention doesn't break a restore
+            now = DateTime.Now;
+            async_call = exe([.. args, "--force", "--retention"]);
+            async_call.Wait();
+            Assert.AreEqual(0, async_call.Result, "Remote synchronization tool did not return 0.");
+
+            // Try to restore the second level again
+            options["restore-path"] = l2r;
+            using (var c = new Controller($"file://{l2}", options, null))
+            {
+                now = DateTime.Now;
+                var results = c.Restore([]);
+                Assert.AreEqual(0, results.Errors.Count());
+                Assert.AreEqual(0, results.Warnings.Count());
+                Console.WriteLine($"Restored {results.RestoredFiles} files to {options["restore-path"]} in {DateTime.Now - now}");
+            }
+
             Assert.IsTrue(DirectoriesAndContentsAreEqual(DATAFOLDER, l2r), "Restored second level files is not equal to original files");
         }
 
