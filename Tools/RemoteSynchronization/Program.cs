@@ -1,4 +1,4 @@
-// Copyright (C) 2025, The Duplicati Team
+﻿// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -19,6 +19,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
+using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 using System;
 using System.Collections.Generic;
@@ -198,12 +199,21 @@ destination will be verified before being overwritten (if they seemingly match).
             var log_level_parsed = Enum.TryParse<Duplicati.Library.Logging.LogMessageType>(log_level, true, out var log_level_enum);
             log_level_enum = log_level_parsed ? log_level_enum : Duplicati.Library.Logging.LogMessageType.Information;
 
+            using var console_sink = new Duplicati.CommandLine.ConsoleOutput(Console.Out, global_options);
+            using var multi_sink = new Duplicati.Library.Main.ControllerMultiLogTarget(console_sink, log_level_enum, null);
+
             // Parse the log file
             var log_file = options["log-file"] as string ?? DEFAULT_LOG_FILE;
-            var file_sink = (Duplicati.Library.Main.IMessageSink?)(string.IsNullOrEmpty(log_file) ? new Duplicati.Library.Logging.StreamLogDestination(log_file) : null);
-            var console_sink = new Duplicati.CommandLine.ConsoleOutput(Console.Out, global_options);
-            Duplicati.Library.Main.IMessageSink[] sinks = file_sink is null ? [console_sink] : [file_sink, console_sink];
-            var multi_sink = new Duplicati.Library.Main.MultiMessageSink(sinks);
+            // The log file sink doesn't have to be disposed, as the multi_sink will take care of it
+            Duplicati.Library.Logging.StreamLogDestination? log_file_sink = null;
+            if (!string.IsNullOrEmpty(log_file))
+            {
+                string log_file_dir = SystemIO.IO_OS.PathGetDirectoryName(log_file);
+                if (!string.IsNullOrEmpty(log_file_dir) && !SystemIO.IO_OS.DirectoryExists(log_file_dir))
+                    SystemIO.IO_OS.DirectoryCreate(log_file_dir);
+                log_file_sink = new Duplicati.Library.Logging.StreamLogDestination(log_file);
+            }
+            multi_sink.AddTarget(log_file_sink, log_level_enum, null);
 
             // Start the logging scope
             using var _ = Duplicati.Library.Logging.Log.StartScope(multi_sink, log_level_enum);
