@@ -1,4 +1,4 @@
-// Copyright (C) 2025, The Duplicati Team
+﻿// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -48,6 +48,7 @@ namespace RemoteSynchronization
         private const string DEFAULT_LOG_LEVEL = "Information";
         private const string DEFAULT_LOG_FILE = "";
         private const bool DEFAULT_PROGRESS = false;
+        private const bool DEFAULT_PARSE_ARGUMENTS_ONLY = false;
 
         /// <summary>
         /// Global configuration for the tool. Should be set after parsing the commandline arguments.
@@ -82,6 +83,10 @@ namespace RemoteSynchronization
             /// Whether the tool should verify the files after uploading them to ensure that they were uploaded correctly. Defaults to false.
             /// </summary>
             internal static bool VerifyGetAfterPut = DEFAULT_VERIFY_GET_AFTER_PUT;
+            /// <summary>
+            /// Try to only parse the arguments and then exit. Defaults to false.
+            /// </summary>
+            internal static bool ParseArgumentsOnly = DEFAULT_PARSE_ARGUMENTS_ONLY;
         }
 
         /// <summary>
@@ -111,6 +116,7 @@ namespace RemoteSynchronization
             var log_level_opt = new Option<string>(aliases: ["--log-level"], description: "The log level to use. If not set here, global options will be checked", getDefaultValue: () => DEFAULT_LOG_LEVEL) { Arity = ArgumentArity.ExactlyOne };
             var log_file_opt = new Option<string>(aliases: ["--log-file"], description: "The log file to write to. If not set here, global options will be checked", getDefaultValue: () => DEFAULT_LOG_FILE) { Arity = ArgumentArity.ExactlyOne };
             var progress_opt = new Option<bool>(aliases: ["--progress"], description: "Print progress to STDOUT", getDefaultValue: () => DEFAULT_PROGRESS);
+            var parse_opt = new Option<bool>(aliases: ["--parse-arguments-only"], description: "Only parse the arguments and then exit", getDefaultValue: () => DEFAULT_PARSE_ARGUMENTS_ONLY);
 
             var root_cmd = new RootCommand(@"Remote Synchronization Tool
 
@@ -146,6 +152,7 @@ destination will be verified before being overwritten (if they seemingly match).
             root_cmd.AddOption(log_level_opt);
             root_cmd.AddOption(log_file_opt);
             root_cmd.AddOption(progress_opt);
+            root_cmd.AddOption(parse_opt);
 
             root_cmd.SetHandler((InvocationContext ctx) =>
             {
@@ -173,11 +180,12 @@ destination will be verified before being overwritten (if they seemingly match).
             GlobalConfig.DryRun = options["dry-run"] as bool? ?? DEFAULT_DRY_RUN;
             GlobalConfig.LogLevel = options["log-level"] as string ?? DEFAULT_LOG_LEVEL;
             GlobalConfig.LogFile = options["log-file"] as string ?? DEFAULT_LOG_FILE;
-            GlobalConfig.VerifyContents = options["verify"] as bool? ?? DEFAULT_VERIFY_CONTENTS;
+            GlobalConfig.VerifyContents = options["verify-contents"] as bool? ?? DEFAULT_VERIFY_CONTENTS;
             GlobalConfig.VerifyGetAfterPut = options["verify-get-after-put"] as bool? ?? DEFAULT_VERIFY_GET_AFTER_PUT;
             var retries = options["retry"] as int? ?? DEFAULT_RETRY;
             var retention = options["retention"] as bool? ?? DEFAULT_RETENTION;
             var confirm = options["confirm"] as bool? ?? DEFAULT_CONFIRM;
+            var parse_only = options["parse-arguments-only"] as bool? ?? DEFAULT_PARSE_ARGUMENTS_ONLY;
 
             // Unpack and parse the multi token options
             Dictionary<string, string> global_options = (options["global-options"] as List<string>)
@@ -192,7 +200,7 @@ destination will be verified before being overwritten (if they seemingly match).
 
             // Parse the log file
             var log_file = options["log-file"] as string ?? DEFAULT_LOG_FILE;
-            var file_sink = (Duplicati.Library.Main.IMessageSink?)(log_file != "" ? new Duplicati.Library.Logging.StreamLogDestination(log_file) : null);
+            var file_sink = (Duplicati.Library.Main.IMessageSink?)(string.IsNullOrEmpty(log_file) ? new Duplicati.Library.Logging.StreamLogDestination(log_file) : null);
             var console_sink = new Duplicati.CommandLine.ConsoleOutput(Console.Out, global_options);
             Duplicati.Library.Main.IMessageSink[] sinks = file_sink is null ? [console_sink] : [file_sink, console_sink];
             var multi_sink = new Duplicati.Library.Main.MultiMessageSink(sinks);
@@ -212,6 +220,13 @@ destination will be verified before being overwritten (if they seemingly match).
             // Merge the global options into the source and destination options
             foreach (var x in global_options)
                 src_opts[x.Key] = dst_opts[x.Key] = x.Value;
+
+            // Check if we only had to parse the arguments
+            if (parse_only)
+            {
+                Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "rsync", "Arguments parsed successfully; exiting.");
+                return 0;
+            }
 
             // Load the backends
             using var b1 = Duplicati.Library.DynamicLoader.BackendLoader.GetBackend(src, src_opts);
