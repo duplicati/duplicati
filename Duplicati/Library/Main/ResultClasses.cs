@@ -449,6 +449,7 @@ namespace Duplicati.Library.Main
         public long AddedFolders { get; internal set; }
         public long TooLargeFiles { get; internal set; }
         public long FilesWithError { get; internal set; }
+        public long TimestampChangedFiles { get; internal set; }
         public long ModifiedFolders { get; internal set; }
         public long ModifiedSymlinks { get; internal set; }
         public long AddedSymlinks { get; internal set; }

@@ -72,6 +72,12 @@ internal static class UploadRealFilelist
         }
         else
         {
+            if (result.TimestampChangedFiles != 0)
+            {
+                Logging.Log.WriteInformationMessage(LOGTAG, "DetectedTimestampChanges", "Detected timestamp changes, but no data needs to be uploaded, pushing timestamp changes to the latest fileset");
+                await db.PushTimestampChangesToPreviousVersionAsync(filesetid).ConfigureAwait(false);
+            }
+
             Logging.Log.WriteVerboseMessage(LOGTAG, "RemovingLeftoverTempFile", "removing temp files, as no data needs to be uploaded");
             await db.RemoveRemoteVolumeAsync(filesetvolume.RemoteFilename);
         }

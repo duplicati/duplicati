@@ -255,6 +255,11 @@ namespace Duplicati.Library.Main.Operation.Backup
             return RunOnMain(() => m_database.WriteFileset(fsw, filesetid, GetTransaction()));
         }
 
+        public Task PushTimestampChangesToPreviousVersionAsync(long filesetid)
+        {
+            return RunOnMain(() => m_database.PushTimestampChangesToPreviousVersion(filesetid, GetTransaction()));
+        }
+
         public Task UpdateFilesetAndMarkAsFullBackupAsync(long filesetid)
         {
             return RunOnMain(() => m_database.UpdateFullBackupStateInFileset(filesetid, true, GetTransaction()));

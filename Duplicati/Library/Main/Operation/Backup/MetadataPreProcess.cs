@@ -63,6 +63,7 @@ namespace Duplicati.Library.Main.Operation.Backup
             // After processing metadata
             public IMetahash MetaHashAndSize;
             public bool MetadataChanged;
+            public bool TimestampChanged;
         }
 
         public static Task Run(Channels channels, Snapshots.ISnapshotService snapshot, Options options, BackupDatabase database, long lastfilesetid, ITaskReader taskReader)
