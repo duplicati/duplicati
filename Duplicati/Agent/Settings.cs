@@ -149,10 +149,7 @@ public sealed record Settings(
     private static string GetSettingsPath()
     {
         // Ideally, this should use DataFolderManager.DATAFOLDER, but we cannot due to backwards compatibility
-        var folder = Library.AutoUpdater.DataFolderLocator.GetDefaultStorageFolder(DefaultSettingsFilename);
-        if (!Directory.Exists(folder))
-            Directory.CreateDirectory(folder);
-
+        var folder = Library.AutoUpdater.DataFolderLocator.GetDefaultStorageFolder(DefaultSettingsFilename, true);
         return Path.Combine(folder, DefaultSettingsFilename);
     }
 }

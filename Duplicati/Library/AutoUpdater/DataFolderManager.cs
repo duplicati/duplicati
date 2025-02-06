@@ -182,7 +182,10 @@ public static class DataFolderManager
         }
 
         if (!Directory.Exists(DATAFOLDER))
+        {
             Directory.CreateDirectory(DATAFOLDER);
+            SystemIO.IO_OS.DirectorySetPermissionUserRWOnly(DATAFOLDER);
+        }
 
         if (!File.Exists(Path.Combine(DATAFOLDER, INSTALL_FILE)))
         {

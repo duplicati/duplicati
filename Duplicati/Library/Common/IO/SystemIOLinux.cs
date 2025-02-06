@@ -64,7 +64,8 @@ namespace Duplicati.Library.Common.IO
             File.SetLastWriteTimeUtc(path, time);
 
             var gtime = FileGetLastWriteTimeUtc(path);
-            if(gtime != time) {
+            if (gtime != time)
+            {
                 Console.Error.WriteLine($"DISS: {path} {gtime.ToFileTimeUtc() - time.ToFileTimeUtc()}");
             }
         }
@@ -214,7 +215,7 @@ namespace Duplicati.Library.Common.IO
 
             var n = PosixFile.GetExtendedAttributes(f, isSymlink, followSymlink);
             if (n != null)
-                foreach(var x in n)
+                foreach (var x in n)
                     dict["unix-ext:" + x.Key] = Convert.ToBase64String(x.Value);
 
             var fse = PosixFile.GetUserGroupAndPermissions(f);
@@ -238,7 +239,7 @@ namespace Duplicati.Library.Common.IO
 
             var f = NormalizePath(file);
 
-            foreach(var x in data.Where(x => x.Key.StartsWith("unix-ext:", StringComparison.Ordinal)).Select(x => new KeyValuePair<string, byte[]>(x.Key.Substring("unix-ext:".Length), Convert.FromBase64String(x.Value))))
+            foreach (var x in data.Where(x => x.Key.StartsWith("unix-ext:", StringComparison.Ordinal)).Select(x => new KeyValuePair<string, byte[]>(x.Key.Substring("unix-ext:".Length), Convert.FromBase64String(x.Value))))
                 PosixFile.SetExtendedAttribute(f, x.Key, x.Value);
 
             if (restorePermissions && data.ContainsKey("unix:uid-gid-perm"))
@@ -345,6 +346,36 @@ namespace Duplicati.Library.Common.IO
         public IFileEntry FileEntry(FileInfo fileInfo)
         {
             return new FileEntry(fileInfo.Name, fileInfo.Length, fileInfo.LastAccessTime, fileInfo.LastWriteTime);
+        }
+
+        /// <summary>
+        /// Sets the unix permission user read-write Only.
+        /// </summary>
+        /// <param name="path">The file to set permissions on.</param>
+        public void FileSetPermissionUserRWOnly(string path)
+        {
+            var fi = PosixFile.GetUserGroupAndPermissions(path);
+            PosixFile.SetUserGroupAndPermissions(
+                path,
+                fi.UID,
+                fi.GID,
+                Convert.ToInt32("600", 8) /* FilePermissions.S_IRUSR | FilePermissions.S_IWUSR*/
+            );
+        }
+
+        /// <summary>
+        /// Sets the permission to read-write only for the current user.
+        /// </summary>
+        /// <param name="path">The directory to set permissions on.</param>
+        public void DirectorySetPermissionUserRWOnly(string path)
+        {
+            var fi = PosixFile.GetUserGroupAndPermissions(path);
+            PosixFile.SetUserGroupAndPermissions(
+                path,
+                fi.UID,
+                fi.GID,
+                Convert.ToInt32("700", 8) /* FilePermissions.S_IRUSR | FilePermissions.S_IWUSR | FilePermissions.S_IXUSR */
+            );
         }
     }
 }
