@@ -92,11 +92,7 @@ public static class DataFolderLocator
 
             // If %LOCALAPPDATA% is inside the Windows folder, prefer a LocalService folder instead
             if (Common.IO.Util.IsPathUnderWindowsFolder(newlocation))
-            {
-                var userProfilesFolder = Library.Utility.SHGetFolder.UserProfilesFolder;
-                if (!string.IsNullOrWhiteSpace(userProfilesFolder))
-                    folderOrder.Add(System.IO.Path.Combine(userProfilesFolder, "LocalService", appName));
-            }
+                folderOrder.Add(System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), appName));
 
             // Prefer the most recent location
             var matches = folderOrder.AsEnumerable()
