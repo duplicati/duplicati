@@ -31,7 +31,15 @@ namespace Duplicati.Library.Common.IO
         /// </summary>
         public static readonly string DirectorySeparatorString = Path.DirectorySeparatorChar.ToString();
 
+        /// <summary>
+        /// A cached instance of the alternate directory separator as a string
+        /// </summary>
         public static readonly string AltDirectorySeparatorString = Path.AltDirectorySeparatorChar.ToString();
+
+        /// <summary>
+        /// Filename of a marker file that can be put inside the data folder to prevent Duplicati from fixing lax permissions
+        /// </summary>
+        public const string InsecurePermissionsMarkerFile = "insecure-permissions.txt";
 
         /// <summary>
         /// Appends the appropriate directory separator to paths, depending on OS.

@@ -49,8 +49,12 @@ public static class DataFolderLocator
             ? DataFolderManager.DATAFOLDER
             : GetDefaultStorageFolderInternal(targetfilename, AutoUpdateSettings.AppName);
 
-        // If the folder does not exist, and we are allowed to create it, we do so
-        if (autoCreate && !SystemIO.IO_OS.DirectoryExists(folder))
+        if (SystemIO.IO_OS.DirectoryExists(folder))
+        {
+            if (!SystemIO.IO_OS.FileExists(System.IO.Path.Combine(folder, Util.InsecurePermissionsMarkerFile)))
+                SystemIO.IO_OS.DirectorySetPermissionUserRWOnly(folder);
+        }
+        else if (autoCreate)
         {
             // Create the folder
             SystemIO.IO_OS.DirectoryCreate(folder);

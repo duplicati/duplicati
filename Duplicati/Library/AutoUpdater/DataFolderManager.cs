@@ -181,7 +181,12 @@ public static class DataFolderManager
             DATAFOLDER = Util.AppendDirSeparator(DataFolderLocator.GetDefaultStorageFolderInternal(SERVER_DATABASE_FILENAME, APPNAME));
         }
 
-        if (!Directory.Exists(DATAFOLDER))
+        if (Directory.Exists(DATAFOLDER))
+        {
+            if (!File.Exists(Path.Combine(DATAFOLDER, Util.InsecurePermissionsMarkerFile)))
+                SystemIO.IO_OS.DirectorySetPermissionUserRWOnly(DATAFOLDER);
+        }
+        else
         {
             Directory.CreateDirectory(DATAFOLDER);
             SystemIO.IO_OS.DirectorySetPermissionUserRWOnly(DATAFOLDER);

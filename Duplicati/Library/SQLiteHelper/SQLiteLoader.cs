@@ -225,9 +225,16 @@ namespace Duplicati.Library.SQLiteHelper
                 sqlitecon.SetConfigurationOption(System.Data.SQLite.SQLiteConfigDbOpsEnum.SQLITE_DBCONFIG_DQS_DML, false);
             }
 
-            // Make the file only accessible by the current user if we just created it
-            if (!fileExists)
+            // Make the file only accessible by the current user
+            if (fileExists)
+            {
+                if (!SystemIO.IO_OS.FileExists(SystemIO.IO_OS.PathCombine(SystemIO.IO_OS.PathGetDirectoryName(path), Util.InsecurePermissionsMarkerFile)))
+                    SystemIO.IO_OS.FileSetPermissionUserRWOnly(path);
+            }
+            else
+            {
                 SystemIO.IO_OS.FileSetPermissionUserRWOnly(path);
+            }
         }
 
         /// <summary>
