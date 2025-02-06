@@ -160,7 +160,7 @@ namespace Duplicati.Library.Common.IO
                 }
                 else
                 {
-                    var fileWithSpec = SystemIO.IO_WIN.PathCombine(file.Path, file.FileSpecification);
+                    var fileWithSpec = SystemIO.IO_OS.PathCombine(file.Path, file.FileSpecification);
                     if (File.Exists(fileWithSpec))
                         paths.Add(fileWithSpec);
                 }
@@ -222,7 +222,7 @@ namespace Duplicati.Library.Common.IO
             _volumes = new Dictionary<string, Guid>(StringComparer.OrdinalIgnoreCase);
             foreach (var s in sources)
             {
-                var drive = SystemIO.IO_WIN.GetPathRoot(s);
+                var drive = SystemIO.IO_OS.GetPathRoot(s);
                 if (!_volumes.ContainsKey(drive))
                 {
                     if (!_vssBackupComponents.IsVolumeSupported(drive))
