@@ -268,12 +268,10 @@ partial class BackendManager
 
             if (backend is IStreamingBackend streamingBackend && !Context.Options.DisableStreamingTransfers)
             {
-                using (var fs = System.IO.File.OpenRead(LocalFilename))
-                using (var act = new StreamUtil.TimeoutObservingStream(fs) { ReadTimeout = backend is ITimeoutExemptBackend ? Timeout.Infinite : Context.Options.ReadWriteTimeout })
-                using (var ts = new ThrottledStream(act, Context.Options.MaxUploadPrSecond, 0))
-                using (var pgs = new ProgressReportingStream(ts, pg => Context.HandleProgress(ts, pg, RemoteFilename)))
-                using (var linkedToken = CancellationTokenSource.CreateLinkedTokenSource(cancelToken, act.TimeoutToken))
-                    await streamingBackend.PutAsync(RemoteFilename, pgs, linkedToken.Token).ConfigureAwait(false);
+                using var fs = System.IO.File.OpenRead(LocalFilename);
+                using var ts = new ThrottledStream(fs, Context.Options.MaxUploadPrSecond, 0);
+                using var pgs = new ProgressReportingStream(ts,pg => Context.HandleProgress(ts, pg, RemoteFilename));
+                await streamingBackend.PutAsync(RemoteFilename, pgs, cancelToken).ConfigureAwait(false);
             }
             else
                 await backend.PutAsync(RemoteFilename, LocalFilename, cancelToken).ConfigureAwait(false);
