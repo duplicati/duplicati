@@ -44,7 +44,15 @@ namespace Duplicati.Library.Common.IO
 
         private static readonly string DIRSEP = Util.DirectorySeparatorString;
 
+        /// <summary>
+        /// The current user name
+        /// </summary>
         private static readonly string CURRENT_USERNAME = WindowsIdentity.GetCurrent().Name;
+
+        /// <summary>
+        /// The LocalSystem user name
+        /// </summary>
+        private static readonly string LOCAL_SYSTEM_NAME = new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null).Translate(typeof(NTAccount)).Value;
 
         /// <summary>
         /// Prefix path with one of the extended device path prefixes
@@ -695,6 +703,12 @@ namespace Duplicati.Library.Common.IO
                 AccessControlType.Allow
             ));
 
+            security.AddAccessRule(new FileSystemAccessRule(
+                LOCAL_SYSTEM_NAME,
+                FileSystemRights.FullControl,
+                AccessControlType.Allow
+            ));
+
             // Adjust with the new security settings
             new FileInfo(path).SetAccessControl(security);
         }
@@ -714,6 +728,12 @@ namespace Duplicati.Library.Common.IO
             // Grant the current user read access
             security.AddAccessRule(new FileSystemAccessRule(
                 CURRENT_USERNAME,
+                FileSystemRights.FullControl,
+                AccessControlType.Allow
+            ));
+
+            security.AddAccessRule(new FileSystemAccessRule(
+                LOCAL_SYSTEM_NAME,
                 FileSystemRights.FullControl,
                 AccessControlType.Allow
             ));
