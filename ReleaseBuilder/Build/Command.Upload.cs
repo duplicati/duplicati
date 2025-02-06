@@ -106,8 +106,9 @@ public static partial class Command
         /// </summary>
         /// <param name="files">The files to upload</param>
         /// <param name="rtcfg">The runtime configuration</param>
+        /// <param name="propagateTo">The release channels to propagate to</param>
         /// <returns>An awaitable task</returns>
-        public static async Task UploadToS3(IEnumerable<UploadFile> files, RuntimeConfig rtcfg)
+        public static async Task UploadToS3(IEnumerable<UploadFile> files, RuntimeConfig rtcfg, IEnumerable<ReleaseChannel> propagateTo)
         {
             var totalSize = files.Sum(f => new FileInfo(f.Path).Length);
             Console.WriteLine($"Uploading {files.Count()} files ({Duplicati.Library.Utility.Utility.FormatSizeString(totalSize)}) to S3...");
@@ -140,6 +141,22 @@ public static partial class Command
                 var filesize = new FileInfo(file.Path).Length;
                 size += filesize;
                 Console.WriteLine($"{size / (double)totalSize * 100:F1}% - Uploaded {file.Name} ({Duplicati.Library.Utility.Utility.FormatSizeString(filesize)})");
+            }
+
+            foreach (var channel in propagateTo)
+            {
+                if (channel == rtcfg.ReleaseInfo.Channel)
+                    continue;
+
+                var target = $"{channel.ToString().ToLowerInvariant()}/latest-v2.manifest";
+                var source = $"{rtcfg.ReleaseInfo.Channel.ToString().ToLowerInvariant()}/latest-v2.manifest";
+                await Duplicati.Library.Utility.RetryHelper.Retry(() =>
+                    client.CopyObjectAsync(
+                        Program.Configuration.ConfigFiles.AwsUploadBucket,
+                        source,
+                        Program.Configuration.ConfigFiles.AwsUploadBucket,
+                        target
+                    ), 3, TimeSpan.FromSeconds(1), CancellationToken.None);
             }
         }
 
@@ -214,7 +231,7 @@ public static partial class Command
         /// </summary>
         /// <param name="rtcfg">The runtime configuration</param>
         /// <returns>An awaitable task</returns>
-        public static async Task ReloadUpdateServer(RuntimeConfig rtcfg)
+        public static async Task ReloadUpdateServer(RuntimeConfig rtcfg, IEnumerable<ReleaseChannel> propagateTo)
         {
             using var client = new HttpClient();
             var req = new HttpRequestMessage(HttpMethod.Post, "https://updates.duplicati.com/reload");
@@ -225,7 +242,7 @@ public static partial class Command
                 $"{rtcfg.ReleaseInfo.Channel.ToString().ToLowerInvariant()}/latest-v2.json",
                 $"{rtcfg.ReleaseInfo.Channel.ToString().ToLowerInvariant()}/latest-v2.js",
                 $"{rtcfg.ReleaseInfo.Channel.ToString().ToLowerInvariant()}/latest-v2.manifest",
-             });
+             }.Concat(propagateTo.Select(c => $"{c.ToString().ToLowerInvariant()}/latest-v2.manifest")));
 
             var response = await client.SendAsync(req);
             response.EnsureSuccessStatusCode();
