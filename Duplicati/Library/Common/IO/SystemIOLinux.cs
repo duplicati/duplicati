@@ -25,6 +25,7 @@ using System.Linq;
 using System.Collections.Generic;
 using Duplicati.Library.Interface;
 using System.Runtime.Versioning;
+using System.Runtime.InteropServices;
 
 namespace Duplicati.Library.Common.IO
 {
@@ -32,6 +33,26 @@ namespace Duplicati.Library.Common.IO
     [SupportedOSPlatform("macOS")]
     public struct SystemIOLinux : ISystemIO
     {
+        /// <summary>
+        /// PInvoke methods
+        /// </summary>
+        private static class PInvoke
+        {
+            /// <summary>
+            /// Gets the user ID of the current user
+            /// </summary>
+            /// <returns>The user ID</returns>
+            [DllImport("libc")]
+            public static extern uint getuid();
+
+            /// <summary>
+            /// Gets the group ID of the current user
+            /// </summary>
+            /// <returns></returns>
+            [DllImport("libc")]
+            public static extern uint getgid();
+        }
+
         #region ISystemIO implementation
 
         public void DirectoryCreate(string path)
@@ -348,17 +369,22 @@ namespace Duplicati.Library.Common.IO
             return new FileEntry(fileInfo.Name, fileInfo.Length, fileInfo.LastAccessTime, fileInfo.LastWriteTime);
         }
 
+        private static (long uid, long gid) GetOwnerAndGroup(string path)
+        {
+            var fi = PosixFile.GetUserGroupAndPermissions(path);
+            return (fi.UID, fi.GID);
+        }
+
         /// <summary>
         /// Sets the unix permission user read-write Only.
         /// </summary>
         /// <param name="path">The file to set permissions on.</param>
         public void FileSetPermissionUserRWOnly(string path)
         {
-            var fi = PosixFile.GetUserGroupAndPermissions(path);
             PosixFile.SetUserGroupAndPermissions(
                 path,
-                fi.UID,
-                fi.GID,
+                PInvoke.getuid(),
+                PInvoke.getgid(),
                 Convert.ToInt32("600", 8) /* FilePermissions.S_IRUSR | FilePermissions.S_IWUSR*/
             );
         }
@@ -369,11 +395,10 @@ namespace Duplicati.Library.Common.IO
         /// <param name="path">The directory to set permissions on.</param>
         public void DirectorySetPermissionUserRWOnly(string path)
         {
-            var fi = PosixFile.GetUserGroupAndPermissions(path);
             PosixFile.SetUserGroupAndPermissions(
                 path,
-                fi.UID,
-                fi.GID,
+                PInvoke.getuid(),
+                PInvoke.getgid(),
                 Convert.ToInt32("700", 8) /* FilePermissions.S_IRUSR | FilePermissions.S_IWUSR | FilePermissions.S_IXUSR */
             );
         }
