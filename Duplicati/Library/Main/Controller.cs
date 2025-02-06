@@ -865,6 +865,10 @@ namespace Duplicati.Library.Main
             if (string.Equals(new Library.Utility.Uri(m_backendUrl).Scheme, "tardigrade", StringComparison.OrdinalIgnoreCase))
                 Logging.Log.WriteWarningMessage(LOGTAG, "TardigradeRename", null, "The Tardigrade-backend got renamed to Storj DCS - please migrate your backups to the new configuration by changing the destination storage type to Storj DCS.");
 
+            //Inform the user about the unmaintained Mega support library
+            if (string.Equals(new Library.Utility.Uri(m_backendUrl).Scheme, "mega", StringComparison.OrdinalIgnoreCase))
+                Logging.Log.WriteWarningMessage(LOGTAG, "MegaUnmaintained", null, "The Mega support library is currently unmaintained and may not work as expected. Mega has not published an official API so it may break at any moment. Please consider migrating to another backend.");
+
             //TODO: Based on the action, see if all options are relevant
         }
 
