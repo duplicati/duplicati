@@ -721,6 +721,10 @@ destination will be verified before being overwritten (if they seemingly match).
                             {
                                 Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "rsync", e,
                                     "Error renaming {0}: {1}", f.Name, e.Message);
+                            }
+                            finally
+                            {
+                                // Ensure the timer is stopped
                                 sw.Stop();
                             }
 
