@@ -189,13 +189,19 @@ destination will be verified before being overwritten (if they seemingly match).
             }
 
             // Load the backends
+            static Exception throw_message(string target)
+            {
+                var message = $"The {target} backend does not support streaming operations.";
+                var ex = new Exception(message);
+                Duplicati.Library.Logging.Log.WriteErrorMessage(LOGTAG, "rsync", ex, message);
+                return ex;
+            }
+
             using var b1 = Duplicati.Library.DynamicLoader.BackendLoader.GetBackend(config.Src, src_opts);
-            var b1s = b1 as IStreamingBackend;
-            System.Diagnostics.Debug.Assert(b1s != null);
+            var b1s = b1 as IStreamingBackend ?? throw throw_message("source");
 
             using var b2 = Duplicati.Library.DynamicLoader.BackendLoader.GetBackend(config.Dst, dst_opts);
-            var b2s = b2 as IStreamingBackend;
-            System.Diagnostics.Debug.Assert(b2s != null);
+            var b2s = b2 as IStreamingBackend ?? throw throw_message("destination");
 
             // Prepare the operations
             var (to_copy, to_delete, to_verify) = PrepareFileLists(b1s, b2s, config);
