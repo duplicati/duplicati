@@ -457,8 +457,7 @@ destination will be verified before being overwritten (if they seemingly match).
         {
             long successful_deletes = 0;
             long i = 0, n = files.Count();
-            var sw = new System.Diagnostics.Stopwatch();
-            sw.Restart();
+            using var timer = new Duplicati.Library.Logging.Timer(LOGTAG, "rsync", "Delete operation");
 
             foreach (var f in files)
             {
@@ -492,11 +491,6 @@ destination will be verified before being overwritten (if they seemingly match).
                 i++;
             }
 
-            sw.Stop();
-            Duplicati.Library.Logging.Log.WriteProfilingMessage(LOGTAG, "rsync",
-                "Delete: {0} ms",
-                TimeSpan.FromMilliseconds(sw.ElapsedMilliseconds));
-
             if (config.Progress)
                 Console.WriteLine($"\rDeleting: {n}/{n}");
             return successful_deletes;
@@ -529,20 +523,13 @@ destination will be verified before being overwritten (if they seemingly match).
         /// <returns>A tuple of Lists each holding the files to copy, delete and verify.</returns>
         private static (IEnumerable<IFileEntry>, IEnumerable<IFileEntry>, IEnumerable<IFileEntry>) PrepareFileLists(IStreamingBackend b_src, IStreamingBackend b_dst, Config config)
         {
-            var sw = new System.Diagnostics.Stopwatch();
+            IEnumerable<IFileEntry> files_src, files_dst;
 
-            sw.Restart();
-            var files_src = b_src.List();
-            sw.Stop();
-            Duplicati.Library.Logging.Log.WriteProfilingMessage(LOGTAG, "rsync",
-                "Prepare | List source: {0} ms",
-                TimeSpan.FromMilliseconds(sw.ElapsedMilliseconds));
-            sw.Restart();
-            var files_dst = b_dst.List();
-            sw.Stop();
-            Duplicati.Library.Logging.Log.WriteProfilingMessage(LOGTAG, "rsync",
-                "Prepare | List destination: {0} ms",
-                TimeSpan.FromMilliseconds(sw.ElapsedMilliseconds));
+            using (new Duplicati.Library.Logging.Timer(LOGTAG, "rsync", "Prepare | List source"))
+                files_src = b_src.List();
+
+            using (new Duplicati.Library.Logging.Timer(LOGTAG, "rsync", "Prepare | List destination"))
+                files_dst = b_dst.List();
 
             // Shortcut for force
             if (config.Force)
@@ -556,70 +543,58 @@ destination will be verified before being overwritten (if they seemingly match).
                 return (files_src, [], []);
             }
 
-            sw.Restart();
-            var lookup_src = files_src.ToDictionary(x => x.Name);
-            var lookup_dst = files_dst.ToDictionary(x => x.Name);
-            sw.Stop();
-            Duplicati.Library.Logging.Log.WriteProfilingMessage(LOGTAG, "rsync",
-                "Prepare | Build lookup for source and destination: {0} ms",
-                TimeSpan.FromMilliseconds(sw.ElapsedMilliseconds));
+            Dictionary<string, IFileEntry> lookup_src, lookup_dst;
+            using (new Duplicati.Library.Logging.Timer(LOGTAG, "rsync", "Prepare | Build lookup for source and destination"))
+            {
+                lookup_src = files_src.ToDictionary(x => x.Name);
+                lookup_dst = files_dst.ToDictionary(x => x.Name);
+            }
 
             var to_copy = new List<IFileEntry>();
             var to_delete = new HashSet<string>();
             var to_verify = new List<IFileEntry>();
 
             // Find all of the files in src that are not in dst, have a different size or have a more recent modification date
-            sw.Restart();
-            foreach (var f_src in files_src)
-            {
-                if (lookup_dst.TryGetValue(f_src.Name, out var f_dst))
+            using (new Duplicati.Library.Logging.Timer(LOGTAG, "rsync", "Prepare | Check the files that are present in source against destination"))
+                foreach (var f_src in files_src)
                 {
-                    if (f_src.Size != f_dst.Size || f_src.LastModification > f_dst.LastModification)
+                    if (lookup_dst.TryGetValue(f_src.Name, out var f_dst))
                     {
-                        // The file is different, so we need to copy it
-                        to_copy.Add(f_src);
-                        to_delete.Add(f_dst.Name);
+                        if (f_src.Size != f_dst.Size || f_src.LastModification > f_dst.LastModification)
+                        {
+                            // The file is different, so we need to copy it
+                            to_copy.Add(f_src);
+                            to_delete.Add(f_dst.Name);
+                        }
+                        else
+                        {
+                            // The file seems to be the same, so we need to verify it if the user wants to
+                            to_verify.Add(f_src);
+                        }
                     }
                     else
                     {
-                        // The file seems to be the same, so we need to verify it if the user wants to
-                        to_verify.Add(f_src);
+                        // The file is not in the destination, so we need to copy it
+                        to_copy.Add(f_src);
                     }
                 }
-                else
-                {
-                    // The file is not in the destination, so we need to copy it
-                    to_copy.Add(f_src);
-                }
-            }
-            sw.Stop();
-            Duplicati.Library.Logging.Log.WriteProfilingMessage(LOGTAG, "rsync",
-                "Prepare | Check the files that are present in source against destination: {0} ms",
-                TimeSpan.FromMilliseconds(sw.ElapsedMilliseconds));
 
             // Find all of the files in dst that are not in src
-            sw.Start();
-            foreach (var f_dst in files_dst)
-            {
-                if (to_delete.Contains(f_dst.Name))
-                    continue;
-
-                if (!lookup_src.ContainsKey(f_dst.Name))
+            using (new Duplicati.Library.Logging.Timer(LOGTAG, "rsync", "Prepare | Check the files that are present in destination against source"))
+                foreach (var f_dst in files_dst)
                 {
-                    to_delete.Add(f_dst.Name);
-                }
-            }
-            sw.Stop();
-            Duplicati.Library.Logging.Log.WriteProfilingMessage(LOGTAG, "rsync",
-                "Prepare | Check the files that are present in destination against source: {0} ms",
-                TimeSpan.FromMilliseconds(sw.ElapsedMilliseconds));
+                    if (to_delete.Contains(f_dst.Name))
+                        continue;
 
-            sw.Restart();
-            var to_delete_lookedup = to_delete.Select(x => lookup_dst[x]).ToList();
-            sw.Stop();
-            Duplicati.Library.Logging.Log.WriteProfilingMessage(LOGTAG, "rsync",
-                "Prepare | Lookup the files to delete: {0} ms",
-                TimeSpan.FromMilliseconds(sw.ElapsedMilliseconds));
+                    if (!lookup_src.ContainsKey(f_dst.Name))
+                    {
+                        to_delete.Add(f_dst.Name);
+                    }
+                }
+
+            List<IFileEntry> to_delete_lookedup;
+            using (new Duplicati.Library.Logging.Timer(LOGTAG, "rsync", "Prepare | Lookup the files to delete"))
+                to_delete_lookedup = [.. to_delete.Select(x => lookup_dst[x])];
 
             return (to_copy, to_delete_lookedup, to_verify);
         }
