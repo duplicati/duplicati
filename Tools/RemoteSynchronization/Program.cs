@@ -1,4 +1,4 @@
-﻿// Copyright (C) 2025, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -43,22 +43,25 @@ namespace RemoteSynchronization
         /// </summary>
         private sealed record Config
         (
+            // Arguments
             string Src,
             string Dst,
+
+            // Options
+            bool Confirm,
             bool DryRun,
             List<string> DstOptions,
-            List<string> GlobalOptions,
-            List<string> SrcOptions,
             bool Force,
-            string LogLevel,
+            List<string> GlobalOptions,
             string LogFile,
+            string LogLevel,
+            bool ParseArgumentsOnly,
             bool Progress,
-            int Retry,
             bool Retention,
-            bool Confirm,
+            int Retry,
+            List<string> SrcOptions,
             bool VerifyContents,
-            bool VerifyGetAfterPut,
-            bool ParseArgumentsOnly
+            bool VerifyGetAfterPut
         );
 
         /// <summary>
@@ -98,20 +101,21 @@ destination will be verified before being overwritten (if they seemingly match).
             {
                 arg_src,
                 arg_dst,
+
+                new Option<bool>(aliases: ["--confirm"], description: "Automatically confirm the operation", getDefaultValue: () => false),
                 new Option<bool>(aliases: ["--dry-run", "-d"], description: "Do not actually write or delete files. If not set here, the global options will be checked", getDefaultValue: () => false),
-                OptionWithMultipleTokens(aliases: ["--src-options"], description: "Options for the source backend. Each option is a key-value pair separated by an equals sign, e.g. --src-options key1=value1 key2=value2"),
-                OptionWithMultipleTokens(aliases: ["--dst-options"], description: "Options for the destination backend. Each option is a key-value pair separated by an equals sign, e.g. --dst-options key1=value1 key2=value2"),
+                OptionWithMultipleTokens(aliases: ["--dst-options"], description: "Options for the destination backend. Each option is a key-value pair separated by an equals sign, e.g. --dst-options key1=value1 key2=value2", getDefaultValue: () => []),
+                new Option<bool>(aliases: ["--force"], description: "Force the synchronization", getDefaultValue: () => false),
+                OptionWithMultipleTokens(aliases: ["--global-options"], description: "Global options all backends. May be overridden by backend specific options (src-options, dst-options). Each option is a key-value pair separated by an equals sign, e.g. --global-options key1=value1 key2=value2", getDefaultValue: () => []),
+                new Option<string>(aliases: ["--log-file"], description: "The log file to write to. If not set here, global options will be checked", getDefaultValue: () => "") { Arity = ArgumentArity.ExactlyOne },
+                new Option<string>(aliases: ["--log-level"], description: "The log level to use. If not set here, global options will be checked", getDefaultValue: () => "Information") { Arity = ArgumentArity.ExactlyOne },
+                new Option<bool>(aliases: ["--parse-arguments-only"], description: "Only parse the arguments and then exit", getDefaultValue: () => false),
+                new Option<bool>(aliases: ["--progress"], description: "Print progress to STDOUT", getDefaultValue: () => false),
+                new Option<bool>(aliases: ["--retention"], description: "Toggles whether to keep old files. Any deletes will be renames instead", getDefaultValue: () => false),
+                new Option<int>(aliases: ["--retry"], description: "Number of times to retry on errors", getDefaultValue: () => 3) { Arity = ArgumentArity.ExactlyOne },
+                OptionWithMultipleTokens(aliases: ["--src-options"], description: "Options for the source backend. Each option is a key-value pair separated by an equals sign, e.g. --src-options key1=value1 key2=value2", getDefaultValue: () => []),
                 new Option<bool>(aliases: ["--verify-contents"], description: "Verify the contents of the files to decide whether the pre-existing destination files should be overwritten", getDefaultValue: () => false),
                 new Option<bool>(aliases: ["--verify-get-after-put"], description: "Verify the files after uploading them to ensure that they were uploaded correctly", getDefaultValue: () => false),
-                new Option<int>(aliases: ["--retry"], description: "Number of times to retry on errors", getDefaultValue: () => 3) { Arity = ArgumentArity.ExactlyOne },
-                new Option<bool>(aliases: ["--force"], description: "Force the synchronization", getDefaultValue: () => false),
-                new Option<bool>(aliases: ["--retention"], description: "Toggles whether to keep old files. Any deletes will be renames instead", getDefaultValue: () => false),
-                new Option<bool>(aliases: ["--confirm"], description: "Automatically confirm the operation", getDefaultValue: () => false),
-                OptionWithMultipleTokens(aliases: ["--global-options"], description: "Global options all backends. May be overridden by backend specific options (src-options, dst-options). Each option is a key-value pair separated by an equals sign, e.g. --global-options key1=value1 key2=value2"),
-                new Option<string>(aliases: ["--log-level"], description: "The log level to use. If not set here, global options will be checked", getDefaultValue: () => "Information") { Arity = ArgumentArity.ExactlyOne },
-                new Option<string>(aliases: ["--log-file"], description: "The log file to write to. If not set here, global options will be checked", getDefaultValue: () => "") { Arity = ArgumentArity.ExactlyOne },
-                new Option<bool>(aliases: ["--progress"], description: "Print progress to STDOUT", getDefaultValue: () => false),
-                new Option<bool>(aliases: ["--parse-arguments-only"], description: "Only parse the arguments and then exit", getDefaultValue: () => false),
             };
 
             root_cmd.Handler = CommandHandler.Create((string backend_src, string backend_dst, Config config) =>
