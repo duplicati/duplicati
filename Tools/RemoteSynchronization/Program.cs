@@ -413,7 +413,12 @@ destination will be verified before being overwritten (if they seemingly match).
             if (config.Progress)
                 Console.WriteLine($"\rCopying: {n}/{n}");
 
-            Duplicati.Library.Logging.Log.WriteProfilingMessage(LOGTAG, "rsync", "Copy | Get source: {0} ms, Put destination: {1} ms, Get destination: {2} ms, Get compare: {3} ms", sw_get_src.ElapsedMilliseconds, sw_put_dst.ElapsedMilliseconds, sw_get_dst.ElapsedMilliseconds, sw_get_cmp.ElapsedMilliseconds);
+            Duplicati.Library.Logging.Log.WriteProfilingMessage(LOGTAG, "rsync",
+                "Copy | Get source: {0} ms, Put destination: {1} ms, Get destination: {2} ms, Get compare: {3} ms",
+                TimeSpan.FromMilliseconds(sw_get_src.ElapsedMilliseconds),
+                TimeSpan.FromMilliseconds(sw_put_dst.ElapsedMilliseconds),
+                TimeSpan.FromMilliseconds(sw_get_dst.ElapsedMilliseconds),
+                TimeSpan.FromMilliseconds(sw_get_cmp.ElapsedMilliseconds));
 
             return (successful_copies, errors);
         }
@@ -462,7 +467,9 @@ destination will be verified before being overwritten (if they seemingly match).
             }
 
             sw.Stop();
-            Duplicati.Library.Logging.Log.WriteProfilingMessage(LOGTAG, "rsync", "Delete: {0} ms", sw.ElapsedMilliseconds);
+            Duplicati.Library.Logging.Log.WriteProfilingMessage(LOGTAG, "rsync",
+                "Delete: {0} ms",
+                TimeSpan.FromMilliseconds(sw.ElapsedMilliseconds));
 
             if (config.Progress)
                 Console.WriteLine($"\rDeleting: {n}/{n}");
@@ -501,11 +508,15 @@ destination will be verified before being overwritten (if they seemingly match).
             sw.Restart();
             var files_src = b_src.List();
             sw.Stop();
-            Duplicati.Library.Logging.Log.WriteProfilingMessage(LOGTAG, "rsync", "Prepare | List source: {0} ms", sw.ElapsedMilliseconds);
+            Duplicati.Library.Logging.Log.WriteProfilingMessage(LOGTAG, "rsync",
+                "Prepare | List source: {0} ms",
+                TimeSpan.FromMilliseconds(sw.ElapsedMilliseconds));
             sw.Restart();
             var files_dst = b_dst.List();
             sw.Stop();
-            Duplicati.Library.Logging.Log.WriteProfilingMessage(LOGTAG, "rsync", "Prepare | List destination: {0} ms", sw.ElapsedMilliseconds);
+            Duplicati.Library.Logging.Log.WriteProfilingMessage(LOGTAG, "rsync",
+                "Prepare | List destination: {0} ms",
+                TimeSpan.FromMilliseconds(sw.ElapsedMilliseconds));
 
             // Shortcut for force
             if (config.Force)
@@ -523,7 +534,9 @@ destination will be verified before being overwritten (if they seemingly match).
             var lookup_src = files_src.ToDictionary(x => x.Name);
             var lookup_dst = files_dst.ToDictionary(x => x.Name);
             sw.Stop();
-            Duplicati.Library.Logging.Log.WriteProfilingMessage(LOGTAG, "rsync", "Prepare | Build lookup for source and destination: {0} ms", sw.ElapsedMilliseconds);
+            Duplicati.Library.Logging.Log.WriteProfilingMessage(LOGTAG, "rsync",
+                "Prepare | Build lookup for source and destination: {0} ms",
+                TimeSpan.FromMilliseconds(sw.ElapsedMilliseconds));
 
             var to_copy = new List<IFileEntry>();
             var to_delete = new HashSet<string>();
@@ -554,7 +567,9 @@ destination will be verified before being overwritten (if they seemingly match).
                 }
             }
             sw.Stop();
-            Duplicati.Library.Logging.Log.WriteProfilingMessage(LOGTAG, "rsync", "Prepare | Check the files that are present in source against destination: {0} ms", sw.ElapsedMilliseconds);
+            Duplicati.Library.Logging.Log.WriteProfilingMessage(LOGTAG, "rsync",
+                "Prepare | Check the files that are present in source against destination: {0} ms",
+                TimeSpan.FromMilliseconds(sw.ElapsedMilliseconds));
 
             // Find all of the files in dst that are not in src
             sw.Start();
@@ -569,12 +584,16 @@ destination will be verified before being overwritten (if they seemingly match).
                 }
             }
             sw.Stop();
-            Duplicati.Library.Logging.Log.WriteProfilingMessage(LOGTAG, "rsync", "Prepare | Check the files that are present in destination against source: {0} ms", sw.ElapsedMilliseconds);
+            Duplicati.Library.Logging.Log.WriteProfilingMessage(LOGTAG, "rsync",
+                "Prepare | Check the files that are present in destination against source: {0} ms",
+                TimeSpan.FromMilliseconds(sw.ElapsedMilliseconds));
 
             sw.Restart();
             var to_delete_lookedup = to_delete.Select(x => lookup_dst[x]).ToList();
             sw.Stop();
-            Duplicati.Library.Logging.Log.WriteProfilingMessage(LOGTAG, "rsync", "Prepare | Lookup the files to delete: {0} ms", sw.ElapsedMilliseconds);
+            Duplicati.Library.Logging.Log.WriteProfilingMessage(LOGTAG, "rsync",
+                "Prepare | Lookup the files to delete: {0} ms",
+                TimeSpan.FromMilliseconds(sw.ElapsedMilliseconds));
 
             return (to_copy, to_delete_lookedup, to_verify);
         }
@@ -656,7 +675,11 @@ destination will be verified before being overwritten (if they seemingly match).
                             i++;
                         }
 
-                        Duplicati.Library.Logging.Log.WriteProfilingMessage(LOGTAG, "rsync", "Rename | Get source: {0} ms, Put destination: {1} ms, Delete source: {2} ms", sw_get_src.ElapsedMilliseconds, sw_put_dst.ElapsedMilliseconds, sw_del_src.ElapsedMilliseconds);
+                        Duplicati.Library.Logging.Log.WriteProfilingMessage(LOGTAG, "rsync",
+                            "Rename | Get source: {0} ms, Put destination: {1} ms, Delete source: {2} ms",
+                            TimeSpan.FromMilliseconds(sw_get_src.ElapsedMilliseconds),
+                            TimeSpan.FromMilliseconds(sw_put_dst.ElapsedMilliseconds),
+                            TimeSpan.FromMilliseconds(sw_del_src.ElapsedMilliseconds));
 
                         if (config.Progress)
                             Console.WriteLine($"\rRenaming: {n}/{n}");
@@ -697,7 +720,9 @@ destination will be verified before being overwritten (if they seemingly match).
                             i++;
                         }
 
-                        Duplicati.Library.Logging.Log.WriteProfilingMessage(LOGTAG, "rsync", "Rename: {0} ms", sw.ElapsedMilliseconds);
+                        Duplicati.Library.Logging.Log.WriteProfilingMessage(LOGTAG, "rsync",
+                            "Rename: {0} ms",
+                            TimeSpan.FromMilliseconds(sw.ElapsedMilliseconds));
 
                         if (config.Progress)
                             Console.WriteLine($"\rRenaming: {n}/{n}");
@@ -774,7 +799,10 @@ destination will be verified before being overwritten (if they seemingly match).
                 i++;
             }
 
-            Duplicati.Library.Logging.Log.WriteProfilingMessage(LOGTAG, "rsync", "Verify | Get: {0} ms, Compare: {1} ms", sw_get.ElapsedMilliseconds, sw_cmp.ElapsedMilliseconds);
+            Duplicati.Library.Logging.Log.WriteProfilingMessage(LOGTAG, "rsync",
+                "Verify | Get: {0} ms, Compare: {1} ms",
+                TimeSpan.FromMilliseconds(sw_get.ElapsedMilliseconds),
+                TimeSpan.FromMilliseconds(sw_cmp.ElapsedMilliseconds));
 
             if (config.Progress)
                 Console.WriteLine($"\rVerifying: {n}/{n}");
