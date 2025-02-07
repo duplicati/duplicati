@@ -166,6 +166,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Crashlog"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.CIFS", "Duplicati\Library\Backend\CIFS\Duplicati.Library.Backend.CIFS.csproj", "{836E0557-B40C-4DC7-9A2A-5C062F9ACC6B}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tools", "Tools", "{15388C37-9218-4818-972E-738EEA8F1602}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RemoteSynchronization", "Tools\RemoteSynchronization\RemoteSynchronization.csproj", "{D3A7E41E-279D-4E0A-A2DB-5E8002E02B6D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -472,6 +476,10 @@ Global
 		{836E0557-B40C-4DC7-9A2A-5C062F9ACC6B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{836E0557-B40C-4DC7-9A2A-5C062F9ACC6B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{836E0557-B40C-4DC7-9A2A-5C062F9ACC6B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D3A7E41E-279D-4E0A-A2DB-5E8002E02B6D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D3A7E41E-279D-4E0A-A2DB-5E8002E02B6D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D3A7E41E-279D-4E0A-A2DB-5E8002E02B6D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D3A7E41E-279D-4E0A-A2DB-5E8002E02B6D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -532,6 +540,7 @@ Global
 		{CA1A0EE8-DFFF-42AF-B15D-EF538357A2DE} = {E1A9B303-F281-45C5-A4F6-CADD9DE3F3C4}
 		{8ACA2736-3C69-4FA5-BCF9-5EDF50CAF332} = {566EBBDA-19A4-4056-A615-D901D57D2439}
 		{836E0557-B40C-4DC7-9A2A-5C062F9ACC6B} = {E1A9B303-F281-45C5-A4F6-CADD9DE3F3C4}
+		{D3A7E41E-279D-4E0A-A2DB-5E8002E02B6D} = {15388C37-9218-4818-972E-738EEA8F1602}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {8B40BAFE-D862-4397-9495-8F5EAF5CE80C}
