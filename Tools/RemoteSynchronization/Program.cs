@@ -635,7 +635,7 @@ destination will be verified before being overwritten (if they seemingly match).
         private static async Task<long> RenameAsync(IBackend b, IEnumerable<IFileEntry> files, Config config)
         {
             long successful_renames = 0;
-            string prefix = $"{System.DateTime.Now:yyyyMMddHHmmss}.old";
+            string prefix = $"{System.DateTime.UtcNow:yyyyMMddHHmmss}.old";
             using var downloaded = new MemoryStream();
             long i = 0, n = files.Count();
 
