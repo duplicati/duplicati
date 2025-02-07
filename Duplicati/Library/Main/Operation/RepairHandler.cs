@@ -141,6 +141,13 @@ namespace Duplicati.Library.Main.Operation
                 var progress = 0;
                 var targetProgess = tp.ExtraVolumes.Count() + tp.MissingVolumes.Count() + tp.VerificationRequiredVolumes.Count();
 
+                var mostRecentLocal = db.FilesetTimes.Select(x => x.Value).Append(DateTime.MinValue).Max();
+                var mostRecentRemote = tp.ParsedVolumes.Select(x => x.Time).Append(DateTime.MinValue).Max();
+                if (mostRecentLocal < DateTime.UnixEpoch)
+                    throw new UserInformationException("The local database has no fileset times. Consider deleting the local database and run the repair operation again.", "LocalDatabaseHasNoFilesetTimes");
+                if (mostRecentRemote > mostRecentLocal)
+                    throw new UserInformationException($"The remote files are newer ({mostRecentRemote}) than the local database ({mostRecentLocal}), this is likely because the database is outdated. Consider deleting the local database and run the repair operation again.", "RemoteFilesNewerThanLocalDatabase");
+
                 if (m_options.Dryrun)
                 {
                     if (!tp.ParsedVolumes.Any() && tp.OtherVolumes.Any())
