@@ -102,10 +102,10 @@ destination will be verified before being overwritten (if they seemingly match).
                 arg_src,
                 arg_dst,
 
-                new Option<bool>(aliases: ["--confirm"], description: "Automatically confirm the operation", getDefaultValue: () => false),
+                new Option<bool>(aliases: ["--confirm", "--yes", "-y"], description: "Automatically confirm the operation", getDefaultValue: () => false),
                 new Option<bool>(aliases: ["--dry-run", "-d"], description: "Do not actually write or delete files. If not set here, the global options will be checked", getDefaultValue: () => false),
                 OptionWithMultipleTokens(aliases: ["--dst-options"], description: "Options for the destination backend. Each option is a key-value pair separated by an equals sign, e.g. --dst-options key1=value1 key2=value2", getDefaultValue: () => []),
-                new Option<bool>(aliases: ["--force"], description: "Force the synchronization", getDefaultValue: () => false),
+                new Option<bool>(aliases: ["--force", "-f"], description: "Force the synchronization", getDefaultValue: () => false),
                 OptionWithMultipleTokens(aliases: ["--global-options"], description: "Global options all backends. May be overridden by backend specific options (src-options, dst-options). Each option is a key-value pair separated by an equals sign, e.g. --global-options key1=value1 key2=value2", getDefaultValue: () => []),
                 new Option<string>(aliases: ["--log-file"], description: "The log file to write to. If not set here, global options will be checked", getDefaultValue: () => "") { Arity = ArgumentArity.ExactlyOne },
                 new Option<string>(aliases: ["--log-level"], description: "The log level to use. If not set here, global options will be checked", getDefaultValue: () => "Information") { Arity = ArgumentArity.ExactlyOne },
