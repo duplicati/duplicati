@@ -729,12 +729,16 @@ namespace Duplicati.Library.Common.IO
             security.AddAccessRule(new FileSystemAccessRule(
                 CURRENT_USERNAME,
                 FileSystemRights.FullControl,
+                InheritanceFlags.ContainerInherit | InheritanceFlags.ObjectInherit, // Apply to subfolders & files
+                PropagationFlags.None, // Keeps inheritance settings intact
                 AccessControlType.Allow
             ));
 
             security.AddAccessRule(new FileSystemAccessRule(
                 LOCAL_SYSTEM_NAME,
                 FileSystemRights.FullControl,
+                InheritanceFlags.ContainerInherit | InheritanceFlags.ObjectInherit, // Apply to subfolders & files
+                PropagationFlags.None, // Keeps inheritance settings intact
                 AccessControlType.Allow
             ));
 
