@@ -1,4 +1,4 @@
-// Copyright (C) 2025, The Duplicati Team
+﻿// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -172,9 +172,14 @@ destination will be verified before being overwritten (if they seemingly match).
                 .Select(x => x.Split("="))
                 .ToDictionary(x => x[0], x => x[1]);
 
-            // Merge the global options into the source and destination options
+            // Merge the global options into the source and destination options. The global options will be overridden by the source and destination options.
             foreach (var x in global_options)
-                src_opts[x.Key] = dst_opts[x.Key] = x.Value;
+            {
+                if (!src_opts.ContainsKey(x.Key))
+                    src_opts[x.Key] = x.Value;
+                if (!dst_opts.ContainsKey(x.Key))
+                    dst_opts[x.Key] = x.Value;
+            }
 
             // Check if we only had to parse the arguments
             if (config.ParseArgumentsOnly)
