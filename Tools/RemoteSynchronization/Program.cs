@@ -353,7 +353,10 @@ destination will be verified before being overwritten (if they seemingly match).
                     sw_get_src.Stop();
                     if (config.DryRun)
                     {
-                        Duplicati.Library.Logging.Log.WriteDryrunMessage(LOGTAG, "rsync", "Would write {0} bytes of {1} to {2}", s_src.Length, f.Name, b_dst.DisplayName);
+                        Duplicati.Library.Logging.Log.WriteDryrunMessage(LOGTAG, "rsync",
+                            "Would write {0} bytes of {1} to {2}",
+                            Duplicati.Library.Utility.Utility.FormatSizeString(s_src.Length),
+                            f.Name, b_dst.DisplayName);
                     }
                     else
                     {
@@ -604,7 +607,11 @@ destination will be verified before being overwritten (if they seemingly match).
                             if (config.Progress)
                                 Console.Write($"\rRenaming: {i}/{n}");
 
-                            Duplicati.Library.Logging.Log.WriteVerboseMessage(LOGTAG, "rsync", "Renaming {0} to {1}.{0} by deleting and re-uploading {2} bytes to {3}", f.Name, prefix, downloaded.Length, sb.DisplayName);
+                            Duplicati.Library.Logging.Log.WriteVerboseMessage(LOGTAG, "rsync",
+                                "Renaming {0} to {1}.{0} by deleting and re-uploading {2} bytes to {3}",
+                                f.Name, prefix,
+                                Duplicati.Library.Utility.Utility.FormatSizeString(downloaded.Length),
+                                sb.DisplayName);
 
                             try
                             {
@@ -614,7 +621,11 @@ destination will be verified before being overwritten (if they seemingly match).
 
                                 if (config.DryRun)
                                 {
-                                    Duplicati.Library.Logging.Log.WriteDryrunMessage(LOGTAG, "rsync", "Would rename {0} to {1}.{0} by deleting and re-uploading {2} bytes to {3}", f.Name, prefix, downloaded.Length, sb.DisplayName);
+                                    Duplicati.Library.Logging.Log.WriteDryrunMessage(LOGTAG, "rsync",
+                                        "Would rename {0} to {1}.{0} by deleting and re-uploading {2} bytes to {3}",
+                                        f.Name, prefix,
+                                        Duplicati.Library.Utility.Utility.FormatSizeString(downloaded.Length),
+                                        sb.DisplayName);
                                 }
                                 else
                                 {
@@ -721,7 +732,11 @@ destination will be verified before being overwritten (if they seemingly match).
                 if (config.Progress)
                     Console.Write($"\rVerifying: {i}/{n}");
 
-                Duplicati.Library.Logging.Log.WriteVerboseMessage(LOGTAG, "rsync", "Verifying {0} by downloading and comparing {1} bytes from {2} and {3}", f.Name, s_src.Length, b_dst.DisplayName, b_src.DisplayName);
+                Duplicati.Library.Logging.Log.WriteVerboseMessage(LOGTAG, "rsync",
+                    "Verifying {0} by downloading and comparing {1} bytes from {2} and {3}",
+                    f.Name,
+                    Duplicati.Library.Utility.Utility.FormatSizeString(s_src.Length),
+                    b_dst.DisplayName, b_src.DisplayName);
 
                 try
                 {
