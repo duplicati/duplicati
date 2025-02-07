@@ -463,9 +463,9 @@ destination will be verified before being overwritten (if they seemingly match).
         /// <param name="aliases">The aliases for the option.</param>
         /// <param name="description">The description for the option.</param>
         /// <returns>The created option.</returns>
-        private static Option<List<string>> OptionWithMultipleTokens(string[] aliases, string description)
+        private static Option<List<string>> OptionWithMultipleTokens(string[] aliases, string description, Func<List<string>> getDefaultValue)
         {
-            return new Option<List<string>>(aliases: aliases, description: description)
+            return new Option<List<string>>(aliases: aliases, description: description, getDefaultValue: getDefaultValue)
             {
                 Arity = ArgumentArity.OneOrMore,
                 AllowMultipleArgumentsPerToken = true
