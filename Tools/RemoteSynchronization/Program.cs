@@ -139,9 +139,8 @@ destination will be verified before being overwritten (if they seemingly match).
         {
             // Unpack and parse the multi token options
             Dictionary<string, string> global_options = config.GlobalOptions
-                ?.Select(x => x.Split("="))
-                .ToDictionary(x => x[0], x => x[1])
-                ?? [];
+                .Select(x => x.Split("="))
+                .ToDictionary(x => x[0], x => x[1]);
 
             // Parse the log level
             var log_level_parsed = Enum.TryParse<Duplicati.Library.Logging.LogMessageType>(config.LogLevel, true, out var log_level_enum);
@@ -166,13 +165,12 @@ destination will be verified before being overwritten (if they seemingly match).
             using var _ = Duplicati.Library.Logging.Log.StartScope(multi_sink, log_level_enum);
 
             Dictionary<string, string> src_opts = config.SrcOptions
-                ?.Select(x => x.Split("="))
-                .ToDictionary(x => x[0], x => x[1])
-                ?? [];
+                .Select(x => x.Split("="))
+                .ToDictionary(x => x[0], x => x[1]);
+
             Dictionary<string, string> dst_opts = config.DstOptions
-                ?.Select(x => x.Split("="))
-                .ToDictionary(x => x[0], x => x[1])
-                ?? [];
+                .Select(x => x.Split("="))
+                .ToDictionary(x => x[0], x => x[1]);
 
             // Merge the global options into the source and destination options
             foreach (var x in global_options)
