@@ -280,7 +280,7 @@ destination will be verified before being overwritten (if they seemingly match).
                     Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "rsync", "Retrying {0} more times to copy the {1} files that failed", config.Retry, copy_errors.Count());
                     for (int i = 0; i < config.Retry; i++)
                     {
-                        Thread.Sleep(5000); // Wait 5 seconds before retrying
+                        await Task.Delay(5000); // Wait 5 seconds before retrying
                         (copied, copy_errors) = await CopyAsync(b1s, b2s, copy_errors, config);
                         Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "rsync", "Copied {0} files from {1} to {2}", copied, b1s, b2s);
                         if (!copy_errors.Any())
