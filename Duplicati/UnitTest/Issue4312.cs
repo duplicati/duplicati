@@ -22,6 +22,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using NUnit.Framework;
 
 namespace Duplicati.UnitTest;
@@ -99,6 +100,9 @@ public class Issue4312 : BasicSetupHelper
 
             // Remove the database
             File.Delete(testopts["dbpath"]);
+
+            // Get a second between the two backups
+            Thread.Sleep(2000);
 
             // Recreate
             var rr = c.Repair();
