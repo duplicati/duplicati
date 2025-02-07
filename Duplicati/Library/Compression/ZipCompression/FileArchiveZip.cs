@@ -231,7 +231,7 @@ namespace Duplicati.Library.Compression.ZipCompression
 
         public void Dispose()
         {
-            if (m_fallbackArchive != null)
+            if (m_fallbackArchive == null)
                 m_archive.Dispose();
             m_fallbackArchive?.Dispose();
         }
