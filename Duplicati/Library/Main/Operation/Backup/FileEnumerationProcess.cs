@@ -81,6 +81,9 @@ namespace Duplicati.Library.Main.Operation.Backup
                     if (includes && !excludes)
                         enumeratefilter = Library.Utility.FilterExpression.Combine(emitfilter, new Duplicati.Library.Utility.FilterExpression("*" + System.IO.Path.DirectorySeparatorChar, true));
 
+                    // Prepare the filter
+                    enumeratefilter = Library.Utility.FilterExpression.CreatePrebuiltFilter(enumeratefilter);
+
                     // Simplify checking for an empty list
                     if (ignorenames != null && ignorenames.Length == 0)
                         ignorenames = null;
@@ -252,8 +255,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                 while (mixinqueue.Count > 0)
                     yield return mixinqueue.Dequeue();
 
-                Library.Utility.IFilter m;
-                if (emitfilter != enumeratefilter && !Library.Utility.FilterExpression.Matches(emitfilter, s, out m))
+                if (emitfilter != enumeratefilter && !Library.Utility.FilterExpression.Matches(emitfilter, s))
                     continue;
 
                 yield return s;
