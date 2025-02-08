@@ -43,7 +43,8 @@ namespace Duplicati.GUI.TrayIcon
         IdleWarning,
         IdleError,
         PausedError,
-        RunningError
+        RunningError,
+        Disconnected
     }
 
     public enum WindowIcons
@@ -64,11 +65,16 @@ namespace Duplicati.GUI.TrayIcon
         void SetDefault(bool isDefault);
         void SetIcon(MenuIcons icon);
         void SetText(string text);
+        void SetEnabled(bool enabled);
+        void SetHidden(bool hidden);
     }
 
     public abstract class TrayIconBase : IDisposable
     {
+        protected IMenuItem m_reconnectMenu;
+        protected IMenuItem m_openMenu;
         protected IMenuItem m_pauseMenu;
+        protected IMenuItem m_quitMenu;
         protected bool m_stateIsPaused;
         protected Action m_onSingleClick;
         protected Action m_onDoubleClick;
@@ -105,7 +111,7 @@ namespace Duplicati.GUI.TrayIcon
 
         protected abstract void SetMenu(IEnumerable<IMenuItem> items);
 
-        protected abstract void NotifyUser(string title, string message, NotificationType type);
+        public abstract void NotifyUser(string title, string message, NotificationType type);
 
         protected virtual void RegisterStatusUpdateCallback()
         {
@@ -149,23 +155,49 @@ namespace Duplicati.GUI.TrayIcon
 
         protected IEnumerable<IMenuItem> BuildMenu()
         {
-            var tmp = CreateMenuItem("Open", MenuIcons.Status, OnStatusClicked, null);
-            tmp.SetDefault(true);
+            m_reconnectMenu = CreateMenuItem("Reconnect", MenuIcons.Resume, Reconnect, null);
+            m_reconnectMenu.SetHidden(true);
+            m_openMenu = CreateMenuItem("Open", MenuIcons.Status, OnStatusClicked, null);
+            m_openMenu.SetDefault(true);
             return new IMenuItem[] {
-                tmp,
+                m_reconnectMenu,
+                m_openMenu,
                 m_pauseMenu = CreateMenuItem("Pause", MenuIcons.Pause, OnPauseClicked, null ),
-                CreateMenuItem("Quit", MenuIcons.Quit, OnQuitClicked, null),
+                m_quitMenu = CreateMenuItem("Quit", MenuIcons.Quit, OnQuitClicked, null),
             };
+        }
+
+        private void Reconnect()
+        {
+            Program.Connection.UpdateStatus().ContinueWith(t =>
+            {
+                if (t.IsFaulted)
+                {
+                    Console.WriteLine("Failed to reconnect: " + t.Exception.Message);
+                    NotifyUser("Failed to reconnect", t.Exception.Message, NotificationType.Error);
+                }
+
+            });
         }
 
         protected void ShowStatusWindow()
         {
-            var window = ShowUrlInWindow(Program.Connection.StatusWindowURL);
-            if (window != null)
+            Program.Connection.GetStatusWindowURLAsync().ContinueWith(t =>
             {
-                window.SetIcon(WindowIcons.Regular);
-                window.SetTitle("Duplicati status");
-            }
+                if (t.IsFaulted)
+                {
+                    Console.WriteLine("Failed to get status window URL: " + t.Exception.Message);
+                    NotifyUser("Failed to get status window URL", t.Exception.Message, NotificationType.Error);
+                    return;
+                }
+
+                var window = ShowUrlInWindow(t.Result);
+                if (window != null)
+                {
+                    window.SetIcon(WindowIcons.Regular);
+                    window.SetTitle("Duplicati status");
+                }
+            });
         }
 
         protected void OnStatusClicked()
@@ -207,6 +239,9 @@ namespace Duplicati.GUI.TrayIcon
                     case SuggestedStatusIcon.Paused:
                         this.SetIcon(TrayIcons.Paused);
                         break;
+                    case SuggestedStatusIcon.Disconnected:
+                        this.SetIcon(TrayIcons.Disconnected);
+                        break;
                     case SuggestedStatusIcon.Ready:
                     default:
                         this.SetIcon(TrayIcons.Idle);
@@ -226,6 +261,10 @@ namespace Duplicati.GUI.TrayIcon
                     m_pauseMenu.SetText("Resume");
                     m_stateIsPaused = true;
                 }
+
+                m_openMenu.SetHidden(status.SuggestedStatusIcon == SuggestedStatusIcon.Disconnected);
+                m_pauseMenu.SetHidden(status.SuggestedStatusIcon == SuggestedStatusIcon.Disconnected);
+                m_reconnectMenu.SetHidden(status.SuggestedStatusIcon != SuggestedStatusIcon.Disconnected);
             });
         }
 

@@ -19,6 +19,8 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -34,15 +36,64 @@ using Avalonia.Themes.Fluent;
 using Avalonia.Threading;
 using Duplicati.Library.AutoUpdater;
 using Duplicati.Library.Logging;
+using DesktopNotifications.Windows;
+using DesktopNotifications.FreeDesktop;
 
 namespace Duplicati.GUI.TrayIcon
 {
+    public static class AppBuilderExtensions
+    {
+        public static AppBuilder SetupDesktopNotifications(this AppBuilder builder, out DesktopNotifications.INotificationManager? manager)
+        {
+            manager = null;
+            try
+            {
+                DesktopNotifications.INotificationManager? realManager = null;
+                if (OperatingSystem.IsWindows())
+                {
+                    var context = WindowsApplicationContext.FromCurrentProcess();
+                    realManager = new WindowsNotificationManager(context);
+                }
+                else if (OperatingSystem.IsLinux())
+                {
+                    var context = FreeDesktopApplicationContext.FromCurrentProcess();
+                    realManager = new FreeDesktopNotificationManager(context);
+                }
+                else
+                {
+                    // MacOS not supported
+                    realManager = null;
+                }
+
+                if (realManager == null)
+                    return builder;
+
+                realManager.Initialize().GetAwaiter().GetResult();
+                builder.AfterSetup(b =>
+                {
+                    if (b.Instance?.ApplicationLifetime is IControlledApplicationLifetime lifetime)
+                    {
+                        lifetime.Exit += (s, e) => { realManager?.Dispose(); };
+                    }
+                });
+
+                manager = realManager;
+            }
+            catch (Exception ex)
+            {
+                Log.WriteErrorMessage(Log.LogTagFromType<AvaloniaRunner>(), "DesktopNotificationInitFailed", ex, "Failed to initialize desktop notifications");
+            }
+            return builder;
+        }
+    }
+
     public class AvaloniaRunner : TrayIconBase
     {
         private static readonly string LOGTAG = Log.LogTagFromType<AvaloniaRunner>();
-        private AvaloniaApp application;
+        private AvaloniaApp? application;
         private ProcessBasedActionDelay actionDelayer = new ProcessBasedActionDelay();
         private IEnumerable<AvaloniaMenuItem> menuItems = Enumerable.Empty<AvaloniaMenuItem>();
+        private DesktopNotifications.INotificationManager? notificationManager;
 
         public override void Init(string[] args)
         {
@@ -94,6 +145,7 @@ namespace Duplicati.GUI.TrayIcon
                 .Configure(() => new AvaloniaApp() { Name = AutoUpdateSettings.AppName })
                 .UsePlatformDetect()
                 .With(new MacOSPlatformOptions() { ShowInDock = false })
+                .SetupDesktopNotifications(out notificationManager)
                 .SetupWithLifetime(lifetime);
 
 #if DEBUG
@@ -106,6 +158,8 @@ namespace Duplicati.GUI.TrayIcon
 #endif
 
             application = builder.Instance as AvaloniaApp;
+            if (application == null)
+                throw new InvalidOperationException("Failed to create Avalonia app");
             application.SetMenu(menuItems);
             application.Configure();
 
@@ -114,7 +168,7 @@ namespace Duplicati.GUI.TrayIcon
 
         private async void CheckForAppInitialized(IClassicDesktopStyleApplicationLifetime lifetime)
         {
-            Exception lastEx = null;
+            Exception? lastEx = null;
 
             // Jump out of the UI thread, ot ensure that the check is done with posting to the UI thread,
             // as opposed to just calling the method directly
@@ -164,8 +218,11 @@ namespace Duplicati.GUI.TrayIcon
             return new AvaloniaMenuItem(this, text, icon, callback, subitems);
         }
 
-        protected override void NotifyUser(string title, string message, NotificationType type)
+        public override void NotifyUser(string title, string message, NotificationType type)
         {
+            if (notificationManager == null)
+                return;
+
             //var icon = Win32NativeNotifyIcon.InfoFlags.NIIF_INFO;
 
             switch (type)
@@ -181,7 +238,12 @@ namespace Duplicati.GUI.TrayIcon
                     break;
             }
 
-            //m_ntfIcon.ShowBalloonTip(title, message, icon);
+            notificationManager.ShowNotification(new DesktopNotifications.Notification()
+            {
+                Title = title,
+                Body = message
+            }, DateTimeOffset.UtcNow.AddSeconds(5));
+
         }
 
         protected override void Exit()
@@ -209,7 +271,7 @@ namespace Duplicati.GUI.TrayIcon
 
         internal static string GetThemePath()
         {
-            var isDark = string.Equals(Application.Current.ActualThemeVariant.ToString(), "Dark", StringComparison.OrdinalIgnoreCase);
+            var isDark = string.Equals(Application.Current?.ActualThemeVariant.ToString(), "Dark", StringComparison.OrdinalIgnoreCase);
 
             if (OperatingSystem.IsMacOS())
                 return isDark ? "macos/dark" : "macos/light";
@@ -237,11 +299,12 @@ namespace Duplicati.GUI.TrayIcon
 
         public string Text { get; private set; }
         public Action Callback { get; private set; }
-        public IList<IMenuItem> SubItems { get; private set; }
+        public IList<IMenuItem>? SubItems { get; private set; }
         public bool Enabled { get; private set; }
         public MenuIcons Icon { get; private set; }
         public bool IsDefault { get; private set; }
-        private NativeMenuItem nativeMenuItem;
+        public bool Hidden { get; private set; }
+        private NativeMenuItem? nativeMenuItem;
         private readonly AvaloniaRunner parent;
 
         public AvaloniaMenuItem(AvaloniaRunner parent, string text, MenuIcons icon, Action callback, IList<IMenuItem> subitems)
@@ -278,6 +341,9 @@ namespace Duplicati.GUI.TrayIcon
         /// </summary>
         private void UpdateIcon()
         {
+            if (nativeMenuItem == null)
+                return;
+
             nativeMenuItem.Icon = this.Icon switch
             {
                 MenuIcons.Status => AvaloniaRunner.LoadBitmap("context-menu-open.png"),
@@ -300,6 +366,14 @@ namespace Duplicati.GUI.TrayIcon
             this.IsDefault = value;
             // Not currently supported by Avalonia, 
             // used to set the menu bold on Windows to indicate the default entry
+        }
+
+        public void SetHidden(bool hidden)
+        {
+            this.Hidden = hidden;
+            if (nativeMenuItem != null)
+                parent.RunOnUIThread(() => nativeMenuItem.IsVisible = !this.Hidden);
+
         }
         #endregion
 
@@ -324,9 +398,9 @@ namespace Duplicati.GUI.TrayIcon
 
     public class AvaloniaApp : Application
     {
-        private Avalonia.Controls.TrayIcon trayIcon;
+        private Avalonia.Controls.TrayIcon? trayIcon;
 
-        private List<AvaloniaMenuItem> menuItems;
+        private List<AvaloniaMenuItem>? menuItems;
 
         public override void Initialize()
         {
@@ -355,13 +429,17 @@ namespace Duplicati.GUI.TrayIcon
                 default:
                     this.trayIcon.Icon = AvaloniaRunner.LoadIcon("normal.png");
                     break;
+                case TrayIcons.Disconnected:
+                    this.trayIcon.Icon = AvaloniaRunner.LoadIcon("normal-disconnected.png");
+                    break;
             }
         }
 
         public void Configure()
         {
             this.Name = Duplicati.Library.AutoUpdater.AutoUpdateSettings.AppName;
-            this.trayIcon.ToolTipText = this.Name;
+            if (this.trayIcon != null)
+                this.trayIcon.ToolTipText = this.Name;
         }
 
         public void SetMenu(IEnumerable<AvaloniaMenuItem> menuItems)
@@ -413,10 +491,10 @@ namespace Duplicati.GUI.TrayIcon
         public bool IsEnabled(LogEventLevel level, string area)
             => level >= _minLevel;
 
-        public void Log(LogEventLevel level, string area, object source, string messageTemplate)
-            => Log(level, area, source, messageTemplate, null);
+        public void Log(LogEventLevel level, string area, object? source, string messageTemplate)
+            => Log(level, area, source, messageTemplate, []);
 
-        public void Log(LogEventLevel level, string area, object source, string messageTemplate, params object[] propertyValues)
+        public void Log(LogEventLevel level, string area, object? source, string messageTemplate, params object?[] propertyValues)
             => Console.WriteLine($"Avalonia [{level}]: {source} {messageTemplate} {string.Join(" ", propertyValues)}");
     }
 

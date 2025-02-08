@@ -265,7 +265,7 @@ namespace Duplicati.Server
                     DataConnection.LogError(null, "Error in updater", obj);
                 };
 
-                DuplicatiWebserver = StartWebServer(commandlineOptions, DataConnection).ConfigureAwait(false).GetAwaiter().GetResult();
+                DuplicatiWebserver = StartWebServer(commandlineOptions, DataConnection).Await();
 
                 UpdatePoller.Init(Library.Utility.Utility.ParseBoolOption(commandlineOptions, DISABLE_UPDATE_CHECK_OPTION));
 
