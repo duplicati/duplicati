@@ -41,6 +41,7 @@ Error message: {0}", message); }
                 public static string SkippingSourceArgumentsOnNonBackupOperation { get { return @"The --source argument was specified in the parameter file, but the current operation is not a backup operation, so the argument is ignored"; } }
                 public static string LogfileCommandDescription { get { return LC.L(@"Output log information to the file given"); } }
                 public static string LoglevelCommandDescription { get { return LC.L(@"Determine the amount of information written in the log file"); } }
+                public static string LogConsoleDescription { get { return LC.L(@"Output log information to the console"); } }
                 public static string PortablemodeCommandDescription { get { return LC.L(@"Activate portable mode where the database is placed below the program executable"); } }
                 public static string SeriousError(string message) { return LC.L(@"A serious error occurred in Duplicati: {0}", message); }
                 public static string TearDownError(string message) { return LC.L(@"An error occurred on server tear down: {0}", message); }
