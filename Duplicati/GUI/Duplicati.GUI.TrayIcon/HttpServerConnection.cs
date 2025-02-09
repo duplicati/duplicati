@@ -345,9 +345,16 @@ namespace Duplicati.GUI.TrayIcon
 
         private async Task ObtainAccessTokenAsync()
         {
+            if (!string.IsNullOrWhiteSpace(m_password))
+            {
+                m_accesstoken = (await PerformRequestInternalAsync<SigninResponse>("POST", "/auth/login", JsonSerializer.Serialize(new { Password = m_password }), null).ConfigureAwait(false)).AccessToken;
+                return;
+            }
+
             var token = await ObtainSignInTokenAsync().ConfigureAwait(false);
             if (string.IsNullOrWhiteSpace(token))
                 return;
+
             m_accesstoken = (await PerformRequestInternalAsync<SigninResponse>("POST", "/auth/signin", JsonSerializer.Serialize(new { SigninToken = token }), null).ConfigureAwait(false)).AccessToken;
         }
 
@@ -411,12 +418,20 @@ namespace Duplicati.GUI.TrayIcon
 
             // If we host the server, issue the token from the service
             if (FIXMEGlobal.IsServerStarted && m_passwordSource == Program.PasswordSource.HostedServer)
+            {
+                if (FIXMEGlobal.DataConnection.ApplicationSettings.DisableSigninTokens)
+                    return null;
+
                 signinjwt = FIXMEGlobal.Provider.GetRequiredService<IJWTTokenProvider>().CreateSigninToken("trayicon");
+            }
 
             // If we have database access, grab the issuer key from the db and issue a token
             if (string.IsNullOrWhiteSpace(signinjwt) && m_passwordSource == Program.PasswordSource.Database)
             {
                 Program.databaseConnection.ApplicationSettings.ReloadSettings();
+                if (Program.databaseConnection.ApplicationSettings.DisableSigninTokens)
+                    return null;
+
                 var cfg = Program.databaseConnection.ApplicationSettings.JWTConfig;
                 if (!string.IsNullOrWhiteSpace(cfg))
                     signinjwt = new JWTTokenProvider(JsonSerializer.Deserialize<JWTConfig>(cfg)).CreateSigninToken("trayicon");
@@ -431,7 +446,18 @@ namespace Duplicati.GUI.TrayIcon
 
         public async Task<string> GetStatusWindowURLAsync()
         {
-            var signinjwt = m_disableTrayIconLogin ? null : await ObtainSignInTokenAsync().ConfigureAwait(false);
+            string signinjwt = null;
+            if (!m_disableTrayIconLogin)
+            {
+                try
+                {
+                    signinjwt = await ObtainSignInTokenAsync().ConfigureAwait(false);
+                }
+                catch
+                {
+                }
+            }
+
             return string.IsNullOrWhiteSpace(signinjwt)
                 ? m_baseUri + STATUS_WINDOW
                 : m_baseUri + SIGNIN_WINDOW + $"?token={signinjwt}";
