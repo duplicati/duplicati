@@ -311,6 +311,21 @@ namespace Duplicati.Server
                     ApplicationExitEvent.Set();
                 });
 
+                var stopCounter = 0;
+                Console.CancelKeyPress += (sender, e) =>
+                {
+                    if (Interlocked.Increment(ref stopCounter) <= 1)
+                    {
+                        Log.WriteInformationMessage(LOGTAG, "CancelKeyPressed", "Cancel key pressed, stopping server");
+                        Task.Run(() => DuplicatiWebserver?.Stop());
+                    }
+                    else
+                    {
+                        Log.WriteWarningMessage(LOGTAG, "CancelKeyPressed", null, "Cancel key pressed twice, terminating now");
+                        Environment.Exit(0);
+                    }
+                };
+
                 ServerStartedEvent.Set();
                 ApplicationExitEvent.WaitOne();
             }
