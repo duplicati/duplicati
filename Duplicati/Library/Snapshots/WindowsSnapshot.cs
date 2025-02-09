@@ -26,6 +26,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.Versioning;
 using Duplicati.Library.Common.IO;
+using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.Snapshots
 {
@@ -54,7 +55,9 @@ namespace Duplicati.Library.Snapshots
         /// </summary>
         /// <param name="sources">Sources to determine which volumes to include in snapshot</param>
         /// <param name="options">A set of commandline options</param>
-        public WindowsSnapshot(IEnumerable<string> sources, IDictionary<string, string> options)
+        /// <param name="followSymlinks">A flag indicating if symlinks should be followed</param>
+        public WindowsSnapshot(IEnumerable<string> sources, IDictionary<string, string> options, bool followSymlinks)
+            : base(followSymlinks)
         {
             // For Windows, ensure we don't store paths with extended device path prefixes (i.e., @"\\?\" or @"\\?\UNC\")
             sources = sources.Select(SystemIOWindows.RemoveExtendedDevicePathPrefix);
@@ -100,6 +103,26 @@ namespace Duplicati.Library.Snapshots
                 }
 
                 throw;
+            }
+        }
+
+        /// <summary>
+        /// Gets the source folders
+        /// </summary>
+        public override IEnumerable<string> SourceFolders => _vssBackupComponents.SnapshotLocalPaths;
+
+        /// <summary>
+        /// Enumerates the root source files and folders
+        /// </summary>
+        /// <returns>The source files and folders</returns>
+        public override IEnumerable<ISourceFileEntry> EnumerateFilesystemEntries()
+        {
+            foreach (var folder in _vssBackupComponents.SnapshotLocalPaths)
+            {
+                if (folder.EndsWith(Path.DirectorySeparatorChar) || DirectoryExists(folder))
+                    yield return new SnapshotSourceFileEntry(this, folder, true, true);
+                else
+                    yield return new SnapshotSourceFileEntry(this, folder, false, true);
             }
         }
 
@@ -157,18 +180,6 @@ namespace Duplicati.Library.Snapshots
         #endregion
 
         #region ISnapshotService Members
-
-        /// <summary>
-        /// Enumerates all files and folders in the snapshot, restricted to sources
-        /// </summary>
-        /// <param name="sources">Sources to enumerate</param>
-        /// <param name="callback">The callback to invoke with each found path</param>
-        /// <param name="errorCallback">The callback used to report errors</param>
-        public override IEnumerable<string> EnumerateFilesAndFolders(IEnumerable<string> sources, Utility.Utility.EnumerationFilterDelegate callback, Utility.Utility.ReportAccessError errorCallback)
-        {
-            // For Windows, ensure we don't store paths with extended device path prefixes (i.e., @"\\?\" or @"\\?\UNC\")
-            return base.EnumerateFilesAndFolders(sources.Select(SystemIOWindows.RemoveExtendedDevicePathPrefix), callback, errorCallback);
-        }
 
         /// <summary>
         /// Gets the last write time of a given file in UTC
@@ -241,23 +252,16 @@ namespace Duplicati.Library.Snapshots
         /// <returns>The metadata for the given file or folder</returns>
         /// <param name="localPath">The file or folder to examine</param>
         /// <param name="isSymlink">A flag indicating if the target is a symlink</param>
-        /// <param name="followSymlink">A flag indicating if a symlink should be followed</param>
-        public override Dictionary<string, string> GetMetadata(string localPath, bool isSymlink, bool followSymlink)
+        public override Dictionary<string, string> GetMetadata(string localPath, bool isSymlink)
         {
-            return SystemIO.IO_WIN.GetMetadata(ConvertToSnapshotPath(localPath), isSymlink, followSymlink);
+            return SystemIO.IO_WIN.GetMetadata(ConvertToSnapshotPath(localPath), isSymlink, FollowSymlinks);
         }
 
         /// <inheritdoc />
-        public override bool IsBlockDevice(string localPath)
-        {
-            return false;
-        }
+        public override bool IsBlockDevice(string localPath) => false;
 
         /// <inheritdoc />
-        public override string HardlinkTargetID(string localPath)
-        {
-            return null;
-        }
+        public override string HardlinkTargetID(string localPath) => null;
 
         /// <inheritdoc />
         public override string ConvertToLocalPath(string snapshotPath)
@@ -311,9 +315,6 @@ namespace Duplicati.Library.Snapshots
         {
             return SystemIO.IO_WIN.DirectoryExists(ConvertToSnapshotPath(localFolderPath));
         }
-
-        /// <inheritdoc />
-        public override bool IsSnapshot => true;
 
         #endregion
 

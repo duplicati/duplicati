@@ -21,9 +21,12 @@
 
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Snapshots;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using System.Threading;
@@ -33,7 +36,7 @@ namespace Duplicati.Library.Backend
 {
     // ReSharper disable once UnusedMember.Global
     // This class is instantiated dynamically in the BackendLoader.
-    public class File : IBackend, IStreamingBackend, IQuotaEnabledBackend, IRenameEnabledBackend
+    public class File : IBackend, IStreamingBackend, IQuotaEnabledBackend, IRenameEnabledBackend, IFolderEnabledBackend
     {
         private const string OPTION_DESTINATION_MARKER = "alternate-destination-marker";
         private const string OPTION_ALTERNATE_PATHS = "alternate-target-paths";
@@ -452,16 +455,107 @@ namespace Duplicati.Library.Backend
                 long? sourceStreamLength = sourceStream == null ? null : Utility.Utility.GetStreamLength(sourceStream, out isStreamPostion);
 
                 if (sourceStreamLength.HasValue && targetFileInfo.Length != sourceStreamLength.Value)
-                    throw new FileMissingException($"Target file size ({targetFileInfo.Length:n0}) is different from the source length ({sourceStreamLength.Value:n0}){(isStreamPostion ? " - ending stream position)" : "")}. Target: {targetFilePath}");
+                    throw new FileMissingException($"Target file size ({targetFileInfo.Length:n0}) is different from the source length ({sourceStreamLength.Value:n0}){(isStreamPostion ? " - ending stream position" : "")}. Target: {targetFilePath}");
 
                 if (expectedLength.HasValue && targetFileInfo.Length != expectedLength.Value)
                     throw new FileMissingException($"Target file size ({targetFileInfo.Length:n0}) is different from the expected length ({expectedLength.Value:n0}). Target: {targetFilePath}");
             }
             catch
             {
-                try { System.IO.File.Delete(targetFilePath); } catch { }
+                try { System.IO.File.Delete(targetFilePath); }
+                catch { }
                 throw;
             }
+        }
+
+        /// <inheritdoc/>
+        public async IAsyncEnumerable<ISourceFileEntry> ListAsync(string path, [EnumeratorCancellation] CancellationToken cancellationToken)
+        {
+            PreAuthenticate();
+
+            var remotePath = string.IsNullOrWhiteSpace(path) ? m_path : GetRemoteName(path);
+
+            if (!systemIO.DirectoryExists(remotePath))
+                throw new FolderMissingException(Strings.FileBackend.FolderMissingError(m_path));
+
+            var service = SnapshotUtility.CreateNoSnapshot([remotePath], false, false);
+
+            await foreach (var folderEntry in systemIO.EnumerateDirectories(remotePath).ToAsyncEnumerable().WithCancellation(cancellationToken).ConfigureAwait(false))
+                yield return new SourceFileEntry(service, folderEntry, true);
+
+            await foreach (var fileEntry in systemIO.EnumerateFiles(remotePath).ToAsyncEnumerable().WithCancellation(cancellationToken).ConfigureAwait(false))
+                yield return new SourceFileEntry(service, fileEntry, false);
+        }
+
+        /// <inheritdoc/>
+        public Task<ISourceFileEntry> GetEntryAsync(string path, CancellationToken cancellationToken)
+        {
+            var service = SnapshotUtility.CreateNoSnapshot([path], false, false);
+            var isFolder = service.DirectoryExists(path);
+            return Task.FromResult<ISourceFileEntry>(new SourceFileEntry(service, path, isFolder));
+        }
+
+        private class SourceFileEntry(ISnapshotService service, string path, bool isFolder) : ISourceFileEntry
+        {
+            /// <inheritdoc/>
+            public bool IsFolder => isFolder;
+
+            /// <inheritdoc/>
+            public bool IsMetaEntry => false;
+            /// <inheritdoc/>
+            public bool IsRootEntry => false;
+
+            /// <inheritdoc/>
+            public DateTime CreatedUtc => service.GetCreationTimeUtc(path);
+
+            /// <inheritdoc/>
+            public DateTime LastModificationUtc => service.GetLastWriteTimeUtc(path);
+
+            /// <inheritdoc/>
+            public string Path => path;
+
+            /// <inheritdoc/>
+            public long Size => isFolder ? -1 : service.GetFileSize(path);
+
+            /// <inheritdoc/>
+            public bool IsSymlink => service.IsSymlink(path, Attributes);
+
+            /// <inheritdoc/>
+            public string SymlinkTarget => service.GetSymlinkTarget(path);
+
+            /// <inheritdoc/>
+            public FileAttributes Attributes => service.GetAttributes(path);
+
+            /// <inheritdoc/>
+            public Dictionary<string, string> MinorMetadata => service.GetMetadata(path, IsSymlink);
+
+            /// <inheritdoc/>
+            public bool IsBlockDevice => service.IsBlockDevice(path);
+
+            /// <inheritdoc/>
+            public bool IsCharacterDevice => false;
+
+            /// <inheritdoc/>
+            public bool IsAlternateStream => false;
+
+            /// <inheritdoc/>
+            public string HardlinkTargetId => service.HardlinkTargetID(path);
+
+            /// <inheritdoc/>
+            public IAsyncEnumerable<ISourceFileEntry> Enumerate(CancellationToken cancellationToken)
+                => service.EnumerateFilesystemEntries(this).ToAsyncEnumerable();
+
+            /// <inheritdoc/>
+            public Task<bool> FileExists(string filename, CancellationToken cancellationToken)
+                => Task.FromResult(service.FileExists(systemIO.PathCombine(Path, filename)));
+
+            /// <inheritdoc/>
+            public Task<Stream> OpenMetadataRead(CancellationToken cancellationToken)
+                => Task.FromResult<Stream>(new MemoryStream(System.Text.Json.JsonSerializer.SerializeToUtf8Bytes(MinorMetadata)));
+
+            /// <inheritdoc/>
+            public Task<Stream> OpenRead(CancellationToken cancellationToken)
+                => service.OpenReadAsync(path, cancellationToken);
         }
     }
 }

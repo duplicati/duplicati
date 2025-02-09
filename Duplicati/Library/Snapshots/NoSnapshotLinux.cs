@@ -25,6 +25,7 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using Duplicati.Library.Common.IO;
+using Duplicati.Library.Interface;
 using Microsoft.Win32.SafeHandles;
 
 namespace Duplicati.Library.Snapshots
@@ -66,14 +67,42 @@ namespace Duplicati.Library.Snapshots
         private readonly bool m_ignoreAdvisoryLocks;
 
         /// <summary>
+        /// The list of folders to create snapshots of
+        /// </summary>
+        private readonly IEnumerable<string> m_folders;
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="NoSnapshotLinux"/> class.
         /// </summary>
+        /// <param name="folders">The list of folders to create snapshots of</param>
         /// <param name="ignoreAdvisoryLocks">A flag indicating if advisory locks should be ignored</param>
-        public NoSnapshotLinux(bool ignoreAdvisoryLocks)
+        /// <param name="followSymlinks">A flag indicating if symlinks should be followed</param>
+        public NoSnapshotLinux(IEnumerable<string> folders, bool ignoreAdvisoryLocks, bool followSymlinks)
+            : base(followSymlinks)
         {
+            m_folders = folders;
             m_ignoreAdvisoryLocks = ignoreAdvisoryLocks;
         }
 
+        /// <summary>
+        /// Gets the source folders
+        /// </summary>
+        public override IEnumerable<string> SourceFolders => m_folders;
+
+        /// <summary>
+        /// Enumerates the root source files and folders
+        /// </summary>
+        /// <returns>The source files and folders</returns>
+        public override IEnumerable<ISourceFileEntry> EnumerateFilesystemEntries()
+        {
+            foreach (var folder in m_folders)
+            {
+                if (DirectoryExists(folder) || folder.EndsWith(Path.DirectorySeparatorChar))
+                    yield return new SnapshotSourceFileEntry(this, folder, true, true);
+                else
+                    yield return new SnapshotSourceFileEntry(this, folder, false, true);
+            }
+        }
 
         /// <summary>
         /// Returns the symlink target if the entry is a symlink, and null otherwise
@@ -91,10 +120,9 @@ namespace Duplicati.Library.Snapshots
         /// <returns>The metadata for the given file or folder</returns>
         /// <param name="localPath">The file or folder to examine</param>
         /// <param name="isSymlink">A flag indicating if the target is a symlink</param>
-        /// <param name="followSymlink">A flag indicating if a symlink should be followed</param>
-        public override Dictionary<string, string> GetMetadata(string localPath, bool isSymlink, bool followSymlink)
+        public override Dictionary<string, string> GetMetadata(string localPath, bool isSymlink)
         {
-            return SystemIO.IO_SYS.GetMetadata(localPath, isSymlink, followSymlink);
+            return SystemIO.IO_SYS.GetMetadata(localPath, isSymlink, FollowSymlinks);
         }
 
         /// <summary>

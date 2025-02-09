@@ -147,6 +147,8 @@ namespace Duplicati.Library.Common.IO
             }
         }
 
+        public IEnumerable<string> SnapshotLocalPaths => _volumeMap.Keys;
+
         private List<string> GetPathsFromComponent(IVssWMComponent component)
         {
             var paths = new List<string>();

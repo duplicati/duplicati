@@ -17,6 +17,7 @@
     <ProjectReference Include="..\Modules\Builtin\Duplicati.Library.Modules.Builtin.csproj" />
     <ProjectReference Include="..\AutoUpdater\Duplicati.Library.AutoUpdater.csproj" />
     <ProjectReference Include="..\SecretProvider\Duplicati.Library.SecretProvider.csproj" />
+    <ProjectReference Include="..\SourceProviders\Duplicati.Library.SourceProviders.csproj" />
   </ItemGroup>
 
   <ItemGroup>

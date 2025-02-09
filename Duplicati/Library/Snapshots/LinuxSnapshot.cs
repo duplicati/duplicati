@@ -23,9 +23,11 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Runtime.Versioning;
 using System.Text;
 using Duplicati.Library.Common.IO;
+using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.Snapshots
 {
@@ -40,7 +42,7 @@ namespace Duplicati.Library.Snapshots
     [SupportedOSPlatform("macOS")]
     public sealed class LinuxSnapshot : SnapshotBase
     {
-		/// <summary>
+        /// <summary>
         /// The tag used for logging messages
         /// </summary>
         public static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(WindowsSnapshot));
@@ -59,7 +61,9 @@ namespace Duplicati.Library.Snapshots
         /// Constructs a new snapshot module using LVM
         /// </summary>
         /// <param name="sources">The list of folders to create snapshots for</param>
-        public LinuxSnapshot(IEnumerable<string> sources)
+        /// <param name="followSymlinks">A flag indicating if symlinks should be followed</param>
+        public LinuxSnapshot(IEnumerable<string> sources, bool followSymlinks)
+            : base(followSymlinks)
         {
             try
             {
@@ -79,7 +83,7 @@ namespace Duplicati.Library.Snapshots
                     m_entries.Add(new KeyValuePair<string, SnapShot>(path, snap));
                 }
 
-                m_snapShots = new List<SnapShot>(snaps.Values);
+                m_snapShots = [.. snaps.Values];
 
                 // We have all the snapshots that we need, lets activate them
                 foreach (var snap in m_snapShots)
@@ -94,12 +98,41 @@ namespace Duplicati.Library.Snapshots
                 {
                     Dispose();
                 }
-				catch (Exception ex)
+                catch (Exception ex)
                 {
-					Logging.Log.WriteVerboseMessage(LOGTAG, "SnapshotCleanupError", ex, "Failed to clean up after error");
+                    Logging.Log.WriteVerboseMessage(LOGTAG, "SnapshotCleanupError", ex, "Failed to clean up after error");
                 }
 
                 throw;
+            }
+        }
+
+        /// <summary>
+        /// Gets the source folders
+        /// </summary>
+        public override IEnumerable<string> SourceFolders => m_snapShots.Select(e => e.LocalPath);
+
+        /// <summary>
+        /// Gets a filesystem entry for a given path
+        /// </summary>
+        /// <param name="path">The path to get the entry for</param>
+        /// <param name="isFolder">A flag indicating if the path is a folder</param>
+        /// <returns>The filesystem entry</returns>
+        public override ISourceFileEntry GetFilesystemEntry(string path, bool isFolder)
+            => new SnapshotSourceFileEntry(this, path, isFolder, false);
+
+        /// <summary>
+        /// Enumerates the root source files and folders
+        /// </summary>
+        /// <returns>The source files and folders</returns>
+        public override IEnumerable<ISourceFileEntry> EnumerateFilesystemEntries()
+        {
+            foreach (var snap in m_snapShots)
+            {
+                if (DirectoryExists(snap.LocalPath) || snap.LocalPath.EndsWith(System.IO.Path.DirectorySeparatorChar))
+                    yield return new SnapshotSourceFileEntry(this, snap.LocalPath, true, true);
+                else
+                    yield return new SnapshotSourceFileEntry(this, snap.LocalPath, false, true);
             }
         }
 
@@ -111,10 +144,10 @@ namespace Duplicati.Library.Snapshots
                 if (disposing)
                 {
                     // Attempt to clean out as many as possible
-                    foreach(var s in m_snapShots)
+                    foreach (var s in m_snapShots)
                     {
                         try { s.Dispose(); }
-						catch (Exception ex) { Logging.Log.WriteVerboseMessage(LOGTAG, "SnapshotCloseError", ex, "Failed to close a snapshot"); }
+                        catch (Exception ex) { Logging.Log.WriteVerboseMessage(LOGTAG, "SnapshotCloseError", ex, "Failed to close a snapshot"); }
                     }
                 }
 
@@ -475,10 +508,9 @@ namespace Duplicati.Library.Snapshots
         /// <returns>The metadata for the given file or folder</returns>
         /// <param name="localPath">The file or folder to examine</param>
         /// <param name="isSymlink">A flag indicating if the target is a symlink</param>
-        /// <param name="followSymlink">A flag indicating if a symlink should be followed</param>
-        public override Dictionary<string, string> GetMetadata(string localPath, bool isSymlink, bool followSymlink)
+        public override Dictionary<string, string> GetMetadata(string localPath, bool isSymlink)
         {
-            return SystemIO.IO_SYS.GetMetadata(ConvertToSnapshotPath(localPath), isSymlink, followSymlink);
+            return SystemIO.IO_SYS.GetMetadata(ConvertToSnapshotPath(localPath), isSymlink, FollowSymlinks);
         }
 
         /// <summary>
@@ -500,8 +532,8 @@ namespace Duplicati.Library.Snapshots
                     default:
                         return true;
                 }
-            } 
-            catch 
+            }
+            catch
             {
                 if (!System.IO.File.Exists(SystemIOLinux.NormalizePath(localPath)))
                     return false;
@@ -509,7 +541,7 @@ namespace Duplicati.Library.Snapshots
                 throw;
             }
         }
-        
+
         /// <summary>
         /// Gets a unique hardlink target ID
         /// </summary>
@@ -518,10 +550,10 @@ namespace Duplicati.Library.Snapshots
         public override string HardlinkTargetID(string localPath)
         {
             var snapshotPath = ConvertToSnapshotPath(localPath);
-            
+
             if (PosixFile.GetHardlinkCount(snapshotPath) <= 1)
                 return null;
-            
+
             return PosixFile.GetInodeTargetID(snapshotPath);
         }
 
@@ -536,9 +568,6 @@ namespace Duplicati.Library.Snapshots
         {
             return FindSnapshotByLocalPath(localPath).ConvertToSnapshotPath(localPath);
         }
-
-        /// <inheritdoc />
-        public override bool IsSnapshot => true;
 
         #endregion
     }

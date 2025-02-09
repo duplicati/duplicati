@@ -396,7 +396,7 @@ namespace Duplicati.Library.Backend
             {
                 if (!filename.StartsWith(KEYFILE_URI, StringComparison.OrdinalIgnoreCase))
                 {
-                    return String.IsNullOrEmpty(password)
+                    return string.IsNullOrEmpty(password)
                         ? new PrivateKeyFile(filename)
                         : new PrivateKeyFile(filename, password);
                 }
@@ -409,7 +409,7 @@ namespace Duplicati.Library.Backend
 
                     ms.Position = 0;
 
-                    return String.IsNullOrEmpty(password) ? new PrivateKeyFile(ms) : new PrivateKeyFile(ms, password);
+                    return string.IsNullOrEmpty(password) ? new PrivateKeyFile(ms) : new PrivateKeyFile(ms, password);
                 }
             }
             catch (Exception ex)

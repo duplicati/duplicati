@@ -20,10 +20,11 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System;
-using System.Linq;
 using System.Collections.Generic;
 using System.IO;
-using Duplicati.Library.Common.IO;
+using Duplicati.Library.Interface;
+using System.Threading.Tasks;
+using System.Threading;
 
 namespace Duplicati.Library.Snapshots
 {
@@ -40,19 +41,56 @@ namespace Duplicati.Library.Snapshots
             Dispose(false);
         }
 
-        #region ISnapshotService
-    
         /// <summary>
-        /// Enumerates all files and folders in the shadow copy
+        /// Initializes a new instance of the <see cref="SnapshotBase"/> class.
         /// </summary>
-        /// <param name="sources">Source paths to enumerate</param>
-        /// <param name="callback">The callback to invoke with each found path</param>
-        /// <param name="errorCallback">The callback used to report errors</param>
-        public virtual IEnumerable<string> EnumerateFilesAndFolders(IEnumerable<string> sources, Utility.Utility.EnumerationFilterDelegate callback, Utility.Utility.ReportAccessError errorCallback)
+        /// <param name="followSymlinks">A flag indicating if symlinks should be followed</param>
+        protected SnapshotBase(bool followSymlinks)
         {
-            return sources.SelectMany(s => Utility.Utility.EnumerateFileSystemEntries(s, callback, ListFolders, ListFiles, GetAttributes, errorCallback));
+            FollowSymlinks = followSymlinks;
         }
-        
+
+        #region ISnapshotService
+
+        protected bool FollowSymlinks { get; }
+
+        /// <summary>
+        /// Gets the source folders
+        /// </summary>
+        public abstract IEnumerable<string> SourceFolders { get; }
+
+        /// <summary>
+        /// Enuemrates the root source files and folders
+        /// </summary>
+        /// <returns>The source files and folders</returns>
+        public abstract IEnumerable<ISourceFileEntry> EnumerateFilesystemEntries();
+
+        /// <summary>
+        /// Gets a filesystem entry for a given path
+        /// </summary>
+        /// <param name="path">The path to get the entry for</param>
+        /// <param name="isFolder">A flag indicating if the path is a folder</param>
+        /// <returns>The filesystem entry</returns>
+        public virtual ISourceFileEntry GetFilesystemEntry(string path, bool isFolder)
+            => new SnapshotSourceFileEntry(this, path, isFolder, false);
+
+        /// <summary>
+        /// Enumerates files and folders in the given folder
+        /// </summary>
+        /// <param name="source">Source to enumerate</param>
+        /// <returns>The files and folders in the given folder</returns>
+        public virtual IEnumerable<ISourceFileEntry> EnumerateFilesystemEntries(ISourceFileEntry source)
+        {
+            if (source.IsFolder)
+            {
+                foreach (var f in ListFiles(source.Path))
+                    yield return new SnapshotSourceFileEntry(this, f, false, false);
+
+                foreach (var d in ListFolders(source.Path))
+                    yield return new SnapshotSourceFileEntry(this, d, true, false);
+            }
+        }
+
         /// <summary>
         /// Gets the last write time of a given file in UTC
         /// </summary>
@@ -72,7 +110,7 @@ namespace Duplicati.Library.Snapshots
         {
             return File.GetCreationTimeUtc(localPath);
         }
-       
+
         /// <summary>
         /// Opens a file for reading
         /// </summary>
@@ -82,6 +120,15 @@ namespace Duplicati.Library.Snapshots
         {
             return File.Open(localPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
         }
+
+        /// <summary>
+        /// Opens a file for reading
+        /// </summary>
+        /// <param name="localPath">The full path to the file in non-snapshot format</param>
+        /// <param name="cancellationToken">A token that can be used to cancel the operation</param>
+        /// <returns>An open filestream that can be read</returns>
+        public virtual Task<Stream> OpenReadAsync(string localPath, CancellationToken cancellationToken)
+            => Task.FromResult(OpenRead(localPath));
 
         /// <summary>
         /// Returns the size of a file
@@ -116,9 +163,8 @@ namespace Duplicati.Library.Snapshots
         /// <returns>The metadata for the given file or folder</returns>
         /// <param name="localPath">The file or folder to examine</param>
         /// <param name="isSymlink">A flag indicating if the target is a symlink</param>
-        /// <param name="followSymlink">A flag indicating if a symlink should be followed</param>
-        public abstract Dictionary<string, string> GetMetadata(string localPath, bool isSymlink, bool followSymlink);
-        
+        public abstract Dictionary<string, string> GetMetadata(string localPath, bool isSymlink);
+
         /// <summary>
         /// Gets a value indicating if the path points to a block device
         /// </summary>
@@ -128,7 +174,7 @@ namespace Duplicati.Library.Snapshots
         {
             return false;
         }
-        
+
         /// <summary>
         /// Gets a unique hardlink target ID
         /// </summary>
@@ -156,15 +202,6 @@ namespace Duplicati.Library.Snapshots
         {
             return Directory.Exists(ConvertToSnapshotPath(localFolderPath));
         }
-
-        /// <inheritdoc />
-        public virtual bool PathExists(string localFileOrFolderPath)
-        {
-            return FileExists(localFileOrFolderPath) || DirectoryExists(localFileOrFolderPath);
-        }
-
-        /// <inheritdoc />
-        public virtual bool IsSnapshot => false;
 
         #endregion
 
@@ -198,7 +235,7 @@ namespace Duplicati.Library.Snapshots
 
             // Now suppress finalization for this object, since we've already handled our resource cleanup tasks
             GC.SuppressFinalize(this);
-        }        
+        }
 
         #endregion
 
