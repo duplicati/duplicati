@@ -123,16 +123,14 @@ partial class BackendManager
                 {
                     // extended to use stacked streams
                     using (var fs = System.IO.File.OpenWrite(dlTarget))
-                    using (var act = new StreamUtil.TimeoutObservingStream(fs) { WriteTimeout = backend is ITimeoutExemptBackend ? Timeout.Infinite : Context.Options.ReadWriteTimeout })
                     using (var hasher = HashFactory.CreateHasher(Context.Options.FileHashAlgorithm))
-                    using (var hs = new HashCalculatingStream(act, hasher))
+                    using (var hs = new HashCalculatingStream(fs, hasher))
                     using (var ss = new ShaderStream(hs, true))
-                    using (var linkedToken = CancellationTokenSource.CreateLinkedTokenSource(cancelToken, act.TimeoutToken))
                     {
                         using (var ts = new ThrottledStream(ss, 0, Context.Options.MaxDownloadPrSecond))
                         using (var pgs = new ProgressReportingStream(ts, pg => Context.HandleProgress(ts, pg, RemoteFilename)))
                         {
-                            await streamingBackend.GetAsync(RemoteFilename, pgs, linkedToken.Token).ConfigureAwait(false);
+                            await streamingBackend.GetAsync(RemoteFilename, pgs, cancelToken).ConfigureAwait(false);
                         }
                         ss.Flush();
                         retDownloadSize = ss.TotalBytesWritten;

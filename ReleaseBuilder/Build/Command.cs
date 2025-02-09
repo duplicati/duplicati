@@ -299,6 +299,12 @@ public static partial class Command
             getDefaultValue: () => false
         );
 
+        var propagateReleaseOption = new Option<bool>(
+            name: "--propagate-release",
+            description: "Propagate the release to the next channel",
+            getDefaultValue: () => false
+        );
+
         var command = new System.CommandLine.Command("build", "Builds the packages for a release") {
             gitStashPushOption,
             releaseChannelArgument,
@@ -322,7 +328,8 @@ public static partial class Command
             disableUpdateServerReloadOption,
             disableDiscordAnnounceOption,
             useHostedBuildsOption,
-            resumeFromUploadOption
+            resumeFromUploadOption,
+            propagateReleaseOption
         };
 
         command.Handler = CommandHandler.Create<CommandInput>(DoBuild);
@@ -355,6 +362,7 @@ public static partial class Command
     /// <param name="DisableDiscordAnnounce">If forum posting should be disabled</param>
     /// <param name="UseHostedBuilds">If hosted builds should be used</param>
     /// <param name="ResumeFromUpload">If the process should resume from the upload step</param>
+    /// <param name="PropagateRelease">If the release should be propagated to the next channel</param>
     record CommandInput(
         PackageTarget[] Targets,
         DirectoryInfo BuildPath,
@@ -378,7 +386,8 @@ public static partial class Command
         bool DisableUpdateServerReload,
         bool DisableDiscordAnnounce,
         bool UseHostedBuilds,
-        bool ResumeFromUpload
+        bool ResumeFromUpload,
+        bool PropagateRelease
     );
 
     static async Task DoBuild(CommandInput input)
@@ -619,6 +628,13 @@ public static partial class Command
         if (input.GitStashPush && !input.ResumeFromUpload)
             await GitPush.TagAndPush(baseDir, releaseInfo);
 
+        // Propagate the release to the next channel, if selected
+        var nextChannels = new[] { ReleaseChannel.Experimental, ReleaseChannel.Beta, ReleaseChannel.Stable }
+            .Where(x => x > releaseInfo.Channel)
+            .Where(x => rtcfg.ReleaseInfo.Channel != ReleaseChannel.Canary)
+            .Where(x => input.PropagateRelease)
+            .ToArray();
+
         if (rtcfg.UseS3Upload || rtcfg.UseGithubUpload)
         {
             Console.WriteLine("Build completed, uploading packages ...");
@@ -636,7 +652,7 @@ public static partial class Command
                    .Append(new Upload.UploadFile(packageJson, Path.GetFileName(packageJson)))
                    .Append(new Upload.UploadFile(packageJson, $"latest-v2-{releaseInfo.Version}.json"));
 
-                await Upload.UploadToS3(uploads, rtcfg);
+                await Upload.UploadToS3(uploads, rtcfg, nextChannels);
             }
 
             if (rtcfg.UseGithubUpload)
@@ -657,7 +673,7 @@ public static partial class Command
         if (rtcfg.UseUpdateServerReload)
         {
             Console.WriteLine("Release completed, reloading update server ...");
-            await Upload.ReloadUpdateServer(rtcfg);
+            await Upload.ReloadUpdateServer(rtcfg, nextChannels);
         }
 
         if (rtcfg.UseForumPosting)

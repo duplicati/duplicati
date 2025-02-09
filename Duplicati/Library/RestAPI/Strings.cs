@@ -59,6 +59,8 @@ Error message: {0}", error); }
                 public static string WebserverAllowedhostnamesDescription { get { return LC.L(@"The hostnames that are accepted, separated with semicolons. If any of the hostnames are ""*"", all hostnames are allowed and the hostname checking is disabled."); } }
                 public static string PingpongkeepaliveLong { get { return LC.L(@"When running as a server, the service daemon must verify that the process is responding. If this option is enabled, the server reads stdin and writes a reply to each line read."); } }
                 public static string PingpongkeepaliveShort { get { return LC.L(@"Enable the ping-pong responder"); } }
+                public static string DisableupdatecheckShort { get { return LC.L(@"Disable the automatic update check"); } }
+                public static string DisableupdatecheckLong { get { return LC.L(@"Use this option to disable the automatic update check. Manual update checks can still be performed."); } }
                 public static string LogretentionLong { get { return LC.L(@"Set the time after which log data will be purged from the database."); } }
                 public static string LogretentionShort { get { return LC.L(@"Clean up old log data"); } }
                 public static string ServerdatafolderLong(string envname) { return LC.L(@"Duplicati needs to store a small database with all settings. Use this option to choose where the settings are stored. This option can also be set with the environment variable {0}.", envname); }
