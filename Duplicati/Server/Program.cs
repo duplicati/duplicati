@@ -325,7 +325,10 @@ namespace Duplicati.Server
                     else
                     {
                         Log.WriteWarningMessage(LOGTAG, "CancelKeyPressed", null, "Cancel key pressed twice, terminating now");
-                        Environment.Exit(0);
+                        if (OperatingSystem.IsWindows())
+                            Environment.FailFast("Cancel key pressed twice, terminating now");
+                        else
+                            Environment.Exit(0);
                     }
                 };
 
