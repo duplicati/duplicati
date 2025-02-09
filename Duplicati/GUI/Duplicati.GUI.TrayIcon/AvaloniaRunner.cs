@@ -36,64 +36,15 @@ using Avalonia.Themes.Fluent;
 using Avalonia.Threading;
 using Duplicati.Library.AutoUpdater;
 using Duplicati.Library.Logging;
-using DesktopNotifications.Windows;
-using DesktopNotifications.FreeDesktop;
 
 namespace Duplicati.GUI.TrayIcon
 {
-    public static class AppBuilderExtensions
-    {
-        public static AppBuilder SetupDesktopNotifications(this AppBuilder builder, out DesktopNotifications.INotificationManager? manager)
-        {
-            manager = null;
-            try
-            {
-                DesktopNotifications.INotificationManager? realManager = null;
-                if (OperatingSystem.IsWindows())
-                {
-                    var context = WindowsApplicationContext.FromCurrentProcess();
-                    realManager = new WindowsNotificationManager(context);
-                }
-                else if (OperatingSystem.IsLinux())
-                {
-                    var context = FreeDesktopApplicationContext.FromCurrentProcess();
-                    realManager = new FreeDesktopNotificationManager(context);
-                }
-                else
-                {
-                    // MacOS not supported
-                    realManager = null;
-                }
-
-                if (realManager == null)
-                    return builder;
-
-                realManager.Initialize().GetAwaiter().GetResult();
-                builder.AfterSetup(b =>
-                {
-                    if (b.Instance?.ApplicationLifetime is IControlledApplicationLifetime lifetime)
-                    {
-                        lifetime.Exit += (s, e) => { realManager?.Dispose(); };
-                    }
-                });
-
-                manager = realManager;
-            }
-            catch (Exception ex)
-            {
-                Log.WriteErrorMessage(Log.LogTagFromType<AvaloniaRunner>(), "DesktopNotificationInitFailed", ex, "Failed to initialize desktop notifications");
-            }
-            return builder;
-        }
-    }
-
     public class AvaloniaRunner : TrayIconBase
     {
         private static readonly string LOGTAG = Log.LogTagFromType<AvaloniaRunner>();
         private AvaloniaApp? application;
         private ProcessBasedActionDelay actionDelayer = new ProcessBasedActionDelay();
         private IEnumerable<AvaloniaMenuItem> menuItems = Enumerable.Empty<AvaloniaMenuItem>();
-        private DesktopNotifications.INotificationManager? notificationManager;
 
         public override void Init(string[] args)
         {
@@ -145,7 +96,6 @@ namespace Duplicati.GUI.TrayIcon
                 .Configure(() => new AvaloniaApp() { Name = AutoUpdateSettings.AppName })
                 .UsePlatformDetect()
                 .With(new MacOSPlatformOptions() { ShowInDock = false })
-                .SetupDesktopNotifications(out notificationManager)
                 .SetupWithLifetime(lifetime);
 
 #if DEBUG
@@ -220,9 +170,6 @@ namespace Duplicati.GUI.TrayIcon
 
         public override void NotifyUser(string title, string message, NotificationType type)
         {
-            if (notificationManager == null)
-                return;
-
             //var icon = Win32NativeNotifyIcon.InfoFlags.NIIF_INFO;
 
             switch (type)
@@ -237,13 +184,6 @@ namespace Duplicati.GUI.TrayIcon
                     //icon = Win32NativeNotifyIcon.InfoFlags.NIIF_ERROR;
                     break;
             }
-
-            notificationManager.ShowNotification(new DesktopNotifications.Notification()
-            {
-                Title = title,
-                Body = message
-            }, DateTimeOffset.UtcNow.AddSeconds(5));
-
         }
 
         protected override void Exit()
