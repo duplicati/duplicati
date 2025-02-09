@@ -202,6 +202,9 @@ public class B2AuthHelper(string userid, string password, HttpClient httpClient)
         if (ex is not HttpRequestException || responseContext == null)
             return;
 
+        if (ex is HttpRequestException && responseContext != null && responseContext.StatusCode == HttpStatusCode.TooManyRequests)
+            throw new TooManyRequestException(responseContext.Headers.RetryAfter);
+
         using var stream = responseContext.Content.ReadAsStream();
         using var reader = new StreamReader(stream);
         var rawData = reader.ReadToEnd();
