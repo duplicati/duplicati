@@ -617,7 +617,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                     (SystemIO.IO_OS.FileExists(file.TargetPath) ?
                         SystemIO.IO_OS.FileOpenRead(file.TargetPath) :
                         null) :
-                    SystemIO.IO_OS.FileOpenWrite(file.TargetPath);
+                    SystemIO.IO_OS.FileOpenReadWrite(file.TargetPath);
                 var buffer = new byte[options.Blocksize];
                 long bytes_read = 0;
                 long bytes_written = 0;
@@ -656,8 +656,8 @@ namespace Duplicati.Library.Main.Operation.Restore
                                 {
                                     try
                                     {
-                                        f_target.Seek(blocks[j].BlockOffset * options.Blocksize, SeekOrigin.Begin);
-                                        await f_target.WriteAsync(buffer, 0, read);
+                                        f_target?.Seek(blocks[j].BlockOffset * options.Blocksize, SeekOrigin.Begin);
+                                        await f_target?.WriteAsync(buffer, 0, read);
                                     }
                                     catch (Exception)
                                     {
