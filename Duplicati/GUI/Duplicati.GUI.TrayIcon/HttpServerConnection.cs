@@ -345,16 +345,27 @@ namespace Duplicati.GUI.TrayIcon
 
         private async Task ObtainAccessTokenAsync()
         {
+            // If we host the server, issue the access token from the service
+            if (FIXMEGlobal.IsServerStarted && m_passwordSource == Program.PasswordSource.HostedServer)
+            {
+                var provider = FIXMEGlobal.Provider.GetRequiredService<IJWTTokenProvider>();
+                m_accesstoken = provider.CreateAccessToken("trayicon", provider.TemporaryFamilyId);
+                return;
+            }
+
+            // If we know the password, issue a token from the API
             if (!string.IsNullOrWhiteSpace(m_password))
             {
                 m_accesstoken = (await PerformRequestInternalAsync<SigninResponse>("POST", "/auth/login", JsonSerializer.Serialize(new { Password = m_password }), null).ConfigureAwait(false)).AccessToken;
                 return;
             }
 
+            // Otherwise, try to get a signin token
             var token = await ObtainSignInTokenAsync().ConfigureAwait(false);
             if (string.IsNullOrWhiteSpace(token))
                 return;
 
+            // Use the signin token to get an access token
             m_accesstoken = (await PerformRequestInternalAsync<SigninResponse>("POST", "/auth/signin", JsonSerializer.Serialize(new { SigninToken = token }), null).ConfigureAwait(false)).AccessToken;
         }
 
