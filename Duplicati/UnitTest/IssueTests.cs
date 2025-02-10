@@ -430,7 +430,7 @@ namespace Duplicati.UnitTest
             else
             {
                 var files = Directory.GetFiles(original_dir, "*", SearchOption.TopDirectoryOnly);
-                Assert.That(files.Length, Is.EqualTo(2), "There should be one file in the folder");
+                Assert.That(files.Length, Is.EqualTo(2), "There should be two files in the folder");
                 var f2 = files.FirstOrDefault(v => v != f);
                 restored_contents = File.ReadAllBytes(f2);
             }
