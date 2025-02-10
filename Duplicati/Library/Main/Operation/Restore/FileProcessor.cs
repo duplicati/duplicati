@@ -328,8 +328,6 @@ namespace Duplicati.Library.Main.Operation.Restore
                 catch (RetiredException)
                 {
                     Logging.Log.WriteVerboseMessage(LOGTAG, "RetiredProcess", null, "File processor retired");
-                    block_request.Retire();
-                    block_response.Retire();
 
                     if (options.InternalProfiling)
                     {
@@ -340,9 +338,12 @@ namespace Duplicati.Library.Main.Operation.Restore
                 catch (Exception ex)
                 {
                     Logging.Log.WriteErrorMessage(LOGTAG, "FileProcessingError", ex, "Error during file processing");
+                    throw;
+                }
+                finally
+                {
                     block_request.Retire();
                     block_response.Retire();
-                    throw;
                 }
             });
         }
