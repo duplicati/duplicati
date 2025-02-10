@@ -20,6 +20,7 @@
 // DEALINGS IN THE SOFTWARE.
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -239,9 +240,14 @@ namespace Duplicati.Library.Main.Operation
 
                                 var parsed = VolumeBase.ParseFilename(entry.Name);
 
+                                using var stream = new FileStream(tmpfile, FileMode.Open, FileAccess.Read, FileShare.Read);
+                                using var compressor = DynamicLoader.CompressionLoader.GetModule(parsed.CompressionModule, stream, ArchiveMode.Read, m_options.RawOptions);
+                                if (compressor == null)
+                                    throw new UserInformationException(string.Format("Failed to load compression module: {0}", parsed.CompressionModule), "FailedToLoadCompressionModule");
+
                                 if (!hasUpdatedOptions)
                                 {
-                                    VolumeReaderBase.UpdateOptionsFromManifest(parsed.CompressionModule, tmpfile, m_options);
+                                    VolumeReaderBase.UpdateOptionsFromManifest(compressor, m_options);
                                     hasUpdatedOptions = true;
                                     // Recompute the cached sizes
                                     blocksize = m_options.Blocksize;
@@ -252,12 +258,12 @@ namespace Duplicati.Library.Main.Operation
                                 var filesetid = restoredb.CreateFileset(volumeIds[entry.Name], parsed.Time, tr);
 
                                 // retrieve fileset data from dlist
-                                var filesetData = VolumeReaderBase.GetFilesetData(parsed.CompressionModule, tmpfile, m_options);
+                                var filesetData = VolumeReaderBase.GetFilesetData(compressor, m_options);
 
                                 // update fileset using filesetData
                                 restoredb.UpdateFullBackupStateInFileset(filesetid, filesetData.IsFullBackup);
 
-                                using (var filelistreader = new FilesetVolumeReader(parsed.CompressionModule, tmpfile, m_options))
+                                using (var filelistreader = new FilesetVolumeReader(compressor, m_options))
                                     foreach (var fe in filelistreader.Files.Where(x => Library.Utility.FilterExpression.Matches(filter, x.Path)))
                                     {
                                         try
