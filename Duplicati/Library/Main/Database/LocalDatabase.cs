@@ -1211,6 +1211,23 @@ ORDER BY
             }
         }
 
+        public void PushTimestampChangesToPreviousVersion(long filesetId, System.Data.IDbTransaction transaction)
+        {
+            using (var cmd = m_connection.CreateCommand())
+            {
+                cmd.Transaction = transaction;
+                var query = @"
+UPDATE FilesetEntry AS oldVersion
+SET Lastmodified = tempVersion.Lastmodified
+FROM FilesetEntry AS tempVersion
+WHERE oldVersion.FileID = tempVersion.FileID
+AND tempVersion.FilesetID = ?
+AND oldVersion.FilesetID = (SELECT ID FROM Fileset WHERE ID != ? ORDER BY Timestamp DESC LIMIT 1)";
+
+                cmd.ExecuteNonQuery(query, filesetId, filesetId);
+            }
+        }
+
         /// <summary>
         /// Keeps a list of filenames in a temporary table with a single column Path
         ///</summary>
