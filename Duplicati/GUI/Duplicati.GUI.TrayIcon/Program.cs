@@ -24,6 +24,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
+using System.Threading;
 using Duplicati.Library.AutoUpdater;
 using Duplicati.Library.Interface;
 using Duplicati.Library.RestAPI;
@@ -85,7 +87,7 @@ namespace Duplicati.GUI.TrayIcon
 
             if (OperatingSystem.IsWindows() && !Library.Utility.Utility.ParseBoolOption(options, DETACHED_PROCESS))
                 Library.Utility.Win32.AttachConsole(Library.Utility.Win32.ATTACH_PARENT_PROCESS);
-            
+
             if (HelpOptionExtensions.IsArgumentAnyHelpString(args))
             {
                 Console.WriteLine("Supported commandline arguments:");
@@ -204,11 +206,19 @@ No password provided, unable to connect to server, exiting");
 
                 do
                 {
+                    if (reSpawn > 0)
+                        Thread.Sleep(1000);
+
                     try
                     {
                         ServicePointManager.SecurityProtocol = SecurityProtocolType.SystemDefault;
                         using (Connection = new HttpServerConnection(serverURL, password, passwordSource, disableTrayIconLogin, acceptedHostCertificate, options))
                         {
+                            // Make sure we have the latest status
+                            // This will throw an exception if the server is not running,
+                            // or the password is incorrect
+                            Connection.UpdateStatus().Await();
+
                             using (var tk = RunTrayIcon())
                             {
                                 if (hosted != null && Server.Program.ApplicationInstance != null)
@@ -219,16 +229,20 @@ No password provided, unable to connect to server, exiting");
                                 // TODO: If we change to hosted browser this should be a callback
                                 if (openui)
                                 {
-                                    try
+                                    Connection.GetStatusWindowURLAsync().ContinueWith(t =>
                                     {
-                                        tk.ShowUrlInWindow(Connection.StatusWindowURL);
+                                        if (t.IsFaulted)
+                                        {
+                                            Console.WriteLine("Failed to get status window URL: " + t.Exception.Message);
+                                            tk.NotifyUser("Failed to get status window URL", t.Exception.Message, NotificationType.Error);
+                                            return;
+                                        }
 
+                                        tk.ShowUrlInWindow(t.Result);
                                         Server.Program.IsFirstRun = false;
                                         Server.Program.ServerPortChanged = false;
-                                    }
-                                    catch
-                                    {
-                                    }
+
+                                    });
                                 }
 
                                 // If the server shuts down, shut down the tray-icon as well
@@ -255,7 +269,7 @@ No password provided, unable to connect to server, exiting");
                             }
                         }
                     }
-                    catch (WebException ex)
+                    catch (HttpRequestException ex)
                     {
                         System.Diagnostics.Trace.WriteLine("Request error: " + ex);
                         Console.WriteLine("Request error: " + ex);

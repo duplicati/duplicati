@@ -21,7 +21,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -52,6 +51,10 @@ namespace Duplicati.Server
         private const string REQUIRE_DB_ENCRYPTION_KEY_OPTION = "require-db-encryption-key";
         private const string SETTINGS_ENCRYPTION_KEY_OPTION = "settings-encryption-key";
         private const string DISABLE_UPDATE_CHECK_OPTION = "disable-update-check";
+        private const string LOG_FILE_OPTION = "log-file";
+        private const string LOG_LEVEL_OPTION = "log-level";
+        private const string LOG_CONSOLE_OPTION = "log-console";
+
 
 #if DEBUG
         private const bool DEBUG_MODE = true;
@@ -265,7 +268,7 @@ namespace Duplicati.Server
                     DataConnection.LogError(null, "Error in updater", obj);
                 };
 
-                DuplicatiWebserver = StartWebServer(commandlineOptions, DataConnection).ConfigureAwait(false).GetAwaiter().GetResult();
+                DuplicatiWebserver = StartWebServer(commandlineOptions, DataConnection).Await();
 
                 UpdatePoller.Init(Library.Utility.Utility.ParseBoolOption(commandlineOptions, DISABLE_UPDATE_CHECK_OPTION));
 
@@ -310,6 +313,24 @@ namespace Duplicati.Server
                     terminated = true;
                     ApplicationExitEvent.Set();
                 });
+
+                var stopCounter = 0;
+                Console.CancelKeyPress += (sender, e) =>
+                {
+                    if (Interlocked.Increment(ref stopCounter) <= 1)
+                    {
+                        Log.WriteInformationMessage(LOGTAG, "CancelKeyPressed", "Cancel key pressed, stopping server");
+                        Task.Run(() => DuplicatiWebserver?.Stop());
+                    }
+                    else
+                    {
+                        Log.WriteWarningMessage(LOGTAG, "CancelKeyPressed", null, "Cancel key pressed twice, terminating now");
+                        if (OperatingSystem.IsWindows())
+                            Environment.FailFast("Cancel key pressed twice, terminating now");
+                        else
+                            Environment.Exit(0);
+                    }
+                };
 
                 ServerStartedEvent.Set();
                 ApplicationExitEvent.WaitOne();
@@ -668,30 +689,45 @@ namespace Duplicati.Server
         private static async Task ApplySecretProvider(Dictionary<string, string> commandlineOptions, CancellationToken cancellationToken)
             => FIXMEGlobal.SecretProvider = await SecretProviderHelper.ApplySecretProviderAsync([], [], commandlineOptions, TempFolder.SystemTempPath, FIXMEGlobal.SecretProvider, cancellationToken).ConfigureAwait(false);
 
+        private class ConsoleLogDestination(LogMessageType level) : ILogDestination
+        {
+            public void WriteMessage(LogEntry entry)
+            {
+                if (entry.Level >= level)
+                    Console.WriteLine(entry.AsString(true));
+            }
+        }
+
         private static void ConfigureLogging(Dictionary<string, string> commandlineOptions)
         {
             //Log various information in the logfile
-            if (DEBUG_MODE && !commandlineOptions.ContainsKey("log-file"))
+            if (DEBUG_MODE && !commandlineOptions.ContainsKey(LOG_FILE_OPTION))
             {
                 var prefix = System.Reflection.Assembly.GetEntryAssembly().GetName().Name.StartsWith("Duplicati.Server") ? "server" : "trayicon";
-                commandlineOptions["log-file"] = System.IO.Path.Combine(StartupPath, $"Duplicati-{prefix}.debug.log");
-                commandlineOptions["log-level"] = Duplicati.Library.Logging.LogMessageType.Profiling.ToString();
-                if (System.IO.File.Exists(commandlineOptions["log-file"]))
-                {
-                    System.IO.File.Delete(commandlineOptions["log-file"]);
-                }
+                commandlineOptions[LOG_FILE_OPTION] = System.IO.Path.Combine(StartupPath, $"Duplicati-{prefix}.debug.log");
+                commandlineOptions[LOG_LEVEL_OPTION] = Duplicati.Library.Logging.LogMessageType.Profiling.ToString();
+                if (System.IO.File.Exists(commandlineOptions[LOG_FILE_OPTION]))
+                    System.IO.File.Delete(commandlineOptions[LOG_FILE_OPTION]);
             }
 
-            // Setup the log redirect
-            Library.Logging.Log.StartScope(LogHandler, null);
+            Log.StartScope(LogHandler, null);
 
-            if (commandlineOptions.ContainsKey("log-file"))
+            if (commandlineOptions.ContainsKey(LOG_FILE_OPTION))
             {
                 var loglevel = Library.Logging.LogMessageType.Warning;
-                if (commandlineOptions.ContainsKey("log-level"))
-                    Enum.TryParse(commandlineOptions["log-level"], true, out loglevel);
+                if (commandlineOptions.ContainsKey(LOG_LEVEL_OPTION))
+                    Enum.TryParse(commandlineOptions[LOG_LEVEL_OPTION], true, out loglevel);
 
-                LogHandler.SetServerFile(commandlineOptions["log-file"], loglevel);
+                LogHandler.SetServerFile(commandlineOptions[LOG_FILE_OPTION], loglevel);
+            }
+
+            if (Library.Utility.Utility.ParseBoolOption(commandlineOptions, LOG_CONSOLE_OPTION))
+            {
+                var loglevel = Library.Logging.LogMessageType.Information;
+                if (commandlineOptions.ContainsKey(LOG_LEVEL_OPTION))
+                    Enum.TryParse(commandlineOptions[LOG_LEVEL_OPTION], true, out loglevel);
+
+                LogHandler.AppendLogDestination(new ConsoleLogDestination(loglevel), loglevel);
             }
 
             if (commandlineOptions.TryGetValue(WINDOWS_EVENTLOG_OPTION, out var source) && !string.IsNullOrEmpty(source))
@@ -942,8 +978,9 @@ namespace Duplicati.Server
                 new Duplicati.Library.Interface.CommandLineArgument("help", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean, Strings.Program.HelpCommandDescription, Strings.Program.HelpCommandDescription),
                 new Duplicati.Library.Interface.CommandLineArgument("parameters-file", Library.Interface.CommandLineArgument.ArgumentType.Path, Strings.Program.ParametersFileOptionShort, Strings.Program.ParametersFileOptionLong2, "", ParameterFileOptionStrings),
                 new Duplicati.Library.Interface.CommandLineArgument(DataFolderManager.PORTABLE_MODE_OPTION, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean, Strings.Program.PortablemodeCommandDescription, Strings.Program.PortablemodeCommandDescription, DataFolderManager.PORTABLE_MODE.ToString().ToLowerInvariant()),
-                new Duplicati.Library.Interface.CommandLineArgument("log-file", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Path, Strings.Program.LogfileCommandDescription, Strings.Program.LogfileCommandDescription),
-                new Duplicati.Library.Interface.CommandLineArgument("log-level", Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Enumeration, Strings.Program.LoglevelCommandDescription, Strings.Program.LoglevelCommandDescription, Library.Logging.LogMessageType.Warning.ToString(), null, Enum.GetNames(typeof(Duplicati.Library.Logging.LogMessageType))),
+                new Duplicati.Library.Interface.CommandLineArgument(LOG_FILE_OPTION, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Path, Strings.Program.LogfileCommandDescription, Strings.Program.LogfileCommandDescription),
+                new Duplicati.Library.Interface.CommandLineArgument(LOG_LEVEL_OPTION, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Enumeration, Strings.Program.LoglevelCommandDescription, Strings.Program.LoglevelCommandDescription, Library.Logging.LogMessageType.Warning.ToString(), null, Enum.GetNames(typeof(Duplicati.Library.Logging.LogMessageType))),
+                new Duplicati.Library.Interface.CommandLineArgument(LOG_CONSOLE_OPTION, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean, Strings.Program.LogConsoleDescription, Strings.Program.LogConsoleDescription, false.ToString()),
                 new Duplicati.Library.Interface.CommandLineArgument(WebServerLoader.OPTION_WEBROOT, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Path, Strings.Program.WebserverWebrootDescription, Strings.Program.WebserverWebrootDescription, WebServerLoader.DEFAULT_OPTION_WEBROOT),
                 new Duplicati.Library.Interface.CommandLineArgument(WebServerLoader.OPTION_PORT, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.String, Strings.Program.WebserverPortDescription, Strings.Program.WebserverPortDescription, WebServerLoader.DEFAULT_OPTION_PORT.ToString()),
                 new Duplicati.Library.Interface.CommandLineArgument(WebServerLoader.OPTION_WEBSERVICE_DISABLEHTTPS, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.String, Strings.Program.WebserverDisableHTTPSDescription, Strings.Program.WebserverDisableHTTPSDescription),
