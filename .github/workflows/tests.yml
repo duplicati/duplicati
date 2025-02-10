@@ -29,9 +29,10 @@ jobs:
       - name: Run unit tests
         run: dotnet test --no-build --verbosity minimal Duplicati.sln
 
-  selenium:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Selenium
-        run: pipeline/selenium/test.sh
+  # Disabled, as a new test needs to be written for the new UI
+  # selenium:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - name: Selenium
+  #       run: pipeline/selenium/test.sh
