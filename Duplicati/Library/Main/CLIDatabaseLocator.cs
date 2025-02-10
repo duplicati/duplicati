@@ -97,7 +97,7 @@ namespace Duplicati.Library.Main
                 return options.Dbpath;
 
             // Ideally, this should use DataFolderManager.DATAFOLDER, but we cannot due to backwards compatibility
-            var folder = AutoUpdater.DataFolderLocator.GetDefaultStorageFolder(CONFIG_FILE);
+            var folder = AutoUpdater.DataFolderLocator.GetDefaultStorageFolder(CONFIG_FILE, true);
             // Emit a warning if the database is stored in the Windows folder
             if (Util.IsPathUnderWindowsFolder(folder))
                 Logging.Log.WriteWarningMessage(LOGTAG, "DatabaseInWindowsFolder", null, "The database config is stored in the Windows folder, this is not recommended as it will be deleted on Windows upgrades.");
@@ -209,9 +209,6 @@ namespace Duplicati.Library.Main
                     ParameterFile = null
                 });
 
-                if (!System.IO.Directory.Exists(folder))
-                    System.IO.Directory.CreateDirectory(folder);
-
                 var settings = new Newtonsoft.Json.JsonSerializerSettings();
                 settings.Formatting = Newtonsoft.Json.Formatting.Indented;
                 System.IO.File.WriteAllText(file, Newtonsoft.Json.JsonConvert.SerializeObject(configs, settings), System.Text.Encoding.UTF8);
@@ -249,7 +246,7 @@ namespace Duplicati.Library.Main
         public static bool IsDatabasePathInUse(string path)
         {
             // Ideally, this should use DataFolderManager.DATAFOLDER, but we cannot due to backwards compatibility
-            var file = System.IO.Path.Combine(AutoUpdater.DataFolderLocator.GetDefaultStorageFolder(CONFIG_FILE), CONFIG_FILE);
+            var file = System.IO.Path.Combine(AutoUpdater.DataFolderLocator.GetDefaultStorageFolder(CONFIG_FILE, false), CONFIG_FILE);
             if (!System.IO.File.Exists(file))
                 return false;
 

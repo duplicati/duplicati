@@ -82,7 +82,7 @@ namespace Duplicati.Library.Snapshots
         /// <returns>The symlink target</returns>
         public override string GetSymlinkTarget(string localPath)
         {
-            return SystemIO.IO_SYS.GetSymlinkTarget(localPath);
+            return SystemIO.IO_OS.GetSymlinkTarget(localPath);
         }
 
         /// <summary>
@@ -94,7 +94,7 @@ namespace Duplicati.Library.Snapshots
         /// <param name="followSymlink">A flag indicating if a symlink should be followed</param>
         public override Dictionary<string, string> GetMetadata(string localPath, bool isSymlink, bool followSymlink)
         {
-            return SystemIO.IO_SYS.GetMetadata(localPath, isSymlink, followSymlink);
+            return SystemIO.IO_OS.GetMetadata(localPath, isSymlink, followSymlink);
         }
 
         /// <summary>
