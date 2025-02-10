@@ -583,6 +583,12 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// <returns>An awaitable `Task`, which returns a collection of data blocks that are missing.</returns>
         private static async Task<(long, List<BlockRequest>)> VerifyLocalBlocks(FileRequest file, List<BlockRequest> blocks, long total_blocks, System.Security.Cryptography.HashAlgorithm filehasher, System.Security.Cryptography.HashAlgorithm blockhasher, Options options, RestoreResults results, IChannel<BlockRequest> block_request)
         {
+            if (file.TargetPath == file.OriginalPath)
+            {
+                // The original file is the same as the target file, so no new blocks can be used.
+                return (0, blocks);
+            }
+
             List<BlockRequest> missing_blocks = [];
             List<BlockRequest> verified_blocks = [];
 
