@@ -295,6 +295,8 @@ namespace Duplicati.Library.Main.Operation.Restore
                                 {
                                     results.BrokenLocalFiles.Add(file.TargetPath);
                                 }
+                                block_request.Retire();
+                                block_response.Retire();
                                 throw;
                             }
                             finally
