@@ -40,9 +40,7 @@
 
     var theme = parseCookies()['default-theme'];
     if ((theme || '').trim().length == 0)
-        theme = 'ngax';
-    if (theme == 'greeno') // Make sure users are redirected automatically
-        theme = 'ngax';
+        theme = 'ngclient';
     
     setCookieAndRun(theme); // Refresh
 
