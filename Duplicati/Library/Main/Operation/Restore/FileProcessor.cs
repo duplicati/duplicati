@@ -93,7 +93,7 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                         sw_work?.Start();
                         // Verify the target file blocks that may already exist.
-                        var (bytes_verified, missing_blocks, verified_blocks) = await VerifyTargetBlocks(file, blocks, filehasher, blockhasher, options, results, block_request);
+                        var (bytes_verified, missing_blocks, verified_blocks) = await VerifyTargetBlocks(file, blocks, filehasher, blockhasher, options, results);
                         long bytes_written = 0;
                         if (blocks.Length != missing_blocks.Count + verified_blocks.Count)
                         {
@@ -127,8 +127,22 @@ namespace Duplicati.Library.Main.Operation.Restore
                                         await CopyOldTargetBlocksToNewTarget(file, new_file, verified_blocks);
                                     }
                                 }
+                                else
+                                {
+                                    verified_blocks.Clear();
+                                    missing_blocks = [.. blocks.Select(x => { x.CacheDecrEvict = false; return x; })];
+                                }
                                 file = new_file;
                             }
+                        }
+
+                        // Notify to the cache that we use local blocks.
+                        foreach (var block in verified_blocks)
+                        {
+                            block.CacheDecrEvict = true;
+                            sw_req?.Start();
+                            await block_request.WriteAsync(block);
+                            sw_req?.Stop();
                         }
 
                         if (missing_blocks.Count > 0 && options.UseLocalBlocks)
@@ -478,9 +492,8 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// <param name="blockhasher">A hasher for a data block.</param>
         /// <param name="options">The Duplicati configuration options.</param>
         /// <param name="results">The restoration results.</param>
-        /// <param name="block_request">The channel to request blocks from the block manager. Used to inform the block manager which blocks are already present.</param>
         /// <returns>An awaitable `Task`, which returns a collection of data blocks that are missing.</returns>
-        private static async Task<(long, List<BlockRequest>, List<BlockRequest>)> VerifyTargetBlocks(FileRequest file, BlockRequest[] blocks, System.Security.Cryptography.HashAlgorithm filehasher, System.Security.Cryptography.HashAlgorithm blockhasher, Options options, RestoreResults results, IChannel<BlockRequest> block_request)
+        private static async Task<(long, List<BlockRequest>, List<BlockRequest>)> VerifyTargetBlocks(FileRequest file, BlockRequest[] blocks, System.Security.Cryptography.HashAlgorithm filehasher, System.Security.Cryptography.HashAlgorithm blockhasher, Options options, RestoreResults results)
         {
             long bytes_read = 0;
             List<BlockRequest> missing_blocks = [];
@@ -506,8 +519,6 @@ namespace Duplicati.Library.Main.Operation.Restore
                             {
                                 // Block matches
                                 bytes_read += read;
-                                blocks[i].CacheDecrEvict = true;
-                                await block_request.WriteAsync(blocks[i]);
                                 verified_blocks.Add(blocks[i]);
                             }
                             else
