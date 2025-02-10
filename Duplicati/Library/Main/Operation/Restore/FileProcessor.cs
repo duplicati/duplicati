@@ -124,7 +124,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                                     }
                                     else
                                     {
-                                        CopyOldTargetBlocksToNewTarget(file, new_file, verified_blocks);
+                                        await CopyOldTargetBlocksToNewTarget(file, new_file, verified_blocks);
                                     }
                                 }
                                 file = new_file;
@@ -351,7 +351,7 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// <param name="old_file">The old target file.</param>
         /// <param name="new_file">The new target file.</param>
         /// <param name="verified_blocks">The blocks in the old file that were verified.</param>
-        private static void CopyOldTargetBlocksToNewTarget(FileRequest old_file, FileRequest new_file, List<BlockRequest> verified_blocks)
+        private static async Task CopyOldTargetBlocksToNewTarget(FileRequest old_file, FileRequest new_file, List<BlockRequest> verified_blocks)
         {
             using var fs_old = SystemIO.IO_OS.FileOpenRead(old_file.TargetPath);
             using var fs_new = SystemIO.IO_OS.FileOpenWrite(new_file.TargetPath);
@@ -362,8 +362,8 @@ namespace Duplicati.Library.Main.Operation.Restore
                 fs_new.Seek(block.BlockOffset * block.BlockSize, SeekOrigin.Begin);
 
                 var buffer = new byte[block.BlockSize];
-                fs_old.Read(buffer, 0, buffer.Length);
-                fs_new.Write(buffer, 0, buffer.Length);
+                await fs_old.ReadAsync(buffer, 0, buffer.Length);
+                await fs_new.WriteAsync(buffer, 0, buffer.Length);
             }
         }
 
