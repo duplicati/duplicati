@@ -19,12 +19,15 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
+using System.Diagnostics;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
 using System.Net;
+using System.Net.Http.Headers;
 using System.Reflection;
 using Duplicati.Library.Backend.Backblaze.Model;
+using FileEntry = Duplicati.Library.Common.IO.FileEntry;
 
 namespace Duplicati.Library.Backend.Backblaze;
 
@@ -77,6 +80,11 @@ public class B2 : IStreamingBackend, ITimeoutExemptBackend
     /// Recommended chunk size as per Backblaze B2 documentation (100MB)
     /// </summary>
     private const int B2_RECOMMENDED_CHUNK_SIZE = 100 * 1024 * 1024;
+    
+    /// <summary>
+    /// Default retry-after time in seconds for B2 API requests
+    /// </summary>
+    private const int B2_RETRY_AFTER_SECONDS = 5;
 
     /// <summary>
     /// The name of the B2 bucket being accessed
@@ -455,53 +463,72 @@ public class B2 : IStreamingBackend, ITimeoutExemptBackend
     /// Implementation of interface method for listing remote folder contents
     /// </summary>
     /// <returns>List of IFileEntry with directory listing result</returns>
-    private async Task<IEnumerable<IFileEntry>> ListAsync(CancellationToken cancellationToken)
+    private async Task<IEnumerable<IFileEntry>> ListAsync(CancellationToken cancellationToken, bool testMode = false)
     {
         _filecache = null;
         var cache = new Dictionary<string, List<FileEntity>>();
         string nextFileId = null;
         string nextFileName = null;
+        string listVersionUrl = $"{_b2AuthHelper.ApiUrl}/b2api/v1/b2_list_file_versions";
+
+        var listRetryHelper = RetryAfterHelper.CreateOrGetRetryAfterHelper(listVersionUrl);
+
         do
         {
-
-            using var timeoutToken = new CancellationTokenSource();
-            timeoutToken.CancelAfter(TimeSpan.FromSeconds(SHORT_OPERATION_TIMEOUT_SECONDS));
-            using var combinedCancellationToken = CancellationTokenSource.CreateLinkedTokenSource(timeoutToken.Token, cancellationToken);
-
-            var resp = await _b2AuthHelper.PostAndGetJsonDataAsync<ListFilesResponse>(
-                $"{_b2AuthHelper.ApiUrl}/b2api/v1/b2_list_file_versions",
-                new ListFilesRequest
-                {
-                    BucketID = GetBucketAsync(cancellationToken).Await().BucketID,
-                    MaxFileCount = _pageSize,
-                    Prefix = _prefix,
-                    StartFileID = nextFileId,
-                    StartFileName = nextFileName
-                },
-                combinedCancellationToken.Token
-            ).ConfigureAwait(false);
-
-            nextFileId = resp.NextFileID;
-            nextFileName = resp.NextFileName;
-
-            if (resp.Files == null || resp.Files.Length == 0)
-                break;
-
-            foreach (var file in resp.Files)
+            try
             {
-                if (!file.FileName.StartsWith(_prefix, StringComparison.Ordinal))
-                    continue;
+                using var timeoutToken = new CancellationTokenSource();
+                timeoutToken.CancelAfter(TimeSpan.FromSeconds(SHORT_OPERATION_TIMEOUT_SECONDS));
+                using var combinedCancellationToken =
+                    CancellationTokenSource.CreateLinkedTokenSource(timeoutToken.Token, cancellationToken);
 
-                var name = file.FileName[_prefix.Length..];
-                if (name.Contains('/'))
-                    continue;
+                var resp = await _b2AuthHelper.PostAndGetJsonDataAsync<ListFilesResponse>(
+                    $"{_b2AuthHelper.ApiUrl}/b2api/v1/b2_list_file_versions",
+                    new ListFilesRequest
+                    {
+                        BucketID = GetBucketAsync(cancellationToken).Await().BucketID,
+                        MaxFileCount = _pageSize,
+                        Prefix = _prefix,
+                        StartFileID = nextFileId,
+                        StartFileName = nextFileName
+                    },
+                    combinedCancellationToken.Token
+                ).ConfigureAwait(false);
 
-                cache.TryGetValue(name, out var lst);
-                if (lst == null)
-                    cache[name] = lst = new List<FileEntity>(1);
-                lst.Add(file);
+                nextFileId = resp.NextFileID;
+                nextFileName = resp.NextFileName;
+
+                if (resp.Files == null || resp.Files.Length == 0)
+                    break;
+
+                foreach (var file in resp.Files)
+                {
+                    if (!file.FileName.StartsWith(_prefix, StringComparison.Ordinal))
+                        continue;
+
+                    var name = file.FileName[_prefix.Length..];
+                    if (name.Contains('/'))
+                        continue;
+
+                    cache.TryGetValue(name, out var lst);
+                    if (lst == null)
+                        cache[name] = lst = new System.Collections.Generic.List<FileEntity>(1);
+                    lst.Add(file);
+                }
             }
-
+            catch (TooManyRequestException tex)
+            {
+                // Backblaze's B2 API rate limit reached. Presently they don't add Retry-After headers, we will default to a delay, but respect it if present.
+                if (tex.RetryAfter == null || (tex.RetryAfter.Date == null && tex.RetryAfter.Delta == null))
+                    listRetryHelper.SetRetryAfter(
+                        new RetryConditionHeaderValue(TimeSpan.FromSeconds(B2_RETRY_AFTER_SECONDS)));
+                else
+                    listRetryHelper.SetRetryAfter(tex.RetryAfter);
+                
+                await listRetryHelper.WaitForRetryAfterAsync(cancellationToken);
+            }
+            if (testMode) // For testing purposes, it suffices to get the first page of results.
+                break;
         } while (nextFileId != null);
 
         _filecache = cache;
@@ -589,7 +616,7 @@ public class B2 : IStreamingBackend, ITimeoutExemptBackend
     /// <param name="cancelToken">Cancellation Token</param>
     public Task TestAsync(CancellationToken cancelToken)
     {
-        this.TestList();
+        _ = ListAsync(cancelToken, true).Await();
         return Task.CompletedTask;
     }
 
