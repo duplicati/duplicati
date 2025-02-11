@@ -344,7 +344,7 @@ namespace Duplicati.Library.Main.Operation
                     case RemoteVolumeState.Uploaded:
                         if (!remoteFound)
                             missing.Add(i);
-                        else if (correctSize)
+                        else if (correctSize || archived)
                             database.UpdateRemoteVolume(i.Name, RemoteVolumeState.Verified, i.Size, i.Hash);
                         else
                             missingHash.Add(new Tuple<long, RemoteVolumeEntry>(r.File.Size, i));
@@ -354,7 +354,7 @@ namespace Duplicati.Library.Main.Operation
                     case RemoteVolumeState.Verified:
                         if (!remoteFound)
                             missing.Add(i);
-                        else if (!correctSize)
+                        else if (!correctSize && !archived)
                             missingHash.Add(new Tuple<long, RemoteVolumeEntry>(r.File.Size, i));
 
                         break;
