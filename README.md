@@ -20,15 +20,13 @@ Removed Gitter
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/duplicati/duplicati/blob/master/LICENSE.txt)
 [![Gurubase](https://img.shields.io/badge/Gurubase-Ask%20Duplicati%20Guru-006BFF)](https://gurubase.io/g/duplicati)
 
-
 Duplicati is a free, open source, backup client that securely stores encrypted, incremental, compressed backups on cloud storage services and remote file servers. It works with:
 
-&nbsp;&nbsp; *Amazon S3, [IDrive e2](https://www.idrive.com/e2/duplicati "Using Duplicati with IDrive e2"), [Backblaze (B2)](https://www.backblaze.com/blog/duplicati-backups-cloud-storage/ "Duplicati with Backblaze B2 Cloud Storage"), Box, Dropbox, FTP, Google Cloud and Drive, MEGA, Microsoft Azure and OneDrive, Rackspace Cloud Files, OpenStack Storage (Swift), Sia, Storj DCS, SSH (SFTP), WebDAV, Tencent Cloud Object Storage (COS), Aliyun OSS, [and more!](https://docs.duplicati.com/backup-destinations/destination-overview)*
+&nbsp;&nbsp; _Amazon S3, [IDrive e2](https://www.idrive.com/e2/duplicati "Using Duplicati with IDrive e2"), [Backblaze (B2)](https://www.backblaze.com/blog/duplicati-backups-cloud-storage/ "Duplicati with Backblaze B2 Cloud Storage"), Box, Dropbox, FTP, Google Cloud and Drive, MEGA, Microsoft Azure and OneDrive, Rackspace Cloud Files, OpenStack Storage (Swift), Sia, Storj DCS, SSH (SFTP), WebDAV, Tencent Cloud Object Storage (COS), Aliyun OSS, [and more!](https://docs.duplicati.com/backup-destinations/destination-overview)_
 
 Duplicati is licensed under the MIT license and available for Windows, OSX and Linux (.NET 4.7.1+ or Mono 5.10.0+ required).
 
-Download
-========
+# Download
 
 The latest version of Duplicati is a beta version for the Duplicati 2.0 release.
 
@@ -39,28 +37,25 @@ For even more [bleeding edge access, check the latest releases](https://github.c
 
 All releases are GPG signed with the public key [3DAC703D](https://keys.openpgp.org/search?q=0xC20E90473DAC703D). The latest signature file and latest ASCII signature file are also available from [the Duplicati download page](https://github.com/duplicati/duplicati/releases).
 
-Support
-=======
+# Support
 
 Duplicati is supported by an [active community and you can reach them via our forum](https://forum.duplicati.com).
 
 We have a great [Duplicati manual](https://docs.duplicati.com) that you can also [contribute to](https://github.com/kees-z/DuplicatiDocs).
 
-Features
-========
+# Features
 
-  * Duplicati uses AES-256 encryption (or GNU Privacy Guard) to secure all data before it is uploaded.
-  * Duplicati uploads a full backup initially and stores smaller, incremental updates afterwards to save bandwidth and storage space.
-  * A scheduler keeps backups up-to-date automatically.
-  * Integrated updater notifies you when a new release is out
-  * Encrypted backup files are transferred to targets like FTP, Cloudfiles, WebDAV, SSH (SFTP), Amazon S3 and others.
-  * Duplicati allows backups of folders, document types like e.g. documents or images, or custom filter rules.
-  * Duplicati is available as application with an easy-to-use user interface and as command line tool.
-  * Duplicati can make proper backups of opened or locked files using the Volume Snapshot Service (VSS) under Windows or the Logical Volume Manager (LVM) under Linux. This allows Duplicati to back up the Microsoft Outlook PST file while Outlook is running.
-  * Filters, deletion rules, transfer and bandwidth options, etc
+- Duplicati uses AES-256 encryption (or GNU Privacy Guard) to secure all data before it is uploaded.
+- Duplicati uploads a full backup initially and stores smaller, incremental updates afterwards to save bandwidth and storage space.
+- A scheduler keeps backups up-to-date automatically.
+- Integrated updater notifies you when a new release is out
+- Encrypted backup files are transferred to targets like FTP, Cloudfiles, WebDAV, SSH (SFTP), Amazon S3 and others.
+- Duplicati allows backups of folders, document types like e.g. documents or images, or custom filter rules.
+- Duplicati is available as application with an easy-to-use user interface and as command line tool.
+- Duplicati can make proper backups of opened or locked files using the Volume Snapshot Service (VSS) under Windows or the Logical Volume Manager (LVM) under Linux. This allows Duplicati to back up the Microsoft Outlook PST file while Outlook is running.
+- Filters, deletion rules, transfer and bandwidth options, etc
 
-Why use Duplicati?
-==================
+# Why use Duplicati?
 
 Keep your data safe, store it far away, update your backup regularly!
 This is a simple rule but many backup solutions do not achieve that today.
@@ -72,33 +67,32 @@ Store your backup far away! The best backup is useless when it is destroyed toge
 
 Backup regularly! The worst case is that your backup is outdated simply because someone forgot to make a backup at the right time. Duplicati has a built-in scheduler, so that it's easy to have a regular, up-to-date backup. Furthermore, Duplicati uses file compression and is able to store incremental backups to save storage space and bandwidth.
 
-Contributing
-==================
+# Contributing
 
 ## Contributing Bug reports
+
 We use GitHub for bug tracking. Please search the existing issues for your bug and create a new one if the issue is not yet tracked:
 https://github.com/duplicati/duplicati/issues
 
 ## Contributing Translations
+
 Interested in helping to translate duplicati? Help is always welcome at transifex:
 https://www.transifex.com/duplicati/duplicati/dashboard/
 
 ## Contributing Code
-Instructions on how to setup your development environment and build duplicati can be found in the [wiki](https://github.com/duplicati/duplicati/wiki/How-to-build-from-source). Pull requests fixing bugs or improving duplicati in another way are appreciated.
+
+Instructions on how to setup your development environment and build duplicati can be found in the [documentation](https://docs.duplicati.com/installation-details/developer). Pull requests fixing bugs or improving duplicati in another way are appreciated.
 
 If you are looking for an issue to fix, try looking at one of the [minor change](https://github.com/duplicati/duplicati/issues?q=is%3Aissue+is%3Aopen+label%3A%22minor+change%22) issues. If you are most used to web development, have a look at the [issues marked UI](https://github.com/duplicati/duplicati/issues?q=is%3Aissue+is%3Aopen+label%3A%22UI%22).
 
-
 Thank you to all our existing contributors:
 <a href="https://github.com/duplicati/duplicati/graphs/contributors"><img src="https://opencollective.com/duplicati/contributors.svg?width=890" /></a>
-
 
 ## Backers
 
 Thank you to all our backers! 🙏
 
 <a href="https://opencollective.com/duplicati#backers" target="_blank"><img src="https://opencollective.com/duplicati/backers.svg?width=890"></a>
-
 
 ## Sponsors
 
