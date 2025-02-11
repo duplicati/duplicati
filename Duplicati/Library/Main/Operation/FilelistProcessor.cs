@@ -265,6 +265,8 @@ namespace Duplicati.Library.Main.Operation
                 var remoteFound = lookup.TryGetValue(i.Name, out var r);
                 var correctSize = remoteFound && i.Size >= 0 && (i.Size == r.File.Size || r.File.Size < 0);
                 var archived = remoteFound && r.File.IsArchived;
+                if (archived && r.File.Size == 0)
+                    correctSize = true;
                 if (archived && i.ArchiveTime == default)
                     database.UpdateRemoteVolume(i.Name, i.State, i.Size, i.Hash, true, TimeSpan.Zero, true);
                 else if (!archived && i.ArchiveTime.Ticks != 0)
@@ -344,7 +346,7 @@ namespace Duplicati.Library.Main.Operation
                     case RemoteVolumeState.Uploaded:
                         if (!remoteFound)
                             missing.Add(i);
-                        else if (correctSize || archived)
+                        else if (correctSize)
                             database.UpdateRemoteVolume(i.Name, RemoteVolumeState.Verified, i.Size, i.Hash);
                         else
                             missingHash.Add(new Tuple<long, RemoteVolumeEntry>(r.File.Size, i));
@@ -354,7 +356,7 @@ namespace Duplicati.Library.Main.Operation
                     case RemoteVolumeState.Verified:
                         if (!remoteFound)
                             missing.Add(i);
-                        else if (!correctSize && !archived)
+                        else if (!correctSize)
                             missingHash.Add(new Tuple<long, RemoteVolumeEntry>(r.File.Size, i));
 
                         break;
