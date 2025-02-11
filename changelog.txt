@@ -1,3 +1,56 @@
+2025-02-11 - 2.1.0.109_canary_2025-02-11
+==========
+This release is a canary release intended to be used for testing.
+
+# Important change for Windows Service
+This build changes the folder locations for the `Duplicati-server.sqlite` file on Windows and Linux when running as a service.
+There is support for backwards compatibility, so existing installations should not be affected.
+
+The detailed changes are:
+Windows: Avoid storing data in `C:\Windows\System32\config\systemprofile\AppData\Local\Duplicati` and prefer `{CSIDL_COMMON_APPDATA}\Duplicati`
+Linux: Avoid storing data in `/Duplicati` and prefer `/var/lib/Duplicati`.
+
+If you are not running Duplicati as a service, this has no effect.
+If you are using `--server-datafolder` or `DUPLICATI_HOME`, this has no effect on the database, but may cause your machineid and installid to change.
+
+The `machineid.txt` and `installid.txt` would previously be stored in the local app data folder, even when using portable mode or choosing a specific data folder.
+This has been fixed, so the files will now follow the database.
+If you are using the Duplicati console or otherwise depend on these values, you need to move them into the folder where the database is stored.
+
+## Important for users running 2.1.0.108
+For **2.1.0.108 version only**, the service folder was `{SYSTEMDRIVE}\Users\LocalService\Duplicati` which was dropped.
+If you have only installed 2.1.0.108 and ended up using the previous folder, you must manually move it to `{CSIDL_COMMON_APPDATA}\Duplicati`.
+
+# Permissions on database and data folder
+This update sets permissions on the data folder and the databases to prevent unauthorized access from local accounts.
+To opt out of setting permissions on each startup, place a file named `insecure-permissions.txt` inside the data folder.
+
+# New user interface
+This version uses the `ngclient` as the default interface. If some feature is not working as expected, it is possible to switch back to the `ngax` client.
+To switch client, replace `ngclient` with `ngax` in the url, or use the `theme.html` page to choose the UI (example: `http://localhost:8200/theme.html`).
+Please report any issues with the new UI.
+
+# Removed timeout guard
+Due to many reports of failures with the timeout mechanism this has been removed in the current version. It will be added back into each of the backends later.
+
+# Added a new tool for offsite backup
+This release features a new tool: `Duplicati.CommandLine.SyncTool.exe` / `duplicati-sync-tool` which can be used to create copies of backup files in multiple locations. The tool is currently documented with the built-in help, and more documentation is on the way. The tool is intended to be more integrated into Duplicati later and enables a straightforward way to achieve 3-2-1 backups, including copies in immutable storage.
+
+## Detailed list of changes:
+- Support topics on Telegram reports
+- Added remote syncronization tool
+- Removed high-level backend timeout
+- Added guard to prevent dataloss on shared destinations
+- Added option to disable automatic update checks
+- Fixed a bug with the new restore that could cause incorrect files to be restored if files alredy exists
+- Fixed a case where updated timestamps were discarded if no data was changed
+- Added permission updates to data folder
+- Fixed automatic fallback on unsupported Zip files
+- Fixed multiple issues with TrayIcon state
+- Mark Mega.nz backend as deprecated
+- Switched to ngclient as the default UI
+- Added support for 429 responses on B2
+
 2025-01-31 - 2.1.0.108_canary_2025-01-31
 ==========
 This release is a canary release intended to be used for testing.
