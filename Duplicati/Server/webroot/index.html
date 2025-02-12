@@ -23,7 +23,7 @@
         var d = new Date();
         d.setTime(d.getTime() + (90*24*60*60*1000));
 
-        document.cookie = 'default-theme-v2=' + theme  + '; expires=' + d.toUTCString() + '; path=/';
+        document.cookie = 'default-client=' + theme  + '; expires=' + d.toUTCString() + '; path=/';
 
         // Make an absolute path redirect, as relative redirects break if the port is non-standard
         var path = window.location.pathname;
@@ -38,7 +38,7 @@
         window.location.replace(path);
     }
 
-    var theme = parseCookies()['default-theme-v2'];
+    var theme = parseCookies()['default-client'];
     if ((theme || '').trim().length == 0)
         theme = 'ngclient';
     
