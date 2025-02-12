@@ -507,9 +507,9 @@ namespace Duplicati.Library.Backend
             else
             {
                 return remoteFolder.Folders.Where(ff => ff.Exists)
-                    .Select(f => new FileEntry(f.Name, -1, f.TimeLastModified, f.TimeLastModified) { IsFolder = true })
+                    .Select(f => new FileEntry(f.Name, -1, f.TimeLastModified, f.TimeLastModified, true, false))
                     .Concat(remoteFolder.Files.Where(ff => ff.Exists)
-                        .Select(f => new FileEntry(f.Name, f.Length, f.TimeLastModified, f.TimeLastModified) { IsFolder = false }))
+                        .Select(f => new FileEntry(f.Name, f.Length, f.TimeLastModified, f.TimeLastModified, false, false)))
                     .ToArray();
             }
         }
