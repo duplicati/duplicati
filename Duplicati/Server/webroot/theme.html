@@ -49,7 +49,7 @@
         return cookies;
       }
 
-      function updateToCurrentTheme() {
+      function updateToCurrentClient() {
         var theme = parseCookies()["default-client"];
 
         var themes = ["ngax", "ngclient"];
@@ -68,7 +68,7 @@
       }
 
       // Lazy hack for DOM timing issues...
-      window.setTimeout(updateToCurrentTheme, 1000);
+      window.setTimeout(updateToCurrentClient, 1000);
     </script>
 
     <script type="text/javascript" src="oem/root/theme/oem.js"></script>
@@ -99,7 +99,7 @@
     </ul>
 
     <script type="text/javascript">
-      updateToCurrentTheme();
+      updateToCurrentClient();
     </script>
   </body>
 </html>
