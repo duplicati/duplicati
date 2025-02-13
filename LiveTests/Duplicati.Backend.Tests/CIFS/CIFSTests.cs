@@ -19,6 +19,8 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
+using DotNet.Testcontainers.Images;
+
 namespace Duplicati.Backend.Tests.CIFS;
 
 /// <summary>
@@ -71,6 +73,7 @@ smbd --foreground --no-process-group --debug-stdout";
 
         var container = new ContainerBuilder()
             .WithImage("ubuntu:22.04")
+            .WithImagePullPolicy(PullPolicy.Always) 
             .WithCommand("/bin/bash", "-c", "apt-get update && " +
                 "DEBIAN_FRONTEND=noninteractive apt-get install -y samba && " +
                 "bash /etc/samba/entrypoint.sh")
