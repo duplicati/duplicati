@@ -25,7 +25,8 @@ NUMBER_OF_FILES  default is 20
 | Dropbox | Planned | Live |
 | AlternativeFTP | Planned | Live |
 | AzureBlob | Planned | Live |
-| CIFS | Planned | |
+| CIFS | Planned | Live |
+| Google Drive | Planned | Live |
 | TahoeLAFS | Pending Decision | |
 | TescentCOS | Pending Decision | |
 | Storj | Pending Decision | |
