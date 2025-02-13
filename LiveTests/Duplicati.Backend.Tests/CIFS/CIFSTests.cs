@@ -73,7 +73,7 @@ smbd --foreground --no-process-group --debug-stdout";
 
         var container = new ContainerBuilder()
             .WithImage("ubuntu:22.04")
-            .WithImagePullPolicy(PullPolicy.Always) 
+            .WithImagePullPolicy(PullPolicy.Missing) 
             .WithCommand("/bin/bash", "-c", "apt-get update && " +
                 "DEBIAN_FRONTEND=noninteractive apt-get install -y samba && " +
                 "bash /etc/samba/entrypoint.sh")

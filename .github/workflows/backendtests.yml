@@ -442,6 +442,10 @@ jobs:
         run: >-
           dotnet build --no-restore
           LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.sln
+      - name: Setup Testcontainers Cloud Client
+        uses: atomicjar/testcontainers-cloud-setup-action@v1
+        with:
+          token: "${{ secrets.TC_CLOUD_TOKEN }}"
       - name: Run CIFS tests
         run: >-
           dotnet test --no-build --filter="ClassName~CIFSTests"
