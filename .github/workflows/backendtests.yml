@@ -417,6 +417,8 @@ jobs:
           --logger:"console;verbosity=detailed"
           LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.sln
   test_cifs:
+    needs: check_secrets
+    if: needs.check_secrets.outputs.testcontainers_secrets_available == 'true'
     name: CIFS Tests
     runs-on: "${{ matrix.os }}"
     strategy:
