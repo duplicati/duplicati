@@ -257,6 +257,7 @@ jobs:
           LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.sln
       - name: Run Azure tests
         env:
+          READ_WRITE_TIMEOUT_SECONDS: 18000
           TESTCREDENTIAL_AZURE_ACCOUNTNAME: "${{ secrets.TESTCREDENTIAL_AZURE_ACCOUNTNAME }}"
           TESTCREDENTIAL_AZURE_ACCESSKEY: "${{ secrets.TESTCREDENTIAL_AZURE_ACCESSKEY }}"
           TESTCREDENTIAL_AZURE_CONTAINERNAME: "${{ secrets.TESTCREDENTIAL_AZURE_CONTAINERNAME }}"
