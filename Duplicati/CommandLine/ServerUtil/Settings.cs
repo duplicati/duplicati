@@ -25,6 +25,7 @@ using Duplicati.Library.Encryption;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main;
 using Duplicati.Library.Utility;
+using Utility = Duplicati.Library.Main.Utility;
 
 namespace Duplicati.CommandLine.ServerUtil;
 
@@ -88,7 +89,7 @@ public sealed record Settings(
     /// <returns>The loaded settings</returns>
     public static Settings Load(string? password, System.Uri? hostUrl, string settingsFile, bool insecure, string? settingsPassphrase, string? secretProvider, SecretProviderHelper.CachingLevel secretProviderCache, string secretProviderPattern, string? acceptedHostCertificate)
     {
-        hostUrl ??= new System.Uri("http://127.0.0.1:8200");
+        hostUrl ??= new System.Uri($"http://{Library.Utility.Utility.IpVersionCompatibleLoopback}:8200");
 
         ISecretProvider? secretInstance = null;
         if (!string.IsNullOrWhiteSpace(secretProvider))

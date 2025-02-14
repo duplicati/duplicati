@@ -66,12 +66,12 @@ namespace Duplicati.GUI.TrayIcon
         private const string DETACHED_PROCESS = "detached-process";
         private const string BROWSER_COMMAND_OPTION = "browser-command";
 
-        private const string DEFAULT_HOSTURL = "http://127.0.0.1:8200";
+        private static string DEFAULT_HOSTURL => $"http://{Library.Utility.Utility.IpVersionCompatibleLoopback}:8200";
 
         private static string _browser_command = null;
         private static bool disableTrayIconLogin = false;
         private static bool openui = false;
-        private static Uri serverURL = new Uri(DEFAULT_HOSTURL);
+        private static Uri serverURL = new(DEFAULT_HOSTURL);
         public static string BrowserCommand { get { return _browser_command; } }
         public static Server.Database.Connection databaseConnection = null;
 
