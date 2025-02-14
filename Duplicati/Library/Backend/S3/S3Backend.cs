@@ -43,6 +43,7 @@ namespace Duplicati.Library.Backend
         private const string SSL_OPTION = "use-ssl";
         private const string S3_CLIENT_OPTION = "s3-client";
         private const string S3_DISABLE_CHUNK_ENCODING_OPTION = "s3-disable-chunk-encoding";
+        private const string S3_STRICT_NAME_PARSING = "s3-strict-name-parsing";
 
         public static readonly Dictionary<string, string> KNOWN_S3_PROVIDERS = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) {
             { "Amazon S3", "s3.amazonaws.com" },
@@ -174,6 +175,8 @@ namespace Duplicati.Library.Backend
         private readonly string m_bucket;
         private readonly string m_prefix;
 
+        private readonly bool m_strictNameParsing;
+
         private const string DEFAULT_S3_HOST = "s3.amazonaws.com";
         private IS3Client s3Client;
 
@@ -221,9 +224,14 @@ namespace Duplicati.Library.Backend
                 }
             }
 
+            m_strictNameParsing = Utility.Utility.ParseBoolOption(options, S3_STRICT_NAME_PARSING);
+
             m_prefix = m_prefix.Trim();
             if (m_prefix.Length != 0)
                 m_prefix = Util.AppendDirSeparator(m_prefix, "/");
+
+            if (!m_strictNameParsing && m_prefix.StartsWith("/", StringComparison.Ordinal))
+                m_prefix = m_prefix.TrimStart('/');
 
             // Auto-disable DNS lookup for non-AWS configurations
             if (!options.ContainsKey("s3-ext-forcepathstyle") && !hostname.EndsWith(".amazonaws.com", StringComparison.OrdinalIgnoreCase))
@@ -276,9 +284,11 @@ namespace Duplicati.Library.Backend
             {
                 ((FileEntry)file).Name = file.Name.Substring(m_prefix.Length);
 
-                //Fix for a bug in Duplicati 1.0 beta 3 and earlier, where filenames are incorrectly prefixed with a slash
-                if (file.Name.StartsWith("/", StringComparison.Ordinal) && !m_prefix.StartsWith("/", StringComparison.Ordinal))
-                    ((FileEntry)file).Name = file.Name.Substring(1);
+                if (!m_strictNameParsing && file.Name.StartsWith("/", StringComparison.Ordinal))
+                    ((FileEntry)file).Name = file.Name.TrimStart('/');
+
+                if (string.IsNullOrWhiteSpace(file.Name))
+                    continue;
 
                 yield return file;
             }
@@ -334,6 +344,7 @@ namespace Duplicati.Library.Backend
                     new CommandLineArgument(SSL_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.S3Backend.DescriptionUseSSLShort, Strings.S3Backend.DescriptionUseSSLLong),
                     new CommandLineArgument(S3_CLIENT_OPTION, CommandLineArgument.ArgumentType.Enumeration, Strings.S3Backend.S3ClientDescriptionShort, Strings.S3Backend.S3ClientDescriptionLong, "aws", null, new string[] { "aws", "minio" }),
                     new CommandLineArgument(S3_DISABLE_CHUNK_ENCODING_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.S3Backend.DescriptionDisableChunkEncodingShort, Strings.S3Backend.DescriptionDisableChunkEncodingLong, "false"),
+                    new CommandLineArgument(S3_STRICT_NAME_PARSING, CommandLineArgument.ArgumentType.Boolean, Strings.S3Backend.DescriptionStrictNameParsingShort, Strings.S3Backend.DescriptionStrictNameParsingLong, "false"),
                     new CommandLineArgument("auth-password", CommandLineArgument.ArgumentType.Password, Strings.S3Backend.AuthPasswordDescriptionShort, Strings.S3Backend.AuthPasswordDescriptionLong),
                     new CommandLineArgument("auth-username", CommandLineArgument.ArgumentType.String, Strings.S3Backend.AuthUsernameDescriptionShort, Strings.S3Backend.AuthUsernameDescriptionLong),
                 };
