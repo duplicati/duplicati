@@ -16,7 +16,7 @@ public class SettingsBinder : BinderBase<Settings>
     /// <summary>
     /// The host URL option.
     /// </summary>
-    public static readonly Option<Uri> hostUrlOption = new Option<Uri>("--hosturl", description: "The host URL to use", getDefaultValue: () => new Uri("http://127.0.0.1:8200"));
+    public static readonly Option<Uri> hostUrlOption = new Option<Uri>("--hosturl", description: "The host URL to use", getDefaultValue: () => new Uri($"http://{Library.Utility.Utility.IpVersionCompatibleLoopback}:8200"));
     /// <summary>
     /// The server datafolder option.
     /// </summary>
