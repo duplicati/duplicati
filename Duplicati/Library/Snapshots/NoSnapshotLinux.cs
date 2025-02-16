@@ -111,7 +111,7 @@ namespace Duplicati.Library.Snapshots
         /// <returns>The symlink target</returns>
         public override string GetSymlinkTarget(string localPath)
         {
-            return SystemIO.IO_SYS.GetSymlinkTarget(localPath);
+            return SystemIO.IO_OS.GetSymlinkTarget(localPath);
         }
 
         /// <summary>
@@ -122,7 +122,7 @@ namespace Duplicati.Library.Snapshots
         /// <param name="isSymlink">A flag indicating if the target is a symlink</param>
         public override Dictionary<string, string> GetMetadata(string localPath, bool isSymlink)
         {
-            return SystemIO.IO_SYS.GetMetadata(localPath, isSymlink, FollowSymlinks);
+            return SystemIO.IO_OS.GetMetadata(localPath, isSymlink, FollowSymlinks);
         }
 
         /// <summary>

@@ -12,6 +12,39 @@ MAX_FILE_SIZE    default is 1000kb
 NUMBER_OF_FILES  default is 20
 ```
 
+## Backends CI Status
+
+| Backend | CI Planned | CI Status |
+|----------|------------|------------|
+| pCloud | Planned | Live |
+| WebDav | Planned | Live |
+| Shhv2 | Planned | Live |
+| S3 | Planned | Live |
+| Ftp | Planned | Live |
+| Planned | Planned | Live |
+| Dropbox | Planned | Live |
+| AlternativeFTP | Planned | Live |
+| AzureBlob | Planned | Live |
+| CIFS | Planned | Live |
+| Google Drive | Planned | Live |
+| TahoeLAFS | Pending Decision | |
+| TescentCOS | Pending Decision | |
+| Storj | Pending Decision | |
+| Sia | Pending Decision | |
+| SharePoint | Pending Decision | |
+| Rclone | Pending Decision | |
+| OneDrive | Pending Decision | |
+| OpenStack | Pending Decision | |
+| Mega | Pending Decision | |
+| Jottacloud | Pending Decision | |
+| IDrive2 | Planned | |
+| File | Planned | |
+| Box | Pending Decision | |
+| CloudFiles | Pending Decision | |
+| backBlaze | Planned | |
+| AliyunOSS | Pending Decision | |
+
+
 ## Backends that do not require Environment variables
 
 * FTP _(TestContainers required)_

@@ -22,6 +22,7 @@
 using System;
 using System.Linq;
 using System.Collections.Generic;
+using Duplicati.Library.Common.IO;
 
 #nullable enable
 
@@ -32,7 +33,6 @@ namespace Duplicati.Library.AutoUpdater;
 /// </summary>
 public static class DataFolderLocator
 {
-
     /// <summary>
     /// Finds a default storage folder, using the operating system specific locations.
     /// The targetfilename is used to detect locations that are used in previous versions.
@@ -41,11 +41,30 @@ public static class DataFolderLocator
     /// If the data folder is overriden, the overriden folder is used, and no search is performed.
     /// </summary>
     /// <param name="targetfilename">The filename to look for</param>
+    /// <param name="autoCreate">Whether to create the folder if it does not exist</param>
     /// <returns>The default storage folder</returns>
-    public static string GetDefaultStorageFolder(string targetfilename)
-        => DataFolderManager.OVERRIDEN_DATAFOLDER
+    public static string GetDefaultStorageFolder(string targetfilename, bool autoCreate)
+    {
+        var folder = DataFolderManager.OVERRIDEN_DATAFOLDER
             ? DataFolderManager.DATAFOLDER
             : GetDefaultStorageFolderInternal(targetfilename, AutoUpdateSettings.AppName);
+
+        if (SystemIO.IO_OS.DirectoryExists(folder))
+        {
+            if (!SystemIO.IO_OS.FileExists(System.IO.Path.Combine(folder, Util.InsecurePermissionsMarkerFile)))
+                SystemIO.IO_OS.DirectorySetPermissionUserRWOnly(folder);
+        }
+        else if (autoCreate)
+        {
+            // Create the folder
+            SystemIO.IO_OS.DirectoryCreate(folder);
+
+            // Make sure the folder is only accessible by the current user
+            SystemIO.IO_OS.DirectorySetPermissionUserRWOnly(folder);
+        }
+
+        return folder;
+    }
 
     /// <summary>
     /// Finds a default storage folder, using the operating system specific locations.
@@ -77,11 +96,7 @@ public static class DataFolderLocator
 
             // If %LOCALAPPDATA% is inside the Windows folder, prefer a LocalService folder instead
             if (Common.IO.Util.IsPathUnderWindowsFolder(newlocation))
-            {
-                var userProfilesFolder = Library.Utility.SHGetFolder.UserProfilesFolder;
-                if (!string.IsNullOrWhiteSpace(userProfilesFolder))
-                    folderOrder.Add(System.IO.Path.Combine(userProfilesFolder, "LocalService", appName));
-            }
+                folderOrder.Add(System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), appName));
 
             // Prefer the most recent location
             var matches = folderOrder.AsEnumerable()

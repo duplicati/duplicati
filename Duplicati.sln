@@ -176,6 +176,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tools", "Tools", "{15388C37
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RemoteSynchronization", "Tools\RemoteSynchronization\RemoteSynchronization.csproj", "{D3A7E41E-279D-4E0A-A2DB-5E8002E02B6D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.CommandLine.SyncTool", "Executables\net8\Duplicati.CommandLine.SyncTool\Duplicati.CommandLine.SyncTool.csproj", "{48D32674-0FE9-4407-B102-4AE46D93595F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -494,6 +496,10 @@ Global
 		{D3A7E41E-279D-4E0A-A2DB-5E8002E02B6D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D3A7E41E-279D-4E0A-A2DB-5E8002E02B6D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D3A7E41E-279D-4E0A-A2DB-5E8002E02B6D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{48D32674-0FE9-4407-B102-4AE46D93595F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{48D32674-0FE9-4407-B102-4AE46D93595F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{48D32674-0FE9-4407-B102-4AE46D93595F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{48D32674-0FE9-4407-B102-4AE46D93595F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -556,6 +562,7 @@ Global
 		{836E0557-B40C-4DC7-9A2A-5C062F9ACC6B} = {E1A9B303-F281-45C5-A4F6-CADD9DE3F3C4}
 		{6D9742A7-6F32-4571-8276-79716168B525} = {424CEF73-4984-430E-9C8B-E61CC0F22074}
 		{D3A7E41E-279D-4E0A-A2DB-5E8002E02B6D} = {15388C37-9218-4818-972E-738EEA8F1602}
+		{48D32674-0FE9-4407-B102-4AE46D93595F} = {6B46F6B1-1898-49B8-ADA7-5CAF68EB77E3}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {8B40BAFE-D862-4397-9495-8F5EAF5CE80C}

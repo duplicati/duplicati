@@ -53,7 +53,8 @@ namespace Duplicati.Server.Serialization
         ReadyError,
         Paused,
         Active,
-        ActivePaused
+        ActivePaused,
+        Disconnected
     }
 
 

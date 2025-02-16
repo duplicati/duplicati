@@ -765,7 +765,7 @@ namespace Duplicati.Library.Utility
                 return @default;
 
             var flags = 0;
-            foreach (var s in value.Split([','], StringSplitOptions.RemoveEmptyEntries))
+            foreach (var s in value.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
             {
                 var trimmed = s.Trim();
                 if (Enum.TryParse(trimmed, true, out T flag))

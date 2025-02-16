@@ -56,7 +56,7 @@ namespace Duplicati.Library.Snapshots
         /// <param name="localPath">The file or folder to examine</param>
         /// <returns>The symlink target</returns>
         public override string GetSymlinkTarget(string localPath)
-            => SystemIO.IO_WIN.GetSymlinkTarget(localPath);
+            => SystemIO.IO_OS.GetSymlinkTarget(localPath);
 
         /// <summary>
         /// Gets the attributes for the given file or folder
@@ -64,7 +64,7 @@ namespace Duplicati.Library.Snapshots
         /// <returns>The file attributes</returns>
         /// <param name="localPath">The file or folder to examine</param>
         public override System.IO.FileAttributes GetAttributes(string localPath)
-            => SystemIO.IO_WIN.GetFileAttributes(localPath);
+            => SystemIO.IO_OS.GetFileAttributes(localPath);
 
         /// <summary>
         /// Returns the size of a file
@@ -72,7 +72,7 @@ namespace Duplicati.Library.Snapshots
         /// <param name="localPath">The full path to the file in non-snapshot format</param>
         /// <returns>The length of the file</returns>
         public override long GetFileSize(string localPath)
-            => SystemIO.IO_WIN.FileLength(localPath);
+            => SystemIO.IO_OS.FileLength(localPath);
 
         /// <summary>
         /// Gets the source folders
@@ -102,7 +102,7 @@ namespace Duplicati.Library.Snapshots
         /// <param name="localPath">The full path to the file in non-snapshot format</param>
         /// <returns>The last write time of the file</returns>
         public override DateTime GetLastWriteTimeUtc(string localPath)
-            => SystemIO.IO_WIN.FileGetLastWriteTimeUtc(localPath);
+            => SystemIO.IO_OS.FileGetLastWriteTimeUtc(localPath);
 
         /// <summary>
         /// Gets the last write time of a given file in UTC
@@ -110,7 +110,7 @@ namespace Duplicati.Library.Snapshots
         /// <param name="localPath">The full path to the file in non-snapshot format</param>
         /// <returns>The last write time of the file</returns>
         public override DateTime GetCreationTimeUtc(string localPath)
-            => SystemIO.IO_WIN.FileGetCreationTimeUtc(localPath);
+            => SystemIO.IO_OS.FileGetCreationTimeUtc(localPath);
 
         /// <summary>
         /// Opens a file for reading
@@ -118,7 +118,7 @@ namespace Duplicati.Library.Snapshots
         /// <param name="localPath">The full path to the file in non-snapshot format</param>
         /// <returns>An open filestream that can be read</returns>
         public override System.IO.Stream OpenRead(string localPath)
-            => SystemIO.IO_WIN.FileOpenRead(localPath);
+            => SystemIO.IO_OS.FileOpenRead(localPath);
 
         /// <summary>
         /// Lists all files in the given folder
@@ -127,7 +127,7 @@ namespace Duplicati.Library.Snapshots
         /// <param name='localFolderPath'>The folder to examinate</param>
         protected override string[] ListFiles(string localFolderPath)
         {
-            string[] tmp = SystemIO.IO_WIN.GetFiles(localFolderPath);
+            string[] tmp = SystemIO.IO_OS.GetFiles(localFolderPath);
             string[] res = new string[tmp.Length];
             for (int i = 0; i < tmp.Length; i++)
                 res[i] = SystemIOWindows.RemoveExtendedDevicePathPrefix(tmp[i]);
@@ -143,7 +143,7 @@ namespace Duplicati.Library.Snapshots
         /// <param name='localFolderPath'>The folder to examinate</param>
         protected override string[] ListFolders(string localFolderPath)
         {
-            string[] tmp = SystemIO.IO_WIN.GetDirectories(SystemIOWindows.AddExtendedDevicePathPrefix(localFolderPath));
+            string[] tmp = SystemIO.IO_OS.GetDirectories(SystemIOWindows.AddExtendedDevicePathPrefix(localFolderPath));
             string[] res = new string[tmp.Length];
             for (int i = 0; i < tmp.Length; i++)
                 res[i] = SystemIOWindows.RemoveExtendedDevicePathPrefix(tmp[i]);
@@ -158,7 +158,7 @@ namespace Duplicati.Library.Snapshots
         /// <param name="localPath">The file or folder to examine</param>
         /// <param name="isSymlink">A flag indicating if the target is a symlink</param>
         public override Dictionary<string, string> GetMetadata(string localPath, bool isSymlink)
-            => SystemIO.IO_WIN.GetMetadata(localPath, isSymlink, FollowSymlinks);
+            => SystemIO.IO_OS.GetMetadata(localPath, isSymlink, FollowSymlinks);
 
         /// <inheritdoc />
         public override string ConvertToLocalPath(string snapshotPath)

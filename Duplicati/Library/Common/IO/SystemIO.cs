@@ -20,42 +20,25 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System;
-using System.Runtime.Versioning;
 namespace Duplicati.Library.Common.IO
 {
     public static class SystemIO
     {
-
-        /// <summary>
-        /// A cached lookup for windows methods for dealing with long filenames
-        /// </summary>
-        [SupportedOSPlatform("windows")]
-        public static readonly ISystemIO IO_WIN;
-
-        [SupportedOSPlatform("linux")]
-        [SupportedOSPlatform("macOS")]
-        public static readonly ISystemIO IO_SYS;
-
         public static readonly ISystemIO IO_OS;
 
         static SystemIO()
         {
-            // TODO: These interfaces cannot be properly guarded by the supported platform attribute in this form.
-            // They are used in static methods of USNJournal on all platforms.
-            
-            // Since that is the case, the warnings will be suppressed with pragma.
-            
-#pragma warning disable CA1416
-            IO_WIN = new SystemIOWindows();
-            IO_SYS = new SystemIOLinux();
-#pragma warning restore CA1416
             if (OperatingSystem.IsWindows())
             {
-                IO_OS = IO_WIN;
+                IO_OS = new SystemIOWindows();
             }
             else if (OperatingSystem.IsMacOS() || OperatingSystem.IsLinux())
             {
-                IO_OS = IO_SYS;
+                IO_OS = new SystemIOLinux();
+            }
+            else
+            {
+                throw new PlatformNotSupportedException("The current platform is not supported");
             }
         }
     }

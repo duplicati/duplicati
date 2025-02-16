@@ -1,22 +1,22 @@
 // Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
-// 
-// Permission is hereby granted, free of charge, to any person obtaining a 
-// copy of this software and associated documentation files (the "Software"), 
-// to deal in the Software without restriction, including without limitation 
-// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
-// and/or sell copies of the Software, and to permit persons to whom the 
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the "Software"),
+// to deal in the Software without restriction, including without limitation
+// the rights to use, copy, modify, merge, publish, distribute, sublicense,
+// and/or sell copies of the Software, and to permit persons to whom the
 // Software is furnished to do so, subject to the following conditions:
-// 
-// The above copyright notice and this permission notice shall be included in 
+//
+// The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
-// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 using Duplicati.Library.DynamicLoader;
 using Duplicati.Library.Interface;
@@ -311,6 +311,7 @@ namespace Duplicati.UnitTest
 
 
         [Test]
+        [Category("Restore"), Category("Bug")]
         public void Issue5886RestoreModifiedMiddleBlock()
         {
             var blocksize = 1024;
@@ -372,6 +373,68 @@ namespace Duplicati.UnitTest
                     Assert.That(restored_contents, Is.EqualTo(original_contents), "Restored file should be equal to original file");
                 }
             }
+        }
+
+        [Test]
+        [Category("Restore"), Category("Bug")]
+        public void Issue5957RestoreModifiedBlockUseLocalBlocks([Values] bool use_local, [Values] bool overwrite)
+        {
+            var blocksize = 1024;
+            var testopts = new Dictionary<string, string>(TestOptions)
+            {
+                ["blocksize"] = $"{blocksize}b",
+                ["restore-with-local-blocks"] = use_local.ToString().ToLower(),
+                ["overwrite"] = overwrite.ToString().ToLower()
+            };
+
+            var original_dir = Path.Combine(DATAFOLDER, "some_original_dir");
+            Directory.CreateDirectory(original_dir);
+            string f = Path.Combine(original_dir, "some_file");
+            TestUtils.WriteTestFile(f, 3 * blocksize);
+
+            // Backup the files
+            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
+            {
+                IBackupResults backupResults = c.Backup([DATAFOLDER]);
+                TestUtils.AssertResults(backupResults);
+            }
+
+            var original_contents = File.ReadAllBytes(f);
+
+            using (var stream = File.Open(f, FileMode.Open, FileAccess.ReadWrite))
+            {
+                stream.Seek(0, SeekOrigin.Begin);
+                byte[] buffer = new byte[1];
+                stream.Read(buffer, 0, 1);
+                buffer[0] = (byte)~buffer[0];
+                stream.Seek(0, SeekOrigin.Begin);
+                stream.Write(buffer, 0, 1);
+            }
+
+            var restored_contents = File.ReadAllBytes(f);
+            Assert.That(restored_contents, Is.Not.EqualTo(original_contents), "Restored file should not be equal to original file");
+
+            // Attempt to restore the file
+            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
+            {
+                var restoreResults = c.Restore([f]);
+                Assert.That(restoreResults.RestoredFiles, Is.EqualTo(1), "File should have been restored.");
+            }
+
+            // Verify that the files are equal
+            // List files in folder
+            if (overwrite)
+            {
+                restored_contents = File.ReadAllBytes(f);
+            }
+            else
+            {
+                var files = Directory.GetFiles(original_dir, "*", SearchOption.TopDirectoryOnly);
+                Assert.That(files.Length, Is.EqualTo(2), "There should be two files in the folder");
+                var f2 = files.FirstOrDefault(v => v != f);
+                restored_contents = File.ReadAllBytes(f2);
+            }
+            Assert.That(restored_contents, Is.EqualTo(original_contents), "Restored file should be equal to original file");
         }
 
 

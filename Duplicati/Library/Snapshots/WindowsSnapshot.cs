@@ -46,6 +46,11 @@ namespace Duplicati.Library.Snapshots
         public static readonly string LOGTAG = Logging.Log.LogTagFromType<WindowsSnapshot>();
 
         /// <summary>
+        /// The system IO for the current platform
+        /// </summary>
+        private static readonly ISystemIO IO_WIN = SystemIO.IO_OS;
+
+        /// <summary>
         /// The main reference to the backup controller
         /// </summary>
         private readonly VssBackupComponents _vssBackupComponents;
@@ -138,8 +143,8 @@ namespace Duplicati.Library.Snapshots
         {
             string[] tmp = null;
             var spath = ConvertToSnapshotPath(localFolderPath);
-            tmp = SystemIO.IO_WIN.GetDirectories(spath);
-            var root = Util.AppendDirSeparator(SystemIO.IO_WIN.GetPathRoot(localFolderPath));
+            tmp = IO_WIN.GetDirectories(spath);
+            var root = Util.AppendDirSeparator(IO_WIN.GetPathRoot(localFolderPath));
             var volumePath = Util.AppendDirSeparator(ConvertToSnapshotPath(root));
             volumePath = SystemIOWindows.AddExtendedDevicePathPrefix(volumePath);
 
@@ -163,10 +168,10 @@ namespace Duplicati.Library.Snapshots
 
             string[] files = null;
             var spath = ConvertToSnapshotPath(localFolderPath);
-            files = SystemIO.IO_WIN.GetFiles(spath);
+            files = IO_WIN.GetFiles(spath);
 
             // convert back to non-shadow, i.e., non-vss version
-            var root = Util.AppendDirSeparator(SystemIO.IO_WIN.GetPathRoot(localFolderPath));
+            var root = Util.AppendDirSeparator(IO_WIN.GetPathRoot(localFolderPath));
             var volumePath = Util.AppendDirSeparator(ConvertToSnapshotPath(root));
             volumePath = SystemIOWindows.AddExtendedDevicePathPrefix(volumePath);
 
@@ -190,7 +195,7 @@ namespace Duplicati.Library.Snapshots
         {
             var spath = ConvertToSnapshotPath(localPath);
 
-            return SystemIO.IO_WIN.GetLastWriteTimeUtc(SystemIOWindows.AddExtendedDevicePathPrefix(spath));
+            return IO_WIN.GetLastWriteTimeUtc(SystemIOWindows.AddExtendedDevicePathPrefix(spath));
         }
 
         /// <summary>
@@ -202,7 +207,7 @@ namespace Duplicati.Library.Snapshots
         {
             var spath = ConvertToSnapshotPath(localPath);
 
-            return SystemIO.IO_WIN.GetCreationTimeUtc(SystemIOWindows.AddExtendedDevicePathPrefix(spath));
+            return IO_WIN.GetCreationTimeUtc(SystemIOWindows.AddExtendedDevicePathPrefix(spath));
         }
 
         /// <summary>
@@ -212,7 +217,7 @@ namespace Duplicati.Library.Snapshots
         /// <returns>An open filestream that can be read</returns>
         public override Stream OpenRead(string localPath)
         {
-            return SystemIO.IO_WIN.FileOpenRead(ConvertToSnapshotPath(localPath));
+            return IO_WIN.FileOpenRead(ConvertToSnapshotPath(localPath));
         }
 
         /// <summary>
@@ -222,7 +227,7 @@ namespace Duplicati.Library.Snapshots
         /// <returns>The length of the file</returns>
         public override long GetFileSize(string localPath)
         {
-            return SystemIO.IO_WIN.FileLength(ConvertToSnapshotPath(localPath));
+            return IO_WIN.FileLength(ConvertToSnapshotPath(localPath));
         }
 
         /// <summary>
@@ -232,7 +237,7 @@ namespace Duplicati.Library.Snapshots
         /// <param name="localPath">The file or folder to examine</param>
         public override FileAttributes GetAttributes(string localPath)
         {
-            return SystemIO.IO_WIN.GetFileAttributes(ConvertToSnapshotPath(localPath));
+            return IO_WIN.GetFileAttributes(ConvertToSnapshotPath(localPath));
         }
 
         /// <summary>
@@ -243,7 +248,7 @@ namespace Duplicati.Library.Snapshots
         public override string GetSymlinkTarget(string localPath)
         {
             var spath = ConvertToSnapshotPath(localPath);
-            return SystemIO.IO_WIN.GetSymlinkTarget(spath);
+            return IO_WIN.GetSymlinkTarget(spath);
         }
 
         /// <summary>
@@ -254,7 +259,7 @@ namespace Duplicati.Library.Snapshots
         /// <param name="isSymlink">A flag indicating if the target is a symlink</param>
         public override Dictionary<string, string> GetMetadata(string localPath, bool isSymlink)
         {
-            return SystemIO.IO_WIN.GetMetadata(ConvertToSnapshotPath(localPath), isSymlink, FollowSymlinks);
+            return SystemIO.IO_OS.GetMetadata(ConvertToSnapshotPath(localPath), isSymlink, FollowSymlinks);
         }
 
         /// <inheritdoc />
@@ -272,7 +277,7 @@ namespace Duplicati.Library.Snapshots
             foreach (var kvp in _vssBackupComponents.SnapshotDeviceAndVolumes)
             {
                 if (snapshotPath.StartsWith(kvp.Key, Utility.Utility.ClientFilenameStringComparison))
-                    return SystemIO.IO_WIN.PathCombine(kvp.Value, snapshotPath.Substring(kvp.Key.Length));
+                    return IO_WIN.PathCombine(kvp.Value, snapshotPath.Substring(kvp.Key.Length));
             }
 
             throw new InvalidOperationException();
@@ -287,7 +292,7 @@ namespace Duplicati.Library.Snapshots
             if (!Path.IsPathRooted(localPath))
                 throw new InvalidOperationException();
 
-            var root = SystemIO.IO_WIN.GetPathRoot(localPath);
+            var root = IO_WIN.GetPathRoot(localPath);
             var volumePath = _vssBackupComponents.GetVolumeFromCache(root);
 
             // Note that using a simple Path.Combine() for the following code
@@ -307,13 +312,13 @@ namespace Duplicati.Library.Snapshots
         /// <inheritdoc />
         public override bool FileExists(string localFilePath)
         {
-            return SystemIO.IO_WIN.FileExists(ConvertToSnapshotPath(localFilePath));
+            return IO_WIN.FileExists(ConvertToSnapshotPath(localFilePath));
         }
 
         /// <inheritdoc />
         public override bool DirectoryExists(string localFolderPath)
         {
-            return SystemIO.IO_WIN.DirectoryExists(ConvertToSnapshotPath(localFolderPath));
+            return IO_WIN.DirectoryExists(ConvertToSnapshotPath(localFolderPath));
         }
 
         #endregion

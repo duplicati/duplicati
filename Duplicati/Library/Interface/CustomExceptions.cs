@@ -20,6 +20,7 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System;
+using System.Net.Http.Headers;
 using Duplicati.Library.Localization.Short;
 
 namespace Duplicati.Library.Interface
@@ -224,5 +225,14 @@ namespace Duplicati.Library.Interface
         public SettingsEncryptionKeyMissingException()
             : base(Strings.Common.SettingsKeyMissingExceptionError, "SettingsKeyMissing")
         { }
+    }
+    
+    /// <summary>
+    /// An exception for carrying the Retry-After header value on 429 Exceptions
+    /// </summary>
+    [Serializable]
+    public class TooManyRequestException(RetryConditionHeaderValue retryAfter) : Exception
+    {
+        public readonly RetryConditionHeaderValue RetryAfter = retryAfter;
     }
 }

@@ -257,6 +257,7 @@ jobs:
           LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.sln
       - name: Run Azure tests
         env:
+          READ_WRITE_TIMEOUT_SECONDS: 18000
           TESTCREDENTIAL_AZURE_ACCOUNTNAME: "${{ secrets.TESTCREDENTIAL_AZURE_ACCOUNTNAME }}"
           TESTCREDENTIAL_AZURE_ACCESSKEY: "${{ secrets.TESTCREDENTIAL_AZURE_ACCESSKEY }}"
           TESTCREDENTIAL_AZURE_CONTAINERNAME: "${{ secrets.TESTCREDENTIAL_AZURE_CONTAINERNAME }}"
@@ -413,5 +414,36 @@ jobs:
           TESTCREDENTIAL_GOOGLEDRIVE_FOLDER: "${{ secrets.TESTCREDENTIAL_GOOGLEDRIVE_FOLDER }}"
         run: >-
           dotnet test --no-build --filter="ClassName~GoogleDriveTests"
+          --logger:"console;verbosity=detailed"
+          LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.sln
+  test_cifs:
+    needs: check_secrets
+    if: needs.check_secrets.outputs.testcontainers_secrets_available == 'true'
+    name: CIFS Tests
+    runs-on: "${{ matrix.os }}"
+    strategy:
+      max-parallel: 1
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+    steps:
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.x
+      - name: Checkout source
+        uses: actions/checkout@v4
+      - name: Restore NuGet dependencies
+        run: >-
+          dotnet restore
+          LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.sln
+      - name: Build project
+        run: >-
+          dotnet build --no-restore
+          LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.sln
+      - name: Run CIFS tests
+        run: >-
+          dotnet test --no-build --filter="ClassName~CIFSTests"
           --logger:"console;verbosity=detailed"
           LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.sln

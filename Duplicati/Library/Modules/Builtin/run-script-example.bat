@@ -50,7 +50,12 @@ REM --run-script-with-arguments = <boolean>
 REM If set to true, the script path will be parsed as a command line, and the
 REM arguments will be passed to the script. If set to false (default), 
 REM the script path will used as a single path.
-REM Use double- or single-quotes to pass arguments with spaces.
+REM If you do not have spaces in your script path or arguments, simply enter 
+REM it as a string:
+REM Example: --run-script-before="C:\path\to\script.bat arg1 arg2 --option1=a"
+REM If you have spaces in the path or arguements, use double- or single-quotes
+REM around the elements that have spaces, similar to how you would do 
+REM on the command line:
 REM Example: --run-script-before="\"C:\path to\script.bat\" \"arg1 \" arg2"
 
 

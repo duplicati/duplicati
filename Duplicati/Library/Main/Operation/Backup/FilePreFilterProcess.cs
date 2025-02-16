@@ -96,11 +96,11 @@ namespace Duplicati.Library.Main.Operation.Backup
 
                     // If we disable the filetime check, we always assume that the file has changed
                     // Otherwise we check that the timestamps are different or if any of them are empty
-                    var timestampChanged = DISABLEFILETIMECHECK || e.LastWrite != e.OldModified || e.LastWrite.Ticks == 0 || e.OldModified.Ticks == 0;
+                    e.TimestampChanged = DISABLEFILETIMECHECK || e.LastWrite != e.OldModified || e.LastWrite.Ticks == 0 || e.OldModified.Ticks == 0;
 
                     // Avoid generating a new metadata blob if timestamp has not changed
                     // and we only check for timestamp changes
-                    if (CHECKFILETIMEONLY && !timestampChanged && !isNewFile)
+                    if (CHECKFILETIMEONLY && !e.TimestampChanged && !isNewFile)
                     {
                         Logging.Log.WriteVerboseMessage(FILELOGTAG, "SkipCheckNoTimestampChange", "Skipped checking file, because timestamp was not updated {0}", e.Entry.Path);
                         try
@@ -135,9 +135,9 @@ namespace Duplicati.Library.Main.Operation.Backup
 
                     // Check if the file is new, or something indicates a change
                     var filesizeChanged = filestatsize < 0 || e.LastFileSize < 0 || filestatsize != e.LastFileSize;
-                    if (isNewFile || timestampChanged || filesizeChanged || e.MetadataChanged)
+                    if (isNewFile || e.TimestampChanged || filesizeChanged || e.MetadataChanged)
                     {
-                        Logging.Log.WriteVerboseMessage(FILELOGTAG, "CheckFileForChanges", "Checking file for changes {0}, new: {1}, timestamp changed: {2}, size changed: {3}, metadatachanged: {4}, {5} vs {6}", e.Entry.Path, isNewFile, timestampChanged, filesizeChanged, e.MetadataChanged, e.LastWrite, e.OldModified);
+                        Logging.Log.WriteVerboseMessage(FILELOGTAG, "CheckFileForChanges", "Checking file for changes {0}, new: {1}, timestamp changed: {2}, size changed: {3}, metadatachanged: {4}, {5} vs {6}", e.Entry.Path, isNewFile, e.TimestampChanged, filesizeChanged, e.MetadataChanged, e.LastWrite, e.OldModified);
                         await self.Output.WriteAsync(e);
                     }
                     else

@@ -70,14 +70,8 @@ public sealed record Settings(
     /// <param name="filename">The filename to use</param>
     /// <returns>The default storage folder</returns>
     private static string GetDefaultStorageFolder(string filename)
-    {
         // Ideally, this should use DataFolderManager.DATAFOLDER, but we cannot due to backwards compatibility
-        var folder = DataFolderLocator.GetDefaultStorageFolder(filename);
-        if (!Directory.Exists(folder))
-            Directory.CreateDirectory(folder);
-
-        return folder;
-    }
+        => DataFolderLocator.GetDefaultStorageFolder(filename, true);
 
     /// <summary>
     /// Loads the settings from the settings file

@@ -289,7 +289,7 @@ namespace Duplicati.Library.Modules.Builtin
                 contenttype = new MediaTypeHeaderValue("application/x-www-form-urlencoded");
                 var postData = $"{m_messageParameterName}={System.Uri.EscapeDataString(body)}";
                 if (!string.IsNullOrEmpty(m_extraParameters))
-                    postData += $"&{System.Uri.EscapeDataString(m_extraParameters)}";
+                    postData += $"&{m_extraParameters}";
                 data = Encoding.UTF8.GetBytes(postData);
             }
 

@@ -117,6 +117,12 @@ namespace Duplicati.Library.Main.Operation.Backup
                             Logging.Log.WriteVerboseMessage(FILELOGTAG, "FileMetadataChanged", "File has only metadata changes {0}", e.Entry.Path);
                             await database.AddFileAsync(e.PathPrefixID, e.Filename, e.LastWrite, filestreamdata.Blocksetid, metadataid);
                         }
+                        else if (e.TimestampChanged)
+                        {
+                            await stats.AddTimestampChangedFile();
+                            Logging.Log.WriteVerboseMessage(FILELOGTAG, "FileTimestampChanged", "File has only timestamp changes {0}", e.Path);
+                            await database.AddUnmodifiedAsync(e.OldId, e.LastWrite);
+                        }
                         else /*if (e.OldId >= 0)*/
                         {
                             // When we write the file to output, update the last modified time

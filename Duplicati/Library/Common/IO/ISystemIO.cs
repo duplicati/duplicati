@@ -82,6 +82,16 @@ namespace Duplicati.Library.Common.IO
 
         void SetMetadata(string path, Dictionary<string, string> metdata, bool restorePermissions);
         Dictionary<string, string> GetMetadata(string path, bool isSymlink, bool followSymlink);
+        /// <summary>
+        /// Sets the permission to read-write only for the current user.
+        /// </summary>
+        /// <param name="path">The file to set permissions on.</param>
+        void FileSetPermissionUserRWOnly(string path);
+        /// <summary>
+        /// Sets the permission to read-write only for the current user.
+        /// </summary>
+        /// <param name="path">The directory to set permissions on.</param>
+        void DirectorySetPermissionUserRWOnly(string path);
     }
 
 }

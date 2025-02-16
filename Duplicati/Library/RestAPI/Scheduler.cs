@@ -152,7 +152,7 @@ namespace Duplicati.Server
         /// </summary>
         public List<Runner.IRunnerData> WorkerQueue
         {
-            get { return (from t in m_worker.CurrentTasks where t != null select t).ToList(); }
+            get { return (from t in m_worker?.CurrentTasks where t != null select t)?.ToList() ?? []; }
         }
 
         /// <summary>
