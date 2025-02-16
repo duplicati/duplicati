@@ -98,7 +98,7 @@ namespace Duplicati.Library.Snapshots
             foreach (var folder in m_folders)
             {
                 if (DirectoryExists(folder) || folder.EndsWith(Path.DirectorySeparatorChar))
-                    yield return new SnapshotSourceFileEntry(this, folder, true, true);
+                    yield return new SnapshotSourceFileEntry(this, Util.AppendDirSeparator(folder), true, true);
                 else
                     yield return new SnapshotSourceFileEntry(this, folder, false, true);
             }

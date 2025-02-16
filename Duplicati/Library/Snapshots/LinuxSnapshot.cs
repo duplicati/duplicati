@@ -119,7 +119,7 @@ namespace Duplicati.Library.Snapshots
         /// <param name="isFolder">A flag indicating if the path is a folder</param>
         /// <returns>The filesystem entry</returns>
         public override ISourceFileEntry GetFilesystemEntry(string path, bool isFolder)
-            => new SnapshotSourceFileEntry(this, path, isFolder, false);
+            => new SnapshotSourceFileEntry(this, isFolder ? Util.AppendDirSeparator(path) : path, isFolder, false);
 
         /// <summary>
         /// Enumerates the root source files and folders
@@ -130,7 +130,7 @@ namespace Duplicati.Library.Snapshots
             foreach (var snap in m_snapShots)
             {
                 if (DirectoryExists(snap.LocalPath) || snap.LocalPath.EndsWith(System.IO.Path.DirectorySeparatorChar))
-                    yield return new SnapshotSourceFileEntry(this, snap.LocalPath, true, true);
+                    yield return new SnapshotSourceFileEntry(this, Util.AppendDirSeparator(snap.LocalPath), true, true);
                 else
                     yield return new SnapshotSourceFileEntry(this, snap.LocalPath, false, true);
             }

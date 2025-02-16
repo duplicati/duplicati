@@ -25,6 +25,7 @@ using System.IO;
 using Duplicati.Library.Interface;
 using System.Threading.Tasks;
 using System.Threading;
+using Duplicati.Library.Common.IO;
 
 namespace Duplicati.Library.Snapshots
 {
@@ -72,7 +73,7 @@ namespace Duplicati.Library.Snapshots
         /// <param name="isFolder">A flag indicating if the path is a folder</param>
         /// <returns>The filesystem entry</returns>
         public virtual ISourceFileEntry GetFilesystemEntry(string path, bool isFolder)
-            => new SnapshotSourceFileEntry(this, path, isFolder, false);
+            => new SnapshotSourceFileEntry(this, isFolder ? Util.AppendDirSeparator(path) : path, isFolder, false);
 
         /// <summary>
         /// Enumerates files and folders in the given folder
@@ -87,7 +88,7 @@ namespace Duplicati.Library.Snapshots
                     yield return new SnapshotSourceFileEntry(this, f, false, false);
 
                 foreach (var d in ListFolders(source.Path))
-                    yield return new SnapshotSourceFileEntry(this, d, true, false);
+                    yield return new SnapshotSourceFileEntry(this, Util.AppendDirSeparator(d), true, false);
             }
         }
 
