@@ -57,7 +57,7 @@ namespace Duplicati.Library.Snapshots
         /// <param name="path">The path to get</param>
         /// <param name="isFolder">True if the path is a folder</param>
         /// <returns>The filesystem entry</returns>
-        ISourceFileEntry GetFilesystemEntry(string path, bool isFolder);
+        ISourceFileEntry? GetFilesystemEntry(string path, bool isFolder);
 
         /// <summary>
         /// Gets the last write time of a given file in UTC

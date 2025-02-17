@@ -19,6 +19,8 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
+#nullable enable
+
 using System;
 using CoCoL;
 using System.Threading.Tasks;
@@ -49,17 +51,17 @@ namespace Duplicati.Library.Main.Operation.Backup
         public static Task Run(
             Channels channels,
             ISourceProvider sourceProvider,
-            UsnJournalService journalService,
+            UsnJournalService? journalService,
             FileAttributes fileAttributeFilter,
             Library.Utility.IFilter emitfilter,
             Options.SymlinkStrategy symlinkPolicy,
             Options.HardlinkStrategy hardlinkPolicy,
             bool excludeemptyfolders,
-            string[] ignorenames,
+            string[]? ignorenames,
             HashSet<string> blacklistPaths,
-            IEnumerable<string> changedfilelist,
+            IEnumerable<string>? changedfilelist,
             ITaskReader taskreader,
-            Action onStopRequested,
+            Action? onStopRequested,
             CancellationToken token)
         {
             return AutomationExtensions.RunTask(
@@ -98,7 +100,11 @@ namespace Duplicati.Library.Main.Operation.Backup
                     async IAsyncEnumerable<ISourceFileEntry> ExpandSources(IEnumerable<string> list)
                     {
                         foreach (var s in list)
-                            yield return await sourceProvider.GetEntry(s, false, token).ConfigureAwait(false);
+                        {
+                            var r = await sourceProvider.GetEntry(s, false, token).ConfigureAwait(false);
+                            if (r != null)
+                                yield return r;
+                        }
                     }
 
                     IAsyncEnumerable<ISourceFileEntry> worklist;
@@ -113,7 +119,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                             throw new NotSupportedException("USN is only supported on Windows");
 
                         var fileProviders = (sourceProvider is Combiner c ? c.Providers.AsEnumerable() : [sourceProvider])
-                            .OfType<SourceProvider.File>()
+                            .OfType<SourceProvider.LocalFileSource>()
                             .ToList();
 
                         if (fileProviders.Count <= 0)
@@ -179,11 +185,11 @@ namespace Duplicati.Library.Main.Operation.Backup
             /// <summary>
             /// The item being tracked
             /// </summary>
-            public ISourceFileEntry Item;
+            public required ISourceFileEntry Item;
             /// <summary>
             /// A flag indicating if any items are found in this folder
             /// </summary>
-            public bool AnyEntries;
+            public required bool AnyEntries;
 
         }
 
@@ -219,7 +225,7 @@ namespace Duplicati.Library.Main.Operation.Backup
 
                     if (pathstack.Count == 0 || s.Path.StartsWith(pathstack.Peek().Item.Path, Library.Utility.Utility.ClientFilenameStringComparison))
                     {
-                        pathstack.Push(new DirectoryStackEntry() { Item = s });
+                        pathstack.Push(new DirectoryStackEntry() { Item = s, AnyEntries = false });
                         continue;
                     }
                 }
@@ -381,7 +387,7 @@ namespace Duplicati.Library.Main.Operation.Backup
         /// <param name="ignorenames">The ignore names.</param>
         /// <param name="mixinqueue">The mixin queue.</param>
         /// <returns>True if the path should be returned, false otherwise.</returns>
-        private static async ValueTask<bool> SourceFileEntryFilter(ISourceFileEntry entry, HashSet<string> blacklistPaths, Options.HardlinkStrategy hardlinkPolicy, Options.SymlinkStrategy symlinkPolicy, Dictionary<string, string> hardlinkmap, FileAttributes fileAttributeFilter, Duplicati.Library.Utility.IFilter enumeratefilter, string[] ignorenames, Queue<ISourceFileEntry> mixinqueue, CancellationToken cancellationToken)
+        private static async ValueTask<bool> SourceFileEntryFilter(ISourceFileEntry entry, HashSet<string> blacklistPaths, Options.HardlinkStrategy hardlinkPolicy, Options.SymlinkStrategy symlinkPolicy, Dictionary<string, string> hardlinkmap, FileAttributes fileAttributeFilter, Duplicati.Library.Utility.IFilter enumeratefilter, string[]? ignorenames, Queue<ISourceFileEntry> mixinqueue, CancellationToken cancellationToken)
         {
             // Do the course pre-filtering first
             if (!PreFilterSourceEntry(entry, blacklistPaths))
@@ -406,8 +412,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                         }
                         else if (hardlinkPolicy == Options.HardlinkStrategy.First)
                         {
-                            string prevPath;
-                            if (hardlinkmap.TryGetValue(id, out prevPath))
+                            if (hardlinkmap.TryGetValue(id, out var prevPath))
                             {
                                 Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "ExcludingDuplicateHardlink", "Excluding hardlink ({1}) for: {0}, previous hardlink: {2}", entry.Path, id, prevPath);
                                 return false;
@@ -481,7 +486,7 @@ namespace Duplicati.Library.Main.Operation.Backup
             }
 
             // If the file is a symlink, apply special handling
-            string symlinkTarget = null;
+            string? symlinkTarget = null;
             try
             {
                 symlinkTarget = entry.SymlinkTarget;

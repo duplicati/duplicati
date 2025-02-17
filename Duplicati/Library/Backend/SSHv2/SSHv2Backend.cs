@@ -22,6 +22,7 @@
 
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
+using Duplicati.Library.SourceProvider;
 using Renci.SshNet;
 using Renci.SshNet.Common;
 using System;
@@ -33,7 +34,7 @@ using System.Threading.Tasks;
 
 namespace Duplicati.Library.Backend
 {
-    public class SSHv2 : IStreamingBackend, IRenameEnabledBackend
+    public class SSHv2 : IStreamingBackend, IRenameEnabledBackend, IFolderEnabledBackend
     {
         private const string SSH_KEYFILE_OPTION = "ssh-keyfile";
         private const string SSH_KEYFILE_INLINE = "ssh-key";
@@ -55,6 +56,15 @@ namespace Duplicati.Library.Backend
         private readonly TimeSpan m_keepaliveinterval;
 
         private readonly int m_port = 22;
+
+        /// <summary>
+        /// The source provider for this backend
+        /// </summary>
+        private readonly BackendSourceProvider m_sourceProvider;
+        /// <summary>
+        /// The path key for this backend if used as a source
+        /// </summary>
+        private readonly string m_sourcePathKey;
 
         private SftpClient m_con;
 
@@ -107,6 +117,9 @@ namespace Duplicati.Library.Backend
 
             if (!string.IsNullOrWhiteSpace(timeoutstr))
                 m_keepaliveinterval = Library.Utility.Timeparser.ParseTimeSpan(timeoutstr);
+
+            m_sourcePathKey = $"{ProtocolKey}://{m_server}:{m_port}/~{m_username}/{m_path}/";
+            m_sourceProvider = new BackendSourceProvider(this);
         }
 
         #region IBackend Members
@@ -429,5 +442,35 @@ namespace Duplicati.Library.Backend
         }
 
         public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(new[] { m_server });
+
+        /// <inheritdoc/>
+        public string PathKey => m_sourcePathKey;
+
+        /// <inheritdoc/>
+        public IAsyncEnumerable<ISourceFileEntry> ListAsync(string path, CancellationToken cancellationToken)
+        {
+            var prefixPath = m_path;
+            if (!prefixPath.EndsWith("/"))
+                prefixPath += "/";
+
+            var filterPath = prefixPath + path;
+            if (!filterPath.EndsWith("/"))
+                filterPath += "/";
+
+            return Client.ListDirectoryAsync(filterPath, cancellationToken)
+                .Select(x => new BackendSourceFileEntry(
+                    m_sourceProvider,
+                    BackendSourceFileEntry.ConcatPaths(path, x.Name),
+                    x.Attributes.IsDirectory,
+                    false,
+                    new DateTime(0),
+                    x.Attributes.LastWriteTimeUtc,
+                    x.Attributes.Size
+                ));
+        }
+
+        /// <inheritdoc/>
+        public Task<ISourceFileEntry> GetEntryAsync(string path, CancellationToken cancellationToken)
+            => Task.FromResult<ISourceFileEntry>(null);
     }
 }

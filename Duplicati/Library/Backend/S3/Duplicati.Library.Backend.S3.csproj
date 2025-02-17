@@ -12,10 +12,10 @@
     <PackageReference Include="AWSSDK.IdentityManagement" Version="3.7.402.39" />
     <PackageReference Include="AWSSDK.S3" Version="3.7.405.9" />
     <PackageReference Include="Minio" Version="3.1.13" />
-    <PackageReference Include="System.Reactive.Linq" Version="4.3.2" />
   </ItemGroup>
   
   <ItemGroup>
+    <ProjectReference Include="../../SourceProvider/Builtin/Duplicati.Library.SourceProvider.Builtin.csproj" />
     <ProjectReference Include="..\..\Interface\Duplicati.Library.Interface.csproj" />
     <ProjectReference Include="..\..\Localization\Duplicati.Library.Localization.csproj" />
     <ProjectReference Include="..\..\Utility\Duplicati.Library.Utility.csproj" />

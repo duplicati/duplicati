@@ -469,6 +469,9 @@ namespace Duplicati.Library.Backend
         }
 
         /// <inheritdoc/>
+        public string PathKey => m_path;
+
+        /// <inheritdoc/>
         public async IAsyncEnumerable<ISourceFileEntry> ListAsync(string path, [EnumeratorCancellation] CancellationToken cancellationToken)
         {
             PreAuthenticate();
@@ -481,10 +484,10 @@ namespace Duplicati.Library.Backend
             var service = SnapshotUtility.CreateNoSnapshot([remotePath], false, false);
 
             await foreach (var folderEntry in systemIO.EnumerateDirectories(remotePath).ToAsyncEnumerable().WithCancellation(cancellationToken).ConfigureAwait(false))
-                yield return new SourceFileEntry(service, folderEntry, true);
+                yield return new SnapshotSourceFileEntry(service, folderEntry, true, false);
 
             await foreach (var fileEntry in systemIO.EnumerateFiles(remotePath).ToAsyncEnumerable().WithCancellation(cancellationToken).ConfigureAwait(false))
-                yield return new SourceFileEntry(service, fileEntry, false);
+                yield return new SnapshotSourceFileEntry(service, fileEntry, false, false);
         }
 
         /// <inheritdoc/>
@@ -492,70 +495,7 @@ namespace Duplicati.Library.Backend
         {
             var service = SnapshotUtility.CreateNoSnapshot([path], false, false);
             var isFolder = service.DirectoryExists(path);
-            return Task.FromResult<ISourceFileEntry>(new SourceFileEntry(service, path, isFolder));
-        }
-
-        private class SourceFileEntry(ISnapshotService service, string path, bool isFolder) : ISourceFileEntry
-        {
-            /// <inheritdoc/>
-            public bool IsFolder => isFolder;
-
-            /// <inheritdoc/>
-            public bool IsMetaEntry => false;
-            /// <inheritdoc/>
-            public bool IsRootEntry => false;
-
-            /// <inheritdoc/>
-            public DateTime CreatedUtc => service.GetCreationTimeUtc(path);
-
-            /// <inheritdoc/>
-            public DateTime LastModificationUtc => service.GetLastWriteTimeUtc(path);
-
-            /// <inheritdoc/>
-            public string Path => path;
-
-            /// <inheritdoc/>
-            public long Size => isFolder ? -1 : service.GetFileSize(path);
-
-            /// <inheritdoc/>
-            public bool IsSymlink => service.IsSymlink(path, Attributes);
-
-            /// <inheritdoc/>
-            public string SymlinkTarget => service.GetSymlinkTarget(path);
-
-            /// <inheritdoc/>
-            public FileAttributes Attributes => service.GetAttributes(path);
-
-            /// <inheritdoc/>
-            public Dictionary<string, string> MinorMetadata => service.GetMetadata(path, IsSymlink);
-
-            /// <inheritdoc/>
-            public bool IsBlockDevice => service.IsBlockDevice(path);
-
-            /// <inheritdoc/>
-            public bool IsCharacterDevice => false;
-
-            /// <inheritdoc/>
-            public bool IsAlternateStream => false;
-
-            /// <inheritdoc/>
-            public string HardlinkTargetId => service.HardlinkTargetID(path);
-
-            /// <inheritdoc/>
-            public IAsyncEnumerable<ISourceFileEntry> Enumerate(CancellationToken cancellationToken)
-                => service.EnumerateFilesystemEntries(this).ToAsyncEnumerable();
-
-            /// <inheritdoc/>
-            public Task<bool> FileExists(string filename, CancellationToken cancellationToken)
-                => Task.FromResult(service.FileExists(systemIO.PathCombine(Path, filename)));
-
-            /// <inheritdoc/>
-            public Task<Stream> OpenMetadataRead(CancellationToken cancellationToken)
-                => Task.FromResult<Stream>(new MemoryStream(System.Text.Json.JsonSerializer.SerializeToUtf8Bytes(MinorMetadata)));
-
-            /// <inheritdoc/>
-            public Task<Stream> OpenRead(CancellationToken cancellationToken)
-                => service.OpenReadAsync(path, cancellationToken);
+            return Task.FromResult<ISourceFileEntry>(new SnapshotSourceFileEntry(service, path, isFolder, false));
         }
     }
 }

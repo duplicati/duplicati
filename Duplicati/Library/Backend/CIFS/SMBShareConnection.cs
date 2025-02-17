@@ -194,9 +194,10 @@ public class SMBShareConnection : IDisposable, IAsyncDisposable
     /// <summary>
     /// Lists the folder contents of the share and path specified in the connection parameters.
     /// </summary>
+    /// <param name="path">Path to list</param>
     /// <param name="cancellationToken">Cancellation Token</param>
     /// <exception cref="UserInformationException">Exception to be displayed to user</exception>
-    public async Task<List<IFileEntry>> ListAsync(CancellationToken cancellationToken)
+    public async Task<List<IFileEntry>> ListAsync(string path, CancellationToken cancellationToken)
     {
         await _semaphore.WaitAsync(cancellationToken);
 
@@ -210,7 +211,7 @@ public class SMBShareConnection : IDisposable, IAsyncDisposable
                 var status = _smbFileStore.CreateFile(
                     out directoryHandle,
                     out fileStatus,
-                    NormalizeSlashes(_connectionParameters.Path),
+                    NormalizeSlashes(path),
                     AccessMask.GENERIC_READ,
                     FileAttributes.Directory,
                     ShareAccess.Read | ShareAccess.Write,
@@ -244,7 +245,8 @@ public class SMBShareConnection : IDisposable, IAsyncDisposable
                             info.LastAccessTime,
                             info.LastWriteTime)
                         {
-                            IsFolder = info.FileAttributes == FileAttributes.Directory
+                            IsFolder = info.FileAttributes == FileAttributes.Directory,
+                            Created = info.CreationTime
                         })
                         .ToList()
                 ];

@@ -28,8 +28,11 @@ namespace Duplicati.Library.SourceProvider;
 /// A source provider that wraps a file system through a snapshot service
 /// </summary>
 /// <param name="snapshotService">The snapshot service to use</param>
-public class File(ISnapshotService snapshotService) : ISourceProvider
+public class LocalFileSource(ISnapshotService snapshotService) : ISourceProvider
 {
+    /// <inheritdoc/>
+    public string PathKey => string.Empty;
+
     /// <inheritdoc/>
     public IAsyncEnumerable<ISourceFileEntry> Enumerate(CancellationToken cancellationToken)
         => snapshotService.EnumerateFilesystemEntries().ToAsyncEnumerable();
@@ -40,7 +43,7 @@ public class File(ISnapshotService snapshotService) : ISourceProvider
     public ISnapshotService SnapshotService => snapshotService;
 
     /// <inheritdoc/>
-    public Task<ISourceFileEntry> GetEntry(string path, bool isFolder, CancellationToken cancellationToken)
+    public Task<ISourceFileEntry?> GetEntry(string path, bool isFolder, CancellationToken cancellationToken)
         => Task.FromResult(snapshotService.GetFilesystemEntry(path, isFolder));
 
     /// <inheritdoc/>

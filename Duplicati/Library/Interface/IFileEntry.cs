@@ -41,6 +41,10 @@ namespace Duplicati.Library.Interface
         /// </summary>
         DateTime LastModification { get; }
         /// <summary>
+        /// The time the file or folder was created
+        /// </summary>
+        DateTime Created { get; }
+        /// <summary>
         /// The name of the file or folder
         /// </summary>
         string Name { get; }

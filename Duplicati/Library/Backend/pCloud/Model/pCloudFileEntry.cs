@@ -33,22 +33,27 @@ internal class pCloudFileEntry : IFileEntry
     /// Indicates it is a folder on the remote filesystem
     /// </summary>
     public bool IsFolder { get; set; }
-    
+
     /// <summary>
     /// Last access date of the file
     /// </summary>
     public DateTime LastAccess { get; set; }
-    
+
     /// <summary>
     /// Last modification of the file
     /// </summary>
     public DateTime LastModification { get; set; }
-    
+
+    /// <summary>
+    /// Last modification of the file
+    /// </summary>
+    public DateTime Created { get; set; }
+
     /// <summary>
     /// Filename or folder name
     /// </summary>
     public string Name { get; set; }
-    
+
     /// <summary>
     /// Size of the object in bytes
     /// </summary>

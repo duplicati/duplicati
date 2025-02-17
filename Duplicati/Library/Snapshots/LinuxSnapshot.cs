@@ -113,15 +113,6 @@ namespace Duplicati.Library.Snapshots
         public override IEnumerable<string> SourceFolders => m_snapShots.Select(e => e.LocalPath);
 
         /// <summary>
-        /// Gets a filesystem entry for a given path
-        /// </summary>
-        /// <param name="path">The path to get the entry for</param>
-        /// <param name="isFolder">A flag indicating if the path is a folder</param>
-        /// <returns>The filesystem entry</returns>
-        public override ISourceFileEntry GetFilesystemEntry(string path, bool isFolder)
-            => new SnapshotSourceFileEntry(this, isFolder ? Util.AppendDirSeparator(path) : path, isFolder, false);
-
-        /// <summary>
         /// Enumerates the root source files and folders
         /// </summary>
         /// <returns>The source files and folders</returns>

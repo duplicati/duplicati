@@ -132,9 +132,9 @@ namespace Duplicati.Library.Main.Operation
                 foreach (var entry in sourceTypes)
                 {
                     if ("file".Equals(entry.Key, StringComparison.OrdinalIgnoreCase))
-                        results.Add(new SourceProvider.File(GetFileSnapshotService(entry, options)));
+                        results.Add(new LocalFileSource(GetFileSnapshotService(entry, options)));
                     else if ("vss".Equals(entry.Key, StringComparison.OrdinalIgnoreCase) || "lvm".Equals(entry.Key, StringComparison.OrdinalIgnoreCase))
-                        results.Add(new SourceProvider.File(SnapshotUtility.CreateSnapshot(entry, options.RawOptions, options.SymlinkPolicy == Options.SymlinkStrategy.Follow)));
+                        results.Add(new LocalFileSource(SnapshotUtility.CreateSnapshot(entry, options.RawOptions, options.SymlinkPolicy == Options.SymlinkStrategy.Follow)));
                     else
                     {
                         foreach (var url in entry)
@@ -147,14 +147,15 @@ namespace Duplicati.Library.Main.Operation
                                 continue;
                             }
 
-                            // See if we can implement the same with a backend
+                            // See if there is a backend that can also be a source
                             var backend = BackendLoader.GetBackend(url, options.RawOptions);
-                            if (backend != null)
+                            if (backend is IFolderEnabledBackend folderBackend)
                             {
-                                results.Add(new SourceProvider.BackendSourceProvider(backend, url));
+                                results.Add(new BackendSourceProvider(folderBackend));
                                 continue;
                             }
 
+                            backend?.Dispose();
                             throw new UserInformationException(string.Format("The source \"{0}\" is not supported", url), "SourceNotSupported");
                         }
                     }
@@ -179,14 +180,14 @@ namespace Duplicati.Library.Main.Operation
 
             var providers = (provider is Combiner c ? c.Providers : [provider])
                 .Select((x, i) => new { Provider = x, Index = i })
-                .Where(x => x.Provider is SourceProvider.File)
+                .Where(x => x.Provider is LocalFileSource)
                 .ToList();
 
             if (providers.Count == 0)
                 return null;
             if (providers.Count > 1)
                 throw new UserInformationException("Multiple USN journal services are not supported", "MultipleUSNJournalServices");
-            var fileProvider = providers.First().Provider as SourceProvider.File;
+            var fileProvider = providers.First().Provider as LocalFileSource;
 
             var journalData = m_database.GetChangeJournalData(lastfilesetid);
             var service = new UsnJournalService(fileProvider.SnapshotService, filter, m_options.FileAttributeFilter, m_options.SkipFilesLargerThan,

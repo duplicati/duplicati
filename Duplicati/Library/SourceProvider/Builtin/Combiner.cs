@@ -29,6 +29,9 @@ namespace Duplicati.Library.SourceProvider;
 /// </summary>
 public class Combiner(IEnumerable<ISourceProvider> providers) : ISourceProvider
 {
+    /// <inheritdoc/>
+    public string PathKey => string.Empty;
+
     /// <summary>
     /// The providers to combine
     /// </summary>
@@ -56,10 +59,23 @@ public class Combiner(IEnumerable<ISourceProvider> providers) : ISourceProvider
     /// <param name="isFolder">True if the path is a folder</param>
     /// <param name="cancellationToken">The cancellation token</param>
     /// <returns>The filesystem entry</returns>
-    public Task<ISourceFileEntry> GetEntry(string path, bool isFolder, CancellationToken cancellationToken)
+    public async Task<ISourceFileEntry?> GetEntry(string path, bool isFolder, CancellationToken cancellationToken)
     {
-        // TODO: Map roots to the paths so we get the right provider
-        throw new NotImplementedException();
+        foreach (var provider in providers)
+            if (!string.IsNullOrWhiteSpace(PathKey) && provider.PathKey.StartsWith(path))
+            {
+                var subpath = provider.PathKey.Substring(path.Length);
+                return await provider.GetEntry(subpath, isFolder, cancellationToken).ConfigureAwait(false);
+            }
+
+        foreach (var provider in providers.Where(x => string.IsNullOrWhiteSpace(x.PathKey)))
+        {
+            var res = await provider.GetEntry(path, isFolder, cancellationToken).ConfigureAwait(false);
+            if (res != null)
+                return res;
+        }
+
+        return null;
     }
 
     /// <summary>

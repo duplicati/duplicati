@@ -21,17 +21,18 @@
 
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
-using Duplicati.Library.Utility;
+using Duplicati.Library.SourceProvider;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace Duplicati.Library.Backend
 {
-    public class Idrivee2Backend : IBackend, IStreamingBackend
+    public class Idrivee2Backend : IBackend, IStreamingBackend, IFolderEnabledBackend
     {
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<Idrivee2Backend>();
 
@@ -42,6 +43,15 @@ namespace Duplicati.Library.Backend
 
         private readonly string m_prefix;
         private readonly string m_bucket;
+
+        /// <summary>
+        /// The source provider for this backend
+        /// </summary>
+        private readonly BackendSourceProvider m_sourceProvider;
+        /// <summary>
+        /// The key the backend is identified by if it is a source
+        /// </summary>
+        private readonly string m_sourcePathKey;
 
         private IS3Client m_s3Client;
 
@@ -80,7 +90,8 @@ namespace Duplicati.Library.Backend
 
 
             m_s3Client = new S3AwsClient(accessKeyId, accessKeySecret, null, host, null, true, false, options);
-
+            m_sourcePathKey = $"{ProtocolKey}://{host}/{m_bucket}/{m_prefix}/";
+            m_sourceProvider = new BackendSourceProvider(this);
         }
 
         public string GetRegionEndpoint(string url)
@@ -127,8 +138,11 @@ namespace Duplicati.Library.Backend
 
 
         public IEnumerable<IFileEntry> List()
+            => ListAsync(CancellationToken.None).ToBlockingEnumerable();
+
+        public async IAsyncEnumerable<IFileEntry> ListAsync([EnumeratorCancellation] CancellationToken cancelToken)
         {
-            foreach (IFileEntry file in Connection.ListBucket(m_bucket, m_prefix))
+            await foreach (IFileEntry file in Connection.ListBucketAsync(m_bucket, m_prefix, cancelToken).ConfigureAwait(false))
             {
                 ((FileEntry)file).Name = file.Name.Substring(m_prefix.Length);
                 if (file.Name.StartsWith("/", StringComparison.Ordinal) && !m_prefix.StartsWith("/", StringComparison.Ordinal))
@@ -230,5 +244,38 @@ namespace Duplicati.Library.Backend
             //AWS SDK encodes the filenames correctly
             return m_prefix + name;
         }
+
+        /// <inheritdoc/>
+        public string PathKey => m_sourcePathKey;
+
+        /// <inheritdoc/>
+        public async IAsyncEnumerable<ISourceFileEntry> ListAsync(string path, [EnumeratorCancellation] CancellationToken cancellationToken)
+        {
+            var prefixPath = m_prefix;
+            if (!prefixPath.EndsWith("/", StringComparison.Ordinal))
+                prefixPath += "/";
+
+            var filterPath = prefixPath + path;
+            if (!filterPath.EndsWith("/", StringComparison.Ordinal))
+                filterPath += "/";
+
+            await foreach (var f in m_s3Client.ListBucketAsync(m_bucket, filterPath, cancellationToken).ConfigureAwait(false))
+            {
+                if (!f.Name.StartsWith(prefixPath, StringComparison.Ordinal))
+                    continue;
+
+                ((FileEntry)f).Name = f.Name.Substring(prefixPath.Length);
+
+                // Skip sub-folder items
+                if (f.Name.Contains("/"))
+                    continue;
+
+                yield return BackendSourceFileEntry.FromFileEntry(m_sourceProvider, path, f);
+            }
+        }
+
+        /// <inheritdoc/>
+        public Task<ISourceFileEntry> GetEntryAsync(string path, CancellationToken cancellationToken)
+            => Task.FromResult<ISourceFileEntry>(null);
     }
 }

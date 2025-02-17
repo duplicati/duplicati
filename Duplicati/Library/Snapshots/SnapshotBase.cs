@@ -73,7 +73,14 @@ namespace Duplicati.Library.Snapshots
         /// <param name="isFolder">A flag indicating if the path is a folder</param>
         /// <returns>The filesystem entry</returns>
         public virtual ISourceFileEntry GetFilesystemEntry(string path, bool isFolder)
-            => new SnapshotSourceFileEntry(this, isFolder ? Util.AppendDirSeparator(path) : path, isFolder, false);
+        {
+            if (isFolder && !DirectoryExists(path))
+                return null;
+            else if (!isFolder && !FileExists(path))
+                return null;
+
+            return new SnapshotSourceFileEntry(this, isFolder ? Util.AppendDirSeparator(path) : path, isFolder, false);
+        }
 
         /// <summary>
         /// Enumerates files and folders in the given folder

@@ -35,11 +35,21 @@ namespace Duplicati.Library.Interface;
 public interface IFolderEnabledBackend : IBackend
 {
     /// <summary>
+    /// Returns the key for this backend instance's path
+    /// </summary>
+    string PathKey { get; }
+
+    /// <summary>
     /// Enumerates a list of files and folders found on the remote location
     /// </summary>
     /// <param name="path">The path to list, empty or null for the root folder</param>
     /// <param name="cancellationToken">The cancellation token</param>
-    /// <returns>The list of files</returns>
+    /// <returns>The list of files, where paths are scoped to the backend.</returns>
+    /// <remarks>
+    /// The paths returned should be relative to the backend root, and should not include the root path.
+    /// For example, if the backend is defined as proto://host/rootpath, then listing files should
+    /// return paths like &quot;/subfolder/file.txt&quot; and not &quot;/rootpath/subfolder/file.txt&quot;.
+    /// </remarks>
     IAsyncEnumerable<ISourceFileEntry> ListAsync(string? path, CancellationToken cancellationToken);
 
     /// <summary>

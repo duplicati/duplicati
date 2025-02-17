@@ -19,6 +19,8 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
+#nullable enable
+
 using System;
 using System.IO;
 using CoCoL;
@@ -71,7 +73,7 @@ namespace Duplicati.Library.Main.Operation
                             catch (Exception ex) { Logging.Log.WriteVerboseMessage(LOGTAG, "FailedAttributeRead", "Failed to read attributes from {0}: {1}", entry.Path, ex.Message); }
 
                             // Analyze symlinks
-                            string symlinkTarget = null;
+                            string? symlinkTarget = null;
                             try { symlinkTarget = entry.SymlinkTarget; }
                             catch (Exception ex) { Logging.Log.WriteExplicitMessage(LOGTAG, "SymlinkTargetReadFailure", ex, "Failed to read symlink target for path: {0}", entry.Path); }
 
@@ -84,14 +86,22 @@ namespace Duplicati.Library.Main.Operation
                             // Go for the symlink target, as we know we follow symlinks
                             if (!string.IsNullOrWhiteSpace(symlinkTarget))
                             {
-                                entry = await provider.GetEntry(symlinkTarget, false, stopToken).ConfigureAwait(false);
+                                var targetEntry = await provider.GetEntry(symlinkTarget, false, stopToken).ConfigureAwait(false);
                                 fa = FileAttributes.Normal;
 
-                                try { fa = entry.Attributes; }
+                                try { fa = targetEntry!.Attributes; }
                                 catch (Exception ex) { Logging.Log.WriteVerboseMessage(LOGTAG, "FailedAttributeRead", "Failed to read attributes from {0}: {1}", entry.Path, ex.Message); }
 
+                                // If we guessed wrong and the symlink target is a folder, we need to fetch it with the correct flag
                                 if (fa.HasFlag(FileAttributes.Directory))
-                                    entry = await provider.GetEntry(symlinkTarget, true, stopToken).ConfigureAwait(false);
+                                    targetEntry = await provider.GetEntry(symlinkTarget, true, stopToken).ConfigureAwait(false);
+
+                                // No such target
+                                if (targetEntry == null)
+                                {
+                                    Logging.Log.WriteVerboseMessage(LOGTAG, "SymlinkTargetNotFound", "Symlink target not found: {0}", symlinkTarget);
+                                    continue;
+                                }
                             }
 
                             // Proceed with non-folders
@@ -109,7 +119,6 @@ namespace Duplicati.Library.Main.Operation
                                 {
                                     Logging.Log.WriteVerboseMessage(LOGTAG, "SizeReadFailed", "Failed to read length of file {0}: {1}", entry.Path, ex.Message);
                                 }
-
 
                                 if (m_options.SkipFilesLargerThan == long.MaxValue || m_options.SkipFilesLargerThan == 0 || size < m_options.SkipFilesLargerThan)
                                     Logging.Log.WriteVerboseMessage(LOGTAG, "IncludeFile", "Including file: {0} ({1})", entry.Path, size < 0 ? "unknown" : Duplicati.Library.Utility.Utility.FormatSizeString(size));
