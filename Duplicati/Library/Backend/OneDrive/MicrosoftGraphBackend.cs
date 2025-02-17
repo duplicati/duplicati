@@ -31,6 +31,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -318,9 +319,11 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public IEnumerable<IFileEntry> List()
+        /// <inheritdoc />
+        public async IAsyncEnumerable<IFileEntry> ListAsync([EnumeratorCancellation] CancellationToken cancelToken)
+
         {
-            foreach (DriveItem item in this.Enumerate<DriveItem>(string.Format("{0}/root:{1}:/children", this.DrivePrefix, this.RootPath)))
+            await foreach (var item in this.Enumerate<DriveItem>(string.Format("{0}/root:{1}:/children", this.DrivePrefix, this.RootPath), cancelToken))
             {
                 // Exclude non-files and deleted items (not sure if they show up in this listing, but make sure anyway)
                 if (item.IsFile && !item.IsDeleted)
@@ -667,7 +670,7 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        private IEnumerable<T> Enumerate<T>(string url)
+        private async IAsyncEnumerable<T> Enumerate<T>(string url, [EnumeratorCancellation] CancellationToken cancelToken)
         {
             string nextUrl = url;
             while (!string.IsNullOrEmpty(nextUrl))
@@ -675,7 +678,7 @@ namespace Duplicati.Library.Backend
                 GraphCollection<T> results;
                 try
                 {
-                    results = this.GetAsync<GraphCollection<T>>(nextUrl, CancellationToken.None).Await();
+                    results = await this.GetAsync<GraphCollection<T>>(nextUrl, cancelToken).ConfigureAwait(false);
                 }
                 catch (DriveItemNotFoundException ex)
                 {

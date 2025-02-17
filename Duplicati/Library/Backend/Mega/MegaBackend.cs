@@ -28,7 +28,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using OtpNet;
-using Duplicati.Library.Utility;
+using System.Runtime.CompilerServices;
 
 namespace Duplicati.Library.Backend.Mega
 {
@@ -190,15 +190,17 @@ namespace Duplicati.Library.Backend.Mega
 
         #region IBackend implementation
 
-        public IEnumerable<IFileEntry> List()
+        /// <inheritdoc />
+        public async IAsyncEnumerable<IFileEntry> ListAsync([EnumeratorCancellation] CancellationToken cancelToken)
         {
             if (m_filecache == null)
-                ResetFileCacheAsync(null, CancellationToken.None).Await();
+                await ResetFileCacheAsync(null, CancellationToken.None).ConfigureAwait(false);
 
-            return
-                from n in m_filecache.Values
-                let item = n.OrderByDescending(x => x.ModificationDate).First()
-                select new FileEntry(item.Name, item.Size, item.ModificationDate ?? new DateTime(0), item.ModificationDate ?? new DateTime(0));
+            foreach (var n in m_filecache.Values)
+            {
+                var item = n.OrderByDescending(x => x.ModificationDate).First();
+                yield return new FileEntry(item.Name, item.Size, item.ModificationDate ?? new DateTime(0), item.ModificationDate ?? new DateTime(0));
+            }
         }
 
         public async Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
@@ -236,10 +238,7 @@ namespace Duplicati.Library.Backend.Mega
         }
 
         public Task TestAsync(CancellationToken cancelToken)
-        {
-            this.TestList();
-            return Task.CompletedTask;
-        }
+            => this.TestListAsync(cancelToken);
 
         public Task CreateFolderAsync(CancellationToken cancelToken)
         {

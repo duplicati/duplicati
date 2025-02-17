@@ -27,6 +27,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Net.Http;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -75,7 +76,7 @@ namespace Duplicati.Library.Backend
         /// It is used to detect a problem with IIS where a file is listed,
         /// but IIS responds 404 because the file mapping is incorrect.
         /// </summary>
-        private List<string> m_filenamelist = null;
+        private HashSet<string> m_filenamelist = null;
 
         // According to the WEBDAV standard, the "allprop" request should return all properties, however this seems to fail on some servers (box.net).
         // I've found this description: http://www.webdav.org/specs/rfc2518.html#METHOD_PROPFIND
@@ -173,11 +174,24 @@ namespace Duplicati.Library.Backend
         public string ProtocolKey => "webdav";
 
         ///<inheritdoc/>
-        public IEnumerable<IFileEntry> List()
+        public async IAsyncEnumerable<IFileEntry> ListAsync([EnumeratorCancellation] CancellationToken cancelToken)
         {
+            using var timeoutToken = new CancellationTokenSource();
+            timeoutToken.CancelAfter(TimeSpan.FromSeconds(LIST_OPERATION_TIMEOUT_SECONDS));
+
+            using var requestResources = CreateRequest(string.Empty, new HttpMethod("PROPFIND"));
+            requestResources.RequestMessage.Headers.Add("Depth", "1");
+            requestResources.RequestMessage.Content = new StreamContent(new MemoryStream(PROPFIND_BODY));
+            requestResources.RequestMessage.Content.Headers.ContentLength = PROPFIND_BODY.Length;
+
+            var doc = new System.Xml.XmlDocument();
+
             try
             {
-                return ListWithoutExceptionCatch();
+                using var response = await requestResources.HttpClient.SendAsync(requestResources.RequestMessage, HttpCompletionOption.ResponseContentRead, timeoutToken.Token).ConfigureAwait(false);
+                response.EnsureSuccessStatusCode(); // This replaces the if needed when Mono was used.
+                using var stream = await response.Content.ReadAsStreamAsync(cancelToken).ConfigureAwait(false);
+                doc.Load(stream);
             }
             catch (HttpRequestException wex)
             {
@@ -189,32 +203,11 @@ namespace Duplicati.Library.Backend
 
                 throw;
             }
-        }
 
-        private IEnumerable<IFileEntry> ListWithoutExceptionCatch()
-        {
-            using var timeoutToken = new CancellationTokenSource();
-            timeoutToken.CancelAfter(TimeSpan.FromSeconds(LIST_OPERATION_TIMEOUT_SECONDS));
-
-            using var requestResources = CreateRequest(string.Empty, new HttpMethod("PROPFIND"));
-            requestResources.RequestMessage.Headers.Add("Depth", "1");
-            requestResources.RequestMessage.Content = new StreamContent(new MemoryStream(PROPFIND_BODY));
-            requestResources.RequestMessage.Content.Headers.ContentLength = PROPFIND_BODY.Length;
-
-            using var response = requestResources.HttpClient.SendAsync(requestResources.RequestMessage, HttpCompletionOption.ResponseContentRead, timeoutToken.Token).ConfigureAwait(false).GetAwaiter().GetResult();
-
-            response.EnsureSuccessStatusCode(); // This replaces the if needed when Mono was used.
-
-            var doc = new System.Xml.XmlDocument();
-
-            doc.Load(response.Content.ReadAsStream());
-
-            System.Xml.XmlNamespaceManager nm = new System.Xml.XmlNamespaceManager(doc.NameTable);
+            var nm = new System.Xml.XmlNamespaceManager(doc.NameTable);
             nm.AddNamespace("D", "DAV:");
 
-            List<IFileEntry> files = new List<IFileEntry>();
-            m_filenamelist = new List<string>();
-
+            var filenamelist = new HashSet<string>();
             foreach (System.Xml.XmlNode n in doc.SelectNodes("D:multistatus/D:response/D:href", nm))
             {
                 //IIS uses %20 for spaces and %2B for +
@@ -274,13 +267,16 @@ namespace Duplicati.Library.Backend
                         isCollection = stat.SelectSingleNode("D:resourcetype/D:collection", nm) != null;
                 }
 
-                FileEntry fe = new FileEntry(name, size, lastAccess, lastModified);
-                fe.IsFolder = isCollection;
-                files.Add(fe);
-                m_filenamelist.Add(name);
+                var fe = new FileEntry(name, size, lastAccess, lastModified)
+                {
+                    IsFolder = isCollection
+                };
+
+                filenamelist.Add(name);
+                yield return fe;
             }
 
-            return files;
+            m_filenamelist = filenamelist;
         }
 
         ///<inheritdoc/>
@@ -347,10 +343,7 @@ namespace Duplicati.Library.Backend
 
         ///<inheritdoc/>
         public Task TestAsync(CancellationToken cancelToken)
-        {
-            List();
-            return Task.CompletedTask;
-        }
+            => this.TestListAsync(cancelToken);
 
         ///<inheritdoc/>
         public async Task CreateFolderAsync(CancellationToken cancelToken)
@@ -409,7 +402,7 @@ namespace Duplicati.Library.Backend
 
             var request = new HttpRequestMessage(HttpMethod.Get, $"{m_url}{Utility.Uri.UrlEncode(remotename).Replace("+", "%20")}");
             request.Headers.Add(HttpRequestHeader.UserAgent.ToString(), "Duplicati WEBDAV Client v" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version);
-            
+
             request.Headers.ConnectionClose = !m_useIntegratedAuthentication; // ConnectionClose is incompatible with integrated authentication
 
             if (method != null)

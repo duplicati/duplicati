@@ -22,12 +22,12 @@
 
 using Amazon.S3;
 using Amazon.S3.Model;
-using Duplicati.Library.Backend.Strings;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -192,7 +192,7 @@ namespace Duplicati.Library.Backend
             return m_client.DeleteObjectAsync(objectDeleteRequest, cancellationToken);
         }
 
-        public virtual IEnumerable<IFileEntry> ListBucket(string bucketName, string prefix)
+        public async IAsyncEnumerable<IFileEntry> ListBucketAsync(string bucketName, string prefix, [EnumeratorCancellation] CancellationToken cancellationToken)
         {
             bool isTruncated = true;
             string filename = null;
@@ -217,7 +217,7 @@ namespace Duplicati.Library.Backend
                 ListObjectsResponse listResponse;
                 try
                 {
-                    listResponse = m_client.ListObjectsAsync(listRequest).Await();
+                    listResponse = await m_client.ListObjectsAsync(listRequest, cancellationToken).ConfigureAwait(false);
                 }
                 catch (AmazonS3Exception e)
                 {
