@@ -44,13 +44,8 @@ public class BackendSourceProvider(IFolderEnabledBackend backend) : ISourceProvi
         => new[] { new BackendSourceFileEntry(this, PathKey, true, true, new DateTime(0), new DateTime(0), 0) }.ToAsyncEnumerable();
 
     /// <inheritdoc/>
-    public async Task<ISourceFileEntry?> GetEntry(string path, bool isFolder, CancellationToken cancellationToken)
-    {
-        if (this.WrappedBackend is IFolderEnabledBackend folderEnabledBackend)
-            return await folderEnabledBackend.GetEntryAsync(path, cancellationToken);
-
-        return null;
-    }
+    public Task<ISourceFileEntry?> GetEntry(string path, bool isFolder, CancellationToken cancellationToken)
+        => backend.GetEntryAsync(path, cancellationToken);
 
     /// <inheritdoc/>
     public void Dispose()

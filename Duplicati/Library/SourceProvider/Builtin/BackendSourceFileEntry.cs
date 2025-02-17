@@ -94,21 +94,8 @@ public class BackendSourceFileEntry(BackendSourceProvider parent, string path, b
         if (!isFolder)
             throw new InvalidOperationException("Enumerate can only be called on folders");
 
-        if (parent.WrappedBackend is IFolderEnabledBackend folderEnabledBackend)
-        {
-            return folderEnabledBackend.ListAsync(path, cancellationToken)
-                .Select(x => new BackendSourceFileEntry(parent, x.Path, x.IsFolder, false, x.CreatedUtc, x.LastModificationUtc, x.Size));
-        }
-        else
-        {
-            // If we do not support folders, we can only list the root
-            if (this.IsMetaEntry)
-                return parent.WrappedBackend.List()
-                    .Select(x => FromFileEntry(parent, "", x))
-                    .ToAsyncEnumerable();
-
-            return Array.Empty<ISourceFileEntry>().ToAsyncEnumerable();
-        }
+        return parent.WrappedBackend.ListAsync(path, cancellationToken)
+            .Select(x => new BackendSourceFileEntry(parent, x.Path, x.IsFolder, false, x.CreatedUtc, x.LastModificationUtc, x.Size));
     }
 
     /// <inheritdoc/>
@@ -117,20 +104,15 @@ public class BackendSourceFileEntry(BackendSourceProvider parent, string path, b
         if (!isFolder)
             throw new InvalidOperationException("FileExists can only be called on folders");
 
-        if (parent.WrappedBackend is IFolderEnabledBackend folderEnabledBackend)
+        try
         {
-            try
-            {
-                var entry = await folderEnabledBackend.GetEntryAsync(path, cancellationToken);
-                return entry != null && !entry.IsFolder;
-            }
-            catch (FileNotFoundException)
-            {
-                return false;
-            }
+            var entry = await parent.WrappedBackend.GetEntryAsync(path, cancellationToken);
+            return entry != null && !entry.IsFolder;
         }
-
-        return false;
+        catch (FileNotFoundException)
+        {
+            return false;
+        }
     }
 
     /// <inheritdoc/>

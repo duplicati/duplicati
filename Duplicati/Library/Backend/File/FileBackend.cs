@@ -21,12 +21,9 @@
 
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
-using Duplicati.Library.Snapshots;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using System.Threading;
@@ -36,7 +33,7 @@ namespace Duplicati.Library.Backend
 {
     // ReSharper disable once UnusedMember.Global
     // This class is instantiated dynamically in the BackendLoader.
-    public class File : IBackend, IStreamingBackend, IQuotaEnabledBackend, IRenameEnabledBackend, IFolderEnabledBackend
+    public class File : IBackend, IStreamingBackend, IQuotaEnabledBackend, IRenameEnabledBackend
     {
         private const string OPTION_DESTINATION_MARKER = "alternate-destination-marker";
         private const string OPTION_ALTERNATE_PATHS = "alternate-target-paths";
@@ -466,36 +463,6 @@ namespace Duplicati.Library.Backend
                 catch { }
                 throw;
             }
-        }
-
-        /// <inheritdoc/>
-        public string PathKey => m_path;
-
-        /// <inheritdoc/>
-        public async IAsyncEnumerable<ISourceFileEntry> ListAsync(string path, [EnumeratorCancellation] CancellationToken cancellationToken)
-        {
-            PreAuthenticate();
-
-            var remotePath = string.IsNullOrWhiteSpace(path) ? m_path : GetRemoteName(path);
-
-            if (!systemIO.DirectoryExists(remotePath))
-                throw new FolderMissingException(Strings.FileBackend.FolderMissingError(m_path));
-
-            var service = SnapshotUtility.CreateNoSnapshot([remotePath], false, false);
-
-            await foreach (var folderEntry in systemIO.EnumerateDirectories(remotePath).ToAsyncEnumerable().WithCancellation(cancellationToken).ConfigureAwait(false))
-                yield return new SnapshotSourceFileEntry(service, folderEntry, true, false);
-
-            await foreach (var fileEntry in systemIO.EnumerateFiles(remotePath).ToAsyncEnumerable().WithCancellation(cancellationToken).ConfigureAwait(false))
-                yield return new SnapshotSourceFileEntry(service, fileEntry, false, false);
-        }
-
-        /// <inheritdoc/>
-        public Task<ISourceFileEntry> GetEntryAsync(string path, CancellationToken cancellationToken)
-        {
-            var service = SnapshotUtility.CreateNoSnapshot([path], false, false);
-            var isFolder = service.DirectoryExists(path);
-            return Task.FromResult<ISourceFileEntry>(new SnapshotSourceFileEntry(service, path, isFolder, false));
         }
     }
 }
