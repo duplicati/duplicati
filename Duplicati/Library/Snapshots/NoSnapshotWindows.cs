@@ -86,7 +86,7 @@ namespace Duplicati.Library.Snapshots
         /// <returns>The source files and folders</returns>
         public override IEnumerable<ISourceFileEntry> EnumerateFilesystemEntries()
         {
-            foreach (var folder in m_folders.Select(SystemIOWindows.AddExtendedDevicePathPrefix))
+            foreach (var folder in m_folders.Select(SystemIOWindows.RemoveExtendedDevicePathPrefix))
             {
                 if (DirectoryExists(folder) || folder.EndsWith(System.IO.Path.DirectorySeparatorChar))
                     yield return new SnapshotSourceFileEntry(this, Util.AppendDirSeparator(folder), true, true);
