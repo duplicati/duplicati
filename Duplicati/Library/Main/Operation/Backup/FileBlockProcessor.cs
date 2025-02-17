@@ -120,7 +120,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                         else if (e.TimestampChanged)
                         {
                             await stats.AddTimestampChangedFile();
-                            Logging.Log.WriteVerboseMessage(FILELOGTAG, "FileTimestampChanged", "File has only timestamp changes {0}", e.Path);
+                            Logging.Log.WriteVerboseMessage(FILELOGTAG, "FileTimestampChanged", "File has only timestamp changes {0}", e.Entry.Path);
                             await database.AddUnmodifiedAsync(e.OldId, e.LastWrite);
                         }
                         else /*if (e.OldId >= 0)*/
