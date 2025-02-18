@@ -322,11 +322,14 @@ namespace Duplicati.Library.Main.Operation
 
             // Prepare the block and file list and create the directory structure
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_CreateFileList);
-            PrepareBlockAndFileList(database, m_options, filter, m_result);
+            using (new Logging.Timer(LOGTAG, "PrepareBlockList", "PrepareBlockList"))
+                PrepareBlockAndFileList(database, m_options, filter, m_result);
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_CreateTargetFolders);
-            await CreateDirectoryStructure(database, m_options, m_result).ConfigureAwait(false);
+            using (new Logging.Timer(LOGTAG, "CreateDirectory", "CreateDirectory"))
+                await CreateDirectoryStructure(database, m_options, m_result).ConfigureAwait(false);
             database.SetResult(m_result);
 
+            using var setup_log_timer = new Logging.Timer(LOGTAG, "RestoreNetworkSetup", "RestoreNetworkSetup");
             // Create the channels between BlockManager and FileProcessor
             var fileprocessor_requests = new Channel<Restore.BlockRequest>[m_options.RestoreFileProcessors].Select(_ => ChannelManager.CreateChannel<Restore.BlockRequest>(buffersize: Restore.Channels.BufferSize)).ToArray();
             var fileprocessor_responses = new Channel<byte[]>[m_options.RestoreFileProcessors].Select(_ => ChannelManager.CreateChannel<byte[]>(buffersize: Restore.Channels.BufferSize)).ToArray();
@@ -341,6 +344,8 @@ namespace Duplicati.Library.Main.Operation
             var volumedecryptors = Enumerable.Range(0, m_options.RestoreVolumeDecryptors).Select(i => Restore.VolumeDecryptor.Run(channels, m_options)).ToArray();
             var volumedecompressors = Enumerable.Range(0, m_options.RestoreVolumeDecompressors).Select(i => Restore.VolumeDecompressor.Run(channels, m_options)).ToArray();
 
+            setup_log_timer.Dispose();
+
             // Wait for the network to complete
             Task[] all =
                 [
@@ -354,6 +359,7 @@ namespace Duplicati.Library.Main.Operation
                 ];
 
             // Start the progress updater
+            using (new Logging.Timer(LOGTAG, "RestoreNetworkWait", "RestoreNetworkWait"))
             using (var kill_updater = new CancellationTokenSource())
             {
                 var updater = Task.Run(async () =>
@@ -489,28 +495,29 @@ namespace Duplicati.Library.Main.Operation
 
                 var brokenFiles = new List<string>();
 
-                await foreach (var (tmpfile, _, _, name) in backendManager.GetFilesOverlappedAsync(volumes, cancellationToken))
-                {
-                    try
+                using (new Logging.Timer(LOGTAG, "PatchWithBlocklist", "PatchWithBlocklist"))
+                    await foreach (var (tmpfile, _, _, name) in backendManager.GetFilesOverlappedAsync(volumes, cancellationToken))
                     {
-                        if (!await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
+                        try
                         {
-                            await backendManager.WaitForEmptyAsync(database, null, cancellationToken).ConfigureAwait(false);
-                            return;
-                        }
+                            if (!await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
+                            {
+                                await backendManager.WaitForEmptyAsync(database, null, cancellationToken).ConfigureAwait(false);
+                                return;
+                            }
 
-                        using (tmpfile)
-                        using (var blocks = new BlockVolumeReader(GetCompressionModule(name), tmpfile, m_options))
-                            PatchWithBlocklist(database, blocks, m_options, m_result, m_blockbuffer, metadatastorage);
+                            using (tmpfile)
+                            using (var blocks = new BlockVolumeReader(GetCompressionModule(name), tmpfile, m_options))
+                                PatchWithBlocklist(database, blocks, m_options, m_result, m_blockbuffer, metadatastorage);
+                        }
+                        catch (Exception ex)
+                        {
+                            brokenFiles.Add(name);
+                            Logging.Log.WriteErrorMessage(LOGTAG, "PatchingFailed", ex, "Failed to patch with remote file: \"{0}\", message: {1}", name, ex.Message);
+                            if (ex is System.Threading.ThreadAbortException)
+                                throw;
+                        }
                     }
-                    catch (Exception ex)
-                    {
-                        brokenFiles.Add(name);
-                        Logging.Log.WriteErrorMessage(LOGTAG, "PatchingFailed", ex, "Failed to patch with remote file: \"{0}\", message: {1}", name, ex.Message);
-                        if (ex is System.Threading.ThreadAbortException)
-                            throw;
-                    }
-                }
 
                 var fileErrors = 0L;
 
