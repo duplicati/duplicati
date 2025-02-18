@@ -20,6 +20,7 @@
 // DEALINGS IN THE SOFTWARE.
 
 using CoCoL;
+using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.Main.Operation.Backup
 {
@@ -51,7 +52,7 @@ namespace Duplicati.Library.Main.Operation.Backup
         /// <summary>
         /// When enumerating the source folders, all discovered paths are sent by the <see cref="FileEnumerationProcess"/> to the <see cref="MetadataPreProcess"/>
         /// </summary>
-        public readonly IChannel<string> SourcePaths = ChannelManager.CreateChannel<string>();
+        public readonly IChannel<ISourceFileEntry> SourcePaths = ChannelManager.CreateChannel<ISourceFileEntry>();
         /// <summary>
         /// All progress events are communicated over this channel, to ensure that parallel progress is reported as a if it was sequential
         /// </summary>

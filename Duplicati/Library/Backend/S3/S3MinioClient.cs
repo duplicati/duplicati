@@ -22,7 +22,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reactive.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
@@ -58,13 +60,33 @@ namespace Duplicati.Library.Backend
             m_dnsHost = servername;
         }
 
-        public IEnumerable<IFileEntry> ListBucket(string bucketName, string prefix)
+        private static async IAsyncEnumerable<T> ToAsyncEnumerable<T>(
+            IObservable<T> observable,
+            [EnumeratorCancellation] CancellationToken cancellationToken = default)
+        {
+            var channel = Channel.CreateUnbounded<T>(); // Buffered channel for async iteration
+
+            using var subscription = observable.Subscribe(
+                item => channel.Writer.TryWrite(item),
+                ex => channel.Writer.TryComplete(ex),
+                () => channel.Writer.TryComplete()
+            );
+
+            while (await channel.Reader.WaitToReadAsync(cancellationToken))
+            {
+                while (channel.Reader.TryRead(out var item))
+                {
+                    yield return item;
+                }
+            }
+        }
+
+        public async IAsyncEnumerable<IFileEntry> ListBucketAsync(string bucketName, string prefix, [EnumeratorCancellation] CancellationToken cancellationToken)
         {
             ThrowExceptionIfBucketDoesNotExist(bucketName);
 
-            var observable = m_client.ListObjectsAsync(bucketName, prefix, true);
-
-            foreach (var obj in observable.ToEnumerable())
+            var observable = m_client.ListObjectsAsync(bucketName, prefix, true, cancellationToken);
+            await foreach (var obj in ToAsyncEnumerable(observable, cancellationToken).ConfigureAwait(false))
             {
                 yield return new Common.IO.FileEntry(
                     obj.Key,

@@ -411,7 +411,7 @@ namespace Duplicati.Library.Modules.Builtin
                 case DESTINATION_TYPE:
                     // Only return the url scheme, as the rest could contain sensitive information
                     var ix = m_remoteurl?.IndexOf("://", StringComparison.OrdinalIgnoreCase) ?? -1;
-                    return ix >= 0 && ix < 15 ? m_remoteurl.Substring(0, ix) : "file";
+                    return Utility.Utility.GuessScheme(m_remoteurl) ?? "file";
                 default:
                     return null;
             }

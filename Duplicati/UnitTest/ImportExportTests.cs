@@ -23,6 +23,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using Duplicati.Library.RestAPI;
+using Duplicati.Library.SQLiteHelper;
 using Duplicati.Server;
 using Duplicati.Server.Database;
 using Duplicati.Server.Serializable;
@@ -126,46 +127,57 @@ namespace Duplicati.UnitTest
         [Category("ImportExport")]
         public void RoundTrip()
         {
-            Dictionary<string, string> metadata = new Dictionary<string, string> { { "SourceFilesCount", "1" } };
-            Dictionary<string, string> advancedOptions = new Dictionary<string, string> { { "server-datafolder", this.serverDatafolder } };
+            var metadata = new Dictionary<string, string> { { "SourceFilesCount", "1" } };
+            var advancedOptions = new Dictionary<string, string> { { "server-datafolder", this.serverDatafolder } };
+
+            // Mock the setup enough to get the import/export working
             var serviceCollection = new ServiceCollection();
             serviceCollection.AddSingleton<INotificationUpdateService, NotificationUpdateService>();
             serviceCollection.AddSingleton(new EventPollNotify());
             FIXMEGlobal.Provider = new DefaultServiceProviderFactory().CreateServiceProvider(serviceCollection);
+            FIXMEGlobal.DataFolder = this.serverDatafolder;
 
-            using (Program.DataConnection = Program.GetDatabaseConnection(advancedOptions, true))
+            var dbpath = Path.Combine(this.serverDatafolder, Library.AutoUpdater.DataFolderManager.SERVER_DATABASE_FILENAME);
+            if (File.Exists(dbpath))
+                File.Delete(dbpath);
+
+            var con = SQLiteLoader.LoadConnection();
+            SQLiteLoader.OpenDatabase(con, dbpath, null);
+            DatabaseUpgrader.UpgradeDatabase(con, dbpath, typeof(Duplicati.Library.RestAPI.Database.DatabaseConnectionSchemaMarker));
+
+            using (var connection = new Connection(con, true, null))
             {
                 // Unencrypted file, don't import metadata.
                 string unencryptedWithoutMetadata = Path.Combine(this.serverDatafolder, Path.GetRandomFileName());
-                File.WriteAllBytes(unencryptedWithoutMetadata, BackupImportExportHandler.ExportToJSON(Program.DataConnection, this.CreateBackup("unencrypted without metadata", "user", "password", metadata), null));
-                BackupImportExportHandler.ImportBackup(Program.DataConnection, unencryptedWithoutMetadata, false, () => null);
-                Assert.AreEqual(1, Program.DataConnection.Backups.Length);
-                Assert.AreEqual(0, Program.DataConnection.Backups[0].Metadata.Count);
+                File.WriteAllBytes(unencryptedWithoutMetadata, BackupImportExportHandler.ExportToJSON(connection, this.CreateBackup("unencrypted without metadata", "user", "password", metadata), null));
+                BackupImportExportHandler.ImportBackup(connection, unencryptedWithoutMetadata, false, () => null);
+                Assert.AreEqual(1, connection.Backups.Length);
+                Assert.AreEqual(0, connection.Backups[0].Metadata.Count);
 
                 // Unencrypted file, import metadata.
                 string unencryptedWithMetadata = Path.Combine(this.serverDatafolder, Path.GetRandomFileName());
-                File.WriteAllBytes(unencryptedWithMetadata, BackupImportExportHandler.ExportToJSON(Program.DataConnection, this.CreateBackup("unencrypted with metadata", "user", "password", metadata), null));
-                BackupImportExportHandler.ImportBackup(Program.DataConnection, unencryptedWithMetadata, true, () => null);
-                Assert.AreEqual(2, Program.DataConnection.Backups.Length);
-                Assert.AreEqual(metadata.Count, Program.DataConnection.Backups[1].Metadata.Count);
+                File.WriteAllBytes(unencryptedWithMetadata, BackupImportExportHandler.ExportToJSON(connection, this.CreateBackup("unencrypted with metadata", "user", "password", metadata), null));
+                BackupImportExportHandler.ImportBackup(connection, unencryptedWithMetadata, true, () => null);
+                Assert.AreEqual(2, connection.Backups.Length);
+                Assert.AreEqual(metadata.Count, connection.Backups[1].Metadata.Count);
 
                 // Encrypted file, don't import metadata.
                 string encryptedWithoutMetadata = Path.Combine(this.serverDatafolder, Path.GetRandomFileName());
                 string passphrase = "abcde";
-                File.WriteAllBytes(encryptedWithoutMetadata, BackupImportExportHandler.ExportToJSON(Program.DataConnection, this.CreateBackup("encrypted without metadata", "user", "password", metadata), passphrase));
-                BackupImportExportHandler.ImportBackup(Program.DataConnection, encryptedWithoutMetadata, false, () => passphrase);
-                Assert.AreEqual(3, Program.DataConnection.Backups.Length);
-                Assert.AreEqual(0, Program.DataConnection.Backups[2].Metadata.Count);
+                File.WriteAllBytes(encryptedWithoutMetadata, BackupImportExportHandler.ExportToJSON(connection, this.CreateBackup("encrypted without metadata", "user", "password", metadata), passphrase));
+                BackupImportExportHandler.ImportBackup(connection, encryptedWithoutMetadata, false, () => passphrase);
+                Assert.AreEqual(3, connection.Backups.Length);
+                Assert.AreEqual(0, connection.Backups[2].Metadata.Count);
 
                 // Encrypted file, import metadata.
                 string encryptedWithMetadata = Path.Combine(this.serverDatafolder, Path.GetRandomFileName());
-                File.WriteAllBytes(encryptedWithMetadata, BackupImportExportHandler.ExportToJSON(Program.DataConnection, this.CreateBackup("encrypted with metadata", "user", "password", metadata), passphrase));
-                BackupImportExportHandler.ImportBackup(Program.DataConnection, encryptedWithMetadata, true, () => passphrase);
-                Assert.AreEqual(4, Program.DataConnection.Backups.Length);
-                Assert.AreEqual(metadata.Count, Program.DataConnection.Backups[3].Metadata.Count);
+                File.WriteAllBytes(encryptedWithMetadata, BackupImportExportHandler.ExportToJSON(connection, this.CreateBackup("encrypted with metadata", "user", "password", metadata), passphrase));
+                BackupImportExportHandler.ImportBackup(connection, encryptedWithMetadata, true, () => passphrase);
+                Assert.AreEqual(4, connection.Backups.Length);
+                Assert.AreEqual(metadata.Count, connection.Backups[3].Metadata.Count);
 
                 // Encrypted file, incorrect passphrase.
-                Assert.Throws(Is.InstanceOf<Exception>(), () => BackupImportExportHandler.ImportBackup(Program.DataConnection, encryptedWithMetadata, true, () => passphrase + " "));
+                Assert.Throws(Is.InstanceOf<Exception>(), () => BackupImportExportHandler.ImportBackup(connection, encryptedWithMetadata, true, () => passphrase + " "));
             }
         }
     }
