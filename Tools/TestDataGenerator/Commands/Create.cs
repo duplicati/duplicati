@@ -22,6 +22,7 @@ public static class Create
     /// <param name="MaxDepth">The maximum depth of subfolders to create in the target folder</param>
     /// <param name="MaxFolderCount">The maximum number of folders to create in the target folder</param>
     /// <param name="MaxPathSegmentLength">The maximum length of each path segment in the target folder</param>
+    /// <param name="RandomSeed">The random seed to use for generating the test data</param>
     record CommandInput(
         DirectoryInfo TargetFolder,
         int FileCount,
@@ -32,7 +33,8 @@ public static class Create
         int MaxFanOut,
         int MaxDepth,
         int MaxFolderCount,
-        int MaxPathSegmentLength);
+        int MaxPathSegmentLength,
+        string RandomSeed);
 
     /// <summary>
     /// Creates the command
@@ -82,6 +84,10 @@ public static class Create
         maxPathSegmentLengthOption.SetDefaultValue(15);
         command.AddOption(maxPathSegmentLengthOption);
 
+        var randomSeedOption = new Option<string>("--random-seed", "The random seed to use for generating the test data");
+        randomSeedOption.SetDefaultValue("Duplicati");
+        command.AddOption(randomSeedOption);
+
         command.Handler = CommandHandler.Create<CommandInput>(Execute);
 
         return command;
@@ -121,7 +127,7 @@ public static class Create
             throw new Exception("The maximum path segment length must be greater than zero");
 
         Console.WriteLine($"Creating test data in {input.TargetFolder.FullName}");
-        var rnd = new Random();
+        var rnd = new Random(input.RandomSeed.GetHashCode());
         var folders = GeneratePathStructure(rnd, input.TargetFolder.FullName, input.MaxDepth, input.MaxFanOut, input.MaxPathSegmentLength);
         while (folders.Count < input.MaxFolderCount)
         {
