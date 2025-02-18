@@ -20,191 +20,187 @@
 // DEALINGS IN THE SOFTWARE.
 
 using Duplicati.Library.Interface;
-using Microsoft.Azure.Storage.Shared.Protocol;
-using System.Collections.Generic;
-using System.IO;
-using System.Threading;
-using System.Threading.Tasks;
+using Azure;
+using Azure.Storage.Blobs.Models;
 
-namespace Duplicati.Library.Backend.AzureBlob
+namespace Duplicati.Library.Backend.AzureBlob;
+
+/// <summary>
+/// AzureBlob backend implementation 
+/// </summary>
+public class AzureBlobBackend : IStreamingBackend
 {
-    // ReSharper disable once UnusedMember.Global
-    // This class is instantiated dynamically in the BackendLoader.
-    public class AzureBlobBackend : IStreamingBackend
+    private readonly AzureBlobWrapper _azureBlob;
+
+    /// <summary>
+    /// Empty constructor needed for backend instance creation
+    /// </summary>
+    public AzureBlobBackend()
     {
-        private readonly AzureBlobWrapper _azureBlob;
+    }
 
-        // ReSharper disable once UnusedMember.Global
-        // This constructor is needed by the BackendLoader.
-        public AzureBlobBackend()
+    /// <summary>
+    /// Actual constructor for the backend execution
+    /// </summary>
+    /// <param name="url">URI to be parsed by the backend</param>
+    /// <param name="options">Advanced options</param>
+    public AzureBlobBackend(string url, Dictionary<string, string> options)
+    {
+        var uri = new Utility.Uri(url);
+        uri.RequireHost();
+
+        string storageAccountName = null;
+        string accessKey = null;
+        string sasToken = null;
+        string containerName = uri.Host.ToLowerInvariant();
+
+        if (options.ContainsKey("auth-username"))
+            storageAccountName = options["auth-username"];
+        if (options.ContainsKey("auth-password"))
+            accessKey = options["auth-password"];
+
+        if (options.ContainsKey("azure-account-name"))
+            storageAccountName = options["azure-account-name"];
+        if (options.ContainsKey("azure-access-key"))
+            accessKey = options["azure-access-key"];
+        if (options.ContainsKey("azure-access-sas-token"))
+            sasToken = options["azure-access-sas-token"];
+
+        if (!string.IsNullOrEmpty(uri.Username))
+            storageAccountName = uri.Username;
+        if (!string.IsNullOrEmpty(uri.Password))
+            accessKey = uri.Password;
+
+        if (string.IsNullOrWhiteSpace(storageAccountName))
+            throw new UserInformationException(Strings.AzureBlobBackend.NoStorageAccountName, "AzureNoAccountName");
+
+        if (string.IsNullOrWhiteSpace(accessKey) && string.IsNullOrWhiteSpace(sasToken))
+            throw new UserInformationException(Strings.AzureBlobBackend.NoAccessKeyOrSasToken,
+                "AzureNoAccessKeyOrSasToken");
+
+        _azureBlob = new AzureBlobWrapper(storageAccountName, accessKey, sasToken, containerName);
+    }
+
+    ///<inheritdoc/>
+    public string DisplayName => Strings.AzureBlobBackend.DisplayName;
+
+    ///<inheritdoc/>
+    public string ProtocolKey => "azure";
+
+    ///<inheritdoc/>
+    public IEnumerable<IFileEntry> List()
+    {
+        return _azureBlob.ListContainerEntries();
+    }
+
+    ///<inheritdoc/>
+    public async Task PutAsync(string remotename, string localname, CancellationToken cancelToken)
+    {
+        await using var fs = File.Open(localname, FileMode.Open, FileAccess.Read, FileShare.Read);
+        await PutAsync(remotename, fs, cancelToken).ConfigureAwait(false);
+    }
+
+    ///<inheritdoc/>
+    public Task PutAsync(string remotename, Stream input, CancellationToken cancelToken)
+    {
+        return WrapWithExceptionHandler(_azureBlob.AddFileStream(remotename, input, cancelToken));
+    }
+
+    ///<inheritdoc/>
+    public async Task GetAsync(string remotename, string localname, CancellationToken cancellationToken)
+    {
+        await using var fs = File.Open(localname, FileMode.Create, FileAccess.Write, FileShare.None);
+        await GetAsync(remotename, fs, cancellationToken).ConfigureAwait(false);
+    }
+
+    ///<inheritdoc/>
+    public Task GetAsync(string remotename, Stream output, CancellationToken cancellationToken)
+    {
+        return WrapWithExceptionHandler(_azureBlob.GetFileStreamAsync(remotename, output, cancellationToken));
+    }
+
+    ///<inheritdoc/>
+    public Task DeleteAsync(string remotename, CancellationToken cancellationToken)
+    {
+        return WrapWithExceptionHandler(_azureBlob.DeleteObjectAsync(remotename, cancellationToken));
+    }
+
+    ///<inheritdoc/>
+    public IList<ICommandLineArgument> SupportedCommands
+    {
+        get
         {
-        }
-
-        // ReSharper disable once UnusedMember.Global
-        // This constructor is needed by the BackendLoader.
-        public AzureBlobBackend(string url, Dictionary<string, string> options)
-        {
-            var uri = new Utility.Uri(url);
-            uri.RequireHost();
-
-            string storageAccountName = null;
-            string accessKey = null;
-            string sasToken = null;
-            string containerName = uri.Host.ToLowerInvariant();
-
-            if (options.ContainsKey("auth-username"))
-                storageAccountName = options["auth-username"];
-            if (options.ContainsKey("auth-password"))
-                accessKey = options["auth-password"];
-
-            if (options.ContainsKey("azure-account-name"))
-                storageAccountName = options["azure-account-name"];
-            if (options.ContainsKey("azure-access-key"))
-                accessKey = options["azure-access-key"];
-            if (options.ContainsKey("azure-access-sas-token"))
-                sasToken = options["azure-access-sas-token"];
-
-            if (!string.IsNullOrEmpty(uri.Username))
-                storageAccountName = uri.Username;
-            if (!string.IsNullOrEmpty(uri.Password))
-                accessKey = uri.Password;
-
-            if (string.IsNullOrWhiteSpace(storageAccountName))
+            return new List<ICommandLineArgument>(new ICommandLineArgument[]
             {
-                throw new UserInformationException(Strings.AzureBlobBackend.NoStorageAccountName, "AzureNoAccountName");
-            }
-            if (string.IsNullOrWhiteSpace(accessKey) && string.IsNullOrWhiteSpace(sasToken))
-            {
-                throw new UserInformationException(Strings.AzureBlobBackend.NoAccessKeyOrSasToken, "AzureNoAccessKeyOrSasToken");
-            }
-
-
-            _azureBlob = new AzureBlobWrapper(storageAccountName, accessKey, sasToken, containerName);
+                new CommandLineArgument("azure-account-name",
+                    CommandLineArgument.ArgumentType.String,
+                    Strings.AzureBlobBackend.StorageAccountNameDescriptionShort,
+                    Strings.AzureBlobBackend.StorageAccountNameDescriptionLong),
+                new CommandLineArgument("azure-access-key",
+                    CommandLineArgument.ArgumentType.Password,
+                    Strings.AzureBlobBackend.AccessKeyDescriptionShort,
+                    Strings.AzureBlobBackend.AccessKeyDescriptionLong),
+                new CommandLineArgument("azure-access-sas-token",
+                    CommandLineArgument.ArgumentType.Password,
+                    Strings.AzureBlobBackend.SasTokenDescriptionShort,
+                    Strings.AzureBlobBackend.SasTokenDescriptionLong),
+                new CommandLineArgument("auth-password",
+                    CommandLineArgument.ArgumentType.Password,
+                    Strings.AzureBlobBackend.AuthPasswordDescriptionShort,
+                    Strings.AzureBlobBackend.AuthPasswordDescriptionLong),
+                new CommandLineArgument("auth-username",
+                    CommandLineArgument.ArgumentType.String,
+                    Strings.AzureBlobBackend.AuthUsernameDescriptionShort,
+                    Strings.AzureBlobBackend.AuthUsernameDescriptionLong)
+            });
         }
+    }
 
-        public string DisplayName
+    ///<inheritdoc/>
+    public string Description => Strings.AzureBlobBackend.DescriptionV2;
+
+    ///<inheritdoc/>
+    public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(_azureBlob.DnsNames);
+
+    ///<inheritdoc/>
+    public Task TestAsync(CancellationToken cancellationToken)
+    {
+        return WrapWithExceptionHandler(Task.Run(this.TestList, cancellationToken));
+    }
+
+    ///<inheritdoc/>
+    public Task CreateFolderAsync(CancellationToken cancellationToken)
+    {
+        return WrapWithExceptionHandler(_azureBlob.AddContainerAsync(cancellationToken));
+    }
+
+    /// <summary>
+    /// Wraps the task with exception handling
+    /// </summary>
+    private async Task WrapWithExceptionHandler(Task task)
+    {
+        try
         {
-            get { return Strings.AzureBlobBackend.DisplayName; }
+            await task.ConfigureAwait(false);
         }
-
-        public string ProtocolKey
+        catch (RequestFailedException e)
+            when (e.Status == 404
+                  || e.ErrorCode == BlobErrorCode.BlobNotFound
+                  || e.ErrorCode == BlobErrorCode.ResourceNotFound)
         {
-            get { return "azure"; }
+            throw new FileMissingException(e.Message, e);
         }
-
-        public IEnumerable<IFileEntry> List()
+        catch (RequestFailedException e)
+            when (e.ErrorCode == BlobErrorCode.ContainerNotFound
+                  || e.ErrorCode == BlobErrorCode.ContainerBeingDeleted
+                  || e.ErrorCode == BlobErrorCode.ContainerDisabled)
         {
-            return _azureBlob.ListContainerEntries();
+            throw new FolderMissingException(e.Message, e);
         }
+    }
 
-        public async Task PutAsync(string remotename, string localname, CancellationToken cancelToken)
-        {
-            using (var fs = File.Open(localname,
-                FileMode.Open, FileAccess.Read, FileShare.Read))
-            {
-                await PutAsync(remotename, fs, cancelToken);
-            }
-        }
-
-        public Task PutAsync(string remotename, Stream input, CancellationToken cancelToken)
-        {
-            return WrapWithExceptionHandler(_azureBlob.AddFileStream(remotename, input, cancelToken));
-        }
-
-        public async Task GetAsync(string remotename, string localname, CancellationToken cancellationToken)
-        {
-            using (var fs = File.Open(localname,
-                FileMode.Create, FileAccess.Write,
-                FileShare.None))
-            {
-                await GetAsync(remotename, fs, cancellationToken).ConfigureAwait(false);
-            }
-        }
-
-        public Task GetAsync(string remotename, Stream output, CancellationToken cancellationToken)
-        {
-            return WrapWithExceptionHandler(_azureBlob.GetFileStreamAsync(remotename, output, cancellationToken));
-        }
-
-        public Task DeleteAsync(string remotename, CancellationToken cancellationToken)
-        {
-            return WrapWithExceptionHandler(_azureBlob.DeleteObjectAsync(remotename, cancellationToken));
-        }
-
-        public IList<ICommandLineArgument> SupportedCommands
-        {
-            get
-            {
-                return new List<ICommandLineArgument>(new ICommandLineArgument[] {
-                    new CommandLineArgument("azure-account-name",
-                        CommandLineArgument.ArgumentType.String,
-                        Strings.AzureBlobBackend.StorageAccountNameDescriptionShort,
-                        Strings.AzureBlobBackend.StorageAccountNameDescriptionLong),
-                    new CommandLineArgument("azure-access-key",
-                        CommandLineArgument.ArgumentType.Password,
-                        Strings.AzureBlobBackend.AccessKeyDescriptionShort,
-                        Strings.AzureBlobBackend.AccessKeyDescriptionLong),
-                    new CommandLineArgument("azure-access-sas-token",
-                        CommandLineArgument.ArgumentType.Password,
-                        Strings.AzureBlobBackend.SasTokenDescriptionShort,
-                        Strings.AzureBlobBackend.SasTokenDescriptionLong),
-                    new CommandLineArgument("auth-password",
-                        CommandLineArgument.ArgumentType.Password,
-                        Strings.AzureBlobBackend.AuthPasswordDescriptionShort,
-                        Strings.AzureBlobBackend.AuthPasswordDescriptionLong),
-                    new CommandLineArgument("auth-username",
-                        CommandLineArgument.ArgumentType.String,
-                        Strings.AzureBlobBackend.AuthUsernameDescriptionShort,
-                        Strings.AzureBlobBackend.AuthUsernameDescriptionLong)
-                });
-
-            }
-        }
-
-        public string Description
-        {
-            get
-            {
-                return Strings.AzureBlobBackend.Description_v2;
-            }
-        }
-
-        public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(_azureBlob.DnsNames);
-
-        public Task TestAsync(CancellationToken cancellationToken)
-        {
-            return WrapWithExceptionHandler(Task.Run(() => this.TestList()));
-        }
-
-        public Task CreateFolderAsync(CancellationToken cancellationToken)
-        {
-            return WrapWithExceptionHandler(_azureBlob.AddContainerAsync(cancellationToken));
-        }
-
-        private async Task WrapWithExceptionHandler(Task task)
-        {
-            try
-            {
-                await task.ConfigureAwait(false);
-            }
-            catch (Microsoft.WindowsAzure.Storage.StorageException e)
-                when (e.RequestInformation.HttpStatusCode == 404
-                || e.RequestInformation.HttpStatusMessage == StorageErrorCodeStrings.ResourceNotFound)
-            {
-                throw new FileMissingException(e.Message, e);
-            }
-            catch (Microsoft.WindowsAzure.Storage.StorageException e)
-                when (e.RequestInformation.HttpStatusMessage == StorageErrorCodeStrings.ContainerNotFound
-                || e.RequestInformation.HttpStatusMessage == StorageErrorCodeStrings.ContainerBeingDeleted
-                || e.RequestInformation.HttpStatusMessage == StorageErrorCodeStrings.ContainerDisabled)
-            {
-                throw new FolderMissingException(e.Message, e);
-            }
-        }
-
-        public void Dispose()
-        {
-
-        }
+    ///<inheritdoc/>
+    public void Dispose()
+    {
     }
 }
