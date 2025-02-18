@@ -56,6 +56,11 @@ namespace Duplicati.Library.Snapshots
         private readonly VssBackupComponents _vssBackupComponents;
 
         /// <summary>
+        /// The source folders included in the snapshot
+        /// </summary>
+        private readonly IReadOnlyList<string> _sourceFolders;
+
+        /// <summary>
         /// Constructs a new backup snapshot, using all the required disks
         /// </summary>
         /// <param name="sources">Sources to determine which volumes to include in snapshot</param>
@@ -65,7 +70,7 @@ namespace Duplicati.Library.Snapshots
             : base(followSymlinks)
         {
             // For Windows, ensure we don't store paths with extended device path prefixes (i.e., @"\\?\" or @"\\?\UNC\")
-            sources = sources.Select(SystemIOWindows.RemoveExtendedDevicePathPrefix);
+            _sourceFolders = sources.Select(SystemIOWindows.RemoveExtendedDevicePathPrefix).ToList();
             try
             {
                 _vssBackupComponents = new VssBackupComponents();
@@ -82,7 +87,7 @@ namespace Duplicati.Library.Snapshots
                 }
                 _vssBackupComponents.SetupWriters(null, excludedWriters);
 
-                _vssBackupComponents.InitShadowVolumes(sources);
+                _vssBackupComponents.InitShadowVolumes(_sourceFolders);
 
                 _vssBackupComponents.MapVolumesToSnapShots();
 
@@ -122,7 +127,7 @@ namespace Duplicati.Library.Snapshots
         /// <returns>The source files and folders</returns>
         public override IEnumerable<ISourceFileEntry> EnumerateFilesystemEntries()
         {
-            foreach (var folder in _vssBackupComponents.SnapshotLocalPaths)
+            foreach (var folder in _sourceFolders)
             {
                 if (folder.EndsWith(Path.DirectorySeparatorChar) || DirectoryExists(folder))
                     yield return new SnapshotSourceFileEntry(this, Util.AppendDirSeparator(folder), true, true);
