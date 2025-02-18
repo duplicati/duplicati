@@ -22,8 +22,10 @@
 using System;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using CoCoL;
+using Duplicati.Library.Interface;
 using Duplicati.Library.Main.Database;
 using Duplicati.Library.Utility;
 
@@ -43,9 +45,12 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// <summary>
         /// Runs the volume downloader process.
         /// </summary>
+        /// <param name="channels">The named channels for the restore operation.</param>
+        /// <param name="db">The local restore database, used to find volume information given the volume ID.</param>
+        /// <param name="backend">The backend to use for downloading the volumes.</param>
         /// <param name="options">The restore options.</param>
         /// <param name="results">The restore results.</param>
-        public static Task Run(Channels channels, LocalRestoreDatabase db, Options options, RestoreResults results)
+        public static Task Run(Channels channels, LocalRestoreDatabase db, IBackend backend, Options options, RestoreResults results)
         {
             return AutomationExtensions.RunTask(
             new
@@ -65,19 +70,19 @@ namespace Duplicati.Library.Main.Operation.Restore
                     {
                         // Get the block request from the `BlockManager` process.
                         sw_read?.Start();
-                        var (volume_id, waittask) = await self.Input.ReadAsync();
+                        var volume_id = await self.Input.ReadAsync().ConfigureAwait(false);
                         sw_read?.Stop();
 
                         // Trigger the download.
                         sw_wait?.Start();
-                        TempFile f = null;
+                        TempFile f = new();
+                        var (volume_name, size, hash) = db.GetVolumeInfo(volume_id).First();
                         try
                         {
-                            f = await waittask.ConfigureAwait(false);
+                            await backend.GetAsync(volume_name, f.Name, CancellationToken.None).ConfigureAwait(false);
                         }
                         catch (Exception)
                         {
-                            var (volume_name, _, _) = db.GetVolumeInfo(volume_id).First();
                             lock (results)
                                 results.BrokenRemoteFiles.Add(volume_name);
 
@@ -87,7 +92,7 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                         // Pass the download handle (which may or may not have downloaded already) to the `VolumeDecryptor` process.
                         sw_write?.Start();
-                        await self.Output.WriteAsync((volume_id, f));
+                        await self.Output.WriteAsync((volume_id, volume_name, f)).ConfigureAwait(false);
                         sw_write?.Stop();
                     }
                 }
@@ -104,6 +109,10 @@ namespace Duplicati.Library.Main.Operation.Restore
                 {
                     Logging.Log.WriteErrorMessage(LOGTAG, "DownloadError", ex, "Error during download");
                     throw;
+                }
+                finally
+                {
+                    backend.Dispose();
                 }
             });
         }

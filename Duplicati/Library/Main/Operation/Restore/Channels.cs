@@ -19,7 +19,6 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-using System.Threading.Tasks;
 using CoCoL;
 using Duplicati.Library.Main.Volumes;
 using Duplicati.Library.Utility;
@@ -46,12 +45,12 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// <summary>
         /// Channel between <see cref="VolumeManager"/> and <see cref="VolumeDownloader"/>.
         /// </summary>
-        public readonly IChannel<(long, Task<TempFile>)> DownloadRequest = ChannelManager.CreateChannel<(long, Task<TempFile>)>(buffersize: BufferSize);
+        public readonly IChannel<long> DownloadRequest = ChannelManager.CreateChannel<long>(buffersize: BufferSize);
 
         /// <summary>
         /// Channel between <see cref="VolumeDownloader"/> and <see cref="VolumeDecryptor"/>
         /// </summary>
-        public readonly IChannel<(long, TempFile)> DecryptRequest = ChannelManager.CreateChannel<(long, TempFile)>(buffersize: BufferSize);
+        public readonly IChannel<(long, string, TempFile)> DecryptRequest = ChannelManager.CreateChannel<(long, string, TempFile)>(buffersize: BufferSize);
 
         /// <summary>
         /// Channel between <see cref="VolumeManager"/> and <see cref="VolumeDecompressor"/>

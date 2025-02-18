@@ -20,7 +20,6 @@
 // DEALINGS IN THE SOFTWARE.
 
 using CoCoL;
-using Duplicati.Library.Main.Database;
 using Duplicati.Library.Main.Volumes;
 using Duplicati.Library.Utility;
 using System;
@@ -46,11 +45,9 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// <summary>
         /// Runs the volume manager process.
         /// </summary>
-        /// <param name="db">The local restore database, used to find the volume where a block is stored.</param>
-        /// <param name="backend">The backend manager, used to fetch the volumes from the backend.</param>
+        /// <param name="channels">The named channels for the restore operation.</param>
         /// <param name="options">The restore options.</param>
-        /// <param name="results">The restore results.</param>
-        public static Task Run(Channels channels, LocalRestoreDatabase db, IBackendManager backend, Options options, RestoreResults results)
+        public static Task Run(Channels channels, Options options)
         {
             return AutomationExtensions.RunTask(
                 new
@@ -106,13 +103,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                                                 }
                                                 else
                                                 {
-                                                    sw_query?.Start();
-                                                    var (volume_name, volume_size, volume_hash) = db.GetVolumeInfo(request.VolumeID).First();
-                                                    sw_query?.Stop();
-                                                    sw_backend?.Start();
-                                                    var handle = backend.GetAsync(volume_name, volume_hash, volume_size, results.TaskControl.TransferToken);
-                                                    sw_backend?.Stop();
-                                                    await self.DownloadRequest.WriteAsync((request.VolumeID, handle));
+                                                    await self.DownloadRequest.WriteAsync(request.VolumeID).ConfigureAwait(false);
                                                     in_flight[request.VolumeID] = [request];
                                                 }
                                             }
