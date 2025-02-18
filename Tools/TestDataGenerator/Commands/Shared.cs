@@ -82,6 +82,16 @@ public static class Shared
     }
 
     /// <summary>
+    /// Generates a random file name
+    /// </summary>
+    /// <param name="rnd">The random number generator to use</param>
+    /// <param name="maxLength">The maximum length of the file name</param>
+    public static string GenerateFileName(Random rnd, int maxLength)
+    {
+        return GetPathSegment(rnd, maxLength) + FileExtensions[rnd.Next(FileExtensions.Count)];
+    }
+
+    /// <summary>
     /// Generates a list of random file names
     /// </summary>
     /// <param name="rnd">The random number generator to use</param>
@@ -92,7 +102,7 @@ public static class Shared
     {
         var names = new List<string>(count);
         for (int i = 0; i < count; i++)
-            names.Add(GetPathSegment(rnd, maxLength) + FileExtensions[rnd.Next(FileExtensions.Count)]);
+            names.Add(GenerateFileName(rnd, maxLength));
         return names;
     }
 

@@ -180,6 +180,10 @@ public static class Create
         {
             try
             {
+                // Sometimes with a large number of files, the file name clashes with a folder name. In that case, generate a new file name
+                while (Directory.Exists(file))
+                    file = Path.Combine(Path.GetDirectoryName(file), GenerateFileName(rnd, input.MaxPathSegmentLength));
+
                 using var fs = new FileStream(file, FileMode.Create, FileAccess.Write);
                 if (size > 0)
                 {
