@@ -91,6 +91,9 @@ internal interface IBackendManager : IDisposable
     /// <returns></returns>
     Task<TempFile> GetAsync(string remotename, string hash, long size, CancellationToken cancelToken);
 
+
+    public IBackend GetBackend();
+
     /// <summary>
     /// Performs a download of the files specified, with pre-fetch to overlap the download and processing
     /// </summary>

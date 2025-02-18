@@ -6,6 +6,7 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using CoCoL;
+using Duplicati.Library.DynamicLoader;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main.Database;
 using Duplicati.Library.Main.Operation.Common;
@@ -29,6 +30,9 @@ internal partial class BackendManager : IBackendManager
     /// List of backend instances that are currently in use
     /// </summary>
     private readonly List<IBackend> backendPool = [];
+
+    private string m_backendurl;
+    private Options m_options;
 
     /// <summary>
     /// The channel for issuing and handling requests
@@ -70,6 +74,9 @@ internal partial class BackendManager : IBackendManager
     {
         if (string.IsNullOrWhiteSpace(backendUrl))
             throw new ArgumentNullException(nameof(backendUrl));
+
+        m_backendurl = backendUrl;
+        m_options = options;
 
         // To avoid excessive parameter passing, the context is captured here
         context = new ExecuteContext(
@@ -165,6 +172,11 @@ internal partial class BackendManager : IBackendManager
         (var file, var _, var downloadSize) = await op.GetResult().ConfigureAwait(false);
         LastReadSize = downloadSize;
         return file;
+    }
+
+    public IBackend GetBackend()
+    {
+        return BackendLoader.GetBackend(m_backendurl, m_options.RawOptions);
     }
 
     /// <summary>
