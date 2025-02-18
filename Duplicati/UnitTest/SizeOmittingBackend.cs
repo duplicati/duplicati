@@ -59,10 +59,10 @@ namespace Duplicati.UnitTest
         #endregion
 
         #region IBackend implementation
-        public IEnumerable<IFileEntry> List()
+        public IAsyncEnumerable<IFileEntry> ListAsync(CancellationToken cancellationToken)
         {
             return
-                from n in m_backend.List()
+                from n in m_backend.ListAsync(cancellationToken)
                 where !n.IsFolder
                 select new FileEntry(n.Name);
         }

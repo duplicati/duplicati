@@ -208,7 +208,7 @@ namespace Duplicati.Library.Main.Operation
                     var blocksize = m_options.Blocksize;
                     var hashes_pr_block = blocksize / m_options.BlockhashSize;
 
-                    await foreach (var (tmpfile, hash, size, name) in backendManager.GetFilesOverlappedAsync(filelistWork, m_result.TaskControl.ProgressToken))
+                    await foreach (var (tmpfile, hash, size, name) in backendManager.GetFilesOverlappedAsync(filelistWork, m_result.TaskControl.ProgressToken).ConfigureAwait(false))
                     {
                         var entry = new RemoteVolume(name, hash, size);
                         try
@@ -378,7 +378,7 @@ namespace Duplicati.Library.Main.Operation
 
                         var progress = 0;
 
-                        await foreach (var (tmpfile, hash, size, name) in backendManager.GetFilesOverlappedAsync(indexfiles, m_result.TaskControl.ProgressToken))
+                        await foreach (var (tmpfile, hash, size, name) in backendManager.GetFilesOverlappedAsync(indexfiles, m_result.TaskControl.ProgressToken).ConfigureAwait(false))
                         {
                             try
                             {
@@ -516,7 +516,7 @@ namespace Duplicati.Library.Main.Operation
                         }
 
                         var progress = 0;
-                        await foreach (var (tmpfile, hash, size, name) in backendManager.GetFilesOverlappedAsync(lst, m_result.TaskControl.ProgressToken))
+                        await foreach (var (tmpfile, hash, size, name) in backendManager.GetFilesOverlappedAsync(lst, m_result.TaskControl.ProgressToken).ConfigureAwait(false))
                         {
                             try
                             {

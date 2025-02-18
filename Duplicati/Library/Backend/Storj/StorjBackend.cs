@@ -19,10 +19,10 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 using Duplicati.Library.Interface;
-using Duplicati.Library.Utility;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using uplink.NET.Interfaces;
@@ -238,29 +238,22 @@ namespace Duplicati.Library.Backend.Storj
             await download.StartDownloadAsync().ConfigureAwait(false);
         }
 
-        public IEnumerable<IFileEntry> List()
+        /// <inheritdoc />
+        public async IAsyncEnumerable<IFileEntry> ListAsync([EnumeratorCancellation] CancellationToken cancelToken)
         {
-            return ListAsync().Await();
-        }
-
-        private async Task<IEnumerable<IFileEntry>> ListAsync()
-        {
-            List<StorjFile> files = new List<StorjFile>();
             var bucket = await _bucketService.EnsureBucketAsync(_bucket).ConfigureAwait(false);
             var prefix = GetBasePath();
             var objects = await _objectService.ListObjectsAsync(bucket, new ListObjectsOptions { Recursive = true, System = true, Custom = true, Prefix = prefix }).ConfigureAwait(false);
 
             foreach (var obj in objects.Items)
             {
-                StorjFile file = new StorjFile(obj);
+                var file = new StorjFile(obj);
                 if (prefix != "")
                 {
                     file.Name = file.Name.Replace(prefix, "");
                 }
-                files.Add(file);
+                yield return file;
             }
-
-            return files;
         }
 
         public async Task PutAsync(string remotename, string filename, CancellationToken cancelToken)

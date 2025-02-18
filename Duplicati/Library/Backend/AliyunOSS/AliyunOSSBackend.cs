@@ -22,11 +22,11 @@ using Aliyun.OSS;
 using Aliyun.OSS.Common;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
-using Duplicati.Library.Utility;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -99,7 +99,8 @@ namespace Duplicati.Library.Backend.AliyunOSS
             });
         }
 
-        public IEnumerable<IFileEntry> List()
+
+        public async IAsyncEnumerable<IFileEntry> ListAsync([EnumeratorCancellation] CancellationToken cancelToken)
         {
             var bucketName = _ossOptions.BucketName;
 
@@ -107,51 +108,48 @@ namespace Duplicati.Library.Backend.AliyunOSS
 
             var client = GetClient(false);
 
-            var list = new List<OssObjectSummary>();
-            try
+            var nextMarker = string.Empty;
+            bool isTruncated;
+            do
             {
-                var nextMarker = string.Empty;
-                var isTruncated = false;
-                do
+                var listObjectsRequest = new ListObjectsRequest(bucketName)
                 {
-                    var listObjectsRequest = new ListObjectsRequest(bucketName)
-                    {
-                        MaxKeys = 1000,
-                        Marker = nextMarker,
-                        Prefix = prefix,
-                    };
-                    var result = client.ListObjects(listObjectsRequest);
+                    MaxKeys = 1000,
+                    Marker = nextMarker,
+                    Prefix = prefix,
+                };
+
+                ObjectListing result;
+                try
+                {
+                    result = await Task.Run(() => client.ListObjects(listObjectsRequest), cancelToken).ConfigureAwait(ConfigureAwaitOptions.ForceYielding);
                     if (result.HttpStatusCode != HttpStatusCode.OK)
                     {
                         throw new Exception(result.HttpStatusCode.ToString());
                     }
 
-                    foreach (var summary in result.ObjectSummaries)
-                    {
-                        list.Add(summary);
-                    }
+                }
+                catch (OssException ex)
+                {
+                    Logging.Log.WriteErrorMessage(LOGTAG, "List", ex, "List object failed. {0}, {1}", ex.Message, ex.ErrorCode);
+                    throw;
+                }
+                catch (Exception ex)
+                {
+                    Logging.Log.WriteErrorMessage(LOGTAG, "List", ex, "List object failed. {0}", ex.Message);
+                    throw;
+                }
 
-                    nextMarker = result.NextMarker;
-                    isTruncated = result.IsTruncated;
-                } while (isTruncated);
-            }
-            catch (OssException ex)
-            {
-                Logging.Log.WriteErrorMessage(LOGTAG, "List", ex, "List object failed. {0}, {1}", ex.Message, ex.ErrorCode);
-                throw;
-            }
-            catch (Exception ex)
-            {
-                Logging.Log.WriteErrorMessage(LOGTAG, "List", ex, "List object failed. {0}", ex.Message);
-                throw;
-            }
+                foreach (var summary in result.ObjectSummaries)
+                {
+                    var fileName = Path.GetFileName(summary.Key);
+                    var time = summary.LastModified; // DateTimeOffset.Parse(summary.LastModified).ToLocalTime().DateTime;
+                    yield return new FileEntry(fileName, summary.Size, time, time);
+                }
 
-            foreach (var item in list)
-            {
-                var fileName = Path.GetFileName(item.Key);
-                var time = item.LastModified; // DateTimeOffset.Parse(item.LastModified).ToLocalTime().DateTime;
-                yield return new FileEntry(fileName, item.Size, time, time);
-            }
+                nextMarker = result.NextMarker;
+                isTruncated = result.IsTruncated;
+            } while (isTruncated);
         }
 
         public async Task PutAsync(string remotename, string filename, CancellationToken cancelToken)

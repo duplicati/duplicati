@@ -27,6 +27,7 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Net;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -100,11 +101,11 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
             public string storageClass { get; set; }
         }
 
-        private T HandleListExceptions<T>(Func<T> func)
+        private async Task<T> HandleListExceptions<T>(Func<Task<T>> func)
         {
             try
             {
-                return func();
+                return await func().ConfigureAwait(false);
             }
             catch (WebException wex)
             {
@@ -116,12 +117,13 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
         }
 
         #region IBackend implementation
-        public IEnumerable<IFileEntry> List()
+        /// <inheritdoc />
+        public async IAsyncEnumerable<IFileEntry> ListAsync([EnumeratorCancellation] CancellationToken cancelToken)
         {
             var url = WebApi.GoogleCloudStorage.ListUrl(m_bucket, Utility.Uri.UrlEncode(m_prefix));
             while (true)
             {
-                var resp = HandleListExceptions(() => m_oauth.ReadJSONResponse<ListBucketResponse>(url));
+                var resp = await HandleListExceptions(() => m_oauth.ReadJSONResponseAsync<ListBucketResponse>(url, cancelToken)).ConfigureAwait(false);
 
                 if (resp.items != null)
                     foreach (var f in resp.items)
@@ -165,10 +167,7 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
         }
 
         public Task TestAsync(CancellationToken cancelToken)
-        {
-            this.TestList();
-            return Task.CompletedTask;
-        }
+            => this.TestListAsync(cancelToken);
 
         public async Task CreateFolderAsync(CancellationToken cancelToken)
         {

@@ -72,9 +72,9 @@ namespace Duplicati.UnitTest
         #endregion
 
         #region IBackend implementation
-        public IEnumerable<IFileEntry> List()
+        public IAsyncEnumerable<IFileEntry> ListAsync(CancellationToken cancellationToken)
         {
-            return m_backend.List();
+            return m_backend.ListAsync(cancellationToken);
         }
         public async Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
         {
