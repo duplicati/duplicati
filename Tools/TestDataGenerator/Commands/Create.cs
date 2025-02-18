@@ -175,6 +175,7 @@ public static class Create
 
         var filesCreated = 0L;
         var fileSizeCreated = 0L;
+        var generateStart = DateTime.UtcNow;
 
         foreach (var (file, size) in filesWithSizes)
         {
@@ -196,14 +197,14 @@ public static class Create
 
                 filesCreated++;
                 fileSizeCreated += size;
-                var now = DateTime.UtcNow;
-                if ((now - lastUpdate) > updateInterval)
+                var generateNow = DateTime.UtcNow;
+                if ((generateNow - lastUpdate) > updateInterval)
                 {
-                    long throughput = (long)Math.Floor(fileSizeCreated / (now - lastUpdate).TotalSeconds);
-                    var time_left = TimeSpan.FromSeconds((input.MaxTotalSize - fileSizeCreated) / throughput);
-                    string time_left_str = time_left.ToString(@"hh\:mm\:ss");
-                    Console.WriteLine($"Created {filesCreated} of {files.Count} files ({SizeToHumanReadable(fileSizeCreated)} of {SizeToHumanReadable(totalSize)}) ({SizeToHumanReadable(throughput)}/s) - ETA: {time_left_str}");
-                    lastUpdate = now;
+                    long throughput = (long)Math.Floor(fileSizeCreated / (generateNow - generateStart).TotalSeconds);
+                    var timeLeft = TimeSpan.FromSeconds((input.MaxTotalSize - fileSizeCreated) / throughput);
+                    string timeLeftString = timeLeft.ToString(@"hh\:mm\:ss");
+                    Console.WriteLine($"Created {filesCreated} of {files.Count} files ({SizeToHumanReadable(fileSizeCreated)} of {SizeToHumanReadable(totalSize)}) ({SizeToHumanReadable(throughput)}/s) - ETA: {timeLeftString}");
+                    lastUpdate = generateNow;
                 }
             }
             catch (Exception ex)
