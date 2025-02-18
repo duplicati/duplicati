@@ -196,10 +196,14 @@ public static class Create
 
                 filesCreated++;
                 fileSizeCreated += size;
-                if ((DateTime.UtcNow - lastUpdate) > updateInterval)
+                var now = DateTime.UtcNow;
+                if ((now - lastUpdate) > updateInterval)
                 {
-                    Console.WriteLine($"Created {filesCreated} of {files.Count} files ({SizeToHumanReadable(fileSizeCreated)} of {SizeToHumanReadable(totalSize)})");
-                    lastUpdate = DateTime.UtcNow;
+                    long throughput = (long)Math.Floor(fileSizeCreated / (now - lastUpdate).TotalSeconds);
+                    var time_left = TimeSpan.FromSeconds((input.MaxTotalSize - fileSizeCreated) / throughput);
+                    string time_left_str = time_left.ToString(@"hh\:mm\:ss");
+                    Console.WriteLine($"Created {filesCreated} of {files.Count} files ({SizeToHumanReadable(fileSizeCreated)} of {SizeToHumanReadable(totalSize)}) ({SizeToHumanReadable(throughput)}/s) - ETA: {time_left_str}");
+                    lastUpdate = now;
                 }
             }
             catch (Exception ex)
