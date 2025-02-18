@@ -76,7 +76,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                     {
                         while (true)
                         {
-                            var msg = await self.VolumeRequestResponse.ReadAsync();
+                            var msg = await self.VolumeRequestResponse.ReadAsync().ConfigureAwait(false);
 
                             switch (msg)
                             {
@@ -96,7 +96,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                                             sw_request?.Start();
                                             if (cache.TryGetValue(request.VolumeID, out BlockVolumeReader reader))
                                             {
-                                                await self.DecompressRequest.WriteAsync((request, reader));
+                                                await self.DecompressRequest.WriteAsync((request, reader)).ConfigureAwait(false);
                                             }
                                             else
                                             {
@@ -129,7 +129,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                                         sw_wakeup?.Start();
                                         foreach (var request in in_flight[volume_id])
                                         {
-                                            await self.DecompressRequest.WriteAsync((request, reader));
+                                            await self.DecompressRequest.WriteAsync((request, reader)).ConfigureAwait(false);
                                         }
                                         in_flight.Remove(volume_id);
                                         sw_wakeup?.Stop();

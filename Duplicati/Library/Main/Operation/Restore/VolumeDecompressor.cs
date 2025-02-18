@@ -65,7 +65,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                     {
                         sw_read?.Start();
                         // Get the block request and volume from the `VolumeDecryptor` process.
-                        var (block_request, volume_reader) = await self.Input.ReadAsync();
+                        var (block_request, volume_reader) = await self.Input.ReadAsync().ConfigureAwait(false);
                         sw_read?.Stop();
 
                         sw_decompress?.Start();
@@ -86,7 +86,7 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                         sw_write?.Start();
                         // Send the block to the `BlockManager` process.
-                        await self.Output.WriteAsync((block_request, data));
+                        await self.Output.WriteAsync((block_request, data)).ConfigureAwait(false);
                         sw_write?.Stop();
                     }
                 }

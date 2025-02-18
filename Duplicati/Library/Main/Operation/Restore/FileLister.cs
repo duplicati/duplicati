@@ -67,7 +67,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                     sw_write?.Start();
                     foreach (var file in files)
                     {
-                        await self.Output.WriteAsync(file);
+                        await self.Output.WriteAsync(file).ConfigureAwait(false);
                     }
                     sw_write?.Stop();
                 }
