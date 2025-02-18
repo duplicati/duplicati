@@ -39,7 +39,7 @@ namespace Duplicati.Library.Interface
         {
             using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancelToken);
             // If we can iterate successfully, even if it's empty, then the backend test is successful
-            await foreach (IFileEntry file in backend.ListAsync(cts.Token))
+            await foreach (IFileEntry file in backend.ListAsync(cts.Token).ConfigureAwait(false))
             {
                 cts.Cancel();
                 return;

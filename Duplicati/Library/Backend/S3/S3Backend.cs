@@ -273,7 +273,7 @@ namespace Duplicati.Library.Backend
         /// <inheritdoc />
         public async IAsyncEnumerable<IFileEntry> ListAsync([EnumeratorCancellation] CancellationToken cancelToken)
         {
-            await foreach (IFileEntry file in Connection.ListBucketAsync(m_bucket, m_prefix, cancelToken))
+            await foreach (IFileEntry file in Connection.ListBucketAsync(m_bucket, m_prefix, cancelToken).ConfigureAwait(false))
             {
                 ((FileEntry)file).Name = file.Name.Substring(m_prefix.Length);
 

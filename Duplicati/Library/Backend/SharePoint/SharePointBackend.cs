@@ -506,7 +506,7 @@ namespace Duplicati.Library.Backend
             if (retry)
             {
                 // An exception was caught, and List() should be retried.
-                await foreach (var f in doListAsync(true, cancelToken))
+                await foreach (var f in doListAsync(true, cancelToken).ConfigureAwait(false))
                     yield return f;
             }
             else

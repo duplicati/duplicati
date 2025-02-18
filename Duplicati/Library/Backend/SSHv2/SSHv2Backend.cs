@@ -377,7 +377,7 @@ namespace Duplicati.Library.Backend
             await CreateConnection(cancelToken).ConfigureAwait(false);
             await ChangeDirectory(m_path).ConfigureAwait(false);
 
-            await foreach (var ls in m_con.ListDirectoryAsync(path, cancelToken))
+            await foreach (var ls in m_con.ListDirectoryAsync(path, cancelToken).ConfigureAwait(false))
             {
                 if (ls.Name.ToString() == "." || ls.Name.ToString() == "..") continue;
                 yield return new FileEntry(ls.Name, ls.Length,

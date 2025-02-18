@@ -145,7 +145,7 @@ namespace Duplicati.Library.Backend.GoogleDrive
             {
                 // Figure out if we update or create the file
                 if (m_filecache.Count == 0)
-                    await foreach (var file in ListAsync(cancelToken)) { /* Enumerate the full listing */ }
+                    await foreach (var file in ListAsync(cancelToken).ConfigureAwait(false)) { /* Enumerate the full listing */ }
 
                 GoogleDriveFolderItem[] files;
                 m_filecache.TryGetValue(remotename, out files);
@@ -188,7 +188,7 @@ namespace Duplicati.Library.Backend.GoogleDrive
         {
             // Prevent repeated download url lookups
             if (m_filecache.Count == 0)
-                await foreach (var file in ListAsync(cancelToken)) { /* Enumerate the full listing */ }
+                await foreach (var file in ListAsync(cancelToken).ConfigureAwait(false)) { /* Enumerate the full listing */ }
 
             var fileId = (await GetFileEntriesAsync(remotename, true, cancelToken).ConfigureAwait(false)).OrderByDescending(x => x.createdDate).First().id;
 
@@ -214,7 +214,7 @@ namespace Duplicati.Library.Backend.GoogleDrive
 
                 // For now, this class assumes that List() fully populates the file cache
                 var currentFolderId = await GetCurrentFolderIdAsync(cancelToken).ConfigureAwait(false);
-                await foreach (var n in ListFolder(currentFolderId, null, null, cancelToken))
+                await foreach (var n in ListFolder(currentFolderId, null, null, cancelToken).ConfigureAwait(false))
                 {
                     FileEntry fe = null;
 

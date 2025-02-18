@@ -323,7 +323,7 @@ namespace Duplicati.Library.Backend
         public async IAsyncEnumerable<IFileEntry> ListAsync([EnumeratorCancellation] CancellationToken cancelToken)
 
         {
-            await foreach (var item in this.Enumerate<DriveItem>(string.Format("{0}/root:{1}:/children", this.DrivePrefix, this.RootPath), cancelToken))
+            await foreach (var item in this.Enumerate<DriveItem>(string.Format("{0}/root:{1}:/children", this.DrivePrefix, this.RootPath), cancelToken).ConfigureAwait(false))
             {
                 // Exclude non-files and deleted items (not sure if they show up in this listing, but make sure anyway)
                 if (item.IsFile && !item.IsDeleted)
