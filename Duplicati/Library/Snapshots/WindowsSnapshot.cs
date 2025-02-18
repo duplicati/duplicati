@@ -119,7 +119,7 @@ namespace Duplicati.Library.Snapshots
         /// <summary>
         /// Gets the source folders
         /// </summary>
-        public override IEnumerable<string> SourceFolders => _vssBackupComponents.SnapshotLocalPaths;
+        public override IEnumerable<string> SourceFolders => _sourceFolders;
 
         /// <summary>
         /// Enumerates the root source files and folders
