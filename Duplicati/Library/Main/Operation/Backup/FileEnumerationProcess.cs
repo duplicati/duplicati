@@ -33,6 +33,7 @@ using Duplicati.Library.Interface;
 using System.Runtime.CompilerServices;
 using Duplicati.Library.Snapshots;
 using Duplicati.Library.SourceProvider;
+using Duplicati.Library.Common.IO;
 
 namespace Duplicati.Library.Main.Operation.Backup
 {
@@ -96,22 +97,30 @@ namespace Duplicati.Library.Main.Operation.Backup
                     if (ignorenames != null && ignorenames.Length == 0)
                         ignorenames = null;
 
-                    // If we have a specific list, use that instead of enumerating the filesystem
-                    async IAsyncEnumerable<ISourceFileEntry> ExpandSources(IEnumerable<string> list)
-                    {
-                        foreach (var s in list)
-                        {
-                            var r = await sourceProvider.GetEntry(s, false, token).ConfigureAwait(false);
-                            if (r != null)
-                                yield return r;
-                        }
-                    }
 
+                    // Shared filter function with bound variables
+                    ValueTask<bool> FilterEntry(ISourceFileEntry entry)
+                        => SourceFileEntryFilter(entry, blacklistPaths, hardlinkPolicy, symlinkPolicy, hardlinkmap, fileAttributeFilter, enumeratefilter, ignorenames, mixinqueue, token);
+
+                    // Prepare the work list
                     IAsyncEnumerable<ISourceFileEntry> worklist;
+
+                    // If we have a specific list, use that instead of enumerating the filesystem
                     if (changedfilelist != null && changedfilelist.Any())
                     {
-                        worklist = ExpandSources(changedfilelist).WhereAwait(x =>
-                            SourceFileEntryFilter(x, blacklistPaths, hardlinkPolicy, symlinkPolicy, hardlinkmap, fileAttributeFilter, enumeratefilter, ignorenames, mixinqueue, token));
+                        async IAsyncEnumerable<ISourceFileEntry> ExpandSources(IEnumerable<string> list)
+                        {
+                            foreach (var s in list)
+                            {
+                                var r = await sourceProvider.GetEntry(s, s.EndsWith(Path.DirectorySeparatorChar), token).ConfigureAwait(false);
+                                if (r != null)
+                                {
+                                    //TODO: Set r.IsRoot = true for source elements
+                                    yield return r;
+                                }
+                            }
+                        }
+                        worklist = ExpandSources(changedfilelist).WhereAwait(FilterEntry);
                     }
                     else if (journalService != null)
                     {
@@ -127,17 +136,27 @@ namespace Duplicati.Library.Main.Operation.Backup
                         if (fileProviders.Count > 1)
                             throw new InvalidOperationException("Multiple file providers found, but USN only supports one");
 
-                        worklist = RecursiveFilterHelper.GetModifiedSources(
-                            ExpandSources(journalService.VolumeDataList.SelectMany(x => x.Folders.Concat(x.Files))),
-                            fileProviders.First().SnapshotService,
-                            x => SourceFileEntryFilter(x, blacklistPaths, hardlinkPolicy, symlinkPolicy, hardlinkmap, fileAttributeFilter, enumeratefilter, ignorenames, mixinqueue, token),
+                        // TODO: This is not as effecient as possible.
+                        // If the root folder is marked changed by USN, the expansion with RecurseEntries
+                        // will cause a full regular scan. It should be possible to *only* process the
+                        // changed elements as returned from the USN journal.
+                        // It should be possible to remove RecurseEntries from the GetModifiedSources()
+                        // enumeration result.
+                        // Such a change requires significant testing as there are many pitfalls with USN.
+                        worklist = RecurseEntries(journalService.GetModifiedSources(FilterEntry, token),
+                            FilterEntry,
                             token
+                        )
+                        .Concat(
+                            RecurseEntries(journalService.GetFullScanSources(token),
+                            FilterEntry,
+                            token)
                         );
                     }
                     else
                     {
                         worklist = RecurseEntries(sourceProvider.Enumerate(token),
-                            x => SourceFileEntryFilter(x, blacklistPaths, hardlinkPolicy, symlinkPolicy, hardlinkmap, fileAttributeFilter, enumeratefilter, ignorenames, mixinqueue, token),
+                            FilterEntry,
                             token
                         );
                     }

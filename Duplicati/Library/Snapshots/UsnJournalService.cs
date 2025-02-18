@@ -19,6 +19,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
+#nullable enable
 
 using System;
 using System.Collections.Generic;
@@ -29,6 +30,8 @@ using System.Threading;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Utility;
+using System.Threading.Tasks;
+using System.Runtime.CompilerServices;
 
 namespace Duplicati.Library.Snapshots
 {
@@ -70,6 +73,9 @@ namespace Duplicati.Library.Snapshots
             m_token = token;
         }
 
+        /// <summary>
+        /// The volume data lists for the mapped root drives
+        /// </summary>
         public IEnumerable<VolumeData> VolumeDataList => m_volumeDataDict.Select(e => e.Value);
 
         /// <summary>
@@ -90,7 +96,7 @@ namespace Duplicati.Library.Snapshots
 
             // get hash identifying current source filter / sources configuration
             var configHash = Utility.Utility.ByteArrayAsHexString(MD5HashHelper.GetHash(new string[] {
-                emitFilter == null ? string.Empty : emitFilter.ToString(),
+                emitFilter?.ToString() ?? string.Empty,
                 string.Join("; ", m_snapshot.SourceFolders),
                 fileAttributeFilter.ToString(),
                 skipFilesLargerThan.ToString()
@@ -219,6 +225,261 @@ namespace Duplicati.Library.Snapshots
         }
 
         /// <summary>
+        /// Returns all sources that should be fully scanned
+        /// </summary>
+        /// <param name="token">Cancellation token</param>
+        /// <returns>Filtered sources</returns>
+        public async IAsyncEnumerable<ISourceFileEntry> GetFullScanSources([EnumeratorCancellation] CancellationToken token)
+        {
+            // Make the method async enumerable
+            await Task.CompletedTask;
+
+            foreach(var volumeData in m_volumeDataDict.Values.Where(x => x.IsFullScan))
+            {
+                if (volumeData.Folders != null)
+                {
+                    foreach(var folderPath in volumeData.Folders)
+                    {
+                        if (token.IsCancellationRequested)
+                            yield break;
+
+                        var folder = m_snapshot.GetFilesystemEntry(folderPath, true);
+                        if (folder != null)
+                            yield return folder;
+                        else
+                            Logging.Log.WriteWarningMessage(FILTER_LOGTAG, "FolderLookupError", null, "No entry while locating source folder {0}", folderPath);
+                    }
+                }
+
+                if (volumeData.Files != null)
+                {
+                    foreach(var filePath in volumeData.Files)
+                    {
+                        if (token.IsCancellationRequested)
+                            yield break;
+
+                        var file = m_snapshot.GetFilesystemEntry(filePath, false);
+                        if (file != null)
+                            yield return file;
+                        else
+                            Logging.Log.WriteWarningMessage(FILTER_LOGTAG, "FolderLookupError", null, "No entry while locating source file {0}", filePath);
+                    }
+                }
+            }
+        }
+
+
+        /// <summary>
+        /// Filters sources, returning sub-set having been modified since last
+        /// change, as specified by <c>journalData</c>.
+        /// </summary>
+        /// <param name="filter">Filter callback to exclude filtered items</param>
+        /// <param name="token">Cancellation token</param>
+        /// <returns>Filtered sources</returns>
+        public async IAsyncEnumerable<ISourceFileEntry> GetModifiedSources(Func<ISourceFileEntry, ValueTask<bool>> filter, [EnumeratorCancellation] CancellationToken token)
+        {
+            foreach(var volumeData in m_volumeDataDict.Values.Where(x => !x.IsFullScan))
+            {
+                // prepare cache for includes (value = true) and excludes (value = false, will be populated
+                // on-demand)
+                var cache = new Dictionary<string, bool>();
+                foreach (var source in m_snapshot.SourceFolders)
+                {
+                    if (token.IsCancellationRequested)
+                        yield break;
+
+                    cache[source] = true;
+                }
+
+                // Check the simplified folders, and their parent folders  against the exclusion filter.
+                // This is needed because the filter may exclude "C:\A\", but this won't match the more
+                // specific "C:\A\B\" in our list, even though it's meant to be excluded.
+                // The reason why the filter doesn't exclude it is because during a regular (non-USN) full scan, 
+                // FilterHandler.EnumerateFilesAndFolders() works top-down, and won't even enumerate child
+                // folders. 
+                // The sources are needed to stop evaluating parent folders above the specified source folders
+                await foreach (var folder in FilterExcludedFolders(volumeData.Folders, m_snapshot, filter, cache, token).ConfigureAwait(false))
+                {
+                    if (token.IsCancellationRequested)
+                        yield break;
+
+                    if (!m_snapshot.DirectoryExists(folder.Path))
+                        continue;
+
+                    yield return folder;
+                }
+
+                // The simplified file list also needs to be checked against the exclusion filter, as it 
+                // may contain entries excluded due to attributes, but also because they are below excluded
+                // folders, which themselves aren't in the folder list from step 1.
+                // Note that the simplified file list may contain entries that have been deleted! They need to 
+                // be kept in the list (unless excluded by the filter) in order for the backup handler to record their 
+                // deletion.
+                await foreach (var files in FilterExcludedFiles(volumeData.Files, m_snapshot, filter, cache, token).ConfigureAwait(false))
+                {
+                    if (token.IsCancellationRequested)
+                        yield break;
+
+                    if (!m_snapshot.FileExists(files.Path))
+                        continue;
+
+                    yield return files;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Filter supplied <c>files</c>, removing any files which itself, or one
+        /// of its parent folders, is excluded by the <c>filter</c>.
+        /// </summary>
+        /// <param name="files">Files to filter</param>
+        /// <param name="snapshot">Snapshot service</param>
+        /// <param name="filter">Exclusion filter</param>
+        /// <param name="cache">Cache of included and excluded files / folders</param>
+        /// <param name="token">Cancellation token</param>
+        /// <returns>Filtered files</returns>
+        private static async IAsyncEnumerable<ISourceFileEntry> FilterExcludedFiles(
+            IEnumerable<string>? files,
+            ISnapshotService snapshot,
+            Func<ISourceFileEntry, ValueTask<bool>> filter,
+            IDictionary<string, bool> cache,
+            [EnumeratorCancellation] CancellationToken token)
+        {
+            if (files == null)
+                yield break;
+
+            foreach (var filePath in files)
+            {
+                ISourceFileEntry? file;
+                try
+                {
+                    file = snapshot.GetFilesystemEntry(filePath, false);
+                    if (file == null)
+                        continue;
+
+                    if (!await filter(file))
+                        continue;
+
+                    var parentPath = Utility.Utility.GetParent(file.Path, true);
+                    if (!string.IsNullOrWhiteSpace(parentPath))
+                    {
+                        var parent = snapshot.GetFilesystemEntry(parentPath, true);
+                        if (parent == null)
+                            continue;
+
+                        if (await IsFolderOrAncestorsExcluded(parent, snapshot, filter, cache, token))
+                            continue;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Logging.Log.WriteWarningMessage(FILTER_LOGTAG, "FilterExcludedFilesError", ex, "Error while filtering file: {0}", ex.Message);
+                    continue;
+                }
+
+                if (file != null)
+                    yield return file;
+            }
+        }
+
+        /// <summary>
+        /// Filter supplied <c>folders</c>, removing any folder which itself, or one
+        /// of its ancestors, is excluded by the <c>filter</c>.
+        /// </summary>
+        /// <param name="folders">Folder to filter</param>
+        /// <param name="snapshot">Snapshot service</param>
+        /// <param name="filter">Exclusion filter</param>
+        /// <param name="cache">Cache of excluded folders</param>
+        /// <param name="token">Cancellation token</param>
+        /// <returns>Filtered folders</returns>
+        private static async IAsyncEnumerable<ISourceFileEntry> FilterExcludedFolders(
+            IEnumerable<string>? folders,
+            ISnapshotService snapshot,
+            Func<ISourceFileEntry, ValueTask<bool>> filter,
+            IDictionary<string, bool> cache,
+            [EnumeratorCancellation] CancellationToken token)
+        {
+            if (folders == null)
+                yield break;
+
+            foreach (var folderPath in folders)
+            {
+                ISourceFileEntry? folder;
+                try
+                {
+                    folder = snapshot.GetFilesystemEntry(folderPath, true);
+                    if (folder == null)
+                        continue;
+                    if (await IsFolderOrAncestorsExcluded(folder, snapshot, filter, cache, token))
+                        continue;
+                }
+                catch (Exception ex)
+                {
+                    Logging.Log.WriteWarningMessage(FILTER_LOGTAG, "FilterExcludedFoldersError", ex, "Error while filtering folder: {0}", ex.Message);
+                    continue;
+                }
+
+                yield return folder;
+            }
+        }
+
+        /// <summary>
+        /// Tests if specified folder, or any of its ancestors, is excluded by the filter
+        /// </summary>
+        /// <param name="folder">Folder to test</param>
+        /// <param name="filter">Filter</param>
+        /// <param name="cache">Cache of excluded folders (optional)</param>
+        /// <returns>True if excluded, false otherwise</returns>
+        private static async ValueTask<bool> IsFolderOrAncestorsExcluded(
+            ISourceFileEntry inputFolder,
+            ISnapshotService snapshot,
+            Func<ISourceFileEntry, ValueTask<bool>> filter,
+            IDictionary<string, bool> cache,
+            CancellationToken token)
+        {
+            List<string>? parents = null;
+            ISourceFileEntry? folder = inputFolder;
+
+            while (folder != null)
+            {
+                if (token.IsCancellationRequested)
+                    break;
+
+                // first check cache
+                if (cache.TryGetValue(folder.Path, out var include))
+                {
+                    if (include)
+                        return false;
+
+                    break; // hit!
+                }
+
+                parents ??= []; // create on-demand
+
+                // remember folder for cache
+                parents.Add(folder.Path);
+
+
+                if (!await filter(folder))
+                    break; // excluded
+
+                var parentPath = Utility.Utility.GetParent(folder.Path, true);
+                if (string.IsNullOrWhiteSpace(parentPath))
+                    break;
+
+                folder = snapshot.GetFilesystemEntry(parentPath, true);
+            }
+
+            if (folder != null)
+            {
+                // update cache
+                parents?.ForEach(p => cache[p] = false);
+            }
+
+            return folder != null;
+        }
+
+        /// <summary>
         /// Sort sources by root volume
         /// </summary>
         /// <param name="sources">List of sources</param>
@@ -260,8 +521,11 @@ namespace Duplicati.Library.Snapshots
             if (volumeData.IsFullScan)
                 return true; // do not append from previous set, already scanned
 
-            if (volumeData.Files.Contains(path))
+            if (volumeData.Files != null && volumeData.Files.Contains(path))
                 return true; // do not append from previous set, already scanned
+
+            if (volumeData.Folders == null)
+                return false;
 
             foreach (var folder in volumeData.Folders)
             {
@@ -289,23 +553,23 @@ namespace Duplicati.Library.Snapshots
         /// <summary>
         /// Volume
         /// </summary>
-        public string Volume { get; set; }
+        public required string Volume { get; set; }
 
         /// <summary>
         /// Set of potentially modified files
         /// </summary>
-        public HashSet<string> Files { get; internal set; }
+        public HashSet<string>? Files { get; internal set; }
 
         /// <summary>
         /// Set of folders that are potentially modified, or whose children
         /// are potentially modified
         /// </summary>
-        public List<string> Folders { get; internal set; }
+        public List<string>? Folders { get; internal set; }
 
         /// <summary>
         /// Journal data to use for next backup
         /// </summary>
-        public USNJournalDataEntry JournalData { get; internal set; }
+        public USNJournalDataEntry? JournalData { get; internal set; }
 
         /// <summary>
         /// If true, a full scan for this volume was required
@@ -315,6 +579,6 @@ namespace Duplicati.Library.Snapshots
         /// <summary>
         /// Optional exception message for volume
         /// </summary>
-        public Exception Exception { get; internal set; }
+        public Exception? Exception { get; internal set; }
     }
 }
