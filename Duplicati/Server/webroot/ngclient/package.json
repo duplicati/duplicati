@@ -1,0 +1,9 @@
+{
+  "name": "ngclient",
+  "version": "1.0.0",
+  "description": "Modern Angular Client for Duplicati",
+  "license": "MIT",
+  "dependencies": {
+    "@duplicati/ngclient": "^0.0.80"
+  }
+}

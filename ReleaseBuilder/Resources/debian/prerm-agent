@@ -1,0 +1,3 @@
+#!/bin/sh
+systemctl stop duplicati-agent
+exit 0

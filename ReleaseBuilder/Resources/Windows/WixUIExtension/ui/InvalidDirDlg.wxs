@@ -1,0 +1,15 @@
+<!-- Copyright (c) .NET Foundation and contributors. All rights reserved. Licensed under the Microsoft Reciprocal License. See LICENSE.TXT file in the project root for full license information. -->
+
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+    <Fragment>
+        <UI>
+            <Dialog Id="InvalidDirDlg" Width="260" Height="85" Title="[ProductName] Setup">
+                <Control Id="OK" Type="PushButton" X="102" Y="57" Width="56" Height="17" Default="yes" Cancel="yes" Text="OK">
+                    <Publish Event="EndDialog" Value="Return" />
+                </Control>
+                <Control Id="Text" Type="Text" X="48" Y="22" Width="194" Height="30" Text="Installation directory must be on a local hard drive." />
+                <Control Id="Icon" Type="Icon" X="15" Y="15" Width="24" Height="24" ToolTip="Information icon" FixedSize="yes" IconSize="32" Text="WixUI_Ico_Info" />
+            </Dialog>
+        </UI>
+    </Fragment>
+</Wix>

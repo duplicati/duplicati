@@ -1,4 +1,4 @@
-﻿// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -172,7 +172,7 @@ namespace Duplicati.CommandLine.RecoveryTool
 
                         using (var tf = new TempFile())
                         {
-                            backend.Get(remoteFile.File.Name, tf);
+                            backend.GetAsync(remoteFile.File.Name, tf, CancellationToken.None).Await();
                             originLastWriteTime = new FileInfo(tf).LastWriteTime;
                             downloaded++;
 
@@ -199,7 +199,7 @@ namespace Duplicati.CommandLine.RecoveryTool
                         {
                             Console.Write(" recompressing ...");
 
-                            //Recompressing from eg. zip to zip
+                            //Recompressing from e.g. ZIP to ZIP
                             if (localFileSource == localFileTarget)
                             {
                                 File.Move(localFileSource, localFileSource + ".same");
@@ -218,7 +218,7 @@ namespace Duplicati.CommandLine.RecoveryTool
                                     {
                                         // Correct inner filename extension to target compression type
                                         cmfileNew = cmfileNew.Replace("." + cmFileVolume.CompressionModule, "." + target_compr_module);
-                                        if (!reencrypt)
+                                        if (!reencrypt && !string.IsNullOrWhiteSpace(cmFileVolume.EncryptionModule))
                                             cmfileNew = cmfileNew.Replace("." + cmFileVolume.EncryptionModule, "");
 
                                         //Because compression changes blocks file sizes - needs to be updated
@@ -275,8 +275,8 @@ namespace Duplicati.CommandLine.RecoveryTool
                         if (reupload)
                         {
                             Console.Write(" reuploading ...");
-                            backend.PutAsync((new FileInfo(localFileTarget)).Name, localFileTarget, CancellationToken.None).Wait();
-                            backend.Delete(remoteFile.File.Name);
+                            backend.PutAsync((new FileInfo(localFileTarget)).Name, localFileTarget, CancellationToken.None).Await();
+                            backend.DeleteAsync(remoteFile.File.Name, CancellationToken.None).Await();
                             File.Delete(localFileTarget);
                         }
 
@@ -297,7 +297,7 @@ namespace Duplicati.CommandLine.RecoveryTool
                     if (remoteverificationfileexist)
                     {
                         Console.WriteLine("Found verification file {0} - deleting", m_Options.Prefix + "-verification.json");
-                        backend.Delete(m_Options.Prefix + "-verification.json");
+                        backend.DeleteAsync(m_Options.Prefix + "-verification.json", CancellationToken.None).Await();
                     }
                 }
 
@@ -322,4 +322,3 @@ namespace Duplicati.CommandLine.RecoveryTool
         }
     }
 }
-

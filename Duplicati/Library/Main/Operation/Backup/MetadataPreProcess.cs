@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -63,17 +63,18 @@ namespace Duplicati.Library.Main.Operation.Backup
             // After processing metadata
             public IMetahash MetaHashAndSize;
             public bool MetadataChanged;
+            public bool TimestampChanged;
         }
-            
-        public static Task Run(Snapshots.ISnapshotService snapshot, Options options, BackupDatabase database, long lastfilesetid, CancellationToken token)
+
+        public static Task Run(Channels channels, Snapshots.ISnapshotService snapshot, Options options, BackupDatabase database, long lastfilesetid, ITaskReader taskReader)
         {
             return AutomationExtensions.RunTask(new
             {
-                Input = Backup.Channels.SourcePaths.ForRead,
-                StreamBlockChannel = Channels.StreamBlock.ForWrite,
-                Output = Backup.Channels.ProcessedFiles.ForWrite,
+                Input = channels.SourcePaths.AsRead(),
+                StreamBlockChannel = channels.StreamBlock.AsWrite(),
+                Output = channels.ProcessedFiles.AsWrite(),
             },
-                
+
             async self =>
             {
                 var emptymetadata = Utility.WrapMetadata(new Dictionary<string, string>(), options);
@@ -86,24 +87,27 @@ namespace Duplicati.Library.Main.Operation.Backup
                 {
                     var path = await self.Input.ReadAsync();
 
+                    // We ignore the stop signal, but not the pause and terminate
+                    await taskReader.ProgressRendevouz().ConfigureAwait(false);
+
                     var lastwrite = new DateTime(0, DateTimeKind.Utc);
                     var attributes = default(FileAttributes);
-                    try 
-                    { 
-                        lastwrite = snapshot.GetLastWriteTimeUtc(path); 
+                    try
+                    {
+                        lastwrite = snapshot.GetLastWriteTimeUtc(path);
                     }
-                    catch (Exception ex) 
+                    catch (Exception ex)
                     {
                         Logging.Log.WriteWarningMessage(FILELOGTAG, "TimestampReadFailed", ex, "Failed to read timestamp on \"{0}\"", path);
                     }
 
-                    try 
-                    { 
-                        attributes = snapshot.GetAttributes(path); 
-                    }
-                    catch (Exception ex) 
+                    try
                     {
-                        Logging.Log.WriteVerboseMessage(FILELOGTAG, "FailedAttributeRead", "Failed to read attributes from {0}: {1}", path, ex.Message);                     
+                        attributes = snapshot.GetAttributes(path);
+                    }
+                    catch (Exception ex)
+                    {
+                        Logging.Log.WriteVerboseMessage(FILELOGTAG, "FailedAttributeRead", "Failed to read attributes from {0}: {1}", path, ex.Message);
                     }
 
                     // If we only have metadata, stop here
@@ -159,10 +163,9 @@ namespace Duplicati.Library.Main.Operation.Backup
                         }
                         catch (Exception ex)
                         {
-                            if (ex.IsRetiredException() || token.IsCancellationRequested)
-                            {
+                            if (ex.IsRetiredException())
                                 continue;
-                            }
+
                             Logging.Log.WriteWarningMessage(FILELOGTAG, "ProcessingMetadataFailed", ex,
                                 "Failed to process entry, path: {0}", path);
                         }
@@ -258,13 +261,13 @@ namespace Duplicati.Library.Main.Operation.Backup
         {
             StreamProcessResult res;
             using (var ms = new MemoryStream(meta.Blob))
-                res = await StreamBlock.ProcessStream(streamblockchannel, path, ms, true, CompressionHint.Default); 
+                res = await StreamBlock.ProcessStream(streamblockchannel, path, ms, true, CompressionHint.Default);
 
             return await database.AddMetadatasetAsync(res.Streamhash, res.Streamlength, res.Blocksetid);
         }
 
         /// <summary>
-        /// Adds a file to the output, 
+        /// Adds a file to the output,
         /// </summary>
         /// <param name="filename">The name of the file to record</param>
         /// <param name="lastModified">The value of the lastModified timestamp</param>
@@ -275,7 +278,7 @@ namespace Duplicati.Library.Main.Operation.Backup
         }
 
         /// <summary>
-        /// Adds a file to the output, 
+        /// Adds a file to the output,
         /// </summary>
         /// <param name="filename">The name of the file to record</param>
         /// <param name="lastModified">The value of the lastModified timestamp</param>

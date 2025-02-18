@@ -1,4 +1,4 @@
-﻿// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -30,17 +30,6 @@ namespace Duplicati.UnitTest
 {
     public class BorderTests : BasicSetupHelper
     {
-        private readonly string recreatedDatabaseFile = Path.Combine(BASEFOLDER, "recreated-database.sqlite");
-
-        [TearDown]
-        public void TearDown()
-        {
-            if (File.Exists(this.recreatedDatabaseFile))
-            {
-                File.Delete(this.recreatedDatabaseFile);
-            }
-        }
-
         [Test]
         [Category("Border")]
         public void Run10kNoProgress()
@@ -309,15 +298,25 @@ namespace Duplicati.UnitTest
                 Assert.AreEqual((filenames.Count * 3) + 1, r.Files.Count());
             }
 
-            testopts["dbpath"] = this.recreatedDatabaseFile;
+            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { full_remote_verification = true }), null))
+            {
+                var r = c.Test(long.MaxValue);
+                Assert.AreEqual(0, r.Errors.Count());
+                Assert.AreEqual(0, r.Warnings.Count());
+                Assert.IsFalse(r.Verifications.Any(p => p.Value.Any()));
+            }
+
+            var recreatedDatabaseFile = Path.Combine(BASEFOLDER, "recreated-database.sqlite");
+            if (File.Exists(recreatedDatabaseFile))
+                File.Delete(recreatedDatabaseFile);
+
+            testopts["dbpath"] = recreatedDatabaseFile;
 
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
             {
                 IRepairResults repairResults = c.Repair();
                 Assert.AreEqual(0, repairResults.Errors.Count());
-
-                // TODO: This sometimes results in a "No block hash found for file: C:\projects\duplicati\testdata\backup-data\a-0" warning.
-                // Because of this, we don't check for warnings here.
+                Assert.AreEqual(0, repairResults.Warnings.Count());
             }
 
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
@@ -356,6 +355,14 @@ namespace Duplicati.UnitTest
                 //ProgressWriteLine("Newest after delete:");
                 //ProgressWriteLine(string.Join(Environment.NewLine, r.Files.Select(x => x.Path)));
                 Assert.AreEqual((filenames.Count * 3) + 1, r.Files.Count());
+            }
+
+            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { full_remote_verification = true }), null))
+            {
+                var r = c.Test(long.MaxValue);
+                Assert.AreEqual(0, r.Errors.Count());
+                Assert.AreEqual(0, r.Warnings.Count());
+                Assert.IsFalse(r.Verifications.Any(p => p.Value.Any()));
             }
 
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { restore_path = RESTOREFOLDER }), null))

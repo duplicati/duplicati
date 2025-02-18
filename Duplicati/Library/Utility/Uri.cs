@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -26,6 +26,14 @@ using System.Text;
 
 namespace Duplicati.Library.Utility
 {
+    // TODO: This class should be deleted.
+
+    // It was introduced to make it simpler to give the backend url on the commandline,
+    // and because the Mono implementation of System.Uri had some issues.
+    // Since Mono is no longer used, the only problem is the commandline,
+    // but it does not make sense to support "invalid" urls as that increases the complexity
+    // of the code and potentially introduces ambiguity for the user.
+
     /// <summary>
     /// Represents a relaxed parsing of a URL.
     /// The goal is to cover as many types of url's as possible,

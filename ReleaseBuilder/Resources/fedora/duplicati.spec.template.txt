@@ -27,10 +27,11 @@ URL:	https://duplicati.com
 Source0:	duplicati-%{_buildversion}.tar.bz2
 Source1:	%{namer}-install-recursive.sh
 Source2:	%{namer}-install-binaries.sh
-Source3:	%{namer}.service
-Source4:	%{namer}.default
+Source3:	%{namer}%SERVICENAME%.service
+Source4:	%{namer}%SERVICENAME%.default
 #GUI_ONLY#Source5:	%{namer}.png
 #GUI_ONLY#Source6:	%{namer}.desktop
+#AGENT_ONLY#Source5:	%{namer}%SERVICENAME%.preset
 
 #GUI_ONLY#BuildRequires:  desktop-file-utils
 BuildRequires:  systemd
@@ -87,23 +88,24 @@ find . -type f -name ._\* | xargs rm -rf
 #GUI_ONLY#desktop-file-install %{_topdir}/SOURCES/%{namer}.desktop
 
 # Install the service:
-install -p -D -m 644 %{_topdir}/SOURCES/%{namer}.service %{buildroot}%{_unitdir}
-install -p -D -m 644 %{_topdir}/SOURCES/%{namer}.default %{buildroot}%{_sysconfdir}/sysconfig/%{namer}
+install -p -D -m 644 %{_topdir}/SOURCES/%{namer}%SERVICENAME%.service %{buildroot}%{_unitdir}
+install -p -D -m 644 %{_topdir}/SOURCES/%{namer}%SERVICENAME%.default %{buildroot}%{_sysconfdir}/sysconfig/%{namer}
 
 %post
 #GUI_ONLY#/bin/touch --no-create %{_datadir}/icons/hicolor || :
 #GUI_ONLY#%{_bindir}/gtk-update-icon-cache \
 #GUI_ONLY#  --quiet %{_datadir}/icons/hicolor 2> /dev/null|| :
-%systemd_post %{namer}.service
+%systemd_post %{namer}%SERVICENAME%.service
+#AGENT_ONLY#%{__install} -Dm644 %{namer}%SERVICENAME%.preset %{buildroot}%{_presetdir}/50-%{namer}%SERVICENAME%.preset
 
 %preun
-%systemd_preun %{namer}.service
+%systemd_preun %{namer}%SERVICENAME%.service
 
 %postun
 #GUI_ONLY#/bin/touch --no-create %{_datadir}/icons/hicolor || :
 #GUI_ONLY#%{_bindir}/gtk-update-icon-cache \
 #GUI_ONLY#  --quiet %{_datadir}/icons/hicolor 2> /dev/null|| :
-%systemd_postun_with_restart %{namer}.service
+%systemd_postun_with_restart %{namer}%SERVICENAME%.service
 
 %posttrans
 #GUI_ONLY#/usr/bin/gtk-update-icon-cache %{_datadir}/icons/hicolor &>/dev/null || :

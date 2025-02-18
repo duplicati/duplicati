@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -77,7 +77,7 @@ namespace Duplicati.UnitTest
                 Assert.IsTrue(File.Exists(file));
             }
 
-            // Configure and run a second backup with a different prefix.  This should run without error.
+            // Configure and run a second backup with a different prefix. This should run without error.
             secondOptions["prefix"] = new Options(firstOptions).Prefix + "2";
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, secondOptions, null))
             {

@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -19,49 +19,38 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
-using System;
 using System.Threading.Tasks;
-using CoCoL;
 using Duplicati.Library.Main.Operation.Common;
 
-namespace Duplicati.Library.Main.Operation.Backup
+namespace Duplicati.Library.Main.Operation.Backup;
+
+internal static class RecreateMissingIndexFiles
 {
-    internal static class RecreateMissingIndexFiles
-    {
-        /// <summary>
-        /// The tag used for log messages
-        /// </summary>
-        private static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(RecreateMissingIndexFiles));
+	/// <summary>
+	/// The tag used for log messages
+	/// </summary>
+	private static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(RecreateMissingIndexFiles));
 
-        public static Task Run(BackupDatabase database, Options options, ITaskReader taskreader)
-        {
-            return AutomationExtensions.RunTask(new
-            {
-                UploadChannel = Channels.BackendRequest.ForWrite
-            },
-
-			async self =>
+	public static async Task Run(BackupDatabase database, IBackendManager backendManager, Options options, ITaskReader taskreader)
+	{
+		if (options.IndexfilePolicy != Options.IndexFileStrategy.None)
+		{
+			foreach (var blockfile in await database.GetMissingIndexFilesAsync().ConfigureAwait(false))
 			{
-				if (options.IndexfilePolicy != Options.IndexFileStrategy.None)
-				{
-				    foreach (var blockfile in await database.GetMissingIndexFilesAsync())
-				    {
-				        if (!await taskreader.ProgressAsync)
-				            return;
+				if (!await taskreader.ProgressRendevouz().ConfigureAwait(false))
+					return;
 
-                        Logging.Log.WriteInformationMessage(LOGTAG, "RecreateMissingIndexFile", "Re-creating missing index file for {0}", blockfile);
-                        var w = await Common.IndexVolumeCreator.CreateIndexVolume(blockfile, options, database);
+				Logging.Log.WriteInformationMessage(LOGTAG, "RecreateMissingIndexFile", "Re-creating missing index file for {0}", blockfile);
+				var w = await Common.IndexVolumeCreator.CreateIndexVolume(blockfile, options, database).ConfigureAwait(false);
 
-				        if (!await taskreader.ProgressAsync)
-				            return;
+				if (!await taskreader.ProgressRendevouz().ConfigureAwait(false))
+					return;
 
-				        await database.UpdateRemoteVolumeAsync(w.RemoteFilename, RemoteVolumeState.Uploading, -1, null);
-				        await self.UploadChannel.WriteAsync(new IndexVolumeUploadRequest(w));
-				    }
-				}
-			});
-
+				await database.UpdateRemoteVolumeAsync(w.RemoteFilename, RemoteVolumeState.Uploading, -1, null).ConfigureAwait(false);
+				await backendManager.PutAsync(w, null, null, false, taskreader.ProgressToken).ConfigureAwait(false);
+			}
 		}
-
 	}
+
 }
+

@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -21,8 +21,10 @@
 
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Utility;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Security.Cryptography;
 using System.Threading;
@@ -47,8 +49,6 @@ namespace Duplicati.Library.Backend
         private string m_authToken = null;
         private readonly string m_authUrl;
 
-        private readonly byte[] m_copybuffer = new byte[Duplicati.Library.Utility.Utility.DEFAULT_BUFFER_SIZE];
-
         // ReSharper disable once UnusedMember.Global
         // This constructor is needed by the BackendLoader.
         public CloudFiles()
@@ -60,7 +60,7 @@ namespace Duplicati.Library.Backend
         public CloudFiles(string url, Dictionary<string, string> options)
         {
             var uri = new Utility.Uri(url);
-            
+
             if (options.ContainsKey("auth-username"))
                 m_username = options["auth-username"];
             if (options.ContainsKey("auth-password"))
@@ -70,7 +70,7 @@ namespace Duplicati.Library.Backend
                 m_username = options["cloudfiles-username"];
             if (options.ContainsKey("cloudfiles-accesskey"))
                 m_password = options["cloudfiles-accesskey"];
-            
+
             if (!string.IsNullOrEmpty(uri.Username))
                 m_username = uri.Username;
             if (!string.IsNullOrEmpty(uri.Password))
@@ -84,7 +84,7 @@ namespace Duplicati.Library.Backend
             //Fallback to the previous format
             if (url.Contains(DUMMY_HOSTNAME))
             {
-                Uri u = new Uri(url);
+                var u = new System.Uri(url);
 
                 if (!string.IsNullOrEmpty(u.UserInfo))
                 {
@@ -158,7 +158,7 @@ namespace Duplicati.Library.Backend
                     if (markerUrl == "") //Only check on first iteration
                         if (wex.Response is HttpWebResponse response && response.StatusCode == HttpStatusCode.NotFound)
                             throw new FolderMissingException(wex);
-                    
+
                     //Other error, just re-throw
                     throw;
                 }
@@ -169,7 +169,7 @@ namespace Duplicati.Library.Backend
                 //The response should be 404 from the server, but it is not :(
                 if (lst.Count == 0 && markerUrl == "") //Only on first iteration
                 {
-                    try { CreateFolder(); }
+                    try { CreateFolderAsync(CancellationToken.None).Await(); }
                     catch { } //Ignore
                 }
 
@@ -203,21 +203,21 @@ namespace Duplicati.Library.Backend
                 await PutAsync(remotename, fs, cancelToken);
         }
 
-        public void Get(string remotename, string filename)
+        public async Task GetAsync(string remotename, string filename, CancellationToken cancelToken)
         {
             using (System.IO.FileStream fs = System.IO.File.Create(filename))
-                Get(remotename, fs);
+                await GetAsync(remotename, fs, cancelToken).ConfigureAwait(false);
         }
 
-        public void Delete(string remotename)
+        public Task DeleteAsync(string remotename, CancellationToken cancelToken)
         {
             try
             {
-                HttpWebRequest req = CreateRequest("/" + remotename, "");
+                var req = CreateRequest("/" + remotename, "");
 
                 req.Method = "DELETE";
-                Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
-                using (HttpWebResponse resp = (HttpWebResponse)areq.GetResponse())
+                var areq = new Utility.AsyncHttpRequest(req);
+                using (var resp = (HttpWebResponse)areq.GetResponse())
                 {
                     if (resp.StatusCode == System.Net.HttpStatusCode.NotFound)
                         throw new FileMissingException();
@@ -236,20 +236,22 @@ namespace Duplicati.Library.Backend
                 else
                     throw;
             }
+
+            return Task.CompletedTask;
         }
 
         public IList<ICommandLineArgument> SupportedCommands
         {
-            get 
+            get
             {
-                return new List<ICommandLineArgument>(new ICommandLineArgument[] {
+                return new List<ICommandLineArgument>([
                     new CommandLineArgument("auth-password", CommandLineArgument.ArgumentType.Password, Strings.CloudFiles.DescriptionAuthPasswordShort, Strings.CloudFiles.DescriptionAuthPasswordLong),
                     new CommandLineArgument("auth-username", CommandLineArgument.ArgumentType.String, Strings.CloudFiles.DescriptionAuthUsernameShort, Strings.CloudFiles.DescriptionAuthUsernameLong),
                     new CommandLineArgument("cloudfiles-username", CommandLineArgument.ArgumentType.String, Strings.CloudFiles.DescriptionUsernameShort, Strings.CloudFiles.DescriptionUsernameLong, null, new string[] {"auth-username"} ),
                     new CommandLineArgument("cloudfiles-accesskey", CommandLineArgument.ArgumentType.Password, Strings.CloudFiles.DescriptionPasswordShort, Strings.CloudFiles.DescriptionPasswordLong, null, new string[] {"auth-password"}),
                     new CommandLineArgument("cloudfiles-uk-account", CommandLineArgument.ArgumentType.Boolean, Strings.CloudFiles.DescriptionUKAccountShort, Strings.CloudFiles.DescriptionUKAccountLong("cloudfiles-authentication-url", AUTH_URL_UK)),
                     new CommandLineArgument("cloudfiles-authentication-url", CommandLineArgument.ArgumentType.String, Strings.CloudFiles.DescriptionAuthenticationURLShort, Strings.CloudFiles.DescriptionAuthenticationURLLong_v2("cloudfiles-uk-account"), AUTH_URL_US),
-                });
+                ]);
             }
         }
 
@@ -261,20 +263,23 @@ namespace Duplicati.Library.Backend
         #endregion
 
         #region IBackend_v2 Members
-        
-        public void Test()
+
+        public Task TestAsync(CancellationToken cancelToken)
         {
             //The "Folder not found" is not detectable :(
             this.TestList();
+            return Task.CompletedTask;
         }
 
-        public void CreateFolder()
+        public Task CreateFolderAsync(CancellationToken cancelToken)
         {
-            HttpWebRequest createReq = CreateRequest("", "");
+            var createReq = CreateRequest("", "");
             createReq.Method = "PUT";
-            Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(createReq);
-            using (HttpWebResponse resp = (HttpWebResponse)areq.GetResponse())
+            var areq = new Utility.AsyncHttpRequest(createReq);
+            using (var resp = (HttpWebResponse)areq.GetResponse())
             { }
+
+            return Task.CompletedTask;
         }
 
         #endregion
@@ -289,12 +294,16 @@ namespace Duplicati.Library.Backend
 
         #region IStreamingBackend Members
 
-        public string[] DNSName
-        {
-            get { return new string[] { new Uri(m_authUrl).Host, string.IsNullOrWhiteSpace(m_storageUrl) ? null : new Uri(m_storageUrl).Host }; }
-        }
+        public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(
+            new string[] {
+                new System.Uri(m_authUrl).Host,
+                string.IsNullOrWhiteSpace(m_storageUrl) ? null : new System.Uri(m_storageUrl).Host
+            }
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .ToArray()
+        );
 
-        public void Get(string remotename, System.IO.Stream stream)
+        public async Task GetAsync(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
         {
             var req = CreateRequest("/" + remotename, "");
             req.Method = "GET";
@@ -306,7 +315,7 @@ namespace Duplicati.Library.Backend
             using (var mds = new Utility.HashCalculatingStream(s, hasher))
             {
                 string md5Hash = resp.Headers["ETag"];
-                Utility.Utility.CopyStream(mds, stream, true, m_copybuffer);
+                await Utility.Utility.CopyStreamAsync(mds, stream, true, cancelToken).ConfigureAwait(false);
 
                 if (!String.Equals(mds.GetFinalHashString(), md5Hash, StringComparison.OrdinalIgnoreCase))
                     throw new Exception(Strings.CloudFiles.ETagVerificationError);
@@ -387,7 +396,7 @@ namespace Duplicati.Library.Backend
                 if (md5Hash == null || !String.Equals(md5Hash, fileHash, StringComparison.OrdinalIgnoreCase))
                 {
                     //Remove the broken file
-                    try { Delete(remotename); }
+                    try { await DeleteAsync(remotename, cancelToken); }
                     catch { }
 
                     throw new Exception(Strings.CloudFiles.ETagVerificationError);
@@ -402,13 +411,13 @@ namespace Duplicati.Library.Backend
             //If this is the first call, get an authentication token
             if (string.IsNullOrEmpty(m_authToken) || string.IsNullOrEmpty(m_storageUrl))
             {
-                HttpWebRequest authReq = (HttpWebRequest)HttpWebRequest.Create(m_authUrl);
+                var authReq = (HttpWebRequest)HttpWebRequest.Create(m_authUrl);
                 authReq.Headers.Add("X-Auth-User", m_username);
                 authReq.Headers.Add("X-Auth-Key", m_password);
                 authReq.Method = "GET";
 
-                Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(authReq);
-                using (WebResponse resp = areq.GetResponse())
+                var areq = new Utility.AsyncHttpRequest(authReq);
+                using (var resp = areq.GetResponse())
                 {
                     m_storageUrl = resp.Headers["X-Storage-Url"];
                     m_authToken = resp.Headers["X-Auth-Token"];
@@ -418,7 +427,7 @@ namespace Duplicati.Library.Backend
                     throw new Exception(Strings.CloudFiles.UnexpectedResponseError);
             }
 
-            HttpWebRequest req = (HttpWebRequest)HttpWebRequest.Create(m_storageUrl + UrlEncode(m_path + remotename) + query);
+            var req = (HttpWebRequest)HttpWebRequest.Create(m_storageUrl + UrlEncode(m_path + remotename) + query);
             req.Headers.Add("X-Auth-Token", UrlEncode(m_authToken));
 
             req.UserAgent = "Duplicati CloudFiles Backend v" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;

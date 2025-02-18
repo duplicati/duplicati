@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -35,7 +35,6 @@ namespace Duplicati.Library.Backend
     {
         private readonly string m_url;
         private readonly bool m_useSSL = false;
-        private readonly byte[] m_copybuffer = new byte[Duplicati.Library.Utility.Utility.DEFAULT_BUFFER_SIZE];
 
         private class TahoeEl
         {
@@ -83,7 +82,7 @@ namespace Duplicati.Library.Backend
                     else if (token.Type == JTokenType.Object)
                         node = token.ToObject<TahoeNode>(serializer);
 
-                return new TahoeEl() { nodetype = nodetype,  node = node };
+                return new TahoeEl() { nodetype = nodetype, node = node };
             }
 
             public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
@@ -102,7 +101,7 @@ namespace Duplicati.Library.Backend
             //Validate URL
             var u = new Utility.Uri(url);
             u.RequireHost();
-            
+
             if (!u.Path.StartsWith("uri/URI:DIR2:", StringComparison.Ordinal) && !u.Path.StartsWith("uri/URI%3ADIR2%3A", StringComparison.Ordinal))
                 throw new UserInformationException(Strings.TahoeBackend.UnrecognizedUriError, "TahoeInvalidUri");
 
@@ -114,7 +113,7 @@ namespace Duplicati.Library.Backend
 
         private System.Net.HttpWebRequest CreateRequest(string remotename, string queryparams)
         {
-            System.Net.HttpWebRequest req = (System.Net.HttpWebRequest)System.Net.HttpWebRequest.Create(m_url + (Library.Utility.Uri.UrlEncode(remotename).Replace("+", "%20")) + (string.IsNullOrEmpty(queryparams) || queryparams.Trim().Length == 0 ? "" : "?" + queryparams));
+            var req = (System.Net.HttpWebRequest)System.Net.HttpWebRequest.Create(m_url + (Library.Utility.Uri.UrlEncode(remotename).Replace("+", "%20")) + (string.IsNullOrEmpty(queryparams) || queryparams.Trim().Length == 0 ? "" : "?" + queryparams));
 
             req.KeepAlive = false;
             req.UserAgent = "Duplicati Tahoe-LAFS Client v" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
@@ -124,18 +123,21 @@ namespace Duplicati.Library.Backend
 
         #region IBackend Members
 
-        public void Test()
+        public Task TestAsync(CancellationToken cancelToken)
         {
             this.TestList();
+            return Task.CompletedTask;
         }
 
-        public void CreateFolder()
+        public Task CreateFolderAsync(CancellationToken cancelToken)
         {
-            System.Net.HttpWebRequest req = CreateRequest("", "t=mkdir");
+            var req = CreateRequest("", "t=mkdir");
             req.Method = System.Net.WebRequestMethods.Http.Post;
-            Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
+            var areq = new Utility.AsyncHttpRequest(req);
             using (areq.GetResponse())
             { }
+
+            return Task.CompletedTask;
         }
 
         public string DisplayName
@@ -168,7 +170,7 @@ namespace Duplicati.Library.Backend
                     using (var sr = new System.IO.StreamReader(rs))
                     using (var jr = new Newtonsoft.Json.JsonTextReader(sr))
                     {
-                        var jsr  =new Newtonsoft.Json.JsonSerializer();
+                        var jsr = new Newtonsoft.Json.JsonSerializer();
                         jsr.Converters.Add(new TahoeElConverter());
                         data = jsr.Deserialize<TahoeEl>(jr);
                     }
@@ -186,7 +188,7 @@ namespace Duplicati.Library.Backend
 
             if (data == null || data.node == null || data.nodetype != "dirnode")
                 throw new Exception("Invalid folder listing response");
-                
+
             foreach (var e in data.node.children)
             {
                 if (e.Value == null || e.Value.node == null)
@@ -203,9 +205,9 @@ namespace Duplicati.Library.Backend
 
                 if (e.Value.node.metadata != null && e.Value.node.metadata.tahoe != null)
                     fe.LastModification = Duplicati.Library.Utility.Utility.EPOCH + TimeSpan.FromSeconds(e.Value.node.metadata.tahoe.linkmotime);
-                
+
                 if (isFile)
-                    fe.Size = e.Value.node.size;                
+                    fe.Size = e.Value.node.size;
 
                 yield return fe;
             }
@@ -213,17 +215,17 @@ namespace Duplicati.Library.Backend
 
         public async Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
         {
-            using (System.IO.FileStream fs = System.IO.File.OpenRead(filename))
-                await PutAsync(remotename, fs, cancelToken);
+            using (var fs = System.IO.File.OpenRead(filename))
+                await PutAsync(remotename, fs, cancelToken).ConfigureAwait(false);
         }
 
-        public void Get(string remotename, string filename)
+        public async Task GetAsync(string remotename, string filename, CancellationToken cancelToken)
         {
-            using (System.IO.FileStream fs = System.IO.File.Create(filename))
-                Get(remotename, fs);
+            using (var fs = System.IO.File.Create(filename))
+                await GetAsync(remotename, fs, cancelToken).ConfigureAwait(false);
         }
 
-        public void Delete(string remotename)
+        public Task DeleteAsync(string remotename, CancellationToken cancelToken)
         {
             try
             {
@@ -240,11 +242,13 @@ namespace Duplicati.Library.Backend
                 else
                     throw;
             }
+
+            return Task.CompletedTask;
         }
 
         public IList<ICommandLineArgument> SupportedCommands
         {
-            get 
+            get
             {
                 return new List<ICommandLineArgument>(new ICommandLineArgument[] {
                     new CommandLineArgument("use-ssl", CommandLineArgument.ArgumentType.Boolean, Strings.TahoeBackend.DescriptionUseSSLShort, Strings.TahoeBackend.DescriptionUseSSLLong),
@@ -257,10 +261,7 @@ namespace Duplicati.Library.Backend
             get { return Strings.TahoeBackend.Description; }
         }
 
-        public string[] DNSName
-        {
-            get { return new string[] { new Uri(m_url).Host }; }
-        }
+        public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(new[] { new Uri(m_url).Host });
 
         #endregion
 
@@ -287,7 +288,7 @@ namespace Duplicati.Library.Backend
 
                 Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
                 using (System.IO.Stream s = areq.GetRequestStream())
-                    await Utility.Utility.CopyStreamAsync(stream, s, true, cancelToken, m_copybuffer);
+                    await Utility.Utility.CopyStreamAsync(stream, s, true, cancelToken).ConfigureAwait(false);
 
                 using (System.Net.HttpWebResponse resp = (System.Net.HttpWebResponse)areq.GetResponse())
                 {
@@ -307,7 +308,7 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public void Get(string remotename, System.IO.Stream stream)
+        public async Task GetAsync(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
         {
             var req = CreateRequest(remotename, "");
             req.Method = System.Net.WebRequestMethods.Http.Get;
@@ -320,7 +321,7 @@ namespace Duplicati.Library.Backend
                     throw new System.Net.WebException(resp.StatusDescription, null, System.Net.WebExceptionStatus.ProtocolError, resp);
 
                 using (var s = areq.GetResponseStream())
-                    Utility.Utility.CopyStream(s, stream, true, m_copybuffer);
+                    await Utility.Utility.CopyStreamAsync(s, stream, true, cancelToken).ConfigureAwait(false);
             }
         }
 

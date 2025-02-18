@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -26,11 +26,14 @@ using Duplicati.Library.Localization.Short;
 using System.IO;
 using Duplicati.Library.Interface;
 using Duplicati.Library.AutoUpdater;
+using Duplicati.Library.Crashlog;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.CommandLine
 {
     public class Program
     {
+        
         private static readonly string LOGTAG = Library.Logging.Log.LogTagFromType<Program>();
 
         public static bool FROM_COMMANDLINE = false;
@@ -40,17 +43,24 @@ namespace Duplicati.CommandLine
         /// </summary>
         public static int Main(string[] args)
         {
+            PreloadSettingsLoader.ConfigurePreloadSettings(ref args, PackageHelper.NamedExecutable.CommandLine);
+
             Library.UsageReporter.Reporter.Initialize();
             FROM_COMMANDLINE = true;
             try
             {
+                CrashlogHelper.OnUnobservedTaskException += LogUnobservedTaskExceptions;
                 return RunCommandLine(Console.Out, Console.Error, c => { }, args);
             }
             finally
             {
                 Library.UsageReporter.Reporter.ShutDown();
+                CrashlogHelper.OnUnobservedTaskException -= LogUnobservedTaskExceptions;
             }
         }
+
+        private static void LogUnobservedTaskExceptions(Exception ex) => Console.Error.WriteLine("UnobservedTaskException: {0}", ex);
+
 
         private static Dictionary<string, Func<TextWriter, Action<Library.Main.Controller>, List<string>, Dictionary<string, string>, Library.Utility.IFilter, int>> CommandMap
         {
@@ -85,7 +95,7 @@ namespace Duplicati.CommandLine
                         ["systeminfo"] = Commands.SystemInfo,
                         ["send-mail"] = Commands.SendMail
                     };
-                
+
                 return knownCommands;
             }
         }
@@ -155,7 +165,7 @@ namespace Duplicati.CommandLine
                 }
 
             // Probe for "help" to avoid extra processing
-            if (cargs.Count == 0 || (string.Equals(cargs[0], "help", StringComparison.OrdinalIgnoreCase)))
+            if (cargs.Count == 0 || HelpOptionExtensions.IsArgumentAnyHelpString(cargs))
             {
                 return Commands.Help(outwriter, setup, cargs, options, filter);
             }
@@ -172,6 +182,10 @@ namespace Duplicati.CommandLine
                     break;
                 }
             }
+
+            // Don't pass these options into the controller
+            options.Remove(Library.AutoUpdater.DataFolderManager.SERVER_DATAFOLDER_OPTION);
+            options.Remove(Library.AutoUpdater.DataFolderManager.PORTABLE_MODE_OPTION);
 
             if (!options.ContainsKey("passphrase"))
                 if (!string.IsNullOrEmpty(System.Environment.GetEnvironmentVariable("PASSPHRASE")))
@@ -275,20 +289,16 @@ namespace Duplicati.CommandLine
             }
         }
 
-        public static IList<Library.Interface.ICommandLineArgument> SupportedOptions
-        {
-            get
-            {
-                return new List<Library.Interface.ICommandLineArgument>(new Library.Interface.ICommandLineArgument[] {
-                    new Library.Interface.CommandLineArgument("parameters-file", Library.Interface.CommandLineArgument.ArgumentType.Path, Strings.Program.ParametersFileOptionShort, Strings.Program.ParametersFileOptionLong2, "", new string[] {"parameter-file", "parameterfile"}),
-                    new Library.Interface.CommandLineArgument("include", Library.Interface.CommandLineArgument.ArgumentType.String, Strings.Program.IncludeShort, Strings.Program.IncludeLong),
-                    new Library.Interface.CommandLineArgument("exclude", Library.Interface.CommandLineArgument.ArgumentType.String, Strings.Program.ExcludeShort, Strings.Program.ExcludeLong),
-                    new Library.Interface.CommandLineArgument("control-files", Library.Interface.CommandLineArgument.ArgumentType.Boolean, Strings.Program.ControlFilesOptionShort, Strings.Program.ControlFilesOptionLong, "false"),
-                    new Library.Interface.CommandLineArgument("quiet-console", Library.Interface.CommandLineArgument.ArgumentType.Boolean, Strings.Program.QuietConsoleOptionShort, Strings.Program.QuietConsoleOptionLong, "false"),
-                    new Library.Interface.CommandLineArgument("auto-update", Library.Interface.CommandLineArgument.ArgumentType.Boolean, LC.L("Toggle automatic updates"), LC.L("Set this option if you prefer to have the commandline version automatically update"), "false"),
-                });
-            }
-        }
+        public static IList<ICommandLineArgument> SupportedOptions => [
+            new CommandLineArgument("parameters-file", CommandLineArgument.ArgumentType.Path, Strings.Program.ParametersFileOptionShort, Strings.Program.ParametersFileOptionLong2, "", new string[] {"parameter-file", "parameterfile"}),
+            new CommandLineArgument("include", CommandLineArgument.ArgumentType.String, Strings.Program.IncludeShort, Strings.Program.IncludeLong),
+            new CommandLineArgument("exclude", CommandLineArgument.ArgumentType.String, Strings.Program.ExcludeShort, Strings.Program.ExcludeLong),
+            new CommandLineArgument("control-files", CommandLineArgument.ArgumentType.Boolean, Strings.Program.ControlFilesOptionShort, Strings.Program.ControlFilesOptionLong, "false"),
+            new CommandLineArgument("quiet-console", CommandLineArgument.ArgumentType.Boolean, Strings.Program.QuietConsoleOptionShort, Strings.Program.QuietConsoleOptionLong, "false"),
+            new CommandLineArgument("auto-update", CommandLineArgument.ArgumentType.Boolean, Strings.Program.AutoUpdateOptionShort, Strings.Program.AutoUpdateOptionLong, "false"),
+            new CommandLineArgument(DataFolderManager.PORTABLE_MODE_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.Program.PortableModeOptionShort, Strings.Program.PortableModeOptionLong, DataFolderManager.PORTABLE_MODE.ToString().ToLowerInvariant()),
+            new CommandLineArgument(DataFolderManager.SERVER_DATAFOLDER_OPTION, CommandLineArgument.ArgumentType.Path, Strings.Program.DataFolderOptionShort, Strings.Program.DataFolderOptionLong, DataFolderManager.DATAFOLDER),
+        ];
 
         private static bool ReadOptionsFromFile(TextWriter outwriter, string filename, ref Library.Utility.IFilter filter, List<string> cargs, Dictionary<string, string> options)
         {

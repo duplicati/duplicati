@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -21,6 +21,7 @@
 
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Utility;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -36,7 +37,7 @@ namespace Duplicati.Library.Backend
 
         static Idrivee2Backend()
         {
-            
+
         }
 
         private readonly string m_prefix;
@@ -75,7 +76,7 @@ namespace Duplicati.Library.Backend
                 throw new UserInformationException(Strings.Idrivee2Backend.NoKeyIdError, "Idrivee2NoKeyId");
             if (string.IsNullOrEmpty(accessKeySecret))
                 throw new UserInformationException(Strings.Idrivee2Backend.NoKeySecretError, "Idrivee2NoKeySecret");
-            string host= GetRegionEndpoint("https://api.idrivee2.com/api/service/get_region_end_point/" + accessKeyId);
+            string host = GetRegionEndpoint("https://api.idrivee2.com/api/service/get_region_end_point/" + accessKeyId);
 
 
             m_s3Client = new S3AwsClient(accessKeyId, accessKeySecret, null, host, null, true, false, options);
@@ -88,9 +89,9 @@ namespace Duplicati.Library.Backend
             {
                 System.Net.HttpWebRequest req = (System.Net.HttpWebRequest)System.Net.WebRequest.Create(url);
                 req.Method = System.Net.WebRequestMethods.Http.Get;
-                
+
                 Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
-               
+
                 using (System.Net.HttpWebResponse resp = (System.Net.HttpWebResponse)areq.GetResponse())
                 {
                     int code = (int)resp.StatusCode;
@@ -109,7 +110,7 @@ namespace Duplicati.Library.Backend
             catch (System.Net.WebException wex)
             {
                 //Convert to better exception
-                throw new Exception("Failed to fetch region endpoint");
+                throw new Exception("Failed to fetch region endpoint", wex);
             }
         }
 
@@ -145,46 +146,30 @@ namespace Duplicati.Library.Backend
 
         public async Task PutAsync(string remotename, Stream input, CancellationToken cancelToken)
         {
-            await Connection.AddFileStreamAsync(m_bucket, GetFullKey(remotename), input, cancelToken);
+            await Connection.AddFileStreamAsync(m_bucket, GetFullKey(remotename), input, cancelToken).ConfigureAwait(false);
         }
 
-        public void Get(string remotename, string localname)
+        public async Task GetAsync(string remotename, string localname, CancellationToken cancellationToken)
         {
             using (var fs = File.Open(localname, FileMode.Create, FileAccess.Write, FileShare.None))
-                Get(remotename, fs);
+                await GetAsync(remotename, fs, cancellationToken).ConfigureAwait(false);
         }
 
-        public void Get(string remotename, Stream output)
+        public Task GetAsync(string remotename, Stream output, CancellationToken cancellationToken)
         {
-            Connection.GetFileStream(m_bucket, GetFullKey(remotename), output);
+            return Connection.GetFileStreamAsync(m_bucket, GetFullKey(remotename), output, cancellationToken);
         }
 
-        public void Delete(string remotename)
+        public Task DeleteAsync(string remotename, CancellationToken cancellationToken)
         {
-            Connection.DeleteObject(m_bucket, GetFullKey(remotename));
+            return Connection.DeleteObjectAsync(m_bucket, GetFullKey(remotename), cancellationToken);
         }
 
         public IList<ICommandLineArgument> SupportedCommands
         {
             get
             {
-                var defaults = new Amazon.S3.AmazonS3Config()
-                {
-                    // If this is not set, accessing the property will trigger an expensive operation (~30 seconds)
-                    // to get the region endpoint. This stalls the supported commands list.
-                    UseArnRegion = false
-                };
-
-                var exts =
-                    typeof(Amazon.S3.AmazonS3Config).GetProperties().Where(x => x.CanRead && x.CanWrite && (x.PropertyType == typeof(string) || x.PropertyType == typeof(bool) || x.PropertyType == typeof(int) || x.PropertyType == typeof(long) || x.PropertyType.IsEnum))
-                        .Select(x => (ICommandLineArgument)new CommandLineArgument(
-                            "s3-ext-" + x.Name.ToLowerInvariant(),
-                            x.PropertyType == typeof(bool) ? CommandLineArgument.ArgumentType.Boolean : x.PropertyType.IsEnum ? CommandLineArgument.ArgumentType.Enumeration : CommandLineArgument.ArgumentType.String,
-                            x.Name,
-                            string.Format("Extended option {0}", x.Name),
-                            string.Format("{0}", x.GetValue(defaults)),
-                            null,
-                            x.PropertyType.IsEnum ? Enum.GetNames(x.PropertyType) : null));
+                var exts = S3AwsClient.GetAwsExtendedOptions();
 
                 var normal = new ICommandLineArgument[] {
                     new CommandLineArgument("access_key_secret", CommandLineArgument.ArgumentType.Password, Strings.Idrivee2Backend.KeySecretDescriptionShort, Strings.Idrivee2Backend.KeySecretDescriptionLong, null, new[]{"auth-password"}, null),
@@ -203,24 +188,25 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public void Test()
+        public Task TestAsync(CancellationToken cancelToken)
         {
             this.TestList();
+            return Task.CompletedTask;
         }
 
-        public void CreateFolder()
+        public Task CreateFolderAsync(CancellationToken cancelToken)
         {
             //S3 does not complain if the bucket already exists
-            Connection.AddBucket(m_bucket);
+            return Connection.AddBucketAsync(m_bucket, cancelToken);
         }
 
         #endregion
 
         #region IRenameEnabledBackend Members
 
-        public void Rename(string source, string target)
+        public Task Rename(string source, string target, CancellationToken cancelToken)
         {
-            Connection.RenameFile(m_bucket, GetFullKey(source), GetFullKey(target));
+            return Connection.RenameFileAsync(m_bucket, GetFullKey(source), GetFullKey(target), cancelToken);
         }
 
         #endregion
@@ -237,10 +223,7 @@ namespace Duplicati.Library.Backend
 
         private IS3Client Connection => m_s3Client;
 
-        public string[] DNSName
-        {
-            get { return new[] { m_s3Client.GetDnsHost() }; }
-        }
+        public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(new[] { m_s3Client.GetDnsHost() });
 
         private string GetFullKey(string name)
         {

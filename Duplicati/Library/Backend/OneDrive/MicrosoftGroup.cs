@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -20,8 +20,11 @@
 // DEALINGS IN THE SOFTWARE.
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Duplicati.Library.Backend.MicrosoftGraph;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Backend
 {
@@ -42,7 +45,8 @@ namespace Duplicati.Library.Backend
             string groupEmail;
             if (options.TryGetValue(GROUP_EMAIL_OPTION, out groupEmail))
             {
-                groupId = this.GetGroupIdFromEmail(groupEmail);
+                // TODO: Should not make network requests in constructor
+                groupId = this.GetGroupIdFromEmailAsync(groupEmail, CancellationToken.None).Await();
             }
 
             string groupIdOption;
@@ -55,7 +59,7 @@ namespace Duplicati.Library.Backend
 
                 groupId = groupIdOption;
             }
-            
+
             if (string.IsNullOrEmpty(groupId))
             {
                 throw new UserInformationException(Strings.MicrosoftGroup.MissingGroupIdAndEmailAddress, "MicrosoftGroupMissingGroupIdAndEmailAddress");
@@ -91,20 +95,20 @@ namespace Duplicati.Library.Backend
         {
             get
             {
-                return new ICommandLineArgument[]
-                {
+                return
+                [
                     new CommandLineArgument(GROUP_ID_OPTION, CommandLineArgument.ArgumentType.String, Strings.MicrosoftGroup.GroupIdShort, Strings.MicrosoftGroup.GroupIdLong),
                     new CommandLineArgument(GROUP_EMAIL_OPTION, CommandLineArgument.ArgumentType.String, Strings.MicrosoftGroup.GroupEmailShort, Strings.MicrosoftGroup.GroupEmailLong),
-                };
+                ];
             }
         }
 
-        private string GetGroupIdFromEmail(string email)
+        private async Task<string> GetGroupIdFromEmailAsync(string email, CancellationToken cancelToken)
         {
             // We can get all groups that have the given email as one of their addresses with:
             // https://graph.microsoft.com/v1.0/groups?$filter=mail eq '{email}' or proxyAddresses/any(x:x eq 'smtp:{email}')
             string request = string.Format("{0}/groups?$filter=mail eq '{1}' or proxyAddresses/any(x:x eq 'smtp:{1}')", this.ApiVersion, email);
-            GraphCollection<Group> groups = this.Get<GraphCollection<Group>>(request);
+            var groups = await this.GetAsync<GraphCollection<Group>>(request, cancelToken).ConfigureAwait(false);
             if (groups.Value.Length == 0)
             {
                 throw new UserInformationException(Strings.MicrosoftGroup.NoGroupsWithEmail(email), "MicrosoftGroupNoGroupsWithEmail");

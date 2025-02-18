@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -21,6 +21,7 @@
 
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Utility;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -66,6 +67,12 @@ namespace Duplicati.Library.Backend
             { "Infomaniak Swiss Backup cluster 2", "s3.swiss-backup02.infomaniak.com" },
             { "Infomaniak Swiss Backup cluster 3", "s3.swiss-backup03.infomaniak.com" },
             { "Infomaniak Public Cloud 1", "s3.pub1.infomaniak.cloud" },
+            { "さくらのクラウド (Sakura Cloud)", "s3.isk01.sakurastorage.jp" },
+            { "Seagate Lyve - US-East-1", "https://s3.us-east-1.lyvecloud.seagate.com" },
+            { "Seagate Lyve - US-West-1", "https://s3.us-west-1.lyvecloud.seagate.com" },
+            { "Seagate Lyve - AP-Southeast-1", "https://s3.ap-southeast-1.lyvecloud.seagate.com" },
+            { "Seagate Lyve - EU-West-1", "https://s3.eu-west-1.lyvecloud.seagate.com" },
+            { "Seagate Lyve - US-Central-2", "https://s3.us-central-2.lyvecloud.seagate.com" }
         };
 
         //Updated list: http://docs.amazonwebservices.com/general/latest/gr/rande.html#s3_region
@@ -224,15 +231,19 @@ namespace Duplicati.Library.Backend
 
             var disableChunkEncoding = Utility.Utility.ParseBoolOption(options, S3_DISABLE_CHUNK_ENCODING_OPTION);
 
-            options.TryGetValue(S3_CLIENT_OPTION, out var s3ClientOptionValue);
+            var s3ClientOptionValue = options.GetValueOrDefault(S3_CLIENT_OPTION);
 
-            if (s3ClientOptionValue == "aws" || s3ClientOptionValue == null)
+            if (string.IsNullOrWhiteSpace(s3ClientOptionValue) || string.Equals(s3ClientOptionValue, "aws", StringComparison.OrdinalIgnoreCase))
             {
                 s3Client = new S3AwsClient(awsID, awsKey, locationConstraint, hostname, storageClass, useSSL, disableChunkEncoding, options);
             }
-            else
+            else if (string.Equals(s3ClientOptionValue, "minio", StringComparison.OrdinalIgnoreCase))
             {
                 s3Client = new S3MinioClient(awsID, awsKey, locationConstraint, hostname, storageClass, useSSL, options);
+            }
+            else
+            {
+                throw new UserInformationException(Strings.S3Backend.UnknownS3ClientError(s3ClientOptionValue), "UnknownS3Client");
             }
         }
 
@@ -284,20 +295,20 @@ namespace Duplicati.Library.Backend
             await Connection.AddFileStreamAsync(m_bucket, GetFullKey(remotename), input, cancelToken);
         }
 
-        public void Get(string remotename, string localname)
+        public async Task GetAsync(string remotename, string localname, CancellationToken cancelToken)
         {
             using (var fs = File.Open(localname, FileMode.Create, FileAccess.Write, FileShare.None))
-                Get(remotename, fs);
+                await GetAsync(remotename, fs, cancelToken).ConfigureAwait(false);
         }
 
-        public void Get(string remotename, Stream output)
+        public Task GetAsync(string remotename, Stream output, CancellationToken cancelToken)
         {
-            Connection.GetFileStream(m_bucket, GetFullKey(remotename), output);
+            return Connection.GetFileStreamAsync(m_bucket, GetFullKey(remotename), output, cancelToken);
         }
 
-        public void Delete(string remotename)
+        public Task DeleteAsync(string remotename, CancellationToken cancelToken)
         {
-            Connection.DeleteObject(m_bucket, GetFullKey(remotename));
+            return Connection.DeleteObjectAsync(m_bucket, GetFullKey(remotename), cancelToken);
         }
 
         public IList<ICommandLineArgument> SupportedCommands
@@ -312,19 +323,7 @@ namespace Duplicati.Library.Backend
                 foreach (var s in KNOWN_S3_LOCATIONS)
                     locations.AppendLine(string.Format("{0}: {1}", s.Key, s.Value));
 
-                var defaults = S3AwsClient.GetDefaultAmazonS3Config();
-
-                var exts =
-                    typeof(Amazon.S3.AmazonS3Config).GetProperties().Where(x => x.CanRead && x.CanWrite && (x.PropertyType == typeof(string) || x.PropertyType == typeof(bool) || x.PropertyType == typeof(int) || x.PropertyType == typeof(long) || x.PropertyType.IsEnum))
-                        .Select(x => (ICommandLineArgument)new CommandLineArgument(
-                            "s3-ext-" + x.Name.ToLowerInvariant(),
-                            x.PropertyType == typeof(bool) ? CommandLineArgument.ArgumentType.Boolean : x.PropertyType.IsEnum ? CommandLineArgument.ArgumentType.Enumeration : CommandLineArgument.ArgumentType.String,
-                            x.Name,
-                            string.Format("Extended option {0}", x.Name),
-                            string.Format("{0}", x.GetValue(defaults)),
-                            null,
-                            x.PropertyType.IsEnum ? Enum.GetNames(x.PropertyType) : null));
-
+                var exts = S3AwsClient.GetAwsExtendedOptions();
 
                 var normal = new ICommandLineArgument[] {
                     new CommandLineArgument("aws-secret-access-key", CommandLineArgument.ArgumentType.Password, Strings.S3Backend.AMZKeyDescriptionShort, Strings.S3Backend.AMZKeyDescriptionLong,null, new string[] {"auth-password"}, null ),
@@ -333,7 +332,7 @@ namespace Duplicati.Library.Backend
                     new CommandLineArgument(SERVER_NAME, CommandLineArgument.ArgumentType.String, Strings.S3Backend.S3ServerNameDescriptionShort, Strings.S3Backend.S3ServerNameDescriptionLong(hostnames.ToString()), DEFAULT_S3_HOST),
                     new CommandLineArgument(LOCATION_OPTION, CommandLineArgument.ArgumentType.String, Strings.S3Backend.S3LocationDescriptionShort, Strings.S3Backend.S3LocationDescriptionLong(locations.ToString())),
                     new CommandLineArgument(SSL_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.S3Backend.DescriptionUseSSLShort, Strings.S3Backend.DescriptionUseSSLLong),
-                    new CommandLineArgument(S3_CLIENT_OPTION, CommandLineArgument.ArgumentType.String, Strings.S3Backend.S3ClientDescriptionShort, Strings.S3Backend.DescriptionS3ClientLong),
+                    new CommandLineArgument(S3_CLIENT_OPTION, CommandLineArgument.ArgumentType.Enumeration, Strings.S3Backend.S3ClientDescriptionShort, Strings.S3Backend.S3ClientDescriptionLong, "aws", null, new string[] { "aws", "minio" }),
                     new CommandLineArgument(S3_DISABLE_CHUNK_ENCODING_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.S3Backend.DescriptionDisableChunkEncodingShort, Strings.S3Backend.DescriptionDisableChunkEncodingLong, "false"),
                     new CommandLineArgument("auth-password", CommandLineArgument.ArgumentType.Password, Strings.S3Backend.AuthPasswordDescriptionShort, Strings.S3Backend.AuthPasswordDescriptionLong),
                     new CommandLineArgument("auth-username", CommandLineArgument.ArgumentType.String, Strings.S3Backend.AuthUsernameDescriptionShort, Strings.S3Backend.AuthUsernameDescriptionLong),
@@ -352,24 +351,25 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public void Test()
+        public Task TestAsync(CancellationToken cancelToken)
         {
             this.TestList();
+            return Task.CompletedTask;
         }
 
-        public void CreateFolder()
+        public Task CreateFolderAsync(CancellationToken cancelToken)
         {
             //S3 does not complain if the bucket already exists
-            Connection.AddBucket(m_bucket);
+            return Connection.AddBucketAsync(m_bucket, cancelToken);
         }
 
         #endregion
 
         #region IRenameEnabledBackend Members
 
-        public void Rename(string source, string target)
+        public Task RenameAsync(string source, string target, CancellationToken cancelToken)
         {
-            Connection.RenameFile(m_bucket, GetFullKey(source), GetFullKey(target));
+            return Connection.RenameFileAsync(m_bucket, GetFullKey(source), GetFullKey(target), cancelToken);
         }
 
         #endregion
@@ -389,10 +389,7 @@ namespace Duplicati.Library.Backend
             get { return s3Client; }
         }
 
-        public string[] DNSName
-        {
-            get { return new[] { s3Client.GetDnsHost() }; }
-        }
+        public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(new[] { s3Client.GetDnsHost() });
 
         private string GetFullKey(string name)
         {

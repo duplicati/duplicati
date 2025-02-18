@@ -1,0 +1,449 @@
+name: Backend Live Tests
+on: [pull_request, workflow_dispatch]
+concurrency:
+  group: duplicati-ci-livetests
+  cancel-in-progress: false
+jobs:
+  check_secrets:
+    runs-on: ubuntu-latest
+    outputs:
+      s3_secrets_available: "${{ steps.check_s3.outputs.available }}"
+      dropbox_secrets_available: "${{ steps.check_dropbox.outputs.available }}"
+      azure_secrets_available: "${{ steps.check_azure.outputs.available }}"
+      testcontainers_secrets_available: "${{ steps.check_testcontainers.outputs.available }}"
+      google_secrets_available: "${{ steps.check_google.outputs.available }}"
+      pcloud_secrets_available: "${{ steps.check_pcloud.outputs.available }}"
+    steps:
+      - id: check_pcloud
+        name: Check pCloud secrets
+        shell: bash
+        run: |
+          echo "Starting pCloud secrets check..."
+          if [[ -n "${{ secrets.TESTCREDENTIAL_PCLOUD_SERVER }}" ]] && \
+            [[ -n "${{ secrets.TESTCREDENTIAL_PCLOUD_TOKEN }}" ]] && \
+            [[ -n "${{ secrets.TESTCREDENTIAL_PCLOUD_FOLDER }}" ]]; then
+            echo "All pCloud secrets found"
+            echo "available=true" >> $GITHUB_OUTPUT
+          else
+            echo "Missing some pCloud secrets"
+            echo "available=false" >> $GITHUB_OUTPUT
+          fi
+          echo "pCloud check completed"
+      - id: check_s3
+        name: Check S3 secrets
+        shell: bash
+        run: |
+          echo "Starting S3 secrets check..."
+          if [[ -n "${{ secrets.TESTCREDENTIAL_S3_BUCKETNAME }}" ]] && \
+            [[ -n "${{ secrets.TESTCREDENTIAL_S3_KEY }}" ]] && \
+            [[ -n "${{ secrets.TESTCREDENTIAL_S3_REGION }}" ]] && \
+            [[ -n "${{ secrets.TESTCREDENTIAL_S3_SECRET }}" ]]; then
+            echo "All S3 secrets found"
+            echo "available=true" >> $GITHUB_OUTPUT
+          else
+            echo "Missing some S3 secrets"
+            echo "available=false" >> $GITHUB_OUTPUT
+          fi
+          echo "S3 check completed"
+      - id: check_dropbox
+        name: Check Dropbox secrets
+        shell: bash
+        run: |
+          echo "Starting Dropbox secrets check..."
+          if [[ -n "${{ secrets.TESTCREDENTIAL_DROPBOX_FOLDER }}" ]] && \
+            [[ -n "${{ secrets.TESTCREDENTIAL_DROPBOX_TOKEN }}" ]]; then
+            echo "All Dropbox secrets found"
+            echo "available=true" >> $GITHUB_OUTPUT
+          else
+            echo "Missing some Dropbox secrets"
+            echo "available=false" >> $GITHUB_OUTPUT
+          fi
+          echo "Dropbox check completed"
+      - id: check_azure
+        name: Check Azure secrets
+        shell: bash
+        run: |
+          echo "Starting Azure secrets check..."
+          if [[ -n "${{ secrets.TESTCREDENTIAL_AZURE_ACCOUNTNAME }}" ]] && \
+            [[ -n "${{ secrets.TESTCREDENTIAL_AZURE_ACCESSKEY }}" ]] && \
+            [[ -n "${{ secrets.TESTCREDENTIAL_AZURE_CONTAINERNAME }}" ]]; then
+            echo "All Azure secrets found"
+            echo "available=true" >> $GITHUB_OUTPUT
+          else
+            echo "Missing some Azure secrets"
+            echo "available=false" >> $GITHUB_OUTPUT
+          fi
+          echo "Azure check completed"
+      - id: check_testcontainers
+        name: Check TestContainers secret
+        shell: bash
+        run: |
+          echo "Starting TestContainers secrets check..."
+          if [[ -n "${{ secrets.TC_CLOUD_TOKEN }}" ]]; then
+            echo "All TestContainers secrets found"
+            echo "available=true" >> $GITHUB_OUTPUT
+          else
+            echo "Missing TestContainers token"
+            echo "available=false" >> $GITHUB_OUTPUT
+          fi
+          echo "Testcontainers check completed"
+
+      - id: check_google
+        name: Check Google secrets
+        shell: bash
+        run: |
+          echo "Starting Google secrets check..."
+          if [[ -n "${{ secrets.TESTCREDENTIAL_GOOGLEDRIVE_TOKEN }}" ]] && \
+            [[ -n "${{ secrets.TESTCREDENTIAL_GOOGLEDRIVE_FOLDER }}" ]]; then
+            echo "All Google secrets found"
+            echo "available=true" >> $GITHUB_OUTPUT
+          else
+            echo "Missing some Google secrets"
+            echo "available=false" >> $GITHUB_OUTPUT
+          fi
+          echo "Google check completed"
+
+      - name: Debug Output
+        shell: bash
+        run: |
+          echo "S3 Available: ${{ steps.check_s3.outputs.available }}"
+          echo "Dropbox Available: ${{ steps.check_dropbox.outputs.available }}"
+          echo "TestContainers Available: ${{ steps.check_testcontainers.outputs.available }}"
+          echo "Google Available: ${{ steps.check_google.outputs.available }}"
+  test_ftp:
+    needs: check_secrets
+    if: needs.check_secrets.outputs.testcontainers_secrets_available == 'true'
+    name: FTP Tests
+    runs-on: "${{ matrix.os }}"
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        os:
+          - ubuntu-latest
+          - windows-latest
+          - macos-latest
+    steps:
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.x
+      - name: Checkout source
+        uses: actions/checkout@v4
+      - name: Restore NuGet dependencies
+        run: >-
+          dotnet restore
+          LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.sln
+      - name: Build project
+        run: >-
+          dotnet build --no-restore
+          LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.sln
+      - name: Setup Testcontainers Cloud Client
+        uses: atomicjar/testcontainers-cloud-setup-action@v1
+        with:
+          token: "${{ secrets.TC_CLOUD_TOKEN }}"
+      - name: Run FTP tests
+        env:
+          TC_CLOUD_TOKEN: "${{ secrets.TC_CLOUD_TOKEN }}"
+        run: >-
+          dotnet test --no-build --filter="ClassName~FtpTests"
+          --logger:"console;verbosity=detailed"
+          LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.sln
+
+  test_pcloud:
+    needs: check_secrets
+    if: needs.check_secrets.outputs.pcloud_secrets_available == 'true'
+    name: pCloud Tests
+    runs-on: "${{ matrix.os }}"
+    strategy:
+      max-parallel: 1
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - windows-latest
+          - macos-latest
+    steps:
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.x
+      - name: Checkout source
+        uses: actions/checkout@v4
+      - name: Restore NuGet dependencies
+        run: >-
+          dotnet restore
+          LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.sln
+      - name: Build project
+        run: >-
+          dotnet build --no-restore
+          LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.sln
+      - name: Run pCloud tests
+        env:
+          TESTCREDENTIAL_PCLOUD_SERVER: "${{ secrets.TESTCREDENTIAL_PCLOUD_SERVER }}"
+          TESTCREDENTIAL_PCLOUD_TOKEN: "${{ secrets.TESTCREDENTIAL_PCLOUD_TOKEN }}"
+          TESTCREDENTIAL_PCLOUD_FOLDER: "${{ secrets.TESTCREDENTIAL_PCLOUD_FOLDER }}"
+        run: >-
+          dotnet test --no-build --filter="ClassName~pCloudTests"
+          --logger:"console;verbosity=detailed"
+          LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.sln
+
+  test_s3:
+    needs: check_secrets
+    if: needs.check_secrets.outputs.s3_secrets_available == 'true'
+    name: S3 Tests
+    runs-on: "${{ matrix.os }}"
+    strategy:
+      max-parallel: 1
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - windows-latest
+          - macos-latest
+    steps:
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.x
+      - name: Checkout source
+        uses: actions/checkout@v4
+      - name: Restore NuGet dependencies
+        run: >-
+          dotnet restore
+          LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.sln
+      - name: Build project
+        run: >-
+          dotnet build --no-restore
+          LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.sln
+      - name: Run S3 tests
+        env:
+          TC_CLOUD_TOKEN: "${{ secrets.TC_CLOUD_TOKEN }}"
+          TESTCREDENTIAL_S3_BUCKETNAME: "${{ secrets.TESTCREDENTIAL_S3_BUCKETNAME }}"
+          TESTCREDENTIAL_S3_KEY: "${{ secrets.TESTCREDENTIAL_S3_KEY }}"
+          TESTCREDENTIAL_S3_REGION: "${{ secrets.TESTCREDENTIAL_S3_REGION }}"
+          TESTCREDENTIAL_S3_SECRET: "${{ secrets.TESTCREDENTIAL_S3_SECRET }}"
+        run: >-
+          dotnet test --no-build --filter="ClassName~S3Tests"
+          --logger:"console;verbosity=detailed"
+          LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.sln
+  test_azure:
+    needs: check_secrets
+    if: needs.check_secrets.outputs.azure_secrets_available == 'true'
+    name: Azure Tests
+    runs-on: "${{ matrix.os }}"
+    strategy:
+      max-parallel: 1
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - windows-latest
+          - macos-latest
+    steps:
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.x
+      - name: Checkout source
+        uses: actions/checkout@v4
+      - name: Restore NuGet dependencies
+        run: >-
+          dotnet restore
+          LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.sln
+      - name: Build project
+        run: >-
+          dotnet build --no-restore
+          LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.sln
+      - name: Run Azure tests
+        env:
+          READ_WRITE_TIMEOUT_SECONDS: 18000
+          TESTCREDENTIAL_AZURE_ACCOUNTNAME: "${{ secrets.TESTCREDENTIAL_AZURE_ACCOUNTNAME }}"
+          TESTCREDENTIAL_AZURE_ACCESSKEY: "${{ secrets.TESTCREDENTIAL_AZURE_ACCESSKEY }}"
+          TESTCREDENTIAL_AZURE_CONTAINERNAME: "${{ secrets.TESTCREDENTIAL_AZURE_CONTAINERNAME }}"
+        run: >-
+          dotnet test --no-build --filter="ClassName~AzureTests"
+          --logger:"console;verbosity=detailed"
+          LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.sln
+  test_webdav:
+    needs: check_secrets
+    if: needs.check_secrets.outputs.testcontainers_secrets_available == 'true'
+    name: Webdav Tests
+    runs-on: "${{ matrix.os }}"
+    strategy:
+      max-parallel: 1
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - windows-latest
+          - macos-latest
+    steps:
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.x
+      - name: Checkout source
+        uses: actions/checkout@v4
+      - name: Restore NuGet dependencies
+        run: >-
+          dotnet restore
+          LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.sln
+      - name: Build project
+        run: >-
+          dotnet build --no-restore
+          LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.sln
+      - name: Setup Testcontainers Cloud Client
+        uses: atomicjar/testcontainers-cloud-setup-action@v1
+        with:
+          token: "${{ secrets.TC_CLOUD_TOKEN }}"
+      - name: Run Webdav tests
+        env:
+          TC_CLOUD_TOKEN: "${{ secrets.TC_CLOUD_TOKEN }}"
+        run: >-
+          dotnet test --no-build --filter="ClassName~WebDavTests"
+          --logger:"console;verbosity=detailed"
+          LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.sln
+  test_dropbox:
+    needs: check_secrets
+    if: needs.check_secrets.outputs.dropbox_secrets_available == 'true'
+    name: DropBox Tests
+    runs-on: "${{ matrix.os }}"
+    strategy:
+      max-parallel: 1
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - windows-latest
+          - macos-latest
+    steps:
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.x
+      - name: Checkout source
+        uses: actions/checkout@v4
+      - name: Restore NuGet dependencies
+        run: >-
+          dotnet restore
+          LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.sln
+      - name: Build project
+        run: >-
+          dotnet build --no-restore
+          LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.sln
+      - name: Run Dropbox tests
+        env:
+          TC_CLOUD_TOKEN: "${{ secrets.TC_CLOUD_TOKEN }}"
+          TESTCREDENTIAL_DROPBOX_FOLDER: "${{ secrets.TESTCREDENTIAL_DROPBOX_FOLDER }}"
+          TESTCREDENTIAL_DROPBOX_TOKEN: "${{ secrets.TESTCREDENTIAL_DROPBOX_TOKEN }}"
+        run: >-
+          dotnet test --no-build --filter="ClassName~DropBoxTests"
+          --logger:"console;verbosity=detailed"
+          LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.sln
+  test_ssh:
+    needs: check_secrets
+    if: needs.check_secrets.outputs.testcontainers_secrets_available == 'true'
+    name: SSH Tests
+    runs-on: "${{ matrix.os }}"
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        os:
+          - ubuntu-latest
+          - windows-latest
+          - macos-latest
+    steps:
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.x
+      - name: Checkout source
+        uses: actions/checkout@v4
+      - name: Restore NuGet dependencies
+        run: >-
+          dotnet restore
+          LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.sln
+      - name: Build project
+        run: >-
+          dotnet build --no-restore
+          LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.sln
+      - name: Setup Testcontainers Cloud Client
+        uses: atomicjar/testcontainers-cloud-setup-action@v1
+        with:
+          token: "${{ secrets.TC_CLOUD_TOKEN }}"
+      - name: Run SSH tests
+        env:
+          TC_CLOUD_TOKEN: "${{ secrets.TC_CLOUD_TOKEN }}"
+        run: >-
+          dotnet test --no-build --filter="ClassName~SshTests"
+          --logger:"console;verbosity=detailed"
+          LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.sln
+  test_googledrive:
+    needs: check_secrets
+    if: needs.check_secrets.outputs.google_secrets_available == 'true'
+    name: Google Drive Tests
+    runs-on: "${{ matrix.os }}"
+    strategy:
+      max-parallel: 1
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - windows-latest
+          - macos-latest
+    steps:
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.x
+      - name: Checkout source
+        uses: actions/checkout@v4
+      - name: Restore NuGet dependencies
+        run: >-
+          dotnet restore
+          LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.sln
+      - name: Build project
+        run: >-
+          dotnet build --no-restore
+          LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.sln
+      - name: Run Googledrive tests
+        env:
+          TESTCREDENTIAL_GOOGLEDRIVE_TOKEN: "${{ secrets.TESTCREDENTIAL_GOOGLEDRIVE_TOKEN }}"
+          TESTCREDENTIAL_GOOGLEDRIVE_FOLDER: "${{ secrets.TESTCREDENTIAL_GOOGLEDRIVE_FOLDER }}"
+        run: >-
+          dotnet test --no-build --filter="ClassName~GoogleDriveTests"
+          --logger:"console;verbosity=detailed"
+          LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.sln
+  test_cifs:
+    needs: check_secrets
+    if: needs.check_secrets.outputs.testcontainers_secrets_available == 'true'
+    name: CIFS Tests
+    runs-on: "${{ matrix.os }}"
+    strategy:
+      max-parallel: 1
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+    steps:
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.x
+      - name: Checkout source
+        uses: actions/checkout@v4
+      - name: Restore NuGet dependencies
+        run: >-
+          dotnet restore
+          LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.sln
+      - name: Build project
+        run: >-
+          dotnet build --no-restore
+          LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.sln
+      - name: Run CIFS tests
+        run: >-
+          dotnet test --no-build --filter="ClassName~CIFSTests"
+          --logger:"console;verbosity=detailed"
+          LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.sln

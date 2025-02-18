@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -28,6 +28,7 @@ using Duplicati.Library.Modules.Builtin.ResultSerialization;
 using System.Threading.Tasks;
 using System.Text.RegularExpressions;
 using System.Linq;
+using Duplicati.Library.Logging;
 
 namespace Duplicati.Library.Modules.Builtin
 {
@@ -97,7 +98,7 @@ namespace Duplicati.Library.Modules.Builtin
             commandlineOptions.TryGetValue(STARTUP_OPTION, out m_startScript);
             commandlineOptions.TryGetValue(REQUIRED_OPTION, out m_requiredScript);
             commandlineOptions.TryGetValue(FINISH_OPTION, out m_finishScript);
-            m_enableArguments = Utility.Utility.ParseBoolOption(commandlineOptions, ENABLE_ARGUMENTS_OPTION);
+            m_enableArguments = Utility.Utility.ParseBoolOption(commandlineOptions.AsReadOnly(), ENABLE_ARGUMENTS_OPTION);
 
             ResultExportFormat resultFormat;
             if (!commandlineOptions.TryGetValue(RESULT_FORMAT_OPTION, out var tmpResultFormat))
@@ -120,7 +121,7 @@ namespace Duplicati.Library.Modules.Builtin
 
             m_options.TryGetValue(OPTION_LOG_FILTER, out var logfilterstring);
             var filter = FilterExpression.ParseLogFilter(logfilterstring);
-            var logLevel = Utility.Utility.ParseEnumOption(m_options, OPTION_LOG_LEVEL, DEFAULT_LOG_LEVEL);
+            var logLevel = Utility.Utility.ParseEnumOption(m_options.AsReadOnly(), OPTION_LOG_LEVEL, DEFAULT_LOG_LEVEL);
 
             m_logstorage = new FileBackedStringList();
             m_logscope = Logging.Log.StartScope(m => m_logstorage.Add(m.AsString(true)), m =>
@@ -159,7 +160,7 @@ namespace Duplicati.Library.Modules.Builtin
                         resultOutputFormatOptions),
                     new CommandLineArgument(TIMEOUT_OPTION, CommandLineArgument.ArgumentType.Timespan, Strings.RunScript.TimeoutoptionShort, Strings.RunScript.TimeoutoptionLong, DEFAULT_TIMEOUT),
 
-                    new CommandLineArgument(OPTION_LOG_LEVEL, CommandLineArgument.ArgumentType.Enumeration, Strings.ReportHelper.OptionLoglevellShort, Strings.ReportHelper.OptionLoglevelLong, DEFAULT_LOG_LEVEL.ToString(), null, Enum.GetNames(typeof(Logging.LogMessageType))),
+                    new CommandLineArgument(OPTION_LOG_LEVEL, CommandLineArgument.ArgumentType.Enumeration, Strings.ReportHelper.OptionLoglevelShort, Strings.ReportHelper.OptionLoglevelLong, DEFAULT_LOG_LEVEL.ToString(), null, Enum.GetNames(typeof(Logging.LogMessageType))),
                     new CommandLineArgument(OPTION_LOG_FILTER, CommandLineArgument.ArgumentType.String, Strings.ReportHelper.OptionLogfilterShort, Strings.ReportHelper.OptionLogfilterLong),
                 ]);
             }
@@ -183,7 +184,7 @@ namespace Duplicati.Library.Modules.Builtin
             m_localpath = localpath;
         }
 
-        public void OnFinish(object result, Exception exception)
+        public void OnFinish(IBasicResults result, Exception exception)
         {
             // Dispose the current log scope
             if (m_logscope != null)
@@ -197,7 +198,7 @@ namespace Duplicati.Library.Modules.Builtin
                 return;
 
             ParsedResultType level;
-            OperationAbortException oae = result as OperationAbortException ?? exception as OperationAbortException;
+            OperationAbortException oae = exception as OperationAbortException;
             if (oae != null)
             {
                 switch (oae.AbortReason)
@@ -216,10 +217,10 @@ namespace Duplicati.Library.Modules.Builtin
                         break;
                 }
             }
-            else if (result is Exception || exception != null)
+            else if (exception != null)
                 level = ParsedResultType.Fatal;
-            else if (result != null && result is IBasicResults results)
-                level = results.ParsedResult;
+            else if (result != null)
+                level = result.ParsedResult;
             else
                 level = ParsedResultType.Error;
 
@@ -303,6 +304,9 @@ namespace Duplicati.Library.Modules.Builtin
 
                         stderr = cs.StandardError;
                         stdout = cs.StandardOutput;
+
+                        SendStdOutToLogs(stdout);
+
                         if (p.ExitCode != 0)
                         {
                             if (!requiredScript)
@@ -449,6 +453,35 @@ namespace Duplicati.Library.Modules.Builtin
                 // If we wait a little here, we eventually get the data.
                 // If the streams have completed we do not wait.
                 m_task.Wait(TimeSpan.FromSeconds(5));
+            }
+        }
+
+        /// <summary>
+        /// Define the log actions for the different prefixes
+        /// </summary>
+        private static readonly Dictionary<string, Action<string>> LogActions = new()
+        {
+            ["LOG:WARN"] = msg => Log.WriteWarningMessage(LOGTAG, "ScriptOutput", null, msg),
+            ["LOG:ERROR"] = msg => Log.WriteErrorMessage(LOGTAG, "ScriptOutput", null, msg),
+            ["LOG:INFO"] = msg => Log.WriteInformationMessage(LOGTAG, "ScriptOutput", msg)
+        };
+
+        /// <summary>
+        /// Parses the STDOUT of the script and sends it to the logs according to the prefix
+        /// </summary>
+        /// <param name="stdout">Captured stdout stream from the process</param>
+        private static void SendStdOutToLogs(string stdout)
+        {
+            if (String.IsNullOrWhiteSpace(stdout))
+                return;
+            // Explicit CR/LF types for all OSes instead of Environment.NewLine in case stdout producer
+            // script explicitly uses a different line ending from the OS the process is ran on.
+            foreach (var line in stdout.Split(["\r\n", "\r", "\n"], StringSplitOptions.RemoveEmptyEntries))
+            {
+                var prefix = LogActions.Keys.FirstOrDefault(p => line.StartsWith(p));
+                if (prefix == null) continue;
+                var message = line.Substring(prefix.Length).Trim();
+                LogActions[prefix](message);
             }
         }
     }

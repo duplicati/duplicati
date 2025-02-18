@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -57,8 +57,9 @@ namespace Duplicati.Library.Main.Database
 
         private readonly System.Data.IDbCommand m_insertfileOperationCommand;
         private readonly System.Data.IDbCommand m_selectfilemetadatahashandsizeCommand;
+        private readonly System.Data.IDbCommand m_getfirstfilesetwithblockinblockset;
 
-        private Dictionary<string, long> m_blockCache;
+        private HashSet<string> m_blocklistHashes;
 
         private long m_filesetId;
 
@@ -93,6 +94,7 @@ namespace Duplicati.Library.Main.Database
             m_selectfileHashCommand = m_connection.CreateCommand();
             m_insertblocksetentryFastCommand = m_connection.CreateCommand();
             m_selectfilemetadatahashandsizeCommand = m_connection.CreateCommand();
+            m_getfirstfilesetwithblockinblockset = m_connection.CreateCommand();
 
             m_findblockCommand.CommandText = @"SELECT ""ID"" FROM ""Block"" WHERE ""Hash"" = ? AND ""Size"" = ?";
             m_findblockCommand.AddParameters(2);
@@ -229,6 +231,13 @@ namespace Duplicati.Library.Main.Database
 
             m_selectblocklistHashesCommand.CommandText = @"SELECT ""Hash"" FROM ""BlocklistHash"" WHERE ""BlocksetID"" = ? ORDER BY ""Index"" ASC ";
             m_selectblocklistHashesCommand.AddParameters(1);
+
+            m_getfirstfilesetwithblockinblockset.CommandText = @"SELECT MIN(""FilesetEntry"".""FilesetID"") FROM ""FilesetEntry"" WHERE  ""FilesetEntry"".""FileID"" IN (
+SELECT ""File"".""ID"" FROM ""File"" WHERE ""File"".""BlocksetID"" IN(
+SELECT ""BlocklistHash"".""BlocksetID"" FROM ""BlocklistHash"" WHERE ""BlocklistHash"".""Hash"" = ?))";
+            m_getfirstfilesetwithblockinblockset.AddParameters(1);
+
+            m_blocklistHashes = new HashSet<string>();
         }
 
         /// <summary>
@@ -253,17 +262,6 @@ namespace Duplicati.Library.Main.Database
         /// <returns>True if the block should be added to the current output</returns>
         public bool AddBlock(string key, long size, long volumeid, System.Data.IDbTransaction transaction = null)
         {
-            long exsize;
-
-            if (m_blockCache != null && m_blockCache.TryGetValue(key, out exsize))
-            {
-                if (exsize == size)
-                    return false;
-
-                Logging.Log.WriteWarningMessage(LOGTAG, "HashCollisionsFound", null, "Found hash collision on {0}, sizes {1} vs {2}. Disabling cache from now on.", key, size, exsize);
-                m_blockCache = null;
-            }
-
             m_findblockCommand.Transaction = transaction;
             m_findblockCommand.SetParameterValue(0, key);
             m_findblockCommand.SetParameterValue(1, size);
@@ -276,8 +274,6 @@ namespace Duplicati.Library.Main.Database
                 m_insertblockCommand.SetParameterValue(1, volumeid);
                 m_insertblockCommand.SetParameterValue(2, size);
                 m_insertblockCommand.ExecuteScalarInt64(m_logQueries);
-                if (m_blockCache != null)
-                    m_blockCache.Add(key, size);
                 return true;
             }
             else
@@ -974,6 +970,23 @@ namespace Duplicati.Library.Main.Database
 
                 tr.Commit();
             }
+        }
+
+        /// <summary>
+        /// Checks if a blocklist hash is known
+        /// </summary>
+        /// <param name="hash">The hash to check</param>
+        /// <param name="transaction">An optional external transaction</param>
+        /// <returns>True if the hash is known, false otherwise</returns>
+        public bool IsBlocklistHashKnown(string hash, IDbTransaction transaction)
+        {
+            m_getfirstfilesetwithblockinblockset.Transaction = transaction;
+            m_getfirstfilesetwithblockinblockset.SetParameterValue(0, hash);
+            var res = m_getfirstfilesetwithblockinblockset.ExecuteScalarInt64();
+            if (res != -1 && res != m_filesetId)
+                return true;
+            else
+                return !m_blocklistHashes.Add(hash);
         }
     }
 }

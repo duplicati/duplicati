@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -25,6 +25,7 @@ using System.Linq;
 using System.Collections.Generic;
 using Duplicati.Library.Interface;
 using System.Runtime.Versioning;
+using System.Runtime.InteropServices;
 
 namespace Duplicati.Library.Common.IO
 {
@@ -32,6 +33,26 @@ namespace Duplicati.Library.Common.IO
     [SupportedOSPlatform("macOS")]
     public struct SystemIOLinux : ISystemIO
     {
+        /// <summary>
+        /// PInvoke methods
+        /// </summary>
+        private static class PInvoke
+        {
+            /// <summary>
+            /// Gets the user ID of the current user
+            /// </summary>
+            /// <returns>The user ID</returns>
+            [DllImport("libc")]
+            public static extern uint getuid();
+
+            /// <summary>
+            /// Gets the group ID of the current user
+            /// </summary>
+            /// <returns></returns>
+            [DllImport("libc")]
+            public static extern uint getgid();
+        }
+
         #region ISystemIO implementation
 
         public void DirectoryCreate(string path)
@@ -64,7 +85,8 @@ namespace Duplicati.Library.Common.IO
             File.SetLastWriteTimeUtc(path, time);
 
             var gtime = FileGetLastWriteTimeUtc(path);
-            if(gtime != time) {
+            if (gtime != time)
+            {
                 Console.Error.WriteLine($"DISS: {path} {gtime.ToFileTimeUtc() - time.ToFileTimeUtc()}");
             }
         }
@@ -92,6 +114,13 @@ namespace Duplicati.Library.Common.IO
         public FileStream FileOpenRead(string path)
         {
             return File.OpenRead(path);
+        }
+
+        public FileStream FileOpenReadWrite(string path)
+        {
+            return File.Exists(path)
+                ? File.Open(path, FileMode.Open, FileAccess.ReadWrite)
+                : File.Create(path);
         }
 
         public FileStream FileOpenWrite(string path)
@@ -123,7 +152,7 @@ namespace Duplicati.Library.Common.IO
         {
             return PosixFile.GetSymlinkTarget(NormalizePath(path));
         }
-        
+
         public string PathGetDirectoryName(string path)
         {
             return Path.GetDirectoryName(NormalizePath(path));
@@ -169,7 +198,7 @@ namespace Duplicati.Library.Common.IO
         {
             return Path.GetExtension(path);
         }
-        
+
         public string PathChangeExtension(string path, string extension)
         {
             return Path.ChangeExtension(path, extension);
@@ -207,7 +236,7 @@ namespace Duplicati.Library.Common.IO
 
             var n = PosixFile.GetExtendedAttributes(f, isSymlink, followSymlink);
             if (n != null)
-                foreach(var x in n)
+                foreach (var x in n)
                     dict["unix-ext:" + x.Key] = Convert.ToBase64String(x.Value);
 
             var fse = PosixFile.GetUserGroupAndPermissions(f);
@@ -231,7 +260,7 @@ namespace Duplicati.Library.Common.IO
 
             var f = NormalizePath(file);
 
-            foreach(var x in data.Where(x => x.Key.StartsWith("unix-ext:", StringComparison.Ordinal)).Select(x => new KeyValuePair<string, byte[]>(x.Key.Substring("unix-ext:".Length), Convert.FromBase64String(x.Value))))
+            foreach (var x in data.Where(x => x.Key.StartsWith("unix-ext:", StringComparison.Ordinal)).Select(x => new KeyValuePair<string, byte[]>(x.Key.Substring("unix-ext:".Length), Convert.FromBase64String(x.Value))))
                 PosixFile.SetExtendedAttribute(f, x.Key, x.Value);
 
             if (restorePermissions && data.ContainsKey("unix:uid-gid-perm"))
@@ -338,6 +367,40 @@ namespace Duplicati.Library.Common.IO
         public IFileEntry FileEntry(FileInfo fileInfo)
         {
             return new FileEntry(fileInfo.Name, fileInfo.Length, fileInfo.LastAccessTime, fileInfo.LastWriteTime);
+        }
+
+        private static (long uid, long gid) GetOwnerAndGroup(string path)
+        {
+            var fi = PosixFile.GetUserGroupAndPermissions(path);
+            return (fi.UID, fi.GID);
+        }
+
+        /// <summary>
+        /// Sets the unix permission user read-write Only.
+        /// </summary>
+        /// <param name="path">The file to set permissions on.</param>
+        public void FileSetPermissionUserRWOnly(string path)
+        {
+            PosixFile.SetUserGroupAndPermissions(
+                path,
+                PInvoke.getuid(),
+                PInvoke.getgid(),
+                Convert.ToInt32("600", 8) /* FilePermissions.S_IRUSR | FilePermissions.S_IWUSR*/
+            );
+        }
+
+        /// <summary>
+        /// Sets the permission to read-write only for the current user.
+        /// </summary>
+        /// <param name="path">The directory to set permissions on.</param>
+        public void DirectorySetPermissionUserRWOnly(string path)
+        {
+            PosixFile.SetUserGroupAndPermissions(
+                path,
+                PInvoke.getuid(),
+                PInvoke.getgid(),
+                Convert.ToInt32("700", 8) /* FilePermissions.S_IRUSR | FilePermissions.S_IWUSR | FilePermissions.S_IXUSR */
+            );
         }
     }
 }

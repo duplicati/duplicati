@@ -1,4 +1,4 @@
-﻿// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -32,7 +32,7 @@ namespace Duplicati.UnitTest
 {
     public class CommandLineOperationsTests : BasicSetupHelper
     {
-        private static readonly string S3_URL = $"https://testfiles.duplicati.com/";
+        public const string S3_URL = $"https://testfiles.duplicati.com/";
 
         /// <summary>
         /// The log tag
@@ -77,9 +77,9 @@ namespace Duplicati.UnitTest
         }
 
         private void DownloadS3FileIfNewer(string destinationFilePath, string url, int retries = 5)
-            => DownloadS3FileIfNewerAsync(destinationFilePath, url, retries).Wait();
+            => DownloadS3FileIfNewerAsync(destinationFilePath, url, retries).Await();
 
-        private async Task DownloadS3FileIfNewerAsync(string destinationFilePath, string url, int retries = 5)
+        public static async Task DownloadS3FileIfNewerAsync(string destinationFilePath, string url, int retries = 5)
         {
             do
             {
@@ -92,7 +92,6 @@ namespace Duplicati.UnitTest
                         request.Headers.IfModifiedSince = systemIO.FileGetLastWriteTimeUtc(destinationFilePath);
 
                     using var response = await httpClient.SendAsync(request);
-                    using var tmpFile = new TempFile();
 
                     if (response.StatusCode == System.Net.HttpStatusCode.NotModified)
                     {
@@ -101,6 +100,7 @@ namespace Duplicati.UnitTest
                     }
                     else
                     {
+                        using var tmpFile = new TempFile();
                         Console.WriteLine($"Downloading file from {url} to: {tmpFile}");
                         var contentStream = await response.Content.ReadAsStreamAsync();
                         var fileInfo = new FileInfo(tmpFile);
@@ -126,6 +126,13 @@ namespace Duplicati.UnitTest
                         throw;
 
                     await Task.Delay(TimeSpan.FromSeconds(1)).ConfigureAwait(false);
+                    try
+                    {
+                        System.Net.Dns.GetHostEntry(new System.Uri(url).Host);
+                    }
+                    catch (Exception)
+                    {
+                    }
                     Console.WriteLine($"Retrying download, {retries} retries left.");
                 }
             } while (retries > 0);

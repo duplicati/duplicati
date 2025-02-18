@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <AssemblyName>Duplicati.WindowsService.Implementation</AssemblyName>
+    <Copyright>Copyright © 2025 Team Duplicati, MIT license</Copyright>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Library\AutoUpdater\Duplicati.Library.AutoUpdater.csproj" />
+    <ProjectReference Include="..\Library\Utility\Duplicati.Library.Utility.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\Service\Runner.cs">
+      <Link>Runner.cs</Link>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.ServiceProcess.ServiceController" Version="5.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.DotNet.Analyzers.Compatibility" Version="0.2.12-alpha">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+</Project>

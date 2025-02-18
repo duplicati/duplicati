@@ -40,8 +40,8 @@ backupApp.directive('backupEditUri', function(gettextCatalog) {
                 if (dlg != null)
                     dlg.dismiss();
 
-                dlg = DialogService.dialog(gettextCatalog.getString('Testing ...'), gettextCatalog.getString('Testing connection ...'), [], null, function() {
-                    AppService.post('/remoteoperation/test', uri).then(function() {
+                dlg = DialogService.dialog(gettextCatalog.getString('Testing …'), gettextCatalog.getString('Testing connection …'), [], null, function() {
+                    AppService.postJson('/remoteoperation/test', { path: uri }).then(function() {
                         scope.Testing = false;
                         dlg.dismiss();
 
@@ -60,7 +60,7 @@ backupApp.directive('backupEditUri', function(gettextCatalog) {
             var createFolder = function() {
                 hasTriedCreate = true;
                 scope.Testing = true;
-                AppService.post('/remoteoperation/create', uri).then(testConnection, handleError);
+                AppService.postJson('/remoteoperation/create', { path: uri }).then(testConnection, handleError);
             };
 
             var appendApprovedCert = function(hash)

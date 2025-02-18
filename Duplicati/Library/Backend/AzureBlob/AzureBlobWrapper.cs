@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -40,7 +40,7 @@ namespace Duplicati.Library.Backend.AzureBlob
         private readonly string _containerName;
         private readonly CloudBlobContainer _container;
         private readonly OperationContext _operationContext;
-        
+
         // Note: May need metadata; need to test with Azure blobs
         private const BlobListingDetails ListDetails = BlobListingDetails.None;
 
@@ -69,12 +69,14 @@ namespace Duplicati.Library.Backend.AzureBlob
 
         public AzureBlobWrapper(string accountName, string accessKey, string sasToken, string containerName)
         {
-            _operationContext = new() { 
+            _operationContext = new()
+            {
                 CustomUserAgent = string.Format(
                     "APN/1.0 Duplicati/{0} AzureBlob/2.0 {1}",
                     System.Reflection.Assembly.GetExecutingAssembly().GetName().Version,
                     Microsoft.WindowsAzure.Storage.Shared.Protocol.Constants.HeaderConstants.UserAgent
-            )};
+            )
+            };
 
             string connectionString;
             if (sasToken != null)
@@ -95,15 +97,15 @@ namespace Duplicati.Library.Backend.AzureBlob
             _container = blobClient.GetContainerReference(containerName);
         }
 
-        public void AddContainer()
+        public async Task AddContainerAsync(CancellationToken cancellationToken)
         {
-            _container.CreateAsync(default, _operationContext).GetAwaiter().GetResult();
-            _container.SetPermissionsAsync(new BlobContainerPermissions { PublicAccess = BlobContainerPublicAccessType.Off });
+            await _container.CreateAsync(default, default, _operationContext, cancellationToken).ConfigureAwait(false);
+            await _container.SetPermissionsAsync(new BlobContainerPermissions { PublicAccess = BlobContainerPublicAccessType.Off }, default, default, _operationContext, cancellationToken).ConfigureAwait(false);
         }
 
-        public virtual void GetFileStream(string keyName, Stream target)
+        public virtual Task GetFileStreamAsync(string keyName, Stream target, CancellationToken cancellationToken)
         {
-            _container.GetBlockBlobReference(keyName).DownloadToStreamAsync(target, default, default, _operationContext).GetAwaiter().GetResult();
+            return _container.GetBlockBlobReference(keyName).DownloadToStreamAsync(target, default, default, _operationContext, cancellationToken);
         }
 
         public virtual Task AddFileStream(string keyName, Stream source, CancellationToken cancelToken)
@@ -111,9 +113,9 @@ namespace Duplicati.Library.Backend.AzureBlob
             return _container.GetBlockBlobReference(keyName).UploadFromStreamAsync(source, source.Length, default, default, _operationContext, cancelToken);
         }
 
-        public void DeleteObject(string keyName)
+        public Task DeleteObjectAsync(string keyName, CancellationToken cancelToken)
         {
-            _container.GetBlockBlobReference(keyName).DeleteIfExistsAsync(default, default, default, _operationContext).GetAwaiter().GetResult();
+            return _container.GetBlockBlobReference(keyName).DeleteIfExistsAsync(default, default, default, _operationContext, cancelToken);
         }
 
         private async Task<List<IListBlobItem>> ListContainerEntriesAsync()

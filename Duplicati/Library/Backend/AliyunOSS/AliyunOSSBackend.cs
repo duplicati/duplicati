@@ -1,7 +1,28 @@
-﻿using Aliyun.OSS;
+// Copyright (C) 2025, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
+using Aliyun.OSS;
 using Aliyun.OSS.Common;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Utility;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -13,14 +34,13 @@ namespace Duplicati.Library.Backend.AliyunOSS
 {
     /// <summary>
     /// Aliyun Object Storage Service(OSS) is a massive, secure, low-cost, and highly reliable cloud storage service, offering up to 99.995% service availability.It offers a variety of storage types to choose from, comprehensively optimizing storage costs.
-    /// en: https://www.alibabacloud.com/zh/product/object-storage-service
+    /// en: https://www.alibabacloud.com/en/product/object-storage-service
     /// zh: https://www.aliyun.com/product/oss
     /// </summary>
     public class OSS : IBackend, IStreamingBackend, IRenameEnabledBackend
     {
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<OSS>();
 
-        private const string OSS_REGION = "oss-region";
         private const string OSS_BUCKET_NAME = "oss-bucket-name";
         private const string OSS_ENDPOINT = "oss-endpoint";
         private const string OSS_ACCESS_KEY_ID = "oss-access-key-id";
@@ -41,11 +61,6 @@ namespace Duplicati.Library.Backend.AliyunOSS
             if (!string.IsNullOrEmpty(prefix))
             {
                 _ossOptions.Path = prefix;
-            }
-
-            if (options.ContainsKey(OSS_REGION))
-            {
-                _ossOptions.Region = options[OSS_REGION];
             }
 
             if (options.ContainsKey(OSS_ACCESS_KEY_ID))
@@ -142,16 +157,16 @@ namespace Duplicati.Library.Backend.AliyunOSS
         public async Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
         {
             using (FileStream fs = File.Open(filename, FileMode.Open, FileAccess.Read, FileShare.Read))
-                await PutAsync(remotename, fs, cancelToken);
+                await PutAsync(remotename, fs, cancelToken).ConfigureAwait(false);
         }
 
-        public void Get(string remotename, string filename)
+        public async Task GetAsync(string remotename, string filename, CancellationToken cancelToken)
         {
             using (var fs = File.Open(filename, FileMode.Create, FileAccess.Write, FileShare.None))
-                Get(remotename, fs);
+                await GetAsync(remotename, fs, cancelToken).ConfigureAwait(false);
         }
 
-        public void Delete(string remotename)
+        public Task DeleteAsync(string remotename, CancellationToken cancelToken)
         {
             try
             {
@@ -172,23 +187,25 @@ namespace Duplicati.Library.Backend.AliyunOSS
                 Logging.Log.WriteErrorMessage(LOGTAG, "Delete", ex, "Delete object failed. {0}", ex.Message);
                 throw;
             }
+
+            return Task.CompletedTask;
         }
 
-        public void Test()
+        public Task TestAsync(CancellationToken cancelToken)
         {
             GetClient();
+            return Task.CompletedTask;
         }
 
-        public void CreateFolder()
-        {
+        public Task CreateFolderAsync(CancellationToken cancelToken)
             // No need to create folders
-        }
+            => Task.CompletedTask;
 
         public void Dispose()
         {
         }
 
-        public Task PutAsync(string remotename, Stream stream, CancellationToken cancelToken)
+        public async Task PutAsync(string remotename, Stream stream, CancellationToken cancelToken)
         {
             var bucketName = _ossOptions.BucketName;
 
@@ -197,21 +214,22 @@ namespace Duplicati.Library.Backend.AliyunOSS
             var client = GetClient();
             try
             {
-                var objectResult = client.PutObject(bucketName, objectName, stream);
+                var objectResult = await Task.Factory.FromAsync(
+                    (cb, state) => client.BeginPutObject(bucketName, objectName, stream, cb, state),
+                    client.EndPutObject,
+                    null).ConfigureAwait(false);
+
                 if (objectResult?.HttpStatusCode != HttpStatusCode.OK)
-                {
                     throw new Exception("Put object failed");
-                }
             }
             catch (Exception ex)
             {
                 throw new Exception($"Put object failed, {ex.Message}");
             }
 
-            return Task.CompletedTask;
         }
 
-        public void Get(string remotename, Stream stream)
+        public async Task GetAsync(string remotename, Stream stream, CancellationToken cancelToken)
         {
             var bucketName = _ossOptions.BucketName;
 
@@ -221,14 +239,16 @@ namespace Duplicati.Library.Backend.AliyunOSS
 
             try
             {
-                var obj = client.GetObject(bucketName, objectName);
+                var obj = await Task.Factory.FromAsync(
+                    (cb, state) => client.BeginGetObject(bucketName, objectName, null, null),
+                    client.EndGetObject,
+                    null).ConfigureAwait(false);
+
                 if (obj.HttpStatusCode != HttpStatusCode.OK)
                     throw new Exception("Get failed");
 
                 using (var requestStream = obj.Content)
-                {
-                    requestStream.CopyTo(stream);
-                }
+                    await Library.Utility.Utility.CopyStreamAsync(requestStream, stream, cancelToken).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -237,7 +257,7 @@ namespace Duplicati.Library.Backend.AliyunOSS
             }
         }
 
-        public void Rename(string oldname, string newname)
+        public async Task RenameAsync(string oldname, string newname, CancellationToken cancelToken)
         {
             var bucketName = _ossOptions.BucketName;
 
@@ -255,14 +275,19 @@ namespace Duplicati.Library.Backend.AliyunOSS
             {
                 // copy file
                 var req = new CopyObjectRequest(sourceBucket, sourceObject, targetBucket, targetObject);
-                var res = client.CopyObject(req);
+
+                var res = await Task.Factory.FromAsync(
+                    (cb, state) => client.BeginCopyObject(req, cb, state),
+                    client.EndCopyResult,
+                    null).ConfigureAwait(false);
+
                 if (res?.HttpStatusCode != HttpStatusCode.OK)
                 {
                     throw new Exception("file rename failed");
                 }
 
                 // del old file
-                Delete(oldname);
+                await DeleteAsync(oldname, cancelToken).ConfigureAwait(false);
             }
             catch (OssException ex)
             {
@@ -286,16 +311,15 @@ namespace Duplicati.Library.Backend.AliyunOSS
         {
             get
             {
-                return new List<ICommandLineArgument>(new ICommandLineArgument[] {
-                    new CommandLineArgument(OSS_REGION, CommandLineArgument.ArgumentType.String, Strings.OSSBackend.OSSRegionDescriptionShort, Strings.OSSBackend.OSSRegionDescriptionLong),
+                return new List<ICommandLineArgument>([
                     new CommandLineArgument(OSS_ACCESS_KEY_ID, CommandLineArgument.ArgumentType.String, Strings.OSSBackend.OSSAccessKeyIdDescriptionShort, Strings.OSSBackend.OSSAccessKeyIdDescriptionLong),
                     new CommandLineArgument(OSS_ACCESS_KEY_SECRET, CommandLineArgument.ArgumentType.Password, Strings.OSSBackend.OSSAccessKeySecretDescriptionShort, Strings.OSSBackend.OSSAccessKeySecretDescriptionLong),
                     new CommandLineArgument(OSS_BUCKET_NAME, CommandLineArgument.ArgumentType.String, Strings.OSSBackend.OSSBucketNameDescriptionShort, Strings.OSSBackend.OSSBucketNameDescriptionLong),
                     new CommandLineArgument(OSS_ENDPOINT, CommandLineArgument.ArgumentType.String, Strings.OSSBackend.OSSEndpointDescriptionShort, Strings.OSSBackend.OSSEndpointDescriptionLong)
-                });
+                ]);
             }
         }
 
-        public string[] DNSName => null;
+        public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(Array.Empty<string>());
     }
 }

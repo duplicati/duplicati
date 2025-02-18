@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -24,7 +24,6 @@ using System.IO;
 using System.Linq;
 using System.Management;
 using System.Runtime.Versioning;
-using Duplicati.Library.Common;
 using Duplicati.Library.Common.IO;
 
 namespace Duplicati.Library.Snapshots
@@ -90,6 +89,11 @@ namespace Duplicati.Library.Snapshots
         /// </summary>
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<HyperVUtility>();
 
+        /// <summary>
+        /// The System.IO abstraction for the Windows platform
+        /// </summary>
+        private static readonly ISystemIO IO_WIN = SystemIO.IO_OS;
+
         private readonly ManagementScope _wmiScope;
         private readonly string _vmIdField;
         private readonly string _wmiHost = "localhost";
@@ -123,9 +127,8 @@ namespace Duplicati.Library.Snapshots
                 return;
             }
 
-            // TODO: Replace with OperatingSystem.IsWindowsVersionAtLeast(6,2) if that is correct
             //Set the namespace depending off host OS
-            _wmiv2Namespace = Environment.OSVersion.Version.Major > 6 || (Environment.OSVersion.Version.Major == 6 && Environment.OSVersion.Version.Minor >= 2);
+            _wmiv2Namespace = OperatingSystem.IsWindowsVersionAtLeast(6, 2);
 
             //Set the scope to use in WMI. V2 for Server 2012 or newer.
             _wmiScope = _wmiv2Namespace
@@ -219,7 +222,7 @@ namespace Duplicati.Library.Snapshots
         {
             using (var vssBackupComponents = new VssBackupComponents())
             {
-                var writerGUIDS = new [] { HyperVWriterGuid };
+                var writerGUIDS = new[] { HyperVWriterGuid };
 
                 try
                 {
@@ -229,7 +232,8 @@ namespace Duplicati.Library.Snapshots
                 {
                     throw new Interface.UserInformationException("Microsoft Hyper-V VSS Writer not found - cannot backup Hyper-V machines.", "NoHyperVVssWriter");
                 }
-                foreach (var o in vssBackupComponents.ParseWriterMetaData(writerGUIDS)) {
+                foreach (var o in vssBackupComponents.ParseWriterMetaData(writerGUIDS))
+                {
                     yield return o;
                 }
             }
@@ -251,7 +255,7 @@ namespace Duplicati.Library.Snapshots
             using (var mObject1 = new ManagementObjectSearcher(_wmiScope, new ObjectQuery(wmiQuery)).Get().Cast<ManagementObject>().First())
                 if (_wmiv2Namespace)
                 {
-                    path = SystemIO.IO_WIN.PathCombine((string)mObject1["ConfigurationDataRoot"], (string)mObject1["ConfigurationFile"]);
+                    path = IO_WIN.PathCombine((string)mObject1["ConfigurationDataRoot"], (string)mObject1["ConfigurationFile"]);
                     if (File.Exists(path))
                         result.Add(path);
 
@@ -261,10 +265,10 @@ namespace Duplicati.Library.Snapshots
                     {
                         foreach (var snap in snaps)
                         {
-                            path = SystemIO.IO_WIN.PathCombine((string)snap["ConfigurationDataRoot"], (string)snap["ConfigurationFile"]);
+                            path = IO_WIN.PathCombine((string)snap["ConfigurationDataRoot"], (string)snap["ConfigurationFile"]);
                             if (File.Exists(path))
                                 result.Add(path);
-                            path = Util.AppendDirSeparator(SystemIO.IO_WIN.PathCombine((string)snap["ConfigurationDataRoot"], (string)snap["SuspendDataRoot"]));
+                            path = Util.AppendDirSeparator(IO_WIN.PathCombine((string)snap["ConfigurationDataRoot"], (string)snap["SuspendDataRoot"]));
                             if (Directory.Exists(path))
                                 result.Add(path);
                         }
@@ -272,10 +276,10 @@ namespace Duplicati.Library.Snapshots
                 }
                 else
                 {
-                    path = SystemIO.IO_WIN.PathCombine((string)mObject1["ExternalDataRoot"], "Virtual Machines", vmID + ".xml");
+                    path = IO_WIN.PathCombine((string)mObject1["ExternalDataRoot"], "Virtual Machines", vmID + ".xml");
                     if (File.Exists(path))
                         result.Add(path);
-                    path = Util.AppendDirSeparator(SystemIO.IO_WIN.PathCombine((string)mObject1["ExternalDataRoot"], "Virtual Machines", vmID));
+                    path = Util.AppendDirSeparator(IO_WIN.PathCombine((string)mObject1["ExternalDataRoot"], "Virtual Machines", vmID));
                     if (Directory.Exists(path))
                         result.Add(path);
 
@@ -285,10 +289,10 @@ namespace Duplicati.Library.Snapshots
 
                     foreach (var snapID in snapsIDs)
                     {
-                        path = SystemIO.IO_WIN.PathCombine((string)mObject1["SnapshotDataRoot"], "Snapshots", snapID.Replace("Microsoft:", "") + ".xml");
+                        path = IO_WIN.PathCombine((string)mObject1["SnapshotDataRoot"], "Snapshots", snapID.Replace("Microsoft:", "") + ".xml");
                         if (File.Exists(path))
                             result.Add(path);
-                        path = Util.AppendDirSeparator(SystemIO.IO_WIN.PathCombine((string)mObject1["SnapshotDataRoot"], "Snapshots", snapID.Replace("Microsoft:", "")));
+                        path = Util.AppendDirSeparator(IO_WIN.PathCombine((string)mObject1["SnapshotDataRoot"], "Snapshots", snapID.Replace("Microsoft:", "")));
                         if (Directory.Exists(path))
                             result.Add(path);
                     }

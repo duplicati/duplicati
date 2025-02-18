@@ -1,0 +1,11 @@
+# Defaults for Duplicati Agent initscript
+# sourced by /lib/systemd/system/duplicati-agent.service
+# installed at /etc/sysconfig/duplicati-agent.default by the maintainer scripts
+# copy to /etc/sysconfig/duplicati and edit if required
+
+#
+# This is a POSIX shell fragment
+#
+
+# Additional options that are passed to the Daemon.
+DAEMON_OPTS=""

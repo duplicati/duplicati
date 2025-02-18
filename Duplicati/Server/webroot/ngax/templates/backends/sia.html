@@ -4,7 +4,7 @@
 </div>
 <div class="input text">
     <label for="sia_path" translate>Folder path</label>
-    <input type="text" name="sia_targetpath" id="sia_targetpath" ng-model="$parent.sia_targetpath" placeholder="{{'Target path, ie /backup' | translate}}" />
+    <input type="text" name="sia_targetpath" id="sia_targetpath" ng-model="$parent.sia_targetpath" placeholder="{{'Target path. Example: /backup' | translate}}" />
 </div>
 <div class="input password">
     <label for="sia_password" translate>Server password</label>
@@ -14,4 +14,7 @@
     <label for="sia_redundancy" translate>Minimum redundancy</label>
     <input type="text" name="sia_redundancy" id="sia_redundancy" ng-model="$parent.sia_redundancy" placeholder="{{'1.5'}}" />
 </div>
-<div>Choose 1.0 for fast backup, 1.5 for decent reliability, 2.0 for safer upload but slow backup.<br /><b>Note:</b>Sia will still boost redundancy later as long as you're connected to your hosts.</div>
+<div class="note">
+    <p translate>Choose 1.0 for fast backup, 1.5 for decent reliability, 2.0 for safer upload but slow backup.</p>
+    <p translate><b>Note:</b> Sia will still boost redundancy later as long as you're connected to your hosts.</p>
+</div>

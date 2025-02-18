@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -19,6 +19,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 using Duplicati.Library.Interface;
+using Duplicati.Library.Localization.Short;
 using System;
 using System.Collections.Generic;
 
@@ -40,18 +41,18 @@ namespace Duplicati.Library.Backend.Storj
 
         public string Key { get { return "storj-getconfig"; } }
 
-        public string DisplayName { get { return "Storj DCS configuration module"; } }
+        public string DisplayName { get { return LC.L("Storj DCS configuration module"); } }
 
-        public string Description { get { return "Exposes Storj DCS configuration as a web module"; } }
+        public string Description { get { return LC.L("Expose Storj DCS configuration as a web module"); } }
 
         public IList<ICommandLineArgument> SupportedCommands
         {
             get
             {
-                return new List<ICommandLineArgument>(new ICommandLineArgument[] {
-                    new CommandLineArgument(KEY_CONFIGTYPE, CommandLineArgument.ArgumentType.Enumeration, "The config to get", "Provides different config values", DEFAULT_CONFIG_TYPE_STR, Enum.GetNames(typeof(ConfigType)))
+                return new List<ICommandLineArgument>([
+                    new CommandLineArgument(KEY_CONFIGTYPE, CommandLineArgument.ArgumentType.Enumeration, LC.L("The config to get"), LC.L("Provide different config values"), DEFAULT_CONFIG_TYPE_STR, Enum.GetNames(typeof(ConfigType)))
 
-                });
+                ]);
             }
         }
 

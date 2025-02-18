@@ -49,6 +49,9 @@ backupApp.controller('EditBackupController', function ($rootScope, $scope, $rout
 
     $scope.$watch('Options["passphrase"]', computePassPhraseStrength);
     $scope.$watch('RepeatPasshrase', computePassPhraseStrength);
+    $scope.parseSizeString = function(v) { 
+        return AppUtils.parseSizeString(v);
+    }
 
     $scope.checkGpgAsymmetric = function() {
         if (!this.Options) {
@@ -93,7 +96,7 @@ backupApp.controller('EditBackupController', function ($rootScope, $scope, $rout
     };
 
     $scope.importUrl = function () {
-        DialogService.textareaDialog('Import URL', 'Enter a Backup destination URL:', null, gettextCatalog.getString('Enter URL'), [gettextCatalog.getString('Cancel'), gettextCatalog.getString('OK')], null, function(btn, input) {
+        DialogService.textareaDialog(gettextCatalog.getString('Import URL'), gettextCatalog.getString('Enter a backup destination URL:'), null, gettextCatalog.getString('Enter URL'), [gettextCatalog.getString('Cancel'), gettextCatalog.getString('OK')], null, function(btn, input) {
             if (btn == 1)
                 scope.Backup.TargetURL = input;
         });
@@ -101,7 +104,7 @@ backupApp.controller('EditBackupController', function ($rootScope, $scope, $rout
 
     $scope.copyUrlToClipboard = function () {
         $scope.builduri(function(res) {
-            DialogService.textareaDialog('Copy URL', null, null, res, [gettextCatalog.getString('OK')], 'templates/copy_clipboard_buttons.html');
+            DialogService.textareaDialog(gettextCatalog.getString('Copy URL'), null, null, res, [gettextCatalog.getString('OK')], 'templates/copy_clipboard_buttons.html');
         });
     };
 
@@ -144,7 +147,7 @@ backupApp.controller('EditBackupController', function ($rootScope, $scope, $rout
         function continuation() {
             scope.validatingSourcePath = true;
 
-            AppService.post('/filesystem/validate', {path: scope.manualSourcePath}).then(function() {
+            AppService.postJson('/filesystem/validate', {path: scope.manualSourcePath}).then(function() {
                 scope.validatingSourcePath = false;
                 scope.Backup.Sources.push(scope.manualSourcePath);
                 scope.manualSourcePath = null;
@@ -325,7 +328,7 @@ backupApp.controller('EditBackupController', function ($rootScope, $scope, $rout
 
             result.Backup.Settings.push({
                 Name: k,
-                Value: opts[k],
+                Value: opts[k]?.toString(),
                 Filter: origfilter,
                 Argument: origarg
             });
@@ -439,13 +442,13 @@ backupApp.controller('EditBackupController', function ($rootScope, $scope, $rout
         if ($routeParams.backupid == null) {
 
             function postDb() {
-                AppService.post('/backups', result, {'headers': {'Content-Type': 'application/json'}}).then(function() {
+                AppService.postJson('/backups', result).then(function() {
                     $location.path('/');
                 }, AppUtils.connectionError);
             };
 
             function checkForExistingDb(continuation) {
-                AppService.post('/remoteoperation/dbpath', $scope.Backup.TargetURL, {'headers': {'Content-Type': 'application/text'}}).then(
+                AppService.postJson('/remoteoperation/dbpath', { path: $scope.Backup.TargetURL }).then(
                     function(resp) {
                         if (resp.data.Exists) {
                             DialogService.dialog(gettextCatalog.getString('Use existing database?'), gettextCatalog.getString('An existing local database for the storage has been found.\nRe-using the database will allow the command-line and server instances to work on the same remote storage.\n\n Do you wish to use the existing database?'), [gettextCatalog.getString('Cancel'), gettextCatalog.getString('Yes'), gettextCatalog.getString('No')], function(ix) {
@@ -480,7 +483,7 @@ backupApp.controller('EditBackupController', function ($rootScope, $scope, $rout
         } else {
 
             function putDb() {
-                AppService.put('/backup/' + $routeParams.backupid, result, {'headers': {'Content-Type': 'application/json'}}).then(function() {
+                AppService.put('/backup/' + $routeParams.backupid, result).then(function() {
                     $location.path('/');
                 }, AppUtils.connectionError);
             }
@@ -696,7 +699,7 @@ backupApp.controller('EditBackupController', function ($rootScope, $scope, $rout
 
         AppService.get('/backupdefaults').then(function(data) {
 
-            $scope.rawddata = data.data.data;
+            $scope.rawddata = data.data;
 
             if ($location.$$path.indexOf('/add-import') == 0 && $rootScope.importConfig != null)
                 angular.merge($scope.rawddata, $rootScope.importConfig);
@@ -711,7 +714,7 @@ backupApp.controller('EditBackupController', function ($rootScope, $scope, $rout
 
         AppService.get('/backup/' + $routeParams.backupid).then(function(data) {
 
-            $scope.rawddata = data.data.data;
+            $scope.rawddata = data.data;
             setupScope($scope.rawddata);
 
         }, function() {

@@ -1,0 +1,14 @@
+[Unit]
+Description=Duplicati Agent
+After=network.target
+
+[Service]
+Nice=19
+IOSchedulingClass=idle
+IOSchedulingPriority=7
+EnvironmentFile=-/etc/default/duplicati-agent
+ExecStart=/usr/bin/duplicati-agent run $DAEMON_OPTS
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

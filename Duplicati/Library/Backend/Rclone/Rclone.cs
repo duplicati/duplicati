@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -54,38 +54,35 @@ namespace Duplicati.Library.Backend
 
         public Rclone()
         {
-            
+
         }
 
         public Rclone(string url, Dictionary<string, string> options)
         {
             var uri = new Utility.Uri(url);
-
-            remote_repo = uri.Host;
-            remote_path = uri.Path;
-
-
-            local_repo = "local";
-            opt_rclone = "";
-            rclone_executable = "rclone";
             /*should check here if program is installed */
 
-            if (options.ContainsKey(OPTION_LOCAL_REPO))
-                local_repo = options[OPTION_LOCAL_REPO];
-            if (options.ContainsKey(OPTION_REMOTE_REPO))
-                remote_repo = options[OPTION_REMOTE_REPO];
-            if (options.ContainsKey(OPTION_REMOTE_PATH))
-                remote_path = options[OPTION_REMOTE_PATH];
-            if (options.ContainsKey(OPTION_RCLONE))
-                opt_rclone = options[OPTION_RCLONE];
-            if (options.ContainsKey(OPTION_RCLONE_EXECUTABLE))
-                rclone_executable = options[OPTION_RCLONE_EXECUTABLE];
+            local_repo = options.GetValueOrDefault(OPTION_LOCAL_REPO, local_repo);
+            remote_repo = options.GetValueOrDefault(OPTION_REMOTE_REPO, remote_repo);
+            remote_path = options.GetValueOrDefault(OPTION_REMOTE_PATH, remote_path);
+            opt_rclone = options.GetValueOrDefault(OPTION_RCLONE, opt_rclone) ?? "";
+            rclone_executable = options.GetValueOrDefault(OPTION_RCLONE_EXECUTABLE, rclone_executable);
+
+            if (string.IsNullOrWhiteSpace(local_repo))
+                local_repo = "local";
+            if (string.IsNullOrWhiteSpace(remote_repo))
+                remote_repo = uri.Host;
+            if (string.IsNullOrWhiteSpace(remote_path))
+                remote_path = uri.Path;
+            if (string.IsNullOrWhiteSpace(rclone_executable))
+                rclone_executable = "rclone";
+
 #if DEBUG
             Console.WriteLine("Constructor {0}: {1}:{2} {3}", local_repo, remote_repo, remote_path, opt_rclone);
 #endif
         }
 
-#region IBackendInterface Members
+        #region IBackendInterface Members
 
         public string DisplayName
         {
@@ -132,13 +129,13 @@ namespace Duplicati.Library.Backend
                     if (!String.IsNullOrEmpty(e.Data))
                     {
 #if DEBUG
-                      //  Console.Error.WriteLine(String.Format("output {0}", e.Data));
+                        //  Console.Error.WriteLine(String.Format("output {0}", e.Data));
 #endif
                         // append the new data to the data already read-in
                         outputBuilder.Append(e.Data);
                     }
                 }
-            );  
+            );
 
             process.ErrorDataReceived += new System.Diagnostics.DataReceivedEventHandler
             (
@@ -163,7 +160,7 @@ namespace Duplicati.Library.Backend
             process.BeginOutputReadLine();
             process.BeginErrorReadLine();
 
-            while(!process.HasExited)
+            while (!process.HasExited)
             {
                 await Task.Delay(500).ConfigureAwait(false);
                 if (cancelToken.IsCancellationRequested)
@@ -186,7 +183,8 @@ namespace Duplicati.Library.Backend
                 throw new Exception($"Missing config file? {errorBuilder}");
             }
 
-            if (errorBuilder.Length > 0) {
+            if (errorBuilder.Length > 0)
+            {
                 throw new Exception(errorBuilder.ToString());
             }
 
@@ -235,11 +233,11 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
+        public async Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
         {
             try
             {
-                return RcloneCommandExecuter(rclone_executable, $"copyto {local_repo}:{filename} {remote_repo}:{remote_path}/{remotename}", cancelToken);
+                await RcloneCommandExecuter(rclone_executable, $"copyto {local_repo}:{filename} {remote_repo}:{remote_path}/{remotename}", cancelToken).ConfigureAwait(false);
             }
             catch (FolderMissingException ex)
             {
@@ -247,26 +245,28 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public void Get(string remotename, string filename)
+        public async Task GetAsync(string remotename, string filename, CancellationToken cancelToken)
         {
             try
             {
-                RcloneCommandExecuter(rclone_executable, $"copyto {remote_repo}:{Path.Combine(this.remote_path, remotename)} {local_repo}:{filename}", CancellationToken.None).Await();
+                await RcloneCommandExecuter(rclone_executable, $"copyto {remote_repo}:{Path.Combine(this.remote_path, remotename)} {local_repo}:{filename}", cancelToken).ConfigureAwait(false);
             }
-            catch (FolderMissingException ex) {
+            catch (FolderMissingException ex)
+            {
                 throw new FileMissingException(ex);
             }
         }
 
-        public void Delete(string remotename)
+        public async Task DeleteAsync(string remotename, CancellationToken cancelToken)
         {
             //this will actually delete the folder if remotename is a folder... 
             // Will give a "directory not found" error if the file does not exist, need to change that to a missing file exception
             try
             {
-                RcloneCommandExecuter(rclone_executable, $"delete {remote_repo}:{Path.Combine(remote_path, remotename)}", CancellationToken.None).Await();
+                await RcloneCommandExecuter(rclone_executable, $"delete {remote_repo}:{Path.Combine(remote_path, remotename)}", cancelToken).ConfigureAwait(false);
             }
-            catch (FolderMissingException ex) {
+            catch (FolderMissingException ex)
+            {
                 throw new FileMissingException(ex);
             }
         }
@@ -275,13 +275,13 @@ namespace Duplicati.Library.Backend
         {
             get
             {
-                return new List<ICommandLineArgument>(new ICommandLineArgument[] {
+                return new List<ICommandLineArgument>([
                     new CommandLineArgument(OPTION_LOCAL_REPO, CommandLineArgument.ArgumentType.String, Strings.Rclone.RcloneLocalRepoShort, Strings.Rclone.RcloneLocalRepoLong, "local"),
                     new CommandLineArgument(OPTION_REMOTE_REPO, CommandLineArgument.ArgumentType.String, Strings.Rclone.RcloneRemoteRepoShort, Strings.Rclone.RcloneRemoteRepoLong, "remote"),
                     new CommandLineArgument(OPTION_REMOTE_PATH, CommandLineArgument.ArgumentType.String, Strings.Rclone.RcloneRemotePathShort, Strings.Rclone.RcloneRemotePathLong, "backup"),
                     new CommandLineArgument(OPTION_RCLONE, CommandLineArgument.ArgumentType.String, Strings.Rclone.RcloneOptionRcloneShort, Strings.Rclone.RcloneOptionRcloneLong, ""),
                     new CommandLineArgument(OPTION_RCLONE_EXECUTABLE, CommandLineArgument.ArgumentType.String, Strings.Rclone.RcloneExecutableShort, Strings.Rclone.RcloneExecutableLong, "rclone")
-                });
+                ]);
 
             }
         }
@@ -294,35 +294,29 @@ namespace Duplicati.Library.Backend
             }
         }
 
+        public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(new[] { remote_repo });
 
-
-        public string[] DNSName
-        {
-            get { return new string[] { remote_repo }; }
-        }
-
-
-
-        public void Test()
+        public Task TestAsync(CancellationToken cancelToken)
         {
             this.TestList();
+            return Task.CompletedTask;
         }
 
-        public void CreateFolder()
+        public Task CreateFolderAsync(CancellationToken cancelToken)
         {
-            RcloneCommandExecuter(rclone_executable, $"mkdir {remote_repo}:{remote_path}", CancellationToken.None).Await();
+            return RcloneCommandExecuter(rclone_executable, $"mkdir {remote_repo}:{remote_path}", cancelToken);
         }
 
-#endregion
+        #endregion
 
-#region IDisposable Members
+        #region IDisposable Members
 
         public void Dispose()
         {
 
         }
 
-#endregion
+        #endregion
 
 
 

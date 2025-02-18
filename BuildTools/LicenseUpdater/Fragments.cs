@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -54,8 +54,14 @@ DEALINGS IN THE SOFTWARE.".Replace("YYYY", DateTime.UtcNow.Year.ToString());
 
     public static Regex CS_MIT_MATCH = new Regex(@"(?<license>//\s+Copyright \(C\) \d{4}, The Duplicati Team.+(?:copyright notice and this permission notice).+IN THE SOFTWARE\.)", RE_OPTS);
 
+    public static Regex CSPROJ_COPYRIGHT_MATCH = new Regex(@"<Copyright>(.*?)<\/Copyright>");
+
     public static string GetLicenseTextWithPrefixedLines(string linePrefix = "// ")
         => string.Join("\n", Fragments.NEW_LICENSE.Split("\n").Select(x => linePrefix + x).Append(string.Empty));
+
+    private static readonly string LicenseTextWithPrefixedLines = GetLicenseTextWithPrefixedLines();
+
+    public static readonly string CopyrightText = $"Copyright © {DateTime.UtcNow.Year.ToString()} Team Duplicati, MIT license";
 
     public static bool MatchAndReplace(ref string data)
     {
@@ -65,11 +71,16 @@ DEALINGS IN THE SOFTWARE.".Replace("YYYY", DateTime.UtcNow.Year.ToString());
             if (match.Success && match.Groups["license"].Success)
             {
                 var g = match.Groups["license"];
+                var newLicense = LicenseTextWithPrefixedLines;
+
+                if (data[(g.Index + g.Length)..].StartsWith('\n') || data[(g.Index + g.Length)..].StartsWith("\r\n"))
+                    newLicense = newLicense.TrimEnd();
+
                 data = string.Join(
                     string.Empty,
 
                     data.Substring(0, g.Index),
-                    GetLicenseTextWithPrefixedLines(),
+                    newLicense,
                     data.Substring(g.Index + g.Length)
                 );
 

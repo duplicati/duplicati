@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -19,7 +19,6 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
-using System;
 using CoCoL;
 
 namespace Duplicati.Library.Main.Operation.Backup
@@ -27,40 +26,36 @@ namespace Duplicati.Library.Main.Operation.Backup
     /// <summary>
     /// Static typed definitions of channels used for the backup process
     /// </summary>
-    internal static class Channels
+    internal class Channels
     {
-        /// <summary>
-        /// Requests to the backend are send over this channel and picked up by the <see cref="BackendUploader" /> class
-        /// </summary>
-        public static readonly ChannelMarkerWrapper<IUploadRequest> BackendRequest = new ChannelMarkerWrapper<IUploadRequest>(new ChannelNameAttribute("BackendRequests"));
         /// <summary>
         /// When the backup completes, all in-progress archives are sent from the <see cref="DataBlockProcessor"/> to the <see cref="SpillCollectorProcess"/>
         /// </summary>
-        public static readonly ChannelMarkerWrapper<SpillVolumeRequest> SpillPickup = new ChannelMarkerWrapper<SpillVolumeRequest>(new ChannelNameAttribute("SpillPickup"));
+        public readonly IChannel<SpillVolumeRequest> SpillPickup = ChannelManager.CreateChannel<SpillVolumeRequest>();
         /// <summary>
         /// All data blocks are sent during the scanning to the <see cref="DataBlockProcessor"/> who bundles them in compressed archives
         /// </summary>
-        public static readonly ChannelMarkerWrapper<DataBlock> OutputBlocks = new ChannelMarkerWrapper<DataBlock>(new ChannelNameAttribute("OutputBlocks"));
+        public readonly IChannel<DataBlock> OutputBlocks = ChannelManager.CreateChannel<DataBlock>();
         /// <summary>
         /// If a file has changes in the metadata, it is sent to the <see cref="FileBlockProcessor"/> where it is read
         /// </summary>
-        public static readonly ChannelMarkerWrapper<MetadataPreProcess.FileEntry> AcceptedChangedFile = new ChannelMarkerWrapper<MetadataPreProcess.FileEntry>(new ChannelNameAttribute("AcceptedChangedFile"));
+        public readonly IChannel<MetadataPreProcess.FileEntry> AcceptedChangedFile = ChannelManager.CreateChannel<MetadataPreProcess.FileEntry>();
         /// <summary>
         /// If a file has changes in the metadata, it is sent to the <see cref="FileBlockProcessor"/> where it is read
         /// </summary>
-        public static readonly ChannelMarkerWrapper<StreamBlock> StreamBlock = new ChannelMarkerWrapper<StreamBlock>(new ChannelNameAttribute("StreamBlockSplitter"));
+        public readonly IChannel<StreamBlock> StreamBlock = ChannelManager.CreateChannel<StreamBlock>();
         /// <summary>
         /// After metadata has been processed and collected, the <see cref="MetadataPreProcess"/> sends the file data to the <see cref="FilePreFilterProcess"/>
         /// </summary>
-        public static readonly ChannelMarkerWrapper<MetadataPreProcess.FileEntry> ProcessedFiles = new ChannelMarkerWrapper<MetadataPreProcess.FileEntry>(new ChannelNameAttribute("ProcessedFiles"));
+        public readonly IChannel<MetadataPreProcess.FileEntry> ProcessedFiles = ChannelManager.CreateChannel<MetadataPreProcess.FileEntry>();
         /// <summary>
-        /// When enumerating the source folders, all discovered paths are sent by the <see cref="FileEnumerationProcess"/> to the <see cref="MetadataPreProcess"/> 
+        /// When enumerating the source folders, all discovered paths are sent by the <see cref="FileEnumerationProcess"/> to the <see cref="MetadataPreProcess"/>
         /// </summary>
-        public static readonly ChannelMarkerWrapper<string> SourcePaths = new ChannelMarkerWrapper<string>(new ChannelNameAttribute("SourcePaths"));
+        public readonly IChannel<string> SourcePaths = ChannelManager.CreateChannel<string>();
         /// <summary>
         /// All progress events are communicated over this channel, to ensure that parallel progress is reported as a if it was sequential
         /// </summary>
-        public static readonly ChannelMarkerWrapper<Common.ProgressEvent> ProgressEvents = new ChannelMarkerWrapper<Common.ProgressEvent>(new ChannelNameAttribute("ProgressEvents"));
+        public readonly IChannel<Common.ProgressEvent> ProgressEvents = ChannelManager.CreateChannel<Common.ProgressEvent>();
     }
 }
 

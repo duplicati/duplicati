@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -192,7 +192,7 @@ namespace Duplicati.Library.Main.Database
             m_insertBlockCommand.CommandText = @"INSERT INTO ""Block"" (""Hash"", ""Size"", ""VolumeID"") VALUES (?,?,?)";
             m_insertBlockCommand.AddParameters(3);
 
-            m_insertDuplicateBlockCommand.CommandText = @"INSERT INTO ""DuplicateBlock"" (""BlockID"", ""VolumeID"") VALUES ((SELECT ""ID"" FROM ""Block"" WHERE ""Hash"" = ? AND ""Size"" = ?), ?)";
+            m_insertDuplicateBlockCommand.CommandText = @"INSERT OR IGNORE INTO ""DuplicateBlock"" (""BlockID"", ""VolumeID"") VALUES ((SELECT ""ID"" FROM ""Block"" WHERE ""Hash"" = ? AND ""Size"" = ?), ?)";
             m_insertDuplicateBlockCommand.AddParameters(3);
         }
 
@@ -694,11 +694,38 @@ namespace Duplicati.Library.Main.Database
             // and marks the index files that pointed to them, such that they will be removed later on
             var sql = $@"
 CREATE TEMPORARY TABLE ""{tablename}"" AS
-SELECT ""A"".""ID"" AS ""BlockID"", ""A"".""VolumeID"" AS ""SourceVolumeID"", ""A"".""State"" AS ""SourceVolumeState"", ""B"".""VolumeID"" AS ""TargetVolumeID"", ""B"".""State"" AS ""TargetVolumeState"" FROM (SELECT ""Block"".""ID"", ""Block"".""VolumeID"", ""Remotevolume"".""State"" FROM ""Block"", ""Remotevolume"" WHERE ""Block"".""VolumeID"" = ""Remotevolume"".""ID"" and ""Remotevolume"".""State"" = ""{RemoteVolumeState.Temporary}"") A, (SELECT ""DuplicateBlock"".""BlockID"",  ""DuplicateBlock"".""VolumeID"", ""Remotevolume"".""State"" FROM ""DuplicateBlock"", ""Remotevolume"" WHERE ""DuplicateBlock"".""VolumeID"" = ""Remotevolume"".""ID"" and ""Remotevolume"".""State"" = '{RemoteVolumeState.Verified}') B WHERE ""A"".""ID"" = ""B"".""BlockID"";
+SELECT 
+  ""A"".""ID"" AS ""BlockID"", ""A"".""VolumeID"" AS ""SourceVolumeID"", ""A"".""State"" AS ""SourceVolumeState"", ""B"".""VolumeID"" AS ""TargetVolumeID"", ""B"".""State"" AS ""TargetVolumeState"" 
+FROM 
+  (SELECT 
+    ""Block"".""ID"", ""Block"".""VolumeID"", ""Remotevolume"".""State"" 
+    FROM ""Block"", ""Remotevolume"" 
+    WHERE ""Block"".""VolumeID"" = ""Remotevolume"".""ID"" AND ""Remotevolume"".""State"" = '{RemoteVolumeState.Temporary}'
+  ) A, 
+  (SELECT 
+    ""DuplicateBlock"".""BlockID"",  MIN(""DuplicateBlock"".""VolumeID"") AS ""VolumeID"", ""Remotevolume"".""State"" 
+    FROM ""DuplicateBlock"", ""Remotevolume"" 
+    WHERE ""DuplicateBlock"".""VolumeID"" = ""Remotevolume"".""ID"" AND ""Remotevolume"".""State"" = '{RemoteVolumeState.Verified}' 
+    GROUP BY ""DuplicateBlock"".""BlockID"", ""Remotevolume"".""State"" 
+  ) B 
+WHERE ""A"".""ID"" = ""B"".""BlockID"";
 
-UPDATE ""Block"" SET ""VolumeID"" = (SELECT ""TargetVolumeID"" FROM ""{tablename}"" WHERE ""Block"".""ID"" = ""{tablename}"".""BlockID"") WHERE ""Block"".""ID"" IN (SELECT ""BlockID"" FROM ""{tablename}"");
+UPDATE ""Block"" 
+  SET ""VolumeID"" = (SELECT 
+    ""TargetVolumeID"" FROM ""{tablename}"" 
+    WHERE ""Block"".""ID"" = ""{tablename}"".""BlockID""
+  ) 
+  WHERE ""Block"".""ID"" IN (SELECT ""BlockID"" FROM ""{tablename}"");
 
-UPDATE ""DuplicateBlock"" SET ""VolumeID"" = (SELECT ""SourceVolumeID"" FROM ""{tablename}"" WHERE ""DuplicateBlock"".""BlockID"" = ""{tablename}"".""BlockID"") WHERE ""DuplicateBlock"".""BlockID"" IN (SELECT ""BlockID"" FROM ""{tablename}"");
+UPDATE ""DuplicateBlock"" 
+  SET ""VolumeID"" = (SELECT 
+    ""SourceVolumeID"" FROM ""{tablename}"" 
+    WHERE ""DuplicateBlock"".""BlockID"" = ""{tablename}"".""BlockID""
+  ) 
+WHERE 
+  (""DuplicateBlock"".""BlockID"", ""DuplicateBlock"".""VolumeID"") 
+  IN (SELECT ""BlockID"", ""TargetVolumeID"" FROM ""{tablename}"");
+
 DROP TABLE ""{tablename}"";
 
 DELETE FROM ""IndexBlockLink"" WHERE ""BlockVolumeID"" IN (SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""Type"" = '{RemoteVolumeType.Blocks}' AND ""State"" = '{RemoteVolumeState.Temporary}' AND ""ID"" NOT IN (SELECT DISTINCT ""VolumeID"" FROM ""Block""));
@@ -723,6 +750,36 @@ DELETE FROM ""RemoteVolume"" WHERE ""Type"" = '{RemoteVolumeType.Blocks}' AND ""
                     Logging.Log.WriteVerboseMessage(LOGTAG, "ReplacedMissingVolumes", "Replaced blocks for {0} missing volumes; there are now {1} missing volumes", cnt, cnt2);
                 }
             }
+        }
+
+        /// <summary>
+        /// Move blocks that are not referenced by any files to DeletedBlock table.
+        /// </summary>
+        /// Needs to be called after the last FindMissingBlocklistHashes, otherwise the tables are not up to date.
+        public void CleanupDeletedBlocks(System.Data.IDbTransaction transaction)
+        {
+            // Find out which blocks are deleted and move them into DeletedBlock, so that compact notices these blocks are empty
+            // Deleted blocks do not appear in the BlocksetEntry and not in the BlocklistHash table
+
+            var tmptablename = "DeletedBlocks-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
+
+            using (var tr = new TemporaryTransactionWrapper(m_connection, transaction))
+            using (var cmd = m_connection.CreateCommand(tr.Parent))
+            {
+                // 1. Select blocks not used by any file and not as a blocklist into temporary table
+                cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}""
+                    AS SELECT ""Block"".""ID"", ""Block"".""Hash"", ""Block"".""Size"", ""Block"".""VolumeID"" FROM ""Block""
+                        WHERE ""Block"".""ID"" NOT IN (SELECT ""BlocksetEntry"".""BlockID"" FROM ""BlocksetEntry"")
+                        AND ""Block"".""Hash"" NOT IN (SELECT ""BlocklistHash"".""Hash"" FROM ""BlocklistHash"")", tmptablename));
+                // 2. Insert blocks into DeletedBlock table
+                cmd.ExecuteNonQuery(string.Format(@"INSERT INTO ""DeletedBlock"" (""Hash"", ""Size"", ""VolumeID"") SELECT ""Hash"", ""Size"", ""VolumeID"" FROM ""{0}""", tmptablename));
+                // 3. Remove blocks from Block table
+                cmd.ExecuteNonQuery(string.Format(@"DELETE FROM ""Block"" WHERE ""ID"" IN (SELECT ""ID"" FROM ""{0}"")", tmptablename));
+                cmd.ExecuteNonQuery(string.Format(@"DROP TABLE IF EXISTS ""{0}""", tmptablename));
+                tr.Commit();
+            }
+
+
         }
 
         public override void Dispose()

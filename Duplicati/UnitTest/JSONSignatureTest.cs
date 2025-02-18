@@ -1,3 +1,23 @@
+// Copyright (C) 2025, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
@@ -21,7 +41,7 @@ public class JSONSignatureTest
         using var source = new MemoryStream(content);
         using var target = new MemoryStream();
 
-        JSONSignature.SignAsync(source, target, [new JSONSignature.SignOperation(JSONSignature.RSA_SHA256, key.ToXmlString(false), key.ToXmlString(true), headers)]).Wait();
+        JSONSignature.SignAsync(source, target, [new JSONSignature.SignOperation(JSONSignature.RSA_SHA256, key.ToXmlString(false), key.ToXmlString(true), headers)]).Await();
 
         target.Position = 0;
 
@@ -43,7 +63,7 @@ public class JSONSignatureTest
 
         var algs = new[] { JSONSignature.RSA_SHA256, JSONSignature.RSA_SHA384, JSONSignature.RSA_SHA512 };
 
-        JSONSignature.SignAsync(source, target, algs.Select(x => new JSONSignature.SignOperation(x, key.ToXmlString(false), key.ToXmlString(true), headers))).Wait();
+        JSONSignature.SignAsync(source, target, algs.Select(x => new JSONSignature.SignOperation(x, key.ToXmlString(false), key.ToXmlString(true), headers))).Await();
 
         target.Position = 0;
         var valids = JSONSignature.Verify(target, algs.Select(x => new JSONSignature.VerifyOperation(x, key.ToXmlString(false))));
@@ -77,7 +97,7 @@ public class JSONSignatureTest
         var algs = new[] { JSONSignature.RSA_SHA256, JSONSignature.RSA_SHA384, JSONSignature.RSA_SHA512 };
         var algkeycombos = algs.SelectMany(alg => keys.Select(key => (Alg: alg, Key: key))).ToArray();
 
-        JSONSignature.SignAsync(source, target, algkeycombos.Select(x => new JSONSignature.SignOperation(x.Alg, x.Key.ToXmlString(false), x.Key.ToXmlString(true), headers))).Wait();
+        JSONSignature.SignAsync(source, target, algkeycombos.Select(x => new JSONSignature.SignOperation(x.Alg, x.Key.ToXmlString(false), x.Key.ToXmlString(true), headers))).Await();
 
         target.Position = 0;
         var valids = JSONSignature.Verify(target, algkeycombos.Select(x => new JSONSignature.VerifyOperation(x.Alg, x.Key.ToXmlString(false))));
@@ -145,7 +165,7 @@ public class JSONSignatureTest
         var algs = new[] { JSONSignature.RSA_SHA256, JSONSignature.RSA_SHA384, JSONSignature.RSA_SHA512 };
         var algkeycombos = algs.SelectMany(alg => keys.Select(key => (Alg: alg, Key: key))).ToArray();
 
-        JSONSignature.SignAsync(source, target, algkeycombos.Select(x => new JSONSignature.SignOperation(x.Alg, x.Key.ToXmlString(false), x.Key.ToXmlString(true), headers))).Wait();
+        JSONSignature.SignAsync(source, target, algkeycombos.Select(x => new JSONSignature.SignOperation(x.Alg, x.Key.ToXmlString(false), x.Key.ToXmlString(true), headers))).Await();
 
         // Taint the data
         target.Position = target.Length - 1;
@@ -173,7 +193,7 @@ public class JSONSignatureTest
         var algs = new[] { JSONSignature.RSA_SHA256, JSONSignature.RSA_SHA384, JSONSignature.RSA_SHA512 };
         var algkeycombos = algs.SelectMany(alg => keys.Select(key => (Alg: alg, Key: key))).ToArray();
 
-        JSONSignature.SignAsync(source, target, algkeycombos.Select(x => new JSONSignature.SignOperation(x.Alg, x.Key.ToXmlString(false), x.Key.ToXmlString(true), headers))).Wait();
+        JSONSignature.SignAsync(source, target, algkeycombos.Select(x => new JSONSignature.SignOperation(x.Alg, x.Key.ToXmlString(false), x.Key.ToXmlString(true), headers))).Await();
 
         // Taint the header data for the first signature
         target.Position = "//SIGJSONv1: ".Length + offset;

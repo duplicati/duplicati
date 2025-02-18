@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -19,10 +19,10 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 using Duplicati.Library.Interface;
+using Duplicati.Library.Utility;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using uplink.NET.Interfaces;
@@ -43,6 +43,13 @@ namespace Duplicati.Library.Backend.Storj
 
         private const string PROTOCOL_KEY = "storj";
         private const string STORJ_PARTNER_ID = "duplicati";
+
+        private const string STORJ_AUTH_METHOD_API_KEY = "API key";
+        private const string STORJ_AUTH_METHOD_ACCESS_GRANT = "Access grant";
+
+        private const string STORJ_DEFAULT_BUCKET = "duplicati";
+        private const string STORJ_DEFAULT_SATELLITE = "us1.storj.io:7777";
+        private const string STORJ_DEFAULT_AUTH_METHOD = STORJ_AUTH_METHOD_API_KEY;
 
         private readonly string _satellite;
         private readonly string _api_key;
@@ -86,16 +93,8 @@ namespace Duplicati.Library.Backend.Storj
         {
             InitStorjLibrary();
 
-            foreach (var option in options.ToList())
-            {
-                if (option.Key.ToLower().Contains("tardigrade"))
-                {
-                    options.Add(option.Key.ToLower().Replace("tardigrade", "storj"), option.Value);
-                }
-            }
-
-            var auth_method = options[STORJ_AUTH_METHOD];
-            if (auth_method == "Access grant")
+            var auth_method = options.GetValueOrDefault(STORJ_AUTH_METHOD, STORJ_DEFAULT_AUTH_METHOD);
+            if (string.Equals(auth_method, STORJ_AUTH_METHOD_ACCESS_GRANT, StringComparison.OrdinalIgnoreCase))
             {
                 //Create an access from the access grant
                 var shared_access = options[STORJ_SHARED_ACCESS];
@@ -103,8 +102,8 @@ namespace Duplicati.Library.Backend.Storj
             }
             else
             {
-                //Create an access for a satellite, API key and encryption passphrase
-                _satellite = options[STORJ_SATELLITE];
+                //Create an access for a satellite, API key and encryption passphrase                    
+                _satellite = options.GetValueOrDefault(STORJ_SATELLITE, STORJ_DEFAULT_SATELLITE);
 
                 if (options.ContainsKey(STORJ_API_KEY))
                 {
@@ -149,12 +148,12 @@ namespace Duplicati.Library.Backend.Storj
             get
             {
                 return new List<ICommandLineArgument>(new ICommandLineArgument[] {
-                    new CommandLineArgument(STORJ_AUTH_METHOD, CommandLineArgument.ArgumentType.String, Strings.Storj.StorjAuthMethodDescriptionShort, Strings.Storj.StorjAuthMethodDescriptionLong, "API key"),
-                    new CommandLineArgument(STORJ_SATELLITE, CommandLineArgument.ArgumentType.String, Strings.Storj.StorjSatelliteDescriptionShort, Strings.Storj.StorjSatelliteDescriptionLong, "us1.storj.io:7777"),
+                    new CommandLineArgument(STORJ_AUTH_METHOD, CommandLineArgument.ArgumentType.String, Strings.Storj.StorjAuthMethodDescriptionShort, Strings.Storj.StorjAuthMethodDescriptionLong, STORJ_DEFAULT_AUTH_METHOD, null, [STORJ_AUTH_METHOD_API_KEY, STORJ_AUTH_METHOD_ACCESS_GRANT]),
+                    new CommandLineArgument(STORJ_SATELLITE, CommandLineArgument.ArgumentType.String, Strings.Storj.StorjSatelliteDescriptionShort, Strings.Storj.StorjSatelliteDescriptionLong, STORJ_DEFAULT_SATELLITE),
                     new CommandLineArgument(STORJ_API_KEY, CommandLineArgument.ArgumentType.String, Strings.Storj.StorjAPIKeyDescriptionShort, Strings.Storj.StorjAPIKeyDescriptionLong),
                     new CommandLineArgument(STORJ_SECRET, CommandLineArgument.ArgumentType.Password, Strings.Storj.StorjSecretDescriptionShort, Strings.Storj.StorjSecretDescriptionLong),
                     new CommandLineArgument(STORJ_SHARED_ACCESS, CommandLineArgument.ArgumentType.String, Strings.Storj.StorjSharedAccessDescriptionShort, Strings.Storj.StorjSharedAccessDescriptionLong),
-                    new CommandLineArgument(STORJ_BUCKET, CommandLineArgument.ArgumentType.String, Strings.Storj.StorjBucketDescriptionShort, Strings.Storj.StorjBucketDescriptionLong),
+                    new CommandLineArgument(STORJ_BUCKET, CommandLineArgument.ArgumentType.String, Strings.Storj.StorjBucketDescriptionShort, Strings.Storj.StorjBucketDescriptionLong, STORJ_DEFAULT_BUCKET),
                     new CommandLineArgument(STORJ_FOLDER, CommandLineArgument.ArgumentType.String, Strings.Storj.StorjFolderDescriptionShort, Strings.Storj.StorjFolderDescriptionLong),
                 });
             }
@@ -168,31 +167,20 @@ namespace Duplicati.Library.Backend.Storj
             }
         }
 
-        public string[] DNSName
-        {
-            get
-            {
-                return new string[0];
-            }
-        }
+        public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(Array.Empty<string>());
 
-        public void CreateFolder()
+        public Task CreateFolderAsync(CancellationToken cancelToken)
         {
             //Storj DCS has no folders
+            return Task.CompletedTask;
         }
 
-        public void Delete(string remotename)
-        {
-            var deleteTask = DeleteAsync(remotename);
-            deleteTask.Wait();
-        }
-
-        public async Task DeleteAsync(string remotename)
+        public async Task DeleteAsync(string remotename, CancellationToken cancelToken)
         {
             try
             {
-                var bucket = await _bucketService.EnsureBucketAsync(_bucket);
-                await _objectService.DeleteObjectAsync(bucket, GetBasePath() + remotename);
+                var bucket = await _bucketService.EnsureBucketAsync(_bucket).ConfigureAwait(false);
+                await _objectService.DeleteObjectAsync(bucket, GetBasePath() + remotename).ConfigureAwait(false);
             }
             catch (Exception root)
             {
@@ -217,63 +205,50 @@ namespace Duplicati.Library.Backend.Storj
             }
         }
 
-        public void Get(string remotename, string filename)
+        public async Task GetAsync(string remotename, string filename, CancellationToken cancelToken)
         {
-            var getTask = GetAsync(remotename, filename);
-            getTask.Wait();
-        }
-
-        public async Task GetAsync(string remotename, string filename)
-        {
-            var bucket = await _bucketService.EnsureBucketAsync(_bucket);
-            var download = await _objectService.DownloadObjectAsync(bucket, GetBasePath() + remotename, new DownloadOptions(), false);
-            await download.StartDownloadAsync();
+            var bucket = await _bucketService.EnsureBucketAsync(_bucket).ConfigureAwait(false);
+            var download = await _objectService.DownloadObjectAsync(bucket, GetBasePath() + remotename, new DownloadOptions(), false).ConfigureAwait(false);
+            await download.StartDownloadAsync().ConfigureAwait(false);
 
             if (download.Completed)
             {
-                using (FileStream file = new FileStream(filename, FileMode.Create))
+                using (var file = new FileStream(filename, FileMode.Create))
                 {
-                    await file.WriteAsync(download.DownloadedBytes, 0, (int)download.BytesReceived);
-                    await file.FlushAsync().ConfigureAwait(false);
+                    await file.WriteAsync(download.DownloadedBytes, 0, (int)download.BytesReceived, cancelToken).ConfigureAwait(false);
+                    await file.FlushAsync(cancelToken).ConfigureAwait(false);
                 }
             }
         }
 
-        public void Get(string remotename, Stream stream)
-        {
-            var getTask = GetAsync(remotename, stream);
-            getTask.Wait();
-        }
-
-        public async Task GetAsync(string remotename, Stream stream)
+        public async Task GetAsync(string remotename, Stream stream, CancellationToken cancelToken)
         {
             int index = 0;
-            var bucket = await _bucketService.EnsureBucketAsync(_bucket);
-            var download = await _objectService.DownloadObjectAsync(bucket, GetBasePath() + remotename, new DownloadOptions(), false);
+            var bucket = await _bucketService.EnsureBucketAsync(_bucket).ConfigureAwait(false);
+            var download = await _objectService.DownloadObjectAsync(bucket, GetBasePath() + remotename, new DownloadOptions(), false).ConfigureAwait(false);
             download.DownloadOperationProgressChanged += (op) =>
             {
+                cancelToken.ThrowIfCancellationRequested();
                 int newPartLength = (int)op.BytesReceived - index;
                 byte[] newPart = new byte[newPartLength];
                 Array.Copy(op.DownloadedBytes, index, newPart, 0, newPartLength);
                 stream.Write(newPart, 0, newPartLength);
                 index = index + newPartLength;
             };
-            await download.StartDownloadAsync();
+            await download.StartDownloadAsync().ConfigureAwait(false);
         }
 
         public IEnumerable<IFileEntry> List()
         {
-            var listTask = ListAsync();
-            listTask.Wait();
-            return listTask.Result;
+            return ListAsync().Await();
         }
 
         private async Task<IEnumerable<IFileEntry>> ListAsync()
         {
             List<StorjFile> files = new List<StorjFile>();
-            var bucket = await _bucketService.EnsureBucketAsync(_bucket);
+            var bucket = await _bucketService.EnsureBucketAsync(_bucket).ConfigureAwait(false);
             var prefix = GetBasePath();
-            var objects = await _objectService.ListObjectsAsync(bucket, new ListObjectsOptions { Recursive = true, System = true, Custom = true, Prefix = prefix });
+            var objects = await _objectService.ListObjectsAsync(bucket, new ListObjectsOptions { Recursive = true, System = true, Custom = true, Prefix = prefix }).ConfigureAwait(false);
 
             foreach (var obj in objects.Items)
             {
@@ -291,31 +266,33 @@ namespace Duplicati.Library.Backend.Storj
         public async Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
         {
             using (FileStream fs = File.Open(filename, FileMode.Open, FileAccess.Read, FileShare.Read))
-                await PutAsync(remotename, fs, cancelToken);
+                await PutAsync(remotename, fs, cancelToken).ConfigureAwait(false);
         }
 
         public async Task PutAsync(string remotename, Stream stream, CancellationToken cancelToken)
         {
-            var bucket = await _bucketService.EnsureBucketAsync(_bucket);
+            var bucket = await _bucketService.EnsureBucketAsync(_bucket).ConfigureAwait(false);
             CustomMetadata custom = new CustomMetadata();
             custom.Entries.Add(new CustomMetadataEntry { Key = StorjFile.STORJ_LAST_ACCESS, Value = DateTime.Now.ToUniversalTime().ToString("O") });
             custom.Entries.Add(new CustomMetadataEntry { Key = StorjFile.STORJ_LAST_MODIFICATION, Value = DateTime.Now.ToUniversalTime().ToString("O") });
-            var upload = await _objectService.UploadObjectAsync(bucket, GetBasePath() + remotename, new UploadOptions(), stream, custom, false);
-            await upload.StartUploadAsync();
+            var upload = await _objectService.UploadObjectAsync(bucket, GetBasePath() + remotename, new UploadOptions(), stream, custom, false).ConfigureAwait(false);
+            await upload.StartUploadAsync().ConfigureAwait(false);
             if (upload.Failed)
             {
                 throw new Exception(upload.ErrorMessage);
             }
         }
 
-        public void Test()
+        public async Task TestAsync(CancellationToken cancelToken)
         {
-            var testTask = TestAsync();
-            testTask.Wait(10000);
-            if (!testTask.Result)
-            {
+            var ct = CancellationTokenSource.CreateLinkedTokenSource(cancelToken);
+            var testTask = TestImplAsync(ct.Token);
+            ct.CancelAfter(10000);
+            await Task.WhenAny(testTask, Task.Delay(Timeout.Infinite, ct.Token)).ConfigureAwait(false);
+            if (testTask.IsCompleted)
+                await testTask.ConfigureAwait(false);
+            else if (!testTask.IsCompletedSuccessfully)
                 throw new Exception(Strings.Storj.TestConnectionFailed);
-            }
         }
 
         /// <summary>
@@ -325,18 +302,18 @@ namespace Duplicati.Library.Backend.Storj
         /// - downloading the file back and expecting 256 bytes
         /// </summary>
         /// <returns>true, if the test was successfull or and exception</returns>
-        private async Task<bool> TestAsync()
+        private async Task<bool> TestImplAsync(CancellationToken cancelToken)
         {
             string testFileName = GetBasePath() + "duplicati_test.dat";
 
-            var bucket = await _bucketService.EnsureBucketAsync(_bucket);
-            var upload = await _objectService.UploadObjectAsync(bucket, testFileName, new UploadOptions(), GetRandomBytes(256), false);
-            await upload.StartUploadAsync();
+            var bucket = await _bucketService.EnsureBucketAsync(_bucket).ConfigureAwait(false);
+            var upload = await _objectService.UploadObjectAsync(bucket, testFileName, new UploadOptions(), GetRandomBytes(256), false).ConfigureAwait(false);
+            await upload.StartUploadAsync().ConfigureAwait(false);
 
-            var download = await _objectService.DownloadObjectAsync(bucket, testFileName, new DownloadOptions(), false);
-            await download.StartDownloadAsync();
+            var download = await _objectService.DownloadObjectAsync(bucket, testFileName, new DownloadOptions(), false).ConfigureAwait(false);
+            await download.StartDownloadAsync().ConfigureAwait(false);
 
-            await _objectService.DeleteObjectAsync(bucket, testFileName);
+            await _objectService.DeleteObjectAsync(bucket, testFileName).ConfigureAwait(false);
 
             if (download.Failed || download.BytesReceived != 256)
             {

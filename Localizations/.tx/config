@@ -1,14 +1,23 @@
 [main]
 host = https://www.transifex.com
 
-[duplicati.duplicati]
-source_file = duplicati/localization.pot
-file_filter = duplicati/localization-<lang>.po
-source_lang = en
-type = PO
+[o:duplicati:p:duplicati:r:duplicati]
+file_filter            = duplicati/localization-<lang>.po
+source_file            = duplicati/localization.pot
+source_lang            = en
+type                   = PO
+minimum_perc           = 0
+resource_name          = localization.pot
+replace_edited_strings = false
+keep_translations      = false
 
-[duplicati.webroot]
-source_file = webroot/localization_webroot.pot
-file_filter = webroot/localization_webroot-<lang>.po
-source_lang = en
-type = PO
+[o:duplicati:p:duplicati:r:webroot]
+file_filter            = webroot/localization_webroot-<lang>.po
+source_file            = webroot/localization_webroot.pot
+source_lang            = en
+type                   = PO
+minimum_perc           = 0
+resource_name          = localization_webroot.pot
+replace_edited_strings = false
+keep_translations      = false
+

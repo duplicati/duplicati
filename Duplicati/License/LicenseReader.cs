@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -21,9 +21,7 @@
 
 using System;
 using System.Collections.Generic;
-using System.Text;
 using Duplicati.Library.Common.IO;
-using Duplicati.Library.Utility;
 
 namespace Duplicati.License
 {
@@ -52,14 +50,14 @@ namespace Duplicati.License
         /// <returns>A list of licenses</returns>
         public static List<LicenseEntry> ReadLicenses(string basefolder)
         {
-            List<LicenseEntry> res = new List<LicenseEntry>();
+            var res = new List<LicenseEntry>();
 
-            string[] folders = SystemIO.IO_OS.GetDirectories(basefolder);
+            var folders = SystemIO.IO_OS.GetDirectories(basefolder);
             Array.Sort(folders);
 
             foreach (string folder in folders)
             {
-                string name = System.IO.Path.GetFileName(folder);
+                var name = System.IO.Path.GetFileName(folder);
                 string urlfile = null;
                 string licensefile = null;
                 string jsonfile = null;

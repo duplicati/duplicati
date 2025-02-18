@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -24,6 +24,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Main.Operation
 {
@@ -33,28 +34,26 @@ namespace Duplicati.Library.Main.Operation
         /// The tag used for logging
         /// </summary>
         private static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(ListBrokenFilesHandler));
-        protected readonly string m_backendurl;
         protected readonly Options m_options;
         protected readonly ListBrokenFilesResults m_result;
 
-        public ListBrokenFilesHandler(string backend, Options options, ListBrokenFilesResults result)
+        public ListBrokenFilesHandler(Options options, ListBrokenFilesResults result)
         {
-            m_backendurl = backend;
             m_options = options;
             m_result = result;
         }
 
-        public void Run(Library.Utility.IFilter filter, Func<long, DateTime, long, string, long, bool> callbackhandler = null)
+        public void Run(IBackendManager backendManager, IFilter filter, Func<long, DateTime, long, string, long, bool> callbackhandler = null)
         {
             if (!System.IO.File.Exists(m_options.Dbpath))
                 throw new UserInformationException(string.Format("Database file does not exist: {0}", m_options.Dbpath), "DatabaseDoesNotExist");
 
             using (var db = new Database.LocalListBrokenFilesDatabase(m_options.Dbpath))
             using (var tr = db.BeginTransaction())
-                DoRun(db, tr, filter, callbackhandler);
+                DoRun(backendManager, db, tr, filter, callbackhandler);
         }
 
-        public static Tuple<DateTime, long, long>[] GetBrokenFilesetsFromRemote(string backendurl, BasicResults result, Database.LocalListBrokenFilesDatabase db, System.Data.IDbTransaction transaction, Options options, out List<Database.RemoteVolumeEntry> missing)
+        public static Tuple<DateTime, long, long>[] GetBrokenFilesetsFromRemote(IBackendManager backendManager, BasicResults result, Database.LocalListBrokenFilesDatabase db, System.Data.IDbTransaction transaction, Options options, out List<Database.RemoteVolumeEntry> missing)
         {
             missing = null;
             var brokensets = db.GetBrokenFilesets(options.Time, options.Version, transaction).ToArray();
@@ -66,35 +65,32 @@ namespace Duplicati.Library.Main.Operation
 
                 Logging.Log.WriteInformationMessage(LOGTAG, "NoBrokenFilesetsInDatabase", "No broken filesets found in database, checking for missing remote files");
 
-                using (var backend = new BackendManager(backendurl, options, result.BackendWriter, db))
+                var remotestate = FilelistProcessor.RemoteListAnalysis(backendManager, options, db, result.BackendWriter, null).Await();
+                if (!remotestate.ParsedVolumes.Any())
+                    throw new UserInformationException("No remote volumes were found, refusing purge", "CannotPurgeWithNoRemoteVolumes");
+
+                missing = remotestate.MissingVolumes.ToList();
+                if (missing.Count == 0)
                 {
-                    var remotestate = FilelistProcessor.RemoteListAnalysis(backend, options, db, result.BackendWriter, null);
-                    if (!remotestate.ParsedVolumes.Any())
-                        throw new UserInformationException("No remote volumes were found, refusing purge", "CannotPurgeWithNoRemoteVolumes");
-
-                    missing = remotestate.MissingVolumes.ToList();
-                    if (missing.Count == 0)
-                    {
-                        Logging.Log.WriteInformationMessage(LOGTAG, "NoMissingFilesFound", "Skipping operation because no files were found to be missing, and no filesets were recorded as broken.");
-                        return null;
-                    }
-
-                    // Mark all volumes as disposable
-                    foreach (var f in missing)
-                        db.UpdateRemoteVolume(f.Name, RemoteVolumeState.Deleting, f.Size, f.Hash, transaction);
-
-                    Logging.Log.WriteInformationMessage(LOGTAG, "MarkedRemoteFilesForDeletion", "Marked {0} remote files for deletion", missing.Count);
-
-                    // Drop all content from tables
-                    db.RemoveMissingBlocks(missing.Select(x => x.Name), transaction);
+                    Logging.Log.WriteInformationMessage(LOGTAG, "NoMissingFilesFound", "Skipping operation because no files were found to be missing, and no filesets were recorded as broken.");
+                    return null;
                 }
+
+                // Mark all volumes as disposable
+                foreach (var f in missing)
+                    db.UpdateRemoteVolume(f.Name, RemoteVolumeState.Deleting, f.Size, f.Hash, transaction);
+
+                Logging.Log.WriteInformationMessage(LOGTAG, "MarkedRemoteFilesForDeletion", "Marked {0} remote files for deletion", missing.Count);
+
+                // Drop all content from tables
+                db.RemoveMissingBlocks(missing.Select(x => x.Name), transaction);
                 brokensets = db.GetBrokenFilesets(options.Time, options.Version, transaction).ToArray();
             }
 
             return brokensets;
         }
 
-        private void DoRun(Database.LocalListBrokenFilesDatabase db, System.Data.IDbTransaction transaction, Library.Utility.IFilter filter, Func<long, DateTime, long, string, long, bool> callbackhandler)
+        private void DoRun(IBackendManager backendManager, Database.LocalListBrokenFilesDatabase db, System.Data.IDbTransaction transaction, Library.Utility.IFilter filter, Func<long, DateTime, long, string, long, bool> callbackhandler)
         {
             if (filter != null && !filter.Empty)
                 throw new UserInformationException("Filters are not supported for this operation", "FiltersAreNotSupportedForListBrokenFiles");
@@ -103,7 +99,7 @@ namespace Duplicati.Library.Main.Operation
                 throw new UserInformationException("The command does not work on partially recreated databases", "ListBrokenFilesDoesNotWorkOnPartialDatabase");
 
             List<Database.RemoteVolumeEntry> missing;
-            var brokensets = GetBrokenFilesetsFromRemote(m_backendurl, m_result, db, transaction, m_options, out missing);
+            var brokensets = GetBrokenFilesetsFromRemote(backendManager, m_result, db, transaction, m_options, out missing);
             if (brokensets == null)
                 return;
 
@@ -123,8 +119,8 @@ namespace Duplicati.Library.Main.Operation
 
             var fstimes = db.FilesetTimes.ToList();
 
-            var brokenfilesets = 
-                brokensets.Select(x => new 
+            var brokenfilesets =
+                brokensets.Select(x => new
                 {
                     Version = fstimes.FindIndex(y => y.Key == x.Item2),
                     Timestamp = x.Item1,
@@ -138,8 +134,8 @@ namespace Duplicati.Library.Main.Operation
             m_result.BrokenFiles =
                 brokenfilesets.Select(
                     x => new Tuple<long, DateTime, IEnumerable<Tuple<string, long>>>(
-                                x.Version, 
-                                x.Timestamp, 
+                                x.Version,
+                                x.Timestamp,
                                 callbackhandler == null && !m_options.ListSetsOnly
                                     ? db.GetBrokenFilenames(x.FilesetID, transaction).ToArray().AsEnumerable()
                                     : new MockList<Tuple<string, long>>((int)x.BrokenCount)
@@ -169,7 +165,7 @@ namespace Duplicati.Library.Main.Operation
 
             public int Count { get; private set; }
 
-            public bool IsReadOnly { get { return true; }}
+            public bool IsReadOnly => true;
 
             public void Add(T item)
             {

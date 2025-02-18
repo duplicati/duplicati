@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -19,9 +19,13 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
+using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using Duplicati.Library.Common.IO;
+using Microsoft.Win32.SafeHandles;
 
 namespace Duplicati.Library.Snapshots
 {
@@ -33,15 +37,54 @@ namespace Duplicati.Library.Snapshots
     public sealed class NoSnapshotLinux : SnapshotBase
     {
         /// <summary>
+        /// PInvoke methods
+        /// </summary>
+        private static class PInvoke
+        {
+            [DllImport("libc", EntryPoint = "fopen", SetLastError = true)]
+            public static extern IntPtr fopen(string path, string mode);
+
+            [DllImport("libc", EntryPoint = "fclose", SetLastError = true)]
+            public static extern int fclose(IntPtr handle);
+
+            [DllImport("libc", EntryPoint = "fileno", SetLastError = true)]
+            public static extern int fileno(IntPtr stream);
+
+            [DllImport("libc", EntryPoint = "strerror", SetLastError = true)]
+            public static extern IntPtr strerror(int errnum);
+
+            public static string GetErrorMessage(int errno)
+            {
+                IntPtr strPtr = PInvoke.strerror(errno);
+                return Marshal.PtrToStringAnsi(strPtr) ?? $"Unknown error: {errno}";
+            }
+        }
+
+        /// <summary>
+        /// Flag indicating if advisory locks should be ignored
+        /// </summary>
+        private readonly bool m_ignoreAdvisoryLocks;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="NoSnapshotLinux"/> class.
+        /// </summary>
+        /// <param name="ignoreAdvisoryLocks">A flag indicating if advisory locks should be ignored</param>
+        public NoSnapshotLinux(bool ignoreAdvisoryLocks)
+        {
+            m_ignoreAdvisoryLocks = ignoreAdvisoryLocks;
+        }
+
+
+        /// <summary>
         /// Returns the symlink target if the entry is a symlink, and null otherwise
         /// </summary>
         /// <param name="localPath">The file or folder to examine</param>
         /// <returns>The symlink target</returns>
         public override string GetSymlinkTarget(string localPath)
         {
-            return SystemIO.IO_SYS.GetSymlinkTarget(localPath);
+            return SystemIO.IO_OS.GetSymlinkTarget(localPath);
         }
-        
+
         /// <summary>
         /// Gets the metadata for the given file or folder
         /// </summary>
@@ -51,9 +94,9 @@ namespace Duplicati.Library.Snapshots
         /// <param name="followSymlink">A flag indicating if a symlink should be followed</param>
         public override Dictionary<string, string> GetMetadata(string localPath, bool isSymlink, bool followSymlink)
         {
-            return SystemIO.IO_SYS.GetMetadata(localPath, isSymlink, followSymlink);
+            return SystemIO.IO_OS.GetMetadata(localPath, isSymlink, followSymlink);
         }
-        
+
         /// <summary>
         /// Gets a value indicating if the path points to a block device
         /// </summary>
@@ -72,7 +115,7 @@ namespace Duplicati.Library.Snapshots
                     return true;
             }
         }
-        
+
         /// <summary>
         /// Gets a unique hardlink target ID
         /// </summary>
@@ -96,6 +139,72 @@ namespace Duplicati.Library.Snapshots
         public override string ConvertToSnapshotPath(string localPath)
         {
             return SystemIOLinux.NormalizePath(localPath);
+        }
+
+
+        /// <summary>
+        /// In case of Linux without snapshot support, we just open the file directly with fopen
+        /// in order to avoid the issues related to file locks, which on linux are advisory, and
+        /// since .net 6 when using FileStream, the framework is taking the advisory as mandatory
+        /// therefore we can't open the file with FileShare.ReadWrite.
+        /// </summary>
+        /// <param name="localPath">file to be opened</param>
+        /// <returns></returns>
+        public override Stream OpenRead(string localPath)
+        {
+            if (m_ignoreAdvisoryLocks)
+            {
+                var filePtr = PInvoke.fopen(localPath, "r");
+                var errorNo = Marshal.GetLastWin32Error(); // Surprisingly, this is to be used on linux/macos
+                if (filePtr == IntPtr.Zero)
+                {
+                    throw new IOException($"Unable to open file: {localPath}. Error: {errorNo} - {PInvoke.GetErrorMessage(errorNo)}");
+                }
+
+                try
+                {
+
+                    SafeFileHandle safeFileHandle = new(PInvoke.fileno(filePtr), false);
+                    return new UnixFileStream(safeFileHandle, filePtr, FileAccess.Read);
+                }
+                catch // Catch all exceptions and rethrow
+                {
+                    if (filePtr != IntPtr.Zero)
+                        PInvoke.fclose(filePtr);
+
+                    throw;
+                }
+            }
+            else
+            {
+                return base.OpenRead(localPath);
+            }
+        }
+
+        /// <summary>
+        /// Stream wrapping a file handle
+        /// </summary>
+        private class UnixFileStream : FileStream
+        {
+            IntPtr _fileHandle;
+            SafeFileHandle _handle;
+            public UnixFileStream(SafeFileHandle handle, IntPtr fileHandle, FileAccess access) : base(handle, access)
+            {
+                _fileHandle = fileHandle;
+                _handle = handle;
+            }
+
+            protected override void Dispose(bool disposing)
+            {
+                if (_fileHandle != IntPtr.Zero)
+                {
+                    PInvoke.fclose(_fileHandle);
+                    _fileHandle = IntPtr.Zero;
+                }
+                _handle?.Dispose();
+                base.Dispose(disposing);
+            }
+
         }
     }
 }

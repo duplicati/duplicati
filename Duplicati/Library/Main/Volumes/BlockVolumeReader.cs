@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -47,7 +47,7 @@ namespace Duplicati.Library.Main.Volumes
 
         public IEnumerable<string> ReadBlocklist(string hash, long hashsize)
         {
-            return ReadBlocklist(m_compression, Library.Utility.Utility.Base64PlainToBase64Url(hash), hashsize);
+            return ReadBlocklistUnverified(m_compression, Library.Utility.Utility.Base64PlainToBase64Url(hash), hashsize);
         }
 
         public Stream ReadBlocklistRaw(string hash)

@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -37,28 +37,26 @@ namespace Duplicati.Library.Main.Operation.Backup
         /// </summary>
         private static readonly string FILELOGTAG = Logging.Log.LogTagFromType(typeof(FileBlockProcessor)) + ".FileEntry";
 
-        public static Task Run(Snapshots.ISnapshotService snapshot, Options options, BackupDatabase database, BackupStatsCollector stats, ITaskReader taskreader, CancellationToken token)
+        public static Task Run(Channels channels, Snapshots.ISnapshotService snapshot, Options options, BackupDatabase database, BackupStatsCollector stats, ITaskReader taskreader)
         {
             return AutomationExtensions.RunTask(
-            new 
+            new
             {
-                Input = Channels.AcceptedChangedFile.ForRead,
-                StreamBlockChannel = Channels.StreamBlock.ForWrite,
+                Input = channels.AcceptedChangedFile.AsRead(),
+                StreamBlockChannel = channels.StreamBlock.AsWrite(),
             },
 
             async self =>
             {
-                while (await taskreader.ProgressAsync)
+                while (true)
                 {
                     var e = await self.Input.ReadAsync();
 
+                    // We ignore the stop signal, but not the pause and terminate
+                    await taskreader.ProgressRendevouz().ConfigureAwait(false);
+
                     try
                     {
-                        if (token.IsCancellationRequested)
-                        {
-                            break;
-                        }
-
                         var hint = options.GetCompressionHintFromFilename(e.Path);
                         var oldHash = e.OldId < 0 ? null : await database.GetFileHashAsync(e.OldId);
 
@@ -82,7 +80,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                                 return (await MetadataPreProcess.AddMetadataToOutputAsync(e.Path, e.MetaHashAndSize, database, self.StreamBlockChannel)).Item2;
                             });
 
-                        using (var fs = snapshot.OpenRead(e.Path))                            
+                        using (var fs = snapshot.OpenRead(e.Path))
                             filestreamdata = await StreamBlock.ProcessStream(self.StreamBlockChannel, e.Path, fs, false, hint);
 
                         await stats.AddOpenedFile(filestreamdata.Streamlength);
@@ -97,7 +95,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                                 Logging.Log.WriteVerboseMessage(FILELOGTAG, "NewFile", "New file {0}", e.Path);
                             else
                                 Logging.Log.WriteVerboseMessage(FILELOGTAG, "ChangedFile", "File has changed {0}", e.Path);
-                            
+
                             if (e.OldId < 0)
                             {
                                 await stats.AddAddedFile(filesize);
@@ -120,6 +118,12 @@ namespace Duplicati.Library.Main.Operation.Backup
                             Logging.Log.WriteVerboseMessage(FILELOGTAG, "FileMetadataChanged", "File has only metadata changes {0}", e.Path);
                             await database.AddFileAsync(e.PathPrefixID, e.Filename, e.LastWrite, filestreamdata.Blocksetid, metadataid);
                         }
+                        else if (e.TimestampChanged)
+                        {
+                            await stats.AddTimestampChangedFile();
+                            Logging.Log.WriteVerboseMessage(FILELOGTAG, "FileTimestampChanged", "File has only timestamp changes {0}", e.Path);
+                            await database.AddUnmodifiedAsync(e.OldId, e.LastWrite);
+                        }
                         else /*if (e.OldId >= 0)*/
                         {
                             // When we write the file to output, update the last modified time
@@ -135,7 +139,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                             }
                         }
                     }
-                    catch(Exception ex)
+                    catch (Exception ex)
                     {
                         if (ex.IsRetiredException())
                             return;

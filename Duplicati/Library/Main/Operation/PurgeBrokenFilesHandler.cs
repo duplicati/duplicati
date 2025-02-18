@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -32,18 +32,16 @@ namespace Duplicati.Library.Main.Operation
         /// The tag used for logging
         /// </summary>
         private static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(PurgeBrokenFilesHandler));
-        protected readonly string m_backendurl;
         protected readonly Options m_options;
         protected readonly PurgeBrokenFilesResults m_result;
 
-        public PurgeBrokenFilesHandler(string backend, Options options, PurgeBrokenFilesResults result)
+        public PurgeBrokenFilesHandler(Options options, PurgeBrokenFilesResults result)
         {
-            m_backendurl = backend;
             m_options = options;
             m_result = result;
         }
 
-        public void Run(Library.Utility.IFilter filter)
+        public void Run(IBackendManager backendManager, Library.Utility.IFilter filter)
         {
             if (!System.IO.File.Exists(m_options.Dbpath))
                 throw new UserInformationException(string.Format("Database file does not exist: {0}", m_options.Dbpath), "DatabaseDoesNotExist");
@@ -52,17 +50,17 @@ namespace Duplicati.Library.Main.Operation
                 throw new UserInformationException("Filters are not supported for this operation", "FiltersNotAllowedOnPurgeBrokenFiles");
 
             List<Database.RemoteVolumeEntry> missing = null;
-            
+
             using (var db = new Database.LocalListBrokenFilesDatabase(m_options.Dbpath))
             using (var tr = db.BeginTransaction())
             {
                 if (db.PartiallyRecreated)
                     throw new UserInformationException("The command does not work on partially recreated databases", "CannotPurgeOnPartialDatabase");
 
-                var sets = ListBrokenFilesHandler.GetBrokenFilesetsFromRemote(m_backendurl, m_result, db, tr, m_options, out missing);
+                var sets = ListBrokenFilesHandler.GetBrokenFilesetsFromRemote(backendManager, m_result, db, tr, m_options, out missing);
                 if (sets == null)
                     return;
-                
+
                 if (sets.Length == 0)
                 {
                     if (missing == null)
@@ -73,7 +71,7 @@ namespace Duplicati.Library.Main.Operation
                         Logging.Log.WriteInformationMessage(LOGTAG, "NoBrokenSetsButMissingRemoteFiles", string.Format("Found no broken filesets, but {0} missing remote files. Purging from database.", missing.Count));
                 }
                 else
-                { 
+                {
                     Logging.Log.WriteInformationMessage(LOGTAG, "FoundBrokenFilesets", "Found {0} broken filesets with {1} affected files, purging files", sets.Length, sets.Sum(x => x.Item3));
 
                     var pgoffset = 0.0f;
@@ -116,8 +114,8 @@ namespace Duplicati.Library.Main.Operation
                                 opts.RawOptions.Remove("time");
                                 opts.RawOptions["no-auto-compact"] = "true";
 
-                                new DeleteHandler(m_backendurl, opts, (DeleteResults)m_result.DeleteResults)
-                                    .DoRun(rmdb, ref deltr, true, false, null);
+                                new DeleteHandler(opts, (DeleteResults)m_result.DeleteResults)
+                                    .DoRun(rmdb, ref deltr, true, false, backendManager);
 
                                 if (!m_options.Dryrun)
                                 {
@@ -163,7 +161,7 @@ namespace Duplicati.Library.Main.Operation
                                 opts.RawOptions.Remove("time");
                                 opts.RawOptions["no-auto-compact"] = "true";
 
-                                new PurgeFilesHandler(m_backendurl, opts, (PurgeFilesResults)m_result.PurgeResults).Run(pgdb, pgoffset, pgspan, (cmd, filesetid, tablename) =>
+                                new PurgeFilesHandler(opts, (PurgeFilesResults)m_result.PurgeResults).Run(backendManager, pgdb, pgoffset, pgspan, (cmd, filesetid, tablename) =>
                                 {
                                     if (filesetid != bs.FilesetID)
                                         throw new Exception(string.Format("Unexpected filesetid: {0}, expected {1}", filesetid, bs.FilesetID));
@@ -180,7 +178,7 @@ namespace Duplicati.Library.Main.Operation
                 m_result.OperationProgressUpdater.UpdateProgress(0.95f);
 
                 if (!m_options.Dryrun && db.RepairInProgress)
-                {                    
+                {
                     Logging.Log.WriteInformationMessage(LOGTAG, "ValidatingDatabase", "Database was previously marked as in-progress, checking if it is valid after purging files");
                     db.VerifyConsistency(m_options.Blocksize, m_options.BlockhashSize, true, null);
                     Logging.Log.WriteInformationMessage(LOGTAG, "UpdatingDatabase", "Purge completed, and consistency checks completed, marking database as complete");

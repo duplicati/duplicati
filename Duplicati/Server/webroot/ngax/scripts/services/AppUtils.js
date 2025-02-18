@@ -60,6 +60,12 @@ backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, AppServic
             res = gettextCatalog.getString('Desktop');
         else if (cls == 'x-tree-icon-home')
             res = gettextCatalog.getString('Home');
+        else if (cls == 'x-tree-icon-mymovies')
+            res = gettextCatalog.getString('My Movies');
+        else if (cls == 'x-tree-icon-mydownloads')
+            res = gettextCatalog.getString('My Downloads');
+        else if (cls == 'x-tree-icon-mypublic')
+            res = gettextCatalog.getString('Public');
         else if (cls == 'x-tree-icon-hypervmachine')
             res = gettextCatalog.getString('Hyper-V Machine');
         else if (cls == 'x-tree-icon-hyperv')
@@ -119,7 +125,7 @@ backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, AppServic
         ];
 
 
-        apputils.exampleOptionString = gettextCatalog.getString('Enter one option per line in command-line format, eg. {0}');
+        apputils.exampleOptionString = gettextCatalog.getString('Enter one option per line in command-line format, e.g. {0}');
 
         apputils.filterClasses = [{
             name: gettextCatalog.getString('Exclude directories whose names contain'),
@@ -501,21 +507,32 @@ backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, AppServic
 
     var URL_REGEXP_FIELDS = ['source_uri', 'backend-type', '--auth-username', '--auth-password', 'server-name', 'server-port', 'server-path', 'querystring'];
     var URL_REGEXP = /([^:]+)\:\/\/(?:(?:([^\:]+)(?:\:?:([^@]*))?\@))?(?:([^\/\?\:]*)(?:\:(\d+))?)(?:\/([^\?]*))?(?:\?(.+))?/;
+    // Same as URL_REGEXP, but also accepts :\\ as a separator between drive letter (server for legacy reasons) and path
+    var FILE_REGEXP = /(file)\:\/\/(?:(?:([^\:]+)(?:\:?:([^@]*))?\@))?(?:([^\/\?\:]*)(?:\:(\d+))?)(?:(?:\/|\:\\)([^\?]*))?(?:\?(.+))?/;
     var QUERY_REGEXP = /(?:^|&)([^&=]*)=?([^&]*)/g;
 
     this.decode_uri = function(uri, backendlist) {
 
-        var i = URL_REGEXP_FIELDS.length + 1;
+        var i = 0;
         var res = {};
 
-        var m = URL_REGEXP.exec(uri);
+        // File URLs contain backslashes on Win which breaks the other regexp
+        // This is not standard, but for compatibility it is allowed for now
+        var fileMatch = FILE_REGEXP.exec(uri);
+        if (fileMatch) {
+            for (i = 0; i < URL_REGEXP_FIELDS.length; ++i) {
+                res[URL_REGEXP_FIELDS[i]] = fileMatch[i] || "";
+            }
+        } else {
+            var m = URL_REGEXP.exec(uri);
 
-        // Invalid URI
-        if (!m)
-            return res;
+            // Invalid URI
+            if (!m)
+                return res;
 
-        while (i--) {
-            res[URL_REGEXP_FIELDS[i]] = m[i] || "";
+            for (i = 0; i < URL_REGEXP_FIELDS.length; ++i) {
+                res[URL_REGEXP_FIELDS[i]] = m[i] || "";
+            }
         }
 
         res.querystring.replace(QUERY_REGEXP, function(str, key, val) {
@@ -524,7 +541,7 @@ backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, AppServic
         });
 
         var backends = {};
-        for(var i in backendlist)
+        for(i in backendlist)
             backends[backendlist[i].Key] = true;
 
         var scheme = res['backend-type'];
@@ -592,7 +609,7 @@ backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, AppServic
             var pre = apputils.replace_all(n.prefix || '', '!', dirsep);
             var suf = apputils.replace_all(n.suffix || '', '!', dirsep);
 
-            if (txt.indexOf(pre) != 0 || txt.lastIndexOf(suf) != txt.length - suf.length)
+            if (txt.indexOf(pre) != 0 || txt.lastIndexOf(suf) != txt.length - suf.length || txt.lastIndexOf(suf) < 0)
                 return null;
 
             var type = n.key;

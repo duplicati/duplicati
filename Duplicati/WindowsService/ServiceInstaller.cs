@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -19,10 +19,8 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 using System;
-using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
-using System.Text;
 
 namespace Duplicati.WindowsService
 {
@@ -47,6 +45,63 @@ namespace Duplicati.WindowsService
         [DllImport("advapi32.dll", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
         private static extern bool DeleteService(IntPtr hService);
+
+        private const int SERVICE_CONFIG_DESCRIPTION = 0x01;
+
+        [DllImport("advapi32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool ChangeServiceConfig2(IntPtr hService, int dwInfoLevel, [MarshalAs(UnmanagedType.Struct)] ref SERVICE_DESCRIPTION lpInfo);
+
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+        private struct SERVICE_DESCRIPTION
+        {
+            public string lpDescription;
+        }
+
+        private enum SC_STATUS_TYPE : int
+        {
+            SC_STATUS_PROCESS_INFO = 0
+        }
+
+        private const uint SERVICE_CONTROL_STOP = 0x1;
+        private const uint SERVICE_CONTROL_CONTINUE = 0x3;
+        private enum SERVICE_STATUS : uint
+        {
+            SERVICE_STOPPED = 0x00000001,
+            SERVICE_START_PENDING = 0x00000002,
+            SERVICE_STOP_PENDING = 0x00000003,
+            SERVICE_RUNNING = 0x00000004,
+            SERVICE_CONTINUE_PENDING = 0x00000005,
+            SERVICE_PAUSE_PENDING = 0x00000006,
+            SERVICE_PAUSED = 0x00000007,
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct SERVICE_STATUS_PROCESS
+        {
+            public uint dwServiceType;
+            public uint dwCurrentState;
+            public uint dwControlsAccepted;
+            public uint dwWin32ExitCode;
+            public uint dwServiceSpecificExitCode;
+            public uint dwCheckPoint;
+            public uint dwWaitHint;
+            public uint dwProcessId;
+            public uint dwServiceFlags;
+        }
+
+
+        [DllImport("advapi32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool StartServiceW(IntPtr hService, uint dwNumServiceArgs, string[] lpServiceArgVectors);
+
+        [DllImport("advapi32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool ControlService(IntPtr hService, uint dwControl, ref SERVICE_STATUS lpServiceStatus);
+
+        [DllImport("advapi32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool QueryServiceStatusEx(IntPtr hService, SC_STATUS_TYPE lpServiceStatus, ref SERVICE_STATUS_PROCESS lpServiceStatusProcess, int cbBufSize, out uint pcbBytesNeeded);
 
         /// <summary>
         /// Access to the service. Before granting the requested access, the
@@ -391,22 +446,129 @@ namespace Duplicati.WindowsService
             GENERIC_ALL = SC_MANAGER_ALL_ACCESS,
         }
 
-        public static void InstallService(string ServiceName, string DisplayName, string Path)
+        public static void InstallService(string ServiceName, string DisplayName, string Description, string Path)
         {
             var scMgrHandle = OpenSCManager(null, null, (uint)SCM_ACCESS.SC_MANAGER_ALL_ACCESS);
 
             try
             {
                 if (scMgrHandle == IntPtr.Zero)
-                    throw new Exception($"Win32 error { Marshal.GetLastWin32Error().ToString() } during install service (OpenSCManager)");
-                
+                    throw new Exception($"Win32 error {Marshal.GetLastWin32Error().ToString()} during install service (OpenSCManager)");
+
                 var serviceHandle = CreateService(scMgrHandle, ServiceName, DisplayName, (uint)SERVICE_ACCESS.SERVICE_ALL_ACCESS, (uint)SERVICE_TYPE.SERVICE_WIN32_OWN_PROCESS,
                     (uint)SERVICE_START.SERVICE_AUTO_START, (uint)SERVICE_ERROR.SERVICE_ERROR_NORMAL, Path, null, null, null, null, null);
 
                 if (serviceHandle == IntPtr.Zero)
-                    throw new Exception($"Win32 error { Marshal.GetLastWin32Error().ToString() } during install service (CreateService)");
-                
+                    throw new Exception($"Win32 error {Marshal.GetLastWin32Error().ToString()} during install service (CreateService)");
+
+                var pinfo = new SERVICE_DESCRIPTION
+                {
+                    lpDescription = Description
+                };
+
+                var res = ChangeServiceConfig2(serviceHandle, SERVICE_CONFIG_DESCRIPTION, ref pinfo);
+                if (!res)
+                    System.Diagnostics.Trace.WriteLine($"Failed to set decription: {Marshal.GetLastWin32Error().ToString()}");
+
                 CloseServiceHandle(serviceHandle);
+            }
+            finally
+            {
+                CloseServiceHandle(scMgrHandle);
+            }
+        }
+
+        public static void StartService(string ServiceName)
+        {
+            var scMgrHandle = OpenSCManager(null, null, (uint)SCM_ACCESS.SC_MANAGER_ALL_ACCESS);
+
+            try
+            {
+                if (scMgrHandle == IntPtr.Zero)
+                    throw new Exception($"Win32 error {Marshal.GetLastWin32Error().ToString()} during start service (OpenSCManager)");
+
+                var serviceHandle = OpenService(scMgrHandle, ServiceName, (uint)SERVICE_ACCESS.SERVICE_ALL_ACCESS);
+
+                if (serviceHandle == IntPtr.Zero)
+                    throw new Exception($"Win32 error {Marshal.GetLastWin32Error().ToString()} during start service (OpenService)");
+
+                try
+                {
+                    var ssp = new SERVICE_STATUS_PROCESS();
+                    var status = QueryServiceStatusEx(serviceHandle, SC_STATUS_TYPE.SC_STATUS_PROCESS_INFO, ref ssp, Marshal.SizeOf<SERVICE_STATUS_PROCESS>(), out uint needed);
+                    if (!status)
+                        throw new Exception($"Win32 error {Marshal.GetLastWin32Error().ToString()} during start service (QueryServiceStatusEx)");
+
+                    var runningStates = new[] {
+                        (uint)SERVICE_STATUS.SERVICE_RUNNING ,
+                        (uint)SERVICE_STATUS.SERVICE_CONTINUE_PENDING,
+                        (uint)SERVICE_STATUS.SERVICE_START_PENDING,
+                    };
+                    if (Array.IndexOf(runningStates, ssp.dwCurrentState) >= 0)
+                        return;
+
+                    if (ssp.dwCurrentState == (uint)SERVICE_STATUS.SERVICE_STOP_PENDING || ssp.dwCurrentState == (uint)SERVICE_STATUS.SERVICE_PAUSE_PENDING)
+                        throw new Exception("Service is in a pending state");
+
+                    if (ssp.dwCurrentState == (uint)SERVICE_STATUS.SERVICE_PAUSED)
+                    {
+                        var sc_status = new SERVICE_STATUS();
+                        if (!ControlService(serviceHandle, SERVICE_CONTROL_CONTINUE, ref sc_status))
+                            throw new Exception($"Win32 error {Marshal.GetLastWin32Error().ToString()} during start service (ControlService)");
+                    }
+                    else
+                    {
+                        if (StartServiceW(serviceHandle, 0, null) == false)
+                            throw new Exception($"Win32 error {Marshal.GetLastWin32Error().ToString()} during start service (StartServiceW)");
+                    }
+                }
+                finally
+                {
+                    CloseServiceHandle(serviceHandle);
+                }
+            }
+            finally
+            {
+                CloseServiceHandle(scMgrHandle);
+            }
+        }
+
+        public static void StopService(string ServiceName)
+        {
+            var scMgrHandle = OpenSCManager(null, null, (uint)SCM_ACCESS.SC_MANAGER_ALL_ACCESS);
+
+            try
+            {
+                if (scMgrHandle == IntPtr.Zero)
+                    throw new Exception($"Win32 error {Marshal.GetLastWin32Error().ToString()} during stop service (OpenSCManager)");
+
+                var serviceHandle = OpenService(scMgrHandle, ServiceName, (uint)SERVICE_ACCESS.SERVICE_ALL_ACCESS);
+
+                if (serviceHandle == IntPtr.Zero)
+                    throw new Exception($"Win32 error {Marshal.GetLastWin32Error().ToString()} during stop service (OpenService)");
+
+                var ssp = new SERVICE_STATUS_PROCESS();
+                var status = QueryServiceStatusEx(serviceHandle, SC_STATUS_TYPE.SC_STATUS_PROCESS_INFO, ref ssp, Marshal.SizeOf<SERVICE_STATUS_PROCESS>(), out uint needed);
+                if (!status)
+                    throw new Exception($"Win32 error {Marshal.GetLastWin32Error().ToString()} during stop service (QueryServiceStatusEx)");
+
+                if (ssp.dwCurrentState == (uint)SERVICE_STATUS.SERVICE_STOPPED)
+                    return;
+
+                if (ssp.dwCurrentState != (uint)SERVICE_STATUS.SERVICE_STOP_PENDING)
+                {
+                    var sc_status = new SERVICE_STATUS();
+                    if (!ControlService(serviceHandle, SERVICE_CONTROL_STOP, ref sc_status))
+                        throw new Exception($"Win32 error {Marshal.GetLastWin32Error().ToString()} during stop service (ControlService)");
+                }
+
+                while (ssp.dwCurrentState != (uint)SERVICE_STATUS.SERVICE_STOPPED)
+                {
+                    var dwWaitTime = (int)Math.Max(10000, Math.Min(1000, ssp.dwWaitHint / 10));
+                    System.Threading.Thread.Sleep(dwWaitTime);
+                    if (!QueryServiceStatusEx(serviceHandle, SC_STATUS_TYPE.SC_STATUS_PROCESS_INFO, ref ssp, Marshal.SizeOf<SERVICE_STATUS_PROCESS>(), out needed))
+                        throw new Exception($"Win32 error {Marshal.GetLastWin32Error().ToString()} during stop service (QueryServiceStatusEx)");
+                }
             }
             finally
             {
@@ -421,17 +583,17 @@ namespace Duplicati.WindowsService
             try
             {
                 if (scMgrHandle == IntPtr.Zero)
-                    throw new Exception($"Win32 error { Marshal.GetLastWin32Error().ToString() } during delete service (OpenSCManager)");
+                    throw new Exception($"Win32 error {Marshal.GetLastWin32Error().ToString()} during delete service (OpenSCManager)");
 
                 var serviceHandle = OpenService(scMgrHandle, ServiceName, (uint)SERVICE_ACCESS.SERVICE_ALL_ACCESS);
 
                 if (serviceHandle == IntPtr.Zero)
-                    throw new Exception($"Win32 error { Marshal.GetLastWin32Error().ToString() } during delete service (OpenService)");
+                    throw new Exception($"Win32 error {Marshal.GetLastWin32Error().ToString()} during delete service (OpenService)");
 
                 try
                 {
                     if (DeleteService(serviceHandle) == false)
-                        throw new Exception($"Win32 error { Marshal.GetLastWin32Error().ToString() } during delete service (DeleteService)");
+                        throw new Exception($"Win32 error {Marshal.GetLastWin32Error().ToString()} during delete service (DeleteService)");
                 }
                 finally
                 {

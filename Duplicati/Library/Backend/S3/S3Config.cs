@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -21,8 +21,8 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Localization.Short;
 
 namespace Duplicati.Library.Backend
 {
@@ -52,11 +52,11 @@ namespace Duplicati.Library.Backend
             options.TryGetValue(KEY_CONFIGTYPE, out k);
             if (string.IsNullOrWhiteSpace(k))
                 k = DEFAULT_CONFIG_TYPE_STR;
-            
+
             ConfigType ct;
             if (!Enum.TryParse<ConfigType>(k, true, out ct))
                 ct = DEFAULT_CONFIG_TYPE;
-             
+
             switch (ct)
             {
                 case ConfigType.RegionHosts:
@@ -72,18 +72,18 @@ namespace Duplicati.Library.Backend
 
         public string Key { get { return "s3-getconfig"; } }
 
-        public string DisplayName { get { return "S3 configuration module"; } }
+        public string DisplayName { get { return LC.L("S3 configuration module"); } }
 
-        public string Description { get { return "Exposes S3 configuration as a web module"; } }
+        public string Description { get { return LC.L("Expose S3 configuration as a web module"); } }
 
         public IList<ICommandLineArgument> SupportedCommands
         {
             get
             {
-                return new List<ICommandLineArgument>(new ICommandLineArgument[] {
-                    new CommandLineArgument(KEY_CONFIGTYPE, CommandLineArgument.ArgumentType.Enumeration, "The config to get", "Provides different config values", DEFAULT_CONFIG_TYPE_STR, Enum.GetNames(typeof(ConfigType)))
+                return new List<ICommandLineArgument>([
+                    new CommandLineArgument(KEY_CONFIGTYPE, CommandLineArgument.ArgumentType.Enumeration, LC.L("The config to get"), LC.L("Provide different config values"), DEFAULT_CONFIG_TYPE_STR, Enum.GetNames(typeof(ConfigType)))
 
-                });
+                ]);
             }
         }
 

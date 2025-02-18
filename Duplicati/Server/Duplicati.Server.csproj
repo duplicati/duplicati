@@ -1,8 +1,9 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <AssemblyName>Duplicati.Server.Implementation</AssemblyName>
+    <Copyright>Copyright © 2025 Team Duplicati, MIT license</Copyright>
   </PropertyGroup>
   
   <ItemGroup>
@@ -13,11 +14,11 @@
     <PackageReference Include="Microsoft.Win32.SystemEvents" Version="7.0.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="System.Drawing.Common" Version="7.0.0" />
-    <PackageReference Include="System.Security.Principal.Windows" Version="4.7.0" />
+    <PackageReference Include="System.Security.Principal.Windows" Version="5.0.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Duplicati.Library.RestAPI\Duplicati.Library.RestAPI.csproj" />
+    <ProjectReference Include="..\Library\RestAPI\Duplicati.Library.RestAPI.csproj" />
     <ProjectReference Include="..\CommandLine\BackendTester\Duplicati.CommandLine.BackendTester.csproj" />
     <ProjectReference Include="..\CommandLine\CLI\Duplicati.CommandLine.csproj" />
     <ProjectReference Include="..\Library\Backend\OAuthHelper\Duplicati.Library.OAuthHelper.csproj" />
@@ -36,6 +37,7 @@
     <ProjectReference Include="..\CommandLine\RecoveryTool\Duplicati.CommandLine.RecoveryTool.csproj" />
     <ProjectReference Include="..\Library\UsageReporter\Duplicati.Library.UsageReporter.csproj" />
     <ProjectReference Include="..\Tools\Duplicati.Tools.csproj" />
+    <ProjectReference Include="..\Library\Crashlog\Duplicati.Library.Crashlog.csproj" />
   </ItemGroup>
   
   <ItemGroup>
@@ -53,3 +55,4 @@
   </ItemGroup>
 
 </Project>
+

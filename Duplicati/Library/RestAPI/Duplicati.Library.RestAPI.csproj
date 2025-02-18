@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Copyright>Copyright © 2025 Team Duplicati, MIT license</Copyright>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Database\Database schema\**" />
+    <Compile Remove="Database\Database schema\DatabaseConnectionSchemaMarker.cs" />
+    <EmbeddedResource Include="Database\DatabaseConnectionSchemaMarker.cs" />
+    <EmbeddedResource Include="newbackup.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Win32.SystemEvents" Version="7.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\CommandLine\CLI\Duplicati.CommandLine.csproj" />
+    <ProjectReference Include="..\Common\Duplicati.Library.Common.csproj" />
+    <ProjectReference Include="..\Encryption\Duplicati.Library.Encryption.csproj" />
+    <ProjectReference Include="..\Main\Duplicati.Library.Main.csproj" />
+    <ProjectReference Include="..\Snapshots\Duplicati.Library.Snapshots.csproj" />
+    <ProjectReference Include="..\SQLiteHelper\Duplicati.Library.SQLiteHelper.csproj" />
+    <ProjectReference Include="..\..\Server\Duplicati.Server.Serialization\Duplicati.Server.Serialization.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="WebServer\Kestrel\" />
+  </ItemGroup>
+
+</Project>
+

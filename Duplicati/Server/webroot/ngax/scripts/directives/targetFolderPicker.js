@@ -45,6 +45,12 @@ backupApp.directive('destinationFolderPicker', function() {
                 n.iconCls = 'x-tree-icon-desktop';
             else if (cp == compareablePath('%HOME%'))
                 n.iconCls = 'x-tree-icon-home';
+            else if (cp == compareablePath('%MY_MOVIES%'))
+                n.iconCls = 'x-tree-icon-mymovies';
+            else if (cp == compareablePath('%MY_DOWNLOADS%'))
+                n.iconCls = 'x-tree-icon-mydownloads';
+            else if (cp == compareablePath('%MY_PUBLIC%'))
+                n.iconCls = 'x-tree-icon-mypublic';
             else if (cp.substr(cp.length - 1, 1) != dirsep)
                 n.iconCls = 'x-tree-icon-leaf';
 
@@ -63,7 +69,7 @@ backupApp.directive('destinationFolderPicker', function() {
             if (!node.children && !node.loading) {
                 node.loading = true;
 
-                AppService.post('/filesystem?onlyfolders=true&showhidden=true', {path: node.id}).then(function(data) {
+                AppService.postJson('/filesystem?onlyfolders=true&showhidden=true', {path: node.id}).then(function(data) {
                     node.children = data.data;
                     node.loading = false;
 
@@ -102,7 +108,7 @@ backupApp.directive('destinationFolderPicker', function() {
 
         $scope.$watch('ngHideUserNode', updateHideUserNode);
         
-        AppService.post('/filesystem?onlyfolders=true&showhidden=true', {path: '/'}).then(function(data) {
+        AppService.postJson('/filesystem?onlyfolders=true&showhidden=true', {path: '/'}).then(function(data) {
 
             var usernode = {
                 text: 'User data',

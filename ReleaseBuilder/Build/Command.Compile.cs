@@ -1,3 +1,23 @@
+// Copyright (C) 2025, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
 namespace ReleaseBuilder.Build;
 
 public static partial class Command
@@ -14,13 +34,12 @@ public static partial class Command
         /// <param name="buildDir">The folder where builds should be placed</param>
         /// <param name="sourceProjects">The projects to build</param>
         /// <param name="windowsOnlyProjects">Projects that are only for the Windows targets</param>
-        /// <param name="guiProjects">Projects that are only needed for GUI builds</param>
         /// <param name="buildTargets">The targets to build</param>
         /// <param name="releaseInfo">The release info to use for the build</param>
         /// <param name="keepBuilds">A flag that allows re-using existing builds</param>
         /// <param name="rtcfg">The runtime configuration</param>
         /// <returns>A task that completes when the build is done</returns>
-        public static async Task BuildProjects(string baseDir, string buildDir, IEnumerable<string> sourceProjects, IEnumerable<string> windowsOnlyProjects, IEnumerable<string> guiProjects, IEnumerable<PackageTarget> buildTargets, ReleaseInfo releaseInfo, bool keepBuilds, RuntimeConfig rtcfg, bool useHostedBuilds)
+        public static async Task BuildProjects(string baseDir, string buildDir, Dictionary<InterfaceType, IEnumerable<string>> sourceProjects, IEnumerable<string> windowsOnlyProjects, IEnumerable<PackageTarget> buildTargets, ReleaseInfo releaseInfo, bool keepBuilds, RuntimeConfig rtcfg, bool useHostedBuilds)
         {
             // For tracing, create a log folder and store all logs there
             var logFolder = Path.Combine(buildDir, "logs");
@@ -48,12 +67,12 @@ public static partial class Command
                     var tmpfolder = Path.Combine(buildDir, target.BuildTargetString + "-tmp");
                     Console.WriteLine($"Building {target.BuildTargetString} ...");
 
-                    foreach (var proj in sourceProjects)
+                    if (!sourceProjects.TryGetValue(target.Interface, out var buildProjects))
+                        throw new InvalidOperationException($"No projects found for {target.Interface}");
+
+                    foreach (var proj in buildProjects)
                     {
                         if (target.OS != OSType.Windows && windowsOnlyProjects.Contains(proj))
-                            continue;
-
-                        if (target.Interface == InterfaceType.Cli && guiProjects.Contains(proj))
                             continue;
 
                         // TODO: Self contained builds are bloating the build size
@@ -76,11 +95,19 @@ public static partial class Command
                             "--self-contained", useHostedBuilds ? "false" : "true"
                         };
 
-                        await ProcessHelper.ExecuteWithLog(command, workingDirectory: tmpfolder, logFolder: logFolder, logFilename: (pid, isStdOut) => $"{Path.GetFileNameWithoutExtension(proj)}.{target.BuildTargetString}.{pid}.{(isStdOut ? "stdout" : "stderr")}.log");
+                        try
+                        {
+                            await ProcessHelper.ExecuteWithLog(command, workingDirectory: tmpfolder, logFolder: logFolder, logFilename: (pid, isStdOut) => $"{Path.GetFileNameWithoutExtension(proj)}.{target.BuildTargetString}.{pid}.{(isStdOut ? "stdout" : "stderr")}.log");
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"Error building {proj} for {target.BuildTargetString}: {ex.Message}");
+                            throw;
+                        }
                     }
 
                     // Perform any post-build steps, cleaning and signing as needed
-                    await PostCompile.PrepareTargetDirectory(baseDir, tmpfolder, target.OS, target.Arch, target.BuildTargetString, rtcfg, keepBuilds);
+                    await PostCompile.PrepareTargetDirectory(baseDir, tmpfolder, target, rtcfg, keepBuilds);
 
                     Directory.Move(tmpfolder, outputFolder);
                 }

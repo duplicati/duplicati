@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -31,48 +31,48 @@ namespace Duplicati.Server.Serialization.Interface
         /// <summary>
         /// The notification unique ID
         /// </summary>
-        long ID { get; set; }
+        long ID { get; }
         /// <summary>
         /// The notification type
         /// </summary>
-        NotificationType Type { get; set; }
+        NotificationType Type { get; }
         /// <summary>
         /// The notification title
         /// </summary>
-        string Title { get; set; }
+        string Title { get; }
         /// <summary>
         /// The notification message
         /// </summary>
-        string Message { get; set; }
+        string Message { get; }
         /// <summary>
         /// The serialized exception data, if any
         /// </summary>
-        string Exception { get; set; }
+        string Exception { get; }
         /// <summary>
         /// The ID of the backup that the notification belongs to
         /// </summary>
-        string BackupID { get; set; }
+        string BackupID { get; }
         /// <summary>
         /// The action for the notification
         /// </summary>
-        string Action { get; set; }
+        string Action { get; }
         /// <summary>
         /// When the notification was emitted
         /// </summary>
-        DateTime Timestamp { get; set; }
+        DateTime Timestamp { get; }
         /// <summary>
         /// The ID of the log entry that relates to this message, if any
         /// </summary>
         /// <value>The log entry identifier.</value>
-        string LogEntryID { get; set; }
+        string LogEntryID { get; }
         /// <summary>
         /// The ID of the event that triggered this notification
         /// </summary>
-        string MessageID { get; set; }
+        string MessageID { get; }
         /// <summary>
         /// The logtag of the error or event that triggered this notification
         /// </summary>
-        string MessageLogTag { get; set; }
+        string MessageLogTag { get; }
     }
 }
 

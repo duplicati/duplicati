@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -56,7 +56,7 @@ namespace ZipFileDebugger
                     continue;
                 }
 
-                Console.WriteLine("Opening zip file {0}", file);
+                Console.WriteLine("Opening ZIP file {0}", file);
 
                 var errors = false;
 
@@ -113,7 +113,7 @@ namespace ZipFileDebugger
                 }
             }
 
-            Console.Write("Processed {0} zip files", filecount);
+            Console.Write("Processed {0} ZIP files", filecount);
             if (errorcount == 0)
                 Console.WriteLine(" without errors");
             else

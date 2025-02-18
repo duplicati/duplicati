@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -47,10 +47,10 @@ namespace Duplicati.UnitTest
         {
             public static long WarningCount = 0;
             public static long ErrorCount = 0;
-            
+
             public LogHelper(string file)
                 : base(file)
-            {}
+            { }
 
             public override void WriteMessage(LogEntry entry)
             {
@@ -61,7 +61,7 @@ namespace Duplicati.UnitTest
                 base.WriteMessage(entry);
             }
         }
-            
+
         /// <summary>
         /// Running the unit test confirms the correctness of duplicati
         /// </summary>
@@ -175,7 +175,7 @@ namespace Duplicati.UnitTest
                                 using (var bk = Duplicati.Library.DynamicLoader.BackendLoader.GetBackend(target, options))
                                     foreach (var f in bk.List())
                                         if (!f.IsFolder)
-                                            bk.Delete(f.Name);
+                                            Utility.Await(bk.DeleteAsync(f.Name, System.Threading.CancellationToken.None));
                             }
                             catch (Duplicati.Library.Interface.FolderMissingException)
                             {
@@ -353,7 +353,7 @@ namespace Duplicati.UnitTest
                         if (s == options["dbpath"])
                             continue;
                         if (s == logfilename)
-                            continue;                        
+                            continue;
                         if (s.StartsWith(Util.AppendDirSeparator(tf), StringComparison.Ordinal))
                             continue;
 
@@ -439,7 +439,7 @@ namespace Duplicati.UnitTest
             BasicSetupHelper.ProgressWriteLine("Backing up the copy: " + sourcename);
             using (new Timer(LOGTAG, "BackupRun", "Backup of " + sourcename))
             using (var console = new CommandLine.ConsoleOutput(Console.Out, options))
-            using(var i = new Duplicati.Library.Main.Controller(target, options, console))
+            using (var i = new Duplicati.Library.Main.Controller(target, options, console))
                 Log.WriteInformationMessage(LOGTAG, "BackupOutput", i.Backup(source.Split(System.IO.Path.PathSeparator)).ToString());
         }
 
@@ -449,7 +449,7 @@ namespace Duplicati.UnitTest
             tops["restore-path"] = tempfolder;
             using (new Timer(LOGTAG, "RestoreRun", "Restore of " + source))
             using (var console = new CommandLine.ConsoleOutput(Console.Out, options))
-            using(var i = new Duplicati.Library.Main.Controller(target, tops, console))
+            using (var i = new Duplicati.Library.Main.Controller(target, tops, console))
                 Log.WriteInformationMessage(LOGTAG, "RestoreOutput", i.Restore(null).ToString());
         }
 
@@ -459,7 +459,7 @@ namespace Duplicati.UnitTest
             tops["restore-path"] = tempfolder;
             using (new Timer(LOGTAG, "PartialRestore", "Partial restore of " + source))
             using (var console = new CommandLine.ConsoleOutput(Console.Out, options))
-            using(var i = new Duplicati.Library.Main.Controller(target, tops, console))
+            using (var i = new Duplicati.Library.Main.Controller(target, tops, console))
                 Log.WriteInformationMessage(LOGTAG, "PartialRestoreOutput", i.Restore(files).ToString());
         }
     }

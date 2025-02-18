@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -23,13 +23,13 @@ namespace Duplicati.Library.Backend.Strings
 {
     internal static class Sia
     {
-        public static string DisplayName { get { return LC.L(@"Sia Decentralized Cloud"); } }
         public static string Description { get { return LC.L(@"This backend can read and write data to Sia."); } }
+        public static string DisplayName { get { return LC.L(@"Sia Decentralized Cloud"); } }
+        public static string SiaPathDescriptionLong { get { return LC.L(@"Set the target path. Example: /backup"); } }
         public static string SiaPathDescriptionShort { get { return LC.L(@"Backup path"); } }
-        public static string SiaPathDescriptionLong { get { return LC.L(@"Target path, ie /backup"); } }
+        public static string SiaPasswordLong { get { return LC.L(@"Supply a password for Sia server."); } }
         public static string SiaPasswordShort { get { return LC.L(@"Sia password"); } }
-        public static string SiaPasswordLong { get { return LC.L(@"Sia password"); } }
-        public static string SiaRedundancyDescriptionShort { get { return LC.L(@"3"); } }
-        public static string SiaRedundancyDescriptionLong { get { return LC.L(@"Minimum value is 3."); } }
+        public static string SiaRedundancyDescriptionLong { get { return LC.L(@"The minimum value for redundancy is 1.0."); } }
+        public static string SiaRedundancyDescriptionShort { get { return LC.L(@"Set the minimum redundancy"); } }
     }
 }

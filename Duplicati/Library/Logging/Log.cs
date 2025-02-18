@@ -1,4 +1,4 @@
-﻿// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -451,7 +451,7 @@ namespace Duplicati.Library.Logging
                     
                     LogScope sc;
                     if (!m_log_instances.TryGetValue(cur, out sc))
-                        throw new Exception("Unable to find log in lookup table, this may be caused by attempting to transport call contexts between AppDomains (eg. with remoting calls)");
+                        throw new Exception("Unable to find log in lookup table, this may be caused by attempting to transport call contexts between AppDomains (e.g. with remoting calls)");
 
                     return sc;
                 }

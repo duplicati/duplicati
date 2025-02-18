@@ -1,6 +1,27 @@
+// Copyright (C) 2025, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
 using System;
 using System.Threading.Tasks;
 using CoCoL;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.GUI.TrayIcon;
 
@@ -61,10 +82,17 @@ public class ProcessBasedActionDelay : IDisposable
     /// </summary>
     /// <param name="action">The action to execute</param>
     public void ExecuteAction(Action action)
+    {
         // Note: WriteNoWait() is used to avoid waiting for the action to be read,
         // as this would cause deadlocks if called from within the processor.
         // The buffer size should be sufficient to allow for a reasonable number of actions to be queued.
-        => m_inboundActionChannel.WriteNoWait(action);
+        var task = m_inboundActionChannel.WriteAsync(action);
+
+        // Observe if the channel is full or retired
+        Task.WaitAny(task, Task.Delay(500));
+        if (task.IsCompleted)
+            task.Await();
+    }
 
     /// <summary>
     /// Signals the start of the processor
@@ -77,7 +105,7 @@ public class ProcessBasedActionDelay : IDisposable
     /// </summary>
     public void Dispose()
     {
-        m_inboundActionChannel.Retire();
-        m_initializedChannel.Retire();
+        m_inboundActionChannel.RetireAsync(true).Await();
+        m_initializedChannel.RetireAsync(true).Await();
     }
 }

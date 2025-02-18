@@ -49,7 +49,8 @@ backupApp.service('SystemInfo', function($rootScope, $timeout, $cookies, AppServ
                 'webdav': null,
                 'openstack': gettextCatalog.getString('OpenStack Object Storage / Swift'),
                 's3': gettextCatalog.getString('S3 Compatible'),
-                'aftp': gettextCatalog.getString('FTP (Alternative)')
+                'aftp': gettextCatalog.getString('FTP (Alternative)'),
+                'cifs': gettextCatalog.getString('CFIS / SMB'),
             },
             local: {'file': null},
             prop: {
@@ -73,11 +74,11 @@ backupApp.service('SystemInfo', function($rootScope, $timeout, $cookies, AppServ
                 'dropbox': null,
                 'sia': null,
                 'storj': null,
-                'tardigrade': null,
                 'jottacloud': null,
 				'rclone': null,
                 'cos': null,
-				'aliyunoss': null
+				'aliyunoss': null,
+                'pcloud': null
             }
         };
 

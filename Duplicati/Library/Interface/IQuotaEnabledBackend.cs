@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -18,10 +18,11 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+
+using System.Threading;
+using System.Threading.Tasks;
+
+#nullable enable
 
 namespace Duplicati.Library.Interface
 {
@@ -35,6 +36,8 @@ namespace Duplicati.Library.Interface
         /// This may return null if the particular host implementation
         /// does not support quotas, but the backend does.
         /// </summary>
-        IQuotaInfo Quota { get; }
+        /// <param name="cancelToken">Token to cancel the operation.</param>
+        /// <returns>Information about the quota, or null if not supported</returns>
+        Task<IQuotaInfo?> GetQuotaInfoAsync(CancellationToken cancelToken);
     }
 }

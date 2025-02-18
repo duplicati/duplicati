@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -101,7 +101,7 @@ namespace Duplicati.Library.DynamicLoader
                     {
                         if (tex.InnerException != null)
                         {
-                            // Unwrap exceptions for nicer display.  The ExceptionDispatchInfo class allows us to
+                            // Unwrap exceptions for nicer display. The ExceptionDispatchInfo class allows us to
                             // rethrow an exception without changing the stack trace.
                             ExceptionDispatchInfo.Capture(tex.InnerException).Throw();
                         }

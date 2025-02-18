@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -41,7 +41,7 @@ namespace Duplicati.Library.Common.IO
                 Mono.Unix.Native.Syscall.llistxattr("/", out v);
                 works = true;
             }
-            catch (EntryPointNotFoundException e)
+            catch (EntryPointNotFoundException)
             {
             }
             catch

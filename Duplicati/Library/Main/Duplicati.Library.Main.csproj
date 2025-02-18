@@ -1,13 +1,15 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <OutputType>Library</OutputType>
+    <Copyright>Copyright © 2025 Team Duplicati, MIT license</Copyright>
+    <RootNamespace>Duplicati.Library.Main</RootNamespace>
   </PropertyGroup>
-  
-  <ItemGroup>	
-    <ProjectReference Include="..\..\License\Duplicati.License.csproj" />	
-    <ProjectReference Include="..\Compression\Duplicati.Library.Compression.csproj" />	
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\License\Duplicati.License.csproj" />
+    <ProjectReference Include="..\Compression\Duplicati.Library.Compression.csproj" />
     <ProjectReference Include="..\Utility\Duplicati.Library.Utility.csproj" />
     <ProjectReference Include="..\DynamicLoader\Duplicati.Library.DynamicLoader.csproj" />
     <ProjectReference Include="..\Interface\Duplicati.Library.Interface.csproj" />
@@ -18,7 +20,7 @@
     <ProjectReference Include="..\UsageReporter\Duplicati.Library.UsageReporter.csproj" />
     <ProjectReference Include="..\Modules\Builtin\Duplicati.Library.Modules.Builtin.csproj" />
   </ItemGroup>
-  
+
   <ItemGroup>
     <EmbeddedResource Include="Database\Database schema\Schema.sql" />
     <EmbeddedResource Include="Database\Database schema\1. Add index.sql" />
@@ -33,8 +35,9 @@
     <EmbeddedResource Include="Database\Database schema\10. Add IsFullBackup to Fileset table.sql" />
     <EmbeddedResource Include="Database\Database schema\11. Add Block indices.sql" />
     <EmbeddedResource Include="Database\Database schema\12. Performance Indexes.sql" />
+    <EmbeddedResource Include="Database\Database schema\13. Unique index on DuplicateBlock.sql" />
   </ItemGroup>
-  
+
   <ItemGroup>
     <Content Include="default_compressed_extensions.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -42,8 +45,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="CoCoL" Version="1.8" />
+    <PackageReference Include="CoCoL" Version="1.8.1" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
   </ItemGroup>
 
 </Project>
+

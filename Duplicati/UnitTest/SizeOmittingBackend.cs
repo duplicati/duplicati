@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -52,9 +52,9 @@ namespace Duplicati.UnitTest
         {
             return m_backend.PutAsync(remotename, stream, cancelToken);
         }
-        public void Get(string remotename, Stream stream)
+        public async Task GetAsync(string remotename, Stream stream, CancellationToken cancelToken)
         {
-            m_backend.Get(remotename, stream);
+            await m_backend.GetAsync(remotename, stream, cancelToken).ConfigureAwait(false);
         }
         #endregion
 
@@ -70,29 +70,23 @@ namespace Duplicati.UnitTest
         {
             return m_backend.PutAsync(remotename, filename, cancelToken);
         }
-        public void Get(string remotename, string filename)
+        public async Task GetAsync(string remotename, string filename, CancellationToken cancelToken)
         {
-            m_backend.Get(remotename, filename);
+            await m_backend.GetAsync(remotename, filename, cancelToken).ConfigureAwait(false);
         }
-        public void Delete(string remotename)
+        public async Task DeleteAsync(string remotename, CancellationToken cancelToken)
         {
-            m_backend.Delete(remotename);
+            await m_backend.DeleteAsync(remotename, cancelToken).ConfigureAwait(false);
         }
-        public void Test()
+        public Task TestAsync(CancellationToken cancelToken)
         {
-            m_backend.Test();
+            return m_backend.TestAsync(cancelToken);
         }
-        public void CreateFolder()
+        public Task CreateFolderAsync(CancellationToken cancelToken)
         {
-            m_backend.CreateFolder();
+            return m_backend.CreateFolderAsync(cancelToken);
         }
-        public string[] DNSName
-        {
-            get
-            {
-                return m_backend.DNSName;
-            }
-        }
+        public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => m_backend.GetDNSNamesAsync(cancelToken);
         public string DisplayName
         {
             get

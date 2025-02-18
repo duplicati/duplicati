@@ -1,4 +1,4 @@
-﻿// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -37,6 +37,8 @@ namespace Duplicati.CommandLine.RecoveryTool
         {
             try
             {
+                Library.AutoUpdater.PreloadSettingsLoader.ConfigurePreloadSettings(ref _args, Library.AutoUpdater.PackageHelper.NamedExecutable.RecoveryTool);
+
                 var args = new List<string>(_args);
                 var tmpparsed = Library.Utility.FilterCollector.ExtractOptions(args);
                 var options = tmpparsed.Item1;
@@ -99,7 +101,7 @@ namespace Duplicati.CommandLine.RecoveryTool
 
                 return command(args, options, filter);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 if (ex is Duplicati.Library.Interface.UserInformationException)
                     Console.WriteLine(ex.Message);
@@ -127,7 +129,7 @@ namespace Duplicati.CommandLine.RecoveryTool
                 if (!newfilter.Empty)
                     filter = newfilter;
 
-                foreach(KeyValuePair<String, String> keyvalue in opt)
+                foreach (KeyValuePair<String, String> keyvalue in opt)
                     options[keyvalue.Key] = keyvalue.Value;
 
                 cargs.AddRange(
@@ -135,7 +137,7 @@ namespace Duplicati.CommandLine.RecoveryTool
                     where !string.IsNullOrWhiteSpace(c) && !c.StartsWith("#", StringComparison.Ordinal) && !c.StartsWith("!", StringComparison.Ordinal) && !c.StartsWith("REM ", StringComparison.OrdinalIgnoreCase)
                     select c
                 );
-                    
+
                 return true;
             }
             catch (Exception e)

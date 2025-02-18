@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -19,8 +19,6 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
-using System;
-
 namespace Duplicati.Server.Serialization.Interface
 {
     /// <summary>
@@ -40,12 +38,12 @@ namespace Duplicati.Server.Serialization.Interface
         /// The setting value
         /// </summary>
         string Value { get; set; }
-        
+
         /// <summary>
         /// The actual option arguments
         /// </summary>
-        Duplicati.Library.Interface.ICommandLineArgument Argument { get; }
-        
+        Library.Interface.ICommandLineArgument Argument { get; }
+
     }
 }
 

@@ -27,6 +27,7 @@ backupApp.directive('advancedOptionsEditor', function() {
 
                 'retry-delay': 'shorttimespan',
                 'web-timeout': 'shorttimespan',
+                'read-write-timeout': 'shorttimespan',
                 'run-script-timeout': 'shorttimespan'
             };
 

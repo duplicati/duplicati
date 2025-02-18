@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -188,6 +188,8 @@ namespace Duplicati.Library.Interface
             : this(name)
         {
             m_type = type;
+            if (type == ArgumentType.Boolean)
+                m_defaultValue = "false";
         }
 
         /// <summary>
@@ -216,6 +218,8 @@ namespace Duplicati.Library.Interface
             : this(name, type, shortDescription, longDescription)
         {
             m_defaultValue = defaultValue;
+            if (type == ArgumentType.Boolean && string.IsNullOrEmpty(m_defaultValue))
+                m_defaultValue = "false";
         }
 
         /// <summary>

@@ -1,4 +1,4 @@
-﻿// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -40,7 +40,7 @@ namespace Duplicati.Library.Snapshots
     [SupportedOSPlatform("macOS")]
     public sealed class LinuxSnapshot : SnapshotBase
     {
-		/// <summary>
+        /// <summary>
         /// The tag used for logging messages
         /// </summary>
         public static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(WindowsSnapshot));
@@ -94,9 +94,9 @@ namespace Duplicati.Library.Snapshots
                 {
                     Dispose();
                 }
-				catch (Exception ex)
+                catch (Exception ex)
                 {
-					Logging.Log.WriteVerboseMessage(LOGTAG, "SnapshotCleanupError", ex, "Failed to clean up after error");
+                    Logging.Log.WriteVerboseMessage(LOGTAG, "SnapshotCleanupError", ex, "Failed to clean up after error");
                 }
 
                 throw;
@@ -111,10 +111,10 @@ namespace Duplicati.Library.Snapshots
                 if (disposing)
                 {
                     // Attempt to clean out as many as possible
-                    foreach(var s in m_snapShots)
+                    foreach (var s in m_snapShots)
                     {
                         try { s.Dispose(); }
-						catch (Exception ex) { Logging.Log.WriteVerboseMessage(LOGTAG, "SnapshotCloseError", ex, "Failed to close a snapshot"); }
+                        catch (Exception ex) { Logging.Log.WriteVerboseMessage(LOGTAG, "SnapshotCloseError", ex, "Failed to close a snapshot"); }
                     }
                 }
 
@@ -466,7 +466,7 @@ namespace Duplicati.Library.Snapshots
         /// <returns>The symlink target</returns>
         public override string GetSymlinkTarget(string localPath)
         {
-            return SystemIO.IO_SYS.GetSymlinkTarget(ConvertToSnapshotPath(localPath));
+            return SystemIO.IO_OS.GetSymlinkTarget(ConvertToSnapshotPath(localPath));
         }
 
         /// <summary>
@@ -478,7 +478,7 @@ namespace Duplicati.Library.Snapshots
         /// <param name="followSymlink">A flag indicating if a symlink should be followed</param>
         public override Dictionary<string, string> GetMetadata(string localPath, bool isSymlink, bool followSymlink)
         {
-            return SystemIO.IO_SYS.GetMetadata(ConvertToSnapshotPath(localPath), isSymlink, followSymlink);
+            return SystemIO.IO_OS.GetMetadata(ConvertToSnapshotPath(localPath), isSymlink, followSymlink);
         }
 
         /// <summary>
@@ -500,8 +500,8 @@ namespace Duplicati.Library.Snapshots
                     default:
                         return true;
                 }
-            } 
-            catch 
+            }
+            catch
             {
                 if (!System.IO.File.Exists(SystemIOLinux.NormalizePath(localPath)))
                     return false;
@@ -509,7 +509,7 @@ namespace Duplicati.Library.Snapshots
                 throw;
             }
         }
-        
+
         /// <summary>
         /// Gets a unique hardlink target ID
         /// </summary>
@@ -518,10 +518,10 @@ namespace Duplicati.Library.Snapshots
         public override string HardlinkTargetID(string localPath)
         {
             var snapshotPath = ConvertToSnapshotPath(localPath);
-            
+
             if (PosixFile.GetHardlinkCount(snapshotPath) <= 1)
                 return null;
-            
+
             return PosixFile.GetInodeTargetID(snapshotPath);
         }
 
