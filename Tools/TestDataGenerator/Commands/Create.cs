@@ -178,13 +178,14 @@ public static class Create
 
         foreach (var (file, size) in filesWithSizes)
         {
+            var filename = file;
             try
             {
                 // Sometimes with a large number of files, the file name clashes with a folder name. In that case, generate a new file name
-                while (Directory.Exists(file))
-                    file = Path.Combine(Path.GetDirectoryName(file), GenerateFileName(rnd, input.MaxPathSegmentLength));
+                while (Directory.Exists(filename))
+                    filename = Path.Combine(Path.GetDirectoryName(filename) ?? "", GenerateFileName(rnd, input.MaxPathSegmentLength));
 
-                using var fs = new FileStream(file, FileMode.Create, FileAccess.Write);
+                using var fs = new FileStream(filename, FileMode.Create, FileAccess.Write);
                 if (size > 0)
                 {
                     fs.SetLength(size);
@@ -203,7 +204,7 @@ public static class Create
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error creating file {file}: {ex.Message}");
+                Console.WriteLine($"Error creating file {filename}: {ex.Message}");
             }
         }
 
