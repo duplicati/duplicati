@@ -123,7 +123,6 @@ namespace Duplicati.Library.Backend.AzureBlob
             BlobResultSegment segment;
             try
             {
-
                 segment = await _container.ListBlobsSegmentedAsync(null, false, ListDetails, null, null, null, _operationContext, cancelToken).ConfigureAwait(false);
             }
             catch (StorageException ex)
@@ -140,7 +139,7 @@ namespace Duplicati.Library.Backend.AzureBlob
 
             while (segment.ContinuationToken != null)
             {
-                segment = await _container.ListBlobsSegmentedAsync(null, false, ListDetails, null, segment.ContinuationToken, null, _operationContext);
+                segment = await _container.ListBlobsSegmentedAsync(null, false, ListDetails, null, segment.ContinuationToken, null, _operationContext, cancelToken).ConfigureAwait(false);
 
                 foreach (var item in segment.Results)
                     yield return item;
