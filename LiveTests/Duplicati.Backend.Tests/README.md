@@ -15,34 +15,34 @@ NUMBER_OF_FILES  default is 20
 ## Backends CI Status
 
 | Backend | CI Planned | CI Status |
-|----------|------------|------------|
-| pCloud | Planned | Live |
-| WebDav | Planned | Live |
-| Shhv2 | Planned | Live |
-| S3 | Planned | Live |
-| Ftp | Planned | Live |
-| Planned | Planned | Live |
-| Dropbox | Planned | Live |
-| AlternativeFTP | Planned | Live |
-| AzureBlob | Planned | Live |
-| CIFS | Planned | Live |
-| Google Drive | Planned | Live |
-| TahoeLAFS | Pending Decision | |
-| TescentCOS | Pending Decision | |
-| Storj | Pending Decision | |
-| Sia | Pending Decision | |
-| SharePoint | Pending Decision | |
-| Rclone | Pending Decision | |
-| OneDrive | Pending Decision | |
-| OpenStack | Pending Decision | |
-| Mega | Pending Decision | |
-| Jottacloud | Pending Decision | |
-| IDrive2 | Planned | |
-| File | Planned | |
-| Box | Pending Decision | |
-| CloudFiles | Pending Decision | |
-| backBlaze | Planned | |
-| AliyunOSS | Pending Decision | |
+|----------|------------|-----------|
+| pCloud | Planned | Live      |
+| WebDav | Planned | Live      |
+| Shhv2 | Planned | Live      |
+| S3 | Planned | Live      |
+| Ftp | Planned | Live      |
+| Planned | Planned | Live      |
+| Dropbox | Planned | Live      |
+| AlternativeFTP | Planned | Live      |
+| AzureBlob | Planned | Live      |
+| CIFS | Planned | Live      |
+| Google Drive | Planned | Live      |
+| TahoeLAFS | Pending Decision |           |
+| TescentCOS | Pending Decision |           |
+| Storj | Pending Decision |           |
+| Sia | Pending Decision |           |
+| SharePoint | Pending Decision |           |
+| Rclone | Pending Decision |           |
+| OneDrive | Pending Decision |           |
+| OpenStack | Pending Decision |           |
+| Mega | Pending Decision |           |
+| Jottacloud | Pending Decision |           |
+| IDrive2 | Planned |           |
+| File | Planned |           |
+| Box | Pending Decision |           |
+| CloudFiles | Pending Decision |           |
+| backBlaze | Planned | Live      |
+| AliyunOSS | Pending Decision |           |
 
 
 ## Backends that do not require Environment variables
@@ -56,6 +56,17 @@ Please note that TestContainers token has to be configured in secrets/Github act
 
 ## Backends that require Environment variables
 
+## Backblaze B2
+
+Backblaze B2 credentials are mapped to the following environment variables:
+
+```
+TESTCREDENTIAL_B2_BUCKET
+TESTCREDENTIAL_B2_FOLDER
+TESTCREDENTIAL_B2_USERNAME
+TESTCREDENTIAL_B2_PASSWORD
+```
+
 ## Google Drive:
 
 Google Drive credentials are mapped to the following environment variables:
@@ -64,6 +75,7 @@ Google Drive credentials are mapped to the following environment variables:
 TESTCREDENTIAL_GOOGLEDRIVE_FOLDER
 TESTCREDENTIAL_GOOGLEDRIVE_TOKEN
 ```
+
 ## S3
 
 S3 credentials are mapped to the following environment variables:
