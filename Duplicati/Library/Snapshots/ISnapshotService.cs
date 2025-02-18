@@ -36,9 +36,9 @@ namespace Duplicati.Library.Snapshots
     public interface ISnapshotService : IDisposable
     {
         /// <summary>
-        /// Gets the source folders
+        /// Gets the source entries
         /// </summary>
-        IEnumerable<string> SourceFolders { get; }
+        IEnumerable<string> SourceEntries { get; }
 
         /// <summary>
         /// Enumerates the root source files and folders

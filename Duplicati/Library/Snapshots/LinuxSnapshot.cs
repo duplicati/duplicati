@@ -110,7 +110,7 @@ namespace Duplicati.Library.Snapshots
         /// <summary>
         /// Gets the source folders
         /// </summary>
-        public override IEnumerable<string> SourceFolders => m_snapShots.Select(e => e.LocalPath);
+        public override IEnumerable<string> SourceEntries => m_entries.Select(x => x.Key);
 
         /// <summary>
         /// Enumerates the root source files and folders
@@ -118,12 +118,12 @@ namespace Duplicati.Library.Snapshots
         /// <returns>The source files and folders</returns>
         public override IEnumerable<ISourceFileEntry> EnumerateFilesystemEntries()
         {
-            foreach (var snap in m_snapShots)
+            foreach (var sourceEntry in SourceEntries)
             {
-                if (DirectoryExists(snap.LocalPath) || snap.LocalPath.EndsWith(System.IO.Path.DirectorySeparatorChar))
-                    yield return new SnapshotSourceFileEntry(this, Util.AppendDirSeparator(snap.LocalPath), true, true);
+                if (DirectoryExists(sourceEntry) || sourceEntry.EndsWith(System.IO.Path.DirectorySeparatorChar))
+                    yield return new SnapshotSourceFileEntry(this, Util.AppendDirSeparator(sourceEntry), true, true);
                 else
-                    yield return new SnapshotSourceFileEntry(this, snap.LocalPath, false, true);
+                    yield return new SnapshotSourceFileEntry(this, sourceEntry, false, true);
             }
         }
 

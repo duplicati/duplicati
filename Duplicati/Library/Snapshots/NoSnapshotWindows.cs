@@ -37,17 +37,17 @@ namespace Duplicati.Library.Snapshots
         /// <summary>
         /// The list of folders to create snapshots of
         /// </summary>
-        private readonly IEnumerable<string> m_folders;
+        private readonly IEnumerable<string> m_sources;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="NoSnapshotWindows"/> class.
         /// </summary>
-        /// <param name="folders">The list of folders to create snapshots of</param>
+        /// <param name="sources">The list of entries to create snapshots of</param>
         /// <param name="followSymlinks">A flag indicating if symlinks should be followed</param>
-        public NoSnapshotWindows(IEnumerable<string> folders, bool followSymlinks)
+        public NoSnapshotWindows(IEnumerable<string> sources, bool followSymlinks)
             : base(followSymlinks)
         {
-            m_folders = folders;
+            m_sources = sources;
         }
 
         /// <summary>
@@ -77,8 +77,8 @@ namespace Duplicati.Library.Snapshots
         /// <summary>
         /// Gets the source folders
         /// </summary>
-        public override IEnumerable<string> SourceFolders
-            => m_folders;
+        public override IEnumerable<string> SourceEntries
+            => m_sources;
 
         /// <summary>
         /// Enumerates the root source files and folders
@@ -86,7 +86,7 @@ namespace Duplicati.Library.Snapshots
         /// <returns>The source files and folders</returns>
         public override IEnumerable<ISourceFileEntry> EnumerateFilesystemEntries()
         {
-            foreach (var folder in m_folders.Select(SystemIOWindows.RemoveExtendedDevicePathPrefix))
+            foreach (var folder in m_sources.Select(SystemIOWindows.RemoveExtendedDevicePathPrefix))
             {
                 if (DirectoryExists(folder) || folder.EndsWith(System.IO.Path.DirectorySeparatorChar))
                     yield return new SnapshotSourceFileEntry(this, Util.AppendDirSeparator(folder), true, true);

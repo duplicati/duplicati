@@ -58,7 +58,7 @@ namespace Duplicati.Library.Snapshots
         /// <summary>
         /// The source folders included in the snapshot
         /// </summary>
-        private readonly IReadOnlyList<string> _sourceFolders;
+        private readonly IReadOnlyList<string> _sourceEntries;
 
         /// <summary>
         /// Constructs a new backup snapshot, using all the required disks
@@ -70,7 +70,7 @@ namespace Duplicati.Library.Snapshots
             : base(followSymlinks)
         {
             // For Windows, ensure we don't store paths with extended device path prefixes (i.e., @"\\?\" or @"\\?\UNC\")
-            _sourceFolders = sources.Select(SystemIOWindows.RemoveExtendedDevicePathPrefix).ToList();
+            _sourceEntries = sources.Select(SystemIOWindows.RemoveExtendedDevicePathPrefix).ToList();
             try
             {
                 _vssBackupComponents = new VssBackupComponents();
@@ -87,7 +87,7 @@ namespace Duplicati.Library.Snapshots
                 }
                 _vssBackupComponents.SetupWriters(null, excludedWriters);
 
-                _vssBackupComponents.InitShadowVolumes(_sourceFolders);
+                _vssBackupComponents.InitShadowVolumes(_sourceEntries);
 
                 _vssBackupComponents.MapVolumesToSnapShots();
 
@@ -119,7 +119,7 @@ namespace Duplicati.Library.Snapshots
         /// <summary>
         /// Gets the source folders
         /// </summary>
-        public override IEnumerable<string> SourceFolders => _sourceFolders;
+        public override IEnumerable<string> SourceEntries => _sourceEntries;
 
         /// <summary>
         /// Enumerates the root source files and folders
@@ -127,7 +127,7 @@ namespace Duplicati.Library.Snapshots
         /// <returns>The source files and folders</returns>
         public override IEnumerable<ISourceFileEntry> EnumerateFilesystemEntries()
         {
-            foreach (var folder in _sourceFolders)
+            foreach (var folder in _sourceEntries)
             {
                 if (folder.EndsWith(Path.DirectorySeparatorChar) || DirectoryExists(folder))
                     yield return new SnapshotSourceFileEntry(this, Util.AppendDirSeparator(folder), true, true);

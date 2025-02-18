@@ -56,9 +56,9 @@ namespace Duplicati.Library.Snapshots
         protected bool FollowSymlinks { get; }
 
         /// <summary>
-        /// Gets the source folders
+        /// Gets the source entries
         /// </summary>
-        public abstract IEnumerable<string> SourceFolders { get; }
+        public abstract IEnumerable<string> SourceEntries { get; }
 
         /// <summary>
         /// Enuemrates the root source files and folders

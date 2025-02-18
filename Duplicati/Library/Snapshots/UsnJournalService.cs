@@ -97,7 +97,7 @@ namespace Duplicati.Library.Snapshots
             // get hash identifying current source filter / sources configuration
             var configHash = Utility.Utility.ByteArrayAsHexString(MD5HashHelper.GetHash(new string[] {
                 emitFilter?.ToString() ?? string.Empty,
-                string.Join("; ", m_snapshot.SourceFolders),
+                string.Join("; ", m_snapshot.SourceEntries),
                 fileAttributeFilter.ToString(),
                 skipFilesLargerThan.ToString()
             }));
@@ -106,7 +106,7 @@ namespace Duplicati.Library.Snapshots
             var journalDataDict = prevJournalData.ToDictionary(data => data.Volume);
 
             // iterate over volumes
-            foreach (var sourcesPerVolume in SortByVolume(m_snapshot.SourceFolders))
+            foreach (var sourcesPerVolume in SortByVolume(m_snapshot.SourceEntries))
             {
                 Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "UsnInitialize", "Reading USN journal for volume: {0}", sourcesPerVolume.Key);
 
@@ -234,11 +234,11 @@ namespace Duplicati.Library.Snapshots
             // Make the method async enumerable
             await Task.CompletedTask;
 
-            foreach(var volumeData in m_volumeDataDict.Values.Where(x => x.IsFullScan))
+            foreach (var volumeData in m_volumeDataDict.Values.Where(x => x.IsFullScan))
             {
                 if (volumeData.Folders != null)
                 {
-                    foreach(var folderPath in volumeData.Folders)
+                    foreach (var folderPath in volumeData.Folders)
                     {
                         if (token.IsCancellationRequested)
                             yield break;
@@ -253,7 +253,7 @@ namespace Duplicati.Library.Snapshots
 
                 if (volumeData.Files != null)
                 {
-                    foreach(var filePath in volumeData.Files)
+                    foreach (var filePath in volumeData.Files)
                     {
                         if (token.IsCancellationRequested)
                             yield break;
@@ -278,12 +278,12 @@ namespace Duplicati.Library.Snapshots
         /// <returns>Filtered sources</returns>
         public async IAsyncEnumerable<ISourceFileEntry> GetModifiedSources(Func<ISourceFileEntry, ValueTask<bool>> filter, [EnumeratorCancellation] CancellationToken token)
         {
-            foreach(var volumeData in m_volumeDataDict.Values.Where(x => !x.IsFullScan))
+            foreach (var volumeData in m_volumeDataDict.Values.Where(x => !x.IsFullScan))
             {
                 // prepare cache for includes (value = true) and excludes (value = false, will be populated
                 // on-demand)
                 var cache = new Dictionary<string, bool>();
-                foreach (var source in m_snapshot.SourceFolders)
+                foreach (var source in m_snapshot.SourceEntries)
                 {
                     if (token.IsCancellationRequested)
                         yield break;
