@@ -18,7 +18,7 @@ internal class WmicShadowCopyManager : IDisposable
     /// <summary>
     /// The tag used for logging messages
     /// </summary>
-    public static readonly string LOGTAG = Logging.Log.LogTagFromType<SnapshotManager>();
+    private static readonly string LOGTAG = Logging.Log.LogTagFromType<SnapshotManager>();
 
     /// <summary>
     /// A single shadow copy
@@ -158,6 +158,31 @@ internal class WmicShadowCopyManager : IDisposable
         Logging.Log.WriteErrorMessage(LOGTAG, "ShadowCopyFailed", null, "Failed to get shadow copy path for {0}: {1}", shadowId, output);
         return null;
     }
+
+    /// <summary>
+    /// Returns the drives that are vss enabled
+    /// </summary>
+    /// <returns></returns>
+    public static HashSet<string> GetVssCapableDrivesViaVssadmin()
+    {
+        var vssDrives = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        try
+        {
+            var output = ExecuteCommand("vssadmin", "list volumes", 5000);
+            
+            // Regex to match drive letters in output
+            var matches = Regex.Matches(output, @"Volume\s+path:\s*([A-Z]:)\\?\s", RegexOptions.IgnoreCase);
+            foreach (Match match in matches)
+                vssDrives.Add(match.Groups[1].Value.Substring(0, 1));
+        }
+        catch (Exception ex)
+        {
+            Logging.Log.WriteErrorMessage(LOGTAG, "ShadowCopyListFailed", ex, "Failed to list volumes"); 
+        }
+
+        return vssDrives;
+    }    
 
     /// <summary>
     /// Delete a shadow copy

@@ -24,7 +24,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Management;
 using System.Runtime.Versioning;
 
 namespace Duplicati.Library.Snapshots.Windows;
@@ -39,6 +38,11 @@ internal class WmicVssBackup : ISnapshotProvider
     /// The manager that contains the actual interface to WMIC
     /// </summary>
     private WmicShadowCopyManager _manager = new WmicShadowCopyManager();
+
+    /// <summary>
+    /// Gets the VSS enabled drives
+    /// </summary>
+    private Lazy<HashSet<string>> _vssEnabledDrives = new Lazy<HashSet<string>>(() => WmicShadowCopyManager.GetVssCapableDrivesViaVssadmin());
 
     /// <inheritdoc/>
     public Guid AddToSnapshotSet(string drive)
@@ -102,20 +106,8 @@ internal class WmicVssBackup : ISnapshotProvider
     {
         if (string.IsNullOrWhiteSpace(drive))
             return false;
-        
-        try
-        {
-            var query = $"SELECT * FROM Win32_ShadowCopy WHERE VolumeName LIKE '%{drive[0]}%'";
-            var searcher = new ManagementObjectSearcher(query);
-            var results = searcher.Get();
 
-            return results.Count > 0;
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error checking VSS support: {ex.Message}");
-            return false;
-        }
+        return _vssEnabledDrives.Value.Contains(drive.Substring(0, 1));
     }
 
     /// <inheritdoc/>
