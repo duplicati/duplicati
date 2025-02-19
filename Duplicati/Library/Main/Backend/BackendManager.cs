@@ -140,6 +140,18 @@ internal partial class BackendManager : IBackendManager
     }
 
     /// <summary>
+    /// Decrypts a file using the specified options
+    /// </summary>
+    /// <param name="tmpfile">The file to decrypt</param>
+    /// <param name="filename">The name of the file. Used for detecting encryption algorithm if not specified in options or if it differs from the options</param>
+    /// <param name="options">The Duplicati options</param>
+    /// <returns>The decrypted file</returns>
+    public TempFile DecryptFile(TempFile volume, string volume_name, Options options)
+    {
+        return GetOperation.DecryptFile(volume, volume_name, options);
+    }
+
+    /// <summary>
     /// Deletes a remote file
     /// </summary>
     /// <param name="remotename">The name of the remote file</param>

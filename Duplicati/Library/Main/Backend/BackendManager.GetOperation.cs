@@ -64,11 +64,6 @@ partial class BackendManager
         {
             TempFile? tmpfile = null;
             Context.Statwriter.SendEvent(BackendActionType.Get, BackendEventType.Started, RemoteFilename, Size);
-            using var encryption = Context.Options.NoEncryption
-                ? null
-                : (DynamicLoader.EncryptionLoader.GetModule(Context.Options.EncryptionModule, Context.Options.Passphrase, Context.Options.RawOptions)
-                    ?? throw new Exception(Strings.BackendMananger.EncryptionModuleNotFound(Context.Options.EncryptionModule))
-            );
 
             try
             {
@@ -94,7 +89,7 @@ partial class BackendManager
                 }
 
                 // Perform decryption after hash validation, if needed
-                tmpfile = DecryptFile(tmpfile, DetectEncryptionModule(encryption));
+                    tmpfile = DecryptFile(tmpfile, RemoteFilename, Context.Options);
 
                 return (tmpfile, fileHash, dataSizeDownloaded);
             }
@@ -161,40 +156,40 @@ partial class BackendManager
         /// </summary>
         /// <param name="encryption">The default encryption module</param>
         /// <returns>The encryption module to use</returns>
-        private IEncryption? DetectEncryptionModule(IEncryption? encryption)
+        private static IEncryption? DetectEncryptionModule(string filename, Options options, IEncryption? encryption)
         {
             try
             {
                 // Auto-guess the encryption module
-                var ext = (System.IO.Path.GetExtension(RemoteFilename) ?? "").TrimStart('.');
+                var ext = (System.IO.Path.GetExtension(filename) ?? "").TrimStart('.');
                 if (!ext.Equals(encryption?.FilenameExtension, StringComparison.OrdinalIgnoreCase))
                 {
                     // Check if the file is not encrypted
                     if (DynamicLoader.CompressionLoader.Keys.Contains(ext, StringComparer.OrdinalIgnoreCase))
                     {
                         if (encryption != null)
-                            Logging.Log.WriteVerboseMessage(LOGTAG, "AutomaticDecryptionDetection", "Filename extension \"{0}\" does not match encryption module \"{1}\", guessing that it is not encrypted", ext, Context.Options.EncryptionModule);
+                            Logging.Log.WriteVerboseMessage(LOGTAG, "AutomaticDecryptionDetection", "Filename extension \"{0}\" does not match encryption module \"{1}\", guessing that it is not encrypted", ext, options.EncryptionModule);
                         return null;
                     }
                     // Check if the file is encrypted with something else
                     else if (DynamicLoader.EncryptionLoader.Keys.Contains(ext, StringComparer.OrdinalIgnoreCase))
                     {
-                        Logging.Log.WriteVerboseMessage(LOGTAG, "AutomaticDecryptionDetection", "Filename extension \"{0}\" does not match encryption module \"{1}\", attempting to use matching encryption module", ext, Context.Options.EncryptionModule);
+                        Logging.Log.WriteVerboseMessage(LOGTAG, "AutomaticDecryptionDetection", "Filename extension \"{0}\" does not match encryption module \"{1}\", attempting to use matching encryption module", ext, options.EncryptionModule);
 
                         try
                         {
-                            return DynamicLoader.EncryptionLoader.GetModule(ext, Context.Options.Passphrase, Context.Options.RawOptions)
+                            return DynamicLoader.EncryptionLoader.GetModule(ext, options.Passphrase, options.RawOptions)
                                 ?? encryption;
                         }
                         catch (Exception ex)
                         {
-                            Logging.Log.WriteWarningMessage(LOGTAG, "AutomaticDecryptionDetection", ex, "Failed to load encryption module \"{0}\", using specified encryption module \"{1}\"", ext, Context.Options.EncryptionModule);
+                            Logging.Log.WriteWarningMessage(LOGTAG, "AutomaticDecryptionDetection", ex, "Failed to load encryption module \"{0}\", using specified encryption module \"{1}\"", ext, options.EncryptionModule);
                         }
                     }
                     // Fallback, lets see what happens...
                     else
                     {
-                        Logging.Log.WriteVerboseMessage(LOGTAG, "AutomaticDecryptionDetection", "Filename extension \"{0}\" does not match encryption module \"{1}\", attempting to use specified encryption module as no others match", ext, Context.Options.EncryptionModule);
+                        Logging.Log.WriteVerboseMessage(LOGTAG, "AutomaticDecryptionDetection", "Filename extension \"{0}\" does not match encryption module \"{1}\", attempting to use specified encryption module as no others match", ext, options.EncryptionModule);
                     }
                 }
 
@@ -213,7 +208,7 @@ partial class BackendManager
         /// <param name="tempFile">The encrypted file</param>
         /// <param name="decrypter">Then encryption module to use, or <c>null</c> for no encryption</param>
         /// <returns>The decrypted file</returns>
-        private TempFile DecryptFile(TempFile tempFile, IEncryption? decrypter)
+        private static TempFile DecryptFile(TempFile tempFile, IEncryption? decrypter)
         {
             // Support no encryption
             if (decrypter == null)
@@ -243,6 +238,23 @@ partial class BackendManager
                     decryptTarget?.Dispose();
                 }
             }
+        }
+
+        /// <summary>
+        /// Decrypts a file using the specified options
+        /// </summary>
+        /// <param name="tmpfile">The file to decrypt</param>
+        /// <param name="filename">The name of the file. Used for detecting encryption algorithm if not specified in options or if it differs from the options</param>
+        /// <param name="options">The Duplicati options</param>
+        /// <returns>The decrypted file</returns>
+        public static TempFile DecryptFile(TempFile tmpfile, string filename, Options options)
+        {
+            using var encryption = options.NoEncryption
+                                    ? null
+                                    : (DynamicLoader.EncryptionLoader.GetModule(options.EncryptionModule, options.Passphrase, options.RawOptions)
+                                        ?? throw new Exception(Strings.BackendMananger.EncryptionModuleNotFound(options.EncryptionModule))
+                                );
+            return DecryptFile(tmpfile, DetectEncryptionModule(filename, options, encryption));
         }
     }
 }

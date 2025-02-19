@@ -55,6 +55,15 @@ internal interface IBackendManager : IDisposable
     Task<IEnumerable<IFileEntry>> ListAsync(CancellationToken cancelToken);
 
     /// <summary>
+    /// Decrypts the given file and returns the decrypted file
+    /// </summary>
+    /// <param name="volume">The file to decrypt</param>
+    /// <param name="volume_name">The name of the file. Used for detecting encryption algorithm if not specified in options or if it differs from the options</param>
+    /// <param name="options">The Duplicati options</param>
+    /// <returns>The decrypted file</returns>
+    TempFile DecryptFile(TempFile volume, string volume_name, Options options);
+
+    /// <summary>
     /// Deletes a file on the backend
     /// </summary>
     /// <param name="remotename">The name of the file to delete</param>
