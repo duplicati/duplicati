@@ -91,7 +91,7 @@ partial class BackendManager
         /// <summary>
         /// The list of active uploads
         /// </summary>
-        private readonly List<Task> activeUploads = new();
+        private readonly List<Task> activeUploads = [];
         /// <summary>
         /// The pool of backends currently created
         /// </summary>
@@ -198,11 +198,11 @@ partial class BackendManager
         }
 
         /// <summary>
-        /// Ensures that there are at most N - 1 pending uploads
+        /// Ensures that there are at most N - 1 active uploads
         /// </summary>
-        /// <param name="n">The maximum number of pending uploads</param>
+        /// <param name="n">The maximum number of active uploads</param>
         /// <returns>An awaitable task</returns>
-        private async Task EnsureAtMostNPendingUploads(int n)
+        private async Task EnsureAtMostNActiveUploads(int n)
         {
             while (activeUploads.Count >= n)
             {
@@ -234,7 +234,7 @@ partial class BackendManager
                         // Allow PUT operations to be queued, if requested
                         if (op is PutOperation putOp && !putOp.WaitForComplete)
                         {
-                            await EnsureAtMostNPendingUploads(maxParallelUploads).ConfigureAwait(false);
+                            await EnsureAtMostNActiveUploads(maxParallelUploads).ConfigureAwait(false);
 
                             // Operation is accepted into queue, so we can signal completion
                             putOp.SetComplete(true);
@@ -242,8 +242,8 @@ partial class BackendManager
                         }
                         else
                         {
-                            // Wait for all pending uploads to complete
-                            await EnsureAtMostNPendingUploads(1).ConfigureAwait(false);
+                            // Wait for all of the active uploads to complete
+                            await EnsureAtMostNActiveUploads(1).ConfigureAwait(false);
                             // Execute the operation
                             await ExecuteWithRetry(op, tcs.Token).ConfigureAwait(false);
                         }
@@ -259,25 +259,25 @@ partial class BackendManager
             }
             finally
             {
-                // Terminate any pending uploads
+                // Terminate any active uploads
                 tcs.Cancel();
 
                 if (activeUploads.Count > 0)
                 {
-                    Logging.Log.WriteWarningMessage(LOGTAG, "BackendManagerDisposeWhileActive", null, "Terminating {0} pending uploads", activeUploads.Count);
+                    Logging.Log.WriteWarningMessage(LOGTAG, "BackendManagerDisposeWhileActive", null, "Terminating {0} active uploads", activeUploads.Count);
 
-                    // Wait for all pending uploads to complete
+                    // Wait for all active uploads to complete
                     await Task.WhenAny(Task.Delay(1000), Task.WhenAll(activeUploads)).ConfigureAwait(false);
                     for (int i = activeUploads.Count - 1; i >= 0; i--)
                     {
                         var t = activeUploads[i];
                         activeUploads.RemoveAt(i);
                         if (t.IsCompleted && !t.IsCanceled && t.Exception != null)
-                            Logging.Log.WriteWarningMessage(LOGTAG, "BackendManagerDisposeError", t.Exception, "Error in pending upload: {0}", t.Exception.Message);
+                            Logging.Log.WriteWarningMessage(LOGTAG, "BackendManagerDisposeError", t.Exception, "Error in active upload: {0}", t.Exception.Message);
                     }
 
                     if (activeUploads.Count > 0)
-                        Logging.Log.WriteWarningMessage(LOGTAG, "BackendManagerDisposeError", null, "Terminating, but {0} pending uploads are still active", activeUploads.Count);
+                        Logging.Log.WriteWarningMessage(LOGTAG, "BackendManagerDisposeError", null, "Terminating, but {0} active uploads are still active", activeUploads.Count);
                 }
 
                 // Dispose of any remaining backends
