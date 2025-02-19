@@ -35,7 +35,7 @@ namespace Duplicati.Library.Interface;
 public interface IFolderEnabledBackend : IBackend
 {
     /// <summary>
-    /// Returns the key for this backend instance's path
+    /// Returns the key for this backend instance's path, should be prefixed with a &quot;@&quot;
     /// </summary>
     string PathKey { get; }
 

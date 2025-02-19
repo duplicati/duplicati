@@ -90,7 +90,7 @@ namespace Duplicati.Library.Backend
 
 
             m_s3Client = new S3AwsClient(accessKeyId, accessKeySecret, null, host, null, true, false, options);
-            m_sourcePathKey = $"{ProtocolKey}://{host}/{m_bucket}/{m_prefix}/";
+            m_sourcePathKey = $"@{ProtocolKey}://{host}/{m_bucket}/{m_prefix}/";
             m_sourceProvider = new BackendSourceProvider(this);
         }
 

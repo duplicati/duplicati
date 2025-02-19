@@ -256,7 +256,7 @@ namespace Duplicati.Library.Backend
                 throw new UserInformationException(Strings.S3Backend.UnknownS3ClientError(s3ClientOptionValue), "UnknownS3Client");
             }
 
-            m_sourcePathKey = $"{ProtocolKey}://{hostname}/{m_bucket}/{m_prefix}/";
+            m_sourcePathKey = $"@{ProtocolKey}://{hostname}/{m_bucket}/{m_prefix}/";
             m_sourceProvider = new BackendSourceProvider(this);
         }
 

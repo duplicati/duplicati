@@ -190,7 +190,7 @@ public class CIFSBackend : IStreamingBackend, IFolderEnabledBackend
             writeBufferSize
         );
 
-        _sourcePathKey = $"{ProtocolKey}://{_connectionParameters.ServerName}/~{_connectionParameters.AuthUser}/{_connectionParameters.Path}/";
+        _sourcePathKey = $"@{ProtocolKey}://{_connectionParameters.ServerName}/~{_connectionParameters.AuthUser}/{_connectionParameters.Path}/";
         _sourceProvider = new BackendSourceProvider(this);
     }
 

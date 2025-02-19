@@ -118,7 +118,7 @@ namespace Duplicati.Library.Backend
             if (!string.IsNullOrWhiteSpace(timeoutstr))
                 m_keepaliveinterval = Library.Utility.Timeparser.ParseTimeSpan(timeoutstr);
 
-            m_sourcePathKey = $"{ProtocolKey}://{m_server}:{m_port}/~{m_username}/{m_path}/";
+            m_sourcePathKey = $"@{ProtocolKey}://{m_server}:{m_port}/~{m_username}/{m_path}/";
             m_sourceProvider = new BackendSourceProvider(this);
         }
 
