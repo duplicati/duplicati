@@ -25,7 +25,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using CoCoL;
-using Duplicati.Library.Interface;
 using Duplicati.Library.Main.Database;
 using Duplicati.Library.Utility;
 
@@ -50,7 +49,7 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// <param name="backend">The backend to use for downloading the volumes.</param>
         /// <param name="options">The restore options.</param>
         /// <param name="results">The restore results.</param>
-        public static Task Run(Channels channels, LocalRestoreDatabase db, IBackend backend, Options options, RestoreResults results)
+        public static Task Run(Channels channels, LocalRestoreDatabase db, IBackendManager backend, Options options, RestoreResults results)
         {
             return AutomationExtensions.RunTask(
             new
@@ -75,11 +74,11 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                         // Trigger the download.
                         sw_wait?.Start();
-                        TempFile f = new();
+                        TempFile f;
                         var (volume_name, size, hash) = db.GetVolumeInfo(volume_id).First();
                         try
                         {
-                            await backend.GetAsync(volume_name, f.Name, CancellationToken.None).ConfigureAwait(false);
+                            f = await backend.GetDirectAsync(volume_name, hash, size, CancellationToken.None).ConfigureAwait(false);
                         }
                         catch (Exception)
                         {
@@ -109,10 +108,6 @@ namespace Duplicati.Library.Main.Operation.Restore
                 {
                     Logging.Log.WriteErrorMessage(LOGTAG, "DownloadError", ex, "Error during download");
                     throw;
-                }
-                finally
-                {
-                    backend.Dispose();
                 }
             });
         }

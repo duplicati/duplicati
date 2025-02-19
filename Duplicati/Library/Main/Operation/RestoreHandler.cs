@@ -340,7 +340,7 @@ namespace Duplicati.Library.Main.Operation
             var fileprocessors = Enumerable.Range(0, m_options.RestoreFileProcessors).Select(i => Restore.FileProcessor.Run(channels, database, fileprocessor_requests[i], fileprocessor_responses[i], m_options, m_result)).ToArray();
             var blockmanager = Restore.BlockManager.Run(channels, database, m_options, fileprocessor_requests, fileprocessor_responses);
             var volumecache = Restore.VolumeManager.Run(channels, m_options);
-            var volumedownloaders = Enumerable.Range(0, m_options.RestoreVolumeDownloaders).Select(i => Restore.VolumeDownloader.Run(channels, database, backendManager.GetBackend(), m_options, m_result)).ToArray();
+            var volumedownloaders = Enumerable.Range(0, m_options.RestoreVolumeDownloaders).Select(i => Restore.VolumeDownloader.Run(channels, database, backendManager, m_options, m_result)).ToArray();
             var volumedecryptors = Enumerable.Range(0, m_options.RestoreVolumeDecryptors).Select(i => Restore.VolumeDecryptor.Run(channels, backendManager, m_options)).ToArray();
             var volumedecompressors = Enumerable.Range(0, m_options.RestoreVolumeDecompressors).Select(i => Restore.VolumeDecompressor.Run(channels, m_options)).ToArray();
 
