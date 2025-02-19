@@ -89,6 +89,10 @@ partial class BackendManager
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<Handler>();
 
         /// <summary>
+        /// The list of active downloads
+        /// </summary>
+        private readonly List<Task> activeDownloads = [];
+        /// <summary>
         /// The list of active uploads
         /// </summary>
         private readonly List<Task> activeUploads = [];
@@ -104,6 +108,10 @@ partial class BackendManager
         /// The context for the handler
         /// </summary>
         private readonly ExecuteContext context;
+        /// <summary>
+        /// The maximum number of parallel downloads
+        /// </summary>
+        private readonly int maxParallelDownloads;
         /// <summary>
         /// The maximum number of parallel uploads
         /// </summary>
@@ -155,6 +163,8 @@ partial class BackendManager
             this.backendUrl = backendUrl;
             this.context = context;
 
+            // TODO Currently, only the restore process uses parallel downloads. If others need it as well, maybe use another option.
+            maxParallelDownloads = Math.Max(1, context.Options.RestoreVolumeDownloaders);
             maxParallelUploads = Math.Max(1, context.Options.AsynchronousConcurrentUploadLimit);
             maxRetries = context.Options.NumberOfRetries;
             retryDelay = context.Options.RetryDelay;
@@ -181,6 +191,23 @@ partial class BackendManager
         }
 
         /// <summary>
+        /// Reclaims completed downloads
+        /// </summary>
+        /// <returns>An awaitable task</returns>
+        private async Task ReclaimCompletedDownloads()
+        {
+            for (int i = activeDownloads.Count - 1; i >= 0; i--)
+            {
+                if (activeDownloads[i].IsCompleted)
+                {
+                    // Make sure the task is awaited so we capture any exceptions
+                    await activeDownloads[i].ConfigureAwait(false);
+                    activeDownloads.RemoveAt(i);
+                }
+            }
+        }
+
+        /// <summary>
         /// Reclaims completed uploads
         /// </summary>
         /// <returns>An awaitable task</returns>
@@ -194,6 +221,20 @@ partial class BackendManager
                     await activeUploads[i].ConfigureAwait(false);
                     activeUploads.RemoveAt(i);
                 }
+            }
+        }
+
+        /// <summary>
+        /// Ensures that there are at most N - 1 active downloads
+        /// </summary>
+        /// <param name="n"></param>
+        /// <returns></returns>
+        private async Task EnsureAtMostNActiveDownloads(int n)
+        {
+            while (activeDownloads.Count >= n)
+            {
+                await Task.WhenAny(activeDownloads).ConfigureAwait(false);
+                await ReclaimCompletedDownloads().ConfigureAwait(false);
             }
         }
 
@@ -239,6 +280,13 @@ partial class BackendManager
                             // Operation is accepted into queue, so we can signal completion
                             putOp.SetComplete(true);
                             activeUploads.Add(ExecuteWithRetry(putOp, tcs.Token));
+                        }
+                        else if (op is GetOperation getOp && !getOp.WaitForComplete)
+                        {
+                            await EnsureAtMostNActiveDownloads(maxParallelDownloads).ConfigureAwait(false);
+
+                            // Operation is accepted into queue, so we can signal completion
+                            activeDownloads.Add(ExecuteWithRetry(getOp, tcs.Token));
                         }
                         else
                         {
