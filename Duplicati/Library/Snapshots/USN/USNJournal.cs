@@ -31,7 +31,7 @@ using System.Runtime.Versioning;
 using Duplicati.Library.Common.IO;
 using Microsoft.Win32.SafeHandles;
 
-namespace Duplicati.Library.Snapshots
+namespace Duplicati.Library.Snapshots.USN
 {
     /// <summary>
     /// Class that encapsulates USN journal access to a single volume

@@ -19,7 +19,6 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
-
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -27,6 +26,7 @@ using System.Linq;
 using System.Runtime.Versioning;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Snapshots.Windows;
 
 namespace Duplicati.Library.Snapshots
 {
@@ -53,7 +53,7 @@ namespace Duplicati.Library.Snapshots
         /// <summary>
         /// The main reference to the backup controller
         /// </summary>
-        private readonly VssBackupComponents _vssBackupComponents;
+        private readonly SnapshotManager _snapshotManager;
 
         /// <summary>
         /// The source folders included in the snapshot
@@ -73,7 +73,8 @@ namespace Duplicati.Library.Snapshots
             _sourceEntries = sources.Select(SystemIOWindows.RemoveExtendedDevicePathPrefix).ToList();
             try
             {
-                _vssBackupComponents = new VssBackupComponents();
+                var provider = Utility.Utility.ParseEnumOption(options.AsReadOnly(), "snapshot-provider", SnapshotProvider.AlphaVSS);
+                _snapshotManager = new SnapshotManager(provider);
 
                 // Default to exclude the System State writer
                 var excludedWriters = new Guid[] { new Guid("{e8132975-6f93-4464-a53e-1050253ae220}") };
@@ -85,16 +86,16 @@ namespace Duplicati.Library.Snapshots
                         .Select(x => new Guid(x))
                         .ToArray();
                 }
-                _vssBackupComponents.SetupWriters(null, excludedWriters);
+                _snapshotManager.SetupWriters(null, excludedWriters);
 
-                _vssBackupComponents.InitShadowVolumes(_sourceEntries);
+                _snapshotManager.InitShadowVolumes(_sourceEntries);
 
-                _vssBackupComponents.MapVolumesToSnapShots();
+                _snapshotManager.MapVolumesToSnapShots();
 
                 //If we should map the drives, we do that now and update the volumeMap
                 if (Utility.Utility.ParseBoolOption(options.AsReadOnly(), "vss-use-mapping"))
                 {
-                    _vssBackupComponents.MapDrives();
+                    _snapshotManager.MapDrives();
                 }
             }
             catch (Exception ex1)
@@ -279,7 +280,7 @@ namespace Duplicati.Library.Snapshots
             if (!Path.IsPathRooted(snapshotPath))
                 throw new InvalidOperationException();
 
-            foreach (var kvp in _vssBackupComponents.SnapshotDeviceAndVolumes)
+            foreach (var kvp in _snapshotManager.SnapshotDeviceAndVolumes)
             {
                 if (snapshotPath.StartsWith(kvp.Key, Utility.Utility.ClientFilenameStringComparison))
                     return IO_WIN.PathCombine(kvp.Value, snapshotPath.Substring(kvp.Key.Length));
@@ -298,7 +299,7 @@ namespace Duplicati.Library.Snapshots
                 throw new InvalidOperationException();
 
             var root = IO_WIN.GetPathRoot(localPath);
-            var volumePath = _vssBackupComponents.GetVolumeFromCache(root);
+            var volumePath = _snapshotManager.GetVolumeFromCache(root);
 
             // Note that using a simple Path.Combine() for the following code
             // can result in invalid snapshot paths; e.g., if localPath is
@@ -333,7 +334,7 @@ namespace Duplicati.Library.Snapshots
         {
             if (disposing)
             {
-                _vssBackupComponents?.Dispose();
+                _snapshotManager?.Dispose();
             }
 
             base.Dispose(disposing);

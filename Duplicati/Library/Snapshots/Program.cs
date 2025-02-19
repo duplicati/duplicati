@@ -21,9 +21,7 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using Duplicati.Library.AutoUpdater;
-using Duplicati.Library.Common;
 using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Snapshots

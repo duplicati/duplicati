@@ -31,9 +31,8 @@ using System.Threading;
 using Duplicati.Library.Main.Operation.Common;
 using Duplicati.Library.Interface;
 using System.Runtime.CompilerServices;
-using Duplicati.Library.Snapshots;
 using Duplicati.Library.SourceProvider;
-using Duplicati.Library.Common.IO;
+using Duplicati.Library.Snapshots.USN;
 
 namespace Duplicati.Library.Main.Operation.Backup
 {

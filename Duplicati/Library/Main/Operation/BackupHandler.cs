@@ -36,6 +36,7 @@ using Duplicati.Library.Main.Operation.Common;
 using System.Data;
 using Duplicati.Library.DynamicLoader;
 using Duplicati.Library.SourceProvider;
+using Duplicati.Library.Snapshots.USN;
 
 namespace Duplicati.Library.Main.Operation
 {

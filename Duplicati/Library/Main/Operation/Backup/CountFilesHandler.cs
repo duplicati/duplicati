@@ -24,7 +24,7 @@ using System.Threading.Tasks;
 using Duplicati.Library.Utility;
 using CoCoL;
 using Duplicati.Library.Interface;
-using Duplicati.Library.Snapshots;
+using Duplicati.Library.Snapshots.USN;
 
 namespace Duplicati.Library.Main.Operation.Backup
 {

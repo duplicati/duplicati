@@ -33,7 +33,7 @@ using Duplicati.Library.Utility;
 using System.Threading.Tasks;
 using System.Runtime.CompilerServices;
 
-namespace Duplicati.Library.Snapshots
+namespace Duplicati.Library.Snapshots.USN
 {
     [SupportedOSPlatform("windows")]
     public class UsnJournalService
