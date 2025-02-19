@@ -26,13 +26,6 @@ internal partial class BackendManager : IBackendManager
     /// The log tag for the class
     /// </summary>
     private static readonly string LOGTAG = Logging.Log.LogTagFromType<BackendManager>();
-    /// <summary>
-    /// List of backend instances that are currently in use
-    /// </summary>
-    private readonly List<IBackend> backendPool = [];
-
-    private string m_backendurl;
-    private Options m_options;
 
     /// <summary>
     /// The channel for issuing and handling requests
@@ -74,9 +67,6 @@ internal partial class BackendManager : IBackendManager
     {
         if (string.IsNullOrWhiteSpace(backendUrl))
             throw new ArgumentNullException(nameof(backendUrl));
-
-        m_backendurl = backendUrl;
-        m_options = options;
 
         // To avoid excessive parameter passing, the context is captured here
         context = new ExecuteContext(
