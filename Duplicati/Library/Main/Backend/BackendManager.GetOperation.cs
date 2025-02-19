@@ -31,6 +31,10 @@ partial class BackendManager
         /// </summary>
         public override long Size { get; }
         /// <summary>
+        /// Flag indicating whether the file should be decrypted
+        /// </summary>
+        public bool Decrypt { get; set; }
+        /// <summary>
         /// The hash of the remote file, or null if unknown
         /// </summary>
         public required string? Hash { get; set; }
@@ -89,6 +93,7 @@ partial class BackendManager
                 }
 
                 // Perform decryption after hash validation, if needed
+                if (Decrypt)
                     tmpfile = DecryptFile(tmpfile, RemoteFilename, Context.Options);
 
                 return (tmpfile, fileHash, dataSizeDownloaded);

@@ -97,11 +97,18 @@ internal interface IBackendManager : IDisposable
     /// <param name="hash">The hash of the file to get, or <c>null</c> if not known</param>
     /// <param name="size">The size of the file to get, or -1 if not known</param>
     /// <param name="cancelToken">The cancellation token</param>
-    /// <returns></returns>
+    /// <returns>The downloaded file</returns>
     Task<TempFile> GetAsync(string remotename, string hash, long size, CancellationToken cancelToken);
 
-
-    public IBackend GetBackend();
+    /// <summary>
+    /// Gets a file from the backend without decrypting it
+    /// </summary>
+    /// <param name="remotename">The name of the remote volume</param>
+    /// <param name="hash">The hash of the volume</param>
+    /// <param name="size">The size of the volume</param>
+    /// <param name="cancelToken">The cancellation token</param>
+    /// <returns>The downloaded file</returns>
+    Task<TempFile> GetDirectAsync(string remotename, string hash, long size, CancellationToken cancelToken);
 
     /// <summary>
     /// Performs a download of the files specified, with pre-fetch to overlap the download and processing

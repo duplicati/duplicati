@@ -178,7 +178,8 @@ internal partial class BackendManager : IBackendManager
     {
         var op = new GetOperation(remotename, size, context, cancelToken)
         {
-            Hash = hash
+            Hash = hash,
+            Decrypt = true
         };
         await QueueTask(op).ConfigureAwait(false);
         (var file, var _, var downloadSize) = await op.GetResult().ConfigureAwait(false);
@@ -186,9 +187,25 @@ internal partial class BackendManager : IBackendManager
         return file;
     }
 
-    public IBackend GetBackend()
+    /// <summary>
+    /// Gets a file from the remote location without decrypting it
+    /// </summary>
+    /// <param name="remotename">The name of the remote file</param>
+    /// <param name="hash">The hash of the remote file, for verification</param>
+    /// <param name="size">The size of the remote file, for verification</param>
+    /// <param name="cancelToken">The cancellation token</param>
+    /// <returns>A temporary file with the contents of the remote file</returns>
+    public async Task<TempFile> GetDirectAsync(string remotename, string hash, long size, CancellationToken cancelToken)
     {
-        return BackendLoader.GetBackend(m_backendurl, m_options.RawOptions);
+        var op = new GetOperation(remotename, size, context, cancelToken)
+        {
+            Hash = hash,
+            Decrypt = false
+        };
+        await QueueTask(op).ConfigureAwait(false);
+        (var file, var _, var downloadSize) = await op.GetResult().ConfigureAwait(false);
+        LastReadSize = downloadSize;
+        return file;
     }
 
     /// <summary>
@@ -215,7 +232,8 @@ internal partial class BackendManager : IBackendManager
     {
         var op = new GetOperation(remotename, size, context, cancelToken)
         {
-            Hash = hash
+            Hash = hash,
+            Decrypt = true
         };
         await QueueTask(op).ConfigureAwait(false);
         (var file, var downloadHash, var downloadSize) = await op.GetResult().ConfigureAwait(false);
