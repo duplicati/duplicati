@@ -273,7 +273,7 @@ namespace Duplicati.Library.Utility
 
             if (!string.IsNullOrEmpty(path))
             {
-                if (!string.IsNullOrEmpty(host) && !path.StartsWith("/", StringComparison.Ordinal))
+                if (!string.IsNullOrEmpty(host))
                     s += "/";
                 s += path;
             }
