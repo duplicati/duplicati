@@ -24,6 +24,7 @@ public static class Create
     /// <param name="MaxFolderCount">The maximum number of folders to create in the target folder</param>
     /// <param name="MaxPathSegmentLength">The maximum length of each path segment in the target folder</param>
     /// <param name="RandomSeed">The random seed to use for generating the test data</param>
+    /// <param name="Parallel">The number of parallel tasks to use for creating the test data</param>
     record CommandInput(
         DirectoryInfo TargetFolder,
         int FileCount,
@@ -35,7 +36,8 @@ public static class Create
         int MaxDepth,
         int MaxFolderCount,
         int MaxPathSegmentLength,
-        string RandomSeed);
+        string RandomSeed,
+        int Parallel);
 
     /// <summary>
     /// Creates the command
@@ -88,6 +90,10 @@ public static class Create
         var randomSeedOption = new Option<string>("--random-seed", "The random seed to use for generating the test data");
         randomSeedOption.SetDefaultValue("Duplicati");
         command.AddOption(randomSeedOption);
+
+        var parallelOption = new Option<int>("--parallel", "The number of parallel tasks to use for creating the test data");
+        parallelOption.SetDefaultValue(Environment.ProcessorCount);
+        command.AddOption(parallelOption);
 
         command.Handler = CommandHandler.Create<CommandInput>(Execute);
 
@@ -200,7 +206,7 @@ public static class Create
             }
         }, cancelToken.Token);
 
-        Parallel.ForEach(Partitioner.Create(0, filesWithSizes.Count), range =>
+        Parallel.ForEach(Partitioner.Create(0, filesWithSizes.Count), new ParallelOptions { MaxDegreeOfParallelism = input.Parallel }, range =>
         {
             var local_rnd = new Random(input.RandomSeed.GetHashCode() + range.Item1);
             for (int i = range.Item1; i < range.Item2; i++)
@@ -210,8 +216,8 @@ public static class Create
                 try
                 {
                     // Sometimes with a large number of files, the file name clashes with a folder name. In that case, generate a new file name
-                    while (Directory.Exists(filename))
-                        filename = Path.Combine(Path.GetDirectoryName(filename) ?? "", GenerateFileName(local_rnd, input.MaxPathSegmentLength));
+                    for (int j = 0; j < 10 && Path.Exists(filename); j++)
+                        filename = Path.Combine(Path.GetDirectoryName(filename) ?? "", "_" + Path.GetFileName(filename));
 
                     using var fs = new FileStream(filename, FileMode.Create, FileAccess.Write);
                     if (size > 0)
@@ -236,7 +242,8 @@ public static class Create
         });
 
         cancelToken.Cancel();
-        Console.WriteLine($"Created {filesCreated} of {files.Count} files ({SizeToHumanReadable(fileSizeCreated)} of {SizeToHumanReadable(totalSize)} at {SizeToHumanReadable((long)(fileSizeCreated / (DateTime.UtcNow - generateStart).TotalSeconds))}/s)");
+        var time_string = (DateTime.UtcNow - generateStart).ToString(@"hh\:mm\:ss");
+        Console.WriteLine($"Created {filesCreated} of {files.Count} files ({SizeToHumanReadable(fileSizeCreated)} of {SizeToHumanReadable(totalSize)} at {SizeToHumanReadable((long)(fileSizeCreated / (DateTime.UtcNow - generateStart).TotalSeconds))}/s) in {time_string}");
     }
 
     /// <summary>
