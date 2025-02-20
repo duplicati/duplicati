@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.CommandLine;
 using System.CommandLine.NamingConventionBinder;
 using static TestDataGenerator.Commands.Shared;
@@ -173,46 +174,69 @@ public static class Create
             }
         }
 
+        object stats_lock = new();
         var filesCreated = 0L;
         var fileSizeCreated = 0L;
         var generateStart = DateTime.UtcNow;
 
-        foreach (var (file, size) in filesWithSizes)
+        var cancelToken = new CancellationTokenSource();
+        var status_updater = Task.Run(async () =>
         {
-            var filename = file;
-            try
+            while (!cancelToken.Token.IsCancellationRequested)
             {
-                // Sometimes with a large number of files, the file name clashes with a folder name. In that case, generate a new file name
-                while (Directory.Exists(filename))
-                    filename = Path.Combine(Path.GetDirectoryName(filename) ?? "", GenerateFileName(rnd, input.MaxPathSegmentLength));
-
-                using var fs = new FileStream(filename, FileMode.Create, FileAccess.Write);
-                if (size > 0)
+                await Task.Delay((int)updateInterval.TotalMilliseconds, cancelToken.Token);
+                long local_filesCreated, local_fileSizeCreated;
+                lock (stats_lock)
                 {
-                    fs.SetLength(size);
-                    fs.Position = 0;
-
-                    WriteRandomData(rnd, fs, size, input.SparseFactor);
+                    local_filesCreated = filesCreated;
+                    local_fileSizeCreated = fileSizeCreated;
                 }
 
-                filesCreated++;
-                fileSizeCreated += size;
                 var generateNow = DateTime.UtcNow;
-                if ((generateNow - lastUpdate) > updateInterval)
+                long throughput = (long)Math.Max(Math.Floor(local_fileSizeCreated / (generateNow - generateStart).TotalSeconds), 1);
+                var timeLeft = TimeSpan.FromSeconds((input.MaxTotalSize - local_fileSizeCreated) / throughput);
+                string timeLeftString = timeLeft.ToString(@"hh\:mm\:ss");
+                Console.WriteLine($"Created {local_filesCreated} of {files.Count} files ({SizeToHumanReadable(local_fileSizeCreated)} of {SizeToHumanReadable(totalSize)}) ({SizeToHumanReadable(throughput)}/s) - ETA: {timeLeftString}");
+            }
+        }, cancelToken.Token);
+
+        Parallel.ForEach(Partitioner.Create(0, filesWithSizes.Count), range =>
+        {
+            var local_rnd = new Random(input.RandomSeed.GetHashCode() + range.Item1);
+            for (int i = range.Item1; i < range.Item2; i++)
+            {
+                var (file, size) = filesWithSizes[i];
+                var filename = file;
+                try
                 {
-                    long throughput = (long)Math.Floor(fileSizeCreated / (generateNow - generateStart).TotalSeconds);
-                    var timeLeft = TimeSpan.FromSeconds((input.MaxTotalSize - fileSizeCreated) / throughput);
-                    string timeLeftString = timeLeft.ToString(@"hh\:mm\:ss");
-                    Console.WriteLine($"Created {filesCreated} of {files.Count} files ({SizeToHumanReadable(fileSizeCreated)} of {SizeToHumanReadable(totalSize)}) ({SizeToHumanReadable(throughput)}/s) - ETA: {timeLeftString}");
-                    lastUpdate = generateNow;
+                    // Sometimes with a large number of files, the file name clashes with a folder name. In that case, generate a new file name
+                    while (Directory.Exists(filename))
+                        filename = Path.Combine(Path.GetDirectoryName(filename) ?? "", GenerateFileName(local_rnd, input.MaxPathSegmentLength));
+
+                    using var fs = new FileStream(filename, FileMode.Create, FileAccess.Write);
+                    if (size > 0)
+                    {
+                        fs.SetLength(size);
+                        fs.Position = 0;
+
+                        WriteRandomData(local_rnd, fs, size, input.SparseFactor);
+                    }
+
+                    lock (stats_lock)
+                    {
+                        filesCreated++;
+                        fileSizeCreated += size;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error creating file {filename}: {ex.Message}");
                 }
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error creating file {filename}: {ex.Message}");
-            }
-        }
+        });
 
+        cancelToken.Cancel();
+        Console.WriteLine($"Created {filesCreated} of {files.Count} files ({SizeToHumanReadable(fileSizeCreated)} of {SizeToHumanReadable(totalSize)} at {SizeToHumanReadable((long)(fileSizeCreated / (DateTime.UtcNow - generateStart).TotalSeconds))}/s)");
     }
 
     /// <summary>
