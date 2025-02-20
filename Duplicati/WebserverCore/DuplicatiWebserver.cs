@@ -1,4 +1,4 @@
-// Copyright (C) 2025, The Duplicati Team
+﻿// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -284,6 +284,9 @@ public class DuplicatiWebserver
         var app = builder.Build();
         HttpClientHelper.Configure(app.Services.GetRequiredService<IHttpClientFactory>());
 
+        if (useCors)
+            app.UseCors(CorsPolicyName);
+
         app.UseAuthentication();
         app.UseAuthorization();
 
@@ -298,9 +301,6 @@ public class DuplicatiWebserver
 
         if (!settings.DisableStaticFiles)
             app.UseDefaultStaticFiles(settings.WebRoot, settings.SPAPaths);
-
-        if (useCors)
-            app.UseCors(CorsPolicyName);
 
         app.UseExceptionHandler(app =>
         {
