@@ -1,4 +1,4 @@
-// Copyright (C) 2025, The Duplicati Team
+﻿// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -68,10 +68,10 @@ namespace Duplicati.UnitTest
             // Fail after index file put
             target = new DeterministicErrorBackend().ProtocolKey + "://" + TARGETFOLDER;
             string interruptedName = "";
-            DeterministicErrorBackend.ErrorGenerator = (string action, string remotename) =>
+            DeterministicErrorBackend.ErrorGenerator = (DeterministicErrorBackend.BackendAction action, string remotename) =>
             {
                 // Fail dindex upload
-                if (action.StartsWith("put") && remotename.Contains("dindex"))
+                if (action == DeterministicErrorBackend.BackendAction.PutAfter && remotename.Contains("dindex"))
                 {
                     interruptedName = remotename;
                     return true;
@@ -460,7 +460,7 @@ namespace Duplicati.UnitTest
             bool failed = false;
             long accessCounter = 0;
             long errorIdx = 0;
-            DeterministicErrorBackend.ErrorGenerator = (string action, string remotename) =>
+            DeterministicErrorBackend.ErrorGenerator = (DeterministicErrorBackend.BackendAction action, string remotename) =>
             {
                 ++accessCounter;
                 if (accessCounter >= errorIdx)

@@ -31,14 +31,26 @@ namespace Duplicati.UnitTest
 {
     public class DeterministicErrorBackend : IBackend, IStreamingBackend
     {
+        public sealed record BackendAction(string Code)
+        {
+            public static readonly BackendAction GetBefore = new BackendAction("get_0");
+            public static readonly BackendAction GetAfter = new BackendAction("get_1");
+            public static readonly BackendAction PutBefore = new BackendAction("put_0");
+            public static readonly BackendAction PutAfter = new BackendAction("put_1");
+            public static readonly BackendAction DeleteBefore = new BackendAction("delete_0");
+            public static readonly BackendAction DeleteAfter = new BackendAction("delete_1");
+
+            public bool IsGetOperation => this == GetBefore || this == GetAfter;
+            public bool IsPutOperation => this == PutBefore || this == PutAfter;
+            public bool IsDeleteOperation => this == DeleteBefore || this == DeleteAfter;
+        }
+
         public class DeterministicErrorBackendException(string message) : Exception(message) { };
 
         static DeterministicErrorBackend() { WrappedBackend = "file"; }
 
-        private static readonly Random random = new Random(42);
-
         // return true to throw exception, parameters: (action, remotename)
-        public static Func<string, string, bool> ErrorGenerator = null;
+        public static Func<BackendAction, string, bool> ErrorGenerator = null;
 
         public static string WrappedBackend { get; set; }
 
@@ -54,7 +66,7 @@ namespace Duplicati.UnitTest
             m_backend = (IStreamingBackend)Library.DynamicLoader.BackendLoader.GetBackend(u, options);
         }
 
-        private void ThrowError(string action, string remotename)
+        private void ThrowError(BackendAction action, string remotename)
         {
             if (ErrorGenerator != null && ErrorGenerator(action, remotename))
             {
@@ -64,17 +76,15 @@ namespace Duplicati.UnitTest
         #region IStreamingBackend implementation
         public async Task PutAsync(string remotename, Stream stream, CancellationToken cancelToken)
         {
-            var uploadError = random.NextDouble() > 0.9;
-
-            using (var f = new Library.Utility.ProgressReportingStream(stream, x => { if (uploadError && stream.Position > stream.Length / 2) throw new DeterministicErrorBackendException("Random upload failure"); }))
-                await m_backend.PutAsync(remotename, f, cancelToken).ConfigureAwait(false);
-            ThrowError("put_async", remotename);
+            ThrowError(BackendAction.PutBefore, remotename);
+            await m_backend.PutAsync(remotename, stream, cancelToken).ConfigureAwait(false);
+            ThrowError(BackendAction.PutAfter, remotename);
         }
         public async Task GetAsync(string remotename, Stream stream, CancellationToken cancellationToken)
         {
-            ThrowError("get_0", remotename);
+            ThrowError(BackendAction.GetBefore, remotename);
             await m_backend.GetAsync(remotename, stream, cancellationToken).ConfigureAwait(false);
-            ThrowError("get_1", remotename);
+            ThrowError(BackendAction.GetAfter, remotename);
         }
         #endregion
 
@@ -85,21 +95,21 @@ namespace Duplicati.UnitTest
         }
         public async Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
         {
-            ThrowError("put_0", remotename);
+            ThrowError(BackendAction.PutBefore, remotename);
             await m_backend.PutAsync(remotename, filename, cancelToken).ConfigureAwait(false);
-            ThrowError("put_1", remotename);
+            ThrowError(BackendAction.PutAfter, remotename);
         }
         public async Task GetAsync(string remotename, string filename, CancellationToken cancelToken)
         {
-            ThrowError("get_0", remotename);
+            ThrowError(BackendAction.GetBefore, remotename);
             await m_backend.GetAsync(remotename, filename, cancelToken).ConfigureAwait(false);
-            ThrowError("get_1", remotename);
+            ThrowError(BackendAction.GetAfter, remotename);
         }
         public async Task DeleteAsync(string remotename, CancellationToken cancelToken)
         {
-            ThrowError("delete_0", remotename);
+            ThrowError(BackendAction.DeleteBefore, remotename);
             await m_backend.DeleteAsync(remotename, cancelToken).ConfigureAwait(false);
-            ThrowError("delete_1", remotename);
+            ThrowError(BackendAction.DeleteAfter, remotename);
         }
         public Task TestAsync(CancellationToken cancelToken)
         {
