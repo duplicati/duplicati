@@ -21,7 +21,6 @@
 
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
-using Duplicati.Library.Utility;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -272,13 +271,13 @@ namespace Duplicati.Library.Backend
 
         public IEnumerable<IFileEntry> List()
         {
-            foreach (IFileEntry file in Connection.ListBucket(m_bucket, m_prefix))
+            foreach (var file in Connection.ListBucket(m_bucket, m_prefix))
             {
-                ((FileEntry)file).Name = file.Name.Substring(m_prefix.Length);
+                file.Name = file.Name.Substring(m_prefix.Length);
 
                 //Fix for a bug in Duplicati 1.0 beta 3 and earlier, where filenames are incorrectly prefixed with a slash
                 if (file.Name.StartsWith("/", StringComparison.Ordinal) && !m_prefix.StartsWith("/", StringComparison.Ordinal))
-                    ((FileEntry)file).Name = file.Name.Substring(1);
+                    file.Name = file.Name.Substring(1);
 
                 yield return file;
             }
@@ -334,6 +333,7 @@ namespace Duplicati.Library.Backend
                     new CommandLineArgument(SSL_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.S3Backend.DescriptionUseSSLShort, Strings.S3Backend.DescriptionUseSSLLong),
                     new CommandLineArgument(S3_CLIENT_OPTION, CommandLineArgument.ArgumentType.Enumeration, Strings.S3Backend.S3ClientDescriptionShort, Strings.S3Backend.S3ClientDescriptionLong, "aws", null, new string[] { "aws", "minio" }),
                     new CommandLineArgument(S3_DISABLE_CHUNK_ENCODING_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.S3Backend.DescriptionDisableChunkEncodingShort, Strings.S3Backend.DescriptionDisableChunkEncodingLong, "false"),
+                    new CommandLineArgument(S3AwsClient.S3_ARCHIVE_CLASSES_OPTION, CommandLineArgument.ArgumentType.Flags, Strings.S3Backend.S3ArchiveClassesDescriptionShort, Strings.S3Backend.S3ArchiveClassesDescriptionLong, string.Join(",", S3AwsClient.DEFAULT_ARCHIVE_CLASSES.Select(x => x.Value)), null, S3AwsClient.DEFAULT_ARCHIVE_CLASSES.Select(x => x.Value).ToArray()),
                     new CommandLineArgument("auth-password", CommandLineArgument.ArgumentType.Password, Strings.S3Backend.AuthPasswordDescriptionShort, Strings.S3Backend.AuthPasswordDescriptionLong),
                     new CommandLineArgument("auth-username", CommandLineArgument.ArgumentType.String, Strings.S3Backend.AuthUsernameDescriptionShort, Strings.S3Backend.AuthUsernameDescriptionLong),
                 };
