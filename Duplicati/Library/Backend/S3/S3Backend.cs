@@ -410,13 +410,9 @@ namespace Duplicati.Library.Backend
         /// <inheritdoc/>
         public IAsyncEnumerable<IFileEntry> ListAsync(string path, CancellationToken cancellationToken)
         {
-            var prefix = m_prefix;
-            if (!string.IsNullOrWhiteSpace(prefix))
-                prefix = Util.AppendDirSeparator(prefix);
-
-            var filterPath = prefix + path;
+            var filterPath = GetFullKey(path);
             if (!string.IsNullOrWhiteSpace(filterPath))
-                filterPath = Util.AppendDirSeparator(filterPath);
+                filterPath = Util.AppendDirSeparator(filterPath, "/");
 
             return s3Client.ListBucketAsync(m_bucket, filterPath, m_recurseLists, cancellationToken);
         }

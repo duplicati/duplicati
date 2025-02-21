@@ -236,7 +236,13 @@ namespace Duplicati.Library.Backend
 
         /// <inheritdoc/>
         public IAsyncEnumerable<IFileEntry> ListAsync(string path, CancellationToken cancellationToken)
-            => m_s3Client.ListBucketAsync(m_bucket, path, false, cancellationToken);
+        {
+            var filterPath = GetFullKey(path);
+            if (!string.IsNullOrWhiteSpace(filterPath))
+                filterPath = Util.AppendDirSeparator(filterPath, "/");
+
+            return m_s3Client.ListBucketAsync(m_bucket, filterPath, true, cancellationToken);
+        }
 
 
         /// <inheritdoc/>

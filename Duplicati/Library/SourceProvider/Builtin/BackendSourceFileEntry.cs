@@ -96,7 +96,7 @@ public class BackendSourceFileEntry(BackendSourceProvider parent, string path, b
         if (!isFolder)
             throw new InvalidOperationException("Enumerate can only be called on folders");
 
-        return parent.WrappedBackend.ListAsync(path, cancellationToken)
+        return parent.WrappedBackend.ListAsync(NormalizePathTo(path, '/'), cancellationToken)
             // Remove the current and parent folder entries
             .Where(x => !string.IsNullOrWhiteSpace(x.Name) && x.Name != "." && x.Name != "..")
             // Remove sub-folder entries
