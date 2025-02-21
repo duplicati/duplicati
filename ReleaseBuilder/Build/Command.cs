@@ -87,6 +87,7 @@ public static partial class Command
         { "Duplicati.CommandLine.ServerUtil", "duplicati-server-util" },
         { "Duplicati.CommandLine.SecretTool", "duplicati-secret-tool" },
         { "Duplicati.CommandLine.SyncTool", "duplicati-sync-tool" },
+        { "Duplicati.CommandLine.SourceTool", "duplicati-source-tool" },
         { "Duplicati.Service", "duplicati-service" },
         { "Duplicati.Agent", "duplicati-agent" },
         { "Duplicati.CommandLine", "duplicati-cli" },

@@ -19,6 +19,8 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
+using System.Runtime.CompilerServices;
+using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.SourceProvider;
@@ -27,7 +29,7 @@ namespace Duplicati.Library.SourceProvider;
 /// A source provider that wraps a backend
 /// </summary>
 /// <param name="backend">The backend to wrap</param>
-public class BackendSourceProvider(IFolderEnabledBackend backend) : ISourceProvider
+public class BackendSourceProvider(IFolderEnabledBackend backend) : ISourceProvider, ISourceProviderModule
 {
     /// <summary>
     /// The wrapped backend
@@ -38,6 +40,15 @@ public class BackendSourceProvider(IFolderEnabledBackend backend) : ISourceProvi
     /// The path key unique for the destination
     /// </summary>
     public string PathKey => backend.PathKey;
+
+    /// <inheritdoc/>
+    public string Key => backend.ProtocolKey;
+
+    /// <inheritdoc/>
+    public string DisplayName => backend.DisplayName;
+
+    /// <inheritdoc/>
+    public IList<ICommandLineArgument> SupportedCommands => backend.SupportedCommands;
 
     /// <inheritdoc/>
     public IAsyncEnumerable<ISourceFileEntry> Enumerate(CancellationToken cancellationToken)

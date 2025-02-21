@@ -178,6 +178,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RemoteSynchronization", "To
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.CommandLine.SyncTool", "Executables\net8\Duplicati.CommandLine.SyncTool\Duplicati.CommandLine.SyncTool.csproj", "{48D32674-0FE9-4407-B102-4AE46D93595F}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.CommandLine.SourceTool", "Duplicati\CommandLine\SourceTool\Duplicati.CommandLine.SourceTool.csproj", "{2873BCE2-2EA6-419D-BFFA-693FDB34926E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.CommandLine.SourceTool", "Executables\net8\Duplicati.CommandLine.SourceTool\Duplicati.CommandLine.SourceTool.csproj", "{4003BF90-6681-4155-9D06-639ED23FE3AB}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -500,6 +504,14 @@ Global
 		{48D32674-0FE9-4407-B102-4AE46D93595F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{48D32674-0FE9-4407-B102-4AE46D93595F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{48D32674-0FE9-4407-B102-4AE46D93595F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2873BCE2-2EA6-419D-BFFA-693FDB34926E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2873BCE2-2EA6-419D-BFFA-693FDB34926E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2873BCE2-2EA6-419D-BFFA-693FDB34926E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2873BCE2-2EA6-419D-BFFA-693FDB34926E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4003BF90-6681-4155-9D06-639ED23FE3AB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4003BF90-6681-4155-9D06-639ED23FE3AB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4003BF90-6681-4155-9D06-639ED23FE3AB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4003BF90-6681-4155-9D06-639ED23FE3AB}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -563,6 +575,8 @@ Global
 		{6D9742A7-6F32-4571-8276-79716168B525} = {424CEF73-4984-430E-9C8B-E61CC0F22074}
 		{D3A7E41E-279D-4E0A-A2DB-5E8002E02B6D} = {15388C37-9218-4818-972E-738EEA8F1602}
 		{48D32674-0FE9-4407-B102-4AE46D93595F} = {6B46F6B1-1898-49B8-ADA7-5CAF68EB77E3}
+		{2873BCE2-2EA6-419D-BFFA-693FDB34926E} = {D19A38DD-68F1-4EF5-BF5F-8966CE0D9A5B}
+		{4003BF90-6681-4155-9D06-639ED23FE3AB} = {6B46F6B1-1898-49B8-ADA7-5CAF68EB77E3}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {8B40BAFE-D862-4397-9495-8F5EAF5CE80C}

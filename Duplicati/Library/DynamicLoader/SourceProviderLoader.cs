@@ -25,6 +25,7 @@ using Duplicati.Library.Interface;
 using System.Linq;
 using System.Runtime.ExceptionServices;
 using Duplicati.Library.SourceProviders;
+using Duplicati.Library.SourceProvider;
 
 namespace Duplicati.Library.DynamicLoader
 {
@@ -164,7 +165,19 @@ namespace Duplicati.Library.DynamicLoader
         /// <returns>The instanciated SourceProvider or null if the url is not supported</returns>
         public static ISourceProviderModule GetSourceProvider(string url, Dictionary<string, string> options)
         {
-            return _SourceProviderLoader.GetSourceProvider(url, options);
+            // Source providers are preferred over backends
+            var provider = _SourceProviderLoader.GetSourceProvider(url, options);
+            if (provider != null)
+                return provider;
+
+            // See if there is a backend that can also be a source
+            var backend = BackendLoader.GetBackend(url, options);
+            if (backend is IFolderEnabledBackend folderBackend)
+                return new BackendSourceProvider(folderBackend);
+
+            backend?.Dispose();
+            return null;
+
         }
         #endregion
 

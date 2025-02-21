@@ -138,27 +138,10 @@ namespace Duplicati.Library.Main.Operation
                         results.Add(new LocalFileSource(SnapshotUtility.CreateSnapshot(entry, options.RawOptions, options.SymlinkPolicy == Options.SymlinkStrategy.Follow)));
                     else
                     {
+                        // Assume it is a remote source
                         foreach (var url in entry)
-                        {
-                            // Source providers are preferred over backends
-                            var provider = SourceProviderLoader.GetSourceProvider(url, options.RawOptions);
-                            if (provider != null)
-                            {
-                                results.Add(provider);
-                                continue;
-                            }
-
-                            // See if there is a backend that can also be a source
-                            var backend = BackendLoader.GetBackend(url, options.RawOptions);
-                            if (backend is IFolderEnabledBackend folderBackend)
-                            {
-                                results.Add(new BackendSourceProvider(folderBackend));
-                                continue;
-                            }
-
-                            backend?.Dispose();
-                            throw new UserInformationException(string.Format("The source \"{0}\" is not supported", url), "SourceNotSupported");
-                        }
+                            results.Add(SourceProviderLoader.GetSourceProvider(url, options.RawOptions)
+                                ?? throw new UserInformationException(string.Format("The source \"{0}\" is not supported", url), "SourceNotSupported"));
                     }
                 }
             }
