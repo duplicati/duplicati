@@ -62,6 +62,16 @@ public class TempFileStream : StreamUtil.WrappingAsyncStream
     /// <summary>
     /// Creates a new TempFileStream instance.
     /// </summary>
+    /// <param name="tempFile">The temporary file instance.</param>
+    /// <returns>The new TempFileStream instance.</returns>
+    public static TempFileStream Create(TempFile tempFile)
+    {
+        return new TempFileStream(tempFile, File.Open(tempFile.Name, FileMode.Open, FileAccess.ReadWrite, FileShare.None));
+    }
+
+    /// <summary>
+    /// Creates a new TempFileStream instance.
+    /// </summary>
     /// <returns>The new TempFileStream instance.</returns>
     public static TempFileStream Create()
     {

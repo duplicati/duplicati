@@ -19,6 +19,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
+using System.IO.Pipelines;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
 
@@ -37,6 +38,11 @@ namespace Duplicati.Library.SourceProvider;
 public class BackendSourceFileEntry(BackendSourceProvider parent, string path, bool isFolder, bool isMetaEntry, DateTime createdUtc, DateTime lastModificationUtc, long size)
     : ISourceFileEntry
 {
+    /// <summary>
+    /// The log tag for this instance
+    /// </summary>
+    private static string LOGTAG = Logging.Log.LogTagFromType<BackendSourceFileEntry>();
+
     /// <inheritdoc/>
     public bool IsFolder => isFolder;
 
@@ -54,11 +60,6 @@ public class BackendSourceFileEntry(BackendSourceProvider parent, string path, b
 
     /// <inheritdoc/>
     public string Path => ConcatPaths(parent.PathKey, NormalizePath(path));
-
-    /// <summary>
-    /// The local path of the entry
-    /// </summary>
-    public string LocalPath => path;
 
     /// <inheritdoc/>
     public long Size => size;
@@ -95,7 +96,13 @@ public class BackendSourceFileEntry(BackendSourceProvider parent, string path, b
             throw new InvalidOperationException("Enumerate can only be called on folders");
 
         return parent.WrappedBackend.ListAsync(path, cancellationToken)
-            .Select(x => new BackendSourceFileEntry(parent, x.Path, x.IsFolder, false, x.CreatedUtc, x.LastModificationUtc, x.Size));
+            .Select(x =>
+            {
+                if (x is BackendSourceFileEntry)
+                    return x;
+
+                return new BackendSourceFileEntry(parent, x.Path, x.IsFolder, false, x.CreatedUtc, x.LastModificationUtc, x.Size);
+            });
     }
 
     /// <inheritdoc/>
@@ -119,6 +126,59 @@ public class BackendSourceFileEntry(BackendSourceProvider parent, string path, b
     public Task<Stream?> OpenMetadataRead(CancellationToken cancellationToken)
         => Task.FromResult<Stream?>(null);
 
+    /// <summary>
+    /// Helper class for reporting th length of a stream
+    /// </summary>
+    /// <param name="stream">The stream to wrap</param>
+    /// <param name="reportedLength">The length to report</param>
+    private class LengthReportingStream(Stream stream, long reportedLength) : OverrideableStream(stream)
+    {
+        /// <summary>
+        /// Track the position
+        /// </summary>
+        private long position = 0;
+
+        /// <inheritdoc/>
+        public override long Length => reportedLength;
+
+        /// <inheritdoc/>
+        public override long Position
+        {
+            get => position;
+            set => position = base.Position = value;
+        }
+
+        /// <inheritdoc/>
+        public override void Write(byte[] buffer, int offset, int count)
+        {
+            base.Write(buffer, offset, count);
+            position += count;
+        }
+
+        /// <inheritdoc/>
+        public override int Read(byte[] buffer, int offset, int count)
+        {
+            var read = base.Read(buffer, offset, count);
+            position += read;
+            return read;
+        }
+
+        /// <inheritdoc/>
+        public override async Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
+        {
+            var read = await base.ReadAsync(buffer, offset, count, cancellationToken);
+            position += read;
+            return read;
+        }
+
+        /// <inheritdoc/>
+        public override async Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
+        {
+            await base.WriteAsync(buffer, offset, count, cancellationToken);
+            position += count;
+        }
+    }
+
     /// <inheritdoc/>
     public async Task<Stream> OpenRead(CancellationToken cancellationToken)
     {
@@ -127,23 +187,48 @@ public class BackendSourceFileEntry(BackendSourceProvider parent, string path, b
 
         if (parent.WrappedBackend is IStreamingBackend streamingBackend)
         {
-            var mapStream = new MapStream();
-            mapStream.CopyTask = streamingBackend.GetAsync(this.Path, mapStream, cancellationToken);
-            return mapStream;
+            var pipe = new Pipe();
+
+            // Start writing data to the pipe asynchronously
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await streamingBackend.GetAsync(path, pipe.Writer.AsStream(), cancellationToken).ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    await pipe.Writer.CompleteAsync(ex).ConfigureAwait(false);
+                }
+                finally
+                {
+                    await pipe.Writer.CompleteAsync().ConfigureAwait(false);
+                }
+            })
+            .ContinueWith(t =>
+            {
+                if (t.IsFaulted)
+                    Logging.Log.WriteWarningMessage(LOGTAG, "ErrorPipingStream", t.Exception, "Error piping stream for {0}", this.Path);
+            });
+
+            // Return the readable stream so the caller can read data as it's produced
+            return new LengthReportingStream(pipe.Reader.AsStream(), size);
         }
         else
         {
+            TempFile? tempFile = null;
             TempFileStream? file = null;
             try
             {
-                file = TempFileStream.Create();
-                await parent.WrappedBackend.GetAsync(this.Path, file.Path, cancellationToken);
-                file.Position = 0;
+                tempFile = new TempFile();
+                await parent.WrappedBackend.GetAsync(path, tempFile, cancellationToken);
+                file = TempFileStream.Create(tempFile);
                 return file;
             }
             catch
             {
                 file?.Dispose();
+                tempFile?.Dispose();
                 throw;
             }
         }

@@ -90,7 +90,9 @@ namespace Duplicati.Library.Backend
 
 
             m_s3Client = new S3AwsClient(accessKeyId, accessKeySecret, null, host, null, true, false, options);
-            m_sourcePathKey = $"@{ProtocolKey}://{host}/{m_bucket}/{m_prefix}/";
+            m_sourcePathKey = $"{Util.RemotePathPrefix}{ProtocolKey}://{host}/{m_bucket}/";
+            if (!string.IsNullOrWhiteSpace(m_prefix))
+                m_sourcePathKey += m_prefix;
             m_sourceProvider = new BackendSourceProvider(this);
         }
 
@@ -142,7 +144,7 @@ namespace Duplicati.Library.Backend
 
         public async IAsyncEnumerable<IFileEntry> ListAsync([EnumeratorCancellation] CancellationToken cancelToken)
         {
-            await foreach (IFileEntry file in Connection.ListBucketAsync(m_bucket, m_prefix, cancelToken).ConfigureAwait(false))
+            await foreach (IFileEntry file in Connection.ListBucketAsync(m_bucket, m_prefix, false, cancelToken).ConfigureAwait(false))
             {
                 ((FileEntry)file).Name = file.Name.Substring(m_prefix.Length);
                 if (file.Name.StartsWith("/", StringComparison.Ordinal) && !m_prefix.StartsWith("/", StringComparison.Ordinal))
@@ -249,30 +251,9 @@ namespace Duplicati.Library.Backend
         public string PathKey => m_sourcePathKey;
 
         /// <inheritdoc/>
-        public async IAsyncEnumerable<ISourceFileEntry> ListAsync(string path, [EnumeratorCancellation] CancellationToken cancellationToken)
-        {
-            var prefixPath = m_prefix;
-            if (!prefixPath.EndsWith("/", StringComparison.Ordinal))
-                prefixPath += "/";
+        public IAsyncEnumerable<ISourceFileEntry> ListAsync(string path, CancellationToken cancellationToken)
+            => m_sourceProvider.ListFromFileEntryAsync(m_prefix, path, (filter, token) => m_s3Client.ListBucketAsync(m_bucket, filter, false, token), cancellationToken);
 
-            var filterPath = prefixPath + path;
-            if (!filterPath.EndsWith("/", StringComparison.Ordinal))
-                filterPath += "/";
-
-            await foreach (var f in m_s3Client.ListBucketAsync(m_bucket, filterPath, cancellationToken).ConfigureAwait(false))
-            {
-                if (!f.Name.StartsWith(prefixPath, StringComparison.Ordinal))
-                    continue;
-
-                ((FileEntry)f).Name = f.Name.Substring(prefixPath.Length);
-
-                // Skip sub-folder items
-                if (f.Name.Contains("/"))
-                    continue;
-
-                yield return BackendSourceFileEntry.FromFileEntry(m_sourceProvider, path, f);
-            }
-        }
 
         /// <inheritdoc/>
         public Task<ISourceFileEntry> GetEntryAsync(string path, CancellationToken cancellationToken)

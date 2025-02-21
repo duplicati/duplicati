@@ -81,11 +81,11 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public async IAsyncEnumerable<IFileEntry> ListBucketAsync(string bucketName, string prefix, [EnumeratorCancellation] CancellationToken cancellationToken)
+        public async IAsyncEnumerable<IFileEntry> ListBucketAsync(string bucketName, string prefix, bool recursive, [EnumeratorCancellation] CancellationToken cancellationToken)
         {
             ThrowExceptionIfBucketDoesNotExist(bucketName);
 
-            var observable = m_client.ListObjectsAsync(bucketName, prefix, true, cancellationToken);
+            var observable = m_client.ListObjectsAsync(bucketName, prefix, recursive, cancellationToken);
             await foreach (var obj in ToAsyncEnumerable(observable, cancellationToken).ConfigureAwait(false))
             {
                 yield return new Common.IO.FileEntry(
@@ -93,7 +93,8 @@ namespace Duplicati.Library.Backend
                     (long)obj.Size,
                     Convert.ToDateTime(obj.LastModified),
                     Convert.ToDateTime(obj.LastModified)
-                );
+                )
+                { IsFolder = obj.Key.EndsWith("/") };
             }
         }
 

@@ -948,6 +948,20 @@ namespace Duplicati.Library.Main
                     string source;
                     try
                     {
+                        // Check if this is not a file source
+                        var scheme = Library.Utility.Utility.GuessScheme(expandedSource) ?? "file";
+                        if (scheme != "file")
+                        {
+                            // TODO: If the remote source fails to load,
+                            // this will be an enumeration warning, but will result
+                            // in the backup being recorded without files from the source
+                            // Eventually, this could lead to retention causing the last backup
+                            // with the data from the source to be deleted
+                            foundAnyPaths = true;
+                            sources.Add(expandedSource);
+                            continue;
+                        }
+
                         // TODO: This expands "C:" to CWD, but not C:\
                         source = System.IO.Path.GetFullPath(expandedSource);
                     }

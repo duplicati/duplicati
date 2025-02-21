@@ -44,6 +44,8 @@ namespace Duplicati.Library.Backend
         private const string SSL_OPTION = "use-ssl";
         private const string S3_CLIENT_OPTION = "s3-client";
         private const string S3_DISABLE_CHUNK_ENCODING_OPTION = "s3-disable-chunk-encoding";
+        private const string S3_LIST_API_VERSION_OPTION = "s3-list-api-version";
+        private const string S3_RECURSIVE_LIST = "s3-recursive-list";
 
         public static readonly Dictionary<string, string> KNOWN_S3_PROVIDERS = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) {
             { "Amazon S3", "s3.amazonaws.com" },
@@ -174,6 +176,7 @@ namespace Duplicati.Library.Backend
 
         private readonly string m_bucket;
         private readonly string m_prefix;
+        private readonly bool m_recurseLists;
 
         /// <summary>
         /// Source provider to be used if the backend is a source
@@ -235,6 +238,8 @@ namespace Duplicati.Library.Backend
             if (m_prefix.Length != 0)
                 m_prefix = Util.AppendDirSeparator(m_prefix, "/");
 
+            m_recurseLists = Utility.Utility.ParseBoolOption(options, S3_RECURSIVE_LIST);
+
             // Auto-disable DNS lookup for non-AWS configurations
             if (!options.ContainsKey("s3-ext-forcepathstyle") && !hostname.EndsWith(".amazonaws.com", StringComparison.OrdinalIgnoreCase))
                 options["s3-ext-forcepathstyle"] = "true";
@@ -256,7 +261,9 @@ namespace Duplicati.Library.Backend
                 throw new UserInformationException(Strings.S3Backend.UnknownS3ClientError(s3ClientOptionValue), "UnknownS3Client");
             }
 
-            m_sourcePathKey = $"@{ProtocolKey}://{hostname}/{m_bucket}/{m_prefix}/";
+            m_sourcePathKey = $"{Util.RemotePathPrefix}{ProtocolKey}://{hostname}/{m_bucket}/";
+            if (!string.IsNullOrWhiteSpace(m_prefix))
+                m_sourcePathKey += m_prefix;
             m_sourceProvider = new BackendSourceProvider(this);
         }
 
@@ -287,7 +294,7 @@ namespace Duplicati.Library.Backend
 
         public async IAsyncEnumerable<IFileEntry> ListAsync([EnumeratorCancellation] CancellationToken cancelToken)
         {
-            await foreach (IFileEntry file in Connection.ListBucketAsync(m_bucket, m_prefix, cancelToken))
+            await foreach (IFileEntry file in Connection.ListBucketAsync(m_bucket, m_prefix, m_recurseLists, cancelToken))
             {
                 ((FileEntry)file).Name = file.Name.Substring(m_prefix.Length);
 
@@ -349,6 +356,8 @@ namespace Duplicati.Library.Backend
                     new CommandLineArgument(SSL_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.S3Backend.DescriptionUseSSLShort, Strings.S3Backend.DescriptionUseSSLLong),
                     new CommandLineArgument(S3_CLIENT_OPTION, CommandLineArgument.ArgumentType.Enumeration, Strings.S3Backend.S3ClientDescriptionShort, Strings.S3Backend.S3ClientDescriptionLong, "aws", null, new string[] { "aws", "minio" }),
                     new CommandLineArgument(S3_DISABLE_CHUNK_ENCODING_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.S3Backend.DescriptionDisableChunkEncodingShort, Strings.S3Backend.DescriptionDisableChunkEncodingLong, "false"),
+                    new CommandLineArgument(S3_LIST_API_VERSION_OPTION, CommandLineArgument.ArgumentType.Enumeration, Strings.S3Backend.DescriptionListApiVersionShort, Strings.S3Backend.DescriptionListApiVersionLong, "v1", null, ["v1", "v2"]),
+                    new CommandLineArgument(S3_RECURSIVE_LIST, CommandLineArgument.ArgumentType.Boolean, Strings.S3Backend.DescriptionRecursiveListShort, Strings.S3Backend.DescriptionRecursiveListLong, "false"),
                     new CommandLineArgument("auth-password", CommandLineArgument.ArgumentType.Password, Strings.S3Backend.AuthPasswordDescriptionShort, Strings.S3Backend.AuthPasswordDescriptionLong),
                     new CommandLineArgument("auth-username", CommandLineArgument.ArgumentType.String, Strings.S3Backend.AuthUsernameDescriptionShort, Strings.S3Backend.AuthUsernameDescriptionLong),
                 };
@@ -416,30 +425,8 @@ namespace Duplicati.Library.Backend
         public string PathKey => m_sourcePathKey;
 
         /// <inheritdoc/>
-        public async IAsyncEnumerable<ISourceFileEntry> ListAsync(string path, [EnumeratorCancellation] CancellationToken cancellationToken)
-        {
-            var prefixPath = m_prefix;
-            if (!prefixPath.EndsWith("/", StringComparison.Ordinal))
-                prefixPath += "/";
-
-            var filterPath = prefixPath + path;
-            if (!filterPath.EndsWith("/", StringComparison.Ordinal))
-                filterPath += "/";
-
-            await foreach (var f in s3Client.ListBucketAsync(m_bucket, filterPath, cancellationToken).ConfigureAwait(false))
-            {
-                if (!f.Name.StartsWith(prefixPath, StringComparison.Ordinal))
-                    continue;
-
-                ((FileEntry)f).Name = f.Name.Substring(prefixPath.Length);
-
-                // Skip sub-folder items
-                if (f.Name.Contains("/"))
-                    continue;
-
-                yield return BackendSourceFileEntry.FromFileEntry(m_sourceProvider, path, f);
-            }
-        }
+        public IAsyncEnumerable<ISourceFileEntry> ListAsync(string path, CancellationToken cancellationToken)
+            => m_sourceProvider.ListFromFileEntryAsync(m_prefix, path, (filter, token) => s3Client.ListBucketAsync(m_bucket, filter, m_recurseLists, token), cancellationToken);
 
         /// <inheritdoc/>
         public Task<ISourceFileEntry> GetEntryAsync(string path, CancellationToken cancellationToken)

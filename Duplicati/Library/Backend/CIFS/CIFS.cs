@@ -32,6 +32,7 @@ using Duplicati.Library.Utility;
 using SMBLibrary;
 using Duplicati.Library.SourceProvider;
 using System.Runtime.CompilerServices;
+using Duplicati.Library.Common.IO;
 
 namespace Duplicati.Library.Backend;
 
@@ -190,7 +191,11 @@ public class CIFSBackend : IStreamingBackend, IFolderEnabledBackend
             writeBufferSize
         );
 
-        _sourcePathKey = $"@{ProtocolKey}://{_connectionParameters.ServerName}/~{_connectionParameters.AuthUser}/{_connectionParameters.Path}/";
+        _sourcePathKey = $"{Util.RemotePathPrefix}{ProtocolKey}://{_connectionParameters.ServerName}/{_connectionParameters.ShareName}/";
+        if (!string.IsNullOrEmpty(_connectionParameters.AuthUser))
+            _sourcePathKey += $"~{_connectionParameters.AuthUser}/";
+        if (!string.IsNullOrEmpty(_connectionParameters.Path))
+            _sourcePathKey += $"{_connectionParameters.Path}/";
         _sourceProvider = new BackendSourceProvider(this);
     }
 
@@ -360,15 +365,16 @@ public class CIFSBackend : IStreamingBackend, IFolderEnabledBackend
     public async IAsyncEnumerable<ISourceFileEntry> ListAsync(string path, [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         var sourcePath = _connectionParameters.Path;
-        if (!sourcePath.EndsWith('\\'))
-            sourcePath += '\\';
+        if (!string.IsNullOrWhiteSpace(sourcePath) && !sourcePath.EndsWith('\\'))
+            sourcePath += '/';
 
-        var list = (await GetConnection().ListAsync(sourcePath + path, cancellationToken).ConfigureAwait(false))
+        foreach (var v in (await GetConnection().ListAsync(sourcePath + path, cancellationToken).ConfigureAwait(false))
+            .Where(x => x.Name != "." && x.Name != "..")
             .Select(f => BackendSourceFileEntry.FromFileEntry(_sourceProvider, path, f))
-            .Cast<ISourceFileEntry>();
-
-        foreach (var v in list)
+            .Cast<ISourceFileEntry>())
+        {
             yield return v;
+        }
     }
 
     /// <inheritdoc/>

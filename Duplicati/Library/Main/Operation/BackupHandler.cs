@@ -269,7 +269,7 @@ namespace Duplicati.Library.Main.Operation
                     Utility.UpdateOptionsFromDb(database, options);
                     Utility.VerifyOptionsAndUpdateDatabase(database, options);
 
-                    var probe_path = database.GetFirstPath();
+                    var probe_path = database.GetFirstLocalPath();
                     if (probe_path != null && Util.GuessDirSeparator(probe_path) != Util.DirectorySeparatorString)
                         throw new UserInformationException(string.Format("The backup contains files that belong to another operating system. Proceeding with a backup would cause the database to contain paths from two different operation systems, which is not supported. To proceed without losing remote data, delete all filesets and make sure the --{0} option is set, then run the backup again to re-use the existing data on the remote store.", "no-auto-compact"), "CrossOsDatabaseReuseNotSupported");
 
