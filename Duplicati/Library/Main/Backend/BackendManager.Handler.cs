@@ -281,7 +281,7 @@ partial class BackendManager
                             putOp.SetComplete(true);
                             activeUploads.Add(ExecuteWithRetry(putOp, tcs.Token));
                         }
-                        else if (op is GetOperation getOp && !getOp.WaitForComplete)
+                        else if (op is GetOperation getOp)
                         {
                             await EnsureAtMostNActiveDownloads(maxParallelDownloads).ConfigureAwait(false);
 
