@@ -275,6 +275,8 @@ partial class BackendManager
                         // Allow PUT operations to be queued, if requested
                         if (op is PutOperation putOp && !putOp.WaitForComplete)
                         {
+                            // Wait for any active downloads to complete before starting an upload
+                            await EnsureAtMostNActiveDownloads(1).ConfigureAwait(false);
                             await EnsureAtMostNActiveUploads(maxParallelUploads).ConfigureAwait(false);
 
                             // Operation is accepted into queue, so we can signal completion
@@ -283,6 +285,8 @@ partial class BackendManager
                         }
                         else if (op is GetOperation getOp)
                         {
+                            // Wait for any active uploads to complete before starting a download
+                            await EnsureAtMostNActiveUploads(1).ConfigureAwait(false);
                             await EnsureAtMostNActiveDownloads(maxParallelDownloads).ConfigureAwait(false);
 
                             // Operation is accepted into queue, so we can signal completion
@@ -290,8 +294,10 @@ partial class BackendManager
                         }
                         else
                         {
-                            // Wait for all of the active uploads to complete
+                            // Wait for all of the active uploads and downloads to complete
                             await EnsureAtMostNActiveUploads(1).ConfigureAwait(false);
+                            await EnsureAtMostNActiveDownloads(1).ConfigureAwait(false);
+
                             // Execute the operation
                             await ExecuteWithRetry(op, tcs.Token).ConfigureAwait(false);
                         }
