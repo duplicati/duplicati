@@ -39,7 +39,7 @@ namespace Duplicati.Library.Common.IO
         /// <summary>
         /// The prefix marker for a remote path
         /// </summary>
-        public const string RemotePathPrefix = "@";
+        public const string RemotePathPrefix = ">";
 
         /// <summary>
         /// Filename of a marker file that can be put inside the data folder to prevent Duplicati from fixing lax permissions
