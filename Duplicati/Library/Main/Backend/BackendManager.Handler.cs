@@ -89,9 +89,13 @@ partial class BackendManager
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<Handler>();
 
         /// <summary>
+        /// The list of active downloads
+        /// </summary>
+        private readonly List<Task> activeDownloads = [];
+        /// <summary>
         /// The list of active uploads
         /// </summary>
-        private readonly List<Task> activeUploads = new();
+        private readonly List<Task> activeUploads = [];
         /// <summary>
         /// The pool of backends currently created
         /// </summary>
@@ -104,6 +108,10 @@ partial class BackendManager
         /// The context for the handler
         /// </summary>
         private readonly ExecuteContext context;
+        /// <summary>
+        /// The maximum number of parallel downloads
+        /// </summary>
+        private readonly int maxParallelDownloads;
         /// <summary>
         /// The maximum number of parallel uploads
         /// </summary>
@@ -155,6 +163,8 @@ partial class BackendManager
             this.backendUrl = backendUrl;
             this.context = context;
 
+            // TODO Currently, only the restore process uses parallel downloads. If others need it as well, maybe use another option.
+            maxParallelDownloads = Math.Max(1, context.Options.RestoreVolumeDownloaders);
             maxParallelUploads = Math.Max(1, context.Options.AsynchronousConcurrentUploadLimit);
             maxRetries = context.Options.NumberOfRetries;
             retryDelay = context.Options.RetryDelay;
@@ -181,6 +191,23 @@ partial class BackendManager
         }
 
         /// <summary>
+        /// Reclaims completed downloads
+        /// </summary>
+        /// <returns>An awaitable task</returns>
+        private async Task ReclaimCompletedDownloads()
+        {
+            for (int i = activeDownloads.Count - 1; i >= 0; i--)
+            {
+                if (activeDownloads[i].IsCompleted)
+                {
+                    // Make sure the task is awaited so we capture any exceptions
+                    await activeDownloads[i].ConfigureAwait(false);
+                    activeDownloads.RemoveAt(i);
+                }
+            }
+        }
+
+        /// <summary>
         /// Reclaims completed uploads
         /// </summary>
         /// <returns>An awaitable task</returns>
@@ -198,11 +225,25 @@ partial class BackendManager
         }
 
         /// <summary>
-        /// Ensures that there are at most N - 1 pending uploads
+        /// Ensures that there are at most N - 1 active downloads
         /// </summary>
-        /// <param name="n">The maximum number of pending uploads</param>
+        /// <param name="n"></param>
+        /// <returns></returns>
+        private async Task EnsureAtMostNActiveDownloads(int n)
+        {
+            while (activeDownloads.Count >= n)
+            {
+                await Task.WhenAny(activeDownloads).ConfigureAwait(false);
+                await ReclaimCompletedDownloads().ConfigureAwait(false);
+            }
+        }
+
+        /// <summary>
+        /// Ensures that there are at most N - 1 active uploads
+        /// </summary>
+        /// <param name="n">The maximum number of active uploads</param>
         /// <returns>An awaitable task</returns>
-        private async Task EnsureAtMostNPendingUploads(int n)
+        private async Task EnsureAtMostNActiveUploads(int n)
         {
             while (activeUploads.Count >= n)
             {
@@ -234,16 +275,29 @@ partial class BackendManager
                         // Allow PUT operations to be queued, if requested
                         if (op is PutOperation putOp && !putOp.WaitForComplete)
                         {
-                            await EnsureAtMostNPendingUploads(maxParallelUploads).ConfigureAwait(false);
+                            // Wait for any active downloads to complete before starting an upload
+                            await EnsureAtMostNActiveDownloads(1).ConfigureAwait(false);
+                            await EnsureAtMostNActiveUploads(maxParallelUploads).ConfigureAwait(false);
 
                             // Operation is accepted into queue, so we can signal completion
                             putOp.SetComplete(true);
                             activeUploads.Add(ExecuteWithRetry(putOp, tcs.Token));
                         }
+                        else if (op is GetOperation getOp)
+                        {
+                            // Wait for any active uploads to complete before starting a download
+                            await EnsureAtMostNActiveUploads(1).ConfigureAwait(false);
+                            await EnsureAtMostNActiveDownloads(maxParallelDownloads).ConfigureAwait(false);
+
+                            // Operation is accepted into queue, so we can signal completion
+                            activeDownloads.Add(ExecuteWithRetry(getOp, tcs.Token));
+                        }
                         else
                         {
-                            // Wait for all pending uploads to complete
-                            await EnsureAtMostNPendingUploads(1).ConfigureAwait(false);
+                            // Wait for all of the active uploads and downloads to complete
+                            await EnsureAtMostNActiveUploads(1).ConfigureAwait(false);
+                            await EnsureAtMostNActiveDownloads(1).ConfigureAwait(false);
+
                             // Execute the operation
                             await ExecuteWithRetry(op, tcs.Token).ConfigureAwait(false);
                         }
@@ -259,25 +313,25 @@ partial class BackendManager
             }
             finally
             {
-                // Terminate any pending uploads
+                // Terminate any active uploads and downloads. Exceptions thrown by the downloads should be captured by the callers.
                 tcs.Cancel();
 
                 if (activeUploads.Count > 0)
                 {
-                    Logging.Log.WriteWarningMessage(LOGTAG, "BackendManagerDisposeWhileActive", null, "Terminating {0} pending uploads", activeUploads.Count);
+                    Logging.Log.WriteWarningMessage(LOGTAG, "BackendManagerDisposeWhileActive", null, "Terminating {0} active uploads", activeUploads.Count);
 
-                    // Wait for all pending uploads to complete
+                    // Wait for all active uploads to complete
                     await Task.WhenAny(Task.Delay(1000), Task.WhenAll(activeUploads)).ConfigureAwait(false);
                     for (int i = activeUploads.Count - 1; i >= 0; i--)
                     {
                         var t = activeUploads[i];
                         activeUploads.RemoveAt(i);
                         if (t.IsCompleted && !t.IsCanceled && t.Exception != null)
-                            Logging.Log.WriteWarningMessage(LOGTAG, "BackendManagerDisposeError", t.Exception, "Error in pending upload: {0}", t.Exception.Message);
+                            Logging.Log.WriteWarningMessage(LOGTAG, "BackendManagerDisposeError", t.Exception, "Error in active upload: {0}", t.Exception.Message);
                     }
 
                     if (activeUploads.Count > 0)
-                        Logging.Log.WriteWarningMessage(LOGTAG, "BackendManagerDisposeError", null, "Terminating, but {0} pending uploads are still active", activeUploads.Count);
+                        Logging.Log.WriteWarningMessage(LOGTAG, "BackendManagerDisposeError", null, "Terminating, but {0} active uploads are still active", activeUploads.Count);
                 }
 
                 // Dispose of any remaining backends

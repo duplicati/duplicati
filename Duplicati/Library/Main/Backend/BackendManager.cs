@@ -6,6 +6,7 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using CoCoL;
+using Duplicati.Library.DynamicLoader;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main.Database;
 using Duplicati.Library.Main.Operation.Common;
@@ -25,10 +26,6 @@ internal partial class BackendManager : IBackendManager
     /// The log tag for the class
     /// </summary>
     private static readonly string LOGTAG = Logging.Log.LogTagFromType<BackendManager>();
-    /// <summary>
-    /// List of backend instances that are currently in use
-    /// </summary>
-    private readonly List<IBackend> backendPool = [];
 
     /// <summary>
     /// The channel for issuing and handling requests
@@ -133,6 +130,18 @@ internal partial class BackendManager : IBackendManager
     }
 
     /// <summary>
+    /// Decrypts a file using the specified options
+    /// </summary>
+    /// <param name="tmpfile">The file to decrypt</param>
+    /// <param name="filename">The name of the file. Used for detecting encryption algorithm if not specified in options or if it differs from the options</param>
+    /// <param name="options">The Duplicati options</param>
+    /// <returns>The decrypted file</returns>
+    public TempFile DecryptFile(TempFile volume, string volume_name, Options options)
+    {
+        return GetOperation.DecryptFile(volume, volume_name, options);
+    }
+
+    /// <summary>
     /// Deletes a remote file
     /// </summary>
     /// <param name="remotename">The name of the remote file</param>
@@ -159,7 +168,29 @@ internal partial class BackendManager : IBackendManager
     {
         var op = new GetOperation(remotename, size, context, cancelToken)
         {
-            Hash = hash
+            Hash = hash,
+            Decrypt = true
+        };
+        await QueueTask(op).ConfigureAwait(false);
+        (var file, var _, var downloadSize) = await op.GetResult().ConfigureAwait(false);
+        LastReadSize = downloadSize;
+        return file;
+    }
+
+    /// <summary>
+    /// Gets a file from the remote location without decrypting it
+    /// </summary>
+    /// <param name="remotename">The name of the remote file</param>
+    /// <param name="hash">The hash of the remote file, for verification</param>
+    /// <param name="size">The size of the remote file, for verification</param>
+    /// <param name="cancelToken">The cancellation token</param>
+    /// <returns>A temporary file with the contents of the remote file</returns>
+    public async Task<TempFile> GetDirectAsync(string remotename, string hash, long size, CancellationToken cancelToken)
+    {
+        var op = new GetOperation(remotename, size, context, cancelToken)
+        {
+            Hash = hash,
+            Decrypt = false
         };
         await QueueTask(op).ConfigureAwait(false);
         (var file, var _, var downloadSize) = await op.GetResult().ConfigureAwait(false);
@@ -191,7 +222,8 @@ internal partial class BackendManager : IBackendManager
     {
         var op = new GetOperation(remotename, size, context, cancelToken)
         {
-            Hash = hash
+            Hash = hash,
+            Decrypt = true
         };
         await QueueTask(op).ConfigureAwait(false);
         (var file, var downloadHash, var downloadSize) = await op.GetResult().ConfigureAwait(false);
