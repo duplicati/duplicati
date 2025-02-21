@@ -62,16 +62,6 @@ public class CIFSBackend : IStreamingBackend, IFolderEnabledBackend
     private string _DnsName;
 
     /// <summary>
-    /// Source provider to be used if the backend is a source
-    /// </summary>
-    private readonly BackendSourceProvider _sourceProvider;
-
-    /// <summary>
-    /// Key to be used in the path for the source provider
-    /// </summary>
-    private readonly string _sourcePathKey;
-
-    /// <summary>
     /// Path separators (both Windows \ and unix /) to be used in path manipulation
     /// </summary>
     private static readonly char[] PATH_SEPARATORS = ['/', '\\'];
@@ -190,13 +180,6 @@ public class CIFSBackend : IStreamingBackend, IFolderEnabledBackend
             readBufferSize,
             writeBufferSize
         );
-
-        _sourcePathKey = $"{Util.RemotePathPrefix}{ProtocolKey}://{_connectionParameters.ServerName}/{_connectionParameters.ShareName}/";
-        if (!string.IsNullOrEmpty(_connectionParameters.AuthUser))
-            _sourcePathKey += $"~{_connectionParameters.AuthUser}/";
-        if (!string.IsNullOrEmpty(_connectionParameters.Path))
-            _sourcePathKey += $"{_connectionParameters.Path}/";
-        _sourceProvider = new BackendSourceProvider(this);
     }
 
     /// <summary>
@@ -359,25 +342,18 @@ public class CIFSBackend : IStreamingBackend, IFolderEnabledBackend
     }
 
     /// <inheritdoc/>
-    public string PathKey => _sourcePathKey;
-
-    /// <inheritdoc/>
-    public async IAsyncEnumerable<ISourceFileEntry> ListAsync(string path, [EnumeratorCancellation] CancellationToken cancellationToken)
+    public async IAsyncEnumerable<IFileEntry> ListAsync(string path, [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         var sourcePath = _connectionParameters.Path;
-        if (!string.IsNullOrWhiteSpace(sourcePath) && !sourcePath.EndsWith('\\'))
-            sourcePath += '/';
+        if (!string.IsNullOrWhiteSpace(sourcePath))
+            sourcePath = Util.AppendDirSeparator(sourcePath, "/");
 
-        foreach (var v in (await GetConnection().ListAsync(sourcePath + path, cancellationToken).ConfigureAwait(false))
-            .Where(x => x.Name != "." && x.Name != "..")
-            .Select(f => BackendSourceFileEntry.FromFileEntry(_sourceProvider, path, f))
-            .Cast<ISourceFileEntry>())
-        {
-            yield return v;
-        }
+        foreach (var v in await GetConnection().ListAsync(sourcePath + BackendSourceFileEntry.NormalizePathTo(path, '/'), cancellationToken).ConfigureAwait(false))
+            if (v.Name != "." && v.Name != "..")
+                yield return v;
     }
 
     /// <inheritdoc/>
-    public Task<ISourceFileEntry> GetEntryAsync(string path, CancellationToken cancellationToken)
-        => Task.FromResult<ISourceFileEntry>(null);
+    public Task<IFileEntry> GetEntryAsync(string path, CancellationToken cancellationToken)
+        => Task.FromResult<IFileEntry>(null);
 }

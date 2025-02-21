@@ -40,7 +40,7 @@ namespace Duplicati.Library.Main.Operation.Backup
         public class FileEntry
         {
             // From input
-            public ISourceFileEntry Entry;
+            public ISourceProviderEntry Entry;
 
             // Split
             public long PathPrefixID;
@@ -180,7 +180,7 @@ namespace Duplicati.Library.Main.Operation.Backup
         /// Processes the metadata for the given path.
         /// </summary>
         /// <returns><c>True</c> if the path should be submitted to more analysis, <c>false</c> if there is nothing else to do</returns>
-        private static async Task<bool> ProcessMetadata(ISourceFileEntry entry, FileAttributes attributes, DateTime lastwrite, Options options, IMetahash emptymetadata, BackupDatabase database, IWriteChannel<StreamBlock> streamblockchannel)
+        private static async Task<bool> ProcessMetadata(ISourceProviderEntry entry, FileAttributes attributes, DateTime lastwrite, Options options, IMetahash emptymetadata, BackupDatabase database, IWriteChannel<StreamBlock> streamblockchannel)
         {
             if (entry.IsSymlink)
             {

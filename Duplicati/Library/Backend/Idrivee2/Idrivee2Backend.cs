@@ -44,15 +44,6 @@ namespace Duplicati.Library.Backend
         private readonly string m_prefix;
         private readonly string m_bucket;
 
-        /// <summary>
-        /// The source provider for this backend
-        /// </summary>
-        private readonly BackendSourceProvider m_sourceProvider;
-        /// <summary>
-        /// The key the backend is identified by if it is a source
-        /// </summary>
-        private readonly string m_sourcePathKey;
-
         private IS3Client m_s3Client;
 
         public Idrivee2Backend()
@@ -90,10 +81,6 @@ namespace Duplicati.Library.Backend
 
 
             m_s3Client = new S3AwsClient(accessKeyId, accessKeySecret, null, host, null, true, false, options);
-            m_sourcePathKey = $"{Util.RemotePathPrefix}{ProtocolKey}://{host}/{m_bucket}/";
-            if (!string.IsNullOrWhiteSpace(m_prefix))
-                m_sourcePathKey += m_prefix;
-            m_sourceProvider = new BackendSourceProvider(this);
         }
 
         public string GetRegionEndpoint(string url)
@@ -248,15 +235,12 @@ namespace Duplicati.Library.Backend
         }
 
         /// <inheritdoc/>
-        public string PathKey => m_sourcePathKey;
-
-        /// <inheritdoc/>
-        public IAsyncEnumerable<ISourceFileEntry> ListAsync(string path, CancellationToken cancellationToken)
-            => m_sourceProvider.ListFromFileEntryAsync(m_prefix, path, (filter, token) => m_s3Client.ListBucketAsync(m_bucket, filter, false, token), cancellationToken);
+        public IAsyncEnumerable<IFileEntry> ListAsync(string path, CancellationToken cancellationToken)
+            => m_s3Client.ListBucketAsync(m_bucket, path, false, cancellationToken);
 
 
         /// <inheritdoc/>
-        public Task<ISourceFileEntry> GetEntryAsync(string path, CancellationToken cancellationToken)
-            => Task.FromResult<ISourceFileEntry>(null);
+        public Task<IFileEntry> GetEntryAsync(string path, CancellationToken cancellationToken)
+            => Task.FromResult<IFileEntry>(null);
     }
 }

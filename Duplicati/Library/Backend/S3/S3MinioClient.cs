@@ -26,6 +26,7 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
+using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
 using Minio;
@@ -85,11 +86,17 @@ namespace Duplicati.Library.Backend
         {
             ThrowExceptionIfBucketDoesNotExist(bucketName);
 
+            if (!string.IsNullOrWhiteSpace(prefix))
+                prefix = Util.AppendDirSeparator(prefix, "/");
+
             var observable = m_client.ListObjectsAsync(bucketName, prefix, recursive, cancellationToken);
             await foreach (var obj in ToAsyncEnumerable(observable, cancellationToken).ConfigureAwait(false))
             {
-                yield return new Common.IO.FileEntry(
-                    obj.Key,
+                if (obj.Key == prefix || !obj.Key.StartsWith(prefix))
+                    continue;
+
+                yield return new FileEntry(
+                    obj.Key.Substring(prefix.Length),
                     (long)obj.Size,
                     Convert.ToDateTime(obj.LastModified),
                     Convert.ToDateTime(obj.LastModified)

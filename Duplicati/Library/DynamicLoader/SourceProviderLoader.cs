@@ -65,7 +65,7 @@ namespace Duplicati.Library.DynamicLoader
             /// <param name="url">The url to create the instance for</param>
             /// <param name="options">The options to pass to the instance constructor</param>
             /// <returns>The instanciated SourceProvider or null if the url is not supported</returns>
-            public ISourceProviderModule GetSourceProvider(string url, Dictionary<string, string> options)
+            public ISourceProviderModule GetSourceProvider(string url, string mountPoint, Dictionary<string, string> options)
             {
                 var uri = new Utility.Uri(url);
 
@@ -80,7 +80,7 @@ namespace Duplicati.Library.DynamicLoader
                     try
                     {
                         if (m_interfaces.ContainsKey(uri.Scheme))
-                            return (ISourceProviderModule)Activator.CreateInstance(m_interfaces[uri.Scheme].GetType(), url, newOpts);
+                            return (ISourceProviderModule)Activator.CreateInstance(m_interfaces[uri.Scheme].GetType(), url, mountPoint, newOpts);
                     }
                     catch (System.Reflection.TargetInvocationException tex)
                     {
@@ -161,19 +161,20 @@ namespace Duplicati.Library.DynamicLoader
         /// Instanciates a specific SourceProvider, given the url and options
         /// </summary>
         /// <param name="url">The url to create the instance for</param>
+        /// <param name="mountPoint">The mount point to use</param>
         /// <param name="options">The options to pass to the instance constructor</param>
         /// <returns>The instanciated SourceProvider or null if the url is not supported</returns>
-        public static ISourceProviderModule GetSourceProvider(string url, Dictionary<string, string> options)
+        public static ISourceProviderModule GetSourceProvider(string url, string mountPoint, Dictionary<string, string> options)
         {
             // Source providers are preferred over backends
-            var provider = _SourceProviderLoader.GetSourceProvider(url, options);
+            var provider = _SourceProviderLoader.GetSourceProvider(url, mountPoint, options);
             if (provider != null)
                 return provider;
 
             // See if there is a backend that can also be a source
             var backend = BackendLoader.GetBackend(url, options);
             if (backend is IFolderEnabledBackend folderBackend)
-                return new BackendSourceProvider(folderBackend);
+                return new BackendSourceProvider(folderBackend, mountPoint);
 
             backend?.Dispose();
             return null;

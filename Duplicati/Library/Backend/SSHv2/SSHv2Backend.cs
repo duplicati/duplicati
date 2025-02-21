@@ -60,15 +60,6 @@ namespace Duplicati.Library.Backend
         private readonly bool m_relativePath;
         private string m_initialDirectory;
 
-        /// <summary>
-        /// The source provider for this backend
-        /// </summary>
-        private readonly BackendSourceProvider m_sourceProvider;
-        /// <summary>
-        /// The path key for this backend if used as a source
-        /// </summary>
-        private readonly string m_sourcePathKey;
-
         private SftpClient m_con;
 
         public SSHv2()
@@ -128,11 +119,6 @@ namespace Duplicati.Library.Backend
 
             if (!string.IsNullOrWhiteSpace(timeoutstr))
                 m_keepaliveinterval = Library.Utility.Timeparser.ParseTimeSpan(timeoutstr);
-
-            m_sourcePathKey = $"{Util.RemotePathPrefix}{ProtocolKey}://{m_server}:{m_port}/~{m_username}/";
-            if (string.IsNullOrWhiteSpace(m_path))
-                m_sourcePathKey += $"{m_path}/";
-            m_sourceProvider = new BackendSourceProvider(this);
         }
 
         #region IBackend Members
@@ -467,10 +453,7 @@ namespace Duplicati.Library.Backend
         public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(new[] { m_server });
 
         /// <inheritdoc/>
-        public string PathKey => m_sourcePathKey;
-
-        /// <inheritdoc/>
-        public IAsyncEnumerable<ISourceFileEntry> ListAsync(string path, CancellationToken cancellationToken)
+        public IAsyncEnumerable<IFileEntry> ListAsync(string path, CancellationToken cancellationToken)
         {
             CreateConnection();
             SetWorkingDirectory();
@@ -479,7 +462,7 @@ namespace Duplicati.Library.Backend
             if (!string.IsNullOrWhiteSpace(prefixPath))
                 prefixPath = Util.AppendDirSeparator(prefixPath, "/");
 
-            var filterPath = prefixPath + path;
+            var filterPath = prefixPath + BackendSourceFileEntry.NormalizePathTo(path, '/');
             if (!string.IsNullOrWhiteSpace(filterPath))
                 filterPath = Util.AppendDirSeparator(filterPath, "/");
 
@@ -487,19 +470,18 @@ namespace Duplicati.Library.Backend
                 filterPath = ".";
 
             return Client.ListDirectoryAsync(filterPath, cancellationToken)
-                .Select(x => new BackendSourceFileEntry(
-                    m_sourceProvider,
-                    BackendSourceFileEntry.ConcatPaths(path, x.Name),
-                    x.Attributes.IsDirectory,
-                    false,
-                    new DateTime(0),
-                    x.Attributes.LastWriteTimeUtc,
-                    x.Attributes.Size
-                ));
+                .Select(x => new FileEntry(
+                    x.Name,
+                    x.Attributes.Size,
+                    x.Attributes.LastAccessTimeUtc,
+                    x.Attributes.LastWriteTimeUtc)
+                {
+                    IsFolder = x.Attributes.IsDirectory
+                });
         }
 
         /// <inheritdoc/>
-        public Task<ISourceFileEntry> GetEntryAsync(string path, CancellationToken cancellationToken)
-            => Task.FromResult<ISourceFileEntry>(null);
+        public Task<IFileEntry> GetEntryAsync(string path, CancellationToken cancellationToken)
+            => Task.FromResult<IFileEntry>(null);
     }
 }

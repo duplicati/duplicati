@@ -20,6 +20,7 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System.IO.Pipelines;
+using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
 
@@ -36,7 +37,7 @@ namespace Duplicati.Library.SourceProvider;
 /// <param name="lastModificationUtc">The last modification time of the entry</param>
 /// <param name="size">The size of the entry</param>
 public class BackendSourceFileEntry(BackendSourceProvider parent, string path, bool isFolder, bool isMetaEntry, DateTime createdUtc, DateTime lastModificationUtc, long size)
-    : ISourceFileEntry
+    : ISourceProviderEntry
 {
     /// <summary>
     /// The log tag for this instance
@@ -59,7 +60,7 @@ public class BackendSourceFileEntry(BackendSourceProvider parent, string path, b
     public DateTime LastModificationUtc => lastModificationUtc;
 
     /// <inheritdoc/>
-    public string Path => ConcatPaths(parent.PathKey, NormalizePath(path));
+    public string Path => SystemIO.IO_OS.PathCombine(parent?.MountedPath, NormalizePathToLocalSystem(path));
 
     /// <inheritdoc/>
     public long Size => size;
@@ -90,18 +91,32 @@ public class BackendSourceFileEntry(BackendSourceProvider parent, string path, b
     public string? HardlinkTargetId => null;
 
     /// <inheritdoc/>
-    public IAsyncEnumerable<ISourceFileEntry> Enumerate(CancellationToken cancellationToken)
+    public IAsyncEnumerable<ISourceProviderEntry> Enumerate(CancellationToken cancellationToken)
     {
         if (!isFolder)
             throw new InvalidOperationException("Enumerate can only be called on folders");
 
         return parent.WrappedBackend.ListAsync(path, cancellationToken)
+            // Remove the current and parent folder entries
+            .Where(x => !string.IsNullOrWhiteSpace(x.Name) && x.Name != "." && x.Name != "..")
+            // Remove sub-folder entries
+            .Where(x => !x.Name[0..^1].Contains('\\') && !x.Name[0..^1].Contains('/'))
+            // Convert to source file entries
             .Select(x =>
             {
-                if (x is BackendSourceFileEntry)
-                    return x;
+                var localPath = SystemIO.IO_OS.PathCombine(path, NormalizePathToLocalSystem(x.Name));
+                if (x.IsFolder)
+                    localPath = Util.AppendDirSeparator(localPath);
 
-                return new BackendSourceFileEntry(parent, x.Path, x.IsFolder, false, x.CreatedUtc, x.LastModificationUtc, x.Size);
+                return new BackendSourceFileEntry(
+                    parent,
+                    localPath,
+                    x.IsFolder,
+                    false,
+                    x.Created,
+                    x.LastModification,
+                    x.Size
+                );
             });
     }
 
@@ -109,7 +124,7 @@ public class BackendSourceFileEntry(BackendSourceProvider parent, string path, b
     public async Task<bool> FileExists(string path, CancellationToken cancellationToken)
     {
         if (!isFolder)
-            throw new InvalidOperationException("FileExists can only be called on folders");
+            throw new InvalidOperationException("FileExists cannot be called on folders");
 
         try
         {
@@ -235,39 +250,28 @@ public class BackendSourceFileEntry(BackendSourceProvider parent, string path, b
     }
 
     /// <summary>
-    /// Normalizes the path, turning backslashes into forward slashes
+    /// Normalizes the path, turning backslashes into forward slashes,
+    /// or vice versa, depending on the platform
     /// </summary>
     /// <param name="path">The path to normalize</param>
     /// <returns>The normalized path</returns>
-    public static string NormalizePath(string path)
-    {
-        if (System.IO.Path.DirectorySeparatorChar == '/')
-            return path;
+    public static string NormalizePathToLocalSystem(string path)
+        => NormalizePathTo(path, System.IO.Path.DirectorySeparatorChar);
 
+    /// <summary>
+    /// Normalizes the path, turning backslashes into forward slashes,
+    /// or vice versa, depending on the platform
+    /// </summary>
+    /// <param name="path">The path to normalize</param>
+    /// <returns>The normalized path</returns>
+    public static string NormalizePathTo(string path, char separator)
+    {
         if (string.IsNullOrEmpty(path))
             return path;
 
-        return path.Replace('\\', '/');
-    }
-
-    /// <summary>
-    /// Concatenates two paths
-    /// </summary>
-    /// <param name="path1">The first path</param>
-    /// <param name="path2">The second path</param>
-    /// <returns>The concatenated path</returns>
-    public static string ConcatPaths(string path1, string path2)
-    {
-        if (string.IsNullOrEmpty(path1))
-            return path2;
-
-        if (string.IsNullOrEmpty(path2))
-            return path1;
-
-        if (path1.EndsWith('/') || path1.EndsWith('\\'))
-            return path1 + path2;
-
-        return path1 + "/" + path2;
+        return path
+            .Replace('/', separator)
+            .Replace('\\', separator);
     }
 
     /// <summary>
@@ -278,6 +282,6 @@ public class BackendSourceFileEntry(BackendSourceProvider parent, string path, b
     /// <param name="prefix">The prefix to add to the path</param>
     /// <returns>The new backend source entry</returns>
     public static BackendSourceFileEntry FromFileEntry(BackendSourceProvider parent, string prefix, IFileEntry entry)
-        => new BackendSourceFileEntry(parent, ConcatPaths(prefix, entry.Name), entry.IsFolder, false, entry.Created, entry.LastModification, entry.Size);
+        => new BackendSourceFileEntry(parent, SystemIO.IO_OS.PathCombine(prefix, entry.Name), entry.IsFolder, false, entry.Created, entry.LastModification, entry.Size);
 }
 

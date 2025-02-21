@@ -44,20 +44,20 @@ namespace Duplicati.Library.Snapshots
         /// Enumerates the root source files and folders
         /// </summary>
         /// <returns>The source files and folders</returns>
-        IEnumerable<ISourceFileEntry> EnumerateFilesystemEntries();
+        IEnumerable<ISourceProviderEntry> EnumerateFilesystemEntries();
         /// <summary>
         /// Enumerates the files and folders in a given folder
         /// </summary>
         /// <param name="parent">The parent folder to enumerate</param>
         /// <returns>The files and folders in the parent folder</returns>
-        IEnumerable<ISourceFileEntry> EnumerateFilesystemEntries(ISourceFileEntry parent);
+        IEnumerable<ISourceProviderEntry> EnumerateFilesystemEntries(ISourceProviderEntry parent);
         /// <summary>
         /// Gets a filesystem entry for a given path
         /// </summary>
         /// <param name="path">The path to get</param>
         /// <param name="isFolder">True if the path is a folder</param>
         /// <returns>The filesystem entry</returns>
-        ISourceFileEntry? GetFilesystemEntry(string path, bool isFolder);
+        ISourceProviderEntry? GetFilesystemEntry(string path, bool isFolder);
 
         /// <summary>
         /// Gets the last write time of a given file in UTC

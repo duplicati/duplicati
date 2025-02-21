@@ -51,7 +51,7 @@ public static class Download
 
                 string localPath(string path)
                 {
-                    var relpath = path.Substring(source.PathKey.Length).TrimStart('/');
+                    var relpath = path.Substring(source.MountedPath.Length).TrimStart(Path.DirectorySeparatorChar);
                     return Path.Combine(destination.FullName, relpath);
                 }
 

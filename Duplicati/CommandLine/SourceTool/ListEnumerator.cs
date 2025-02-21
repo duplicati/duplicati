@@ -35,9 +35,9 @@ public static partial class Common
     /// <param name="visitor">The visitor function</param>
     /// <param name="token">The cancellation token</param>
     /// <returns>An awaitable task</returns>
-    public static async Task Visit(ISourceProvider source, int maxdepth, Func<ISourceFileEntry, int, Task<bool>> visitor, CancellationToken token)
+    public static async Task Visit(ISourceProvider source, int maxdepth, Func<ISourceProviderEntry, int, Task<bool>> visitor, CancellationToken token)
     {
-        var visit = new Stack<(ISourceFileEntry Entry, int Level)>();
+        var visit = new Stack<(ISourceProviderEntry Entry, int Level)>();
         await foreach (var item in source.Enumerate(token))
             visit.Push((item, 0));
 

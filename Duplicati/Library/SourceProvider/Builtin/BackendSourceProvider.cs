@@ -19,8 +19,6 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
-using System.Runtime.CompilerServices;
-using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.SourceProvider;
@@ -29,7 +27,8 @@ namespace Duplicati.Library.SourceProvider;
 /// A source provider that wraps a backend
 /// </summary>
 /// <param name="backend">The backend to wrap</param>
-public class BackendSourceProvider(IFolderEnabledBackend backend) : ISourceProvider, ISourceProviderModule
+/// <param name="mountedPath">The path to mount the backend</param>
+public class BackendSourceProvider(IFolderEnabledBackend backend, string mountedPath) : ISourceProvider, ISourceProviderModule
 {
     /// <summary>
     /// The wrapped backend
@@ -37,9 +36,9 @@ public class BackendSourceProvider(IFolderEnabledBackend backend) : ISourceProvi
     public IFolderEnabledBackend WrappedBackend => backend;
 
     /// <summary>
-    /// The path key unique for the destination
+    /// The path where the provider is logically mounted
     /// </summary>
-    public string PathKey => backend.PathKey;
+    public string MountedPath => mountedPath;
 
     /// <inheritdoc/>
     public string Key => backend.ProtocolKey;
@@ -51,53 +50,20 @@ public class BackendSourceProvider(IFolderEnabledBackend backend) : ISourceProvi
     public IList<ICommandLineArgument> SupportedCommands => backend.SupportedCommands;
 
     /// <inheritdoc/>
-    public IAsyncEnumerable<ISourceFileEntry> Enumerate(CancellationToken cancellationToken)
+    public IAsyncEnumerable<ISourceProviderEntry> Enumerate(CancellationToken cancellationToken)
         => new[] { new BackendSourceFileEntry(this, "", true, true, new DateTime(0), new DateTime(0), 0) }.ToAsyncEnumerable();
 
     /// <inheritdoc/>
-    public Task<ISourceFileEntry?> GetEntry(string path, bool isFolder, CancellationToken cancellationToken)
-        => backend.GetEntryAsync(path, cancellationToken);
+    public async Task<ISourceProviderEntry?> GetEntry(string path, bool isFolder, CancellationToken cancellationToken)
+    {
+        var entry = await backend.GetEntryAsync(path, cancellationToken).ConfigureAwait(false);
+        return entry == null ? null : BackendSourceFileEntry.FromFileEntry(this, path, entry);
+    }
 
     /// <inheritdoc/>
     public void Dispose()
     {
         WrappedBackend.Dispose();
         GC.SuppressFinalize(this);
-    }
-
-    /// <summary>
-    /// Helper function to use a List function that returns IFileEntry and convert it to ISourceFileEntry
-    /// </summary>
-    /// <param name="prefix">The prefix to hide from the caller</param>
-    /// <param name="path">The logical path to list</param>
-    /// <param name="listFunction">The function that returns the IFileEntry items</param>
-    /// <param name="cancellationToken">The cancellation token</param>
-    /// <returns>The list of source file entries</returns>
-    public async IAsyncEnumerable<ISourceFileEntry> ListFromFileEntryAsync(string prefix, string path, Func<string, CancellationToken, IAsyncEnumerable<IFileEntry>> listFunction, [EnumeratorCancellation] CancellationToken cancellationToken)
-    {
-        if (!string.IsNullOrWhiteSpace(prefix) && !prefix.EndsWith("/", StringComparison.Ordinal))
-            prefix += "/";
-
-        // Logic here is that the prefix is invisible to the caller, so we add it to the prefix to filter the results
-        // and remove it from the name to make the prefix invisible.
-        // The input path is preserved so the output looks like a "full path" to the caller.
-
-        var filterPath = prefix + path;
-        if (filterPath != "" && !filterPath.EndsWith("/", StringComparison.Ordinal))
-            filterPath += "/";
-
-        await foreach (var f in listFunction(filterPath, cancellationToken).ConfigureAwait(false))
-        {
-            if (!f.Name.StartsWith(filterPath, StringComparison.Ordinal))
-                continue;
-
-            ((FileEntry)f).Name = f.Name.Substring(filterPath.Length);
-
-            // Skip self and sub-folder items
-            if (f.Name.Length == 0 || f.Name[0..^1].Contains("/"))
-                continue;
-
-            yield return BackendSourceFileEntry.FromFileEntry(this, path, f);
-        }
     }
 }

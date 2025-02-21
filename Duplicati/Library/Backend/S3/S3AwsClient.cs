@@ -22,6 +22,7 @@
 
 using Amazon.S3;
 using Amazon.S3.Model;
+using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
 using System;
@@ -207,6 +208,8 @@ namespace Duplicati.Library.Backend
             var isTruncated = true;
             string filename = null;
             var delimiter = recursive ? "" : "/";
+            if (!string.IsNullOrWhiteSpace(prefix))
+                prefix = Util.AppendDirSeparator(prefix, "/");
 
             //TODO: Figure out if this is the case with AWSSDK too
             //Unfortunately S3 sometimes reports duplicate values when requesting more than one page of results
@@ -270,10 +273,13 @@ namespace Duplicati.Library.Backend
 
                 foreach (var obj in listResponse.CommonPrefixes)
                 {
+                    if (obj == prefix || !obj.StartsWith(prefix))
+                        continue;
+
                     // Because the prefixes are returned, and not the folder objects
                     // we do not get the folder modification date
                     yield return new Common.IO.FileEntry(
-                        obj,
+                        obj.Substring(prefix.Length),
                         -1,
                         new DateTime(0),
                         new DateTime(0)
@@ -284,11 +290,11 @@ namespace Duplicati.Library.Backend
                 foreach (var obj in listResponse.S3Objects.Where(obj => alreadyReturned.Add(obj.Key)))
                 {
                     // Skip self-prefix, this discards the folder modification date :/
-                    if (obj.Key == prefix)
+                    if (obj.Key == prefix || !obj.Key.StartsWith(prefix))
                         continue;
 
                     yield return new Common.IO.FileEntry(
-                        obj.Key,
+                        obj.Key.Substring(prefix.Length),
                         obj.Size,
                         obj.LastModified,
                         obj.LastModified

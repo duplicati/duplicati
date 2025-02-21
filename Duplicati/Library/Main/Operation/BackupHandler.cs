@@ -37,6 +37,8 @@ using System.Data;
 using Duplicati.Library.DynamicLoader;
 using Duplicati.Library.SourceProvider;
 using Duplicati.Library.Snapshots.USN;
+using System.Text.RegularExpressions;
+using System.IO;
 
 namespace Duplicati.Library.Main.Operation
 {
@@ -123,7 +125,7 @@ namespace Duplicati.Library.Main.Operation
         private static List<ISourceProvider> GetSourceProviders(IEnumerable<string> sources, Options options)
         {
             // Group the sources by their type, so we can combine all snapshot paths into a single snapshot
-            var sourceTypes = sources.GroupBy(x => Library.Utility.Utility.GuessScheme(x) ?? "file", StringComparer.OrdinalIgnoreCase);
+            var sourceTypes = sources.GroupBy(x => x.StartsWith("@") ? "@" : Library.Utility.Utility.GuessScheme(x) ?? "file", StringComparer.OrdinalIgnoreCase);
 
             // To avoid leaking snapshot instances, we create all instances first and then dispose them if an exception occurs
             // The number of instances is expected to be low, so the memory overhead is acceptable
@@ -136,13 +138,30 @@ namespace Duplicati.Library.Main.Operation
                         results.Add(new LocalFileSource(GetFileSnapshotService(entry, options)));
                     else if ("vss".Equals(entry.Key, StringComparison.OrdinalIgnoreCase) || "lvm".Equals(entry.Key, StringComparison.OrdinalIgnoreCase))
                         results.Add(new LocalFileSource(SnapshotUtility.CreateSnapshot(entry, options.RawOptions, options.SymlinkPolicy == Options.SymlinkStrategy.Follow)));
-                    else
+                    else if ("@".Equals(entry.Key, StringComparison.OrdinalIgnoreCase))
                     {
-                        // Assume it is a remote source
                         foreach (var url in entry)
-                            results.Add(SourceProviderLoader.GetSourceProvider(url, options.RawOptions)
-                                ?? throw new UserInformationException(string.Format("The source \"{0}\" is not supported", url), "SourceNotSupported"));
+                        {
+                            var m = Regex.Match(url, @"^@(?<mountpoint>[^|]+)\|(?<url>.+)$", RegexOptions.IgnoreCase);
+                            if (m.Success)
+                            {
+                                var mountpoint = m.Groups["mountpoint"].Value;
+
+                                if (mountpoint.Any(x => Path.GetInvalidPathChars().Contains(x)))
+                                    throw new UserInformationException(string.Format("The mountpoint \"{0}\" contains invalid characters", mountpoint), "InvalidMountpoint");
+                                if (!Path.IsPathRooted(mountpoint))
+                                    throw new UserInformationException(string.Format("The mountpoint \"{0}\" is not a valid rooted mountpoint", mountpoint), "InvalidMountpoint");
+
+                                var backendurl = m.Groups["url"].Value;
+                                results.Add(SourceProviderLoader.GetSourceProvider(backendurl, Path.GetFullPath(mountpoint), options.RawOptions)
+                                    ?? throw new UserInformationException(string.Format("The source \"{0}\" is not supported", backendurl), "SourceNotSupported"));
+                            }
+                            else
+                                throw new UserInformationException(string.Format("The source \"{0}\" is not a supported format", url), "SourceFormatNotSupported");
+                        }
                     }
+                    else
+                        throw new UserInformationException(string.Format("The source type \"{0}\" is not supported", entry.Key), "SourceTypeNotSupported");
                 }
             }
             catch
@@ -269,7 +288,7 @@ namespace Duplicati.Library.Main.Operation
                     Utility.UpdateOptionsFromDb(database, options);
                     Utility.VerifyOptionsAndUpdateDatabase(database, options);
 
-                    var probe_path = database.GetFirstLocalPath();
+                    var probe_path = database.GetFirstPath();
                     if (probe_path != null && Util.GuessDirSeparator(probe_path) != Util.DirectorySeparatorString)
                         throw new UserInformationException(string.Format("The backup contains files that belong to another operating system. Proceeding with a backup would cause the database to contain paths from two different operation systems, which is not supported. To proceed without losing remote data, delete all filesets and make sure the --{0} option is set, then run the backup again to re-use the existing data on the remote store.", "no-auto-compact"), "CrossOsDatabaseReuseNotSupported");
 

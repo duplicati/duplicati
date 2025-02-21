@@ -35,22 +35,16 @@ namespace Duplicati.Library.Interface;
 public interface IFolderEnabledBackend : IBackend
 {
     /// <summary>
-    /// Returns the key for this backend instance's path, should be prefixed with a &quot;@&quot;
-    /// </summary>
-    string PathKey { get; }
-
-    /// <summary>
     /// Enumerates a list of files and folders found on the remote location
     /// </summary>
     /// <param name="path">The path to list, empty or null for the root folder</param>
     /// <param name="cancellationToken">The cancellation token</param>
     /// <returns>The list of files, where paths are scoped to the backend.</returns>
     /// <remarks>
-    /// The paths returned should be relative to the backend root, and should not include the root path.
-    /// For example, if the backend is defined as proto://host/rootpath, then listing files should
-    /// return paths like &quot;/subfolder/file.txt&quot; and not &quot;/rootpath/subfolder/file.txt&quot;.
+    /// The paths returned should be only the filenames or folder names, not the full path.
+    /// Folders should end with the operating system's directory separator.
     /// </remarks>
-    IAsyncEnumerable<ISourceFileEntry> ListAsync(string? path, CancellationToken cancellationToken);
+    IAsyncEnumerable<IFileEntry> ListAsync(string? path, CancellationToken cancellationToken);
 
     /// <summary>
     /// Gets a single file or folder entry
@@ -58,6 +52,10 @@ public interface IFolderEnabledBackend : IBackend
     /// <param name="path">The path to get</param>
     /// <param name="cancellationToken">The cancellation token</param>
     /// <returns>The file or folder entry</returns>
-    Task<ISourceFileEntry?> GetEntryAsync(string path, CancellationToken cancellationToken);
+    /// <remarks>
+    /// The paths returned should be only the filenames or folder names, not the full path.
+    /// Folders should end with the operating system's directory separator.
+    /// </remarks>
+    Task<IFileEntry?> GetEntryAsync(string path, CancellationToken cancellationToken);
 }
 

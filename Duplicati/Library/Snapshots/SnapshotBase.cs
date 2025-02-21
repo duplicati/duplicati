@@ -64,7 +64,7 @@ namespace Duplicati.Library.Snapshots
         /// Enuemrates the root source files and folders
         /// </summary>
         /// <returns>The source files and folders</returns>
-        public abstract IEnumerable<ISourceFileEntry> EnumerateFilesystemEntries();
+        public abstract IEnumerable<ISourceProviderEntry> EnumerateFilesystemEntries();
 
         /// <summary>
         /// Gets a filesystem entry for a given path
@@ -72,7 +72,7 @@ namespace Duplicati.Library.Snapshots
         /// <param name="path">The path to get the entry for</param>
         /// <param name="isFolder">A flag indicating if the path is a folder</param>
         /// <returns>The filesystem entry</returns>
-        public virtual ISourceFileEntry GetFilesystemEntry(string path, bool isFolder)
+        public virtual ISourceProviderEntry GetFilesystemEntry(string path, bool isFolder)
         {
             if (isFolder && !DirectoryExists(path))
                 return null;
@@ -87,7 +87,7 @@ namespace Duplicati.Library.Snapshots
         /// </summary>
         /// <param name="source">Source to enumerate</param>
         /// <returns>The files and folders in the given folder</returns>
-        public virtual IEnumerable<ISourceFileEntry> EnumerateFilesystemEntries(ISourceFileEntry source)
+        public virtual IEnumerable<ISourceProviderEntry> EnumerateFilesystemEntries(ISourceProviderEntry source)
         {
             if (source.IsFolder)
             {

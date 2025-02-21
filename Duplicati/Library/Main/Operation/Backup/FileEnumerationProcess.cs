@@ -80,7 +80,7 @@ namespace Duplicati.Library.Main.Operation.Backup
 
                     // The mixin queue is used to store symlinks that should be processed
                     // The symlinks are emitted during the enumeration process when they are found
-                    var mixinqueue = new Queue<ISourceFileEntry>();
+                    var mixinqueue = new Queue<ISourceProviderEntry>();
 
                     // The enumeration filter is used to determine what paths to
                     // recurse into. If the emit filter only has includes,
@@ -98,16 +98,16 @@ namespace Duplicati.Library.Main.Operation.Backup
 
 
                     // Shared filter function with bound variables
-                    ValueTask<bool> FilterEntry(ISourceFileEntry entry)
+                    ValueTask<bool> FilterEntry(ISourceProviderEntry entry)
                         => SourceFileEntryFilter(entry, blacklistPaths, hardlinkPolicy, symlinkPolicy, hardlinkmap, fileAttributeFilter, enumeratefilter, ignorenames, mixinqueue, token);
 
                     // Prepare the work list
-                    IAsyncEnumerable<ISourceFileEntry> worklist;
+                    IAsyncEnumerable<ISourceProviderEntry> worklist;
 
                     // If we have a specific list, use that instead of enumerating the filesystem
                     if (changedfilelist != null && changedfilelist.Any())
                     {
-                        async IAsyncEnumerable<ISourceFileEntry> ExpandSources(IEnumerable<string> list)
+                        async IAsyncEnumerable<ISourceProviderEntry> ExpandSources(IEnumerable<string> list)
                         {
                             foreach (var s in list)
                             {
@@ -203,7 +203,7 @@ namespace Duplicati.Library.Main.Operation.Backup
             /// <summary>
             /// The item being tracked
             /// </summary>
-            public required ISourceFileEntry Item;
+            public required ISourceProviderEntry Item;
             /// <summary>
             /// A flag indicating if any items are found in this folder
             /// </summary>
@@ -216,7 +216,7 @@ namespace Duplicati.Library.Main.Operation.Backup
         /// </summary>
         /// <returns>The list without empty folders.</returns>
         /// <param name="source">The list with potential empty folders.</param>
-        private static async IAsyncEnumerable<ISourceFileEntry> ExcludeEmptyFolders(IAsyncEnumerable<ISourceFileEntry> source, [EnumeratorCancellation] CancellationToken cancellationToken)
+        private static async IAsyncEnumerable<ISourceProviderEntry> ExcludeEmptyFolders(IAsyncEnumerable<ISourceProviderEntry> source, [EnumeratorCancellation] CancellationToken cancellationToken)
         {
             var pathstack = new Stack<DirectoryStackEntry>();
 
@@ -276,9 +276,9 @@ namespace Duplicati.Library.Main.Operation.Backup
         /// <param name="entries">The entries to recurse</param>
         /// <param name="filter">The filter to apply</param>
         /// <returns></returns>
-        private static async IAsyncEnumerable<ISourceFileEntry> RecurseEntries(IAsyncEnumerable<ISourceFileEntry> entries, Func<ISourceFileEntry, ValueTask<bool>> filter, [EnumeratorCancellation] CancellationToken cancellationToken)
+        private static async IAsyncEnumerable<ISourceProviderEntry> RecurseEntries(IAsyncEnumerable<ISourceProviderEntry> entries, Func<ISourceProviderEntry, ValueTask<bool>> filter, [EnumeratorCancellation] CancellationToken cancellationToken)
         {
-            var work = new Stack<ISourceFileEntry>();
+            var work = new Stack<ISourceProviderEntry>();
 
             await foreach (var e in entries.WithCancellation(cancellationToken).ConfigureAwait(false))
                 if (await filter(e).ConfigureAwait(false))
@@ -317,7 +317,7 @@ namespace Duplicati.Library.Main.Operation.Backup
         /// <param name="mixinqueue">The mix in queue.</param>
         /// <param name="emitfilter">The emitfilter.</param>
         /// <param name="enumeratefilter">The enumeratefilter.</param>
-        private static async IAsyncEnumerable<ISourceFileEntry> ExpandWorkList(IAsyncEnumerable<ISourceFileEntry> worklist, Queue<ISourceFileEntry> mixinqueue, Library.Utility.IFilter emitfilter, Library.Utility.IFilter enumeratefilter, [EnumeratorCancellation] CancellationToken cancellationToken)
+        private static async IAsyncEnumerable<ISourceProviderEntry> ExpandWorkList(IAsyncEnumerable<ISourceProviderEntry> worklist, Queue<ISourceProviderEntry> mixinqueue, Library.Utility.IFilter emitfilter, Library.Utility.IFilter enumeratefilter, [EnumeratorCancellation] CancellationToken cancellationToken)
         {
             // Process each path, and dequeue the mixins with symlinks as we go
             await foreach (var s in worklist.WithCancellation(cancellationToken).ConfigureAwait(false))
@@ -345,7 +345,7 @@ namespace Duplicati.Library.Main.Operation.Backup
         /// <param name="entry">The entry to evaluate.</param>
         /// <param name="blacklistPaths">The blacklist paths.</param>
         /// <returns>True if the path should be returned, false otherwise.</returns>
-        private static bool PreFilterSourceEntry(ISourceFileEntry entry, HashSet<string> blacklistPaths)
+        private static bool PreFilterSourceEntry(ISourceProviderEntry entry, HashSet<string> blacklistPaths)
         {
             // Don't filter meta stuff
             if (entry.IsMetaEntry)
@@ -405,7 +405,7 @@ namespace Duplicati.Library.Main.Operation.Backup
         /// <param name="ignorenames">The ignore names.</param>
         /// <param name="mixinqueue">The mixin queue.</param>
         /// <returns>True if the path should be returned, false otherwise.</returns>
-        private static async ValueTask<bool> SourceFileEntryFilter(ISourceFileEntry entry, HashSet<string> blacklistPaths, Options.HardlinkStrategy hardlinkPolicy, Options.SymlinkStrategy symlinkPolicy, Dictionary<string, string> hardlinkmap, FileAttributes fileAttributeFilter, Duplicati.Library.Utility.IFilter enumeratefilter, string[]? ignorenames, Queue<ISourceFileEntry> mixinqueue, CancellationToken cancellationToken)
+        private static async ValueTask<bool> SourceFileEntryFilter(ISourceProviderEntry entry, HashSet<string> blacklistPaths, Options.HardlinkStrategy hardlinkPolicy, Options.SymlinkStrategy symlinkPolicy, Dictionary<string, string> hardlinkmap, FileAttributes fileAttributeFilter, Duplicati.Library.Utility.IFilter enumeratefilter, string[]? ignorenames, Queue<ISourceProviderEntry> mixinqueue, CancellationToken cancellationToken)
         {
             // Do the course pre-filtering first
             if (!PreFilterSourceEntry(entry, blacklistPaths))

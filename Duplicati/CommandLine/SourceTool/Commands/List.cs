@@ -55,7 +55,8 @@ public static class List
                         files++;
                     if (entry.IsFolder && level > 0)
                         level--;
-                    Console.WriteLine($"{new string(' ', (level + 1) * 2)}{entry.Path}");
+                    if (!entry.IsRootEntry)
+                        Console.WriteLine($"{new string(' ', (level + 1) * 2)}{entry.Path}");
                     return Task.FromResult(true);
                 }, token);
 

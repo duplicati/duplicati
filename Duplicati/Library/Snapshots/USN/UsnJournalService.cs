@@ -229,7 +229,7 @@ namespace Duplicati.Library.Snapshots.USN
         /// </summary>
         /// <param name="token">Cancellation token</param>
         /// <returns>Filtered sources</returns>
-        public async IAsyncEnumerable<ISourceFileEntry> GetFullScanSources([EnumeratorCancellation] CancellationToken token)
+        public async IAsyncEnumerable<ISourceProviderEntry> GetFullScanSources([EnumeratorCancellation] CancellationToken token)
         {
             // Make the method async enumerable
             await Task.CompletedTask;
@@ -276,7 +276,7 @@ namespace Duplicati.Library.Snapshots.USN
         /// <param name="filter">Filter callback to exclude filtered items</param>
         /// <param name="token">Cancellation token</param>
         /// <returns>Filtered sources</returns>
-        public async IAsyncEnumerable<ISourceFileEntry> GetModifiedSources(Func<ISourceFileEntry, ValueTask<bool>> filter, [EnumeratorCancellation] CancellationToken token)
+        public async IAsyncEnumerable<ISourceProviderEntry> GetModifiedSources(Func<ISourceProviderEntry, ValueTask<bool>> filter, [EnumeratorCancellation] CancellationToken token)
         {
             foreach (var volumeData in m_volumeDataDict.Values.Where(x => !x.IsFullScan))
             {
@@ -338,10 +338,10 @@ namespace Duplicati.Library.Snapshots.USN
         /// <param name="cache">Cache of included and excluded files / folders</param>
         /// <param name="token">Cancellation token</param>
         /// <returns>Filtered files</returns>
-        private static async IAsyncEnumerable<ISourceFileEntry> FilterExcludedFiles(
+        private static async IAsyncEnumerable<ISourceProviderEntry> FilterExcludedFiles(
             IEnumerable<string>? files,
             ISnapshotService snapshot,
-            Func<ISourceFileEntry, ValueTask<bool>> filter,
+            Func<ISourceProviderEntry, ValueTask<bool>> filter,
             IDictionary<string, bool> cache,
             [EnumeratorCancellation] CancellationToken token)
         {
@@ -350,7 +350,7 @@ namespace Duplicati.Library.Snapshots.USN
 
             foreach (var filePath in files)
             {
-                ISourceFileEntry? file;
+                ISourceProviderEntry? file;
                 try
                 {
                     file = snapshot.GetFilesystemEntry(filePath, false);
@@ -392,10 +392,10 @@ namespace Duplicati.Library.Snapshots.USN
         /// <param name="cache">Cache of excluded folders</param>
         /// <param name="token">Cancellation token</param>
         /// <returns>Filtered folders</returns>
-        private static async IAsyncEnumerable<ISourceFileEntry> FilterExcludedFolders(
+        private static async IAsyncEnumerable<ISourceProviderEntry> FilterExcludedFolders(
             IEnumerable<string>? folders,
             ISnapshotService snapshot,
-            Func<ISourceFileEntry, ValueTask<bool>> filter,
+            Func<ISourceProviderEntry, ValueTask<bool>> filter,
             IDictionary<string, bool> cache,
             [EnumeratorCancellation] CancellationToken token)
         {
@@ -404,7 +404,7 @@ namespace Duplicati.Library.Snapshots.USN
 
             foreach (var folderPath in folders)
             {
-                ISourceFileEntry? folder;
+                ISourceProviderEntry? folder;
                 try
                 {
                     folder = snapshot.GetFilesystemEntry(folderPath, true);
@@ -431,14 +431,14 @@ namespace Duplicati.Library.Snapshots.USN
         /// <param name="cache">Cache of excluded folders (optional)</param>
         /// <returns>True if excluded, false otherwise</returns>
         private static async ValueTask<bool> IsFolderOrAncestorsExcluded(
-            ISourceFileEntry inputFolder,
+            ISourceProviderEntry inputFolder,
             ISnapshotService snapshot,
-            Func<ISourceFileEntry, ValueTask<bool>> filter,
+            Func<ISourceProviderEntry, ValueTask<bool>> filter,
             IDictionary<string, bool> cache,
             CancellationToken token)
         {
             List<string>? parents = null;
-            ISourceFileEntry? folder = inputFolder;
+            ISourceProviderEntry? folder = inputFolder;
 
             while (folder != null)
             {

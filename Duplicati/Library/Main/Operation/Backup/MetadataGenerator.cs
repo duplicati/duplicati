@@ -32,7 +32,7 @@ namespace Duplicati.Library.Main.Operation.Backup
     {
         private static readonly string METALOGTAG = Logging.Log.LogTagFromType(typeof(MetadataGenerator)) + ".Metadata";
 
-        public static Dictionary<string, string> GenerateMetadata(ISourceFileEntry entry, System.IO.FileAttributes attributes, Options options)
+        public static Dictionary<string, string> GenerateMetadata(ISourceProviderEntry entry, System.IO.FileAttributes attributes, Options options)
         {
             try
             {

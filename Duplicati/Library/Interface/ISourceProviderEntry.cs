@@ -30,9 +30,9 @@ using System.Threading.Tasks;
 namespace Duplicati.Library.Interface;
 
 /// <summary>
-/// Interface for an instance of a file
+/// Interface for an instance of a file or folder
 /// </summary>
-public interface ISourceFileEntry
+public interface ISourceProviderEntry
 {
     /// <summary>
     /// True if the entry represents a folder, false otherwise
@@ -122,5 +122,5 @@ public interface ISourceFileEntry
     /// </summary>
     /// <param name="cancellationToken">A token that can be used to cancel the operation</param>
     /// <returns>The contents of the folder</returns>
-    IAsyncEnumerable<ISourceFileEntry> Enumerate(CancellationToken cancellationToken);
+    IAsyncEnumerable<ISourceProviderEntry> Enumerate(CancellationToken cancellationToken);
 }

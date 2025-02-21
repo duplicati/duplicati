@@ -178,15 +178,6 @@ namespace Duplicati.Library.Backend
         private readonly string m_prefix;
         private readonly bool m_recurseLists;
 
-        /// <summary>
-        /// Source provider to be used if the backend is a source
-        /// </summary>
-        private readonly BackendSourceProvider m_sourceProvider;
-        /// <summary>
-        /// The key path for the backend as a source
-        /// </summary>
-        private readonly string m_sourcePathKey;
-
         private const string DEFAULT_S3_HOST = "s3.amazonaws.com";
         private IS3Client s3Client;
 
@@ -260,11 +251,6 @@ namespace Duplicati.Library.Backend
             {
                 throw new UserInformationException(Strings.S3Backend.UnknownS3ClientError(s3ClientOptionValue), "UnknownS3Client");
             }
-
-            m_sourcePathKey = $"{Util.RemotePathPrefix}{ProtocolKey}://{hostname}/{m_bucket}/";
-            if (!string.IsNullOrWhiteSpace(m_prefix))
-                m_sourcePathKey += m_prefix;
-            m_sourceProvider = new BackendSourceProvider(this);
         }
 
         public static bool IsValidHostname(string bucketname)
@@ -422,14 +408,21 @@ namespace Duplicati.Library.Backend
         }
 
         /// <inheritdoc/>
-        public string PathKey => m_sourcePathKey;
+        public IAsyncEnumerable<IFileEntry> ListAsync(string path, CancellationToken cancellationToken)
+        {
+            var prefix = m_prefix;
+            if (!string.IsNullOrWhiteSpace(prefix))
+                prefix = Util.AppendDirSeparator(prefix);
+
+            var filterPath = prefix + path;
+            if (!string.IsNullOrWhiteSpace(filterPath))
+                filterPath = Util.AppendDirSeparator(filterPath);
+
+            return s3Client.ListBucketAsync(m_bucket, filterPath, m_recurseLists, cancellationToken);
+        }
 
         /// <inheritdoc/>
-        public IAsyncEnumerable<ISourceFileEntry> ListAsync(string path, CancellationToken cancellationToken)
-            => m_sourceProvider.ListFromFileEntryAsync(m_prefix, path, (filter, token) => s3Client.ListBucketAsync(m_bucket, filter, m_recurseLists, token), cancellationToken);
-
-        /// <inheritdoc/>
-        public Task<ISourceFileEntry> GetEntryAsync(string path, CancellationToken cancellationToken)
-            => Task.FromResult<ISourceFileEntry>(null);
+        public Task<IFileEntry> GetEntryAsync(string path, CancellationToken cancellationToken)
+            => Task.FromResult<IFileEntry>(null);
     }
 }

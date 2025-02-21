@@ -39,7 +39,7 @@ namespace Duplicati.Library.Snapshots;
 /// <param name="path">The path of the file</param>
 /// <param name="isFolder">True if the entry is a folder, false otherwise</param>
 /// <param name="isRoot">True if the entry is the root entry, false otherwise</param>
-public class SnapshotSourceFileEntry(ISnapshotService service, string path, bool isFolder, bool isRoot) : ISourceFileEntry
+public class SnapshotSourceFileEntry(ISnapshotService service, string path, bool isFolder, bool isRoot) : ISourceProviderEntry
 {
     /// <summary>
     /// The symlink target
@@ -137,7 +137,7 @@ public class SnapshotSourceFileEntry(ISnapshotService service, string path, bool
     /// <inheritdoc/>
     public Task<Stream?> OpenMetadataRead(CancellationToken cancellationToken) => Task.FromResult<Stream?>(new MemoryStream(System.Text.Json.JsonSerializer.SerializeToUtf8Bytes(MinorMetadata)));
     /// <inheritdoc/>
-    public IAsyncEnumerable<ISourceFileEntry> Enumerate(CancellationToken cancellationToken) => service.EnumerateFilesystemEntries(this).ToAsyncEnumerable();
+    public IAsyncEnumerable<ISourceProviderEntry> Enumerate(CancellationToken cancellationToken) => service.EnumerateFilesystemEntries(this).ToAsyncEnumerable();
     /// <inheritdoc/>
     public Task<bool> FileExists(string filename, CancellationToken cancellationToken) => Task.FromResult(service.FileExists(System.IO.Path.Combine(path, filename)));
 }

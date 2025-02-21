@@ -1557,6 +1557,9 @@ namespace Duplicati.Library.Utility
         /// <returns>The guessed scheme, or null if no scheme was found</returns>
         public static string? GuessScheme(string url)
         {
+            if (string.IsNullOrWhiteSpace(url))
+                return null;
+
             var idx = url.IndexOf("://");
             if (idx < 0 && idx < 15 && idx + "://".Length < url.Length)
                 return null;

@@ -37,11 +37,6 @@ namespace Duplicati.Library.Common.IO
         public static readonly string AltDirectorySeparatorString = Path.AltDirectorySeparatorChar.ToString();
 
         /// <summary>
-        /// The prefix marker for a remote path
-        /// </summary>
-        public const string RemotePathPrefix = ">";
-
-        /// <summary>
         /// Filename of a marker file that can be put inside the data folder to prevent Duplicati from fixing lax permissions
         /// </summary>
         public const string InsecurePermissionsMarkerFile = "insecure-permissions.txt";
@@ -77,8 +72,6 @@ namespace Duplicati.Library.Common.IO
         /// <returns>The guessed directory separator</returns>
         public static string GuessDirSeparator(string path)
         {
-            if (path != null && path.StartsWith(RemotePathPrefix, StringComparison.Ordinal))
-                throw new ArgumentException("Path cannot start with @, most likely this is a remote path", nameof(path));
             return string.IsNullOrWhiteSpace(path) || path.StartsWith("/", StringComparison.Ordinal) ? "/" : "\\";
         }
 

@@ -34,6 +34,6 @@ public static partial class Common
     /// <param name="url">The URL to get the provider for</param>
     /// <returns>The source provider</returns>
     public static ISourceProvider GetProvider(string url) =>
-        SourceProviderLoader.GetSourceProvider(url, [])
+        SourceProviderLoader.GetSourceProvider(url, "", [])
             ?? throw new UserInformationException(string.Format("The source \"{0}\" is not supported", url), "SourceNotSupported");
 }

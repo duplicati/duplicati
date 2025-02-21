@@ -93,7 +93,7 @@ namespace Duplicati.Library.Snapshots
         /// Enumerates the root source files and folders
         /// </summary>
         /// <returns>The source files and folders</returns>
-        public override IEnumerable<ISourceFileEntry> EnumerateFilesystemEntries()
+        public override IEnumerable<ISourceProviderEntry> EnumerateFilesystemEntries()
         {
             foreach (var folder in m_sources)
             {

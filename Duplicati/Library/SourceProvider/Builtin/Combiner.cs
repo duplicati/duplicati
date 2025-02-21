@@ -30,7 +30,7 @@ namespace Duplicati.Library.SourceProvider;
 public class Combiner(IEnumerable<ISourceProvider> providers) : ISourceProvider
 {
     /// <inheritdoc/>
-    public string PathKey => string.Empty;
+    public string MountedPath => string.Empty;
 
     /// <summary>
     /// The providers to combine
@@ -38,7 +38,7 @@ public class Combiner(IEnumerable<ISourceProvider> providers) : ISourceProvider
     private readonly List<ISourceProvider> providers = providers.SelectMany(x => x is Combiner c ? c.providers.AsEnumerable() : [x]).ToList();
 
     /// <inheritdoc />
-    public async IAsyncEnumerable<ISourceFileEntry> Enumerate([EnumeratorCancellation] CancellationToken cancellationToken)
+    public async IAsyncEnumerable<ISourceProviderEntry> Enumerate([EnumeratorCancellation] CancellationToken cancellationToken)
     {
         foreach (var provider in providers)
         {
@@ -59,16 +59,16 @@ public class Combiner(IEnumerable<ISourceProvider> providers) : ISourceProvider
     /// <param name="isFolder">True if the path is a folder</param>
     /// <param name="cancellationToken">The cancellation token</param>
     /// <returns>The filesystem entry</returns>
-    public async Task<ISourceFileEntry?> GetEntry(string path, bool isFolder, CancellationToken cancellationToken)
+    public async Task<ISourceProviderEntry?> GetEntry(string path, bool isFolder, CancellationToken cancellationToken)
     {
         foreach (var provider in providers)
-            if (!string.IsNullOrWhiteSpace(PathKey) && provider.PathKey.StartsWith(path))
+            if (!string.IsNullOrWhiteSpace(MountedPath) && provider.MountedPath.StartsWith(path))
             {
-                var subpath = provider.PathKey.Substring(path.Length);
+                var subpath = provider.MountedPath.Substring(path.Length);
                 return await provider.GetEntry(subpath, isFolder, cancellationToken).ConfigureAwait(false);
             }
 
-        foreach (var provider in providers.Where(x => string.IsNullOrWhiteSpace(x.PathKey)))
+        foreach (var provider in providers.Where(x => string.IsNullOrWhiteSpace(x.MountedPath)))
         {
             var res = await provider.GetEntry(path, isFolder, cancellationToken).ConfigureAwait(false);
             if (res != null)

@@ -34,16 +34,16 @@ namespace Duplicati.Library.Interface;
 public interface ISourceProvider : IDisposable
 {
     /// <summary>
-    /// Returns the key for this provider instance's path
+    /// Returns the path where this provider is logically mounted
     /// </summary>
-    string PathKey { get; }
+    string MountedPath { get; }
 
     /// <summary>
     /// Gets the root entries
     /// </summary>
     /// <param name="cancellationToken">The cancellation token</param>
     /// <returns>An enumerable of file entries</returns>
-    IAsyncEnumerable<ISourceFileEntry> Enumerate(CancellationToken cancellationToken);
+    IAsyncEnumerable<ISourceProviderEntry> Enumerate(CancellationToken cancellationToken);
 
     /// <summary>
     /// Gets a specific entry
@@ -52,5 +52,5 @@ public interface ISourceProvider : IDisposable
     /// <param name="isFolder">True if the path is a folder</param>
     /// <param name="cancellationToken">The cancellation token</param>
     /// <returns>The file entry</returns>
-    Task<ISourceFileEntry?> GetEntry(string path, bool isFolder, CancellationToken cancellationToken);
+    Task<ISourceProviderEntry?> GetEntry(string path, bool isFolder, CancellationToken cancellationToken);
 }

@@ -31,10 +31,10 @@ namespace Duplicati.Library.SourceProvider;
 public class LocalFileSource(ISnapshotService snapshotService) : ISourceProvider
 {
     /// <inheritdoc/>
-    public string PathKey => string.Empty;
+    public string MountedPath => string.Empty;
 
     /// <inheritdoc/>
-    public IAsyncEnumerable<ISourceFileEntry> Enumerate(CancellationToken cancellationToken)
+    public IAsyncEnumerable<ISourceProviderEntry> Enumerate(CancellationToken cancellationToken)
         => snapshotService.EnumerateFilesystemEntries().ToAsyncEnumerable();
 
     /// <summary>
@@ -43,7 +43,7 @@ public class LocalFileSource(ISnapshotService snapshotService) : ISourceProvider
     public ISnapshotService SnapshotService => snapshotService;
 
     /// <inheritdoc/>
-    public Task<ISourceFileEntry?> GetEntry(string path, bool isFolder, CancellationToken cancellationToken)
+    public Task<ISourceProviderEntry?> GetEntry(string path, bool isFolder, CancellationToken cancellationToken)
         => Task.FromResult(snapshotService.GetFilesystemEntry(path, isFolder));
 
     /// <inheritdoc/>
