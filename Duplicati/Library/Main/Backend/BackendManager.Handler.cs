@@ -313,7 +313,7 @@ partial class BackendManager
             }
             finally
             {
-                // Terminate any active uploads
+                // Terminate any active uploads and downloads. Exceptions thrown by the downloads should be captured by the callers.
                 tcs.Cancel();
 
                 if (activeUploads.Count > 0)
