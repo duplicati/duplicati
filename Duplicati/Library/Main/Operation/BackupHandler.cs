@@ -85,8 +85,8 @@ namespace Duplicati.Library.Main.Operation
         /// <param name="sources">The sources to get providers for</param>
         /// <param name="options">The options to use</param>
         /// <returns>The source providers</returns>
-        public static ISourceProvider GetSourceProvider(IEnumerable<string> sources, Options options)
-            => Combiner.Combine(GetSourceProviders(sources, options));
+        public static async Task<ISourceProvider> GetSourceProvider(IEnumerable<string> sources, Options options, CancellationToken cancellationToken)
+            => Combiner.Combine(await GetSourceProviders(sources, options, cancellationToken));
 
         /// <summary>
         /// Gets a snapshot service for the given sources
@@ -122,7 +122,7 @@ namespace Duplicati.Library.Main.Operation
         /// <param name="filter">The filter to use</param>
         /// <param name="lastfilesetid">The last fileset id</param>
         /// <returns>The source providers</returns>
-        private static List<ISourceProvider> GetSourceProviders(IEnumerable<string> sources, Options options)
+        private static async Task<List<ISourceProvider>> GetSourceProviders(IEnumerable<string> sources, Options options, CancellationToken cancellationToken)
         {
             // Group the sources by their type, so we can combine all snapshot paths into a single snapshot
             var sourceTypes = sources.GroupBy(x => x.StartsWith("@") ? "@" : Library.Utility.Utility.GuessScheme(x) ?? "file", StringComparer.OrdinalIgnoreCase);
@@ -142,6 +142,7 @@ namespace Duplicati.Library.Main.Operation
                     {
                         foreach (var url in entry)
                         {
+                            var sanitizedUrl = Library.Utility.Utility.GetUrlWithoutCredentials(url);
                             var m = Regex.Match(url, @"^@(?<mountpoint>[^|]+)\|(?<url>.+)$", RegexOptions.IgnoreCase);
                             if (m.Success)
                             {
@@ -153,15 +154,32 @@ namespace Duplicati.Library.Main.Operation
                                     throw new UserInformationException(string.Format("The mountpoint \"{0}\" is not a valid rooted mountpoint", mountpoint), "InvalidMountpoint");
 
                                 var backendurl = m.Groups["url"].Value;
-                                results.Add(SourceProviderLoader.GetSourceProvider(backendurl, Path.GetFullPath(mountpoint), options.RawOptions)
-                                    ?? throw new UserInformationException(string.Format("The source \"{0}\" is not supported", backendurl), "SourceNotSupported"));
+
+                                ISourceProvider provider;
+                                try
+                                {
+                                    provider = await SourceProviderLoader.GetSourceProvider(backendurl, Path.GetFullPath(mountpoint), options.RawOptions, cancellationToken).ConfigureAwait(false);
+                                }
+                                catch (Exception ex)
+                                {
+                                    if (options.AllowMissingSource)
+                                    {
+                                        Log.WriteWarningMessage(LOGTAG, "SourceProviderFailed", ex, "Failed to load source provider for \"{0}\"", sanitizedUrl);
+                                        continue;
+                                    }
+
+                                    throw new UserInformationException($"Failed to load source provider for \"{sanitizedUrl}\": {ex.Message}", "SourceProviderFailed", ex);
+                                }
+
+                                // Don't accept missing providers
+                                results.Add(provider ?? throw new UserInformationException($"The source \"{sanitizedUrl}\" is not supported", "SourceNotSupported"));
                             }
                             else
-                                throw new UserInformationException(string.Format("The source \"{0}\" is not a supported format", url), "SourceFormatNotSupported");
+                                throw new UserInformationException($"The source \"{sanitizedUrl}\" is not a supported format", "SourceFormatNotSupported");
                         }
                     }
                     else
-                        throw new UserInformationException(string.Format("The source type \"{0}\" is not supported", entry.Key), "SourceTypeNotSupported");
+                        throw new UserInformationException($"The source type \"{entry.Key}\" is not supported", "SourceTypeNotSupported");
                 }
             }
             catch
@@ -171,6 +189,9 @@ namespace Duplicati.Library.Main.Operation
 
                 throw;
             }
+
+            if (results.Count == 0)
+                throw new UserInformationException("No sources were available for the backup", "NoSourcesAvailable");
 
             return results;
         }
@@ -600,7 +621,7 @@ namespace Duplicati.Library.Main.Operation
                 {
                     long filesetid;
                     using var counterToken = CancellationTokenSource.CreateLinkedTokenSource(m_taskReader.ProgressToken);
-                    using (var source = GetSourceProvider(sources, m_options))
+                    using (var source = await GetSourceProvider(sources, m_options, m_taskReader.ProgressToken).ConfigureAwait(false))
                     {
                         try
                         {

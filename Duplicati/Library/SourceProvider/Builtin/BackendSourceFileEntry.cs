@@ -20,6 +20,7 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System.IO.Pipelines;
+using System.Runtime.CompilerServices;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
@@ -32,11 +33,11 @@ namespace Duplicati.Library.SourceProvider;
 /// <param name="parent">The parent backend</param>
 /// <param name="path">The path of the entry</param>
 /// <param name="isFolder">True if the entry is a folder</param>
-/// <param name="isMetaEntry">True if the entry is a meta entry</param>
+/// <param name="isRootEntry">True if the entry is a meta entry</param>
 /// <param name="createdUtc">The creation time of the entry</param>
 /// <param name="lastModificationUtc">The last modification time of the entry</param>
 /// <param name="size">The size of the entry</param>
-public class BackendSourceFileEntry(BackendSourceProvider parent, string path, bool isFolder, bool isMetaEntry, DateTime createdUtc, DateTime lastModificationUtc, long size)
+public class BackendSourceFileEntry(BackendSourceProvider parent, string path, bool isFolder, bool isRootEntry, DateTime createdUtc, DateTime lastModificationUtc, long size)
     : ISourceProviderEntry
 {
     /// <summary>
@@ -48,10 +49,10 @@ public class BackendSourceFileEntry(BackendSourceProvider parent, string path, b
     public bool IsFolder => isFolder;
 
     /// <inheritdoc/>
-    public bool IsMetaEntry => isMetaEntry;
+    public bool IsMetaEntry => false;
 
     /// <inheritdoc/>
-    public bool IsRootEntry => isMetaEntry;
+    public bool IsRootEntry => isRootEntry;
 
     /// <inheritdoc/>
     public DateTime CreatedUtc => createdUtc;
@@ -90,35 +91,92 @@ public class BackendSourceFileEntry(BackendSourceProvider parent, string path, b
     /// <inheritdoc/>
     public string? HardlinkTargetId => null;
 
+    /// <summary>
+    /// An async enumerator for the entries
+    /// </summary>
+    private IAsyncEnumerator<ISourceProviderEntry>? preparedEnumerator = null;
+
+    /// <summary>
+    /// A flag to indicate if the prepared enumerator has any entries
+    /// </summary>
+    private bool preparedEnumeratorAny = false;
+
+    /// <summary>
+    /// Prepares the enumerator for this entry
+    /// </summary>
+    /// <param name="cancellationToken">The cancellation token</param>
+    /// <returns>The prepared enumerator</returns>
+    public async Task PrepareEnumerator(CancellationToken cancellationToken)
+    {
+        if (!isFolder || !isRootEntry)
+            throw new InvalidOperationException("PrepareEnumerator can only be called on root folders");
+
+        if (preparedEnumerator != null)
+            throw new InvalidOperationException("PrepareEnumerator can only be called once");
+
+        var result = EnumerateInternal(cancellationToken).GetAsyncEnumerator(cancellationToken);
+        var prev = Interlocked.Exchange(ref preparedEnumerator, result);
+        if (prev != null)
+            throw new InvalidOperationException("PrepareEnumerator can only be called once");
+
+        // Advance to the first entry, so we are sure it does not throw exceptions
+        preparedEnumeratorAny = await result.MoveNextAsync().ConfigureAwait(false);
+    }
+
     /// <inheritdoc/>
-    public IAsyncEnumerable<ISourceProviderEntry> Enumerate(CancellationToken cancellationToken)
+    public async IAsyncEnumerable<ISourceProviderEntry> Enumerate([EnumeratorCancellation] CancellationToken cancellationToken)
     {
         if (!isFolder)
             throw new InvalidOperationException("Enumerate can only be called on folders");
 
-        return parent.WrappedBackend.ListAsync(NormalizePathTo(path, '/'), cancellationToken)
-            // Remove the current and parent folder entries
-            .Where(x => !string.IsNullOrWhiteSpace(x.Name) && x.Name != "." && x.Name != "..")
-            // Remove sub-folder entries
-            .Where(x => !x.Name[0..^1].Contains('\\') && !x.Name[0..^1].Contains('/'))
-            // Convert to source file entries
-            .Select(x =>
+        if (isRootEntry)
+        {
+            // If we have a prepared enumerator, consume and use it
+            var enumerator = Interlocked.Exchange(ref preparedEnumerator, null);
+            if (enumerator != null)
             {
-                var localPath = SystemIO.IO_OS.PathCombine(path, NormalizePathToLocalSystem(x.Name));
-                if (x.IsFolder)
-                    localPath = Util.AppendDirSeparator(localPath);
+                if (preparedEnumeratorAny)
+                {
+                    // It has already been advanced, so return the current value
+                    yield return enumerator.Current;
 
-                return new BackendSourceFileEntry(
-                    parent,
-                    localPath,
-                    x.IsFolder,
-                    false,
-                    x.Created,
-                    x.LastModification,
-                    x.Size
-                );
-            });
+                    while (await enumerator.MoveNextAsync())
+                        yield return enumerator.Current;
+                }
+
+                yield break;
+            }
+        }
+
+        // Otherwise, enumerate the entries
+        await foreach (var entry in EnumerateInternal(cancellationToken).ConfigureAwait(false))
+            yield return entry;
+
     }
+
+    private IAsyncEnumerable<ISourceProviderEntry> EnumerateInternal(CancellationToken cancellationToken)
+        => parent.WrappedBackend.ListAsync(NormalizePathTo(path, '/'), cancellationToken)
+        // Remove the current and parent folder entries
+        .Where(x => !string.IsNullOrWhiteSpace(x.Name) && x.Name != "." && x.Name != "..")
+        // Remove sub-folder entries
+        .Where(x => !x.Name[0..^1].Contains('\\') && !x.Name[0..^1].Contains('/'))
+        // Convert to source file entries
+        .Select(x =>
+        {
+            var localPath = SystemIO.IO_OS.PathCombine(path, NormalizePathToLocalSystem(x.Name));
+            if (x.IsFolder)
+                localPath = Util.AppendDirSeparator(localPath);
+
+            return new BackendSourceFileEntry(
+                parent,
+                localPath,
+                x.IsFolder,
+                false,
+                x.Created,
+                x.LastModification,
+                x.Size
+            );
+        });
 
     /// <inheritdoc/>
     public async Task<bool> FileExists(string path, CancellationToken cancellationToken)

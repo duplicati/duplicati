@@ -1042,7 +1042,7 @@ namespace Duplicati.Library.Main
 
                 return r;
             }
-        }        
+        }
 
         /// <summary>
         /// Gets a flag indicating if advisory locking should be ignored
@@ -1706,7 +1706,7 @@ namespace Duplicati.Library.Main
         }
 
         /// <summary>
-        /// Gets a flag indicating if compacting should not be done automatically
+        /// Gets a flag indicating if missing source elements should be ignored
         /// </summary>
         public bool AllowMissingSource
         {

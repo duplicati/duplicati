@@ -48,7 +48,7 @@ namespace Duplicati.Library.Main.Operation
         {
             var stopToken = m_result.TaskControl.ProgressToken;
 
-            using (var provider = BackupHandler.GetSourceProvider(sources, m_options))
+            using (var provider = await BackupHandler.GetSourceProvider(sources, m_options, stopToken).ConfigureAwait(false))
             {
                 Backup.Channels channels = new();
                 var source = Backup.FileEnumerationProcess.Run(channels, provider, null,

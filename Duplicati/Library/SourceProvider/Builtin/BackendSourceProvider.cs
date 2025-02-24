@@ -49,9 +49,39 @@ public class BackendSourceProvider(IFolderEnabledBackend backend, string mounted
     /// <inheritdoc/>
     public IList<ICommandLineArgument> SupportedCommands => backend.SupportedCommands;
 
+    /// <summary>
+    /// The prepared root entry, if any
+    /// </summary>
+    private BackendSourceFileEntry? preparedRoot;
+
+    /// <summary>
+    /// Flags if the provider has been initialized
+    /// </summary>
+    private int isInitialized = 0;
+
+    /// <summary>
+    /// Creates a root entry
+    /// </summary>
+    /// <returns>The root entry</returns>
+    private BackendSourceFileEntry CreateRoot()
+        => new BackendSourceFileEntry(this, "", true, true, new DateTime(0), new DateTime(0), 0);
+
+    /// <inheritdoc/>
+    public async Task Initialize(CancellationToken cancellationToken)
+    {
+        // Only allow a single intiiialization call
+        if (Interlocked.Exchange(ref isInitialized, 1) != 0)
+            return;
+
+        // Prepare the root entry
+        var root = CreateRoot();
+        await root.PrepareEnumerator(cancellationToken).ConfigureAwait(false);
+        preparedRoot = root;
+    }
+
     /// <inheritdoc/>
     public IAsyncEnumerable<ISourceProviderEntry> Enumerate(CancellationToken cancellationToken)
-        => new[] { new BackendSourceFileEntry(this, "", true, true, new DateTime(0), new DateTime(0), 0) }.ToAsyncEnumerable();
+        => new[] { Interlocked.Exchange(ref preparedRoot, null) ?? CreateRoot() }.ToAsyncEnumerable();
 
     /// <inheritdoc/>
     public async Task<ISourceProviderEntry?> GetEntry(string path, bool isFolder, CancellationToken cancellationToken)

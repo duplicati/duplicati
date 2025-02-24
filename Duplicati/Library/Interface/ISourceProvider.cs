@@ -39,6 +39,13 @@ public interface ISourceProvider : IDisposable
     string MountedPath { get; }
 
     /// <summary>
+    /// Initializes the provider, if needed
+    /// </summary>
+    /// <param name="cancellationToken">The cancellation token</param>
+    /// <returns>An awaitable task</returns>
+    Task Initialize(CancellationToken cancellationToken);
+
+    /// <summary>
     /// Gets the root entries
     /// </summary>
     /// <param name="cancellationToken">The cancellation token</param>

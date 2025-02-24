@@ -34,6 +34,9 @@ public class LocalFileSource(ISnapshotService snapshotService) : ISourceProvider
     public string MountedPath => string.Empty;
 
     /// <inheritdoc/>
+    public Task Initialize(CancellationToken cancellationToken) => Task.CompletedTask;
+
+    /// <inheritdoc/>
     public IAsyncEnumerable<ISourceProviderEntry> Enumerate(CancellationToken cancellationToken)
         => snapshotService.EnumerateFilesystemEntries().ToAsyncEnumerable();
 

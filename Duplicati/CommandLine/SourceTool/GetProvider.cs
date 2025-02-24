@@ -33,7 +33,7 @@ public static partial class Common
     /// </summary>
     /// <param name="url">The URL to get the provider for</param>
     /// <returns>The source provider</returns>
-    public static ISourceProvider GetProvider(string url) =>
-        SourceProviderLoader.GetSourceProvider(url, "", [])
+    public static async Task<ISourceProvider> GetProvider(string url) =>
+        (await SourceProviderLoader.GetSourceProvider(url, "", [], CancellationToken.None))
             ?? throw new UserInformationException(string.Format("The source \"{0}\" is not supported", url), "SourceNotSupported");
 }

@@ -47,7 +47,7 @@ public static class Download
             {
                 var token = new CancellationTokenSource().Token;
 
-                using var source = Common.GetProvider(url);
+                using var source = await Common.GetProvider(url);
 
                 string localPath(string path)
                 {

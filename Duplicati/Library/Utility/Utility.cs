@@ -1565,7 +1565,38 @@ namespace Duplicati.Library.Utility
                 return null;
 
             return url.Substring(0, idx);
+        }
 
+        /// <summary>
+        /// Returns a url that is safe to display, by removing any credentials
+        /// </summary>
+        /// <param name="url">The url to sanitize</param>
+        /// <returns>The sanitized url</returns>
+        public static string GetUrlWithoutCredentials(string url)
+        {
+            // Assumed safe part of the url to show
+            const int maxShown = 25;
+            if (string.IsNullOrWhiteSpace(url))
+                return url;
+
+            // Use a reportable url without credentials
+            var sepIndex = Math.Max(0, url.IndexOf('|')) + 1;
+            var length = url.Length - sepIndex;
+            var shown = Math.Min(length, maxShown);
+            var hidden = length - maxShown;
+            var sanitizedUrl = $"{url[sepIndex..(sepIndex + shown)]}{new string('*', hidden)}";
+
+            // If we can parse it, this result is better
+            try
+            {
+                var uri = new Uri(url[sepIndex..]);
+                sanitizedUrl = new Uri($"{uri.Scheme}://{uri.Host}").SetPath(uri.Path).ToString();
+            }
+            catch
+            {
+            }
+
+            return sanitizedUrl;
         }
     }
 }

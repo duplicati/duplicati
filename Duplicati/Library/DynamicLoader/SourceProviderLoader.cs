@@ -26,6 +26,8 @@ using System.Linq;
 using System.Runtime.ExceptionServices;
 using Duplicati.Library.SourceProviders;
 using Duplicati.Library.SourceProvider;
+using System.Threading.Tasks;
+using System.Threading;
 
 namespace Duplicati.Library.DynamicLoader
 {
@@ -154,7 +156,16 @@ namespace Duplicati.Library.DynamicLoader
             if (string.IsNullOrEmpty(url))
                 throw new ArgumentNullException(nameof(url));
 
-            return _SourceProviderLoader.GetSupportedCommands(url);
+            var commands = _SourceProviderLoader.GetSupportedCommands(url);
+            if (commands != null)
+                return commands;
+
+            var backend = BackendLoader.GetBackend(url, []);
+            if (backend is IFolderEnabledBackend folderBackend)
+                commands = folderBackend.SupportedCommands.AsReadOnly();
+            backend?.Dispose();
+
+            return commands;
         }
 
         /// <summary>
@@ -163,21 +174,35 @@ namespace Duplicati.Library.DynamicLoader
         /// <param name="url">The url to create the instance for</param>
         /// <param name="mountPoint">The mount point to use</param>
         /// <param name="options">The options to pass to the instance constructor</param>
+        /// <param name="cancellationToken">The cancellation token</param>
         /// <returns>The instanciated SourceProvider or null if the url is not supported</returns>
-        public static ISourceProviderModule GetSourceProvider(string url, string mountPoint, Dictionary<string, string> options)
+        public static async Task<ISourceProviderModule> GetSourceProvider(string url, string mountPoint, Dictionary<string, string> options, CancellationToken cancellationToken)
         {
             // Source providers are preferred over backends
             var provider = _SourceProviderLoader.GetSourceProvider(url, mountPoint, options);
-            if (provider != null)
+            if (provider == null)
+            {
+                // See if there is a backend that can also be a source
+                var backend = BackendLoader.GetBackend(url, options);
+                if (backend is IFolderEnabledBackend folderBackend)
+                    provider = new BackendSourceProvider(folderBackend, mountPoint);
+                else
+                    backend?.Dispose();
+            }
+
+            if (provider == null)
+                return null;
+
+            try
+            {
+                await provider.Initialize(cancellationToken).ConfigureAwait(false);
                 return provider;
-
-            // See if there is a backend that can also be a source
-            var backend = BackendLoader.GetBackend(url, options);
-            if (backend is IFolderEnabledBackend folderBackend)
-                return new BackendSourceProvider(folderBackend, mountPoint);
-
-            backend?.Dispose();
-            return null;
+            }
+            catch
+            {
+                provider.Dispose();
+                throw;
+            }
 
         }
         #endregion

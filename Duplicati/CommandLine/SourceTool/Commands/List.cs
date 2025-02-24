@@ -46,7 +46,7 @@ public static class List
                 var folders = 0L;
                 var files = 0L;
 
-                using var source = Common.GetProvider(url);
+                using var source = await Common.GetProvider(url);
                 await Common.Visit(source, maxdepth, (entry, level) =>
                 {
                     if (entry.IsFolder)
