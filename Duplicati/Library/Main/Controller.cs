@@ -1012,7 +1012,7 @@ namespace Duplicati.Library.Main
 
             //Sanity check for duplicate files/folders
             ISet<string> pathDuplicates;
-            sources = Library.Utility.Utility.GetUniqueItems(sources, Library.Utility.Utility.ClientFilenameStringComparer, out pathDuplicates).OrderBy(a => a).ToList();
+            sources = Library.Utility.Utility.GetUniqueItems(sources, Library.Utility.Utility.ClientFilenameStringComparer, out pathDuplicates).ToList();
 
             foreach (var pathDuplicate in pathDuplicates)
                 Logging.Log.WriteVerboseMessage(LOGTAG, "RemoveDuplicateSource", "Removing duplicate source: {0}", pathDuplicate);

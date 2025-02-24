@@ -981,7 +981,7 @@ namespace Duplicati.Library.Utility
         /// <param name="collection">The collection to remove duplicate items from.</param>
         /// <param name="duplicateItems">The duplicate items in <paramref name="collection"/>.</param>
         /// <returns>The unique items from <paramref name="collection"/>.</returns>
-        public static ISet<T> GetUniqueItems<T>(IEnumerable<T> collection, out ISet<T> duplicateItems)
+        public static IList<T> GetUniqueItems<T>(IEnumerable<T> collection, out ISet<T> duplicateItems)
         {
             return GetUniqueItems(collection, EqualityComparer<T>.Default, out duplicateItems);
         }
@@ -994,18 +994,21 @@ namespace Duplicati.Library.Utility
         /// <param name="comparer">The <see cref="System.Collections.Generic.IEqualityComparer{T}"/> implementation to use when comparing values in the collection.</param>
         /// <param name="duplicateItems">The duplicate items in <paramref name="collection"/>.</param>
         /// <returns>The unique items from <paramref name="collection"/>.</returns>
-        public static ISet<T> GetUniqueItems<T>(IEnumerable<T> collection, IEqualityComparer<T> comparer, out ISet<T> duplicateItems)
+        public static IList<T> GetUniqueItems<T>(IEnumerable<T> collection, IEqualityComparer<T> comparer, out ISet<T> duplicateItems)
         {
             var uniqueItems = new HashSet<T>(comparer);
+            var results = new List<T>();
             duplicateItems = new HashSet<T>(comparer);
 
             foreach (var item in collection)
             {
-                if (!uniqueItems.Add(item))
+                if (uniqueItems.Add(item))
+                    results.Add(item);
+                else
                     duplicateItems.Add(item);
             }
 
-            return uniqueItems;
+            return results;
         }
 
         // <summary>
