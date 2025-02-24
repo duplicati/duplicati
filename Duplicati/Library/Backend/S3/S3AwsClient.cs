@@ -278,7 +278,7 @@ namespace Duplicati.Library.Backend
 
                     // Because the prefixes are returned, and not the folder objects
                     // we do not get the folder modification date
-                    yield return new Common.IO.FileEntry(
+                    yield return new FileEntry(
                         obj.Substring(prefix.Length),
                         -1,
                         new DateTime(0),
@@ -293,7 +293,7 @@ namespace Duplicati.Library.Backend
                     if (obj.Key == prefix || !obj.Key.StartsWith(prefix))
                         continue;
 
-                    yield return new Common.IO.FileEntry(
+                    yield return new FileEntry(
                         obj.Key.Substring(prefix.Length),
                         obj.Size,
                         obj.LastModified,

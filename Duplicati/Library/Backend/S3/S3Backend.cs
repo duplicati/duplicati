@@ -281,15 +281,7 @@ namespace Duplicati.Library.Backend
         public async IAsyncEnumerable<IFileEntry> ListAsync([EnumeratorCancellation] CancellationToken cancelToken)
         {
             await foreach (IFileEntry file in Connection.ListBucketAsync(m_bucket, m_prefix, m_recurseLists, cancelToken))
-            {
-                ((FileEntry)file).Name = file.Name.Substring(m_prefix.Length);
-
-                //Fix for a bug in Duplicati 1.0 beta 3 and earlier, where filenames are incorrectly prefixed with a slash
-                if (file.Name.StartsWith("/", StringComparison.Ordinal) && !m_prefix.StartsWith("/", StringComparison.Ordinal))
-                    ((FileEntry)file).Name = file.Name.Substring(1);
-
                 yield return file;
-            }
         }
 
         public async Task PutAsync(string remotename, string localname, CancellationToken cancelToken)
