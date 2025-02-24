@@ -74,6 +74,11 @@ public class DuplicatiWebserver
     public required int Port { get; init; }
 
     /// <summary>
+    /// The interfaces being listened to
+    /// </summary>
+    public required string Interface { get; init; }
+
+    /// <summary>
     /// The port the server is listening on
     /// </summary>
     public required bool CorsEnabled { get; init; }
@@ -335,11 +340,19 @@ public class DuplicatiWebserver
         // Preload static system info, for better first-load experience
         var _ = Task.Run(() => app.Services.GetRequiredService<ISystemInfoProvider>().GetSystemInfo(null));
 
+        // Get a string description of the listen interface used
+        var listenInterface = settings.Interface == System.Net.IPAddress.Any
+            ? "*"
+            : settings.Interface == System.Net.IPAddress.Loopback
+                ? "localhost"
+                : settings.Interface.ToString();
+
         return new DuplicatiWebserver()
         {
             Configuration = builder.Configuration,
             App = app,
             Port = settings.Port,
+            Interface = listenInterface,
             CorsEnabled = useCors
         };
 
