@@ -24,13 +24,13 @@
     <ProjectReference Include="..\..\Backend\OAuthHelper\Duplicati.Library.OAuthHelper.csproj" />
   </ItemGroup>
   
-  <ItemGroup Condition=" '$(OS)' == 'Windows_NT' ">
+  <ItemGroup Condition=" $([MSBuild]::StartsWith('$(RuntimeIdentifier)', 'win')) Or '$(RuntimeIdentifier)' == '' ">
       <Content Include="run-script-example.bat">
           <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </Content>
   </ItemGroup>
 
-  <ItemGroup Condition=" '$(OS)' != 'Windows_NT' ">
+  <ItemGroup Condition=" ! $([MSBuild]::StartsWith('$(RuntimeIdentifier)', 'win'))">
       <Content Include="run-script-example.sh">
           <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </Content>
