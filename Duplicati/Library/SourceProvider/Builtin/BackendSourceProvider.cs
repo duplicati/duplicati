@@ -86,7 +86,7 @@ public class BackendSourceProvider(IFolderEnabledBackend backend, string mounted
     /// <inheritdoc/>
     public async Task<ISourceProviderEntry?> GetEntry(string path, bool isFolder, CancellationToken cancellationToken)
     {
-        var entry = await backend.GetEntryAsync(path, cancellationToken).ConfigureAwait(false);
+        var entry = await backend.GetEntryAsync(BackendSourceFileEntry.NormalizePathTo(path, '/'), cancellationToken).ConfigureAwait(false);
         return entry == null ? null : BackendSourceFileEntry.FromFileEntry(this, path, entry);
     }
 

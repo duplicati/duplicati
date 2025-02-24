@@ -186,7 +186,7 @@ public class BackendSourceFileEntry(BackendSourceProvider parent, string path, b
 
         try
         {
-            var entry = await parent.WrappedBackend.GetEntryAsync(path, cancellationToken);
+            var entry = await parent.WrappedBackend.GetEntryAsync(NormalizePathTo(path, '/'), cancellationToken);
             return entry != null && !entry.IsFolder;
         }
         catch (FileNotFoundException)
@@ -267,7 +267,7 @@ public class BackendSourceFileEntry(BackendSourceProvider parent, string path, b
             {
                 try
                 {
-                    await streamingBackend.GetAsync(path, pipe.Writer.AsStream(), cancellationToken).ConfigureAwait(false);
+                    await streamingBackend.GetAsync(NormalizePathTo(path, '/'), pipe.Writer.AsStream(), cancellationToken).ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {
