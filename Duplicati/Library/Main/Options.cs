@@ -2071,7 +2071,7 @@ namespace Duplicati.Library.Main
                 if (max_cache > 0 && max_cache < Blocksize)
                     throw new ArgumentOutOfRangeException(nameof(max_cache), string.Format("The maximum cache size cannot be less than the blocksize if not explicitly 0: {0} < {1}", max_cache, Blocksize));
 
-                return max_cache;
+                return max_cache / Blocksize;
             }
         }
 
