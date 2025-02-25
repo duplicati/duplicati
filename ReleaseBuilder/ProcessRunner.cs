@@ -83,6 +83,7 @@ public static class ProcessRunner
     public static Task MacOSCodeSign(string codesign, string codesignIdentity, string entitlementFile, string file)
         => ProcessHelper.Execute([
             codesign,
+            "--deep",
             "--force",
             "--timestamp",
             "--options=runtime",
