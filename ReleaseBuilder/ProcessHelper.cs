@@ -249,7 +249,7 @@ public static class ProcessHelper
 
         await p.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
         if (codeIsError(p.ExitCode))
-            throw new Exception($"Execution of {executable} gave error code {p.ExitCode}");
+            throw new Exception($"Execution of {executable} gave error code {p.ExitCode}, see log file {Path.Combine(logFolder, logFilename(p.Id, true))}");
 
         await t1.ConfigureAwait(false);
         await t2.ConfigureAwait(false);
