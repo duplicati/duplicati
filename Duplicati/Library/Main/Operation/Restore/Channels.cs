@@ -35,7 +35,7 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// The buffer size for the channels. The buffer size is the number of
         /// messages that can be queued up before the sender blocks.
         /// </summary>
-        public static readonly int BufferSize = 8;
+        public static int BufferSize;
 
         /// <summary>
         /// Channel between <see cref="FileLister"/> and <see cref="FileProcessor"/>.

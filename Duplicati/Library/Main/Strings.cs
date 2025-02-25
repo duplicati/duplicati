@@ -345,6 +345,8 @@ namespace Duplicati.Library.Main.Strings
         public static string RestoreVolumeDecryptorsLong { get { return LC.L("Use this option to set the number of concurrent FileDecryptor processes used during restore. A FileDecryptor processes one volume at a time, and increasing the number of FileDecryptors may improve restore performance if the bottleneck is decryption."); } }
         public static string RestoreVolumeDownloadersShort { get { return LC.L("Number of concurrent FileDownloader processes used during restore"); } }
         public static string RestoreVolumeDownloadersLong { get { return LC.L("Use this option to set the number of concurrent FileDownloader processes used during restore. A FileDownloader processes one volume at a time, and increasing the number of FileDownloaders may improve restore performance if the bottleneck is downloading."); } }
+        public static string RestoreChannelBufferSizeShort { get { return LC.L("Size of buffers of the channels used during restore"); } }
+        public static string RestoreChannelBufferSizeLong { get { return LC.L("Use this option to set the size of the buffers of the channels used during restore. The buffers are used to allow for better asynchronous communication between the processes in the restore flow. Increasing the buffer size may improve restore performance."); } }
         public static string InternalProfilingShort { get { return LC.L("Enable internal profiling"); } }
         public static string InternalProfilingLong { get { return LC.L("Use this option to enable internal profiling. Profiling is used to measure the performance of the internal code. The profiling data is written to the log file and can be used to identify performance bottlenecks."); } }
     }
