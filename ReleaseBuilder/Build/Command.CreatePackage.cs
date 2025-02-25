@@ -372,8 +372,10 @@ public static partial class Command
             if (rtcfg.UseCodeSignSigning)
             {
                 var entitlementFile = Path.Combine(installerDir, "Entitlements.plist");
-                await PackageSupport.SignMacOSBinaries(rtcfg, appFolder, entitlementFile);
-                await rtcfg.Codesign(appFolder, true, entitlementFile);
+                // In principle, it should be enough to deep sign the bundle, but the signtool is broken
+                await PackageSupport.SignMacOSBinaries(rtcfg, Path.Combine(appFolder, "Contents", "MacOS"), entitlementFile);
+                await rtcfg.Codesign(appFolder, false, entitlementFile);
+                await rtcfg.VerifyCodeSign(appFolder);
             }
         }
 
@@ -451,6 +453,7 @@ public static partial class Command
             Directory.Delete(mountDir, false);
 
             await rtcfg.Codesign(dmgFile, false, Path.Combine(resourcesDir, "Entitlements.plist"));
+            await rtcfg.VerifyCodeSign(dmgFile);
         }
 
         /// <summary>

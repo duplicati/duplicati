@@ -488,6 +488,19 @@ public static partial class Command
                 : Task.CompletedTask;
 
         /// <summary>
+        /// Verifies the codesign of the given file or app bundle
+        /// </summary>
+        /// <param name="file">The file to verify</param>
+        /// <returns>An awaitable task</returns>
+        public Task VerifyCodeSign(string file)
+            => UseCodeSignSigning
+                ? ProcessRunner.MacOSVerifyCodeSign(
+                    Configuration.Commands.Codesign!,
+                    file
+                )
+                : Task.CompletedTask;
+
+        /// <summary>
         /// Performs productsign on the given file
         /// </summary>
         /// <param name="file">The file to sign</param>

@@ -93,6 +93,21 @@ public static class ProcessRunner
         ]);
 
     /// <summary>
+    /// Verifies the MacOS codesign of a file or app bundle
+    /// </summary>
+    /// <param name="codesign">The path to the codesign binary</param>
+    /// <param name="file">The file to verify</param>
+    /// <returns>An awaitable task</returns>
+    public static Task MacOSVerifyCodeSign(string codesign, string file)
+        => ProcessHelper.Execute([
+            codesign,
+            "--verify",
+            "--deep",
+            "--strict",
+            file
+        ]);
+
+    /// <summary>
     /// Runs MacOS codesign on a single file
     /// </summary>
     /// <param name="productsign">The path to the productsign binary</param>
