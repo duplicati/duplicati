@@ -28,7 +28,7 @@ using Duplicati.Library.Main.Database;
 
 namespace Duplicati.Library.Main.Operation.Restore
 {
-
+    // TODO double check docstrings
     /// <summary>
     /// Process that holds the files that this particular restore operation needs to restore.
     /// </summary>
@@ -56,6 +56,7 @@ namespace Duplicati.Library.Main.Operation.Restore
             },
             async self =>
             {
+                Stopwatch sw_cache = options.InternalProfiling ? new() : null;
                 Stopwatch sw_prework = options.InternalProfiling ? new() : null;
                 Stopwatch sw_write = options.InternalProfiling ? new() : null;
 
@@ -63,6 +64,10 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                 try
                 {
+                    sw_cache?.Start();
+                    //db.BuildCaches();
+                    sw_cache?.Stop();
+
                     sw_prework?.Start();
                     var files = db.GetFilesAndSymlinksToRestore(true).OrderByDescending(x => x.Length).ToArray(); // Get started on big files first
                     result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_DownloadingRemoteFiles);
@@ -86,7 +91,7 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                     if (options.InternalProfiling)
                     {
-                        Logging.Log.WriteProfilingMessage(LOGTAG, "InternalTimings", $"Prework: {sw_prework.ElapsedMilliseconds}ms, Write: {sw_write.ElapsedMilliseconds}ms");
+                        Logging.Log.WriteProfilingMessage(LOGTAG, "InternalTimings", $"Cache: {sw_cache.ElapsedMilliseconds}ms, Prework: {sw_prework.ElapsedMilliseconds}ms, Write: {sw_write.ElapsedMilliseconds}ms");
                     }
                 }
             });

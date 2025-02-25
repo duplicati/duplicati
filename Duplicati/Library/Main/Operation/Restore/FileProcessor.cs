@@ -99,7 +99,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                         // Get information about the blocks for the file
                         // TODO rather than keeping all of the blocks in memory, we could do a single pass over the blocks using a cursor, only keeping the relevant block requests in memory. Maybe even only a single block request at a time.
                         sw_block?.Start();
-                        var blocks = db.GetBlocksFromFile(file.BlocksetID).ToArray();
+                        var blocks = db.GetBlocksFromFile(file.BlocksetID).ToArray();//.Select(x => new BlockRequest(x.BlockID, x.BlockOffset, x.BlockHash, x.BlockSize, x.VolumeID, false)).ToArray();
                         sw_block?.Stop();
 
                         sw_work_verify_target?.Start();
@@ -282,7 +282,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                                         {
                                             // Write the block to the file
                                             sw_work_write?.Start();
-                                            await fs.WriteAsync(data, 0, (int)blocks[i].BlockSize).ConfigureAwait(false);
+                                            await fs.WriteAsync(data.AsMemory(0, (int)blocks[i].BlockSize)).ConfigureAwait(false);
                                             sw_work_write?.Stop();
                                         }
 
@@ -495,7 +495,7 @@ namespace Duplicati.Library.Main.Operation.Restore
         private static async Task<bool> RestoreMetadata(LocalRestoreDatabase db, FileRequest file, IChannel<BlockRequest> block_request, IChannel<byte[]> block_response, Options options, Stopwatch sw_meta, Stopwatch sw_work, Stopwatch sw_req, Stopwatch sw_resp)
         {
             sw_meta?.Start();
-            var blocks = db.GetMetadataBlocksFromFile(file.ID).ToArray();
+            var blocks = db.GetMetadataBlocksFromFile(file.ID);//.Select(x => new BlockRequest(x.BlockID, x.BlockOffset, x.BlockHash, x.BlockSize, x.VolumeID, false)).ToArray();
             sw_meta?.Stop();
 
             using var ms = new MemoryStream();
