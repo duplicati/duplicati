@@ -58,6 +58,9 @@ namespace Duplicati.Library.Main.Operation.Restore
             {
                 Stopwatch sw_prework = options.InternalProfiling ? new() : null;
                 Stopwatch sw_write = options.InternalProfiling ? new() : null;
+
+                bool threw_exception = false;
+
                 try
                 {
                     sw_prework?.Start();
@@ -67,25 +70,24 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                     sw_write?.Start();
                     foreach (var file in files)
-                    {
                         await self.Output.WriteAsync(file).ConfigureAwait(false);
-                    }
                     sw_write?.Stop();
-                }
-                catch (RetiredException)
-                {
-                    Logging.Log.WriteVerboseMessage(LOGTAG, "RetiredProcess", null, "File lister retired");
-
-                    if (options.InternalProfiling)
-                    {
-                        Logging.Log.WriteProfilingMessage(LOGTAG, "InternalTimings", $"Prework: {sw_prework.ElapsedMilliseconds}ms, Write: {sw_write.ElapsedMilliseconds}ms");
-                        Console.WriteLine($"File lister - Prework: {sw_prework.ElapsedMilliseconds}ms, Write: {sw_write.ElapsedMilliseconds}ms");
-                    }
                 }
                 catch (Exception ex)
                 {
                     Logging.Log.WriteErrorMessage(LOGTAG, "FileListerError", ex, "Error during file listing");
+                    threw_exception = true;
                     throw;
+                }
+                finally
+                {
+                    if (!threw_exception)
+                        Logging.Log.WriteVerboseMessage(LOGTAG, "RetiredProcess", null, "File lister retired");
+
+                    if (options.InternalProfiling)
+                    {
+                        Logging.Log.WriteProfilingMessage(LOGTAG, "InternalTimings", $"Prework: {sw_prework.ElapsedMilliseconds}ms, Write: {sw_write.ElapsedMilliseconds}ms");
+                    }
                 }
             });
         }
