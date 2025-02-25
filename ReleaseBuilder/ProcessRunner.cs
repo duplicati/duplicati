@@ -78,11 +78,12 @@ public static class ProcessRunner
     /// <param name="codesignIdentity">The identity used for codesign</param>
     /// <param name="entitlementFile">The entitlements to activate for the file</param>
     /// <param name="file">The file to sign</param>
+    /// <param name="deep">Whether to sign deeply</param>
     /// <returns>An awaitable task</returns>
-    public static Task MacOSCodeSign(string codesign, string codesignIdentity, string entitlementFile, string file)
+    public static Task MacOSCodeSign(string codesign, string codesignIdentity, string entitlementFile, string file, bool deep)
         => ProcessHelper.Execute([
             codesign,
-            "--deep",
+            (deep ? "--deep" : null),
             "--force",
             "--timestamp",
             "--options=runtime",

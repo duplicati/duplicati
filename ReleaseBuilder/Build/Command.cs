@@ -888,7 +888,7 @@ public static partial class Command
             EnvHelper.CopyDirectory(target, tmp, true);
 
             // Run npm install in the temporary folder
-            await ProcessHelper.Execute(new[] { rtcfg.Configuration.Commands.Npm, "ci" }, workingDirectory: tmp);
+            await ProcessHelper.Execute([rtcfg.Configuration.Commands.Npm, "ci"], workingDirectory: tmp);
             var basefolder = Directory.EnumerateDirectories(Path.Combine(tmp, "node_modules"), "*", SearchOption.AllDirectories)
                 .Where(x => File.Exists(Path.Combine(x, "index.html")))
                 .OrderBy(x => x.Length)

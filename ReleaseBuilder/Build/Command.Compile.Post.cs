@@ -248,14 +248,7 @@ public static partial class Command
             var licenseTarget = Path.Combine(tmpApp, "Contents", "Licenses");
             Directory.Move(Path.Combine(binDir, "licenses"), licenseTarget);
 
-            // Apply code signing, if requested
-            if (rtcfg.UseCodeSignSigning)
-            {
-                var entitlementFile = Path.Combine(resourcesDir, "Entitlements.plist");
-                await PackageSupport.SignMacOSBinaries(rtcfg, binDir, entitlementFile);
-                await rtcfg.Codesign(tmpApp, entitlementFile);
-            }
-
+            // Make files executable
             if (!OperatingSystem.IsWindows())
                 foreach (var f in Directory.EnumerateFiles(binDir, "*.launchagent.plist", SearchOption.TopDirectoryOnly))
                     File.SetUnixFileMode(f, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.GroupRead | UnixFileMode.OtherRead);

@@ -473,15 +473,17 @@ public static partial class Command
         /// Performs codesign on the given file
         /// </summary>
         /// <param name="file">The file to sign</param>
+        /// <param name="deep">A value indicating if deep signing should be used</param>
         /// <param name="entitlements">The entitlements to apply</param>
         /// <returns>An awaitable task</returns>
-        public Task Codesign(string file, string entitlements)
+        public Task Codesign(string file, bool deep, string entitlements)
             => UseCodeSignSigning
                 ? ProcessRunner.MacOSCodeSign(
                     Configuration.Commands.Codesign!,
                     Configuration.ConfigFiles.CodesignIdentity,
                     entitlements,
-                    file
+                    file,
+                    deep
                 )
                 : Task.CompletedTask;
 

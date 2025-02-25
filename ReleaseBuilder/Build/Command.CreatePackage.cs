@@ -364,7 +364,7 @@ public static partial class Command
         /// <param name="target">The package target to create the file for</param>
         /// <param name="rtcfg">The runtime config</param>
         /// <returns>An awaitable task</returns>
-        static async Task PrepareAndReSignAppBundle(string appFolder, string installerDir, PackageTarget target, RuntimeConfig rtcfg)
+        static async Task PrepareAndSignAppBundle(string appFolder, string installerDir, PackageTarget target, RuntimeConfig rtcfg)
         {
             await PackageSupport.InstallPackageIdentifier(Path.Combine(appFolder, "Contents", "MacOS"), target);
 
@@ -372,15 +372,8 @@ public static partial class Command
             if (rtcfg.UseCodeSignSigning)
             {
                 var entitlementFile = Path.Combine(installerDir, "Entitlements.plist");
-                var updates = new[] { Path.Combine(appFolder, "Contents", "MacOS", "package_type_id.txt") }
-                    .Concat(
-                            ExecutableRenames.Values.Select(x => Path.Combine(appFolder, "Contents", "MacOS", x))
-                            .Where(File.Exists)
-                    )
-                    .Append(appFolder);
-
-                foreach (var x in updates)
-                    await rtcfg.Codesign(x, entitlementFile);
+                await PackageSupport.SignMacOSBinaries(rtcfg, appFolder, entitlementFile);
+                await rtcfg.Codesign(appFolder, true, entitlementFile);
             }
         }
 
@@ -398,9 +391,8 @@ public static partial class Command
             var mountDir = Path.Combine(buildRoot, "mount");
             if (Directory.Exists(mountDir))
             {
-                await ProcessHelper.Execute([
-                    "hdiutil", "detach", mountDir, "-quiet", "-force",
-            ], workingDirectory: buildRoot, codeIsError: _ => false);
+                await ProcessHelper.Execute(["hdiutil", "detach", mountDir, "-quiet", "-force",],
+                    workingDirectory: buildRoot, codeIsError: _ => false);
 
                 Directory.Delete(mountDir, false);
             }
@@ -433,9 +425,7 @@ public static partial class Command
             // Change the dmg name
             var dmgname = $"Duplicati {rtcfg.ReleaseInfo.ReleaseName}";
             Console.WriteLine($"Setting dmg name to {dmgname}");
-            await ProcessHelper.Execute([
-                "diskutil", "quiet", "rename", mountDir, dmgname
-            ], workingDirectory: mountDir);
+            await ProcessHelper.Execute(["diskutil", "quiet", "rename", mountDir, dmgname], workingDirectory: mountDir);
 
             // Make the Duplicati.app structure, root folder should exist
             var appFolder = Path.Combine(mountDir, rtcfg.MacOSAppName);
@@ -444,7 +434,7 @@ public static partial class Command
 
             // Place the prepared folder
             EnvHelper.CopyDirectory(Path.Combine(buildRoot, $"{target.BuildTargetString}-{rtcfg.MacOSAppName}"), appFolder, recursive: true);
-            await PrepareAndReSignAppBundle(appFolder, resourcesDir, target, rtcfg);
+            await PrepareAndSignAppBundle(appFolder, resourcesDir, target, rtcfg);
 
             // Set permissions inside DMG file
             if (!OperatingSystem.IsWindows())
@@ -460,8 +450,7 @@ public static partial class Command
             File.Delete(templateDmg);
             Directory.Delete(mountDir, false);
 
-            if (rtcfg.UseCodeSignSigning)
-                await rtcfg.Codesign(dmgFile, Path.Combine(resourcesDir, "Entitlements.plist"));
+            await rtcfg.Codesign(dmgFile, false, Path.Combine(resourcesDir, "Entitlements.plist"));
         }
 
         /// <summary>
@@ -488,7 +477,7 @@ public static partial class Command
 
             // Place the prepared folder
             EnvHelper.CopyDirectory(Path.Combine(buildRoot, $"{target.BuildTargetString}-{rtcfg.MacOSAppName}"), appFolder, recursive: true);
-            await PrepareAndReSignAppBundle(appFolder, installerDir, target, rtcfg);
+            await PrepareAndSignAppBundle(appFolder, installerDir, target, rtcfg);
 
             // Copy the source script files
             var scripts = new[] { "daemon", "daemon-scripts", "app-scripts" };
@@ -662,11 +651,7 @@ public static partial class Command
             }
 
             // Apply code signing, if requested
-            if (rtcfg.UseCodeSignSigning)
-            {
-                var entitlementFile = Path.Combine(installerDir, "Entitlements.plist");
-                await PackageSupport.SignMacOSBinaries(rtcfg, binFolder, entitlementFile);
-            }
+            await PackageSupport.SignMacOSBinaries(rtcfg, binFolder, Path.Combine(installerDir, "Entitlements.plist"));
 
             var payloadPkgFile = target.Interface switch
             {
