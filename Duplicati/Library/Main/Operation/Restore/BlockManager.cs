@@ -20,6 +20,7 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System;
+using System.Buffers;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data;
@@ -143,11 +144,12 @@ namespace Duplicati.Library.Main.Operation.Restore
             /// </summary>
             /// <param name="blockRequest">The block request to check.</param>
             /// <param name="decrement"></param>
-            public void CheckCounts(BlockRequest blockRequest)
+            public async Task CheckCounts(BlockRequest blockRequest)
             {
                 long error_block_id = -1;
                 long error_volume_id = -1;
                 var emit_evict = false;
+                byte[] data = null;
 
                 lock (m_blockcount_lock)
                 {
@@ -163,6 +165,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                     {
                         // Evict the block from the cache and check if the volume is no longer needed.
                         m_blockcount.Remove(blockRequest.BlockID);
+                        data = m_block_cache?.Get<byte[]>(blockRequest.BlockID);
                         m_block_cache?.Remove(blockRequest.BlockID);
                     }
                     else // block_count < 0
@@ -177,7 +180,6 @@ namespace Duplicati.Library.Main.Operation.Restore
                     }
                     else if (vol_count == 0)
                     {
-                        // Notify the `VolumeManager` that it should evict the volume.
                         m_volumecount.Remove(blockRequest.VolumeID);
                         blockRequest.CacheDecrEvict = true;
                         emit_evict = true;
@@ -189,8 +191,12 @@ namespace Duplicati.Library.Main.Operation.Restore
                     sw_checkcounts?.Stop();
                 }
 
+                if (data != null)
+                    ArrayPool<byte>.Shared.Return(data);
+
+                // Notify the `VolumeManager` that it should evict the volume.
                 if (emit_evict)
-                    m_volume_request.Write(blockRequest);
+                    await m_volume_request.WriteAsync(blockRequest).ConfigureAwait(false);
 
                 if (error_block_id != -1)
                 {
@@ -215,7 +221,6 @@ namespace Duplicati.Library.Main.Operation.Restore
                 // Check if the block is already in the cache, and return it if it is.
                 if (m_block_cache != null && m_block_cache.TryGetValue(block_request.BlockID, out byte[] value))
                 {
-                    CheckCounts(block_request);
                     return Task.FromResult(value);
                 }
 
@@ -230,12 +235,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                 }
                 sw_get_wait?.Stop();
 
-                return new_tcs.Task.ContinueWith(t =>
-                {
-                    if (t.IsCompletedSuccessfully)
-                        CheckCounts(block_request);
-                    return t.Result;
-                });
+                return new_tcs.Task;
             }
 
             /// <summary>
@@ -405,7 +405,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                             {
                                 sw_cache?.Start();
                                 // Target file already had the block.
-                                cache.CheckCounts(block_request);
+                                await cache.CheckCounts(block_request).ConfigureAwait(false);
                                 sw_cache?.Stop();
                             }
                             else

@@ -244,6 +244,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                                         sw_resp?.Start();
                                         var data = await block_response.ReadAsync().ConfigureAwait(false);
                                         sw_resp?.Stop();
+
                                         sw_req?.Start();
                                         if (j < missing_blocks.Count - burst)
                                         {
@@ -253,7 +254,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                                         sw_work?.Start();
 
                                         // Hash the block to verify the file hash
-                                        filehasher.TransformBlock(data, 0, data.Length, data, 0);
+                                        filehasher.TransformBlock(data, 0, (int)blocks[i].BlockSize, data, 0);
                                         if (options.Dryrun)
                                         {
                                             // Simulate writing the block
@@ -262,19 +263,22 @@ namespace Duplicati.Library.Main.Operation.Restore
                                         else
                                         {
                                             // Write the block to the file
-                                            await fs.WriteAsync(data).ConfigureAwait(false);
+                                            await fs.WriteAsync(data, 0, (int)blocks[i].BlockSize).ConfigureAwait(false);
                                         }
 
                                         // Keep track of metrics
-                                        bytes_written += data.Length;
+                                        bytes_written += blocks[i].BlockSize;
                                         j++;
+                                        sw_req?.Start();
+                                        blocks[i].CacheDecrEvict = true;
+                                        await block_request.WriteAsync(blocks[i]).ConfigureAwait(false);
+                                        sw_req?.Stop();
                                     }
                                     else
                                     {
                                         // Not a missing block, so read from the file
-                                        var data = new byte[blocks[i].BlockSize];
-                                        var read = await fs?.ReadAsync(data, 0, data.Length);
-                                        filehasher.TransformBlock(data, 0, read, data, 0);
+                                        var read = await fs?.ReadAsync(buffer, 0, buffer.Length);
+                                        filehasher.TransformBlock(buffer, 0, read, buffer, 0);
                                     }
                                 }
 
@@ -472,11 +476,18 @@ namespace Duplicati.Library.Main.Operation.Restore
                 sw_req?.Start();
                 await block_request.WriteAsync(block).ConfigureAwait(false);
                 sw_req?.Stop();
+
                 sw_resp?.Start();
                 var data = await block_response.ReadAsync().ConfigureAwait(false);
                 sw_resp?.Stop();
+
                 sw_work?.Start();
-                ms.Write(data, 0, data.Length);
+                ms.Write(data, 0, (int)block.BlockSize);
+
+                sw_req?.Start();
+                block.CacheDecrEvict = true;
+                await block_request.WriteAsync(block).ConfigureAwait(false);
+                sw_req?.Stop();
             }
             ms.Seek(0, SeekOrigin.Begin);
 

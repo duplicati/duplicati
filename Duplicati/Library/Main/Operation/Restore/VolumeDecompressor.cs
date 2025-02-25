@@ -20,6 +20,7 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System;
+using System.Buffers;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using CoCoL;
@@ -69,7 +70,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                         sw_read?.Stop();
 
                         sw_decompress?.Start();
-                        var data = new byte[block_request.BlockSize];
+                        var data = ArrayPool<byte>.Shared.Rent(options.Blocksize);
                         lock (volume_reader) // The BlockVolumeReader is not thread-safe
                         {
                             volume_reader.ReadBlock(block_request.BlockHash, data);
