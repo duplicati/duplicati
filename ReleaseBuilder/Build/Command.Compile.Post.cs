@@ -316,7 +316,7 @@ public static partial class Command
         /// <returns>An awaitable task</returns>
         static async Task SignWindowsExecutables(string buildDir, RuntimeConfig rtcfg)
         {
-            var cfg = Program.Configuration;
+            var cfg = rtcfg.Configuration;
             if (!rtcfg.UseAuthenticodeSigning)
                 return;
 

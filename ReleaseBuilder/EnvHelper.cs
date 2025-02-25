@@ -41,11 +41,20 @@ public static class EnvHelper
         if (string.IsNullOrWhiteSpace(value))
             value = defaultValue ?? string.Empty;
 
+        return ExpandEnv(value);
+    }
+
+    /// <summary>
+    /// Reads the environment key, and expands environment variables inside.
+    /// If no key is found, the default value is returned
+    /// </summary>
+    /// <param name="key">The key to use</param>
+    /// <returns>The expanded string</returns>
+    public static string ExpandEnv(string value)
         // Bash-style env expansion "${name}", done after normal env expansion
-        return Regex.Replace(Environment.ExpandEnvironmentVariables(value), "\\${(?<name>[^}]+)}", m =>
+        => Regex.Replace(Environment.ExpandEnvironmentVariables(value), "\\${(?<name>[^}]+)}", m =>
             Environment.GetEnvironmentVariable(m.Groups["name"].Value) ?? string.Empty
         );
-    }
 
     /// <summary>
     /// Reads the environment key, and expands environment variables inside.

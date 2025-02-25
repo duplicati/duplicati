@@ -175,7 +175,7 @@ public static partial class Command
             {
                 // # Notarize and staple takes a while...
                 Console.WriteLine($"Performing notarize and staple of {packageFile} ...");
-                await ProcessHelper.Execute(["xcrun", "notarytool", "submit", tempFile, "--keychain-profile", Program.Configuration.ConfigFiles.NotarizeProfile, "--wait"]);
+                await ProcessHelper.Execute(["xcrun", "notarytool", "submit", tempFile, "--keychain-profile", rtcfg.Configuration.ConfigFiles.NotarizeProfile, "--wait"]);
                 await ProcessHelper.Execute(["xcrun", "stapler", "staple", tempFile]);
             }
 
@@ -322,7 +322,7 @@ public static partial class Command
                     .Replace(originalNamespace, wixv4Namespace));
 
                 wixArgs = [
-                    Program.Configuration.Commands.Wix!,
+                    rtcfg.Configuration.Commands.Wix!,
                     "build",
                     "-define", $"HarvestPath={sourceFiles}",
                     "-arch", msiArch,
@@ -336,7 +336,7 @@ public static partial class Command
             {
                 // wixl needs the UI extension
                 wixArgs = [
-                    Program.Configuration.Commands.Wix!,
+                    rtcfg.Configuration.Commands.Wix!,
                     "--ext", "ui",
                     "--extdir", Path.Combine(resourcesDir, "WixUIExtension"),
                     "--define", $"HarvestPath={sourceFiles}",
@@ -1180,11 +1180,11 @@ public static partial class Command
     private static async Task BuildDockerImages(string baseDir, string buildRoot, IEnumerable<PackageTarget> targets, RuntimeConfig rtcfg)
     {
         // Make sure any dangling buildx instances are removed
-        try { await ProcessHelper.Execute([Program.Configuration.Commands.Docker!, "buildx", "rm", "duplicati-builder"], codeIsError: _ => false, suppressStdErr: true); }
+        try { await ProcessHelper.Execute([rtcfg.Configuration.Commands.Docker!, "buildx", "rm", "duplicati-builder"], codeIsError: _ => false, suppressStdErr: true); }
         catch { }
 
         // Prepare multi-build
-        await ProcessHelper.Execute([Program.Configuration.Commands.Docker!, "buildx", "create", "--use", "--name", "duplicati-builder"]);
+        await ProcessHelper.Execute([rtcfg.Configuration.Commands.Docker!, "buildx", "create", "--use", "--name", "duplicati-builder"]);
 
         // Perform a distict build for each interface type, but keep the buildx instance
         foreach (var interfaceType in Enum.GetValues<InterfaceType>())
@@ -1239,7 +1239,7 @@ public static partial class Command
             var repo = $"{rtcfg.DockerRepo}{(interfaceType == InterfaceType.Agent ? "-agent" : "")}";
 
             // Build the images
-            var args = new List<string> { Program.Configuration.Commands.Docker!, "buildx", "build" };
+            var args = new List<string> { rtcfg.Configuration.Commands.Docker!, "buildx", "build" };
             args.AddRange(tags.SelectMany(x => new[] { "-t", $"{repo}:{x.ToLowerInvariant()}" }));
             args.AddRange([
                 "--platform", string.Join(",", dockerArchs),
@@ -1258,6 +1258,6 @@ public static partial class Command
         }
 
         // Clean up
-        await ProcessHelper.Execute([Program.Configuration.Commands.Docker!, "buildx", "rm", "duplicati-builder"]);
+        await ProcessHelper.Execute([rtcfg.Configuration.Commands.Docker!, "buildx", "rm", "duplicati-builder"]);
     }
 }

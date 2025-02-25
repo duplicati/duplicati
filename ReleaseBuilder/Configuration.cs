@@ -68,10 +68,11 @@ public record Configuration(
     /// <summary>
     /// Creates a new <see cref="Configuration"/> 
     /// </summary>
+    /// <param name="channel">The release channel</param>
     /// <returns>The new configuration</returns>
-    public static Configuration Create()
+    public static Configuration Create(ReleaseChannel channel)
         => new(
-            ConfigFiles.Create(),
+            ConfigFiles.Create(channel),
             Commands.Create(),
             ExtraSettings.Create()
         );
@@ -283,12 +284,28 @@ public record ConfigFiles(
     /// <summary>
     /// Generates a new config files instance
     /// </summary>
+    /// <param name="channel">The release channel</param>
     /// <returns>The config files instance</returns>
 
-    public static ConfigFiles Create()
+    public static ConfigFiles Create(ReleaseChannel channel)
     {
-        ParseEnvironmentFile(ExpandEnv("BUILD_SETTINGS_FILE", "${HOME}/.config/build-settings"));
-        ParseEnvironmentFile(ExpandEnv("GATEKEEPER_SETTINGS_FILE", "${HOME}/.config/signkeys/Duplicati/macos-gatekeeper"));
+        // Grab the shared configuration
+        ParseEnvironmentFile(ExpandEnv("BUILD_SETTINGS_FILE", "${HOME}/.config/duplicati-build-settings"));
+
+        // Override the configuration for the release type, if any
+        ParseEnvironmentFile(ExpandEnv(channel switch
+        {
+            ReleaseChannel.Stable or
+            ReleaseChannel.Beta or
+            ReleaseChannel.Experimental or
+            ReleaseChannel.Canary => "${HOME}/.config/signkeys/Duplicati/release-build-settings",
+            ReleaseChannel.Nightly => "${HOME}/.config/signkeys/Duplicati/nightly-build-settings-nightly",
+            ReleaseChannel.Debug => "${HOME}/.config/signkeys/Duplicati/debug-build-settings",
+            _ => throw new ArgumentOutOfRangeException(nameof(channel))
+        }));
+
+        // Override the configuration for the release channel, if any
+        ParseEnvironmentFile(ExpandEnv($"${{HOME}}/.config/signkeys/Duplicati/${channel.ToString().ToLowerInvariant()}-build-settings"));
 
         return new(
             ExpandEnv("UPDATER_KEYFILE", "${HOME}/.config/signkeys/Duplicati/updater-release.key").Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries),
