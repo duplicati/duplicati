@@ -52,20 +52,19 @@ public static class ProcessRunner
             var tmp = Path.GetTempFileName();
             File.Delete(tmp);
 
-            var args = new[] {
+            await ProcessHelper.Execute([
                 osslsigncode, "sign",
                 "-pkcs12", pfxfile,
                 "-pass", pfxpassword,
                 "-n", OSSLOrganization,
                 "-i", OSSLUrl,
                 "-h", hashalg,
-                first ? "" : "-nest",
+                first ? null : "-nest",
                 "-t", $"http://timestamp.digicert.com?alg={hashalg}",
                 "-in", executable,
                 "-out", tmp
-            };
+            ]);
 
-            await ProcessHelper.Execute(args.Where(x => !string.IsNullOrWhiteSpace(x)));
             File.Move(tmp, executable, true);
 
             first = false;

@@ -206,7 +206,7 @@ public static class EnvHelper
         var targetEntry = Path.GetFileName(path);
 
         // Use docker to set the ownership
-        await ProcessHelper.Execute(new[] { "docker", "run", "--mount", $"type=bind,source={baseFolder},target=/opt/mount", "alpine:latest", "chown", recursive ? "-R" : "", $"{uid}:{gid}", Path.Combine("/opt/mount", targetEntry) });
+        await ProcessHelper.Execute(["docker", "run", "--mount", $"type=bind,source={baseFolder},target=/opt/mount", "alpine:latest", "chown", recursive ? "-R" : "", $"{uid}:{gid}", Path.Combine("/opt/mount", targetEntry)]);
     }
 
     /// <summary>
