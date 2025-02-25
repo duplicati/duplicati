@@ -43,6 +43,7 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// Runs the file lister process that lists the files that need to be restored
         /// and sends them to the <see cref="FileProcessor"/>.
         /// </summary>
+        /// <param name="channels">The named channels for the restore operation.</param>
         /// <param name="db">The restore database, which is queried for the file list.</param>
         /// <param name="options">The restore options</param>
         /// <param name="result">The restore results</param>
@@ -60,7 +61,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                 try
                 {
                     sw_prework?.Start();
-                    var files = db.GetFilesAndSymlinksToRestore(true).OrderByDescending(x => x.Length).ToArray();
+                    var files = db.GetFilesAndSymlinksToRestore(true).OrderByDescending(x => x.Length).ToArray(); // Get started on big files first
                     result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_DownloadingRemoteFiles);
                     sw_prework?.Stop();
 
