@@ -92,6 +92,11 @@ public static partial class Command
         private bool? _useAuthenticodeSigning;
 
         /// <summary>
+        /// Cache value for checking if jsign tool should be used for authenticode signing
+        /// </summary>
+        private bool? _useJsignToolForAuthenticode;
+
+        /// <summary>
         /// Checks if Authenticode signing should be enabled
         /// </summary>
         public void ToggleAuthenticodeSigning()
@@ -104,18 +109,39 @@ public static partial class Command
                     return;
                 }
 
-                if (Configuration.IsAuthenticodePossible())
-                    _useAuthenticodeSigning = true;
-                else
+                if (Configuration.IsAuthenticodePossibleWithSignTool())
                 {
-                    if (ConsoleHelper.ReadInput("Configuration missing for osslsigncode, continue without signing executables?", "Y", "n") == "Y")
+                    _useAuthenticodeSigning = true;
+                    _useJsignToolForAuthenticode = false;
+                    return;
+                }
+
+                if (Configuration.IsAuthenticodePossibleWithJsignTool())
+                {
+                    if (string.IsNullOrWhiteSpace(Input.SignkeyPin))
                     {
-                        _useAuthenticodeSigning = false;
-                        return;
+                        var signKeyPin = EnvHelper.GetEnvKey("SIGNKEY_PIN", "");
+                        if (string.IsNullOrWhiteSpace(signKeyPin))
+                            signKeyPin = ConsoleHelper.ReadPassword("Enter the pin for the signing key");
+                        input = input with { SignkeyPin = signKeyPin };
                     }
 
-                    throw new Exception("Configuration is not set up for osslsigncode");
+                    if (!string.IsNullOrWhiteSpace(Input.SignkeyPin))
+                    {
+                        _useAuthenticodeSigning = true;
+                        _useJsignToolForAuthenticode = true;
+                        return;
+                    }
                 }
+
+                if (ConsoleHelper.ReadInput("Configuration missing for jsign/signtool/osslsigncode, continue without signing executables?", "Y", "n") == "Y")
+                {
+                    _useAuthenticodeSigning = false;
+                    _useJsignToolForAuthenticode = false;
+                    return;
+                }
+
+                throw new Exception("Configuration is not set up for jsign/signtool/osslsigncode");
             }
         }
 
@@ -398,6 +424,11 @@ public static partial class Command
         public bool UseAuthenticodeSigning => _useAuthenticodeSigning!.Value;
 
         /// <summary>
+        /// Returns a value indicating if authenticode signing is enabled
+        /// </summary>
+        public bool UseJsingToolForAuthenticode => _useJsignToolForAuthenticode!.Value;
+
+        /// <summary>
         /// Returns a value indicating if notarize is enabled
         /// </summary>
         public bool UseNotarizeSigning => _useNotarizeSigning!.Value;
@@ -461,13 +492,20 @@ public static partial class Command
         /// <param name="file">The file to sign</param>
         /// <returns>An awaitable task</returns>
         public Task AuthenticodeSign(string file)
-            => UseAuthenticodeSigning
-                ? ProcessRunner.OsslCodeSign(
-                    Configuration.Commands.OsslSignCode!,
+        {
+            if (!UseAuthenticodeSigning)
+                return Task.CompletedTask;
+
+            if (UseJsingToolForAuthenticode)
+                return ProcessRunner.JsignCodeSign(Configuration.Commands.JSign!, Input.SignkeyPin, file);
+            else
+                return ProcessRunner.OsslCodeSign(
+                    Configuration.Commands.SignCode!,
                     Configuration.ConfigFiles.AuthenticodePfxFile,
                     PfxPassword,
-                    file)
-                : Task.CompletedTask;
+                    file
+                );
+        }
 
         /// <summary>
         /// Performs codesign on the given file

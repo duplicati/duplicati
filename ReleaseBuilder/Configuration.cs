@@ -77,13 +77,26 @@ public record Configuration(
             ExtraSettings.Create()
         );
 
+
     /// <summary>
-    /// Checks if signing with authenticode is possible given the current configuration
+    /// Checks if signing with authenticode using jsign is possible given the current configuration
     /// </summary>
     /// <returns>A boolean indicating if signing is possible</returns>
-    public bool IsAuthenticodePossible()
+    public bool IsAuthenticodePossibleWithJsignTool()
     {
-        if (string.IsNullOrWhiteSpace(ConfigFiles.AuthenticodePasswordFile) || string.IsNullOrWhiteSpace(ConfigFiles.AuthenticodePfxFile) || string.IsNullOrWhiteSpace(Commands.OsslSignCode))
+        if (string.IsNullOrWhiteSpace(Commands.JSign))
+            return false;
+
+        return true;
+    }
+
+    /// <summary>
+    /// Checks if signing with authenticode is possible with signtool given the current configuration
+    /// </summary>
+    /// <returns>A boolean indicating if signing is possible</returns>
+    public bool IsAuthenticodePossibleWithSignTool()
+    {
+        if (string.IsNullOrWhiteSpace(ConfigFiles.AuthenticodePasswordFile) || string.IsNullOrWhiteSpace(ConfigFiles.AuthenticodePfxFile) || string.IsNullOrWhiteSpace(Commands.SignCode))
             return false;
 
         if (!File.Exists(ConfigFiles.AuthenticodePasswordFile) || !File.Exists(ConfigFiles.AuthenticodePfxFile))
@@ -329,7 +342,8 @@ public record ConfigFiles(
 /// <param name="Dotnet">The &quot;build&quot; command</param>
 /// <param name="Gpg">The &quot;gpg&quot; command</param>
 /// <param name="AwsCli">The &quot;aws&quot; command</param>
-/// <param name="OsslSignCode">The &quot;osslsigncode&quot; command</param>
+/// <param name="SignCode">The &quot;osslsigncode&quot; command</param>
+/// <param name="Jsign">The &quot;jsign&quot; command</param>
 /// <param name="Codesign">The &quot;codesign&quot; command</param>
 /// <param name="Productsign">The &quot;productsign&quot; command</param>
 /// <param name="Wix">The &quot;wix&quot; command</param>
@@ -338,7 +352,8 @@ public record ConfigFiles(
 public record Commands(
     string Dotnet,
     string? Gpg,
-    string? OsslSignCode,
+    string? SignCode,
+    string? JSign,
     string? Codesign,
     string? Productsign,
     string? Wix,
@@ -355,6 +370,7 @@ public record Commands(
             FindCommand("dotnet", "DOTNET") ?? throw new Exception("Failed to find the \"dotnet\" command"),
             FindCommand("gpg2", "GPG", FindCommand("gpg", "GPG")),
             FindCommand(OperatingSystem.IsWindows() ? "signtool.exe" : "osslsigncode", "SIGNTOOL"),
+            FindCommand("jsign", "JSIGNTOOL"),
             OperatingSystem.IsMacOS() ? FindCommand("codesign", "CODESIGN") : null,
             OperatingSystem.IsMacOS() ? FindCommand("productsign", "PRODUCTSIGN") : null,
             FindCommand(OperatingSystem.IsWindows() ? "wix" : "wixl", "WIX"),

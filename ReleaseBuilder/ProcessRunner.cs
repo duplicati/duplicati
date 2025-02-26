@@ -30,11 +30,42 @@ public static class ProcessRunner
     /// <summary>
     /// The company name to encode in the Authenticode certificate
     /// </summary>
-    private const string OSSLOrganization = "Duplicati";
+    private const string OSSLOrganization = "Duplicati Inc";
     /// <summary>
     /// The url to encode in the Authenticode certificate
     /// </summary>
     private const string OSSLUrl = "https://duplicati.com";
+
+    /// <summary>
+    /// Performs code signing of the <paramref name="executable"/>
+    /// </summary>
+    /// <param name="jsign">The path to the jsign binary</param>
+    /// <param name="keypin">The password to decrypt the PFX file</param>
+    /// <param name="executable">The executable to sign, in-place</param>
+    /// <returns>An awaitable task</returns>
+    public static async Task JsignCodeSign(string jsign, string keypin, string executable)
+    {
+        var first = true;
+        foreach (var hashalg in OSSLHashAlgs)
+        {
+            await ProcessHelper.Execute([
+                jsign, "sign",
+                "--storetype", "PIV",
+                "--storepass", keypin,
+                "--alias", "AUTHENTICATION",
+                "--name", OSSLOrganization,
+                "--url", OSSLUrl,
+                "--alg", hashalg,
+                first ? "--replace" : null,
+                "--tsaurl", "http://ts.ssl.com",
+                "--tsmode", "RFC3161",
+                executable
+            ]);
+
+
+            first = false;
+        }
+    }
 
     /// <summary>
     /// Performs code signing of the <paramref name="executable"/>
@@ -51,6 +82,16 @@ public static class ProcessRunner
         {
             var tmp = Path.GetTempFileName();
             File.Delete(tmp);
+
+            // It is also possible to use a PKCS#11 module for the key, like this:
+            // osslsigncode sign -h sha256 
+            //   -pkcs11module /opt/homebrew/lib/libykcs11.dylib 
+            //   -certs public-key.pem
+            //   -key 'pkcs11:pin-value={pin}' 
+            //   -ts http://ts.ssl.com 
+            //   -in {executable} 
+            //   -out {tmp}
+
 
             await ProcessHelper.Execute([
                 osslsigncode, "sign",

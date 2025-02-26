@@ -222,6 +222,12 @@ public static partial class Command
 
         var passwordOption = SharedOptions.passwordOption;
 
+        var signkeyPinOption = new Option<string>(
+            name: "--signkey-pin",
+            description: "The pin to use for the signing key",
+            getDefaultValue: () => string.Empty
+        );
+
         var disableDockerPushOption = new Option<bool>(
             name: "--disable-docker-push",
             description: "Disables pushing the docker image to the repository",
@@ -317,6 +323,7 @@ public static partial class Command
             disableAuthenticodeOption,
             disableCodeSignOption,
             passwordOption,
+            signkeyPinOption,
             macOsAppNameOption,
             disableDockerPushOption,
             dockerRepoOption,
@@ -351,6 +358,7 @@ public static partial class Command
     /// <param name="DisableAuthenticode">If authenticode signing should be disabled</param>
     /// <param name="DisableSignCode">If signcode should be disabled</param>
     /// <param name="Password">The password to use for the keyfile</param>
+    /// <param name="SignkeyPin">The pin to use for the signing key</param>
     /// <param name="DisableDockerPush">If the docker push should be disabled</param>
     /// <param name="MacOSAppName">The name of the MacOS app bundle</param>
     /// <param name="DockerRepo">The docker repository to push to</param>
@@ -376,6 +384,7 @@ public static partial class Command
         bool DisableAuthenticode,
         bool DisableSignCode,
         string Password,
+        string SignkeyPin,
         bool DisableDockerPush,
         string MacOSAppName,
         string DockerRepo,
