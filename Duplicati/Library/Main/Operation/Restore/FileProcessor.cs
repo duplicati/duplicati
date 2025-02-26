@@ -513,11 +513,14 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                 sw_work?.Start();
                 ms.Write(data, 0, (int)block.BlockSize);
+                sw_work?.Stop();
 
                 sw_req?.Start();
                 block.CacheDecrEvict = true;
                 await block_request.WriteAsync(block).ConfigureAwait(false);
                 sw_req?.Stop();
+
+                sw_work?.Start();
             }
             ms.Seek(0, SeekOrigin.Begin);
 
