@@ -44,8 +44,9 @@ namespace Duplicati.Library.Main.Database
         /// </summary>
         protected string m_tempfiletable;
         protected string m_tempblocktable;
-        ConcurrentDictionary<long, BlockRequest[]> block2cache = new();
-        ConcurrentDictionary<long, BlockRequest[]> block2metacache = new();
+        ConcurrentDictionary<long, List<BlockRequest>> block2cache = new();
+        ConcurrentDictionary<long, List<BlockRequest>> block2metacache = new();
+        ConcurrentBag<IDbConnection> connection_pool = new();
         protected string m_latestblocktable;
         protected string m_fileprogtable;
         protected string m_totalprogtable;
@@ -90,7 +91,7 @@ namespace Duplicati.Library.Main.Database
             using (var cmd = m_connection.CreateCommand())
             {
                 //cmd.ExecuteNonQuery("PRAGMA temp_store = MEMORY");
-                //cmd.ExecuteNonQuery("PRAGMA journal_mode = OFF");
+                //cmd.ExecuteNonQuery("PRAGMA journal_mode = WAL");
                 //cmd.ExecuteNonQuery("PRAGMA cache_size = -2000000");
 
                 // How to handle METADATA?
@@ -1079,19 +1080,37 @@ namespace Duplicati.Library.Main.Database
         {
             //return block2cache[blocksetID];
 
-            using var cmd = m_connection.CreateCommand();
+            if (!connection_pool.TryTake(out var connection))
+            {
+                //connection = CreateConnection(m_connection.ConnectionString);
+                connection = (System.Data.IDbConnection?)Activator.CreateInstance(Duplicati.Library.SQLiteHelper.SQLiteLoader.SQLiteConnectionType);
+                connection.ConnectionString = m_connection.ConnectionString + ";Cache=Shared;";
+                connection.Open();
+                using var cmd2 = connection.CreateCommand();
+                cmd2.CommandText = "PRAGMA journal_mode=WAL;";
+                cmd2.ExecuteNonQuery();
+                cmd2.CommandText = "PRAGMA read_uncommitted = true;";
+                cmd2.ExecuteNonQuery();
+            }
+
+            using var cmd = connection.CreateCommand();
+
             cmd.CommandText = @$"
                 SELECT Block.ID, Block.Hash, Block.Size, Block.VolumeID
                 FROM BlocksetEntry INNER JOIN Block
                 ON BlocksetEntry.BlockID = Block.ID
                 WHERE BlocksetEntry.BlocksetID = ?";
+
             cmd.AddParameter();
             cmd.SetParameterValue(0, blocksetID);
+
             using var reader = cmd.ExecuteReader();
             for (long i = 0; reader.Read(); i++)
             {
                 yield return new BlockRequest(reader.ConvertValueToInt64(0), i, reader.ConvertValueToString(1), reader.ConvertValueToInt64(2), reader.ConvertValueToInt64(3), false);
             }
+
+            connection_pool.Add(connection);
         }
 
         /// <summary>
@@ -1103,14 +1122,26 @@ namespace Duplicati.Library.Main.Database
         {
             //return block2metacache[fileID];
 
-            using var cmd = m_connection.CreateCommand();
+            if (!connection_pool.TryTake(out var connection))
+            {
+                connection = (System.Data.IDbConnection?)Activator.CreateInstance(Duplicati.Library.SQLiteHelper.SQLiteLoader.SQLiteConnectionType);
+                connection.ConnectionString = m_connection.ConnectionString + ";Cache=Shared;";
+                connection.Open();
+                using var cmd2 = connection.CreateCommand();
+                cmd2.CommandText = "PRAGMA journal_mode=WAL;";
+                cmd2.ExecuteNonQuery();
+                cmd2.CommandText = "PRAGMA read_uncommitted = true;";
+                cmd2.ExecuteNonQuery();
+            }
+
+            using var cmd = connection.CreateCommand();
             cmd.CommandText = $@"
                 SELECT Block.ID, Block.Hash, Block.Size, Block.VolumeID
-                FROM ""{m_tempfiletable}""
-                INNER JOIN Metadataset ON ""{m_tempfiletable}"".MetadataID = Metadataset.ID
+                FROM FileLookup
+                INNER JOIN Metadataset ON FileLookup.MetadataID = Metadataset.ID
                 INNER JOIN BlocksetEntry ON Metadataset.BlocksetID = BlocksetEntry.BlocksetID
                 INNER JOIN Block ON BlocksetEntry.BlockID = Block.ID
-                WHERE ""{m_tempfiletable}"".ID = ?
+                WHERE FileLookup.ID = ?
             ";
             cmd.AddParameter();
             cmd.SetParameterValue(0, fileID);
@@ -1119,6 +1150,8 @@ namespace Duplicati.Library.Main.Database
             {
                 yield return new BlockRequest(reader.ConvertValueToInt64(0), i, reader.ConvertValueToString(1), reader.ConvertValueToInt64(2), reader.ConvertValueToInt64(3), false);
             }
+
+            connection_pool.Add(connection);
         }
 
         /// <summary>
@@ -1383,6 +1416,12 @@ namespace Duplicati.Library.Main.Database
 
         public override void Dispose()
         {
+            foreach (var connection in connection_pool)
+            {
+                connection.Close();
+                connection.Dispose();
+            }
+            connection_pool.Clear();
             DropRestoreTable();
             base.Dispose();
         }
