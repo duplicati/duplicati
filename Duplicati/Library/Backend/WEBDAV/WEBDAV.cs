@@ -189,7 +189,7 @@ namespace Duplicati.Library.Backend
             try
             {
                 using var response = await requestResources.HttpClient.SendAsync(requestResources.RequestMessage, HttpCompletionOption.ResponseContentRead, timeoutToken.Token).ConfigureAwait(false);
-                response.EnsureSuccessStatusCode(); // This replaces the if needed when Mono was used.
+                response.EnsureSuccessStatusCode();
                 using var stream = await response.Content.ReadAsStreamAsync(cancelToken).ConfigureAwait(false);
                 doc.Load(stream);
             }
@@ -307,7 +307,7 @@ namespace Duplicati.Library.Backend
 
                 var response = await requestResources.HttpClient.SendAsync(requestResources.RequestMessage, combinedTokens.Token).ConfigureAwait(false);
 
-                response.EnsureSuccessStatusCode(); // This replaces the if needed when Mono was used.
+                response.EnsureSuccessStatusCode();
 
             }
             catch (HttpRequestException wex)
@@ -356,7 +356,7 @@ namespace Duplicati.Library.Backend
 
             using var response = await requestResources.HttpClient.SendAsync(requestResources.RequestMessage, combinedTokens.Token).ConfigureAwait(false);
 
-            response.EnsureSuccessStatusCode(); // This replaces the if needed when Mono was used.
+            response.EnsureSuccessStatusCode();
         }
 
         #endregion
@@ -428,7 +428,7 @@ namespace Duplicati.Library.Backend
 
                 using var response = await requestResources.HttpClient.SendAsync(requestResources.RequestMessage, HttpCompletionOption.ResponseHeadersRead, cancelToken).ConfigureAwait(false);
 
-                response.EnsureSuccessStatusCode(); // This replaces the if needed when Mono was used.
+                response.EnsureSuccessStatusCode();
             }
             catch (HttpRequestException wex)
             {
