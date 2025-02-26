@@ -57,7 +57,8 @@ namespace Duplicati.Library.Utility
         /// </summary>
         public readonly string Host;
         /// <summary>
-        /// The server path, e.g. index.html
+        /// The server path, e.g. index.html.
+        /// Note that the path does NOT have a leading /.
         /// </summary>
         public readonly string Path;
         /// <summary>
@@ -273,7 +274,7 @@ namespace Duplicati.Library.Utility
 
             if (!string.IsNullOrEmpty(path))
             {
-                if (!string.IsNullOrEmpty(host) && !path.StartsWith("/", StringComparison.Ordinal))
+                if (!string.IsNullOrEmpty(host))
                     s += "/";
                 s += path;
             }
@@ -457,7 +458,7 @@ namespace Duplicati.Library.Utility
         /// <param name="query">The query to parse</param>
         public static NameValueCollection ParseQueryString(string query)
         {
-            return Library.Utility.Uri.ParseQueryString(query, true);
+            return ParseQueryString(query, true);
         }
 
         /// <summary>
@@ -537,7 +538,7 @@ namespace Duplicati.Library.Utility
         {
             var builder = new UriBuilder(url)
             {
-                Path = (new UrlPath(ExtractPath(url)).Append(path)).ToString(),
+                Path = new UrlPath(ExtractPath(url)).Append(path).ToString(),
                 Query = query != null ? BuildUriQuery(query) : null
             };
             return builder.Uri.AbsoluteUri;
@@ -551,7 +552,7 @@ namespace Duplicati.Library.Utility
         /// <param name="url">URL.</param>
         public static string ExtractPath(string url)
         {
-            return (new Uri(url)).Path;
+            return new Uri(url).Path;
         }
 
         /// <summary>

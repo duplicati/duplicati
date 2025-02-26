@@ -41,6 +41,17 @@ internal static class NpmSpaHelper
     {
         var tempPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
 
+        // Handle move not working across drive boundaries on Windows
+        if (OperatingSystem.IsWindows() && Path.GetPathRoot(tempPath) != Path.GetPathRoot(targetPath))
+        {
+            tempPath = Path.GetFullPath(targetPath);
+            if (targetPath.EndsWith(Path.DirectorySeparatorChar))
+                tempPath = tempPath[..-1];
+            tempPath += "-tmp";
+            if (Directory.Exists(tempPath))
+                Directory.Delete(tempPath, true);
+        }
+
         try
         {
             // Download and extract the package
@@ -156,7 +167,7 @@ internal static class NpmSpaHelper
                 return null;
 
             // Package is not installed, install it
-            var packageFolder = Path.Combine(basepath, "node_modules", packageId);
+            var packageFolder = Path.GetFullPath(Path.Combine(basepath, "node_modules", packageId));
             if (!Directory.Exists(packageFolder))
                 return InstallNpmPackage(packageUrl, packageFolder);
 
