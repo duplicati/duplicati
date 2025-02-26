@@ -89,11 +89,6 @@ class Program
     .ToList();
 
     /// <summary>
-    /// The environment shared configuration
-    /// </summary>
-    public static readonly Configuration Configuration = Configuration.Create();
-
-    /// <summary>
     /// The return code of the application; shared state
     /// </summary>
     public static int? ReturnCode = 0;

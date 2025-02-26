@@ -24,19 +24,13 @@
     <ProjectReference Include="..\..\Backend\OAuthHelper\Duplicati.Library.OAuthHelper.csproj" />
   </ItemGroup>
 
-  <PropertyGroup>
-      <!-- Extract the first 4 characters from RuntimeIdentifier -->
-      <RIDPrefix Condition="'$(RuntimeIdentifier)' != ''">$([System.String]::Copy('$(RuntimeIdentifier)'))</RIDPrefix>
-      <RIDPrefix Condition="'$(RuntimeIdentifier)' != '' and $([System.String]::Length('$(RuntimeIdentifier)')) &gt;= 4">$([System.String]::Substring('$(RuntimeIdentifier)', 0, 4))</RIDPrefix>
-  </PropertyGroup>
-
-  <ItemGroup Condition=" '$(RIDPrefix)' == 'win-' Or '$(RuntimeIdentifier)' == '' ">
+  <ItemGroup Condition=" $([System.Text.RegularExpressions.Regex]::IsMatch('$(RuntimeIdentifier)', '^win-')) Or '$(RuntimeIdentifier)' == '' ">
       <Content Include="run-script-example.bat">
           <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </Content>
   </ItemGroup>
 
-  <ItemGroup Condition=" '$(RIDPrefix)' != 'win-' Or '$(RuntimeIdentifier)' == '' ">
+  <ItemGroup Condition=" ! $([System.Text.RegularExpressions.Regex]::IsMatch('$(RuntimeIdentifier)', '^win-')) Or '$(RuntimeIdentifier)' == '' ">
       <Content Include="run-script-example.sh">
           <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </Content>

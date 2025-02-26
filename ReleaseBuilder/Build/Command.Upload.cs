@@ -114,10 +114,10 @@ public static partial class Command
             Console.WriteLine($"Uploading {files.Count()} files ({Duplicati.Library.Utility.Utility.FormatSizeString(totalSize)}) to S3...");
 
             var chain = new Amazon.Runtime.CredentialManagement.CredentialProfileStoreChain();
-            if (!chain.TryGetAWSCredentials(Program.Configuration.ConfigFiles.AwsUploadProfile, out var awsCredentials))
-                throw new Exception($"The aws-cli profile '{Program.Configuration.ConfigFiles.AwsUploadProfile}' could not be found.");
+            if (!chain.TryGetAWSCredentials(rtcfg.Configuration.ConfigFiles.AwsUploadProfile, out var awsCredentials))
+                throw new Exception($"The aws-cli profile '{rtcfg.Configuration.ConfigFiles.AwsUploadProfile}' could not be found.");
 
-            chain.TryGetProfile(Program.Configuration.ConfigFiles.AwsUploadProfile, out var awsProfile);
+            chain.TryGetProfile(rtcfg.Configuration.ConfigFiles.AwsUploadProfile, out var awsProfile);
             var config = new AmazonS3Config
             {
                 RegionEndpoint = awsProfile?.Region ?? RegionEndpoint.USEast1,
@@ -134,7 +134,7 @@ public static partial class Command
                 await Duplicati.Library.Utility.RetryHelper.Retry(() =>
                     fileTransferUtility.UploadAsync(
                         file.Path,
-                        Program.Configuration.ConfigFiles.AwsUploadBucket,
+                        rtcfg.Configuration.ConfigFiles.AwsUploadBucket,
                         $"{rtcfg.ReleaseInfo.Channel.ToString().ToLowerInvariant()}/{file.Name}"
                     ), 3, TimeSpan.FromSeconds(1), CancellationToken.None);
 
@@ -152,9 +152,9 @@ public static partial class Command
                 var source = $"{rtcfg.ReleaseInfo.Channel.ToString().ToLowerInvariant()}/latest-v2.manifest";
                 await Duplicati.Library.Utility.RetryHelper.Retry(() =>
                     client.CopyObjectAsync(
-                        Program.Configuration.ConfigFiles.AwsUploadBucket,
+                        rtcfg.Configuration.ConfigFiles.AwsUploadBucket,
                         source,
-                        Program.Configuration.ConfigFiles.AwsUploadBucket,
+                        rtcfg.Configuration.ConfigFiles.AwsUploadBucket,
                         target
                     ), 3, TimeSpan.FromSeconds(1), CancellationToken.None);
             }
@@ -175,7 +175,7 @@ public static partial class Command
             var totalSize = files.Sum(f => new FileInfo(f.Path).Length);
             Console.WriteLine($"Uploading {files.Count()} files ({Duplicati.Library.Utility.Utility.FormatSizeString(totalSize)}) to Github...");
 
-            var ghtoken = File.ReadAllText(Program.Configuration.ConfigFiles.GithubTokenFile).Trim();
+            var ghtoken = File.ReadAllText(rtcfg.Configuration.ConfigFiles.GithubTokenFile).Trim();
             var owner = "duplicati";
             var repo = "duplicati";
 
@@ -236,7 +236,7 @@ public static partial class Command
             using var client = new HttpClient();
             var req = new HttpRequestMessage(HttpMethod.Post, "https://updates.duplicati.com/reload");
 
-            var reloadToken = Program.Configuration.ConfigFiles.ReloadUpdatesApiKey;
+            var reloadToken = rtcfg.Configuration.ConfigFiles.ReloadUpdatesApiKey;
             req.Headers.Add("X-API-KEY", reloadToken);
             req.Content = JsonContent.Create(new[] {
                 $"{rtcfg.ReleaseInfo.Channel.ToString().ToLowerInvariant()}/latest-v2.json",
@@ -258,7 +258,7 @@ public static partial class Command
             using var client = new HttpClient();
             var req = new HttpRequestMessage(HttpMethod.Post, "https://forum.duplicati.com/posts");
 
-            var discourseToken = File.ReadAllText(Program.Configuration.ConfigFiles.DiscourseTokenFile).Trim().Split(":", 2);
+            var discourseToken = File.ReadAllText(rtcfg.Configuration.ConfigFiles.DiscourseTokenFile).Trim().Split(":", 2);
             req.Headers.Add("Api-Username", discourseToken[0]);
             req.Headers.Add("Api-Key", discourseToken[1]);
             req.Headers.Add("Accept", "application/json");
