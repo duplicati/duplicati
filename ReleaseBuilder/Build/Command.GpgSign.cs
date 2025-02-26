@@ -33,7 +33,7 @@ public static partial class Command
 
                         await ProcessHelper.Execute(
                             [
-                                Program.Configuration.Commands.Gpg!,
+                                rtcfg.Configuration.Commands.Gpg!,
                                 "--pinentry-mode", "loopback",
                                 "--passphrase-fd", "0",
                                 "--batch", "--yes",
@@ -66,7 +66,7 @@ public static partial class Command
         static (string GpgId, string GpgPassphrase) GetGpgIdAndPassphrase(RuntimeConfig rtcfg)
         {
             using var ms = new MemoryStream();
-            using var fs = File.OpenRead(Program.Configuration.ConfigFiles.GpgKeyfile);
+            using var fs = File.OpenRead(rtcfg.Configuration.ConfigFiles.GpgKeyfile);
             SharpAESCrypt.SharpAESCrypt.Decrypt(rtcfg.KeyfilePassword, fs, ms);
             var parts = System.Text.Encoding.UTF8.GetString(ms.ToArray()).Split('\n', 2, StringSplitOptions.RemoveEmptyEntries);
             return (parts[0], parts[1]);

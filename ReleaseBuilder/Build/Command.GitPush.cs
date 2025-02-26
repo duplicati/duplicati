@@ -19,29 +19,29 @@ public static partial class Command
             File.WriteAllText(Path.Combine(baseDir, "ReleaseBuilder", "build_version.txt"), releaseInfo.Version.ToString());
 
             // Add modified files
-            await ProcessHelper.Execute(new[] {
+            await ProcessHelper.Execute([
                     "git", "add",
                     "ReleaseBuilder/build_version.txt",
                     "changelog.txt"
-                }, workingDirectory: baseDir);
+                ], workingDirectory: baseDir);
 
             // Make a commit
-            await ProcessHelper.Execute(new[] {
+            await ProcessHelper.Execute([
                     "git", "commit",
                     "-m", $"Version bump to v{releaseInfo.Version}-{releaseInfo.ReleaseName}",
                     "-m", "You can download this build from: ",
                     "-m", $"Binaries: https://updates.duplicati.com/{releaseInfo.Channel.ToString().ToLowerInvariant()}/",
                     "-m", $"Signature file: https://updates.duplicati.com/{releaseInfo.Channel.ToString().ToLowerInvariant()}/duplicati-{releaseInfo.ReleaseName}.signatures.zip"
-                }, workingDirectory: baseDir);
+                ], workingDirectory: baseDir);
 
             // And tag the release
-            await ProcessHelper.Execute(new[] {
+            await ProcessHelper.Execute([
                     "git", "tag", $"v{releaseInfo.Version}-{releaseInfo.ReleaseName}",
-                }, workingDirectory: baseDir);
+                ], workingDirectory: baseDir);
 
             // Then push the release
-            await ProcessHelper.Execute(new[] { "git", "push", "-u", "origin", "head" }, workingDirectory: baseDir);
-            await ProcessHelper.Execute(new[] { "git", "push", "--tags" }, workingDirectory: baseDir);
+            await ProcessHelper.Execute(["git", "push", "-u", "origin", "head"], workingDirectory: baseDir);
+            await ProcessHelper.Execute(["git", "push", "--tags"], workingDirectory: baseDir);
         }
     }
 }

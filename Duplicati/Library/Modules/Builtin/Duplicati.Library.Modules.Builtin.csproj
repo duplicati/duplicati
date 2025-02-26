@@ -23,11 +23,17 @@
     <ProjectReference Include="..\..\Localization\Duplicati.Library.Localization.csproj" />
     <ProjectReference Include="..\..\Backend\OAuthHelper\Duplicati.Library.OAuthHelper.csproj" />
   </ItemGroup>
-  
-  <ItemGroup>
-    <Content Include="run-script-example.sh">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
+
+  <ItemGroup Condition=" $([System.Text.RegularExpressions.Regex]::IsMatch('$(RuntimeIdentifier)', '^win-')) Or '$(RuntimeIdentifier)' == '' ">
+      <Content Include="run-script-example.bat">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+  </ItemGroup>
+
+  <ItemGroup Condition=" ! $([System.Text.RegularExpressions.Regex]::IsMatch('$(RuntimeIdentifier)', '^win-')) Or '$(RuntimeIdentifier)' == '' ">
+      <Content Include="run-script-example.sh">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
   </ItemGroup>
 
   <ItemGroup>

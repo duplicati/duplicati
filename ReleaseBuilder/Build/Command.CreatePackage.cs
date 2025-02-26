@@ -155,7 +155,7 @@ public static partial class Command
             {
                 // # Notarize and staple takes a while...
                 Console.WriteLine($"Performing notarize and staple of {packageFile} ...");
-                await ProcessHelper.Execute(["xcrun", "notarytool", "submit", tempFile, "--keychain-profile", Program.Configuration.ConfigFiles.NotarizeProfile, "--wait"]);
+                await ProcessHelper.Execute(["xcrun", "notarytool", "submit", tempFile, "--keychain-profile", rtcfg.Configuration.ConfigFiles.NotarizeProfile, "--wait"]);
                 await ProcessHelper.Execute(["xcrun", "stapler", "staple", tempFile]);
             }
 
@@ -278,17 +278,49 @@ public static partial class Command
                 _ => throw new Exception($"Architeture not supported: {target.ArchString}")
             };
 
-            await ProcessHelper.Execute([
-                Program.Configuration.Commands.Wix!,
-                "--ext", "ui",
-                "--extdir", Path.Combine(resourcesDir, "WixUIExtension"),
-                "--define", $"HarvestPath={sourceFiles}",
-                "--arch", msiArch,
-                "--output", msiFile,
-                Path.Combine(resourcesSubDir, "Shortcuts.wxs"),
-                binFiles,
-                Path.Combine(resourcesSubDir, "Duplicati.wxs")
-            ], workingDirectory: buildRoot);
+            // Prepare the Wix arguments, different for WiX (Windows) and wixl (Linux/MacOS)
+            string[] wixArgs;
+
+            if (isWindows)
+            {
+                // Update namespace in the .wxs files for WiX v4
+                var shortcutsTempfile = Path.Combine(buildTmp, "Shortcuts.wxs");
+                var entryTempfile = Path.Combine(buildTmp, "Duplicati.wxs");
+
+                File.WriteAllText(shortcutsTempfile, File.ReadAllText(Path.Combine(resourcesSubDir, "Shortcuts.wxs"))
+                    .Replace(originalNamespace, wixv4Namespace));
+
+                File.WriteAllText(entryTempfile, File.ReadAllText(Path.Combine(resourcesSubDir, "Duplicati.wxs"))
+                    .Replace(originalNamespace, wixv4Namespace));
+
+                wixArgs = [
+                    rtcfg.Configuration.Commands.Wix!,
+                    "build",
+                    "-define", $"HarvestPath={sourceFiles}",
+                    "-arch", msiArch,
+                    "-out", msiFile,
+                    shortcutsTempfile,
+                    binFiles,
+                    entryTempfile
+                ];
+            }
+            else
+            {
+                // wixl needs the UI extension
+                wixArgs = [
+                    rtcfg.Configuration.Commands.Wix!,
+                    "--ext", "ui",
+                    "--extdir", Path.Combine(resourcesDir, "WixUIExtension"),
+                    "--define", $"HarvestPath={sourceFiles}",
+                    "--arch", msiArch,
+                    "--output", msiFile,
+                    Path.Combine(resourcesSubDir, "Shortcuts.wxs"),
+                    binFiles,
+                    Path.Combine(resourcesSubDir, "Duplicati.wxs")
+                ];
+            }
+
+            await ProcessHelper.Execute(wixArgs, workingDirectory: buildRoot);
 
             if (rtcfg.UseAuthenticodeSigning)
                 await rtcfg.AuthenticodeSign(msiFile);
@@ -304,7 +336,7 @@ public static partial class Command
         /// <param name="target">The package target to create the file for</param>
         /// <param name="rtcfg">The runtime config</param>
         /// <returns>An awaitable task</returns>
-        static async Task PrepareAndReSignAppBundle(string appFolder, string installerDir, PackageTarget target, RuntimeConfig rtcfg)
+        static async Task PrepareAndSignAppBundle(string appFolder, string installerDir, PackageTarget target, RuntimeConfig rtcfg)
         {
             await PackageSupport.InstallPackageIdentifier(Path.Combine(appFolder, "Contents", "MacOS"), target);
 
@@ -312,15 +344,10 @@ public static partial class Command
             if (rtcfg.UseCodeSignSigning)
             {
                 var entitlementFile = Path.Combine(installerDir, "Entitlements.plist");
-                var updates = new[] { Path.Combine(appFolder, "Contents", "MacOS", "package_type_id.txt") }
-                    .Concat(
-                            ExecutableRenames.Values.Select(x => Path.Combine(appFolder, "Contents", "MacOS", x))
-                            .Where(File.Exists)
-                    )
-                    .Append(appFolder);
-
-                foreach (var x in updates)
-                    await rtcfg.Codesign(x, entitlementFile);
+                // In principle, it should be enough to deep sign the bundle, but the signtool is broken
+                await PackageSupport.SignMacOSBinaries(rtcfg, Path.Combine(appFolder, "Contents", "MacOS"), entitlementFile);
+                await rtcfg.Codesign(appFolder, false, entitlementFile);
+                await rtcfg.VerifyCodeSign(appFolder);
             }
         }
 
@@ -338,9 +365,8 @@ public static partial class Command
             var mountDir = Path.Combine(buildRoot, "mount");
             if (Directory.Exists(mountDir))
             {
-                await ProcessHelper.Execute([
-                    "hdiutil", "detach", mountDir, "-quiet", "-force",
-            ], workingDirectory: buildRoot, codeIsError: _ => false);
+                await ProcessHelper.Execute(["hdiutil", "detach", mountDir, "-quiet", "-force",],
+                    workingDirectory: buildRoot, codeIsError: _ => false);
 
                 Directory.Delete(mountDir, false);
             }
@@ -373,9 +399,7 @@ public static partial class Command
             // Change the dmg name
             var dmgname = $"Duplicati {rtcfg.ReleaseInfo.ReleaseName}";
             Console.WriteLine($"Setting dmg name to {dmgname}");
-            await ProcessHelper.Execute([
-                "diskutil", "quiet", "rename", mountDir, dmgname
-            ], workingDirectory: mountDir);
+            await ProcessHelper.Execute(["diskutil", "quiet", "rename", mountDir, dmgname], workingDirectory: mountDir);
 
             // Make the Duplicati.app structure, root folder should exist
             var appFolder = Path.Combine(mountDir, rtcfg.MacOSAppName);
@@ -384,7 +408,7 @@ public static partial class Command
 
             // Place the prepared folder
             EnvHelper.CopyDirectory(Path.Combine(buildRoot, $"{target.BuildTargetString}-{rtcfg.MacOSAppName}"), appFolder, recursive: true);
-            await PrepareAndReSignAppBundle(appFolder, resourcesDir, target, rtcfg);
+            await PrepareAndSignAppBundle(appFolder, resourcesDir, target, rtcfg);
 
             // Set permissions inside DMG file
             if (!OperatingSystem.IsWindows())
@@ -400,8 +424,8 @@ public static partial class Command
             File.Delete(templateDmg);
             Directory.Delete(mountDir, false);
 
-            if (rtcfg.UseCodeSignSigning)
-                await rtcfg.Codesign(dmgFile, Path.Combine(resourcesDir, "Entitlements.plist"));
+            await rtcfg.Codesign(dmgFile, false, Path.Combine(resourcesDir, "Entitlements.plist"));
+            await rtcfg.VerifyCodeSign(dmgFile);
         }
 
         /// <summary>
@@ -428,7 +452,7 @@ public static partial class Command
 
             // Place the prepared folder
             EnvHelper.CopyDirectory(Path.Combine(buildRoot, $"{target.BuildTargetString}-{rtcfg.MacOSAppName}"), appFolder, recursive: true);
-            await PrepareAndReSignAppBundle(appFolder, installerDir, target, rtcfg);
+            await PrepareAndSignAppBundle(appFolder, installerDir, target, rtcfg);
 
             // Copy the source script files
             var scripts = new[] { "daemon", "daemon-scripts", "app-scripts" };
@@ -602,11 +626,7 @@ public static partial class Command
             }
 
             // Apply code signing, if requested
-            if (rtcfg.UseCodeSignSigning)
-            {
-                var entitlementFile = Path.Combine(installerDir, "Entitlements.plist");
-                await PackageSupport.SignMacOSBinaries(rtcfg, binFolder, entitlementFile);
-            }
+            await PackageSupport.SignMacOSBinaries(rtcfg, binFolder, Path.Combine(installerDir, "Entitlements.plist"));
 
             var payloadPkgFile = target.Interface switch
             {
@@ -1120,11 +1140,11 @@ public static partial class Command
     private static async Task BuildDockerImages(string baseDir, string buildRoot, IEnumerable<PackageTarget> targets, RuntimeConfig rtcfg)
     {
         // Make sure any dangling buildx instances are removed
-        try { await ProcessHelper.Execute([Program.Configuration.Commands.Docker!, "buildx", "rm", "duplicati-builder"], codeIsError: _ => false, suppressStdErr: true); }
+        try { await ProcessHelper.Execute([rtcfg.Configuration.Commands.Docker!, "buildx", "rm", "duplicati-builder"], codeIsError: _ => false, suppressStdErr: true); }
         catch { }
 
         // Prepare multi-build
-        await ProcessHelper.Execute([Program.Configuration.Commands.Docker!, "buildx", "create", "--use", "--name", "duplicati-builder"]);
+        await ProcessHelper.Execute([rtcfg.Configuration.Commands.Docker!, "buildx", "create", "--use", "--name", "duplicati-builder"]);
 
         // Perform a distict build for each interface type, but keep the buildx instance
         foreach (var interfaceType in Enum.GetValues<InterfaceType>())
@@ -1179,7 +1199,7 @@ public static partial class Command
             var repo = $"{rtcfg.DockerRepo}{(interfaceType == InterfaceType.Agent ? "-agent" : "")}";
 
             // Build the images
-            var args = new List<string> { Program.Configuration.Commands.Docker!, "buildx", "build" };
+            var args = new List<string> { rtcfg.Configuration.Commands.Docker!, "buildx", "build" };
             args.AddRange(tags.SelectMany(x => new[] { "-t", $"{repo}:{x.ToLowerInvariant()}" }));
             args.AddRange([
                 "--platform", string.Join(",", dockerArchs),
@@ -1198,6 +1218,6 @@ public static partial class Command
         }
 
         // Clean up
-        await ProcessHelper.Execute([Program.Configuration.Commands.Docker!, "buildx", "rm", "duplicati-builder"]);
+        await ProcessHelper.Execute([rtcfg.Configuration.Commands.Docker!, "buildx", "rm", "duplicati-builder"]);
     }
 }

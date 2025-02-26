@@ -95,7 +95,7 @@ public static partial class Command
                     .ToList();
 
                 foreach (var f in signtargets)
-                    await rtcfg.Codesign(f, entitlementFile);
+                    await rtcfg.Codesign(f, false, entitlementFile);
             }
         }
     }

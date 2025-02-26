@@ -12,7 +12,7 @@ public static class Command
         var keyfileArgument = new Argument<FileInfo>(
             name: "keyfile",
             description: "Path to keyfile to use for signing release manifests",
-            getDefaultValue: () => new FileInfo(Program.Configuration.ConfigFiles.UpdaterKeyfile.FirstOrDefault() ?? "./signkey.key")
+            getDefaultValue: () => new FileInfo(Configuration.Create(ReleaseChannel.Debug).ConfigFiles.UpdaterKeyfile.FirstOrDefault() ?? "./signkey.key")
         );
 
         var command = new System.CommandLine.Command("create-key", "Creates a new key for signing releases")

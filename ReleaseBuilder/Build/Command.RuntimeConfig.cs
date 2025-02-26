@@ -7,24 +7,23 @@ public static partial class Command
     /// <summary>
     /// Setup of the current runtime information
     /// </summary>
-    private class RuntimeConfig
+    /// <remarks>
+    /// Constructs a new <see cref="RuntimeConfig"/>
+    /// </remarks>
+    /// <param name="releaseInfo">The release info to use</param>
+    /// <param name="keyfilePassword">The keyfile password to use</param>
+    /// <param name="signKeys">The sign keys</param>
+    /// <param name="changelogNews">The changelog news</param>
+    /// <param name="input">The command input</param>
+    private class RuntimeConfig(
+        Configuration configuration,
+        ReleaseInfo releaseInfo,
+        IEnumerable<RSA> signKeys,
+        string keyfilePassword,
+        string changelogNews,
+        CommandInput input
+    )
     {
-        /// <summary>
-        /// Constructs a new <see cref="RuntimeConfig"/>
-        /// </summary>
-        /// <param name="releaseInfo">The release info to use</param>
-        /// <param name="keyfilePassword">The keyfile password to use</param>
-        /// <param name="signKeys">The sign keys</param>
-        /// <param name="changelogNews">The changelog news</param>
-        /// <param name="input">The command input</param>
-        public RuntimeConfig(ReleaseInfo releaseInfo, IEnumerable<RSA> signKeys, string keyfilePassword, string changelogNews, CommandInput input)
-        {
-            ReleaseInfo = releaseInfo;
-            SignKeys = signKeys;
-            KeyfilePassword = keyfilePassword;
-            ChangelogNews = changelogNews;
-            Input = input;
-        }
 
         /// <summary>
         /// The cached password for the pfx file
@@ -34,27 +33,30 @@ public static partial class Command
         /// <summary>
         /// The commandline input
         /// </summary>
-        private CommandInput Input { get; }
-
+        private CommandInput Input => input;
+        /// <summary>
+        /// The configuration to use
+        /// </summary>
+        public Configuration Configuration => configuration;
         /// <summary>
         /// The release info for this run
         /// </summary>
-        public ReleaseInfo ReleaseInfo { get; }
+        public ReleaseInfo ReleaseInfo => releaseInfo;
 
         /// <summary>
         /// The keyfile password for this run
         /// </summary>
-        public IEnumerable<RSA> SignKeys { get; }
+        public IEnumerable<RSA> SignKeys => signKeys;
 
         /// <summary>
         /// The primary password
         /// </summary>
-        public string KeyfilePassword { get; }
+        public string KeyfilePassword => keyfilePassword;
 
         /// <summary>
         /// The changelog news
         /// </summary>
-        public string ChangelogNews { get; }
+        public string ChangelogNews => changelogNews;
 
         /// <summary>
         /// Gets the PFX password and throws if not possible
@@ -70,6 +72,11 @@ public static partial class Command
         private bool? _useAuthenticodeSigning;
 
         /// <summary>
+        /// Cache value for checking if jsign tool should be used for authenticode signing
+        /// </summary>
+        private bool? _useJsignToolForAuthenticode;
+
+        /// <summary>
         /// Checks if Authenticode signing should be enabled
         /// </summary>
         public void ToggleAuthenticodeSigning()
@@ -82,18 +89,39 @@ public static partial class Command
                     return;
                 }
 
-                if (Program.Configuration.IsAuthenticodePossible())
-                    _useAuthenticodeSigning = true;
-                else
+                if (Configuration.IsAuthenticodePossibleWithSignTool())
                 {
-                    if (ConsoleHelper.ReadInput("Configuration missing for osslsigncode, continue without signing executables?", "Y", "n") == "Y")
+                    _useAuthenticodeSigning = true;
+                    _useJsignToolForAuthenticode = false;
+                    return;
+                }
+
+                if (Configuration.IsAuthenticodePossibleWithJsignTool())
+                {
+                    if (string.IsNullOrWhiteSpace(Input.SignkeyPin))
                     {
-                        _useAuthenticodeSigning = false;
-                        return;
+                        var signKeyPin = EnvHelper.GetEnvKey("SIGNKEY_PIN", "");
+                        if (string.IsNullOrWhiteSpace(signKeyPin))
+                            signKeyPin = ConsoleHelper.ReadPassword("Enter the pin for the signing key");
+                        input = input with { SignkeyPin = signKeyPin };
                     }
 
-                    throw new Exception("Configuration is not set up for osslsigncode");
+                    if (!string.IsNullOrWhiteSpace(Input.SignkeyPin))
+                    {
+                        _useAuthenticodeSigning = true;
+                        _useJsignToolForAuthenticode = true;
+                        return;
+                    }
                 }
+
+                if (ConsoleHelper.ReadInput("Configuration missing for jsign/signtool/osslsigncode, continue without signing executables?", "Y", "n") == "Y")
+                {
+                    _useAuthenticodeSigning = false;
+                    _useJsignToolForAuthenticode = false;
+                    return;
+                }
+
+                throw new Exception("Configuration is not set up for jsign/signtool/osslsigncode");
             }
         }
 
@@ -117,7 +145,7 @@ public static partial class Command
 
                 if (!OperatingSystem.IsMacOS())
                     _useCodeSignSigning = false;
-                else if (Program.Configuration.IsCodeSignPossible())
+                else if (Configuration.IsCodeSignPossible())
                     _useCodeSignSigning = true;
                 else
                 {
@@ -146,7 +174,7 @@ public static partial class Command
             {
                 try
                 {
-                    var res = await ProcessHelper.ExecuteWithOutput([Program.Configuration.Commands.Docker!, "ps"], suppressStdErr: true);
+                    var res = await ProcessHelper.ExecuteWithOutput([Configuration.Commands.Docker!, "ps"], suppressStdErr: true);
                     _dockerBuild = true;
                 }
                 catch
@@ -183,7 +211,7 @@ public static partial class Command
 
                 if (!OperatingSystem.IsMacOS())
                     _useNotarizeSigning = false;
-                else if (Program.Configuration.IsNotarizePossible())
+                else if (Configuration.IsNotarizePossible())
                     _useNotarizeSigning = true;
                 else
                 {
@@ -216,7 +244,7 @@ public static partial class Command
                     return;
                 }
 
-                if (Program.Configuration.IsGpgPossible())
+                if (Configuration.IsGpgPossible())
                     _useGpgSigning = true;
                 else
                 {
@@ -249,7 +277,7 @@ public static partial class Command
                     return;
                 }
 
-                if (Program.Configuration.IsAwsUploadPossible())
+                if (Configuration.IsAwsUploadPossible())
                     _useS3Upload = true;
                 else
                 {
@@ -283,7 +311,7 @@ public static partial class Command
                     return;
                 }
 
-                if (Program.Configuration.IsGithubUploadPossible())
+                if (Configuration.IsGithubUploadPossible())
                     _useGithubUpload = true;
                 else
                 {
@@ -316,7 +344,7 @@ public static partial class Command
                     return;
                 }
 
-                if (Program.Configuration.IsUpdateServerReloadPossible())
+                if (Configuration.IsUpdateServerReloadPossible())
                     _useUpdateServerReload = true;
                 else
                 {
@@ -350,7 +378,7 @@ public static partial class Command
                     return;
                 }
 
-                if (Program.Configuration.IsDiscourseAnnouncePossible())
+                if (Configuration.IsDiscourseAnnouncePossible())
                     _useDiscourseAnnounce = true;
                 else
                 {
@@ -374,6 +402,11 @@ public static partial class Command
         /// Returns a value indicating if authenticode signing is enabled
         /// </summary>
         public bool UseAuthenticodeSigning => _useAuthenticodeSigning!.Value;
+
+        /// <summary>
+        /// Returns a value indicating if authenticode signing is enabled
+        /// </summary>
+        public bool UseJsingToolForAuthenticode => _useJsignToolForAuthenticode!.Value;
 
         /// <summary>
         /// Returns a value indicating if notarize is enabled
@@ -431,7 +464,7 @@ public static partial class Command
         /// <param name="keyfilepassword">Password for the password file</param>
         /// <returns>The Authenticode password</returns>
         private string GetAuthenticodePassword(string keyfilepassword)
-            => EncryptionHelper.DecryptPasswordFile(Program.Configuration.ConfigFiles.AuthenticodePasswordFile, keyfilepassword).Trim();
+            => EncryptionHelper.DecryptPasswordFile(Configuration.ConfigFiles.AuthenticodePasswordFile, keyfilepassword).Trim();
 
         /// <summary>
         /// Performs authenticode signing if enabled
@@ -439,26 +472,48 @@ public static partial class Command
         /// <param name="file">The file to sign</param>
         /// <returns>An awaitable task</returns>
         public Task AuthenticodeSign(string file)
-            => UseAuthenticodeSigning
-                ? ProcessRunner.OsslCodeSign(
-                    Program.Configuration.Commands.OsslSignCode!,
-                    Program.Configuration.ConfigFiles.AuthenticodePfxFile,
+        {
+            if (!UseAuthenticodeSigning)
+                return Task.CompletedTask;
+
+            if (UseJsingToolForAuthenticode)
+                return ProcessRunner.JsignCodeSign(Configuration.Commands.JSign!, Input.SignkeyPin, file);
+            else
+                return ProcessRunner.OsslCodeSign(
+                    Configuration.Commands.SignCode!,
+                    Configuration.ConfigFiles.AuthenticodePfxFile,
                     PfxPassword,
-                    file)
-                : Task.CompletedTask;
+                    file
+                );
+        }
 
         /// <summary>
         /// Performs codesign on the given file
         /// </summary>
         /// <param name="file">The file to sign</param>
+        /// <param name="deep">A value indicating if deep signing should be used</param>
         /// <param name="entitlements">The entitlements to apply</param>
         /// <returns>An awaitable task</returns>
-        public Task Codesign(string file, string entitlements)
+        public Task Codesign(string file, bool deep, string entitlements)
             => UseCodeSignSigning
                 ? ProcessRunner.MacOSCodeSign(
-                    Program.Configuration.Commands.Codesign!,
-                    Program.Configuration.ConfigFiles.CodesignIdentity,
+                    Configuration.Commands.Codesign!,
+                    Configuration.ConfigFiles.CodesignIdentity,
                     entitlements,
+                    file,
+                    deep
+                )
+                : Task.CompletedTask;
+
+        /// <summary>
+        /// Verifies the codesign of the given file or app bundle
+        /// </summary>
+        /// <param name="file">The file to verify</param>
+        /// <returns>An awaitable task</returns>
+        public Task VerifyCodeSign(string file)
+            => UseCodeSignSigning
+                ? ProcessRunner.MacOSVerifyCodeSign(
+                    Configuration.Commands.Codesign!,
                     file
                 )
                 : Task.CompletedTask;
@@ -471,8 +526,8 @@ public static partial class Command
         public Task Productsign(string file)
             => UseCodeSignSigning
                 ? ProcessRunner.MacOSProductSign(
-                    Program.Configuration.Commands.Productsign!,
-                    Program.Configuration.ConfigFiles.CodesignIdentity,
+                    Configuration.Commands.Productsign!,
+                    Configuration.ConfigFiles.CodesignIdentity,
                     file
                 )
                 : Task.CompletedTask;
