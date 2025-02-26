@@ -106,6 +106,7 @@ namespace Duplicati.Library.Main.Operation.Restore
             /// The options for the restore.
             /// </summary>
             private readonly Options m_options;
+            private MemoryCacheEntryOptions m_entry_options = new();
 
             /// <summary>
             /// Initializes a new instance of the <see cref="SleepableDictionary"/> class.
@@ -121,6 +122,15 @@ namespace Duplicati.Library.Main.Operation.Restore
                 {
                     var cache_options = new MemoryCacheOptions();
                     m_block_cache = new MemoryCache(cache_options);
+                    m_entry_options.RegisterPostEvictionCallback((key, value, reason, state) =>
+                    {
+                        m_block_cache.Remove(key);
+                        lock (m_blockcount_lock)
+                        {
+                            m_returncount++;
+                        }
+                        ArrayPool<byte>.Shared.Return((byte[])value);
+                    });
                 }
                 this.readers = readers;
                 sw_cacheevict = options.InternalProfiling ? new() : null;
@@ -259,10 +269,11 @@ namespace Duplicati.Library.Main.Operation.Restore
                 }
 
                 sw_cacheevict?.Start();
-                if (m_block_cache?.Count * m_options.Blocksize > m_options.RestoreCacheMax)
-                {
-                    m_block_cache?.Compact(m_options.RestoreCacheEvict);
-                }
+                // TODO cache is broken due to the arraypool
+                //if (m_block_cache?.Count > m_options.RestoreCacheMax)
+                //{
+                //    m_block_cache?.Compact(m_options.RestoreCacheEvict);
+                //}
                 sw_cacheevict?.Stop();
             }
 
