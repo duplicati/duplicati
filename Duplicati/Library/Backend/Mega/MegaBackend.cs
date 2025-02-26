@@ -194,7 +194,7 @@ namespace Duplicati.Library.Backend.Mega
         public async IAsyncEnumerable<IFileEntry> ListAsync([EnumeratorCancellation] CancellationToken cancelToken)
         {
             if (m_filecache == null)
-                await ResetFileCacheAsync(null, CancellationToken.None).ConfigureAwait(false);
+                await ResetFileCacheAsync(null, cancelToken).ConfigureAwait(false);
 
             foreach (var n in m_filecache.Values)
             {
