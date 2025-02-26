@@ -33,6 +33,7 @@ using System.Threading.Tasks;
 using Duplicati.Library.Backend.pCloud;
 using Duplicati.Library.Utility;
 using Uri = System.Uri;
+using System.Runtime.CompilerServices;
 
 namespace Duplicati.Library.Backend;
 
@@ -222,18 +223,12 @@ public class pCloudBackend : IStreamingBackend
     /// Implementation of interface method for listing remote folder contents
     /// </summary>
     /// <returns>List of IFileEntry with directory listing result</returns>
-    public async Task<IEnumerable<IFileEntry>> ListAsync(CancellationToken cancellationToken)
+    public async IAsyncEnumerable<IFileEntry> ListAsync([EnumeratorCancellation] CancellationToken cancellationToken)
     {
         _CachedFolderID ??= await GetFolderId(cancellationToken).ConfigureAwait(false);
-
-        return await List(_CachedFolderID.Value, cancellationToken).ConfigureAwait(false);
+        foreach (var v in await List(_CachedFolderID.Value, cancellationToken).ConfigureAwait(false))
+            yield return v;
     }
-
-    /// <summary>
-    /// Wrapper method of legacy non async call to list files in the remote folder
-    /// </summary>
-    /// <returns></returns>
-    public IEnumerable<IFileEntry> List() => ListAsync(CancellationToken.None).Await();
 
     /// <summary>
     /// Upload files to remote location

@@ -26,6 +26,7 @@ using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Net;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -124,10 +125,7 @@ namespace Duplicati.Library.Backend
         #region IBackend Members
 
         public Task TestAsync(CancellationToken cancelToken)
-        {
-            this.TestList();
-            return Task.CompletedTask;
-        }
+            => this.TestListAsync(cancelToken);
 
         public Task CreateFolderAsync(CancellationToken cancelToken)
         {
@@ -150,8 +148,12 @@ namespace Duplicati.Library.Backend
             get { return "tahoe"; }
         }
 
-        public IEnumerable<IFileEntry> List()
+        /// <inheritdoc />
+        public async IAsyncEnumerable<IFileEntry> ListAsync([EnumeratorCancellation] CancellationToken cancelToken)
         {
+            // Remove warning until this is rewritten to use HttpClient
+            await Task.CompletedTask;
+
             TahoeEl data;
 
             try
@@ -160,9 +162,9 @@ namespace Duplicati.Library.Backend
                 req.Method = System.Net.WebRequestMethods.Http.Get;
 
                 var areq = new Utility.AsyncHttpRequest(req);
-                using (System.Net.HttpWebResponse resp = (System.Net.HttpWebResponse)areq.GetResponse())
+                using (var resp = (System.Net.HttpWebResponse)areq.GetResponse())
                 {
-                    int code = (int)resp.StatusCode;
+                    var code = (int)resp.StatusCode;
                     if (code < 200 || code >= 300) //For some reason Mono does not throw this automatically
                         throw new System.Net.WebException(resp.StatusDescription, null, System.Net.WebExceptionStatus.ProtocolError, resp);
 

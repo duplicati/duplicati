@@ -43,7 +43,7 @@ namespace Duplicati.Library.Backend
             base.AccessTokenOnly = !accessToken.Contains(":");
         }
 
-        public ListFolderResult ListFiles(string path)
+        public async Task<ListFolderResult> ListFiles(string path, CancellationToken cancelToken)
         {
             var pa = new PathArg
             {
@@ -52,7 +52,7 @@ namespace Duplicati.Library.Backend
 
             try
             {
-                return PostAndGetJSONData<ListFolderResult>(WebApi.Dropbox.ListFilesUrl(), pa);
+                return await PostAndGetJSONDataAsync<ListFolderResult>(WebApi.Dropbox.ListFilesUrl(), cancelToken, pa).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -61,13 +61,13 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public ListFolderResult ListFilesContinue(string cursor)
+        public async Task<ListFolderResult> ListFilesContinue(string cursor, CancellationToken cancelToken)
         {
             var lfca = new ListFolderContinueArg() { cursor = cursor };
 
             try
             {
-                return PostAndGetJSONData<ListFolderResult>(WebApi.Dropbox.ListFilesContinueUrl(), lfca);
+                return await PostAndGetJSONDataAsync<ListFolderResult>(WebApi.Dropbox.ListFilesContinueUrl(), cancelToken, lfca).ConfigureAwait(false);
             }
             catch (Exception ex)
             {

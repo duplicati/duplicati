@@ -21,13 +21,13 @@
 
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
-using Duplicati.Library.Utility;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -192,14 +192,15 @@ namespace Duplicati.Library.Backend
         }
 
 
-        public IEnumerable<IFileEntry> List()
+        /// <inheritdoc />
+        public async IAsyncEnumerable<IFileEntry> ListAsync([EnumeratorCancellation] CancellationToken cancelToken)
         {
-            String str_result;
+            string str_result;
 
             try
             {
 
-                str_result = RcloneCommandExecuter(rclone_executable, $"lsjson {remote_repo}:{remote_path}", CancellationToken.None).Await();
+                str_result = await RcloneCommandExecuter(rclone_executable, $"lsjson {remote_repo}:{remote_path}", cancelToken).ConfigureAwait(false);
                 // this will give an error if the executable does not exist.
             }
 
@@ -297,10 +298,7 @@ namespace Duplicati.Library.Backend
         public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(new[] { remote_repo });
 
         public Task TestAsync(CancellationToken cancelToken)
-        {
-            this.TestList();
-            return Task.CompletedTask;
-        }
+            => this.TestListAsync(cancelToken);
 
         public Task CreateFolderAsync(CancellationToken cancelToken)
         {

@@ -25,6 +25,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using Duplicati.Library.Utility;
+using System.Threading.Tasks;
 
 namespace Duplicati.CommandLine.RecoveryTool
 {
@@ -56,7 +57,7 @@ namespace Duplicati.CommandLine.RecoveryTool
 
                 Console.WriteLine("Listing files on backend: {0} ...", backend.ProtocolKey);
 
-                var lst = backend.List().ToList();
+                var lst = backend.ListAsync(CancellationToken.None).ToBlockingEnumerable().ToList();
 
                 Console.WriteLine("Found {0} files", lst.Count);
 

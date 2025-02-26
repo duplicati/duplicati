@@ -74,7 +74,7 @@ namespace Duplicati.Library.Main.Operation
 
             if (m_options.FullRemoteVerification != Options.RemoteTestStrategy.False)
             {
-                await foreach (var (tf, hash, size, name) in backend.GetFilesOverlappedAsync(files, CancellationToken.None))
+                await foreach (var (tf, hash, size, name) in backend.GetFilesOverlappedAsync(files, CancellationToken.None).ConfigureAwait(false))
                 {
                     var vol = new RemoteVolume(name, hash, size);
                     try

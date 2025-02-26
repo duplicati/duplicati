@@ -19,7 +19,6 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
-using System.Diagnostics;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
@@ -28,6 +27,7 @@ using System.Net.Http.Headers;
 using System.Reflection;
 using Duplicati.Library.Backend.Backblaze.Model;
 using FileEntry = Duplicati.Library.Common.IO.FileEntry;
+using System.Runtime.CompilerServices;
 
 namespace Duplicati.Library.Backend.Backblaze;
 
@@ -80,7 +80,7 @@ public class B2 : IStreamingBackend, ITimeoutExemptBackend
     /// Recommended chunk size as per Backblaze B2 documentation (100MB)
     /// </summary>
     private const int B2_RECOMMENDED_CHUNK_SIZE = 100 * 1024 * 1024;
-    
+
     /// <summary>
     /// Default retry-after time in seconds for B2 API requests
     /// </summary>
@@ -283,14 +283,15 @@ public class B2 : IStreamingBackend, ITimeoutExemptBackend
     /// Retrieves the fileID searching by filename.
     /// </summary>
     /// <param name="filename">Filename</param>
+    /// <param name="cancelToken">Cancellation Token</param>
     /// <returns></returns>
     /// <exception cref="FileMissingException">Exception thrown when file is not found</exception>
-    private string GetFileId(string filename)
+    private async Task<string> GetFileId(string filename, CancellationToken cancelToken)
     {
         if (_filecache != null && _filecache.TryGetValue(filename, out var value))
             return value.OrderByDescending(x => x.UploadTimestamp).First().FileID;
 
-        List();
+        await RebuildFileCache(cancelToken).ConfigureAwait(false);
 
         if (_filecache != null && _filecache.TryGetValue(filename, out var value1))
             return value1.OrderByDescending(x => x.UploadTimestamp).First().FileID;
@@ -358,7 +359,7 @@ public class B2 : IStreamingBackend, ITimeoutExemptBackend
         }
 
         if (_filecache == null)
-            await ListAsync(cancelToken).ConfigureAwait(false);
+            await RebuildFileCache(cancelToken).ConfigureAwait(false);
 
         var uploadUrlData = await GetUploadUrlDataAsync(cancelToken).ConfigureAwait(false);
         try
@@ -427,11 +428,11 @@ public class B2 : IStreamingBackend, ITimeoutExemptBackend
     {
 
         if (_filecache == null || !_filecache.ContainsKey(remotename))
-            await ListAsync(cancellationToken).ConfigureAwait(false);
+            await RebuildFileCache(cancellationToken).ConfigureAwait(false);
 
         using var request = _filecache != null && _filecache.ContainsKey(remotename)
             ? _b2AuthHelper.CreateRequest(
-                $"{DownloadUrl}/b2api/v1/b2_download_file_by_id?fileId={Utility.Uri.UrlEncode(GetFileId(remotename))}")
+                $"{DownloadUrl}/b2api/v1/b2_download_file_by_id?fileId={Utility.Uri.UrlEncode(await GetFileId(remotename, cancellationToken))}")
             : _b2AuthHelper.CreateRequest(
                 $"{DownloadUrl}/{_urlencodedPrefix}{Utility.Uri.UrlPathEncode(remotename)}");
 
@@ -463,7 +464,7 @@ public class B2 : IStreamingBackend, ITimeoutExemptBackend
     /// Implementation of interface method for listing remote folder contents
     /// </summary>
     /// <returns>List of IFileEntry with directory listing result</returns>
-    private async Task<IEnumerable<IFileEntry>> ListAsync(CancellationToken cancellationToken, bool testMode = false)
+    private async Task RebuildFileCache(CancellationToken cancellationToken)
     {
         _filecache = null;
         var cache = new Dictionary<string, List<FileEntity>>();
@@ -524,28 +525,28 @@ public class B2 : IStreamingBackend, ITimeoutExemptBackend
                         new RetryConditionHeaderValue(TimeSpan.FromSeconds(B2_RETRY_AFTER_SECONDS)));
                 else
                     listRetryHelper.SetRetryAfter(tex.RetryAfter);
-                
+
                 await listRetryHelper.WaitForRetryAfterAsync(cancellationToken);
             }
-            if (testMode) // For testing purposes, it suffices to get the first page of results.
-                break;
         } while (nextFileId != null);
 
         _filecache = cache;
-
-        return
-            (from x in _filecache
-             let newest = x.Value.OrderByDescending(y => y.UploadTimestamp).First()
-             let ts = Utility.Utility.EPOCH.AddMilliseconds(newest.UploadTimestamp)
-             select (IFileEntry)new FileEntry(x.Key, newest.Size, ts, ts)
-            ).ToList();
     }
 
     /// <summary>
-    /// Wrapper method of legacy non async call to list files in the remote folder
+    /// Implementation of interface method for listing remote folder contents
     /// </summary>
-    /// <returns></returns>
-    public IEnumerable<IFileEntry> List() => ListAsync(CancellationToken.None).Await();
+    /// <returns>List of IFileEntry with directory listing result</returns>
+    public async IAsyncEnumerable<IFileEntry> ListAsync([EnumeratorCancellation] CancellationToken cancellationToken)
+    {
+        await RebuildFileCache(cancellationToken).ConfigureAwait(false);
+        foreach (var x in _filecache)
+        {
+            var newest = x.Value.OrderByDescending(y => y.UploadTimestamp).First();
+            var ts = Utility.Utility.EPOCH.AddMilliseconds(newest.UploadTimestamp);
+            yield return new FileEntry(x.Key, newest.Size, ts, ts);
+        }
+    }
 
     //<inheritdoc/>
     public async Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
@@ -585,7 +586,7 @@ public class B2 : IStreamingBackend, ITimeoutExemptBackend
             using var combinedCancellationToken = CancellationTokenSource.CreateLinkedTokenSource(timeoutToken.Token, cancellationToken);
 
             if (_filecache == null || !_filecache.ContainsKey(remotename))
-                await ListAsync(cancellationToken).ConfigureAwait(false);
+                await RebuildFileCache(cancellationToken).ConfigureAwait(false);
 
             if (!_filecache.TryGetValue(remotename, out var value))
                 throw new FileMissingException();
@@ -615,10 +616,7 @@ public class B2 : IStreamingBackend, ITimeoutExemptBackend
     /// </summary>
     /// <param name="cancelToken">Cancellation Token</param>
     public Task TestAsync(CancellationToken cancelToken)
-    {
-        _ = ListAsync(cancelToken, true).Await();
-        return Task.CompletedTask;
-    }
+        => this.TestListAsync(cancelToken);
 
     /// <summary>
     /// Create remote folder

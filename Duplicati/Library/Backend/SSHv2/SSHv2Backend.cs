@@ -28,6 +28,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -112,22 +113,19 @@ namespace Duplicati.Library.Backend
         #region IBackend Members
 
         public Task TestAsync(CancellationToken cancelToken)
-        {
-            this.TestList();
-            return Task.CompletedTask;
-        }
+            => this.TestListAsync(cancelToken);
 
-        public Task CreateFolderAsync(CancellationToken cancelToken)
+        public async Task CreateFolderAsync(CancellationToken cancelToken)
         {
-            CreateConnection();
+            await CreateConnection(cancelToken).ConfigureAwait(false);
 
             // Since the SftpClient.CreateDirectory method does not create all the parent directories
             // as needed, this has to be done manually.
-            string partialPath = String.Empty;
+            var partialPath = string.Empty;
             foreach (string part in m_path.Split('/').Where(x => !String.IsNullOrEmpty(x)))
             {
                 partialPath += $"/{part}";
-                if (this.m_con.Exists(partialPath))
+                if (await this.m_con.ExistsAsync(partialPath, cancelToken))
                 {
                     if (!this.m_con.GetAttributes(partialPath).IsDirectory)
                     {
@@ -136,11 +134,10 @@ namespace Duplicati.Library.Backend
                 }
                 else
                 {
-                    this.m_con.CreateDirectory(partialPath);
+                    await this.m_con.CreateDirectoryAsync(partialPath, cancelToken).ConfigureAwait(false);
                 }
             }
 
-            return Task.CompletedTask;
         }
 
         public string DisplayName => Strings.SSHv2Backend.DisplayName;
@@ -165,8 +162,8 @@ namespace Duplicati.Library.Backend
         {
             try
             {
-                CreateConnection();
-                ChangeDirectory(m_path);
+                await CreateConnection(cancelToken).ConfigureAwait(false);
+                await ChangeDirectory(m_path).ConfigureAwait(false);
                 await m_con.DeleteFileAsync(remotename, cancelToken).ConfigureAwait(false);
             }
             catch (SftpPathNotFoundException ex)
@@ -239,11 +236,11 @@ namespace Duplicati.Library.Backend
 
         #region IStreamingBackend Implementation
 
-        public Task PutAsync(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
+        public async Task PutAsync(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
         {
-            CreateConnection();
-            ChangeDirectory(m_path);
-            return Task.Factory.FromAsync(
+            await CreateConnection(cancelToken).ConfigureAwait(false);
+            await ChangeDirectory(m_path).ConfigureAwait(false);
+            await Task.Factory.FromAsync(
                 (cb, state) => m_con.BeginUploadFile(stream, remotename, cb, state, _ => cancelToken.ThrowIfCancellationRequested()),
                 m_con.EndUploadFile,
                 null);
@@ -251,8 +248,8 @@ namespace Duplicati.Library.Backend
 
         public async Task GetAsync(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
         {
-            CreateConnection();
-            ChangeDirectory(m_path);
+            await CreateConnection(cancelToken).ConfigureAwait(false);
+            await ChangeDirectory(m_path).ConfigureAwait(false);
 
             try
             {
@@ -271,25 +268,25 @@ namespace Duplicati.Library.Backend
 
         #region IRenameEnabledBackend Implementation
 
-        public Task RenameAsync(string source, string target, CancellationToken cancelToken)
+        public async Task RenameAsync(string source, string target, CancellationToken cancelToken)
         {
-            CreateConnection();
-            ChangeDirectory(m_path);
-            return m_con.RenameFileAsync(source, target, cancelToken);
+            await CreateConnection(cancelToken).ConfigureAwait(false);
+            await ChangeDirectory(m_path).ConfigureAwait(false);
+            await m_con.RenameFileAsync(source, target, cancelToken).ConfigureAwait(false);
         }
 
         #endregion
 
         #region Implementation
 
-        private void CreateConnection()
+        private async Task CreateConnection(CancellationToken cancelToken)
         {
             if (m_con != null && m_con.IsConnected)
                 return;
 
             if (m_con != null && !m_con.IsConnected)
             {
-                this.TryConnect(m_con);
+                await this.TryConnect(m_con, cancelToken).ConfigureAwait(false);
                 return;
             }
 
@@ -344,17 +341,15 @@ namespace Duplicati.Library.Backend
             if (m_keepaliveinterval.Ticks != 0)
                 con.KeepAliveInterval = m_keepaliveinterval;
 
-            this.TryConnect(con);
+            await this.TryConnect(con, cancelToken).ConfigureAwait(false);
 
             m_con = con;
         }
 
-        private void TryConnect(SftpClient client)
-        {
-            client.Connect();
-        }
+        private Task TryConnect(SftpClient client, CancellationToken cancelToken)
+            => client.ConnectAsync(cancelToken);
 
-        private void ChangeDirectory(string path)
+        private async Task ChangeDirectory(string path)
         {
             if (string.IsNullOrEmpty(path))
                 return;
@@ -365,7 +360,7 @@ namespace Duplicati.Library.Backend
 
             try
             {
-                m_con.ChangeDirectory(path);
+                await m_con.ChangeDirectoryAsync(path);
             }
             catch (Exception ex)
             {
@@ -374,14 +369,15 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public IEnumerable<IFileEntry> List()
+        /// <inheritdoc />
+        public async IAsyncEnumerable<IFileEntry> ListAsync([EnumeratorCancellation] CancellationToken cancelToken)
         {
-            string path = ".";
+            var path = ".";
 
-            CreateConnection();
-            ChangeDirectory(m_path);
+            await CreateConnection(cancelToken).ConfigureAwait(false);
+            await ChangeDirectory(m_path).ConfigureAwait(false);
 
-            foreach (var ls in m_con.ListDirectory(path))
+            await foreach (var ls in m_con.ListDirectoryAsync(path, cancelToken).ConfigureAwait(false))
             {
                 if (ls.Name.ToString() == "." || ls.Name.ToString() == "..") continue;
                 yield return new FileEntry(ls.Name, ls.Length,

@@ -72,7 +72,7 @@ partial class BackendManager
 
                     try
                     {
-                        recovered = !backend.List().Select(x => x.Name).Contains(RemoteFilename);
+                        recovered = !await backend.ListAsync(cancelToken).Select(x => x.Name).ContainsAsync(RemoteFilename).ConfigureAwait(false);
                     }
                     catch
                     {
