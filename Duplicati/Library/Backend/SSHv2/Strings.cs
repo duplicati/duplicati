@@ -61,6 +61,8 @@ namespace Duplicati.Library.Backend.Strings
         public static string DescriptionSshtimeoutShort { get { return LC.L(@"Set the operation timeout value"); } }
         public static string DescriptionSshkeepaliveLong { get { return LC.L(@"Use this option to enable the keep-alive interval for the SSH connection. If the connection is idle, aggressive firewalls might close the connection. Using keep-alive will keep the connection open in this scenario. If this value is set to zero, the keep-alive is disabled."); } }
         public static string DescriptionSshkeepaliveShort { get { return LC.L(@"Set a keepalive value"); } }
+        public static string DescriptionRelativePathShort { get { return LC.L(@"Treat source path as relative to the initial path"); } }
+        public static string DescriptionRelativePathLong { get { return LC.L(@"Use this option to treat the source path as relative to the initial path. This is useful when the full path of the system is not known."); } }
         public static string FolderNotFoundManagedError(string foldername, string message) { return LC.L(@"Unable to set folder to {0}, error message: {1}", foldername, message); }
         public static string FingerprintNotMatchManagedError(string fingerprint) { return LC.L(@"Validation of server fingerprint failed. Server returned fingerprint ""{0}"". Cause of this message is either not correct configuration or Man-in-the-middle attack!", fingerprint); }
         public static string FingerprintNotSpecifiedManagedError(string fingerprint, string hostkeyoption, string allkeysoptions) { return LC.L(@"Please add --{1}=""{0}"" to trust this host. Optionally you can use --{2} (NOT SECURE) for testing!", fingerprint, hostkeyoption, allkeysoptions); }

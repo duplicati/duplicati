@@ -11,6 +11,7 @@
     <ProjectReference Include="..\..\Interface\Duplicati.Library.Interface.csproj" />
     <ProjectReference Include="..\..\Localization\Duplicati.Library.Localization.csproj" />
     <ProjectReference Include="..\..\Utility\Duplicati.Library.Utility.csproj" />
+    <ProjectReference Include="..\..\Snapshots\Duplicati.Library.Snapshots.csproj" />
   </ItemGroup>
 
   <ItemGroup>

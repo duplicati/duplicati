@@ -24,7 +24,7 @@ using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using Microsoft.Win32.SafeHandles;
 
-namespace Duplicati.Library.Snapshots
+namespace Duplicati.Library.Snapshots.USN
 {
     //The signatures in this file are from http://pinvoke.net
 

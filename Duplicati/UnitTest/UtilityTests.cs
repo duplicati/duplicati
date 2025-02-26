@@ -349,8 +349,7 @@ namespace Duplicati.UnitTest
             string[] duplicateItems = { "A", "c" };
 
             // Test with default comparer.
-            ISet<string> actualDuplicateItems;
-            ISet<string> actualUniqueItems = Utility.GetUniqueItems(collection, out actualDuplicateItems);
+            var actualUniqueItems = Utility.GetUniqueItems(collection, out var actualDuplicateItems);
 
             CollectionAssert.AreEquivalent(uniqueItems, actualUniqueItems);
             CollectionAssert.AreEquivalent(duplicateItems, actualDuplicateItems);

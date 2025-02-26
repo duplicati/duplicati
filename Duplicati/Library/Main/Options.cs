@@ -345,6 +345,7 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("upload-unchanged-backups", CommandLineArgument.ArgumentType.Boolean, Strings.Options.UploadUnchangedBackupsShort, Strings.Options.UploadUnchangedBackupsLong, "false"),
 
                     new CommandLineArgument("snapshot-policy", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.SnapshotpolicyShort, Strings.Options.SnapshotpolicyLong, "off", null, Enum.GetNames(typeof(OptimizationStrategy))),
+                    new CommandLineArgument("snapshot-provider", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.SnapshotproviderShort, Strings.Options.SnapshotproviderLong, OperatingSystem.IsWindows() ? Snapshots.SnapshotProvider.AlphaVSS.ToString() : Snapshots.SnapshotProvider.LVM.ToString(), null, (OperatingSystem.IsWindows() ? [Snapshots.SnapshotProvider.AlphaVSS, Snapshots.SnapshotProvider.Wmic] : new [] { Snapshots.SnapshotProvider.LVM }).Select(x => x.ToString()).ToArray()),
                     new CommandLineArgument("vss-exclude-writers", CommandLineArgument.ArgumentType.String, Strings.Options.VssexcludewritersShort, Strings.Options.VssexcludewritersLong, "{e8132975-6f93-4464-a53e-1050253ae220}"),
                     new CommandLineArgument("vss-use-mapping", CommandLineArgument.ArgumentType.Boolean, Strings.Options.VssusemappingShort, Strings.Options.VssusemappingLong, "false"),
                     new CommandLineArgument("usn-policy", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.UsnpolicyShort, Strings.Options.UsnpolicyLong, "off", null, Enum.GetNames(typeof(OptimizationStrategy))),
@@ -1026,6 +1027,24 @@ namespace Duplicati.Library.Main
         }
 
         /// <summary>
+        /// Gets the snapshot strategy to use
+        /// </summary>
+        public Snapshots.SnapshotProvider SnapShotProvider
+        {
+            get
+            {
+                if (!m_options.TryGetValue("snapshot-provider", out var provider))
+                    provider = "";
+
+                Snapshots.SnapshotProvider r;
+                if (!Enum.TryParse(provider, true, out r))
+                    r = OperatingSystem.IsWindows() ? Snapshots.SnapshotProvider.AlphaVSS : Snapshots.SnapshotProvider.LVM;
+
+                return r;
+            }
+        }
+
+        /// <summary>
         /// Gets a flag indicating if advisory locking should be ignored
         /// </summary>
         public bool IgnoreAdvisoryLocking => GetBool("ignore-advisory-locking");
@@ -1687,7 +1706,7 @@ namespace Duplicati.Library.Main
         }
 
         /// <summary>
-        /// Gets a flag indicating if compacting should not be done automatically
+        /// Gets a flag indicating if missing source elements should be ignored
         /// </summary>
         public bool AllowMissingSource
         {

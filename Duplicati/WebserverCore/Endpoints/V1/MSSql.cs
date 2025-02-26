@@ -21,6 +21,7 @@
 using System.Runtime.Versioning;
 using System.Security.Principal;
 using Duplicati.Library.Snapshots;
+using Duplicati.Library.Snapshots.Windows;
 using Duplicati.WebserverCore.Abstractions;
 using Duplicati.WebserverCore.Exceptions;
 using Microsoft.AspNetCore.Mvc;
@@ -56,7 +57,7 @@ public class MSSql : IEndpointV1
 
         try
         {
-            mssqlUtility.QueryDBsInfo();
+            mssqlUtility.QueryDBsInfo(SnapshotProvider.AlphaVSS);
 
             if (string.IsNullOrEmpty(key))
             {

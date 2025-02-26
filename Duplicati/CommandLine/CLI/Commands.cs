@@ -622,7 +622,7 @@ namespace Duplicati.CommandLine
                         switch (phase)
                         {
                             case Duplicati.Library.Main.OperationPhase.Backup_ProcessingFiles:
-                                output.MessageEvent("Scanning local files ...");
+                                output.MessageEvent("Scanning source files ...");
                                 periodicOutput.SetReady();
                                 break;
                             case Duplicati.Library.Main.OperationPhase.Backup_Finalize:

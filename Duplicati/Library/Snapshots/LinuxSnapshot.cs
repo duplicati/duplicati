@@ -23,9 +23,11 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Runtime.Versioning;
 using System.Text;
 using Duplicati.Library.Common.IO;
+using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.Snapshots
 {
@@ -59,7 +61,9 @@ namespace Duplicati.Library.Snapshots
         /// Constructs a new snapshot module using LVM
         /// </summary>
         /// <param name="sources">The list of folders to create snapshots for</param>
-        public LinuxSnapshot(IEnumerable<string> sources)
+        /// <param name="followSymlinks">A flag indicating if symlinks should be followed</param>
+        public LinuxSnapshot(IEnumerable<string> sources, bool followSymlinks)
+            : base(followSymlinks)
         {
             try
             {
@@ -79,7 +83,7 @@ namespace Duplicati.Library.Snapshots
                     m_entries.Add(new KeyValuePair<string, SnapShot>(path, snap));
                 }
 
-                m_snapShots = new List<SnapShot>(snaps.Values);
+                m_snapShots = [.. snaps.Values];
 
                 // We have all the snapshots that we need, lets activate them
                 foreach (var snap in m_snapShots)
@@ -100,6 +104,26 @@ namespace Duplicati.Library.Snapshots
                 }
 
                 throw;
+            }
+        }
+
+        /// <summary>
+        /// Gets the source folders
+        /// </summary>
+        public override IEnumerable<string> SourceEntries => m_entries.Select(x => x.Key);
+
+        /// <summary>
+        /// Enumerates the root source files and folders
+        /// </summary>
+        /// <returns>The source files and folders</returns>
+        public override IEnumerable<ISourceProviderEntry> EnumerateFilesystemEntries()
+        {
+            foreach (var sourceEntry in SourceEntries)
+            {
+                if (DirectoryExists(sourceEntry) || sourceEntry.EndsWith(System.IO.Path.DirectorySeparatorChar))
+                    yield return new SnapshotSourceFileEntry(this, Util.AppendDirSeparator(sourceEntry), true, true);
+                else
+                    yield return new SnapshotSourceFileEntry(this, sourceEntry, false, true);
             }
         }
 
@@ -475,10 +499,9 @@ namespace Duplicati.Library.Snapshots
         /// <returns>The metadata for the given file or folder</returns>
         /// <param name="localPath">The file or folder to examine</param>
         /// <param name="isSymlink">A flag indicating if the target is a symlink</param>
-        /// <param name="followSymlink">A flag indicating if a symlink should be followed</param>
-        public override Dictionary<string, string> GetMetadata(string localPath, bool isSymlink, bool followSymlink)
+        public override Dictionary<string, string> GetMetadata(string localPath, bool isSymlink)
         {
-            return SystemIO.IO_OS.GetMetadata(ConvertToSnapshotPath(localPath), isSymlink, followSymlink);
+            return SystemIO.IO_OS.GetMetadata(ConvertToSnapshotPath(localPath), isSymlink, FollowSymlinks);
         }
 
         /// <summary>
@@ -536,9 +559,6 @@ namespace Duplicati.Library.Snapshots
         {
             return FindSnapshotByLocalPath(localPath).ConvertToSnapshotPath(localPath);
         }
-
-        /// <inheritdoc />
-        public override bool IsSnapshot => true;
 
         #endregion
     }

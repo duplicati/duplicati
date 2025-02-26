@@ -28,7 +28,7 @@ namespace Duplicati.Library.Backend
 {
     public interface IS3Client : IDisposable
     {
-        IEnumerable<IFileEntry> ListBucket(string bucketName, string prefix);
+        IAsyncEnumerable<IFileEntry> ListBucketAsync(string bucketName, string prefix, bool recursive, CancellationToken cancellationToken);
 
         Task AddBucketAsync(string bucketName, CancellationToken cancelToken);
 

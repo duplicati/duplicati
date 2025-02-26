@@ -20,11 +20,8 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System;
-using System.Threading.Tasks;
 using System.Collections.Generic;
-using CoCoL;
-using Duplicati.Library.Main.Operation.Common;
-using Duplicati.Library.Snapshots;
+using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.Main.Operation.Backup
 {
@@ -35,7 +32,7 @@ namespace Duplicati.Library.Main.Operation.Backup
     {
         private static readonly string METALOGTAG = Logging.Log.LogTagFromType(typeof(MetadataGenerator)) + ".Metadata";
 
-        public static Dictionary<string, string> GenerateMetadata(string path, System.IO.FileAttributes attributes, Options options, Snapshots.ISnapshotService snapshot)
+        public static Dictionary<string, string> GenerateMetadata(ISourceProviderEntry entry, System.IO.FileAttributes attributes, Options options)
         {
             try
             {
@@ -43,7 +40,7 @@ namespace Duplicati.Library.Main.Operation.Backup
 
                 if (!options.SkipMetadata)
                 {
-                    metadata = snapshot.GetMetadata(path, snapshot.IsSymlink(path, attributes), options.SymlinkPolicy == Options.SymlinkStrategy.Follow);
+                    metadata = entry.MinorMetadata;
                     if (metadata == null)
                         metadata = new Dictionary<string, string>();
 
@@ -54,11 +51,11 @@ namespace Duplicati.Library.Main.Operation.Backup
                     {
                         try
                         {
-                            metadata["CoreLastWritetime"] = snapshot.GetLastWriteTimeUtc(path).Ticks.ToString();
+                            metadata["CoreLastWritetime"] = entry.LastModificationUtc.Ticks.ToString();
                         }
                         catch (Exception ex)
                         {
-                            Logging.Log.WriteWarningMessage(METALOGTAG, "TimestampReadFailed", ex, "Failed to read timestamp on \"{0}\"", path);
+                            Logging.Log.WriteWarningMessage(METALOGTAG, "TimestampReadFailed", ex, "Failed to read timestamp on \"{0}\"", entry.Path);
                         }
                     }
 
@@ -66,11 +63,11 @@ namespace Duplicati.Library.Main.Operation.Backup
                     {
                         try
                         {
-                            metadata["CoreCreatetime"] = snapshot.GetCreationTimeUtc(path).Ticks.ToString();
+                            metadata["CoreCreatetime"] = entry.CreatedUtc.Ticks.ToString();
                         }
                         catch (Exception ex)
                         {
-                            Logging.Log.WriteWarningMessage(METALOGTAG, "TimestampReadFailed", ex, "Failed to read timestamp on \"{0}\"", path);
+                            Logging.Log.WriteWarningMessage(METALOGTAG, "TimestampReadFailed", ex, "Failed to read timestamp on \"{0}\"", entry.Path);
                         }
                     }
                 }
@@ -81,9 +78,9 @@ namespace Duplicati.Library.Main.Operation.Backup
 
                 return metadata;
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
-                Logging.Log.WriteWarningMessage(METALOGTAG, "MetadataProcessFailed", ex, "Failed to process metadata for \"{0}\", storing empty metadata", path);
+                Logging.Log.WriteWarningMessage(METALOGTAG, "MetadataProcessFailed", ex, "Failed to process metadata for \"{0}\", storing empty metadata", entry.Path);
                 return new Dictionary<string, string>();
             }
         }

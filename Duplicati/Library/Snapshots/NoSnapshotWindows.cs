@@ -24,6 +24,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Versioning;
 using Duplicati.Library.Common.IO;
+using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.Snapshots
 {
@@ -34,9 +35,20 @@ namespace Duplicati.Library.Snapshots
     public sealed class NoSnapshotWindows : SnapshotBase
     {
         /// <summary>
-        /// The system IO implementation for Windows
+        /// The list of folders to create snapshots of
         /// </summary>
-        private static readonly ISystemIO IO_WIN = SystemIO.IO_OS;
+        private readonly IEnumerable<string> m_sources;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="NoSnapshotWindows"/> class.
+        /// </summary>
+        /// <param name="sources">The list of entries to create snapshots of</param>
+        /// <param name="followSymlinks">A flag indicating if symlinks should be followed</param>
+        public NoSnapshotWindows(IEnumerable<string> sources, bool followSymlinks)
+            : base(followSymlinks)
+        {
+            m_sources = sources;
+        }
 
         /// <summary>
         /// Returns the symlink target if the entry is a symlink, and null otherwise
@@ -44,9 +56,7 @@ namespace Duplicati.Library.Snapshots
         /// <param name="localPath">The file or folder to examine</param>
         /// <returns>The symlink target</returns>
         public override string GetSymlinkTarget(string localPath)
-        {
-            return IO_WIN.GetSymlinkTarget(localPath);
-        }
+            => SystemIO.IO_OS.GetSymlinkTarget(localPath);
 
         /// <summary>
         /// Gets the attributes for the given file or folder
@@ -54,9 +64,7 @@ namespace Duplicati.Library.Snapshots
         /// <returns>The file attributes</returns>
         /// <param name="localPath">The file or folder to examine</param>
         public override System.IO.FileAttributes GetAttributes(string localPath)
-        {
-            return IO_WIN.GetFileAttributes(localPath);
-        }
+            => SystemIO.IO_OS.GetFileAttributes(localPath);
 
         /// <summary>
         /// Returns the size of a file
@@ -64,21 +72,29 @@ namespace Duplicati.Library.Snapshots
         /// <param name="localPath">The full path to the file in non-snapshot format</param>
         /// <returns>The length of the file</returns>
         public override long GetFileSize(string localPath)
-        {
-            return IO_WIN.FileLength(localPath);
-        }
+            => SystemIO.IO_OS.FileLength(localPath);
 
         /// <summary>
-        /// Enumerates all files and folders in the snapshot, restricted to sources
+        /// Gets the source folders
         /// </summary>
-        /// <param name="sources">Sources to enumerate</param>
-        /// <param name="callback">The callback to invoke with each found path</param>
-        /// <param name="errorCallback">The callback used to report errors</param>
-        public override IEnumerable<string> EnumerateFilesAndFolders(IEnumerable<string> sources, Utility.Utility.EnumerationFilterDelegate callback, Utility.Utility.ReportAccessError errorCallback)
+        public override IEnumerable<string> SourceEntries
+            => m_sources;
+
+        /// <summary>
+        /// Enumerates the root source files and folders
+        /// </summary>
+        /// <returns>The source files and folders</returns>
+        public override IEnumerable<ISourceProviderEntry> EnumerateFilesystemEntries()
         {
-            // For Windows, ensure we don't store paths with extended device path prefixes (i.e., @"\\?\" or @"\\?\UNC\")
-            return base.EnumerateFilesAndFolders(sources.Select(SystemIOWindows.RemoveExtendedDevicePathPrefix), callback, errorCallback);
+            foreach (var folder in m_sources.Select(SystemIOWindows.RemoveExtendedDevicePathPrefix))
+            {
+                if (DirectoryExists(folder) || folder.EndsWith(System.IO.Path.DirectorySeparatorChar))
+                    yield return new SnapshotSourceFileEntry(this, Util.AppendDirSeparator(folder), true, true);
+                else
+                    yield return new SnapshotSourceFileEntry(this, folder, false, true);
+            }
         }
+
 
         /// <summary>
         /// Gets the last write time of a given file in UTC
@@ -86,9 +102,7 @@ namespace Duplicati.Library.Snapshots
         /// <param name="localPath">The full path to the file in non-snapshot format</param>
         /// <returns>The last write time of the file</returns>
         public override DateTime GetLastWriteTimeUtc(string localPath)
-        {
-            return IO_WIN.FileGetLastWriteTimeUtc(localPath);
-        }
+            => SystemIO.IO_OS.FileGetLastWriteTimeUtc(localPath);
 
         /// <summary>
         /// Gets the last write time of a given file in UTC
@@ -96,9 +110,7 @@ namespace Duplicati.Library.Snapshots
         /// <param name="localPath">The full path to the file in non-snapshot format</param>
         /// <returns>The last write time of the file</returns>
         public override DateTime GetCreationTimeUtc(string localPath)
-        {
-            return IO_WIN.FileGetCreationTimeUtc(localPath);
-        }
+            => SystemIO.IO_OS.FileGetCreationTimeUtc(localPath);
 
         /// <summary>
         /// Opens a file for reading
@@ -106,9 +118,7 @@ namespace Duplicati.Library.Snapshots
         /// <param name="localPath">The full path to the file in non-snapshot format</param>
         /// <returns>An open filestream that can be read</returns>
         public override System.IO.Stream OpenRead(string localPath)
-        {
-            return IO_WIN.FileOpenRead(localPath);
-        }
+            => SystemIO.IO_OS.FileOpenRead(localPath);
 
         /// <summary>
         /// Lists all files in the given folder
@@ -117,7 +127,7 @@ namespace Duplicati.Library.Snapshots
         /// <param name='localFolderPath'>The folder to examinate</param>
         protected override string[] ListFiles(string localFolderPath)
         {
-            string[] tmp = IO_WIN.GetFiles(localFolderPath);
+            string[] tmp = SystemIO.IO_OS.GetFiles(localFolderPath);
             string[] res = new string[tmp.Length];
             for (int i = 0; i < tmp.Length; i++)
                 res[i] = SystemIOWindows.RemoveExtendedDevicePathPrefix(tmp[i]);
@@ -133,7 +143,7 @@ namespace Duplicati.Library.Snapshots
         /// <param name='localFolderPath'>The folder to examinate</param>
         protected override string[] ListFolders(string localFolderPath)
         {
-            string[] tmp = IO_WIN.GetDirectories(SystemIOWindows.AddExtendedDevicePathPrefix(localFolderPath));
+            string[] tmp = SystemIO.IO_OS.GetDirectories(SystemIOWindows.AddExtendedDevicePathPrefix(localFolderPath));
             string[] res = new string[tmp.Length];
             for (int i = 0; i < tmp.Length; i++)
                 res[i] = SystemIOWindows.RemoveExtendedDevicePathPrefix(tmp[i]);
@@ -147,11 +157,8 @@ namespace Duplicati.Library.Snapshots
         /// <returns>The metadata for the given file or folder</returns>
         /// <param name="localPath">The file or folder to examine</param>
         /// <param name="isSymlink">A flag indicating if the target is a symlink</param>
-        /// <param name="followSymlink">A flag indicating if a symlink should be followed</param>
-        public override Dictionary<string, string> GetMetadata(string localPath, bool isSymlink, bool followSymlink)
-        {
-            return IO_WIN.GetMetadata(localPath, isSymlink, followSymlink);
-        }
+        public override Dictionary<string, string> GetMetadata(string localPath, bool isSymlink)
+            => SystemIO.IO_OS.GetMetadata(localPath, isSymlink, FollowSymlinks);
 
         /// <inheritdoc />
         public override string ConvertToLocalPath(string snapshotPath)
@@ -160,11 +167,9 @@ namespace Duplicati.Library.Snapshots
         }
 
         /// <inheritdoc />
-        public override string ConvertToSnapshotPath(string localPath)
-        {
+        public override string ConvertToSnapshotPath(string localPath) =>
             // For Windows, ensure we don't store paths with extended device path prefixes (i.e., @"\\?\" or @"\\?\UNC\")
-            return SystemIOWindows.RemoveExtendedDevicePathPrefix(localPath);
-        }
+            SystemIOWindows.RemoveExtendedDevicePathPrefix(localPath);
     }
 }
 

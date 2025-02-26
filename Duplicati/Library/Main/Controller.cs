@@ -948,6 +948,19 @@ namespace Duplicati.Library.Main
                     string source;
                     try
                     {
+                        // Check if this is a mounted path
+                        if (expandedSource.StartsWith("@"))
+                        {
+                            // TODO: If the remote source fails to load,
+                            // this will be an enumeration warning, but will result
+                            // in the backup being recorded without files from the source
+                            // Eventually, this could lead to retention deletion,
+                            // causing the last backup with the data from the source to be deleted
+                            foundAnyPaths = true;
+                            sources.Add(expandedSource);
+                            continue;
+                        }
+
                         // TODO: This expands "C:" to CWD, but not C:\
                         source = System.IO.Path.GetFullPath(expandedSource);
                     }
@@ -999,7 +1012,7 @@ namespace Duplicati.Library.Main
 
             //Sanity check for duplicate files/folders
             ISet<string> pathDuplicates;
-            sources = Library.Utility.Utility.GetUniqueItems(sources, Library.Utility.Utility.ClientFilenameStringComparer, out pathDuplicates).OrderBy(a => a).ToList();
+            sources = Library.Utility.Utility.GetUniqueItems(sources, Library.Utility.Utility.ClientFilenameStringComparer, out pathDuplicates).ToList();
 
             foreach (var pathDuplicate in pathDuplicates)
                 Logging.Log.WriteVerboseMessage(LOGTAG, "RemoveDuplicateSource", "Removing duplicate source: {0}", pathDuplicate);

@@ -26,7 +26,7 @@ using System.Management;
 using System.Runtime.Versioning;
 using Duplicati.Library.Common.IO;
 
-namespace Duplicati.Library.Snapshots
+namespace Duplicati.Library.Snapshots.Windows
 {
     public class HyperVGuest : IEquatable<HyperVGuest>
     {
@@ -160,8 +160,9 @@ namespace Duplicati.Library.Snapshots
         /// Query Hyper-V for all Virtual Machines info
         /// </summary>
         /// <param name="bIncludePaths">Specify if returned data should contain VM paths</param>
+        /// <param name="provider">The provider to use for VSS</param>
         /// <returns>List of Hyper-V Machines</returns>
-        public void QueryHyperVGuestsInfo(bool bIncludePaths = false)
+        public void QueryHyperVGuestsInfo(SnapshotProvider provider, bool bIncludePaths = false)
         {
             if (!IsHyperVInstalled)
                 return;
@@ -178,7 +179,7 @@ namespace Duplicati.Library.Snapshots
                     if (bIncludePaths)
                     {
 
-                        foreach (var o in GetAllVMsPathsVSS())
+                        foreach (var o in GetAllVMsPathsVSS(provider))
                         {
                             foreach (var mObject in moCollection)
                             {
@@ -218,9 +219,9 @@ namespace Duplicati.Library.Snapshots
         /// For all Hyper-V guests it enumerate all associated paths using VSS data
         /// </summary>
         /// <returns>A collection of VMs and paths</returns>
-        private static IEnumerable<WriterMetaData> GetAllVMsPathsVSS()
+        private static IEnumerable<WriterMetaData> GetAllVMsPathsVSS(SnapshotProvider provider)
         {
-            using (var vssBackupComponents = new VssBackupComponents())
+            using (var vssBackupComponents = new SnapshotManager(provider))
             {
                 var writerGUIDS = new[] { HyperVWriterGuid };
 

@@ -21,11 +21,12 @@
 
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
-using Duplicati.Library.Utility;
+using Duplicati.Library.SourceProvider;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -33,7 +34,7 @@ using System.Threading.Tasks;
 
 namespace Duplicati.Library.Backend
 {
-    public class S3 : IBackend, IStreamingBackend, IRenameEnabledBackend
+    public class S3 : IBackend, IStreamingBackend, IRenameEnabledBackend, IFolderEnabledBackend
     {
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<S3>();
 
@@ -43,6 +44,8 @@ namespace Duplicati.Library.Backend
         private const string SSL_OPTION = "use-ssl";
         private const string S3_CLIENT_OPTION = "s3-client";
         private const string S3_DISABLE_CHUNK_ENCODING_OPTION = "s3-disable-chunk-encoding";
+        private const string S3_LIST_API_VERSION_OPTION = "s3-list-api-version";
+        private const string S3_RECURSIVE_LIST = "s3-recursive-list";
 
         public static readonly Dictionary<string, string> KNOWN_S3_PROVIDERS = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) {
             { "Amazon S3", "s3.amazonaws.com" },
@@ -175,6 +178,7 @@ namespace Duplicati.Library.Backend
 
         private readonly string m_bucket;
         private readonly string m_prefix;
+        private readonly bool m_recurseLists;
 
         private const string DEFAULT_S3_HOST = "s3.amazonaws.com";
         private IS3Client s3Client;
@@ -227,6 +231,8 @@ namespace Duplicati.Library.Backend
             if (m_prefix.Length != 0)
                 m_prefix = Util.AppendDirSeparator(m_prefix, "/");
 
+            m_recurseLists = Utility.Utility.ParseBoolOption(options, S3_RECURSIVE_LIST);
+
             // Auto-disable DNS lookup for non-AWS configurations
             if (!options.ContainsKey("s3-ext-forcepathstyle") && !hostname.EndsWith(".amazonaws.com", StringComparison.OrdinalIgnoreCase))
                 options["s3-ext-forcepathstyle"] = "true";
@@ -271,19 +277,13 @@ namespace Duplicati.Library.Backend
             get { return true; }
         }
 
-
         public IEnumerable<IFileEntry> List()
+            => ListAsync(CancellationToken.None).ToBlockingEnumerable();
+
+        public async IAsyncEnumerable<IFileEntry> ListAsync([EnumeratorCancellation] CancellationToken cancelToken)
         {
-            foreach (IFileEntry file in Connection.ListBucket(m_bucket, m_prefix))
-            {
-                ((FileEntry)file).Name = file.Name.Substring(m_prefix.Length);
-
-                //Fix for a bug in Duplicati 1.0 beta 3 and earlier, where filenames are incorrectly prefixed with a slash
-                if (file.Name.StartsWith("/", StringComparison.Ordinal) && !m_prefix.StartsWith("/", StringComparison.Ordinal))
-                    ((FileEntry)file).Name = file.Name.Substring(1);
-
+            await foreach (IFileEntry file in Connection.ListBucketAsync(m_bucket, m_prefix, m_recurseLists, cancelToken))
                 yield return file;
-            }
         }
 
         public async Task PutAsync(string remotename, string localname, CancellationToken cancelToken)
@@ -336,6 +336,8 @@ namespace Duplicati.Library.Backend
                     new CommandLineArgument(SSL_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.S3Backend.DescriptionUseSSLShort, Strings.S3Backend.DescriptionUseSSLLong),
                     new CommandLineArgument(S3_CLIENT_OPTION, CommandLineArgument.ArgumentType.Enumeration, Strings.S3Backend.S3ClientDescriptionShort, Strings.S3Backend.S3ClientDescriptionLong, "aws", null, new string[] { "aws", "minio" }),
                     new CommandLineArgument(S3_DISABLE_CHUNK_ENCODING_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.S3Backend.DescriptionDisableChunkEncodingShort, Strings.S3Backend.DescriptionDisableChunkEncodingLong, "false"),
+                    new CommandLineArgument(S3_LIST_API_VERSION_OPTION, CommandLineArgument.ArgumentType.Enumeration, Strings.S3Backend.DescriptionListApiVersionShort, Strings.S3Backend.DescriptionListApiVersionLong, "v1", null, ["v1", "v2"]),
+                    new CommandLineArgument(S3_RECURSIVE_LIST, CommandLineArgument.ArgumentType.Boolean, Strings.S3Backend.DescriptionRecursiveListShort, Strings.S3Backend.DescriptionRecursiveListLong, "false"),
                     new CommandLineArgument("auth-password", CommandLineArgument.ArgumentType.Password, Strings.S3Backend.AuthPasswordDescriptionShort, Strings.S3Backend.AuthPasswordDescriptionLong),
                     new CommandLineArgument("auth-username", CommandLineArgument.ArgumentType.String, Strings.S3Backend.AuthUsernameDescriptionShort, Strings.S3Backend.AuthUsernameDescriptionLong),
                 };
@@ -398,5 +400,19 @@ namespace Duplicati.Library.Backend
             //AWS SDK encodes the filenames correctly
             return m_prefix + name;
         }
+
+        /// <inheritdoc/>
+        public IAsyncEnumerable<IFileEntry> ListAsync(string path, CancellationToken cancellationToken)
+        {
+            var filterPath = GetFullKey(path);
+            if (!string.IsNullOrWhiteSpace(filterPath))
+                filterPath = Util.AppendDirSeparator(filterPath, "/");
+
+            return s3Client.ListBucketAsync(m_bucket, filterPath, m_recurseLists, cancellationToken);
+        }
+
+        /// <inheritdoc/>
+        public Task<IFileEntry> GetEntryAsync(string path, CancellationToken cancellationToken)
+            => Task.FromResult<IFileEntry>(null);
     }
 }

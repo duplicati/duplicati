@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>    
+    <Description>Central reference to all source providers</Description>
+	<RootNamespace>Duplicati.Library.Backend</RootNamespace>
+    <Copyright>Copyright © 2024 Team Duplicati, MIT license</Copyright>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+	<ProjectReference Include="..\Interface\Duplicati.Library.Interface.csproj" />
+  </ItemGroup>
+</Project>
