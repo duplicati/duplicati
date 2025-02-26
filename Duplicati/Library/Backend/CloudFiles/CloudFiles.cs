@@ -21,11 +21,11 @@
 
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
-using Duplicati.Library.Utility;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
@@ -133,10 +133,10 @@ namespace Duplicati.Library.Backend
             get { return "cloudfiles"; }
         }
 
-        public IEnumerable<IFileEntry> List()
+        public async IAsyncEnumerable<IFileEntry> ListAsync([EnumeratorCancellation] CancellationToken cancelToken)
         {
-            string extraUrl = "?format=xml&limit=" + ITEM_LIST_LIMIT.ToString();
-            string markerUrl = "";
+            var extraUrl = "?format=xml&limit=" + ITEM_LIST_LIMIT.ToString();
+            var markerUrl = "";
 
             bool repeat;
 
@@ -169,14 +169,14 @@ namespace Duplicati.Library.Backend
                 //The response should be 404 from the server, but it is not :(
                 if (lst.Count == 0 && markerUrl == "") //Only on first iteration
                 {
-                    try { CreateFolderAsync(CancellationToken.None).Await(); }
+                    try { await CreateFolderAsync(cancelToken).ConfigureAwait(false); }
                     catch { } //Ignore
                 }
 
-                string lastItemName = "";
+                var lastItemName = "";
                 foreach (System.Xml.XmlNode n in lst)
                 {
-                    string name = n["name"].InnerText;
+                    var name = n["name"].InnerText;
                     long size;
                     DateTime mod;
 
@@ -264,12 +264,9 @@ namespace Duplicati.Library.Backend
 
         #region IBackend_v2 Members
 
-        public Task TestAsync(CancellationToken cancelToken)
-        {
+        public Task TestAsync(CancellationToken cancelToken) =>
             //The "Folder not found" is not detectable :(
-            this.TestList();
-            return Task.CompletedTask;
-        }
+            this.TestListAsync(cancelToken);
 
         public Task CreateFolderAsync(CancellationToken cancelToken)
         {

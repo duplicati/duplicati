@@ -28,6 +28,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -473,8 +474,11 @@ namespace Duplicati.Library.Backend
             await testContextForWebAsync(ctx, true, cancelToken).ConfigureAwait(false);
         }
 
-        public IEnumerable<IFileEntry> List() { return doListAsync(false, CancellationToken.None).Await(); }
-        private async Task<IEnumerable<IFileEntry>> doListAsync(bool useNewContext, CancellationToken cancelToken)
+        /// <inheritdoc />
+        public IAsyncEnumerable<IFileEntry> ListAsync(CancellationToken cancelToken)
+            => doListAsync(false, cancelToken);
+
+        private async IAsyncEnumerable<IFileEntry> doListAsync(bool useNewContext, [EnumeratorCancellation] CancellationToken cancelToken)
         {
             var ctx = await getSpClientContextAsync(useNewContext, cancelToken).ConfigureAwait(false);
             SP.Folder remoteFolder = null;
@@ -502,15 +506,19 @@ namespace Duplicati.Library.Backend
             if (retry)
             {
                 // An exception was caught, and List() should be retried.
-                return await doListAsync(true, cancelToken).ConfigureAwait(false);
+                await foreach (var f in doListAsync(true, cancelToken).ConfigureAwait(false))
+                    yield return f;
             }
             else
             {
-                return remoteFolder.Folders.Where(ff => ff.Exists)
+
+                var list = remoteFolder.Folders.Where(ff => ff.Exists)
                     .Select(f => new FileEntry(f.Name, -1, f.TimeLastModified, f.TimeLastModified) { IsFolder = true })
                     .Concat(remoteFolder.Files.Where(ff => ff.Exists)
-                        .Select(f => new FileEntry(f.Name, f.Length, f.TimeLastModified, f.TimeLastModified) { IsFolder = false }))
-                    .ToArray();
+                        .Select(f => new FileEntry(f.Name, f.Length, f.TimeLastModified, f.TimeLastModified) { IsFolder = false }));
+
+                foreach (var f in list)
+                    yield return f;
             }
         }
 

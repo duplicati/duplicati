@@ -26,6 +26,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Net;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -161,19 +162,22 @@ namespace Duplicati.Library.Backend.Sia
             public SiaDownloadFile[] Files { get; set; }
         }
 
-        private SiaFileList GetFiles()
+        private async Task<SiaFileList> GetFiles(CancellationToken cancelToken)
         {
+            // Remove warning until this is rewritten to use HttpClient
+            await Task.CompletedTask;
+
             var fl = new SiaFileList();
-            string endpoint = "/renter/files";
+            var endpoint = "/renter/files";
 
             try
             {
-                System.Net.HttpWebRequest req = CreateRequest(endpoint);
+                var req = CreateRequest(endpoint);
                 req.Method = System.Net.WebRequestMethods.Http.Get;
 
-                Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
+                var areq = new Utility.AsyncHttpRequest(req);
 
-                using (System.Net.HttpWebResponse resp = (System.Net.HttpWebResponse)areq.GetResponse())
+                using (var resp = (System.Net.HttpWebResponse)areq.GetResponse())
                 {
                     int code = (int)resp.StatusCode;
                     if (code < 200 || code >= 300)
@@ -196,9 +200,9 @@ namespace Duplicati.Library.Backend.Sia
             return fl;
         }
 
-        private bool IsUploadComplete(string siafilename)
+        private async Task<bool> IsUploadComplete(string siafilename, CancellationToken cancelToken)
         {
-            SiaFileList fl = GetFiles();
+            var fl = await GetFiles(cancelToken).ConfigureAwait(false);
             if (fl.Files == null)
                 return false;
 
@@ -286,10 +290,7 @@ namespace Duplicati.Library.Backend.Sia
         #region IBackend Members
 
         public Task TestAsync(CancellationToken cancelToken)
-        {
-            this.TestList();
-            return Task.CompletedTask;
-        }
+            => this.TestListAsync(cancelToken);
 
         public Task CreateFolderAsync(CancellationToken cancelToken)
         {
@@ -307,12 +308,13 @@ namespace Duplicati.Library.Backend.Sia
             get { return "sia"; }
         }
 
-        public IEnumerable<IFileEntry> List()
+        /// <inheritdoc />
+        public async IAsyncEnumerable<IFileEntry> ListAsync([EnumeratorCancellation] CancellationToken cancelToken)
         {
             SiaFileList fl;
             try
             {
-                fl = GetFiles();
+                fl = await GetFiles(cancelToken).ConfigureAwait(false);
             }
             catch (System.Net.WebException wex)
             {
@@ -338,10 +340,10 @@ namespace Duplicati.Library.Backend.Sia
             }
         }
 
-        public Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
+        public async Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
         {
-            string endpoint = "";
-            string siafile = m_targetpath + "/" + remotename;
+            var endpoint = "";
+            var siafile = m_targetpath + "/" + remotename;
 
             try
             {
@@ -351,29 +353,25 @@ namespace Duplicati.Library.Backend.Sia
                     Utility.Uri.UrlEncode(filename).Replace("+", "%20")
                 );
 
-                HttpWebRequest req = CreateRequest(endpoint);
+                var req = CreateRequest(endpoint);
                 req.Method = WebRequestMethods.Http.Post;
 
-                AsyncHttpRequest areq = new AsyncHttpRequest(req);
+                var areq = new AsyncHttpRequest(req);
 
-                using (HttpWebResponse resp = (HttpWebResponse)areq.GetResponse())
+                using (var resp = (HttpWebResponse)areq.GetResponse())
                 {
                     int code = (int)resp.StatusCode;
                     if (code < 200 || code >= 300)
                         throw new WebException(resp.StatusDescription, null, WebExceptionStatus.ProtocolError, resp);
 
-                    while (!IsUploadComplete(siafile))
-                    {
-                        Thread.Sleep(5000);
-                    }
+                    while (!await IsUploadComplete(siafile, cancelToken).ConfigureAwait(false))
+                        await Task.Delay(5000, cancelToken).ConfigureAwait(false);
                 }
             }
             catch (WebException wex)
             {
                 throw new Exception(getResponseBodyOnError(endpoint, wex));
             }
-
-            return Task.FromResult(true);
         }
 
         public async Task GetAsync(string remotename, string localname, CancellationToken cancelToken)

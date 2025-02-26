@@ -25,6 +25,7 @@ using Duplicati.Library.Localization.Short;
 using System;
 using System.Collections.Generic;
 using System.Net;
+using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
@@ -182,8 +183,12 @@ namespace Duplicati.Library.Backend
             get { return "jottacloud"; }
         }
 
-        public IEnumerable<IFileEntry> List()
+        /// <inheritdoc />
+        public async IAsyncEnumerable<IFileEntry> ListAsync([EnumeratorCancellation] CancellationToken cancelToken)
         {
+            // Remove warning until this backend is rewritten with HttpClient
+            await Task.CompletedTask;
+
             var doc = new System.Xml.XmlDocument();
             try
             {
@@ -330,10 +335,7 @@ namespace Duplicati.Library.Backend
         }
 
         public Task TestAsync(CancellationToken cancelToken)
-        {
-            this.TestList();
-            return Task.CompletedTask;
-        }
+            => this.TestListAsync(cancelToken);
 
         public Task CreateFolderAsync(CancellationToken cancelToken)
         {

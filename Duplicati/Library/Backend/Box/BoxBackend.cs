@@ -21,12 +21,12 @@
 
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
-using Duplicati.Library.Utility;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -133,7 +133,7 @@ namespace Duplicati.Library.Backend.Box
 
             foreach (var p in m_path.Split(new string[] { "/" }, StringSplitOptions.RemoveEmptyEntries))
             {
-                var el = (MiniFolder)PagedFileListResponse(parentid, true).FirstOrDefault(x => x.Name == p);
+                var el = (MiniFolder)await PagedFileListResponse(parentid, true, cancelToken).FirstOrDefaultAsync(x => x.Name == p).ConfigureAwait(false);
                 if (el == null)
                 {
                     if (!create)
@@ -159,7 +159,7 @@ namespace Duplicati.Library.Backend.Box
 
             // Make sure we enumerate this, otherwise the m_filecache is empty.
             var currentFolder = await GetCurrentFolderWithCacheAsync(cancelToken).ConfigureAwait(false);
-            PagedFileListResponse(currentFolder, false).LastOrDefault();
+            await PagedFileListResponse(currentFolder, false, cancelToken).LastOrDefaultAsync().ConfigureAwait(false);
 
             if (m_filecache.ContainsKey(name))
                 return m_filecache[name];
@@ -167,7 +167,7 @@ namespace Duplicati.Library.Backend.Box
             throw new FileMissingException();
         }
 
-        private IEnumerable<FileEntity> PagedFileListResponse(string parentid, bool onlyfolders)
+        private async IAsyncEnumerable<FileEntity> PagedFileListResponse(string parentid, bool onlyfolders, [EnumeratorCancellation] CancellationToken cancelToken)
         {
             var offset = 0;
             var done = false;
@@ -177,7 +177,7 @@ namespace Duplicati.Library.Backend.Box
 
             do
             {
-                var resp = m_oauth.GetJSONData<ShortListResponse>(string.Format("{0}/folders/{1}/items?limit={2}&offset={3}&fields=name,size,modified_at", BOX_API_URL, parentid, PAGE_SIZE, offset));
+                var resp = await m_oauth.GetJSONDataAsync<ShortListResponse>($"{BOX_API_URL}/folders/{parentid}/items?limit={PAGE_SIZE}&offset={offset}&fields=name,size,modified_at", cancelToken).ConfigureAwait(false);
 
                 if (resp.Entries == null || resp.Entries.Length == 0)
                     break;
@@ -221,7 +221,7 @@ namespace Duplicati.Library.Backend.Box
             };
 
             if (m_filecache.Count == 0)
-                PagedFileListResponse(currentFolder, false);
+                await PagedFileListResponse(currentFolder, false, cancelToken).LastOrDefaultAsync().ConfigureAwait(false);
 
             var existing = m_filecache.ContainsKey(remotename);
 
@@ -262,12 +262,11 @@ namespace Duplicati.Library.Backend.Box
 
         #region IBackend implementation
 
-        public System.Collections.Generic.IEnumerable<IFileEntry> List()
+        public async IAsyncEnumerable<IFileEntry> ListAsync([EnumeratorCancellation] CancellationToken cancelToken)
         {
-            var currentFolder = GetCurrentFolderWithCacheAsync(CancellationToken.None).Await();
-            return
-                from n in PagedFileListResponse(currentFolder, false)
-                select (IFileEntry)new FileEntry(n.Name, n.Size, n.ModifiedAt, n.ModifiedAt) { IsFolder = n.Type == "folder" };
+            var currentFolder = await GetCurrentFolderWithCacheAsync(cancelToken).ConfigureAwait(false);
+            await foreach (var n in PagedFileListResponse(currentFolder, false, cancelToken).ConfigureAwait(false))
+                yield return new FileEntry(n.Name, n.Size, n.ModifiedAt, n.ModifiedAt) { IsFolder = n.Type == "folder" };
         }
 
         public async Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
@@ -304,10 +303,7 @@ namespace Duplicati.Library.Backend.Box
         }
 
         public Task TestAsync(CancellationToken cancelToken)
-        {
-            this.TestList();
-            return Task.CompletedTask;
-        }
+            => this.TestListAsync(cancelToken);
 
         public Task CreateFolderAsync(CancellationToken cancellationToken)
         {

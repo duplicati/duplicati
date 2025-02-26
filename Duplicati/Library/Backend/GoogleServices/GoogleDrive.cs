@@ -29,6 +29,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -78,8 +79,7 @@ namespace Duplicati.Library.Backend.GoogleDrive
 
             foreach (var p in path.Split(new char[] { '/' }, StringSplitOptions.RemoveEmptyEntries))
             {
-                var res = ListFolder(curparent, true, p).ToArray();
-
+                var res = await ListFolder(curparent, true, p, cancelToken).ToArrayAsync(cancelToken).ConfigureAwait(false);
                 if (res.Length == 0)
                 {
                     if (!autocreate)
@@ -119,7 +119,7 @@ namespace Duplicati.Library.Backend.GoogleDrive
                 return entries;
 
             var currentFolderId = await GetCurrentFolderIdAsync(cancelToken).ConfigureAwait(false);
-            entries = ListFolder(currentFolderId, false, remotename).ToArray();
+            entries = await ListFolder(currentFolderId, false, remotename, cancelToken).ToArrayAsync(cancelToken).ConfigureAwait(false);
 
             if (entries == null || entries.Length == 0)
             {
@@ -145,7 +145,7 @@ namespace Duplicati.Library.Backend.GoogleDrive
             {
                 // Figure out if we update or create the file
                 if (m_filecache.Count == 0)
-                    foreach (var file in List()) { /* Enumerate the full listing */ }
+                    await foreach (var file in ListAsync(cancelToken).ConfigureAwait(false)) { /* Enumerate the full listing */ }
 
                 GoogleDriveFolderItem[] files;
                 m_filecache.TryGetValue(remotename, out files);
@@ -188,7 +188,7 @@ namespace Duplicati.Library.Backend.GoogleDrive
         {
             // Prevent repeated download url lookups
             if (m_filecache.Count == 0)
-                foreach (var file in List()) { /* Enumerate the full listing */ }
+                await foreach (var file in ListAsync(cancelToken).ConfigureAwait(false)) { /* Enumerate the full listing */ }
 
             var fileId = (await GetFileEntriesAsync(remotename, true, cancelToken).ConfigureAwait(false)).OrderByDescending(x => x.createdDate).First().id;
 
@@ -203,7 +203,9 @@ namespace Duplicati.Library.Backend.GoogleDrive
 
         #region IBackend implementation
 
-        public IEnumerable<IFileEntry> List()
+        /// <inheritdoc />
+        public async IAsyncEnumerable<IFileEntry> ListAsync([EnumeratorCancellation] CancellationToken cancelToken)
+
         {
             bool success = false;
             try
@@ -211,8 +213,8 @@ namespace Duplicati.Library.Backend.GoogleDrive
                 m_filecache.Clear();
 
                 // For now, this class assumes that List() fully populates the file cache
-                var currentFolderId = GetCurrentFolderIdAsync(CancellationToken.None).Await();
-                foreach (var n in ListFolder(currentFolderId))
+                var currentFolderId = await GetCurrentFolderIdAsync(cancelToken).ConfigureAwait(false);
+                await foreach (var n in ListFolder(currentFolderId, null, null, cancelToken).ConfigureAwait(false))
                 {
                     FileEntry fe = null;
 
@@ -294,10 +296,7 @@ namespace Duplicati.Library.Backend.GoogleDrive
         }
 
         public Task TestAsync(CancellationToken cancelToken)
-        {
-            this.TestList();
-            return Task.CompletedTask;
-        }
+            => this.TestListAsync(cancelToken);
 
         public async Task CreateFolderAsync(CancellationToken cancelToken)
         {
@@ -432,7 +431,7 @@ namespace Duplicati.Library.Backend.GoogleDrive
             public string rootFolderId { get; set; }
         }
 
-        private IEnumerable<GoogleDriveFolderItem> ListFolder(string parentfolder, bool? onlyFolders = null, string name = null)
+        private async IAsyncEnumerable<GoogleDriveFolderItem> ListFolder(string parentfolder, bool? onlyFolders, string name, [EnumeratorCancellation] CancellationToken cancelToken)
         {
             var fileQuery = new string[] {
                 string.IsNullOrEmpty(name) ? null : string.Format("title = '{0}'", EscapeTitleEntries(name)),
@@ -446,7 +445,7 @@ namespace Duplicati.Library.Backend.GoogleDrive
 
             while (true)
             {
-                var res = m_oauth.GetJSONData<GoogleDriveListResponse>(url);
+                var res = await m_oauth.GetJSONDataAsync<GoogleDriveListResponse>(url, cancelToken).ConfigureAwait(false);
                 foreach (var n in res.items)
                     yield return n;
 

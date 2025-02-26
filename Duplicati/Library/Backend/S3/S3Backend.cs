@@ -21,11 +21,11 @@
 
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
-using Duplicati.Library.Utility;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -272,9 +272,10 @@ namespace Duplicati.Library.Backend
         }
 
 
-        public IEnumerable<IFileEntry> List()
+        /// <inheritdoc />
+        public async IAsyncEnumerable<IFileEntry> ListAsync([EnumeratorCancellation] CancellationToken cancelToken)
         {
-            foreach (IFileEntry file in Connection.ListBucket(m_bucket, m_prefix))
+            await foreach (IFileEntry file in Connection.ListBucketAsync(m_bucket, m_prefix, cancelToken).ConfigureAwait(false))
             {
                 ((FileEntry)file).Name = file.Name.Substring(m_prefix.Length);
 
@@ -354,10 +355,7 @@ namespace Duplicati.Library.Backend
         }
 
         public Task TestAsync(CancellationToken cancelToken)
-        {
-            this.TestList();
-            return Task.CompletedTask;
-        }
+            => this.TestListAsync(cancelToken);
 
         public Task CreateFolderAsync(CancellationToken cancelToken)
         {

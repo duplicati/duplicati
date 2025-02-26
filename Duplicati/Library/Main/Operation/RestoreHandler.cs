@@ -496,7 +496,7 @@ namespace Duplicati.Library.Main.Operation
                 var brokenFiles = new List<string>();
 
                 using (new Logging.Timer(LOGTAG, "PatchWithBlocklist", "PatchWithBlocklist"))
-                    await foreach (var (tmpfile, _, _, name) in backendManager.GetFilesOverlappedAsync(volumes, cancellationToken))
+                    await foreach (var (tmpfile, _, _, name) in backendManager.GetFilesOverlappedAsync(volumes, cancellationToken).ConfigureAwait(false))
                     {
                         try
                         {

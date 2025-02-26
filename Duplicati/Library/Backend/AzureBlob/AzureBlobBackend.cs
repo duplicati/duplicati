@@ -92,10 +92,8 @@ namespace Duplicati.Library.Backend.AzureBlob
             get { return "azure"; }
         }
 
-        public IEnumerable<IFileEntry> List()
-        {
-            return _azureBlob.ListContainerEntries();
-        }
+        public IAsyncEnumerable<IFileEntry> ListAsync(CancellationToken cancelToken)
+            => _azureBlob.ListContainerEntriesAsync(cancelToken);
 
         public async Task PutAsync(string remotename, string localname, CancellationToken cancelToken)
         {
@@ -172,9 +170,7 @@ namespace Duplicati.Library.Backend.AzureBlob
         public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(_azureBlob.DnsNames);
 
         public Task TestAsync(CancellationToken cancellationToken)
-        {
-            return WrapWithExceptionHandler(Task.Run(() => this.TestList()));
-        }
+            => this.TestListAsync(cancellationToken);
 
         public Task CreateFolderAsync(CancellationToken cancellationToken)
         {

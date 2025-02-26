@@ -424,7 +424,7 @@ namespace Duplicati.Library.Main.Operation
                                     }
 
                                     //Then we grab all remote volumes that have the missing blocks
-                                    await foreach (var (tmpfile, _, _, name) in backendManager.GetFilesOverlappedAsync(mbl.GetMissingBlockSources().ToList(), cancellationToken))
+                                    await foreach (var (tmpfile, _, _, name) in backendManager.GetFilesOverlappedAsync(mbl.GetMissingBlockSources().ToList(), cancellationToken).ConfigureAwait(false))
                                     {
                                         try
                                         {

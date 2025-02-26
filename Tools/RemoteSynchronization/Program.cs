@@ -204,7 +204,7 @@ destination will be verified before being overwritten (if they seemingly match).
             var b2s = b2 as IStreamingBackend ?? throw throw_message("destination");
 
             // Prepare the operations
-            var (to_copy, to_delete, to_verify) = PrepareFileLists(b1s, b2s, config);
+            var (to_copy, to_delete, to_verify) = await PrepareFileLists(b1s, b2s, config, CancellationToken.None);
 
             // Verify the files if requested. If the files are not verified, they will be deleted and copied again.
             long verified = 0, failed_verify = 0;
@@ -521,15 +521,15 @@ destination will be verified before being overwritten (if they seemingly match).
         /// <param name="b_dst">The destination backend.</param>
         /// <param name="config">The parsed configuration for the tool.</param>
         /// <returns>A tuple of Lists each holding the files to copy, delete and verify.</returns>
-        private static (IEnumerable<IFileEntry>, IEnumerable<IFileEntry>, IEnumerable<IFileEntry>) PrepareFileLists(IStreamingBackend b_src, IStreamingBackend b_dst, Config config)
+        private static async Task<(IEnumerable<IFileEntry>, IEnumerable<IFileEntry>, IEnumerable<IFileEntry>)> PrepareFileLists(IStreamingBackend b_src, IStreamingBackend b_dst, Config config, CancellationToken cancelToken)
         {
             IEnumerable<IFileEntry> files_src, files_dst;
 
             using (new Duplicati.Library.Logging.Timer(LOGTAG, "rsync", "Prepare | List source"))
-                files_src = b_src.List();
+                files_src = await b_src.ListAsync(cancelToken).ToListAsync(cancelToken).ConfigureAwait(false);
 
             using (new Duplicati.Library.Logging.Timer(LOGTAG, "rsync", "Prepare | List destination"))
-                files_dst = b_dst.List();
+                files_dst = await b_dst.ListAsync(cancelToken).ToListAsync(cancelToken).ConfigureAwait(false);
 
             // Shortcut for force
             if (config.Force)

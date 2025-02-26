@@ -29,11 +29,12 @@ using System.Globalization;
 using System.Threading;
 using Duplicati.Library.Utility;
 using Duplicati.StreamUtil;
+using System.Threading.Tasks;
 
 namespace Duplicati.CommandLine.BackendTester
 {
     public class Program
-    { 
+    {
         class TempFile
         {
             public readonly string remotefilename;
@@ -173,7 +174,7 @@ namespace Duplicati.CommandLine.BackendTester
                 try
                 {
                     backend.TestAsync(CancellationToken.None).Await();
-                    curlist = backend.List();
+                    curlist = backend.ListAsync(CancellationToken.None).ToBlockingEnumerable().ToList();
                 }
                 catch (FolderMissingException)
                 {
@@ -182,7 +183,7 @@ namespace Duplicati.CommandLine.BackendTester
                         try
                         {
                             backend.CreateFolderAsync(CancellationToken.None).Await();
-                            curlist = backend.List();
+                            curlist = backend.ListAsync(CancellationToken.None).ToBlockingEnumerable().ToList();
                         }
                         catch (Exception ex)
                         {
@@ -250,20 +251,20 @@ namespace Duplicati.CommandLine.BackendTester
                     throttleDownload = Duplicati.Library.Utility.Sizeparser.ParseSize(throttleDownloadString, "kb");
                 }
 
-                int readWriteTimeout = backend is ITimeoutExemptBackend || 
-                                       (Environment.GetEnvironmentVariable("READ_WRITE_TIMEOUT_SECONDS") is { } timeout 
-                                        && int.TryParse(timeout, out var seconds) 
+                int readWriteTimeout = backend is ITimeoutExemptBackend ||
+                                       (Environment.GetEnvironmentVariable("READ_WRITE_TIMEOUT_SECONDS") is { } timeout
+                                        && int.TryParse(timeout, out var seconds)
                                         && seconds == -1)
                     ? Timeout.Infinite
-                    : Environment.GetEnvironmentVariable("READ_WRITE_TIMEOUT_SECONDS") is { } timeoutRetry 
+                    : Environment.GetEnvironmentVariable("READ_WRITE_TIMEOUT_SECONDS") is { } timeoutRetry
                       && int.TryParse(timeoutRetry, out var secondsRetry)
                         ? (int)TimeSpan.FromSeconds(secondsRetry).TotalMilliseconds
                         : (int)TimeSpan.FromSeconds(60).TotalMilliseconds;
 
-                Console.WriteLine(LogTimeStamp + "Read Write Timeout set to {0}{1}", 
+                Console.WriteLine(LogTimeStamp + "Read Write Timeout set to {0}{1}",
                     readWriteTimeout == Timeout.Infinite ? "infinite" : readWriteTimeout + " ms",
                     backend is ITimeoutExemptBackend ? " (because implements ITimeoutExemptBackend)" : "");
-                
+
                 // Allow overriding the timeout for the backend here, even if timeouts are disabled
                 if (options.TryGetValue("read-write-timeout", out var readWriteTimeoutString))
                     readWriteTimeout = (int)Timeparser.ParseTimeSpan(readWriteTimeoutString).TotalMilliseconds;
@@ -353,7 +354,7 @@ namespace Duplicati.CommandLine.BackendTester
 
                     Console.WriteLine(LogTimeStamp + "Verifying file list ...");
 
-                    curlist = backend.List();
+                    curlist = backend.ListAsync(CancellationToken.None).ToBlockingEnumerable().ToList();
                     foreach (var fe in curlist)
                         if (!fe.IsFolder)
                         {
@@ -460,7 +461,7 @@ namespace Duplicati.CommandLine.BackendTester
                         Thread.Sleep(waitAfterDelete);
                     }
 
-                    curlist = backend.List();
+                    curlist = backend.ListAsync(CancellationToken.None).ToBlockingEnumerable().ToList();
                     foreach (var fe in curlist)
                         if (!fe.IsFolder)
                         {

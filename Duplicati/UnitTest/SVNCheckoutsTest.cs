@@ -27,6 +27,7 @@ using Duplicati.Library.Logging;
 using Duplicati.Library.Utility;
 using System.Linq;
 using Duplicati.Library.Common.IO;
+using System.Threading.Tasks;
 
 namespace Duplicati.UnitTest
 {
@@ -173,7 +174,7 @@ namespace Duplicati.UnitTest
                             try
                             {
                                 using (var bk = Duplicati.Library.DynamicLoader.BackendLoader.GetBackend(target, options))
-                                    foreach (var f in bk.List())
+                                    foreach (var f in bk.ListAsync(System.Threading.CancellationToken.None).ToBlockingEnumerable())
                                         if (!f.IsFolder)
                                             Utility.Await(bk.DeleteAsync(f.Name, System.Threading.CancellationToken.None));
                             }
@@ -215,7 +216,7 @@ namespace Duplicati.UnitTest
 
                     Duplicati.Library.Main.Options opts = new Duplicati.Library.Main.Options(options);
                     using (Duplicati.Library.Interface.IBackend bk = Duplicati.Library.DynamicLoader.BackendLoader.GetBackend(target, options))
-                        foreach (Duplicati.Library.Interface.IFileEntry fe in bk.List())
+                        foreach (Duplicati.Library.Interface.IFileEntry fe in bk.ListAsync(System.Threading.CancellationToken.None).ToBlockingEnumerable())
                             if (fe.Size > opts.VolumeSize)
                             {
                                 string msg = string.Format("The file {0} is {1} bytes larger than allowed", fe.Name, fe.Size - opts.VolumeSize);

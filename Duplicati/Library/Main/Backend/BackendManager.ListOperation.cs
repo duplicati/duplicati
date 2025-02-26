@@ -33,11 +33,12 @@ partial class BackendManager
         /// <param name="backend">The backend to list</param>
         /// <param name="cancelToken">The cancellation token</param>
         /// <returns>An awaitable task</returns>
-        public override Task<List<IFileEntry>> ExecuteAsync(IBackend backend, CancellationToken cancelToken)
+        public override async Task<List<IFileEntry>> ExecuteAsync(IBackend backend, CancellationToken cancelToken)
         {
             Context.Statwriter.SendEvent(BackendActionType.List, BackendEventType.Started, null, -1);
 
-            var r = backend.List().ToList();
+            // TODO: Consider returning IAsyncEnumerable instead of List
+            var r = await backend.ListAsync(cancelToken).ToListAsync(cancelToken).ConfigureAwait(false);
 
             // TODO: Investigate better way to solve this so we do not use memory for large lists
             var sb = new StringBuilder();
@@ -57,7 +58,7 @@ partial class BackendManager
 
             Context.Statwriter.SendEvent(BackendActionType.List, BackendEventType.Completed, null, r.Count);
 
-            return Task.FromResult(r);
+            return r;
         }
     }
 }

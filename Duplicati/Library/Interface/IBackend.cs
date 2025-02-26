@@ -51,8 +51,9 @@ namespace Duplicati.Library.Interface
         /// <summary>
         /// Enumerates a list of files found on the remote location
         /// </summary>
+        /// <param name="cancellationToken">Token to cancel the operation.</param>
         /// <returns>The list of files</returns>
-        IEnumerable<IFileEntry> List();
+        IAsyncEnumerable<IFileEntry> ListAsync(CancellationToken cancellationToken);
 
         /// <summary>
         /// Puts the content of the file to the url passed
