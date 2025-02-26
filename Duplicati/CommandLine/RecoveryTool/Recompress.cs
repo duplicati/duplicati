@@ -29,7 +29,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
-using System.Security.Cryptography;
+using System.Threading.Tasks;
 
 namespace Duplicati.CommandLine.RecoveryTool
 {
@@ -71,7 +71,7 @@ namespace Duplicati.CommandLine.RecoveryTool
 
                 Console.WriteLine("Listing files on backend: {0} ...", backend.ProtocolKey);
 
-                var rawlist = backend.List().ToList();
+                var rawlist = backend.ListAsync(CancellationToken.None).ToBlockingEnumerable().ToList();
 
                 Console.WriteLine("Found {0} files at remote storage", rawlist.Count);
 

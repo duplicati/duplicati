@@ -28,11 +28,11 @@ using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Library.Backend.CIFS;
 using Duplicati.Library.Backend.CIFS.Model;
-using Duplicati.Library.Utility;
 using SMBLibrary;
 using Duplicati.Library.SourceProvider;
 using System.Runtime.CompilerServices;
 using Duplicati.Library.Common.IO;
+using System.Runtime.CompilerServices;
 
 namespace Duplicati.Library.Backend;
 
@@ -199,16 +199,11 @@ public class CIFSBackend : IStreamingBackend, IFolderEnabledBackend
     /// Implementation of interface method for listing remote folder contents
     /// </summary>
     /// <returns>List of IFileEntry with directory listing result</returns>
-    private async Task<IEnumerable<IFileEntry>> ListAsync(CancellationToken cancellationToken)
+    public async IAsyncEnumerable<IFileEntry> ListAsync([EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        return await GetConnection().ListAsync(_connectionParameters.Path, cancellationToken).ConfigureAwait(false);
+        foreach (var v in await GetConnection().ListAsync(_connectionParameters.Path, cancellationToken).ConfigureAwait(false))
+            yield return v;
     }
-
-    /// <summary>
-    /// Wrapper method of legacy non async call to list files in the remote folder
-    /// </summary>
-    /// <returns></returns>
-    public IEnumerable<IFileEntry> List() => ListAsync(CancellationToken.None).Await();
 
     /// <summary>
     /// Upload files to remote location

@@ -87,7 +87,7 @@ Error message: {0}", error); }
                 public static string WindowsEventLogSourceNotFound(string source) { return LC.L(@"The Windows event log source {0} was not found. Attempting to create.", source); }
                 public static string WindowsEventLogSourceNotCreated(string source) { return LC.L(@"The Windows Event Log was not created for: {0}, not logging to eventlog.", source); }
                 public static string WindowsEventLogNotSupported { get { return LC.L(@"The Windows event log is not supported on this platform"); } }
-                public static string ServerStarted(int port) { return LC.L(@"Server has started and is listening on port {0}", port); }
+                public static string ServerStarted(string @interface, int port) { return LC.L(@"Server has started and is listening on {0}, port {1}", @interface, port); }
                 public static string ServerStartedSignin(string url) { return LC.L(@"Use the following link to sign in: {0}", url); }
                 public static string ServerCrashed(string message) { return LC.L(@"The server crashed: {0}", message); }
                 public static string ServerStopping { get { return LC.L(@"Server is stopping, tearing down handlers"); } }

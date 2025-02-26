@@ -21,7 +21,7 @@
 
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Library.Common.IO;
@@ -118,53 +118,12 @@ namespace Duplicati.Library.Backend.AzureBlob
             return _container.GetBlockBlobReference(keyName).DeleteIfExistsAsync(default, default, default, _operationContext, cancelToken);
         }
 
-        private async Task<List<IListBlobItem>> ListContainerEntriesAsync()
+        private async IAsyncEnumerable<IListBlobItem> ListContainerBlobEntriesAsync([EnumeratorCancellation] CancellationToken cancelToken)
         {
-            var segment = await _container.ListBlobsSegmentedAsync(null, false, ListDetails, null, null, null, _operationContext);
-            var list = new List<IListBlobItem>();
-
-            list.AddRange(segment.Results);
-
-            while (segment.ContinuationToken != null)
-            {
-                segment = await _container.ListBlobsSegmentedAsync(null, false, ListDetails, null, segment.ContinuationToken, null, _operationContext);
-                list.AddRange(segment.Results);
-            }
-
-            return list;
-        }
-
-        public virtual List<IFileEntry> ListContainerEntries()
-        {
-            var listBlobItems = ListContainerEntriesAsync().GetAwaiter().GetResult();
+            BlobResultSegment segment;
             try
             {
-                return listBlobItems.Select(x =>
-                {
-                    var absolutePath = x.StorageUri.PrimaryUri.AbsolutePath;
-                    var containerSegment = string.Concat("/", _containerName, "/");
-                    var blobName = absolutePath.Substring(absolutePath.IndexOf(
-                        containerSegment, System.StringComparison.Ordinal) + containerSegment.Length);
-
-                    try
-                    {
-                        if (x is CloudBlockBlob cb)
-                        {
-                            var lastModified = new System.DateTime();
-                            if (cb.Properties.LastModified != null)
-                                lastModified = new System.DateTime(cb.Properties.LastModified.Value.Ticks, System.DateTimeKind.Utc);
-                            return new FileEntry(Uri.UrlDecode(blobName.Replace("+", "%2B")), cb.Properties.Length, lastModified, lastModified);
-                        }
-                    }
-                    catch
-                    {
-                        // If the metadata fails to parse, return the basic entry
-                    }
-
-                    return new FileEntry(Uri.UrlDecode(blobName.Replace("+", "%2B")));
-                })
-                .Cast<IFileEntry>()
-                .ToList();
+                segment = await _container.ListBlobsSegmentedAsync(null, false, ListDetails, null, null, null, _operationContext, cancelToken).ConfigureAwait(false);
             }
             catch (StorageException ex)
             {
@@ -173,6 +132,46 @@ namespace Duplicati.Library.Backend.AzureBlob
                     throw new FolderMissingException(ex);
                 }
                 throw;
+            }
+
+            foreach (var item in segment.Results)
+                yield return item;
+
+            while (segment.ContinuationToken != null)
+            {
+                segment = await _container.ListBlobsSegmentedAsync(null, false, ListDetails, null, segment.ContinuationToken, null, _operationContext, cancelToken).ConfigureAwait(false);
+
+                foreach (var item in segment.Results)
+                    yield return item;
+            }
+        }
+
+        public virtual async IAsyncEnumerable<IFileEntry> ListContainerEntriesAsync([EnumeratorCancellation] CancellationToken cancelToken)
+        {
+            await foreach (var x in ListContainerBlobEntriesAsync(cancelToken).ConfigureAwait(false))
+            {
+                var absolutePath = x.StorageUri.PrimaryUri.AbsolutePath;
+                var containerSegment = string.Concat("/", _containerName, "/");
+                var blobName = absolutePath.Substring(absolutePath.IndexOf(
+                    containerSegment, System.StringComparison.Ordinal) + containerSegment.Length);
+
+                var res = new FileEntry(Uri.UrlDecode(blobName.Replace("+", "%2B")));
+                try
+                {
+                    if (x is CloudBlockBlob cb)
+                    {
+                        var lastModified = new System.DateTime();
+                        if (cb.Properties.LastModified != null)
+                            lastModified = new System.DateTime(cb.Properties.LastModified.Value.Ticks, System.DateTimeKind.Utc);
+                        res = new FileEntry(res.Name, cb.Properties.Length, lastModified, lastModified);
+                    }
+                }
+                catch
+                {
+                    // If the metadata fails to parse, return the basic entry
+                }
+
+                yield return res;
             }
         }
     }

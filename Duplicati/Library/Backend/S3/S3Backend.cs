@@ -21,7 +21,6 @@
 
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
-using Duplicati.Library.SourceProvider;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -69,7 +68,9 @@ namespace Duplicati.Library.Backend
             { "Infomaniak Swiss Backup cluster 1", "s3.swiss-backup.infomaniak.com" },
             { "Infomaniak Swiss Backup cluster 2", "s3.swiss-backup02.infomaniak.com" },
             { "Infomaniak Swiss Backup cluster 3", "s3.swiss-backup03.infomaniak.com" },
+            { "Infomaniak Swiss Backup cluster 4", "s3.swiss-backup04.infomaniak.com" },
             { "Infomaniak Public Cloud 1", "s3.pub1.infomaniak.cloud" },
+            { "Infomaniak Public Cloud 2", "s3.pub2.infomaniak.cloud" },
             { "さくらのクラウド (Sakura Cloud)", "s3.isk01.sakurastorage.jp" },
             { "Seagate Lyve - US-East-1", "https://s3.us-east-1.lyvecloud.seagate.com" },
             { "Seagate Lyve - US-West-1", "https://s3.us-west-1.lyvecloud.seagate.com" },
@@ -275,14 +276,8 @@ namespace Duplicati.Library.Backend
             get { return true; }
         }
 
-        public IEnumerable<IFileEntry> List()
-            => ListAsync(CancellationToken.None).ToBlockingEnumerable();
-
-        public async IAsyncEnumerable<IFileEntry> ListAsync([EnumeratorCancellation] CancellationToken cancelToken)
-        {
-            await foreach (IFileEntry file in Connection.ListBucketAsync(m_bucket, m_prefix, m_recurseLists, cancelToken))
-                yield return file;
-        }
+        public IAsyncEnumerable<IFileEntry> ListAsync(CancellationToken cancelToken)
+            => Connection.ListBucketAsync(m_bucket, m_prefix, m_recurseLists, cancelToken);
 
         public async Task PutAsync(string remotename, string localname, CancellationToken cancelToken)
         {
@@ -354,10 +349,7 @@ namespace Duplicati.Library.Backend
         }
 
         public Task TestAsync(CancellationToken cancelToken)
-        {
-            this.TestList();
-            return Task.CompletedTask;
-        }
+            => this.TestListAsync(cancelToken);
 
         public Task CreateFolderAsync(CancellationToken cancelToken)
         {

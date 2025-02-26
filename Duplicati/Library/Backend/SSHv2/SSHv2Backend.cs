@@ -29,6 +29,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -57,7 +58,7 @@ namespace Duplicati.Library.Backend
         private readonly TimeSpan m_keepaliveinterval;
 
         private readonly int m_port = 22;
-        private readonly bool m_relativePath;
+        private readonly bool m_useRelativePath;
         private string m_initialDirectory;
 
         private SftpClient m_con;
@@ -85,7 +86,7 @@ namespace Duplicati.Library.Backend
                 m_password = uri.Password;
 
             m_fingerprintallowall = Utility.Utility.ParseBoolOption(options, SSH_FINGERPRINT_ACCEPT_ANY_OPTION);
-            m_relativePath = Utility.Utility.ParseBoolOption(options, SSH_RELATIVE_PATH_OPTION);
+            m_useRelativePath = Utility.Utility.ParseBoolOption(options, SSH_RELATIVE_PATH_OPTION);
 
             m_path = uri.Path;
 
@@ -94,7 +95,7 @@ namespace Duplicati.Library.Backend
                 m_path = Util.AppendDirSeparator(m_path, "/");
             }
 
-            if (m_relativePath)
+            if (m_useRelativePath)
             {
                 m_path = m_path.TrimStart('/');
             }
@@ -124,22 +125,19 @@ namespace Duplicati.Library.Backend
         #region IBackend Members
 
         public Task TestAsync(CancellationToken cancelToken)
-        {
-            this.TestList();
-            return Task.CompletedTask;
-        }
+            => this.TestListAsync(cancelToken);
 
-        public Task CreateFolderAsync(CancellationToken cancelToken)
+        public async Task CreateFolderAsync(CancellationToken cancelToken)
         {
-            CreateConnection();
+            await CreateConnection(cancelToken).ConfigureAwait(false);
 
             // Since the SftpClient.CreateDirectory method does not create all the parent directories
             // as needed, this has to be done manually.
-            string partialPath = String.Empty;
+            var partialPath = string.Empty;
             foreach (string part in m_path.Split('/').Where(x => !String.IsNullOrEmpty(x)))
             {
                 partialPath += $"/{part}";
-                if (this.m_con.Exists(partialPath))
+                if (await this.m_con.ExistsAsync(partialPath, cancelToken))
                 {
                     if (!this.m_con.GetAttributes(partialPath).IsDirectory)
                     {
@@ -148,11 +146,10 @@ namespace Duplicati.Library.Backend
                 }
                 else
                 {
-                    this.m_con.CreateDirectory(partialPath);
+                    await this.m_con.CreateDirectoryAsync(partialPath, cancelToken).ConfigureAwait(false);
                 }
             }
 
-            return Task.CompletedTask;
         }
 
         public string DisplayName => Strings.SSHv2Backend.DisplayName;
@@ -177,8 +174,8 @@ namespace Duplicati.Library.Backend
         {
             try
             {
-                CreateConnection();
-                SetWorkingDirectory();
+                await CreateConnection(cancelToken).ConfigureAwait(false);
+                await SetWorkingDirectory(cancelToken).ConfigureAwait(false);
                 await m_con.DeleteFileAsync(remotename, cancelToken).ConfigureAwait(false);
             }
             catch (SftpPathNotFoundException ex)
@@ -254,11 +251,11 @@ namespace Duplicati.Library.Backend
 
         #region IStreamingBackend Implementation
 
-        public Task PutAsync(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
+        public async Task PutAsync(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
         {
-            CreateConnection();
-            SetWorkingDirectory();
-            return Task.Factory.FromAsync(
+            await CreateConnection(cancelToken).ConfigureAwait(false);
+            await SetWorkingDirectory(cancelToken).ConfigureAwait(false);
+            await Task.Factory.FromAsync(
                 (cb, state) => m_con.BeginUploadFile(stream, remotename, cb, state, _ => cancelToken.ThrowIfCancellationRequested()),
                 m_con.EndUploadFile,
                 null);
@@ -266,8 +263,8 @@ namespace Duplicati.Library.Backend
 
         public async Task GetAsync(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
         {
-            CreateConnection();
-            SetWorkingDirectory();
+            await CreateConnection(cancelToken).ConfigureAwait(false);
+            await SetWorkingDirectory(cancelToken).ConfigureAwait(false);
 
             try
             {
@@ -286,25 +283,25 @@ namespace Duplicati.Library.Backend
 
         #region IRenameEnabledBackend Implementation
 
-        public Task RenameAsync(string source, string target, CancellationToken cancelToken)
+        public async Task RenameAsync(string source, string target, CancellationToken cancelToken)
         {
-            CreateConnection();
-            SetWorkingDirectory();
-            return m_con.RenameFileAsync(source, target, cancelToken);
+            await CreateConnection(cancelToken).ConfigureAwait(false);
+            await SetWorkingDirectory(cancelToken).ConfigureAwait(false);
+            await m_con.RenameFileAsync(source, target, cancelToken).ConfigureAwait(false);
         }
 
         #endregion
 
         #region Implementation
 
-        private void CreateConnection()
+        private async Task CreateConnection(CancellationToken cancelToken)
         {
             if (m_con != null && m_con.IsConnected)
                 return;
 
             if (m_con != null && !m_con.IsConnected)
             {
-                this.TryConnect(m_con);
+                await this.TryConnect(m_con, cancelToken).ConfigureAwait(false);
                 return;
             }
 
@@ -359,25 +356,23 @@ namespace Duplicati.Library.Backend
             if (m_keepaliveinterval.Ticks != 0)
                 con.KeepAliveInterval = m_keepaliveinterval;
 
-            this.TryConnect(con);
-            if (m_relativePath && (string.IsNullOrWhiteSpace(con.WorkingDirectory) || !con.WorkingDirectory.StartsWith("/")))
+            await this.TryConnect(con, cancelToken).ConfigureAwait(false);
+            if (m_useRelativePath && (string.IsNullOrWhiteSpace(con.WorkingDirectory) || !con.WorkingDirectory.StartsWith("/")))
                 throw new UserInformationException("Server does not report absolute initial directory, please switch to absolute paths", "RelativePathNotSupported");
             m_initialDirectory = con.WorkingDirectory;
 
             m_con = con;
         }
 
-        private void TryConnect(SftpClient client)
-        {
-            client.Connect();
-        }
+        private Task TryConnect(SftpClient client, CancellationToken cancelToken)
+            => client.ConnectAsync(cancelToken);
 
-        private void SetWorkingDirectory()
+        private async Task SetWorkingDirectory(CancellationToken cancelToken)
         {
             if (string.IsNullOrEmpty(m_path))
                 return;
 
-            var targetPath = m_relativePath
+            var targetPath = m_useRelativePath
                 ? Util.AppendDirSeparator(m_initialDirectory, "/") + m_path
                 : m_path;
 
@@ -387,7 +382,7 @@ namespace Duplicati.Library.Backend
 
             try
             {
-                m_con.ChangeDirectory(targetPath);
+                await m_con.ChangeDirectoryAsync(targetPath, cancelToken).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -396,14 +391,15 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public IEnumerable<IFileEntry> List()
+        /// <inheritdoc />
+        public async IAsyncEnumerable<IFileEntry> ListAsync([EnumeratorCancellation] CancellationToken cancelToken)
         {
-            string path = ".";
+            var path = ".";
 
-            CreateConnection();
-            SetWorkingDirectory();
+            await CreateConnection(cancelToken).ConfigureAwait(false);
+            await SetWorkingDirectory(cancelToken).ConfigureAwait(false);
 
-            foreach (var ls in m_con.ListDirectory(path))
+            await foreach (var ls in m_con.ListDirectoryAsync(path, cancelToken).ConfigureAwait(false))
             {
                 if (ls.Name.ToString() == "." || ls.Name.ToString() == "..") continue;
                 yield return new FileEntry(ls.Name, ls.Length,
@@ -453,12 +449,12 @@ namespace Duplicati.Library.Backend
         public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(new[] { m_server });
 
         /// <inheritdoc/>
-        public IAsyncEnumerable<IFileEntry> ListAsync(string path, CancellationToken cancellationToken)
+        public async IAsyncEnumerable<IFileEntry> ListAsync(string path, [EnumeratorCancellation] CancellationToken cancellationToken)
         {
-            CreateConnection();
-            SetWorkingDirectory();
+            await CreateConnection(cancellationToken).ConfigureAwait(false);
+            await SetWorkingDirectory(cancellationToken).ConfigureAwait(false);
 
-            var prefixPath = m_relativePath ? "" : m_path;
+            var prefixPath = m_useRelativePath ? "" : m_path;
             if (!string.IsNullOrWhiteSpace(prefixPath))
                 prefixPath = Util.AppendDirSeparator(prefixPath, "/");
 
@@ -469,15 +465,15 @@ namespace Duplicati.Library.Backend
             if (string.IsNullOrWhiteSpace(filterPath))
                 filterPath = ".";
 
-            return Client.ListDirectoryAsync(filterPath, cancellationToken)
-                .Select(x => new FileEntry(
+            await foreach (var x in Client.ListDirectoryAsync(filterPath, cancellationToken).ConfigureAwait(false))
+                yield return new FileEntry(
                     x.Name,
                     x.Attributes.Size,
                     x.Attributes.LastAccessTimeUtc,
                     x.Attributes.LastWriteTimeUtc)
                 {
                     IsFolder = x.Attributes.IsDirectory
-                });
+                };
         }
 
         /// <inheritdoc/>

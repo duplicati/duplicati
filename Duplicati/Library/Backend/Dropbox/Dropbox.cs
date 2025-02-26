@@ -23,6 +23,7 @@ using Duplicati.Library.Interface;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -112,16 +113,31 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public IEnumerable<IFileEntry> List()
+        private async Task<T> HandleListExceptions<T>(Func<Task<T>> func)
         {
-            var lfr = HandleListExceptions(() => dbx.ListFiles(m_path));
+            try
+            {
+                return await func().ConfigureAwait(false);
+            }
+            catch (DropboxException de)
+            {
+                if (de.errorJSON["error"][".tag"].ToString() == "path" && de.errorJSON["error"]["path"][".tag"].ToString() == "not_found")
+                    throw new FolderMissingException();
+
+                throw;
+            }
+        }
+
+        public async IAsyncEnumerable<IFileEntry> ListAsync([EnumeratorCancellation] CancellationToken cancelToken)
+        {
+            var lfr = await HandleListExceptions(() => dbx.ListFiles(m_path, cancelToken)).ConfigureAwait(false);
 
             foreach (var md in lfr.entries)
                 yield return ParseEntry(md);
 
             while (lfr.has_more)
             {
-                lfr = HandleListExceptions(() => dbx.ListFilesContinue(lfr.cursor));
+                lfr = await HandleListExceptions(() => dbx.ListFilesContinue(lfr.cursor, cancelToken)).ConfigureAwait(false);
                 foreach (var md in lfr.entries)
                     yield return ParseEntry(md);
             }
@@ -168,10 +184,7 @@ namespace Duplicati.Library.Backend
         public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(WebApi.Dropbox.Hosts());
 
         public Task TestAsync(CancellationToken cancelToken)
-        {
-            this.TestList();
-            return Task.CompletedTask;
-        }
+            => this.TestListAsync(cancelToken);
 
         public async Task CreateFolderAsync(CancellationToken cancelToken)
         {

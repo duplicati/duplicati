@@ -21,7 +21,6 @@
 
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
-using Duplicati.Library.SourceProvider;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -125,10 +124,6 @@ namespace Duplicati.Library.Backend
 
         public bool SupportsStreaming => true;
 
-
-        public IEnumerable<IFileEntry> List()
-            => ListAsync(CancellationToken.None).ToBlockingEnumerable();
-
         public async IAsyncEnumerable<IFileEntry> ListAsync([EnumeratorCancellation] CancellationToken cancelToken)
         {
             await foreach (IFileEntry file in Connection.ListBucketAsync(m_bucket, m_prefix, false, cancelToken).ConfigureAwait(false))
@@ -186,10 +181,7 @@ namespace Duplicati.Library.Backend
         }
 
         public Task TestAsync(CancellationToken cancelToken)
-        {
-            this.TestList();
-            return Task.CompletedTask;
-        }
+            => this.TestListAsync(cancelToken);
 
         public Task CreateFolderAsync(CancellationToken cancelToken)
         {

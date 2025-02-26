@@ -1,27 +1,28 @@
 // Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
-// 
-// Permission is hereby granted, free of charge, to any person obtaining a 
-// copy of this software and associated documentation files (the "Software"), 
-// to deal in the Software without restriction, including without limitation 
-// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
-// and/or sell copies of the Software, and to permit persons to whom the 
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the "Software"),
+// to deal in the Software without restriction, including without limitation
+// the rights to use, copy, modify, merge, publish, distribute, sublicense,
+// and/or sell copies of the Software, and to permit persons to whom the
 // Software is furnished to do so, subject to the following conditions:
-// 
-// The above copyright notice and this permission notice shall be included in 
+//
+// The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
-// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
 using System;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using CoCoL;
 using Duplicati.Library.Main.Database;
@@ -43,9 +44,12 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// <summary>
         /// Runs the volume downloader process.
         /// </summary>
+        /// <param name="channels">The named channels for the restore operation.</param>
+        /// <param name="db">The local restore database, used to find volume information given the volume ID.</param>
+        /// <param name="backend">The backend to use for downloading the volumes.</param>
         /// <param name="options">The restore options.</param>
         /// <param name="results">The restore results.</param>
-        public static Task Run(Channels channels, LocalRestoreDatabase db, Options options, RestoreResults results)
+        public static Task Run(Channels channels, LocalRestoreDatabase db, IBackendManager backend, Options options, RestoreResults results)
         {
             return AutomationExtensions.RunTask(
             new
@@ -65,19 +69,19 @@ namespace Duplicati.Library.Main.Operation.Restore
                     {
                         // Get the block request from the `BlockManager` process.
                         sw_read?.Start();
-                        var (volume_id, waittask) = await self.Input.ReadAsync();
+                        var volume_id = await self.Input.ReadAsync().ConfigureAwait(false);
                         sw_read?.Stop();
 
                         // Trigger the download.
                         sw_wait?.Start();
-                        TempFile f = null;
+                        TempFile f;
+                        var (volume_name, size, hash) = db.GetVolumeInfo(volume_id).First();
                         try
                         {
-                            f = await waittask.ConfigureAwait(false);
+                            f = await backend.GetDirectAsync(volume_name, hash, size, CancellationToken.None).ConfigureAwait(false);
                         }
                         catch (Exception)
                         {
-                            var (volume_name, _, _) = db.GetVolumeInfo(volume_id).First();
                             lock (results)
                                 results.BrokenRemoteFiles.Add(volume_name);
 
@@ -87,7 +91,7 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                         // Pass the download handle (which may or may not have downloaded already) to the `VolumeDecryptor` process.
                         sw_write?.Start();
-                        await self.Output.WriteAsync((volume_id, f));
+                        await self.Output.WriteAsync((volume_id, volume_name, f)).ConfigureAwait(false);
                         sw_write?.Stop();
                     }
                 }

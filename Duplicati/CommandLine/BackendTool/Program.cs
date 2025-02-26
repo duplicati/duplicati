@@ -26,6 +26,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Duplicati.CommandLine.BackendTool
 {
@@ -124,7 +125,7 @@ namespace Duplicati.CommandLine.BackendTool
                             throw new UserInformationException(string.Format("too many arguments: {0}", string.Join(",", args)), "BackendToolTooManyArguments");
                         Console.WriteLine("{0}\t{1}\t{2}\t{3}", "Name", "Dir/File", "LastChange", "Size");
 
-                        foreach (var e in backend.List())
+                        foreach (var e in backend.ListAsync(CancellationToken.None).ToBlockingEnumerable())
                             Console.WriteLine("{0}\t{1}\t{2}\t{3}", e.Name, e.IsFolder ? "Dir" : "File", e.LastModification, e.Size < 0 ? "" : Library.Utility.Utility.FormatSizeString(e.Size));
 
                         return 0;

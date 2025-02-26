@@ -32,6 +32,7 @@ using System.Text;
 using Duplicati.Library.Common.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Runtime.CompilerServices;
 
 namespace Duplicati.Library.Backend.OpenStack
 {
@@ -75,7 +76,9 @@ namespace Duplicati.Library.Backend.OpenStack
             new KeyValuePair<string, string>("Infomaniak Swiss Backup cluster 1", "https://swiss-backup.infomaniak.com/identity/v3"),
             new KeyValuePair<string, string>("Infomaniak Swiss Backup cluster 2", "https://swiss-backup02.infomaniak.com/identity/v3"),
             new KeyValuePair<string, string>("Infomaniak Swiss Backup cluster 3", "https://swiss-backup03.infomaniak.com/identity/v3"),
+            new KeyValuePair<string, string>("Infomaniak Swiss Backup cluster 4", "https://swiss-backup04.infomaniak.com/identity/v3"),
             new KeyValuePair<string, string>("Infomaniak Public Cloud 1", "https://api.pub1.infomaniak.cloud/identity/v3"),
+            new KeyValuePair<string, string>("Infomaniak Public Cloud 2", "https://api.pub2.infomaniak.cloud/identity/v3"),
             new KeyValuePair<string, string>("Catalyst Cloud - nz-hlz-1 (NZ)", "https://api.nz-hlz-1.catalystcloud.io:5000/v3"),
             new KeyValuePair<string, string>("Catalyst Cloud - nz-por-1 (NZ)", "https://api.nz-por-1.catalystcloud.io:5000/v3"),
         };
@@ -528,11 +531,11 @@ namespace Duplicati.Library.Backend.OpenStack
         #endregion
         #region IBackend implementation
 
-        private T HandleListExceptions<T>(Func<T> func)
+        private async Task<T> HandleListExceptions<T>(Func<Task<T>> func)
         {
             try
             {
-                return func();
+                return await func().ConfigureAwait(false);
             }
             catch (WebException wex)
             {
@@ -543,7 +546,8 @@ namespace Duplicati.Library.Backend.OpenStack
             }
         }
 
-        public IEnumerable<IFileEntry> List()
+        /// <inheritdoc />
+        public async IAsyncEnumerable<IFileEntry> ListAsync([EnumeratorCancellation] CancellationToken cancelToken)
         {
             var plainurl = JoinUrls(SimpleStorageEndPoint, m_container) + string.Format("?format=json&delimiter=/&limit={0}", PAGE_LIMIT);
             if (!string.IsNullOrEmpty(m_prefix))
@@ -556,7 +560,7 @@ namespace Duplicati.Library.Backend.OpenStack
                 var req = m_helper.CreateRequest(url);
                 req.Accept = "application/json";
 
-                var items = HandleListExceptions(() => m_helper.ReadJSONResponse<OpenStackStorageItem[]>(req));
+                var items = await HandleListExceptions(() => m_helper.ReadJSONResponseAsync<OpenStackStorageItem[]>(req, cancelToken)).ConfigureAwait(false);
                 foreach (var n in items)
                 {
                     var name = n.name;
@@ -596,10 +600,8 @@ namespace Duplicati.Library.Backend.OpenStack
             return m_helper.ReadJSONResponseAsync<object>(url, cancelToken, null, "DELETE");
         }
         public Task TestAsync(CancellationToken cancelToken)
-        {
-            this.TestList();
-            return Task.CompletedTask;
-        }
+            => this.TestListAsync(cancelToken);
+
         public async Task CreateFolderAsync(CancellationToken cancelToken)
         {
             var url = JoinUrls(SimpleStorageEndPoint, m_container);
