@@ -52,6 +52,7 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// <summary>
         /// Runs the file processor process that restores the files that need to be restored.
         /// </summary>
+        /// <param name="channels">The named channels for the restore operation.</param>
         /// <param name="db">The restore database, which is queried for blocks, corresponding volumes and metadata for the files.</param>
         /// <param name="block_request">The channel to request blocks from the block manager.</param>
         /// <param name="block_response">The channel to receive blocks from the block manager.</param>
@@ -99,7 +100,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                         // Get information about the blocks for the file
                         // TODO rather than keeping all of the blocks in memory, we could do a single pass over the blocks using a cursor, only keeping the relevant block requests in memory. Maybe even only a single block request at a time.
                         sw_block?.Start();
-                        var blocks = db.GetBlocksFromFile(file.BlocksetID).ToArray();//.Select(x => new BlockRequest(x.BlockID, x.BlockOffset, x.BlockHash, x.BlockSize, x.VolumeID, false)).ToArray();
+                        var blocks = db.GetBlocksFromFile(file.BlocksetID).ToArray();
                         sw_block?.Stop();
 
                         sw_work_verify_target?.Start();
@@ -495,7 +496,7 @@ namespace Duplicati.Library.Main.Operation.Restore
         private static async Task<bool> RestoreMetadata(LocalRestoreDatabase db, FileRequest file, IChannel<BlockRequest> block_request, IChannel<byte[]> block_response, Options options, Stopwatch sw_meta, Stopwatch sw_work, Stopwatch sw_req, Stopwatch sw_resp)
         {
             sw_meta?.Start();
-            var blocks = db.GetMetadataBlocksFromFile(file.ID);//.Select(x => new BlockRequest(x.BlockID, x.BlockOffset, x.BlockHash, x.BlockSize, x.VolumeID, false)).ToArray();
+            var blocks = db.GetMetadataBlocksFromFile(file.ID);
             sw_meta?.Stop();
 
             using var ms = new MemoryStream();
@@ -534,6 +535,7 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// <param name="blocks">The metadata about the blocks that make up the file.</param>
         /// <param name="filehasher">A hasher for the file.</param>
         /// <param name="blockhasher">A hasher for a data block.</param>
+        /// <param name="buffer">A buffer to read and write data blocks.</param>
         /// <param name="options">The Duplicati configuration options.</param>
         /// <param name="results">The restoration results.</param>
         /// <returns>An awaitable `Task`, which returns a collection of data blocks that are missing.</returns>
@@ -634,6 +636,7 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// <param name="total_blocks">The total number of blocks for the file.</param>
         /// <param name="filehasher">A hasher for the file.</param>
         /// <param name="blockhasher">A hasher for the data block.</param>
+        /// <param name="buffer">A buffer to read and write data blocks.</param>
         /// <param name="options">The Duplicati configuration options.</param>
         /// <param name="results">The restoration results.</param>
         /// <param name="block_request">The channel to request blocks from the block manager. Used to inform the block manager which blocks are already present.</param>
