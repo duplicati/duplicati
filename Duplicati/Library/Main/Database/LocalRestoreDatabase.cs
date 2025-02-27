@@ -44,9 +44,7 @@ namespace Duplicati.Library.Main.Database
         /// </summary>
         protected string m_tempfiletable;
         protected string m_tempblocktable;
-        ConcurrentDictionary<long, List<BlockRequest>> block2cache = new();
-        ConcurrentDictionary<long, List<BlockRequest>> block2metacache = new();
-        ConcurrentBag<IDbConnection> connection_pool = new();
+        protected ConcurrentBag<IDbConnection> m_connection_pool = [];
         protected string m_latestblocktable;
         protected string m_fileprogtable;
         protected string m_totalprogtable;
@@ -90,10 +88,6 @@ namespace Duplicati.Library.Main.Database
 
             using (var cmd = m_connection.CreateCommand())
             {
-                //cmd.ExecuteNonQuery("PRAGMA temp_store = MEMORY");
-                //cmd.ExecuteNonQuery("PRAGMA journal_mode = WAL");
-                //cmd.ExecuteNonQuery("PRAGMA cache_size = -2000000");
-
                 // How to handle METADATA?
                 cmd.ExecuteNonQuery(string.Format(@"DROP TABLE IF EXISTS ""{0}"" ", m_fileprogtable));
                 cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" ("
@@ -353,58 +347,6 @@ namespace Duplicati.Library.Main.Database
             }
 
             return new Tuple<long, long>(0, 0);
-        }
-
-        public void BuildCaches()
-        {
-            using (var cmd = m_connection.CreateCommand())
-            {
-                var blocksetids = cmd.ExecuteReaderEnumerable(@"SELECT ""Blockset"".""ID"" FROM ""Blockset""").Select(r => r.ConvertValueToInt64(0)).ToList();
-                cmd.CommandText = @$"
-                        SELECT Block.ID, Block.Hash, Block.Size, Block.VolumeID
-                        FROM BlocksetEntry INNER JOIN Block
-                        ON BlocksetEntry.BlockID = Block.ID
-                        WHERE BlocksetEntry.BlocksetID = ?";
-                cmd.AddParameter();
-                foreach (var bsid in blocksetids)
-                {
-                    cmd.SetParameterValue(0, bsid);
-                    using var reader = cmd.ExecuteReader();
-                    List<BlockRequest> brlist = [];
-                    for (long i = 0; reader.Read(); i++)
-                        brlist.Add(new BlockRequest(reader.ConvertValueToInt64(0), i, reader.ConvertValueToString(1), reader.ConvertValueToInt64(2), reader.ConvertValueToInt64(3), false));
-                    block2cache[bsid] = [.. brlist];
-                }
-                Console.WriteLine($"Block cache loaded with {block2cache.Count} entries");
-            }
-
-            using (var cmd = m_connection.CreateCommand())
-            {
-                var fileids = cmd.ExecuteReaderEnumerable($@"
-                SELECT F.ID
-                FROM ""{m_tempfiletable}"" F
-                LEFT JOIN Blockset B ON F.BlocksetID = B.ID
-                WHERE F.BlocksetID != {FOLDER_BLOCKSET_ID}").Select(r => r.ConvertValueToInt64(0)).ToList();
-
-                cmd.CommandText = $@"
-                    SELECT Block.ID, Block.Hash, Block.Size, Block.VolumeID
-                    FROM ""{m_tempfiletable}""
-                    INNER JOIN Metadataset ON ""{m_tempfiletable}"".MetadataID = Metadataset.ID
-                    INNER JOIN BlocksetEntry ON Metadataset.BlocksetID = BlocksetEntry.BlocksetID
-                    INNER JOIN Block ON BlocksetEntry.BlockID = Block.ID
-                    WHERE ""{m_tempfiletable}"".ID = ?
-                ";
-                cmd.AddParameter();
-                foreach (var fileID in fileids)
-                {
-                    cmd.SetParameterValue(0, fileID);
-                    using var reader = cmd.ExecuteReader();
-                    List<BlockRequest> brlist = [];
-                    for (long i = 0; reader.Read(); i++)
-                        brlist.Add(new BlockRequest(reader.ConvertValueToInt64(0), i, reader.ConvertValueToString(1), reader.ConvertValueToInt64(2), reader.ConvertValueToInt64(3), false));
-                    block2metacache[fileID] = [.. brlist];
-                }
-            }
         }
 
         public string GetFirstPath()
@@ -1001,6 +943,26 @@ namespace Duplicati.Library.Main.Database
             return new FilesAndMetadata(m_connection, m_tempfiletable, m_tempblocktable, blocksize, curvolume);
         }
 
+        /// <summary>
+        /// Returns a connection from the connection pool.
+        /// </summary>
+        /// <returns>A connection from the connection pool.</returns>
+        public IDbConnection GetConnectionFromPool()
+        {
+            if (!m_connection_pool.TryTake(out var connection))
+            {
+                connection = (System.Data.IDbConnection)Activator.CreateInstance(Duplicati.Library.SQLiteHelper.SQLiteLoader.SQLiteConnectionType);
+                connection.ConnectionString = m_connection.ConnectionString + ";Cache=Shared;";
+                connection.Open();
+
+                using var cmd = connection.CreateCommand();
+                cmd.ExecuteNonQuery("PRAGMA journal_mode = WAL;");
+                cmd.ExecuteNonQuery("PRAGMA read_uncommitted = true;");
+            }
+
+            return connection;
+        }
+
         private class FileToRestore : IFileToRestore
         {
             public string Path { get; private set; }
@@ -1078,21 +1040,7 @@ namespace Duplicati.Library.Main.Database
         /// <returns>A list of <see cref="BlockRequest"/> needed to restore the given file.</returns>
         public IEnumerable<BlockRequest> GetBlocksFromFile(long blocksetID)
         {
-            //return block2cache[blocksetID];
-
-            if (!connection_pool.TryTake(out var connection))
-            {
-                //connection = CreateConnection(m_connection.ConnectionString);
-                connection = (System.Data.IDbConnection?)Activator.CreateInstance(Duplicati.Library.SQLiteHelper.SQLiteLoader.SQLiteConnectionType);
-                connection.ConnectionString = m_connection.ConnectionString + ";Cache=Shared;";
-                connection.Open();
-                using var cmd2 = connection.CreateCommand();
-                cmd2.CommandText = "PRAGMA journal_mode=WAL;";
-                cmd2.ExecuteNonQuery();
-                cmd2.CommandText = "PRAGMA read_uncommitted = true;";
-                cmd2.ExecuteNonQuery();
-            }
-
+            var connection = GetConnectionFromPool();
             using var cmd = connection.CreateCommand();
 
             cmd.CommandText = @$"
@@ -1100,7 +1048,6 @@ namespace Duplicati.Library.Main.Database
                 FROM BlocksetEntry INNER JOIN Block
                 ON BlocksetEntry.BlockID = Block.ID
                 WHERE BlocksetEntry.BlocksetID = ?";
-
             cmd.AddParameter();
             cmd.SetParameterValue(0, blocksetID);
 
@@ -1110,7 +1057,8 @@ namespace Duplicati.Library.Main.Database
                 yield return new BlockRequest(reader.ConvertValueToInt64(0), i, reader.ConvertValueToString(1), reader.ConvertValueToInt64(2), reader.ConvertValueToInt64(3), false);
             }
 
-            connection_pool.Add(connection);
+            // Return the connection to the pool
+            m_connection_pool.Add(connection);
         }
 
         /// <summary>
@@ -1120,21 +1068,9 @@ namespace Duplicati.Library.Main.Database
         /// <returns>A list of <see cref="BlockRequest"/> needed to restore the metadata of the given file.</returns>
         public IEnumerable<BlockRequest> GetMetadataBlocksFromFile(long fileID)
         {
-            //return block2metacache[fileID];
-
-            if (!connection_pool.TryTake(out var connection))
-            {
-                connection = (System.Data.IDbConnection?)Activator.CreateInstance(Duplicati.Library.SQLiteHelper.SQLiteLoader.SQLiteConnectionType);
-                connection.ConnectionString = m_connection.ConnectionString + ";Cache=Shared;";
-                connection.Open();
-                using var cmd2 = connection.CreateCommand();
-                cmd2.CommandText = "PRAGMA journal_mode=WAL;";
-                cmd2.ExecuteNonQuery();
-                cmd2.CommandText = "PRAGMA read_uncommitted = true;";
-                cmd2.ExecuteNonQuery();
-            }
-
+            var connection = GetConnectionFromPool();
             using var cmd = connection.CreateCommand();
+
             cmd.CommandText = $@"
                 SELECT Block.ID, Block.Hash, Block.Size, Block.VolumeID
                 FROM FileLookup
@@ -1145,13 +1081,15 @@ namespace Duplicati.Library.Main.Database
             ";
             cmd.AddParameter();
             cmd.SetParameterValue(0, fileID);
+
             using var reader = cmd.ExecuteReader();
             for (long i = 0; reader.Read(); i++)
             {
                 yield return new BlockRequest(reader.ConvertValueToInt64(0), i, reader.ConvertValueToString(1), reader.ConvertValueToInt64(2), reader.ConvertValueToInt64(3), false);
             }
 
-            connection_pool.Add(connection);
+            // Return the connection to the pool
+            m_connection_pool.Add(connection);
         }
 
         /// <summary>
@@ -1416,12 +1354,12 @@ namespace Duplicati.Library.Main.Database
 
         public override void Dispose()
         {
-            foreach (var connection in connection_pool)
+            foreach (var connection in m_connection_pool)
             {
                 connection.Close();
                 connection.Dispose();
             }
-            connection_pool.Clear();
+            m_connection_pool.Clear();
             DropRestoreTable();
             base.Dispose();
         }
