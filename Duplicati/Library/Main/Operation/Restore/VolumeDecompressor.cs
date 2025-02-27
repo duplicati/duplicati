@@ -55,9 +55,9 @@ namespace Duplicati.Library.Main.Operation.Restore
             {
                 Stopwatch sw_read = options.InternalProfiling ? new() : null;
                 Stopwatch sw_write = options.InternalProfiling ? new() : null;
-                Stopwatch sw_decompress1 = options.InternalProfiling ? new() : null;
-                Stopwatch sw_decompress2 = options.InternalProfiling ? new() : null;
-                Stopwatch sw_decompress3 = options.InternalProfiling ? new() : null;
+                Stopwatch sw_decompress_alloc = options.InternalProfiling ? new() : null;
+                Stopwatch sw_decompress_locking = options.InternalProfiling ? new() : null;
+                Stopwatch sw_decompress_read = options.InternalProfiling ? new() : null;
                 Stopwatch sw_verify = options.InternalProfiling ? new() : null;
 
                 try
@@ -71,16 +71,16 @@ namespace Duplicati.Library.Main.Operation.Restore
                         var (block_request, volume_reader) = await self.Input.ReadAsync().ConfigureAwait(false);
                         sw_read?.Stop();
 
-                        sw_decompress1?.Start();
+                        sw_decompress_alloc?.Start();
                         var data = ArrayPool<byte>.Shared.Rent(options.Blocksize);
-                        sw_decompress1?.Stop();
-                        sw_decompress2?.Start();
+                        sw_decompress_alloc?.Stop();
+                        sw_decompress_locking?.Start();
                         lock (volume_reader) // The BlockVolumeReader is not thread-safe
                         {
-                            sw_decompress2?.Stop();
-                            sw_decompress3?.Start();
+                            sw_decompress_locking?.Stop();
+                            sw_decompress_read?.Start();
                             volume_reader.ReadBlock(block_request.BlockHash, data);
-                            sw_decompress3?.Stop();
+                            sw_decompress_read?.Stop();
                         }
 
                         sw_verify?.Start();
@@ -103,7 +103,7 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                     if (options.InternalProfiling)
                     {
-                        Logging.Log.WriteProfilingMessage(LOGTAG, "InternalTimings", $"Read: {sw_read.ElapsedMilliseconds}ms, Write: {sw_write.ElapsedMilliseconds}ms, Decompress allocate: {sw_decompress1.ElapsedMilliseconds}ms, Decompress lock: {sw_decompress2.ElapsedMilliseconds}ms, Decompress read: {sw_decompress3.ElapsedMilliseconds}ms, Verify: {sw_verify.ElapsedMilliseconds}ms");
+                        Logging.Log.WriteProfilingMessage(LOGTAG, "InternalTimings", $"Read: {sw_read.ElapsedMilliseconds}ms, Write: {sw_write.ElapsedMilliseconds}ms, Decompress allocate: {sw_decompress_alloc.ElapsedMilliseconds}ms, Decompress lock: {sw_decompress_locking.ElapsedMilliseconds}ms, Decompress read: {sw_decompress_read.ElapsedMilliseconds}ms, Verify: {sw_verify.ElapsedMilliseconds}ms");
                     }
                 }
                 catch (Exception ex)
