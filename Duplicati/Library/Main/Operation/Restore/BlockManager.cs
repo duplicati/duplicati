@@ -111,6 +111,7 @@ namespace Duplicati.Library.Main.Operation.Restore
             private long m_returncount = 0;
             private long m_autoevictcount = 0;
             private MemoryCacheEntryOptions m_entry_options = new();
+            private ConcurrentDictionary<long, long> m_active_readers = [];
 
             /// <summary>
             /// Initializes a new instance of the <see cref="SleepableDictionary"/> class.
@@ -124,18 +125,21 @@ namespace Duplicati.Library.Main.Operation.Restore
                 m_volume_request = volume_request;
                 if (m_options.RestoreCacheMax > 0)
                 {
-                    var cache_options = new MemoryCacheOptions();
-                    m_block_cache = new MemoryCache(cache_options);
-                    m_entry_options.RegisterPostEvictionCallback((key, value, reason, state) =>
+                    while (true)
                     {
-                        m_block_cache.Remove(key);
                         lock (m_blockcount_lock)
                         {
-                            m_returncount++;
+                            if (m_active_readers.TryGetValue((long)key, out var ac) && ac == 0)
+                            {
+                                m_block_cache.Remove(key);
+                                m_returncount++;
+                                break;
+                            }
                         }
-                        ArrayPool<byte>.Shared.Return((byte[])value);
-                    });
-                }
+                        await Task.Delay(10).ConfigureAwait(false);
+                    }
+                    ArrayPool<byte>.Shared.Return((byte[])value);
+                });
                 this.readers = readers;
                 sw_cacheevict = options.InternalProfiling ? new() : null;
                 sw_checkcounts = options.InternalProfiling ? new() : null;
@@ -169,6 +173,8 @@ namespace Duplicati.Library.Main.Operation.Restore
                 lock (m_blockcount_lock)
                 {
                     sw_checkcounts?.Start();
+
+                    m_active_readers[blockRequest.BlockID] = m_active_readers.TryGetValue(blockRequest.BlockID, out var ac) ? ac - 1 : 0;
 
                     var block_count = m_blockcount.TryGetValue(blockRequest.BlockID, out var c) ? c - 1 : 0;
 
@@ -240,6 +246,11 @@ namespace Duplicati.Library.Main.Operation.Restore
             /// <returns>A `Task` holding the data block.</returns>
             public Task<byte[]> Get(BlockRequest block_request)
             {
+                lock (m_blockcount_lock)
+                {
+                    m_active_readers[block_request.BlockID] = m_active_readers.TryGetValue(block_request.BlockID, out var c) ? c + 1 : 1;
+                }
+
                 // Check if the block is already in the cache, and return it if it is.
                 if (m_block_cache != null && m_block_cache.TryGetValue(block_request.BlockID, out byte[] value))
                 {
@@ -281,11 +292,10 @@ namespace Duplicati.Library.Main.Operation.Restore
                 }
 
                 sw_cacheevict?.Start();
-                // TODO cache is broken due to the arraypool
-                //if (m_block_cache?.Count > m_options.RestoreCacheMax)
-                //{
-                //    m_block_cache?.Compact(m_options.RestoreCacheEvict);
-                //}
+                if (m_block_cache?.Count > m_options.RestoreCacheMax)
+                {
+                    m_block_cache?.Compact(m_options.RestoreCacheEvict);
+                }
                 sw_cacheevict?.Stop();
             }
 
@@ -332,7 +342,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                     Logging.Log.WriteProfilingMessage(LOGTAG, "InternalTimings", $"Sleepable dictionary - CheckCounts: {sw_checkcounts.ElapsedMilliseconds}ms, Get wait: {sw_get_wait.ElapsedMilliseconds}ms, Cache evict: {sw_cacheevict.ElapsedMilliseconds}ms, returned blocks: {m_returncount}, total blocks: {m_blockcount_total}, auto evicted: {m_autoevictcount}");
                 }
 
-                if (m_block_cache.Count > 0)
+                if (m_block_cache?.Count > 0)
                 {
                     Logging.Log.WriteWarningMessage(LOGTAG, "BlockCacheError", null, $"Internal Block cache is not empty: {m_block_cache.Count}");
                 }
