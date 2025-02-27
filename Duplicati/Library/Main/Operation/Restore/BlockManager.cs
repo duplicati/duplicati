@@ -106,9 +106,14 @@ namespace Duplicati.Library.Main.Operation.Restore
             /// The options for the restore.
             /// </summary>
             private readonly Options m_options;
-
-            private MemoryCacheEntryOptions m_entry_options = new();
-            private ConcurrentDictionary<long, long> m_active_readers = [];
+            /// <summary>
+            /// The cache eviction options. Used for registering a callback when a block is evicted from the cache.
+            /// </summary>
+            private readonly MemoryCacheEntryOptions m_entry_options = new();
+            /// <summary>
+            /// Dictionary to keep track of how many active readers are accessing each block. On eviction, the byte[] buffer can only be returned to the ArrayPool if there are no active readers.
+            /// </summary>
+            private readonly ConcurrentDictionary<long, long> m_active_readers = [];
 
             /// <summary>
             /// Initializes a new instance of the <see cref="SleepableDictionary"/> class.
@@ -159,7 +164,6 @@ namespace Duplicati.Library.Main.Operation.Restore
             /// the VolumeDownloader will be notified.
             /// </summary>
             /// <param name="blockRequest">The block request to check.</param>
-            /// <param name="decrement"></param>
             public async Task CheckCounts(BlockRequest blockRequest)
             {
                 long error_block_id = -1;
@@ -269,8 +273,8 @@ namespace Duplicati.Library.Main.Operation.Restore
             /// removed, the requester will be given a `Task` that will be
             /// completed when the block is available.
             /// </summary>
-            /// <param name="key"></param>
-            /// <param name="value"></param>
+            /// <param name="blockRequest">The block request related to the value.</param>
+            /// <param name="value">The byte[] buffer holding the block data.</param>
             public void Set(BlockRequest blockRequest, byte[] value)
             {
                 m_block_cache.Set(blockRequest.BlockID, value);
@@ -359,6 +363,7 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// accessing the cache for the blocks, and writing the resulting
         /// blocks back to the `FileProcessor`.
         /// </summary>
+        /// <param name="channels">The named channels for the restore operation.</param>
         /// <param name="db">The database holding information about how many of each block this restore requires.</param>
         /// <param name="options">The restore options.</param>
         /// <param name="fp_requests">The channels for reading block requests from the `FileProcessor`.</param>
