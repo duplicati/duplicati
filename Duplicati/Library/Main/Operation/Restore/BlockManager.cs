@@ -107,9 +107,6 @@ namespace Duplicati.Library.Main.Operation.Restore
             /// </summary>
             private readonly Options m_options;
 
-            private long m_blockcount_total = 0;
-            private long m_returncount = 0;
-            private long m_autoevictcount = 0;
             private MemoryCacheEntryOptions m_entry_options = new();
             private ConcurrentDictionary<long, long> m_active_readers = [];
 
@@ -134,7 +131,6 @@ namespace Duplicati.Library.Main.Operation.Restore
                             if (m_active_readers.TryGetValue((long)key, out var ac) && ac == 0)
                             {
                                 m_block_cache.Remove(key);
-                                m_returncount++;
                                 break;
                             }
                         }
@@ -154,7 +150,6 @@ namespace Duplicati.Library.Main.Operation.Restore
                     var vc = m_volumecount.TryGetValue(volume_id, out var v);
                     m_volumecount[volume_id] = vc ? v + 1 : 1;
                 }
-                m_blockcount_total = m_blockcount.Count;
             }
 
             /// <summary>
@@ -190,7 +185,6 @@ namespace Duplicati.Library.Main.Operation.Restore
                         m_blockcount.Remove(blockRequest.BlockID);
                         data = m_block_cache.Get<byte[]>(blockRequest.BlockID);
                         m_block_cache.Remove(blockRequest.BlockID);
-                        m_autoevictcount++;
                     }
                     else // block_count < 0
                     {
@@ -216,13 +210,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                 }
 
                 if (data != null)
-                {
-                    lock (m_blockcount_lock)
-                    {
-                        m_returncount++;
-                    }
                     ArrayPool<byte>.Shared.Return(data);
-                }
 
                 // Notify the `VolumeManager` that it should evict the volume.
                 if (emit_evict)
@@ -341,7 +329,7 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                 if (m_options.InternalProfiling)
                 {
-                    Logging.Log.WriteProfilingMessage(LOGTAG, "InternalTimings", $"Sleepable dictionary - CheckCounts: {sw_checkcounts.ElapsedMilliseconds}ms, Get wait: {sw_get_wait.ElapsedMilliseconds}ms, Cache evict: {sw_cacheevict.ElapsedMilliseconds}ms, returned blocks: {m_returncount}, total blocks: {m_blockcount_total}, auto evicted: {m_autoevictcount}");
+                    Logging.Log.WriteProfilingMessage(LOGTAG, "InternalTimings", $"Sleepable dictionary - CheckCounts: {sw_checkcounts.ElapsedMilliseconds}ms, Get wait: {sw_get_wait.ElapsedMilliseconds}ms, Cache evict: {sw_cacheevict.ElapsedMilliseconds}ms");
                 }
 
                 if (m_block_cache.Count > 0)
