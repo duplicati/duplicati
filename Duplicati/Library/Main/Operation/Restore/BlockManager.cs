@@ -123,7 +123,9 @@ namespace Duplicati.Library.Main.Operation.Restore
             {
                 m_options = options;
                 m_volume_request = volume_request;
-                if (m_options.RestoreCacheMax > 0)
+                var cache_options = new MemoryCacheOptions();
+                m_block_cache = new MemoryCache(cache_options);
+                m_entry_options.RegisterPostEvictionCallback(async (key, value, reason, state) =>
                 {
                     while (true)
                     {
@@ -186,8 +188,8 @@ namespace Duplicati.Library.Main.Operation.Restore
                     {
                         // Evict the block from the cache and check if the volume is no longer needed.
                         m_blockcount.Remove(blockRequest.BlockID);
-                        data = m_block_cache?.Get<byte[]>(blockRequest.BlockID);
-                        m_block_cache?.Remove(blockRequest.BlockID);
+                        data = m_block_cache.Get<byte[]>(blockRequest.BlockID);
+                        m_block_cache.Remove(blockRequest.BlockID);
                         m_autoevictcount++;
                     }
                     else // block_count < 0
@@ -283,7 +285,7 @@ namespace Duplicati.Library.Main.Operation.Restore
             /// <param name="value"></param>
             public void Set(BlockRequest blockRequest, byte[] value)
             {
-                m_block_cache?.Set(blockRequest.BlockID, value);
+                m_block_cache.Set(blockRequest.BlockID, value);
 
                 // Notify any waiters that the block is available.
                 if (m_waiters.TryRemove(blockRequest.BlockID, out var tcs))
@@ -292,9 +294,9 @@ namespace Duplicati.Library.Main.Operation.Restore
                 }
 
                 sw_cacheevict?.Start();
-                if (m_block_cache?.Count > m_options.RestoreCacheMax)
+                if (m_block_cache.Count > m_options.RestoreCacheMax)
                 {
-                    m_block_cache?.Compact(m_options.RestoreCacheEvict);
+                    m_block_cache.Compact(m_options.RestoreCacheMax == 0 ? 1.0 : m_options.RestoreCacheEvict);
                 }
                 sw_cacheevict?.Stop();
             }
@@ -342,7 +344,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                     Logging.Log.WriteProfilingMessage(LOGTAG, "InternalTimings", $"Sleepable dictionary - CheckCounts: {sw_checkcounts.ElapsedMilliseconds}ms, Get wait: {sw_get_wait.ElapsedMilliseconds}ms, Cache evict: {sw_cacheevict.ElapsedMilliseconds}ms, returned blocks: {m_returncount}, total blocks: {m_blockcount_total}, auto evicted: {m_autoevictcount}");
                 }
 
-                if (m_block_cache?.Count > 0)
+                if (m_block_cache.Count > 0)
                 {
                     Logging.Log.WriteWarningMessage(LOGTAG, "BlockCacheError", null, $"Internal Block cache is not empty: {m_block_cache.Count}");
                 }

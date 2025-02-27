@@ -2057,7 +2057,7 @@ namespace Duplicati.Library.Main
         }
 
         /// <summary>
-        /// Gets the maximum number of data blocks to keep in the cache. If set to 0, the cache is disabled.
+        /// Gets the maximum number of data blocks to keep in the cache. If set to 0, the cache is effictively disabled, but some is still kept for bookkeeping.
         /// </summary>
         public long RestoreCacheMax
         {
