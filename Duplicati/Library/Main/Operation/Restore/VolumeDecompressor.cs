@@ -42,6 +42,7 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// <summary>
         /// Runs the volume decompressor process.
         /// </summary>
+        /// <param name="channels">The named channels for the restore operation.</param>
         /// <param name="options">The restore options</param>
         public static Task Run(Channels channels, Options options)
         {

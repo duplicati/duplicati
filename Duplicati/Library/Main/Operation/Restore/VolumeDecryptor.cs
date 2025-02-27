@@ -42,6 +42,8 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// <summary>
         /// Runs the volume decryptor process.
         /// </summary>
+        /// <param name="channels">The named channels for the restore operation.</param>
+        /// <param name="backend">The backend manager.</param>
         /// <param name="options">The restore options.</param>
         public static Task Run(Channels channels, IBackendManager backend, Options options)
         {
