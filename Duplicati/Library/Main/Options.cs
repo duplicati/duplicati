@@ -130,6 +130,11 @@ namespace Duplicati.Library.Main
         private readonly int DEFAULT_RESTORE_VOLUME_DOWNLOADERS = Math.Max(1, Environment.ProcessorCount / 2);
 
         /// <summary>
+        /// The default value for the size of the channel buffers during restore
+        /// </summary>
+        private readonly int DEFAULT_RESTORE_CHANNEL_BUFFER_SIZE = 8;
+
+        /// <summary>
         /// An enumeration that describes the supported strategies for an optimization
         /// </summary>
         public enum OptimizationStrategy
@@ -474,6 +479,7 @@ namespace Duplicati.Library.Main
                     new CommandLineArgument("restore-volume-decompressors", CommandLineArgument.ArgumentType.Integer, Strings.Options.RestoreVolumeDecompressorsShort, Strings.Options.RestoreVolumeDecompressorsLong, DEFAULT_RESTORE_VOLUME_DECOMPRESSORS.ToString()),
                     new CommandLineArgument("restore-volume-decryptors", CommandLineArgument.ArgumentType.Integer, Strings.Options.RestoreVolumeDecryptorsShort, Strings.Options.RestoreVolumeDecryptorsLong, DEFAULT_RESTORE_VOLUME_DECRYPTORS.ToString()),
                     new CommandLineArgument("restore-volume-downloaders", CommandLineArgument.ArgumentType.Integer, Strings.Options.RestoreVolumeDownloadersShort, Strings.Options.RestoreVolumeDownloadersLong, DEFAULT_RESTORE_VOLUME_DOWNLOADERS.ToString()),
+                    new CommandLineArgument("restore-channel-buffer-size", CommandLineArgument.ArgumentType.Integer, Strings.Options.RestoreChannelBufferSizeShort, Strings.Options.RestoreChannelBufferSizeLong, DEFAULT_RESTORE_CHANNEL_BUFFER_SIZE.ToString()),
                     new CommandLineArgument("internal-profiling", CommandLineArgument.ArgumentType.Boolean, Strings.Options.InternalProfilingShort, Strings.Options.InternalProfilingLong, "false"),
                 });
 
@@ -2186,6 +2192,20 @@ namespace Duplicati.Library.Main
 
                 if (string.IsNullOrEmpty(v))
                     return DEFAULT_RESTORE_VOLUME_DOWNLOADERS;
+                else
+                    return int.Parse(v);
+            }
+        }
+
+        public int RestoreChannelBufferSize
+        {
+            get
+            {
+                if (!m_options.TryGetValue("restore-channel-buffer-size", out string v))
+                    v = null;
+
+                if (string.IsNullOrEmpty(v))
+                    return DEFAULT_RESTORE_CHANNEL_BUFFER_SIZE;
                 else
                     return int.Parse(v);
             }
