@@ -79,7 +79,7 @@ public class SMBShareConnection : IDisposable, IAsyncDisposable
         if (!_smb2Client.Connect(connectionParameters.ServerName, connectionParameters.TransportType))
             throw new UserInformationException($"{LC.L("Failed to connect to server")} {connectionParameters.ServerName}", "ConnectionError");
 
-        var status = _smb2Client.Login(connectionParameters.AuthDomain, connectionParameters.AuthUser, connectionParameters.AuthPassword);
+        var status = _smb2Client.Login(connectionParameters.AuthDomain ?? "", connectionParameters.AuthUser ?? "", connectionParameters.AuthPassword ?? "");
 
         if (status != NTStatus.STATUS_SUCCESS)
             throw new UserInformationException($"{LC.L("Failed to authenticate to server")} {connectionParameters.ServerName} with status {status}", "ConnectionError");
@@ -194,9 +194,10 @@ public class SMBShareConnection : IDisposable, IAsyncDisposable
     /// <summary>
     /// Lists the folder contents of the share and path specified in the connection parameters.
     /// </summary>
+    /// <param name="path">Path to list</param>
     /// <param name="cancellationToken">Cancellation Token</param>
     /// <exception cref="UserInformationException">Exception to be displayed to user</exception>
-    public async Task<List<IFileEntry>> ListAsync(CancellationToken cancellationToken)
+    public async Task<List<IFileEntry>> ListAsync(string path, CancellationToken cancellationToken)
     {
         await _semaphore.WaitAsync(cancellationToken);
 
@@ -206,11 +207,10 @@ public class SMBShareConnection : IDisposable, IAsyncDisposable
         {
             try
             {
-
                 var status = _smbFileStore.CreateFile(
                     out directoryHandle,
                     out fileStatus,
-                    NormalizeSlashes(_connectionParameters.Path),
+                    NormalizeSlashes(path),
                     AccessMask.GENERIC_READ,
                     FileAttributes.Directory,
                     ShareAccess.Read | ShareAccess.Write,
@@ -222,7 +222,7 @@ public class SMBShareConnection : IDisposable, IAsyncDisposable
                     if (status == NTStatus.STATUS_OBJECT_PATH_NOT_FOUND || status == NTStatus.STATUS_OBJECT_NAME_NOT_FOUND)
                         throw new FolderMissingException();
                     else
-                        throw new UserInformationException($"{LC.L("Failed to open directory")} {NormalizeSlashes(_connectionParameters.Path)} with status {status.ToString()}", "DirectoryOpenError");
+                        throw new UserInformationException($"{LC.L("Failed to open directory")} {NormalizeSlashes(path)} with status {status}", "DirectoryOpenError");
 
                 List<QueryDirectoryFileInformation> fileList;
                 status = _smbFileStore.QueryDirectory(
@@ -232,7 +232,7 @@ public class SMBShareConnection : IDisposable, IAsyncDisposable
                     FileInformationClass.FileDirectoryInformation);
 
                 if (status != NTStatus.STATUS_NO_MORE_FILES)
-                    throw new UserInformationException($"{LC.L("Failed to query directory contents")} with status {status.ToString()}", "DirectoryQueryError");
+                    throw new UserInformationException($"{LC.L("Failed to query directory contents")} with status {status}", "DirectoryQueryError");
 
                 return
                 [
@@ -244,7 +244,8 @@ public class SMBShareConnection : IDisposable, IAsyncDisposable
                             info.LastAccessTime,
                             info.LastWriteTime)
                         {
-                            IsFolder = info.FileAttributes == FileAttributes.Directory
+                            IsFolder = info.FileAttributes == FileAttributes.Directory,
+                            Created = info.CreationTime
                         })
                         .ToList()
                 ];

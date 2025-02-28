@@ -29,6 +29,9 @@ using System.Threading.Tasks;
 using Duplicati.Library.Backend.CIFS;
 using Duplicati.Library.Backend.CIFS.Model;
 using SMBLibrary;
+using Duplicati.Library.SourceProvider;
+using System.Runtime.CompilerServices;
+using Duplicati.Library.Common.IO;
 using System.Runtime.CompilerServices;
 
 namespace Duplicati.Library.Backend;
@@ -36,7 +39,7 @@ namespace Duplicati.Library.Backend;
 /// <summary>
 /// Native CIFS/SMB Backend implementation
 /// </summary>
-public class CIFSBackend : IStreamingBackend
+public class CIFSBackend : IStreamingBackend, IFolderEnabledBackend
 {
     /// <summary>
     /// Implementation of interface property for the backend key
@@ -198,7 +201,7 @@ public class CIFSBackend : IStreamingBackend
     /// <returns>List of IFileEntry with directory listing result</returns>
     public async IAsyncEnumerable<IFileEntry> ListAsync([EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        foreach (var v in await GetConnection().ListAsync(cancellationToken).ConfigureAwait(false))
+        foreach (var v in await GetConnection().ListAsync(_connectionParameters.Path, cancellationToken).ConfigureAwait(false))
             yield return v;
     }
 
@@ -288,7 +291,7 @@ public class CIFSBackend : IStreamingBackend
     public async Task TestAsync(CancellationToken cancellationToken)
     {
         // This will throw an exception if the folder is missing
-        await GetConnection().ListAsync(cancellationToken).ConfigureAwait(false);
+        await GetConnection().ListAsync(_connectionParameters.Path, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -315,6 +318,8 @@ public class CIFSBackend : IStreamingBackend
     /// <returns>An SMB connection that can be used for file operations</returns>
     private SMBShareConnection GetConnection() => _sharedConnection ??= new SMBShareConnection(_connectionParameters);
 
+
+
     /// <summary>
     /// Implementation of Dispose pattern enforced by interface
     /// </summary>
@@ -330,4 +335,20 @@ public class CIFSBackend : IStreamingBackend
             System.Diagnostics.Debug.WriteLine($"Error disposing CIFS connection: {ex.Message}");
         }
     }
+
+    /// <inheritdoc/>
+    public async IAsyncEnumerable<IFileEntry> ListAsync(string path, [EnumeratorCancellation] CancellationToken cancellationToken)
+    {
+        var sourcePath = _connectionParameters.Path;
+        if (!string.IsNullOrWhiteSpace(sourcePath))
+            sourcePath = Util.AppendDirSeparator(sourcePath, "/");
+
+        foreach (var v in await GetConnection().ListAsync(sourcePath + BackendSourceFileEntry.NormalizePathTo(path, '/'), cancellationToken).ConfigureAwait(false))
+            if (v.Name != "." && v.Name != "..")
+                yield return v;
+    }
+
+    /// <inheritdoc/>
+    public Task<IFileEntry> GetEntryAsync(string path, CancellationToken cancellationToken)
+        => Task.FromResult<IFileEntry>(null);
 }

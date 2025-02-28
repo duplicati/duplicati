@@ -34,6 +34,11 @@ using Duplicati.Library.Common.IO;
 using Duplicati.Library.Logging;
 using Duplicati.Library.Main.Operation.Common;
 using System.Data;
+using Duplicati.Library.DynamicLoader;
+using Duplicati.Library.SourceProvider;
+using Duplicati.Library.Snapshots.USN;
+using System.Text.RegularExpressions;
+using System.IO;
 
 namespace Duplicati.Library.Main.Operation
 {
@@ -74,53 +79,142 @@ namespace Duplicati.Library.Main.Operation
                 throw new UserInformationException(Strings.Common.PassphraseChangeUnsupported, "PassphraseChangeUnsupported");
         }
 
-        public static Snapshots.ISnapshotService GetSnapshot(string[] sources, Options options)
+        /// <summary>
+        /// Gets a single source provider for the given sources
+        /// </summary>
+        /// <param name="sources">The sources to get providers for</param>
+        /// <param name="options">The options to use</param>
+        /// <returns>The source providers</returns>
+        public static async Task<ISourceProvider> GetSourceProvider(IEnumerable<string> sources, Options options, CancellationToken cancellationToken)
+            => Combiner.Combine(await GetSourceProviders(sources, options, cancellationToken));
+
+        /// <summary>
+        /// Gets a snapshot service for the given sources
+        /// </summary>
+        /// <param name="sources">The sources to get the snapshot for</param>
+        /// <param name="options">The options to use</param>
+        /// <returns>The source provider</returns>
+        private static ISnapshotService GetFileSnapshotService(IEnumerable<string> sources, Options options)
         {
             try
             {
                 if (options.SnapShotStrategy != Options.OptimizationStrategy.Off)
-                    return Duplicati.Library.Snapshots.SnapshotUtility.CreateSnapshot(sources, options.RawOptions);
+                    return SnapshotUtility.CreateSnapshot(sources, options.RawOptions, options.SymlinkPolicy == Options.SymlinkStrategy.Follow);
             }
             catch (Exception ex)
             {
                 if (options.SnapShotStrategy == Options.OptimizationStrategy.Required)
                     throw new UserInformationException(Strings.Common.SnapshotFailedError(ex.Message), "SnapshotFailed", ex);
                 else if (options.SnapShotStrategy == Options.OptimizationStrategy.On)
-                    Logging.Log.WriteWarningMessage(LOGTAG, "SnapshotFailed", ex, Strings.Common.SnapshotFailedError(ex.Message));
+                    Log.WriteWarningMessage(LOGTAG, "SnapshotFailed", ex, Strings.Common.SnapshotFailedError(ex.Message));
                 else if (options.SnapShotStrategy == Options.OptimizationStrategy.Auto)
-                    Logging.Log.WriteInformationMessage(LOGTAG, "SnapshotFailed", Strings.Common.SnapshotFailedError(ex.Message));
+                    Log.WriteInformationMessage(LOGTAG, "SnapshotFailed", Strings.Common.SnapshotFailedError(ex.Message));
             }
 
-            if (OperatingSystem.IsMacOS() || OperatingSystem.IsLinux())
-            {
-                return new NoSnapshotLinux(options.IgnoreAdvisoryLocking);
-            }
-            else if (OperatingSystem.IsWindows())
-            {
-                return new NoSnapshotWindows();
-            }
-            else
-            {
-                throw new NotSupportedException("Unsupported Operating System");
-            }
+            return SnapshotUtility.CreateNoSnapshot(sources, options.IgnoreAdvisoryLocking, options.SymlinkPolicy == Options.SymlinkStrategy.Follow);
         }
 
         /// <summary>
-        /// Create instance of USN journal service
+        /// Gets all source providers for the given sources
         /// </summary>
-        /// <param name="sources"></param>
-        /// <param name="snapshot"></param>
-        /// <param name="filter"></param>
-        /// <param name="lastfilesetid"></param>
-        /// <returns></returns>
-        private UsnJournalService GetJournalService(IEnumerable<string> sources, ISnapshotService snapshot, IFilter filter, long lastfilesetid)
+        /// <param name="sources">The sources to get providers for</param>
+        /// <param name="options">The options to use</param>
+        /// <param name="filter">The filter to use</param>
+        /// <param name="lastfilesetid">The last fileset id</param>
+        /// <returns>The source providers</returns>
+        private static async Task<List<ISourceProvider>> GetSourceProviders(IEnumerable<string> sources, Options options, CancellationToken cancellationToken)
+        {
+            // Group the sources by their type, so we can combine all snapshot paths into a single snapshot
+            var sourceTypes = sources.GroupBy(x => x.StartsWith("@") ? "@" : Library.Utility.Utility.GuessScheme(x) ?? "file", StringComparer.OrdinalIgnoreCase);
+
+            // To avoid leaking snapshot instances, we create all instances first and then dispose them if an exception occurs
+            // The number of instances is expected to be low, so the memory overhead is acceptable
+            var results = new List<ISourceProvider>();
+            try
+            {
+                foreach (var entry in sourceTypes)
+                {
+                    if ("file".Equals(entry.Key, StringComparison.OrdinalIgnoreCase))
+                        results.Add(new LocalFileSource(GetFileSnapshotService(entry, options)));
+                    else if ("vss".Equals(entry.Key, StringComparison.OrdinalIgnoreCase) || "lvm".Equals(entry.Key, StringComparison.OrdinalIgnoreCase))
+                        results.Add(new LocalFileSource(SnapshotUtility.CreateSnapshot(entry, options.RawOptions, options.SymlinkPolicy == Options.SymlinkStrategy.Follow)));
+                    else if ("@".Equals(entry.Key, StringComparison.OrdinalIgnoreCase))
+                    {
+                        foreach (var url in entry)
+                        {
+                            var sanitizedUrl = Library.Utility.Utility.GetUrlWithoutCredentials(url);
+                            var m = Regex.Match(url, @"^@(?<mountpoint>[^|]+)\|(?<url>.+)$", RegexOptions.IgnoreCase);
+                            if (m.Success)
+                            {
+                                var mountpoint = m.Groups["mountpoint"].Value;
+
+                                if (mountpoint.Any(x => Path.GetInvalidPathChars().Contains(x)))
+                                    throw new UserInformationException(string.Format("The mountpoint \"{0}\" contains invalid characters", mountpoint), "InvalidMountpoint");
+                                if (!Path.IsPathRooted(mountpoint))
+                                    throw new UserInformationException(string.Format("The mountpoint \"{0}\" is not a valid rooted mountpoint", mountpoint), "InvalidMountpoint");
+
+                                var backendurl = m.Groups["url"].Value;
+
+                                ISourceProvider provider;
+                                try
+                                {
+                                    provider = await SourceProviderLoader.GetSourceProvider(backendurl, Path.GetFullPath(mountpoint), options.RawOptions, cancellationToken).ConfigureAwait(false);
+                                }
+                                catch (Exception ex)
+                                {
+                                    if (options.AllowMissingSource)
+                                    {
+                                        Log.WriteWarningMessage(LOGTAG, "SourceProviderFailed", ex, "Failed to load source provider for \"{0}\"", sanitizedUrl);
+                                        continue;
+                                    }
+
+                                    throw new UserInformationException($"Failed to load source provider for \"{sanitizedUrl}\": {ex.Message}", "SourceProviderFailed", ex);
+                                }
+
+                                // Don't accept missing providers
+                                results.Add(provider ?? throw new UserInformationException($"The source \"{sanitizedUrl}\" is not supported", "SourceNotSupported"));
+                            }
+                            else
+                                throw new UserInformationException($"The source \"{sanitizedUrl}\" is not a supported format", "SourceFormatNotSupported");
+                        }
+                    }
+                    else
+                        throw new UserInformationException($"The source type \"{entry.Key}\" is not supported", "SourceTypeNotSupported");
+                }
+            }
+            catch
+            {
+                foreach (var provider in results)
+                    (provider as IDisposable)?.Dispose();
+
+                throw;
+            }
+
+            if (results.Count == 0)
+                throw new UserInformationException("No sources were available for the backup", "NoSourcesAvailable");
+
+            return results;
+        }
+
+        public UsnJournalService GetJournalService(ISourceProvider provider, IFilter filter, long lastfilesetid)
         {
             if (m_options.UsnStrategy == Options.OptimizationStrategy.Off) return null;
             if (!OperatingSystem.IsWindows())
                 throw new UserInformationException("USN journal is only supported on Windows", "UsnJournalNotSupported");
 
+            var providers = (provider is Combiner c ? c.Providers : [provider])
+                .Select((x, i) => new { Provider = x, Index = i })
+                .Where(x => x.Provider is LocalFileSource)
+                .ToList();
+
+            if (providers.Count == 0)
+                return null;
+            if (providers.Count > 1)
+                throw new UserInformationException("Multiple USN journal services are not supported", "MultipleUSNJournalServices");
+            var fileProvider = providers.First().Provider as LocalFileSource;
+
             var journalData = m_database.GetChangeJournalData(lastfilesetid);
-            var service = new UsnJournalService(sources, snapshot, filter, m_options.FileAttributeFilter, m_options.SkipFilesLargerThan,
+            var service = new UsnJournalService(fileProvider.SnapshotService, filter, m_options.FileAttributeFilter, m_options.SkipFilesLargerThan,
                 journalData, cancellationTokenSource.Token);
 
             foreach (var volumeData in service.VolumeDataList)
@@ -288,7 +382,7 @@ namespace Duplicati.Library.Main.Operation
         /// <summary>
         /// Performs the bulk of work by starting all relevant processes
         /// </summary>
-        private static async Task RunMainOperation(Backup.Channels channels, IEnumerable<string> sources, Snapshots.ISnapshotService snapshot, UsnJournalService journalService, Backup.BackupDatabase database, IBackendManager backendManager, Backup.BackupStatsCollector stats, Options options, IFilter sourcefilter, IFilter filter, BackupResults result, ITaskReader taskreader, long filesetid, long lastfilesetid)
+        private static async Task RunMainOperation(Backup.Channels channels, ISourceProvider source, UsnJournalService journalService, Backup.BackupDatabase database, IBackendManager backendManager, Backup.BackupStatsCollector stats, Options options, IFilter sourcefilter, IFilter filter, BackupResults result, ITaskReader taskreader, long filesetid, long lastfilesetid)
         {
             using (new Logging.Timer(LOGTAG, "BackupMainOperation", "BackupMainOperation"))
             {
@@ -299,15 +393,15 @@ namespace Duplicati.Library.Main.Operation
                     new[]
                         {
                                 Backup.DataBlockProcessor.Run(channels, database, backendManager, options, taskreader),
-                                Backup.FileBlockProcessor.Run(channels, snapshot, options, database, stats, taskreader),
+                                Backup.FileBlockProcessor.Run(channels, options, database, stats, taskreader),
                                 Backup.StreamBlockSplitter.Run(channels, options, database, taskreader),
-                                Backup.FileEnumerationProcess.Run(channels, sources, snapshot, journalService,
-                                    options.FileAttributeFilter, sourcefilter, filter, options.SymlinkPolicy,
+                                Backup.FileEnumerationProcess.Run(channels, source, journalService,
+                                    options.FileAttributeFilter, filter, options.SymlinkPolicy,
                                     options.HardlinkPolicy, options.ExcludeEmptyFolders, options.IgnoreFilenames,
                                     GetBlacklistedPaths(options), options.ChangedFilelist, taskreader,
                                     () => result.PartialBackup = true, CancellationToken.None),
-                                Backup.FilePreFilterProcess.Run(channels, snapshot, options, stats, database),
-                                Backup.MetadataPreProcess.Run(channels, snapshot, options, database, lastfilesetid, taskreader),
+                                Backup.FilePreFilterProcess.Run(channels, options, stats, database),
+                                Backup.MetadataPreProcess.Run(channels, options, database, lastfilesetid, taskreader),
                                 Backup.SpillCollectorProcess.Run(channels, options, database, backendManager, taskreader),
                                 Backup.ProgressHandler.Run(channels, result)
                         }
@@ -324,7 +418,7 @@ namespace Duplicati.Library.Main.Operation
                         // Spawn additional file processors
                         .Concat(
                             Enumerable.Range(0, options.ConcurrencyFileprocessors - 1).Select(x =>
-                                Backup.FileBlockProcessor.Run(channels, snapshot, options, database, stats, taskreader)
+                                Backup.FileBlockProcessor.Run(channels, options, database, stats, taskreader)
                         )
                     )
                 );
@@ -351,9 +445,8 @@ namespace Duplicati.Library.Main.Operation
                             return true;
 
                         if (fileSize >= 0)
-                        {
                             stats.AddExaminedFile(fileSize);
-                        }
+
                         return false;
                     });
 
@@ -528,7 +621,7 @@ namespace Duplicati.Library.Main.Operation
                 {
                     long filesetid;
                     using var counterToken = CancellationTokenSource.CreateLinkedTokenSource(m_taskReader.ProgressToken);
-                    using (var snapshot = GetSnapshot(sources, m_options))
+                    using (var source = await GetSourceProvider(sources, m_options, m_taskReader.ProgressToken).ConfigureAwait(false))
                     {
                         try
                         {
@@ -558,8 +651,7 @@ namespace Duplicati.Library.Main.Operation
                             var filesetvolumeid = await db.RegisterRemoteVolumeAsync(filesetvolume.RemoteFilename, RemoteVolumeType.Files, RemoteVolumeState.Temporary);
                             filesetid = await db.CreateFilesetAsync(filesetvolumeid, VolumeBase.ParseFilename(filesetvolume.RemoteFilename).Time);
 
-                            // create USN-based scanner if enabled
-                            var journalService = GetJournalService(sources, snapshot, filter, lastfilesetid);
+                            var journalService = GetJournalService(source, filter, lastfilesetid);
 
                             // Start parallel scan, or use the database
                             if (m_options.DisableFileScanner)
@@ -569,13 +661,13 @@ namespace Duplicati.Library.Main.Operation
                             }
                             else
                             {
-                                parallelScanner = Backup.CountFilesHandler.Run(sources, snapshot, journalService, m_result, m_options, m_sourceFilter, m_filter, GetBlacklistedPaths(), m_result.TaskControl, counterToken.Token);
+                                parallelScanner = Backup.CountFilesHandler.Run(source, journalService, m_result, m_options, m_filter, GetBlacklistedPaths(), m_result.TaskControl, counterToken.Token);
                             }
 
                             // Run the backup operation
                             if (await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
                             {
-                                await RunMainOperation(channels, sources, snapshot, journalService, db, backendManager, stats, m_options, m_sourceFilter, m_filter, m_result, m_result.TaskControl, filesetid, lastfilesetid).ConfigureAwait(false);
+                                await RunMainOperation(channels, source, journalService, db, backendManager, stats, m_options, m_sourceFilter, m_filter, m_result, m_result.TaskControl, filesetid, lastfilesetid).ConfigureAwait(false);
                             }
                         }
                         finally

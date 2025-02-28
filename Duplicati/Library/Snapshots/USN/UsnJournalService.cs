@@ -19,6 +19,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
+#nullable enable
 
 using System;
 using System.Collections.Generic;
@@ -29,8 +30,10 @@ using System.Threading;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Utility;
+using System.Threading.Tasks;
+using System.Runtime.CompilerServices;
 
-namespace Duplicati.Library.Snapshots
+namespace Duplicati.Library.Snapshots.USN
 {
     [SupportedOSPlatform("windows")]
     public class UsnJournalService
@@ -40,30 +43,39 @@ namespace Duplicati.Library.Snapshots
         /// </summary>
         private static readonly string FILTER_LOGTAG = Logging.Log.LogTagFromType(typeof(UsnJournalService));
 
+        /// <summary>
+        /// The snapshot service
+        /// </summary>
         private readonly ISnapshotService m_snapshot;
-        private readonly IEnumerable<string> m_sources;
+        /// <summary>
+        /// The volume data dictionary
+        /// </summary>
         private readonly Dictionary<string, VolumeData> m_volumeDataDict;
+        /// <summary>
+        /// The cancellation token
+        /// </summary>
         private readonly CancellationToken m_token;
 
         /// <summary>
         /// Constructor.
         /// </summary>
-        /// <param name="sources">Sources to filter</param>
         /// <param name="snapshot"></param>
         /// <param name="emitFilter">Emit filter</param>
         /// <param name="fileAttributeFilter"></param>
         /// <param name="skipFilesLargerThan"></param>
         /// <param name="prevJournalData">Journal-data of previous fileset</param>
         /// <param name="token"></param>
-        public UsnJournalService(IEnumerable<string> sources, ISnapshotService snapshot, IFilter emitFilter, FileAttributes fileAttributeFilter,
+        public UsnJournalService(ISnapshotService snapshot, IFilter emitFilter, FileAttributes fileAttributeFilter,
             long skipFilesLargerThan, IEnumerable<USNJournalDataEntry> prevJournalData, CancellationToken token)
         {
-            m_sources = sources;
             m_snapshot = snapshot;
             m_volumeDataDict = Initialize(emitFilter, fileAttributeFilter, skipFilesLargerThan, prevJournalData);
             m_token = token;
         }
 
+        /// <summary>
+        /// The volume data lists for the mapped root drives
+        /// </summary>
         public IEnumerable<VolumeData> VolumeDataList => m_volumeDataDict.Select(e => e.Value);
 
         /// <summary>
@@ -84,8 +96,8 @@ namespace Duplicati.Library.Snapshots
 
             // get hash identifying current source filter / sources configuration
             var configHash = Utility.Utility.ByteArrayAsHexString(MD5HashHelper.GetHash(new string[] {
-                emitFilter == null ? string.Empty : emitFilter.ToString(),
-                string.Join("; ", m_sources),
+                emitFilter?.ToString() ?? string.Empty,
+                string.Join("; ", m_snapshot.SourceEntries),
                 fileAttributeFilter.ToString(),
                 skipFilesLargerThan.ToString()
             }));
@@ -94,7 +106,7 @@ namespace Duplicati.Library.Snapshots
             var journalDataDict = prevJournalData.ToDictionary(data => data.Volume);
 
             // iterate over volumes
-            foreach (var sourcesPerVolume in SortByVolume(m_sources))
+            foreach (var sourcesPerVolume in SortByVolume(m_snapshot.SourceEntries))
             {
                 Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "UsnInitialize", "Reading USN journal for volume: {0}", sourcesPerVolume.Key);
 
@@ -180,8 +192,7 @@ namespace Duplicati.Library.Snapshots
                     //    Since that folder is going to be fully scanned, those files can be removed.
                     //    Note: it would be wrong to use the result from step 2. as the folder list! The entries removed
                     //          between 1. and 2. are *excluded* folders, and files below them are to be *excluded*, too.
-                    volumeData.Files =
-                        new HashSet<string>(Utility.Utility.GetFilesNotInFolders(changedFiles, volumeData.Folders));
+                    volumeData.Files = [.. Utility.Utility.GetFilesNotInFolders(changedFiles, volumeData.Folders)];
 
                     // Record success for volume
                     volumeData.IsFullScan = false;
@@ -214,25 +225,68 @@ namespace Duplicati.Library.Snapshots
         }
 
         /// <summary>
+        /// Returns all sources that should be fully scanned
+        /// </summary>
+        /// <param name="token">Cancellation token</param>
+        /// <returns>Filtered sources</returns>
+        public async IAsyncEnumerable<ISourceProviderEntry> GetFullScanSources([EnumeratorCancellation] CancellationToken token)
+        {
+            // Make the method async enumerable
+            await Task.CompletedTask;
+
+            foreach (var volumeData in m_volumeDataDict.Values.Where(x => x.IsFullScan))
+            {
+                if (volumeData.Folders != null)
+                {
+                    foreach (var folderPath in volumeData.Folders)
+                    {
+                        if (token.IsCancellationRequested)
+                            yield break;
+
+                        var folder = m_snapshot.GetFilesystemEntry(folderPath, true);
+                        if (folder != null)
+                            yield return folder;
+                        else
+                            Logging.Log.WriteWarningMessage(FILTER_LOGTAG, "FolderLookupError", null, "No entry while locating source folder {0}", folderPath);
+                    }
+                }
+
+                if (volumeData.Files != null)
+                {
+                    foreach (var filePath in volumeData.Files)
+                    {
+                        if (token.IsCancellationRequested)
+                            yield break;
+
+                        var file = m_snapshot.GetFilesystemEntry(filePath, false);
+                        if (file != null)
+                            yield return file;
+                        else
+                            Logging.Log.WriteWarningMessage(FILTER_LOGTAG, "FolderLookupError", null, "No entry while locating source file {0}", filePath);
+                    }
+                }
+            }
+        }
+
+
+        /// <summary>
         /// Filters sources, returning sub-set having been modified since last
         /// change, as specified by <c>journalData</c>.
         /// </summary>
         /// <param name="filter">Filter callback to exclude filtered items</param>
+        /// <param name="token">Cancellation token</param>
         /// <returns>Filtered sources</returns>
-        public IEnumerable<string> GetModifiedSources(Utility.Utility.EnumerationFilterDelegate filter)
+        public async IAsyncEnumerable<ISourceProviderEntry> GetModifiedSources(Func<ISourceProviderEntry, ValueTask<bool>> filter, [EnumeratorCancellation] CancellationToken token)
         {
-            // iterate over volumes
-            foreach (var volumeData in m_volumeDataDict)
+            foreach (var volumeData in m_volumeDataDict.Values.Where(x => !x.IsFullScan))
             {
                 // prepare cache for includes (value = true) and excludes (value = false, will be populated
                 // on-demand)
                 var cache = new Dictionary<string, bool>();
-                foreach (var source in m_sources)
+                foreach (var source in m_snapshot.SourceEntries)
                 {
-                    if (m_token.IsCancellationRequested)
-                    {
-                        break;
-                    }
+                    if (token.IsCancellationRequested)
+                        yield break;
 
                     cache[source] = true;
                 }
@@ -244,17 +298,15 @@ namespace Duplicati.Library.Snapshots
                 // FilterHandler.EnumerateFilesAndFolders() works top-down, and won't even enumerate child
                 // folders. 
                 // The sources are needed to stop evaluating parent folders above the specified source folders
-                if (volumeData.Value.Folders != null)
+                await foreach (var folder in FilterExcludedFolders(volumeData.Folders, m_snapshot, filter, cache, token).ConfigureAwait(false))
                 {
-                    foreach (var folder in FilterExcludedFolders(volumeData.Value.Folders, filter, cache).Where(m_snapshot.DirectoryExists))
-                    {
-                        if (m_token.IsCancellationRequested)
-                        {
-                            break;
-                        }
+                    if (token.IsCancellationRequested)
+                        yield break;
 
-                        yield return folder;
-                    }
+                    if (!m_snapshot.DirectoryExists(folder.Path))
+                        continue;
+
+                    yield return folder;
                 }
 
                 // The simplified file list also needs to be checked against the exclusion filter, as it 
@@ -263,17 +315,15 @@ namespace Duplicati.Library.Snapshots
                 // Note that the simplified file list may contain entries that have been deleted! They need to 
                 // be kept in the list (unless excluded by the filter) in order for the backup handler to record their 
                 // deletion.
-                if (volumeData.Value.Files != null)
+                await foreach (var files in FilterExcludedFiles(volumeData.Files, m_snapshot, filter, cache, token).ConfigureAwait(false))
                 {
-                    foreach (var files in FilterExcludedFiles(volumeData.Value.Files, filter, cache).Where(m_snapshot.FileExists))
-                    {
-                        if (m_token.IsCancellationRequested)
-                        {
-                            break;
-                        }
+                    if (token.IsCancellationRequested)
+                        yield break;
 
-                        yield return files;
-                    }
+                    if (!m_snapshot.FileExists(files.Path))
+                        continue;
+
+                    yield return files;
                 }
             }
         }
@@ -283,45 +333,53 @@ namespace Duplicati.Library.Snapshots
         /// of its parent folders, is excluded by the <c>filter</c>.
         /// </summary>
         /// <param name="files">Files to filter</param>
+        /// <param name="snapshot">Snapshot service</param>
         /// <param name="filter">Exclusion filter</param>
         /// <param name="cache">Cache of included and excluded files / folders</param>
-        /// <param name="errorCallback"></param>
+        /// <param name="token">Cancellation token</param>
         /// <returns>Filtered files</returns>
-        private IEnumerable<string> FilterExcludedFiles(IEnumerable<string> files,
-            Utility.Utility.EnumerationFilterDelegate filter, IDictionary<string, bool> cache, Utility.Utility.ReportAccessError errorCallback = null)
+        private static async IAsyncEnumerable<ISourceProviderEntry> FilterExcludedFiles(
+            IEnumerable<string>? files,
+            ISnapshotService snapshot,
+            Func<ISourceProviderEntry, ValueTask<bool>> filter,
+            IDictionary<string, bool> cache,
+            [EnumeratorCancellation] CancellationToken token)
         {
-            var result = new List<string>();
+            if (files == null)
+                yield break;
 
-            foreach (var file in files)
+            foreach (var filePath in files)
             {
-                if (m_token.IsCancellationRequested)
-                {
-                    break;
-                }
-
-                var attr = m_snapshot.FileExists(file) ? m_snapshot.GetAttributes(file) : FileAttributes.Normal;
+                ISourceProviderEntry? file;
                 try
                 {
-                    if (!filter(file, file, attr))
+                    file = snapshot.GetFilesystemEntry(filePath, false);
+                    if (file == null)
                         continue;
 
-                    if (!IsFolderOrAncestorsExcluded(Utility.Utility.GetParent(file, true), filter, cache))
+                    if (!await filter(file))
+                        continue;
+
+                    var parentPath = Utility.Utility.GetParent(file.Path, true);
+                    if (!string.IsNullOrWhiteSpace(parentPath))
                     {
-                        result.Add(file);
+                        var parent = snapshot.GetFilesystemEntry(parentPath, true);
+                        if (parent == null)
+                            continue;
+
+                        if (await IsFolderOrAncestorsExcluded(parent, snapshot, filter, cache, token))
+                            continue;
                     }
-                }
-                catch (System.Threading.ThreadAbortException)
-                {
-                    throw;
                 }
                 catch (Exception ex)
                 {
-                    errorCallback?.Invoke(file, file, ex);
-                    filter(file, file, attr | Utility.Utility.ATTRIBUTE_ERROR);
+                    Logging.Log.WriteWarningMessage(FILTER_LOGTAG, "FilterExcludedFilesError", ex, "Error while filtering file: {0}", ex.Message);
+                    continue;
                 }
-            }
 
-            return result;
+                if (file != null)
+                    yield return file;
+            }
         }
 
         /// <summary>
@@ -329,41 +387,40 @@ namespace Duplicati.Library.Snapshots
         /// of its ancestors, is excluded by the <c>filter</c>.
         /// </summary>
         /// <param name="folders">Folder to filter</param>
+        /// <param name="snapshot">Snapshot service</param>
         /// <param name="filter">Exclusion filter</param>
-        /// <param name="cache">Cache of excluded folders (optional)</param>
-        /// <param name="errorCallback"></param>
+        /// <param name="cache">Cache of excluded folders</param>
+        /// <param name="token">Cancellation token</param>
         /// <returns>Filtered folders</returns>
-        private IEnumerable<string> FilterExcludedFolders(IEnumerable<string> folders,
-            Utility.Utility.EnumerationFilterDelegate filter, IDictionary<string, bool> cache, Utility.Utility.ReportAccessError errorCallback = null)
+        private static async IAsyncEnumerable<ISourceProviderEntry> FilterExcludedFolders(
+            IEnumerable<string>? folders,
+            ISnapshotService snapshot,
+            Func<ISourceProviderEntry, ValueTask<bool>> filter,
+            IDictionary<string, bool> cache,
+            [EnumeratorCancellation] CancellationToken token)
         {
-            var result = new List<string>();
+            if (folders == null)
+                yield break;
 
-            foreach (var folder in folders)
+            foreach (var folderPath in folders)
             {
-                if (m_token.IsCancellationRequested)
-                {
-                    break;
-                }
-
+                ISourceProviderEntry? folder;
                 try
                 {
-                    if (!IsFolderOrAncestorsExcluded(folder, filter, cache))
-                    {
-                        result.Add(folder);
-                    }
-                }
-                catch (System.Threading.ThreadAbortException)
-                {
-                    throw;
+                    folder = snapshot.GetFilesystemEntry(folderPath, true);
+                    if (folder == null)
+                        continue;
+                    if (await IsFolderOrAncestorsExcluded(folder, snapshot, filter, cache, token))
+                        continue;
                 }
                 catch (Exception ex)
                 {
-                    errorCallback?.Invoke(folder, folder, ex);
-                    filter(folder, folder, FileAttributes.Directory | Utility.Utility.ATTRIBUTE_ERROR);
+                    Logging.Log.WriteWarningMessage(FILTER_LOGTAG, "FilterExcludedFoldersError", ex, "Error while filtering folder: {0}", ex.Message);
+                    continue;
                 }
-            }
 
-            return result;
+                yield return folder;
+            }
         }
 
         /// <summary>
@@ -373,18 +430,23 @@ namespace Duplicati.Library.Snapshots
         /// <param name="filter">Filter</param>
         /// <param name="cache">Cache of excluded folders (optional)</param>
         /// <returns>True if excluded, false otherwise</returns>
-        private bool IsFolderOrAncestorsExcluded(string folder, Utility.Utility.EnumerationFilterDelegate filter, IDictionary<string, bool> cache)
+        private static async ValueTask<bool> IsFolderOrAncestorsExcluded(
+            ISourceProviderEntry inputFolder,
+            ISnapshotService snapshot,
+            Func<ISourceProviderEntry, ValueTask<bool>> filter,
+            IDictionary<string, bool> cache,
+            CancellationToken token)
         {
-            List<string> parents = null;
+            List<string>? parents = null;
+            ISourceProviderEntry? folder = inputFolder;
+
             while (folder != null)
             {
-                if (m_token.IsCancellationRequested)
-                {
+                if (token.IsCancellationRequested)
                     break;
-                }
 
                 // first check cache
-                if (cache.TryGetValue(folder, out var include))
+                if (cache.TryGetValue(folder.Path, out var include))
                 {
                     if (include)
                         return false;
@@ -392,20 +454,20 @@ namespace Duplicati.Library.Snapshots
                     break; // hit!
                 }
 
+                parents ??= []; // create on-demand
+
                 // remember folder for cache
-                if (parents == null)
-                {
-                    parents = new List<string>(); // create on-demand
-                }
-                parents.Add(folder);
+                parents.Add(folder.Path);
 
 
-                var attr = m_snapshot.DirectoryExists(folder) ? m_snapshot.GetAttributes(folder) : FileAttributes.Directory;
-
-                if (!filter(folder, folder, attr))
+                if (!await filter(folder))
                     break; // excluded
 
-                folder = Utility.Utility.GetParent(folder, true);
+                var parentPath = Utility.Utility.GetParent(folder.Path, true);
+                if (string.IsNullOrWhiteSpace(parentPath))
+                    break;
+
+                folder = snapshot.GetFilesystemEntry(parentPath, true);
             }
 
             if (folder != null)
@@ -422,7 +484,6 @@ namespace Duplicati.Library.Snapshots
         /// </summary>
         /// <param name="sources">List of sources</param>
         /// <returns>Dictionary of volumes, with list of sources as values</returns>
-        [SupportedOSPlatform("windows")]
         private static Dictionary<string, List<string>> SortByVolume(IEnumerable<string> sources)
         {
             var sourcesByVolume = new Dictionary<string, List<string>>();
@@ -448,7 +509,6 @@ namespace Duplicati.Library.Snapshots
         /// </summary>
         /// <param name="path"></param>
         /// <returns></returns>
-        [SupportedOSPlatform("windows")]
         public bool IsPathEnumerated(string path)
         {
             // get NTFS volume root
@@ -461,8 +521,11 @@ namespace Duplicati.Library.Snapshots
             if (volumeData.IsFullScan)
                 return true; // do not append from previous set, already scanned
 
-            if (volumeData.Files.Contains(path))
+            if (volumeData.Files != null && volumeData.Files.Contains(path))
                 return true; // do not append from previous set, already scanned
+
+            if (volumeData.Folders == null)
+                return false;
 
             foreach (var folder in volumeData.Folders)
             {
@@ -490,23 +553,23 @@ namespace Duplicati.Library.Snapshots
         /// <summary>
         /// Volume
         /// </summary>
-        public string Volume { get; set; }
+        public required string Volume { get; set; }
 
         /// <summary>
         /// Set of potentially modified files
         /// </summary>
-        public HashSet<string> Files { get; internal set; }
+        public HashSet<string>? Files { get; internal set; }
 
         /// <summary>
         /// Set of folders that are potentially modified, or whose children
         /// are potentially modified
         /// </summary>
-        public List<string> Folders { get; internal set; }
+        public List<string>? Folders { get; internal set; }
 
         /// <summary>
         /// Journal data to use for next backup
         /// </summary>
-        public USNJournalDataEntry JournalData { get; internal set; }
+        public USNJournalDataEntry? JournalData { get; internal set; }
 
         /// <summary>
         /// If true, a full scan for this volume was required
@@ -516,6 +579,6 @@ namespace Duplicati.Library.Snapshots
         /// <summary>
         /// Optional exception message for volume
         /// </summary>
-        public Exception Exception { get; internal set; }
+        public Exception? Exception { get; internal set; }
     }
 }

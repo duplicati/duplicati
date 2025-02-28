@@ -22,6 +22,7 @@
 
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
+using Duplicati.Library.SourceProvider;
 using Renci.SshNet;
 using Renci.SshNet.Common;
 using System;
@@ -34,11 +35,12 @@ using System.Threading.Tasks;
 
 namespace Duplicati.Library.Backend
 {
-    public class SSHv2 : IStreamingBackend, IRenameEnabledBackend
+    public class SSHv2 : IStreamingBackend, IRenameEnabledBackend, IFolderEnabledBackend
     {
         private const string SSH_KEYFILE_OPTION = "ssh-keyfile";
         private const string SSH_KEYFILE_INLINE = "ssh-key";
         private const string SSH_FINGERPRINT_OPTION = "ssh-fingerprint";
+        private const string SSH_RELATIVE_PATH_OPTION = "ssh-relative-path";
         private const string SSH_FINGERPRINT_ACCEPT_ANY_OPTION = "ssh-accept-any-fingerprints";
         public const string KEYFILE_URI = "sshkey://";
         private const string SSH_TIMEOUT_OPTION = "ssh-operation-timeout";
@@ -56,6 +58,8 @@ namespace Duplicati.Library.Backend
         private readonly TimeSpan m_keepaliveinterval;
 
         private readonly int m_port = 22;
+        private readonly bool m_useRelativePath;
+        private string m_initialDirectory;
 
         private SftpClient m_con;
 
@@ -82,6 +86,7 @@ namespace Duplicati.Library.Backend
                 m_password = uri.Password;
 
             m_fingerprintallowall = Utility.Utility.ParseBoolOption(options, SSH_FINGERPRINT_ACCEPT_ANY_OPTION);
+            m_useRelativePath = Utility.Utility.ParseBoolOption(options, SSH_RELATIVE_PATH_OPTION);
 
             m_path = uri.Path;
 
@@ -90,8 +95,15 @@ namespace Duplicati.Library.Backend
                 m_path = Util.AppendDirSeparator(m_path, "/");
             }
 
-            if (!m_path.StartsWith("/", StringComparison.Ordinal))
-                m_path = "/" + m_path;
+            if (m_useRelativePath)
+            {
+                m_path = m_path.TrimStart('/');
+            }
+            else
+            {
+                if (!m_path.StartsWith("/", StringComparison.Ordinal))
+                    m_path = "/" + m_path;
+            }
 
             m_server = uri.Host;
 
@@ -163,7 +175,7 @@ namespace Duplicati.Library.Backend
             try
             {
                 await CreateConnection(cancelToken).ConfigureAwait(false);
-                await ChangeDirectory(m_path).ConfigureAwait(false);
+                await SetWorkingDirectory(cancelToken).ConfigureAwait(false);
                 await m_con.DeleteFileAsync(remotename, cancelToken).ConfigureAwait(false);
             }
             catch (SftpPathNotFoundException ex)
@@ -202,6 +214,9 @@ namespace Duplicati.Library.Backend
                     new CommandLineArgument(SSH_KEEPALIVE_OPTION, CommandLineArgument.ArgumentType.Timespan,
                         Strings.SSHv2Backend.DescriptionSshkeepaliveShort,
                         Strings.SSHv2Backend.DescriptionSshkeepaliveLong, "0"),
+                    new CommandLineArgument(SSH_RELATIVE_PATH_OPTION, CommandLineArgument.ArgumentType.Boolean,
+                        Strings.SSHv2Backend.DescriptionRelativePathShort,
+                        Strings.SSHv2Backend.DescriptionRelativePathLong)
                 });
             }
         }
@@ -239,7 +254,7 @@ namespace Duplicati.Library.Backend
         public async Task PutAsync(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
         {
             await CreateConnection(cancelToken).ConfigureAwait(false);
-            await ChangeDirectory(m_path).ConfigureAwait(false);
+            await SetWorkingDirectory(cancelToken).ConfigureAwait(false);
             await Task.Factory.FromAsync(
                 (cb, state) => m_con.BeginUploadFile(stream, remotename, cb, state, _ => cancelToken.ThrowIfCancellationRequested()),
                 m_con.EndUploadFile,
@@ -249,7 +264,7 @@ namespace Duplicati.Library.Backend
         public async Task GetAsync(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
         {
             await CreateConnection(cancelToken).ConfigureAwait(false);
-            await ChangeDirectory(m_path).ConfigureAwait(false);
+            await SetWorkingDirectory(cancelToken).ConfigureAwait(false);
 
             try
             {
@@ -271,7 +286,7 @@ namespace Duplicati.Library.Backend
         public async Task RenameAsync(string source, string target, CancellationToken cancelToken)
         {
             await CreateConnection(cancelToken).ConfigureAwait(false);
-            await ChangeDirectory(m_path).ConfigureAwait(false);
+            await SetWorkingDirectory(cancelToken).ConfigureAwait(false);
             await m_con.RenameFileAsync(source, target, cancelToken).ConfigureAwait(false);
         }
 
@@ -342,6 +357,9 @@ namespace Duplicati.Library.Backend
                 con.KeepAliveInterval = m_keepaliveinterval;
 
             await this.TryConnect(con, cancelToken).ConfigureAwait(false);
+            if (m_useRelativePath && (string.IsNullOrWhiteSpace(con.WorkingDirectory) || !con.WorkingDirectory.StartsWith("/")))
+                throw new UserInformationException("Server does not report absolute initial directory, please switch to absolute paths", "RelativePathNotSupported");
+            m_initialDirectory = con.WorkingDirectory;
 
             m_con = con;
         }
@@ -349,23 +367,27 @@ namespace Duplicati.Library.Backend
         private Task TryConnect(SftpClient client, CancellationToken cancelToken)
             => client.ConnectAsync(cancelToken);
 
-        private async Task ChangeDirectory(string path)
+        private async Task SetWorkingDirectory(CancellationToken cancelToken)
         {
-            if (string.IsNullOrEmpty(path))
+            if (string.IsNullOrEmpty(m_path))
                 return;
 
+            var targetPath = m_useRelativePath
+                ? Util.AppendDirSeparator(m_initialDirectory, "/") + m_path
+                : m_path;
+
             var workingDir = Util.AppendDirSeparator(m_con.WorkingDirectory, "/");
-            if (workingDir == path)
+            if (workingDir == targetPath)
                 return;
 
             try
             {
-                await m_con.ChangeDirectoryAsync(path);
+                await m_con.ChangeDirectoryAsync(targetPath, cancelToken).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
                 throw new Interface.FolderMissingException(
-                    Strings.SSHv2Backend.FolderNotFoundManagedError(path, ex.Message), ex);
+                    Strings.SSHv2Backend.FolderNotFoundManagedError(m_path, ex.Message), ex);
             }
         }
 
@@ -375,7 +397,7 @@ namespace Duplicati.Library.Backend
             var path = ".";
 
             await CreateConnection(cancelToken).ConfigureAwait(false);
-            await ChangeDirectory(m_path).ConfigureAwait(false);
+            await SetWorkingDirectory(cancelToken).ConfigureAwait(false);
 
             await foreach (var ls in m_con.ListDirectoryAsync(path, cancelToken).ConfigureAwait(false))
             {
@@ -392,7 +414,7 @@ namespace Duplicati.Library.Backend
             {
                 if (!filename.StartsWith(KEYFILE_URI, StringComparison.OrdinalIgnoreCase))
                 {
-                    return String.IsNullOrEmpty(password)
+                    return string.IsNullOrEmpty(password)
                         ? new PrivateKeyFile(filename)
                         : new PrivateKeyFile(filename, password);
                 }
@@ -405,7 +427,7 @@ namespace Duplicati.Library.Backend
 
                     ms.Position = 0;
 
-                    return String.IsNullOrEmpty(password) ? new PrivateKeyFile(ms) : new PrivateKeyFile(ms, password);
+                    return string.IsNullOrEmpty(password) ? new PrivateKeyFile(ms) : new PrivateKeyFile(ms, password);
                 }
             }
             catch (Exception ex)
@@ -425,5 +447,37 @@ namespace Duplicati.Library.Backend
         }
 
         public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(new[] { m_server });
+
+        /// <inheritdoc/>
+        public async IAsyncEnumerable<IFileEntry> ListAsync(string path, [EnumeratorCancellation] CancellationToken cancellationToken)
+        {
+            await CreateConnection(cancellationToken).ConfigureAwait(false);
+            await SetWorkingDirectory(cancellationToken).ConfigureAwait(false);
+
+            var prefixPath = m_useRelativePath ? "" : m_path;
+            if (!string.IsNullOrWhiteSpace(prefixPath))
+                prefixPath = Util.AppendDirSeparator(prefixPath, "/");
+
+            var filterPath = prefixPath + BackendSourceFileEntry.NormalizePathTo(path, '/');
+            if (!string.IsNullOrWhiteSpace(filterPath))
+                filterPath = Util.AppendDirSeparator(filterPath, "/");
+
+            if (string.IsNullOrWhiteSpace(filterPath))
+                filterPath = ".";
+
+            await foreach (var x in Client.ListDirectoryAsync(filterPath, cancellationToken).ConfigureAwait(false))
+                yield return new FileEntry(
+                    x.Name,
+                    x.Attributes.Size,
+                    x.Attributes.LastAccessTimeUtc,
+                    x.Attributes.LastWriteTimeUtc)
+                {
+                    IsFolder = x.Attributes.IsDirectory
+                };
+        }
+
+        /// <inheritdoc/>
+        public Task<IFileEntry> GetEntryAsync(string path, CancellationToken cancellationToken)
+            => Task.FromResult<IFileEntry>(null);
     }
 }

@@ -40,7 +40,7 @@ namespace Duplicati.Library.Main.Operation.Backup
         /// </summary>
         private static readonly string FILELOGTAG = Logging.Log.LogTagFromType(typeof(FilePreFilterProcess)) + ".FileEntry";
 
-        public static Task Run(Channels channels, Snapshots.ISnapshotService snapshot, Options options, BackupStatsCollector stats, BackupDatabase database)
+        public static Task Run(Channels channels, Options options, BackupStatsCollector stats, BackupDatabase database)
         {
             return AutomationExtensions.RunTask(
             new
@@ -73,11 +73,11 @@ namespace Duplicati.Library.Main.Operation.Backup
                     long filestatsize = -1;
                     try
                     {
-                        filestatsize = snapshot.GetFileSize(e.Path);
+                        filestatsize = e.Entry.Size;
                     }
                     catch (Exception ex)
                     {
-                        Logging.Log.WriteExplicitMessage(FILELOGTAG, "FailedToReadSize", ex, "Failed to read size of file: {0}", e.Path);
+                        Logging.Log.WriteExplicitMessage(FILELOGTAG, "FailedToReadSize", ex, "Failed to read size of file: {0}", e.Entry.Path);
                     }
 
                     await stats.AddExaminedFile(filestatsize);
@@ -86,8 +86,8 @@ namespace Duplicati.Library.Main.Operation.Backup
                     var tooLargeFile = SKIPFILESLARGERTHAN != 0 && filestatsize >= 0 && filestatsize > SKIPFILESLARGERTHAN;
                     if (tooLargeFile)
                     {
-                        Logging.Log.WriteVerboseMessage(FILELOGTAG, "SkipCheckTooLarge", "Skipped checking file, because the size exceeds limit {0}", e.Path);
-                        await self.ProgressChannel.WriteAsync(new ProgressEvent() { Filepath = e.Path, Length = filestatsize, Type = EventType.FileSkipped });
+                        Logging.Log.WriteVerboseMessage(FILELOGTAG, "SkipCheckTooLarge", "Skipped checking file, because the size exceeds limit {0}", e.Entry.Path);
+                        await self.ProgressChannel.WriteAsync(new ProgressEvent() { Filepath = e.Entry.Path, Length = filestatsize, Type = EventType.FileSkipped });
                         continue;
                     }
 
@@ -102,7 +102,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                     // and we only check for timestamp changes
                     if (CHECKFILETIMEONLY && !e.TimestampChanged && !isNewFile)
                     {
-                        Logging.Log.WriteVerboseMessage(FILELOGTAG, "SkipCheckNoTimestampChange", "Skipped checking file, because timestamp was not updated {0}", e.Path);
+                        Logging.Log.WriteVerboseMessage(FILELOGTAG, "SkipCheckNoTimestampChange", "Skipped checking file, because timestamp was not updated {0}", e.Entry.Path);
                         try
                         {
                             await database.AddUnmodifiedAsync(e.OldId, e.LastWrite);
@@ -111,9 +111,9 @@ namespace Duplicati.Library.Main.Operation.Backup
                         {
                             if (ex.IsRetiredException())
                                 throw;
-                            Logging.Log.WriteWarningMessage(FILELOGTAG, "FailedToAddFile", ex, "Failed while attempting to add unmodified file to database: {0}", e.Path);
+                            Logging.Log.WriteWarningMessage(FILELOGTAG, "FailedToAddFile", ex, "Failed while attempting to add unmodified file to database: {0}", e.Entry.Path);
                         }
-                        await self.ProgressChannel.WriteAsync(new ProgressEvent() { Filepath = e.Path, Length = filestatsize, Type = EventType.FileSkipped });
+                        await self.ProgressChannel.WriteAsync(new ProgressEvent() { Filepath = e.Entry.Path, Length = filestatsize, Type = EventType.FileSkipped });
                         continue;
                     }
 
@@ -130,28 +130,28 @@ namespace Duplicati.Library.Main.Operation.Backup
                     }
 
                     // Compute current metadata
-                    e.MetaHashAndSize = SKIPMETADATA ? EMPTY_METADATA : Utility.WrapMetadata(MetadataGenerator.GenerateMetadata(e.Path, e.Attributes, options, snapshot), options);
+                    e.MetaHashAndSize = SKIPMETADATA ? EMPTY_METADATA : Utility.WrapMetadata(MetadataGenerator.GenerateMetadata(e.Entry, e.Attributes, options), options);
                     e.MetadataChanged = !SKIPMETADATA && (e.MetaHashAndSize.Blob.Length != e.OldMetaSize || e.MetaHashAndSize.FileHash != e.OldMetaHash);
 
                     // Check if the file is new, or something indicates a change
                     var filesizeChanged = filestatsize < 0 || e.LastFileSize < 0 || filestatsize != e.LastFileSize;
                     if (isNewFile || e.TimestampChanged || filesizeChanged || e.MetadataChanged)
                     {
-                        Logging.Log.WriteVerboseMessage(FILELOGTAG, "CheckFileForChanges", "Checking file for changes {0}, new: {1}, timestamp changed: {2}, size changed: {3}, metadatachanged: {4}, {5} vs {6}", e.Path, isNewFile, e.TimestampChanged, filesizeChanged, e.MetadataChanged, e.LastWrite, e.OldModified);
+                        Logging.Log.WriteVerboseMessage(FILELOGTAG, "CheckFileForChanges", "Checking file for changes {0}, new: {1}, timestamp changed: {2}, size changed: {3}, metadatachanged: {4}, {5} vs {6}", e.Entry.Path, isNewFile, e.TimestampChanged, filesizeChanged, e.MetadataChanged, e.LastWrite, e.OldModified);
                         await self.Output.WriteAsync(e);
                     }
                     else
                     {
-                        Logging.Log.WriteVerboseMessage(FILELOGTAG, "SkipCheckNoMetadataChange", "Skipped checking file, because no metadata was updated {0}", e.Path);
+                        Logging.Log.WriteVerboseMessage(FILELOGTAG, "SkipCheckNoMetadataChange", "Skipped checking file, because no metadata was updated {0}", e.Entry.Path);
                         try
                         {
                             await database.AddUnmodifiedAsync(e.OldId, e.LastWrite);
                         }
                         catch (Exception ex)
                         {
-                            Logging.Log.WriteWarningMessage(FILELOGTAG, "FailedToAddFile", ex, "Failed while attempting to add unmodified file to database: {0}", e.Path);
+                            Logging.Log.WriteWarningMessage(FILELOGTAG, "FailedToAddFile", ex, "Failed while attempting to add unmodified file to database: {0}", e.Entry.Path);
                         }
-                        await self.ProgressChannel.WriteAsync(new ProgressEvent() { Filepath = e.Path, Length = filestatsize, Type = EventType.FileSkipped });
+                        await self.ProgressChannel.WriteAsync(new ProgressEvent() { Filepath = e.Entry.Path, Length = filestatsize, Type = EventType.FileSkipped });
                     }
                 }
             });

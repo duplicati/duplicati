@@ -451,14 +451,15 @@ namespace Duplicati.Library.Backend
                 long? sourceStreamLength = sourceStream == null ? null : Utility.Utility.GetStreamLength(sourceStream, out isStreamPostion);
 
                 if (sourceStreamLength.HasValue && targetFileInfo.Length != sourceStreamLength.Value)
-                    throw new FileMissingException($"Target file size ({targetFileInfo.Length:n0}) is different from the source length ({sourceStreamLength.Value:n0}){(isStreamPostion ? " - ending stream position)" : "")}. Target: {targetFilePath}");
+                    throw new FileMissingException($"Target file size ({targetFileInfo.Length:n0}) is different from the source length ({sourceStreamLength.Value:n0}){(isStreamPostion ? " - ending stream position" : "")}. Target: {targetFilePath}");
 
                 if (expectedLength.HasValue && targetFileInfo.Length != expectedLength.Value)
                     throw new FileMissingException($"Target file size ({targetFileInfo.Length:n0}) is different from the expected length ({expectedLength.Value:n0}). Target: {targetFilePath}");
             }
             catch
             {
-                try { System.IO.File.Delete(targetFilePath); } catch { }
+                try { System.IO.File.Delete(targetFilePath); }
+                catch { }
                 throw;
             }
         }
