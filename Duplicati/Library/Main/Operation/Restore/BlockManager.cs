@@ -129,19 +129,28 @@ namespace Duplicati.Library.Main.Operation.Restore
                 m_block_cache = new MemoryCache(cache_options);
                 m_entry_options.RegisterPostEvictionCallback(async (key, value, reason, state) =>
                 {
+                    bool was_present = false;
                     while (true)
                     {
                         lock (m_blockcount_lock)
                         {
-                            if (m_active_readers.TryGetValue((long)key, out var ac) && ac == 0)
+                            if (m_active_readers.TryGetValue((long)key, out var ac))
                             {
-                                m_block_cache.Remove(key);
-                                break;
+                                if (ac == 0)
+                                {
+                                    m_block_cache.Remove(key);
+                                    was_present = true;
+                                    break;
+                                }
                             }
+                            else
+                                break;
                         }
+
                         await Task.Delay(10).ConfigureAwait(false);
                     }
-                    ArrayPool<byte>.Shared.Return((byte[])value);
+                    if (was_present)
+                        ArrayPool<byte>.Shared.Return((byte[])value);
                 });
                 this.readers = readers;
                 sw_cacheevict = options.InternalProfiling ? new() : null;
@@ -175,7 +184,11 @@ namespace Duplicati.Library.Main.Operation.Restore
                 {
                     sw_checkcounts?.Start();
 
-                    m_active_readers[blockRequest.BlockID] = m_active_readers.TryGetValue(blockRequest.BlockID, out var ac) ? ac - 1 : 0;
+                    var active = m_active_readers.TryGetValue(blockRequest.BlockID, out var ac) ? ac - 1 : 0;
+                    if (active == 0)
+                        m_active_readers.Remove(blockRequest.BlockID, out var _);
+                    else
+                        m_active_readers[blockRequest.BlockID] = active;
 
                     var block_count = m_blockcount.TryGetValue(blockRequest.BlockID, out var c) ? c - 1 : 0;
 
@@ -321,7 +334,12 @@ namespace Duplicati.Library.Main.Operation.Restore
                 {
                     var blocks = m_blockcount.Where(x => x.Value != 0).Select(x => x.Key).ToArray();
                     var blockids = string.Join(", ", blocks);
-                    Logging.Log.WriteWarningMessage(LOGTAG, "BlockCountError", null, $"Block count in SleepableDictionarys block table is not zero: {blockcount}{Environment.NewLine}");//Blocks: {blockids}");
+                    Logging.Log.WriteWarningMessage(LOGTAG, "BlockCountError", null, $"Block count in SleepableDictionarys block table is not zero: {blockcount}{Environment.NewLine}");
+                }
+
+                if (m_active_readers.Count > 0)
+                {
+                    Logging.Log.WriteWarningMessage(LOGTAG, "BlockCountError", null, $"There are still {m_active_readers.Count} files being read by {m_active_readers.Sum(x => x.Value)} readers");
                 }
 
                 if (volumecount != 0)
@@ -338,7 +356,8 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                 if (m_block_cache.Count > 0)
                 {
-                    Logging.Log.WriteWarningMessage(LOGTAG, "BlockCacheError", null, $"Internal Block cache is not empty: {m_block_cache.Count}");
+                    Logging.Log.WriteWarningMessage(LOGTAG, "BlockCacheMismatch", null, $"Internal Block cache is not empty: {m_block_cache.Count}");
+                    Logging.Log.WriteWarningMessage(LOGTAG, "BlockCacheMismatch", null, $"Block counts in cache ({m_blockcount.Count}): {string.Join(", ", m_blockcount.Select(x => x.Value))}");
                 }
             }
 
