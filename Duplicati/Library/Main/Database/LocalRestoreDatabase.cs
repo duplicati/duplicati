@@ -1,24 +1,25 @@
 // Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
-// 
-// Permission is hereby granted, free of charge, to any person obtaining a 
-// copy of this software and associated documentation files (the "Software"), 
-// to deal in the Software without restriction, including without limitation 
-// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
-// and/or sell copies of the Software, and to permit persons to whom the 
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the "Software"),
+// to deal in the Software without restriction, including without limitation
+// the rights to use, copy, modify, merge, publish, distribute, sublicense,
+// and/or sell copies of the Software, and to permit persons to whom the
 // Software is furnished to do so, subject to the following conditions:
-// 
-// The above copyright notice and this permission notice shall be included in 
+//
+// The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
-// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
@@ -43,6 +44,7 @@ namespace Duplicati.Library.Main.Database
         /// </summary>
         protected string m_tempfiletable;
         protected string m_tempblocktable;
+        protected ConcurrentBag<IDbConnection> m_connection_pool = [];
         protected string m_latestblocktable;
         protected string m_fileprogtable;
         protected string m_totalprogtable;
@@ -240,7 +242,7 @@ namespace Duplicati.Library.Main.Database
                     if (filter == null || filter.Empty)
                     {
                         // Simple case, restore everything
-                        cmd.CommandText = string.Format(@"INSERT INTO ""{0}"" (""Path"", ""BlocksetID"", ""MetadataID"", ""DataVerified"") SELECT ""File"".""Path"", ""File"".""BlocksetID"", ""File"".""MetadataID"", 0 FROM ""File"", ""FilesetEntry"" WHERE ""File"".""ID"" = ""FilesetEntry"".""FileID"" AND ""FilesetEntry"".""FilesetID"" = ? ", m_tempfiletable);
+                        cmd.CommandText = string.Format(@"INSERT INTO ""{0}"" (""ID"", ""Path"", ""BlocksetID"", ""MetadataID"", ""DataVerified"") SELECT ""File"".""ID"", ""File"".""Path"", ""File"".""BlocksetID"", ""File"".""MetadataID"", 0 FROM ""File"", ""FilesetEntry"" WHERE ""File"".""ID"" = ""FilesetEntry"".""FileID"" AND ""FilesetEntry"".""FilesetID"" = ? ", m_tempfiletable);
                         cmd.AddParameter(filesetId);
                         cmd.ExecuteNonQuery();
                     }
@@ -264,7 +266,7 @@ namespace Duplicati.Library.Main.Database
                                 cmd.ExecuteNonQuery();
                             }
 
-                            cmd.CommandText = string.Format(@"INSERT INTO ""{0}"" (""Path"", ""BlocksetID"", ""MetadataID"", ""DataVerified"") SELECT ""File"".""Path"", ""File"".""BlocksetID"", ""File"".""MetadataID"", 0 FROM ""File"", ""FilesetEntry"" WHERE ""File"".""ID"" = ""FilesetEntry"".""FileID"" AND ""FilesetEntry"".""FilesetID"" = ? AND ""Path"" IN (SELECT DISTINCT ""Path"" FROM ""{1}"") ", m_tempfiletable, m_filenamestable);
+                            cmd.CommandText = string.Format(@"INSERT INTO ""{0}"" (""ID"", ""Path"", ""BlocksetID"", ""MetadataID"", ""DataVerified"") SELECT ""File"".""ID"", ""File"".""Path"", ""File"".""BlocksetID"", ""File"".""MetadataID"", 0 FROM ""File"", ""FilesetEntry"" WHERE ""File"".""ID"" = ""FilesetEntry"".""FileID"" AND ""FilesetEntry"".""FilesetID"" = ? AND ""Path"" IN (SELECT DISTINCT ""Path"" FROM ""{1}"") ", m_tempfiletable, m_filenamestable);
                             cmd.SetParameterValue(0, filesetId);
                             var c = cmd.ExecuteNonQuery();
 
@@ -294,13 +296,14 @@ namespace Duplicati.Library.Main.Database
                     {
                         // Restore but filter elements based on the filter expression
                         // If this is too slow, we could add a special handler for wildcard searches too
-                        cmd.CommandText = @"SELECT ""File"".""Path"", ""File"".""BlocksetID"", ""File"".""MetadataID"" FROM ""File"", ""FilesetEntry"" WHERE ""File"".""ID"" = ""FilesetEntry"".""FileID"" AND ""FilesetID"" = ?";
+                        cmd.CommandText = @"SELECT ""File"".""ID"", ""File"".""Path"", ""File"".""BlocksetID"", ""File"".""MetadataID"" FROM ""File"", ""FilesetEntry"" WHERE ""File"".""ID"" = ""FilesetEntry"".""FileID"" AND ""FilesetID"" = ?";
                         cmd.AddParameter(filesetId);
 
-                        object[] values = new object[3];
+                        object[] values = new object[4];
                         using (var cmd2 = m_connection.CreateCommand())
                         {
-                            cmd2.CommandText = string.Format(@"INSERT INTO ""{0}"" (""Path"", ""BlocksetID"", ""MetadataID"", ""DataVerified"") VALUES (?,?,?,0)", m_tempfiletable);
+                            cmd2.CommandText = string.Format(@"INSERT INTO ""{0}"" (""ID"", ""Path"", ""BlocksetID"", ""MetadataID"", ""DataVerified"") VALUES (?,?,?,?,0)", m_tempfiletable);
+                            cmd2.AddParameter();
                             cmd2.AddParameter();
                             cmd2.AddParameter();
                             cmd2.AddParameter();
@@ -309,11 +312,12 @@ namespace Duplicati.Library.Main.Database
                                 while (rd.Read())
                                 {
                                     rd.GetValues(values);
-                                    if (values[0] != null && values[0] != DBNull.Value && Library.Utility.FilterExpression.Matches(filter, values[0].ToString()))
+                                    if (values[1] != null && values[1] != DBNull.Value && Library.Utility.FilterExpression.Matches(filter, values[1].ToString()))
                                     {
                                         cmd2.SetParameterValue(0, values[0]);
                                         cmd2.SetParameterValue(1, values[1]);
                                         cmd2.SetParameterValue(2, values[2]);
+                                        cmd2.SetParameterValue(3, values[3]);
                                         cmd2.ExecuteNonQuery();
                                     }
                                 }
@@ -321,6 +325,7 @@ namespace Duplicati.Library.Main.Database
                     }
 
                     //creating indexes after insertion is much faster
+                    cmd.ExecuteNonQuery(string.Format(@"CREATE INDEX ""{0}_ID"" ON ""{0}"" (""ID"")", m_tempfiletable));
                     cmd.ExecuteNonQuery(string.Format(@"CREATE INDEX ""{0}_TargetPath"" ON ""{0}"" (""TargetPath"")", m_tempfiletable));
                     cmd.ExecuteNonQuery(string.Format(@"CREATE INDEX ""{0}_Path"" ON ""{0}"" (""Path"")", m_tempfiletable));
 
@@ -941,6 +946,26 @@ namespace Duplicati.Library.Main.Database
             return new FilesAndMetadata(m_connection, m_tempfiletable, m_tempblocktable, blocksize, curvolume);
         }
 
+        /// <summary>
+        /// Returns a connection from the connection pool.
+        /// </summary>
+        /// <returns>A connection from the connection pool.</returns>
+        public IDbConnection GetConnectionFromPool()
+        {
+            if (!m_connection_pool.TryTake(out var connection))
+            {
+                connection = (System.Data.IDbConnection)Activator.CreateInstance(Duplicati.Library.SQLiteHelper.SQLiteLoader.SQLiteConnectionType);
+                connection.ConnectionString = m_connection.ConnectionString + ";Cache=Shared;";
+                connection.Open();
+
+                using var cmd = connection.CreateCommand();
+                cmd.ExecuteNonQuery("PRAGMA journal_mode = WAL;");
+                cmd.ExecuteNonQuery("PRAGMA read_uncommitted = true;");
+            }
+
+            return connection;
+        }
+
         private class FileToRestore : IFileToRestore
         {
             public string Path { get; private set; }
@@ -1018,7 +1043,9 @@ namespace Duplicati.Library.Main.Database
         /// <returns>A list of <see cref="BlockRequest"/> needed to restore the given file.</returns>
         public IEnumerable<BlockRequest> GetBlocksFromFile(long blocksetID)
         {
-            using var cmd = m_connection.CreateCommand();
+            var connection = GetConnectionFromPool();
+            using var cmd = connection.CreateCommand();
+
             cmd.CommandText = @$"
                 SELECT Block.ID, Block.Hash, Block.Size, Block.VolumeID
                 FROM BlocksetEntry INNER JOIN Block
@@ -1026,11 +1053,15 @@ namespace Duplicati.Library.Main.Database
                 WHERE BlocksetEntry.BlocksetID = ?";
             cmd.AddParameter();
             cmd.SetParameterValue(0, blocksetID);
+
             using var reader = cmd.ExecuteReader();
             for (long i = 0; reader.Read(); i++)
             {
                 yield return new BlockRequest(reader.ConvertValueToInt64(0), i, reader.ConvertValueToString(1), reader.ConvertValueToInt64(2), reader.ConvertValueToInt64(3), false);
             }
+
+            // Return the connection to the pool
+            m_connection_pool.Add(connection);
         }
 
         /// <summary>
@@ -1040,22 +1071,28 @@ namespace Duplicati.Library.Main.Database
         /// <returns>A list of <see cref="BlockRequest"/> needed to restore the metadata of the given file.</returns>
         public IEnumerable<BlockRequest> GetMetadataBlocksFromFile(long fileID)
         {
-            using var cmd = m_connection.CreateCommand();
+            var connection = GetConnectionFromPool();
+            using var cmd = connection.CreateCommand();
+
             cmd.CommandText = $@"
                 SELECT Block.ID, Block.Hash, Block.Size, Block.VolumeID
-                FROM ""{m_tempfiletable}""
-                INNER JOIN Metadataset ON ""{m_tempfiletable}"".MetadataID = Metadataset.ID
+                FROM File
+                INNER JOIN Metadataset ON File.MetadataID = Metadataset.ID
                 INNER JOIN BlocksetEntry ON Metadataset.BlocksetID = BlocksetEntry.BlocksetID
                 INNER JOIN Block ON BlocksetEntry.BlockID = Block.ID
-                WHERE ""{m_tempfiletable}"".ID = ?
+                WHERE File.ID = ?
             ";
             cmd.AddParameter();
             cmd.SetParameterValue(0, fileID);
+
             using var reader = cmd.ExecuteReader();
             for (long i = 0; reader.Read(); i++)
             {
                 yield return new BlockRequest(reader.ConvertValueToInt64(0), i, reader.ConvertValueToString(1), reader.ConvertValueToInt64(2), reader.ConvertValueToInt64(3), false);
             }
+
+            // Return the connection to the pool
+            m_connection_pool.Add(connection);
         }
 
         /// <summary>
@@ -1320,6 +1357,12 @@ namespace Duplicati.Library.Main.Database
 
         public override void Dispose()
         {
+            foreach (var connection in m_connection_pool)
+            {
+                connection.Close();
+                connection.Dispose();
+            }
+            m_connection_pool.Clear();
             DropRestoreTable();
             base.Dispose();
         }

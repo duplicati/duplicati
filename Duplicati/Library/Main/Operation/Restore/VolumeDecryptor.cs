@@ -42,6 +42,8 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// <summary>
         /// Runs the volume decryptor process.
         /// </summary>
+        /// <param name="channels">The named channels for the restore operation.</param>
+        /// <param name="backend">The backend manager.</param>
         /// <param name="options">The restore options.</param>
         public static Task Run(Channels channels, IBackendManager backend, Options options)
         {
@@ -72,7 +74,7 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                         sw_write?.Start();
                         // Pass the decrypted volume to the `VolumeDecompressor` process.
-                        await self.Output.WriteAsync((volume_id, volume, bvr)).ConfigureAwait(false);
+                        await self.Output.WriteAsync((volume_id, bvr)).ConfigureAwait(false);
                         sw_write?.Stop();
                     }
                 }

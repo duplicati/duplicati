@@ -20,6 +20,7 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System;
+using System.Buffers;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using CoCoL;
@@ -41,6 +42,7 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// <summary>
         /// Runs the volume decompressor process.
         /// </summary>
+        /// <param name="channels">The named channels for the restore operation.</param>
         /// <param name="options">The restore options</param>
         public static Task Run(Channels channels, Options options)
         {
@@ -54,7 +56,9 @@ namespace Duplicati.Library.Main.Operation.Restore
             {
                 Stopwatch sw_read = options.InternalProfiling ? new() : null;
                 Stopwatch sw_write = options.InternalProfiling ? new() : null;
-                Stopwatch sw_decompress = options.InternalProfiling ? new() : null;
+                Stopwatch sw_decompress_alloc = options.InternalProfiling ? new() : null;
+                Stopwatch sw_decompress_locking = options.InternalProfiling ? new() : null;
+                Stopwatch sw_decompress_read = options.InternalProfiling ? new() : null;
                 Stopwatch sw_verify = options.InternalProfiling ? new() : null;
 
                 try
@@ -68,13 +72,17 @@ namespace Duplicati.Library.Main.Operation.Restore
                         var (block_request, volume_reader) = await self.Input.ReadAsync().ConfigureAwait(false);
                         sw_read?.Stop();
 
-                        sw_decompress?.Start();
-                        var data = new byte[block_request.BlockSize];
+                        sw_decompress_alloc?.Start();
+                        var data = ArrayPool<byte>.Shared.Rent(options.Blocksize);
+                        sw_decompress_alloc?.Stop();
+                        sw_decompress_locking?.Start();
                         lock (volume_reader) // The BlockVolumeReader is not thread-safe
                         {
+                            sw_decompress_locking?.Stop();
+                            sw_decompress_read?.Start();
                             volume_reader.ReadBlock(block_request.BlockHash, data);
+                            sw_decompress_read?.Stop();
                         }
-                        sw_decompress?.Stop();
 
                         sw_verify?.Start();
                         var hash = Convert.ToBase64String(block_hasher.ComputeHash(data, 0, (int)block_request.BlockSize));
@@ -96,7 +104,7 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                     if (options.InternalProfiling)
                     {
-                        Logging.Log.WriteProfilingMessage(LOGTAG, "InternalTimings", $"Read: {sw_read.ElapsedMilliseconds}ms, Write: {sw_write.ElapsedMilliseconds}ms, Decompress: {sw_decompress.ElapsedMilliseconds}ms, Verify: {sw_verify.ElapsedMilliseconds}ms");
+                        Logging.Log.WriteProfilingMessage(LOGTAG, "InternalTimings", $"Read: {sw_read.ElapsedMilliseconds}ms, Write: {sw_write.ElapsedMilliseconds}ms, Decompress allocate: {sw_decompress_alloc.ElapsedMilliseconds}ms, Decompress lock: {sw_decompress_locking.ElapsedMilliseconds}ms, Decompress read: {sw_decompress_read.ElapsedMilliseconds}ms, Verify: {sw_verify.ElapsedMilliseconds}ms");
                     }
                 }
                 catch (Exception ex)

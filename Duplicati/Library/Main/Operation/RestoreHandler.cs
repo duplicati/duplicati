@@ -331,6 +331,7 @@ namespace Duplicati.Library.Main.Operation
 
             using var setup_log_timer = new Logging.Timer(LOGTAG, "RestoreNetworkSetup", "RestoreNetworkSetup");
             // Create the channels between BlockManager and FileProcessor
+            Restore.Channels.BufferSize = m_options.RestoreChannelBufferSize;
             var fileprocessor_requests = new Channel<Restore.BlockRequest>[m_options.RestoreFileProcessors].Select(_ => ChannelManager.CreateChannel<Restore.BlockRequest>(buffersize: Restore.Channels.BufferSize)).ToArray();
             var fileprocessor_responses = new Channel<byte[]>[m_options.RestoreFileProcessors].Select(_ => ChannelManager.CreateChannel<byte[]>(buffersize: Restore.Channels.BufferSize)).ToArray();
 

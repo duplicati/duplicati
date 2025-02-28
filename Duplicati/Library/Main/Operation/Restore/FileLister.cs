@@ -43,6 +43,7 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// Runs the file lister process that lists the files that need to be restored
         /// and sends them to the <see cref="FileProcessor"/>.
         /// </summary>
+        /// <param name="channels">The named channels for the restore operation.</param>
         /// <param name="db">The restore database, which is queried for the file list.</param>
         /// <param name="options">The restore options</param>
         /// <param name="result">The restore results</param>
@@ -57,34 +58,36 @@ namespace Duplicati.Library.Main.Operation.Restore
             {
                 Stopwatch sw_prework = options.InternalProfiling ? new() : null;
                 Stopwatch sw_write = options.InternalProfiling ? new() : null;
+
+                bool threw_exception = false;
+
                 try
                 {
                     sw_prework?.Start();
-                    var files = db.GetFilesAndSymlinksToRestore(true).OrderByDescending(x => x.Length).ToArray();
+                    var files = db.GetFilesAndSymlinksToRestore(true).OrderByDescending(x => x.Length).ToArray(); // Get started on big files first
                     result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_DownloadingRemoteFiles);
                     sw_prework?.Stop();
 
                     sw_write?.Start();
                     foreach (var file in files)
-                    {
                         await self.Output.WriteAsync(file).ConfigureAwait(false);
-                    }
                     sw_write?.Stop();
-                }
-                catch (RetiredException)
-                {
-                    Logging.Log.WriteVerboseMessage(LOGTAG, "RetiredProcess", null, "File lister retired");
-
-                    if (options.InternalProfiling)
-                    {
-                        Logging.Log.WriteProfilingMessage(LOGTAG, "InternalTimings", $"Prework: {sw_prework.ElapsedMilliseconds}ms, Write: {sw_write.ElapsedMilliseconds}ms");
-                        Console.WriteLine($"File lister - Prework: {sw_prework.ElapsedMilliseconds}ms, Write: {sw_write.ElapsedMilliseconds}ms");
-                    }
                 }
                 catch (Exception ex)
                 {
                     Logging.Log.WriteErrorMessage(LOGTAG, "FileListerError", ex, "Error during file listing");
+                    threw_exception = true;
                     throw;
+                }
+                finally
+                {
+                    if (!threw_exception)
+                        Logging.Log.WriteVerboseMessage(LOGTAG, "RetiredProcess", null, "File lister retired");
+
+                    if (options.InternalProfiling)
+                    {
+                        Logging.Log.WriteProfilingMessage(LOGTAG, "InternalTimings", $"Prework: {sw_prework.ElapsedMilliseconds}ms, Write: {sw_write.ElapsedMilliseconds}ms");
+                    }
                 }
             });
         }
