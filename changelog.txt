@@ -1,3 +1,56 @@
+2025-02-28 - 2.1.0.110_canary_2025-02-28
+==========
+This release is a canary release intended to be used for testing.
+
+# Major changes in this version
+
+- Restore improvements
+Building further on the new restore engine, this version has significant performance speedups during restore.
+
+- New signing keys
+The builds are now signed by "Duplicati Inc" for MacOS and Windows.
+The Windows signatures are now done with an extended validation (EV) certificate and should not trigger Windows Defender warnings.
+
+- New enumeration logic
+The enumeration of files and folders has been rewritten to better support some edge cases.
+
+- Improved pagination support
+All backends are updated to support the new list methods that supports pagination and cancellation. 
+The test method will now only load a single page of results, instead of listing all items.
+
+- Support for backend-as-source
+This version has support for backups of both remote and local data.
+In this version, S3, IDrive, SSH and CIFS sources are supported.
+The UI does not yet support this, but it is possible to read data from a remote location by "mounting" it into the local filesystem.
+For the commandline (and manual text entry in the UI) enter sources such as:
+```
+// Linux/MacOS
+@/mnt/s3-data|s3://example?auth-username=...
+
+// Windows
+@X:\server1|cifs://server/share?auth-username=...
+```
+
+# Potentially breaking changes (from 2.1.0.109)
+  - Location of data folder has changed in some cases, refer to previous release for details
+  - Permissions are now applied to the data folder, refer to previous release for details
+  - New user interface, `ngclient` is the default; there is a button to switch between the two
+
+## Detailed list of changes:
+- Improved script examples
+- Fixed double-click TrayIcon on Windows, thanks @Alex-Heard
+- Fixed an issue with CORS headers
+- Parallel downloads for restore
+- Report interface and port in Webserver startup message
+- Fixed missing example script on Windows
+- Fixed a case where a leading slash could be stripped from the path or a URL
+- Added additional Infomaniak endpoints, thanks @ochaze
+- Backend listing is now async for better pagination and cancellation support
+- Updated signing support for the release builds
+- Added a link from `ngax` to `ngclient` (the other way already exists)
+- Added alternate source providers and new enumeration process
+- Performance optimizations for restore process
+
 2025-02-11 - 2.1.0.109_canary_2025-02-11
 ==========
 This release is a canary release intended to be used for testing.
