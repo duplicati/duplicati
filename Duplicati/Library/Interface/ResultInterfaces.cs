@@ -38,7 +38,7 @@ namespace Duplicati.Library.Interface
         DateTime BeginTime { get; }
         DateTime EndTime { get; }
         TimeSpan Duration { get; }
-        
+
         IEnumerable<string> Errors { get; }
         IEnumerable<string> Warnings { get; }
         IEnumerable<string> Messages { get; }
@@ -64,6 +64,7 @@ namespace Duplicati.Library.Interface
         long UnknownFileCount { get; set; }
         long KnownFileCount { get; set; }
         long KnownFileSize { get; set; }
+        long KnownFilesets { get; set; }
         DateTime LastBackupDate { get; set; }
         long BackupListCount { get; set; }
         long TotalQuotaSpace { get; set; }
@@ -116,14 +117,14 @@ namespace Duplicati.Library.Interface
         IEnumerable<IListResultRemoteLog> LogMessages { get; }
         IEnumerable<IListResultRemoteVolume> RemoteVolumes { get; }
     }
-        
+
     public interface IDeleteResults : IBasicResults
     {
         IEnumerable<Tuple<long, DateTime>> DeletedSets { get; }
         ICompactResults CompactResults { get; }
         bool Dryrun { get; }
     }
-        
+
     public interface IBackupResults : IBasicResults, IBackendStatsticsReporter
     {
         long DeletedFiles { get; }
@@ -143,16 +144,16 @@ namespace Duplicati.Library.Interface
         long ModifiedFolders { get; }
         long ModifiedSymlinks { get; }
         long AddedSymlinks { get; }
-        long DeletedSymlinks { get; } 
+        long DeletedSymlinks { get; }
         bool PartialBackup { get; }
         bool Dryrun { get; }
-        
+
         ICompactResults CompactResults { get; }
         IVacuumResults VacuumResults { get; }
         IDeleteResults DeleteResults { get; }
         IRepairResults RepairResults { get; }
     }
-    
+
     public interface IRestoreResults : IBasicResults
     {
         long RestoredFiles { get; }
@@ -163,10 +164,10 @@ namespace Duplicati.Library.Interface
         long DeletedFiles { get; }
         long DeletedFolders { get; }
         long DeletedSymlinks { get; }
-        
+
         IRecreateDatabaseResults RecreateDatabaseResults { get; }
     }
-    
+
     public interface IRecreateDatabaseResults : IBasicResults
     {
     }
@@ -188,23 +189,23 @@ namespace Duplicati.Library.Interface
 
         IVacuumResults VacuumResults { get; }
     }
-    
+
     public interface ICreateLogDatabaseResults : IBasicResults
     {
         string TargetPath { get; }
     }
-    
+
     public interface IRestoreControlFilesResults : IBasicResults
     {
         IEnumerable<string> Files { get; }
     }
-    
+
     public interface IRepairResults : IBasicResults
     {
         IRecreateDatabaseResults RecreateDatabaseResults { get; }
     }
-    
-    
+
+
     /// <summary>
     /// The possible change types for an entry
     /// </summary>
@@ -222,8 +223,8 @@ namespace Duplicati.Library.Interface
         /// The element was modified
         /// </summary>
         Modified
-    }  
-    
+    }
+
     /// <summary>
     /// The possible entry types
     /// </summary>
@@ -242,16 +243,16 @@ namespace Duplicati.Library.Interface
         /// </summary>
         File
     }
-          
+
     public interface IListChangesResults : IBasicResults
     {
         DateTime BaseVersionTimestamp { get; }
         DateTime CompareVersionTimestamp { get; }
         long BaseVersionIndex { get; }
         long CompareVersionIndex { get; }
-    
-        IEnumerable<Tuple<ListChangesChangeType, ListChangesElementType, string>> ChangeDetails { get; } 
-        
+
+        IEnumerable<Tuple<ListChangesChangeType, ListChangesElementType, string>> ChangeDetails { get; }
+
         long AddedFolders { get; }
         long AddedSymlinks { get; }
         long AddedFiles { get; }
@@ -263,14 +264,14 @@ namespace Duplicati.Library.Interface
         long ModifiedFolders { get; }
         long ModifiedSymlinks { get; }
         long ModifiedFiles { get; }
-        
+
         long PreviousSize { get; }
         long CurrentSize { get; }
 
         long AddedSize { get; }
         long DeletedSize { get; }
     }
-    
+
     /// <summary>
     /// The status of a change in a test entry 
     /// </summary>
@@ -298,7 +299,7 @@ namespace Duplicati.Library.Interface
     {
         IEnumerable<KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>> Verifications { get; }
     }
-    
+
     public interface ITestFilterResults : IBasicResults
     {
         long FileSize { get; set; }

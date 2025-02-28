@@ -736,6 +736,7 @@ namespace Duplicati.Server
 
                 backup.Metadata["TargetFilesSize"] = r.KnownFileSize.ToString();
                 backup.Metadata["TargetFilesCount"] = r.KnownFileCount.ToString();
+                backup.Metadata["TargetFilesetsCount"] = r.KnownFilesets.ToString();
                 backup.Metadata["TargetSizeString"] = Duplicati.Library.Utility.Utility.FormatSizeString(r.KnownFileSize);
             }
         }

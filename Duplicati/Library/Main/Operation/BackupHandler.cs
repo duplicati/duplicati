@@ -530,6 +530,7 @@ namespace Duplicati.Library.Main.Operation
             if (result.BackendWriter != null)
             {
                 result.BackendWriter.KnownFileCount = database.GetRemoteVolumes().Count();
+                result.BackendWriter.KnownFilesets = database.GetRemoteVolumes().Count(x => x.Type == RemoteVolumeType.Files);
                 result.BackendWriter.KnownFileSize = database.GetRemoteVolumes().Select(x => Math.Max(0, x.Size)).Sum();
 
                 result.BackendWriter.UnknownFileCount = 0;

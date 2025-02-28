@@ -668,6 +668,7 @@ namespace Duplicati.CommandLine
                     if (parsedStats.KnownFileCount > 0)
                     {
                         output.MessageEvent(string.Format("  Remote files: {0}", parsedStats.KnownFileCount));
+                        output.MessageEvent(string.Format("  Remote filesets: {0}", parsedStats.KnownFilesets));
                         output.MessageEvent(string.Format("  Remote size: {0}", Library.Utility.Utility.FormatSizeString(parsedStats.KnownFileSize)));
                     }
 
