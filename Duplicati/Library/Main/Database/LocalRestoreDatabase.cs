@@ -242,7 +242,7 @@ namespace Duplicati.Library.Main.Database
                     if (filter == null || filter.Empty)
                     {
                         // Simple case, restore everything
-                        cmd.CommandText = string.Format(@"INSERT INTO ""{0}"" (""Path"", ""BlocksetID"", ""MetadataID"", ""DataVerified"") SELECT ""File"".""Path"", ""File"".""BlocksetID"", ""File"".""MetadataID"", 0 FROM ""File"", ""FilesetEntry"" WHERE ""File"".""ID"" = ""FilesetEntry"".""FileID"" AND ""FilesetEntry"".""FilesetID"" = ? ", m_tempfiletable);
+                        cmd.CommandText = string.Format(@"INSERT INTO ""{0}"" (""ID"", ""Path"", ""BlocksetID"", ""MetadataID"", ""DataVerified"") SELECT ""File"".""ID"", ""File"".""Path"", ""File"".""BlocksetID"", ""File"".""MetadataID"", 0 FROM ""File"", ""FilesetEntry"" WHERE ""File"".""ID"" = ""FilesetEntry"".""FileID"" AND ""FilesetEntry"".""FilesetID"" = ? ", m_tempfiletable);
                         cmd.AddParameter(filesetId);
                         cmd.ExecuteNonQuery();
                     }
@@ -266,7 +266,7 @@ namespace Duplicati.Library.Main.Database
                                 cmd.ExecuteNonQuery();
                             }
 
-                            cmd.CommandText = string.Format(@"INSERT INTO ""{0}"" (""Path"", ""BlocksetID"", ""MetadataID"", ""DataVerified"") SELECT ""File"".""Path"", ""File"".""BlocksetID"", ""File"".""MetadataID"", 0 FROM ""File"", ""FilesetEntry"" WHERE ""File"".""ID"" = ""FilesetEntry"".""FileID"" AND ""FilesetEntry"".""FilesetID"" = ? AND ""Path"" IN (SELECT DISTINCT ""Path"" FROM ""{1}"") ", m_tempfiletable, m_filenamestable);
+                            cmd.CommandText = string.Format(@"INSERT INTO ""{0}"" (""ID"", ""Path"", ""BlocksetID"", ""MetadataID"", ""DataVerified"") SELECT ""File"".""ID"", ""File"".""Path"", ""File"".""BlocksetID"", ""File"".""MetadataID"", 0 FROM ""File"", ""FilesetEntry"" WHERE ""File"".""ID"" = ""FilesetEntry"".""FileID"" AND ""FilesetEntry"".""FilesetID"" = ? AND ""Path"" IN (SELECT DISTINCT ""Path"" FROM ""{1}"") ", m_tempfiletable, m_filenamestable);
                             cmd.SetParameterValue(0, filesetId);
                             var c = cmd.ExecuteNonQuery();
 
@@ -296,13 +296,14 @@ namespace Duplicati.Library.Main.Database
                     {
                         // Restore but filter elements based on the filter expression
                         // If this is too slow, we could add a special handler for wildcard searches too
-                        cmd.CommandText = @"SELECT ""File"".""Path"", ""File"".""BlocksetID"", ""File"".""MetadataID"" FROM ""File"", ""FilesetEntry"" WHERE ""File"".""ID"" = ""FilesetEntry"".""FileID"" AND ""FilesetID"" = ?";
+                        cmd.CommandText = @"SELECT ""File"".""ID"", ""File"".""Path"", ""File"".""BlocksetID"", ""File"".""MetadataID"" FROM ""File"", ""FilesetEntry"" WHERE ""File"".""ID"" = ""FilesetEntry"".""FileID"" AND ""FilesetID"" = ?";
                         cmd.AddParameter(filesetId);
 
-                        object[] values = new object[3];
+                        object[] values = new object[4];
                         using (var cmd2 = m_connection.CreateCommand())
                         {
-                            cmd2.CommandText = string.Format(@"INSERT INTO ""{0}"" (""Path"", ""BlocksetID"", ""MetadataID"", ""DataVerified"") VALUES (?,?,?,0)", m_tempfiletable);
+                            cmd2.CommandText = string.Format(@"INSERT INTO ""{0}"" (""ID"", ""Path"", ""BlocksetID"", ""MetadataID"", ""DataVerified"") VALUES (?,?,?,?,0)", m_tempfiletable);
+                            cmd2.AddParameter();
                             cmd2.AddParameter();
                             cmd2.AddParameter();
                             cmd2.AddParameter();
@@ -311,11 +312,12 @@ namespace Duplicati.Library.Main.Database
                                 while (rd.Read())
                                 {
                                     rd.GetValues(values);
-                                    if (values[0] != null && values[0] != DBNull.Value && Library.Utility.FilterExpression.Matches(filter, values[0].ToString()))
+                                    if (values[1] != null && values[1] != DBNull.Value && Library.Utility.FilterExpression.Matches(filter, values[1].ToString()))
                                     {
                                         cmd2.SetParameterValue(0, values[0]);
                                         cmd2.SetParameterValue(1, values[1]);
                                         cmd2.SetParameterValue(2, values[2]);
+                                        cmd2.SetParameterValue(3, values[3]);
                                         cmd2.ExecuteNonQuery();
                                     }
                                 }
@@ -323,6 +325,7 @@ namespace Duplicati.Library.Main.Database
                     }
 
                     //creating indexes after insertion is much faster
+                    cmd.ExecuteNonQuery(string.Format(@"CREATE INDEX ""{0}_ID"" ON ""{0}"" (""ID"")", m_tempfiletable));
                     cmd.ExecuteNonQuery(string.Format(@"CREATE INDEX ""{0}_TargetPath"" ON ""{0}"" (""TargetPath"")", m_tempfiletable));
                     cmd.ExecuteNonQuery(string.Format(@"CREATE INDEX ""{0}_Path"" ON ""{0}"" (""Path"")", m_tempfiletable));
 
@@ -1073,11 +1076,11 @@ namespace Duplicati.Library.Main.Database
 
             cmd.CommandText = $@"
                 SELECT Block.ID, Block.Hash, Block.Size, Block.VolumeID
-                FROM FileLookup
-                INNER JOIN Metadataset ON FileLookup.MetadataID = Metadataset.ID
+                FROM File
+                INNER JOIN Metadataset ON File.MetadataID = Metadataset.ID
                 INNER JOIN BlocksetEntry ON Metadataset.BlocksetID = BlocksetEntry.BlocksetID
                 INNER JOIN Block ON BlocksetEntry.BlockID = Block.ID
-                WHERE FileLookup.ID = ?
+                WHERE File.ID = ?
             ";
             cmd.AddParameter();
             cmd.SetParameterValue(0, fileID);
