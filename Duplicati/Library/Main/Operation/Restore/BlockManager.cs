@@ -273,6 +273,17 @@ namespace Duplicati.Library.Main.Operation.Restore
                 {
                     Logging.Log.WriteExplicitMessage(LOGTAG, "BlockCacheGet", "Requesting block {0} from volume {1}", block_request.BlockID, block_request.VolumeID);
 
+                    // TODO add a debugging timeout. As this can potentially take a long time in a real setup with a slow machine and slew connection.
+                    Task.Run(async () =>
+                    {
+                        await Task.Delay(TimeSpan.FromMinutes(5)).ConfigureAwait(false);
+                        if (!tcs.Task.IsCompleted)
+                        {
+                            tcs.SetException(new TimeoutException("Block request timeout"));
+                            Logging.Log.WriteErrorMessage(LOGTAG, "BlockRequestTimeout", null, $"Block request for block {block_request.BlockID} timed out");
+                        }
+                    });
+
                     // We are the first to request this block
                     m_volume_request.Write(block_request);
                 }
