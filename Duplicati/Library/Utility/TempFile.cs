@@ -37,6 +37,7 @@ namespace Duplicati.Library.Utility
 
         private string m_path;
         private bool m_protect;
+        private bool m_disposed = false;
 
 #if DEBUG
         //In debug mode, we track the creation of temporary files, and encode the generating method into the name
@@ -179,6 +180,8 @@ namespace Duplicati.Library.Utility
 
         protected void Dispose(bool disposing)
         {
+            m_disposed = true;
+
             if (disposing)
                 GC.SuppressFinalize(this);
 
@@ -204,6 +207,9 @@ namespace Duplicati.Library.Utility
 
         ~TempFile()
         {
+            if (!m_disposed)
+                Logging.Log.WriteWarningMessage("TempFile", "Finalizer", null, "TempFile was not disposed, cleaning up");
+
             Dispose(false);
         }
 
