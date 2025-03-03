@@ -252,6 +252,8 @@ namespace Duplicati.Library.Main.Operation.Restore
             /// <returns>A `Task` holding the data block.</returns>
             public Task<byte[]> Get(BlockRequest block_request)
             {
+                Logging.Log.WriteExplicitMessage(LOGTAG, "BlockCacheGet", "Getting block {0} from cache", block_request.BlockID);
+
                 lock (m_blockcount_lock)
                 {
                     m_active_readers[block_request.BlockID] = m_active_readers.TryGetValue(block_request.BlockID, out var c) ? c + 1 : 1;
@@ -269,6 +271,8 @@ namespace Duplicati.Library.Main.Operation.Restore
                 var new_tcs = m_waiters.GetOrAdd(block_request.BlockID, tcs);
                 if (tcs == new_tcs)
                 {
+                    Logging.Log.WriteExplicitMessage(LOGTAG, "BlockCacheGet", "Requesting block {0} from volume {1}", block_request.BlockID, block_request.VolumeID);
+
                     // We are the first to request this block
                     m_volume_request.Write(block_request);
                 }
@@ -289,6 +293,8 @@ namespace Duplicati.Library.Main.Operation.Restore
             /// <param name="value">The byte[] buffer holding the block data.</param>
             public void Set(BlockRequest blockRequest, byte[] value)
             {
+                Logging.Log.WriteExplicitMessage(LOGTAG, "BlockCacheSet", "Setting block {0} in cache", blockRequest.BlockID);
+
                 m_block_cache.Set(blockRequest.BlockID, value);
 
                 // Notify any waiters that the block is available.

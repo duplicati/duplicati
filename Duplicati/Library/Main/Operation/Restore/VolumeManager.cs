@@ -90,13 +90,16 @@ namespace Duplicati.Library.Main.Operation.Restore
                                         }
                                         else
                                         {
+                                            Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeRequest", "Requesting block {0} from volume {1}", request.BlockID, request.VolumeID);
                                             sw_request?.Start();
                                             if (cache.TryGetValue(request.VolumeID, out BlockVolumeReader reader))
                                             {
+                                                Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeRequest", "Block {0} found in cache", request.BlockID);
                                                 await self.DecompressRequest.WriteAsync((request, reader)).ConfigureAwait(false);
                                             }
                                             else
                                             {
+                                                Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeRequest", "Block {0} not found in cache, requesting volume {1}", request.BlockID, request.VolumeID);
                                                 if (in_flight.TryGetValue(request.VolumeID, out var waiters))
                                                 {
                                                     waiters.Add(request);
@@ -120,6 +123,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                                         sw_wakeup?.Start();
                                         foreach (var request in in_flight[volume_id])
                                         {
+                                            Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeRequest", "Requesting block {0} from volume {1}", request.BlockID, volume_id);
                                             await self.DecompressRequest.WriteAsync((request, reader)).ConfigureAwait(false);
                                         }
                                         in_flight.Remove(volume_id);
