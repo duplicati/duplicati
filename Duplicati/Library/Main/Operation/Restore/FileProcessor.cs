@@ -154,9 +154,17 @@ namespace Duplicati.Library.Main.Operation.Restore
                         // Notify to the cache that we use local blocks.
                         foreach (var block in verified_blocks)
                         {
-                            block.CacheDecrEvict = true;
                             sw_req?.Start();
-                            await block_request.WriteAsync(block).ConfigureAwait(false);
+                            await block_request.WriteAsync(
+                                new BlockRequest(
+                                    block.BlockID,
+                                    block.BlockOffset,
+                                    block.BlockHash,
+                                    block.BlockSize,
+                                    block.VolumeID,
+                                    true
+                                )
+                            ).ConfigureAwait(false);
                             sw_req?.Stop();
                         }
                         sw_work_notify_local?.Stop();
@@ -192,8 +200,16 @@ namespace Duplicati.Library.Main.Operation.Restore
                                 fs.SetLength(0);
                                 if (missing_blocks.Count != 0)
                                 {
-                                    blocks[0].CacheDecrEvict = true;
-                                    await block_request.WriteAsync(blocks[0]).ConfigureAwait(false);
+                                    await block_request.WriteAsync(
+                                        new BlockRequest(
+                                            blocks[0].BlockID,
+                                            blocks[0].BlockOffset,
+                                            blocks[0].BlockHash,
+                                            blocks[0].BlockSize,
+                                            blocks[0].VolumeID,
+                                            true
+                                        )
+                                    ).ConfigureAwait(false);
                                 }
                             }
                             sw_work_empty_file?.Stop();
@@ -243,7 +259,16 @@ namespace Duplicati.Library.Main.Operation.Restore
                                 int j = 0;
                                 for (int i = 0; i < (int)Math.Min(missing_blocks.Count, burst); i++)
                                 {
-                                    await block_request.WriteAsync(missing_blocks[i]).ConfigureAwait(false);
+                                    await block_request.WriteAsync(
+                                        new BlockRequest(
+                                            missing_blocks[i].BlockID,
+                                            missing_blocks[i].BlockOffset,
+                                            missing_blocks[i].BlockHash,
+                                            missing_blocks[i].BlockSize,
+                                            missing_blocks[i].VolumeID,
+                                            false
+                                        )
+                                    ).ConfigureAwait(false);
                                 }
                                 sw_req?.Stop();
 
@@ -266,7 +291,16 @@ namespace Duplicati.Library.Main.Operation.Restore
                                         sw_req?.Start();
                                         if (j < missing_blocks.Count - burst)
                                         {
-                                            await block_request.WriteAsync(missing_blocks[j + burst]).ConfigureAwait(false);
+                                            await block_request.WriteAsync(
+                                                new BlockRequest(
+                                                    missing_blocks[j + burst].BlockID,
+                                                    missing_blocks[j + burst].BlockOffset,
+                                                    missing_blocks[j + burst].BlockHash,
+                                                    missing_blocks[j + burst].BlockSize,
+                                                    missing_blocks[j + burst].VolumeID,
+                                                    false
+                                                )
+                                            ).ConfigureAwait(false);
                                         }
                                         sw_req?.Stop();
 
@@ -291,8 +325,16 @@ namespace Duplicati.Library.Main.Operation.Restore
                                         bytes_written += blocks[i].BlockSize;
                                         j++;
                                         sw_req?.Start();
-                                        blocks[i].CacheDecrEvict = true;
-                                        await block_request.WriteAsync(blocks[i]).ConfigureAwait(false);
+                                        await block_request.WriteAsync(
+                                            new BlockRequest(
+                                                blocks[i].BlockID,
+                                                blocks[i].BlockOffset,
+                                                blocks[i].BlockHash,
+                                                blocks[i].BlockSize,
+                                                blocks[i].VolumeID,
+                                                true
+                                            )
+                                        ).ConfigureAwait(false);
                                         sw_req?.Stop();
                                     }
                                     else
@@ -505,7 +547,16 @@ namespace Duplicati.Library.Main.Operation.Restore
             {
                 sw_work?.Stop();
                 sw_req?.Start();
-                await block_request.WriteAsync(block).ConfigureAwait(false);
+                await block_request.WriteAsync(
+                    new BlockRequest(
+                        block.BlockID,
+                        block.BlockOffset,
+                        block.BlockHash,
+                        block.BlockSize,
+                        block.VolumeID,
+                        false
+                    )
+                ).ConfigureAwait(false);
                 sw_req?.Stop();
 
                 sw_resp?.Start();
@@ -517,8 +568,16 @@ namespace Duplicati.Library.Main.Operation.Restore
                 sw_work?.Stop();
 
                 sw_req?.Start();
-                block.CacheDecrEvict = true;
-                await block_request.WriteAsync(block).ConfigureAwait(false);
+                await block_request.WriteAsync(
+                    new BlockRequest(
+                        block.BlockID,
+                        block.BlockOffset,
+                        block.BlockHash,
+                        block.BlockSize,
+                        block.VolumeID,
+                        true
+                    )
+                ).ConfigureAwait(false);
                 sw_req?.Stop();
 
                 sw_work?.Start();
@@ -715,8 +774,16 @@ namespace Duplicati.Library.Main.Operation.Restore
                                 }
                                 bytes_read += read;
                                 bytes_written += read;
-                                blocks[j].CacheDecrEvict = true;
-                                await block_request.WriteAsync(blocks[j]).ConfigureAwait(false);
+                                await block_request.WriteAsync(
+                                    new BlockRequest(
+                                        blocks[j].BlockID,
+                                        blocks[j].BlockOffset,
+                                        blocks[j].BlockHash,
+                                        blocks[j].BlockSize,
+                                        blocks[j].VolumeID,
+                                        true
+                                    )
+                                ).ConfigureAwait(false);
                                 verified_blocks.Add(blocks[j]);
                             }
                         }
