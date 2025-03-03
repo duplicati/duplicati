@@ -146,7 +146,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                                 break;
                         }
 
-                        await Task.Delay(10).ConfigureAwait(false);
+                        await Task.CompletedTask.ConfigureAwait(ConfigureAwaitOptions.ForceYielding);
                     }
                     if (was_present)
                         ArrayPool<byte>.Shared.Return((byte[])value);
