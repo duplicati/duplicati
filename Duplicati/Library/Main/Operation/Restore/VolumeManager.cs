@@ -59,6 +59,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                 async self =>
                 {
                     Dictionary<long, BlockVolumeReader> cache = [];
+                    Dictionary<long, TempFile> tmpfiles = [];
                     Dictionary<long, List<BlockRequest>> in_flight = [];
 
                     Stopwatch sw_cache_set = options.InternalProfiling ? new() : null;
@@ -83,6 +84,8 @@ namespace Duplicati.Library.Main.Operation.Restore
                                             sw_cache_evict?.Start();
                                             cache.Remove(request.VolumeID, out var reader);
                                             reader?.Dispose();
+                                            tmpfiles.Remove(request.VolumeID, out var tmpfile);
+                                            tmpfile?.Dispose();
                                             sw_cache_evict?.Stop();
                                         }
                                         else
@@ -108,10 +111,11 @@ namespace Duplicati.Library.Main.Operation.Restore
                                         }
                                         break;
                                     }
-                                case (long volume_id, BlockVolumeReader reader):
+                                case (long volume_id, TempFile tmpfile, BlockVolumeReader reader):
                                     {
                                         sw_cache_set?.Start();
                                         cache[volume_id] = reader;
+                                        tmpfiles[volume_id] = tmpfile;
                                         sw_cache_set?.Stop();
                                         sw_wakeup?.Start();
                                         foreach (var request in in_flight[volume_id])
