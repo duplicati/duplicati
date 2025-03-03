@@ -258,7 +258,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                 }
 
                 // Check if the block is already in the cache, and return it if it is.
-                if (m_block_cache != null && m_block_cache.TryGetValue(block_request.BlockID, out byte[] value))
+                if (m_block_cache.TryGetValue(block_request.BlockID, out byte[] value))
                 {
                     return Task.FromResult(value);
                 }
