@@ -143,7 +143,7 @@ namespace Duplicati.Server
             get
             {
                 lock (m_lock)
-                    return m_schedule.ToList();
+                    return (m_schedule ?? []).ToList();
             }
         }
 
