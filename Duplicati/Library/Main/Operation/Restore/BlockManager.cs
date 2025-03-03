@@ -138,7 +138,6 @@ namespace Duplicati.Library.Main.Operation.Restore
                             {
                                 if (ac == 0)
                                 {
-                                    m_block_cache.Remove(key);
                                     was_present = true;
                                     break;
                                 }
