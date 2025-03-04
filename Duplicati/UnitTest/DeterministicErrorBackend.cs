@@ -59,10 +59,8 @@ namespace Duplicati.UnitTest
         #region IStreamingBackend implementation
         public async Task PutAsync(string remotename, Stream stream, CancellationToken cancelToken)
         {
-            var uploadError = random.NextDouble() > 0.9;
-
-            using (var f = new Library.Utility.ProgressReportingStream(stream, x => { if (uploadError && stream.Position > stream.Length / 2) throw new DeterministicErrorBackendException("Random upload failure"); }))
-                await m_backend.PutAsync(remotename, f, cancelToken).ConfigureAwait(false);
+            ThrowError("put_async_0", remotename);
+            await m_backend.PutAsync(remotename, stream, cancelToken).ConfigureAwait(false);
             ThrowError("put_async", remotename);
         }
         public async Task GetAsync(string remotename, Stream stream, CancellationToken cancellationToken)
