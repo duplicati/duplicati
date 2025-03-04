@@ -184,18 +184,21 @@ public static partial class Command
             // Upload the files to the same tag
             foreach (var file in files)
             {
-                request = new HttpRequestMessage(HttpMethod.Post, $"https://uploads.github.com/repos/{owner}/{repo}/releases/{releasedata.id}/assets?name={System.Net.WebUtility.UrlEncode(Path.GetFileName(file.Name))}");
-                request.Headers.Add("Accept", "application/vnd.github+json");
-                request.Headers.Add("Authorization", $"Bearer {ghtoken}");
-                request.Headers.Add("X-GitHub-Api-Version", "2022-11-28");
-                request.Headers.Add("User-Agent", "Duplicati Release Builder v1");
+                await Duplicati.Library.Utility.RetryHelper.Retry(async () =>
+                {
+                    request = new HttpRequestMessage(HttpMethod.Post, $"https://uploads.github.com/repos/{owner}/{repo}/releases/{releasedata.id}/assets?name={System.Net.WebUtility.UrlEncode(Path.GetFileName(file.Name))}");
+                    request.Headers.Add("Accept", "application/vnd.github+json");
+                    request.Headers.Add("Authorization", $"Bearer {ghtoken}");
+                    request.Headers.Add("X-GitHub-Api-Version", "2022-11-28");
+                    request.Headers.Add("User-Agent", "Duplicati Release Builder v1");
 
-                using var fileStream = File.OpenRead(file.Path);
-                request.Content = new StreamContent(fileStream);
-                request.Content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/octet-stream");
+                    using var fileStream = File.OpenRead(file.Path);
+                    request.Content = new StreamContent(fileStream);
+                    request.Content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/octet-stream");
 
-                response = await httpClient.SendAsync(request);
-                response.EnsureSuccessStatusCode();
+                    response = await httpClient.SendAsync(request);
+                    response.EnsureSuccessStatusCode();
+                }, 3, TimeSpan.FromSeconds(1), CancellationToken.None);
 
                 var filesize = new FileInfo(file.Path).Length;
                 size += filesize;

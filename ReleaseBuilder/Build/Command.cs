@@ -521,7 +521,7 @@ public static partial class Command
 
         // Generally, the builds should happen with a clean source tree, 
         // but this can be disabled for debugging
-        if (input.GitStashPush)
+        if (input.GitStashPush && !input.ResumeFromUpload)
             await ProcessHelper.Execute(["git", "stash", "save", $"auto-build-{releaseInfo.Timestamp:yyyy-MM-dd}"], workingDirectory: baseDir);
 
         // Inject various files that will be embedded into the build artifacts
@@ -616,7 +616,7 @@ public static partial class Command
 
         // Ensure the tag is pushed before uploading, so the uploaded files
         // are associated with the release tag
-        if (input.GitStashPush)
+        if (input.GitStashPush && !input.ResumeFromUpload)
             await GitPush.TagAndPush(baseDir, releaseInfo);
 
         // Propagate the release to the next channel, if selected
@@ -634,25 +634,21 @@ public static partial class Command
                 var manifestNames = new[] { $"duplicati-{releaseInfo.ReleaseName}.manifest", "latest-v2.manifest" };
 
                 var packageJson = Path.Combine(input.BuildPath.FullName, "packages", "latest-v2.json");
-                var packageJs = Path.Combine(input.BuildPath.FullName, "packages", "latest-v2.js");
                 var content = Upload.CreatePackageJson(builtPackages, rtcfg);
 
                 File.WriteAllText(packageJson, content);
-                File.WriteAllText(packageJs, $"duplicati_installers = {content};");
 
                 var uploads = files.Select(x => new Upload.UploadFile(x, Path.GetFileName(x)))
                    .Concat(manifestNames.Select(x => new Upload.UploadFile(manifestfile, x)))
                    .Append(new Upload.UploadFile(packageJson, Path.GetFileName(packageJson)))
-                   .Append(new Upload.UploadFile(packageJs, Path.GetFileName(packageJs)))
-                   .Append(new Upload.UploadFile(packageJson, $"latest-v2-{releaseInfo.Version}.json"))
-                   .Append(new Upload.UploadFile(packageJs, $"latest-v2-{releaseInfo.Version}.js"));
+                   .Append(new Upload.UploadFile(packageJson, $"latest-v2-{releaseInfo.Version}.json"));
 
                 await Upload.UploadToS3(uploads, rtcfg, nextChannels);
             }
 
             if (rtcfg.UseGithubUpload)
             {
-                if (!rtcfg.UseS3Upload && input.GitStashPush)
+                if (!rtcfg.UseS3Upload && input.GitStashPush && !input.ResumeFromUpload)
                 {
                     Console.WriteLine("Waiting for Github to create the release tag ...");
                     await Task.Delay(TimeSpan.FromSeconds(30));

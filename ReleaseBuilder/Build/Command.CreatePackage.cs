@@ -264,6 +264,10 @@ public static partial class Command
         /// <returns>A task representing the asynchronous operation.</returns>
         static async Task BuildMsiPackage(string baseDir, string buildRoot, string msiFile, PackageTarget target, RuntimeConfig rtcfg)
         {
+            var isWindows = OperatingSystem.IsWindows();
+            const string originalNamespace = "http://schemas.microsoft.com/wix/2006/wi";
+            const string wixv4Namespace = "http://wixtoolset.org/schemas/v4/wxs";
+
             var resourcesDir = Path.Combine(baseDir, "ReleaseBuilder", "Resources", "Windows");
             var resourcesSubDir = Path.Combine(resourcesDir,
                 target.Interface switch
@@ -288,7 +292,11 @@ public static partial class Command
             if (File.Exists(binFiles))
                 File.Delete(binFiles);
 
-            File.WriteAllText(binFiles, WixHeatBuilder.CreateWixFilelist(sourceFiles, version: rtcfg.ReleaseInfo.Version.ToString()));
+            File.WriteAllText(binFiles, WixHeatBuilder.CreateWixFilelist(
+                sourceFiles,
+                version: rtcfg.ReleaseInfo.Version.ToString(),
+                wixNs: isWindows ? wixv4Namespace : originalNamespace
+            ));
 
             var msiArch = target.Arch switch
             {
