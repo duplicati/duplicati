@@ -1,3 +1,25 @@
+2025-03-04 - 2.1.0.5_stable_2025-03-04
+==========
+This is an update release to 2.1.0.4, fixing critical issues.
+
+This update fixes a number of issues reported with 2.1.0.4, 2.1.0.3, and 2.1.0.1.
+If you are running one of these versions, it is **highly** recommended that you upgrade as soon as possible.
+
+## Important changes from 2.0.8.1 or older:
+- Updated to .NET8 with OS specific builds
+- Using Kestrel as the API/UI server
+- Mandatory password and new authentication scheme for server
+- Settings database version updated to v8
+- Backup database updated to v13
+- Automatic updating not supported
+
+## Detailed list of changes
+- Fixed issue where failed uploads would be ignored in certain cases
+- Increased default value for `--read-write-timeout` to 10 min to counter timeouts on large sets
+- Fixed a case where a leading slash would be removed from source url paths
+- Fixed fallback support for zip files with non-deflate compressed files
+- Fixed dark/light-mode icons on MacOS
+
 2025-01-31 - 2.1.0.4_stable_2025-01-31
 ==========
 This is the first stable release of the Duplicati 2.x codebase!
