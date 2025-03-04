@@ -191,65 +191,59 @@ partial class BackendManager
         }
 
         /// <summary>
-        /// Reclaims completed downloads
+        /// Reclaims completed tasks
         /// </summary>
+        /// <param name="tasks">The list of tasks to reclaim</param>
         /// <returns>An awaitable task</returns>
-        private async Task ReclaimCompletedDownloads()
+        private static async Task ReclaimCompletedTasks(List<Task> tasks)
         {
-            for (int i = activeDownloads.Count - 1; i >= 0; i--)
+            for (int i = tasks.Count - 1; i >= 0; i--)
             {
-                if (activeDownloads[i].IsCompleted)
+                if (tasks[i].IsCompleted)
                 {
+                    var t = tasks[i];
+                    tasks.RemoveAt(i);
                     // Make sure the task is awaited so we capture any exceptions
-                    await activeDownloads[i].ConfigureAwait(false);
-                    activeDownloads.RemoveAt(i);
+                    await t.ConfigureAwait(false);
                 }
             }
         }
 
         /// <summary>
-        /// Reclaims completed uploads
+        /// Reclaims completed tasks from uploads and downloads
         /// </summary>
         /// <returns>An awaitable task</returns>
-        private async Task ReclaimCompletedUploads()
+        private async Task ReclaimCompletedTasks()
         {
-            for (int i = activeUploads.Count - 1; i >= 0; i--)
+            await ReclaimCompletedTasks(activeUploads);
+            await ReclaimCompletedTasks(activeDownloads);
+        }
+
+        /// <summary>
+        /// Ensures that there are at most N - 1 active tasks
+        /// </summary>
+        /// <param name="n">The maximum number of active tasks</param>
+        /// <param name="tasks">The list of active tasks</param>
+        /// <returns>An awaitable task</returns>
+        private static async Task EnsureAtMostNActiveTasks(int n, List<Task> tasks)
+        {
+            while (tasks.Count >= n)
             {
-                if (activeUploads[i].IsCompleted)
-                {
-                    // Make sure the task is awaited so we capture any exceptions
-                    await activeUploads[i].ConfigureAwait(false);
-                    activeUploads.RemoveAt(i);
-                }
+                await Task.WhenAny(tasks).ConfigureAwait(false);
+                await ReclaimCompletedTasks(tasks).ConfigureAwait(false);
             }
         }
 
         /// <summary>
-        /// Ensures that there are at most N - 1 active downloads
+        /// Ensures that there are at most N - 1 active tasks
         /// </summary>
-        /// <param name="n"></param>
-        /// <returns></returns>
-        private async Task EnsureAtMostNActiveDownloads(int n)
+        /// <param name="uploads">The number of active uploads</param>
+        /// <param name="downloads">The number of active downloads</param>
+        /// <returns>An awaitable task</returns>        
+        private async Task EnsureAtMostNActiveTasks(int uploads, int downloads)
         {
-            while (activeDownloads.Count >= n)
-            {
-                await Task.WhenAny(activeDownloads).ConfigureAwait(false);
-                await ReclaimCompletedDownloads().ConfigureAwait(false);
-            }
-        }
-
-        /// <summary>
-        /// Ensures that there are at most N - 1 active uploads
-        /// </summary>
-        /// <param name="n">The maximum number of active uploads</param>
-        /// <returns>An awaitable task</returns>
-        private async Task EnsureAtMostNActiveUploads(int n)
-        {
-            while (activeUploads.Count >= n)
-            {
-                await Task.WhenAny(activeUploads).ConfigureAwait(false);
-                await ReclaimCompletedUploads().ConfigureAwait(false);
-            }
+            await EnsureAtMostNActiveTasks(uploads, activeUploads).ConfigureAwait(false);
+            await EnsureAtMostNActiveTasks(downloads, activeDownloads).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -270,14 +264,13 @@ partial class BackendManager
                     try
                     {
                         // Clean up completed uploads, if any
-                        await ReclaimCompletedUploads().ConfigureAwait(false);
+                        await ReclaimCompletedTasks().ConfigureAwait(false);
 
                         // Allow PUT operations to be queued, if requested
                         if (op is PutOperation putOp && !putOp.WaitForComplete)
                         {
                             // Wait for any active downloads to complete before starting an upload
-                            await EnsureAtMostNActiveDownloads(1).ConfigureAwait(false);
-                            await EnsureAtMostNActiveUploads(maxParallelUploads).ConfigureAwait(false);
+                            await EnsureAtMostNActiveTasks(maxParallelUploads, 1).ConfigureAwait(false);
 
                             // Operation is accepted into queue, so we can signal completion
                             putOp.SetComplete(true);
@@ -286,8 +279,7 @@ partial class BackendManager
                         else if (op is GetOperation getOp)
                         {
                             // Wait for any active uploads to complete before starting a download
-                            await EnsureAtMostNActiveUploads(1).ConfigureAwait(false);
-                            await EnsureAtMostNActiveDownloads(maxParallelDownloads).ConfigureAwait(false);
+                            await EnsureAtMostNActiveTasks(1, maxParallelDownloads).ConfigureAwait(false);
 
                             // Operation is accepted into queue, so we can signal completion
                             activeDownloads.Add(ExecuteWithRetry(getOp, tcs.Token));
@@ -295,8 +287,7 @@ partial class BackendManager
                         else
                         {
                             // Wait for all of the active uploads and downloads to complete
-                            await EnsureAtMostNActiveUploads(1).ConfigureAwait(false);
-                            await EnsureAtMostNActiveDownloads(1).ConfigureAwait(false);
+                            await EnsureAtMostNActiveTasks(1, 1).ConfigureAwait(false);
 
                             // Execute the operation
                             await ExecuteWithRetry(op, tcs.Token).ConfigureAwait(false);
@@ -325,19 +316,30 @@ partial class BackendManager
                     for (int i = activeUploads.Count - 1; i >= 0; i--)
                     {
                         var t = activeUploads[i];
-                        activeUploads.RemoveAt(i);
-                        if (t.IsCompleted && !t.IsCanceled && t.Exception != null)
-                            Logging.Log.WriteWarningMessage(LOGTAG, "BackendManagerDisposeError", t.Exception, "Error in active upload: {0}", t.Exception.Message);
+                        if (t.IsCompleted)
+                        {
+                            activeUploads.RemoveAt(i);
+                            if (t.IsCanceled)
+                                Logging.Log.WriteWarningMessage(LOGTAG, "BackendManagerDisposeError", t.Exception, "Error in active upload: Cancelled");
+                            else if (t.IsFaulted)
+                                Logging.Log.WriteWarningMessage(LOGTAG, "BackendManagerDisposeError", t.Exception, "Error in active upload: {0}", t.Exception?.Message ?? "null");
+                            else
+                                Logging.Log.WriteWarningMessage(LOGTAG, "BackendManagerDisposeError", null, "Upload was active during termination, but completed successfully");
+                        }
+                        else
+                        {
+                            Logging.Log.WriteWarningMessage(LOGTAG, "BackendManagerDisposeError", null, "Upload was active during termination, but had state: {0}", t.Status);
+                        }
+
+                        if (activeUploads.Count > 0)
+                            Logging.Log.WriteWarningMessage(LOGTAG, "BackendManagerDisposeError", null, "Terminating, but {0} active uploads are still active", activeUploads.Count);
                     }
 
-                    if (activeUploads.Count > 0)
-                        Logging.Log.WriteWarningMessage(LOGTAG, "BackendManagerDisposeError", null, "Terminating, but {0} active uploads are still active", activeUploads.Count);
+                    // Dispose of any remaining backends
+                    while (backendPool.TryDequeue(out var backend))
+                        try { backend.Dispose(); }
+                        catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, "BackendManagerDisposeError", ex, "Failed to dispose backend instance: {0}", ex.Message); }
                 }
-
-                // Dispose of any remaining backends
-                while (backendPool.TryDequeue(out var backend))
-                    try { backend.Dispose(); }
-                    catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, "BackendManagerDisposeError", ex, "Failed to dispose backend instance: {0}", ex.Message); }
             }
         }
 
