@@ -187,7 +187,11 @@ namespace Duplicati.Library.Main.Operation.Backup
                             await Task.WhenAny(workers.Select(w => w.Task)).ConfigureAwait(false);
                             uploadsInProgress--;
 
-                            var failedUploads = workers.Where(w => w.Task.IsFaulted).Select(w => GetInnerMostException(w.Task.Exception)).ToList();
+                            var failedUploads = workers.Where(w => w.Task.IsFaulted)
+                                .Select(w => GetInnerMostException(w.Task.Exception))
+                                .Concat(workers.Where(w => w.Task.IsCanceled).Select(w => new OperationCanceledException()))
+                                .ToList();
+
                             if (failedUploads.Any())
                             {
                                 if (failedUploads.Count == 1)
@@ -198,16 +202,19 @@ namespace Duplicati.Library.Main.Operation.Backup
                         }
                     }
                 }
-                catch (Exception ex) when (!ex.IsRetiredException())
+                catch (Exception ex) when (ex.IsRetiredException())
+                {
+                }
+                catch
                 {
                     m_cancelTokenSource.Cancel();
                     try
                     {
                         await Task.WhenAll(workers.Select(w => w.Task));
                     }
-                    catch
+                    catch (Exception ex)
                     {
-                        // As we are cancelling all threads we do not need to alert the user to any of these exceptions.
+                        Logging.Log.WriteWarningMessage(LOGTAG, "UploadError", ex, "Error during upload failure: {0}", ex.Message);
                     }
                     finally
                     {
@@ -231,7 +238,7 @@ namespace Duplicati.Library.Main.Operation.Backup
 
         private Worker GetWorker(List<Worker> workers)
         {
-            var worker = workers.FirstOrDefault(w => w.Task.IsCompleted && !w.Task.IsFaulted);
+            var worker = workers.FirstOrDefault(w => w.Task.IsCompletedSuccessfully);
             if (worker == null)
             {
                 worker = new Worker(m_backendFactory());
@@ -250,6 +257,12 @@ namespace Duplicati.Library.Main.Operation.Backup
                 {
                     flush.TrySetCanceled();
                     ExceptionDispatchInfo.Capture(finishedTask.Exception).Throw();
+                }
+
+                if (finishedTask.IsCanceled)
+                {
+                    flush.TrySetCanceled();
+                    throw new OperationCanceledException();
                 }
 
                 Worker finishedWorker = workers.Single(w => w.Task == finishedTask);
@@ -278,17 +291,15 @@ namespace Duplicati.Library.Main.Operation.Backup
 
         private async Task UploadBlockAndIndexAsync(VolumeUploadRequest upload, Worker worker, CancellationToken cancelToken)
         {
-            if (await UploadFileAsync(upload.BlockEntry, worker, cancelToken).ConfigureAwait(false))
-            {
-                // We must use the BlockEntry's RemoteFilename and not the BlockVolume's since the
-                // BlockEntry's' RemoteFilename reflects renamed files due to retries after errors.
-                IndexVolumeWriter indexVolumeWriter = await upload.IndexVolume.CreateVolume(upload.BlockEntry.RemoteFilename, upload.BlockEntry.Hash, upload.BlockEntry.Size, upload.Options, upload.Database);
-                // Create link before upload is started, it will be removed later if upload fails
-                await m_database.AddIndexBlockLinkAsync(indexVolumeWriter.VolumeID, upload.BlockVolume.VolumeID).ConfigureAwait(false);
+            await UploadFileAsync(upload.BlockEntry, worker, cancelToken).ConfigureAwait(false);
+            // We must use the BlockEntry's RemoteFilename and not the BlockVolume's since the
+            // BlockEntry's' RemoteFilename reflects renamed files due to retries after errors.
+            IndexVolumeWriter indexVolumeWriter = await upload.IndexVolume.CreateVolume(upload.BlockEntry.RemoteFilename, upload.BlockEntry.Hash, upload.BlockEntry.Size, upload.Options, upload.Database);
+            // Create link before upload is started, it will be removed later if upload fails
+            await m_database.AddIndexBlockLinkAsync(indexVolumeWriter.VolumeID, upload.BlockVolume.VolumeID).ConfigureAwait(false);
 
-                FileEntryItem indexEntry = indexVolumeWriter.CreateFileEntryForUpload(upload.Options);
-                await UploadFileAsync(indexEntry, worker, cancelToken).ConfigureAwait(false);
-            }
+            FileEntryItem indexEntry = indexVolumeWriter.CreateFileEntryForUpload(upload.Options);
+            await UploadFileAsync(indexEntry, worker, cancelToken).ConfigureAwait(false);
         }
 
         private async Task UploadVolumeWriter(VolumeWriterBase volumeWriter, Worker worker, CancellationToken cancelToken)
@@ -301,12 +312,11 @@ namespace Duplicati.Library.Main.Operation.Backup
             await UploadFileAsync(fileEntry, worker, cancelToken).ConfigureAwait(false);
         }
 
-        private async Task<bool> UploadFileAsync(FileEntryItem item, Worker worker, CancellationToken cancelToken)
+        private async Task UploadFileAsync(FileEntryItem item, Worker worker, CancellationToken cancelToken)
         {
-            if (cancelToken.IsCancellationRequested)
-                return false;
+            cancelToken.ThrowIfCancellationRequested();
 
-            return await DoWithRetry(async () =>
+            await DoWithRetry(async () =>
             {
                 if (item.IsRetry)
                     await RenameFileAfterErrorAsync(item).ConfigureAwait(false);
@@ -315,12 +325,10 @@ namespace Duplicati.Library.Main.Operation.Backup
             item, worker, cancelToken).ConfigureAwait(false);
         }
 
-        private async Task<bool> DoWithRetry(Func<Task> method, FileEntryItem item, Worker worker, CancellationToken cancelToken)
+        private async Task DoWithRetry(Func<Task> method, FileEntryItem item, Worker worker, CancellationToken cancelToken)
         {
             item.IsRetry = false;
-            var retryCount = 0;
-
-            for (retryCount = 0; retryCount <= m_options.NumberOfRetries; retryCount++)
+            for (var retryCount = 0; retryCount <= m_options.NumberOfRetries; retryCount++)
             {
                 if (m_options.RetryDelay.Ticks != 0 && retryCount != 0)
                 {
@@ -328,23 +336,19 @@ namespace Duplicati.Library.Main.Operation.Backup
                     await Task.Delay(delay).ConfigureAwait(false);
                 }
 
-                if (cancelToken.IsCancellationRequested)
-                    return false;
+                cancelToken.ThrowIfCancellationRequested();
 
                 try
                 {
                     if (worker.Backend == null)
                         worker.Backend = m_backendFactory();
                     await method().ConfigureAwait(false);
-                    return true;
+                    return;
                 }
                 catch (Exception ex)
                 {
                     item.IsRetry = true;
                     Logging.Log.WriteRetryMessage(LOGTAG, $"Retry{item.Operation}", ex, "Operation {0} with file {1} attempt {2} of {3} failed with message: {4}", item.Operation, item.RemoteFilename, retryCount + 1, m_options.NumberOfRetries + 1, ex.Message);
-                    if (ex is ThreadAbortException || ex is OperationCanceledException)
-                        break;
-
                     await m_stats.SendEventAsync(item.Operation, retryCount < m_options.NumberOfRetries ? BackendEventType.Retrying : BackendEventType.Failed, item.RemoteFilename, item.Size);
 
                     bool recovered = false;
@@ -374,8 +378,6 @@ namespace Duplicati.Library.Main.Operation.Backup
                         ResetBackend(null, worker);
                 }
             }
-
-            return false;
         }
 
         private void ResetBackend(Exception ex, Worker worker)
