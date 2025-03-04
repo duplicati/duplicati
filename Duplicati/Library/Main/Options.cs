@@ -77,7 +77,7 @@ namespace Duplicati.Library.Main
         /// <summary>
         /// The default activity timeout
         /// </summary>
-        private const string DEFAULT_READ_WRITE_TIMEOUT = "30s";
+        private const string DEFAULT_READ_WRITE_TIMEOUT = "10m";
 
         /// <summary>
         /// The default number of compressor instances
