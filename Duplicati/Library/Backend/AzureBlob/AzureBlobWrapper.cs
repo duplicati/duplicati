@@ -19,16 +19,12 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
-using System.Collections.Generic;
-using System.IO;
+using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Models;
 using System.Runtime.CompilerServices;
-using System.Threading;
-using System.Threading.Tasks;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
-using Duplicati.Library.Utility;
-using Microsoft.WindowsAzure.Storage;
-using Microsoft.WindowsAzure.Storage.Blob;
+using Uri = System.Uri;
 
 namespace Duplicati.Library.Backend.AzureBlob
 {
@@ -37,141 +33,125 @@ namespace Duplicati.Library.Backend.AzureBlob
     /// </summary>
     public class AzureBlobWrapper
     {
-        private readonly string _containerName;
-        private readonly CloudBlobContainer _container;
-        private readonly OperationContext _operationContext;
+        private readonly BlobContainerClient _container;
 
-        // Note: May need metadata; need to test with Azure blobs
-        private const BlobListingDetails ListDetails = BlobListingDetails.None;
-
+        /// <summary>
+        /// Gets an array of DNS names associated with the blob container.
+        /// </summary>
+        /// <returns>An array of DNS hostnames for the primary and secondary URIs of the container.</returns>
         public string[] DnsNames
         {
             get
             {
                 var lst = new List<string>();
-                if (_container != null)
-                {
-                    if (_container.Uri != null)
-                        lst.Add(_container.Uri.Host);
-
-                    if (_container.StorageUri != null)
-                    {
-                        if (_container.StorageUri.PrimaryUri != null)
-                            lst.Add(_container.StorageUri.PrimaryUri.Host);
-                        if (_container.StorageUri.SecondaryUri != null)
-                            lst.Add(_container.StorageUri.SecondaryUri.Host);
-                    }
-                }
-
+                if (_container != null && _container.Uri != null) lst.Add(_container.Uri.Host);
                 return lst.ToArray();
             }
         }
 
+        /// <summary>
+        /// Initializes a new instance of the AzureBlobWrapper class.
+        /// </summary>
+        /// <param name="accountName">The Azure storage account name.</param>
+        /// <param name="accessKey">The access key for the storage account.</param>
+        /// <param name="sasToken">The Shared Access Signature (SAS) token for authentication.</param>
+        /// <param name="containerName">The name of the blob container.</param>
         public AzureBlobWrapper(string accountName, string accessKey, string sasToken, string containerName)
         {
-            _operationContext = new()
-            {
-                CustomUserAgent = string.Format(
-                    "APN/1.0 Duplicati/{0} AzureBlob/2.0 {1}",
-                    System.Reflection.Assembly.GetExecutingAssembly().GetName().Version,
-                    Microsoft.WindowsAzure.Storage.Shared.Protocol.Constants.HeaderConstants.UserAgent
-            )
-            };
-
-            string connectionString;
+            BlobServiceClient blobServiceClient;
             if (sasToken != null)
             {
-                connectionString = string.Format("DefaultEndpointsProtocol=https;AccountName={0};SharedAccessSignature={1}",
-                    accountName, sasToken);
+                var sasUri = new Uri($"https://{accountName}.blob.core.windows.net/?{sasToken}");
+                blobServiceClient = new BlobServiceClient(sasUri);
             }
             else
             {
-                connectionString = string.Format("DefaultEndpointsProtocol=https;AccountName={0};AccountKey={1}",
-                            accountName, accessKey);
+                var connectionString = $"DefaultEndpointsProtocol=https;AccountName={accountName};AccountKey={accessKey};EndpointSuffix=core.windows.net";
+                blobServiceClient = new BlobServiceClient(connectionString);
             }
 
-            var storageAccount = CloudStorageAccount.Parse(connectionString);
-            var blobClient = storageAccount.CreateCloudBlobClient();
-
-            _containerName = containerName;
-            _container = blobClient.GetContainerReference(containerName);
+            _container = blobServiceClient.GetBlobContainerClient(containerName);
         }
 
+        /// <summary>
+        /// Creates a new blob container asynchronously and sets its access permissions to private.
+        /// </summary>
+        /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+        /// <returns>A task that represents the asynchronous operation.</returns>
         public async Task AddContainerAsync(CancellationToken cancellationToken)
         {
-            await _container.CreateAsync(default, default, _operationContext, cancellationToken).ConfigureAwait(false);
-            await _container.SetPermissionsAsync(new BlobContainerPermissions { PublicAccess = BlobContainerPublicAccessType.Off }, default, default, _operationContext, cancellationToken).ConfigureAwait(false);
+            await _container.CreateAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
         }
 
-        public virtual Task GetFileStreamAsync(string keyName, Stream target, CancellationToken cancellationToken)
+        /// <summary>
+        /// Downloads a blob to a stream asynchronously.
+        /// </summary>
+        /// <param name="keyName">The name of the blob to download.</param>
+        /// <param name="target">The stream to download the blob to.</param>
+        /// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
+        /// <returns>A task that represents the asynchronous download operation.</returns>
+        public async Task GetFileStreamAsync(string keyName, Stream target, CancellationToken cancellationToken)
         {
-            return _container.GetBlockBlobReference(keyName).DownloadToStreamAsync(target, default, default, _operationContext, cancellationToken);
+            var blobClient = _container.GetBlobClient(keyName);
+            await blobClient.DownloadToAsync(target, cancellationToken).ConfigureAwait(false);
         }
 
-        public virtual Task AddFileStream(string keyName, Stream source, CancellationToken cancelToken)
+        /// <summary>
+        /// Uploads a stream to a blob asynchronously.
+        /// </summary>
+        /// <param name="keyName">The name to give the uploaded blob.</param>
+        /// <param name="source">The stream containing the data to upload.</param>
+        /// <param name="cancelToken">A token to monitor for cancellation requests.</param>
+        /// <returns>A task that represents the asynchronous upload operation.</returns>
+        public async Task AddFileStream(string keyName, Stream source, CancellationToken cancelToken)
         {
-            return _container.GetBlockBlobReference(keyName).UploadFromStreamAsync(source, source.Length, default, default, _operationContext, cancelToken);
+            var blobClient = _container.GetBlobClient(keyName);
+            await blobClient.UploadAsync(source, cancelToken).ConfigureAwait(false);
         }
 
-        public Task DeleteObjectAsync(string keyName, CancellationToken cancelToken)
+        /// <summary>
+        /// Deletes a blob if it exists asynchronously.
+        /// </summary>
+        /// <param name="keyName">The name of the blob to delete.</param>
+        /// <param name="cancelToken">A token to monitor for cancellation requests.</param>
+        public async Task DeleteObjectAsync(string keyName, CancellationToken cancelToken)
         {
-            return _container.GetBlockBlobReference(keyName).DeleteIfExistsAsync(default, default, default, _operationContext, cancelToken);
+            var blobClient = _container.GetBlobClient(keyName);
+            await blobClient.DeleteIfExistsAsync(cancellationToken: cancelToken).ConfigureAwait(false);
         }
-
-        private async IAsyncEnumerable<IListBlobItem> ListContainerBlobEntriesAsync([EnumeratorCancellation] CancellationToken cancelToken)
+        
+        /// <summary>
+        /// List container files.
+        /// </summary>
+        /// <param name="cancelToken">A token to monitor for cancellation requests.</param>
+        /// <returns></returns>
+        /// <exception cref="FolderMissingException">Thrown when the container is not found</exception>
+        public virtual async IAsyncEnumerable<IFileEntry> ListContainerEntriesAsync([EnumeratorCancellation] CancellationToken cancelToken)
         {
-            BlobResultSegment segment;
-            try
+            IAsyncEnumerable<BlobItem> blobs = GetBlobsWithExceptionHandling();
+
+            await foreach (var blobItem in blobs.WithCancellation(cancelToken))
             {
-                segment = await _container.ListBlobsSegmentedAsync(null, false, ListDetails, null, null, null, _operationContext, cancelToken).ConfigureAwait(false);
+                var blobName = Uri.UnescapeDataString(blobItem.Name.Replace("+", "%2B"));
+        
+                if (blobItem is { } bi)
+                {
+                    var lastModified = bi.Properties.LastModified?.UtcDateTime ?? DateTime.UtcNow;
+                    yield return new FileEntry(blobName, bi.Properties.ContentLength ?? 0, lastModified, lastModified);
+                }
             }
-            catch (StorageException ex)
+
+            IAsyncEnumerable<BlobItem> GetBlobsWithExceptionHandling()
             {
-                if (ex.RequestInformation.HttpStatusCode == 404)
+                try
+                {
+                    // Note: AsyncPageable<BlobItem> return internally uses .ConfigureAwait(false).
+                    return _container.GetBlobsAsync(cancellationToken: cancelToken);
+                }
+                catch (Azure.RequestFailedException ex) when (ex.Status == 404)
                 {
                     throw new FolderMissingException(ex);
                 }
-                throw;
-            }
-
-            foreach (var item in segment.Results)
-                yield return item;
-
-            while (segment.ContinuationToken != null)
-            {
-                segment = await _container.ListBlobsSegmentedAsync(null, false, ListDetails, null, segment.ContinuationToken, null, _operationContext, cancelToken).ConfigureAwait(false);
-
-                foreach (var item in segment.Results)
-                    yield return item;
-            }
-        }
-
-        public virtual async IAsyncEnumerable<IFileEntry> ListContainerEntriesAsync([EnumeratorCancellation] CancellationToken cancelToken)
-        {
-            await foreach (var x in ListContainerBlobEntriesAsync(cancelToken).ConfigureAwait(false))
-            {
-                var absolutePath = x.StorageUri.PrimaryUri.AbsolutePath;
-                var containerSegment = string.Concat("/", _containerName, "/");
-                var blobName = absolutePath.Substring(absolutePath.IndexOf(
-                    containerSegment, System.StringComparison.Ordinal) + containerSegment.Length);
-
-                var res = new FileEntry(Uri.UrlDecode(blobName.Replace("+", "%2B")));
-                try
-                {
-                    if (x is CloudBlockBlob cb)
-                    {
-                        var lastModified = new System.DateTime();
-                        if (cb.Properties.LastModified != null)
-                            lastModified = new System.DateTime(cb.Properties.LastModified.Value.Ticks, System.DateTimeKind.Utc);
-                        res = new FileEntry(res.Name, cb.Properties.Length, lastModified, lastModified);
-                    }
-                }
-                catch
-                {
-                    // If the metadata fails to parse, return the basic entry
-                }
-
-                yield return res;
             }
         }
     }
