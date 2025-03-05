@@ -39,11 +39,6 @@ namespace Duplicati.Library.Localization
         private static readonly Dictionary<CultureInfo, ILocalizationService> Services = new Dictionary<CultureInfo, ILocalizationService>();
 
         /// <summary>
-        /// The key for accessing logical context
-        /// </summary>
-        internal const string LOGICAL_CONTEXT_KEY = "DUPLICATI_LOCALIZATION_CULTURE_CONTEXT";
-
-        /// <summary>
         /// Regular expression to match a locale
         /// </summary>
         public static readonly Regex CI_MATCHER = new Regex(@"[A-z]{2}([-_][A-z]{4})?([-_][A-z]{2})?");
@@ -96,7 +91,7 @@ namespace Duplicati.Library.Localization
         {
             get
             {
-                var lc = CallContext.GetData(LOGICAL_CONTEXT_KEY) as string;
+                var lc = LocalizationContext.Current;
                 if (!string.IsNullOrWhiteSpace(lc))
                     return Get(new CultureInfo(lc));
                 return Get(CultureInfo.CurrentCulture);
