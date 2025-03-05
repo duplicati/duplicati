@@ -66,7 +66,7 @@ namespace Duplicati.UnitTest
                 {
                     if (path.EndsWith(this.fileSizes[2] + "MB"))
                     {
-                        Thread.Sleep(500);
+                        Thread.Sleep(2000);
                         controller.Stop();
                         stopped.TrySetResult(true);
                     }
