@@ -24,7 +24,6 @@ using System.Linq;
 using System.Globalization;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
-using Duplicati.Library.Localization.Short;
 using Duplicati.Library.Logging;
 
 namespace Duplicati.Library.Localization
@@ -147,7 +146,7 @@ namespace Duplicati.Library.Localization
         /// <summary>
         /// Returns true if the culture has localization support
         /// </summary>
-        public static Boolean isCultureSupported(CultureInfo culture)
+        public static bool IsCultureSupported(CultureInfo culture)
         {
             return MoLocalizationService.isCultureSupported(culture);
         }
