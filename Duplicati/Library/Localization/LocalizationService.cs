@@ -99,6 +99,20 @@ namespace Duplicati.Library.Localization
         }
 
         /// <summary>
+        /// Gets a localization provider with the current UI language
+        /// </summary>
+        public static ILocalizationService CurrentUI
+        {
+            get
+            {
+                var lc = LocalizationContext.Current;
+                if (!string.IsNullOrWhiteSpace(lc))
+                    return Get(new CultureInfo(lc));
+                return Get(CultureInfo.CurrentUICulture);
+            }
+        }
+
+        /// <summary>
         /// Gets a localization provider with the OS install language
         /// </summary>
         public static ILocalizationService Installed { get { return Get(CultureInfo.InstalledUICulture); } }

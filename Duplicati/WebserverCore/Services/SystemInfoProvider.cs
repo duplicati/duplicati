@@ -273,7 +273,7 @@ public class SystemInfoProvider : ISystemInfoProvider
     public SystemInfoDto GetSystemInfo(CultureInfo? browserlanguage)
     {
         browserlanguage ??= CultureInfo.InvariantCulture;
-        var currentLanguage = LocalizationService.Current?.Culture.Name;
+        var currentLanguage = LocalizationService.CurrentUI?.Culture.Name;
         if (string.IsNullOrWhiteSpace(currentLanguage))
             currentLanguage = CultureInfo.CurrentUICulture.Name;
 
