@@ -237,6 +237,8 @@ namespace Duplicati.UnitTest
                 secondBackupTime = c.List().Filesets.First().Time;
             }
 
+            ModifySourceFiles();
+
             // Run a partial backup.
             DateTime thirdBackupTime;
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
@@ -263,8 +265,6 @@ namespace Duplicati.UnitTest
                 Assert.AreEqual(thirdBackupTime, filesets[0].Time);
                 Assert.AreEqual(BackupType.PARTIAL_BACKUP, filesets[0].IsFullBackup);
             }
-
-            ModifySourceFiles();
 
             // Run another partial backup. We will then verify that a full backup is retained
             // even when all the "recent" backups are partial.
