@@ -51,11 +51,12 @@ namespace Duplicati.UnitTest
             }
         }
 
-        private async Task<IBackupResults> RunPartialBackup(Controller controller)
+        private async Task<(IBackupResults Result, List<string> ModifiedFiles)> RunPartialBackup(Controller controller)
         {
             this.ModifySourceFiles();
 
             var stopped = new TaskCompletionSource<bool>();
+            var modifiedFiles = new List<string>();
             controller.OnOperationStarted = r =>
             {
                 var pv = r as ITaskControlProvider;
@@ -64,6 +65,7 @@ namespace Duplicati.UnitTest
 #if DEBUG
                 pv.TaskControl.TestMethodCallback = (path) =>
                 {
+                    modifiedFiles.Add(path);
                     if (path.EndsWith(this.fileSizes[2] + "MB"))
                     {
                         Thread.Sleep(500);
@@ -81,7 +83,7 @@ namespace Duplicati.UnitTest
             if (t != stopped.Task)
                 throw new Exception("Backup task completed before we could stop it");
 
-            return await backupTask.ConfigureAwait(false);
+            return (await backupTask.ConfigureAwait(false), modifiedFiles);
         }
 
         [SetUp]
@@ -122,7 +124,7 @@ namespace Duplicati.UnitTest
             // Run a partial backup.
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
-                IBackupResults backupResults = await this.RunPartialBackup(c).ConfigureAwait(false);
+                (var backupResults, _) = await this.RunPartialBackup(c).ConfigureAwait(false);
                 Assert.AreEqual(0, backupResults.Errors.Count());
                 Assert.AreEqual(1, backupResults.Warnings.Count());
             }
@@ -237,13 +239,11 @@ namespace Duplicati.UnitTest
                 secondBackupTime = c.List().Filesets.First().Time;
             }
 
-            ModifySourceFiles();
-
             // Run a partial backup.
             DateTime thirdBackupTime;
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
-                IBackupResults backupResults = await this.RunPartialBackup(c).ConfigureAwait(false);
+                (var backupResults, _) = await this.RunPartialBackup(c).ConfigureAwait(false);
                 Assert.AreEqual(0, backupResults.Errors.Count());
                 Assert.AreEqual(1, backupResults.Warnings.Count());
                 thirdBackupTime = c.List().Filesets.First().Time;
@@ -270,7 +270,7 @@ namespace Duplicati.UnitTest
             // even when all the "recent" backups are partial.
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
-                IBackupResults backupResults = await this.RunPartialBackup(c).ConfigureAwait(false);
+                (var backupResults, _) = await this.RunPartialBackup(c).ConfigureAwait(false);
                 Assert.AreEqual(0, backupResults.Errors.Count());
                 Assert.AreEqual(1, backupResults.Warnings.Count());
                 DateTime fourthBackupTime = c.List().Filesets.First().Time;
@@ -322,7 +322,7 @@ namespace Duplicati.UnitTest
             // Run a partial backup.
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
-                IBackupResults backupResults = await this.RunPartialBackup(c).ConfigureAwait(false);
+                (var backupResults, _) = await this.RunPartialBackup(c).ConfigureAwait(false);
                 Assert.AreEqual(0, backupResults.Errors.Count());
                 Assert.AreEqual(1, backupResults.Warnings.Count());
             }
@@ -330,7 +330,7 @@ namespace Duplicati.UnitTest
             // Run a partial backup.
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
-                IBackupResults backupResults = await this.RunPartialBackup(c).ConfigureAwait(false);
+                (var backupResults, _) = await this.RunPartialBackup(c).ConfigureAwait(false);
                 Assert.AreEqual(0, backupResults.Errors.Count());
                 Assert.AreEqual(1, backupResults.Warnings.Count());
             }
@@ -350,7 +350,7 @@ namespace Duplicati.UnitTest
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
                 options["keep-versions"] = "2";
-                IBackupResults backupResults = await this.RunPartialBackup(c).ConfigureAwait(false);
+                (var backupResults, _) = await this.RunPartialBackup(c).ConfigureAwait(false);
                 Assert.AreEqual(0, backupResults.Errors.Count());
                 Assert.AreEqual(1, backupResults.Warnings.Count());
                 DateTime fifthBackupTime = c.List().Filesets.First().Time;
@@ -416,7 +416,7 @@ namespace Duplicati.UnitTest
             // Run a partial backup.
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
-                IBackupResults backupResults = await this.RunPartialBackup(c).ConfigureAwait(false);
+                (var backupResults, _) = await this.RunPartialBackup(c).ConfigureAwait(false);
                 Assert.AreEqual(0, backupResults.Errors.Count());
                 Assert.AreEqual(1, backupResults.Warnings.Count());
 
@@ -480,7 +480,7 @@ namespace Duplicati.UnitTest
             DateTime thirdBackupTime;
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
-                IBackupResults backupResults = await this.RunPartialBackup(c).ConfigureAwait(false);
+                (var backupResults, _) = await this.RunPartialBackup(c).ConfigureAwait(false);
                 Assert.AreEqual(0, backupResults.Errors.Count());
                 Assert.AreEqual(1, backupResults.Warnings.Count());
                 thirdBackupTime = c.List().Filesets.First().Time;
@@ -596,14 +596,14 @@ namespace Duplicati.UnitTest
                 Assert.AreEqual(BackupType.FULL_BACKUP, c.List().Filesets.Single(x => x.Version == 0).IsFullBackup);
             }
 
-            ModifySourceFiles();
-
             // Run a partial backup.
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
-                IBackupResults backupResults = await this.RunPartialBackup(c).ConfigureAwait(false);
+                (var backupResults, var modified) = await this.RunPartialBackup(c).ConfigureAwait(false);
                 Assert.AreEqual(0, backupResults.Errors.Count());
                 Assert.AreEqual(1, backupResults.Warnings.Count());
+                if (backupResults.ModifiedFiles == 0)
+                    throw new Exception($"No files were modified, likely the stop was issued too early, list is: {string.Join(", ", modified)}");
                 Assert.That(backupResults.ModifiedFiles, Is.GreaterThan(0), "No files were added, likely the stop was issued too early");
                 Assert.That(backupResults.ModifiedFiles, Is.LessThan(fileSizes.Length), "All files were added, likely the stop was issued too late");
 
