@@ -66,7 +66,7 @@ namespace Duplicati.UnitTest
                 pv.TaskControl.TestMethodCallback = (path) =>
                 {
                     modifiedFiles.Add(path);
-                    if (path.EndsWith(this.fileSizes[2] + "MB"))
+                    if (modifiedFiles.Count == 3)
                     {
                         Thread.Sleep(500);
                         controller.Stop();
