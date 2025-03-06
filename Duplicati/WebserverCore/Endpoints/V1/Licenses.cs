@@ -31,7 +31,7 @@ public class Licenses : IEndpointV1
 
     private static IEnumerable<Dto.LicenseDto> Execute()
     {
-        var exefolder = Path.GetDirectoryName(Duplicati.Library.Utility.Utility.getEntryAssembly().Location) ?? ".";
+        var exefolder = Path.GetDirectoryName(Duplicati.Library.Utility.Utility.GetEntryAssemblyLocation()) ?? ".";
         var path = Path.Combine(exefolder, "licenses");
         if (OperatingSystem.IsMacOS() && !Directory.Exists(path))
         {

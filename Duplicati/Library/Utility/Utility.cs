@@ -774,7 +774,7 @@ namespace Duplicati.Library.Utility
 
             return (T)(object)flags;
         }
-        
+
         /// <summary> 
         /// Parses an option with int value, returning the default value if the option is not found or cannot be parsed 
         /// </summary> 
@@ -782,9 +782,9 @@ namespace Duplicati.Library.Utility
         /// <param name="value">The value to look for in the settings</param> 
         /// <param name="default">default value</param> 
         /// <returns></returns> 
-        public static int ParseIntOption(IReadOnlyDictionary<string, string?> options, string value, int @default) 
-        { 
-            return options.TryGetValue(value, out var opt) && int.TryParse(opt ?? string.Empty, out var result) ? result : @default; 
+        public static int ParseIntOption(IReadOnlyDictionary<string, string?> options, string value, int @default)
+        {
+            return options.TryGetValue(value, out var opt) && int.TryParse(opt ?? string.Empty, out var result) ? result : @default;
         }
 
         /// <summary>
@@ -1030,9 +1030,65 @@ namespace Duplicati.Library.Utility
         // so this layer of indirection is necessary
         // </summary>
         // <returns>entry assembly or reasonable approximation</returns>
-        public static System.Reflection.Assembly getEntryAssembly()
+        public static System.Reflection.Assembly GetEntryAssembly()
+            => System.Reflection.Assembly.GetEntryAssembly() ?? System.Reflection.Assembly.GetExecutingAssembly();
+
+        /// <summary>
+        /// Returns the directory the entry assembly or a reasonable approximation if no entry assembly is available.
+        /// </summary>
+        /// <returns>The directory of the entry assembly or a reasonable approximation</returns>
+        public static string GetEntryAssemblyDirectory()
         {
-            return System.Reflection.Assembly.GetEntryAssembly() ?? System.Reflection.Assembly.GetExecutingAssembly();
+            string? path = null;
+            try
+            {
+                path = Path.GetDirectoryName(GetEntryAssembly()?.Location);
+            }
+            catch
+            {
+            }
+
+            return path ?? AppContext.BaseDirectory ?? Directory.GetCurrentDirectory();
+        }
+
+        /// <summary>
+        /// Returns the location of the entry assembly or a reasonable approximation if no entry assembly is available.
+        /// </summary>
+        /// <returns>The location of the entry assembly or a reasonable approximation</returns>
+        public static string GetEntryAssemblyLocation()
+        {
+            string? filename = null;
+            try
+            {
+                filename = Path.GetFileName(GetEntryAssembly()?.Location);
+            }
+            catch
+            {
+            }
+
+            if (filename == null)
+            {
+                try
+                {
+                    var name = GetEntryAssembly().GetName().Name;
+                    if (!string.IsNullOrWhiteSpace(name))
+                    {
+                        filename = name;
+                        if (OperatingSystem.IsWindows() && !filename.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
+                            filename += ".exe";
+                    }
+                }
+                catch
+                {
+                }
+            }
+
+            filename = filename ?? AppDomain.CurrentDomain.FriendlyName;
+
+            if (!string.IsNullOrWhiteSpace(filename) && OperatingSystem.IsWindows() && !filename.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
+                filename += ".exe";
+
+            return Path.Combine(GetEntryAssemblyDirectory(), filename);
         }
 
         /// <summary>

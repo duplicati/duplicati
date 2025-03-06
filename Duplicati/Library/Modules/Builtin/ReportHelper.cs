@@ -401,7 +401,7 @@ namespace Duplicati.Library.Modules.Builtin
                 case BACKUP_ID:
                     return Utility.Utility.ByteArrayAsHexString(Utility.Utility.RepeatedHashWithSalt(m_remoteurl, SALT));
                 case BACKUP_NAME:
-                    return System.IO.Path.GetFileNameWithoutExtension(Utility.Utility.getEntryAssembly().Location);
+                    return System.IO.Path.GetFileNameWithoutExtension(Utility.Utility.GetEntryAssemblyLocation());
                 case MACHINE_NAME:
                     return AutoUpdater.DataFolderManager.MachineName;
                 case OPERATING_SYSTEM:

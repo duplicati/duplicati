@@ -73,7 +73,7 @@ public static class PreloadSettingsLoader
     
         // The path for preload settings with the install directory
         Path.Combine(
-            Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location) ?? "",
+            Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location) ?? AppContext.BaseDirectory ?? "",
             FILE_NAME
         ),
 
