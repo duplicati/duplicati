@@ -108,7 +108,7 @@ namespace Duplicati.Library.Main.Operation
             {
                 LocalBackupDatabase backupDatabase = new LocalBackupDatabase(database, options);
                 IEnumerable<string> protectedFiles = backupDatabase.GetTemporaryFilelistVolumeNames(latestVolumesOnly, transaction);
-                await VerifyRemoteList(backend, options, database, backendWriter, protectedFiles, logErrors: true, verifyMode: verifyMode).ConfigureAwait(false);
+                await VerifyRemoteList(backend, options, database, backendWriter, protectedFiles, [], logErrors: true, verifyMode: verifyMode).ConfigureAwait(false);
             }
         }
 
@@ -121,11 +121,12 @@ namespace Duplicati.Library.Main.Operation
         /// <param name="database">The database to compare with</param>
         /// <param name="log">The log instance to use</param>
         /// <param name="protectedFiles">Filenames that should be exempted from deletion</param>
+        /// <param name="strictExcemptFiles">Filenames that should be exempted from strict verification</param>
         /// <param name="verifyMode">The mode to use for verification</param>
         /// <param name="logErrors">Disable the logging of errors to prevent spamming the log; exceptions will be thrown regardless</param>
-        public static async Task VerifyRemoteList(IBackendManager backend, Options options, LocalDatabase database, IBackendWriter log, IEnumerable<string> protectedFiles, bool logErrors, VerifyMode verifyMode)
+        public static async Task VerifyRemoteList(IBackendManager backend, Options options, LocalDatabase database, IBackendWriter log, IEnumerable<string> protectedFiles, IEnumerable<string> strictExcemptFiles, bool logErrors, VerifyMode verifyMode)
         {
-            var tp = await RemoteListAnalysis(backend, options, database, log, protectedFiles, verifyMode).ConfigureAwait(false);
+            var tp = await RemoteListAnalysis(backend, options, database, log, protectedFiles, strictExcemptFiles, verifyMode).ConfigureAwait(false);
             long extraCount = 0;
             long missingCount = 0;
 
@@ -232,9 +233,10 @@ namespace Duplicati.Library.Main.Operation
         /// <param name="options">The options used</param>
         /// <param name="database">The database to compare with</param>
         /// <param name="protectedFiles">Filenames that should be exempted from deletion</param>
+        /// <param name="strictExcemptFiles">Filenames that should be exempted from strict verification</param>
         /// <param name="verifyMode">The mode to use for verification</param>
         /// <returns>The result of the analysis</returns>
-        public static async Task<RemoteAnalysisResult> RemoteListAnalysis(IBackendManager backendManager, Options options, LocalDatabase database, IBackendWriter log, IEnumerable<string> protectedFiles, VerifyMode verifyMode)
+        public static async Task<RemoteAnalysisResult> RemoteListAnalysis(IBackendManager backendManager, Options options, LocalDatabase database, IBackendWriter log, IEnumerable<string> protectedFiles, IEnumerable<string> strictExcemptFiles, VerifyMode verifyMode)
         {
             // If the last operation completed, no cleanup should be required
             if (verifyMode == VerifyMode.VerifyAndClean && !database.UncleanShutdown)
@@ -246,7 +248,8 @@ namespace Duplicati.Library.Main.Operation
 
             var rawlist = await backendManager.ListAsync(CancellationToken.None).ConfigureAwait(false);
             var lookup = new Dictionary<string, Volumes.IParsedVolume>();
-            protectedFiles = protectedFiles ?? Enumerable.Empty<string>();
+            protectedFiles = protectedFiles ?? [];
+            strictExcemptFiles = strictExcemptFiles ?? [];
 
             var remotelist = (from n in rawlist
                               let p = Volumes.VolumeBase.ParseFilename(n)
@@ -284,7 +287,8 @@ namespace Duplicati.Library.Main.Operation
 
             var missing = new List<RemoteVolumeEntry>();
             var missingHash = new List<Tuple<long, RemoteVolumeEntry>>();
-            var cleanupRemovedRemoteVolumes = new HashSet<string>();
+            var temporaryAndDeletedVolumes = new HashSet<string>();
+            var missingUploadingVolumes = new HashSet<string>();
 
             foreach (var e in database.DuplicateRemoteVolumes())
             {
@@ -297,8 +301,7 @@ namespace Duplicati.Library.Main.Operation
             var locallist = database.GetRemoteVolumes();
             foreach (var i in locallist)
             {
-                Volumes.IParsedVolume r;
-                var remoteFound = lookup.TryGetValue(i.Name, out r);
+                var remoteFound = lookup.TryGetValue(i.Name, out var r);
                 var correctSize = remoteFound && i.Size >= 0 && (i.Size == r.File.Size || r.File.Size < 0);
 
                 lookup.Remove(i.Name);
@@ -336,7 +339,7 @@ namespace Duplicati.Library.Main.Operation
                                 else
                                 {
                                     Logging.Log.WriteInformationMessage(LOGTAG, "RemoteUnwantedMissingFile", "removing file listed as {0}: {1}", i.State, i.Name);
-                                    cleanupRemovedRemoteVolumes.Add(i.Name);
+                                    temporaryAndDeletedVolumes.Add(i.Name);
                                 }
                             }
                         }
@@ -354,15 +357,15 @@ namespace Duplicati.Library.Main.Operation
                                 Logging.Log.WriteInformationMessage(LOGTAG, "KeepIncompleteFile", "keeping protected incomplete remote file listed as {0}: {1}", i.State, i.Name);
                                 database.UpdateRemoteVolume(i.Name, RemoteVolumeState.Temporary, i.Size, i.Hash, false, new TimeSpan(0), null);
                             }
-                            else if (verifyMode == VerifyMode.VerifyStrict)
+                            else if (verifyMode == VerifyMode.VerifyStrict && !strictExcemptFiles.Any(pf => pf == i.Name))
                             {
                                 Logging.Log.WriteErrorMessage(LOGTAG, "UnexpectedUploadingFile", null, "Unexpected file in uploading state: {0}", i.Name);
-                                throw new RemoteListVerificationException($"The remote volume {i.Name} is in uploading state, failing", "UnexpectedUploadingFile");
+                                throw new RemoteListVerificationException($"The missing remote volume {i.Name} is in uploading state and strict mode is on", "UnexpectedUploadingFile");
                             }
                             else
                             {
                                 Logging.Log.WriteInformationMessage(LOGTAG, "SchedulingMissingFileForDelete", "scheduling missing file for deletion, currently listed as {0}: {1}", i.State, i.Name);
-                                cleanupRemovedRemoteVolumes.Add(i.Name);
+                                missingUploadingVolumes.Add(i.Name);
                                 database.UpdateRemoteVolume(i.Name, RemoteVolumeState.Deleting, i.Size, i.Hash, false, TimeSpan.FromHours(2), null);
                             }
                         }
@@ -372,10 +375,10 @@ namespace Duplicati.Library.Main.Operation
                             {
                                 Logging.Log.WriteInformationMessage(LOGTAG, "KeepIncompleteFile", "keeping protected incomplete remote file listed as {0}: {1}", i.State, i.Name);
                             }
-                            else if (verifyMode == VerifyMode.VerifyStrict)
+                            else if (verifyMode == VerifyMode.VerifyStrict && !strictExcemptFiles.Any(pf => pf == i.Name))
                             {
                                 Logging.Log.WriteErrorMessage(LOGTAG, "UnexpectedUploadingFile", null, "Unexpected file in uploading state: {0}", i.Name);
-                                throw new RemoteListVerificationException($"The remote volume {i.Name} is in uploading state, failing", "UnexpectedUploadingFile");
+                                throw new RemoteListVerificationException($"The remote volume {i.Name} is in uploading state, partially uploaded, and strict mode is on", "UnexpectedUploadingFile");
                             }
                             else
                             {
@@ -415,11 +418,11 @@ namespace Duplicati.Library.Main.Operation
             }
 
             // cleanup deleted volumes in DB en block
-            if (verifyMode == VerifyMode.VerifyStrict && cleanupRemovedRemoteVolumes.Count > 0)
-                throw new RemoteListVerificationException($"The remote volumes {string.Join(", ", cleanupRemovedRemoteVolumes)} are supposed to be deleted, but strict mode is on. Try running the \"repair\" command", "DeleteDuringStrictMode");
+            if (verifyMode == VerifyMode.VerifyStrict && missingUploadingVolumes.Count > 0)
+                throw new RemoteListVerificationException($"The remote volumes {string.Join(", ", missingUploadingVolumes)} are supposed to be deleted, but strict mode is on. Try running the \"repair\" command", "DeleteDuringStrictMode");
             else if (verifyMode == VerifyMode.VerifyAndClean)
             {
-                database.RemoveRemoteVolumes(cleanupRemovedRemoteVolumes, null);
+                database.RemoveRemoteVolumes(missingUploadingVolumes.Concat(temporaryAndDeletedVolumes), null);
                 // Clear the flag after we have cleaned up
                 if (!options.Dryrun)
                     database.UncleanShutdown = false;

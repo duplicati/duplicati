@@ -77,15 +77,13 @@ namespace Duplicati.Library.Main.Operation.Backup
             Logging.Log.WriteInformationMessage(LOGTAG, "PreviousBackupFilelistUpload", "Uploading filelist from previous interrupted backup");
 
             var incompleteSet = incompleteFilesets.Last();
-            var badIds = from n in incompleteFilesets select n.Key;
+            var badIds = incompleteFilesets.Select(n => n.Key);
 
-            var prevs = (from n in await database.GetFilesetTimesAsync()
-                         where
-                         n.Key < incompleteSet.Key
-                         &&
-                         !badIds.Contains(n.Key)
-                         orderby n.Key
-                         select n.Key).ToArray();
+            var prevs = (await database.GetFilesetTimesAsync())
+                .Where(n => n.Key < incompleteSet.Key && !badIds.Contains(n.Key))
+                .OrderBy(n => n.Key)
+                .Select(n => n.Key)
+                .ToArray();
 
             var prevId = prevs.Length == 0 ? -1 : prevs.Last();
 

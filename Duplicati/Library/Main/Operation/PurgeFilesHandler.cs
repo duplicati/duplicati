@@ -91,7 +91,7 @@ namespace Duplicati.Library.Main.Operation
                 if (m_options.NoBackendverification)
                     FilelistProcessor.VerifyLocalList(backendManager, db, cancellationToken).Await();
                 else
-                    FilelistProcessor.VerifyRemoteList(backendManager, m_options, db, m_result.BackendWriter, null, logErrors: true, verifyMode: FilelistProcessor.VerifyMode.VerifyAndClean).Await();
+                    FilelistProcessor.VerifyRemoteList(backendManager, m_options, db, m_result.BackendWriter, null, null, logErrors: true, verifyMode: FilelistProcessor.VerifyMode.VerifyAndClean).Await();
             }
 
             var filesets = db.FilesetTimes.OrderByDescending(x => x.Value).ToArray();

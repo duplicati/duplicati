@@ -134,7 +134,7 @@ namespace Duplicati.Library.Main.Operation
                 if (db.RepairInProgress)
                     throw new UserInformationException("The database was attempted repaired, but the repair did not complete. This database may be incomplete and the repair process is not allowed to alter remote files as that could result in data loss.", "DatabaseIsInRepairState");
 
-                var tp = await FilelistProcessor.RemoteListAnalysis(backendManager, m_options, db, m_result.BackendWriter, null, FilelistProcessor.VerifyMode.VerifyAndCleanForced).ConfigureAwait(false);
+                var tp = await FilelistProcessor.RemoteListAnalysis(backendManager, m_options, db, m_result.BackendWriter, null, null, FilelistProcessor.VerifyMode.VerifyAndCleanForced).ConfigureAwait(false);
                 var buffer = new byte[m_options.Blocksize];
                 var hashsize = HashFactory.HashSizeBytes(m_options.BlockHashAlgorithm);
 

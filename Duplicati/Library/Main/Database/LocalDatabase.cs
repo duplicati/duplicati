@@ -742,9 +742,9 @@ AND Fileset.ID NOT IN
             var opts = GetDbOptions();
 
             if (value)
-                opts["repair-in-progress"] = "true";
+                opts[key] = "true";
             else
-                opts.Remove("repair-in-progress");
+                opts.Remove(key);
 
             SetDbOptions(opts);
         }
