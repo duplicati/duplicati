@@ -104,7 +104,7 @@ namespace Duplicati.Library.Main.Operation
             {
                 // Workaround where we allow a running backendmanager to be used
                 if (!hasVerifiedBackend)
-                    await FilelistProcessor.VerifyRemoteList(backendManager, m_options, db, m_result.BackendWriter, true, transaction).ConfigureAwait(false);
+                    await FilelistProcessor.VerifyRemoteList(backendManager, m_options, db, m_result.BackendWriter, true, FilelistProcessor.VerifyMode.VerifyAndClean, transaction).ConfigureAwait(false);
 
                 var newvol = new BlockVolumeWriter(m_options);
                 newvol.VolumeID = db.RegisterRemoteVolume(newvol.RemoteFilename, RemoteVolumeType.Blocks, RemoteVolumeState.Temporary, transaction);
@@ -146,6 +146,10 @@ namespace Duplicati.Library.Main.Operation
 
                 if (report.ShouldCompact)
                 {
+                    // If we crash now, we may leave partial files
+                    if (!m_options.Dryrun)
+                        db.UncleanShutdown = true;
+
                     newvolindex?.StartVolume(newvol.RemoteFilename);
                     List<IRemoteVolume> volumesToDownload = [];
                     if (report.CompactableVolumes.Any())
@@ -240,6 +244,10 @@ namespace Duplicati.Library.Main.Operation
                             }
                         }
                     }
+
+                    // The remainder of the operation cannot leave partial files
+                    if (!m_options.Dryrun)
+                        db.UncleanShutdown = false;
                 }
                 else
                 {

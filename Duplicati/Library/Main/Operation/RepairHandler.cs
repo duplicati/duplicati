@@ -134,7 +134,7 @@ namespace Duplicati.Library.Main.Operation
                 if (db.RepairInProgress)
                     throw new UserInformationException("The database was attempted repaired, but the repair did not complete. This database may be incomplete and the repair process is not allowed to alter remote files as that could result in data loss.", "DatabaseIsInRepairState");
 
-                var tp = await FilelistProcessor.RemoteListAnalysis(backendManager, m_options, db, m_result.BackendWriter, null).ConfigureAwait(false);
+                var tp = await FilelistProcessor.RemoteListAnalysis(backendManager, m_options, db, m_result.BackendWriter, null, FilelistProcessor.VerifyMode.VerifyAndCleanForced).ConfigureAwait(false);
                 var buffer = new byte[m_options.Blocksize];
                 var hashsize = HashFactory.HashSizeBytes(m_options.BlockHashAlgorithm);
 
@@ -296,6 +296,9 @@ namespace Duplicati.Library.Main.Operation
                         if (missingDblocks.Length > 0)
                             throw new UserInformationException($"The backup storage destination is missing data files. You can either enable `--rebuild-missing-dblock-files` or run the purge command to remove these files. The following files are missing: {string.Join(", ", missingDblocks.Select(x => x.Name))}", "MissingDblockFiles");
                     }
+
+                    if (!m_options.Dryrun && tp.MissingVolumes.Any())
+                        db.UncleanShutdown = true;
 
                     foreach (var n in tp.MissingVolumes)
                     {
@@ -496,6 +499,8 @@ namespace Duplicati.Library.Main.Operation
 
                 m_result.OperationProgressUpdater.UpdateProgress(1);
                 await backendManager.WaitForEmptyAsync(db, null, cancellationToken).ConfigureAwait(false);
+                if (!m_options.Dryrun)
+                    db.UncleanShutdown = false;
                 db.WriteResults();
             }
         }

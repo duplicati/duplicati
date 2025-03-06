@@ -343,7 +343,9 @@ namespace Duplicati.Library.Main.Operation
                             await UpdateStorageStatsFromDatabase(result, database, options, backendManager, result.TaskControl.ProgressToken).ConfigureAwait(false);
                         }
                         else
-                            await FilelistProcessor.VerifyRemoteList(backendManager, options, database, result.BackendWriter, new string[] { lastTempFilelist }, logErrors: false).ConfigureAwait(false);
+                        {
+                            await FilelistProcessor.VerifyRemoteList(backendManager, options, database, result.BackendWriter, new string[] { lastTempFilelist }, logErrors: false, verifyMode: FilelistProcessor.VerifyMode.VerifyAndClean).ConfigureAwait(false);
+                        }
                     }
                     catch (RemoteListVerificationException ex)
                     {
@@ -362,7 +364,7 @@ namespace Duplicati.Library.Main.Operation
                             result.SetDatabase(database);
 
                             Log.WriteInformationMessage(LOGTAG, "BackendCleanupFinished", "Backend cleanup finished, retrying verification");
-                            await FilelistProcessor.VerifyRemoteList(backendManager, options, database, result.BackendWriter, new string[] { lastTempFilelist }).ConfigureAwait(false);
+                            await FilelistProcessor.VerifyRemoteList(backendManager, options, database, result.BackendWriter, new string[] { lastTempFilelist }, logErrors: true, verifyMode: FilelistProcessor.VerifyMode.VerifyStrict).ConfigureAwait(false);
                         }
                         else
                             throw;
@@ -506,7 +508,7 @@ namespace Duplicati.Library.Main.Operation
         {
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_PostBackupVerify);
             using (new Logging.Timer(LOGTAG, "AfterBackupVerify", "AfterBackupVerify"))
-                await FilelistProcessor.VerifyRemoteList(backendManager, m_options, m_database, m_result.BackendWriter, new string[] { currentFilelistVolume }).ConfigureAwait(false);
+                await FilelistProcessor.VerifyRemoteList(backendManager, m_options, m_database, m_result.BackendWriter, new string[] { currentFilelistVolume }, logErrors: true, verifyMode: FilelistProcessor.VerifyMode.VerifyStrict).ConfigureAwait(false);
             await backendManager.WaitForEmptyAsync(m_database, m_transaction, m_taskReader.ProgressToken);
 
             long remoteVolumeCount = m_database.GetRemoteVolumes().LongCount(x => x.State == RemoteVolumeState.Verified);
@@ -613,6 +615,10 @@ namespace Duplicati.Library.Main.Operation
             Task parallelScanner = null;
             try
             {
+                // If we crash now, there is a chance we leave behind partial remote files
+                if (!m_options.Dryrun)
+                    database.UncleanShutdown = true;
+
                 using (m_database = database)
                 using (var db = new Backup.BackupDatabase(m_database, m_options))
                 // Setup runners and instances here
@@ -691,6 +697,8 @@ namespace Duplicati.Library.Main.Operation
                     m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_WaitForUpload);
                     var lastVolumeSize = await FlushBackend(m_database, m_transaction, m_result, backendManager).ConfigureAwait(false);
 
+                    if (!m_options.Dryrun)
+                        database.UncleanShutdown = false;
                     // Make sure we have the database up-to-date
                     await db.CommitTransactionAsync("CommitAfterUpload", false);
 

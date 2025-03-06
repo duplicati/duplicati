@@ -737,42 +737,34 @@ AND Fileset.ID NOT IN
             return GetDbOptionList(transaction).ToDictionary(x => x.Key, x => x.Value);
         }
 
+        private void UpdateDbOption(string key, bool value)
+        {
+            var opts = GetDbOptions();
+
+            if (value)
+                opts["repair-in-progress"] = "true";
+            else
+                opts.Remove("repair-in-progress");
+
+            SetDbOptions(opts);
+        }
+
         public bool RepairInProgress
         {
-            get
-            {
-                return GetDbOptions().ContainsKey("repair-in-progress");
-            }
-            set
-            {
-                var opts = GetDbOptions();
-
-                if (value)
-                    opts["repair-in-progress"] = "true";
-                else
-                    opts.Remove("repair-in-progress");
-
-                SetDbOptions(opts);
-            }
+            get => GetDbOptions().ContainsKey("repair-in-progress");
+            set => UpdateDbOption("repair-in-progress", value);
         }
 
         public bool PartiallyRecreated
         {
-            get
-            {
-                return GetDbOptions().ContainsKey("partially-recreated");
-            }
-            set
-            {
-                var opts = GetDbOptions();
+            get => GetDbOptions().ContainsKey("partially-recreated");
+            set => UpdateDbOption("partially-recreated", value);
+        }
 
-                if (value)
-                    opts["partially-recreated"] = "true";
-                else
-                    opts.Remove("partially-recreated");
-
-                SetDbOptions(opts);
-            }
+        public bool UncleanShutdown
+        {
+            get => GetDbOptions().ContainsKey("unclean-shutdown");
+            set => UpdateDbOption("unclean-shutdown", value);
         }
 
         public void SetDbOptions(IDictionary<string, string> options, System.Data.IDbTransaction transaction = null)
