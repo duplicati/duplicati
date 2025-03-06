@@ -23,6 +23,7 @@ using System.Net;
 using System.Text;
 using Duplicati.Library.Backend.Backblaze.Model;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Utility;
 using Newtonsoft.Json;
 using Exception = System.Exception;
 using Uri = System.Uri;
@@ -35,8 +36,19 @@ namespace Duplicati.Library.Backend.Backblaze;
 /// <param name="userid">Username</param>
 /// <param name="password">Password</param>
 /// <param name="httpClient">HttpClient instance to use and pass along to JsonWebHelperHttpClient</param>
-public class B2AuthHelper(string userid, string password, HttpClient httpClient) : JsonWebHelperHttpClient(httpClient)
+public class B2AuthHelper(string userid, string password) : JsonWebHelperHttpClient(CreateHttpClient())
 {
+    /// <summary>
+    /// Creates an HTTP client with infinite timeout
+    /// </summary>
+    /// <returns>The HttpClient instance</returns>
+    private static HttpClient CreateHttpClient()
+    {
+        var httpClient = HttpClientHelper.CreateClient();
+        httpClient.Timeout = Timeout.InfiniteTimeSpan;
+        return httpClient;
+    }
+
     /// <summary>
     /// Cached authorization response
     /// </summary>
@@ -86,6 +98,8 @@ public class B2AuthHelper(string userid, string password, HttpClient httpClient)
     /// Account ID (fetches from Config, which will refresh if needed)
     /// </summary>
     public string AccountId => Config.AccountID;
+
+    public HttpClient HttpClient => _httpClient;
 
     /// <summary>
     /// Creates an HTTP request message with authorization header
