@@ -180,7 +180,7 @@ namespace Duplicati.GUI.TrayIcon
             });
         }
 
-        protected void ShowStatusWindow()
+        public void ShowStatusWindow()
         {
             Program.Connection.GetStatusWindowURLAsync().ContinueWith(t =>
             {
