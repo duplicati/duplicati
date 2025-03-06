@@ -367,6 +367,10 @@ partial class BackendManager
                 while (backendPool.TryDequeue(out var backend))
                     try { backend.Dispose(); }
                     catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, "BackendManagerDisposeError", ex, "Failed to dispose backend instance: {0}", ex.Message); }
+
+                // Dispose of shared state
+                foreach (var state in sharedState.Values)
+                    (state as IDisposable)?.Dispose();
             }
         }
 
