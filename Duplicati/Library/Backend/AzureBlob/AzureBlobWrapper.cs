@@ -80,7 +80,8 @@ namespace Duplicati.Library.Backend.AzureBlob
         /// <returns>A task that represents the asynchronous operation.</returns>
         public async Task AddContainerAsync(CancellationToken cancellationToken)
         {
-            await _container.CreateAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
+            // Even though PublicAccessType.None is by default, we set it explicitly to highlight it.
+            await _container.CreateAsync(PublicAccessType.None, cancellationToken: cancellationToken).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -106,7 +107,7 @@ namespace Duplicati.Library.Backend.AzureBlob
         public async Task AddFileStream(string keyName, Stream source, CancellationToken cancelToken)
         {
             var blobClient = _container.GetBlobClient(keyName);
-            await blobClient.UploadAsync(source, cancelToken).ConfigureAwait(false);
+            await blobClient.UploadAsync(source, true, cancelToken).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -130,7 +131,7 @@ namespace Duplicati.Library.Backend.AzureBlob
         {
             IAsyncEnumerable<BlobItem> blobs = GetBlobsWithExceptionHandling();
 
-            await foreach (var blobItem in blobs.WithCancellation(cancelToken))
+            await foreach (var blobItem in blobs.WithCancellation(cancelToken).ConfigureAwait(false))
             {
                 var blobName = Uri.UnescapeDataString(blobItem.Name.Replace("+", "%2B"));
         
