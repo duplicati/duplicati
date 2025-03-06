@@ -456,6 +456,10 @@ namespace Duplicati.Library.Main
 
                         // This would allow us to pass the database instance to the backend manager
                         // And safeguard against remote operations not being logged in the database
+
+                        // This would also allow us to control the unclean shutdown flag,
+                        // by toggling this on start and completion of transfers in the manager,
+                        // instead of relying on the operations to correctly toggle the flag
                         if (File.Exists(m_options.Dbpath))
                         {
                             using (var db = new LocalDatabase(m_options.Dbpath, result.MainOperation.ToString(), true))

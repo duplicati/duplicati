@@ -269,6 +269,7 @@ namespace Duplicati.Library.Main.Operation
                             select n).ToList();
 
             log.KnownFileCount = remotelist.Count;
+            log.KnownFilesets = filesets.Count;
             long knownFileSize = remotelist.Select(x => Math.Max(0, x.File.Size)).Sum();
             log.KnownFileSize = knownFileSize;
             log.UnknownFileCount = unknownlist.Count;

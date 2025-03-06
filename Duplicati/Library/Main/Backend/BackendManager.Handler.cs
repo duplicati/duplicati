@@ -417,7 +417,7 @@ partial class BackendManager
                         }
                     }
 
-                    context.Statwriter.SendEvent(op.Operation, retries < maxRetries ? BackendEventType.Retrying : BackendEventType.Failed, op.RemoteFilename, op.Size);
+                    context.Statwriter.SendEvent(op.Operation, retries <= maxRetries ? BackendEventType.Retrying : BackendEventType.Failed, op.RemoteFilename, op.Size);
 
                     // Check if we can recover from the error
                     var recovered = false;
@@ -430,14 +430,14 @@ partial class BackendManager
                     }
 
                     // We did not recover, so wait or give up
-                    if (!recovered && retries < maxRetries && retryDelay.Ticks != 0)
+                    if (!recovered && retries <= maxRetries && retryDelay.Ticks != 0)
                     {
                         var delay = Library.Utility.Utility.GetRetryDelay(retryDelay, retries, retryWithExponentialBackoff);
                         await Task.Delay(delay, context.TaskReader.ProgressToken).ConfigureAwait(false);
                     }
                 }
 
-            } while (retries < maxRetries);
+            } while (retries <= maxRetries);
 
             // If we have a last exception, we failed
             if (lastException != null)

@@ -774,6 +774,18 @@ namespace Duplicati.Library.Utility
 
             return (T)(object)flags;
         }
+        
+        /// <summary> 
+        /// Parses an option with int value, returning the default value if the option is not found or cannot be parsed 
+        /// </summary> 
+        /// <param name="options">The set of options to look for the setting in</param> 
+        /// <param name="value">The value to look for in the settings</param> 
+        /// <param name="default">default value</param> 
+        /// <returns></returns> 
+        public static int ParseIntOption(IReadOnlyDictionary<string, string?> options, string value, int @default) 
+        { 
+            return options.TryGetValue(value, out var opt) && int.TryParse(opt ?? string.Empty, out var result) ? result : @default; 
+        }
 
         /// <summary>
         /// Converts a sequence of bytes to a hex string
