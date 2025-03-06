@@ -73,6 +73,13 @@ public static partial class Command
     };
 
     /// <summary>
+    /// Projects that are compiled as single binary projects
+    /// </summary>
+    private static readonly IReadOnlySet<string> SingleBinaryProjects = new HashSet<string>(StringComparer.InvariantCultureIgnoreCase) {
+        "Duplicati.CommandLine.AutoUpdater.csproj"
+    };
+
+    /// <summary>
     /// Some executables have shorter names that follow the Linux convention of all-lowercase
     /// </summary>
     /// <remarks>Note that the values here mirror the values in the AutoUpdater.PackageHelper, so changes should be coordinated between the two</remarks>
