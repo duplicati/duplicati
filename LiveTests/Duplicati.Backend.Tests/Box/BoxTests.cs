@@ -35,7 +35,7 @@ public sealed class BoxTests : BaseTest
         var exitCode = CommandLine.BackendTester.Program.Main(
             new[]
             {
-                $"box://{Environment.GetEnvironmentVariable("TESTCREDENTIAL_BOX_FOLDER")}/?auth-id={Uri.EscapeDataString(Environment.GetEnvironmentVariable("TESTCREDENTIAL_BOX_AUTHID")!)}",
+                $"box://{Environment.GetEnvironmentVariable("TESTCREDENTIAL_BOX_FOLDER")}/?authid={Uri.EscapeDataString(Environment.GetEnvironmentVariable("TESTCREDENTIAL_BOX_AUTHID")!)}",
 
             }.Concat(Parameters.GlobalTestParameters).ToArray());
 
