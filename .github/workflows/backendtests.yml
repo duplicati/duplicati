@@ -484,76 +484,76 @@ jobs:
           --logger:"console;verbosity=detailed"
           LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.sln
   test_b2:
-      needs: check_secrets
-      if: needs.check_secrets.outputs.b2_secrets_available == 'true'
-      name: Backblaze B2 Tests
-      runs-on: "${{ matrix.os }}"
-      strategy:
-        max-parallel: 1
-        fail-fast: false
-        matrix:
-          os:
-            - ubuntu-latest
-            - windows-latest
-            - macos-latest
-      steps:
-        - name: Set up .NET
-          uses: actions/setup-dotnet@v4
-          with:
-            dotnet-version: 8.x
-        - name: Checkout source
-          uses: actions/checkout@v4
-        - name: Restore NuGet dependencies
-          run: >-
-            dotnet restore
-            LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.sln
-        - name: Build project
-          run: >-
-            dotnet build --no-restore
-            LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.sln
-        - name: Run B2 tests
-          env:
-            TESTCREDENTIAL_B2_BUCKET: "${{ secrets.TESTCREDENTIAL_B2_BUCKET }}"
-            TESTCREDENTIAL_B2_FOLDER: "${{ secrets.TESTCREDENTIAL_B2_FOLDER }}"
-            TESTCREDENTIAL_B2_USERNAME: "${{ secrets.TESTCREDENTIAL_B2_USERNAME }}"
-            TESTCREDENTIAL_B2_PASSWORD: "${{ secrets.TESTCREDENTIAL_B2_PASSWORD }}"
-          run: >-
-            dotnet test --no-build --filter="ClassName~B2Tests"
-            --logger:"console;verbosity=detailed"
-            LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.sln
+    needs: check_secrets
+    if: needs.check_secrets.outputs.b2_secrets_available == 'true'
+    name: Backblaze B2 Tests
+    runs-on: "${{ matrix.os }}"
+    strategy:
+      max-parallel: 1
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - windows-latest
+          - macos-latest
+    steps:
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.x
+      - name: Checkout source
+        uses: actions/checkout@v4
+      - name: Restore NuGet dependencies
+        run: >-
+          dotnet restore
+          LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.sln
+      - name: Build project
+        run: >-
+          dotnet build --no-restore
+          LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.sln
+      - name: Run B2 tests
+        env:
+          TESTCREDENTIAL_B2_BUCKET: "${{ secrets.TESTCREDENTIAL_B2_BUCKET }}"
+          TESTCREDENTIAL_B2_FOLDER: "${{ secrets.TESTCREDENTIAL_B2_FOLDER }}"
+          TESTCREDENTIAL_B2_USERNAME: "${{ secrets.TESTCREDENTIAL_B2_USERNAME }}"
+          TESTCREDENTIAL_B2_PASSWORD: "${{ secrets.TESTCREDENTIAL_B2_PASSWORD }}"
+        run: >-
+          dotnet test --no-build --filter="ClassName~B2Tests"
+          --logger:"console;verbosity=detailed"
+          LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.sln
   test_box:
-      needs: check_secrets
-      if: needs.check_secrets.outputs.box_secrets_available == 'true'
-      name: Box.com Tests
-      runs-on: "${{ matrix.os }}"
-      strategy:
-        max-parallel: 1
-        fail-fast: false
-        matrix:
-          os:
-            - ubuntu-latest
-            - windows-latest
-            - macos-latest
-      steps:
-        - name: Set up .NET
-          uses: actions/setup-dotnet@v4
-          with:
-            dotnet-version: 8.x
-        - name: Checkout source
-          uses: actions/checkout@v4
-        - name: Restore NuGet dependencies
-          run: >-
-            dotnet restore
-            LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.sln
-        - name: Build project
-          run: >-
-            dotnet build --no-restore
-            LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.sln
-        - name: Run Box.com tests
-          env:
-            TESTCREDENTIAL_BOX_FOLDER: "${{ secrets.TESTCREDENTIAL_BOX_FOLDER }}"
-            TESTCREDENTIAL_BOX_AUTHID: "${{ secrets.TESTCREDENTIAL_BOX_AUTHID }}"
-          run: >-
-            dotnet test --no-build --filter="ClassName~BoxTests"
-            --logger:"console;verbosity=detailed"
-            LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.sln
+    needs: check_secrets
+    if: needs.check_secrets.outputs.box_secrets_available == 'true'
+    name: Box.com Tests
+    runs-on: "${{ matrix.os }}"
+    strategy:
+      max-parallel: 1
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - windows-latest
+          - macos-latest
+    steps:
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.x
+      - name: Checkout source
+        uses: actions/checkout@v4
+      - name: Restore NuGet dependencies
+        run: >-
+          dotnet restore
+          LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.sln
+      - name: Build project
+        run: >-
+          dotnet build --no-restore
+          LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.sln
+      - name: Run Box.com tests
+        env:
+          TESTCREDENTIAL_BOX_FOLDER: "${{ secrets.TESTCREDENTIAL_BOX_FOLDER }}"
+          TESTCREDENTIAL_BOX_AUTHID: "${{ secrets.TESTCREDENTIAL_BOX_AUTHID }}"
+        run: >-
+          dotnet test --no-build --filter="ClassName~Box.BoxTests"
+          --logger:"console;verbosity=detailed"
+          LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.sln
