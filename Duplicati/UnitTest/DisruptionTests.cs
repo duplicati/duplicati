@@ -66,7 +66,7 @@ namespace Duplicati.UnitTest
                 {
                     if (path.EndsWith(this.fileSizes[2] + "MB"))
                     {
-                        Thread.Sleep(2000);
+                        Thread.Sleep(500);
                         controller.Stop();
                         stopped.TrySetResult(true);
                     }
@@ -263,6 +263,8 @@ namespace Duplicati.UnitTest
                 Assert.AreEqual(thirdBackupTime, filesets[0].Time);
                 Assert.AreEqual(BackupType.PARTIAL_BACKUP, filesets[0].IsFullBackup);
             }
+
+            ModifySourceFiles();
 
             // Run another partial backup. We will then verify that a full backup is retained
             // even when all the "recent" backups are partial.
@@ -593,6 +595,8 @@ namespace Duplicati.UnitTest
                 Assert.AreEqual(1, c.List().Filesets.Count());
                 Assert.AreEqual(BackupType.FULL_BACKUP, c.List().Filesets.Single(x => x.Version == 0).IsFullBackup);
             }
+
+            ModifySourceFiles();
 
             // Run a partial backup.
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
