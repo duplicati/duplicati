@@ -148,7 +148,7 @@ namespace Duplicati.Library.Main.Operation
                 {
                     // If we crash now, we may leave partial files
                     if (!m_options.Dryrun)
-                        db.UncleanShutdown = true;
+                        db.TerminatedWithActiveUploads = true;
 
                     newvolindex?.StartVolume(newvol.RemoteFilename);
                     List<IRemoteVolume> volumesToDownload = [];
@@ -247,7 +247,7 @@ namespace Duplicati.Library.Main.Operation
 
                     // The remainder of the operation cannot leave partial files
                     if (!m_options.Dryrun)
-                        db.UncleanShutdown = false;
+                        db.TerminatedWithActiveUploads = false;
                 }
                 else
                 {

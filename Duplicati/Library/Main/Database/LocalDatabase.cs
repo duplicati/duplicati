@@ -761,10 +761,10 @@ AND Fileset.ID NOT IN
             set => UpdateDbOption("partially-recreated", value);
         }
 
-        public bool UncleanShutdown
+        public bool TerminatedWithActiveUploads
         {
-            get => GetDbOptions().ContainsKey("unclean-shutdown");
-            set => UpdateDbOption("unclean-shutdown", value);
+            get => GetDbOptions().ContainsKey("terminated-with-active-uploads");
+            set => UpdateDbOption("terminated-with-active-uploads", value);
         }
 
         public void SetDbOptions(IDictionary<string, string> options, System.Data.IDbTransaction transaction = null)

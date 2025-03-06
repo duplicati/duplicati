@@ -105,7 +105,7 @@ namespace Duplicati.Library.Main.Operation
 
             // If we crash now, it is possible that the remote storage contains partial files
             if (!m_options.Dryrun)
-                db.UncleanShutdown = true;
+                db.TerminatedWithActiveUploads = true;
 
             // Reverse makes sure we re-write the old versions first
             foreach (var versionid in versions.Reverse())
@@ -226,7 +226,7 @@ namespace Duplicati.Library.Main.Operation
             }
 
             if (!m_options.Dryrun)
-                db.UncleanShutdown = false;
+                db.TerminatedWithActiveUploads = false;
 
             if (doCompactStep)
             {

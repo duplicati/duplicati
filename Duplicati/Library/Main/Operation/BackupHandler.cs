@@ -618,7 +618,7 @@ namespace Duplicati.Library.Main.Operation
             {
                 // If we crash now, there is a chance we leave behind partial remote files
                 if (!m_options.Dryrun)
-                    database.UncleanShutdown = true;
+                    database.TerminatedWithActiveUploads = true;
 
                 using (m_database = database)
                 using (var db = new Backup.BackupDatabase(m_database, m_options))
@@ -699,7 +699,7 @@ namespace Duplicati.Library.Main.Operation
                     var lastVolumeSize = await FlushBackend(m_database, m_transaction, m_result, backendManager).ConfigureAwait(false);
 
                     if (!m_options.Dryrun)
-                        database.UncleanShutdown = false;
+                        database.TerminatedWithActiveUploads = false;
                     // Make sure we have the database up-to-date
                     await db.CommitTransactionAsync("CommitAfterUpload", false);
 

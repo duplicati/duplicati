@@ -298,7 +298,7 @@ namespace Duplicati.Library.Main.Operation
                     }
 
                     if (!m_options.Dryrun && tp.MissingVolumes.Any())
-                        db.UncleanShutdown = true;
+                        db.TerminatedWithActiveUploads = true;
 
                     foreach (var n in tp.MissingVolumes)
                     {
@@ -500,7 +500,7 @@ namespace Duplicati.Library.Main.Operation
                 m_result.OperationProgressUpdater.UpdateProgress(1);
                 await backendManager.WaitForEmptyAsync(db, null, cancellationToken).ConfigureAwait(false);
                 if (!m_options.Dryrun)
-                    db.UncleanShutdown = false;
+                    db.TerminatedWithActiveUploads = false;
                 db.WriteResults();
             }
         }

@@ -239,7 +239,7 @@ namespace Duplicati.Library.Main.Operation
         public static async Task<RemoteAnalysisResult> RemoteListAnalysis(IBackendManager backendManager, Options options, LocalDatabase database, IBackendWriter log, IEnumerable<string> protectedFiles, IEnumerable<string> strictExcemptFiles, VerifyMode verifyMode)
         {
             // If the last operation completed, no cleanup should be required
-            if (verifyMode == VerifyMode.VerifyAndClean && !database.UncleanShutdown)
+            if (verifyMode == VerifyMode.VerifyAndClean && !database.TerminatedWithActiveUploads)
                 verifyMode = VerifyMode.VerifyStrict;
 
             // Force cleanup should set the mode to cleanup
@@ -425,7 +425,7 @@ namespace Duplicati.Library.Main.Operation
                 database.RemoveRemoteVolumes(missingUploadingVolumes.Concat(temporaryAndDeletedVolumes), null);
                 // Clear the flag after we have cleaned up
                 if (!options.Dryrun)
-                    database.UncleanShutdown = false;
+                    database.TerminatedWithActiveUploads = false;
             }
 
             foreach (var i in missingHash)
