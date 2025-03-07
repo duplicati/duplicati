@@ -603,12 +603,18 @@ public class B2 : IStreamingBackend, ITimeoutExemptBackend, IStateEnabledModule<
     /// <returns>List of IFileEntry with directory listing result</returns>
     public async IAsyncEnumerable<IFileEntry> ListAsync([EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        List<FileEntity> result = null;
-        await RebuildFileCache(true, cancellationToken, state => result = state.FileCache.Values.Select(x => x.OrderByDescending(y => y.UploadTimestamp).First()).ToList()).ConfigureAwait(false);
+        // TODO: This should be changed to async enumerable, if we can get rid of the cache
+        List<(string Name, FileEntity Entity)> result = null;
+        await RebuildFileCache(true, cancellationToken, state =>
+            result = state.FileCache
+                .Select(x => (x.Key, x.Value.OrderByDescending(y => y.UploadTimestamp).First()))
+                .ToList()
+        ).ConfigureAwait(false);
+
         foreach (var x in result ?? throw new Exception("File cache not initialized"))
         {
-            var ts = Utility.Utility.EPOCH.AddMilliseconds(x.UploadTimestamp);
-            yield return new FileEntry(x.FileName, x.Size, ts, ts);
+            var ts = Utility.Utility.EPOCH.AddMilliseconds(x.Entity.UploadTimestamp);
+            yield return new FileEntry(x.Name, x.Entity.Size, ts, ts);
         }
     }
 
