@@ -272,7 +272,7 @@ public class B2 : IStreamingBackend, ITimeoutExemptBackend
 
         _uploadUrl = await _b2AuthHelper.PostAndGetJsonDataAsync<UploadUrlResponse>(
             $"{_b2AuthHelper.ApiUrl}/b2api/v1/b2_get_upload_url",
-            new UploadUrlRequest { BucketID = GetBucketAsync(cancellationToken).Await().BucketID },
+            new UploadUrlRequest { BucketID = (await GetBucketAsync(cancellationToken)).BucketID },
             combinedCancellationToken.Token
         ).ConfigureAwait(false);
 
@@ -487,7 +487,7 @@ public class B2 : IStreamingBackend, ITimeoutExemptBackend
                     $"{_b2AuthHelper.ApiUrl}/b2api/v1/b2_list_file_versions",
                     new ListFilesRequest
                     {
-                        BucketID = GetBucketAsync(cancellationToken).Await().BucketID,
+                        BucketID = (await GetBucketAsync(cancellationToken)).BucketID,
                         MaxFileCount = _pageSize,
                         Prefix = _prefix,
                         StartFileID = nextFileId,
