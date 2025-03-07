@@ -311,34 +311,51 @@ partial class BackendManager
                 {
                     Logging.Log.WriteWarningMessage(LOGTAG, "BackendManagerDisposeWhileActive", null, "Terminating {0} active uploads", activeUploads.Count);
 
-                    // Wait for all active uploads to complete
-                    await Task.WhenAny(Task.Delay(1000), Task.WhenAll(activeUploads)).ConfigureAwait(false);
-                    for (int i = activeUploads.Count - 1; i >= 0; i--)
-                    {
-                        var t = activeUploads[i];
-                        if (t.IsCompleted)
-                        {
-                            activeUploads.RemoveAt(i);
-                            if (t.IsCanceled)
-                                Logging.Log.WriteWarningMessage(LOGTAG, "BackendManagerDisposeError", t.Exception, "Error in active upload: Cancelled");
-                            else if (t.IsFaulted)
-                                Logging.Log.WriteWarningMessage(LOGTAG, "BackendManagerDisposeError", t.Exception, "Error in active upload: {0}", t.Exception?.Message ?? "null");
-                            else
-                                Logging.Log.WriteWarningMessage(LOGTAG, "BackendManagerDisposeError", null, "Upload was active during termination, but completed successfully");
-                        }
-                        else
-                        {
-                            Logging.Log.WriteWarningMessage(LOGTAG, "BackendManagerDisposeError", null, "Upload was active during termination, but had state: {0}", t.Status);
-                        }
-
-                        if (activeUploads.Count > 0)
-                            Logging.Log.WriteWarningMessage(LOGTAG, "BackendManagerDisposeError", null, "Terminating, but {0} active uploads are still active", activeUploads.Count);
-                    }
+                    await WaitForPendingItems("upload", activeUploads).ConfigureAwait(false);
+                    await WaitForPendingItems("download", activeDownloads).ConfigureAwait(false);
 
                     // Dispose of any remaining backends
                     while (backendPool.TryDequeue(out var backend))
                         try { backend.Dispose(); }
                         catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, "BackendManagerDisposeError", ex, "Failed to dispose backend instance: {0}", ex.Message); }
+                }
+            }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="description"></param>
+        /// <param name="tasks"></param>
+        /// <returns></returns>
+        private static async Task WaitForPendingItems(string description, List<Task> tasks)
+        {
+            if (tasks.Count > 0)
+            {
+                Logging.Log.WriteWarningMessage(LOGTAG, "BackendManagerDisposeWhileActive", null, "Terminating {0} active {1}s", tasks.Count, description);
+
+                // Wait for all active tasks to complete
+                await Task.WhenAny(Task.Delay(1000), Task.WhenAll(tasks)).ConfigureAwait(false);
+                for (int i = tasks.Count - 1; i >= 0; i--)
+                {
+                    var t = tasks[i];
+                    if (t.IsCompleted)
+                    {
+                        tasks.RemoveAt(i);
+                        if (t.IsCanceled)
+                            Logging.Log.WriteWarningMessage(LOGTAG, "BackendManagerDisposeError", t.Exception, "Error in active {0}: Cancelled", description);
+                        else if (t.IsFaulted)
+                            Logging.Log.WriteWarningMessage(LOGTAG, "BackendManagerDisposeError", t.Exception, "Error in active {0}: {1}", description, t.Exception?.Message ?? "null");
+                        else
+                            Logging.Log.WriteWarningMessage(LOGTAG, "BackendManagerDisposeError", null, "{0} was active during termination, but completed successfully", description);
+                    }
+                    else
+                    {
+                        Logging.Log.WriteWarningMessage(LOGTAG, "BackendManagerDisposeError", null, "{0} was active during termination, but had state: {1}", description, t.Status);
+                    }
+
+                    if (tasks.Count > 0)
+                        Logging.Log.WriteWarningMessage(LOGTAG, "BackendManagerDisposeError", null, "Terminating, but {0} active {1}(s) are still active", tasks.Count, description);
                 }
             }
         }
