@@ -268,9 +268,10 @@ public class B2 : IStreamingBackend, ITimeoutExemptBackend, IStateEnabledModule<
     ///
     /// Caches the result in the _mBucket field.
     /// </summary>
+    /// <param name="authHelper">The B2AuthHelper instance to use for the request</param>
     /// <param name="cancellationToken">CancellationToken that is combined with internal timeout token</param>
     /// <exception cref="FolderMissingException"></exception>
-    private async Task<BucketEntity> GetBucketAsync(CancellationToken cancellationToken)
+    private async Task<BucketEntity> GetBucketAsync(B2AuthHelper authHelper, CancellationToken cancellationToken)
     {
         if (_bucket != null) return _bucket;
 
@@ -282,9 +283,9 @@ public class B2 : IStreamingBackend, ITimeoutExemptBackend, IStateEnabledModule<
             timeoutToken.CancelAfter(TimeSpan.FromSeconds(SHORT_OPERATION_TIMEOUT_SECONDS));
             using var combinedCancellationToken = CancellationTokenSource.CreateLinkedTokenSource(timeoutToken.Token, cancellationToken);
 
-            var buckets = await AuthHelper.PostAndGetJsonDataAsync<ListBucketsResponse>(
-                $"{AuthHelper.ApiUrl}/b2api/v1/b2_list_buckets",
-                new ListBucketsRequest(accountId: AuthHelper.AccountId),
+            var buckets = await authHelper.PostAndGetJsonDataAsync<ListBucketsResponse>(
+                $"{authHelper.ApiUrl}/b2api/v1/b2_list_buckets",
+                new ListBucketsRequest(accountId: authHelper.AccountId),
                 combinedCancellationToken.Token).ConfigureAwait(false);
 
             return _bucket ??= buckets?.Buckets?.FirstOrDefault(x =>
@@ -309,10 +310,11 @@ public class B2 : IStreamingBackend, ITimeoutExemptBackend, IStateEnabledModule<
         using var timeoutToken = new CancellationTokenSource();
         timeoutToken.CancelAfter(TimeSpan.FromSeconds(SHORT_OPERATION_TIMEOUT_SECONDS));
         using var combinedCancellationToken = CancellationTokenSource.CreateLinkedTokenSource(timeoutToken.Token, cancellationToken);
+        var authHelper = AuthHelper;
 
-        _uploadUrl = await AuthHelper.PostAndGetJsonDataAsync<UploadUrlResponse>(
-            $"{AuthHelper.ApiUrl}/b2api/v1/b2_get_upload_url",
-            new UploadUrlRequest { BucketID = GetBucketAsync(cancellationToken).Await().BucketID },
+        _uploadUrl = await authHelper.PostAndGetJsonDataAsync<UploadUrlResponse>(
+            $"{authHelper.ApiUrl}/b2api/v1/b2_get_upload_url",
+            new UploadUrlRequest { BucketID = (await GetBucketAsync(authHelper, cancellationToken)).BucketID },
             combinedCancellationToken.Token
         ).ConfigureAwait(false);
 
@@ -546,7 +548,7 @@ public class B2 : IStreamingBackend, ITimeoutExemptBackend, IStateEnabledModule<
                         $"{prev.AuthHelper.ApiUrl}/b2api/v1/b2_list_file_versions",
                         new ListFilesRequest
                         {
-                            BucketID = GetBucketAsync(cancellationToken).Await().BucketID,
+                            BucketID = (await GetBucketAsync(prev.AuthHelper, cancellationToken)).BucketID,
                             MaxFileCount = _pageSize,
                             Prefix = _prefix,
                             StartFileID = nextFileId,
@@ -589,7 +591,9 @@ public class B2 : IStreamingBackend, ITimeoutExemptBackend, IStateEnabledModule<
                 }
             } while (nextFileId != null);
 
-            return prev with { FileCache = cache };
+            prev = prev with { FileCache = cache };
+            updatedStateCallback?.Invoke(prev);
+            return prev;
         }).ConfigureAwait(false);
     }
 
