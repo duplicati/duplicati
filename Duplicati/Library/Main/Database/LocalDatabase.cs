@@ -737,6 +737,11 @@ AND Fileset.ID NOT IN
             return GetDbOptionList(transaction).ToDictionary(x => x.Key, x => x.Value);
         }
 
+        /// <summary>
+        /// Updates a database option
+        /// </summary>
+        /// <param name="key">The key to update</param>
+        /// <param name="value">The value to set</param>
         private void UpdateDbOption(string key, bool value)
         {
             var opts = GetDbOptions();
@@ -749,24 +754,38 @@ AND Fileset.ID NOT IN
             SetDbOptions(opts);
         }
 
+        /// <summary>
+        /// Flag indicating if a repair is in progress
+        /// </summary>
         public bool RepairInProgress
         {
             get => GetDbOptions().ContainsKey("repair-in-progress");
             set => UpdateDbOption("repair-in-progress", value);
         }
 
+        /// <summary>
+        /// Flag indicating if a repair is in progress
+        /// </summary>
         public bool PartiallyRecreated
         {
             get => GetDbOptions().ContainsKey("partially-recreated");
             set => UpdateDbOption("partially-recreated", value);
         }
 
+        /// <summary>
+        /// Flag indicating if the database can contain partial uploads
+        /// </summary>
         public bool TerminatedWithActiveUploads
         {
             get => GetDbOptions().ContainsKey("terminated-with-active-uploads");
             set => UpdateDbOption("terminated-with-active-uploads", value);
         }
 
+        /// <summary>
+        /// Sets the database options
+        /// </summary>
+        /// <param name="options">The options to set</param>
+        /// <param name="transaction">An optional transaction</param>
         public void SetDbOptions(IDictionary<string, string> options, System.Data.IDbTransaction transaction = null)
         {
             using (var tr = new TemporaryTransactionWrapper(m_connection, transaction))
