@@ -454,7 +454,7 @@ public class B2 : IStreamingBackend, ITimeoutExemptBackend, IStateEnabledModule<
         }
         catch (Exception ex)
         {
-            await SharedState.ClearFileCache();
+            await SharedState.ClearFileCache().ConfigureAwait(false);
             var code = (int)B2AuthHelper.GetExceptionStatusCode(ex);
             if (code is >= 500 and <= 599)
                 _uploadUrl = null;
@@ -572,7 +572,7 @@ public class B2 : IStreamingBackend, ITimeoutExemptBackend, IStateEnabledModule<
 
                         cache.TryGetValue(name, out var lst);
                         if (lst == null)
-                            cache[name] = lst = new System.Collections.Generic.List<FileEntity>(1);
+                            cache[name] = lst = new List<FileEntity>(1);
                         lst.Add(file);
                     }
                 }

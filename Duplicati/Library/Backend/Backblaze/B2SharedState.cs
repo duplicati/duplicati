@@ -118,6 +118,7 @@ internal class B2SharedState : IDisposable
         }
     }
 
+    /// <inheritdoc/>
     public void Dispose()
     {
         _semaphore.Wait();
