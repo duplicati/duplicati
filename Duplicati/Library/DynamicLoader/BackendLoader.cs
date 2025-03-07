@@ -118,6 +118,34 @@ namespace Duplicati.Library.DynamicLoader
             /// </summary>
             /// <param name="url">The url to find commands for</param>
             /// <returns>The supported commands or null if the url scheme was not supported</returns>
+            public Type GetBackendType(string url)
+            {
+                var uri = new Utility.Uri(url);
+
+                LoadInterfaces();
+
+                // TODO: The loading logic is replicated in the "GetBackend" method, should be refactored
+                lock (m_lock)
+                {
+                    IBackend b;
+                    if (m_interfaces.TryGetValue(uri.Scheme, out b) && b != null)
+                        return b.GetType();
+                    else if (uri.Scheme.EndsWith("s", StringComparison.Ordinal))
+                    {
+                        var tmpscheme = uri.Scheme.Substring(0, uri.Scheme.Length - 1);
+                        if (m_interfaces.TryGetValue(tmpscheme, out b) && b != null)
+                            return b.GetType();
+                    }
+
+                    return null;
+                }
+            }
+
+            /// <summary>
+            /// Gets the supported commands for a certain url
+            /// </summary>
+            /// <param name="url">The url to find commands for</param>
+            /// <returns>The supported commands or null if the url scheme was not supported</returns>
             public IReadOnlyList<ICommandLineArgument> GetSupportedCommands(string url)
             {
                 var uri = new Utility.Uri(url);
@@ -181,6 +209,16 @@ namespace Duplicati.Library.DynamicLoader
         public static IBackend GetBackend(string url, Dictionary<string, string> options)
         {
             return _backendLoader.GetBackend(url, options);
+        }
+
+        /// <summary>
+        /// Gets the type of the backend for a given url
+        /// </summary>
+        /// <param name="url">The url to find the backend for</param>
+        /// <returns>The type of the backend or null if the url is not supported</returns>
+        public static Type GetBackendType(string url)
+        {
+            return _backendLoader.GetBackendType(url);
         }
         #endregion
 

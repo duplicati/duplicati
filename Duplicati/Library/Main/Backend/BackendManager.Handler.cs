@@ -7,6 +7,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using CoCoL;
+using Duplicati.Library.DynamicLoader;
 using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.Main.Backend;
@@ -133,6 +134,10 @@ partial class BackendManager
         /// </summary>
         private readonly bool allowBackendReuse;
         /// <summary>
+        /// The shared states for the backends
+        /// </summary>
+        private readonly Dictionary<Type, object> sharedState = new();
+        /// <summary>
         /// Whether any files have been uploaded
         /// </summary>
         private bool anyUploaded;
@@ -171,6 +176,25 @@ partial class BackendManager
             retryWithExponentialBackoff = context.Options.RetryWithExponentialBackoff;
             allowBackendReuse = !context.Options.NoConnectionReuse;
 
+            var type = BackendLoader.GetBackendType(backendUrl) ?? throw new ArgumentException($"Unknown backend type: {backendUrl}");
+            sharedState = type.GetInterfaces()
+                .Where(x => x.IsGenericType && x.GetGenericTypeDefinition() == typeof(IStateEnabledModule<>))
+                .Select(x => x.GetGenericArguments()[0])
+                .ToDictionary(x => x, x => Activator.CreateInstance(x) ?? throw new InvalidOperationException($"Failed to create shared state for {x}"));
+        }
+
+        /// <summary>
+        /// Helper method to wrap generic typing
+        /// </summary>
+        /// <typeparam name="T">The type of the state</typeparam>
+        /// <param name="backend">The backend to set the state on</param>
+        /// <param name="state">The state to set</param>
+        private void SetBackendStateObject<T>(IBackend backend)
+            where T : class
+        {
+            if (backend is IStateEnabledModule<T> stateModule)
+                stateModule.SetStateModule(sharedState[typeof(T)] as T
+                    ?? throw new InvalidOperationException($"Failed to cast shared state to {typeof(T)}"));
         }
 
         /// <summary>
@@ -181,7 +205,13 @@ partial class BackendManager
         {
             backendPool.TryDequeue(out var backend);
             if (backend == null)
-                backend = DynamicLoader.BackendLoader.GetBackend(backendUrl, context.Options.RawOptions);
+            {
+                backend = BackendLoader.GetBackend(backendUrl, context.Options.RawOptions);
+                foreach (var state in sharedState.Values)
+                    this.GetType().GetMethod(nameof(SetBackendStateObject), System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!
+                        .MakeGenericMethod(state.GetType())
+                        .Invoke(this, [backend]);
+            }
 
             return new ReclaimableBackend(
                 backend,
@@ -338,6 +368,10 @@ partial class BackendManager
                 while (backendPool.TryDequeue(out var backend))
                     try { backend.Dispose(); }
                     catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, "BackendManagerDisposeError", ex, "Failed to dispose backend instance: {0}", ex.Message); }
+
+                // Dispose of shared state
+                foreach (var state in sharedState.Values)
+                    (state as IDisposable)?.Dispose();
             }
         }
 
