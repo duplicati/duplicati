@@ -179,7 +179,8 @@ partial class BackendManager
             var type = BackendLoader.GetBackendType(backendUrl) ?? throw new ArgumentException($"Unknown backend type: {backendUrl}");
             sharedState = type.GetInterfaces()
                 .Where(x => x.IsGenericType && x.GetGenericTypeDefinition() == typeof(IStateEnabledModule<>))
-                .ToDictionary(x => x.GetGenericArguments()[0], x => Activator.CreateInstance(x) ?? throw new InvalidOperationException($"Failed to create shared state for {x}"));
+                .Select(x => x.GetGenericArguments()[0])
+                .ToDictionary(x => x, x => Activator.CreateInstance(x) ?? throw new InvalidOperationException($"Failed to create shared state for {x}"));
         }
 
         /// <summary>
@@ -205,10 +206,10 @@ partial class BackendManager
             backendPool.TryDequeue(out var backend);
             if (backend == null)
             {
-                backend = DynamicLoader.BackendLoader.GetBackend(backendUrl, context.Options.RawOptions);
+                backend = BackendLoader.GetBackend(backendUrl, context.Options.RawOptions);
                 foreach (var state in sharedState.Values)
-                    this.GetType().GetMethod(nameof(SetBackendStateObject), System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
-                        !.MakeGenericMethod(state.GetType())
+                    this.GetType().GetMethod(nameof(SetBackendStateObject), System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!
+                        .MakeGenericMethod(state.GetType())
                         .Invoke(this, [backend]);
             }
 
