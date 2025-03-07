@@ -736,6 +736,7 @@ namespace Duplicati.Server
 
                 backup.Metadata["TargetFilesSize"] = r.KnownFileSize.ToString();
                 backup.Metadata["TargetFilesCount"] = r.KnownFileCount.ToString();
+                backup.Metadata["TargetFilesetsCount"] = r.KnownFilesets.ToString();
                 backup.Metadata["TargetSizeString"] = Duplicati.Library.Utility.Utility.FormatSizeString(r.KnownFileSize);
             }
         }
@@ -918,6 +919,18 @@ namespace Duplicati.Server
 
             // The server hangs if the module is enabled as there is no console attached
             DisableModule("console-password-input", options);
+
+            // Patch in additional report urls
+            var additionalReportUrl = FIXMEGlobal.DataConnection.ApplicationSettings.AdditionalReportUrl;
+            if (!string.IsNullOrWhiteSpace(additionalReportUrl))
+            {
+                options["send-http-json-urls"] = string.Join(";",
+                    new[] {
+                        options.GetValueOrDefault("send-http-json-urls"),
+                        additionalReportUrl
+                    }.Where(x => !string.IsNullOrWhiteSpace(x))
+                );
+            }
 
             return options;
         }

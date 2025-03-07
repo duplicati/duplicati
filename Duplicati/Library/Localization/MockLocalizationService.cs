@@ -19,13 +19,17 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
-using System;
-using System.Collections.Generic;
+using System.Globalization;
 
 namespace Duplicati.Library.Localization
 {
     public class MockLocalizationService : ILocalizationService
     {
+        /// <summary>
+        /// The culture of the localization service
+        /// </summary>
+        public CultureInfo Culture => CultureInfo.InvariantCulture;
+
         /// <summary>
         /// Localizes the string similar to how string.Format works
         /// </summary>

@@ -27,6 +27,7 @@ NUMBER_OF_FILES  default is 20
 | AzureBlob | Planned | Live      |
 | CIFS | Planned | Live      |
 | Google Drive | Planned | Live      |
+| Box | Planned | Live      |
 | TahoeLAFS | Pending Decision |           |
 | TescentCOS | Pending Decision |           |
 | Storj | Pending Decision |           |
@@ -39,7 +40,6 @@ NUMBER_OF_FILES  default is 20
 | Jottacloud | Pending Decision |           |
 | IDrive2 | Planned |           |
 | File | Planned |           |
-| Box | Pending Decision |           |
 | CloudFiles | Pending Decision |           |
 | backBlaze | Planned | Live      |
 | AliyunOSS | Pending Decision |           |
@@ -55,6 +55,13 @@ NUMBER_OF_FILES  default is 20
 Please note that TestContainers token has to be configured in secrets/Github actions yml.
 
 ## Backends that require Environment variables
+
+## Box.com
+
+```
+TESTCREDENTIAL_BOX_FOLDER
+TESTCREDENTIAL_BOX_AUTHID
+```
 
 ## Backblaze B2
 

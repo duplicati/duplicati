@@ -18,22 +18,29 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
-using System.Globalization;
-using Duplicati.Library.Localization;
 
-namespace Duplicati.WebserverCore.Middlewares;
+namespace Duplicati.Backend.Tests.Box;
 
-public class LanguageFilter : IEndpointFilter
+/// <summary>
+/// Box.com Tests
+/// </summary>
+[TestClass]
+public sealed class BoxTests : BaseTest
 {
-    public async ValueTask<object?> InvokeAsync(EndpointFilterInvocationContext context, EndpointFilterDelegate next)
+    [TestMethod]
+    public Task TestBox()
     {
-        var ci = (context.HttpContext.Request != null && context.HttpContext.Request.Headers.TryGetValue("X-UI-Language", out var locale) && !string.IsNullOrWhiteSpace(locale))
-            ? LocalizationService.ParseCulture(locale)
-            : null;
+        CheckRequiredEnvironment(["TESTCREDENTIAL_BOX_FOLDER", "TESTCREDENTIAL_BOX_AUTHID"]);
 
-        using (LocalizationService.TemporaryContext(ci ?? CultureInfo.CurrentUICulture))
-            return await next(context);
+        var exitCode = CommandLine.BackendTester.Program.Main(
+            new[]
+            {
+                $"box://{Environment.GetEnvironmentVariable("TESTCREDENTIAL_BOX_FOLDER")}/?authid={Uri.EscapeDataString(Environment.GetEnvironmentVariable("TESTCREDENTIAL_BOX_AUTHID")!)}",
 
+            }.Concat(Parameters.GlobalTestParameters).ToArray());
+
+        if (exitCode != 0) Assert.Fail("BackendTester is returning non-zero exit code, check logs for details");
+
+        return Task.CompletedTask;
     }
 }
-

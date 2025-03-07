@@ -75,6 +75,7 @@ namespace Duplicati.Library.Localization
         /// <param name="ci">The culture to find.</param>
         public MoLocalizationService(CultureInfo ci)
         {
+            Culture = ci;
             var filenames = new string[] { 
                 // Load the specialized version first
                 string.Format("localization-{0}.mo", ci.Name.Replace('-', '_')), 
@@ -116,6 +117,11 @@ namespace Duplicati.Library.Localization
                 }
             }
         }
+
+        /// <summary>
+        /// Gets the culture of the localization
+        /// </summary>
+        public CultureInfo Culture { get; }
 
         /// <summary>
         /// Pre-processes the message to use Linux line endings

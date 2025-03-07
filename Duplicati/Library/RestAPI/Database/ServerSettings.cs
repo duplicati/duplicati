@@ -71,6 +71,7 @@ namespace Duplicati.Server.Database
             public const string TIMEZONE_OPTION = "server-timezone";
             public const string PAUSED_UNTIL = "paused-until";
             public const string LAST_UPDATE_CHECK_VERSION = "last-update-check-version";
+            public const string ADDITIONAL_REPORT_URL = "additional-report-url";
         }
 
         private readonly Dictionary<string, string?> settings;
@@ -844,6 +845,20 @@ namespace Duplicati.Server.Database
             {
                 lock (databaseConnection.m_lock)
                     settings[CONST.LAST_UPDATE_CHECK_VERSION] = value;
+                SaveSettings();
+            }
+        }
+
+        public string? AdditionalReportUrl
+        {
+            get
+            {
+                return settings[CONST.ADDITIONAL_REPORT_URL];
+            }
+            set
+            {
+                lock (databaseConnection.m_lock)
+                    settings[CONST.ADDITIONAL_REPORT_URL] = value;
                 SaveSettings();
             }
         }

@@ -224,7 +224,7 @@ No password provided, unable to connect to server, exiting");
                                 if (hosted != null && Server.Program.ApplicationInstance != null)
                                     Server.Program.ApplicationInstance.SecondInstanceDetected +=
                                         new Server.SingleInstance.SecondInstanceDelegate(
-                                            x => { tk.ShowUrlInWindow(serverURL.ToString()); });
+                                            x => tk.ShowStatusWindow());
 
                                 // TODO: If we change to hosted browser this should be a callback
                                 if (openui)
