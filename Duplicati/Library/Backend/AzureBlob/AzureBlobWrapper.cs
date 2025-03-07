@@ -129,29 +129,36 @@ namespace Duplicati.Library.Backend.AzureBlob
         /// <exception cref="FolderMissingException">Thrown when the container is not found</exception>
         public virtual async IAsyncEnumerable<IFileEntry> ListContainerEntriesAsync([EnumeratorCancellation] CancellationToken cancelToken)
         {
-            IAsyncEnumerable<BlobItem> blobs = GetBlobsWithExceptionHandling();
-
-            await foreach (var blobItem in blobs.WithCancellation(cancelToken).ConfigureAwait(false))
+            await using var blobEnumerator = _container.GetBlobsAsync().GetAsyncEnumerator(cancelToken);
+    
+            while (true)
             {
-                var blobName = Uri.UnescapeDataString(blobItem.Name.Replace("+", "%2B"));
+                bool hasNext;
         
-                if (blobItem is { } bi)
-                {
-                    var lastModified = bi.Properties.LastModified?.UtcDateTime ?? DateTime.UtcNow;
-                    yield return new FileEntry(blobName, bi.Properties.ContentLength ?? 0, lastModified, lastModified);
-                }
-            }
-
-            IAsyncEnumerable<BlobItem> GetBlobsWithExceptionHandling()
-            {
                 try
                 {
-                    // Note: AsyncPageable<BlobItem> return internally uses .ConfigureAwait(false).
-                    return _container.GetBlobsAsync(cancellationToken: cancelToken);
+                    hasNext = await blobEnumerator.MoveNextAsync().ConfigureAwait(false);
                 }
                 catch (Azure.RequestFailedException ex) when (ex.Status == 404)
                 {
                     throw new FolderMissingException(ex);
+                }
+        
+                if (!hasNext) break;
+        
+                cancelToken.ThrowIfCancellationRequested();
+        
+                if (blobEnumerator.Current is { } blob)
+                {
+                    var blobName = Uri.UnescapeDataString(blob.Name.Replace("+", "%2B"));
+                    var lastModified = blob.Properties.LastModified?.UtcDateTime ?? DateTime.UtcNow;
+            
+                    yield return new FileEntry(
+                        blobName,
+                        blob.Properties.ContentLength ?? 0,
+                        lastModified,
+                        lastModified
+                    );
                 }
             }
         }
