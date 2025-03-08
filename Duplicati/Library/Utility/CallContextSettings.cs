@@ -20,13 +20,13 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Security;
 using System.Security.Cryptography.X509Certificates;
-
+using System.Threading;
 using Duplicati.Library.Interface;
-using Duplicati.Library.Logging;
 
 namespace Duplicati.Library.Utility
 {
@@ -81,12 +81,9 @@ namespace Duplicati.Library.Utility
             }
             set
             {
-                lock (CallContextSettings<SystemSettings>._lock)
-                {
-                    var st = CallContextSettings<SystemSettings>.Settings;
-                    st.Tempdir = value;
-                    CallContextSettings<SystemSettings>.Settings = st;
-                }
+                var st = CallContextSettings<SystemSettings>.Settings;
+                st.Tempdir = value;
+                CallContextSettings<SystemSettings>.Settings = st;
             }
         }
 
@@ -228,20 +225,58 @@ namespace Duplicati.Library.Utility
     public static class CallContextSettings<T>
     {
         /// <summary>
-        /// The settings that are stored in the call context, which are not serializable
+        /// The call context settings for OAuth
         /// </summary>
-        private static readonly Dictionary<string, T> _settings = new Dictionary<string, T>();
+        private static readonly AsyncLocal<T> _settings = new AsyncLocal<T>();
 
         /// <summary>
-        /// The context setting types that are used and need their private setting key
-        /// to prevent overwriting each others settings.
+        /// The instances that are currently active
         /// </summary>
-        private static string contextSettingsType = null;
+        private static readonly ConcurrentDictionary<T, object> _instances = new ConcurrentDictionary<T, object>();
 
         /// <summary>
-        /// Lock for protecting the dictionary
+        /// Disposable class for setting call context settings
         /// </summary>
-        public static readonly object _lock = new object();
+        /// <typeparam name="T">The type of the settings</typeparam>
+        private sealed class Disposer : IDisposable
+        {
+            /// <summary>
+            /// A flag indicating if the object has been disposed
+            /// </summary>
+            private bool m_disposed = false;
+            /// <summary>
+            /// The previous value
+            /// </summary>
+            private T m_prev;
+            /// <summary>
+            /// The current value
+            /// </summary>
+            private T m_current;
+
+            /// <summary>
+            /// Initializes a new instance of the <see cref="Disposer"/> class.
+            /// </summary>
+            /// <param name="current">The current server URL</param>
+            /// <param name="prev">The previous server URL</param>
+            public Disposer(T current, T prev)
+            {
+                _settings.Value = m_current = current;
+                this.m_prev = prev;
+                _instances.TryAdd(current, null);
+            }
+
+            /// <inheritdoc/>
+            public void Dispose()
+            {
+                if (m_disposed)
+                    return;
+                GC.SuppressFinalize(this);
+                m_disposed = true;
+                if (_settings.Value.Equals(m_current))
+                    _settings.Value = m_prev;
+                _instances.TryRemove(m_current, out _);
+            }
+        }
 
         /// <summary>
         /// Gets or sets the values in the current call context
@@ -249,40 +284,8 @@ namespace Duplicati.Library.Utility
         /// <value>The settings.</value>
         public static T Settings
         {
-            get
-            {
-                var key = ContextID;
-                if (string.IsNullOrWhiteSpace(key))
-                    return default(T);
-
-
-                if (!_settings.TryGetValue(key, out T res))
-                    lock (_lock) // if not present but context id is not null, wait
-                        if (!_settings.TryGetValue(key, out res))
-                            return default(T);
-
-                return res;
-            }
-            set
-            {
-                var key = ContextID;
-                if (!string.IsNullOrWhiteSpace(key))
-                    lock (_lock)
-                        _settings[key] = value;
-            }
-        }
-
-        /// <summary>
-        /// Starts the context wit a default value.
-        /// </summary>
-        /// <returns>The disposable handle for the context.</returns>
-        /// <param name="initial">The initial value.</param>
-        public static IDisposable StartContext(string settingsKey, T initial = default(T))
-        {
-            contextSettingsType = settingsKey;
-            var res = new ContextGuard();
-            Settings = initial;
-            return res;
+            get => _settings.Value;
+            set => _settings.Value = value;
         }
 
         /// <summary>
@@ -291,72 +294,10 @@ namespace Duplicati.Library.Utility
         /// <returns>The disposable handle for the context.</returns>
         /// <param name="initial">The initial value.</param>
         public static IDisposable StartContext(T initial = default(T))
-        {
-            return StartContext(typeof(T).ToString(), initial);
-        }
+            => new Disposer(initial, _settings.Value);
 
-        /// <summary>
-        /// Gets all instances currently registered
-        /// </summary>
-        internal static T[] GetAllInstances()
-        {
-            lock (_lock)
-                return _settings.Values.ToArray();
-        }
+        public static IEnumerable<T> GetAllInstances()
+            => _instances.Keys.ToList();
 
-        /// <summary>
-        /// Help class for providing a way to release resources associated with a call context
-        /// </summary>
-        private class ContextGuard : IDisposable
-        {
-            /// <summary>
-            /// Randomly generated identifier
-            /// </summary>
-            private readonly string ID = Guid.NewGuid().ToString();
-
-            /// <summary>
-            /// Initializes a new instance of the
-            /// <see cref="T:Duplicati.Library.Utility.CallContextSettings`1.ContextGuard"/> class,
-            /// and sets up the call context
-            /// </summary>
-            public ContextGuard()
-            {
-                CallContext.SetData(contextSettingsType, ID);
-            }
-
-            /// <summary>
-            /// Releases all resource used by the
-            /// <see cref="T:Duplicati.Library.Utility.CallContextSettings`1.ContextGuard"/> object.
-            /// </summary>
-            /// <remarks>Call <see cref="Dispose"/> when you are finished using the
-            /// <see cref="T:Duplicati.Library.Utility.CallContextSettings`1.ContextGuard"/>. The <see cref="Dispose"/>
-            /// method leaves the <see cref="T:Duplicati.Library.Utility.CallContextSettings`1.ContextGuard"/> in an
-            /// unusable state. After calling <see cref="Dispose"/>, you must release all references to the
-            /// <see cref="T:Duplicati.Library.Utility.CallContextSettings`1.ContextGuard"/> so the garbage collector
-            /// can reclaim the memory that the
-            /// <see cref="T:Duplicati.Library.Utility.CallContextSettings`1.ContextGuard"/> was occupying.</remarks>
-            public void Dispose()
-            {
-                lock (_lock)
-                {
-                    // Release the resources, if any
-                    _settings.Remove(ID);
-                }
-
-                CallContext.SetData(contextSettingsType, null);
-            }
-        }
-
-        /// <summary>
-        /// Gets the context ID for this call.
-        /// </summary>
-        /// <value>The context identifier.</value>
-        private static string ContextID
-        {
-            get
-            {
-                return contextSettingsType != null ? CallContext.GetData(contextSettingsType) as string : null;
-            }
-        }
     }
 }

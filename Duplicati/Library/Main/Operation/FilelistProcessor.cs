@@ -102,6 +102,18 @@ namespace Duplicati.Library.Main.Operation
             }
         }
 
+        /// <summary>
+        /// Helper method that verifies uploaded volumes and updates their state in the database.
+        /// Throws an error if there are issues with the remote storage
+        /// </summary>
+        /// <param name="backend">The backend instance to use</param>
+        /// <param name="options">The options used</param>
+        /// <param name="database">The database to compare with</param>
+        /// <param name="backendWriter">The backend writer to use</param>
+        /// <param name="latestVolumesOnly">True if only the latest volumes should be verified</param>
+        /// <param name="verifyMode">The mode to use for verification</param>
+        /// <param name="transaction">An optional transaction object</param>
+        /// <returns>An awaitable task</returns>
         public static async Task VerifyRemoteList(IBackendManager backend, Options options, LocalDatabase database, IBackendWriter backendWriter, bool latestVolumesOnly, VerifyMode verifyMode, IDbTransaction transaction)
         {
             if (!options.NoBackendverification)
@@ -124,6 +136,7 @@ namespace Duplicati.Library.Main.Operation
         /// <param name="strictExcemptFiles">Filenames that should be exempted from strict verification</param>
         /// <param name="verifyMode">The mode to use for verification</param>
         /// <param name="logErrors">Disable the logging of errors to prevent spamming the log; exceptions will be thrown regardless</param>
+        /// <returns>An awaitable task</returns>
         public static async Task VerifyRemoteList(IBackendManager backend, Options options, LocalDatabase database, IBackendWriter log, IEnumerable<string> protectedFiles, IEnumerable<string> strictExcemptFiles, bool logErrors, VerifyMode verifyMode)
         {
             var tp = await RemoteListAnalysis(backend, options, database, log, protectedFiles, strictExcemptFiles, verifyMode).ConfigureAwait(false);
