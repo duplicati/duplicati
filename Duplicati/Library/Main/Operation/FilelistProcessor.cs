@@ -413,14 +413,14 @@ namespace Duplicati.Library.Main.Operation
                         Logging.Log.WriteWarningMessage(LOGTAG, "UnknownFileState", null, "unknown state for remote file listed as {0}: {1}", i.State, i.Name);
                         break;
                 }
-
-                await backendManager.WaitForEmptyAsync(database, null, CancellationToken.None).ConfigureAwait(false);
             }
+
+            await backendManager.WaitForEmptyAsync(database, null, CancellationToken.None).ConfigureAwait(false);
 
             // cleanup deleted volumes in DB en block
             if (verifyMode == VerifyMode.VerifyStrict && missingUploadingVolumes.Count > 0)
                 throw new RemoteListVerificationException($"The remote volumes {string.Join(", ", missingUploadingVolumes)} are supposed to be deleted, but strict mode is on. Try running the \"repair\" command", "DeleteDuringStrictMode");
-            else if (verifyMode == VerifyMode.VerifyAndClean)
+            else if (verifyMode == VerifyMode.VerifyAndClean || verifyMode == VerifyMode.VerifyStrict)
             {
                 database.RemoveRemoteVolumes(missingUploadingVolumes.Concat(temporaryAndDeletedVolumes), null);
                 // Clear the flag after we have cleaned up
