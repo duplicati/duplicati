@@ -366,7 +366,7 @@ namespace Duplicati.Library.Main.Database
                         rd.ConvertValueToInt64(3, -1),
                         (RemoteVolumeType)Enum.Parse(typeof(RemoteVolumeType), rd.GetValue(2).ToString()),
                         (RemoteVolumeState)Enum.Parse(typeof(RemoteVolumeState), rd.GetValue(5).ToString()),
-                        new DateTime(rd.ConvertValueToInt64(6, 0), DateTimeKind.Utc)
+                        ParseFromEpochSeconds(rd.ConvertValueToInt64(6, 0))
                     );
 
             return RemoteVolumeEntry.Empty;
@@ -397,7 +397,7 @@ namespace Duplicati.Library.Main.Database
                         rd.ConvertValueToInt64(3, -1),
                         (RemoteVolumeType)Enum.Parse(typeof(RemoteVolumeType), rd.GetValue(2).ToString()),
                         (RemoteVolumeState)Enum.Parse(typeof(RemoteVolumeState), rd.GetValue(5).ToString()),
-                        new DateTime(rd.ConvertValueToInt64(6, 0), DateTimeKind.Utc)
+                        ParseFromEpochSeconds(rd.ConvertValueToInt64(6, 0))
                     );
                 }
             }
@@ -451,12 +451,12 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
-        public void RemoveRemoteVolume(string name, System.Data.IDbTransaction transaction = null)
+        public void RemoveRemoteVolume(string name, IDbTransaction transaction = null)
         {
-            RemoveRemoteVolumes(new string[] { name }, transaction);
+            RemoveRemoteVolumes([name], transaction);
         }
 
-        public void RemoveRemoteVolumes(IEnumerable<string> names, System.Data.IDbTransaction transaction = null)
+        public void RemoveRemoteVolumes(IEnumerable<string> names, IDbTransaction transaction = null)
         {
             if (names == null || !names.Any()) return;
 
@@ -1438,6 +1438,64 @@ AND oldVersion.FilesetID = (SELECT ID FROM Fileset WHERE ID != ? ORDER BY Timest
 
                 tr.Commit();
             }
+        }
+
+        /// <summary>
+        /// Gets the last previous fileset that was incomplete
+        /// </summary>
+        /// <param name="transaction">The transaction to use</param>
+        /// <returns>The last incomplete fileset or default</returns>
+        public RemoteVolumeEntry GetLastIncompleteFilesetVolume(IDbTransaction transaction)
+        {
+            var candidates = GetIncompleteFilesets(transaction).OrderBy(x => x.Value).ToArray();
+            if (candidates.Any())
+                return GetRemoteVolumeFromFilesetID(candidates.Last().Key, transaction);
+
+            return default;
+        }
+
+        /// <summary>
+        /// Gets a list of incomplete filesets
+        /// </summary>
+        /// <param name="transaction">An optional transaction</param>
+        /// <returns>A list of fileset IDs and timestamps</returns>
+        public IEnumerable<KeyValuePair<long, DateTime>> GetIncompleteFilesets(IDbTransaction transaction)
+        {
+            using (var cmd = m_connection.CreateCommand(transaction))
+            {
+                using (var rd = cmd.ExecuteReader(@$"SELECT DISTINCT ""Fileset"".""ID"", ""Fileset"".""Timestamp"" FROM ""Fileset"", ""RemoteVolume"" WHERE ""RemoteVolume"".""ID"" = ""Fileset"".""VolumeID"" AND ""Fileset"".""ID"" IN (SELECT ""FilesetID"" FROM ""FilesetEntry"")  AND (""RemoteVolume"".""State"" = '{RemoteVolumeState.Uploading}' OR ""RemoteVolume"".""State"" = '{RemoteVolumeState.Temporary}')"))
+                    while (rd.Read())
+                    {
+                        yield return new KeyValuePair<long, DateTime>(
+                            rd.GetInt64(0),
+                            ParseFromEpochSeconds(rd.GetInt64(1)).ToLocalTime()
+                        );
+                    }
+            }
+        }
+
+        /// <summary>
+        /// Gets the remote volume entry from the fileset ID
+        /// </summary>
+        /// <param name="filesetID">The fileset ID</param>
+        /// <param name="transaction">An optional transaction</param>
+        /// <returns>The remote volume entry or default</returns>
+        public RemoteVolumeEntry GetRemoteVolumeFromFilesetID(long filesetID, IDbTransaction transaction = null)
+        {
+            using (var cmd = m_connection.CreateCommand(transaction))
+            using (var rd = cmd.ExecuteReader(@"SELECT ""RemoteVolume"".""ID"", ""Name"", ""Type"", ""Size"", ""Hash"", ""State"", ""DeleteGraceTime"" FROM ""RemoteVolume"", ""Fileset"" WHERE ""Fileset"".""VolumeID"" = ""RemoteVolume"".""ID"" AND ""Fileset"".""ID"" = ?", filesetID))
+                if (rd.Read())
+                    return new RemoteVolumeEntry(
+                        rd.ConvertValueToInt64(0, -1),
+                        rd.GetValue(1).ToString(),
+                        (rd.GetValue(4) == null || rd.GetValue(4) == DBNull.Value) ? null : rd.GetValue(4).ToString(),
+                        rd.ConvertValueToInt64(3, -1),
+                        (RemoteVolumeType)Enum.Parse(typeof(RemoteVolumeType), rd.GetValue(2).ToString()),
+                        (RemoteVolumeState)Enum.Parse(typeof(RemoteVolumeState), rd.GetValue(5).ToString()),
+                        ParseFromEpochSeconds(rd.GetInt64(6)).ToLocalTime()
+                    );
+                else
+                    return default(RemoteVolumeEntry);
         }
 
         public void PurgeLogData(DateTime threshold)

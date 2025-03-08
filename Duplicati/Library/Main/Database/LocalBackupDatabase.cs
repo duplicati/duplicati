@@ -771,39 +771,6 @@ SELECT ""BlocklistHash"".""BlocksetID"" FROM ""BlocklistHash"" WHERE ""Blocklist
             return m_filesetId = base.CreateFileset(volumeid, timestamp, transaction);
         }
 
-        public IEnumerable<KeyValuePair<long, DateTime>> GetIncompleteFilesets(System.Data.IDbTransaction transaction)
-        {
-            using (var cmd = m_connection.CreateCommand(transaction))
-            {
-                using (var rd = cmd.ExecuteReader(@$"SELECT DISTINCT ""Fileset"".""ID"", ""Fileset"".""Timestamp"" FROM ""Fileset"", ""RemoteVolume"" WHERE ""RemoteVolume"".""ID"" = ""Fileset"".""VolumeID"" AND ""Fileset"".""ID"" IN (SELECT ""FilesetID"" FROM ""FilesetEntry"")  AND (""RemoteVolume"".""State"" = '{RemoteVolumeState.Uploading}' OR ""RemoteVolume"".""State"" = '{RemoteVolumeState.Temporary}')"))
-                    while (rd.Read())
-                    {
-                        yield return new KeyValuePair<long, DateTime>(
-                            rd.GetInt64(0),
-                            ParseFromEpochSeconds(rd.GetInt64(1)).ToLocalTime()
-                        );
-                    }
-            }
-        }
-
-        public RemoteVolumeEntry GetRemoteVolumeFromFilesetID(long filesetID, IDbTransaction transaction = null)
-        {
-            using (var cmd = m_connection.CreateCommand(transaction))
-            using (var rd = cmd.ExecuteReader(@"SELECT ""RemoteVolume"".""ID"", ""Name"", ""Type"", ""Size"", ""Hash"", ""State"", ""DeleteGraceTime"" FROM ""RemoteVolume"", ""Fileset"" WHERE ""Fileset"".""VolumeID"" = ""RemoteVolume"".""ID"" AND ""Fileset"".""ID"" = ?", filesetID))
-                if (rd.Read())
-                    return new RemoteVolumeEntry(
-                        rd.ConvertValueToInt64(0, -1),
-                        rd.GetValue(1).ToString(),
-                        (rd.GetValue(4) == null || rd.GetValue(4) == DBNull.Value) ? null : rd.GetValue(4).ToString(),
-                        rd.ConvertValueToInt64(3, -1),
-                        (RemoteVolumeType)Enum.Parse(typeof(RemoteVolumeType), rd.GetValue(2).ToString()),
-                        (RemoteVolumeState)Enum.Parse(typeof(RemoteVolumeState), rd.GetValue(5).ToString()),
-                        new DateTime(rd.ConvertValueToInt64(6, 0), DateTimeKind.Utc)
-                    );
-                else
-                    return default(RemoteVolumeEntry);
-        }
-
         public IEnumerable<string> GetTemporaryFilelistVolumeNames(bool latestOnly, IDbTransaction transaction = null)
         {
             var incompleteFilesetIDs = GetIncompleteFilesets(transaction).OrderBy(x => x.Value).Select(x => x.Key).ToArray();
