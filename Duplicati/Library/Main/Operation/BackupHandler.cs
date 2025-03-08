@@ -55,7 +55,6 @@ namespace Duplicati.Library.Main.Operation
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<BackupHandler>();
 
         private readonly Options m_options;
-        private readonly string m_backendurl;
 
         private LocalBackupDatabase m_database;
         private System.Data.IDbTransaction m_transaction;
@@ -68,11 +67,10 @@ namespace Duplicati.Library.Main.Operation
 
         public readonly CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
 
-        public BackupHandler(string backendurl, Options options, BackupResults results)
+        public BackupHandler(Options options, BackupResults results)
         {
             m_options = options;
             m_result = results;
-            m_backendurl = backendurl;
             m_taskReader = results.TaskControl;
 
             if (options.AllowPassphraseChange)
