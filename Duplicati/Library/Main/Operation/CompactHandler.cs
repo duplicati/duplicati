@@ -104,7 +104,7 @@ namespace Duplicati.Library.Main.Operation
             {
                 // Workaround where we allow a running backendmanager to be used
                 if (!hasVerifiedBackend)
-                    await FilelistProcessor.VerifyRemoteList(backendManager, m_options, db, m_result.BackendWriter, true, FilelistProcessor.VerifyMode.VerifyAndClean, transaction).ConfigureAwait(false);
+                    await FilelistProcessor.VerifyRemoteList(backendManager, m_options, db, m_result.BackendWriter, true, FilelistProcessor.VerifyMode.VerifyStrict, transaction).ConfigureAwait(false);
 
                 var newvol = new BlockVolumeWriter(m_options);
                 newvol.VolumeID = db.RegisterRemoteVolume(newvol.RemoteFilename, RemoteVolumeType.Blocks, RemoteVolumeState.Temporary, transaction);
