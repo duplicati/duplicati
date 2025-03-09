@@ -879,6 +879,7 @@ namespace Duplicati.UnitTest
 
             // We expect to upload 7 volumes, and fail on the last one
             var count = 7;
+            var failed = false;
 
             // Fail when uploading the dlist file
             DeterministicErrorBackend.ErrorGenerator = (DeterministicErrorBackend.BackendAction action, string remotename) =>
@@ -891,6 +892,7 @@ namespace Duplicati.UnitTest
                         {
                             // Allow others to progress
                             Thread.Sleep(2000);
+                            failed = true;
                             return true;
                         }
                     }
@@ -898,7 +900,10 @@ namespace Duplicati.UnitTest
                 else
                 {
                     if (action == operation && remotename.Contains(".dlist."))
+                    {
+                        failed = true;
                         return true;
+                    }
                 }
 
                 return false;
@@ -906,6 +911,8 @@ namespace Duplicati.UnitTest
 
             using (var c = new Library.Main.Controller(failtarget, testopts, null))
                 Assert.Throws<DeterministicErrorBackend.DeterministicErrorBackendException>(() => c.Backup(new string[] { DATAFOLDER }));
+
+            Assert.That(failed, Is.True, "Failed to fail the upload");
 
             // Make spacing for the next backup
             Thread.Sleep(3000);
