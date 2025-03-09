@@ -21,6 +21,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
+using Duplicati.Library.Main.Database;
 using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Main.Operation
@@ -36,7 +37,7 @@ namespace Duplicati.Library.Main.Operation
             m_result = result;
         }
 
-        public void Run(IEnumerable<string> filterstrings, IBackendManager backendManager, Library.Utility.IFilter compositefilter)
+        public void Run(IEnumerable<string> filterstrings, DatabaseConnectionManager dbManager, IBackendManager backendManager, Library.Utility.IFilter compositefilter)
         {
             var cancellationToken = CancellationToken.None;
             if (string.IsNullOrEmpty(m_options.Restorepath))
@@ -44,8 +45,9 @@ namespace Duplicati.Library.Main.Operation
             if (!System.IO.Directory.Exists(m_options.Restorepath))
                 System.IO.Directory.CreateDirectory(m_options.Restorepath);
 
-            using (var tmpdb = new Library.Utility.TempFile())
-            using (var db = new Database.LocalDatabase(System.IO.File.Exists(m_options.Dbpath) ? m_options.Dbpath : (string)tmpdb, "RestoreControlFiles", true))
+            using (var tmpdb = new TempFile())
+            using (var tmpdbManager = new DatabaseConnectionManager(tmpdb))
+            using (var db = new LocalDatabase(dbManager.Exists ? dbManager : tmpdbManager, "RestoreControlFiles"))
             {
                 m_result.SetDatabase(db);
 
@@ -64,7 +66,7 @@ namespace Duplicati.Library.Main.Operation
                         {
                             if (!m_result.TaskControl.ProgressRendevouz().Await())
                             {
-                                backendManager.WaitForEmptyAsync(db, null, cancellationToken).Await();
+                                backendManager.WaitForEmptyAsync(cancellationToken).Await();
                                 return;
                             }
 
@@ -100,7 +102,7 @@ namespace Duplicati.Library.Main.Operation
                 }
                 finally
                 {
-                    backendManager.WaitForEmptyAsync(db, null, cancellationToken).Await();
+                    backendManager.WaitForEmptyAsync(cancellationToken).Await();
                 }
 
                 db.WriteResults();

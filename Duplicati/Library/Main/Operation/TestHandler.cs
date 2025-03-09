@@ -46,12 +46,12 @@ namespace Duplicati.Library.Main.Operation
             m_results = results;
         }
 
-        public void Run(long samples, IBackendManager backendManager)
+        public void Run(long samples, DatabaseConnectionManager dbManager, IBackendManager backendManager)
         {
-            if (!System.IO.File.Exists(m_options.Dbpath))
-                throw new UserInformationException(string.Format("Database file does not exist: {0}", m_options.Dbpath), "DatabaseDoesNotExist");
+            if (!dbManager.Exists)
+                throw new UserInformationException(string.Format("Database file does not exist: {0}", dbManager.Path), "DatabaseDoesNotExist");
 
-            using (var db = new LocalTestDatabase(m_options.Dbpath))
+            using (var db = new LocalTestDatabase(dbManager))
             {
                 db.SetResult(m_results);
                 Utility.UpdateOptionsFromDb(db, m_options);
@@ -81,7 +81,7 @@ namespace Duplicati.Library.Main.Operation
                     {
                         if (!m_results.TaskControl.ProgressRendevouz().Await())
                         {
-                            backend.WaitForEmptyAsync(db, null, CancellationToken.None).Await();
+                            backend.WaitForEmptyAsync(CancellationToken.None).Await();
                             m_results.EndTime = DateTime.UtcNow;
                             return;
                         }

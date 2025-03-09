@@ -22,7 +22,7 @@ partial class BackendManager
     private sealed record ExecuteContext(
         Action<ThrottledStream, long, string> HandleProgress,
         IBackendWriter Statwriter,
-        DatabaseCollector Database,
+        DatabaseWrapper Database,
         ITaskReader TaskReader,
         Options Options);
 

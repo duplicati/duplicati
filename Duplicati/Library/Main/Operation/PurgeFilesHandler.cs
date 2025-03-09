@@ -23,6 +23,7 @@ using System;
 using System.Linq;
 using System.Threading;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Main.Database;
 using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Main.Operation
@@ -42,15 +43,15 @@ namespace Duplicati.Library.Main.Operation
             m_result = result;
         }
 
-        public void Run(IBackendManager backendManager, Library.Utility.IFilter filter)
+        public void Run(DatabaseConnectionManager dbManager, IBackendManager backendManager, IFilter filter)
         {
             if (filter == null || filter.Empty)
                 throw new UserInformationException("Cannot purge with an empty filter, as that would cause all files to be removed.\nTo remove an entire backup set, use the \"delete\" command.", "EmptyFilterPurgeNotAllowed");
 
-            if (!System.IO.File.Exists(m_options.Dbpath))
-                throw new UserInformationException(string.Format("Database file does not exist: {0}", m_options.Dbpath), "DatabaseDoesNotExist");
+            if (!dbManager.Exists)
+                throw new UserInformationException(string.Format("Database file does not exist: {0}", dbManager.Path), "DatabaseDoesNotExist");
 
-            using (var db = new Database.LocalPurgeDatabase(m_options.Dbpath))
+            using (var db = new LocalPurgeDatabase(dbManager))
                 DoRun(backendManager, db, filter, null, 0, 1);
         }
 
@@ -102,10 +103,6 @@ namespace Duplicati.Library.Main.Operation
 
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.PurgeFiles_Process);
             m_result.OperationProgressUpdater.UpdateProgress(currentprogress);
-
-            // If we crash now, it is possible that the remote storage contains partial files
-            if (!m_options.Dryrun)
-                db.TerminatedWithActiveUploads = true;
 
             // Reverse makes sure we re-write the old versions first
             foreach (var versionid in versions.Reverse())
@@ -214,7 +211,7 @@ namespace Duplicati.Library.Main.Operation
                                     tr.Commit();
                                     backendManager.PutAsync(vol, null, null, true, cancellationToken).Await();
                                     backendManager.DeleteAsync(prevfilename, -1, true, cancellationToken).Await();
-                                    backendManager.WaitForEmptyAsync(db, null, cancellationToken).Await();
+                                    backendManager.WaitForEmptyAsync(cancellationToken).Await();
                                 }
                             }
                         }
@@ -263,7 +260,7 @@ namespace Duplicati.Library.Main.Operation
                 m_result.OperationProgressUpdater.UpdateProgress(pgoffset + pgspan);
                 m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.PurgeFiles_Complete);
 
-                backendManager.WaitForEmptyAsync(db, null, cancellationToken).Await();
+                backendManager.WaitForEmptyAsync(cancellationToken).Await();
             }
         }
     }

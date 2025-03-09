@@ -102,7 +102,7 @@ namespace Duplicati.Library.Main.Operation
                 };
         }
 
-        public void Run(string[] paths, IBackendManager backendManager, Library.Utility.IFilter filter)
+        public void Run(string[] paths, DatabaseConnectionManager dbManager, IBackendManager backendManager, Library.Utility.IFilter filter)
         {
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_Begin);
 
@@ -111,11 +111,12 @@ namespace Duplicati.Library.Main.Operation
 
             LocalRestoreDatabase db = null;
             TempFile tmpdb = null;
+            DatabaseConnectionManager tmpDbManager = null;
             try
             {
-                if (!m_options.NoLocalDb && SystemIO.IO_OS.FileExists(m_options.Dbpath))
+                if (!m_options.NoLocalDb && dbManager.Exists)
                 {
-                    db = new LocalRestoreDatabase(m_options.Dbpath);
+                    db = new LocalRestoreDatabase(dbManager);
                     db.SetResult(m_result);
                 }
                 else
@@ -123,7 +124,8 @@ namespace Duplicati.Library.Main.Operation
                     Logging.Log.WriteInformationMessage(LOGTAG, "NoLocalDatabase", "No local database, building a temporary database");
                     tmpdb = new TempFile();
                     RecreateDatabaseHandler.NumberedFilterFilelistDelegate filelistfilter = FilterNumberedFilelist(m_options.Time, m_options.Version);
-                    db = new LocalRestoreDatabase(tmpdb);
+                    tmpDbManager = new DatabaseConnectionManager(tmpdb);
+                    db = new LocalRestoreDatabase(tmpDbManager);
                     m_result.RecreateDatabaseResults = new RecreateDatabaseResults(m_result);
                     using (new Logging.Timer(LOGTAG, "RecreateTempDbForRestore", "Recreate temporary database for restore"))
                         new RecreateDatabaseHandler(m_options, (RecreateDatabaseResults)m_result.RecreateDatabaseResults)
@@ -148,6 +150,7 @@ namespace Duplicati.Library.Main.Operation
             finally
             {
                 db?.Dispose();
+                tmpDbManager?.Dispose();
                 tmpdb?.Dispose();
             }
         }
@@ -403,7 +406,7 @@ namespace Duplicati.Library.Main.Operation
 
             // Drop the temp tables
             database.DropRestoreTable();
-            await backendManager.WaitForEmptyAsync(database, null, CancellationToken.None).ConfigureAwait(false);
+            await backendManager.WaitForEmptyAsync(CancellationToken.None).ConfigureAwait(false);
 
             // Report that the restore is complete
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_Complete);
@@ -464,7 +467,7 @@ namespace Duplicati.Library.Main.Operation
 
                 if (!await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
                 {
-                    await backendManager.WaitForEmptyAsync(database, null, cancellationToken).ConfigureAwait(false);
+                    await backendManager.WaitForEmptyAsync(cancellationToken).ConfigureAwait(false);
                     return;
                 }
 
@@ -479,7 +482,7 @@ namespace Duplicati.Library.Main.Operation
 
                 if (!await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
                 {
-                    await backendManager.WaitForEmptyAsync(database, null, cancellationToken).ConfigureAwait(false);
+                    await backendManager.WaitForEmptyAsync(cancellationToken).ConfigureAwait(false);
                     return;
                 }
 
@@ -503,7 +506,7 @@ namespace Duplicati.Library.Main.Operation
                         {
                             if (!await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
                             {
-                                await backendManager.WaitForEmptyAsync(database, null, cancellationToken).ConfigureAwait(false);
+                                await backendManager.WaitForEmptyAsync(cancellationToken).ConfigureAwait(false);
                                 return;
                             }
 
@@ -568,7 +571,7 @@ namespace Duplicati.Library.Main.Operation
                             {
                                 if (!await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
                                 {
-                                    await backendManager.WaitForEmptyAsync(database, null, cancellationToken).ConfigureAwait(false);
+                                    await backendManager.WaitForEmptyAsync(cancellationToken).ConfigureAwait(false);
                                     return;
                                 }
 
@@ -606,7 +609,7 @@ namespace Duplicati.Library.Main.Operation
 
                 // Drop the temp tables
                 database.DropRestoreTable();
-                await backendManager.WaitForEmptyAsync(database, null, cancellationToken).ConfigureAwait(false);
+                await backendManager.WaitForEmptyAsync(cancellationToken).ConfigureAwait(false);
             }
 
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_Complete);

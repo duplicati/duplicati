@@ -24,6 +24,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Main.Database;
 using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Main.Operation
@@ -64,12 +65,12 @@ namespace Duplicati.Library.Main.Operation
             return res;
         }
 
-        public void Run(string baseVersion, string compareVersion, IBackendManager backendManager, IEnumerable<string> filterstrings, IFilter compositefilter, Action<IListChangesResults, IEnumerable<Tuple<ListChangesChangeType, ListChangesElementType, string>>> callback)
+        public void Run(string baseVersion, string compareVersion, DatabaseConnectionManager dbManager, IBackendManager backendManager, IEnumerable<string> filterstrings, IFilter compositefilter, Action<IListChangesResults, IEnumerable<Tuple<ListChangesChangeType, ListChangesElementType, string>>> callback)
         {
             var cancellationToken = CancellationToken.None;
-            var filter = Library.Utility.JoinedFilterExpression.Join(new Library.Utility.FilterExpression(filterstrings), compositefilter);
+            var filter = JoinedFilterExpression.Join(new Library.Utility.FilterExpression(filterstrings), compositefilter);
 
-            var useLocalDb = !m_options.NoLocalDb && System.IO.File.Exists(m_options.Dbpath);
+            var useLocalDb = !m_options.NoLocalDb && dbManager.Exists;
             baseVersion = string.IsNullOrEmpty(baseVersion) ? "1" : baseVersion;
             compareVersion = string.IsNullOrEmpty(compareVersion) ? "0" : compareVersion;
 
@@ -79,8 +80,9 @@ namespace Duplicati.Library.Main.Operation
             DateTime baseVersionTime;
             DateTime compareVersionTime;
 
-            using (var tmpdb = useLocalDb ? null : new Library.Utility.TempFile())
-            using (var db = new Database.LocalListChangesDatabase(useLocalDb ? m_options.Dbpath : (string)tmpdb))
+            using (var tmpdb = useLocalDb ? null : new TempFile())
+            using (var tmpDbManager = useLocalDb ? null : new DatabaseConnectionManager(tmpdb))
+            using (var db = new LocalListChangesDatabase(tmpDbManager ?? dbManager))
             using (var storageKeeper = db.CreateStorageHelper())
             {
                 m_result.SetDatabase(db);

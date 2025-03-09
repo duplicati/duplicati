@@ -43,19 +43,19 @@ namespace Duplicati.Library.Main.Operation
             m_result = result;
         }
 
-        public void Run()
+        public void Run(DatabaseConnectionManager dbManager)
         {
-            var ext = System.IO.Path.GetExtension(m_targetpath);
+            var ext = Path.GetExtension(m_targetpath);
             var module = m_options.CompressionModule;
 
             if (ext == "" || string.Compare(ext, 1, module, 0, module.Length, StringComparison.OrdinalIgnoreCase) != 0)
                 m_targetpath = m_targetpath + "." + module;
 
-            if (System.IO.File.Exists(m_targetpath))
+            if (File.Exists(m_targetpath))
                 throw new UserInformationException(string.Format("Output file already exists, not overwriting: {0}", m_targetpath), "BugReportTargetAlreadyExists");
 
-            if (!System.IO.File.Exists(m_options.Dbpath))
-                throw new UserInformationException(string.Format("Database file does not exist: {0}", m_options.Dbpath), "BugReportSourceDatabaseNotFound");
+            if (!dbManager.Exists)
+                throw new UserInformationException(string.Format("Database file does not exist: {0}", dbManager.Path), "BugReportSourceDatabaseNotFound");
 
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.BugReport_Running);
             m_result.OperationProgressUpdater.UpdateProgress(0);
@@ -64,8 +64,8 @@ namespace Duplicati.Library.Main.Operation
 
             using (var tmp = new Library.Utility.TempFile())
             {
-                System.IO.File.Copy(m_options.Dbpath, tmp, true);
-                using (var db = new LocalBugReportDatabase(tmp))
+                File.Copy(dbManager.Path, tmp, true);
+                using (var db = new LocalBugReportDatabase(dbManager))
                 {
                     m_result.SetDatabase(db);
                     db.Fix();
@@ -75,14 +75,14 @@ namespace Duplicati.Library.Main.Operation
                     }
                 }
 
-                using (var stream = new System.IO.FileStream(m_targetpath, FileMode.Create, FileAccess.Write, FileShare.Read))
-                using (ICompression cm = DynamicLoader.CompressionLoader.GetModule(module, stream, Interface.ArchiveMode.Write, m_options.RawOptions))
+                using (var stream = new FileStream(m_targetpath, FileMode.Create, FileAccess.Write, FileShare.Read))
+                using (ICompression cm = DynamicLoader.CompressionLoader.GetModule(module, stream, ArchiveMode.Write, m_options.RawOptions))
                 {
-                    using (var cs = cm.CreateFile("log-database.sqlite", Duplicati.Library.Interface.CompressionHint.Compressible, DateTime.UtcNow))
-                    using (var fs = System.IO.File.Open(tmp, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.ReadWrite))
+                    using (var cs = cm.CreateFile("log-database.sqlite", CompressionHint.Compressible, DateTime.UtcNow))
+                    using (var fs = File.Open(tmp, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
                         Library.Utility.Utility.CopyStream(fs, cs);
 
-                    using (var cs = new System.IO.StreamWriter(cm.CreateFile("system-info.txt", Duplicati.Library.Interface.CompressionHint.Compressible, DateTime.UtcNow)))
+                    using (var cs = new StreamWriter(cm.CreateFile("system-info.txt", CompressionHint.Compressible, DateTime.UtcNow)))
                         foreach (var line in SystemInfoHandler.GetSystemInfo())
                             cs.WriteLine(line);
                 }
