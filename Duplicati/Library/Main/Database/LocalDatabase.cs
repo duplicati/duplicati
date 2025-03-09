@@ -366,7 +366,7 @@ namespace Duplicati.Library.Main.Database
                         rd.ConvertValueToInt64(3, -1),
                         (RemoteVolumeType)Enum.Parse(typeof(RemoteVolumeType), rd.GetValue(2).ToString()),
                         (RemoteVolumeState)Enum.Parse(typeof(RemoteVolumeState), rd.GetValue(5).ToString()),
-                        new DateTime(rd.ConvertValueToInt64(6, 0), DateTimeKind.Utc)
+                        ParseFromEpochSeconds(rd.ConvertValueToInt64(6, 0))
                     );
 
             return RemoteVolumeEntry.Empty;
@@ -397,7 +397,7 @@ namespace Duplicati.Library.Main.Database
                         rd.ConvertValueToInt64(3, -1),
                         (RemoteVolumeType)Enum.Parse(typeof(RemoteVolumeType), rd.GetValue(2).ToString()),
                         (RemoteVolumeState)Enum.Parse(typeof(RemoteVolumeState), rd.GetValue(5).ToString()),
-                        new DateTime(rd.ConvertValueToInt64(6, 0), DateTimeKind.Utc)
+                        ParseFromEpochSeconds(rd.ConvertValueToInt64(6, 0))
                     );
                 }
             }
@@ -451,12 +451,12 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
-        public void RemoveRemoteVolume(string name, System.Data.IDbTransaction transaction = null)
+        public void RemoveRemoteVolume(string name, IDbTransaction transaction = null)
         {
-            RemoveRemoteVolumes(new string[] { name }, transaction);
+            RemoveRemoteVolumes([name], transaction);
         }
 
-        public void RemoveRemoteVolumes(IEnumerable<string> names, System.Data.IDbTransaction transaction = null)
+        public void RemoveRemoteVolumes(IEnumerable<string> names, IDbTransaction transaction = null)
         {
             if (names == null || !names.Any()) return;
 
@@ -737,44 +737,55 @@ AND Fileset.ID NOT IN
             return GetDbOptionList(transaction).ToDictionary(x => x.Key, x => x.Value);
         }
 
+        /// <summary>
+        /// Updates a database option
+        /// </summary>
+        /// <param name="key">The key to update</param>
+        /// <param name="value">The value to set</param>
+        private void UpdateDbOption(string key, bool value)
+        {
+            var opts = GetDbOptions();
+
+            if (value)
+                opts[key] = "true";
+            else
+                opts.Remove(key);
+
+            SetDbOptions(opts);
+        }
+
+        /// <summary>
+        /// Flag indicating if a repair is in progress
+        /// </summary>
         public bool RepairInProgress
         {
-            get
-            {
-                return GetDbOptions().ContainsKey("repair-in-progress");
-            }
-            set
-            {
-                var opts = GetDbOptions();
-
-                if (value)
-                    opts["repair-in-progress"] = "true";
-                else
-                    opts.Remove("repair-in-progress");
-
-                SetDbOptions(opts);
-            }
+            get => GetDbOptions().ContainsKey("repair-in-progress");
+            set => UpdateDbOption("repair-in-progress", value);
         }
 
+        /// <summary>
+        /// Flag indicating if a repair is in progress
+        /// </summary>
         public bool PartiallyRecreated
         {
-            get
-            {
-                return GetDbOptions().ContainsKey("partially-recreated");
-            }
-            set
-            {
-                var opts = GetDbOptions();
-
-                if (value)
-                    opts["partially-recreated"] = "true";
-                else
-                    opts.Remove("partially-recreated");
-
-                SetDbOptions(opts);
-            }
+            get => GetDbOptions().ContainsKey("partially-recreated");
+            set => UpdateDbOption("partially-recreated", value);
         }
 
+        /// <summary>
+        /// Flag indicating if the database can contain partial uploads
+        /// </summary>
+        public bool TerminatedWithActiveUploads
+        {
+            get => GetDbOptions().ContainsKey("terminated-with-active-uploads");
+            set => UpdateDbOption("terminated-with-active-uploads", value);
+        }
+
+        /// <summary>
+        /// Sets the database options
+        /// </summary>
+        /// <param name="options">The options to set</param>
+        /// <param name="transaction">An optional transaction</param>
         public void SetDbOptions(IDictionary<string, string> options, System.Data.IDbTransaction transaction = null)
         {
             using (var tr = new TemporaryTransactionWrapper(m_connection, transaction))
@@ -1446,6 +1457,64 @@ AND oldVersion.FilesetID = (SELECT ID FROM Fileset WHERE ID != ? ORDER BY Timest
 
                 tr.Commit();
             }
+        }
+
+        /// <summary>
+        /// Gets the last previous fileset that was incomplete
+        /// </summary>
+        /// <param name="transaction">The transaction to use</param>
+        /// <returns>The last incomplete fileset or default</returns>
+        public RemoteVolumeEntry GetLastIncompleteFilesetVolume(IDbTransaction transaction)
+        {
+            var candidates = GetIncompleteFilesets(transaction).OrderBy(x => x.Value).ToArray();
+            if (candidates.Any())
+                return GetRemoteVolumeFromFilesetID(candidates.Last().Key, transaction);
+
+            return default;
+        }
+
+        /// <summary>
+        /// Gets a list of incomplete filesets
+        /// </summary>
+        /// <param name="transaction">An optional transaction</param>
+        /// <returns>A list of fileset IDs and timestamps</returns>
+        public IEnumerable<KeyValuePair<long, DateTime>> GetIncompleteFilesets(IDbTransaction transaction)
+        {
+            using (var cmd = m_connection.CreateCommand(transaction))
+            {
+                using (var rd = cmd.ExecuteReader(@$"SELECT DISTINCT ""Fileset"".""ID"", ""Fileset"".""Timestamp"" FROM ""Fileset"", ""RemoteVolume"" WHERE ""RemoteVolume"".""ID"" = ""Fileset"".""VolumeID"" AND ""Fileset"".""ID"" IN (SELECT ""FilesetID"" FROM ""FilesetEntry"")  AND (""RemoteVolume"".""State"" = '{RemoteVolumeState.Uploading}' OR ""RemoteVolume"".""State"" = '{RemoteVolumeState.Temporary}')"))
+                    while (rd.Read())
+                    {
+                        yield return new KeyValuePair<long, DateTime>(
+                            rd.GetInt64(0),
+                            ParseFromEpochSeconds(rd.GetInt64(1)).ToLocalTime()
+                        );
+                    }
+            }
+        }
+
+        /// <summary>
+        /// Gets the remote volume entry from the fileset ID
+        /// </summary>
+        /// <param name="filesetID">The fileset ID</param>
+        /// <param name="transaction">An optional transaction</param>
+        /// <returns>The remote volume entry or default</returns>
+        public RemoteVolumeEntry GetRemoteVolumeFromFilesetID(long filesetID, IDbTransaction transaction = null)
+        {
+            using (var cmd = m_connection.CreateCommand(transaction))
+            using (var rd = cmd.ExecuteReader(@"SELECT ""RemoteVolume"".""ID"", ""Name"", ""Type"", ""Size"", ""Hash"", ""State"", ""DeleteGraceTime"" FROM ""RemoteVolume"", ""Fileset"" WHERE ""Fileset"".""VolumeID"" = ""RemoteVolume"".""ID"" AND ""Fileset"".""ID"" = ?", filesetID))
+                if (rd.Read())
+                    return new RemoteVolumeEntry(
+                        rd.ConvertValueToInt64(0, -1),
+                        rd.GetValue(1).ToString(),
+                        (rd.GetValue(4) == null || rd.GetValue(4) == DBNull.Value) ? null : rd.GetValue(4).ToString(),
+                        rd.ConvertValueToInt64(3, -1),
+                        (RemoteVolumeType)Enum.Parse(typeof(RemoteVolumeType), rd.GetValue(2).ToString()),
+                        (RemoteVolumeState)Enum.Parse(typeof(RemoteVolumeState), rd.GetValue(5).ToString()),
+                        ParseFromEpochSeconds(rd.GetInt64(6)).ToLocalTime()
+                    );
+                else
+                    return default(RemoteVolumeEntry);
         }
 
         public void PurgeLogData(DateTime threshold)

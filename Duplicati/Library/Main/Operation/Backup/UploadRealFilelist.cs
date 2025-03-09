@@ -32,7 +32,7 @@ internal static class UploadRealFilelist
     /// </summary>
     private static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(UploadRealFilelist));
 
-    public static async Task Run(BackupResults result, BackupDatabase db, IBackendManager backendManager, Options options, FilesetVolumeWriter filesetvolume, long filesetid, Common.ITaskReader taskreader)
+    public static async Task Run(BackupResults result, BackupDatabase db, IBackendManager backendManager, Options options, FilesetVolumeWriter filesetvolume, long filesetid, Common.ITaskReader taskreader, bool lastWasPartial)
     {
         // We ignore the stop signal, but not the pause and terminate
         await taskreader.ProgressRendevouz().ConfigureAwait(false);
@@ -47,7 +47,7 @@ internal static class UploadRealFilelist
             result.AddedSymlinks + result.ModifiedSymlinks + result.DeletedSymlinks;
 
         //Changes in the filelist triggers a filelist upload
-        if (options.UploadUnchangedBackups || changeCount > 0)
+        if (options.UploadUnchangedBackups || changeCount > 0 || lastWasPartial)
         {
             using (new Logging.Timer(LOGTAG, "UploadNewFileset", "Uploading a new fileset"))
             {

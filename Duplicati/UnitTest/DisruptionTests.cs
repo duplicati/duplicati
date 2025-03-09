@@ -858,6 +858,255 @@ namespace Duplicati.UnitTest
             }
         }
 
+        [Test]
+        [Category("Disruption")]
+        [TestCase(true, false)]
+        [TestCase(false, false)]
+        [TestCase(true, true)]
+        [TestCase(false, true)]
+        public void TestFailedUploadOfFirstDlist(bool before, bool failOnLastDblock)
+        {
+            var testopts = TestOptions;
+            testopts["number-of-retries"] = "0";
+            testopts["dblock-size"] = "10mb";
+
+            // Deterministic error backend
+            Library.DynamicLoader.BackendLoader.AddBackend(new DeterministicErrorBackend());
+            var failtarget = new DeterministicErrorBackend().ProtocolKey + "://" + TARGETFOLDER;
+            var operation = before
+                ? DeterministicErrorBackend.BackendAction.PutBefore
+                : DeterministicErrorBackend.BackendAction.PutAfter;
+
+            // We expect to upload 7 volumes, and fail on the last one
+            var count = 7;
+            var failed = false;
+
+            // Fail when uploading the dlist file
+            DeterministicErrorBackend.ErrorGenerator = (DeterministicErrorBackend.BackendAction action, string remotename) =>
+            {
+                if (failOnLastDblock)
+                {
+                    if (action == operation && remotename.Contains(".dblock."))
+                    {
+                        if (Interlocked.Decrement(ref count) == 0)
+                        {
+                            // Allow others to progress
+                            Thread.Sleep(2000);
+                            failed = true;
+                            return true;
+                        }
+                    }
+                }
+                else
+                {
+                    if (action == operation && remotename.Contains(".dlist."))
+                    {
+                        failed = true;
+                        return true;
+                    }
+                }
+
+                return false;
+            };
+
+            using (var c = new Library.Main.Controller(failtarget, testopts, null))
+                Assert.Throws<DeterministicErrorBackend.DeterministicErrorBackendException>(() => c.Backup(new string[] { DATAFOLDER }));
+
+            Assert.That(failed, Is.True, "Failed to fail the upload");
+
+            // Make spacing for the next backup
+            Thread.Sleep(3000);
+
+            // Make a new backup, should continue as normal
+            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
+            {
+                IBackupResults backupResults = c.Backup(new string[] { DATAFOLDER });
+                Assert.AreEqual(0, backupResults.Errors.Count());
+                Assert.AreEqual(0, backupResults.Warnings.Count());
+                Assert.AreEqual(2, c.List().Filesets.Count());
+            }
+
+            // Verify that all is in order
+            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { full_remote_verification = true }), null))
+            {
+                var r = c.Test(long.MaxValue);
+                Assert.AreEqual(0, r.Errors.Count());
+                Assert.AreEqual(0, r.Warnings.Count());
+                Assert.IsFalse(r.Verifications.Any(p => p.Value.Any()));
+            }
+
+            // Test that we can recreate
+            var recreatedDatabaseFile = Path.Combine(BASEFOLDER, "recreated-database.sqlite");
+            if (File.Exists(recreatedDatabaseFile))
+                File.Delete(recreatedDatabaseFile);
+
+            testopts["dbpath"] = recreatedDatabaseFile;
+
+            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
+            {
+                IRepairResults repairResults = c.Repair();
+                Assert.AreEqual(0, repairResults.Errors.Count());
+                Assert.AreEqual(0, repairResults.Warnings.Count());
+            }
+
+            // Check that we have 2 versions
+            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
+            {
+                IListResults listResults = c.List();
+                Assert.AreEqual(0, listResults.Errors.Count());
+                Assert.AreEqual(0, listResults.Warnings.Count());
+                Assert.AreEqual(2, listResults.Filesets.Count());
+            }
+        }
+
+        [Test]
+        [Category("Disruption")]
+        [TestCase(true)]
+        [TestCase(false)]
+        public void TestRepairWithNoDlist(bool before)
+        {
+            var testopts = TestOptions;
+            testopts["number-of-retries"] = "0";
+            testopts["dblock-size"] = "10mb";
+
+            // Deterministic error backend
+            Library.DynamicLoader.BackendLoader.AddBackend(new DeterministicErrorBackend());
+            var failtarget = new DeterministicErrorBackend().ProtocolKey + "://" + TARGETFOLDER;
+            var operation = before
+                ? DeterministicErrorBackend.BackendAction.PutBefore
+                : DeterministicErrorBackend.BackendAction.PutAfter;
+
+            // Fail when uploading the first dlist file
+            DeterministicErrorBackend.ErrorGenerator = (DeterministicErrorBackend.BackendAction action, string remotename) =>
+            {
+                if (action == operation && remotename.Contains(".dlist."))
+                    return true;
+
+                return false;
+            };
+
+            using (var c = new Library.Main.Controller(failtarget, testopts, null))
+                Assert.Throws<DeterministicErrorBackend.DeterministicErrorBackendException>(() => c.Backup(new string[] { DATAFOLDER }));
+
+            // Test that we can repair
+            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
+            {
+                IRepairResults repairResults = c.Repair();
+                Assert.AreEqual(0, repairResults.Errors.Count());
+                Assert.AreEqual(0, repairResults.Warnings.Count());
+            }
+
+            // Check that we have 1 version
+            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
+            {
+                IListResults listResults = c.List();
+                Assert.AreEqual(0, listResults.Errors.Count());
+                Assert.AreEqual(0, listResults.Warnings.Count());
+                Assert.AreEqual(1, listResults.Filesets.Count());
+            }
+        }
+
+
+        [Test]
+        [Category("Disruption")]
+        [TestCase(true, true, 3, false)]
+        [TestCase(false, false, 3, false)]
+        [TestCase(true, false, 3, false)]
+        [TestCase(false, true, 3, false)]
+        [TestCase(true, true, 3, true)]
+        [TestCase(false, true, 3, true)]
+        public void TestMultiFailedDlist(bool before, bool modifyInBetween, int runs, bool withBase)
+        {
+            var testopts = TestOptions;
+            testopts["number-of-retries"] = "0";
+            testopts["dblock-size"] = "10mb";
+            var expectedFilesets = withBase ? 3 : 2;
+
+            if (withBase)
+            {
+                // Make a regular backup
+                using (var c = new Controller("file://" + TARGETFOLDER, testopts, null))
+                {
+                    IBackupResults backupResults = c.Backup(new string[] { DATAFOLDER });
+                    Assert.AreEqual(0, backupResults.Errors.Count());
+                    Assert.AreEqual(0, backupResults.Warnings.Count());
+                }
+            }
+
+
+            // Deterministic error backend
+            Library.DynamicLoader.BackendLoader.AddBackend(new DeterministicErrorBackend());
+            var failtarget = new DeterministicErrorBackend().ProtocolKey + "://" + TARGETFOLDER;
+            var operation = before
+                ? DeterministicErrorBackend.BackendAction.PutBefore
+                : DeterministicErrorBackend.BackendAction.PutAfter;
+
+            // Fail when uploading the first dlist file
+            DeterministicErrorBackend.ErrorGenerator = (DeterministicErrorBackend.BackendAction action, string remotename) =>
+            {
+                if (action == operation && remotename.Contains(".dlist."))
+                    return true;
+
+                return false;
+            };
+
+            for (var i = 0; i < runs; i++)
+            {
+                if (modifyInBetween)
+                    ModifySourceFiles();
+
+                using (var c = new Controller(failtarget, testopts, null))
+                    Assert.Throws<DeterministicErrorBackend.DeterministicErrorBackendException>(() => c.Backup(new string[] { DATAFOLDER }));
+
+                // Prevent clashes in timestamps
+                Thread.Sleep(3000);
+            }
+
+            if (modifyInBetween)
+                ModifySourceFiles();
+
+            // Make a new backup, should continue as normal
+            using (var c = new Controller("file://" + TARGETFOLDER, testopts, null))
+            {
+                IBackupResults backupResults = c.Backup(new string[] { DATAFOLDER });
+                Assert.AreEqual(0, backupResults.Errors.Count());
+                Assert.AreEqual(0, backupResults.Warnings.Count());
+                Assert.AreEqual(expectedFilesets, c.List().Filesets.Count());
+            }
+
+            // Verify that all is in order
+            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { full_remote_verification = true }), null))
+            {
+                var r = c.Test(long.MaxValue);
+                Assert.AreEqual(0, r.Errors.Count());
+                Assert.AreEqual(0, r.Warnings.Count());
+                Assert.IsFalse(r.Verifications.Any(p => p.Value.Any()));
+            }
+
+            // Test that we can recreate
+            var recreatedDatabaseFile = Path.Combine(BASEFOLDER, "recreated-database.sqlite");
+            if (File.Exists(recreatedDatabaseFile))
+                File.Delete(recreatedDatabaseFile);
+
+            testopts["dbpath"] = recreatedDatabaseFile;
+
+            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
+            {
+                IRepairResults repairResults = c.Repair();
+                Assert.AreEqual(0, repairResults.Errors.Count());
+                Assert.AreEqual(0, repairResults.Warnings.Count());
+            }
+
+            // Check that we have 2 versions
+            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
+            {
+                IListResults listResults = c.List();
+                Assert.AreEqual(0, listResults.Errors.Count());
+                Assert.AreEqual(0, listResults.Warnings.Count());
+                Assert.AreEqual(expectedFilesets, listResults.Filesets.Count());
+            }
+        }
+
         private class LogSink : IMessageSink
         {
             public List<string> StartedFiles { get; } = new List<string>();
@@ -891,102 +1140,25 @@ namespace Duplicati.UnitTest
         [Category("Disruption")]
         public void TestFailedDblockUploadWithOperationCancellation()
         {
-            var testopts = TestOptions;
-            testopts["number-of-retries"] = "1";
-            testopts["dblock-size"] = "10mb";
-
-            // Make a base backup
-            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
-            {
-                IBackupResults backupResults = c.Backup(new string[] { DATAFOLDER });
-                Assert.AreEqual(0, backupResults.Errors.Count());
-                Assert.AreEqual(0, backupResults.Warnings.Count());
-            }
-
-            // Make a new backup that fails uploading a dblock file
-            ModifySourceFiles();
-
-            // Deterministic error backend
-            Library.DynamicLoader.BackendLoader.AddBackend(new DeterministicErrorBackend());
-            var failtarget = new DeterministicErrorBackend().ProtocolKey + "://" + TARGETFOLDER;
-            var uploadCount = 0;
-            var failedFile = string.Empty;
-
-            // Fail the dlist upload
-            DeterministicErrorBackend.ErrorGenerator = (DeterministicErrorBackend.BackendAction action, string remotename) =>
-            {
-                if (action == DeterministicErrorBackend.BackendAction.PutBefore && remotename.Contains(".dblock."))
-                {
-                    // Fail once with a cancellation
-                    if (Interlocked.Increment(ref uploadCount) == 1)
-                    {
-                        failedFile = remotename;
-                        throw new OperationCanceledException();
-                    }
-                }
-
-                return false;
-            };
-
-            using (var c = new Library.Main.Controller(failtarget, testopts, null))
-            {
-                var sink = new LogSink();
-                c.AppendSink(sink);
-                var res = c.Backup(new string[] { DATAFOLDER });
-                if (uploadCount == 0)
-                    Assert.Fail("Upload count was not incremented");
-
-                Assert.AreEqual(2, c.List().Filesets.Count());
-                Assert.AreEqual(7 * 2 + 1, sink.CompletedFiles.Count); // 7 completed (dblock + dindex) + 1 dlist
-                Assert.AreEqual(7 * 2 + 2, sink.StartedFiles.Count); // 1 retry
-                Assert.AreEqual(1, res.BackendStatistics.RetryAttempts);
-            }
-
-            ModifySourceFiles();
-            // Create a regular backup
-            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
-            {
-                IBackupResults backupResults = c.Backup(new string[] { DATAFOLDER });
-                Assert.AreEqual(0, backupResults.Errors.Count());
-                Assert.AreEqual(0, backupResults.Warnings.Count());
-            }
-
-            // Verify that all is in order
-            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { full_remote_verification = true }), null))
-            {
-                var r = c.Test(long.MaxValue);
-                Assert.AreEqual(0, r.Errors.Count());
-                Assert.AreEqual(0, r.Warnings.Count());
-                Assert.IsFalse(r.Verifications.Any(p => p.Value.Any()));
-            }
-
-            // Test that we can recreate
-            var recreatedDatabaseFile = Path.Combine(BASEFOLDER, "recreated-database.sqlite");
-            if (File.Exists(recreatedDatabaseFile))
-                File.Delete(recreatedDatabaseFile);
-
-            testopts["dbpath"] = recreatedDatabaseFile;
-
-            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
-            {
-                IRepairResults repairResults = c.Repair();
-                Assert.AreEqual(0, repairResults.Errors.Count());
-                Assert.AreEqual(0, repairResults.Warnings.Count());
-            }
-
-            // Check that we have 3 versions
-            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
-            {
-                IListResults listResults = c.List();
-                Assert.AreEqual(0, listResults.Errors.Count());
-                Assert.AreEqual(0, listResults.Warnings.Count());
-                Assert.AreEqual(3, listResults.Filesets.Count());
-            }
+            TestFailedUploadWithOperationCancellation(".dblock.");
         }
+
 
         [Test]
         [Category("Disruption")]
         public void TestFailedDindexUploadWithOperationCancellation()
+        {
+            TestFailedUploadWithOperationCancellation(".dindex.");
+        }
+
+        [Test]
+        [Category("Disruption")]
+        public void TestFailedDlistUploadWithOperationCancellation()
+        {
+            TestFailedUploadWithOperationCancellation(".dlist.");
+        }
+
+        private void TestFailedUploadWithOperationCancellation(string filefragment)
         {
             var testopts = TestOptions;
             testopts["number-of-retries"] = "1";
@@ -1007,19 +1179,16 @@ namespace Duplicati.UnitTest
             Library.DynamicLoader.BackendLoader.AddBackend(new DeterministicErrorBackend());
             var failtarget = new DeterministicErrorBackend().ProtocolKey + "://" + TARGETFOLDER;
             var uploadCount = 0;
-            var failedFile = string.Empty;
+            var failstep = DeterministicErrorBackend.BackendAction.PutBefore;
 
-            // Fail the dlist upload
+            // Fail the upload before
             DeterministicErrorBackend.ErrorGenerator = (DeterministicErrorBackend.BackendAction action, string remotename) =>
             {
-                if (action == DeterministicErrorBackend.BackendAction.PutBefore && remotename.Contains(".dindex."))
+                if (action == failstep && remotename.Contains(filefragment))
                 {
                     // Fail once with a cancellation
                     if (Interlocked.Increment(ref uploadCount) == 1)
-                    {
-                        failedFile = remotename;
                         throw new OperationCanceledException();
-                    }
                 }
 
                 return false;
@@ -1034,6 +1203,27 @@ namespace Duplicati.UnitTest
                     Assert.Fail("Upload count was not incremented");
 
                 Assert.AreEqual(2, c.List().Filesets.Count());
+                Assert.AreEqual(2, Directory.GetFiles(TARGETFOLDER, "*.dlist.*", SearchOption.TopDirectoryOnly).Count());
+                Assert.AreEqual(7 * 2 + 1, sink.CompletedFiles.Count); // 7 completed (dblock + dindex) + 1 dlist
+                Assert.AreEqual(7 * 2 + 2, sink.StartedFiles.Count); // 1 retry
+                Assert.AreEqual(sink.CompletedFiles.Count(x => x.Contains(".dblock.")), sink.CompletedFiles.Count(x => x.Contains(".dindex.")));
+                Assert.AreEqual(1, res.BackendStatistics.RetryAttempts);
+            }
+
+            uploadCount = 0;
+            failstep = DeterministicErrorBackend.BackendAction.PutAfter;
+
+            ModifySourceFiles();
+            using (var c = new Library.Main.Controller(failtarget, testopts, null))
+            {
+                var sink = new LogSink();
+                c.AppendSink(sink);
+                var res = c.Backup(new string[] { DATAFOLDER });
+                if (uploadCount == 0)
+                    Assert.Fail("Upload count was not incremented");
+
+                Assert.AreEqual(3, c.List().Filesets.Count());
+                Assert.AreEqual(3, Directory.GetFiles(TARGETFOLDER, "*.dlist.*", SearchOption.TopDirectoryOnly).Count());
                 Assert.AreEqual(7 * 2 + 1, sink.CompletedFiles.Count); // 7 completed (dblock + dindex) + 1 dlist
                 Assert.AreEqual(7 * 2 + 2, sink.StartedFiles.Count); // 1 retry
                 Assert.AreEqual(sink.CompletedFiles.Count(x => x.Contains(".dblock.")), sink.CompletedFiles.Count(x => x.Contains(".dindex.")));
@@ -1078,96 +1268,7 @@ namespace Duplicati.UnitTest
                 IListResults listResults = c.List();
                 Assert.AreEqual(0, listResults.Errors.Count());
                 Assert.AreEqual(0, listResults.Warnings.Count());
-                Assert.AreEqual(3, listResults.Filesets.Count());
-            }
-        }
-
-        [Test]
-        [Category("Disruption")]
-        public void TestFailedDlistUploadWithOperationCancellation()
-        {
-            var testopts = TestOptions;
-            testopts["number-of-retries"] = "1";
-            testopts["dblock-size"] = "10mb";
-
-            // Make a base backup
-            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
-            {
-                IBackupResults backupResults = c.Backup(new string[] { DATAFOLDER });
-                Assert.AreEqual(0, backupResults.Errors.Count());
-                Assert.AreEqual(0, backupResults.Warnings.Count());
-            }
-
-            // Make a new backup that fails uploading a dblock file
-            ModifySourceFiles();
-
-            // Deterministic error backend
-            Library.DynamicLoader.BackendLoader.AddBackend(new DeterministicErrorBackend());
-            var failtarget = new DeterministicErrorBackend().ProtocolKey + "://" + TARGETFOLDER;
-            var uploadCount = 0;
-
-            // Fail the dlist upload
-            DeterministicErrorBackend.ErrorGenerator = (DeterministicErrorBackend.BackendAction action, string remotename) =>
-            {
-                if (action == DeterministicErrorBackend.BackendAction.PutBefore && remotename.Contains(".dlist."))
-                {
-                    if (Interlocked.Increment(ref uploadCount) == 1)
-                        throw new OperationCanceledException();
-                }
-
-                return false;
-            };
-
-            using (var c = new Library.Main.Controller(failtarget, testopts, null))
-            {
-                var res = c.Backup(new string[] { DATAFOLDER });
-                var dlistCount = Directory.GetFiles(TARGETFOLDER, "*.dlist.*", SearchOption.TopDirectoryOnly).Count();
-                if (uploadCount == 0)
-                    Assert.Fail("Upload count was not incremented");
-                Assert.AreEqual(2, c.List().Filesets.Count());
-                Assert.AreEqual(2, dlistCount);
-                Assert.AreEqual(1, res.BackendStatistics.RetryAttempts);
-            }
-
-            ModifySourceFiles();
-            // Create a regular backup
-            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
-            {
-                IBackupResults backupResults = c.Backup(new string[] { DATAFOLDER });
-                Assert.AreEqual(0, backupResults.Errors.Count());
-                Assert.AreEqual(0, backupResults.Warnings.Count());
-            }
-
-            // Verify that all is in order
-            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { full_remote_verification = true }), null))
-            {
-                var r = c.Test(long.MaxValue);
-                Assert.AreEqual(0, r.Errors.Count());
-                Assert.AreEqual(0, r.Warnings.Count());
-                Assert.IsFalse(r.Verifications.Any(p => p.Value.Any()));
-            }
-
-            // Test that we can recreate
-            var recreatedDatabaseFile = Path.Combine(BASEFOLDER, "recreated-database.sqlite");
-            if (File.Exists(recreatedDatabaseFile))
-                File.Delete(recreatedDatabaseFile);
-
-            testopts["dbpath"] = recreatedDatabaseFile;
-
-            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
-            {
-                IRepairResults repairResults = c.Repair();
-                Assert.AreEqual(0, repairResults.Errors.Count());
-                Assert.AreEqual(0, repairResults.Warnings.Count());
-            }
-
-            // Check that we have 3 versions
-            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
-            {
-                IListResults listResults = c.List();
-                Assert.AreEqual(0, listResults.Errors.Count());
-                Assert.AreEqual(0, listResults.Warnings.Count());
-                Assert.AreEqual(3, listResults.Filesets.Count());
+                Assert.AreEqual(4, listResults.Filesets.Count());
             }
         }
     }
