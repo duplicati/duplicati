@@ -44,7 +44,7 @@ namespace Duplicati.Library.Main.Database
         /// </summary>
         protected string m_tempfiletable;
         protected string m_tempblocktable;
-        protected ConcurrentBag<IDbConnection> m_connection_pool = [];
+        protected ConcurrentBag<DatabaseConnectionManager> m_manager_pool = [];
         protected string m_latestblocktable;
         protected string m_fileprogtable;
         protected string m_totalprogtable;
@@ -54,10 +54,9 @@ namespace Duplicati.Library.Main.Database
 
         public DateTime RestoreTime { get { return m_restoreTime; } }
 
-        public LocalRestoreDatabase(string path)
-            : this(new LocalDatabase(path, "Restore", false))
+        public LocalRestoreDatabase(DatabaseConnectionManager manager)
+            : this(new LocalDatabase(manager, "Restore"))
         {
-            ShouldCloseConnection = true;
         }
 
         public LocalRestoreDatabase(LocalDatabase dbparent)
@@ -86,7 +85,7 @@ namespace Duplicati.Library.Main.Database
             m_totalprogtable = "TotalProgress-" + this.m_temptabsetguid;
             m_filesnewlydonetable = createFilesNewlyDoneTracker ? "FilesNewlyDone-" + this.m_temptabsetguid : null;
 
-            using (var cmd = m_connection.CreateCommand())
+            using (var cmd = m_manager.CreateCommand())
             {
                 // How to handle METADATA?
                 cmd.ExecuteNonQuery(string.Format(@"DROP TABLE IF EXISTS ""{0}"" ", m_fileprogtable));
@@ -213,7 +212,7 @@ namespace Duplicati.Library.Main.Database
             m_tempfiletable = "Fileset-" + m_temptabsetguid;
             m_tempblocktable = "Blocks-" + m_temptabsetguid;
 
-            using (var cmd = m_connection.CreateCommand())
+            using (var cmd = m_manager.CreateCommand())
             {
                 var filesetIds = GetFilesetIDs(Library.Utility.Utility.NormalizeDateTime(restoretime), versions).ToList();
                 while (filesetIds.Count > 0)
@@ -251,7 +250,7 @@ namespace Duplicati.Library.Main.Database
                         // If we get a list of filenames, the lookup table is faster
                         // unfortunately we cannot do this if the filesystem is case sensitive as
                         // SQLite only supports ASCII compares
-                        using (var tr = m_connection.BeginTransaction())
+                        using (var tr = m_manager.BeginTransaction())
                         {
                             var p = expression.GetSimpleList();
                             var m_filenamestable = "Filenames-" + m_temptabsetguid;
@@ -300,7 +299,7 @@ namespace Duplicati.Library.Main.Database
                         cmd.AddParameter(filesetId);
 
                         object[] values = new object[4];
-                        using (var cmd2 = m_connection.CreateCommand())
+                        using (var cmd2 = m_manager.CreateCommand())
                         {
                             cmd2.CommandText = string.Format(@"INSERT INTO ""{0}"" (""ID"", ""Path"", ""BlocksetID"", ""MetadataID"", ""DataVerified"") VALUES (?,?,?,?,0)", m_tempfiletable);
                             cmd2.AddParameter();
@@ -354,7 +353,7 @@ namespace Duplicati.Library.Main.Database
 
         public string GetFirstPath()
         {
-            using (var cmd = m_connection.CreateCommand())
+            using (var cmd = m_manager.CreateCommand())
             {
                 cmd.CommandText = string.Format(@"SELECT ""Path"" FROM ""{0}"" ORDER BY LENGTH(""Path"") DESC LIMIT 1", m_tempfiletable);
                 var v0 = cmd.ExecuteScalar();
@@ -367,7 +366,7 @@ namespace Duplicati.Library.Main.Database
 
         public string GetLargestPrefix()
         {
-            using (var cmd = m_connection.CreateCommand())
+            using (var cmd = m_manager.CreateCommand())
             {
                 cmd.CommandText = string.Format(@"SELECT ""Path"" FROM ""{0}"" ORDER BY LENGTH(""Path"") DESC LIMIT 1", m_tempfiletable);
                 var v0 = cmd.ExecuteScalar();
@@ -412,7 +411,7 @@ namespace Duplicati.Library.Main.Database
         {
             var dirsep = Util.GuessDirSeparator(string.IsNullOrWhiteSpace(largest_prefix) ? GetFirstPath() : largest_prefix);
 
-            using (var cmd = m_connection.CreateCommand())
+            using (var cmd = m_manager.CreateCommand())
             {
                 if (string.IsNullOrEmpty(destination))
                 {
@@ -479,7 +478,7 @@ namespace Duplicati.Library.Main.Database
 
         public void FindMissingBlocks(bool skipMetadata)
         {
-            using (var cmd = m_connection.CreateCommand())
+            using (var cmd = m_manager.CreateCommand())
             {
                 cmd.CommandText = string.Format(@"INSERT INTO ""{0}"" (""FileID"", ""Index"", ""Hash"", ""Size"", ""Restored"", ""Metadata"", ""VolumeId"", ""BlockId"") SELECT DISTINCT ""{1}"".""ID"", ""BlocksetEntry"".""Index"", ""Block"".""Hash"", ""Block"".""Size"", 0, 0, ""Block"".""VolumeID"", ""Block"".""ID"" FROM ""{1}"", ""BlocksetEntry"", ""Block"" WHERE ""{1}"".""BlocksetID"" = ""BlocksetEntry"".""BlocksetID"" AND ""BlocksetEntry"".""BlockID"" = ""Block"".""ID"" ", m_tempblocktable, m_tempfiletable);
                 var p1 = cmd.ExecuteNonQuery();
@@ -504,7 +503,7 @@ namespace Duplicati.Library.Main.Database
 
         public void UpdateTargetPath(long ID, string newname)
         {
-            using (var cmd = m_connection.CreateCommand())
+            using (var cmd = m_manager.CreateCommand())
                 cmd.ExecuteNonQuery(string.Format(@"UPDATE ""{0}"" SET ""TargetPath"" = ? WHERE ""ID"" = ?", m_tempfiletable), newname, ID);
         }
 
@@ -610,9 +609,9 @@ namespace Duplicati.Library.Main.Database
                 }
             }
 
-            public static IEnumerable<IExistingFile> GetExistingFilesWithBlocks(System.Data.IDbConnection connection, string tablename)
+            public static IEnumerable<IExistingFile> GetExistingFilesWithBlocks(DatabaseConnectionManager manager, string tablename)
             {
-                using (var cmd = connection.CreateCommand())
+                using (var cmd = manager.CreateCommand())
                 {
                     cmd.CommandText = string.Format(@"SELECT ""{0}"".""TargetPath"", ""Blockset"".""FullHash"", ""{0}"".""ID"", ""Blockset"".""Length"", ""Block"".""Hash"", ""BlocksetEntry"".""Index"", ""Block"".""Size"" FROM ""{0}"", ""Blockset"", ""BlocksetEntry"", ""Block"" WHERE ""{0}"".""BlocksetID"" = ""Blockset"".""ID"" AND ""BlocksetEntry"".""BlocksetID"" = ""{0}"".""BlocksetID"" AND ""BlocksetEntry"".""BlockID"" = ""Block"".""ID"" ORDER BY ""{0}"".""TargetPath"", ""BlocksetEntry"".""Index""", tablename);
                     using (var rd = cmd.ExecuteReader())
@@ -636,7 +635,7 @@ namespace Duplicati.Library.Main.Database
 
         public IEnumerable<IExistingFile> GetExistingFilesWithBlocks()
         {
-            return ExistingFile.GetExistingFilesWithBlocks(m_connection, m_tempfiletable);
+            return ExistingFile.GetExistingFilesWithBlocks(m_manager, m_tempfiletable);
         }
 
         private class LocalBlockSource : ILocalBlockSource
@@ -711,9 +710,9 @@ namespace Duplicati.Library.Main.Database
                 }
             }
 
-            public static IEnumerable<ILocalBlockSource> GetFilesAndSourceBlocks(System.Data.IDbConnection connection, string filetablename, string blocktablename, long blocksize, bool skipMetadata)
+            public static IEnumerable<ILocalBlockSource> GetFilesAndSourceBlocks(DatabaseConnectionManager manager, string filetablename, string blocktablename, long blocksize, bool skipMetadata)
             {
-                using (var cmd = connection.CreateCommand())
+                using (var cmd = manager.CreateCommand())
                 {
                     // TODO: Skip metadata as required
                     cmd.CommandText = string.Format(@"SELECT DISTINCT ""A"".""TargetPath"", ""A"".""ID"", ""B"".""Hash"", (""B"".""Index"" * {2}), ""B"".""Index"", ""B"".""Size"", ""C"".""Path"", (""D"".""Index"" * {2}), ""E"".""Size"", ""B"".""Metadata"" FROM ""{0}"" ""A"", ""{1}"" ""B"", ""File"" ""C"", ""BlocksetEntry"" ""D"", ""Block"" E WHERE ""A"".""ID"" = ""B"".""FileID"" AND ""C"".""BlocksetID"" = ""D"".""BlocksetID"" AND ""D"".""BlockID"" = ""E"".""ID"" AND ""B"".""Hash"" = ""E"".""Hash"" AND ""B"".""Size"" = ""E"".""Size"" AND ""B"".""Restored"" = 0", filetablename, blocktablename, blocksize);
@@ -740,12 +739,12 @@ namespace Duplicati.Library.Main.Database
 
         public IEnumerable<ILocalBlockSource> GetFilesAndSourceBlocks(bool skipMetadata, long blocksize)
         {
-            return LocalBlockSource.GetFilesAndSourceBlocks(m_connection, m_tempfiletable, m_tempblocktable, blocksize, skipMetadata);
+            return LocalBlockSource.GetFilesAndSourceBlocks(m_manager, m_tempfiletable, m_tempblocktable, blocksize, skipMetadata);
         }
 
         public IEnumerable<IRemoteVolume> GetMissingVolumes()
         {
-            using (var cmd = m_connection.CreateCommand())
+            using (var cmd = m_manager.CreateCommand())
             {
                 // Return order from SQLite-DISTINCT is likely to be sorted by Name, which is bad for restore.
                 // If the end of very large files (e.g. iso's) is restored before the beginning, most OS write out zeros to fill the file.
@@ -797,16 +796,16 @@ namespace Duplicati.Library.Main.Database
             private readonly string m_blocktablename;
             private readonly long m_blocksize;
 
-            private readonly System.Data.IDbConnection m_connection;
+            private readonly DatabaseConnectionManager m_manager;
 
-            public FilesAndMetadata(System.Data.IDbConnection connection, string filetablename, string blocktablename, long blocksize, BlockVolumeReader curvolume)
+            public FilesAndMetadata(DatabaseConnectionManager manager, string filetablename, string blocktablename, long blocksize, BlockVolumeReader curvolume)
             {
                 m_filetablename = filetablename;
                 m_blocktablename = blocktablename;
                 m_blocksize = blocksize;
-                m_connection = connection;
+                m_manager = manager;
 
-                using (var c = m_connection.CreateCommand())
+                using (var c = m_manager.CreateCommand())
                 {
                     m_tmptable = "VolumeFiles-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
                     c.CommandText = string.Format(@"CREATE TEMPORARY TABLE ""{0}"" ( ""Hash"" TEXT NOT NULL, ""Size"" INTEGER NOT NULL )", m_tmptable);
@@ -830,7 +829,7 @@ namespace Duplicati.Library.Main.Database
             public void Dispose()
             {
                 if (m_tmptable != null)
-                    using (var c = m_connection.CreateCommand())
+                    using (var c = m_manager.CreateCommand())
                     {
                         c.CommandText = string.Format(@"DROP TABLE IF EXISTS ""{0}""", m_tmptable);
                         c.ExecuteNonQuery();
@@ -874,7 +873,7 @@ namespace Duplicati.Library.Main.Database
             {
                 get
                 {
-                    using (var cmd = m_connection.CreateCommand())
+                    using (var cmd = m_manager.CreateCommand())
                     {
                         // The IN-clause with subquery enables SQLite to use indexes better. Three way join (A,B,C) is slow here!
                         cmd.CommandText = string.Format(
@@ -909,7 +908,7 @@ namespace Duplicati.Library.Main.Database
             {
                 get
                 {
-                    using (var cmd = m_connection.CreateCommand())
+                    using (var cmd = m_manager.CreateCommand())
                     {
                         // The IN-clause with subquery enables SQLite to use indexes better. Three way join (A,B,C) is slow here!
                         cmd.CommandText = string.Format(
@@ -943,20 +942,18 @@ namespace Duplicati.Library.Main.Database
 
         public IFilesAndMetadata GetMissingBlockData(BlockVolumeReader curvolume, long blocksize)
         {
-            return new FilesAndMetadata(m_connection, m_tempfiletable, m_tempblocktable, blocksize, curvolume);
+            return new FilesAndMetadata(m_manager, m_tempfiletable, m_tempblocktable, blocksize, curvolume);
         }
 
         /// <summary>
         /// Returns a connection from the connection pool.
         /// </summary>
         /// <returns>A connection from the connection pool.</returns>
-        public IDbConnection GetConnectionFromPool()
+        public DatabaseConnectionManager GetConnectionFromPool()
         {
-            if (!m_connection_pool.TryTake(out var connection))
+            if (!m_manager_pool.TryTake(out var connection))
             {
-                connection = (System.Data.IDbConnection)Activator.CreateInstance(Duplicati.Library.SQLiteHelper.SQLiteLoader.SQLiteConnectionType);
-                connection.ConnectionString = m_connection.ConnectionString + ";Cache=Shared;";
-                connection.Open();
+                connection = m_manager.CreateAdditionalConnection();
 
                 using var cmd = connection.CreateCommand();
                 cmd.ExecuteNonQuery("PRAGMA journal_mode = WAL;");
@@ -982,7 +979,7 @@ namespace Duplicati.Library.Main.Database
 
         public IEnumerable<IFileToRestore> GetFilesToRestore(bool onlyNonVerified)
         {
-            using (var cmd = m_connection.CreateCommand())
+            using (var cmd = m_manager.CreateCommand())
             {
                 cmd.AddParameter(!onlyNonVerified);
                 using (var rd = cmd.ExecuteReader(string.Format(@"SELECT ""{0}"".""ID"", ""{0}"".""TargetPath"", ""Blockset"".""FullHash"", ""Blockset"".""Length"" FROM ""{0}"",""Blockset"" WHERE ""{0}"".""BlocksetID"" = ""Blockset"".""ID"" AND ""{0}"".""DataVerified"" <= ?", m_tempfiletable)))
@@ -998,7 +995,7 @@ namespace Duplicati.Library.Main.Database
         /// <returns>A list of files and symlinks to restore.</returns>
         public IEnumerable<FileRequest> GetFilesAndSymlinksToRestore(bool onlyNonVerified)
         {
-            using var cmd = m_connection.CreateCommand();
+            using var cmd = m_manager.CreateCommand();
             cmd.AddParameter(!onlyNonVerified);
             using var rd = cmd.ExecuteReader($@"
                 SELECT F.ID, F.Path, F.TargetPath, IFNULL(B.FullHash, ''), IFNULL(B.Length, 0), F.BlocksetID
@@ -1016,7 +1013,7 @@ namespace Duplicati.Library.Main.Database
         /// <returns>A list of tuples containing the block ID and the volume ID of the block.</returns>
         public IEnumerable<(long, long)> GetBlocksAndVolumeIDs(bool skipMetadata)
         {
-            using var cmd = Connection.CreateCommand();
+            using var cmd = m_manager.CreateCommand();
             using var reader = cmd.ExecuteReader($@"
                 SELECT Block.ID, Block.VolumeID
                 FROM BlocksetEntry
@@ -1061,7 +1058,7 @@ namespace Duplicati.Library.Main.Database
             }
 
             // Return the connection to the pool
-            m_connection_pool.Add(connection);
+            m_manager_pool.Add(connection);
         }
 
         /// <summary>
@@ -1092,7 +1089,7 @@ namespace Duplicati.Library.Main.Database
             }
 
             // Return the connection to the pool
-            m_connection_pool.Add(connection);
+            m_manager_pool.Add(connection);
         }
 
         /// <summary>
@@ -1102,7 +1099,7 @@ namespace Duplicati.Library.Main.Database
         /// <returns>A tuple containing the name, size, and hash of the volume.</returns>
         public IEnumerable<(string, long, string)> GetVolumeInfo(long VolumeID)
         {
-            using var cmd = m_connection.CreateCommand();
+            using var cmd = m_manager.CreateCommand();
             cmd.CommandText = "SELECT Name, Size, Hash FROM RemoteVolume WHERE ID = ?";
             cmd.AddParameter();
             cmd.SetParameterValue(0, VolumeID);
@@ -1113,7 +1110,7 @@ namespace Duplicati.Library.Main.Database
 
         public void DropRestoreTable()
         {
-            using (var cmd = m_connection.CreateCommand())
+            using (var cmd = m_manager.CreateCommand())
             {
                 if (m_tempfiletable != null)
                     try
@@ -1199,19 +1196,14 @@ namespace Duplicati.Library.Main.Database
             private readonly string m_blocktablename;
             private readonly string m_filetablename;
 
-            public DirectBlockMarker(System.Data.IDbConnection connection, string blocktablename, string filetablename, string statstablename)
+            public DirectBlockMarker(DatabaseConnectionManager manager, string blocktablename, string filetablename, string statstablename)
             {
-                m_insertblockCommand = connection.CreateCommand();
-                m_resetfileCommand = connection.CreateCommand();
-                m_updateAsRestoredCommand = connection.CreateCommand();
-                m_updateFileAsDataVerifiedCommand = connection.CreateCommand();
-                m_statUpdateCommand = connection.CreateCommand();
-
-                m_insertblockCommand.Transaction = connection.BeginTransaction();
-                m_resetfileCommand.Transaction = m_insertblockCommand.Transaction;
-                m_updateAsRestoredCommand.Transaction = m_insertblockCommand.Transaction;
-                m_updateFileAsDataVerifiedCommand.Transaction = m_insertblockCommand.Transaction;
-                m_statUpdateCommand.Transaction = m_insertblockCommand.Transaction;
+                var tr = manager.BeginTransaction();
+                m_insertblockCommand = manager.CreateCommand(tr);
+                m_resetfileCommand = manager.CreateCommand(tr);
+                m_updateAsRestoredCommand = manager.CreateCommand(tr);
+                m_updateFileAsDataVerifiedCommand = manager.CreateCommand(tr);
+                m_statUpdateCommand = manager.CreateCommand(tr);
 
                 m_blocktablename = blocktablename;
                 m_filetablename = filetablename;
@@ -1352,24 +1344,21 @@ namespace Duplicati.Library.Main.Database
 
         public IBlockMarker CreateBlockMarker()
         {
-            return new DirectBlockMarker(m_connection, m_tempblocktable, m_tempfiletable, m_totalprogtable);
+            return new DirectBlockMarker(m_manager, m_tempblocktable, m_tempfiletable, m_totalprogtable);
         }
 
         public override void Dispose()
         {
-            foreach (var connection in m_connection_pool)
-            {
-                connection.Close();
+            foreach (var connection in m_manager_pool)
                 connection.Dispose();
-            }
-            m_connection_pool.Clear();
+            m_manager_pool.Clear();
             DropRestoreTable();
             base.Dispose();
         }
 
         public IEnumerable<string> GetTargetFolders()
         {
-            using (var cmd = m_connection.CreateCommand())
+            using (var cmd = m_manager.CreateCommand())
             using (var rd = cmd.ExecuteReader(string.Format(@"SELECT ""TargetPath"" FROM ""{0}"" WHERE ""BlocksetID"" == ?", m_tempfiletable), FOLDER_BLOCKSET_ID))
                 while (rd.Read())
                     yield return rd.ConvertValueToString(0);
@@ -1429,11 +1418,11 @@ namespace Duplicati.Library.Main.Database
 
         public IEnumerable<IFastSource> GetFilesAndSourceBlocksFast(long blocksize)
         {
-            using (var transaction = m_connection.BeginTransaction())
+            using (var transaction = m_manager.BeginTransaction())
             {
-                using (var cmdReader = m_connection.CreateCommand())
+                using (var cmdReader = m_manager.CreateCommand())
                 {
-                    using (var cmd = m_connection.CreateCommand())
+                    using (var cmd = m_manager.CreateCommand())
                     {
                         cmd.CommandText = string.Format(@"UPDATE ""{0}"" SET ""LocalSourceExists"" = 1 WHERE Path = ?", m_tempfiletable);
                         cmd.AddParameters(1);
@@ -1496,7 +1485,7 @@ namespace Duplicati.Library.Main.Database
                 GROUP BY ""File"".""Path""",
                 m_tempfiletable, m_tempblocktable, whereclause);
 
-            using (var cmd = m_connection.CreateCommand())
+            using (var cmd = m_manager.CreateCommand())
             {
                 cmd.ExecuteNonQuery(string.Format(@"DROP TABLE IF EXISTS ""{0}"" ", m_latestblocktable));
                 cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" AS {1}", m_latestblocktable, latestBlocksetIds));
@@ -1525,7 +1514,7 @@ namespace Duplicati.Library.Main.Database
                 @"      " + whereclause +
                 @"  ORDER BY ""{0}"".""ID"", ""{1}"".""Index"" ", m_tempfiletable, m_tempblocktable);
 
-            using (var cmd = m_connection.CreateCommand())
+            using (var cmd = m_manager.CreateCommand())
             using (var rd = cmd.ExecuteReader(sources))
             {
                 if (rd.Read())

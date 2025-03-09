@@ -27,8 +27,8 @@ namespace Duplicati.Library.Main.Database
 {
     internal class LocalTestDatabase : LocalDatabase
     {
-        public LocalTestDatabase(string path)
-            : base(path, "Test", true)
+        public LocalTestDatabase(DatabaseConnectionManager manager)
+            : base(manager, "Test")
         {
         }
 
@@ -39,7 +39,7 @@ namespace Duplicati.Library.Main.Database
 
         public void UpdateVerificationCount(string name)
         {
-            using (var cmd = m_connection.CreateCommand())
+            using (var cmd = m_manager.CreateCommand())
                 cmd.ExecuteNonQuery(@"UPDATE ""RemoteVolume"" SET ""VerificationCount"" = MAX(1, CASE WHEN ""VerificationCount"" <= 0 THEN (SELECT MAX(""VerificationCount"") FROM ""RemoteVolume"") ELSE ""VerificationCount"" + 1 END) WHERE ""Name"" = ?", name);
         }
 
@@ -118,7 +118,7 @@ namespace Duplicati.Library.Main.Database
             var tp = GetFilelistWhereClause(options.Time, options.Version);
 
             samples = Math.Max(1, samples);
-            using (var cmd = m_connection.CreateCommand())
+            using (var cmd = m_manager.CreateCommand())
             {
                 // Select any broken items
                 using (var rd = cmd.ExecuteReader(@"SELECT ""ID"", ""Name"", ""Size"", ""Hash"", ""VerificationCount"" FROM ""Remotevolume"" WHERE (""State"" = ? OR ""State"" = ?) AND (""Hash"" = '' OR ""Hash"" IS NULL OR ""Size"" <= 0) ", RemoteVolumeState.Verified.ToString(), RemoteVolumeState.Uploaded.ToString()))
@@ -171,27 +171,27 @@ namespace Duplicati.Library.Main.Database
 
         private abstract class Basiclist : IDisposable
         {
-            protected readonly System.Data.IDbConnection m_connection;
+            protected readonly DatabaseConnectionManager m_manager;
             protected readonly string m_volumename;
             protected string m_tablename;
             protected System.Data.IDbTransaction m_transaction;
             protected System.Data.IDbCommand m_insertCommand;
 
-            protected Basiclist(System.Data.IDbConnection connection, string volumename, string tablePrefix, string tableFormat, string insertCommand, int insertArguments)
+            protected Basiclist(DatabaseConnectionManager manager, string volumename, string tablePrefix, string tableFormat, string insertCommand, int insertArguments)
             {
-                m_connection = connection;
+                m_manager = manager;
                 m_volumename = volumename;
-                m_transaction = m_connection.BeginTransaction();
+                m_transaction = m_manager.BeginTransaction();
                 var tablename = tablePrefix + "-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
 
-                using (var cmd = m_connection.CreateCommand())
+                using (var cmd = m_manager.CreateCommand())
                 {
                     cmd.Transaction = m_transaction;
                     cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" {1}", tablename, tableFormat));
                     m_tablename = tablename;
                 }
 
-                m_insertCommand = m_connection.CreateCommand();
+                m_insertCommand = m_manager.CreateCommand();
                 m_insertCommand.Transaction = m_transaction;
                 m_insertCommand.CommandText = string.Format(@"INSERT INTO ""{0}"" {1}", m_tablename, insertCommand);
                 m_insertCommand.AddParameters(insertArguments);
@@ -202,7 +202,7 @@ namespace Duplicati.Library.Main.Database
                 if (m_tablename != null)
                     try
                     {
-                        using (var cmd = m_connection.CreateCommand())
+                        using (var cmd = m_manager.CreateCommand())
                         {
                             cmd.Transaction = m_transaction;
                             cmd.ExecuteNonQuery(string.Format(@"DROP TABLE IF EXISTS ""{0}""", m_tablename));
@@ -236,8 +236,8 @@ namespace Duplicati.Library.Main.Database
             private const string INSERT_COMMAND = @"(""Path"", ""Size"", ""Hash"", ""Metasize"", ""Metahash"") VALUES (?,?,?,?,?)";
             private const int INSERT_ARGUMENTS = 5;
 
-            public Filelist(System.Data.IDbConnection connection, string volumename)
-                : base(connection, volumename, Filelist.TABLE_PREFIX, Filelist.TABLE_FORMAT, Filelist.INSERT_COMMAND, Filelist.INSERT_ARGUMENTS)
+            public Filelist(DatabaseConnectionManager manager, string volumename)
+                : base(manager, volumename, Filelist.TABLE_PREFIX, Filelist.TABLE_FORMAT, Filelist.INSERT_COMMAND, Filelist.INSERT_ARGUMENTS)
             {
             }
 
@@ -261,7 +261,7 @@ namespace Duplicati.Library.Main.Database
                 var modified = @"SELECT ? AS ""Type"", ""E"".""Path"" AS ""Path"" FROM ""{0}"" E, ""{1}"" D WHERE ""D"".""Path"" = ""E"".""Path"" AND (""D"".""Size"" != ""E"".""Size"" OR ""D"".""Hash"" != ""E"".""Hash"" OR ""D"".""Metasize"" != ""E"".""Metasize"" OR ""D"".""Metahash"" != ""E"".""Metahash"")  ";
                 var drop = @"DROP TABLE IF EXISTS ""{1}"" ";
 
-                using (var cmd = m_connection.CreateCommand())
+                using (var cmd = m_manager.CreateCommand())
                 {
                     cmd.Transaction = m_transaction;
 
@@ -295,8 +295,8 @@ namespace Duplicati.Library.Main.Database
             private const string INSERT_COMMAND = @"(""Name"", ""Hash"", ""Size"") VALUES (?,?,?)";
             private const int INSERT_ARGUMENTS = 3;
 
-            public Indexlist(System.Data.IDbConnection connection, string volumename)
-                : base(connection, volumename, Indexlist.TABLE_PREFIX, Indexlist.TABLE_FORMAT, Indexlist.INSERT_COMMAND, Indexlist.INSERT_ARGUMENTS)
+            public Indexlist(DatabaseConnectionManager manager, string volumename)
+                : base(manager, volumename, Indexlist.TABLE_PREFIX, Indexlist.TABLE_FORMAT, Indexlist.INSERT_COMMAND, Indexlist.INSERT_ARGUMENTS)
             {
             }
 
@@ -317,7 +317,7 @@ namespace Duplicati.Library.Main.Database
                 var modified = @"SELECT ? AS ""Type"", ""E"".""Name"" AS ""Name"" FROM ""{0}"" E, ""{1}"" D WHERE ""D"".""Name"" = ""E"".""Name"" AND (""D"".""Hash"" != ""E"".""Hash"" OR ""D"".""Size"" != ""E"".""Size"") ";
                 var drop = @"DROP TABLE IF EXISTS ""{1}"" ";
 
-                using (var cmd = m_connection.CreateCommand())
+                using (var cmd = m_manager.CreateCommand())
                 {
                     cmd.Transaction = m_transaction;
 
@@ -351,8 +351,8 @@ namespace Duplicati.Library.Main.Database
             private const string INSERT_COMMAND = @"(""Hash"", ""Size"") VALUES (?,?)";
             private const int INSERT_ARGUMENTS = 2;
 
-            public Blocklist(System.Data.IDbConnection connection, string volumename)
-                : base(connection, volumename, Blocklist.TABLE_PREFIX, Blocklist.TABLE_FORMAT, Blocklist.INSERT_COMMAND, Blocklist.INSERT_ARGUMENTS)
+            public Blocklist(DatabaseConnectionManager manager, string volumename)
+                : base(manager, volumename, Blocklist.TABLE_PREFIX, Blocklist.TABLE_FORMAT, Blocklist.INSERT_COMMAND, Blocklist.INSERT_ARGUMENTS)
             { }
 
             public void AddBlock(string hash, long size)
@@ -374,7 +374,7 @@ namespace Duplicati.Library.Main.Database
                 var modified = @"SELECT ? AS ""Type"", ""E"".""Hash"" AS ""Hash"" FROM ""{0}"" E, ""{1}"" D WHERE ""D"".""Hash"" = ""E"".""Hash"" AND ""D"".""Size"" != ""E"".""Size""  ";
                 var drop = @"DROP TABLE IF EXISTS ""{1}"" ";
 
-                using (var cmd = m_connection.CreateCommand())
+                using (var cmd = m_manager.CreateCommand())
                 {
                     cmd.Transaction = m_transaction;
 
@@ -397,17 +397,17 @@ namespace Duplicati.Library.Main.Database
 
         public IFilelist CreateFilelist(string name)
         {
-            return new Filelist(m_connection, name);
+            return new Filelist(m_manager, name);
         }
 
         public IIndexlist CreateIndexlist(string name)
         {
-            return new Indexlist(m_connection, name);
+            return new Indexlist(m_manager, name);
         }
 
         public IBlocklist CreateBlocklist(string name)
         {
-            return new Blocklist(m_connection, name);
+            return new Blocklist(m_manager, name);
         }
     }
 }

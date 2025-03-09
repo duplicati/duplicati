@@ -53,17 +53,17 @@ namespace Duplicati.Library.Main.Operation
         /// <summary>
         /// Run the recreate procedure
         /// </summary>
-        /// <param name="path">Path to the database that will be created</param>
+        /// <param name="dbManager">The database manager to use for the database</param>
         /// <param name="backendManager">The backend manager to use for downloading files</param>
         /// <param name="filelistfilter">A filter that can be used to disregard certain remote files, intended to be used to select a certain filelist</param>
         /// <param name="filter">Filters the files in a filelist to prevent downloading unwanted data</param>
         /// <param name="blockprocessor">A callback hook that can be used to work with downloaded block volumes, intended to be use to recover data blocks while processing blocklists</param>
-        public void Run(string path, IBackendManager backendManager, IFilter filter, NumberedFilterFilelistDelegate filelistfilter, BlockVolumePostProcessor blockprocessor)
+        public void Run(DatabaseConnectionManager dbManager, IBackendManager backendManager, IFilter filter, NumberedFilterFilelistDelegate filelistfilter, BlockVolumePostProcessor blockprocessor)
         {
-            if (System.IO.File.Exists(path))
-                throw new UserInformationException(string.Format("Cannot recreate database because file already exists: {0}", path), "RecreateTargetDatabaseExists");
+            if (dbManager.Exists)
+                throw new UserInformationException(string.Format("Cannot recreate database because file already exists: {0}", dbManager.Path), "RecreateTargetDatabaseExists");
 
-            using (var db = new LocalDatabase(path, "Recreate", true))
+            using (var db = new LocalDatabase(dbManager, "Recreate"))
             {
                 m_result.SetDatabase(db);
                 DoRun(backendManager, db, false, filter, filelistfilter, blockprocessor).Await();
@@ -74,15 +74,17 @@ namespace Duplicati.Library.Main.Operation
         /// <summary>
         /// Updates a database with new path information from a remote fileset
         /// </summary>
+        /// <param name="dbManager">The database manager to use for the database</param>
+        /// <param name="backendManager">The backend manager to use for downloading files</param>
         /// <param name="filelistfilter">A filter that can be used to disregard certain remote files, intended to be used to select a certain filelist</param>
         /// <param name="filter">Filters the files in a filelist to prevent downloading unwanted data</param>
         /// <param name="blockprocessor">A callback hook that can be used to work with downloaded block volumes, intended to be use to recover data blocks while processing blocklists</param>
-        public void RunUpdate(IBackendManager backendManager, Library.Utility.IFilter filter, NumberedFilterFilelistDelegate filelistfilter, BlockVolumePostProcessor blockprocessor)
+        public void RunUpdate(DatabaseConnectionManager dbManager, IBackendManager backendManager, IFilter filter, NumberedFilterFilelistDelegate filelistfilter, BlockVolumePostProcessor blockprocessor)
         {
             if (!m_options.RepairOnlyPaths)
                 throw new UserInformationException(string.Format("Can only update with paths, try setting --{0}", "repair-only-paths"), "RepairUpdateRequiresPathsOnly");
 
-            using (var db = new LocalDatabase(m_options.Dbpath, "Recreate", true))
+            using (var db = new LocalDatabase(dbManager, "Recreate"))
             {
                 m_result.SetDatabase(db);
 
@@ -215,7 +217,7 @@ namespace Duplicati.Library.Main.Operation
                         {
                             if (!await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
                             {
-                                await backendManager.WaitForEmptyAsync(restoredb, tr, cancellationToken).ConfigureAwait(false);
+                                await backendManager.WaitForEmptyAsync(cancellationToken).ConfigureAwait(false);
                                 m_result.EndTime = DateTime.UtcNow;
                                 return;
                             }
@@ -384,7 +386,7 @@ namespace Duplicati.Library.Main.Operation
                             {
                                 if (!await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
                                 {
-                                    await backendManager.WaitForEmptyAsync(restoredb, tr, cancellationToken).ConfigureAwait(false);
+                                    await backendManager.WaitForEmptyAsync(cancellationToken).ConfigureAwait(false);
                                     m_result.EndTime = DateTime.UtcNow;
                                     return;
                                 }
@@ -526,7 +528,7 @@ namespace Duplicati.Library.Main.Operation
                                 {
                                     if (!m_result.TaskControl.ProgressRendevouz().Await())
                                     {
-                                        backendManager.WaitForEmptyAsync(restoredb, tr, cancellationToken).Await();
+                                        backendManager.WaitForEmptyAsync(cancellationToken).Await();
                                         m_result.EndTime = DateTime.UtcNow;
                                         return;
                                     }
@@ -590,7 +592,7 @@ namespace Duplicati.Library.Main.Operation
                     }
                 }
 
-                backendManager.WaitForEmptyAsync(restoredb, null, cancellationToken).Await();
+                backendManager.WaitForEmptyAsync(cancellationToken).Await();
 
                 if (!m_options.RepairOnlyPaths)
                 {

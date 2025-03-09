@@ -61,8 +61,9 @@ internal partial class BackendManager : IBackendManager
     /// <param name="backendUrl">The backend URL</param>
     /// <param name="options">The options</param>
     /// <param name="backendWriter">The backend writer</param>
+    /// <param name="dbManager">The database manager</param>
     /// <param name="taskReader">The task reader</param>
-    public BackendManager(string backendUrl, Options options, IBackendWriter backendWriter, ITaskReader taskReader)
+    public BackendManager(string backendUrl, Options options, IBackendWriter backendWriter, DatabaseConnectionManager dbManager, ITaskReader taskReader)
     {
         if (string.IsNullOrWhiteSpace(backendUrl))
             throw new ArgumentNullException(nameof(backendUrl));
@@ -71,7 +72,7 @@ internal partial class BackendManager : IBackendManager
         context = new ExecuteContext(
             new ProgressHandler(options, backendWriter, taskReader).HandleProgress,
             backendWriter ?? throw new ArgumentNullException(nameof(backendWriter)),
-            new DatabaseCollector(),
+            new DatabaseWrapper(dbManager),
             taskReader ?? throw new ArgumentNullException(nameof(taskReader)),
             options ?? throw new ArgumentNullException(nameof(options))
         );
@@ -299,15 +300,11 @@ internal partial class BackendManager : IBackendManager
     /// </summary>
     /// <param name="cancellationToken">The cancellation token</param>
     /// <returns>An awaitable task</returns>
-    public async Task WaitForEmptyAsync(LocalDatabase database, IDbTransaction? transaction, CancellationToken cancellationToken)
+    public async Task WaitForEmptyAsync(CancellationToken cancellationToken)
     {
-        context.Database.FlushPendingMessages(database, transaction);
-
         var op = new WaitForEmptyOperation(context, cancellationToken);
         await QueueTask(op).ConfigureAwait(false);
         await op.GetResult().ConfigureAwait(false);
-
-        context.Database.FlushPendingMessages(database, transaction);
     }
 
     /// <summary>
@@ -315,23 +312,11 @@ internal partial class BackendManager : IBackendManager
     /// </summary>
     /// <param name="database">The database to write pending messages to</param>
     /// <param name="transaction">The transaction to use, if any</param>
-    public async Task StopRunnerAndFlushMessages(LocalDatabase database, IDbTransaction? transaction)
+    public async Task StopRunnerAndFlushMessages()
     {
         await requestChannel.RetireAsync().ConfigureAwait(false);
-        context.Database.FlushPendingMessages(database, transaction);
         if (queueRunner.IsFaulted)
             Logging.Log.WriteWarningMessage(LOGTAG, "BackendManagerShutdown", queueRunner.Exception, "Backend manager queue runner crashed");
-    }
-
-    /// <summary>
-    /// Stops the backend manager and discards any pending messages
-    /// </summary>
-    public void StopRunnerAndDiscardMessages()
-    {
-        requestChannel.RetireAsync().Await();
-        if (queueRunner.IsFaulted)
-            Logging.Log.WriteWarningMessage(LOGTAG, "BackendManagerShutdown", queueRunner.Exception, "Backend manager queue runner crashed");
-        context.Database.ClearPendingMessages();
     }
 
     /// <summary>
@@ -378,7 +363,6 @@ internal partial class BackendManager : IBackendManager
 
         isDisposed = true;
         requestChannel.RetireAsync().Await();
-        context.Database.FlushMessagesToLog();
 
         if (!queueRunner.IsCompleted)
         {

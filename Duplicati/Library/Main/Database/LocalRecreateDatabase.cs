@@ -20,9 +20,6 @@
 // DEALINGS IN THE SOFTWARE.
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
 
 namespace Duplicati.Library.Main.Database
 {
@@ -124,7 +121,7 @@ namespace Duplicati.Library.Main.Database
             m_tempblocklist = "TempBlocklist_" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
             m_tempsmalllist = "TempSmalllist_" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
 
-            using (var cmd = m_connection.CreateCommand())
+            using (var cmd = m_manager.CreateCommand())
             {
                 cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" (""BlockListHash"" TEXT NOT NULL, ""BlockHash"" TEXT NOT NULL, ""Index"" INTEGER NOT NULL)", m_tempblocklist));
                 cmd.ExecuteNonQuery(string.Format(@"CREATE INDEX ""Index_{0}"" ON ""{0}"" (""BlockListHash"");", m_tempblocklist));
@@ -134,71 +131,26 @@ namespace Duplicati.Library.Main.Database
                 cmd.ExecuteNonQuery(string.Format(@"CREATE UNIQUE INDEX ""Index_Block_{0}"" ON ""{0}"" (""BlockHash"", ""BlockSize"");", m_tempsmalllist));
             }
 
-            m_insertFileCommand = m_connection.CreateCommand();
-            m_insertFilesetEntryCommand = m_connection.CreateCommand();
-            m_insertMetadatasetCommand = m_connection.CreateCommand();
-            m_insertBlocksetCommand = m_connection.CreateCommand();
-            m_insertBlocklistHashCommand = m_connection.CreateCommand();
-            m_updateBlockVolumeCommand = m_connection.CreateCommand();
-            m_insertTempBlockListHash = m_connection.CreateCommand();
-            m_insertSmallBlockset = m_connection.CreateCommand();
-            m_findBlocksetCommand = m_connection.CreateCommand();
-            m_findMetadatasetCommand = m_connection.CreateCommand();
-            m_findFilesetCommand = m_connection.CreateCommand();
-            m_findTempBlockListHashCommand = m_connection.CreateCommand();
-            m_findHashBlockCommand = m_connection.CreateCommand();
-            m_insertBlockCommand = m_connection.CreateCommand();
-            m_insertDuplicateBlockCommand = m_connection.CreateCommand();
-
-            m_insertFileCommand.CommandText = @"INSERT INTO ""FileLookup"" (""PrefixID"", ""Path"", ""BlocksetID"", ""MetadataID"") VALUES (?,?,?,?); SELECT last_insert_rowid();";
-            m_insertFileCommand.AddParameters(4);
-
-            m_insertFilesetEntryCommand.CommandText = @"INSERT INTO ""FilesetEntry"" (""FilesetID"", ""FileID"", ""Lastmodified"") VALUES (?,?,?)";
-            m_insertFilesetEntryCommand.AddParameters(3);
-
-            m_insertMetadatasetCommand.CommandText = @"INSERT INTO ""Metadataset"" (""BlocksetID"") VALUES (?); SELECT last_insert_rowid();";
-            m_insertMetadatasetCommand.AddParameters(1);
-
-            m_insertBlocksetCommand.CommandText = @"INSERT INTO ""Blockset"" (""Length"", ""FullHash"") VALUES (?,?); SELECT last_insert_rowid();";
-            m_insertBlocksetCommand.AddParameters(2);
-
-            m_insertBlocklistHashCommand.CommandText = @"INSERT INTO ""BlocklistHash"" (""BlocksetID"", ""Index"", ""Hash"") VALUES (?,?,?)";
-            m_insertBlocklistHashCommand.AddParameters(3);
-
-            m_updateBlockVolumeCommand.CommandText = @"UPDATE ""Block"" SET ""VolumeID"" = ? WHERE ""Hash"" = ? AND ""Size"" = ?";
-            m_updateBlockVolumeCommand.AddParameters(3);
-
-            m_insertTempBlockListHash.CommandText = string.Format(@"INSERT INTO ""{0}"" (""BlocklistHash"", ""BlockHash"", ""Index"") VALUES (?,?,?) ", m_tempblocklist);
-            m_insertTempBlockListHash.AddParameters(3);
-
-            m_insertSmallBlockset.CommandText = string.Format(@"INSERT OR IGNORE INTO ""{0}"" (""FileHash"", ""BlockHash"", ""BlockSize"") VALUES (?,?,?) ", m_tempsmalllist);
-            m_insertSmallBlockset.AddParameters(3);
-
-            m_findBlocksetCommand.CommandText = @"SELECT ""ID"" FROM ""Blockset"" WHERE ""Length"" = ? AND ""FullHash"" = ? ";
-            m_findBlocksetCommand.AddParameters(2);
-
-            m_findMetadatasetCommand.CommandText = @"SELECT ""Metadataset"".""ID"" FROM ""Metadataset"",""Blockset"" WHERE ""Metadataset"".""BlocksetID"" = ""Blockset"".""ID"" AND ""Blockset"".""FullHash"" = ? AND ""Blockset"".""Length"" = ? ";
-            m_findMetadatasetCommand.AddParameters(2);
-
-            m_findFilesetCommand.CommandText = @"SELECT ""ID"" FROM ""FileLookup"" WHERE ""PrefixID"" = ? AND ""Path"" = ? AND ""BlocksetID"" = ? AND ""MetadataID"" = ? ";
-            m_findFilesetCommand.AddParameters(4);
-
-            m_findTempBlockListHashCommand.CommandText = string.Format(@"SELECT DISTINCT ""BlockListHash"" FROM ""{0}"" WHERE ""BlockListHash"" = ? ", m_tempblocklist);
-            m_findTempBlockListHashCommand.AddParameters(1);
-
-            m_findHashBlockCommand.CommandText = @"SELECT ""VolumeID"" FROM ""Block"" WHERE ""Hash"" = ? AND ""Size"" = ? ";
-            m_findHashBlockCommand.AddParameters(2);
-
-            m_insertBlockCommand.CommandText = @"INSERT INTO ""Block"" (""Hash"", ""Size"", ""VolumeID"") VALUES (?,?,?)";
-            m_insertBlockCommand.AddParameters(3);
-
-            m_insertDuplicateBlockCommand.CommandText = @"INSERT OR IGNORE INTO ""DuplicateBlock"" (""BlockID"", ""VolumeID"") VALUES ((SELECT ""ID"" FROM ""Block"" WHERE ""Hash"" = ? AND ""Size"" = ?), ?)";
-            m_insertDuplicateBlockCommand.AddParameters(3);
+            m_insertFileCommand = m_manager.CreateCommand(@"INSERT INTO ""FileLookup"" (""PrefixID"", ""Path"", ""BlocksetID"", ""MetadataID"") VALUES (?,?,?,?); SELECT last_insert_rowid();");
+            m_insertFilesetEntryCommand = m_manager.CreateCommand(@"INSERT INTO ""FilesetEntry"" (""FilesetID"", ""FileID"", ""Lastmodified"") VALUES (?,?,?)");
+            m_insertMetadatasetCommand = m_manager.CreateCommand(@"INSERT INTO ""Metadataset"" (""BlocksetID"") VALUES (?); SELECT last_insert_rowid();");
+            m_insertBlocksetCommand = m_manager.CreateCommand(@"INSERT INTO ""Blockset"" (""Length"", ""FullHash"") VALUES (?,?); SELECT last_insert_rowid();");
+            m_insertBlocklistHashCommand = m_manager.CreateCommand(@"INSERT INTO ""BlocklistHash"" (""BlocksetID"", ""Index"", ""Hash"") VALUES (?,?,?)");
+            m_updateBlockVolumeCommand = m_manager.CreateCommand(@"UPDATE ""Block"" SET ""VolumeID"" = ? WHERE ""Hash"" = ? AND ""Size"" = ?");
+            m_insertTempBlockListHash = m_manager.CreateCommand(string.Format(@"INSERT INTO ""{0}"" (""BlocklistHash"", ""BlockHash"", ""Index"") VALUES (?,?,?) ", m_tempblocklist));
+            m_insertSmallBlockset = m_manager.CreateCommand(string.Format(@"INSERT OR IGNORE INTO ""{0}"" (""FileHash"", ""BlockHash"", ""BlockSize"") VALUES (?,?,?) ", m_tempsmalllist));
+            m_findBlocksetCommand = m_manager.CreateCommand(@"SELECT ""ID"" FROM ""Blockset"" WHERE ""Length"" = ? AND ""FullHash"" = ? ");
+            m_findMetadatasetCommand = m_manager.CreateCommand(@"SELECT ""Metadataset"".""ID"" FROM ""Metadataset"",""Blockset"" WHERE ""Metadataset"".""BlocksetID"" = ""Blockset"".""ID"" AND ""Blockset"".""FullHash"" = ? AND ""Blockset"".""Length"" = ? ");
+            m_findFilesetCommand = m_manager.CreateCommand(@"SELECT ""ID"" FROM ""FileLookup"" WHERE ""PrefixID"" = ? AND ""Path"" = ? AND ""BlocksetID"" = ? AND ""MetadataID"" = ? ");
+            m_findTempBlockListHashCommand = m_manager.CreateCommand(string.Format(@"SELECT DISTINCT ""BlockListHash"" FROM ""{0}"" WHERE ""BlockListHash"" = ? ", m_tempblocklist));
+            m_findHashBlockCommand = m_manager.CreateCommand(@"SELECT ""VolumeID"" FROM ""Block"" WHERE ""Hash"" = ? AND ""Size"" = ? ");
+            m_insertBlockCommand = m_manager.CreateCommand(@"INSERT INTO ""Block"" (""Hash"", ""Size"", ""VolumeID"") VALUES (?,?,?)");
+            m_insertDuplicateBlockCommand = m_manager.CreateCommand(@"INSERT OR IGNORE INTO ""DuplicateBlock"" (""BlockID"", ""VolumeID"") VALUES ((SELECT ""ID"" FROM ""Block"" WHERE ""Hash"" = ? AND ""Size"" = ?), ?)");
         }
 
         public void FindMissingBlocklistHashes(long hashsize, long blocksize, System.Data.IDbTransaction transaction)
         {
-            using (var cmd = m_connection.CreateCommand())
+            using (var cmd = m_manager.CreateCommand())
             {
                 cmd.Transaction = transaction;
 
@@ -275,7 +227,7 @@ namespace Duplicati.Library.Main.Database
                 {
                     Logging.Log.WriteErrorMessage(LOGTAG, "BlocksetInsertFailed", ex, "Blockset insert failed, committing temporary tables for trace purposes");
 
-                    using (var fixcmd = m_connection.CreateCommand())
+                    using (var fixcmd = m_manager.CreateCommand())
                     {
                         fixcmd.ExecuteNonQuery(string.Format(@"CREATE TABLE ""{0}-Failure"" AS SELECT * FROM ""{0}"" ", m_tempblocklist));
                         fixcmd.ExecuteNonQuery(string.Format(@"CREATE TABLE ""{0}-Failure"" AS SELECT * FROM ""{0}"" ", m_tempsmalllist));
@@ -305,7 +257,7 @@ namespace Duplicati.Library.Main.Database
         public void AddBlockAndBlockSetEntryFromTemp(long hashsize, long blocksize, System.Data.IDbTransaction transaction, bool hashOnly = false)
         {
 
-            using (var cmd = m_connection.CreateCommand())
+            using (var cmd = m_manager.CreateCommand())
             {
                 cmd.Transaction = transaction;
 
@@ -384,7 +336,7 @@ namespace Duplicati.Library.Main.Database
                 {
                     Logging.Log.WriteErrorMessage(LOGTAG, "BlockOrBlocksetInsertFailed", ex, "Block or Blockset insert failed, committing temporary tables for trace purposes");
 
-                    using (var fixcmd = m_connection.CreateCommand())
+                    using (var fixcmd = m_manager.CreateCommand())
                     {
                         fixcmd.ExecuteNonQuery(string.Format(@"CREATE TABLE ""{0}_Failure"" AS SELECT * FROM ""{0}"" ", m_tempblocklist));
                         fixcmd.ExecuteNonQuery(string.Format(@"CREATE TABLE ""{0}_Failure"" AS SELECT * FROM ""{0}"" ", m_tempsmalllist));
@@ -585,7 +537,7 @@ namespace Duplicati.Library.Main.Database
 
         public IEnumerable<string> GetBlockLists(long volumeid)
         {
-            using (var cmd = m_connection.CreateCommand())
+            using (var cmd = m_manager.CreateCommand())
             {
                 cmd.CommandText = @"SELECT DISTINCT ""BlocklistHash"".""Hash"" FROM ""BlocklistHash"", ""Block"" WHERE ""Block"".""Hash"" = ""BlocklistHash"".""Hash"" AND ""Block"".""VolumeID"" = ?";
                 cmd.AddParameter(volumeid);
@@ -598,7 +550,7 @@ namespace Duplicati.Library.Main.Database
 
         public IEnumerable<IRemoteVolume> GetMissingBlockListVolumes(int passNo, long blocksize, long hashsize, bool forceBlockUse)
         {
-            using (var cmd = m_connection.CreateCommand())
+            using (var cmd = m_manager.CreateCommand())
             {
                 var selectCommand = @"SELECT DISTINCT ""RemoteVolume"".""Name"", ""RemoteVolume"".""Hash"", ""RemoteVolume"".""Size"", ""RemoteVolume"".""ID"" FROM ""RemoteVolume""";
 
@@ -738,7 +690,7 @@ DELETE FROM ""RemoteVolume"" WHERE ""Type"" = '{RemoteVolumeType.Blocks}' AND ""
 
             var countsql = $@"SELECT COUNT(*) FROM ""RemoteVolume"" WHERE ""State"" = '{RemoteVolumeState.Temporary}' AND ""Type"" = '{RemoteVolumeType.Blocks}' ";
 
-            using (var cmd = m_connection.CreateCommand())
+            using (var cmd = m_manager.CreateCommand())
             {
                 var cnt = cmd.ExecuteScalarInt64(countsql);
                 if (cnt > 0)
@@ -763,8 +715,8 @@ DELETE FROM ""RemoteVolume"" WHERE ""Type"" = '{RemoteVolumeType.Blocks}' AND ""
 
             var tmptablename = "DeletedBlocks-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
 
-            using (var tr = new TemporaryTransactionWrapper(m_connection, transaction))
-            using (var cmd = m_connection.CreateCommand(tr.Parent))
+            using (var tr = new TemporaryTransactionWrapper(m_manager, transaction))
+            using (var cmd = m_manager.CreateCommand(tr.Parent))
             {
                 // 1. Select blocks not used by any file and not as a blocklist into temporary table
                 cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}""
@@ -784,7 +736,7 @@ DELETE FROM ""RemoteVolume"" WHERE ""Type"" = '{RemoteVolumeType.Blocks}' AND ""
 
         public override void Dispose()
         {
-            using (var cmd = m_connection.CreateCommand())
+            using (var cmd = m_manager.CreateCommand())
             {
                 if (m_tempblocklist != null)
                     try

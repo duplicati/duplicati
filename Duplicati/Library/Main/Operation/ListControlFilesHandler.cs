@@ -38,11 +38,12 @@ namespace Duplicati.Library.Main.Operation
             m_result = result;
         }
 
-        public void Run(IBackendManager backendManager, IEnumerable<string> filterstrings, Library.Utility.IFilter compositefilter)
+        public void Run(DatabaseConnectionManager dbManager, IBackendManager backendManager, IEnumerable<string> filterstrings, IFilter compositefilter)
         {
             var cancellationToken = CancellationToken.None;
             using (var tmpdb = new TempFile())
-            using (var db = new LocalDatabase(System.IO.File.Exists(m_options.Dbpath) ? m_options.Dbpath : (string)tmpdb, "ListControlFiles", true))
+            using (var tmpdbManager = new DatabaseConnectionManager(tmpdb))
+            using (var db = new LocalDatabase(dbManager.Exists ? dbManager : tmpdbManager, "ListControlFiles"))
             {
                 m_result.SetDatabase(db);
 
@@ -88,7 +89,7 @@ namespace Duplicati.Library.Main.Operation
                 }
                 finally
                 {
-                    backendManager.WaitForEmptyAsync(db, null, cancellationToken).Await();
+                    backendManager.WaitForEmptyAsync(cancellationToken).Await();
                 }
             }
         }
