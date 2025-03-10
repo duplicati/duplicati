@@ -418,14 +418,15 @@ namespace Duplicati.UnitTest
             }
 
             // Check database block link
-            using (LocalDatabase db = new LocalDatabase(DBFILE, "Test", true))
+            using (var manager = new DatabaseConnectionManager(DBFILE))
+            using (var db = new LocalDatabase(manager, "Test"))
             {
                 long indexVolumeId = db.GetRemoteVolumeID(Path.GetFileName(origFile));
                 long duplicateVolumeId = db.GetRemoteVolumeID(Path.GetFileName(dupFile));
                 Assert.AreNotEqual(-1, indexVolumeId);
                 Assert.AreNotEqual(-1, duplicateVolumeId);
 
-                using (var cmd = db.Connection.CreateCommand())
+                using (var cmd = manager.CreateCommand())
                 {
                     string sql = @"SELECT ""BlockVolumeID"" FROM ""IndexBlockLink"" WHERE ""IndexVolumeID"" = ?";
                     long linkedIndexId = cmd.ExecuteScalarInt64(sql, -1, indexVolumeId);

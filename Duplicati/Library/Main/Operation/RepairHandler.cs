@@ -49,12 +49,12 @@ namespace Duplicati.Library.Main.Operation
                 throw new UserInformationException(Strings.Common.PassphraseChangeUnsupported, "PassphraseChangeUnsupported");
         }
 
-        public void Run(IBackendManager backendManager, IFilter filter)
+        public void Run(DatabaseConnectionManager dbManager, IBackendManager backendManager, IFilter filter)
         {
-            if (!System.IO.File.Exists(m_options.Dbpath))
+            if (!dbManager.Exists)
             {
-                RunRepairLocal(backendManager, filter);
-                RunRepairCommon();
+                RunRepairLocal(dbManager, backendManager, filter);
+                RunRepairCommon(dbManager);
                 m_result.EndTime = DateTime.UtcNow;
                 return;
             }
@@ -62,12 +62,12 @@ namespace Duplicati.Library.Main.Operation
             long knownRemotes = -1;
             try
             {
-                using (var db = new LocalRepairDatabase(m_options.Dbpath))
+                using (var db = new LocalRepairDatabase(dbManager))
                     knownRemotes = db.GetRemoteVolumes().Count();
             }
             catch (Exception ex)
             {
-                Logging.Log.WriteWarningMessage(LOGTAG, "FailedToReadLocalDatabase", ex, "Failed to read local db {0}, error: {1}", m_options.Dbpath, ex.Message);
+                Logging.Log.WriteWarningMessage(LOGTAG, "FailedToReadLocalDatabase", ex, "Failed to read local db {0}, error: {1}", dbManager.Path, ex.Message);
             }
 
             if (knownRemotes <= 0)
@@ -78,52 +78,52 @@ namespace Duplicati.Library.Main.Operation
                 }
                 else
                 {
-                    var baseName = System.IO.Path.ChangeExtension(m_options.Dbpath, "backup");
+                    var baseName = System.IO.Path.ChangeExtension(dbManager.Path, "backup");
                     var i = 0;
                     while (System.IO.File.Exists(baseName) && i++ < 1000)
-                        baseName = System.IO.Path.ChangeExtension(m_options.Dbpath, "backup-" + i.ToString());
+                        baseName = System.IO.Path.ChangeExtension(dbManager.Path, "backup-" + i.ToString());
 
-                    Logging.Log.WriteInformationMessage(LOGTAG, "RenamingDatabase", "Renaming existing db from {0} to {1}", m_options.Dbpath, baseName);
-                    System.IO.File.Move(m_options.Dbpath, baseName);
+                    Logging.Log.WriteInformationMessage(LOGTAG, "RenamingDatabase", "Renaming existing db from {0} to {1}", dbManager.Path, baseName);
+                    System.IO.File.Move(dbManager.Path, baseName);
                 }
 
-                RunRepairLocal(backendManager, filter);
-                RunRepairCommon();
+                RunRepairLocal(dbManager, backendManager, filter);
+                RunRepairCommon(dbManager);
             }
             else
             {
-                RunRepairCommon();
-                RunRepairRemote(backendManager, m_result.TaskControl.ProgressToken).Await();
+                RunRepairCommon(dbManager);
+                RunRepairRemote(dbManager, backendManager, m_result.TaskControl.ProgressToken).Await();
             }
 
             m_result.EndTime = DateTime.UtcNow;
 
         }
 
-        public void RunRepairLocal(IBackendManager backendManager, Library.Utility.IFilter filter)
+        public void RunRepairLocal(DatabaseConnectionManager dbManager, IBackendManager backendManager, Library.Utility.IFilter filter)
         {
             m_result.RecreateDatabaseResults = new RecreateDatabaseResults(m_result);
             using (new Logging.Timer(LOGTAG, "RecreateDbForRepair", "Recreate database for repair"))
             using (var f = m_options.Dryrun ? new Library.Utility.TempFile() : null)
+            using (var tempManager = m_options.Dryrun ? new DatabaseConnectionManager(f) : null)
             {
                 if (f != null && System.IO.File.Exists(f))
                     System.IO.File.Delete(f);
 
                 var filelistfilter = RestoreHandler.FilterNumberedFilelist(m_options.Time, m_options.Version);
-
                 new RecreateDatabaseHandler(m_options, (RecreateDatabaseResults)m_result.RecreateDatabaseResults)
-                    .Run(m_options.Dryrun ? (string)f : m_options.Dbpath, backendManager, filter, filelistfilter, null);
+                    .Run(tempManager ?? dbManager, backendManager, filter, filelistfilter, null);
             }
         }
 
-        public async Task RunRepairRemote(IBackendManager backendManager, CancellationToken cancellationToken)
+        public async Task RunRepairRemote(DatabaseConnectionManager dbManager, IBackendManager backendManager, CancellationToken cancellationToken)
         {
-            if (!System.IO.File.Exists(m_options.Dbpath))
-                throw new UserInformationException(string.Format("Database file does not exist: {0}", m_options.Dbpath), "RepairDatabaseFileDoesNotExist");
+            if (!dbManager.Exists)
+                throw new UserInformationException(string.Format("Database file does not exist: {0}", dbManager.Path), "RepairDatabaseFileDoesNotExist");
 
             m_result.OperationProgressUpdater.UpdateProgress(0);
 
-            using (var db = new LocalRepairDatabase(m_options.Dbpath))
+            using (var db = new LocalRepairDatabase(dbManager))
             {
                 m_result.SetDatabase(db);
                 Utility.UpdateOptionsFromDb(db, m_options);
@@ -181,7 +181,7 @@ namespace Duplicati.Library.Main.Operation
                                 {
                                     if (!await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
                                     {
-                                        await backendManager.WaitForEmptyAsync(testdb, null, cancellationToken).ConfigureAwait(false);
+                                        await backendManager.WaitForEmptyAsync(cancellationToken).ConfigureAwait(false);
                                         return;
                                     }
 
@@ -218,7 +218,7 @@ namespace Duplicati.Library.Main.Operation
                         {
                             if (!await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
                             {
-                                await backendManager.WaitForEmptyAsync(db, null, cancellationToken).ConfigureAwait(false);
+                                await backendManager.WaitForEmptyAsync(cancellationToken).ConfigureAwait(false);
                                 return;
                             }
 
@@ -375,7 +375,7 @@ namespace Duplicati.Library.Main.Operation
                         {
                             if (!await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
                             {
-                                await backendManager.WaitForEmptyAsync(db, null, cancellationToken).ConfigureAwait(false);
+                                await backendManager.WaitForEmptyAsync(cancellationToken).ConfigureAwait(false);
                                 return;
                             }
 
@@ -565,21 +565,21 @@ namespace Duplicati.Library.Main.Operation
                 }
 
                 m_result.OperationProgressUpdater.UpdateProgress(1);
-                await backendManager.WaitForEmptyAsync(db, null, cancellationToken).ConfigureAwait(false);
+                await backendManager.WaitForEmptyAsync(cancellationToken).ConfigureAwait(false);
                 if (!m_options.Dryrun)
                     db.TerminatedWithActiveUploads = false;
                 db.WriteResults();
             }
         }
 
-        public void RunRepairCommon()
+        public void RunRepairCommon(DatabaseConnectionManager dbManager)
         {
-            if (!System.IO.File.Exists(m_options.Dbpath))
-                throw new UserInformationException(string.Format("Database file does not exist: {0}", m_options.Dbpath), "DatabaseDoesNotExist");
+            if (!dbManager.Exists)
+                throw new UserInformationException(string.Format("Database file does not exist: {0}", dbManager.Path), "DatabaseDoesNotExist");
 
             m_result.OperationProgressUpdater.UpdateProgress(0);
 
-            using (var db = new LocalRepairDatabase(m_options.Dbpath))
+            using (var db = new LocalRepairDatabase(dbManager))
             {
                 db.SetResult(m_result);
 

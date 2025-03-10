@@ -98,7 +98,7 @@ namespace Duplicati.Library.Main.Operation
                         break;
                 }
 
-                await backendManager.WaitForEmptyAsync(database, null, cancellationToken).ConfigureAwait(false);
+                await backendManager.WaitForEmptyAsync(cancellationToken).ConfigureAwait(false);
             }
         }
 
@@ -217,8 +217,7 @@ namespace Duplicati.Library.Main.Operation
         /// <param name="backendurl">The backend url</param>
         /// <param name="options">The options to use</param>
         /// <param name="db">The attached database</param>
-        /// <param name="transaction">An optional transaction object</param>
-        public static async Task UploadVerificationFile(IBackendManager backendManager, Options options, LocalDatabase db, IDbTransaction transaction)
+        public static async Task UploadVerificationFile(IBackendManager backendManager, Options options, LocalDatabase db)
         {
             using (var tempfile = new Library.Utility.TempFile())
             {
@@ -233,7 +232,7 @@ namespace Duplicati.Library.Main.Operation
                 else
                 {
                     await backendManager.PutVerificationFileAsync(remotename, tempfile, CancellationToken.None).ConfigureAwait(false);
-                    await backendManager.WaitForEmptyAsync(db, transaction, CancellationToken.None).ConfigureAwait(false);
+                    await backendManager.WaitForEmptyAsync(CancellationToken.None).ConfigureAwait(false);
                 }
             }
         }
@@ -444,7 +443,7 @@ namespace Duplicati.Library.Main.Operation
                 }
             }
 
-            await backendManager.WaitForEmptyAsync(database, null, CancellationToken.None).ConfigureAwait(false);
+            await backendManager.WaitForEmptyAsync(CancellationToken.None).ConfigureAwait(false);
 
             // Batch cleanup deleted volumes in DB
             if (verifyMode == VerifyMode.VerifyStrict && missingUploadingVolumes.Count > 0)

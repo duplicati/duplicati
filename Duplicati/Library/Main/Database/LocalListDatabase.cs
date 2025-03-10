@@ -22,25 +22,23 @@
 using System;
 using System.Linq;
 using System.Collections.Generic;
-using System.Text;
 using Duplicati.Library.Common.IO;
 
 namespace Duplicati.Library.Main.Database
 {
     internal class LocalListDatabase : LocalDatabase
     {
-        public LocalListDatabase(string path)
-            : base(path, "List", false)
+        public LocalListDatabase(DatabaseConnectionManager manager)
+            : base(manager, "List")
         {
-            ShouldCloseConnection = true;
         }
-                
+
         public interface IFileversion
         {
             string Path { get; }
             IEnumerable<long> Sizes { get; }
         }
-        
+
         public interface IFileset
         {
             long Version { get; }
@@ -49,7 +47,7 @@ namespace Duplicati.Library.Main.Database
             long FileCount { get; }
             long FileSizes { get; }
         }
-                
+
         public interface IFileSets : IDisposable
         {
             IEnumerable<IFileset> Sets { get; }
@@ -57,31 +55,31 @@ namespace Duplicati.Library.Main.Database
             IEnumerable<IFileversion> SelectFiles(Library.Utility.IFilter filter);
             IEnumerable<IFileversion> GetLargestPrefix(Library.Utility.IFilter filter);
             IEnumerable<IFileversion> SelectFolderContents(Library.Utility.IFilter filter);
-            void TakeFirst ();
+            void TakeFirst();
         }
 
         private class FileSets : IFileSets
         {
-            private readonly System.Data.IDbConnection m_connection;
+            private readonly DatabaseConnectionManager m_manager;
             private string m_tablename;
             private readonly KeyValuePair<long, DateTime>[] m_filesets;
-            
+
             public FileSets(LocalListDatabase owner, DateTime time, long[] versions)
             {
-                m_connection = owner.m_connection;
+                m_manager = owner.m_manager;
                 m_filesets = owner.FilesetTimes.ToArray();
                 m_tablename = "Filesets-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
                 var tmp = owner.GetFilelistWhereClause(time, versions, m_filesets);
                 string query = tmp.Item1;
                 var args = tmp.Item2;
-                
-                using(var cmd = m_connection.CreateCommand())
+
+                using (var cmd = m_manager.CreateCommand())
                 {
                     cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" AS SELECT DISTINCT ""ID"" AS ""FilesetID"", ""IsFullBackup"" AS ""IsFullBackup"" , ""Timestamp"" AS ""Timestamp"" FROM ""Fileset"" " + query, m_tablename), args);
                     cmd.ExecuteNonQuery(string.Format(@"CREATE INDEX ""{0}_FilesetIDTimestampIndex"" ON ""{0}"" (""FilesetID"", ""Timestamp"" DESC)", m_tablename));
                 }
             }
-            
+
             private class Fileset : IFileset
             {
                 public long Version { get; private set; }
@@ -89,7 +87,7 @@ namespace Duplicati.Library.Main.Database
                 public DateTime Time { get; private set; }
                 public long FileCount { get; private set; }
                 public long FileSizes { get; private set; }
-                
+
                 public Fileset(long version, int isFullBackup, DateTime time, long filecount, long filesizes)
                 {
                     this.Version = version;
@@ -99,25 +97,25 @@ namespace Duplicati.Library.Main.Database
                     this.FileSizes = filesizes;
                 }
             }
-            
+
             private class Fileversion : IFileversion
             {
                 private readonly System.Data.IDataReader m_reader;
                 public string Path { get; private set; }
                 public bool More { get; private set; }
-                
-                public Fileversion(System.Data.IDataReader reader) 
-                { 
-                    m_reader = reader; 
+
+                public Fileversion(System.Data.IDataReader reader)
+                {
+                    m_reader = reader;
                     this.Path = reader.GetValue(0).ToString();
                     this.More = true;
                 }
-                
+
                 public IEnumerable<long> Sizes
                 {
                     get
                     {
-                        while(this.More && this.Path == m_reader.GetValue(0).ToString())
+                        while (this.More && this.Path == m_reader.GetValue(0).ToString())
                         {
                             yield return m_reader.ConvertValueToInt64(1, -1);
                             this.More = m_reader.Read();
@@ -125,7 +123,7 @@ namespace Duplicati.Library.Main.Database
                     }
                 }
             }
-            
+
             private class FileversionFixed : IFileversion
             {
                 public string Path { get; internal set; }
@@ -139,8 +137,8 @@ namespace Duplicati.Library.Main.Database
 
             private IEnumerable<IFileversion> GetLargestPrefix(Library.Utility.IFilter filter, string prefixrule)
             {
-                using(var tmpnames = new FilteredFilenameTable(m_connection, filter, null))
-                using(var cmd = m_connection.CreateCommand())                
+                using (var tmpnames = new FilteredFilenameTable(m_manager, filter, null))
+                using (var cmd = m_manager.CreateCommand())
                 {
                     //First we trim the filelist to exclude filenames not found in any of the filesets
                     cmd.ExecuteNonQuery(string.Format(@"DELETE FROM ""{0}"" WHERE ""Path"" NOT IN (SELECT DISTINCT ""Path"" FROM ""File"", ""FilesetEntry"" WHERE ""FilesetEntry"".""FileID"" = ""File"".""ID"" AND ""FilesetEntry"".""FilesetID"" IN (SELECT ""FilesetID"" FROM ""{1}"") ) ", tmpnames.Tablename, m_tablename));
@@ -157,22 +155,22 @@ namespace Duplicati.Library.Main.Database
                         maxpath = v0.ToString();
 
                     var dirsep = Util.GuessDirSeparator(maxpath);
-    
+
                     cmd.CommandText = string.Format(@"SELECT COUNT(*) FROM ""{0}""", tmpnames.Tablename);
                     var filecount = cmd.ExecuteScalarInt64(0);
                     long foundfiles = -1;
-    
+
                     //TODO: Handle FS case-sensitive?
                     cmd.CommandText = string.Format(@"SELECT COUNT(*) FROM ""{0}"" WHERE SUBSTR(""Path"", 1, ?) = ?", tmpnames.Tablename);
                     cmd.AddParameter();
                     cmd.AddParameter();
-    
+
                     while (filecount != foundfiles && maxpath.Length > 0)
                     {
                         var mp = Util.AppendDirSeparator(maxpath, dirsep);
                         cmd.SetParameterValue(0, mp.Length);
                         cmd.SetParameterValue(1, mp);
-                        
+
                         foundfiles = cmd.ExecuteScalarInt64(0);
 
                         if (filecount != foundfiles)
@@ -205,14 +203,14 @@ namespace Duplicati.Library.Main.Database
                         };
                 }
             }
-            
+
             private IEnumerable<string> SelectFolderEntries(System.Data.IDbCommand cmd, string prefix, string table)
             {
                 if (!string.IsNullOrEmpty(prefix))
                     prefix = Util.AppendDirSeparator(prefix, Util.GuessDirSeparator(prefix));
-                
+
                 var ppl = prefix.Length;
-                using(var rd = cmd.ExecuteReader(string.Format(@"SELECT DISTINCT ""Path"" FROM ""{0}"" ", table)))
+                using (var rd = cmd.ExecuteReader(string.Format(@"SELECT DISTINCT ""Path"" FROM ""{0}"" ", table)))
                     while (rd.Read())
                     {
                         var s = rd.GetString(0);
@@ -228,7 +226,7 @@ namespace Duplicati.Library.Main.Database
                         yield return prefix + s;
                     }
             }
-            
+
             public IEnumerable<IFileversion> SelectFolderContents(Library.Utility.IFilter filter)
             {
                 var tbname = "Filenames-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
@@ -246,13 +244,13 @@ namespace Duplicati.Library.Main.Database
 
                     if (pathprefix.Length > 0 || dirsep == "/")
                         pathprefix = Util.AppendDirSeparator(pathprefix, dirsep);
-                    
-                    using(var tmpnames = new FilteredFilenameTable(m_connection, new Library.Utility.FilterExpression(new string[] { pathprefix + "*" }, true), null))
-                    using(var cmd = m_connection.CreateCommand())
+
+                    using (var tmpnames = new FilteredFilenameTable(m_manager, new Library.Utility.FilterExpression(new string[] { pathprefix + "*" }, true), null))
+                    using (var cmd = m_manager.CreateCommand())
                     {
                         //First we trim the filelist to exclude filenames not found in any of the filesets
-                        cmd.ExecuteNonQuery(string.Format(@"DELETE FROM ""{0}"" WHERE ""Path"" NOT IN (SELECT DISTINCT ""Path"" FROM ""File"", ""FilesetEntry"" WHERE ""FilesetEntry"".""FileID"" = ""File"".""ID"" AND ""FilesetEntry"".""FilesetID"" IN (SELECT ""FilesetID"" FROM ""{1}"") ) ", tmpnames.Tablename, m_tablename));  
-                    
+                        cmd.ExecuteNonQuery(string.Format(@"DELETE FROM ""{0}"" WHERE ""Path"" NOT IN (SELECT DISTINCT ""Path"" FROM ""File"", ""FilesetEntry"" WHERE ""FilesetEntry"".""FileID"" = ""File"".""ID"" AND ""FilesetEntry"".""FilesetID"" IN (SELECT ""FilesetID"" FROM ""{1}"") ) ", tmpnames.Tablename, m_tablename));
+
                         // If we had instr support this would work:
                         /*var distinctPaths = @"SELECT DISTINCT :1 || " +
                             @"CASE(INSTR(SUBSTR(""Path"", :2), '/')) " +
@@ -263,13 +261,13 @@ namespace Duplicati.Library.Main.Database
 
                         // Instead we manually iterate the paths
                         cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" (""Path"" TEXT NOT NULL)", tbname));
-                        
-                        using(var c2 = m_connection.CreateCommand())
+
+                        using (var c2 = m_manager.CreateCommand())
                         {
                             c2.CommandText = string.Format(@"INSERT INTO ""{0}"" (""Path"") VALUES (?)", tbname);
                             c2.AddParameter();
-                        
-                            foreach(var n in SelectFolderEntries(cmd, pathprefix, tmpnames.Tablename).Distinct())
+
+                            foreach (var n in SelectFolderEntries(cmd, pathprefix, tmpnames.Tablename).Distinct())
                             {
                                 c2.SetParameterValue(0, n);
                                 c2.ExecuteNonQuery();
@@ -277,18 +275,18 @@ namespace Duplicati.Library.Main.Database
 
                             c2.ExecuteNonQuery(string.Format(@"CREATE INDEX ""{0}_PathIndex"" ON ""{0}"" (""Path"")", tbname));
                         }
-                        
+
                         //Then we select the matching results
                         var filesets = string.Format(@"SELECT ""FilesetID"", ""Timestamp"" FROM ""{0}"" ORDER BY ""Timestamp"" DESC", m_tablename);
                         var cartesianPathFileset = string.Format(@"SELECT ""A"".""Path"", ""B"".""FilesetID"" FROM ""{0}"" A, (" + filesets + @") B ORDER BY ""A"".""Path"" ASC, ""B"".""Timestamp"" DESC", tbname, m_tablename);
 
                         var filesWithSizes = string.Format(@"SELECT ""Length"", ""FilesetEntry"".""FilesetID"", ""File"".""Path"" FROM ""Blockset"", ""FilesetEntry"", ""File"" WHERE ""File"".""BlocksetID"" = ""Blockset"".""ID"" AND ""FilesetEntry"".""FileID"" = ""File"".""ID"" AND FilesetEntry.""FilesetID"" IN (SELECT DISTINCT ""FilesetID"" FROM ""{0}"") ", m_tablename);
                         var query = @"SELECT ""C"".""Path"", ""D"".""Length"", ""C"".""FilesetID"" FROM (" + cartesianPathFileset + @") C LEFT OUTER JOIN (" + filesWithSizes + @") D ON ""C"".""FilesetID"" = ""D"".""FilesetID"" AND ""C"".""Path"" = ""D"".""Path""";
-                        
-                        cmd.AddParameter(pathprefix, "1");                    
+
+                        cmd.AddParameter(pathprefix, "1");
                         cmd.AddParameter(pathprefix.Length + 1, "2");
-                        
-                        using(var rd = cmd.ExecuteReader(query))
+
+                        using (var rd = cmd.ExecuteReader(query))
                             if (rd.Read())
                             {
                                 bool more;
@@ -304,16 +302,16 @@ namespace Duplicati.Library.Main.Database
                                     {
                                         more = rd.Read();
                                     }
-                                    
-                                } while(more);
+
+                                } while (more);
                             }
-                    }                    
+                    }
                 }
                 finally
                 {
                     try
                     {
-                        using(var c = m_connection.CreateCommand())
+                        using (var c = m_manager.CreateCommand())
                             c.ExecuteNonQuery(string.Format(@"DROP TABLE IF EXISTS ""{0}""", tbname));
                     }
                     catch
@@ -321,22 +319,22 @@ namespace Duplicati.Library.Main.Database
                     }
                 }
             }
-            
+
             public IEnumerable<IFileversion> SelectFiles(Library.Utility.IFilter filter)
             {
-                using(var tmpnames = new FilteredFilenameTable(m_connection, filter, null))
-                using(var cmd = m_connection.CreateCommand())                
+                using (var tmpnames = new FilteredFilenameTable(m_manager, filter, null))
+                using (var cmd = m_manager.CreateCommand())
                 {
                     //First we trim the filelist to exclude filenames not found in any of the filesets
-                    cmd.ExecuteNonQuery(string.Format(@"DELETE FROM ""{0}"" WHERE ""Path"" NOT IN (SELECT DISTINCT ""Path"" FROM ""File"", ""FilesetEntry"" WHERE ""FilesetEntry"".""FileID"" = ""File"".""ID"" AND ""FilesetEntry"".""FilesetID"" IN (SELECT ""FilesetID"" FROM ""{1}"") ) ", tmpnames.Tablename, m_tablename));  
-                
+                    cmd.ExecuteNonQuery(string.Format(@"DELETE FROM ""{0}"" WHERE ""Path"" NOT IN (SELECT DISTINCT ""Path"" FROM ""File"", ""FilesetEntry"" WHERE ""FilesetEntry"".""FileID"" = ""File"".""ID"" AND ""FilesetEntry"".""FilesetID"" IN (SELECT ""FilesetID"" FROM ""{1}"") ) ", tmpnames.Tablename, m_tablename));
+
                     //Then we select the matching results
                     var filesets = string.Format(@"SELECT ""FilesetID"", ""Timestamp"" FROM ""{0}"" ORDER BY ""Timestamp"" DESC", m_tablename);
                     var cartesianPathFileset = string.Format(@"SELECT ""A"".""Path"", ""B"".""FilesetID"" FROM ""{0}"" A, (" + filesets + @") B ORDER BY ""A"".""Path"" ASC, ""B"".""Timestamp"" DESC", tmpnames.Tablename, m_tablename);
                     var filesWithSizes = string.Format(@"SELECT ""Length"", ""FilesetEntry"".""FilesetID"", ""File"".""Path"" FROM ""Blockset"", ""FilesetEntry"", ""File"" WHERE ""File"".""BlocksetID"" = ""Blockset"".""ID"" AND ""FilesetEntry"".""FileID"" = ""File"".""ID""  AND FilesetEntry.""FilesetID"" IN (SELECT DISTINCT ""FilesetID"" FROM ""{0}"") ", m_tablename);
                     var query = @"SELECT ""C"".""Path"", ""D"".""Length"", ""C"".""FilesetID"" FROM (" + cartesianPathFileset + @") C LEFT OUTER JOIN (" + filesWithSizes + @") D ON ""C"".""FilesetID"" = ""D"".""FilesetID"" AND ""C"".""Path"" = ""D"".""Path""";
-                    using(var rd = cmd.ExecuteReader(query))
-                        if(rd.Read())
+                    using (var rd = cmd.ExecuteReader(query))
+                        if (rd.Read())
                         {
                             bool more;
                             do
@@ -344,14 +342,14 @@ namespace Duplicati.Library.Main.Database
                                 var f = new Fileversion(rd);
                                 yield return f;
                                 more = f.More;
-                            } while(more);
+                            } while (more);
                         }
                 }
             }
-            
+
             public void TakeFirst()
             {
-                using(var cmd = m_connection.CreateCommand())
+                using (var cmd = m_manager.CreateCommand())
                     cmd.ExecuteNonQuery(string.Format(@"DELETE FROM ""{0}"" WHERE ""FilesetID"" NOT IN (SELECT ""FilesetID"" FROM ""{0}"" ORDER BY ""Timestamp"" DESC LIMIT 1 )", m_tablename));
             }
 
@@ -365,7 +363,7 @@ namespace Duplicati.Library.Main.Database
                         dict[m_filesets[i].Key] = i;
                     }
 
-                    using (var cmd = m_connection.CreateCommand())
+                    using (var cmd = m_manager.CreateCommand())
                     {
                         using (var rd = cmd.ExecuteReader(@"SELECT DISTINCT ""ID"", ""IsFullBackup"" FROM ""Fileset"" ORDER BY ""Timestamp"" DESC "))
                         {
@@ -381,8 +379,8 @@ namespace Duplicati.Library.Main.Database
                 }
             }
 
-            public IEnumerable<IFileset> Sets 
-            { 
+            public IEnumerable<IFileset> Sets
+            {
                 get
                 {
                     var dict = new Dictionary<long, long>();
@@ -390,11 +388,11 @@ namespace Duplicati.Library.Main.Database
                     {
                         dict[m_filesets[i].Key] = i;
                     }
-                    
+
                     var summation =
                         $@"SELECT ""A"".""FilesetID"" AS ""FilesetID"", COUNT(*) AS ""FileCount"", SUM(""C"".""Length"") AS ""FileSizes"" FROM ""FilesetEntry"" A, ""File"" B, ""Blockset"" C WHERE ""A"".""FileID"" = ""B"".""ID"" AND ""B"".""BlocksetID"" = ""C"".""ID"" AND ""A"".""FilesetID"" IN (SELECT DISTINCT ""FilesetID"" FROM ""{m_tablename}"") GROUP BY ""A"".""FilesetID"" ";
 
-                    using (var cmd = m_connection.CreateCommand())
+                    using (var cmd = m_manager.CreateCommand())
                     {
                         using (var rd = cmd.ExecuteReader(
                             $@"SELECT DISTINCT ""A"".""FilesetID"", ""A"".""IsFullBackup"", ""B"".""FileCount"", ""B"".""FileSizes"" FROM ""{m_tablename}"" A LEFT OUTER JOIN ( {summation} ) B ON ""A"".""FilesetID"" = ""B"".""FilesetID"" ORDER BY ""A"".""Timestamp"" DESC ")
@@ -414,30 +412,30 @@ namespace Duplicati.Library.Main.Database
                     }
                 }
             }
-            
+
             public void Dispose()
             {
                 if (m_tablename != null)
                 {
-                    try 
+                    try
                     {
-                        using (var cmd = m_connection.CreateCommand())
+                        using (var cmd = m_manager.CreateCommand())
                         {
                             cmd.ExecuteNonQuery(string.Format(@"DROP TABLE IF EXISTS ""{0}"" ", m_tablename));
                         }
                     }
-                    catch {}
+                    catch { }
                     finally { m_tablename = null; }
                 }
-                
+
             }
         }
-        
+
         public IFileSets SelectFileSets(DateTime time, long[] versions)
         {
             return new FileSets(this, time, versions);
         }
-        
+
     }
 }
 

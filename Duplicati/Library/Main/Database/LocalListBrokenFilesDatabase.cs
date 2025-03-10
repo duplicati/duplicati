@@ -68,16 +68,14 @@ SELECT ""A"".""Path"", ""B"".""Length"" FROM ""File"" A, ""Blockset"" B WHERE ""
         private const string INSERT_BROKEN_IDS = @"INSERT INTO ""{3}"" (""{4}"") " + BROKEN_FILE_IDS
             + @" AND ""ID"" IN (SELECT ""FileID"" FROM ""FilesetEntry"" WHERE ""FilesetID"" = ?)";
 
-        public LocalListBrokenFilesDatabase(string path)
-            : base(path, "ListBrokenFiles", false)
+        public LocalListBrokenFilesDatabase(DatabaseConnectionManager manager)
+            : base(manager, "ListBrokenFiles")
         {
-            ShouldCloseConnection = true;
         }
 
         public LocalListBrokenFilesDatabase(LocalDatabase parent)
             : base(parent)
         {
-            ShouldCloseConnection = false;
         }
 
         public IEnumerable<Tuple<DateTime, long, long>> GetBrokenFilesets(DateTime time, long[] versions, System.Data.IDbTransaction transaction)
@@ -89,7 +87,7 @@ SELECT ""A"".""Path"", ""B"".""Length"" FROM ""File"" A, ""Blockset"" B WHERE ""
 
             query += @" GROUP BY ""A"".""FilesetID""";
 
-            using (var cmd = Connection.CreateCommand(transaction))
+            using (var cmd = m_manager.CreateCommand(transaction))
                 foreach (var rd in cmd.ExecuteReaderEnumerable(query, clause.Item2))
                     if (!rd.IsDBNull(0))
                         yield return new Tuple<DateTime, long, long>(ParseFromEpochSeconds(rd.ConvertValueToInt64(0, 0)), rd.ConvertValueToInt64(1, -1), rd.ConvertValueToInt64(2, 0));
@@ -97,7 +95,7 @@ SELECT ""A"".""Path"", ""B"".""Length"" FROM ""File"" A, ""Blockset"" B WHERE ""
 
         public IEnumerable<Tuple<string, long>> GetBrokenFilenames(long filesetid, System.Data.IDbTransaction transaction)
         {
-            using (var cmd = Connection.CreateCommand(transaction))
+            using (var cmd = m_manager.CreateCommand(transaction))
                 foreach (var rd in cmd.ExecuteReaderEnumerable(string.Format(BROKEN_FILE_NAMES, FOLDER_BLOCKSET_ID, SYMLINK_BLOCKSET_ID, RemoteVolumeType.Blocks.ToString()), filesetid))
                     if (!rd.IsDBNull(0))
                         yield return new Tuple<string, long>(rd.ConvertValueToString(0), rd.ConvertValueToInt64(1));
@@ -105,7 +103,7 @@ SELECT ""A"".""Path"", ""B"".""Length"" FROM ""File"" A, ""Blockset"" B WHERE ""
 
         public void InsertBrokenFileIDsIntoTable(long filesetid, string tablename, string IDfieldname, System.Data.IDbTransaction transaction)
         {
-            using (var cmd = Connection.CreateCommand(transaction))
+            using (var cmd = m_manager.CreateCommand(transaction))
                 cmd.ExecuteNonQuery(string.Format(INSERT_BROKEN_IDS, FOLDER_BLOCKSET_ID, SYMLINK_BLOCKSET_ID, RemoteVolumeType.Blocks.ToString(), tablename, IDfieldname), filesetid);
         }
 
@@ -115,7 +113,7 @@ SELECT ""A"".""Path"", ""B"".""Length"" FROM ""File"" A, ""Blockset"" B WHERE ""
             if (transaction == null)
                 throw new Exception("This function cannot be called when not in a transaction, as it leaves the database in an inconsistent state");
 
-            using (var deletecmd = m_connection.CreateCommand(transaction))
+            using (var deletecmd = m_manager.CreateCommand(transaction))
             {
                 string temptransguid = Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
                 var volidstable = "DelVolSetIds-" + temptransguid;
@@ -154,7 +152,7 @@ SELECT ""A"".""Path"", ""B"".""Length"" FROM ""File"" A, ""Blockset"" B WHERE ""
 
         public long GetFilesetFileCount(long filesetid, System.Data.IDbTransaction transaction)
         {
-            using (var cmd = m_connection.CreateCommand(transaction))
+            using (var cmd = m_manager.CreateCommand(transaction))
                 return cmd.ExecuteScalarInt64(@"SELECT COUNT(*) FROM ""FilesetEntry"" WHERE ""FilesetID"" = ?", 0, filesetid);
         }
     }

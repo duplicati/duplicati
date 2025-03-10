@@ -20,9 +20,7 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System;
-using System.Linq;
 using System.Collections.Generic;
-using System.Security.Cryptography;
 using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Main.Database
@@ -34,15 +32,15 @@ namespace Duplicati.Library.Main.Database
         /// </summary>
         private static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(LocalRepairDatabase));
 
-        public LocalRepairDatabase(string path)
-            : base(path, "Repair", true)
+        public LocalRepairDatabase(DatabaseConnectionManager manager)
+            : base(manager, "Repair")
         {
 
         }
 
         public long GetFilesetIdFromRemotename(string filelist)
         {
-            using (var cmd = m_connection.CreateCommand())
+            using (var cmd = m_manager.CreateCommand())
             {
                 var filesetid = cmd.ExecuteScalarInt64(@"SELECT ""Fileset"".""ID"" FROM ""Fileset"",""RemoteVolume"" WHERE ""Fileset"".""VolumeID"" = ""RemoteVolume"".""ID"" AND ""RemoteVolume"".""Name"" = ?", -1, filelist);
                 if (filesetid == -1)
@@ -125,7 +123,7 @@ namespace Duplicati.Library.Main.Database
 
         public IEnumerable<IRemoteVolume> GetBlockVolumesFromIndexName(string name)
         {
-            using (var cmd = m_connection.CreateCommand())
+            using (var cmd = m_manager.CreateCommand())
                 foreach (var rd in cmd.ExecuteReaderEnumerable(@"SELECT ""Name"", ""Hash"", ""Size"" FROM ""RemoteVolume"" WHERE ""ID"" IN (SELECT ""BlockVolumeID"" FROM ""IndexBlockLink"" WHERE ""IndexVolumeID"" IN (SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""Name"" = ?))", name))
                     yield return new RemoteVolume(rd.GetString(0), rd.ConvertValueToString(1), rd.ConvertValueToInt64(2));
         }
@@ -141,19 +139,19 @@ namespace Duplicati.Library.Main.Database
 
         private class MissingBlockList : IMissingBlockList
         {
-            private readonly System.Data.IDbConnection m_connection;
+            private readonly DatabaseConnectionManager m_manager;
             private readonly TemporaryTransactionWrapper m_transaction;
             private System.Data.IDbCommand m_insertCommand;
             private string m_tablename;
             private readonly string m_volumename;
 
-            public MissingBlockList(string volumename, System.Data.IDbConnection connection, System.Data.IDbTransaction transaction)
+            public MissingBlockList(string volumename, DatabaseConnectionManager manager, System.Data.IDbTransaction transaction)
             {
-                m_connection = connection;
-                m_transaction = new TemporaryTransactionWrapper(m_connection, transaction);
+                m_manager = manager;
+                m_transaction = new TemporaryTransactionWrapper(manager, transaction);
                 m_volumename = volumename;
                 var tablename = "MissingBlocks-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
-                using (var cmd = m_connection.CreateCommand())
+                using (var cmd = m_manager.CreateCommand())
                 {
                     cmd.Transaction = m_transaction.Parent;
                     cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" (""Hash"" TEXT NOT NULL, ""Size"" INTEGER NOT NULL, ""Restored"" INTEGER NOT NULL) ", tablename));
@@ -166,7 +164,7 @@ namespace Duplicati.Library.Main.Database
                     cmd.ExecuteNonQuery(string.Format(@"CREATE UNIQUE INDEX ""{0}-Ix"" ON ""{0}"" (""Hash"", ""Size"", ""Restored"")", tablename));
                 }
 
-                m_insertCommand = m_connection.CreateCommand();
+                m_insertCommand = m_manager.CreateCommand();
                 m_insertCommand.Transaction = m_transaction.Parent;
                 m_insertCommand.CommandText = string.Format(@"UPDATE ""{0}"" SET ""Restored"" = ? WHERE ""Hash"" = ? AND ""Size"" = ? AND ""Restored"" = ? ", tablename);
                 m_insertCommand.AddParameters(4);
@@ -183,7 +181,7 @@ namespace Duplicati.Library.Main.Database
 
             public IEnumerable<IBlockWithSources> GetSourceFilesWithBlocks(long blocksize)
             {
-                using (var cmd = m_connection.CreateCommand(m_transaction.Parent))
+                using (var cmd = m_manager.CreateCommand(m_transaction.Parent))
                 using (var rd = cmd.ExecuteReader(string.Format(@"SELECT DISTINCT ""{0}"".""Hash"", ""{0}"".""Size"", ""File"".""Path"", ""BlocksetEntry"".""Index"" * {1} FROM  ""{0}"", ""Block"", ""BlocksetEntry"", ""File"" WHERE ""File"".""BlocksetID"" = ""BlocksetEntry"".""BlocksetID"" AND ""Block"".""ID"" = ""BlocksetEntry"".""BlockID"" AND ""{0}"".""Hash"" = ""Block"".""Hash"" AND ""{0}"".""Size"" = ""Block"".""Size"" AND ""{0}"".""Restored"" = ? ", m_tablename, blocksize), 0))
                     if (rd.Read())
                     {
@@ -195,7 +193,7 @@ namespace Duplicati.Library.Main.Database
 
             public IEnumerable<KeyValuePair<string, long>> GetMissingBlocks()
             {
-                using (var cmd = m_connection.CreateCommand(m_transaction.Parent))
+                using (var cmd = m_manager.CreateCommand(m_transaction.Parent))
                     foreach (var rd in cmd.ExecuteReaderEnumerable(string.Format(@"SELECT ""{0}"".""Hash"", ""{0}"".""Size"" FROM ""{0}"" WHERE ""{0}"".""Restored"" = ? ", m_tablename), 0))
                         yield return new KeyValuePair<string, long>(rd.ConvertValueToString(0), rd.ConvertValueToInt64(1));
             }
@@ -207,14 +205,14 @@ namespace Duplicati.Library.Main.Database
 
                 var cmdtxt = @"SELECT DISTINCT ""RemoteVolume"".""Name"", ""RemoteVolume"".""Hash"", ""RemoteVolume"".""Size"" FROM ""RemoteVolume"", ""FilesetEntry"", ""Fileset"" WHERE ""RemoteVolume"".""ID"" = ""Fileset"".""VolumeID"" AND ""Fileset"".""ID"" = ""FilesetEntry"".""FilesetID"" AND ""RemoteVolume"".""Type"" = ? AND ""FilesetEntry"".""FileID"" IN  (SELECT DISTINCT ""ID"" FROM ( " + blocks + " UNION " + blocklists + " ))";
 
-                using (var cmd = m_connection.CreateCommand(m_transaction.Parent))
+                using (var cmd = m_manager.CreateCommand(m_transaction.Parent))
                     foreach (var rd in cmd.ExecuteReaderEnumerable(string.Format(cmdtxt, m_tablename), RemoteVolumeType.Files.ToString()))
                         yield return new RemoteVolume(rd.GetString(0), rd.ConvertValueToString(1), rd.ConvertValueToInt64(2));
             }
 
             public IEnumerable<IRemoteVolume> GetMissingBlockSources()
             {
-                using (var cmd = m_connection.CreateCommand(m_transaction.Parent))
+                using (var cmd = m_manager.CreateCommand(m_transaction.Parent))
                     foreach (var rd in cmd.ExecuteReaderEnumerable(string.Format(@"SELECT DISTINCT ""RemoteVolume"".""Name"", ""RemoteVolume"".""Hash"", ""RemoteVolume"".""Size"" FROM ""RemoteVolume"", ""Block"", ""{0}"" WHERE ""Block"".""Hash"" = ""{0}"".""Hash"" AND ""Block"".""Size"" = ""{0}"".""Size"" AND ""Block"".""VolumeID"" = ""RemoteVolume"".""ID"" AND ""Remotevolume"".""Name"" != ? ", m_tablename), m_volumename))
                         yield return new RemoteVolume(rd.GetString(0), rd.ConvertValueToString(1), rd.ConvertValueToInt64(2));
             }
@@ -225,7 +223,7 @@ namespace Duplicati.Library.Main.Database
                 {
                     try
                     {
-                        using (var cmd = m_connection.CreateCommand(m_transaction.Parent))
+                        using (var cmd = m_manager.CreateCommand(m_transaction.Parent))
                             cmd.ExecuteNonQuery(string.Format(@"DROP TABLE IF EXISTS ""{0}"" ", m_transaction));
                     }
                     catch { }
@@ -241,13 +239,13 @@ namespace Duplicati.Library.Main.Database
 
         public IMissingBlockList CreateBlockList(string volumename, System.Data.IDbTransaction transaction = null)
         {
-            return new MissingBlockList(volumename, m_connection, transaction);
+            return new MissingBlockList(volumename, m_manager, transaction);
         }
 
         public void FixDuplicateMetahash()
         {
-            using (var tr = m_connection.BeginTransaction())
-            using (var cmd = m_connection.CreateCommand(tr))
+            using (var tr = m_manager.BeginTransaction())
+            using (var cmd = m_manager.CreateCommand(tr))
             {
                 cmd.Transaction = tr;
 
@@ -269,7 +267,7 @@ namespace Duplicati.Library.Main.Database
 
                     var sql = @"SELECT ""A"".""ID"", ""B"".""BlocksetID"" FROM (SELECT MIN(""ID"") AS ""ID"", COUNT(""ID"") AS ""Duplicates"" FROM ""Metadataset"" GROUP BY ""BlocksetID"") ""A"", ""Metadataset"" ""B"" WHERE ""A"".""Duplicates"" > 1 AND ""A"".""ID"" = ""B"".""ID""";
 
-                    using (var c2 = m_connection.CreateCommand(tr))
+                    using (var c2 = m_manager.CreateCommand(tr))
                     {
                         c2.CommandText = string.Format(@"UPDATE ""{0}"" SET ""MetadataID"" = ? WHERE ""MetadataID"" IN (SELECT ""ID"" FROM ""Metadataset"" WHERE ""BlocksetID"" = ?)", tablename);
                         c2.CommandText += @"; DELETE FROM ""Metadataset"" WHERE ""BlocksetID"" = ? AND ""ID"" != ?";
@@ -282,7 +280,7 @@ namespace Duplicati.Library.Main.Database
                             SELECT MIN(""ID"") AS ""ID"", ""Path"", ""BlocksetID"", ""MetadataID"", COUNT(*) as ""Entries"" FROM ""{0}"" GROUP BY ""Path"", ""BlocksetID"", ""MetadataID"") 
                             WHERE ""Entries"" > 1 ORDER BY ""ID""", tablename);
 
-                    using (var c2 = m_connection.CreateCommand())
+                    using (var c2 = m_manager.CreateCommand())
                     {
                         c2.Transaction = tr;
                         c2.CommandText = string.Format(@"UPDATE ""FilesetEntry"" SET ""FileID"" = ? WHERE ""FileID"" IN (SELECT ""ID"" FROM ""{0}"" WHERE ""Path"" = ? AND ""BlocksetID"" = ? AND ""MetadataID"" = ?)", tablename);
@@ -309,8 +307,8 @@ namespace Duplicati.Library.Main.Database
 
         public void FixDuplicateFileentries()
         {
-            using (var tr = m_connection.BeginTransaction())
-            using (var cmd = m_connection.CreateCommand(tr))
+            using (var tr = m_manager.BeginTransaction())
+            using (var cmd = m_manager.CreateCommand(tr))
             {
                 var sql_count = @"SELECT COUNT(*) FROM (SELECT ""PrefixID"", ""Path"", ""BlocksetID"", ""MetadataID"", COUNT(*) as ""Duplicates"" FROM ""FileLookup"" GROUP BY ""PrefixID"", ""Path"", ""BlocksetID"", ""MetadataID"") WHERE ""Duplicates"" > 1";
 
@@ -323,7 +321,7 @@ namespace Duplicati.Library.Main.Database
                             SELECT MIN(""ID"") AS ""ID"", ""PrefixID"", ""Path"", ""BlocksetID"", ""MetadataID"", COUNT(*) as ""Entries"" FROM ""FileLookup"" GROUP BY ""PrefixID"", ""Path"", ""BlocksetID"", ""MetadataID"") 
                             WHERE ""Entries"" > 1 ORDER BY ""ID""";
 
-                    using (var c2 = m_connection.CreateCommand(tr))
+                    using (var c2 = m_manager.CreateCommand(tr))
                     {
                         c2.CommandText = @"UPDATE ""FilesetEntry"" SET ""FileID"" = ? WHERE ""FileID"" IN (SELECT ""ID"" FROM ""FileLookup"" WHERE ""PrefixID"" = ? AND ""Path"" = ? AND ""BlocksetID"" = ? AND ""MetadataID"" = ?)";
                         c2.CommandText += @"; DELETE FROM ""FileLookup"" WHERE ""PrefixID"" = ? AND ""Path"" = ? AND ""BlocksetID"" = ? AND ""MetadataID"" = ? AND ""ID"" != ?";
@@ -347,8 +345,8 @@ namespace Duplicati.Library.Main.Database
         {
             var blocklistbuffer = new byte[blocksize];
 
-            using (var tr = m_connection.BeginTransaction())
-            using (var cmd = m_connection.CreateCommand(tr))
+            using (var tr = m_manager.BeginTransaction())
+            using (var cmd = m_manager.CreateCommand(tr))
             using (var blockhasher = HashFactory.CreateHasher(blockhashalgorithm))
             {
                 var hashsize = blockhasher.HashSize / 8;
@@ -360,11 +358,11 @@ namespace Duplicati.Library.Main.Database
                 if (itemswithnoblocklisthash != 0)
                 {
                     Logging.Log.WriteInformationMessage(LOGTAG, "MissingBlocklistHashes", "Found {0} missing blocklisthash entries, repairing", itemswithnoblocklisthash);
-                    using (var c2 = m_connection.CreateCommand(tr))
-                    using (var c3 = m_connection.CreateCommand(tr))
-                    using (var c4 = m_connection.CreateCommand(tr))
-                    using (var c5 = m_connection.CreateCommand(tr))
-                    using (var c6 = m_connection.CreateCommand(tr))
+                    using (var c2 = m_manager.CreateCommand(tr))
+                    using (var c3 = m_manager.CreateCommand(tr))
+                    using (var c4 = m_manager.CreateCommand(tr))
+                    using (var c5 = m_manager.CreateCommand(tr))
+                    using (var c6 = m_manager.CreateCommand(tr))
                     {
                         c3.CommandText = @"INSERT INTO ""BlocklistHash"" (""BlocksetID"", ""Index"", ""Hash"") VALUES (?, ?, ?) ";
                         c4.CommandText = @"SELECT COUNT(*) FROM ""Block"" WHERE ""Hash"" = ? AND ""Size"" = ?";
@@ -449,8 +447,8 @@ namespace Duplicati.Library.Main.Database
 
         public void FixDuplicateBlocklistHashes(long blocksize, long hashsize)
         {
-            using (var tr = m_connection.BeginTransaction())
-            using (var cmd = m_connection.CreateCommand(tr))
+            using (var tr = m_manager.BeginTransaction())
+            using (var cmd = m_manager.CreateCommand(tr))
             {
                 var dup_sql = @"SELECT * FROM (SELECT ""BlocksetID"", ""Index"", COUNT(*) AS ""EC"" FROM ""BlocklistHash"" GROUP BY ""BlocksetID"", ""Index"") WHERE ""EC"" > 1";
 
@@ -463,7 +461,7 @@ namespace Duplicati.Library.Main.Database
 
                     var unique_count = cmd.ExecuteScalarInt64(@"SELECT COUNT(*) FROM (SELECT DISTINCT ""BlocksetID"", ""Index"" FROM ""BlocklistHash"")", 0);
 
-                    using (var c2 = m_connection.CreateCommand(tr))
+                    using (var c2 = m_manager.CreateCommand(tr))
                     {
                         c2.CommandText = @"DELETE FROM ""BlocklistHash"" WHERE rowid IN (SELECT rowid FROM ""BlocklistHash"" WHERE ""BlocksetID"" = ? AND ""Index"" = ? LIMIT ?)";
                         foreach (var rd in cmd.ExecuteReaderEnumerable(dup_sql))
@@ -502,8 +500,8 @@ namespace Duplicati.Library.Main.Database
 
         public void CheckAllBlocksAreInVolume(string filename, IEnumerable<KeyValuePair<string, long>> blocks)
         {
-            using (var tr = m_connection.BeginTransaction())
-            using (var cmd = m_connection.CreateCommand(tr))
+            using (var tr = m_manager.BeginTransaction())
+            using (var cmd = m_manager.CreateCommand(tr))
             {
                 var tablename = "ProbeBlocks-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
 
@@ -530,7 +528,7 @@ namespace Duplicati.Library.Main.Database
 
         public void CheckBlocklistCorrect(string hash, long length, IEnumerable<string> blocklist, long blocksize, long blockhashlength)
         {
-            using (var cmd = m_connection.CreateCommand())
+            using (var cmd = m_manager.CreateCommand())
             {
                 var query = string.Format(@"
 SELECT 
@@ -585,14 +583,14 @@ ORDER BY
 
         public IEnumerable<string> MissingLocalFilesets()
         {
-            using (var cmd = m_connection.CreateCommand())
+            using (var cmd = m_manager.CreateCommand())
                 foreach (var rd in cmd.ExecuteReaderEnumerable(@"SELECT ""Name"" FROM ""RemoteVolume"" WHERE ""Type"" = ? AND ""State"" NOT IN (?, ?) AND ""ID"" NOT IN (SELECT ""VolumeID"" FROM ""Fileset"")", RemoteVolumeType.Files.ToString(), RemoteVolumeState.Deleting.ToString(), RemoteVolumeState.Deleted.ToString()))
                     yield return rd.ConvertValueToString(0);
         }
 
         public IEnumerable<(long FilesetID, DateTime Timestamp, bool IsFull)> MissingRemoteFilesets()
         {
-            using (var cmd = m_connection.CreateCommand())
+            using (var cmd = m_manager.CreateCommand())
                 foreach (var rd in cmd.ExecuteReaderEnumerable(@"SELECT ""ID"", ""Timestamp"", ""IsFullBackup"" FROM ""Fileset"" WHERE ""VolumeID"" NOT IN (SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""Type"" = ? AND ""State"" NOT IN (?, ?))", RemoteVolumeType.Files.ToString(), RemoteVolumeState.Deleting.ToString(), RemoteVolumeState.Deleted.ToString()))
                     yield return (rd.ConvertValueToInt64(0), ParseFromEpochSeconds(rd.ConvertValueToInt64(1)), rd.ConvertValueToInt64(2) == BackupType.FULL_BACKUP);
         }

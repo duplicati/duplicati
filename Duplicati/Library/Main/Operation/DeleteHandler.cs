@@ -45,12 +45,12 @@ namespace Duplicati.Library.Main.Operation
             m_result = result;
         }
 
-        public void Run(IBackendManager backendManager)
+        public void Run(DatabaseConnectionManager dbManager, IBackendManager backendManager)
         {
-            if (!System.IO.File.Exists(m_options.Dbpath))
-                throw new UserInformationException(string.Format("Database file does not exist: {0}", m_options.Dbpath), "DatabaseFileMissing");
+            if (!dbManager.Exists)
+                throw new UserInformationException(string.Format("Database file does not exist: {0}", dbManager.Path), "DatabaseFileMissing");
 
-            using (var db = new Database.LocalDeleteDatabase(m_options.Dbpath, "Delete"))
+            using (var db = new LocalDeleteDatabase(dbManager, "Delete"))
             {
                 var tr = db.BeginTransaction();
                 try
@@ -122,7 +122,7 @@ namespace Duplicati.Library.Main.Operation
             {
                 if (!m_result.TaskControl.ProgressRendevouz().Await())
                 {
-                    backendManager.WaitForEmptyAsync(db, transaction, cancellationToken).Await();
+                    backendManager.WaitForEmptyAsync(cancellationToken).Await();
                     return;
                 }
 
@@ -132,7 +132,7 @@ namespace Duplicati.Library.Main.Operation
                     Logging.Log.WriteDryrunMessage(LOGTAG, "WouldDeleteRemoteFileset", "Would delete remote fileset: {0}", f.Key);
             }
 
-            backendManager.WaitForEmptyAsync(db, transaction, cancellationToken).Await();
+            backendManager.WaitForEmptyAsync(cancellationToken).Await();
 
             var count = lst.Length;
             if (!m_options.Dryrun)
