@@ -38,8 +38,8 @@ namespace Duplicati.Server.Database
 {
     public class Connection : IDisposable
     {
-        private readonly System.Data.IDbConnection m_connection;
-        private readonly System.Data.IDbCommand m_errorcmd;
+        private readonly IDbConnection m_connection;
+        private readonly IDbCommand m_errorcmd;
         public readonly object m_lock = new object();
         public const int ANY_BACKUP_ID = -1;
         public const int SERVER_SETTINGS_ID = -2;
@@ -65,7 +65,7 @@ namespace Duplicati.Server.Database
                 ])
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-        public Connection(System.Data.IDbConnection connection, bool disableFieldEncryption, EncryptedFieldHelper.KeyInstance? key)
+        public Connection(IDbConnection connection, bool disableFieldEncryption, EncryptedFieldHelper.KeyInstance? key)
         {
             m_encryptSensitiveFields = !disableFieldEncryption;
             m_key = key;
@@ -141,7 +141,7 @@ namespace Duplicati.Server.Database
             }
         }
 
-        public void ExecuteWithCommand(Action<System.Data.IDbCommand> f)
+        public void ExecuteWithCommand(Action<IDbCommand> f)
         {
             lock (m_lock)
                 using (var cmd = m_connection.CreateCommand())
@@ -214,7 +214,7 @@ namespace Duplicati.Server.Database
                     .ToDictionary((k) => k.Key, (k) => k.Value);
         }
 
-        internal void SetMetadata(IDictionary<string, string> values, long id, System.Data.IDbTransaction? transaction)
+        internal void SetMetadata(IDictionary<string, string> values, long id, IDbTransaction? transaction)
         {
             lock (m_lock)
                 using (var tr = transaction == null ? m_connection.BeginTransaction() : null)
@@ -246,7 +246,7 @@ namespace Duplicati.Server.Database
                     .ToArray();
         }
 
-        internal void SetFilters(IEnumerable<IFilter> values, long id, System.Data.IDbTransaction? transaction = null)
+        internal void SetFilters(IEnumerable<IFilter> values, long id, IDbTransaction? transaction = null)
         {
             lock (m_lock)
                 using (var tr = transaction == null ? m_connection.BeginTransaction() : null)
@@ -279,7 +279,7 @@ namespace Duplicati.Server.Database
                     .ToArray();
         }
 
-        internal void SetSettings(IEnumerable<ISetting> values, long id, System.Data.IDbTransaction? transaction = null)
+        internal void SetSettings(IEnumerable<ISetting> values, long id, IDbTransaction? transaction = null)
         {
             lock (m_lock)
                 using (var tr = transaction == null ? m_connection.BeginTransaction() : null)
@@ -319,7 +319,7 @@ namespace Duplicati.Server.Database
                     .ToArray();
         }
 
-        internal void SetSources(IEnumerable<string> values, long id, System.Data.IDbTransaction transaction)
+        internal void SetSources(IEnumerable<string> values, long id, IDbTransaction transaction)
         {
             lock (m_lock)
                 using (var tr = transaction == null ? m_connection.BeginTransaction() : null)
@@ -715,7 +715,7 @@ namespace Duplicati.Server.Database
                 }
         }
 
-        private void AddOrUpdateSchedule(ISchedule item, System.Data.IDbTransaction tr)
+        private void AddOrUpdateSchedule(ISchedule item, IDbTransaction tr)
         {
             lock (m_lock)
             {
@@ -981,7 +981,7 @@ namespace Duplicati.Server.Database
                     .ToDictionary(x => x.Key, x => x.Last().Value);
         }
 
-        public void SetUISettings(string scheme, IDictionary<string, string?> values, System.Data.IDbTransaction? transaction = null)
+        public void SetUISettings(string scheme, IDictionary<string, string?> values, IDbTransaction? transaction = null)
         {
             lock (m_lock)
                 using (var tr = transaction == null ? m_connection.BeginTransaction() : null)
@@ -1002,7 +1002,7 @@ namespace Duplicati.Server.Database
                 }
         }
 
-        public void UpdateUISettings(string scheme, IDictionary<string, string?> values, System.Data.IDbTransaction? transaction = null)
+        public void UpdateUISettings(string scheme, IDictionary<string, string?> values, IDbTransaction? transaction = null)
         {
             lock (m_lock)
                 using (var tr = transaction == null ? m_connection.BeginTransaction() : null)
@@ -1066,24 +1066,24 @@ namespace Duplicati.Server.Database
             }
         }
 
-        private static DateTime ConvertToDateTime(System.Data.IDataReader rd, int index)
+        private static DateTime ConvertToDateTime(IDataReader rd, int index)
         {
             var unixTime = ConvertToInt64(rd, index);
             return unixTime == 0 ? new DateTime(0) : Library.Utility.Utility.EPOCH.AddSeconds(unixTime);
         }
 
-        private static bool ConvertToBoolean(System.Data.IDataReader rd, int index)
+        private static bool ConvertToBoolean(IDataReader rd, int index)
         {
             return ConvertToInt64(rd, index) == 1;
         }
 
-        private static string? ConvertToString(System.Data.IDataReader rd, int index)
+        private static string? ConvertToString(IDataReader rd, int index)
         {
             var r = rd.GetValue(index);
             return r == null || r == DBNull.Value ? null : r.ToString();
         }
 
-        private static long ConvertToInt64(System.Data.IDataReader rd, int index)
+        private static long ConvertToInt64(IDataReader rd, int index)
         {
             try
             {
@@ -1097,20 +1097,20 @@ namespace Duplicati.Server.Database
             return -1;
         }
 
-        private static long ExecuteScalarInt64(System.Data.IDbCommand cmd, long defaultValue = -1)
+        private static long ExecuteScalarInt64(IDbCommand cmd, long defaultValue = -1)
         {
             using (var rd = cmd.ExecuteReader())
                 return rd.Read() ? ConvertToInt64(rd, 0) : defaultValue;
         }
 
-        private static string? ExecuteScalarString(System.Data.IDbCommand cmd)
+        private static string? ExecuteScalarString(IDbCommand cmd)
         {
             using (var rd = cmd.ExecuteReader())
                 return rd.Read() ? ConvertToString(rd, 0) : null;
 
         }
 
-        private object? ConvertToEnum(Type enumType, System.Data.IDataReader rd, int index, object? @default)
+        private object? ConvertToEnum(Type enumType, IDataReader rd, int index, object? @default)
         {
             try
             {
@@ -1124,13 +1124,13 @@ namespace Duplicati.Server.Database
         }
 
         // Overloaded function for legacy functionality
-        private bool DeleteFromDb(string tablename, long id, System.Data.IDbTransaction? transaction = null)
+        private bool DeleteFromDb(string tablename, long id, IDbTransaction? transaction = null)
         {
             return DeleteFromDb(tablename, id, "ID", transaction);
         }
 
         // New function that allows to delete rows from tables with arbitrary identifier values (e.g. ID or BackupID)
-        private bool DeleteFromDb(string tablename, long id, string identifier, System.Data.IDbTransaction? transaction = null)
+        private bool DeleteFromDb(string tablename, long id, string identifier, IDbTransaction? transaction = null)
         {
             if (transaction == null)
             {
@@ -1158,14 +1158,14 @@ namespace Duplicati.Server.Database
             }
         }
 
-        private static IEnumerable<T> Read<T>(System.Data.IDbCommand cmd, Func<System.Data.IDataReader, T> f)
+        private static IEnumerable<T> Read<T>(IDbCommand cmd, Func<IDataReader, T> f)
         {
             using (var rd = cmd.ExecuteReader())
                 while (rd.Read())
                     yield return f(rd);
         }
 
-        private static IEnumerable<T> Read<T>(System.Data.IDataReader rd, Func<T> f)
+        private static IEnumerable<T> Read<T>(IDataReader rd, Func<T> f)
         {
             while (rd.Read())
                 yield return f();
@@ -1226,7 +1226,7 @@ namespace Duplicati.Server.Database
             }, sql, args);
         }
 
-        private void OverwriteAndUpdateDb<T>(System.Data.IDbTransaction? transaction, string? deleteSql, object[]? deleteArgs, IEnumerable<T> values, bool updateExisting)
+        private void OverwriteAndUpdateDb<T>(IDbTransaction? transaction, string? deleteSql, object[]? deleteArgs, IEnumerable<T> values, bool updateExisting)
         {
             var properties = GetORMFields<T>();
             var idfield = properties.FirstOrDefault(x => x.Name == "ID")
@@ -1286,7 +1286,7 @@ namespace Duplicati.Server.Database
                 }
         }
 
-        private IEnumerable<T> ReadFromDb<T>(Func<System.Data.IDataReader, T> f, string sql, params object?[]? args)
+        private IEnumerable<T> ReadFromDb<T>(Func<IDataReader, T> f, string sql, params object?[]? args)
         {
             using (var cmd = m_connection.CreateCommand())
             {
@@ -1297,7 +1297,7 @@ namespace Duplicati.Server.Database
             }
         }
 
-        private void OverwriteAndUpdateDb<T>(System.Data.IDbTransaction? transaction, string? deleteSql, object[]? deleteArgs, IEnumerable<T> values, string insertSql, Func<T, object?[]> f)
+        private void OverwriteAndUpdateDb<T>(IDbTransaction? transaction, string? deleteSql, object[]? deleteArgs, IEnumerable<T> values, string insertSql, Func<T, object?[]> f)
         {
             using (var cmd = m_connection.CreateCommand())
             {
