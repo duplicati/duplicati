@@ -181,7 +181,7 @@ namespace Duplicati.Library.Main.Operation
                                 {
                                     if (!await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
                                     {
-                                        await backendManager.WaitForEmptyAsync(cancellationToken).ConfigureAwait(false);
+                                        await backendManager.WaitForEmptyAsync(db, null, cancellationToken).ConfigureAwait(false);
                                         return;
                                     }
 
@@ -218,7 +218,7 @@ namespace Duplicati.Library.Main.Operation
                         {
                             if (!await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
                             {
-                                await backendManager.WaitForEmptyAsync(cancellationToken).ConfigureAwait(false);
+                                await backendManager.WaitForEmptyAsync(db, null, cancellationToken).ConfigureAwait(false);
                                 return;
                             }
 
@@ -364,9 +364,6 @@ namespace Duplicati.Library.Main.Operation
                         }
                     }
 
-                    if (!m_options.Dryrun && tp.MissingVolumes.Any())
-                        db.TerminatedWithActiveUploads = true;
-
                     foreach (var n in tp.MissingVolumes)
                     {
                         IDisposable newEntry = null;
@@ -375,7 +372,7 @@ namespace Duplicati.Library.Main.Operation
                         {
                             if (!await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
                             {
-                                await backendManager.WaitForEmptyAsync(cancellationToken).ConfigureAwait(false);
+                                await backendManager.WaitForEmptyAsync(db, null, cancellationToken).ConfigureAwait(false);
                                 return;
                             }
 
@@ -565,7 +562,8 @@ namespace Duplicati.Library.Main.Operation
                 }
 
                 m_result.OperationProgressUpdater.UpdateProgress(1);
-                await backendManager.WaitForEmptyAsync(cancellationToken).ConfigureAwait(false);
+                await backendManager.WaitForEmptyAsync(db, null, cancellationToken).ConfigureAwait(false);
+                // Clear the flag after a repair operation
                 if (!m_options.Dryrun)
                     db.TerminatedWithActiveUploads = false;
                 db.WriteResults();

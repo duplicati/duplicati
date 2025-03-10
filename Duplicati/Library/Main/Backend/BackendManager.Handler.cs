@@ -393,9 +393,9 @@ partial class BackendManager
         {
             // Once in this method, we MUST set the op result,
             // or the program will hang waiting for the operation to complete
-
             int retries = 0;
             Exception? lastException = null;
+            context.Database.StartedOperation(op);
 
             do
             {
@@ -403,6 +403,7 @@ partial class BackendManager
                 {
                     // Happy case is execute and return
                     await Execute(op, cancellationToken).ConfigureAwait(false);
+                    context.Database.FinishedOperation(op);
                     return;
                 }
                 catch (Exception ex)
@@ -459,6 +460,7 @@ partial class BackendManager
             // If we have a last exception, we failed
             if (lastException != null)
             {
+                context.Database.FailedOperation(op, lastException);
                 op.SetFailed(lastException);
                 (op as IDisposable)?.Dispose();
 

@@ -406,7 +406,7 @@ namespace Duplicati.Library.Main.Operation
 
             // Drop the temp tables
             database.DropRestoreTable();
-            await backendManager.WaitForEmptyAsync(CancellationToken.None).ConfigureAwait(false);
+            await backendManager.WaitForEmptyAsync(database, null, CancellationToken.None).ConfigureAwait(false);
 
             // Report that the restore is complete
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_Complete);
@@ -467,7 +467,7 @@ namespace Duplicati.Library.Main.Operation
 
                 if (!await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
                 {
-                    await backendManager.WaitForEmptyAsync(cancellationToken).ConfigureAwait(false);
+                    await backendManager.WaitForEmptyAsync(database, null, cancellationToken).ConfigureAwait(false);
                     return;
                 }
 
@@ -482,7 +482,7 @@ namespace Duplicati.Library.Main.Operation
 
                 if (!await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
                 {
-                    await backendManager.WaitForEmptyAsync(cancellationToken).ConfigureAwait(false);
+                    await backendManager.WaitForEmptyAsync(database, null, cancellationToken).ConfigureAwait(false);
                     return;
                 }
 
@@ -506,7 +506,7 @@ namespace Duplicati.Library.Main.Operation
                         {
                             if (!await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
                             {
-                                await backendManager.WaitForEmptyAsync(cancellationToken).ConfigureAwait(false);
+                                await backendManager.WaitForEmptyAsync(database, null, cancellationToken).ConfigureAwait(false);
                                 return;
                             }
 
@@ -571,7 +571,7 @@ namespace Duplicati.Library.Main.Operation
                             {
                                 if (!await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
                                 {
-                                    await backendManager.WaitForEmptyAsync(cancellationToken).ConfigureAwait(false);
+                                    await backendManager.WaitForEmptyAsync(database, null, cancellationToken).ConfigureAwait(false);
                                     return;
                                 }
 
@@ -609,7 +609,7 @@ namespace Duplicati.Library.Main.Operation
 
                 // Drop the temp tables
                 database.DropRestoreTable();
-                await backendManager.WaitForEmptyAsync(cancellationToken).ConfigureAwait(false);
+                await backendManager.WaitForEmptyAsync(database, null, cancellationToken).ConfigureAwait(false);
             }
 
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_Complete);

@@ -215,7 +215,7 @@ namespace Duplicati.Library.Main.Operation
                         {
                             if (!await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
                             {
-                                await backendManager.WaitForEmptyAsync(cancellationToken).ConfigureAwait(false);
+                                await backendManager.WaitForEmptyAsync(dbparent, tr, cancellationToken).ConfigureAwait(false);
                                 m_result.EndTime = DateTime.UtcNow;
                                 return;
                             }
@@ -313,7 +313,7 @@ namespace Duplicati.Library.Main.Operation
                             {
                                 if (!await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
                                 {
-                                    await backendManager.WaitForEmptyAsync(cancellationToken).ConfigureAwait(false);
+                                    await backendManager.WaitForEmptyAsync(dbparent, tr, cancellationToken).ConfigureAwait(false);
                                     m_result.EndTime = DateTime.UtcNow;
                                     return;
                                 }
@@ -455,7 +455,7 @@ namespace Duplicati.Library.Main.Operation
                                 {
                                     if (!m_result.TaskControl.ProgressRendevouz().Await())
                                     {
-                                        backendManager.WaitForEmptyAsync(cancellationToken).Await();
+                                        backendManager.WaitForEmptyAsync(dbparent, tr, cancellationToken).Await();
                                         m_result.EndTime = DateTime.UtcNow;
                                         return;
                                     }
@@ -519,7 +519,7 @@ namespace Duplicati.Library.Main.Operation
                     }
                 }
 
-                backendManager.WaitForEmptyAsync(cancellationToken).Await();
+                backendManager.WaitForEmptyAsync(dbparent, null, cancellationToken).Await();
 
                 if (!m_options.RepairOnlyPaths)
                 {

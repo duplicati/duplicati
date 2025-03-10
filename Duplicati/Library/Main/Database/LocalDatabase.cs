@@ -1182,7 +1182,7 @@ ORDER BY
 
         public void LinkFilesetToVolume(long filesetid, long volumeid, System.Data.IDbTransaction transaction)
         {
-            using (var cmd = m_connection.CreateCommand())
+            using (var cmd = m_manager.CreateCommand())
             {
                 cmd.Transaction = transaction;
                 var c = cmd.ExecuteNonQuery(@"UPDATE ""Fileset"" SET ""VolumeID"" = ? WHERE ""ID"" = ?", volumeid, filesetid);

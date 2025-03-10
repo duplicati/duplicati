@@ -433,6 +433,8 @@ namespace Duplicati.Library.Main
             m_logTarget = new ControllerMultiLogTarget(result, Logging.LogMessageType.Information, null);
             using (Logging.Log.StartScope(m_logTarget, null))
             using (var dbManager = new DatabaseConnectionManager(m_options.Dbpath))
+            using (new CoCoL.IsolatedChannelScope())
+            using (var backend = new Backend.BackendManager(m_backendUrl, m_options, result.BackendWriter, dbManager, result.TaskControl))
             {
                 m_logTarget.AddTarget(m_messageSink, m_options.ConsoleLoglevel, m_options.ConsoleLogFilter);
                 result.MessageSink = m_messageSink;
@@ -447,13 +449,8 @@ namespace Duplicati.Library.Main
 
                     using (new ProcessController(m_options))
                     using (new Logging.Timer(LOGTAG, string.Format("Run{0}", result.MainOperation), string.Format("Running {0}", result.MainOperation)))
-                    using (new CoCoL.IsolatedChannelScope())
                     using (m_options.ConcurrencyMaxThreads <= 0 ? null : new CoCoL.CappedThreadedThreadPool(m_options.ConcurrencyMaxThreads))
-                    using (var backend = new Backend.BackendManager(m_backendUrl, m_options, result.BackendWriter, dbManager, result.TaskControl))
-                    {
                         method(result, dbManager, backend);
-                        backend.StopRunnerAndFlushMessages().Await();
-                    }
 
                     if (resultSetter.EndTime.Ticks == 0)
                         resultSetter.EndTime = DateTime.UtcNow;
@@ -461,6 +458,16 @@ namespace Duplicati.Library.Main
                     if (result is BasicResults r)
                     {
                         r.Interrupted = false;
+                    }
+
+                    if (dbManager.Exists)
+                    {
+                        using (var db = new LocalDatabase(dbManager, null))
+                            backend.StopRunnerAndFlushMessages(db, null).Await();
+                    }
+                    else
+                    {
+                        backend.StopRunnerAndDiscardMessages();
                     }
 
                     OperationComplete(result, null);
@@ -486,11 +493,18 @@ namespace Duplicati.Library.Main
                             {
                                 // No operation was started in database, so write logs to new operation
                                 if (dbManager.Exists)
+                                {
                                     using (var db = new LocalDatabase(dbManager, result.MainOperation.ToString()))
                                     {
+                                        backend.StopRunnerAndFlushMessages(db, null).Await();
                                         basicResults.SetDatabase(db);
                                         db.WriteResults();
                                     }
+                                }
+                                else
+                                {
+                                    backend.StopRunnerAndDiscardMessages();
+                                }
 
                                 // Do not propagate the cancel exception
                                 OperationComplete(result, null);

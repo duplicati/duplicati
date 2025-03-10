@@ -122,7 +122,7 @@ namespace Duplicati.Library.Main.Operation
             {
                 if (!m_result.TaskControl.ProgressRendevouz().Await())
                 {
-                    backendManager.WaitForEmptyAsync(cancellationToken).Await();
+                    backendManager.WaitForEmptyAsync(db, transaction, cancellationToken).Await();
                     return;
                 }
 
@@ -132,7 +132,7 @@ namespace Duplicati.Library.Main.Operation
                     Logging.Log.WriteDryrunMessage(LOGTAG, "WouldDeleteRemoteFileset", "Would delete remote fileset: {0}", f.Key);
             }
 
-            backendManager.WaitForEmptyAsync(cancellationToken).Await();
+            backendManager.WaitForEmptyAsync(db, transaction, cancellationToken).Await();
 
             var count = lst.Length;
             if (!m_options.Dryrun)

@@ -98,7 +98,7 @@ namespace Duplicati.Library.Main.Operation
                         break;
                 }
 
-                await backendManager.WaitForEmptyAsync(cancellationToken).ConfigureAwait(false);
+                await backendManager.WaitForEmptyAsync(database, null, cancellationToken).ConfigureAwait(false);
             }
         }
 
@@ -232,7 +232,7 @@ namespace Duplicati.Library.Main.Operation
                 else
                 {
                     await backendManager.PutVerificationFileAsync(remotename, tempfile, CancellationToken.None).ConfigureAwait(false);
-                    await backendManager.WaitForEmptyAsync(CancellationToken.None).ConfigureAwait(false);
+                    await backendManager.WaitForEmptyAsync(db, null, CancellationToken.None).ConfigureAwait(false);
                 }
             }
         }
@@ -443,7 +443,7 @@ namespace Duplicati.Library.Main.Operation
                 }
             }
 
-            await backendManager.WaitForEmptyAsync(CancellationToken.None).ConfigureAwait(false);
+            await backendManager.WaitForEmptyAsync(database, null, CancellationToken.None).ConfigureAwait(false);
 
             // Batch cleanup deleted volumes in DB
             if (verifyMode == VerifyMode.VerifyStrict && missingUploadingVolumes.Count > 0)

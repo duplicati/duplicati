@@ -167,7 +167,7 @@ namespace Duplicati.Library.Main.Operation
                                 var entry = new RemoteVolume(name, hash, size);
                                 if (!await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
                                 {
-                                    await backendManager.WaitForEmptyAsync(cancellationToken).ConfigureAwait(false);
+                                    await backendManager.WaitForEmptyAsync(db, transaction, cancellationToken).ConfigureAwait(false);
                                     return (false, transaction);
                                 }
 
@@ -209,7 +209,7 @@ namespace Duplicati.Library.Main.Operation
                                                 blocksInVolume = 0;
 
                                                 // Wait for the backend to catch up
-                                                await backendManager.WaitForEmptyAsync(cancellationToken).ConfigureAwait(false);
+                                                await backendManager.WaitForEmptyAsync(db, transaction, cancellationToken).ConfigureAwait(false);
 
                                                 // Commit as we have uploaded a volume
                                                 if (!m_options.Dryrun)
@@ -240,10 +240,6 @@ namespace Duplicati.Library.Main.Operation
                             }
                         }
                     }
-
-                    // The remainder of the operation cannot leave partial files
-                    if (!m_options.Dryrun)
-                        db.TerminatedWithActiveUploads = false;
                 }
                 else
                 {
@@ -295,7 +291,7 @@ namespace Duplicati.Library.Main.Operation
                                                           Library.Utility.Utility.FormatSizeString(m_result.DeletedFileSize - m_result.UploadedFileSize));
                 }
 
-                await backendManager.WaitForEmptyAsync(cancellationToken).ConfigureAwait(false);
+                await backendManager.WaitForEmptyAsync(db, transaction, cancellationToken).ConfigureAwait(false);
 
                 m_result.EndTime = DateTime.UtcNow;
                 return ((m_result.DeletedFileCount + m_result.UploadedFileCount) > 0, transaction);
@@ -326,7 +322,7 @@ namespace Duplicati.Library.Main.Operation
             }
 
             // Before we commit the current state, make sure the backend has caught up
-            backend.WaitForEmptyAsync(cancellationToken).Await();
+            backend.WaitForEmptyAsync(db, transaction, cancellationToken).Await();
 
             if (!m_options.Dryrun)
             {

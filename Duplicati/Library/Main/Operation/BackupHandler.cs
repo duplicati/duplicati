@@ -496,7 +496,7 @@ namespace Duplicati.Library.Main.Operation
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_PostBackupVerify);
             using (new Logging.Timer(LOGTAG, "AfterBackupVerify", "AfterBackupVerify"))
                 await FilelistProcessor.VerifyRemoteList(backendManager, m_options, database, m_result.BackendWriter, [currentFilelistVolume], [previousTemporaryFilelist], logErrors: true, verifyMode: FilelistProcessor.VerifyMode.VerifyStrict).ConfigureAwait(false);
-            await backendManager.WaitForEmptyAsync(m_taskReader.ProgressToken);
+            await backendManager.WaitForEmptyAsync(database, null, m_taskReader.ProgressToken);
 
             long remoteVolumeCount = database.GetRemoteVolumes().LongCount(x => x.State == RemoteVolumeState.Verified);
             long samplesToTest = Math.Max(m_options.BackupTestSampleCount, (long)Math.Round(remoteVolumeCount * (m_options.BackupTestPercentage / 100m), MidpointRounding.AwayFromZero));
@@ -575,7 +575,7 @@ namespace Duplicati.Library.Main.Operation
 
             try
             {
-                await backendManager.WaitForEmptyAsync(result.TaskControl.ProgressToken).ConfigureAwait(false);
+                await backendManager.WaitForEmptyAsync(database, transaction, result.TaskControl.ProgressToken).ConfigureAwait(false);
                 // Grab the size of the last uploaded volume
                 return backendManager.LastWriteSize;
             }
@@ -686,8 +686,6 @@ namespace Duplicati.Library.Main.Operation
                     m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_WaitForUpload);
                     var lastVolumeSize = await FlushBackend(database, m_transaction, m_result, backendManager).ConfigureAwait(false);
 
-                    if (!m_options.Dryrun)
-                        database.TerminatedWithActiveUploads = false;
                     // Make sure we have the database up-to-date
                     await db.CommitTransactionAsync("CommitAfterUpload", false);
 

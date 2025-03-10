@@ -41,9 +41,11 @@ internal interface IBackendManager : IDisposable
     /// <summary>
     /// Waits for the backend queue to be empty and flushes any pending messages to the database
     /// </summary>
+    /// <param name="database">The database to write pending messages to</param>
+    /// <param name="transaction">The transaction to use, if any</param>
     /// <param name="cancellationToken">The cancellation token</param>
     /// <returns>An awaitable task</returns>
-    Task WaitForEmptyAsync(CancellationToken cancellationToken);
+    Task WaitForEmptyAsync(LocalDatabase database, IDbTransaction? transaction, CancellationToken cancellationToken);
 
     /// <summary>
     /// Lists the files on the backend
