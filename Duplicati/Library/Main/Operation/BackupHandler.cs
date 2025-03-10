@@ -509,7 +509,13 @@ namespace Duplicati.Library.Main.Operation
                 await FilelistProcessor.VerifyRemoteList(backendManager, m_options, m_database, m_result.BackendWriter, new string[] { currentFilelistVolume }).ConfigureAwait(false);
             await backendManager.WaitForEmptyAsync(m_database, m_transaction, m_taskReader.ProgressToken);
 
-            long remoteVolumeCount = m_database.GetRemoteVolumes().LongCount(x => x.State == RemoteVolumeState.Verified);
+            // Calculate the number of samples to test, using the largest number of file of a given type
+            long remoteVolumeCount = m_database.GetRemoteVolumes()
+                .Where(x => x.State == RemoteVolumeState.Verified)
+                .GroupBy(x => x.Type)
+                .Select(x => x.LongCount())
+                .Max();
+
             long samplesToTest = Math.Max(m_options.BackupTestSampleCount, (long)Math.Round(remoteVolumeCount * (m_options.BackupTestPercentage / 100m), MidpointRounding.AwayFromZero));
             if (samplesToTest > 0 && remoteVolumeCount > 0)
             {
