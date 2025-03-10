@@ -89,7 +89,7 @@ namespace Duplicati.Library.Main.Operation
                 }
                 finally
                 {
-                    backendManager.WaitForEmptyAsync(db, null, cancellationToken).Await();
+                    backendManager.WaitForEmptyAsync(cancellationToken).Await();
                 }
             }
         }

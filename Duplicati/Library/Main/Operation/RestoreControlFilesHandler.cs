@@ -66,7 +66,7 @@ namespace Duplicati.Library.Main.Operation
                         {
                             if (!m_result.TaskControl.ProgressRendevouz().Await())
                             {
-                                backendManager.WaitForEmptyAsync(db, null, cancellationToken).Await();
+                                backendManager.WaitForEmptyAsync(cancellationToken).Await();
                                 return;
                             }
 
@@ -102,7 +102,7 @@ namespace Duplicati.Library.Main.Operation
                 }
                 finally
                 {
-                    backendManager.WaitForEmptyAsync(db, null, cancellationToken).Await();
+                    backendManager.WaitForEmptyAsync(cancellationToken).Await();
                 }
 
                 db.WriteResults();

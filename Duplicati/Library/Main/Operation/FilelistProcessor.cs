@@ -98,7 +98,7 @@ namespace Duplicati.Library.Main.Operation
                         break;
                 }
 
-                await backendManager.WaitForEmptyAsync(database, null, cancellationToken).ConfigureAwait(false);
+                await backendManager.WaitForEmptyAsync(cancellationToken).ConfigureAwait(false);
             }
         }
 

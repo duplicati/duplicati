@@ -322,7 +322,7 @@ namespace Duplicati.Library.Main.Operation
             }
 
             // Before we commit the current state, make sure the backend has caught up
-            backend.WaitForEmptyAsync(db, transaction, cancellationToken).Await();
+            backend.WaitForEmptyAsync(cancellationToken).Await();
 
             if (!m_options.Dryrun)
             {
