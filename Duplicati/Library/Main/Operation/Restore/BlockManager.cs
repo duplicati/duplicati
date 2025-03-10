@@ -447,10 +447,12 @@ namespace Duplicati.Library.Main.Operation.Restore
                     }
                     catch (Exception ex)
                     {
-                        Logging.Log.WriteWarningMessage(LOGTAG, "VolumeConsumerError", ex, "Error in volume consumer");
+                        Logging.Log.WriteErrorMessage(LOGTAG, "VolumeConsumerError", ex, "Error in volume consumer");
+                        self.Input.Retire();
 
                         // Cancel any remaining readers - although there shouldn't be any.
                         cache.CancelAll();
+                        cache.Retire();
                     }
                 });
 
@@ -496,6 +498,13 @@ namespace Duplicati.Library.Main.Operation.Restore
                             Logging.Log.WriteProfilingMessage(LOGTAG, "InternalTimings", $"Block handler - Req: {sw_req.ElapsedMilliseconds}ms, Resp: {sw_resp.ElapsedMilliseconds}ms, Cache: {sw_cache.ElapsedMilliseconds}ms, Get: {sw_get.ElapsedMilliseconds}ms");
                         }
 
+                        cache.Retire();
+                    }
+                    catch (Exception ex)
+                    {
+                        Logging.Log.WriteErrorMessage(LOGTAG, "BlockHandlerError", ex, "Error in block handler");
+                        req.Retire();
+                        res.Retire();
                         cache.Retire();
                     }
                 })).ToArray();

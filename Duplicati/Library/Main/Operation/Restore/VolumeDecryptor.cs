@@ -90,6 +90,8 @@ namespace Duplicati.Library.Main.Operation.Restore
                 catch (Exception ex)
                 {
                     Logging.Log.WriteErrorMessage(LOGTAG, "DecryptionError", ex, "Error during decryption");
+                    self.Input.Retire();
+                    self.Output.Retire();
                     throw;
                 }
             });

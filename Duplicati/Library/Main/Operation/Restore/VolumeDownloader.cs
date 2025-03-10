@@ -107,6 +107,8 @@ namespace Duplicati.Library.Main.Operation.Restore
                 catch (Exception ex)
                 {
                     Logging.Log.WriteErrorMessage(LOGTAG, "DownloadError", ex, "Error during download");
+                    self.Input.Retire();
+                    self.Output.Retire();
                     throw;
                 }
             });

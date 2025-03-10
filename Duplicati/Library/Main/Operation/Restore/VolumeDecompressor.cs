@@ -110,6 +110,8 @@ namespace Duplicati.Library.Main.Operation.Restore
                 catch (Exception ex)
                 {
                     Logging.Log.WriteErrorMessage(LOGTAG, "DecompressionError", ex, "Error during decompression");
+                    self.Input.Retire();
+                    self.Output.Retire();
                     throw;
                 }
             });
