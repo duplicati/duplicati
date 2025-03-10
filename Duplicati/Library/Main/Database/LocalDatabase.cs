@@ -898,10 +898,15 @@ ON
                     throw new DatabaseInconsistencyException(string.Format("Detected {0} volumes with missing filesets", volumesMissingFilests));
                 }
 
+                var nonAttachedFiles = cmd.ExecuteScalarInt64(@"SELECT COUNT(*) FROM ""FilesetEntry"" WHERE ""FileID"" NOT IN (SELECT ""ID"" FROM ""FileLookup"")");
+                if (nonAttachedFiles != 0)
+                    throw new DatabaseInconsistencyException($"Detected {nonAttachedFiles} file(s) in FilesetEntry without corresponding FileLookup entry");
+
                 if (verifyfilelists)
                 {
                     var anyError = new List<string>();
                     using (var cmd2 = m_connection.CreateCommand(transaction))
+                    {
                         foreach (var filesetid in cmd.ExecuteReaderEnumerable(@"SELECT ""ID"" FROM ""Fileset"" ").Select(x => x.ConvertValueToInt64(0, -1)))
                         {
                             var expandedCmd = string.Format(@"SELECT COUNT(*) FROM (SELECT DISTINCT ""Path"" FROM ({0}) UNION SELECT DISTINCT ""Path"" FROM ({1}))", LocalDatabase.LIST_FILESETS, LocalDatabase.LIST_FOLDERS_AND_SYMLINKS);
@@ -918,6 +923,7 @@ ON
                                 anyError.Add(string.Format("Unexpected difference in fileset {0}, found {1} entries, but expected {2}", filesetname, expandedlist, storedlist));
                             }
                         }
+                    }
                     if (anyError.Any())
                     {
                         throw new DatabaseInconsistencyException(string.Join("\n\r", anyError), "FilesetDifferences");
