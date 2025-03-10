@@ -20,9 +20,6 @@
 // DEALINGS IN THE SOFTWARE.
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
 
 namespace Duplicati.Library.Main.Database
 {
@@ -792,8 +789,14 @@ DELETE FROM ""RemoteVolume"" WHERE ""Type"" = '{RemoteVolumeType.Blocks}' AND ""
                         cmd.CommandText = string.Format(@"DROP TABLE IF EXISTS ""{0}""", m_tempblocklist);
                         cmd.ExecuteNonQuery();
                     }
-                    catch { }
-                    finally { m_tempblocklist = null; }
+                    catch (Exception ex)
+                    {
+                        Logging.Log.WriteWarningMessage(LOGTAG, "FailedToDropTempBlocklist", ex, "Failed to drop temporary blocklist table {0}", m_tempblocklist);
+                    }
+                    finally
+                    {
+                        m_tempblocklist = null;
+                    }
 
                 if (m_tempsmalllist != null)
                     try
@@ -801,8 +804,14 @@ DELETE FROM ""RemoteVolume"" WHERE ""Type"" = '{RemoteVolumeType.Blocks}' AND ""
                         cmd.CommandText = string.Format(@"DROP TABLE IF EXISTS ""{0}""", m_tempsmalllist);
                         cmd.ExecuteNonQuery();
                     }
-                    catch { }
-                    finally { m_tempsmalllist = null; }
+                    catch (Exception ex)
+                    {
+                        Logging.Log.WriteWarningMessage(LOGTAG, "FailedToDropTempSmalllist", ex, "Failed to drop temporary smalllist table {0}", m_tempsmalllist);
+                    }
+                    finally
+                    {
+                        m_tempsmalllist = null;
+                    }
 
             }
 

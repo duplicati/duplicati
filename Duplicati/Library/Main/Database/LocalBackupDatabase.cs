@@ -796,17 +796,6 @@ SELECT ""BlocklistHash"".""BlocksetID"" FROM ""BlocklistHash"" WHERE ""Blocklist
                     yield return rd.GetValue(0).ToString();
         }
 
-        public void LinkFilesetToVolume(long filesetid, long volumeid, System.Data.IDbTransaction transaction)
-        {
-            using (var cmd = m_connection.CreateCommand())
-            {
-                cmd.Transaction = transaction;
-                var c = cmd.ExecuteNonQuery(@"UPDATE ""Fileset"" SET ""VolumeID"" = ? WHERE ""ID"" = ?", volumeid, filesetid);
-                if (c != 1)
-                    throw new Exception(string.Format("Failed to link filesetid {0} to volumeid {1}", filesetid, volumeid));
-            }
-        }
-
         public void MoveBlockToVolume(string blockkey, long size, long sourcevolumeid, long targetvolumeid, System.Data.IDbTransaction transaction)
         {
             using (var cmd = m_connection.CreateCommand())

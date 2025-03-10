@@ -88,19 +88,7 @@ namespace Duplicati.Library.Main.Operation.Backup
             FilesetVolumeWriter fsw = null;
             try
             {
-                var s = 1;
-                var fileTime = incompleteSet.Value + TimeSpan.FromSeconds(s);
-
-                // Probe for an unused filename
-                while (s < 60)
-                {
-                    var id = await database.GetRemoteVolumeIDAsync(VolumeBase.GenerateFilename(RemoteVolumeType.Files, options, null, fileTime));
-                    if (id < 0)
-                        break;
-
-                    fileTime = incompleteSet.Value + TimeSpan.FromSeconds(++s);
-                }
-
+                var fileTime = await FilesetVolumeWriter.ProbeUnusedFilenameName(database, options, incompleteSet.Value).ConfigureAwait(false);
                 fsw = new FilesetVolumeWriter(options, fileTime);
                 fsw.VolumeID = await database.RegisterRemoteVolumeAsync(fsw.RemoteFilename, RemoteVolumeType.Files, RemoteVolumeState.Temporary);
 

@@ -856,26 +856,24 @@ ON
                             sb.AppendFormat("... and {0} more", c);
 
                         sb.Append(". Run repair to fix it.");
-                        throw new InvalidDataException(sb.ToString());
+                        throw new DatabaseInconsistencyException(sb.ToString());
                     }
 
                 var real_count = cmd.ExecuteScalarInt64(@"SELECT Count(*) FROM ""BlocklistHash""", 0);
                 var unique_count = cmd.ExecuteScalarInt64(@"SELECT Count(*) FROM (SELECT DISTINCT ""BlocksetID"", ""Index"" FROM ""BlocklistHash"")", 0);
 
                 if (real_count != unique_count)
-                    throw new InvalidDataException(string.Format("Found {0} blocklist hashes, but there should be {1}. Run repair to fix it.", real_count, unique_count));
+                    throw new DatabaseInconsistencyException(string.Format("Found {0} blocklist hashes, but there should be {1}. Run repair to fix it.", real_count, unique_count));
 
                 var itemswithnoblocklisthash = cmd.ExecuteScalarInt64(string.Format(@"SELECT COUNT(*) FROM (SELECT * FROM (SELECT ""N"".""BlocksetID"", ((""N"".""BlockCount"" + {0} - 1) / {0}) AS ""BlocklistHashCountExpected"", CASE WHEN ""G"".""BlocklistHashCount"" IS NULL THEN 0 ELSE ""G"".""BlocklistHashCount"" END AS ""BlocklistHashCountActual"" FROM (SELECT ""BlocksetID"", COUNT(*) AS ""BlockCount"" FROM ""BlocksetEntry"" GROUP BY ""BlocksetID"") ""N"" LEFT OUTER JOIN (SELECT ""BlocksetID"", COUNT(*) AS ""BlocklistHashCount"" FROM ""BlocklistHash"" GROUP BY ""BlocksetID"") ""G"" ON ""N"".""BlocksetID"" = ""G"".""BlocksetID"" WHERE ""N"".""BlockCount"" > 1) WHERE ""BlocklistHashCountExpected"" != ""BlocklistHashCountActual"")", blocksize / hashsize), 0);
                 if (itemswithnoblocklisthash != 0)
-                    throw new InvalidDataException(string.Format("Found {0} file(s) with missing blocklist hashes", itemswithnoblocklisthash));
+                    throw new DatabaseInconsistencyException(string.Format("Found {0} file(s) with missing blocklist hashes", itemswithnoblocklisthash));
 
                 if (cmd.ExecuteScalarInt64(@"SELECT COUNT(*) FROM ""Blockset"" WHERE ""Length"" > 0 AND ""ID"" NOT IN (SELECT ""BlocksetId"" FROM ""BlocksetEntry"")") != 0)
-                {
-                    throw new Exception("Detected non-empty blocksets with no associated blocks!");
-                }
+                    throw new DatabaseInconsistencyException("Detected non-empty blocksets with no associated blocks!");
 
                 if (cmd.ExecuteScalarInt64(@"SELECT COUNT(*) FROM ""FileLookup"" WHERE ""BlocksetID"" != ? AND ""BlocksetID"" != ? AND NOT ""BlocksetID"" IN (SELECT ""ID"" FROM ""Blockset"")", 0, FOLDER_BLOCKSET_ID, SYMLINK_BLOCKSET_ID) != 0)
-                    throw new Exception("Detected files associated with non-existing blocksets!");
+                    throw new DatabaseInconsistencyException("Detected files associated with non-existing blocksets!");
 
                 if (verifyfilelists)
                 {
@@ -899,7 +897,7 @@ ON
                         }
                     if (anyError.Any())
                     {
-                        throw new Interface.UserInformationException(string.Join("\n\r", anyError), "FilesetDifferences");
+                        throw new DatabaseInconsistencyException(string.Join("\n\r", anyError), "FilesetDifferences");
                     }
                 }
             }
@@ -1219,6 +1217,17 @@ ORDER BY
 
                         } while (more);
                     }
+            }
+        }
+
+        public void LinkFilesetToVolume(long filesetid, long volumeid, System.Data.IDbTransaction transaction)
+        {
+            using (var cmd = m_connection.CreateCommand())
+            {
+                cmd.Transaction = transaction;
+                var c = cmd.ExecuteNonQuery(@"UPDATE ""Fileset"" SET ""VolumeID"" = ? WHERE ""ID"" = ?", volumeid, filesetid);
+                if (c != 1)
+                    throw new Exception(string.Format("Failed to link filesetid {0} to volumeid {1}", filesetid, volumeid));
             }
         }
 
