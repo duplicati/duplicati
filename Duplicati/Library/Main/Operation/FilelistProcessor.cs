@@ -446,7 +446,7 @@ namespace Duplicati.Library.Main.Operation
 
             await backendManager.WaitForEmptyAsync(database, null, CancellationToken.None).ConfigureAwait(false);
 
-            // cleanup deleted volumes in DB en block
+            // Batch cleanup deleted volumes in DB
             if (verifyMode == VerifyMode.VerifyStrict && missingUploadingVolumes.Count > 0)
                 throw new RemoteListVerificationException($"The remote volumes {string.Join(", ", missingUploadingVolumes)} are supposed to be deleted, but strict mode is on. Try running the \"repair\" command", "DeleteDuringStrictMode");
             else if (verifyMode == VerifyMode.VerifyAndClean || verifyMode == VerifyMode.VerifyStrict)
@@ -455,6 +455,10 @@ namespace Duplicati.Library.Main.Operation
                 // Clear the flag after we have cleaned up
                 if (!options.Dryrun)
                     database.TerminatedWithActiveUploads = false;
+            }
+            else if (verifyMode == VerifyMode.VerifyOnly && database.TerminatedWithActiveUploads)
+            {
+                Logging.Log.WriteWarningMessage(LOGTAG, "ActiveUploadsDetected", null, "Active uploads detected, but no cleanup was performed. Run the \"repair\" command to clean up the incomplete files");
             }
 
             foreach (var i in missingHash)
