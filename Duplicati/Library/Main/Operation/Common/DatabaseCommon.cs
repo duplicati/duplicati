@@ -102,18 +102,6 @@ namespace Duplicati.Library.Main.Operation.Common
             });
         }
 
-
-
-        public Task RenameRemoteFileAsync(string oldname, string newname)
-        {
-            return RunOnMain(() => m_db.RenameRemoteFile(oldname, newname, GetTransaction()));
-        }
-
-        public Task LogRemoteOperationAsync(string operation, string path, string data)
-        {
-            return RunOnMain(() => m_db.LogRemoteOperation(operation, path, data, GetTransaction()));
-        }
-
         public Task<LocalDatabase.IBlock[]> GetBlocksAsync(long volumeid)
         {
             // TODO: Figure out how to return the enumerable, while keeping the lock

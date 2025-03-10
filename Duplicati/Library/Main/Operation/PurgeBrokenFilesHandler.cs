@@ -23,6 +23,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Main.Database;
 
 namespace Duplicati.Library.Main.Operation
 {
@@ -41,17 +42,17 @@ namespace Duplicati.Library.Main.Operation
             m_result = result;
         }
 
-        public void Run(IBackendManager backendManager, Library.Utility.IFilter filter)
+        public void Run(DatabaseConnectionManager dbManager, IBackendManager backendManager, Library.Utility.IFilter filter)
         {
-            if (!System.IO.File.Exists(m_options.Dbpath))
-                throw new UserInformationException(string.Format("Database file does not exist: {0}", m_options.Dbpath), "DatabaseDoesNotExist");
+            if (!dbManager.Exists)
+                throw new UserInformationException(string.Format("Database file does not exist: {0}", dbManager.Path), "DatabaseDoesNotExist");
 
             if (filter != null && !filter.Empty)
                 throw new UserInformationException("Filters are not supported for this operation", "FiltersNotAllowedOnPurgeBrokenFiles");
 
-            List<Database.RemoteVolumeEntry> missing = null;
+            List<RemoteVolumeEntry> missing = null;
 
-            using (var db = new Database.LocalListBrokenFilesDatabase(m_options.Dbpath))
+            using (var db = new LocalListBrokenFilesDatabase(dbManager))
             using (var tr = db.BeginTransaction())
             {
                 if (db.PartiallyRecreated)

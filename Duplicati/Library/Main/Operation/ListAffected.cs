@@ -23,31 +23,23 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Main.Database;
 
 namespace Duplicati.Library.Main.Operation
 {
     internal class ListAffected
     {
-        private readonly Options m_options;
-        private readonly ListAffectedResults m_result;
-
-        public ListAffected(Options options, ListAffectedResults result)
+        public void Run(DatabaseConnectionManager dbManager, ListAffectedResults result, List<string> args, Action<IListAffectedResults> callback = null)
         {
-            m_options = options;
-            m_result = result;
-        }
-            
-        public void Run(List<string> args, Action<Duplicati.Library.Interface.IListAffectedResults> callback = null)
-        {
-            if (!System.IO.File.Exists(m_options.Dbpath))
-                throw new UserInformationException(string.Format("Database file does not exist: {0}", m_options.Dbpath), "DatabaseDoesNotExist");
+            if (!dbManager.Exists)
+                throw new UserInformationException(string.Format("Database file does not exist: {0}", dbManager.Path), "DatabaseDoesNotExist");
 
-            using(var db = new Database.LocalListAffectedDatabase(m_options.Dbpath))
+            using (var db = new LocalListAffectedDatabase(dbManager))
             {
-                m_result.SetDatabase(db);
+                result.SetDatabase(db);
                 if (callback == null)
                 {
-                    m_result.SetResult(
+                    result.SetResult(
                         db.GetFilesets(args).OrderByDescending(x => x.Time).ToArray(),
                         db.GetFiles(args).ToArray(),
                         db.GetLogLines(args).ToArray(),
@@ -56,14 +48,14 @@ namespace Duplicati.Library.Main.Operation
                 }
                 else
                 {
-                    m_result.SetResult(
+                    result.SetResult(
                         db.GetFilesets(args).OrderByDescending(x => x.Time),
                         db.GetFiles(args),
                         db.GetLogLines(args),
                         db.GetVolumes(args)
                     );
 
-                    callback(m_result);
+                    callback(result);
                 }
             }
         }

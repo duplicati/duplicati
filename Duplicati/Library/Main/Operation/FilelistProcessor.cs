@@ -217,8 +217,7 @@ namespace Duplicati.Library.Main.Operation
         /// <param name="backendurl">The backend url</param>
         /// <param name="options">The options to use</param>
         /// <param name="db">The attached database</param>
-        /// <param name="transaction">An optional transaction object</param>
-        public static async Task UploadVerificationFile(IBackendManager backendManager, Options options, LocalDatabase db, IDbTransaction transaction)
+        public static async Task UploadVerificationFile(IBackendManager backendManager, Options options, LocalDatabase db)
         {
             using (var tempfile = new Library.Utility.TempFile())
             {
@@ -233,7 +232,7 @@ namespace Duplicati.Library.Main.Operation
                 else
                 {
                     await backendManager.PutVerificationFileAsync(remotename, tempfile, CancellationToken.None).ConfigureAwait(false);
-                    await backendManager.WaitForEmptyAsync(db, transaction, CancellationToken.None).ConfigureAwait(false);
+                    await backendManager.WaitForEmptyAsync(db, null, CancellationToken.None).ConfigureAwait(false);
                 }
             }
         }

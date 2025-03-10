@@ -24,6 +24,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Main.Database;
 using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Main.Operation
@@ -43,12 +44,12 @@ namespace Duplicati.Library.Main.Operation
             m_result = result;
         }
 
-        public void Run(IBackendManager backendManager, IFilter filter, Func<long, DateTime, long, string, long, bool> callbackhandler = null)
+        public void Run(DatabaseConnectionManager dbManager, IBackendManager backendManager, IFilter filter, Func<long, DateTime, long, string, long, bool> callbackhandler = null)
         {
-            if (!System.IO.File.Exists(m_options.Dbpath))
-                throw new UserInformationException(string.Format("Database file does not exist: {0}", m_options.Dbpath), "DatabaseDoesNotExist");
+            if (!dbManager.Exists)
+                throw new UserInformationException(string.Format("Database file does not exist: {0}", dbManager.Path), "DatabaseDoesNotExist");
 
-            using (var db = new Database.LocalListBrokenFilesDatabase(m_options.Dbpath))
+            using (var db = new LocalListBrokenFilesDatabase(dbManager))
             using (var tr = db.BeginTransaction())
                 DoRun(backendManager, db, tr, filter, callbackhandler);
         }

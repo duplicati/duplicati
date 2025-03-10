@@ -45,12 +45,12 @@ namespace Duplicati.Library.Main.Operation
             m_result = result;
         }
 
-        public void Run(IBackendManager backendManager)
+        public void Run(DatabaseConnectionManager dbManager, IBackendManager backendManager)
         {
-            if (!System.IO.File.Exists(m_options.Dbpath))
-                throw new UserInformationException(string.Format("Database file does not exist: {0}", m_options.Dbpath), "DatabaseFileMissing");
+            if (!dbManager.Exists)
+                throw new UserInformationException(string.Format("Database file does not exist: {0}", dbManager.Path), "DatabaseFileMissing");
 
-            using (var db = new Database.LocalDeleteDatabase(m_options.Dbpath, "Delete"))
+            using (var db = new LocalDeleteDatabase(dbManager, "Delete"))
             {
                 var tr = db.BeginTransaction();
                 try

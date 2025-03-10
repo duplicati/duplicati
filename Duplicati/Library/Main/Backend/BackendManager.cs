@@ -61,8 +61,9 @@ internal partial class BackendManager : IBackendManager
     /// <param name="backendUrl">The backend URL</param>
     /// <param name="options">The options</param>
     /// <param name="backendWriter">The backend writer</param>
+    /// <param name="dbManager">The database manager</param>
     /// <param name="taskReader">The task reader</param>
-    public BackendManager(string backendUrl, Options options, IBackendWriter backendWriter, ITaskReader taskReader)
+    public BackendManager(string backendUrl, Options options, IBackendWriter backendWriter, DatabaseConnectionManager dbManager, ITaskReader taskReader)
     {
         if (string.IsNullOrWhiteSpace(backendUrl))
             throw new ArgumentNullException(nameof(backendUrl));
@@ -71,7 +72,7 @@ internal partial class BackendManager : IBackendManager
         context = new ExecuteContext(
             new ProgressHandler(options, backendWriter, taskReader).HandleProgress,
             backendWriter ?? throw new ArgumentNullException(nameof(backendWriter)),
-            new DatabaseCollector(),
+            new DatabaseCollector(dbManager),
             taskReader ?? throw new ArgumentNullException(nameof(taskReader)),
             options ?? throw new ArgumentNullException(nameof(options))
         );
@@ -378,7 +379,6 @@ internal partial class BackendManager : IBackendManager
 
         isDisposed = true;
         requestChannel.RetireAsync().Await();
-        context.Database.FlushMessagesToLog();
 
         if (!queueRunner.IsCompleted)
         {

@@ -45,7 +45,7 @@ namespace Duplicati.Library.Main.Operation
             m_result = result;
         }
 
-        public async Task Run(IBackendManager backendManager, IEnumerable<string> filterstrings, IFilter compositefilter)
+        public async Task Run(DatabaseConnectionManager dbManager, IBackendManager backendManager, IEnumerable<string> filterstrings, IFilter compositefilter)
         {
             var cancellationToken = m_result.TaskControl.ProgressToken;
             var parsedfilter = new FilterExpression(filterstrings);
@@ -53,8 +53,8 @@ namespace Duplicati.Library.Main.Operation
             var simpleList = !((filter is FilterExpression expression && expression.Type == FilterType.Simple) || m_options.AllVersions);
 
             //Use a speedy local query
-            if (!m_options.NoLocalDb && System.IO.File.Exists(m_options.Dbpath))
-                using (var db = new Database.LocalListDatabase(m_options.Dbpath))
+            if (!m_options.NoLocalDb && dbManager.Exists)
+                using (var db = new LocalListDatabase(dbManager))
                 {
                     m_result.SetDatabase(db);
                     using (var filesets = db.SelectFileSets(m_options.Time, m_options.Version))
@@ -120,7 +120,8 @@ namespace Duplicati.Library.Main.Operation
 
             // Otherwise, grab info from remote location
             using (var tmpdb = new TempFile())
-            using (var db = new LocalDatabase(tmpdb, "List", true))
+            using (var tmpdbManager = new DatabaseConnectionManager(tmpdb))
+            using (var db = new LocalDatabase(tmpdbManager, "List"))
             {
                 m_result.SetDatabase(db);
 

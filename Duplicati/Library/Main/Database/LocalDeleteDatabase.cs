@@ -39,10 +39,10 @@ namespace Duplicati.Library.Main.Database
         /// </summary>
         private const string TEMPORARY = "TEMPORARY";
 
-        private System.Data.IDbCommand m_registerDuplicateBlockCommand;
+        private IDbCommand m_registerDuplicateBlockCommand;
 
-        public LocalDeleteDatabase(string path, string operation)
-            : base(path, operation, true)
+        public LocalDeleteDatabase(DatabaseConnectionManager manager, string operation)
+            : base(manager, operation)
         {
             InitializeCommands();
         }
@@ -55,9 +55,7 @@ namespace Duplicati.Library.Main.Database
 
         private void InitializeCommands()
         {
-            m_registerDuplicateBlockCommand = m_connection.CreateCommand();
-            m_registerDuplicateBlockCommand.CommandText = @"INSERT OR IGNORE INTO ""DuplicateBlock"" (""BlockID"", ""VolumeID"") SELECT ""ID"", ? FROM ""Block"" WHERE ""Hash"" = ? AND ""Size"" = ? ";
-            m_registerDuplicateBlockCommand.AddParameters(3);
+            m_registerDuplicateBlockCommand = m_manager.CreateCommand(@"INSERT OR IGNORE INTO ""DuplicateBlock"" (""BlockID"", ""VolumeID"") SELECT ""ID"", ? FROM ""Block"" WHERE ""Hash"" = ? AND ""Size"" = ? ");
         }
 
         /// <summary>
@@ -66,12 +64,10 @@ namespace Duplicati.Library.Main.Database
         /// <param name="toDelete">The fileset entries to delete</param>
         /// <param name="transaction">The transaction to execute the commands in</param>
         /// <returns>A list of filesets to delete</returns>
-        public IEnumerable<KeyValuePair<string, long>> DropFilesetsFromTable(DateTime[] toDelete, System.Data.IDbTransaction transaction)
+        public IEnumerable<KeyValuePair<string, long>> DropFilesetsFromTable(DateTime[] toDelete, IDbTransaction transaction)
         {
-            using (var cmd = m_connection.CreateCommand())
+            using (var cmd = m_manager.CreateCommand(transaction))
             {
-                cmd.Transaction = transaction;
-
                 var deleted = 0;
 
                 //Process array in slices to prevent exceeding SQLITE_MAX_VARIABLE_NUMBER (default 999)
@@ -129,7 +125,7 @@ namespace Duplicati.Library.Main.Database
             get
             {
                 List<IListResultFileset> filesets = new List<IListResultFileset>();
-                using (IDbCommand cmd = this.m_connection.CreateCommand())
+                using (IDbCommand cmd = m_manager.CreateCommand())
                 {
                     // We can also use the ROW_NUMBER() window function to generate the backup versions,
                     // but this requires at least SQLite 3.25, which is not available in some common
@@ -170,7 +166,7 @@ namespace Duplicati.Library.Main.Database
         /// The sizes are the uncompressed values.
         /// </summary>
         /// <returns>A list of tuples with name, datasize, wastedbytes.</returns>
-        private IEnumerable<VolumeUsage> GetWastedSpaceReport(System.Data.IDbTransaction transaction)
+        private IEnumerable<VolumeUsage> GetWastedSpaceReport(IDbTransaction transaction)
         {
             var tmptablename = "UsageReport-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
 
@@ -187,9 +183,8 @@ namespace Duplicati.Library.Main.Database
             var collected = @"SELECT ""VolumeID"" AS ""VolumeID"", SUM(""ActiveSize"") AS ""ActiveSize"", SUM(""InactiveSize"") AS ""InactiveSize"", MAX(""Sorttime"") AS ""Sorttime"" FROM (" + combined + @") GROUP BY ""VolumeID"" ";
             var createtable = @$"CREATE {TEMPORARY} TABLE ""{tmptablename}"" AS " + collected;
 
-            using (var cmd = m_connection.CreateCommand())
+            using (var cmd = m_manager.CreateCommand(transaction))
             {
-                cmd.Transaction = transaction;
                 try
                 {
                     cmd.ExecuteNonQuery(createtable, RemoteVolumeType.Blocks.ToString(), RemoteVolumeState.Uploaded.ToString(), RemoteVolumeState.Verified.ToString());
@@ -303,7 +298,7 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
-        public ICompactReport GetCompactReport(long volsize, long wastethreshold, long smallfilesize, long maxsmallfilecount, System.Data.IDbTransaction transaction)
+        public ICompactReport GetCompactReport(long volsize, long wastethreshold, long smallfilesize, long maxsmallfilecount, IDbTransaction transaction)
         {
             return new CompactReport(volsize, wastethreshold, smallfilesize, maxsmallfilecount, GetWastedSpaceReport(transaction).ToList());
         }
@@ -311,24 +306,19 @@ namespace Duplicati.Library.Main.Database
 
         public interface IBlockQuery : IDisposable
         {
-            bool UseBlock(string hash, long size, System.Data.IDbTransaction transaction);
+            bool UseBlock(string hash, long size, IDbTransaction transaction);
         }
 
         private class BlockQuery : IBlockQuery
         {
-            private System.Data.IDbCommand m_command;
+            private IDbCommand m_command;
 
-            public BlockQuery(System.Data.IDbConnection con, System.Data.IDbTransaction transaction)
+            public BlockQuery(DatabaseConnectionManager manager)
             {
-                m_command = con.CreateCommand();
-                m_command.Transaction = transaction;
-
-                m_command.Parameters.Clear();
-                m_command.CommandText = @"SELECT ""VolumeID"" FROM ""Block"" WHERE ""Hash"" = ? AND ""Size"" = ? ";
-                m_command.AddParameters(2);
+                m_command = manager.CreateCommand(@"SELECT ""VolumeID"" FROM ""Block"" WHERE ""Hash"" = ? AND ""Size"" = ? ");
             }
 
-            public bool UseBlock(string hash, long size, System.Data.IDbTransaction transaction)
+            public bool UseBlock(string hash, long size, IDbTransaction transaction)
             {
                 m_command.Transaction = transaction;
                 m_command.SetParameterValue(0, hash);
@@ -339,18 +329,17 @@ namespace Duplicati.Library.Main.Database
 
             public void Dispose()
             {
-                if (m_command != null)
-                    try { m_command.Dispose(); }
-                    finally { m_command = null; }
+                try { m_command?.Dispose(); }
+                finally { m_command = null; }
             }
         }
 
         /// <summary>
         /// Builds a lookup table to enable faster response to block queries
         /// </summary>
-        public IBlockQuery CreateBlockQueryHelper(System.Data.IDbTransaction transaction)
+        public IBlockQuery CreateBlockQueryHelper(IDbTransaction transaction)
         {
-            return new BlockQuery(m_connection, transaction);
+            return new BlockQuery(m_manager);
         }
 
         /// <summary>
@@ -360,7 +349,7 @@ namespace Duplicati.Library.Main.Database
         /// <param name="size">The size of the block</param>
         /// <param name="volumeID">The new volume ID</param>
         /// <param name="tr">The transaction to execute the command in</param>
-        public void RegisterDuplicatedBlock(string hash, long size, long volumeID, System.Data.IDbTransaction tr)
+        public void RegisterDuplicatedBlock(string hash, long size, long volumeID, IDbTransaction tr)
         {
             m_registerDuplicateBlockCommand.Transaction = tr;
             m_registerDuplicateBlockCommand.SetParameterValue(0, volumeID);
@@ -376,13 +365,13 @@ namespace Duplicati.Library.Main.Database
         /// <param name="filename">The file to remove</param>
         /// <param name="volumeIdsToBeRemoved">The volume IDs that will be removed</param>
         /// <param name="transaction">The transaction to execute the command in</param>
-        public void PrepareForDelete(string filename, IEnumerable<long> volumeIdsToBeRemoved, System.Data.IDbTransaction transaction)
+        public void PrepareForDelete(string filename, IEnumerable<long> volumeIdsToBeRemoved, IDbTransaction transaction)
         {
             var deletedVolume = GetRemoteVolume(filename, transaction);
             if (deletedVolume.Type != RemoteVolumeType.Blocks)
                 return;
 
-            using (var cmd = m_connection.CreateCommand(transaction))
+            using (var cmd = m_manager.CreateCommand(transaction))
             {
                 var updatedBlocks = "BlocksToUpdate-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
                 var replacementBlocks = "ReplacementBlocks-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
@@ -420,9 +409,9 @@ namespace Duplicati.Library.Main.Database
         /// <param name="deleteableVolumes">Block volumes slated for deletion.</param>
         /// <param name="transaction">The transaction to execute the command in</param>
         /// <returns>The deletable volumes.</returns>
-        public IEnumerable<IRemoteVolume> ReOrderDeleteableVolumes(IEnumerable<IRemoteVolume> deleteableVolumes, System.Data.IDbTransaction transaction)
+        public IEnumerable<IRemoteVolume> ReOrderDeleteableVolumes(IEnumerable<IRemoteVolume> deleteableVolumes, IDbTransaction transaction)
         {
-            using (var cmd = m_connection.CreateCommand(transaction))
+            using (var cmd = m_manager.CreateCommand(transaction))
             {
                 // Although the generated index volumes are always in pairs,
                 // this code handles many-to-many relations between
