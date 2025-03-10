@@ -27,6 +27,7 @@ using System.IO;
 using Duplicati.Library.Modules.Builtin.ResultSerialization;
 using Duplicati.Library.Utility;
 using System.Runtime.CompilerServices;
+using Duplicati.Library.Interface;
 
 
 // Expose internal classes to UnitTests, so that Database classes can be tested
@@ -366,7 +367,7 @@ namespace Duplicati.Library.Main.Database
                         rd.ConvertValueToInt64(3, -1),
                         (RemoteVolumeType)Enum.Parse(typeof(RemoteVolumeType), rd.GetValue(2).ToString()),
                         (RemoteVolumeState)Enum.Parse(typeof(RemoteVolumeState), rd.GetValue(5).ToString()),
-                        new DateTime(rd.ConvertValueToInt64(6, 0), DateTimeKind.Utc)
+                        ParseFromEpochSeconds(rd.ConvertValueToInt64(6, 0))
                     );
 
             return RemoteVolumeEntry.Empty;
@@ -397,7 +398,7 @@ namespace Duplicati.Library.Main.Database
                         rd.ConvertValueToInt64(3, -1),
                         (RemoteVolumeType)Enum.Parse(typeof(RemoteVolumeType), rd.GetValue(2).ToString()),
                         (RemoteVolumeState)Enum.Parse(typeof(RemoteVolumeState), rd.GetValue(5).ToString()),
-                        new DateTime(rd.ConvertValueToInt64(6, 0), DateTimeKind.Utc)
+                        ParseFromEpochSeconds(rd.ConvertValueToInt64(6, 0))
                     );
                 }
             }
@@ -451,12 +452,12 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
-        public void RemoveRemoteVolume(string name, System.Data.IDbTransaction transaction = null)
+        public void RemoveRemoteVolume(string name, IDbTransaction transaction = null)
         {
-            RemoveRemoteVolumes(new string[] { name }, transaction);
+            RemoveRemoteVolumes([name], transaction);
         }
 
-        public void RemoveRemoteVolumes(IEnumerable<string> names, System.Data.IDbTransaction transaction = null)
+        public void RemoveRemoteVolumes(IEnumerable<string> names, IDbTransaction transaction = null)
         {
             if (names == null || !names.Any()) return;
 
@@ -737,44 +738,55 @@ AND Fileset.ID NOT IN
             return GetDbOptionList(transaction).ToDictionary(x => x.Key, x => x.Value);
         }
 
+        /// <summary>
+        /// Updates a database option
+        /// </summary>
+        /// <param name="key">The key to update</param>
+        /// <param name="value">The value to set</param>
+        private void UpdateDbOption(string key, bool value)
+        {
+            var opts = GetDbOptions();
+
+            if (value)
+                opts[key] = "true";
+            else
+                opts.Remove(key);
+
+            SetDbOptions(opts);
+        }
+
+        /// <summary>
+        /// Flag indicating if a repair is in progress
+        /// </summary>
         public bool RepairInProgress
         {
-            get
-            {
-                return GetDbOptions().ContainsKey("repair-in-progress");
-            }
-            set
-            {
-                var opts = GetDbOptions();
-
-                if (value)
-                    opts["repair-in-progress"] = "true";
-                else
-                    opts.Remove("repair-in-progress");
-
-                SetDbOptions(opts);
-            }
+            get => GetDbOptions().ContainsKey("repair-in-progress");
+            set => UpdateDbOption("repair-in-progress", value);
         }
 
+        /// <summary>
+        /// Flag indicating if a repair is in progress
+        /// </summary>
         public bool PartiallyRecreated
         {
-            get
-            {
-                return GetDbOptions().ContainsKey("partially-recreated");
-            }
-            set
-            {
-                var opts = GetDbOptions();
-
-                if (value)
-                    opts["partially-recreated"] = "true";
-                else
-                    opts.Remove("partially-recreated");
-
-                SetDbOptions(opts);
-            }
+            get => GetDbOptions().ContainsKey("partially-recreated");
+            set => UpdateDbOption("partially-recreated", value);
         }
 
+        /// <summary>
+        /// Flag indicating if the database can contain partial uploads
+        /// </summary>
+        public bool TerminatedWithActiveUploads
+        {
+            get => GetDbOptions().ContainsKey("terminated-with-active-uploads");
+            set => UpdateDbOption("terminated-with-active-uploads", value);
+        }
+
+        /// <summary>
+        /// Sets the database options
+        /// </summary>
+        /// <param name="options">The options to set</param>
+        /// <param name="transaction">An optional transaction</param>
         public void SetDbOptions(IDictionary<string, string> options, System.Data.IDbTransaction transaction = null)
         {
             using (var tr = new TemporaryTransactionWrapper(m_connection, transaction))
@@ -845,31 +857,56 @@ ON
                             sb.AppendFormat("... and {0} more", c);
 
                         sb.Append(". Run repair to fix it.");
-                        throw new InvalidDataException(sb.ToString());
+                        throw new DatabaseInconsistencyException(sb.ToString());
                     }
 
                 var real_count = cmd.ExecuteScalarInt64(@"SELECT Count(*) FROM ""BlocklistHash""", 0);
                 var unique_count = cmd.ExecuteScalarInt64(@"SELECT Count(*) FROM (SELECT DISTINCT ""BlocksetID"", ""Index"" FROM ""BlocklistHash"")", 0);
 
                 if (real_count != unique_count)
-                    throw new InvalidDataException(string.Format("Found {0} blocklist hashes, but there should be {1}. Run repair to fix it.", real_count, unique_count));
+                    throw new DatabaseInconsistencyException(string.Format("Found {0} blocklist hashes, but there should be {1}. Run repair to fix it.", real_count, unique_count));
 
                 var itemswithnoblocklisthash = cmd.ExecuteScalarInt64(string.Format(@"SELECT COUNT(*) FROM (SELECT * FROM (SELECT ""N"".""BlocksetID"", ((""N"".""BlockCount"" + {0} - 1) / {0}) AS ""BlocklistHashCountExpected"", CASE WHEN ""G"".""BlocklistHashCount"" IS NULL THEN 0 ELSE ""G"".""BlocklistHashCount"" END AS ""BlocklistHashCountActual"" FROM (SELECT ""BlocksetID"", COUNT(*) AS ""BlockCount"" FROM ""BlocksetEntry"" GROUP BY ""BlocksetID"") ""N"" LEFT OUTER JOIN (SELECT ""BlocksetID"", COUNT(*) AS ""BlocklistHashCount"" FROM ""BlocklistHash"" GROUP BY ""BlocksetID"") ""G"" ON ""N"".""BlocksetID"" = ""G"".""BlocksetID"" WHERE ""N"".""BlockCount"" > 1) WHERE ""BlocklistHashCountExpected"" != ""BlocklistHashCountActual"")", blocksize / hashsize), 0);
                 if (itemswithnoblocklisthash != 0)
-                    throw new InvalidDataException(string.Format("Found {0} file(s) with missing blocklist hashes", itemswithnoblocklisthash));
+                    throw new DatabaseInconsistencyException(string.Format("Found {0} file(s) with missing blocklist hashes", itemswithnoblocklisthash));
 
                 if (cmd.ExecuteScalarInt64(@"SELECT COUNT(*) FROM ""Blockset"" WHERE ""Length"" > 0 AND ""ID"" NOT IN (SELECT ""BlocksetId"" FROM ""BlocksetEntry"")") != 0)
-                {
-                    throw new Exception("Detected non-empty blocksets with no associated blocks!");
-                }
+                    throw new DatabaseInconsistencyException("Detected non-empty blocksets with no associated blocks!");
 
                 if (cmd.ExecuteScalarInt64(@"SELECT COUNT(*) FROM ""FileLookup"" WHERE ""BlocksetID"" != ? AND ""BlocksetID"" != ? AND NOT ""BlocksetID"" IN (SELECT ""ID"" FROM ""Blockset"")", 0, FOLDER_BLOCKSET_ID, SYMLINK_BLOCKSET_ID) != 0)
-                    throw new Exception("Detected files associated with non-existing blocksets!");
+                    throw new DatabaseInconsistencyException("Detected files associated with non-existing blocksets!");
+
+                var filesetsMissingVolumes = cmd.ExecuteScalarInt64(@"SELECT COUNT(*) FROM ""Fileset"" WHERE ""VolumeID"" NOT IN (SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""Type"" = ? AND ""State"" != ?)", 0, RemoteVolumeType.Files.ToString(), RemoteVolumeState.Deleted.ToString());
+                if (filesetsMissingVolumes != 0)
+                {
+                    if (filesetsMissingVolumes == 1)
+                        using (var reader = cmd.ExecuteReader(@"SELECT ""ID"", ""Timestamp"", ""VolumeID"" FROM ""Fileset"" WHERE ""VolumeID"" NOT IN (SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""Type"" = ? AND ""State"" != ?)", 0, RemoteVolumeType.Files.ToString(), RemoteVolumeState.Deleted.ToString()))
+                            if (reader.Read())
+                                throw new DatabaseInconsistencyException($"Detected 1 fileset with missing volume: FilesetId = {reader.ConvertValueToInt64(0)}, Time = ({ParseFromEpochSeconds(reader.ConvertValueToInt64(1))}), unmatched VolumeID {reader.ConvertValueToInt64(2)}");
+
+                    throw new DatabaseInconsistencyException(string.Format("Detected {0} filesets with missing volumes", filesetsMissingVolumes));
+                }
+
+                var volumesMissingFilests = cmd.ExecuteScalarInt64(@"SELECT COUNT(*) FROM ""RemoteVolume"" WHERE ""Type"" = ? AND ""State"" != ? AND ""ID"" NOT IN (SELECT ""VolumeID"" FROM ""Fileset"")", 0, RemoteVolumeType.Files.ToString(), RemoteVolumeState.Deleted.ToString());
+                if (volumesMissingFilests != 0)
+                {
+                    if (volumesMissingFilests == 1)
+                        using (var reader = cmd.ExecuteReader(@"SELECT ""ID"", ""Name"", ""State"" FROM ""RemoteVolume"" WHERE ""Type"" = ? AND ""State"" != ? AND ""ID"" NOT IN (SELECT ""VolumeID"" FROM ""Fileset"")", 0, RemoteVolumeType.Files.ToString(), RemoteVolumeState.Deleted.ToString()))
+                            if (reader.Read())
+                                throw new DatabaseInconsistencyException($"Detected 1 volume with missing filesets: VolumeId = {reader.ConvertValueToInt64(0)}, Name = {reader.ConvertValueToString(1)}, State = {reader.ConvertValueToString(2)}");
+
+                    throw new DatabaseInconsistencyException(string.Format("Detected {0} volumes with missing filesets", volumesMissingFilests));
+                }
+
+                var nonAttachedFiles = cmd.ExecuteScalarInt64(@"SELECT COUNT(*) FROM ""FilesetEntry"" WHERE ""FileID"" NOT IN (SELECT ""ID"" FROM ""FileLookup"")");
+                if (nonAttachedFiles != 0)
+                    throw new DatabaseInconsistencyException($"Detected {nonAttachedFiles} file(s) in FilesetEntry without corresponding FileLookup entry");
 
                 if (verifyfilelists)
                 {
                     var anyError = new List<string>();
                     using (var cmd2 = m_connection.CreateCommand(transaction))
+                    {
                         foreach (var filesetid in cmd.ExecuteReaderEnumerable(@"SELECT ""ID"" FROM ""Fileset"" ").Select(x => x.ConvertValueToInt64(0, -1)))
                         {
                             var expandedCmd = string.Format(@"SELECT COUNT(*) FROM (SELECT DISTINCT ""Path"" FROM ({0}) UNION SELECT DISTINCT ""Path"" FROM ({1}))", LocalDatabase.LIST_FILESETS, LocalDatabase.LIST_FOLDERS_AND_SYMLINKS);
@@ -886,9 +923,10 @@ ON
                                 anyError.Add(string.Format("Unexpected difference in fileset {0}, found {1} entries, but expected {2}", filesetname, expandedlist, storedlist));
                             }
                         }
+                    }
                     if (anyError.Any())
                     {
-                        throw new Interface.UserInformationException(string.Join("\n\r", anyError), "FilesetDifferences");
+                        throw new DatabaseInconsistencyException(string.Join("\n\r", anyError), "FilesetDifferences");
                     }
                 }
             }
@@ -1211,6 +1249,17 @@ ORDER BY
             }
         }
 
+        public void LinkFilesetToVolume(long filesetid, long volumeid, System.Data.IDbTransaction transaction)
+        {
+            using (var cmd = m_connection.CreateCommand())
+            {
+                cmd.Transaction = transaction;
+                var c = cmd.ExecuteNonQuery(@"UPDATE ""Fileset"" SET ""VolumeID"" = ? WHERE ""ID"" = ?", volumeid, filesetid);
+                if (c != 1)
+                    throw new Exception(string.Format("Failed to link filesetid {0} to volumeid {1}", filesetid, volumeid));
+            }
+        }
+
         public void PushTimestampChangesToPreviousVersion(long filesetId, System.Data.IDbTransaction transaction)
         {
             using (var cmd = m_connection.CreateCommand())
@@ -1446,6 +1495,64 @@ AND oldVersion.FilesetID = (SELECT ID FROM Fileset WHERE ID != ? ORDER BY Timest
 
                 tr.Commit();
             }
+        }
+
+        /// <summary>
+        /// Gets the last previous fileset that was incomplete
+        /// </summary>
+        /// <param name="transaction">The transaction to use</param>
+        /// <returns>The last incomplete fileset or default</returns>
+        public RemoteVolumeEntry GetLastIncompleteFilesetVolume(IDbTransaction transaction)
+        {
+            var candidates = GetIncompleteFilesets(transaction).OrderBy(x => x.Value).ToArray();
+            if (candidates.Any())
+                return GetRemoteVolumeFromFilesetID(candidates.Last().Key, transaction);
+
+            return default;
+        }
+
+        /// <summary>
+        /// Gets a list of incomplete filesets
+        /// </summary>
+        /// <param name="transaction">An optional transaction</param>
+        /// <returns>A list of fileset IDs and timestamps</returns>
+        public IEnumerable<KeyValuePair<long, DateTime>> GetIncompleteFilesets(IDbTransaction transaction)
+        {
+            using (var cmd = m_connection.CreateCommand(transaction))
+            {
+                using (var rd = cmd.ExecuteReader(@$"SELECT DISTINCT ""Fileset"".""ID"", ""Fileset"".""Timestamp"" FROM ""Fileset"", ""RemoteVolume"" WHERE ""RemoteVolume"".""ID"" = ""Fileset"".""VolumeID"" AND ""Fileset"".""ID"" IN (SELECT ""FilesetID"" FROM ""FilesetEntry"")  AND (""RemoteVolume"".""State"" = '{RemoteVolumeState.Uploading}' OR ""RemoteVolume"".""State"" = '{RemoteVolumeState.Temporary}')"))
+                    while (rd.Read())
+                    {
+                        yield return new KeyValuePair<long, DateTime>(
+                            rd.GetInt64(0),
+                            ParseFromEpochSeconds(rd.GetInt64(1)).ToLocalTime()
+                        );
+                    }
+            }
+        }
+
+        /// <summary>
+        /// Gets the remote volume entry from the fileset ID
+        /// </summary>
+        /// <param name="filesetID">The fileset ID</param>
+        /// <param name="transaction">An optional transaction</param>
+        /// <returns>The remote volume entry or default</returns>
+        public RemoteVolumeEntry GetRemoteVolumeFromFilesetID(long filesetID, IDbTransaction transaction = null)
+        {
+            using (var cmd = m_connection.CreateCommand(transaction))
+            using (var rd = cmd.ExecuteReader(@"SELECT ""RemoteVolume"".""ID"", ""Name"", ""Type"", ""Size"", ""Hash"", ""State"", ""DeleteGraceTime"" FROM ""RemoteVolume"", ""Fileset"" WHERE ""Fileset"".""VolumeID"" = ""RemoteVolume"".""ID"" AND ""Fileset"".""ID"" = ?", filesetID))
+                if (rd.Read())
+                    return new RemoteVolumeEntry(
+                        rd.ConvertValueToInt64(0, -1),
+                        rd.GetValue(1).ToString(),
+                        (rd.GetValue(4) == null || rd.GetValue(4) == DBNull.Value) ? null : rd.GetValue(4).ToString(),
+                        rd.ConvertValueToInt64(3, -1),
+                        (RemoteVolumeType)Enum.Parse(typeof(RemoteVolumeType), rd.GetValue(2).ToString()),
+                        (RemoteVolumeState)Enum.Parse(typeof(RemoteVolumeState), rd.GetValue(5).ToString()),
+                        ParseFromEpochSeconds(rd.GetInt64(6)).ToLocalTime()
+                    );
+                else
+                    return default(RemoteVolumeEntry);
         }
 
         public void PurgeLogData(DateTime threshold)

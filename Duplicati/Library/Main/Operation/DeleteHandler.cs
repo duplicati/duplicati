@@ -86,7 +86,7 @@ namespace Duplicati.Library.Main.Operation
         {
             CancellationToken cancellationToken = CancellationToken.None;
             if (!hasVerifiedBackend)
-                FilelistProcessor.VerifyRemoteList(backendManager, m_options, db, m_result.BackendWriter, true, transaction).Await();
+                FilelistProcessor.VerifyRemoteList(backendManager, m_options, db, m_result.BackendWriter, latestVolumesOnly: true, verifyMode: FilelistProcessor.VerifyMode.VerifyStrict, transaction).Await();
 
             IListResultFileset[] filesets = db.FilesetsWithBackupVersion.ToArray();
             List<IListResultFileset> versionsToDelete =

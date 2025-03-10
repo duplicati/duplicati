@@ -317,7 +317,7 @@ namespace Duplicati.Library.Main.Operation
             if (!m_options.NoBackendverification)
             {
                 m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_PreRestoreVerify);
-                await FilelistProcessor.VerifyRemoteList(backendManager, m_options, database, m_result.BackendWriter, false, null).ConfigureAwait(false);
+                await FilelistProcessor.VerifyRemoteList(backendManager, m_options, database, m_result.BackendWriter, latestVolumesOnly: false, verifyMode: FilelistProcessor.VerifyMode.VerifyOnly, null).ConfigureAwait(false);
             }
 
             // Prepare the block and file list and create the directory structure
@@ -431,7 +431,7 @@ namespace Duplicati.Library.Main.Operation
                 if (!m_options.NoBackendverification)
                 {
                     m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_PreRestoreVerify);
-                    await FilelistProcessor.VerifyRemoteList(backendManager, m_options, database, m_result.BackendWriter, false, null).ConfigureAwait(false);
+                    await FilelistProcessor.VerifyRemoteList(backendManager, m_options, database, m_result.BackendWriter, latestVolumesOnly: false, verifyMode: FilelistProcessor.VerifyMode.VerifyOnly, null).ConfigureAwait(false);
                 }
 
                 //Figure out what files are to be patched, and what blocks are needed

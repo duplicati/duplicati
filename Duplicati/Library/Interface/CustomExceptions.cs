@@ -226,7 +226,7 @@ namespace Duplicati.Library.Interface
             : base(Strings.Common.SettingsKeyMissingExceptionError, "SettingsKeyMissing")
         { }
     }
-    
+
     /// <summary>
     /// An exception for carrying the Retry-After header value on 429 Exceptions
     /// </summary>
@@ -234,5 +234,28 @@ namespace Duplicati.Library.Interface
     public class TooManyRequestException(RetryConditionHeaderValue retryAfter) : Exception
     {
         public readonly RetryConditionHeaderValue RetryAfter = retryAfter;
+    }
+
+    /// <summary>
+    /// An exception indicating that the database state is inconsistent
+    /// </summary>
+    [Serializable]
+    public class DatabaseInconsistencyException : UserInformationException
+    {
+        public DatabaseInconsistencyException(string message)
+            : base(message, "DatabaseInconsistency")
+        { }
+
+        public DatabaseInconsistencyException(string message, string helpId)
+            : base(message, helpId)
+        { }
+
+        public DatabaseInconsistencyException(string message, Exception innerException)
+            : base(message, "DatabaseInconsistency", innerException)
+        { }
+
+        public DatabaseInconsistencyException(string message, string helpId, Exception innerException)
+            : base(message, helpId, innerException)
+        { }
     }
 }
