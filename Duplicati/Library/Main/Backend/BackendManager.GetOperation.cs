@@ -77,7 +77,8 @@ partial class BackendManager
                 (tmpfile, var dataSizeDownloaded, var fileHash) = await DoGetFileAsync(backend, cancelToken).ConfigureAwait(false);
 
                 var duration = DateTime.Now - begin;
-                Logging.Log.WriteProfilingMessage(LOGTAG, "DownloadSpeed", "Downloaded {0} in {1}, {2}/s", Library.Utility.Utility.FormatSizeString(dataSizeDownloaded),
+                Logging.Log.WriteProfilingMessage(LOGTAG, "DownloadSpeed", "Downloaded {0} to {1} ({2}) in {3}, {4}/s",
+                    RemoteFilename, tmpfile.Name, Library.Utility.Utility.FormatSizeString(dataSizeDownloaded),
                     duration, Library.Utility.Utility.FormatSizeString((long)(dataSizeDownloaded / duration.TotalSeconds)));
 
                 Context.Database.LogRemoteOperation("get", RemoteFilename, System.Text.Json.JsonSerializer.Serialize(new { Size = dataSizeDownloaded, Hash = fileHash }));

@@ -59,6 +59,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                 async self =>
                 {
                     Dictionary<long, BlockVolumeReader> cache = [];
+                    Dictionary<long, TempFile> tmpfiles = [];
                     Dictionary<long, List<BlockRequest>> in_flight = [];
 
                     Stopwatch sw_cache_set = options.InternalProfiling ? new() : null;
@@ -83,17 +84,22 @@ namespace Duplicati.Library.Main.Operation.Restore
                                             sw_cache_evict?.Start();
                                             cache.Remove(request.VolumeID, out var reader);
                                             reader?.Dispose();
+                                            tmpfiles.Remove(request.VolumeID, out var tmpfile);
+                                            tmpfile?.Dispose();
                                             sw_cache_evict?.Stop();
                                         }
                                         else
                                         {
+                                            Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeRequest", "Requesting block {0} from volume {1}", request.BlockID, request.VolumeID);
                                             sw_request?.Start();
                                             if (cache.TryGetValue(request.VolumeID, out BlockVolumeReader reader))
                                             {
+                                                Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeRequest", "Block {0} found in cache", request.BlockID);
                                                 await self.DecompressRequest.WriteAsync((request, reader)).ConfigureAwait(false);
                                             }
                                             else
                                             {
+                                                Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeRequest", "Block {0} not found in cache, requesting volume {1}", request.BlockID, request.VolumeID);
                                                 if (in_flight.TryGetValue(request.VolumeID, out var waiters))
                                                 {
                                                     waiters.Add(request);
@@ -108,14 +114,16 @@ namespace Duplicati.Library.Main.Operation.Restore
                                         }
                                         break;
                                     }
-                                case (long volume_id, BlockVolumeReader reader):
+                                case (long volume_id, TempFile tmpfile, BlockVolumeReader reader):
                                     {
                                         sw_cache_set?.Start();
                                         cache[volume_id] = reader;
+                                        tmpfiles[volume_id] = tmpfile;
                                         sw_cache_set?.Stop();
                                         sw_wakeup?.Start();
                                         foreach (var request in in_flight[volume_id])
                                         {
+                                            Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeRequest", "Requesting block {0} from volume {1}", request.BlockID, volume_id);
                                             await self.DecompressRequest.WriteAsync((request, reader)).ConfigureAwait(false);
                                         }
                                         in_flight.Remove(volume_id);

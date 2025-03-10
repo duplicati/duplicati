@@ -138,7 +138,6 @@ namespace Duplicati.Library.Main.Operation.Restore
                             {
                                 if (ac == 0)
                                 {
-                                    m_block_cache.Remove(key);
                                     was_present = true;
                                     break;
                                 }
@@ -147,7 +146,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                                 break;
                         }
 
-                        await Task.Delay(10).ConfigureAwait(false);
+                        await Task.CompletedTask.ConfigureAwait(ConfigureAwaitOptions.ForceYielding);
                     }
                     if (was_present)
                         ArrayPool<byte>.Shared.Return((byte[])value);
@@ -251,18 +250,18 @@ namespace Duplicati.Library.Main.Operation.Restore
             /// </summary>
             /// <param name="block_request">The requested block.</param>
             /// <returns>A `Task` holding the data block.</returns>
-            public Task<byte[]> Get(BlockRequest block_request)
+            public async Task<byte[]> Get(BlockRequest block_request)
             {
+                Logging.Log.WriteExplicitMessage(LOGTAG, "BlockCacheGet", "Getting block {0} from cache", block_request.BlockID);
+
                 lock (m_blockcount_lock)
                 {
                     m_active_readers[block_request.BlockID] = m_active_readers.TryGetValue(block_request.BlockID, out var c) ? c + 1 : 1;
                 }
 
                 // Check if the block is already in the cache, and return it if it is.
-                if (m_block_cache != null && m_block_cache.TryGetValue(block_request.BlockID, out byte[] value))
-                {
-                    return Task.FromResult(value);
-                }
+                if (m_block_cache.TryGetValue(block_request.BlockID, out byte[] value))
+                    return value;
 
                 // If the block is not in the cache, request it from the volume.
                 sw_get_wait?.Start();
@@ -270,12 +269,25 @@ namespace Duplicati.Library.Main.Operation.Restore
                 var new_tcs = m_waiters.GetOrAdd(block_request.BlockID, tcs);
                 if (tcs == new_tcs)
                 {
-                    // We are the first to request this block
-                    m_volume_request.Write(block_request);
-                }
-                sw_get_wait?.Stop();
+                    Logging.Log.WriteExplicitMessage(LOGTAG, "BlockCacheGet", "Requesting block {0} from volume {1}", block_request.BlockID, block_request.VolumeID);
 
-                return new_tcs.Task;
+                    // We are the first to request this block
+                    await m_volume_request.WriteAsync(block_request).ConfigureAwait(false);
+
+                    sw_get_wait?.Stop();
+
+                    // Add a timeout monitor
+                    using var tcs1 = new CancellationTokenSource();
+                    var t = await Task.WhenAny(Task.Delay(TimeSpan.FromMinutes(5), tcs1.Token), new_tcs.Task).ConfigureAwait(false);
+                    if (t != new_tcs.Task)
+                        Logging.Log.WriteWarningMessage(LOGTAG, "BlockRequestTimeout", null, "Block request for block {0} has been in flight for over 5 minutes. This may be a deadlock.", block_request.BlockID);
+                }
+                else
+                {
+                    sw_get_wait?.Stop();
+                }
+
+                return await new_tcs.Task;
             }
 
             /// <summary>
@@ -290,6 +302,8 @@ namespace Duplicati.Library.Main.Operation.Restore
             /// <param name="value">The byte[] buffer holding the block data.</param>
             public void Set(BlockRequest blockRequest, byte[] value)
             {
+                Logging.Log.WriteExplicitMessage(LOGTAG, "BlockCacheSet", "Setting block {0} in cache", blockRequest.BlockID);
+
                 m_block_cache.Set(blockRequest.BlockID, value);
 
                 // Notify any waiters that the block is available.
@@ -387,7 +401,7 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// <param name="options">The restore options.</param>
         /// <param name="fp_requests">The channels for reading block requests from the `FileProcessor`.</param>
         /// <param name="fp_responses">The channels for writing block responses back to the `FileProcessor`.</param>
-        public static Task Run(Channels channels, LocalRestoreDatabase db, Options options, IChannel<BlockRequest>[] fp_requests, IChannel<byte[]>[] fp_responses)
+        public static Task Run(Channels channels, LocalRestoreDatabase db, Options options, IChannel<BlockRequest>[] fp_requests, IChannel<Task<byte[]>>[] fp_responses)
         {
             return AutomationExtensions.RunTask(
             new
@@ -432,10 +446,12 @@ namespace Duplicati.Library.Main.Operation.Restore
                     }
                     catch (Exception ex)
                     {
-                        Logging.Log.WriteWarningMessage(LOGTAG, "VolumeConsumerError", ex, "Error in volume consumer");
+                        Logging.Log.WriteErrorMessage(LOGTAG, "VolumeConsumerError", ex, "Error in volume consumer");
+                        self.Input.Retire();
 
                         // Cancel any remaining readers - although there shouldn't be any.
                         cache.CancelAll();
+                        cache.Retire();
                     }
                 });
 
@@ -463,11 +479,11 @@ namespace Duplicati.Library.Main.Operation.Restore
                             else
                             {
                                 sw_get?.Start();
-                                var data = await cache.Get(block_request).ConfigureAwait(false);
+                                var datatask = cache.Get(block_request);
                                 sw_get?.Stop();
 
                                 sw_resp?.Start();
-                                await res.WriteAsync(data).ConfigureAwait(false);
+                                await res.WriteAsync(datatask).ConfigureAwait(false);
                                 sw_resp?.Stop();
                             }
                         }
@@ -481,6 +497,13 @@ namespace Duplicati.Library.Main.Operation.Restore
                             Logging.Log.WriteProfilingMessage(LOGTAG, "InternalTimings", $"Block handler - Req: {sw_req.ElapsedMilliseconds}ms, Resp: {sw_resp.ElapsedMilliseconds}ms, Cache: {sw_cache.ElapsedMilliseconds}ms, Get: {sw_get.ElapsedMilliseconds}ms");
                         }
 
+                        cache.Retire();
+                    }
+                    catch (Exception ex)
+                    {
+                        Logging.Log.WriteErrorMessage(LOGTAG, "BlockHandlerError", ex, "Error in block handler");
+                        req.Retire();
+                        res.Retire();
                         cache.Retire();
                     }
                 })).ToArray();

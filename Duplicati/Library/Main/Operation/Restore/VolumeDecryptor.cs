@@ -74,7 +74,7 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                         sw_write?.Start();
                         // Pass the decrypted volume to the `VolumeDecompressor` process.
-                        await self.Output.WriteAsync((volume_id, bvr)).ConfigureAwait(false);
+                        await self.Output.WriteAsync((volume_id, tmpfile, bvr)).ConfigureAwait(false);
                         sw_write?.Stop();
                     }
                 }
@@ -90,6 +90,8 @@ namespace Duplicati.Library.Main.Operation.Restore
                 catch (Exception ex)
                 {
                     Logging.Log.WriteErrorMessage(LOGTAG, "DecryptionError", ex, "Error during decryption");
+                    self.Input.Retire();
+                    self.Output.Retire();
                     throw;
                 }
             });
