@@ -715,7 +715,7 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("Disruption")]
-        public void TestFailedUploadWithNoRetries()
+        public void TestUploadExceptionWithNoRetries()
         {
             var testopts = TestOptions;
             testopts["number-of-retries"] = "0";
@@ -801,7 +801,7 @@ namespace Duplicati.UnitTest
         [TestCase(false, false)]
         [TestCase(true, true)]
         [TestCase(false, true)]
-        public void TestFailedUploadOfFirstDlistWithRepair(bool before, bool failOnLastDblock)
+        public void TestUploadExceptionOnFirstDlistWithRepair(bool before, bool failOnLastDblock)
         {
             var testopts = TestOptions;
             testopts["number-of-retries"] = "0";
@@ -895,7 +895,7 @@ namespace Duplicati.UnitTest
         [TestCase(false, false)]
         [TestCase(true, true)]
         [TestCase(false, true)]
-        public void TestFailedUploadOfFirstDlist(bool before, bool failOnLastDblock)
+        public void TestUploadExceptionOnFirstDlist(bool before, bool failOnLastDblock)
         {
             var testopts = TestOptions;
             testopts["number-of-retries"] = "0";
@@ -1030,7 +1030,7 @@ namespace Duplicati.UnitTest
         [TestCase(false, true, 3, false)]
         [TestCase(true, true, 3, true)]
         [TestCase(false, true, 3, true)]
-        public void TestMultiFailedDlist(bool before, bool modifyInBetween, int runs, bool withBase)
+        public void TestMultiExceptionOnDlist(bool before, bool modifyInBetween, int runs, bool withBase)
         {
             var testopts = TestOptions;
             testopts["number-of-retries"] = "0";
@@ -1144,27 +1144,27 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("Disruption")]
-        public void TestFailedDblockUploadWithOperationCancellation()
+        public void TestDblockUploadWithOperationCancellation()
         {
-            TestFailedUploadWithOperationCancellation(".dblock.");
+            TestUploadWithOperationCancellation(".dblock.");
         }
 
 
         [Test]
         [Category("Disruption")]
-        public void TestFailedDindexUploadWithOperationCancellation()
+        public void TestDindexUploadWithOperationCancellation()
         {
-            TestFailedUploadWithOperationCancellation(".dindex.");
+            TestUploadWithOperationCancellation(".dindex.");
         }
 
         [Test]
         [Category("Disruption")]
-        public void TestFailedDlistUploadWithOperationCancellation()
+        public void TestDlistUploadWithOperationCancellation()
         {
-            TestFailedUploadWithOperationCancellation(".dlist.");
+            TestUploadWithOperationCancellation(".dlist.");
         }
 
-        private void TestFailedUploadWithOperationCancellation(string filefragment)
+        private void TestUploadWithOperationCancellation(string filefragment)
         {
             var testopts = TestOptions;
             testopts["number-of-retries"] = "1";
