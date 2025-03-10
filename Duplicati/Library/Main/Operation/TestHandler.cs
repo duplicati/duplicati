@@ -81,7 +81,7 @@ namespace Duplicati.Library.Main.Operation
                     {
                         if (!m_results.TaskControl.ProgressRendevouz().Await())
                         {
-                            backend.WaitForEmptyAsync(CancellationToken.None).Await();
+                            backend.WaitForEmptyAsync(db, null, CancellationToken.None).Await();
                             m_results.EndTime = DateTime.UtcNow;
                             return;
                         }

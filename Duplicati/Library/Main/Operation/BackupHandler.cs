@@ -575,7 +575,7 @@ namespace Duplicati.Library.Main.Operation
 
             try
             {
-                await backendManager.WaitForEmptyAsync(result.TaskControl.ProgressToken).ConfigureAwait(false);
+                await backendManager.WaitForEmptyAsync(database, transaction, result.TaskControl.ProgressToken).ConfigureAwait(false);
                 // Grab the size of the last uploaded volume
                 return backendManager.LastWriteSize;
             }

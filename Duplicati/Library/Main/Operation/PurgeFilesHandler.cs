@@ -211,7 +211,7 @@ namespace Duplicati.Library.Main.Operation
                                     tr.Commit();
                                     backendManager.PutAsync(vol, null, null, true, cancellationToken).Await();
                                     backendManager.DeleteAsync(prevfilename, -1, true, cancellationToken).Await();
-                                    backendManager.WaitForEmptyAsync(cancellationToken).Await();
+                                    backendManager.WaitForEmptyAsync(db, tr, cancellationToken).Await();
                                 }
                             }
                         }
@@ -257,7 +257,7 @@ namespace Duplicati.Library.Main.Operation
                 m_result.OperationProgressUpdater.UpdateProgress(pgoffset + pgspan);
                 m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.PurgeFiles_Complete);
 
-                backendManager.WaitForEmptyAsync(cancellationToken).Await();
+                backendManager.WaitForEmptyAsync(db, null, cancellationToken).Await();
             }
         }
     }

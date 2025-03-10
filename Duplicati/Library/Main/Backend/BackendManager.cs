@@ -300,11 +300,15 @@ internal partial class BackendManager : IBackendManager
     /// </summary>
     /// <param name="cancellationToken">The cancellation token</param>
     /// <returns>An awaitable task</returns>
-    public async Task WaitForEmptyAsync(CancellationToken cancellationToken)
+    public async Task WaitForEmptyAsync(LocalDatabase database, IDbTransaction? transaction, CancellationToken cancellationToken)
     {
+        context.Database.FlushPendingMessages(database, transaction);
+
         var op = new WaitForEmptyOperation(context, cancellationToken);
         await QueueTask(op).ConfigureAwait(false);
         await op.GetResult().ConfigureAwait(false);
+
+        context.Database.FlushPendingMessages(database, transaction);
     }
 
     /// <summary>
@@ -312,11 +316,23 @@ internal partial class BackendManager : IBackendManager
     /// </summary>
     /// <param name="database">The database to write pending messages to</param>
     /// <param name="transaction">The transaction to use, if any</param>
-    public async Task StopRunnerAndFlushMessages()
+    public async Task StopRunnerAndFlushMessages(LocalDatabase database, IDbTransaction? transaction)
     {
         await requestChannel.RetireAsync().ConfigureAwait(false);
+        context.Database.FlushPendingMessages(database, transaction);
         if (queueRunner.IsFaulted)
             Logging.Log.WriteWarningMessage(LOGTAG, "BackendManagerShutdown", queueRunner.Exception, "Backend manager queue runner crashed");
+    }
+
+    /// <summary>
+    /// Stops the backend manager and discards any pending messages
+    /// </summary>
+    public void StopRunnerAndDiscardMessages()
+    {
+        requestChannel.RetireAsync().Await();
+        if (queueRunner.IsFaulted)
+            Logging.Log.WriteWarningMessage(LOGTAG, "BackendManagerShutdown", queueRunner.Exception, "Backend manager queue runner crashed");
+        context.Database.ClearPendingMessages();
     }
 
     /// <summary>
