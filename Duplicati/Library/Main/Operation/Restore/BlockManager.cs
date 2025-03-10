@@ -250,7 +250,7 @@ namespace Duplicati.Library.Main.Operation.Restore
             /// </summary>
             /// <param name="block_request">The requested block.</param>
             /// <returns>A `Task` holding the data block.</returns>
-            public Task<byte[]> Get(BlockRequest block_request)
+            public async Task<byte[]> Get(BlockRequest block_request)
             {
                 Logging.Log.WriteExplicitMessage(LOGTAG, "BlockCacheGet", "Getting block {0} from cache", block_request.BlockID);
 
@@ -261,9 +261,7 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                 // Check if the block is already in the cache, and return it if it is.
                 if (m_block_cache.TryGetValue(block_request.BlockID, out byte[] value))
-                {
-                    return Task.FromResult(value);
-                }
+                    return value;
 
                 // If the block is not in the cache, request it from the volume.
                 sw_get_wait?.Start();
@@ -273,22 +271,23 @@ namespace Duplicati.Library.Main.Operation.Restore
                 {
                     Logging.Log.WriteExplicitMessage(LOGTAG, "BlockCacheGet", "Requesting block {0} from volume {1}", block_request.BlockID, block_request.VolumeID);
 
-                    // Adding a timeout to warn of potential deadlocks.
-                    Task.Run(async () =>
-                    {
-                        await Task.Delay(TimeSpan.FromMinutes(5)).ConfigureAwait(false);
-                        if (!tcs.Task.IsCompleted)
-                        {
-                            Logging.Log.WriteWarningMessage(LOGTAG, "BlockRequestTimeout", null, "Block request for block {0} has been in flight for over 5 minutes. This may be a deadlock.", block_request.BlockID);
-                        }
-                    });
-
                     // We are the first to request this block
-                    m_volume_request.Write(block_request);
-                }
-                sw_get_wait?.Stop();
+                    await m_volume_request.WriteAsync(block_request).ConfigureAwait(false);
 
-                return new_tcs.Task;
+                    sw_get_wait?.Stop();
+
+                    // Add a timeout monitor
+                    using var tcs1 = new CancellationTokenSource();
+                    var t = await Task.WhenAny(Task.Delay(TimeSpan.FromMinutes(5), tcs1.Token), new_tcs.Task).ConfigureAwait(false);
+                    if (t != new_tcs.Task)
+                        Logging.Log.WriteWarningMessage(LOGTAG, "BlockRequestTimeout", null, "Block request for block {0} has been in flight for over 5 minutes. This may be a deadlock.", block_request.BlockID);
+                }
+                else
+                {
+                    sw_get_wait?.Stop();
+                }
+
+                return await new_tcs.Task;
             }
 
             /// <summary>
@@ -402,7 +401,7 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// <param name="options">The restore options.</param>
         /// <param name="fp_requests">The channels for reading block requests from the `FileProcessor`.</param>
         /// <param name="fp_responses">The channels for writing block responses back to the `FileProcessor`.</param>
-        public static Task Run(Channels channels, LocalRestoreDatabase db, Options options, IChannel<BlockRequest>[] fp_requests, IChannel<byte[]>[] fp_responses)
+        public static Task Run(Channels channels, LocalRestoreDatabase db, Options options, IChannel<BlockRequest>[] fp_requests, IChannel<Task<byte[]>>[] fp_responses)
         {
             return AutomationExtensions.RunTask(
             new
@@ -480,11 +479,11 @@ namespace Duplicati.Library.Main.Operation.Restore
                             else
                             {
                                 sw_get?.Start();
-                                var data = await cache.Get(block_request).ConfigureAwait(false);
+                                var datatask = cache.Get(block_request);
                                 sw_get?.Stop();
 
                                 sw_resp?.Start();
-                                await res.WriteAsync(data).ConfigureAwait(false);
+                                await res.WriteAsync(datatask).ConfigureAwait(false);
                                 sw_resp?.Stop();
                             }
                         }

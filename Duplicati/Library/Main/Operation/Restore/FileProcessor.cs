@@ -58,7 +58,7 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// <param name="block_response">The channel to receive blocks from the block manager.</param>
         /// <param name="options">The restore options.</param>
         /// <param name="results">The restore results.</param>
-        public static Task Run(Channels channels, LocalRestoreDatabase db, IChannel<BlockRequest> block_request, IChannel<byte[]> block_response, Options options, RestoreResults results)
+        public static Task Run(Channels channels, LocalRestoreDatabase db, IChannel<BlockRequest> block_request, IChannel<Task<byte[]>> block_response, Options options, RestoreResults results)
         {
             return AutomationExtensions.RunTask(
             new
@@ -285,7 +285,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                                     {
                                         // Read the block from the response and issue a new request, if more blocks are missing
                                         sw_resp?.Start();
-                                        var data = await block_response.ReadAsync().ConfigureAwait(false);
+                                        var data = await (await block_response.ReadAsync().ConfigureAwait(false)).ConfigureAwait(false);
                                         sw_resp?.Stop();
 
                                         sw_req?.Start();
@@ -535,7 +535,7 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// <param name="sw_work">The stopwatch for internal profiling of the general processing.</param>
         /// <param name="sw_req">The stopwatch for internal profiling of the block requests.</param>
         /// <param name="sw_resp">The stopwatch for internal profiling of the block responses.</param>
-        private static async Task<bool> RestoreMetadata(LocalRestoreDatabase db, FileRequest file, IChannel<BlockRequest> block_request, IChannel<byte[]> block_response, Options options, Stopwatch sw_meta, Stopwatch sw_work, Stopwatch sw_req, Stopwatch sw_resp)
+        private static async Task<bool> RestoreMetadata(LocalRestoreDatabase db, FileRequest file, IChannel<BlockRequest> block_request, IChannel<Task<byte[]>> block_response, Options options, Stopwatch sw_meta, Stopwatch sw_work, Stopwatch sw_req, Stopwatch sw_resp)
         {
             sw_meta?.Start();
             var blocks = db.GetMetadataBlocksFromFile(file.ID);
@@ -560,7 +560,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                 sw_req?.Stop();
 
                 sw_resp?.Start();
-                var data = await block_response.ReadAsync().ConfigureAwait(false);
+                var data = await (await block_response.ReadAsync().ConfigureAwait(false)).ConfigureAwait(false);
                 sw_resp?.Stop();
 
                 sw_work?.Start();
