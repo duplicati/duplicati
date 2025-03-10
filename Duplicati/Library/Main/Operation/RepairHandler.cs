@@ -20,6 +20,7 @@
 // DEALINGS IN THE SOFTWARE.
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -141,8 +142,11 @@ namespace Duplicati.Library.Main.Operation
                 var buffer = new byte[m_options.Blocksize];
                 var hashsize = HashFactory.HashSizeBytes(m_options.BlockHashAlgorithm);
 
+                var missingRemoteFilesets = db.MissingRemoteFilesets().ToList();
+                var missingLocalFilesets = db.MissingLocalFilesets().ToList();
+
                 var progress = 0;
-                var targetProgess = tp.ExtraVolumes.Count() + tp.MissingVolumes.Count() + tp.VerificationRequiredVolumes.Count();
+                var targetProgess = tp.ExtraVolumes.Count() + tp.MissingVolumes.Count() + tp.VerificationRequiredVolumes.Count() + missingRemoteFilesets.Count + missingLocalFilesets.Count;
 
                 var mostRecentLocal = db.FilesetTimes.Select(x => x.Value).Append(DateTime.MinValue).Max();
                 var mostRecentRemote = tp.ParsedVolumes.Select(x => x.Time).Append(DateTime.MinValue).Max();
@@ -166,7 +170,7 @@ namespace Duplicati.Library.Main.Operation
                     }
                 }
 
-                if (tp.ExtraVolumes.Any() || tp.MissingVolumes.Any() || tp.VerificationRequiredVolumes.Any())
+                if (tp.ExtraVolumes.Any() || tp.MissingVolumes.Any() || tp.VerificationRequiredVolumes.Any() || missingRemoteFilesets.Any() || missingLocalFilesets.Any())
                 {
                     if (tp.VerificationRequiredVolumes.Any())
                     {
@@ -298,6 +302,66 @@ namespace Duplicati.Library.Main.Operation
                         var missingDblocks = tp.MissingVolumes.Where(x => x.Type == RemoteVolumeType.Blocks).ToArray();
                         if (missingDblocks.Length > 0)
                             throw new UserInformationException($"The backup storage destination is missing data files. You can either enable `--rebuild-missing-dblock-files` or run the purge command to remove these files. The following files are missing: {string.Join(", ", missingDblocks.Select(x => x.Name))}", "MissingDblockFiles");
+                    }
+
+                    var anyDlistUploads = false;
+                    foreach (var (filesetId, timestamp, isfull) in missingRemoteFilesets)
+                    {
+                        if (!await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
+                        {
+                            await backendManager.WaitForEmptyAsync(db, null, cancellationToken).ConfigureAwait(false);
+                            return;
+                        }
+
+                        progress++;
+                        m_result.OperationProgressUpdater.UpdateProgress((float)progress / targetProgess);
+                        var fileTime = FilesetVolumeWriter.ProbeUnusedFilenameName(db, m_options, timestamp);
+
+                        var fsw = new FilesetVolumeWriter(m_options, fileTime);
+                        Logging.Log.WriteInformationMessage(LOGTAG, "ReuploadingFileset", "Re-uploading fileset {0} from {1} as remote volume registration is missing, new filename: {2}", filesetId, timestamp, fsw.RemoteFilename);
+
+                        if (!string.IsNullOrEmpty(m_options.ControlFiles))
+                            foreach (var p in m_options.ControlFiles.Split(new char[] { System.IO.Path.PathSeparator }, StringSplitOptions.RemoveEmptyEntries))
+                                fsw.AddControlFile(p, m_options.GetCompressionHintFromFilename(p));
+
+                        fsw.CreateFilesetFile(isfull);
+                        db.WriteFileset(fsw, filesetId, null);
+                        fsw.Close();
+
+                        if (m_options.Dryrun)
+                        {
+                            fsw.Dispose();
+                            Logging.Log.WriteDryrunMessage(LOGTAG, "WouldReUploadFileset", "would re-upload fileset {0}", fsw.RemoteFilename);
+                            continue;
+                        }
+
+                        fsw.VolumeID = db.RegisterRemoteVolume(fsw.RemoteFilename, RemoteVolumeType.Files, -1, RemoteVolumeState.Temporary);
+                        db.LinkFilesetToVolume(filesetId, fsw.VolumeID, null);
+                        await backendManager.PutAsync(fsw, null, null, false, cancellationToken).ConfigureAwait(false);
+                    }
+
+                    if (anyDlistUploads)
+                        await backendManager.WaitForEmptyAsync(db, null, cancellationToken).ConfigureAwait(false);
+
+                    foreach (var volumename in missingLocalFilesets)
+                    {
+                        var remoteVolume = db.GetRemoteVolume(volumename);
+                        using (var tmpfile = await backendManager.GetAsync(remoteVolume.Name, remoteVolume.Hash, remoteVolume.Size, cancellationToken).ConfigureAwait(false))
+                        {
+                            var parsed = VolumeBase.ParseFilename(remoteVolume.Name);
+                            using (var stream = new FileStream(tmpfile, FileMode.Open, FileAccess.Read, FileShare.Read))
+                            using (var compressor = DynamicLoader.CompressionLoader.GetModule(parsed.CompressionModule, stream, ArchiveMode.Read, m_options.RawOptions))
+                            using (var transaction = db.BeginTransaction())
+                            using (var recreatedb = new LocalRecreateDatabase(db, m_options))
+                            {
+                                if (compressor == null)
+                                    throw new UserInformationException(string.Format("Failed to load compression module: {0}", parsed.CompressionModule), "FailedToLoadCompressionModule");
+
+                                var filesetid = db.CreateFileset(remoteVolume.ID, parsed.Time, transaction);
+                                RecreateDatabaseHandler.RecreateFilesetFromRemoteList(recreatedb, transaction, compressor, filesetid, m_options, new FilterExpression());
+                                transaction.Commit();
+                            }
+                        }
                     }
 
                     if (!m_options.Dryrun && tp.MissingVolumes.Any())
