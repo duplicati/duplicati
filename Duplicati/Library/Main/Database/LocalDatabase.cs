@@ -27,6 +27,7 @@ using System.IO;
 using Duplicati.Library.Modules.Builtin.ResultSerialization;
 using Duplicati.Library.Utility;
 using System.Runtime.CompilerServices;
+using Duplicati.Library.Interface;
 
 
 // Expose internal classes to UnitTests, so that Database classes can be tested
@@ -874,6 +875,28 @@ ON
 
                 if (cmd.ExecuteScalarInt64(@"SELECT COUNT(*) FROM ""FileLookup"" WHERE ""BlocksetID"" != ? AND ""BlocksetID"" != ? AND NOT ""BlocksetID"" IN (SELECT ""ID"" FROM ""Blockset"")", 0, FOLDER_BLOCKSET_ID, SYMLINK_BLOCKSET_ID) != 0)
                     throw new DatabaseInconsistencyException("Detected files associated with non-existing blocksets!");
+
+                var filesetsMissingVolumes = cmd.ExecuteScalarInt64(@"SELECT COUNT(*) FROM ""Fileset"" WHERE ""VolumeID"" NOT IN (SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""Type"" = ? AND ""State"" != ?)", 0, RemoteVolumeType.Files.ToString(), RemoteVolumeState.Deleted.ToString());
+                if (filesetsMissingVolumes != 0)
+                {
+                    if (filesetsMissingVolumes == 1)
+                        using (var reader = cmd.ExecuteReader(@"SELECT ""ID"", ""Timestamp"", ""VolumeID"" FROM ""Fileset"" WHERE ""VolumeID"" NOT IN (SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""Type"" = ? AND ""State"" != ?)", 0, RemoteVolumeType.Files.ToString(), RemoteVolumeState.Deleted.ToString()))
+                            if (reader.Read())
+                                throw new DatabaseInconsistencyException($"Detected 1 fileset with missing volume: FilesetId = {reader.ConvertValueToInt64(0)}, Time = ({ParseFromEpochSeconds(reader.ConvertValueToInt64(1))}), unmatched VolumeID {reader.ConvertValueToInt64(2)}");
+
+                    throw new DatabaseInconsistencyException(string.Format("Detected {0} filesets with missing volumes", filesetsMissingVolumes));
+                }
+
+                var volumesMissingFilests = cmd.ExecuteScalarInt64(@"SELECT COUNT(*) FROM ""RemoteVolume"" WHERE ""Type"" = ? AND ""State"" != ? AND ""ID"" NOT IN (SELECT ""VolumeID"" FROM ""Fileset"")", 0, RemoteVolumeType.Files.ToString(), RemoteVolumeState.Deleted.ToString());
+                if (volumesMissingFilests != 0)
+                {
+                    if (volumesMissingFilests == 1)
+                        using (var reader = cmd.ExecuteReader(@"SELECT ""ID"", ""Name"", ""State"" FROM ""RemoteVolume"" WHERE ""Type"" = ? AND ""State"" != ? AND ""ID"" NOT IN (SELECT ""VolumeID"" FROM ""Fileset"")", 0, RemoteVolumeType.Files.ToString(), RemoteVolumeState.Deleted.ToString()))
+                            if (reader.Read())
+                                throw new DatabaseInconsistencyException($"Detected 1 volume with missing filesets: VolumeId = {reader.ConvertValueToInt64(0)}, Name = {reader.ConvertValueToString(1)}, State = {reader.ConvertValueToString(2)}");
+
+                    throw new DatabaseInconsistencyException(string.Format("Detected {0} volumes with missing filesets", volumesMissingFilests));
+                }
 
                 if (verifyfilelists)
                 {
