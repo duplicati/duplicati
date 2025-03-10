@@ -323,7 +323,7 @@ namespace Duplicati.Library.Main.Operation
                 {
                     case RemoteVolumeState.Deleted:
                         if (remoteFound)
-                            Logging.Log.WriteInformationMessage(LOGTAG, "IgnoreRemoteDeletedFile", "ignoring remote file listed as {0}: {1}", i.State, i.Name);
+                            Logging.Log.WriteInformationMessage(LOGTAG, "IgnoreRemoteDeletedFile", "Ignoring remote file listed as {0}: {1}", i.State, i.Name);
 
                         break;
 
@@ -331,27 +331,35 @@ namespace Duplicati.Library.Main.Operation
                     case RemoteVolumeState.Deleting:
                         if (remoteFound)
                         {
-                            Logging.Log.WriteInformationMessage(LOGTAG, "RemoveUnwantedRemoteFile", "removing remote file listed as {0}: {1}", i.State, i.Name);
                             if (options.Dryrun)
+                            {
                                 Logging.Log.WriteDryrunMessage(LOGTAG, "WouldDeleteRemoteFile", "Would delete remote file: {0}", i.Name);
-                            else if (verifyMode != VerifyMode.VerifyOnly)
+                            }
+                            else if (verifyMode == VerifyMode.VerifyOnly)
+                            {
+                                Logging.Log.WriteInformationMessage(LOGTAG, "WouldRemoveUnwantedRemoteFile", "Would remove remote file listed as {0}: {1}, but defering as {2} is requested", i.State, i.Name, verifyMode);
+                            }
+                            else
+                            {
+                                Logging.Log.WriteInformationMessage(LOGTAG, "RemoveUnwantedRemoteFile", "Removing remote file listed as {0}: {1}", i.State, i.Name);
                                 await backendManager.DeleteAsync(i.Name, i.Size, true, CancellationToken.None).ConfigureAwait(false);
+                            }
                         }
                         else
                         {
                             if (i.DeleteGracePeriod > DateTime.UtcNow)
                             {
-                                Logging.Log.WriteInformationMessage(LOGTAG, "KeepDeleteRequest", "keeping delete request for {0} until {1}", i.Name, i.DeleteGracePeriod.ToLocalTime());
+                                Logging.Log.WriteInformationMessage(LOGTAG, "KeepDeleteRequest", "Keeping delete request for {0} until {1}", i.Name, i.DeleteGracePeriod.ToLocalTime());
                             }
                             else
                             {
                                 if (i.State == RemoteVolumeState.Temporary && protectedFiles.Any(pf => pf == i.Name))
                                 {
-                                    Logging.Log.WriteInformationMessage(LOGTAG, "KeepIncompleteFile", "keeping protected incomplete remote file listed as {0}: {1}", i.State, i.Name);
+                                    Logging.Log.WriteInformationMessage(LOGTAG, "KeepIncompleteFile", "Keeping protected incomplete remote file listed as {0}: {1}", i.State, i.Name);
                                 }
                                 else
                                 {
-                                    Logging.Log.WriteInformationMessage(LOGTAG, "RemoteUnwantedMissingFile", "removing file listed as {0}: {1}", i.State, i.Name);
+                                    Logging.Log.WriteInformationMessage(LOGTAG, "RemoteUnwantedMissingFile", "Removing file listed as {0}: {1}", i.State, i.Name);
                                     temporaryAndDeletedVolumes.Add(i.Name);
                                 }
                             }
@@ -360,14 +368,14 @@ namespace Duplicati.Library.Main.Operation
                     case RemoteVolumeState.Uploading:
                         if (remoteFound && correctSize && r.File.Size >= 0)
                         {
-                            Logging.Log.WriteInformationMessage(LOGTAG, "PromotingCompleteFile", "promoting uploaded complete file from {0} to {2}: {1}", i.State, i.Name, RemoteVolumeState.Uploaded);
+                            Logging.Log.WriteInformationMessage(LOGTAG, "PromotingCompleteFile", "Promoting uploaded complete file from {0} to {2}: {1}", i.State, i.Name, RemoteVolumeState.Uploaded);
                             database.UpdateRemoteVolume(i.Name, RemoteVolumeState.Uploaded, i.Size, i.Hash);
                         }
                         else if (!remoteFound)
                         {
                             if (protectedFiles.Any(pf => pf == i.Name))
                             {
-                                Logging.Log.WriteInformationMessage(LOGTAG, "KeepIncompleteFile", "keeping protected incomplete remote file listed as {0}: {1}", i.State, i.Name);
+                                Logging.Log.WriteInformationMessage(LOGTAG, "KeepIncompleteFile", "Keeping protected incomplete remote file listed as {0}: {1}", i.State, i.Name);
                                 database.UpdateRemoteVolume(i.Name, RemoteVolumeState.Temporary, i.Size, i.Hash, false, new TimeSpan(0), null);
                             }
                             else if (verifyMode == VerifyMode.VerifyStrict && !strictExcemptFiles.Any(pf => pf == i.Name))
@@ -377,7 +385,7 @@ namespace Duplicati.Library.Main.Operation
                             }
                             else
                             {
-                                Logging.Log.WriteInformationMessage(LOGTAG, "SchedulingMissingFileForDelete", "scheduling missing file for deletion, currently listed as {0}: {1}", i.State, i.Name);
+                                Logging.Log.WriteInformationMessage(LOGTAG, "SchedulingMissingFileForDelete", "Scheduling missing file for deletion, currently listed as {0}: {1}", i.State, i.Name);
                                 missingUploadingVolumes.Add(i.Name);
                                 database.UpdateRemoteVolume(i.Name, RemoteVolumeState.Deleting, i.Size, i.Hash, false, TimeSpan.FromHours(2), null);
                             }
@@ -386,7 +394,7 @@ namespace Duplicati.Library.Main.Operation
                         {
                             if (protectedFiles.Any(pf => pf == i.Name))
                             {
-                                Logging.Log.WriteInformationMessage(LOGTAG, "KeepIncompleteFile", "keeping protected incomplete remote file listed as {0}: {1}", i.State, i.Name);
+                                Logging.Log.WriteInformationMessage(LOGTAG, "KeepIncompleteFile", "Keeping protected incomplete remote file listed as {0}: {1}", i.State, i.Name);
                             }
                             else if (verifyMode == VerifyMode.VerifyStrict && !strictExcemptFiles.Any(pf => pf == i.Name))
                             {
@@ -395,11 +403,19 @@ namespace Duplicati.Library.Main.Operation
                             }
                             else
                             {
-                                Logging.Log.WriteInformationMessage(LOGTAG, "Remove incomplete file", "removing incomplete remote file listed as {0}: {1}", i.State, i.Name);
                                 if (options.Dryrun)
+                                {
                                     Logging.Log.WriteDryrunMessage(LOGTAG, "WouldDeleteRemoteFile", "Would delete remote file: {0}", i.Name);
-                                else if (verifyMode != VerifyMode.VerifyOnly)
+                                }
+                                else if (verifyMode == VerifyMode.VerifyOnly)
+                                {
+                                    Logging.Log.WriteInformationMessage(LOGTAG, "WouldDeleteIncompleteFile", "Would remove incomplete remote file listed as {0}: {1}, but defering as {2} is requested", i.State, i.Name, verifyMode);
+                                }
+                                else
+                                {
+                                    Logging.Log.WriteInformationMessage(LOGTAG, "RemovingIncompleteFile", "Removing incomplete remote file listed as {0}: {1}", i.State, i.Name);
                                     await backendManager.DeleteAsync(i.Name, i.Size, true, CancellationToken.None).ConfigureAwait(false);
+                                }
                             }
                         }
                         break;
@@ -423,7 +439,7 @@ namespace Duplicati.Library.Main.Operation
                         break;
 
                     default:
-                        Logging.Log.WriteWarningMessage(LOGTAG, "UnknownFileState", null, "unknown state for remote file listed as {0}: {1}", i.State, i.Name);
+                        Logging.Log.WriteWarningMessage(LOGTAG, "UnknownFileState", null, "Unknown state for remote file listed as {0}: {1}", i.State, i.Name);
                         break;
                 }
             }
@@ -442,7 +458,7 @@ namespace Duplicati.Library.Main.Operation
             }
 
             foreach (var i in missingHash)
-                Logging.Log.WriteWarningMessage(LOGTAG, "MissingRemoteHash", null, "remote file {1} is listed as {0} with size {2} but should be {3}, please verify the sha256 hash \"{4}\"", i.Item2.State, i.Item2.Name, i.Item1, i.Item2.Size, i.Item2.Hash);
+                Logging.Log.WriteWarningMessage(LOGTAG, "MissingRemoteHash", null, "Remote file {1} is listed as {0} with size {2} but should be {3}, please verify the sha256 hash \"{4}\"", i.Item2.State, i.Item2.Name, i.Item1, i.Item2.Size, i.Item2.Hash);
 
             return new RemoteAnalysisResult()
             {
