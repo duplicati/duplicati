@@ -113,11 +113,14 @@ namespace Duplicati.UnitTest
 
             if (compactBeforeRecreate)
             {
+                // Make room for a backup
+                Thread.Sleep(2000);
+
                 // Delete f2 and compact
                 File.Delete(file2);
-                using (var c = new Library.Main.Controller(target, testopts, null))
+                using (var c = new Controller(target, testopts, null))
                 {
-                    IBackupResults backupResults = c.Backup(new[] { DATAFOLDER });
+                    var backupResults = c.Backup(new[] { DATAFOLDER });
                     TestUtils.AssertResults(backupResults);
                     ICompactResults compactResults = c.Compact();
                     TestUtils.AssertResults(compactResults);
