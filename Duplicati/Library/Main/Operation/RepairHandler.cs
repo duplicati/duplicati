@@ -153,7 +153,12 @@ namespace Duplicati.Library.Main.Operation
                 if (mostRecentLocal < DateTime.UnixEpoch)
                     throw new UserInformationException("The local database has no fileset times. Consider deleting the local database and run the repair operation again.", "LocalDatabaseHasNoFilesetTimes");
                 if (mostRecentRemote > mostRecentLocal)
-                    throw new UserInformationException($"The remote files are newer ({mostRecentRemote}) than the local database ({mostRecentLocal}), this is likely because the database is outdated. Consider deleting the local database and run the repair operation again.", "RemoteFilesNewerThanLocalDatabase");
+                {
+                    if (m_options.RepairIgnoreOutdatedDatabase)
+                        Logging.Log.WriteWarningMessage(LOGTAG, "RemoteFilesNewerThanLocalDatabase", null, "The remote files are newer ({0}) than the local database ({1}), this is likely because the database is outdated. Continuing as the options force ignoring this.", mostRecentRemote, mostRecentLocal);
+                    else
+                        throw new UserInformationException($"The remote files are newer ({mostRecentRemote}) than the local database ({mostRecentLocal}), this is likely because the database is outdated. Consider deleting the local database and run the repair operation again. If this is expected, set the option \"--repair-ignore-outdated-database\" ", "RemoteFilesNewerThanLocalDatabase");
+                }
 
                 if (m_options.Dryrun)
                 {

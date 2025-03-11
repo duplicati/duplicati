@@ -446,6 +446,7 @@ namespace Duplicati.Library.Main
 
                     new CommandLineArgument("repair-only-paths", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RepaironlypathsShort, Strings.Options.RepaironlypathsLong, "false"),
                     new CommandLineArgument("repair-force-block-use", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RepaironlypathsShort, Strings.Options.RepaironlypathsLong, "false"),
+                    new CommandLineArgument("repair-ignore-outdated-database", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RepairignoreoutdateddatabaseShort, Strings.Options.RepairignoreoutdateddatabaseLong, "false"),
                     new CommandLineArgument("force-locale", CommandLineArgument.ArgumentType.String, Strings.Options.ForcelocaleShort, Strings.Options.ForcelocaleLong),
                     new CommandLineArgument("force-actual-date", CommandLineArgument.ArgumentType.Boolean, Strings.Options.ForceActualDateShort, Strings.Options.ForceActualDateLong, "false"),
 
@@ -1843,6 +1844,15 @@ namespace Duplicati.Library.Main
         public bool RepairOnlyPaths
         {
             get { return Library.Utility.Utility.ParseBoolOption(m_options, "repair-only-paths"); }
+        }
+
+        /// <summary>
+        /// Gets a flag indicating if the repair process will ignore outdated database
+        /// </summary>
+        /// <value><c>true</c> if repair process will ignore outdated database; otherwise, <c>false</c>.</value>
+        public bool RepairIgnoreOutdatedDatabase
+        {
+            get { return Library.Utility.Utility.ParseBoolOption(m_options, "repair-ignore-outdated-database"); }
         }
 
         /// <summary>
