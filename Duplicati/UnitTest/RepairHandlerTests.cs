@@ -546,7 +546,9 @@ namespace Duplicati.UnitTest
             using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
                 Assert.Throws<DatabaseInconsistencyException>(() => c.Backup(new[] { this.DATAFOLDER }));
 
-            using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
+            // Since we have removed the entry that is being checked here, we need to disable the check
+            var repairOptions = new Dictionary<string, string>(options) { ["repair-ignore-outdated-database"] = "true" };
+            using (Controller c = new Controller("file://" + this.TARGETFOLDER, repairOptions, null))
             {
                 IRepairResults repairResults = c.Repair();
                 TestUtils.AssertResults(repairResults);
