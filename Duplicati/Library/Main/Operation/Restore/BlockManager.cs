@@ -281,7 +281,7 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                 // If the block is not in the cache, request it from the volume.
                 sw_get_wait?.Start();
-                var tcs = new TaskCompletionSource<byte[]>();
+                var tcs = new TaskCompletionSource<byte[]>(TaskCreationOptions.RunContinuationsAsynchronously);
                 var new_tcs = m_waiters.GetOrAdd(block_request.BlockID, tcs);
                 if (tcs == new_tcs)
                 {
