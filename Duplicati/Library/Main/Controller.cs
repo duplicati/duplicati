@@ -456,9 +456,7 @@ namespace Duplicati.Library.Main
                         resultSetter.EndTime = DateTime.UtcNow;
                     result.SetDatabase(null);
                     if (result is BasicResults r)
-                    {
                         r.Interrupted = false;
-                    }
 
                     if (dbManager.Exists)
                     {

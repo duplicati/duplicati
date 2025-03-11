@@ -496,7 +496,7 @@ namespace Duplicati.Library.Main.Operation
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_PostBackupVerify);
             using (new Logging.Timer(LOGTAG, "AfterBackupVerify", "AfterBackupVerify"))
                 await FilelistProcessor.VerifyRemoteList(backendManager, m_options, database, m_result.BackendWriter, [currentFilelistVolume], [previousTemporaryFilelist], logErrors: true, verifyMode: FilelistProcessor.VerifyMode.VerifyStrict).ConfigureAwait(false);
-            await backendManager.WaitForEmptyAsync(database, null, m_taskReader.ProgressToken);
+            await backendManager.WaitForEmptyAsync(database, m_transaction, m_taskReader.ProgressToken);
 
             long remoteVolumeCount = database.GetRemoteVolumes().LongCount(x => x.State == RemoteVolumeState.Verified);
             long samplesToTest = Math.Max(m_options.BackupTestSampleCount, (long)Math.Round(remoteVolumeCount * (m_options.BackupTestPercentage / 100m), MidpointRounding.AwayFromZero));
@@ -701,7 +701,7 @@ namespace Duplicati.Library.Main.Operation
                         if (m_options.UploadVerificationFile && await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
                         {
                             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_VerificationUpload);
-                            await FilelistProcessor.UploadVerificationFile(backendManager, m_options, database);
+                            await FilelistProcessor.UploadVerificationFile(backendManager, m_options, database, m_transaction);
                         }
                     }
                     catch

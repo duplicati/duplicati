@@ -119,6 +119,7 @@ partial class BackendManager
         /// <param name="result">The result of the operation</param>
         public void LogRemoteOperation(string action, string file, string? result)
         {
+            // Use the lock, but do not queue the operation, but instead write directly to the table
             lock (m_dbqueuelock)
                 m_db.Value.LogRemoteOperation(action, file, result, null);
         }
