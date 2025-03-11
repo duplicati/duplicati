@@ -1565,6 +1565,25 @@ namespace Duplicati.Library.Utility
         public static string IpVersionCompatibleLoopback =>
             HasIPv4Loopback ? IPAddress.Loopback.ToString() : $"[{IPAddress.IPv6Loopback.ToString()}]";
         
+        
+        /// <summary>
+        /// Probes the system for the presence of a loopback address on IPv4
+        /// </summary>
+        public static bool HasIPv4Loopback =>
+            NetworkInterface.GetAllNetworkInterfaces()
+                .Where(ni => ni.OperationalStatus == OperationalStatus.Up)
+                .SelectMany(ni => ni.GetIPProperties().UnicastAddresses)
+                .Any(addr => addr.Address.AddressFamily == AddressFamily.InterNetwork
+                             && addr.Address.Equals(IPAddress.Loopback));
+
+        /// <summary>
+        /// On systems that have IPV4 and IPV6, the method will return the default loopback ( 127, 0, 0, 1)
+        /// On systems with IPV6 only, the method will return the IPV6 loopback (::1)
+        /// </summary>
+        /// <returns></returns>
+        public static string IpVersionCompatibleLoopback =>
+            HasIPv4Loopback ? IPAddress.Loopback.ToString() : $"[{IPAddress.IPv6Loopback.ToString()}]";
+        
 
         /// <summary>
         /// Flattens an exception and its inner exceptions
