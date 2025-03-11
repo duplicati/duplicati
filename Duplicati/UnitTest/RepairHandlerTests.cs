@@ -24,6 +24,7 @@ using System.Data;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
+using System.Threading;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main;
 using Duplicati.Library.Main.Database;
@@ -524,6 +525,9 @@ namespace Duplicati.UnitTest
             var options = this.TestOptions;
             using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
                 TestUtils.AssertResults(c.Backup(new[] { this.DATAFOLDER }));
+
+            // Make room for a new backup
+            Thread.Sleep(2000);
 
             ModifyFile();
             using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
