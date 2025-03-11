@@ -91,6 +91,19 @@ namespace Duplicati.Library.Main.Operation.Restore
             /// </summary>
             private readonly Stopwatch sw_get_wait;
             /// <summary>
+            /// Internal stopwatch for profiling setting a block in the cache.
+            /// </summary>
+            private readonly Stopwatch sw_set_set;
+            /// <summary>
+            /// Internal stopwatch for profiling getting a waiter to notify that the block is available.
+            /// </summary>
+            private readonly Stopwatch sw_set_wake_get;
+            /// <summary>
+            /// Internal stopwatch for profiling for waking up the waiting request.
+            /// </summary>
+            private readonly Stopwatch sw_set_wake_set;
+
+            /// <summary>
             /// Dictionary for keeping track of how many times each block is requested. Used to determine when a block is no longer needed.
             /// </summary>
             private readonly Dictionary<long, long> m_blockcount = new();
@@ -155,6 +168,9 @@ namespace Duplicati.Library.Main.Operation.Restore
                 sw_cacheevict = options.InternalProfiling ? new() : null;
                 sw_checkcounts = options.InternalProfiling ? new() : null;
                 sw_get_wait = options.InternalProfiling ? new() : null;
+                sw_set_set = options.InternalProfiling ? new() : null;
+                sw_set_wake_get = options.InternalProfiling ? new() : null;
+                sw_set_wake_set = options.InternalProfiling ? new() : null;
 
                 foreach (var (block_id, volume_id) in db.GetBlocksAndVolumeIDs(options.SkipMetadata))
                 {
@@ -304,13 +320,20 @@ namespace Duplicati.Library.Main.Operation.Restore
             {
                 Logging.Log.WriteExplicitMessage(LOGTAG, "BlockCacheSet", "Setting block {0} in cache", blockRequest.BlockID);
 
+                sw_set_set?.Start();
                 m_block_cache.Set(blockRequest.BlockID, value);
+                sw_set_set?.Stop();
 
                 // Notify any waiters that the block is available.
+                sw_set_wake_get?.Start();
                 if (m_waiters.TryRemove(blockRequest.BlockID, out var tcs))
                 {
+                    sw_set_wake_get?.Stop();
+                    sw_set_wake_set?.Start();
                     tcs.SetResult(value);
+                    sw_set_wake_set?.Stop();
                 }
+                sw_set_wake_get?.Stop();
 
                 sw_cacheevict?.Start();
                 if (m_block_cache.Count > m_options.RestoreCacheMax)
@@ -365,7 +388,7 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                 if (m_options.InternalProfiling)
                 {
-                    Logging.Log.WriteProfilingMessage(LOGTAG, "InternalTimings", $"Sleepable dictionary - CheckCounts: {sw_checkcounts.ElapsedMilliseconds}ms, Get wait: {sw_get_wait.ElapsedMilliseconds}ms, Cache evict: {sw_cacheevict.ElapsedMilliseconds}ms");
+                    Logging.Log.WriteProfilingMessage(LOGTAG, "InternalTimings", $"Sleepable dictionary - CheckCounts: {sw_checkcounts.ElapsedMilliseconds}ms, Get wait: {sw_get_wait.ElapsedMilliseconds}ms, Set set: {sw_set_set.ElapsedMilliseconds}ms, Set wake get: {sw_set_wake_get.ElapsedMilliseconds}ms, Set wake set: {sw_set_wake_set.ElapsedMilliseconds}ms, Cache evict: {sw_cacheevict.ElapsedMilliseconds}ms");
                 }
 
                 if (m_block_cache.Count > 0)
