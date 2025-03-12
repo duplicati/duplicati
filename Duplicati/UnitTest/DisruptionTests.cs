@@ -708,23 +708,38 @@ namespace Duplicati.UnitTest
             this.ModifySourceFiles();
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
-                // ReSharper disable once AccessToDisposedClosure
-                Task backupTask = Task.Run(() => c.Backup(new[] { this.DATAFOLDER }));
-
-                // Block for a small amount of time to allow the ITaskControl to be associated
-                // with the Controller. Otherwise, the call to Stop will simply be a no-op.
-                Thread.Sleep(1000);
-
-                c.Abort();
-                try
+                var startedTcs = new TaskCompletionSource<bool>();
+                c.OnOperationStarted += results =>
                 {
-                    await backupTask.ConfigureAwait(false);
+                    ((BackupResults)results).OperationProgressUpdater.PhaseChanged += (phase, previousPhase) =>
+                    {
+                        if (phase == OperationPhase.Backup_ProcessingFiles)
+                            startedTcs.SetResult(true);
+                    };
+                };
+                
+                Task backupTask = Task.Run(() => c.Backup([DATAFOLDER]));
+
+                Task completedTask = await Task.WhenAny(startedTcs.Task, Task.Delay(5000));
+                if (completedTask == startedTcs.Task)
+                {
+                    c.Abort();
+                    try
+                    {
+                        await backupTask.ConfigureAwait(false);
+                        Assert.Fail("Expected OperationCanceledException but none was thrown.");
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        // Success, exception thrown as expected
+                    }
                 }
-                catch (TaskCanceledException)
+                else
                 {
+                    Assert.Fail("Operation did not reach ready state within timeout.");
                 }
             }
-
+            
             // The next backup should proceed without issues.
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
