@@ -91,7 +91,7 @@ namespace Duplicati.Library.Main.Operation
                 if (m_options.NoBackendverification)
                     FilelistProcessor.VerifyLocalList(backendManager, db, cancellationToken).Await();
                 else
-                    FilelistProcessor.VerifyRemoteList(backendManager, m_options, db, m_result.BackendWriter, null).Await();
+                    FilelistProcessor.VerifyRemoteList(backendManager, m_options, db, m_result.BackendWriter, null, null, logErrors: true, verifyMode: FilelistProcessor.VerifyMode.VerifyStrict).Await();
             }
 
             var filesets = db.FilesetTimes.OrderByDescending(x => x.Value).ToArray();
@@ -102,6 +102,10 @@ namespace Duplicati.Library.Main.Operation
 
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.PurgeFiles_Process);
             m_result.OperationProgressUpdater.UpdateProgress(currentprogress);
+
+            // If we crash now, it is possible that the remote storage contains partial files
+            if (!m_options.Dryrun)
+                db.TerminatedWithActiveUploads = true;
 
             // Reverse makes sure we re-write the old versions first
             foreach (var versionid in versions.Reverse())
@@ -221,6 +225,8 @@ namespace Duplicati.Library.Main.Operation
                 m_result.OperationProgressUpdater.UpdateProgress(currentprogress);
             }
 
+            if (!m_options.Dryrun)
+                db.TerminatedWithActiveUploads = false;
 
             if (doCompactStep)
             {

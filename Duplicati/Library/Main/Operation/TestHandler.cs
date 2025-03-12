@@ -57,7 +57,7 @@ namespace Duplicati.Library.Main.Operation
                 Utility.UpdateOptionsFromDb(db, m_options);
                 Utility.VerifyOptionsAndUpdateDatabase(db, m_options);
                 db.VerifyConsistency(m_options.Blocksize, m_options.BlockhashSize, !m_options.DisableFilelistConsistencyChecks, null);
-                FilelistProcessor.VerifyRemoteList(backendManager, m_options, db, m_results.BackendWriter, true, null).Await();
+                FilelistProcessor.VerifyRemoteList(backendManager, m_options, db, m_results.BackendWriter, latestVolumesOnly: true, verifyMode: FilelistProcessor.VerifyMode.VerifyOnly, null).Await();
 
                 DoRun(samples, db, backendManager).Await();
                 db.WriteResults();
