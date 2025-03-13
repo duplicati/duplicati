@@ -745,6 +745,9 @@ namespace Duplicati.Library.Main
             if (!string.IsNullOrWhiteSpace(m_options.Prefix) && m_options.Prefix.Contains("-"))
                 throw new Interface.UserInformationException("The prefix cannot contain hyphens (-)", "PrefixCannotContainHyphens");
 
+            if (m_options.VolumeSize < m_options.Blocksize * 2)
+                throw new Interface.UserInformationException("The volume size must be at least twice the block size", "VolumeSizeTooSmall");
+
             //Check validity of retention-policy option value
             try
             {

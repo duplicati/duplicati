@@ -186,7 +186,7 @@ namespace Duplicati.Library.Main.Operation
                                             db.RegisterDuplicatedBlock(e.Key, e.Value, newvol.VolumeID);
                                             blocksInVolume++;
 
-                                            if (newvol.Filesize > m_options.VolumeSize)
+                                            if (newvol.Filesize > (m_options.VolumeSize - m_options.Blocksize))
                                             {
                                                 await FinishVolumeAndUpload(db, backendManager, newvol, newvolindex, uploadedVolumes).ConfigureAwait(false);
 

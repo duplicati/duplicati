@@ -53,6 +53,7 @@ namespace Duplicati.UnitTest
             RunCommands(1024 * 10, modifyOptions: opts =>
             {
                 opts["blocksize"] = "10mb";
+                opts["dblock-size"] = "25mb";
             });
         }
 

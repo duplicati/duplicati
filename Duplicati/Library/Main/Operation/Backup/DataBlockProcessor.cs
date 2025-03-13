@@ -134,7 +134,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                             }
 
                             // If the volume is full, send to upload
-                            if (blockvolume.Filesize > options.VolumeSize - options.Blocksize)
+                            if (blockvolume.Filesize > (options.VolumeSize - options.Blocksize))
                             {
                                 //When uploading a new volume, we register the volumes and then flush the transaction
                                 // this ensures that the local database and remote storage are as closely related as possible
