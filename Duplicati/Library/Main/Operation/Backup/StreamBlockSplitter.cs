@@ -25,10 +25,9 @@ using Duplicati.Library.Main.Operation.Common;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using Duplicati.Library.Utility;
-using System.Linq;
 using Duplicati.Library.Interface;
 using System.IO;
-using System.Security.Cryptography;
+using Duplicati.Library.Main.Database;
 
 namespace Duplicati.Library.Main.Operation.Backup
 {
@@ -40,7 +39,7 @@ namespace Duplicati.Library.Main.Operation.Backup
         private static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(StreamBlockSplitter));
         private static readonly string FILELOGTAG = LOGTAG + ".FileEntry";
 
-        public static Task Run(Channels channels, Options options, BackupDatabase database, ITaskReader taskreader)
+        public static Task Run(Channels channels, Options options, LocalBackupDatabase database, ITaskReader taskreader)
         {
             return AutomationExtensions.RunTask(
             new
@@ -164,7 +163,9 @@ namespace Duplicati.Library.Main.Operation.Backup
 
                                 filehasher.TransformFinalBlock(new byte[0], 0, 0);
                                 var filehash = Convert.ToBase64String(filehasher.Hash);
-                                var blocksetid = await database.AddBlocksetAsync(filehash, filesize, blocksize, hashcollector, blocklisthashes);
+                                long blocksetid;
+                                using (await database.LockAsync())
+                                    database.AddBlockset(filehash, filesize, blocksize, hashcollector, blocklisthashes, out blocksetid);
                                 cur.SetResult(new StreamProcessResult() { Streamlength = filesize, Streamhash = filehash, Blocksetid = blocksetid });
                                 cur = null;
                             }

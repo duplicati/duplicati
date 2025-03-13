@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using Duplicati.Library.Logging;
 using Duplicati.Library.Main.Database;
 
@@ -20,12 +21,16 @@ partial class BackendManager
     /// If the operation fails, the logged messages here should still be flushed to the database, 
     /// as they have already been performed on the remote destination.
     /// </summary>
-    private class DatabaseCollector
+    private class DatabaseCollector : IDisposable
     {
         /// <summary>
         /// The log tag for this class
         /// </summary>
         private static readonly string LOGTAG = Log.LogTagFromType<DatabaseCollector>();
+        /// <summary>
+        /// The database to use
+        /// </summary>
+        private readonly Lazy<LogOnlyDatabase> m_db;
         /// <summary>
         /// The lock object for the database queue
         /// </summary>
@@ -39,15 +44,6 @@ partial class BackendManager
         /// Interface for database entries
         /// </summary>
         private interface IRemoteOperationEntry { }
-
-        /// <summary>
-        /// Logs an operation performed on the remote destination
-        /// </summary>
-        /// <param name="Action">The performed action</param>
-        /// <param name="File">The file the operation is performed on</param>
-        /// <param name="Result">The result of the operation</param>
-        private sealed record RemoteOperationLogEntry(string Action, string File, string? Result) : IRemoteOperationEntry;
-
 
         /// <summary>
         /// Logs a database update after a remote file operation
@@ -66,6 +62,53 @@ partial class BackendManager
         private sealed record RenameRemoteVolume(string Oldname, string Newname) : IRemoteOperationEntry;
 
         /// <summary>
+        /// The number of in-flight uploads
+        /// </summary>
+        private int m_inFlightUploads = 0;
+
+        /// <summary>
+        /// Creates a new database collector
+        /// </summary>
+        /// <param name="dbManager">The database connection manager to use</param>
+        public DatabaseCollector(DatabaseConnectionManager dbManager)
+        {
+            m_db = new Lazy<LogOnlyDatabase>(() => new LogOnlyDatabase(dbManager, -1));
+        }
+
+        /// <summary>
+        /// Marks the operation as started
+        /// </summary>
+        /// <param name="operation">The operation that was started</param>
+        public void StartedOperation(PendingOperationBase operation)
+        {
+            if (operation is PutOperation && Interlocked.Increment(ref m_inFlightUploads) > 1)
+                m_db.Value.TerminatedWithActiveUploads = true;
+        }
+
+        /// <summary>
+        /// Marks the operation as finished
+        /// </summary>
+        /// <param name="operation">The operation that was finished</param>
+        public void FinishedOperation(PendingOperationBase operation)
+        {
+            if (operation is PutOperation && Interlocked.Decrement(ref m_inFlightUploads) == 0)
+                m_db.Value.TerminatedWithActiveUploads = false;
+        }
+
+        /// <summary>
+        /// Marks the operation as failed
+        /// </summary>
+        /// <param name="operation">The operation that failed</param>
+        /// <param name="ex">The exception that caused the failure</param>
+        public void FailedOperation(PendingOperationBase operation, Exception ex)
+        {
+            // In case the upload failed completely, we do not decrement the counter,
+            // as the operation will fail, but we log the exception message
+            if (operation is PutOperation putOp)
+                m_db.Value.LogRemoteOperation("put", putOp.RemoteFilename, ex.ToString());
+        }
+
+        /// <summary>
         /// Logs an operation performed on the remote destination
         /// </summary>
         /// <param name="action">The action of the operation</param>
@@ -73,8 +116,7 @@ partial class BackendManager
         /// <param name="result">The result of the operation</param>
         public void LogRemoteOperation(string action, string file, string? result)
         {
-            lock (m_dbqueuelock)
-                m_dbqueue.Add(new RemoteOperationLogEntry(action, file, result));
+            m_db.Value.LogRemoteOperation(action, file, result);
         }
 
         /// <summary>
@@ -114,9 +156,8 @@ partial class BackendManager
         /// Flushes all messages to the database
         /// </summary>
         /// <param name="db">The database to write pending messages to</param>
-        /// <param name="transaction">The transaction to use, if any</param>
         /// <returns>Whether any messages were flushed</returns>
-        public bool FlushPendingMessages(LocalDatabase db, System.Data.IDbTransaction? transaction)
+        public bool FlushPendingMessages(LocalDatabase db)
         {
             List<IRemoteOperationEntry> entries;
             lock (m_dbqueuelock)
@@ -131,25 +172,27 @@ partial class BackendManager
             // Collect removed volumes for final db cleanup.
             var volsRemoved = new HashSet<string>();
 
-            // As we replace the list, we can now freely access the elements without locking
-            foreach (var e in entries)
-                if (e is RemoteOperationLogEntry operation)
-                    db.LogRemoteOperation(operation.Action, operation.File, operation.Result, transaction);
-                else if (e is RemoteVolumeUpdate update && update.State == RemoteVolumeState.Deleted)
-                {
-                    db.UpdateRemoteVolume(update.Remotename, RemoteVolumeState.Deleted, update.Size, update.Hash, true, TimeSpan.FromHours(2), transaction);
-                    volsRemoved.Add(update.Remotename);
-                }
-                else if (e is RemoteVolumeUpdate dbUpdate)
-                    db.UpdateRemoteVolume(dbUpdate.Remotename, dbUpdate.State, dbUpdate.Size, dbUpdate.Hash, transaction);
-                else if (e is RenameRemoteVolume rename)
-                    db.RenameRemoteFile(rename.Oldname, rename.Newname, transaction);
-                else if (e != null)
-                    Log.WriteErrorMessage(LOGTAG, "InvalidQueueElement", null, "Queue had element of type: {0}, {1}", e.GetType(), e);
+            // If this is a local backup database, we lock it for the entire operation
+            using ((db as LocalBackupDatabase)?.LockAsync())
+            {
+                // As we replace the list, we can now freely access the elements without locking
+                foreach (var e in entries)
+                    if (e is RemoteVolumeUpdate update && update.State == RemoteVolumeState.Deleted)
+                    {
+                        db.UpdateRemoteVolume(update.Remotename, RemoteVolumeState.Deleted, update.Size, update.Hash, true, TimeSpan.FromHours(2));
+                        volsRemoved.Add(update.Remotename);
+                    }
+                    else if (e is RemoteVolumeUpdate dbUpdate)
+                        db.UpdateRemoteVolume(dbUpdate.Remotename, dbUpdate.State, dbUpdate.Size, dbUpdate.Hash);
+                    else if (e is RenameRemoteVolume rename)
+                        db.RenameRemoteFile(rename.Oldname, rename.Newname);
+                    else if (e != null)
+                        Log.WriteErrorMessage(LOGTAG, "InvalidQueueElement", null, "Queue had element of type: {0}, {1}", e.GetType(), e);
 
-            // Finally remove volumes from DB.
-            if (volsRemoved.Count > 0)
-                db.RemoveRemoteVolumes(volsRemoved);
+                // Finally remove volumes from DB.
+                if (volsRemoved.Count > 0)
+                    db.RemoveRemoteVolumes(volsRemoved);
+            }
 
             return true;
         }
@@ -166,7 +209,6 @@ partial class BackendManager
             lock (m_dbqueuelock)
                 message = string.Join("\n", m_dbqueue.Select(e => e switch
                 {
-                    RemoteOperationLogEntry operation => $"Operation: {operation.Action} File: {operation.File} Result: {operation.Result}",
                     RemoteVolumeUpdate update => $"Update: {update.Remotename} State: {update.State} Size: {update.Size} Hash: {update.Hash}",
                     RenameRemoteVolume rename => $"Rename: {rename.Oldname} -> {rename.Newname}",
                     _ => $"InvalidQueueElement: {e.GetType()} {e}"
@@ -174,6 +216,13 @@ partial class BackendManager
 
             Log.WriteWarningMessage(LOGTAG, "FlushingMessagesToLog", null, message);
 
+        }
+
+        /// <inheritdoc/>
+        public void Dispose()
+        {
+            if (m_db.IsValueCreated)
+                m_db.Value.Dispose();
         }
     }
 }

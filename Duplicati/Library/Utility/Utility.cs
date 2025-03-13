@@ -296,11 +296,7 @@ namespace Duplicati.Library.Utility
                     var attr = attributeReader?.Invoke(rootpath) ?? FileAttributes.Directory;
                     lst.Push(rootpath);
                 }
-                catch (System.Threading.ThreadAbortException)
-                {
-                    throw;
-                }
-                catch (Exception ex)
+                catch (Exception ex) when (!ex.IsCancellationException())
                 {
                     errorCallback?.Invoke(rootpath, rootpath, ex);
                 }
@@ -321,21 +317,13 @@ namespace Duplicati.Library.Utility
                                 var attr = attributeReader?.Invoke(sf) ?? FileAttributes.Directory;
                                 lst.Push(sf);
                             }
-                            catch (System.Threading.ThreadAbortException)
-                            {
-                                throw;
-                            }
-                            catch (Exception ex)
+                            catch (Exception ex) when (!ex.IsCancellationException())
                             {
                                 errorCallback?.Invoke(rootpath, sf, ex);
                             }
                         }
                     }
-                    catch (System.Threading.ThreadAbortException)
-                    {
-                        throw;
-                    }
-                    catch (Exception ex)
+                    catch (Exception ex) when (!ex.IsCancellationException())
                     {
                         errorCallback?.Invoke(rootpath, f, ex);
                     }
@@ -347,11 +335,7 @@ namespace Duplicati.Library.Utility
                         {
                             files = fileList(f);
                         }
-                        catch (System.Threading.ThreadAbortException)
-                        {
-                            throw;
-                        }
-                        catch (Exception ex)
+                        catch (Exception ex) when (!ex.IsCancellationException())
                         {
                             errorCallback?.Invoke(rootpath, f, ex);
                         }
@@ -777,7 +761,7 @@ namespace Duplicati.Library.Utility
 
             return (T)(object)flags;
         }
-        
+
         /// <summary> 
         /// Parses an option with int value, returning the default value if the option is not found or cannot be parsed 
         /// </summary> 
@@ -785,9 +769,9 @@ namespace Duplicati.Library.Utility
         /// <param name="value">The value to look for in the settings</param> 
         /// <param name="default">default value</param> 
         /// <returns></returns> 
-        public static int ParseIntOption(IReadOnlyDictionary<string, string?> options, string value, int @default) 
-        { 
-            return options.TryGetValue(value, out var opt) && int.TryParse(opt ?? string.Empty, out var result) ? result : @default; 
+        public static int ParseIntOption(IReadOnlyDictionary<string, string?> options, string value, int @default)
+        {
+            return options.TryGetValue(value, out var opt) && int.TryParse(opt ?? string.Empty, out var result) ? result : @default;
         }
 
         /// <summary>

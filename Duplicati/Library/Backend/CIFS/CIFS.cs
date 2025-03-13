@@ -32,7 +32,6 @@ using SMBLibrary;
 using Duplicati.Library.SourceProvider;
 using System.Runtime.CompilerServices;
 using Duplicati.Library.Common.IO;
-using System.Runtime.CompilerServices;
 
 namespace Duplicati.Library.Backend;
 

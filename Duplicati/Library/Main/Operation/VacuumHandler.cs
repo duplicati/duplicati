@@ -19,10 +19,8 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
+using Duplicati.Library.Main.Database;
 
 namespace Duplicati.Library.Main.Operation
 {
@@ -37,15 +35,15 @@ namespace Duplicati.Library.Main.Operation
             m_result = result;
         }
 
-        public virtual void Run()
+        public virtual Task RunAsync(DatabaseConnectionManager dbManager)
         {
-            using (var db = new Database.LocalDatabase(m_options.Dbpath, "Vacuum", false))
+            using (var db = new LocalDatabase(dbManager, "Vacuum"))
             {
-                m_result.SetDatabase(db);
                 m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Vacuum_Running);
                 db.Vacuum();
                 m_result.EndTime = DateTime.UtcNow;
             }
+            return Task.CompletedTask;
         }
     }
 }

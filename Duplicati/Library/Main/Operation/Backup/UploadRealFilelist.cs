@@ -21,6 +21,7 @@
 
 using System;
 using System.Threading.Tasks;
+using Duplicati.Library.Main.Database;
 using Duplicati.Library.Main.Volumes;
 
 namespace Duplicati.Library.Main.Operation.Backup;
@@ -32,14 +33,14 @@ internal static class UploadRealFilelist
     /// </summary>
     private static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(UploadRealFilelist));
 
-    public static async Task Run(BackupResults result, BackupDatabase db, IBackendManager backendManager, Options options, FilesetVolumeWriter filesetvolume, long filesetid, Common.ITaskReader taskreader, bool lastWasPartial)
+    public static async Task Run(BackupResults result, LocalBackupDatabase db, IBackendManager backendManager, Options options, FilesetVolumeWriter filesetvolume, long filesetid, Common.ITaskReader taskreader, bool lastWasPartial)
     {
         // We ignore the stop signal, but not the pause and terminate
         await taskreader.ProgressRendevouz().ConfigureAwait(false);
 
         // Update the reported source and backend changes
         using (new Logging.Timer(LOGTAG, "UpdateChangeStatistics", "UpdateChangeStatistics"))
-            await db.UpdateChangeStatisticsAsync(result);
+            db.UpdateChangeStatistics(result);
 
         var changeCount =
             result.AddedFiles + result.ModifiedFiles + result.DeletedFiles +
@@ -58,14 +59,14 @@ internal static class UploadRealFilelist
                 // We ignore the stop signal, but not the pause and terminate
                 await taskreader.ProgressRendevouz().ConfigureAwait(false);
 
-                await db.WriteFilesetAsync(filesetvolume, filesetid).ConfigureAwait(false);
+                db.WriteFileset(filesetvolume, filesetid);
                 filesetvolume.Close();
 
                 // We ignore the stop signal, but not the pause and terminate
                 await taskreader.ProgressRendevouz().ConfigureAwait(false);
 
-                await db.UpdateRemoteVolumeAsync(filesetvolume.RemoteFilename, RemoteVolumeState.Uploading, -1, null).ConfigureAwait(false);
-                await db.CommitTransactionAsync("CommitUpdateRemoteVolume").ConfigureAwait(false);
+                db.UpdateRemoteVolume(filesetvolume.RemoteFilename, RemoteVolumeState.Uploading, -1, null);
+                db.CommitAndRestartTransaction("CommitUpdateRemoteVolume");
 
                 await backendManager.PutAsync(filesetvolume, null, null, false, taskreader.ProgressToken).ConfigureAwait(false);
             }
@@ -75,14 +76,14 @@ internal static class UploadRealFilelist
             if (result.TimestampChangedFiles != 0)
             {
                 Logging.Log.WriteInformationMessage(LOGTAG, "DetectedTimestampChanges", "Detected timestamp changes, but no data needs to be uploaded, pushing timestamp changes to the latest fileset");
-                await db.PushTimestampChangesToPreviousVersionAsync(filesetid).ConfigureAwait(false);
+                db.PushTimestampChangesToPreviousVersion(filesetid);
             }
 
             Logging.Log.WriteVerboseMessage(LOGTAG, "RemovingLeftoverTempFile", "removing temp files, as no data needs to be uploaded");
-            await db.RemoveRemoteVolumeAsync(filesetvolume.RemoteFilename);
+            db.RemoveRemoteVolume(filesetvolume.RemoteFilename);
         }
 
-        await db.CommitTransactionAsync("CommitUpdateRemoteVolume");
+        db.CommitAndRestartTransaction("CommitUpdateRemoteVolume");
     }
 }
 

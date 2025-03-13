@@ -289,11 +289,20 @@ namespace Duplicati.UnitTest
             {
                 operation = ((Library.Main.OperationMode)operationProperty.GetValue(results)).ToString();
             }
+
+            if (results.Errors.Any())
+                throw new Exception($"{operation} errors:\n{string.Join("\n", results.Errors)}");
             Assert.AreEqual(0, results.Errors.Count(), "{0} errors:\n{1}", operation, string.Join("\n", results.Errors));
+            if (results.Warnings.Any())
+                throw new Exception($"{operation} warnings:\n{string.Join("\n", results.Warnings)}");
             Assert.AreEqual(0, results.Warnings.Count(), "{0} warnings:\n{1}", operation, string.Join("\n", results.Warnings));
 
             if (results is ITestResults testResults)
+            {
+                if (testResults.Verifications.Any(p => p.Value.Any()))
+                    throw new Exception($"{operation} verifications:\n{string.Join("\n", testResults.Verifications.Select(p => string.Join("\n", p.Value)))}");
                 Assert.IsFalse(testResults.Verifications.Any(p => p.Value.Any()), "{0} verifications:\n{1}", operation, string.Join("\n", testResults.Verifications.Select(p => string.Join("\n", p.Value))));
+            }
         }
     }
 }

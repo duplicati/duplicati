@@ -116,7 +116,7 @@ namespace Duplicati.Library.Main.Volumes
 
             private ParsedVolume() { }
 
-            public static IParsedVolume Parse(string filename, Library.Interface.IFileEntry file = null)
+            public static IParsedVolume Parse(string filename, Interface.IFileEntry file = null)
             {
                 var m = FILENAME_REGEXP.Match(filename);
                 if (!m.Success || m.Length != filename.Length)
@@ -159,7 +159,7 @@ namespace Duplicati.Library.Main.Volumes
             return volumename;
         }
 
-        public static IParsedVolume ParseFilename(Library.Interface.IFileEntry file)
+        public static IParsedVolume ParseFilename(Interface.IFileEntry file)
         {
             return ParsedVolume.Parse(file.Name, file);
         }

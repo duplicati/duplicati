@@ -78,31 +78,25 @@ namespace Duplicati.Library.Main.Operation
                 _lst =>
                 {
                     // Unwrap, so we do not query the remote storage twice
-                    var lst = (from n in _lst
-                               where n.FileType == RemoteVolumeType.Files
-                               orderby n.Time descending
-                               select n).ToArray();
+                    var lst = _lst.Where(n => n.FileType == RemoteVolumeType.Files)
+                        .OrderByDescending(n => n.Time)
+                        .ToArray();
 
                     var numbers = lst.Zip(Enumerable.Range(0, lst.Length), (a, b) => new KeyValuePair<long, IParsedVolume>(b, a)).ToList();
 
                     if (time.Ticks > 0 && versions != null && versions.Length > 0)
-                        return from n in numbers
-                               where (singleTimeMatch ? n.Value.Time == time : n.Value.Time <= time) && versions.Contains(n.Key)
-                               select n;
+                        return numbers.Where(n => singleTimeMatch ? n.Value.Time == time : n.Value.Time <= time)
+                        .Where(n => versions.Contains(n.Key));
                     else if (time.Ticks > 0)
-                        return from n in numbers
-                               where (singleTimeMatch ? n.Value.Time == time : n.Value.Time <= time)
-                               select n;
+                        return numbers.Where(n => singleTimeMatch ? n.Value.Time == time : n.Value.Time <= time);
                     else if (versions != null && versions.Length > 0)
-                        return from n in numbers
-                               where versions.Contains(n.Key)
-                               select n;
+                        return numbers.Where(n => versions.Contains(n.Key));
                     else
                         return numbers;
                 };
         }
 
-        public void Run(string[] paths, IBackendManager backendManager, Library.Utility.IFilter filter)
+        public async Task RunAsync(string[] paths, DatabaseConnectionManager dbManager, IBackendManager backendManager, IFilter filter)
         {
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_Begin);
 
@@ -111,23 +105,28 @@ namespace Duplicati.Library.Main.Operation
 
             LocalRestoreDatabase db = null;
             TempFile tmpdb = null;
+            DatabaseConnectionManager tmpDbManager = null;
+            IBackendManager tmpBackendManager = null;
             try
             {
-                if (!m_options.NoLocalDb && SystemIO.IO_OS.FileExists(m_options.Dbpath))
+                if (!m_options.NoLocalDb && dbManager.Exists)
                 {
-                    db = new LocalRestoreDatabase(m_options.Dbpath);
-                    db.SetResult(m_result);
+                    tmpDbManager = dbManager.CreateTransactionFreeConnection();
+                    tmpBackendManager = backendManager.CloneForOtherDb(tmpDbManager);
+                    db = new LocalRestoreDatabase(tmpDbManager);
                 }
                 else
                 {
                     Logging.Log.WriteInformationMessage(LOGTAG, "NoLocalDatabase", "No local database, building a temporary database");
                     tmpdb = new TempFile();
                     RecreateDatabaseHandler.NumberedFilterFilelistDelegate filelistfilter = FilterNumberedFilelist(m_options.Time, m_options.Version);
-                    db = new LocalRestoreDatabase(tmpdb);
+                    tmpDbManager = new DatabaseConnectionManager(tmpdb, transactionFree: true);
+                    tmpBackendManager = backendManager.CloneForOtherDb(tmpDbManager);
+                    db = new LocalRestoreDatabase(tmpDbManager.CreateTransactionFreeConnection());
                     m_result.RecreateDatabaseResults = new RecreateDatabaseResults(m_result);
                     using (new Logging.Timer(LOGTAG, "RecreateTempDbForRestore", "Recreate temporary database for restore"))
-                        new RecreateDatabaseHandler(m_options, (RecreateDatabaseResults)m_result.RecreateDatabaseResults)
-                            .DoRun(backendManager, db, false, filter, filelistfilter, null).Await();
+                        await new RecreateDatabaseHandler(m_options, (RecreateDatabaseResults)m_result.RecreateDatabaseResults)
+                            .DoRunAsync(tmpBackendManager, db, false, filter, filelistfilter, null).ConfigureAwait(false);
 
                     if (!m_options.SkipMetadata)
                         ApplyStoredMetadata(m_options, new RestoreHandlerMetadataStorage());
@@ -139,16 +138,18 @@ namespace Duplicati.Library.Main.Operation
                 }
 
                 if (m_options.RestoreLegacy)
-                    DoRun(backendManager, db, filter, m_result.TaskControl.ProgressToken).Await();
+                    await DoRun(tmpBackendManager, db, filter, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
                 else
-                    DoRunNew(backendManager, db, filter, m_result.TaskControl.ProgressToken).Await();
+                    await DoRunNew(tmpBackendManager, db, filter, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
 
-                db.WriteResults();
+                db.WriteResults(m_result);
             }
             finally
             {
                 db?.Dispose();
                 tmpdb?.Dispose();
+                tmpBackendManager?.Dispose();
+                tmpDbManager?.Dispose();
             }
         }
 
@@ -317,7 +318,7 @@ namespace Duplicati.Library.Main.Operation
             if (!m_options.NoBackendverification)
             {
                 m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_PreRestoreVerify);
-                await FilelistProcessor.VerifyRemoteList(backendManager, m_options, database, m_result.BackendWriter, latestVolumesOnly: false, verifyMode: FilelistProcessor.VerifyMode.VerifyOnly, null).ConfigureAwait(false);
+                await FilelistProcessor.VerifyRemoteList(backendManager, m_options, database, m_result.BackendWriter, latestVolumesOnly: false, verifyMode: FilelistProcessor.VerifyMode.VerifyOnly).ConfigureAwait(false);
             }
 
             // Prepare the block and file list and create the directory structure
@@ -327,7 +328,6 @@ namespace Duplicati.Library.Main.Operation
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_CreateTargetFolders);
             using (new Logging.Timer(LOGTAG, "CreateDirectory", "CreateDirectory"))
                 await CreateDirectoryStructure(database, m_options, m_result).ConfigureAwait(false);
-            database.SetResult(m_result);
 
             using var setup_log_timer = new Logging.Timer(LOGTAG, "RestoreNetworkSetup", "RestoreNetworkSetup");
             // Create the channels between BlockManager and FileProcessor
@@ -403,7 +403,7 @@ namespace Duplicati.Library.Main.Operation
 
             // Drop the temp tables
             database.DropRestoreTable();
-            await backendManager.WaitForEmptyAsync(database, null, CancellationToken.None).ConfigureAwait(false);
+            await backendManager.WaitForEmptyAsync(database, CancellationToken.None).ConfigureAwait(false);
 
             // Report that the restore is complete
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_Complete);
@@ -423,7 +423,6 @@ namespace Duplicati.Library.Main.Operation
             //using (var database = new LocalRestoreDatabase(dbparent))
             using (var metadatastorage = new RestoreHandlerMetadataStorage())
             {
-                database.SetResult(m_result);
                 Utility.UpdateOptionsFromDb(database, m_options);
                 Utility.VerifyOptionsAndUpdateDatabase(database, m_options);
                 m_blockbuffer = new byte[m_options.Blocksize];
@@ -431,7 +430,7 @@ namespace Duplicati.Library.Main.Operation
                 if (!m_options.NoBackendverification)
                 {
                     m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_PreRestoreVerify);
-                    await FilelistProcessor.VerifyRemoteList(backendManager, m_options, database, m_result.BackendWriter, latestVolumesOnly: false, verifyMode: FilelistProcessor.VerifyMode.VerifyOnly, null).ConfigureAwait(false);
+                    await FilelistProcessor.VerifyRemoteList(backendManager, m_options, database, m_result.BackendWriter, latestVolumesOnly: false, verifyMode: FilelistProcessor.VerifyMode.VerifyOnly).ConfigureAwait(false);
                 }
 
                 //Figure out what files are to be patched, and what blocks are needed
@@ -464,7 +463,7 @@ namespace Duplicati.Library.Main.Operation
 
                 if (!await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
                 {
-                    await backendManager.WaitForEmptyAsync(database, null, cancellationToken).ConfigureAwait(false);
+                    await backendManager.WaitForEmptyAsync(database, cancellationToken).ConfigureAwait(false);
                     return;
                 }
 
@@ -479,7 +478,7 @@ namespace Duplicati.Library.Main.Operation
 
                 if (!await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
                 {
-                    await backendManager.WaitForEmptyAsync(database, null, cancellationToken).ConfigureAwait(false);
+                    await backendManager.WaitForEmptyAsync(database, cancellationToken).ConfigureAwait(false);
                     return;
                 }
 
@@ -503,7 +502,7 @@ namespace Duplicati.Library.Main.Operation
                         {
                             if (!await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
                             {
-                                await backendManager.WaitForEmptyAsync(database, null, cancellationToken).ConfigureAwait(false);
+                                await backendManager.WaitForEmptyAsync(database, cancellationToken).ConfigureAwait(false);
                                 return;
                             }
 
@@ -515,7 +514,7 @@ namespace Duplicati.Library.Main.Operation
                         {
                             brokenFiles.Add(name);
                             Logging.Log.WriteErrorMessage(LOGTAG, "PatchingFailed", ex, "Failed to patch with remote file: \"{0}\", message: {1}", name, ex.Message);
-                            if (ex is System.Threading.ThreadAbortException)
+                            if (ex.IsCancellationException())
                                 throw;
                         }
                     }
@@ -539,7 +538,7 @@ namespace Duplicati.Library.Main.Operation
                     {
                         fileErrors++;
                         Logging.Log.WriteErrorMessage(LOGTAG, "RestoreFileFailed", ex, "Failed to restore empty file: \"{0}\". Error message was: {1}", file.Path, ex.Message);
-                        if (ex is System.Threading.ThreadAbortException)
+                        if (ex.IsCancellationException())
                             throw;
                     }
                 }
@@ -568,7 +567,7 @@ namespace Duplicati.Library.Main.Operation
                             {
                                 if (!await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
                                 {
-                                    await backendManager.WaitForEmptyAsync(database, null, cancellationToken).ConfigureAwait(false);
+                                    await backendManager.WaitForEmptyAsync(database, cancellationToken).ConfigureAwait(false);
                                     return;
                                 }
 
@@ -591,7 +590,7 @@ namespace Duplicati.Library.Main.Operation
                             {
                                 fileErrors++;
                                 Logging.Log.WriteErrorMessage(LOGTAG, "RestoreFileFailed", ex, "Failed to restore file: \"{0}\". Error message was: {1}", file.Path, ex.Message);
-                                if (ex is System.Threading.ThreadAbortException)
+                                if (ex.IsCancellationException())
                                     throw;
                             }
                         }
@@ -606,7 +605,7 @@ namespace Duplicati.Library.Main.Operation
 
                 // Drop the temp tables
                 database.DropRestoreTable();
-                await backendManager.WaitForEmptyAsync(database, null, cancellationToken).ConfigureAwait(false);
+                await backendManager.WaitForEmptyAsync(database, cancellationToken).ConfigureAwait(false);
             }
 
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_Complete);
@@ -746,7 +745,7 @@ namespace Duplicati.Library.Main.Operation
                                 catch (Exception ex)
                                 {
                                     Logging.Log.WriteWarningMessage(LOGTAG, "PatchingFileLocalFailed", ex, "Failed to patch file: \"{0}\" with data from local file \"{1}\", message: {2}", targetpath, sourcepath, ex.Message);
-                                    if (ex is System.Threading.ThreadAbortException)
+                                    if (ex.IsCancellationException())
                                         throw;
                                 }
                             }
@@ -767,7 +766,7 @@ namespace Duplicati.Library.Main.Operation
                     catch (Exception ex)
                     {
                         Logging.Log.WriteWarningMessage(LOGTAG, "PatchingFileLocalFailed", ex, "Failed to patch file: \"{0}\" with local data, message: {1}", targetpath, ex.Message);
-                        if (ex is System.Threading.ThreadAbortException)
+                        if (ex.IsCancellationException())
                             throw;
                         if (options.UnittestMode)
                             throw;
@@ -863,7 +862,7 @@ namespace Duplicati.Library.Main.Operation
                                     catch (Exception ex)
                                     {
                                         Logging.Log.WriteWarningMessage(LOGTAG, "PatchingFileLocalFailed", ex, "Failed to patch file: \"{0}\" with data from local file \"{1}\", message: {2}", targetpath, source.Path, ex.Message);
-                                        if (ex is System.Threading.ThreadAbortException)
+                                        if (ex.IsCancellationException())
                                             throw;
                                     }
                                 }
@@ -1112,7 +1111,7 @@ namespace Duplicati.Library.Main.Operation
                         catch (Exception ex)
                         {
                             Logging.Log.WriteWarningMessage(LOGTAG, "TargetFileReadError", ex, "Failed to read target file: \"{0}\", message: {1}", targetpath, ex.Message);
-                            if (ex is System.Threading.ThreadAbortException)
+                            if (ex.IsCancellationException())
                                 throw;
                             if (options.UnittestMode)
                                 throw;

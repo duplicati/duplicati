@@ -74,13 +74,13 @@ namespace Duplicati.UnitTest
             List<int> expectedBlocksetIDs = new List<int>();
             List<int> expectedIndexes = new List<int>();
             List<string> expectedHashes = new List<string>();
-            using (IDbConnection connection = SQLiteLoader.LoadConnection(options["dbpath"]))
+            using (var connection = SQLiteLoader.LoadConnection(options["dbpath"]))
             {
                 // Read the contents of the BlocklistHash table so that we can
                 // compare them to the contents after the repair operation.
-                using (IDbCommand command = connection.CreateCommand())
+                using (var command = connection.CreateCommand())
                 {
-                    using (IDataReader reader = command.ExecuteReader(selectStatement))
+                    using (var reader = command.ExecuteReader(selectStatement))
                     {
                         while (reader.Read())
                         {
@@ -419,14 +419,15 @@ namespace Duplicati.UnitTest
             }
 
             // Check database block link
-            using (LocalDatabase db = new LocalDatabase(DBFILE, "Test", true))
+            using (var manager = new DatabaseConnectionManager(DBFILE))
+            using (var db = new LocalDatabase(manager, "Test"))
             {
                 long indexVolumeId = db.GetRemoteVolumeID(Path.GetFileName(origFile));
                 long duplicateVolumeId = db.GetRemoteVolumeID(Path.GetFileName(dupFile));
                 Assert.AreNotEqual(-1, indexVolumeId);
                 Assert.AreNotEqual(-1, duplicateVolumeId);
 
-                using (var cmd = db.Connection.CreateCommand())
+                using (var cmd = manager.CreateCommand())
                 {
                     string sql = @"SELECT ""BlockVolumeID"" FROM ""IndexBlockLink"" WHERE ""IndexVolumeID"" = ?";
                     long linkedIndexId = cmd.ExecuteScalarInt64(sql, -1, indexVolumeId);

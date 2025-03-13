@@ -20,6 +20,7 @@
 // DEALINGS IN THE SOFTWARE.
 
 using CoCoL;
+using Duplicati.Library.Main.Database;
 using Duplicati.Library.Main.Operation.Common;
 using Duplicati.Library.Main.Volumes;
 using System;
@@ -48,7 +49,7 @@ namespace Duplicati.Library.Main.Operation.Backup
     /// </summary>
     internal static class SpillCollectorProcess
     {
-        public static Task Run(Channels channels, Options options, BackupDatabase database, IBackendManager backendManager, ITaskReader taskreader)
+        public static Task Run(Channels channels, Options options, LocalBackupDatabase database, IBackendManager backendManager, ITaskReader taskreader)
         {
             return AutomationExtensions.RunTask(
             new
@@ -60,16 +61,14 @@ namespace Duplicati.Library.Main.Operation.Backup
             {
                 var lst = new List<SpillVolumeRequest>();
 
-                while (!await self.Input.IsRetiredAsync.ConfigureAwait(false))
+                while (true)
                     try
                     {
                         lst.Add(await self.Input.ReadAsync().ConfigureAwait(false));
                     }
-                    catch (Exception ex)
+                    catch (Exception ex) when (ex.IsRetiredException())
                     {
-                        if (ex.IsRetiredException())
-                            break;
-                        throw;
+                        break;
                     }
 
                 async Task<SpillVolumeRequest> GetNextTarget(SpillVolumeRequest source)
@@ -79,7 +78,8 @@ namespace Duplicati.Library.Main.Operation.Backup
                     {
                         // No more targets, make one
                         target = new SpillVolumeRequest(new BlockVolumeWriter(options), source.IndexVolume == null ? null : new TemporaryIndexVolume(options));
-                        target.BlockVolume.VolumeID = await database.RegisterRemoteVolumeAsync(target.BlockVolume.RemoteFilename, RemoteVolumeType.Blocks, RemoteVolumeState.Temporary).ConfigureAwait(false);
+                        using (await database.LockAsync())
+                            target.BlockVolume.VolumeID = database.RegisterRemoteVolume(target.BlockVolume.RemoteFilename, RemoteVolumeType.Blocks, RemoteVolumeState.Temporary);
                     }
                     else
                     {
@@ -115,17 +115,18 @@ namespace Duplicati.Library.Main.Operation.Backup
                     using (var rd = new BlockVolumeReader(options.CompressionModule, source.BlockVolume.LocalFilename, options))
                     {
                         // Make sure we process the blocklisthashes, even if the blockvolume is empty
-                        target = await GetNextTarget(source).ConfigureAwait(false);
+                        target = await GetNextTarget(source);
 
                         foreach (var file in rd.Blocks)
                         {
                             // Grab a target
                             if (target == null)
-                                target = await GetNextTarget(source).ConfigureAwait(false);
+                                target = await GetNextTarget(source);
 
                             var len = rd.ReadBlock(file.Key, buffer);
                             target.BlockVolume.AddBlock(file.Key, buffer, 0, len, Duplicati.Library.Interface.CompressionHint.Default);
-                            await database.MoveBlockToVolumeAsync(file.Key, len, source.BlockVolume.VolumeID, target.BlockVolume.VolumeID).ConfigureAwait(false);
+                            using (await database.LockAsync())
+                                database.MoveBlockToVolume(file.Key, len, source.BlockVolume.VolumeID, target.BlockVolume.VolumeID);
 
                             if (target.IndexVolume != null)
                                 target.IndexVolume.AddBlock(file.Key, len);
@@ -141,7 +142,8 @@ namespace Duplicati.Library.Main.Operation.Backup
 
                     // Make sure they are out of the database
                     System.IO.File.Delete(source.BlockVolume.LocalFilename);
-                    await database.SafeDeleteRemoteVolumeAsync(source.BlockVolume.RemoteFilename).ConfigureAwait(false);
+                    using (await database.LockAsync())
+                        database.SafeDeleteRemoteVolume(source.BlockVolume.RemoteFilename);
 
                     // Re-inject the target if it has content
                     if (target != null)
@@ -160,16 +162,21 @@ namespace Duplicati.Library.Main.Operation.Backup
             });
         }
 
-        private static async Task UploadVolumeAndIndex(SpillVolumeRequest target, Options options, BackupDatabase database, IBackendManager backendManager, ITaskReader taskreader)
+        private static async Task UploadVolumeAndIndex(SpillVolumeRequest target, Options options, LocalBackupDatabase database, IBackendManager backendManager, ITaskReader taskreader)
         {
             IndexVolumeWriter indexVolumeCopy = null;
             if (target.IndexVolume != null)
             {
                 // TODO: It is much easier to let the BackendManager deal with index files,
                 // but it adds a bit of strain to the database
-                indexVolumeCopy = await target.IndexVolume.CreateVolume(target.BlockVolume.RemoteFilename, options, database).ConfigureAwait(false);
-                // Create link before upload is started, it will be removed later if upload fails
-                await database.AddIndexBlockLinkAsync(indexVolumeCopy.VolumeID, target.BlockVolume.VolumeID).ConfigureAwait(false);
+                indexVolumeCopy = target.IndexVolume.CreateVolume(target.BlockVolume.RemoteFilename, options);
+
+                using (await database.LockAsync())
+                {
+                    indexVolumeCopy.VolumeID = database.RegisterRemoteVolume(indexVolumeCopy.RemoteFilename, RemoteVolumeType.Index, RemoteVolumeState.Temporary);
+                    // Create link before upload is started, it will be removed later if upload fails
+                    database.AddIndexBlockLink(indexVolumeCopy.VolumeID, target.BlockVolume.VolumeID);
+                }
             }
 
             await backendManager.PutAsync(target.BlockVolume, indexVolumeCopy, null, false, taskreader.ProgressToken).ConfigureAwait(false);
