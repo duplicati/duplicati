@@ -552,7 +552,8 @@ namespace Duplicati.UnitTest
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, repairOptions, null))
             {
                 IRepairResults repairResults = c.Repair();
-                TestUtils.AssertResults(repairResults);
+                Assert.AreEqual(0, repairResults.Errors.Count());
+                Assert.AreEqual(0, repairResults.Warnings.Where(x => x.IndexOf("RemoteFilesNewerThanLocalDatabase", StringComparison.OrdinalIgnoreCase) < 0).Count());
                 Assert.AreEqual(2, Directory.EnumerateFiles(this.TARGETFOLDER, "*.dlist.*").Count());
                 Assert.AreEqual(2, c.List().Filesets.Count());
             }

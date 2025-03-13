@@ -23,17 +23,20 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
+using System.Net;
+using System.Net.NetworkInformation;
+using System.Net.Sockets;
+using System.Runtime.Versioning;
+using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
+using System.Threading.Tasks;
 using Duplicati.Library.Common.IO;
-using System.Globalization;
-using System.Runtime.Versioning;
-using System.Security.Cryptography.X509Certificates;
-using System.Security.Cryptography;
 
 namespace Duplicati.Library.Utility
 {
@@ -1527,6 +1530,25 @@ namespace Duplicati.Library.Utility
             collection.Import(pfxPath, password, X509KeyStorageFlags.Exportable | X509KeyStorageFlags.PersistKeySet);
             return collection;
         }
+        
+        /// <summary>
+        /// Probes the system for the presence of a loopback address on IPv4
+        /// </summary>
+        public static bool HasIPv4Loopback =>
+            NetworkInterface.GetAllNetworkInterfaces()
+                .Where(ni => ni.OperationalStatus == OperationalStatus.Up)
+                .SelectMany(ni => ni.GetIPProperties().UnicastAddresses)
+                .Any(addr => addr.Address.AddressFamily == AddressFamily.InterNetwork
+                             && addr.Address.Equals(IPAddress.Loopback));
+
+        /// <summary>
+        /// On systems that have IPV4 and IPV6, the method will return the default loopback ( 127, 0, 0, 1)
+        /// On systems with IPV6 only, the method will return the IPV6 loopback (::1)
+        /// </summary>
+        /// <returns></returns>
+        public static string IpVersionCompatibleLoopback =>
+            HasIPv4Loopback ? IPAddress.Loopback.ToString() : $"[{IPAddress.IPv6Loopback.ToString()}]";
+        
 
         /// <summary>
         /// Flattens an exception and its inner exceptions

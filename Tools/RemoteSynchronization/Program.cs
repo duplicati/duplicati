@@ -87,8 +87,12 @@ to have the destination match the source.
 If the destination has files that are not in the source, they will be deleted
 (or renamed if the retention option is set).
 
-If the destination has files that are in the source but are different in size or
-has a newer timestamp, they will be overwritten by the source files.
+If the destination has files that are also present in the source, but the files
+differ in size, or if the source files have a newer (more recent) timestamp,
+the destination files will be overwritten by the source files. Given that some
+backends do not allow for metadata or timestamp modification, and that the tool
+is run after backup, the destination files should always have a timestamp that
+is newer (or the same if run promptly) compared to the source files.
 
 If the force option is set, the destination will be overwritten by the source,
 regardless of the state of the files. It will also skip the initial comparison,
@@ -554,7 +558,7 @@ destination will be verified before being overwritten (if they seemingly match).
             var to_delete = new HashSet<string>();
             var to_verify = new List<IFileEntry>();
 
-            // Find all of the files in src that are not in dst, have a different size or have a more recent modification date
+            // Find all of the files in src that are not in dst, where the dst has a different size than src or src a more recent modification date than dst
             using (new Duplicati.Library.Logging.Timer(LOGTAG, "rsync", "Prepare | Check the files that are present in source against destination"))
                 foreach (var f_src in files_src)
                 {
