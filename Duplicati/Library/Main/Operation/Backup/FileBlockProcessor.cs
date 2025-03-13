@@ -58,7 +58,10 @@ namespace Duplicati.Library.Main.Operation.Backup
                     try
                     {
                         var hint = options.GetCompressionHintFromFilename(e.Entry.Path);
-                        var oldHash = e.OldId < 0 ? null : await database.WithLockAsync(x => x.GetFileHash(e.OldId));
+                        string oldHash = null;
+                        if (e.OldId >= 0)
+                            using (await database.LockAsync())
+                                oldHash = database.GetFileHash(e.OldId);
 
                         StreamProcessResult filestreamdata;
 

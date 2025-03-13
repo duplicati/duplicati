@@ -216,7 +216,7 @@ namespace Duplicati.Library.Main.Database
 
                 if (versions != null && versions.Length > 0)
                 {
-                    StringBuilder qs = new StringBuilder();
+                    var qs = new StringBuilder();
 
                     foreach (var v in versions)
                     {

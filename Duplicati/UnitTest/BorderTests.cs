@@ -24,7 +24,6 @@ using NUnit.Framework;
 using System.IO;
 using System.Linq;
 using System.Collections.Generic;
-using Duplicati.Library.Interface;
 
 namespace Duplicati.UnitTest
 {
@@ -217,8 +216,9 @@ namespace Duplicati.UnitTest
 
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
             {
-                IBackupResults backupResults = c.Backup(new string[] { DATAFOLDER });
+                var backupResults = c.Backup(new string[] { DATAFOLDER });
                 Assert.AreEqual(0, backupResults.Errors.Count());
+                Assert.AreEqual(1, c.List().Filesets.Count());
 
                 // TODO: This sometimes results in a "No block hash found for file: C:\projects\duplicati\testdata\backup-data\a-0" warning.
                 // Because of this, we don't check for warnings here.

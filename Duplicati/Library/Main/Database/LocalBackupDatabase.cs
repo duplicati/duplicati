@@ -223,18 +223,6 @@ SELECT ""BlocklistHash"".""BlocksetID"" FROM ""BlocklistHash"" WHERE ""Blocklist
         }
 
         /// <summary>
-        /// Runs the method with a lock
-        /// </summary>
-        /// <typeparam name="T">The return type<typeparam>
-        /// <param name="action">The action to run</param>
-        /// <returns>The result of the action</returns>
-        public async Task<T> WithLockAsync<T>(Func<LocalBackupDatabase, T> action)
-        {
-            using (await LockAsync())
-                return action(this);
-        }
-
-        /// <summary>
         /// Probes to see if a block already exists
         /// </summary>
         /// <param name="key">The block key</param>

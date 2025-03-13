@@ -83,11 +83,18 @@ namespace Duplicati.Library.Main.Operation.Backup
                             // There can be a race, such that two workers determine that
                             // the block is missing, but this will be solved by the AddBlock call
                             // which runs atomically
-                            if (!isMandatoryBlocklistHash && await database.WithLockAsync(x => x.FindBlockID(b.HashKey, b.Size)) >= 0)
+                            if (!isMandatoryBlocklistHash)
                             {
-                                b.TaskCompletion.TrySetResult(false);
-                                sw_workload.Stop();
-                                continue;
+                                long blockId;
+                                using (await database.LockAsync())
+                                    blockId = database.FindBlockID(b.HashKey, b.Size);
+
+                                if (blockId >= 0)
+                                {
+                                    b.TaskCompletion.TrySetResult(false);
+                                    sw_workload.Stop();
+                                    continue;
+                                }
                             }
 
                             blockvolume = new BlockVolumeWriter(options);

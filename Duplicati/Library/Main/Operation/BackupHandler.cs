@@ -671,7 +671,6 @@ namespace Duplicati.Library.Main.Operation
 
                     try
                     {
-
                         // If this throws, we should roll back the transaction
                         if (await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
                             await CompactIfRequired(database, backendManager, lastVolumeSize);

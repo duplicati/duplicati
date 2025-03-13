@@ -131,7 +131,7 @@ namespace Duplicati.Library.Main.Operation
                             .Cast<IRemoteVolume>()
                             .ToList();
                 }
-                await foreach (var e in PerformDelete(backendManager, fullyDeleteable, m_result.TaskControl.ProgressToken).ConfigureAwait(false))
+                await foreach (var e in DoDelete(db, backendManager, fullyDeleteable, transaction, m_result.TaskControl.ProgressToken).ConfigureAwait(false))
                     deletedVolumes.Add(e);
 
                 // This list is used to pick up unused volumes,
@@ -239,7 +239,7 @@ namespace Duplicati.Library.Main.Operation
                     newvol.Dispose();
                 }
 
-                await foreach (var e in PerformDelete(backendManager, deleteableVolumes, m_result.TaskControl.ProgressToken).ConfigureAwait(false))
+                await foreach (var e in DoDelete(db, backendManager, deleteableVolumes, transaction, m_result.TaskControl.ProgressToken).ConfigureAwait(false))
                     deletedVolumes.Add(e);
 
                 var downloadSize = downloadedVolumes.Where(x => x.Value >= 0).Aggregate(0L, (a, x) => a + x.Value);
