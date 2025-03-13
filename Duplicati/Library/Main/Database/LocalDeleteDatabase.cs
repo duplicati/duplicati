@@ -88,7 +88,7 @@ namespace Duplicati.Library.Main.Database
                 }
 
                 if (deleted != toDelete.Length)
-                    throw new Exception(string.Format("Unexpected number of deleted filesets {0} vs {1}", deleted, toDelete.Length));
+                    throw new Exception($"Unexpected number of deleted filesets {deleted} vs {toDelete.Length}");
 
                 //Then we delete anything that is no longer being referenced
                 cmd.ExecuteNonQuery(@"DELETE FROM ""FilesetEntry"" WHERE ""FilesetID"" NOT IN (SELECT DISTINCT ""ID"" FROM ""Fileset"")");
@@ -107,7 +107,7 @@ namespace Duplicati.Library.Main.Database
                 var updated = cmd.ExecuteNonQuery(@"UPDATE ""RemoteVolume"" SET ""State"" = ? WHERE ""Type"" = ? AND ""State"" IN (?, ?, ?, ?) AND ""ID"" NOT IN (SELECT ""VolumeID"" FROM ""Fileset"") ", RemoteVolumeState.Deleting.ToString(), RemoteVolumeType.Files.ToString(), RemoteVolumeState.Uploaded.ToString(), RemoteVolumeState.Verified.ToString(), RemoteVolumeState.Temporary.ToString(), RemoteVolumeState.Deleting.ToString());
 
                 if (deleted != updated)
-                    throw new Exception(string.Format("Unexpected number of remote volumes marked as deleted. Found {0} filesets, but {1} volumes", deleted, updated));
+                    throw new Exception($"Unexpected number of remote volumes marked as deleted. Found {deleted} filesets, but {updated} volumes");
 
                 using (var rd = cmd.ExecuteReader(@"SELECT ""Name"", ""Size"" FROM ""RemoteVolume"" WHERE ""Type"" = ? AND ""State"" = ? ", RemoteVolumeType.Files.ToString(), RemoteVolumeState.Deleting.ToString()))
                 {
@@ -185,7 +185,7 @@ namespace Duplicati.Library.Main.Database
 
             var combined = active + " UNION " + inactive + " UNION " + empty;
             var collected = @"SELECT ""VolumeID"" AS ""VolumeID"", SUM(""ActiveSize"") AS ""ActiveSize"", SUM(""InactiveSize"") AS ""InactiveSize"", MAX(""Sorttime"") AS ""Sorttime"" FROM (" + combined + @") GROUP BY ""VolumeID"" ";
-            var createtable = @$"CREATE {TEMPORARY} TABLE ""{tmptablename}"" AS " + collected;
+            var createtable = FormatInvariant(@$"CREATE {TEMPORARY} TABLE ""{tmptablename}"" AS " + collected);
 
             using (var cmd = m_connection.CreateCommand())
             {
@@ -193,13 +193,13 @@ namespace Duplicati.Library.Main.Database
                 try
                 {
                     cmd.ExecuteNonQuery(createtable, RemoteVolumeType.Blocks.ToString(), RemoteVolumeState.Uploaded.ToString(), RemoteVolumeState.Verified.ToString());
-                    using (var rd = cmd.ExecuteReader(string.Format(@"SELECT ""A"".""Name"", ""B"".""ActiveSize"", ""B"".""InactiveSize"", ""A"".""Size"" FROM ""Remotevolume"" A, ""{0}"" B WHERE ""A"".""ID"" = ""B"".""VolumeID"" ORDER BY ""B"".""Sorttime"" ASC ", tmptablename)))
+                    using (var rd = cmd.ExecuteReader(FormatInvariant(@"SELECT ""A"".""Name"", ""B"".""ActiveSize"", ""B"".""InactiveSize"", ""A"".""Size"" FROM ""Remotevolume"" A, ""{0}"" B WHERE ""A"".""ID"" = ""B"".""VolumeID"" ORDER BY ""B"".""Sorttime"" ASC ", tmptablename)))
                         while (rd.Read())
                             yield return new VolumeUsage(rd.GetValue(0).ToString(), rd.ConvertValueToInt64(1, 0) + rd.ConvertValueToInt64(2, 0), rd.ConvertValueToInt64(2, 0), rd.ConvertValueToInt64(3, 0));
                 }
                 finally
                 {
-                    try { cmd.ExecuteNonQuery(string.Format(@"DROP TABLE IF EXISTS ""{0}"" ", tmptablename)); }
+                    try { cmd.ExecuteNonQuery(FormatInvariant(@"DROP TABLE IF EXISTS ""{0}"" ", tmptablename)); }
                     catch { }
                 }
             }
@@ -388,20 +388,20 @@ namespace Duplicati.Library.Main.Database
                 var replacementBlocks = "ReplacementBlocks-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
                 try
                 {
-                    cmd.ExecuteNonQuery(@$"CREATE {TEMPORARY} TABLE """ + updatedBlocks + @""" AS SELECT ""ID"" FROM ""Block"" WHERE ""VolumeID"" = ? ", deletedVolume.ID);
-                    cmd.ExecuteNonQuery(@$"CREATE {TEMPORARY} TABLE """ + replacementBlocks + @""" AS SELECT ""BlockID"", MAX(""VolumeID"") AS ""VolumeID"" FROM ""DuplicateBlock"" WHERE ""VolumeID"" NOT IN (?) AND ""BlockID"" IN (SELECT ""ID"" FROM """ + updatedBlocks + @""") GROUP BY ""BlockID"" ", volumeIdsToBeRemoved.ToArray());
+                    cmd.ExecuteNonQuery(FormatInvariant(@$"CREATE {TEMPORARY} TABLE """ + updatedBlocks + @""" AS SELECT ""ID"" FROM ""Block"" WHERE ""VolumeID"" = ? "), deletedVolume.ID);
+                    cmd.ExecuteNonQuery(FormatInvariant(@$"CREATE {TEMPORARY} TABLE """ + replacementBlocks + @""" AS SELECT ""BlockID"", MAX(""VolumeID"") AS ""VolumeID"" FROM ""DuplicateBlock"" WHERE ""VolumeID"" NOT IN (?) AND ""BlockID"" IN (SELECT ""ID"" FROM """ + updatedBlocks + @""") GROUP BY ""BlockID"" "), volumeIdsToBeRemoved.ToArray());
                     var targetCount = cmd.ExecuteScalarInt64(@"SELECT COUNT(*) FROM """ + updatedBlocks + @""" ");
                     if (targetCount == 0)
                         return;
 
                     var replacementCount = cmd.ExecuteScalarInt64(@"SELECT COUNT(*) FROM """ + replacementBlocks + @""" ");
-                    var updateCount = cmd.ExecuteNonQuery(@$"UPDATE ""Block"" SET ""VolumeID"" = (SELECT ""VolumeID"" FROM ""{replacementBlocks}"" WHERE ""{replacementBlocks}"".""BlockID"" = ""Block"".""ID"" AND ""Block"".""VolumeID"" = ?) WHERE ""Block"".""VolumeID"" = ? ", deletedVolume.ID, deletedVolume.ID);
-                    var deleteCount = cmd.ExecuteNonQuery(@$"DELETE FROM ""DuplicateBlock"" WHERE (""DuplicateBlock"".""BlockID"" || ':' || ""DuplicateBlock"".""VolumeID"") IN (SELECT ""RB"".""BlockID"" || ':' || ""RB"".""VolumeID"" FROM ""{replacementBlocks}"" RB)");
+                    var updateCount = cmd.ExecuteNonQuery(FormatInvariant(@$"UPDATE ""Block"" SET ""VolumeID"" = (SELECT ""VolumeID"" FROM ""{replacementBlocks}"" WHERE ""{replacementBlocks}"".""BlockID"" = ""Block"".""ID"" AND ""Block"".""VolumeID"" = ?) WHERE ""Block"".""VolumeID"" = ? "), deletedVolume.ID, deletedVolume.ID);
+                    var deleteCount = cmd.ExecuteNonQuery(FormatInvariant(@$"DELETE FROM ""DuplicateBlock"" WHERE (""DuplicateBlock"".""BlockID"" || ':' || ""DuplicateBlock"".""VolumeID"") IN (SELECT ""RB"".""BlockID"" || ':' || ""RB"".""VolumeID"" FROM ""{replacementBlocks}"" RB)"));
                     if (targetCount != updateCount || replacementCount != deleteCount || updateCount != deleteCount)
-                        throw new Exception(string.Format($"Unexpected number of rows updated. Expected {targetCount} but got updated {updateCount}, deleted {deleteCount}, and replaced {replacementCount}"));
+                        throw new Exception($"Unexpected number of rows updated. Expected {targetCount} but got updated {updateCount}, deleted {deleteCount}, and replaced {replacementCount}");
 
                     // Remove knowledge of any old blocks
-                    cmd.ExecuteNonQuery(@"DELETE FROM ""DuplicateBlock"" WHERE ""VolumeID"" = ?", deletedVolume.ID);
+                    cmd.ExecuteNonQuery(FormatInvariant(@"DELETE FROM ""DuplicateBlock"" WHERE ""VolumeID"" = ?"), deletedVolume.ID);
                 }
                 finally
                 {

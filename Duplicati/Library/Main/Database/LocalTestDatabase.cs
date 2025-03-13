@@ -187,13 +187,13 @@ namespace Duplicati.Library.Main.Database
                 using (var cmd = m_connection.CreateCommand())
                 {
                     cmd.Transaction = m_transaction;
-                    cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" {1}", tablename, tableFormat));
+                    cmd.ExecuteNonQuery(FormatInvariant(@"CREATE TEMPORARY TABLE ""{0}"" {1}", tablename, tableFormat));
                     m_tablename = tablename;
                 }
 
                 m_insertCommand = m_connection.CreateCommand();
                 m_insertCommand.Transaction = m_transaction;
-                m_insertCommand.CommandText = string.Format(@"INSERT INTO ""{0}"" {1}", m_tablename, insertCommand);
+                m_insertCommand.CommandText = FormatInvariant(@"INSERT INTO ""{0}"" {1}", m_tablename, insertCommand);
                 m_insertCommand.AddParameters(insertArguments);
             }
 
@@ -205,7 +205,7 @@ namespace Duplicati.Library.Main.Database
                         using (var cmd = m_connection.CreateCommand())
                         {
                             cmd.Transaction = m_transaction;
-                            cmd.ExecuteNonQuery(string.Format(@"DROP TABLE IF EXISTS ""{0}""", m_tablename));
+                            cmd.ExecuteNonQuery(FormatInvariant(@"DROP TABLE IF EXISTS ""{0}""", m_tablename));
                         }
                     }
                     catch { }
@@ -267,15 +267,15 @@ namespace Duplicati.Library.Main.Database
 
                     try
                     {
-                        cmd.ExecuteNonQuery(string.Format(create, m_tablename, cmpName), m_volumename);
-                        using (var rd = cmd.ExecuteReader(string.Format(extra + " UNION " + missing + " UNION " + modified, m_tablename, cmpName), (int)Library.Interface.TestEntryStatus.Extra, (int)Library.Interface.TestEntryStatus.Missing, (int)Library.Interface.TestEntryStatus.Modified))
+                        cmd.ExecuteNonQuery(FormatInvariant(create, m_tablename, cmpName), m_volumename);
+                        using (var rd = cmd.ExecuteReader(FormatInvariant(extra + " UNION " + missing + " UNION " + modified, m_tablename, cmpName), (int)Library.Interface.TestEntryStatus.Extra, (int)Library.Interface.TestEntryStatus.Missing, (int)Library.Interface.TestEntryStatus.Modified))
                             while (rd.Read())
                                 yield return new KeyValuePair<Duplicati.Library.Interface.TestEntryStatus, string>((Duplicati.Library.Interface.TestEntryStatus)rd.GetInt64(0), rd.GetString(1));
 
                     }
                     finally
                     {
-                        try { cmd.ExecuteNonQuery(string.Format(drop, m_tablename, cmpName)); }
+                        try { cmd.ExecuteNonQuery(FormatInvariant(drop, m_tablename, cmpName)); }
                         catch { }
                     }
                 }
@@ -323,15 +323,15 @@ namespace Duplicati.Library.Main.Database
 
                     try
                     {
-                        cmd.ExecuteNonQuery(string.Format(create, m_tablename, cmpName), m_volumename);
-                        using (var rd = cmd.ExecuteReader(string.Format(extra + " UNION " + missing + " UNION " + modified, m_tablename, cmpName), (int)Library.Interface.TestEntryStatus.Extra, (int)Library.Interface.TestEntryStatus.Missing, (int)Library.Interface.TestEntryStatus.Modified))
+                        cmd.ExecuteNonQuery(FormatInvariant(create, m_tablename, cmpName), m_volumename);
+                        using (var rd = cmd.ExecuteReader(FormatInvariant(extra + " UNION " + missing + " UNION " + modified, m_tablename, cmpName), (int)Library.Interface.TestEntryStatus.Extra, (int)Library.Interface.TestEntryStatus.Missing, (int)Library.Interface.TestEntryStatus.Modified))
                             while (rd.Read())
                                 yield return new KeyValuePair<Duplicati.Library.Interface.TestEntryStatus, string>((Duplicati.Library.Interface.TestEntryStatus)rd.GetInt64(0), rd.GetString(1));
 
                     }
                     finally
                     {
-                        try { cmd.ExecuteNonQuery(string.Format(drop, m_tablename, cmpName)); }
+                        try { cmd.ExecuteNonQuery(FormatInvariant(drop, m_tablename, cmpName)); }
                         catch { }
                     }
                 }
@@ -380,15 +380,15 @@ namespace Duplicati.Library.Main.Database
 
                     try
                     {
-                        cmd.ExecuteNonQuery(string.Format(create, cmpName, curBlocks, delBlocks, duplBlocks), m_volumename, m_volumename, m_volumename);
-                        using (var rd = cmd.ExecuteReader(string.Format(extra + " UNION " + missing + " UNION " + modified, m_tablename, cmpName), (int)Library.Interface.TestEntryStatus.Extra, (int)Library.Interface.TestEntryStatus.Missing, (int)Library.Interface.TestEntryStatus.Modified))
+                        cmd.ExecuteNonQuery(FormatInvariant(create, cmpName, curBlocks, delBlocks, duplBlocks), m_volumename, m_volumename, m_volumename);
+                        using (var rd = cmd.ExecuteReader(FormatInvariant(extra + " UNION " + missing + " UNION " + modified, m_tablename, cmpName), (int)Library.Interface.TestEntryStatus.Extra, (int)Library.Interface.TestEntryStatus.Missing, (int)Library.Interface.TestEntryStatus.Modified))
                             while (rd.Read())
                                 yield return new KeyValuePair<Duplicati.Library.Interface.TestEntryStatus, string>((Duplicati.Library.Interface.TestEntryStatus)rd.GetInt64(0), rd.GetString(1));
 
                     }
                     finally
                     {
-                        try { cmd.ExecuteNonQuery(string.Format(drop, m_tablename, cmpName)); }
+                        try { cmd.ExecuteNonQuery(FormatInvariant(drop, m_tablename, cmpName)); }
                         catch { }
                     }
                 }

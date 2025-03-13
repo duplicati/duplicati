@@ -66,7 +66,7 @@ namespace Duplicati.Library.Main.Database
             for(var i = 0; i < filesets.Length; i++)
                 dict[filesets[i].Key] = i;
 
-            var sql = string.Format(
+            var sql = FormatInvariant(
                 @"SELECT DISTINCT ""FilesetID"" FROM (" +
                 @"SELECT ""FilesetID"" FROM ""FilesetEntry"" WHERE ""FileID"" IN ( SELECT ""ID"" FROM ""FileLookup"" WHERE ""BlocksetID"" IN ( SELECT ""BlocksetID"" FROM ""BlocksetEntry"" WHERE ""BlockID"" IN ( SELECT ""ID"" From ""Block"" WHERE ""VolumeID"" IN ( SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""Name"" IN ({0})))))" +
                 " UNION " +
@@ -92,7 +92,7 @@ namespace Duplicati.Library.Main.Database
 
         public IEnumerable<Duplicati.Library.Interface.IListResultFile> GetFiles(IEnumerable<string> items)
         {
-            var sql = string.Format(
+            var sql = FormatInvariant(
                 @"SELECT DISTINCT ""Path"" FROM (" +
                 @"SELECT ""Path"" FROM ""File"" WHERE ""BlocksetID"" IN (SELECT ""BlocksetID"" FROM ""BlocksetEntry"" WHERE ""BlockID"" IN (SELECT ""ID"" FROM ""Block"" WHERE ""VolumeID"" IN (SELECT ""ID"" from ""RemoteVolume"" WHERE ""Name"" IN ({0}))))" +
                 @" UNION " +
@@ -118,7 +118,7 @@ namespace Duplicati.Library.Main.Database
 
         public IEnumerable<Duplicati.Library.Interface.IListResultRemoteLog> GetLogLines(IEnumerable<string> items)
         {
-            var sql = string.Format(
+            var sql = FormatInvariant(
                 @"SELECT ""TimeStamp"", ""Message"" || ' ' || CASE WHEN ""Exception"" IS NULL THEN '' ELSE ""Exception"" END FROM ""LogData"" WHERE {0}" +
                 @" UNION " +
                 @"SELECT ""Timestamp"", ""Data"" FROM ""RemoteOperation"" WHERE ""Path"" IN ({1})",
@@ -140,7 +140,7 @@ namespace Duplicati.Library.Main.Database
 
         public IEnumerable<Duplicati.Library.Interface.IListResultRemoteVolume> GetVolumes(IEnumerable<string> items)
         {
-            var sql = string.Format(
+            var sql = FormatInvariant(
                 @"SELECT DISTINCT ""Name"" FROM ( " +
                 @" SELECT ""Name"" FROM ""Remotevolume"" WHERE ""ID"" IN ( SELECT ""VolumeID"" FROM ""Block"" WHERE ""ID"" IN ( SELECT ""BlockID"" FROM ""BlocksetEntry"" WHERE ""BlocksetID"" IN ( SELECT ""BlocksetID"" FROM ""FileLookup"" WHERE ""ID"" IN ( SELECT ""FileID"" FROM ""FilesetEntry"" WHERE ""FilesetID"" IN ( SELECT ""ID"" FROM ""Fileset"" WHERE ""VolumeID"" IN ( SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""Name"" IN ({0}))))))) " +
                 @" UNION " +

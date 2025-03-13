@@ -82,7 +82,7 @@ SELECT ""A"".""Path"", ""B"".""Length"" FROM ""File"" A, ""Blockset"" B WHERE ""
 
         public IEnumerable<Tuple<DateTime, long, long>> GetBrokenFilesets(DateTime time, long[] versions, System.Data.IDbTransaction transaction)
         {
-            var query = string.Format(BROKEN_FILE_SETS, FOLDER_BLOCKSET_ID, SYMLINK_BLOCKSET_ID, RemoteVolumeType.Blocks.ToString());
+            var query = FormatInvariant(BROKEN_FILE_SETS, FOLDER_BLOCKSET_ID, SYMLINK_BLOCKSET_ID, RemoteVolumeType.Blocks.ToString());
             var clause = GetFilelistWhereClause(time, versions);
             if (!string.IsNullOrWhiteSpace(clause.Item1))
                 query += @" AND ""A"".""FilesetID"" IN (SELECT ""ID"" FROM ""Fileset"" " + clause.Item1 + ")";
@@ -98,7 +98,7 @@ SELECT ""A"".""Path"", ""B"".""Length"" FROM ""File"" A, ""Blockset"" B WHERE ""
         public IEnumerable<Tuple<string, long>> GetBrokenFilenames(long filesetid, System.Data.IDbTransaction transaction)
         {
             using (var cmd = Connection.CreateCommand(transaction))
-                foreach (var rd in cmd.ExecuteReaderEnumerable(string.Format(BROKEN_FILE_NAMES, FOLDER_BLOCKSET_ID, SYMLINK_BLOCKSET_ID, RemoteVolumeType.Blocks.ToString()), filesetid))
+                foreach (var rd in cmd.ExecuteReaderEnumerable(FormatInvariant(BROKEN_FILE_NAMES, FOLDER_BLOCKSET_ID, SYMLINK_BLOCKSET_ID, RemoteVolumeType.Blocks.ToString()), filesetid))
                     if (!rd.IsDBNull(0))
                         yield return new Tuple<string, long>(rd.ConvertValueToString(0), rd.ConvertValueToInt64(1));
         }
@@ -106,7 +106,7 @@ SELECT ""A"".""Path"", ""B"".""Length"" FROM ""File"" A, ""Blockset"" B WHERE ""
         public void InsertBrokenFileIDsIntoTable(long filesetid, string tablename, string IDfieldname, System.Data.IDbTransaction transaction)
         {
             using (var cmd = Connection.CreateCommand(transaction))
-                cmd.ExecuteNonQuery(string.Format(INSERT_BROKEN_IDS, FOLDER_BLOCKSET_ID, SYMLINK_BLOCKSET_ID, RemoteVolumeType.Blocks.ToString(), tablename, IDfieldname), filesetid);
+                cmd.ExecuteNonQuery(FormatInvariant(INSERT_BROKEN_IDS, FOLDER_BLOCKSET_ID, SYMLINK_BLOCKSET_ID, RemoteVolumeType.Blocks.ToString(), tablename, IDfieldname), filesetid);
         }
 
         public void RemoveMissingBlocks(IEnumerable<string> names, System.Data.IDbTransaction transaction)
@@ -121,8 +121,8 @@ SELECT ""A"".""Path"", ""B"".""Length"" FROM ""File"" A, ""Blockset"" B WHERE ""
                 var volidstable = "DelVolSetIds-" + temptransguid;
 
                 // Create and fill a temp table with the volids to delete. We avoid using too many parameters that way.
-                deletecmd.ExecuteNonQuery(string.Format(@"CREATE TEMP TABLE ""{0}"" (""ID"" INTEGER PRIMARY KEY)", volidstable));
-                deletecmd.CommandText = string.Format(@"INSERT OR IGNORE INTO ""{0}"" (""ID"") VALUES (?)", volidstable);
+                deletecmd.ExecuteNonQuery(FormatInvariant(@"CREATE TEMP TABLE ""{0}"" (""ID"" INTEGER PRIMARY KEY)", volidstable));
+                deletecmd.CommandText = FormatInvariant(@"INSERT OR IGNORE INTO ""{0}"" (""ID"") VALUES (?)", volidstable);
                 deletecmd.Parameters.Clear();
                 deletecmd.AddParameters(1);
                 foreach (var name in names)
@@ -131,22 +131,22 @@ SELECT ""A"".""Path"", ""B"".""Length"" FROM ""File"" A, ""Blockset"" B WHERE ""
                     deletecmd.SetParameterValue(0, volumeid);
                     deletecmd.ExecuteNonQuery();
                 }
-                var volIdsSubQuery = string.Format(@"SELECT ""ID"" FROM ""{0}"" ", volidstable);
+                var volIdsSubQuery = FormatInvariant(@"SELECT ""ID"" FROM ""{0}"" ", volidstable);
                 deletecmd.Parameters.Clear();
 
-                deletecmd.ExecuteNonQuery(string.Format(@"DELETE FROM ""IndexBlockLink"" WHERE ""BlockVolumeID"" IN ({0}) OR ""IndexVolumeID"" IN ({0})", volIdsSubQuery));
-                deletecmd.ExecuteNonQuery(string.Format(@"DELETE FROM ""Block"" WHERE ""VolumeID"" IN ({0})", volIdsSubQuery));
-                deletecmd.ExecuteNonQuery(string.Format(@"DELETE FROM ""DeletedBlock"" WHERE ""VolumeID"" IN ({0})", volIdsSubQuery));
-                deletecmd.ExecuteNonQuery(string.Format(@"DELETE FROM ""DuplicateBlock"" WHERE ""VolumeID"" IN ({0})", volIdsSubQuery));
+                deletecmd.ExecuteNonQuery(FormatInvariant(@"DELETE FROM ""IndexBlockLink"" WHERE ""BlockVolumeID"" IN ({0}) OR ""IndexVolumeID"" IN ({0})", volIdsSubQuery));
+                deletecmd.ExecuteNonQuery(FormatInvariant(@"DELETE FROM ""Block"" WHERE ""VolumeID"" IN ({0})", volIdsSubQuery));
+                deletecmd.ExecuteNonQuery(FormatInvariant(@"DELETE FROM ""DeletedBlock"" WHERE ""VolumeID"" IN ({0})", volIdsSubQuery));
+                deletecmd.ExecuteNonQuery(FormatInvariant(@"DELETE FROM ""DuplicateBlock"" WHERE ""VolumeID"" IN ({0})", volIdsSubQuery));
 
                 // Clean up temp tables for subqueries. We truncate content and then try to delete.
                 // Drop in try-block, as it fails in nested transactions (SQLite problem)
                 // System.Data.SQLite.SQLiteException (0x80004005): database table is locked
-                deletecmd.ExecuteNonQuery(string.Format(@"DELETE FROM ""{0}"" ", volidstable));
+                deletecmd.ExecuteNonQuery(FormatInvariant(@"DELETE FROM ""{0}"" ", volidstable));
                 try
                 {
                     deletecmd.CommandTimeout = 2;
-                    deletecmd.ExecuteNonQuery(string.Format(@"DROP TABLE IF EXISTS ""{0}"" ", volidstable));
+                    deletecmd.ExecuteNonQuery(FormatInvariant(@"DROP TABLE IF EXISTS ""{0}"" ", volidstable));
                 }
                 catch { /* Ignore, will be deleted on close anyway. */ }
             }
