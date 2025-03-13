@@ -213,7 +213,7 @@ namespace Duplicati.Library.Main.Operation
 
         public static List<KeyValuePair<long, IParsedVolume>> ParseAndFilterFilesets(IEnumerable<Interface.IFileEntry> rawlist, Options options)
         {
-            var parsedlist = rawlist.Select(x => VolumeBase.ParseFilename(x.Name))
+            var parsedlist = rawlist.Select(x => VolumeBase.ParseFilename(x))
                 .Where(x => x != null && x.FileType == RemoteVolumeType.Files)
                 .OrderByDescending(x => x.Time)
                 .ToArray();
