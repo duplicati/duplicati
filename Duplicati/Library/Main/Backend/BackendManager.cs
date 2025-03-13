@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Data;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
@@ -56,6 +55,20 @@ internal partial class BackendManager : IBackendManager
     private bool isDisposed = false;
 
     /// <summary>
+    /// Represents the data needed to clone the backend manager
+    /// </summary>
+    /// <param name="backendurl">The backend URL</param>
+    /// <param name="options">The options</param>
+    /// <param name="backendWriter">The backend writer</param>
+    /// <param name="taskReader">The task reader</param>
+    private sealed record CloneData(string backendurl, Options options, IBackendWriter backendWriter, ITaskReader taskReader);
+
+    /// <summary>
+    /// The captured clone data
+    /// </summary>
+    private readonly CloneData cloneData;
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="BackendManager"/> class.
     /// </summary>
     /// <param name="backendUrl">The backend URL</param>
@@ -84,7 +97,17 @@ internal partial class BackendManager : IBackendManager
             requestChannel,
             backendUrl,
             context);
+
+        cloneData = new CloneData(backendUrl, options, backendWriter, taskReader);
     }
+
+    /// <summary>
+    /// Clones the backend manager for another database
+    /// </summary>
+    /// <param name="otherManager">The other database to use</param>
+    /// <returns>The cloned backend manager</returns>
+    public IBackendManager CloneForOtherDb(DatabaseConnectionManager otherManager)
+        => new BackendManager(cloneData.backendurl, cloneData.options, cloneData.backendWriter, otherManager, cloneData.taskReader);
 
     /// <summary>
     /// Enters a task into the queue for processing.
@@ -298,28 +321,28 @@ internal partial class BackendManager : IBackendManager
     /// <summary>
     /// Waits for the backend queue to be empty and flushes the database messages
     /// </summary>
+    /// <param name="database">The database to write pending messages to</param>
     /// <param name="cancellationToken">The cancellation token</param>
     /// <returns>An awaitable task</returns>
-    public async Task WaitForEmptyAsync(LocalDatabase database, IDbTransaction? transaction, CancellationToken cancellationToken)
+    public async Task WaitForEmptyAsync(LocalDatabase database, CancellationToken cancellationToken)
     {
-        context.Database.FlushPendingMessages(database, transaction);
+        context.Database.FlushPendingMessages(database);
 
         var op = new WaitForEmptyOperation(context, cancellationToken);
         await QueueTask(op).ConfigureAwait(false);
         await op.GetResult().ConfigureAwait(false);
 
-        context.Database.FlushPendingMessages(database, transaction);
+        context.Database.FlushPendingMessages(database);
     }
 
     /// <summary>
     /// Stops the backend manager and flushes any pending messages to the database
     /// </summary>
     /// <param name="database">The database to write pending messages to</param>
-    /// <param name="transaction">The transaction to use, if any</param>
-    public async Task StopRunnerAndFlushMessages(LocalDatabase database, IDbTransaction? transaction)
+    public async Task StopRunnerAndFlushMessages(LocalDatabase database)
     {
         await requestChannel.RetireAsync().ConfigureAwait(false);
-        context.Database.FlushPendingMessages(database, transaction);
+        context.Database.FlushPendingMessages(database);
         if (queueRunner.IsFaulted)
             Logging.Log.WriteWarningMessage(LOGTAG, "BackendManagerShutdown", queueRunner.Exception, "Backend manager queue runner crashed");
     }
@@ -388,7 +411,8 @@ internal partial class BackendManager : IBackendManager
                 Logging.Log.WriteWarningMessage(LOGTAG, "BackendManagerShutdown", null, "Backend manager queue runner did not stop");
             if (queueRunner.IsFaulted)
                 Logging.Log.WriteWarningMessage(LOGTAG, "BackendManagerShutdown", queueRunner.Exception, "Backend manager queue runner crashed");
-
         }
+
+        context.Database.Dispose();
     }
 }

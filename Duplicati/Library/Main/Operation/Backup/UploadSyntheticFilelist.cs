@@ -48,7 +48,7 @@ namespace Duplicati.Library.Main.Operation.Backup
         /// <param name="backendManager">The backend manager to use</param>
         /// <param name="lastTempFilelist">The last temporary file list volume</param>
         /// <returns></returns>
-        public static async Task Run(BackupDatabase database, Options options, BasicResults result, ITaskReader taskreader, IBackendManager backendManager, RemoteVolumeEntry lastTempFilelist)
+        public static async Task Run(LocalBackupDatabase database, Options options, BasicResults result, ITaskReader taskreader, IBackendManager backendManager, RemoteVolumeEntry lastTempFilelist)
         {
             // Check if we should upload a synthetic filelist
             if (options.DisableSyntheticFilelist || string.IsNullOrWhiteSpace(lastTempFilelist.Name) || lastTempFilelist.ID <= 0)
@@ -62,8 +62,8 @@ namespace Duplicati.Library.Main.Operation.Backup
             }
 
             // Ready to build and upload the synthetic list
-            await database.CommitTransactionAsync("PreSyntheticFilelist");
-            var incompleteFilesets = (await database.GetIncompleteFilesetsAsync()).OrderBy(x => x.Value).ToList();
+            database.CommitAndRestartTransaction("PreSyntheticFilelist");
+            var incompleteFilesets = database.GetIncompleteFilesets().OrderBy(x => x.Value).ToList();
 
             if (!incompleteFilesets.Any())
                 return;
@@ -77,7 +77,7 @@ namespace Duplicati.Library.Main.Operation.Backup
             var incompleteSet = incompleteFilesets.Last();
             var badIds = incompleteFilesets.Select(n => n.Key);
 
-            var prevs = (await database.GetFilesetTimesAsync())
+            var prevs = database.FilesetTimes
                 .Where(n => n.Key < incompleteSet.Key && !badIds.Contains(n.Key))
                 .OrderBy(n => n.Key)
                 .Select(n => n.Key)
@@ -88,9 +88,9 @@ namespace Duplicati.Library.Main.Operation.Backup
             FilesetVolumeWriter fsw = null;
             try
             {
-                var fileTime = await FilesetVolumeWriter.ProbeUnusedFilenameName(database, options, incompleteSet.Value).ConfigureAwait(false);
+                var fileTime = FilesetVolumeWriter.ProbeUnusedFilenameName(database, options, incompleteSet.Value);
                 fsw = new FilesetVolumeWriter(options, fileTime);
-                fsw.VolumeID = await database.RegisterRemoteVolumeAsync(fsw.RemoteFilename, RemoteVolumeType.Files, RemoteVolumeState.Temporary);
+                fsw.VolumeID = database.RegisterRemoteVolume(fsw.RemoteFilename, RemoteVolumeType.Files, RemoteVolumeState.Temporary);
 
                 if (!string.IsNullOrEmpty(options.ControlFiles))
                     foreach (var p in options.ControlFiles.Split(new char[] { System.IO.Path.PathSeparator }, StringSplitOptions.RemoveEmptyEntries))
@@ -99,28 +99,27 @@ namespace Duplicati.Library.Main.Operation.Backup
                 // We declare this to be a partial backup since the synthetic filelist is only created
                 // when a backup is interrupted.
                 fsw.CreateFilesetFile(false);
-                var newFilesetID = await database.CreateFilesetAsync(fsw.VolumeID, fileTime);
-                await database.LinkFilesetToVolumeAsync(newFilesetID, fsw.VolumeID);
-                await database.AppendFilesFromPreviousSetAsync(null, newFilesetID, prevId, fileTime);
+                var newFilesetID = database.CreateFileset(fsw.VolumeID, fileTime);
+                database.LinkFilesetToVolume(newFilesetID, fsw.VolumeID);
+                database.AppendFilesFromPreviousSet(null, newFilesetID, prevId, fileTime);
 
-                await database.WriteFilesetAsync(fsw, newFilesetID);
+                database.WriteFileset(fsw, newFilesetID);
                 fsw.Close();
 
                 if (!await taskreader.ProgressRendevouz().ConfigureAwait(false))
                     return;
 
-                await database.UpdateRemoteVolumeAsync(fsw.RemoteFilename, RemoteVolumeState.Uploading, -1, null);
+                database.UpdateRemoteVolume(fsw.RemoteFilename, RemoteVolumeState.Uploading, -1, null);
                 // If the previous filelist was not uploaded, we register it for deletion, as we have created a new synthetic one
                 // Because it is registered as "Deleting", it will be removed from remote storage by the cleanup process if it exists
                 if (!string.IsNullOrWhiteSpace(lastTempFilelist.Name) && (lastTempFilelist.State == RemoteVolumeState.Uploading || lastTempFilelist.State == RemoteVolumeState.Temporary))
-                    await database.UpdateRemoteVolumeAsync(lastTempFilelist.Name, RemoteVolumeState.Deleting, -1, null);
-                await database.CommitTransactionAsync("CommitUpdateFilelistVolume");
+                    database.UpdateRemoteVolume(lastTempFilelist.Name, RemoteVolumeState.Deleting, -1, null);
+                database.CommitAndRestartTransaction("CommitUpdateFilelistVolume");
 
                 await backendManager.PutAsync(fsw, null, null, false, taskreader.ProgressToken);
             }
             catch
             {
-                await database.RollbackTransactionAsync();
                 fsw?.Dispose();
                 throw;
             }

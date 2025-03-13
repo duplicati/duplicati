@@ -46,21 +46,22 @@ namespace Duplicati.Library.Main.Operation
             m_results = results;
         }
 
-        public void Run(long samples, DatabaseConnectionManager dbManager, IBackendManager backendManager)
+        public async Task RunAsync(long samples, DatabaseConnectionManager dbManager, IBackendManager backendManager)
         {
             if (!dbManager.Exists)
                 throw new UserInformationException(string.Format("Database file does not exist: {0}", dbManager.Path), "DatabaseDoesNotExist");
 
+            using (var tr = dbManager.BeginRootTransaction())
             using (var db = new LocalTestDatabase(dbManager))
             {
-                db.SetResult(m_results);
                 Utility.UpdateOptionsFromDb(db, m_options);
                 Utility.VerifyOptionsAndUpdateDatabase(db, m_options);
-                db.VerifyConsistency(m_options.Blocksize, m_options.BlockhashSize, !m_options.DisableFilelistConsistencyChecks, null);
-                FilelistProcessor.VerifyRemoteList(backendManager, m_options, db, m_results.BackendWriter, latestVolumesOnly: true, verifyMode: FilelistProcessor.VerifyMode.VerifyOnly, null).Await();
+                db.VerifyConsistency(m_options.Blocksize, m_options.BlockhashSize, !m_options.DisableFilelistConsistencyChecks);
+                await FilelistProcessor.VerifyRemoteList(backendManager, m_options, db, m_results.BackendWriter, latestVolumesOnly: true, verifyMode: FilelistProcessor.VerifyMode.VerifyOnly).ConfigureAwait(false);
 
-                DoRun(samples, db, backendManager).Await();
-                db.WriteResults();
+                await DoRun(samples, db, backendManager).ConfigureAwait(false);
+                db.WriteResults(m_results);
+                tr.Commit();
             }
         }
 
@@ -79,9 +80,9 @@ namespace Duplicati.Library.Main.Operation
                     var vol = new RemoteVolume(name, hash, size);
                     try
                     {
-                        if (!m_results.TaskControl.ProgressRendevouz().Await())
+                        if (!await m_results.TaskControl.ProgressRendevouz())
                         {
-                            backend.WaitForEmptyAsync(db, null, CancellationToken.None).Await();
+                            await backend.WaitForEmptyAsync(db, CancellationToken.None).ConfigureAwait(false);
                             m_results.EndTime = DateTime.UtcNow;
                             return;
                         }
@@ -98,7 +99,7 @@ namespace Duplicati.Library.Main.Operation
                         {
                             if (res.Value == null || !res.Value.Any())
                             {
-                                var rv = db.GetRemoteVolume(vol.Name, null);
+                                var rv = db.GetRemoteVolume(vol.Name);
 
                                 if (rv.ID < 0)
                                 {
@@ -122,9 +123,9 @@ namespace Duplicati.Library.Main.Operation
                     }
                     catch (Exception ex)
                     {
-                        m_results.AddResult(vol.Name, new KeyValuePair<Duplicati.Library.Interface.TestEntryStatus, string>[] { new KeyValuePair<Duplicati.Library.Interface.TestEntryStatus, string>(Duplicati.Library.Interface.TestEntryStatus.Error, ex.Message) });
+                        m_results.AddResult(vol.Name, [new KeyValuePair<TestEntryStatus, string>(TestEntryStatus.Error, ex.Message)]);
                         Logging.Log.WriteErrorMessage(LOGTAG, "RemoteFileProcessingFailed", ex, "Failed to process file {0}", vol.Name);
-                        if (ex is System.Threading.ThreadAbortException)
+                        if (ex.IsCancellationException())
                         {
                             m_results.EndTime = DateTime.UtcNow;
                             throw;
@@ -138,7 +139,7 @@ namespace Duplicati.Library.Main.Operation
                 {
                     try
                     {
-                        if (!m_results.TaskControl.ProgressRendevouz().Await())
+                        if (!await m_results.TaskControl.ProgressRendevouz())
                         {
                             m_results.EndTime = DateTime.UtcNow;
                             return;
@@ -152,7 +153,7 @@ namespace Duplicati.Library.Main.Operation
                             Logging.Log.WriteInformationMessage(LOGTAG, "MissingRemoteHash", "No hash or size recorded for {0}, performing full verification", f.Name);
                             KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>> res;
 
-                            (var tf, var hash, var size) = backend.GetWithInfoAsync(f.Name, f.Hash, f.Size, CancellationToken.None).Await();
+                            (var tf, var hash, var size) = await backend.GetWithInfoAsync(f.Name, f.Hash, f.Size, CancellationToken.None).ConfigureAwait(false);
 
                             using (tf)
                                 res = TestVolumeInternals(db, f, tf, m_options, 1);
@@ -176,7 +177,7 @@ namespace Duplicati.Library.Main.Operation
                         }
                         else
                         {
-                            using (var tf = backend.GetAsync(f.Name, f.Hash, f.Size, CancellationToken.None).Await())
+                            using (var tf = await backend.GetAsync(f.Name, f.Hash, f.Size, CancellationToken.None).ConfigureAwait(false))
                             { }
                         }
 
@@ -187,7 +188,7 @@ namespace Duplicati.Library.Main.Operation
                     {
                         m_results.AddResult(f.Name, [new KeyValuePair<TestEntryStatus, string>(TestEntryStatus.Error, ex.Message)]);
                         Logging.Log.WriteErrorMessage(LOGTAG, "FailedToProcessFile", ex, "Failed to process file {0}", f.Name);
-                        if (ex is ThreadAbortException || ex is TaskCanceledException)
+                        if (ex.IsCancellationException())
                         {
                             m_results.EndTime = DateTime.UtcNow;
                             throw;

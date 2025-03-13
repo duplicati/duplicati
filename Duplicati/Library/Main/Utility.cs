@@ -102,11 +102,10 @@ namespace Duplicati.Library.Main
         /// </summary>
         /// <param name="db">The database to read from</param>
         /// <param name="options">The options to update</param>
-        /// <param name="transaction">The transaction to use, if any</param>
-        internal static void UpdateOptionsFromDb(LocalDatabase db, Options options, System.Data.IDbTransaction transaction = null)
+        internal static void UpdateOptionsFromDb(LocalDatabase db, Options options)
         {
             string n = null;
-            var opts = db.GetDbOptions(transaction);
+            var opts = db.GetDbOptions();
             if (opts.ContainsKey("blocksize") && (!options.RawOptions.TryGetValue("blocksize", out n) || string.IsNullOrEmpty(n)))
                 options.RawOptions["blocksize"] = opts["blocksize"] + "b";
 
@@ -132,8 +131,7 @@ namespace Duplicati.Library.Main
         /// </summary>
         /// <param name="db">The database to check</param>
         /// <param name="options">The options to verify</param>
-        /// <param name="transaction">The transaction to use, if any</param>
-        internal static void VerifyOptionsAndUpdateDatabase(LocalDatabase db, Options options, System.Data.IDbTransaction transaction = null)
+        internal static void VerifyOptionsAndUpdateDatabase(LocalDatabase db, Options options)
         {
             var newDict = new Dictionary<string, string>
             {
@@ -141,7 +139,7 @@ namespace Duplicati.Library.Main
                 { "blockhash", options.BlockHashAlgorithm },
                 { "filehash", options.FileHashAlgorithm }
             };
-            var opts = db.GetDbOptions(transaction);
+            var opts = db.GetDbOptions();
 
             if (options.NoEncryption)
             {
@@ -202,7 +200,7 @@ namespace Duplicati.Library.Main
                     if (!newDict.ContainsKey(k.Key))
                         newDict[k.Key] = k.Value;
 
-                db.SetDbOptions(newDict, transaction);
+                db.SetDbOptions(newDict);
             }
         }
     }

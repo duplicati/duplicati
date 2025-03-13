@@ -23,6 +23,7 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using Duplicati.Library.Common.IO;
+using static Duplicati.Library.Main.Database.DatabaseConnectionManager;
 
 namespace Duplicati.Library.Main.Database
 {
@@ -100,11 +101,11 @@ namespace Duplicati.Library.Main.Database
 
             private class Fileversion : IFileversion
             {
-                private readonly System.Data.IDataReader m_reader;
+                private readonly DatabaseReader m_reader;
                 public string Path { get; private set; }
                 public bool More { get; private set; }
 
-                public Fileversion(System.Data.IDataReader reader)
+                public Fileversion(DatabaseReader reader)
                 {
                     m_reader = reader;
                     this.Path = reader.GetValue(0).ToString();
@@ -137,7 +138,7 @@ namespace Duplicati.Library.Main.Database
 
             private IEnumerable<IFileversion> GetLargestPrefix(Library.Utility.IFilter filter, string prefixrule)
             {
-                using (var tmpnames = new FilteredFilenameTable(m_manager, filter, null))
+                using (var tmpnames = new FilteredFilenameTable(m_manager, filter))
                 using (var cmd = m_manager.CreateCommand())
                 {
                     //First we trim the filelist to exclude filenames not found in any of the filesets
@@ -204,7 +205,7 @@ namespace Duplicati.Library.Main.Database
                 }
             }
 
-            private IEnumerable<string> SelectFolderEntries(System.Data.IDbCommand cmd, string prefix, string table)
+            private IEnumerable<string> SelectFolderEntries(DatabaseCommand cmd, string prefix, string table)
             {
                 if (!string.IsNullOrEmpty(prefix))
                     prefix = Util.AppendDirSeparator(prefix, Util.GuessDirSeparator(prefix));
@@ -245,7 +246,7 @@ namespace Duplicati.Library.Main.Database
                     if (pathprefix.Length > 0 || dirsep == "/")
                         pathprefix = Util.AppendDirSeparator(pathprefix, dirsep);
 
-                    using (var tmpnames = new FilteredFilenameTable(m_manager, new Library.Utility.FilterExpression(new string[] { pathprefix + "*" }, true), null))
+                    using (var tmpnames = new FilteredFilenameTable(m_manager, new Library.Utility.FilterExpression(new string[] { pathprefix + "*" }, true)))
                     using (var cmd = m_manager.CreateCommand())
                     {
                         //First we trim the filelist to exclude filenames not found in any of the filesets
@@ -322,7 +323,7 @@ namespace Duplicati.Library.Main.Database
 
             public IEnumerable<IFileversion> SelectFiles(Library.Utility.IFilter filter)
             {
-                using (var tmpnames = new FilteredFilenameTable(m_manager, filter, null))
+                using (var tmpnames = new FilteredFilenameTable(m_manager, filter))
                 using (var cmd = m_manager.CreateCommand())
                 {
                     //First we trim the filelist to exclude filenames not found in any of the filesets

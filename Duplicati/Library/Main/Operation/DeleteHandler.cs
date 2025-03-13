@@ -24,8 +24,8 @@ using System.Linq;
 using System.Collections.Generic;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main.Database;
-using Duplicati.Library.Utility;
-using System.Threading;
+using static Duplicati.Library.Main.Database.DatabaseConnectionManager;
+using System.Threading.Tasks;
 
 namespace Duplicati.Library.Main.Operation
 {
@@ -45,59 +45,52 @@ namespace Duplicati.Library.Main.Operation
             m_result = result;
         }
 
-        public void Run(DatabaseConnectionManager dbManager, IBackendManager backendManager)
+        public async Task RunAsync(DatabaseConnectionManager dbManager, IBackendManager backendManager)
         {
             if (!dbManager.Exists)
                 throw new UserInformationException(string.Format("Database file does not exist: {0}", dbManager.Path), "DatabaseFileMissing");
 
+            using (var tr = dbManager.BeginRootTransaction())
             using (var db = new LocalDeleteDatabase(dbManager, "Delete"))
             {
-                var tr = db.BeginTransaction();
                 try
                 {
-                    m_result.SetDatabase(db);
                     Utility.UpdateOptionsFromDb(db, m_options);
                     Utility.VerifyOptionsAndUpdateDatabase(db, m_options);
 
-                    DoRun(db, ref tr, false, false, backendManager);
+                    await DoRunAsync(db, tr, false, false, backendManager).ConfigureAwait(false);
 
                     if (!m_options.Dryrun)
                     {
-                        using (new Logging.Timer(LOGTAG, "CommitDelete", "CommitDelete"))
-                            tr.Commit();
-
-                        db.WriteResults();
+                        db.WriteResults(m_result);
+                        tr.Commit("CommitDelete");
                     }
                     else
                         tr.Rollback();
-
-                    tr = null;
                 }
                 finally
                 {
-                    if (tr != null)
-                        try { tr.Rollback(); }
-                        catch { }
+                    try { tr.SafeRollback(); }
+                    catch { }
                 }
             }
         }
 
-        public void DoRun(Database.LocalDeleteDatabase db, ref System.Data.IDbTransaction transaction, bool hasVerifiedBackend, bool forceCompact, IBackendManager backendManager)
+        public async Task DoRunAsync(LocalDeleteDatabase db, DatabaseTransaction transaction, bool hasVerifiedBackend, bool forceCompact, IBackendManager backendManager)
         {
-            CancellationToken cancellationToken = CancellationToken.None;
             if (!hasVerifiedBackend)
-                FilelistProcessor.VerifyRemoteList(backendManager, m_options, db, m_result.BackendWriter, latestVolumesOnly: true, verifyMode: FilelistProcessor.VerifyMode.VerifyStrict, transaction).Await();
+                await FilelistProcessor.VerifyRemoteList(backendManager, m_options, db, m_result.BackendWriter, latestVolumesOnly: true, verifyMode: FilelistProcessor.VerifyMode.VerifyStrict).ConfigureAwait(false);
 
             IListResultFileset[] filesets = db.FilesetsWithBackupVersion.ToArray();
             List<IListResultFileset> versionsToDelete =
             [
-                .. new SpecificVersionsRemover(this.m_options).GetFilesetsToDelete(filesets),
-                .. new KeepTimeRemover(this.m_options).GetFilesetsToDelete(filesets),
-                .. new RetentionPolicyRemover(this.m_options).GetFilesetsToDelete(filesets),
+                .. new SpecificVersionsRemover(m_options).GetFilesetsToDelete(filesets),
+                .. new KeepTimeRemover(m_options).GetFilesetsToDelete(filesets),
+                .. new RetentionPolicyRemover(m_options).GetFilesetsToDelete(filesets),
             ];
 
             // When determining the number of full versions to keep, we need to ignore the versions already marked for removal.
-            versionsToDelete.AddRange(new KeepVersionsRemover(this.m_options).GetFilesetsToDelete(filesets.Except(versionsToDelete)));
+            versionsToDelete.AddRange(new KeepVersionsRemover(m_options).GetFilesetsToDelete(filesets.Except(versionsToDelete)));
 
             if (!m_options.AllowFullRemoval && filesets.Length == versionsToDelete.Count)
             {
@@ -108,31 +101,28 @@ namespace Duplicati.Library.Main.Operation
             if (versionsToDelete.Count > 0)
                 Logging.Log.WriteInformationMessage(LOGTAG, "DeleteRemoteFileset", "Deleting {0} remote fileset(s) ...", versionsToDelete.Count);
 
-            var lst = db.DropFilesetsFromTable(versionsToDelete.Select(x => x.Time).ToArray(), transaction).ToArray();
+            var lst = db.DropFilesetsFromTable(versionsToDelete.Select(x => x.Time).ToArray()).ToArray();
             foreach (var f in lst)
-                db.UpdateRemoteVolume(f.Key, RemoteVolumeState.Deleting, f.Value, null, transaction);
+                db.UpdateRemoteVolume(f.Key, RemoteVolumeState.Deleting, f.Value, null);
 
             if (!m_options.Dryrun)
-            {
-                transaction.Commit();
-                transaction = db.BeginTransaction();
-            }
+                transaction.CommitAndRestart("CommitDeleteRemoteFileset");
 
             foreach (var f in lst)
             {
-                if (!m_result.TaskControl.ProgressRendevouz().Await())
+                if (!await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
                 {
-                    backendManager.WaitForEmptyAsync(db, transaction, cancellationToken).Await();
+                    await backendManager.WaitForEmptyAsync(db, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
                     return;
                 }
 
                 if (!m_options.Dryrun)
-                    backendManager.DeleteAsync(f.Key, f.Value, false, cancellationToken).Await();
+                    await backendManager.DeleteAsync(f.Key, f.Value, false, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
                 else
                     Logging.Log.WriteDryrunMessage(LOGTAG, "WouldDeleteRemoteFileset", "Would delete remote fileset: {0}", f.Key);
             }
 
-            backendManager.WaitForEmptyAsync(db, transaction, cancellationToken).Await();
+            await backendManager.WaitForEmptyAsync(db, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
 
             var count = lst.Length;
             if (!m_options.Dryrun)
@@ -157,8 +147,9 @@ namespace Duplicati.Library.Main.Operation
             if (!m_options.NoAutoCompact && (forceCompact || versionsToDelete.Count > 0))
             {
                 m_result.CompactResults = new CompactResults(m_result);
-                var (_, tr) = new CompactHandler(m_options, (CompactResults)m_result.CompactResults).DoCompact(db, true, transaction, backendManager).Await();
-                transaction = tr;
+                await new CompactHandler(m_options, (CompactResults)m_result.CompactResults)
+                    .DoCompactAsync(db, true, transaction, backendManager)
+                    .ConfigureAwait(false);
             }
 
             m_result.SetResults(versionsToDelete.Select(v => new Tuple<long, DateTime>(v.Version, v.Time)), m_options.Dryrun);

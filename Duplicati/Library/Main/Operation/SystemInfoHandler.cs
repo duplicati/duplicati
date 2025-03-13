@@ -21,17 +21,15 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Globalization;
+using System.Threading.Tasks;
 
 namespace Duplicati.Library.Main.Operation
 {
     internal static class SystemInfoHandler
     {
-        public static void Run(SystemInfoResults results)
-        {
-            results.Lines = GetSystemInfo().ToArray();
-        }
+        public static Task RunAsync(SystemInfoResults results)
+            => Task.Run(() => results.Lines = [.. GetSystemInfo()]);
 
         public static IEnumerable<string> GetSystemInfo()
         {

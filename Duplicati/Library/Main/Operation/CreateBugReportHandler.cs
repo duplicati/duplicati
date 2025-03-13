@@ -21,6 +21,7 @@
 
 using System;
 using System.IO;
+using System.Threading.Tasks;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main.Database;
 
@@ -43,7 +44,7 @@ namespace Duplicati.Library.Main.Operation
             m_result = result;
         }
 
-        public void Run(DatabaseConnectionManager dbManager)
+        public Task RunAsync(DatabaseConnectionManager dbManager)
         {
             var ext = Path.GetExtension(m_targetpath);
             var module = m_options.CompressionModule;
@@ -65,14 +66,14 @@ namespace Duplicati.Library.Main.Operation
             using (var tmp = new Library.Utility.TempFile())
             {
                 File.Copy(dbManager.Path, tmp, true);
-                using (var db = new LocalBugReportDatabase(dbManager))
+                using (var tmpManager = new DatabaseConnectionManager(tmp))
+                using (var tr = tmpManager.BeginRootTransaction())
+                using (var db = new LocalBugReportDatabase(tmpManager))
                 {
-                    m_result.SetDatabase(db);
                     db.Fix();
                     if (m_options.AutoVacuum)
-                    {
                         db.Vacuum();
-                    }
+                    tr.Commit();
                 }
 
                 using (var stream = new FileStream(m_targetpath, FileMode.Create, FileAccess.Write, FileShare.Read))
@@ -89,6 +90,8 @@ namespace Duplicati.Library.Main.Operation
 
                 m_result.TargetPath = m_targetpath;
             }
+
+            return Task.CompletedTask;
         }
     }
 }

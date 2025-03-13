@@ -22,6 +22,7 @@
 using System;
 using System.Linq;
 using System.Collections.Generic;
+using static Duplicati.Library.Main.Database.DatabaseConnectionManager;
 
 namespace Duplicati.Library.Main.Database
 {
@@ -51,7 +52,7 @@ namespace Duplicati.Library.Main.Database
             public string Hash { get; private set; }
             public long VerificationCount { get; private set; }
 
-            public RemoteVolume(System.Data.IDataReader rd)
+            public RemoteVolume(DatabaseReader rd)
             {
                 this.ID = rd.GetInt64(0);
                 this.Name = rd.GetString(1);
@@ -174,8 +175,8 @@ namespace Duplicati.Library.Main.Database
             protected readonly DatabaseConnectionManager m_manager;
             protected readonly string m_volumename;
             protected string m_tablename;
-            protected System.Data.IDbTransaction m_transaction;
-            protected System.Data.IDbCommand m_insertCommand;
+            protected DatabaseTransaction m_transaction;
+            protected DatabaseCommand m_insertCommand;
 
             protected Basiclist(DatabaseConnectionManager manager, string volumename, string tablePrefix, string tableFormat, string insertCommand, int insertArguments)
             {
@@ -186,13 +187,11 @@ namespace Duplicati.Library.Main.Database
 
                 using (var cmd = m_manager.CreateCommand())
                 {
-                    cmd.Transaction = m_transaction;
                     cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" {1}", tablename, tableFormat));
                     m_tablename = tablename;
                 }
 
                 m_insertCommand = m_manager.CreateCommand();
-                m_insertCommand.Transaction = m_transaction;
                 m_insertCommand.CommandText = string.Format(@"INSERT INTO ""{0}"" {1}", m_tablename, insertCommand);
                 m_insertCommand.AddParameters(insertArguments);
             }
@@ -203,10 +202,7 @@ namespace Duplicati.Library.Main.Database
                     try
                     {
                         using (var cmd = m_manager.CreateCommand())
-                        {
-                            cmd.Transaction = m_transaction;
                             cmd.ExecuteNonQuery(string.Format(@"DROP TABLE IF EXISTS ""{0}""", m_tablename));
-                        }
                     }
                     catch { }
                     finally { m_tablename = null; }
@@ -217,7 +213,7 @@ namespace Duplicati.Library.Main.Database
                     finally { m_insertCommand = null; }
 
                 if (m_transaction != null)
-                    try { m_transaction.Rollback(); }
+                    try { m_transaction.SafeRollback(); }
                     catch { }
                     finally { m_transaction = null; }
             }
@@ -263,8 +259,6 @@ namespace Duplicati.Library.Main.Database
 
                 using (var cmd = m_manager.CreateCommand())
                 {
-                    cmd.Transaction = m_transaction;
-
                     try
                     {
                         cmd.ExecuteNonQuery(string.Format(create, m_tablename, cmpName), m_volumename);
@@ -319,8 +313,6 @@ namespace Duplicati.Library.Main.Database
 
                 using (var cmd = m_manager.CreateCommand())
                 {
-                    cmd.Transaction = m_transaction;
-
                     try
                     {
                         cmd.ExecuteNonQuery(string.Format(create, m_tablename, cmpName), m_volumename);
@@ -376,8 +368,6 @@ namespace Duplicati.Library.Main.Database
 
                 using (var cmd = m_manager.CreateCommand())
                 {
-                    cmd.Transaction = m_transaction;
-
                     try
                     {
                         cmd.ExecuteNonQuery(string.Format(create, cmpName, curBlocks, delBlocks, duplBlocks), m_volumename, m_volumename, m_volumename);

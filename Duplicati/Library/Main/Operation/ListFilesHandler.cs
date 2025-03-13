@@ -45,7 +45,7 @@ namespace Duplicati.Library.Main.Operation
             m_result = result;
         }
 
-        public async Task Run(DatabaseConnectionManager dbManager, IBackendManager backendManager, IEnumerable<string> filterstrings, IFilter compositefilter)
+        public async Task RunAsync(DatabaseConnectionManager dbManager, IBackendManager backendManager, IEnumerable<string> filterstrings, IFilter compositefilter)
         {
             var cancellationToken = m_result.TaskControl.ProgressToken;
             var parsedfilter = new FilterExpression(filterstrings);
@@ -54,9 +54,9 @@ namespace Duplicati.Library.Main.Operation
 
             //Use a speedy local query
             if (!m_options.NoLocalDb && dbManager.Exists)
+                using (var tr = dbManager.BeginRootTransaction())
                 using (var db = new LocalListDatabase(dbManager))
                 {
-                    m_result.SetDatabase(db);
                     using (var filesets = db.SelectFileSets(m_options.Time, m_options.Version))
                     {
                         if (!filter.Empty)
@@ -121,15 +121,15 @@ namespace Duplicati.Library.Main.Operation
             // Otherwise, grab info from remote location
             using (var tmpdb = new TempFile())
             using (var tmpdbManager = new DatabaseConnectionManager(tmpdb))
+            using (var rootTransaction = tmpdbManager.BeginRootTransaction())
             using (var db = new LocalDatabase(tmpdbManager, "List"))
+            using (var tmpBackendManager = backendManager.CloneForOtherDb(tmpdbManager))
             {
-                m_result.SetDatabase(db);
-
-                var filteredList = ParseAndFilterFilesets(await backendManager.ListAsync(cancellationToken).ConfigureAwait(false), m_options);
+                var filteredList = ParseAndFilterFilesets(await tmpBackendManager.ListAsync(cancellationToken).ConfigureAwait(false), m_options);
                 if (filteredList.Count == 0)
                     throw new UserInformationException("No filesets found on remote target", "EmptyRemoteFolder");
 
-                var numberSeq = await CreateResultSequence(filteredList, backendManager, m_options, cancellationToken);
+                var numberSeq = await CreateResultSequence(filteredList, tmpBackendManager, m_options, cancellationToken);
                 if (filter.Empty)
                 {
                     m_result.SetResult(numberSeq, null);
@@ -144,16 +144,16 @@ namespace Duplicati.Library.Main.Operation
                 if (!await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
                     return;
 
-                using (var tmpfile = await backendManager.GetAsync(firstEntry.File.Name, null, firstEntry.File.Size, cancellationToken).ConfigureAwait(false))
+                using (var tmpfile = await tmpBackendManager.GetAsync(firstEntry.File.Name, null, firstEntry.File.Size, cancellationToken).ConfigureAwait(false))
                 using (var rd = new FilesetVolumeReader(RestoreHandler.GetCompressionModule(firstEntry.File.Name), tmpfile, m_options))
                     if (simpleList)
                     {
                         m_result.SetResult(
                             numberSeq.Take(1),
                             (from n in rd.Files
-                             where Library.Utility.FilterExpression.Matches(filter, n.Path)
+                             where FilterExpression.Matches(filter, n.Path)
                              orderby n.Path
-                             select new ListResultFile(n.Path, new long[] { n.Size }))
+                             select new ListResultFile(n.Path, [n.Size]))
                                   .ToArray()
                         );
 
@@ -162,22 +162,17 @@ namespace Duplicati.Library.Main.Operation
                     else
                     {
                         res = rd.Files
-                              .Where(x => Library.Utility.FilterExpression.Matches(filter, x.Path))
+                              .Where(x => FilterExpression.Matches(filter, x.Path))
                               .ToDictionary(
                                     x => x.Path,
-                                    y =>
-                                    {
-                                        var lst = new List<long>();
-                                        lst.Add(y.Size);
-                                        return lst;
-                                    },
+                                    y => new List<long> { y.Size },
                                     Library.Utility.Utility.ClientFilenameStringComparer
                               );
                     }
 
                 long flindex = 1;
                 var filteredListMap = filteredList.ToDictionary(x => x.Value.File.Name, x => x.Value);
-                await foreach (var (tmpfile, hash, size, name) in backendManager.GetFilesOverlappedAsync(filteredList.Select(x => new RemoteVolumeMapper(x.Value)), cancellationToken).ConfigureAwait(false))
+                await foreach (var (tmpfile, hash, size, name) in tmpBackendManager.GetFilesOverlappedAsync(filteredList.Select(x => new RemoteVolumeMapper(x.Value)), cancellationToken).ConfigureAwait(false))
                 {
                     var flentry = filteredListMap[name];
                     using (tmpfile)
@@ -186,7 +181,7 @@ namespace Duplicati.Library.Main.Operation
                         if (!await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
                             return;
 
-                        foreach (var p in from n in rd.Files where Library.Utility.FilterExpression.Matches(filter, n.Path) select n)
+                        foreach (var p in rd.Files.Where(n => FilterExpression.Matches(filter, n.Path)))
                         {
                             List<long> lst;
                             if (!res.TryGetValue(p.Path, out lst))
@@ -209,20 +204,20 @@ namespace Duplicati.Library.Main.Operation
 
                 m_result.SetResult(
                     numberSeq,
-                    from n in res
-                    orderby n.Key
-                    select (Duplicati.Library.Interface.IListResultFile)(new ListResultFile(n.Key, n.Value))
+                    res.OrderBy(x => x.Key)
+                        .Select(x => new ListResultFile(x.Key, x.Value))
+                        .Cast<IListResultFile>()
                );
             }
         }
 
-        public static List<KeyValuePair<long, Volumes.IParsedVolume>> ParseAndFilterFilesets(IEnumerable<Duplicati.Library.Interface.IFileEntry> rawlist, Options options)
+        public static List<KeyValuePair<long, IParsedVolume>> ParseAndFilterFilesets(IEnumerable<Interface.IFileEntry> rawlist, Options options)
         {
-            var parsedlist = (from n in rawlist
-                              let p = Volumes.VolumeBase.ParseFilename(n)
-                              where p != null && p.FileType == RemoteVolumeType.Files
-                              orderby p.Time descending
-                              select p).ToArray();
+            var parsedlist = rawlist.Select(x => VolumeBase.ParseFilename(x.Name))
+                .Where(x => x != null && x.FileType == RemoteVolumeType.Files)
+                .OrderByDescending(x => x.Time)
+                .ToArray();
+
             var filelistFilter = RestoreHandler.FilterNumberedFilelist(options.Time, options.Version);
             return filelistFilter(parsedlist).ToList();
         }

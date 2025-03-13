@@ -23,7 +23,7 @@ using System;
 using System.Collections.Generic;
 using Duplicati.Library.Main.Database;
 using Duplicati.Library.Utility;
-using System.Threading;
+using System.Threading.Tasks;
 
 namespace Duplicati.Library.Main.Operation
 {
@@ -38,20 +38,17 @@ namespace Duplicati.Library.Main.Operation
             m_result = result;
         }
 
-        public void Run(DatabaseConnectionManager dbManager, IBackendManager backendManager, IEnumerable<string> filterstrings, IFilter compositefilter)
+        public async Task RunAsync(DatabaseConnectionManager dbManager, IBackendManager backendManager, IEnumerable<string> filterstrings, IFilter compositefilter)
         {
-            var cancellationToken = CancellationToken.None;
             using (var tmpdb = new TempFile())
-            using (var tmpdbManager = new DatabaseConnectionManager(tmpdb))
-            using (var db = new LocalDatabase(dbManager.Exists ? dbManager : tmpdbManager, "ListControlFiles"))
+            using (var activeManager = dbManager.Exists ? dbManager : new DatabaseConnectionManager(tmpdb))
+            using (var db = new LocalDatabase(activeManager, "ListControlFiles"))
             {
-                m_result.SetDatabase(db);
-
                 var filter = JoinedFilterExpression.Join(new Library.Utility.FilterExpression(filterstrings), compositefilter);
 
                 try
                 {
-                    var filteredList = ListFilesHandler.ParseAndFilterFilesets(backendManager.ListAsync(cancellationToken).Await(), m_options);
+                    var filteredList = ListFilesHandler.ParseAndFilterFilesets(await backendManager.ListAsync(m_result.TaskControl.ProgressToken).ConfigureAwait(false), m_options);
                     if (filteredList.Count == 0)
                         throw new Exception("No filesets found on remote target");
 
@@ -60,28 +57,26 @@ namespace Duplicati.Library.Main.Operation
                     foreach (var fileversion in filteredList)
                         try
                         {
-                            if (!m_result.TaskControl.ProgressRendevouz().Await())
+                            if (!await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
                                 return;
 
                             var file = fileversion.Value.File;
                             var entry = db.GetRemoteVolume(file.Name);
 
-                            var files = new List<Library.Interface.IListResultFile>();
-                            using (var tmpfile = backendManager.GetAsync(file.Name, entry.Hash, entry.Size < 0 ? file.Size : entry.Size, cancellationToken).Await())
+                            var files = new List<Interface.IListResultFile>();
+                            using (var tmpfile = await backendManager.GetAsync(file.Name, entry.Hash, entry.Size < 0 ? file.Size : entry.Size, m_result.TaskControl.ProgressToken).ConfigureAwait(false))
                             using (var tmp = new Volumes.FilesetVolumeReader(RestoreHandler.GetCompressionModule(file.Name), tmpfile, m_options))
                                 foreach (var cf in tmp.ControlFiles)
-                                    if (Library.Utility.FilterExpression.Matches(filter, cf.Key))
+                                    if (FilterExpression.Matches(filter, cf.Key))
                                         files.Add(new ListResultFile(cf.Key, null));
 
-                            m_result.SetResult(new Library.Interface.IListResultFileset[] { new ListResultFileset(fileversion.Key, BackupType.PARTIAL_BACKUP, fileversion.Value.Time, -1, -1) }, files);
+                            m_result.SetResult([new ListResultFileset(fileversion.Key, BackupType.PARTIAL_BACKUP, fileversion.Value.Time, -1, -1)], files);
                             lastEx = null;
                             break;
                         }
-                        catch (Exception ex)
+                        catch (Exception ex) when (!ex.IsCancellationException())
                         {
                             lastEx = ex;
-                            if (ex is System.Threading.ThreadAbortException)
-                                throw;
                         }
 
                     if (lastEx != null)
@@ -89,7 +84,7 @@ namespace Duplicati.Library.Main.Operation
                 }
                 finally
                 {
-                    backendManager.WaitForEmptyAsync(db, null, cancellationToken).Await();
+                    await backendManager.WaitForEmptyAsync(db, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
                 }
             }
         }

@@ -20,10 +20,11 @@
 // DEALINGS IN THE SOFTWARE.
 #nullable enable
 
-using Duplicati.Library.Utility;
 using System.Collections.Generic;
 using System.Linq;
 using System;
+
+namespace Duplicati.Library.Utility;
 
 /// <summary>
 /// Helper class to get the device ID string and computed hash

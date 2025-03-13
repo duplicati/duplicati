@@ -22,6 +22,7 @@
 using System;
 using System.Collections.Generic;
 using Duplicati.Library.Utility;
+using static Duplicati.Library.Main.Database.DatabaseConnectionManager;
 
 namespace Duplicati.Library.Main.Database
 {
@@ -37,14 +38,14 @@ namespace Duplicati.Library.Main.Database
         {
         }
 
-        public ITemporaryFileset CreateTemporaryFileset(long parentid, System.Data.IDbTransaction transaction)
+        public ITemporaryFileset CreateTemporaryFileset(long parentid)
         {
-            return new TemporaryFileset(parentid, this, m_manager, transaction);
+            return new TemporaryFileset(parentid, this, m_manager);
         }
 
-        public string GetRemoteVolumeNameForFileset(long id, System.Data.IDbTransaction transaction)
+        public string GetRemoteVolumeNameForFileset(long id)
         {
-            using (var cmd = m_manager.CreateCommand(transaction))
+            using (var cmd = m_manager.CreateCommand())
             using (var rd = cmd.ExecuteReader(@"SELECT ""B"".""Name"" FROM ""Fileset"" A, ""RemoteVolume"" B WHERE ""A"".""VolumeID"" = ""B"".""ID"" AND ""A"".""ID"" = ? ", id))
                 if (!rd.Read())
                     throw new Exception(string.Format("No remote volume found for fileset with id {0}", id));
@@ -52,9 +53,9 @@ namespace Duplicati.Library.Main.Database
                     return rd.ConvertValueToString(0);
         }
 
-        internal long CountOrphanFiles(System.Data.IDbTransaction transaction)
+        internal long CountOrphanFiles()
         {
-            using (var cmd = m_manager.CreateCommand(transaction))
+            using (var cmd = m_manager.CreateCommand())
             using (var rd = cmd.ExecuteReader(@"SELECT COUNT(*) FROM ""FileLookup"" WHERE ""ID"" NOT IN (SELECT DISTINCT ""FileID"" FROM ""FilesetEntry"")"))
                 if (rd.Read())
                     return rd.ConvertValueToInt64(0, 0);
@@ -68,8 +69,8 @@ namespace Duplicati.Library.Main.Database
             long RemovedFileCount { get; }
             long RemovedFileSize { get; }
 
-            void ApplyFilter(Library.Utility.IFilter filter);
-            void ApplyFilter(Action<System.Data.IDbCommand, long, string> filtercommand);
+            void ApplyFilter(IFilter filter);
+            void ApplyFilter(Action<DatabaseCommand, long, string> filtercommand);
             Tuple<long, long> ConvertToPermanentFileset(string name, DateTime timestamp, bool isFullBackup);
             IEnumerable<KeyValuePair<string, long>> ListAllDeletedFiles();
         }
@@ -77,7 +78,6 @@ namespace Duplicati.Library.Main.Database
         private class TemporaryFileset : ITemporaryFileset
         {
             private readonly DatabaseConnectionManager m_manager;
-            private readonly System.Data.IDbTransaction m_transaction;
             private readonly string m_tablename;
             private readonly LocalPurgeDatabase m_parentdb;
 
@@ -85,36 +85,35 @@ namespace Duplicati.Library.Main.Database
             public long RemovedFileCount { get; private set; }
             public long RemovedFileSize { get; private set; }
 
-            public TemporaryFileset(long parentid, LocalPurgeDatabase parentdb, DatabaseConnectionManager manager, System.Data.IDbTransaction transaction)
+            public TemporaryFileset(long parentid, LocalPurgeDatabase parentdb, DatabaseConnectionManager manager)
             {
                 this.ParentID = parentid;
                 m_parentdb = parentdb;
                 m_manager = manager;
-                m_transaction = transaction;
                 m_tablename = "TempDeletedFilesTable-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
 
-                using (var cmd = m_manager.CreateCommand(m_transaction))
+                using (var cmd = m_manager.CreateCommand())
                     cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" (""FileID"" INTEGER PRIMARY KEY) ", m_tablename));
             }
 
-            public void ApplyFilter(Action<System.Data.IDbCommand, long, string> filtercommand)
+            public void ApplyFilter(Action<DatabaseCommand, long, string> filtercommand)
             {
-                using (var cmd = m_manager.CreateCommand(m_transaction))
+                using (var cmd = m_manager.CreateCommand())
                     filtercommand(cmd, ParentID, m_tablename);
 
                 PostFilterChecks();
             }
 
-            public void ApplyFilter(Library.Utility.IFilter filter)
+            public void ApplyFilter(IFilter filter)
             {
-                if (Library.Utility.Utility.IsFSCaseSensitive && filter is FilterExpression expression && expression.Type == Duplicati.Library.Utility.FilterType.Simple)
+                if (Library.Utility.Utility.IsFSCaseSensitive && filter is FilterExpression expression && expression.Type == FilterType.Simple)
                 {
                     // File list based
                     // unfortunately we cannot do this if the filesystem is not case-sensitive as
                     // SQLite only supports ASCII compares
                     var p = expression.GetSimpleList();
                     var filenamestable = "Filenames-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
-                    using (var cmd = m_manager.CreateCommand(m_transaction))
+                    using (var cmd = m_manager.CreateCommand())
                     {
                         cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" (""Path"" TEXT NOT NULL) ", filenamestable));
                         cmd.CommandText = string.Format(@"INSERT INTO ""{0}"" (""Path"") VALUES (?)", filenamestable);
@@ -134,8 +133,8 @@ namespace Duplicati.Library.Main.Database
                 {
                     // Do row-wise iteration
                     object[] values = new object[2];
-                    using (var cmd = m_manager.CreateCommand(m_transaction))
-                    using (var cmd2 = m_manager.CreateCommand(m_transaction))
+                    using (var cmd = m_manager.CreateCommand())
+                    using (var cmd2 = m_manager.CreateCommand())
                     {
                         cmd2.CommandText = string.Format(@"INSERT INTO ""{0}"" (""FileID"") VALUES (?)", m_tablename);
                         cmd2.AddParameters(1);
@@ -158,23 +157,23 @@ namespace Duplicati.Library.Main.Database
 
             private void PostFilterChecks()
             {
-                using (var cmd = m_manager.CreateCommand(m_transaction))
+                using (var cmd = m_manager.CreateCommand())
                 {
                     RemovedFileCount = cmd.ExecuteScalarInt64(string.Format(@"SELECT COUNT(*) FROM ""{0}""", m_tablename), 0);
                     RemovedFileSize = cmd.ExecuteScalarInt64(string.Format(@"SELECT SUM(""C"".""Length"") FROM ""{0}"" A, ""FileLookup"" B, ""Blockset"" C WHERE ""A"".""FileID"" = ""B"".""ID"" AND ""B"".""BlocksetID"" = ""C"".""ID"" ", m_tablename), 0);
                     var filesetcount = cmd.ExecuteScalarInt64(string.Format(@"SELECT COUNT(*) FROM ""FilesetEntry"" WHERE ""FilesetID"" = " + ParentID), 0);
                     if (filesetcount == RemovedFileCount)
-                        throw new Duplicati.Library.Interface.UserInformationException(string.Format("Refusing to purge {0} files from fileset with ID {1}, as that would remove the entire fileset.\nTo delete a fileset, use the \"delete\" command.", RemovedFileCount, ParentID), "PurgeWouldRemoveEntireFileset");
+                        throw new Interface.UserInformationException(string.Format("Refusing to purge {0} files from fileset with ID {1}, as that would remove the entire fileset.\nTo delete a fileset, use the \"delete\" command.", RemovedFileCount, ParentID), "PurgeWouldRemoveEntireFileset");
                 }
             }
 
             public Tuple<long, long> ConvertToPermanentFileset(string name, DateTime timestamp, bool isFullBackup)
             {
-                var remotevolid = m_parentdb.RegisterRemoteVolume(name, RemoteVolumeType.Files, RemoteVolumeState.Temporary, m_transaction);
-                var filesetid = m_parentdb.CreateFileset(remotevolid, timestamp, m_transaction);
+                var remotevolid = m_parentdb.RegisterRemoteVolume(name, RemoteVolumeType.Files, RemoteVolumeState.Temporary);
+                var filesetid = m_parentdb.CreateFileset(remotevolid, timestamp);
                 m_parentdb.UpdateFullBackupStateInFileset(filesetid, isFullBackup);
 
-                using (var cmd = m_manager.CreateCommand(m_transaction))
+                using (var cmd = m_manager.CreateCommand())
                     cmd.ExecuteNonQuery(string.Format(@"INSERT INTO ""FilesetEntry"" (""FilesetID"", ""FileID"", ""Lastmodified"") SELECT ?, ""FileID"", ""LastModified"" FROM ""FilesetEntry"" WHERE ""FilesetID"" = ? AND ""FileID"" NOT IN ""{0}"" ", m_tablename), filesetid, ParentID);
 
                 return new Tuple<long, long>(remotevolid, filesetid);
@@ -182,7 +181,7 @@ namespace Duplicati.Library.Main.Database
 
             public IEnumerable<KeyValuePair<string, long>> ListAllDeletedFiles()
             {
-                using (var cmd = m_manager.CreateCommand(m_transaction))
+                using (var cmd = m_manager.CreateCommand())
                 using (var rd = cmd.ExecuteReader(string.Format(@"SELECT ""B"".""Path"", ""C"".""Length"" FROM ""{0}"" A, ""File"" B, ""Blockset"" C WHERE ""A"".""FileID"" = ""B"".""ID"" AND ""B"".""BlocksetID"" = ""C"".""ID"" ", m_tablename)))
                     while (rd.Read())
                         yield return new KeyValuePair<string, long>(rd.ConvertValueToString(0), rd.ConvertValueToInt64(1));
@@ -192,7 +191,7 @@ namespace Duplicati.Library.Main.Database
             {
                 try
                 {
-                    using (var cmd = m_manager.CreateCommand(m_transaction))
+                    using (var cmd = m_manager.CreateCommand())
                         cmd.ExecuteNonQuery(@"DROP TABLE IF EXISTS ""{0}""", m_tablename);
                 }
                 catch

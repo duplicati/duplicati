@@ -59,8 +59,6 @@ namespace Duplicati.Library.Main
         DateTime BeginTime { get; set; }
         IMessageSink MessageSink { get; set; }
         OperationMode MainOperation { get; }
-
-        void SetDatabase(LocalDatabase db);
     }
 
     internal interface ITaskControlProvider
@@ -257,27 +255,10 @@ namespace Duplicati.Library.Main
             }
         }
 
-        public void SetDatabase(LocalDatabase db)
+        public void FlushLog(LocalDatabase db)
         {
             if (m_parent != null)
-            {
-                m_parent.SetDatabase(db);
-            }
-            else
-            {
-                lock (m_lock)
-                {
-                    m_db = db;
-                    if (m_db != null)
-                        db.SetResult(this);
-                }
-            }
-        }
-
-        public void FlushLog()
-        {
-            if (m_parent != null)
-                m_parent.FlushLog();
+                m_parent.FlushLog(db);
             else
             {
                 lock (m_lock)
@@ -285,7 +266,7 @@ namespace Duplicati.Library.Main
                     while (m_dbqueue.Count > 0)
                     {
                         var el = m_dbqueue.Dequeue();
-                        m_db.LogMessage(el.Type, el.Message, el.Exception, null);
+                        db.LogMessage(el.Type, el.Message, el.Exception);
                     }
                 }
             }

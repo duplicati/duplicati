@@ -24,6 +24,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using Duplicati.Library.Interface;
+using static Duplicati.Library.Main.Database.DatabaseConnectionManager;
 
 namespace Duplicati.Library.Main.Database
 {
@@ -39,7 +40,7 @@ namespace Duplicati.Library.Main.Database
         /// </summary>
         private const string TEMPORARY = "TEMPORARY";
 
-        private IDbCommand m_registerDuplicateBlockCommand;
+        private DatabaseCommand m_registerDuplicateBlockCommand;
 
         public LocalDeleteDatabase(DatabaseConnectionManager manager, string operation)
             : base(manager, operation)
@@ -62,11 +63,10 @@ namespace Duplicati.Library.Main.Database
         /// Drops all entries related to operations listed in the table.
         /// </summary>
         /// <param name="toDelete">The fileset entries to delete</param>
-        /// <param name="transaction">The transaction to execute the commands in</param>
         /// <returns>A list of filesets to delete</returns>
-        public IEnumerable<KeyValuePair<string, long>> DropFilesetsFromTable(DateTime[] toDelete, IDbTransaction transaction)
+        public IEnumerable<KeyValuePair<string, long>> DropFilesetsFromTable(DateTime[] toDelete)
         {
-            using (var cmd = m_manager.CreateCommand(transaction))
+            using (var cmd = m_manager.CreateCommand())
             {
                 var deleted = 0;
 
@@ -124,13 +124,13 @@ namespace Duplicati.Library.Main.Database
         {
             get
             {
-                List<IListResultFileset> filesets = new List<IListResultFileset>();
-                using (IDbCommand cmd = m_manager.CreateCommand())
+                var filesets = new List<IListResultFileset>();
+                using (var cmd = m_manager.CreateCommand())
                 {
                     // We can also use the ROW_NUMBER() window function to generate the backup versions,
                     // but this requires at least SQLite 3.25, which is not available in some common
                     // distributions (e.g., Debian) currently.
-                    using (IDataReader reader = cmd.ExecuteReader(@"SELECT ""IsFullBackup"", ""Timestamp"" FROM ""Fileset"" ORDER BY ""Timestamp"" DESC"))
+                    using (var reader = cmd.ExecuteReader(@"SELECT ""IsFullBackup"", ""Timestamp"" FROM ""Fileset"" ORDER BY ""Timestamp"" DESC"))
                     {
                         int version = 0;
                         while (reader.Read())
@@ -166,7 +166,7 @@ namespace Duplicati.Library.Main.Database
         /// The sizes are the uncompressed values.
         /// </summary>
         /// <returns>A list of tuples with name, datasize, wastedbytes.</returns>
-        private IEnumerable<VolumeUsage> GetWastedSpaceReport(IDbTransaction transaction)
+        private IEnumerable<VolumeUsage> GetWastedSpaceReport()
         {
             var tmptablename = "UsageReport-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
 
@@ -183,7 +183,7 @@ namespace Duplicati.Library.Main.Database
             var collected = @"SELECT ""VolumeID"" AS ""VolumeID"", SUM(""ActiveSize"") AS ""ActiveSize"", SUM(""InactiveSize"") AS ""InactiveSize"", MAX(""Sorttime"") AS ""Sorttime"" FROM (" + combined + @") GROUP BY ""VolumeID"" ";
             var createtable = @$"CREATE {TEMPORARY} TABLE ""{tmptablename}"" AS " + collected;
 
-            using (var cmd = m_manager.CreateCommand(transaction))
+            using (var cmd = m_manager.CreateCommand())
             {
                 try
                 {
@@ -298,29 +298,28 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
-        public ICompactReport GetCompactReport(long volsize, long wastethreshold, long smallfilesize, long maxsmallfilecount, IDbTransaction transaction)
+        public ICompactReport GetCompactReport(long volsize, long wastethreshold, long smallfilesize, long maxsmallfilecount)
         {
-            return new CompactReport(volsize, wastethreshold, smallfilesize, maxsmallfilecount, GetWastedSpaceReport(transaction).ToList());
+            return new CompactReport(volsize, wastethreshold, smallfilesize, maxsmallfilecount, GetWastedSpaceReport().ToList());
         }
 
 
         public interface IBlockQuery : IDisposable
         {
-            bool UseBlock(string hash, long size, IDbTransaction transaction);
+            bool UseBlock(string hash, long size);
         }
 
         private class BlockQuery : IBlockQuery
         {
-            private IDbCommand m_command;
+            private DatabaseCommand m_command;
 
             public BlockQuery(DatabaseConnectionManager manager)
             {
                 m_command = manager.CreateCommand(@"SELECT ""VolumeID"" FROM ""Block"" WHERE ""Hash"" = ? AND ""Size"" = ? ");
             }
 
-            public bool UseBlock(string hash, long size, IDbTransaction transaction)
+            public bool UseBlock(string hash, long size)
             {
-                m_command.Transaction = transaction;
                 m_command.SetParameterValue(0, hash);
                 m_command.SetParameterValue(1, size);
                 var r = m_command.ExecuteScalar();
@@ -337,7 +336,7 @@ namespace Duplicati.Library.Main.Database
         /// <summary>
         /// Builds a lookup table to enable faster response to block queries
         /// </summary>
-        public IBlockQuery CreateBlockQueryHelper(IDbTransaction transaction)
+        public IBlockQuery CreateBlockQueryHelper()
         {
             return new BlockQuery(m_manager);
         }
@@ -349,9 +348,8 @@ namespace Duplicati.Library.Main.Database
         /// <param name="size">The size of the block</param>
         /// <param name="volumeID">The new volume ID</param>
         /// <param name="tr">The transaction to execute the command in</param>
-        public void RegisterDuplicatedBlock(string hash, long size, long volumeID, IDbTransaction tr)
+        public void RegisterDuplicatedBlock(string hash, long size, long volumeID)
         {
-            m_registerDuplicateBlockCommand.Transaction = tr;
             m_registerDuplicateBlockCommand.SetParameterValue(0, volumeID);
             m_registerDuplicateBlockCommand.SetParameterValue(1, hash);
             m_registerDuplicateBlockCommand.SetParameterValue(2, size);
@@ -364,14 +362,13 @@ namespace Duplicati.Library.Main.Database
         /// </summary>
         /// <param name="filename">The file to remove</param>
         /// <param name="volumeIdsToBeRemoved">The volume IDs that will be removed</param>
-        /// <param name="transaction">The transaction to execute the command in</param>
-        public void PrepareForDelete(string filename, IEnumerable<long> volumeIdsToBeRemoved, IDbTransaction transaction)
+        public void PrepareForDelete(string filename, IEnumerable<long> volumeIdsToBeRemoved)
         {
-            var deletedVolume = GetRemoteVolume(filename, transaction);
+            var deletedVolume = GetRemoteVolume(filename);
             if (deletedVolume.Type != RemoteVolumeType.Blocks)
                 return;
 
-            using (var cmd = m_manager.CreateCommand(transaction))
+            using (var cmd = m_manager.CreateCommand())
             {
                 var updatedBlocks = "BlocksToUpdate-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
                 var replacementBlocks = "ReplacementBlocks-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
@@ -407,11 +404,10 @@ namespace Duplicati.Library.Main.Database
         /// Calculates the sequence in which files should be deleted based on their relations.
         /// </summary>
         /// <param name="deleteableVolumes">Block volumes slated for deletion.</param>
-        /// <param name="transaction">The transaction to execute the command in</param>
         /// <returns>The deletable volumes.</returns>
-        public IEnumerable<IRemoteVolume> ReOrderDeleteableVolumes(IEnumerable<IRemoteVolume> deleteableVolumes, IDbTransaction transaction)
+        public IEnumerable<IRemoteVolume> ReOrderDeleteableVolumes(IEnumerable<IRemoteVolume> deleteableVolumes)
         {
-            using (var cmd = m_manager.CreateCommand(transaction))
+            using (var cmd = m_manager.CreateCommand())
             {
                 // Although the generated index volumes are always in pairs,
                 // this code handles many-to-many relations between

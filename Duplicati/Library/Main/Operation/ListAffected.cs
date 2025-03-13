@@ -24,19 +24,20 @@ using System.Linq;
 using System.Collections.Generic;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main.Database;
+using System.Threading.Tasks;
 
 namespace Duplicati.Library.Main.Operation
 {
     internal class ListAffected
     {
-        public void Run(DatabaseConnectionManager dbManager, ListAffectedResults result, List<string> args, Action<IListAffectedResults> callback = null)
+        public Task RunAsync(DatabaseConnectionManager dbManager, ListAffectedResults result, List<string> args, Action<IListAffectedResults> callback = null)
         {
             if (!dbManager.Exists)
                 throw new UserInformationException(string.Format("Database file does not exist: {0}", dbManager.Path), "DatabaseDoesNotExist");
 
+            using (var tr = dbManager.BeginRootTransaction())
             using (var db = new LocalListAffectedDatabase(dbManager))
             {
-                result.SetDatabase(db);
                 if (callback == null)
                 {
                     result.SetResult(
@@ -58,6 +59,8 @@ namespace Duplicati.Library.Main.Operation
                     callback(result);
                 }
             }
+
+            return Task.CompletedTask;
         }
     }
 }

@@ -22,6 +22,7 @@
 using System;
 using System.Collections.Generic;
 using Duplicati.Library.Utility;
+using static Duplicati.Library.Main.Database.DatabaseConnectionManager;
 
 namespace Duplicati.Library.Main.Database
 {
@@ -94,10 +95,10 @@ namespace Duplicati.Library.Main.Database
         private class StorageHelper : IStorageHelper
         {
             private readonly DatabaseConnectionManager m_manager;
-            private System.Data.IDbTransaction m_transaction;
+            private DatabaseTransaction m_transaction;
 
-            private System.Data.IDbCommand m_insertPreviousElementCommand;
-            private System.Data.IDbCommand m_insertCurrentElementCommand;
+            private DatabaseCommand m_insertPreviousElementCommand;
+            private DatabaseCommand m_insertCurrentElementCommand;
 
             private string m_previousTable;
             private string m_currentTable;
@@ -112,19 +113,15 @@ namespace Duplicati.Library.Main.Database
 
                 using (var cmd = m_manager.CreateCommand())
                 {
-                    cmd.Transaction = m_transaction;
-
                     cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" (""Path"" TEXT NOT NULL, ""FileHash"" TEXT NULL, ""MetaHash"" TEXT NOT NULL, ""Size"" INTEGER NOT NULL, ""Type"" INTEGER NOT NULL) ", m_previousTable));
                     cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" (""Path"" TEXT NOT NULL, ""FileHash"" TEXT NULL, ""MetaHash"" TEXT NOT NULL, ""Size"" INTEGER NOT NULL, ""Type"" INTEGER NOT NULL) ", m_currentTable));
                 }
 
                 m_insertPreviousElementCommand = m_manager.CreateCommand();
-                m_insertPreviousElementCommand.Transaction = m_transaction;
                 m_insertPreviousElementCommand.CommandText = string.Format(@"INSERT INTO ""{0}"" (""Path"", ""FileHash"", ""MetaHash"", ""Size"", ""Type"") VALUES (?,?,?,?,?)", m_previousTable);
                 m_insertPreviousElementCommand.AddParameters(5);
 
                 m_insertCurrentElementCommand = m_manager.CreateCommand();
-                m_insertCurrentElementCommand.Transaction = m_transaction;
                 m_insertCurrentElementCommand.CommandText = string.Format(@"INSERT INTO ""{0}"" (""Path"", ""FileHash"", ""MetaHash"", ""Size"", ""Type"") VALUES (?,?,?,?,?)", m_currentTable);
                 m_insertCurrentElementCommand.AddParameters(5);
             }
@@ -141,7 +138,6 @@ namespace Duplicati.Library.Main.Database
 
                 using (var cmd = m_manager.CreateCommand())
                 {
-                    cmd.Transaction = m_transaction;
                     if (filter == null || filter.Empty)
                     {
                         // Simple case, select everything
@@ -186,7 +182,6 @@ namespace Duplicati.Library.Main.Database
                         {
                             cmd2.CommandText = string.Format(@"INSERT INTO ""{0}"" (""Path"", ""FileHash"", ""MetaHash"", ""Size"", ""Type"") VALUES (?,?,?,?,?)", tablename);
                             cmd2.AddParameters(5);
-                            cmd2.Transaction = m_transaction;
 
                             using (var rd = cmd.ExecuteReader(string.Format(@"SELECT ""A"".""Path"", ""A"".""FileHash"", ""A"".""MetaHash"", ""A"".""Size"", ""A"".""Type"" FROM {0} A WHERE ""A"".""FilesetID"" = ?", combined), filesetId))
                                 while (rd.Read())
@@ -218,7 +213,7 @@ namespace Duplicati.Library.Main.Database
                 cmd.ExecuteNonQuery();
             }
 
-            private static IEnumerable<string> ReaderToStringList(System.Data.IDataReader rd)
+            private static IEnumerable<string> ReaderToStringList(DatabaseReader rd)
             {
                 using (rd)
                     while (rd.Read())
@@ -249,8 +244,6 @@ namespace Duplicati.Library.Main.Database
 
                 using (var cmd = m_manager.CreateCommand())
                 {
-                    cmd.Transaction = m_transaction;
-
                     var result = new ChangeSizeReport();
 
                     result.PreviousSize = cmd.ExecuteScalarInt64(string.Format(@"SELECT SUM(""Size"") FROM ""{0}"" ", m_previousTable), 0);
@@ -272,8 +265,6 @@ namespace Duplicati.Library.Main.Database
 
                 using (var cmd = m_manager.CreateCommand())
                 {
-                    cmd.Transaction = m_transaction;
-
                     var result = new ChangeCountReport();
                     result.AddedFolders = cmd.ExecuteScalarInt64(added, 0, (int)Library.Interface.ListChangesElementType.Folder);
                     result.AddedSymlinks = cmd.ExecuteScalarInt64(added, 0, (int)Library.Interface.ListChangesElementType.Symlink);
@@ -300,7 +291,6 @@ namespace Duplicati.Library.Main.Database
 
                 using (var cmd = m_manager.CreateCommand())
                 {
-                    cmd.Transaction = m_transaction;
                     foreach (var s in ReaderToStringList(cmd.ExecuteReader(added, (int)Library.Interface.ListChangesElementType.Folder)))
                         yield return new Tuple<Library.Interface.ListChangesChangeType, Library.Interface.ListChangesElementType, string>(Library.Interface.ListChangesChangeType.Added, Library.Interface.ListChangesElementType.Folder, s);
                     foreach (var s in ReaderToStringList(cmd.ExecuteReader(added, (int)Library.Interface.ListChangesElementType.Symlink)))
@@ -342,7 +332,7 @@ namespace Duplicati.Library.Main.Database
 
                 if (m_transaction != null)
                 {
-                    try { m_transaction.Rollback(); }
+                    try { m_transaction.SafeRollback(); }
                     catch { }
                     finally
                     {

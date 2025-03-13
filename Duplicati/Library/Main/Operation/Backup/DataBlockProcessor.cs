@@ -20,6 +20,7 @@
 // DEALINGS IN THE SOFTWARE.
 
 using CoCoL;
+using Duplicati.Library.Main.Database;
 using Duplicati.Library.Main.Operation.Common;
 using Duplicati.Library.Main.Volumes;
 using System;
@@ -34,7 +35,7 @@ namespace Duplicati.Library.Main.Operation.Backup
     /// </summary>
     internal static class DataBlockProcessor
     {
-        public static Task Run(Channels channels, BackupDatabase database, IBackendManager backendManager, Options options, ITaskReader taskreader)
+        public static Task Run(Channels channels, LocalBackupDatabase database, IBackendManager backendManager, Options options, ITaskReader taskreader)
         {
             return AutomationExtensions.RunTask(
             new
@@ -82,7 +83,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                             // There can be a race, such that two workers determine that
                             // the block is missing, but this will be solved by the AddBlock call
                             // which runs atomically
-                            if (!isMandatoryBlocklistHash && await database.FindBlockIDAsync(b.HashKey, b.Size) >= 0)
+                            if (!isMandatoryBlocklistHash && await database.WithLockAsync(x => x.FindBlockID(b.HashKey, b.Size)) >= 0)
                             {
                                 b.TaskCompletion.TrySetResult(false);
                                 sw_workload.Stop();
@@ -90,13 +91,16 @@ namespace Duplicati.Library.Main.Operation.Backup
                             }
 
                             blockvolume = new BlockVolumeWriter(options);
-                            blockvolume.VolumeID = await database.RegisterRemoteVolumeAsync(blockvolume.RemoteFilename, RemoteVolumeType.Blocks, RemoteVolumeState.Temporary);
+                            using (await database.LockAsync())
+                                blockvolume.VolumeID = database.RegisterRemoteVolume(blockvolume.RemoteFilename, RemoteVolumeType.Blocks, RemoteVolumeState.Temporary);
 
                             indexvolume = noIndexFiles ? null : new TemporaryIndexVolume(options);
                             blocklistHashesAdded = 0;
                         }
 
-                        var newBlock = await database.AddBlockAsync(b.HashKey, b.Size, blockvolume.VolumeID);
+                        bool newBlock;
+                        using (await database.LockAsync())
+                            newBlock = database.AddBlock(b.HashKey, b.Size, blockvolume.VolumeID);
                         b.TaskCompletion.TrySetResult(newBlock);
 
                         // If we are recording blocklist hashes, add them to the index file,
@@ -105,25 +109,30 @@ namespace Duplicati.Library.Main.Operation.Backup
                         {
                             // This can cause a race between workers,
                             // but the side-effect is that the index files are slightly larger
-                            if (newBlock || !await database.IsBlocklistHashKnownAsync(b.HashKey))
-                            {
-                                blocklistHashesAdded++;
-                                indexvolume.AddBlockListHash(b.HashKey, b.Size, b.Data);
-                            }
+                            using (await database.LockAsync())
+                                if (newBlock || !database.IsBlocklistHashKnown(b.HashKey))
+                                {
+                                    blocklistHashesAdded++;
+                                    indexvolume.AddBlockListHash(b.HashKey, b.Size, b.Data);
+                                }
                         }
 
                         if (newBlock)
                         {
-                            blockvolume.AddBlock(b.HashKey, b.Data, b.Offset, (int)b.Size, b.Hint);
-                            if (indexvolume != null)
-                                indexvolume.AddBlock(b.HashKey, b.Size);
+                            using (await database.LockAsync())
+                            {
+                                blockvolume.AddBlock(b.HashKey, b.Data, b.Offset, (int)b.Size, b.Hint);
+                                if (indexvolume != null)
+                                    indexvolume.AddBlock(b.HashKey, b.Size);
+                            }
 
                             // If the volume is full, send to upload
                             if (blockvolume.Filesize > options.VolumeSize - options.Blocksize)
                             {
                                 //When uploading a new volume, we register the volumes and then flush the transaction
                                 // this ensures that the local database and remote storage are as closely related as possible
-                                await database.UpdateRemoteVolumeAsync(blockvolume.RemoteFilename, RemoteVolumeState.Uploading, -1, null);
+                                using (await database.LockAsync())
+                                    database.UpdateRemoteVolume(blockvolume.RemoteFilename, RemoteVolumeState.Uploading, -1, null);
 
                                 blockvolume.Close();
 
@@ -132,12 +141,16 @@ namespace Duplicati.Library.Main.Operation.Backup
                                 {
                                     // TODO: It is much easier to let the BackendManager deal with index files,
                                     // but it adds a bit of strain to the database
-                                    indexVolumeCopy = await indexvolume.CreateVolume(blockvolume.RemoteFilename, options, database);
-                                    // Create link before upload is started, it will be removed later if upload fails
-                                    await database.AddIndexBlockLinkAsync(indexVolumeCopy.VolumeID, blockvolume.VolumeID).ConfigureAwait(false);
+                                    indexVolumeCopy = indexvolume.CreateVolume(blockvolume.RemoteFilename, options);
+                                    using (await database.LockAsync())
+                                    {
+                                        indexVolumeCopy.VolumeID = database.RegisterRemoteVolume(indexVolumeCopy.RemoteFilename, RemoteVolumeType.Index, RemoteVolumeState.Temporary);
+                                        // Create link before upload is started, it will be removed later if upload fails
+                                        database.AddIndexBlockLink(indexVolumeCopy.VolumeID, blockvolume.VolumeID);
+                                    }
                                 }
 
-                                await database.CommitTransactionAsync("CommitAddBlockToOutputFlush");
+                                database.CommitAndRestartTransaction("CommitAddBlockToOutputFlush");
 
                                 var blockVolumeCopy = blockvolume;
                                 blockvolume = null;
@@ -168,7 +181,8 @@ namespace Duplicati.Library.Main.Operation.Backup
                             }
                             else
                             {
-                                await database.RemoveRemoteVolumeAsync(blockvolume.RemoteFilename);
+                                using (await database.LockAsync())
+                                    database.RemoveRemoteVolume(blockvolume.RemoteFilename);
                             }
                         }
                     }

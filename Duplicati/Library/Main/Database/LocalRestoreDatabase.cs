@@ -28,6 +28,7 @@ using Duplicati.Library.Common.IO;
 using Duplicati.Library.Main.Operation.Restore;
 using Duplicati.Library.Main.Volumes;
 using Duplicati.Library.Utility;
+using static Duplicati.Library.Main.Database.DatabaseConnectionManager;
 
 namespace Duplicati.Library.Main.Database
 {
@@ -254,7 +255,6 @@ namespace Duplicati.Library.Main.Database
                         {
                             var p = expression.GetSimpleList();
                             var m_filenamestable = "Filenames-" + m_temptabsetguid;
-                            cmd.Transaction = tr;
                             cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" (""Path"" TEXT NOT NULL) ", m_filenamestable));
                             cmd.CommandText = string.Format(@"INSERT INTO ""{0}"" (""Path"") VALUES (?)", m_filenamestable);
                             cmd.AddParameter();
@@ -287,8 +287,7 @@ namespace Duplicati.Library.Main.Database
 
                             cmd.ExecuteNonQuery(string.Format(@"DROP TABLE IF EXISTS ""{0}"" ", m_filenamestable));
 
-                            using (new Logging.Timer(LOGTAG, "CommitPrepareFileset", "CommitPrepareFileset"))
-                                tr.Commit();
+                            tr.Commit("CommitPrepareFileset");
                         }
                     }
                     else
@@ -307,7 +306,7 @@ namespace Duplicati.Library.Main.Database
                             cmd2.AddParameter();
                             cmd2.AddParameter();
 
-                            using (var rd = cmd.ExecuteReader())
+                            using (var rd = cmd.ExecuteReaderWithoutLocks())
                                 while (rd.Read())
                                 {
                                     rd.GetValues(values);
@@ -574,9 +573,9 @@ namespace Duplicati.Library.Main.Database
 
         private class ExistingFile : IExistingFile
         {
-            private readonly System.Data.IDataReader m_reader;
+            private readonly DatabaseReader m_reader;
 
-            public ExistingFile(System.Data.IDataReader rd) { m_reader = rd; HasMore = true; }
+            public ExistingFile(DatabaseReader rd) { m_reader = rd; HasMore = true; }
 
             public string TargetPath { get { return m_reader.ConvertValueToString(0); } }
             public string TargetHash { get { return m_reader.ConvertValueToString(1); } }
@@ -587,9 +586,9 @@ namespace Duplicati.Library.Main.Database
 
             private class ExistingFileBlock : IExistingFileBlock
             {
-                private readonly System.Data.IDataReader m_reader;
+                private readonly DatabaseReader m_reader;
 
-                public ExistingFileBlock(System.Data.IDataReader rd) { m_reader = rd; }
+                public ExistingFileBlock(DatabaseReader rd) { m_reader = rd; }
 
                 public string Hash { get { return m_reader.ConvertValueToString(4); } }
                 public long Index { get { return m_reader.ConvertValueToInt64(5); } }
@@ -644,16 +643,16 @@ namespace Duplicati.Library.Main.Database
             {
                 private class BlockSource : IBlockSource
                 {
-                    private readonly System.Data.IDataReader m_reader;
-                    public BlockSource(System.Data.IDataReader rd) { m_reader = rd; }
+                    private readonly DatabaseReader m_reader;
+                    public BlockSource(DatabaseReader rd) { m_reader = rd; }
 
                     public string Path { get { return m_reader.ConvertValueToString(6); } }
                     public long Offset { get { return m_reader.ConvertValueToInt64(7); } }
                     public bool IsMetadata { get { return false; } }
                 }
 
-                private readonly System.Data.IDataReader m_reader;
-                public BlockDescriptor(System.Data.IDataReader rd) { m_reader = rd; HasMore = true; }
+                private readonly DatabaseReader m_reader;
+                public BlockDescriptor(DatabaseReader rd) { m_reader = rd; HasMore = true; }
 
                 private string TargetPath { get { return m_reader.ConvertValueToString(0); } }
 
@@ -682,8 +681,8 @@ namespace Duplicati.Library.Main.Database
                 }
             }
 
-            private readonly System.Data.IDataReader m_reader;
-            public LocalBlockSource(System.Data.IDataReader rd) { m_reader = rd; HasMore = true; }
+            private readonly DatabaseReader m_reader;
+            public LocalBlockSource(DatabaseReader rd) { m_reader = rd; HasMore = true; }
 
             public string TargetPath { get { return m_reader.ConvertValueToString(0); } }
             public long TargetFileID { get { return m_reader.ConvertValueToInt64(1); } }
@@ -840,16 +839,16 @@ namespace Duplicati.Library.Main.Database
             {
                 private class PatchBlock : IPatchBlock
                 {
-                    private readonly System.Data.IDataReader m_reader;
-                    public PatchBlock(System.Data.IDataReader rd) { m_reader = rd; }
+                    private readonly DatabaseReader m_reader;
+                    public PatchBlock(DatabaseReader rd) { m_reader = rd; }
 
                     public long Offset { get { return m_reader.ConvertValueToInt64(2); } }
                     public long Size { get { return m_reader.ConvertValueToInt64(3); } }
                     public string Key { get { return m_reader.ConvertValueToString(4); } }
                 }
 
-                private readonly System.Data.IDataReader m_reader;
-                public VolumePatch(System.Data.IDataReader rd) { m_reader = rd; HasMore = true; }
+                private readonly DatabaseReader m_reader;
+                public VolumePatch(DatabaseReader rd) { m_reader = rd; HasMore = true; }
 
                 public string Path { get { return m_reader.ConvertValueToString(0); } }
                 public long FileID { get { return m_reader.ConvertValueToInt64(1); } }
@@ -953,11 +952,9 @@ namespace Duplicati.Library.Main.Database
         {
             if (!m_manager_pool.TryTake(out var connection))
             {
-                connection = m_manager.CreateAdditionalConnection();
-
-                using var cmd = connection.CreateCommand();
-                cmd.ExecuteNonQuery("PRAGMA journal_mode = WAL;");
-                cmd.ExecuteNonQuery("PRAGMA read_uncommitted = true;");
+                connection = m_manager.CreateAdditionalConnection(true);
+                connection.ExecutePragma("journal_mode = WAL;");
+                connection.ExecutePragma("read_uncommitted = true;");
             }
 
             return connection;
@@ -1082,11 +1079,11 @@ namespace Duplicati.Library.Main.Database
             cmd.AddParameter();
             cmd.SetParameterValue(0, fileID);
 
-            using var reader = cmd.ExecuteReader();
-            for (long i = 0; reader.Read(); i++)
-            {
-                yield return new BlockRequest(reader.ConvertValueToInt64(0), i, reader.ConvertValueToString(1), reader.ConvertValueToInt64(2), reader.ConvertValueToInt64(3), false);
-            }
+            using (var reader = cmd.ExecuteReaderWithoutLocks())
+                for (long i = 0; reader.Read(); i++)
+                {
+                    yield return new BlockRequest(reader.ConvertValueToInt64(0), i, reader.ConvertValueToString(1), reader.ConvertValueToInt64(2), reader.ConvertValueToInt64(3), false);
+                }
 
             // Return the connection to the pool
             m_manager_pool.Add(connection);
@@ -1186,11 +1183,12 @@ namespace Duplicati.Library.Main.Database
         /// </summary>
         private class DirectBlockMarker : IBlockMarker
         {
-            private System.Data.IDbCommand m_insertblockCommand;
-            private System.Data.IDbCommand m_resetfileCommand;
-            private System.Data.IDbCommand m_updateAsRestoredCommand;
-            private System.Data.IDbCommand m_updateFileAsDataVerifiedCommand;
-            private System.Data.IDbCommand m_statUpdateCommand;
+            private DatabaseCommand m_insertblockCommand;
+            private DatabaseCommand m_resetfileCommand;
+            private DatabaseCommand m_updateAsRestoredCommand;
+            private DatabaseCommand m_updateFileAsDataVerifiedCommand;
+            private DatabaseCommand m_statUpdateCommand;
+            private DatabaseTransaction m_transaction;
             private bool m_hasUpdates = false;
 
             private readonly string m_blocktablename;
@@ -1198,12 +1196,12 @@ namespace Duplicati.Library.Main.Database
 
             public DirectBlockMarker(DatabaseConnectionManager manager, string blocktablename, string filetablename, string statstablename)
             {
-                var tr = manager.BeginTransaction();
-                m_insertblockCommand = manager.CreateCommand(tr);
-                m_resetfileCommand = manager.CreateCommand(tr);
-                m_updateAsRestoredCommand = manager.CreateCommand(tr);
-                m_updateFileAsDataVerifiedCommand = manager.CreateCommand(tr);
-                m_statUpdateCommand = manager.CreateCommand(tr);
+                m_transaction = manager.BeginTransaction();
+                m_insertblockCommand = manager.CreateCommand();
+                m_resetfileCommand = manager.CreateCommand();
+                m_updateAsRestoredCommand = manager.CreateCommand();
+                m_updateFileAsDataVerifiedCommand = manager.CreateCommand();
+                m_statUpdateCommand = manager.CreateCommand();
 
                 m_blocktablename = blocktablename;
                 m_filetablename = filetablename;
@@ -1305,12 +1303,10 @@ namespace Duplicati.Library.Main.Database
 
             public void Commit()
             {
-                var tr = m_insertblockCommand.Transaction;
                 m_insertblockCommand.Dispose();
                 m_insertblockCommand = null;
-                using (new Logging.Timer(LOGTAG, "CommitBlockMarker", "CommitBlockMarker"))
-                    tr.Commit();
-                tr.Dispose();
+                m_transaction.Commit("CommitBlockMarker");
+                m_transaction.Dispose();
             }
 
             public void Dispose()
@@ -1384,18 +1380,18 @@ namespace Duplicati.Library.Main.Database
         {
             private class BlockEntry : IBlockEntry
             {
-                private readonly System.Data.IDataReader m_rd;
+                private readonly DatabaseReader m_rd;
                 private readonly long m_blocksize;
-                public BlockEntry(System.Data.IDataReader rd, long blocksize) { m_rd = rd; m_blocksize = blocksize; }
+                public BlockEntry(DatabaseReader rd, long blocksize) { m_rd = rd; m_blocksize = blocksize; }
                 public long Offset { get { return m_rd.ConvertValueToInt64(3) * m_blocksize; } }
                 public long Index { get { return m_rd.ConvertValueToInt64(3); } }
                 public long Size { get { return m_rd.ConvertValueToInt64(5); } }
                 public string Hash { get { return m_rd.ConvertValueToString(4); } }
             }
 
-            private readonly System.Data.IDataReader m_rd;
+            private readonly DatabaseReader m_rd;
             private readonly long m_blocksize;
-            public FastSource(System.Data.IDataReader rd, long blocksize) { m_rd = rd; m_blocksize = blocksize; MoreData = true; }
+            public FastSource(DatabaseReader rd, long blocksize) { m_rd = rd; m_blocksize = blocksize; MoreData = true; }
             public bool MoreData { get; private set; }
             public string TargetPath { get { return m_rd.ConvertValueToString(0); } }
             public long TargetFileID { get { return m_rd.ConvertValueToInt64(2); } }
@@ -1426,7 +1422,6 @@ namespace Duplicati.Library.Main.Database
                     {
                         cmd.CommandText = string.Format(@"UPDATE ""{0}"" SET ""LocalSourceExists"" = 1 WHERE Path = ?", m_tempfiletable);
                         cmd.AddParameters(1);
-                        cmd.Transaction = transaction;
 
                         var fileset = string.Format(@"SELECT DISTINCT ""{0}"".""Path"" FROM ""{0}""", m_tempfiletable);
                         using (var rd = cmdReader.ExecuteReader(fileset))

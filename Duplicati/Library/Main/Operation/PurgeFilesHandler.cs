@@ -21,10 +21,11 @@
 
 using System;
 using System.Linq;
-using System.Threading;
+using System.Threading.Tasks;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main.Database;
 using Duplicati.Library.Utility;
+using static Duplicati.Library.Main.Database.DatabaseConnectionManager;
 
 namespace Duplicati.Library.Main.Operation
 {
@@ -43,7 +44,7 @@ namespace Duplicati.Library.Main.Operation
             m_result = result;
         }
 
-        public void Run(DatabaseConnectionManager dbManager, IBackendManager backendManager, IFilter filter)
+        public async Task RunAsync(DatabaseConnectionManager dbManager, IBackendManager backendManager, IFilter filter)
         {
             if (filter == null || filter.Empty)
                 throw new UserInformationException("Cannot purge with an empty filter, as that would cause all files to be removed.\nTo remove an entire backup set, use the \"delete\" command.", "EmptyFilterPurgeNotAllowed");
@@ -51,18 +52,25 @@ namespace Duplicati.Library.Main.Operation
             if (!dbManager.Exists)
                 throw new UserInformationException(string.Format("Database file does not exist: {0}", dbManager.Path), "DatabaseDoesNotExist");
 
+            using (var tr = dbManager.BeginRootTransaction())
             using (var db = new LocalPurgeDatabase(dbManager))
-                DoRun(backendManager, db, filter, null, 0, 1);
+            {
+                await DoRun(backendManager, db, filter, null, 0, 1).ConfigureAwait(false);
+                tr.Commit();
+            }
         }
 
-        public void Run(IBackendManager backendManager, Database.LocalPurgeDatabase db, float pgoffset, float pgspan, Action<System.Data.IDbCommand, long, string> filtercommand)
+        public async Task RunAsync(IBackendManager backendManager, LocalPurgeDatabase db, float pgoffset, float pgspan, Action<DatabaseCommand, long, string> filtercommand)
         {
-            DoRun(backendManager, db, null, filtercommand, pgoffset, pgspan);
+            using (var tr = db.BeginTransaction())
+            {
+                await DoRun(backendManager, db, null, filtercommand, pgoffset, pgspan).ConfigureAwait(false);
+                tr.Commit();
+            }
         }
 
-        private void DoRun(IBackendManager backendManager, Database.LocalPurgeDatabase db, IFilter filter, Action<System.Data.IDbCommand, long, string> filtercommand, float pgoffset, float pgspan)
+        private async Task DoRun(IBackendManager backendManager, LocalPurgeDatabase db, IFilter filter, Action<DatabaseCommand, long, string> filtercommand, float pgoffset, float pgspan)
         {
-            var cancellationToken = CancellationToken.None;
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.PurgeFiles_Begin);
             Logging.Log.WriteInformationMessage(LOGTAG, "StartingPurge", "Starting purge operation");
 
@@ -78,7 +86,7 @@ namespace Duplicati.Library.Main.Operation
             if (versions.Length <= 0)
                 throw new UserInformationException("No filesets matched the supplied time or versions", "NoFilesetFoundForTimeOrVersion");
 
-            var orphans = db.CountOrphanFiles(null);
+            var orphans = db.CountOrphanFiles();
             if (orphans != 0)
                 throw new UserInformationException(string.Format("Unable to start the purge process as there are {0} orphan file(s)", orphans), "CannotPurgeWithOrphans");
 
@@ -87,12 +95,12 @@ namespace Duplicati.Library.Main.Operation
 
             if (filtercommand == null)
             {
-                db.VerifyConsistency(m_options.Blocksize, m_options.BlockhashSize, false, null);
+                db.VerifyConsistency(m_options.Blocksize, m_options.BlockhashSize, false);
 
                 if (m_options.NoBackendverification)
-                    FilelistProcessor.VerifyLocalList(backendManager, db, cancellationToken).Await();
+                    await FilelistProcessor.VerifyLocalList(backendManager, db, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
                 else
-                    FilelistProcessor.VerifyRemoteList(backendManager, m_options, db, m_result.BackendWriter, null, null, logErrors: true, verifyMode: FilelistProcessor.VerifyMode.VerifyStrict).Await();
+                    await FilelistProcessor.VerifyRemoteList(backendManager, m_options, db, m_result.BackendWriter, null, null, logErrors: true, verifyMode: FilelistProcessor.VerifyMode.VerifyStrict).ConfigureAwait(false);
             }
 
             var filesets = db.FilesetTimes.OrderByDescending(x => x.Value).ToArray();
@@ -128,14 +136,14 @@ namespace Duplicati.Library.Main.Operation
                     {
                         secs++;
                         var tfn = Volumes.VolumeBase.GenerateFilename(RemoteVolumeType.Files, m_options, null, filesets[ix].Value.AddSeconds(secs));
-                        if (db.GetRemoteVolumeID(tfn, tr) < 0)
+                        if (db.GetRemoteVolumeID(tfn) < 0)
                             break;
                     }
 
                     var tsOriginal = filesets[ix].Value;
                     var ts = tsOriginal.AddSeconds(secs);
 
-                    var prevfilename = db.GetRemoteVolumeNameForFileset(filesets[ix].Key, tr);
+                    var prevfilename = db.GetRemoteVolumeNameForFileset(filesets[ix].Key);
 
                     if (secs >= 60)
                         throw new Exception(string.Format("Unable to create a new fileset for {0} because the resulting timestamp {1} is more than 60 seconds away", prevfilename, ts));
@@ -143,7 +151,7 @@ namespace Duplicati.Library.Main.Operation
                     if (ix != 0 && filesets[ix - 1].Value <= ts)
                         throw new Exception(string.Format("Unable to create a new fileset for {0} because the resulting timestamp {1} is larger than the next timestamp {2}", prevfilename, ts, filesets[ix - 1].Value));
 
-                    using (var tempset = db.CreateTemporaryFileset(versionid, tr))
+                    using (var tempset = db.CreateTemporaryFileset(versionid))
                     {
                         if (filtercommand == null)
                             tempset.ApplyFilter(filter);
@@ -169,7 +177,7 @@ namespace Duplicati.Library.Main.Operation
 
                                 Logging.Log.WriteInformationMessage(LOGTAG, "ReplacingFileset", "Replacing fileset {0} with {1} which has with {2} fewer file(s) ({3} reduction)", prevfilename, vol.RemoteFilename, tempset.RemovedFileCount, Library.Utility.Utility.FormatSizeString(tempset.RemovedFileSize));
 
-                                db.WriteFileset(vol, newids.Item2, tr);
+                                db.WriteFileset(vol, newids.Item2);
 
                                 m_result.RemovedFileSize += tempset.RemovedFileSize;
                                 m_result.RemovedFileCount += tempset.RemovedFileCount;
@@ -204,14 +212,14 @@ namespace Duplicati.Library.Main.Operation
                                 }
                                 else
                                 {
-                                    var lst = db.DropFilesetsFromTable(new[] { filesets[ix].Value }, tr).ToArray();
+                                    var lst = db.DropFilesetsFromTable(new[] { filesets[ix].Value }).ToArray();
                                     foreach (var f in lst)
-                                        db.UpdateRemoteVolume(f.Key, RemoteVolumeState.Deleting, f.Value, null, tr);
+                                        db.UpdateRemoteVolume(f.Key, RemoteVolumeState.Deleting, f.Value, null);
 
                                     tr.Commit();
-                                    backendManager.PutAsync(vol, null, null, true, cancellationToken).Await();
-                                    backendManager.DeleteAsync(prevfilename, -1, true, cancellationToken).Await();
-                                    backendManager.WaitForEmptyAsync(db, null, cancellationToken).Await();
+                                    await backendManager.PutAsync(vol, null, null, true, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
+                                    await backendManager.DeleteAsync(prevfilename, -1, true, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
+                                    await backendManager.WaitForEmptyAsync(db, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
                                 }
                             }
                         }
@@ -233,22 +241,19 @@ namespace Duplicati.Library.Main.Operation
                     m_result.OperationProgressUpdater.UpdateProgress(pgoffset + (0.75f * pgspan));
                     m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.PurgeFiles_Compact);
                     m_result.CompactResults = new CompactResults(m_result);
-                    using (var cdb = new Database.LocalDeleteDatabase(db))
+                    using (var cdb = new LocalDeleteDatabase(db))
                     {
                         var tr = cdb.BeginTransaction();
                         try
                         {
-                            var (_, tr2) = new CompactHandler(m_options, (CompactResults)m_result.CompactResults).DoCompact(cdb, true, tr, backendManager).Await();
-                            tr2 = tr;
+                            await new CompactHandler(m_options, (CompactResults)m_result.CompactResults)
+                                .DoCompactAsync(cdb, true, tr, backendManager)
+                                .ConfigureAwait(false);
+                            tr.Commit();
                         }
                         catch
                         {
                             try { tr.Rollback(); }
-                            catch { }
-                        }
-                        finally
-                        {
-                            try { tr.Commit(); }
                             catch { }
                         }
                     }
@@ -257,7 +262,7 @@ namespace Duplicati.Library.Main.Operation
                 m_result.OperationProgressUpdater.UpdateProgress(pgoffset + pgspan);
                 m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.PurgeFiles_Complete);
 
-                backendManager.WaitForEmptyAsync(db, null, cancellationToken).Await();
+                await backendManager.WaitForEmptyAsync(db, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
             }
         }
     }

@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Data;
 using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Library.Interface;
@@ -18,6 +17,13 @@ namespace Duplicati.Library.Main;
 /// </summary>
 internal interface IBackendManager : IDisposable
 {
+    /// <summary>
+    /// Clones the backend manager for another database
+    /// </summary>
+    /// <param name="otherManager">The other database to use</param>
+    /// <returns>The cloned backend manager</returns>
+    IBackendManager CloneForOtherDb(DatabaseConnectionManager otherManager);
+
     /// <summary>
     /// Uploads a block volume to the backend, including an optional index volume
     /// </summary>
@@ -42,10 +48,9 @@ internal interface IBackendManager : IDisposable
     /// Waits for the backend queue to be empty and flushes any pending messages to the database
     /// </summary>
     /// <param name="database">The database to write pending messages to</param>
-    /// <param name="transaction">The transaction to use, if any</param>
     /// <param name="cancellationToken">The cancellation token</param>
     /// <returns>An awaitable task</returns>
-    Task WaitForEmptyAsync(LocalDatabase database, IDbTransaction? transaction, CancellationToken cancellationToken);
+    Task WaitForEmptyAsync(LocalDatabase database, CancellationToken cancellationToken);
 
     /// <summary>
     /// Lists the files on the backend

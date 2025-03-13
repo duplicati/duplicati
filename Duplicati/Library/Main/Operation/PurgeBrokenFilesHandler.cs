@@ -22,6 +22,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main.Database;
 
@@ -42,7 +43,7 @@ namespace Duplicati.Library.Main.Operation
             m_result = result;
         }
 
-        public void Run(DatabaseConnectionManager dbManager, IBackendManager backendManager, Library.Utility.IFilter filter)
+        public async Task RunAsync(DatabaseConnectionManager dbManager, IBackendManager backendManager, Library.Utility.IFilter filter)
         {
             if (!dbManager.Exists)
                 throw new UserInformationException(string.Format("Database file does not exist: {0}", dbManager.Path), "DatabaseDoesNotExist");
@@ -50,15 +51,13 @@ namespace Duplicati.Library.Main.Operation
             if (filter != null && !filter.Empty)
                 throw new UserInformationException("Filters are not supported for this operation", "FiltersNotAllowedOnPurgeBrokenFiles");
 
-            List<RemoteVolumeEntry> missing = null;
-
+            using (var tr = dbManager.BeginRootTransaction())
             using (var db = new LocalListBrokenFilesDatabase(dbManager))
-            using (var tr = db.BeginTransaction())
             {
                 if (db.PartiallyRecreated)
                     throw new UserInformationException("The command does not work on partially recreated databases", "CannotPurgeOnPartialDatabase");
 
-                var sets = ListBrokenFilesHandler.GetBrokenFilesetsFromRemote(backendManager, m_result, db, tr, m_options, out missing);
+                (var sets, var missing) = await ListBrokenFilesHandler.GetBrokenFilesetsFromRemote(backendManager, m_result, db, m_options).ConfigureAwait(false);
                 if (sets == null)
                     return;
 
@@ -86,13 +85,11 @@ namespace Duplicati.Library.Main.Operation
                         Timestamp = x.Item1,
                         RemoveCount = x.Item3,
                         Version = filesets.FindIndex(y => y.Key == x.Item2),
-                        SetCount = db.GetFilesetFileCount(x.Item2, tr)
+                        SetCount = db.GetFilesetFileCount(x.Item2)
                     }).ToArray();
 
-                    if (m_options.Dryrun)
-                        tr.Rollback();
-                    else
-                        tr.Commit();
+                    if (!m_options.Dryrun)
+                        tr.CommitAndRestart();
 
                     var fully_emptied = compare_list.Where(x => x.RemoveCount == x.SetCount).ToArray();
                     var to_purge = compare_list.Where(x => x.RemoveCount != x.SetCount).ToArray();
@@ -106,8 +103,9 @@ namespace Duplicati.Library.Main.Operation
 
                         m_result.DeleteResults = new DeleteResults(m_result);
                         using (var rmdb = new Database.LocalDeleteDatabase(db))
+                        using (var deltr = rmdb.BeginTransaction())
                         {
-                            var deltr = rmdb.BeginTransaction();
+
                             try
                             {
                                 var opts = new Options(new Dictionary<string, string>(m_options.RawOptions));
@@ -115,24 +113,22 @@ namespace Duplicati.Library.Main.Operation
                                 opts.RawOptions.Remove("time");
                                 opts.RawOptions["no-auto-compact"] = "true";
 
-                                new DeleteHandler(opts, (DeleteResults)m_result.DeleteResults)
-                                    .DoRun(rmdb, ref deltr, true, false, backendManager);
+                                await new DeleteHandler(opts, (DeleteResults)m_result.DeleteResults)
+                                    .DoRunAsync(rmdb, deltr, true, false, backendManager)
+                                    .ConfigureAwait(false);
 
                                 if (!m_options.Dryrun)
                                 {
-                                    using (new Logging.Timer(LOGTAG, "CommitDelete", "CommitDelete"))
-                                        deltr.Commit();
-
-                                    rmdb.WriteResults();
+                                    deltr.Commit("CommitDelete");
+                                    rmdb.WriteResults(m_result);
                                 }
                                 else
                                     deltr.Rollback();
                             }
                             finally
                             {
-                                if (deltr != null)
-                                    try { deltr.Rollback(); }
-                                    catch { }
+                                try { deltr.SafeRollback(); }
+                                catch { }
                             }
 
                         }
@@ -150,6 +146,7 @@ namespace Duplicati.Library.Main.Operation
                             Logging.Log.WriteInformationMessage(LOGTAG, "PurgingFiles", "Purging {0} file(s) from fileset {1}", bs.RemoveCount, bs.Timestamp.ToLocalTime());
                             var opts = new Options(new Dictionary<string, string>(m_options.RawOptions));
 
+                            using (var pgtr = db.BeginTransaction())
                             using (var pgdb = new Database.LocalPurgeDatabase(db))
                             {
                                 // Recompute the version number after we deleted the versions before
@@ -162,12 +159,16 @@ namespace Duplicati.Library.Main.Operation
                                 opts.RawOptions.Remove("time");
                                 opts.RawOptions["no-auto-compact"] = "true";
 
-                                new PurgeFilesHandler(opts, (PurgeFilesResults)m_result.PurgeResults).Run(backendManager, pgdb, pgoffset, pgspan, (cmd, filesetid, tablename) =>
-                                {
-                                    if (filesetid != bs.FilesetID)
-                                        throw new Exception(string.Format("Unexpected filesetid: {0}, expected {1}", filesetid, bs.FilesetID));
-                                    db.InsertBrokenFileIDsIntoTable(filesetid, tablename, "FileID", cmd.Transaction);
-                                });
+                                await new PurgeFilesHandler(opts, (PurgeFilesResults)m_result.PurgeResults)
+                                    .RunAsync(backendManager, pgdb, pgoffset, pgspan, (cmd, filesetid, tablename) =>
+                                    {
+                                        if (filesetid != bs.FilesetID)
+                                            throw new Exception(string.Format("Unexpected filesetid: {0}, expected {1}", filesetid, bs.FilesetID));
+                                        db.InsertBrokenFileIDsIntoTable(filesetid, tablename, "FileID");
+                                    })
+                                    .ConfigureAwait(false);
+
+                                pgtr.Commit("CommitPurge");
                             }
 
                             pgoffset += pgspan;
@@ -181,10 +182,15 @@ namespace Duplicati.Library.Main.Operation
                 if (!m_options.Dryrun && db.RepairInProgress)
                 {
                     Logging.Log.WriteInformationMessage(LOGTAG, "ValidatingDatabase", "Database was previously marked as in-progress, checking if it is valid after purging files");
-                    db.VerifyConsistency(m_options.Blocksize, m_options.BlockhashSize, true, null);
+                    db.VerifyConsistency(m_options.Blocksize, m_options.BlockhashSize, true);
                     Logging.Log.WriteInformationMessage(LOGTAG, "UpdatingDatabase", "Purge completed, and consistency checks completed, marking database as complete");
                     db.RepairInProgress = false;
                 }
+
+                if (m_options.Dryrun)
+                    tr.Rollback();
+                else
+                    tr.Commit();
 
                 m_result.OperationProgressUpdater.UpdateProgress(1.0f);
 

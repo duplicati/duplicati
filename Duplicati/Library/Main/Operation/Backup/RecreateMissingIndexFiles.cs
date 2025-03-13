@@ -20,6 +20,7 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System.Threading.Tasks;
+using Duplicati.Library.Main.Database;
 using Duplicati.Library.Main.Operation.Common;
 
 namespace Duplicati.Library.Main.Operation.Backup;
@@ -31,22 +32,22 @@ internal static class RecreateMissingIndexFiles
 	/// </summary>
 	private static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(RecreateMissingIndexFiles));
 
-	public static async Task Run(BackupDatabase database, IBackendManager backendManager, Options options, ITaskReader taskreader)
+	public static async Task Run(LocalBackupDatabase database, IBackendManager backendManager, Options options, ITaskReader taskreader)
 	{
 		if (options.IndexfilePolicy != Options.IndexFileStrategy.None)
 		{
-			foreach (var blockfile in await database.GetMissingIndexFilesAsync().ConfigureAwait(false))
+			foreach (var blockfile in database.GetMissingIndexFiles())
 			{
 				if (!await taskreader.ProgressRendevouz().ConfigureAwait(false))
 					return;
 
 				Logging.Log.WriteInformationMessage(LOGTAG, "RecreateMissingIndexFile", "Re-creating missing index file for {0}", blockfile);
-				var w = await Common.IndexVolumeCreator.CreateIndexVolume(blockfile, options, database).ConfigureAwait(false);
+				var w = IndexVolumeCreator.CreateIndexVolume(blockfile, options, database);
 
 				if (!await taskreader.ProgressRendevouz().ConfigureAwait(false))
 					return;
 
-				await database.UpdateRemoteVolumeAsync(w.RemoteFilename, RemoteVolumeState.Uploading, -1, null).ConfigureAwait(false);
+				database.UpdateRemoteVolume(w.RemoteFilename, RemoteVolumeState.Uploading, -1, null);
 				await backendManager.PutAsync(w, null, null, false, taskreader.ProgressToken).ConfigureAwait(false);
 			}
 		}

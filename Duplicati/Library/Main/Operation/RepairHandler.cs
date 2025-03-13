@@ -49,11 +49,11 @@ namespace Duplicati.Library.Main.Operation
                 throw new UserInformationException(Strings.Common.PassphraseChangeUnsupported, "PassphraseChangeUnsupported");
         }
 
-        public void Run(DatabaseConnectionManager dbManager, IBackendManager backendManager, IFilter filter)
+        public async Task RunAsync(DatabaseConnectionManager dbManager, IBackendManager backendManager, IFilter filter)
         {
             if (!dbManager.Exists)
             {
-                RunRepairLocal(dbManager, backendManager, filter);
+                await RunRepairLocal(dbManager, backendManager, filter).ConfigureAwait(false);
                 RunRepairCommon(dbManager);
                 m_result.EndTime = DateTime.UtcNow;
                 return;
@@ -62,6 +62,7 @@ namespace Duplicati.Library.Main.Operation
             long knownRemotes = -1;
             try
             {
+                using (var tr = dbManager.BeginRootTransaction())
                 using (var db = new LocalRepairDatabase(dbManager))
                     knownRemotes = db.GetRemoteVolumes().Count();
             }
@@ -78,54 +79,57 @@ namespace Duplicati.Library.Main.Operation
                 }
                 else
                 {
-                    var baseName = System.IO.Path.ChangeExtension(dbManager.Path, "backup");
+                    var baseName = Path.ChangeExtension(dbManager.Path, "backup");
                     var i = 0;
-                    while (System.IO.File.Exists(baseName) && i++ < 1000)
-                        baseName = System.IO.Path.ChangeExtension(dbManager.Path, "backup-" + i.ToString());
+                    while (File.Exists(baseName) && i++ < 1000)
+                        baseName = Path.ChangeExtension(dbManager.Path, "backup-" + i.ToString());
 
                     Logging.Log.WriteInformationMessage(LOGTAG, "RenamingDatabase", "Renaming existing db from {0} to {1}", dbManager.Path, baseName);
-                    System.IO.File.Move(dbManager.Path, baseName);
+                    File.Move(dbManager.Path, baseName);
                 }
 
-                RunRepairLocal(dbManager, backendManager, filter);
+                await RunRepairLocal(dbManager, backendManager, filter).ConfigureAwait(false);
                 RunRepairCommon(dbManager);
             }
             else
             {
                 RunRepairCommon(dbManager);
-                RunRepairRemote(dbManager, backendManager, m_result.TaskControl.ProgressToken).Await();
+                await RunRepairRemote(dbManager, backendManager, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
             }
 
             m_result.EndTime = DateTime.UtcNow;
 
         }
 
-        public void RunRepairLocal(DatabaseConnectionManager dbManager, IBackendManager backendManager, Library.Utility.IFilter filter)
+        private async Task RunRepairLocal(DatabaseConnectionManager dbManager, IBackendManager backendManager, IFilter filter)
         {
             m_result.RecreateDatabaseResults = new RecreateDatabaseResults(m_result);
             using (new Logging.Timer(LOGTAG, "RecreateDbForRepair", "Recreate database for repair"))
-            using (var f = m_options.Dryrun ? new Library.Utility.TempFile() : null)
+            using (var f = m_options.Dryrun ? new TempFile() : null)
             using (var tempManager = m_options.Dryrun ? new DatabaseConnectionManager(f) : null)
+            using (var tempBackendManger = tempManager == null ? null : backendManager.CloneForOtherDb(tempManager))
             {
-                if (f != null && System.IO.File.Exists(f))
-                    System.IO.File.Delete(f);
+                if (f != null && File.Exists(f))
+                    File.Delete(f);
+
 
                 var filelistfilter = RestoreHandler.FilterNumberedFilelist(m_options.Time, m_options.Version);
-                new RecreateDatabaseHandler(m_options, (RecreateDatabaseResults)m_result.RecreateDatabaseResults)
-                    .Run(tempManager ?? dbManager, backendManager, filter, filelistfilter, null);
+                await new RecreateDatabaseHandler(m_options, (RecreateDatabaseResults)m_result.RecreateDatabaseResults)
+                    .RunAsync(tempManager ?? dbManager, tempBackendManger ?? backendManager, filter, filelistfilter, null)
+                    .ConfigureAwait(false);
             }
         }
 
-        public async Task RunRepairRemote(DatabaseConnectionManager dbManager, IBackendManager backendManager, CancellationToken cancellationToken)
+        private async Task RunRepairRemote(DatabaseConnectionManager dbManager, IBackendManager backendManager, CancellationToken cancellationToken)
         {
             if (!dbManager.Exists)
                 throw new UserInformationException(string.Format("Database file does not exist: {0}", dbManager.Path), "RepairDatabaseFileDoesNotExist");
 
             m_result.OperationProgressUpdater.UpdateProgress(0);
 
+            using (var tr = dbManager.BeginRootTransaction())
             using (var db = new LocalRepairDatabase(dbManager))
             {
-                m_result.SetDatabase(db);
                 Utility.UpdateOptionsFromDb(db, m_options);
                 Utility.VerifyOptionsAndUpdateDatabase(db, m_options);
 
@@ -136,7 +140,7 @@ namespace Duplicati.Library.Main.Operation
                     throw new UserInformationException("The database was attempted repaired, but the repair did not complete. This database may be incomplete and the repair process is not allowed to alter remote files as that could result in data loss.", "DatabaseIsInRepairState");
 
                 // If the last backup failed, guard the incomplete fileset, so we can create a synthetic filelist
-                var lastTempFilelist = db.GetLastIncompleteFilesetVolume(null);
+                var lastTempFilelist = db.GetLastIncompleteFilesetVolume();
                 var tp = await FilelistProcessor.RemoteListAnalysis(backendManager, m_options, db, m_result.BackendWriter, [lastTempFilelist.Name], null, FilelistProcessor.VerifyMode.VerifyAndCleanForced).ConfigureAwait(false);
 
                 var buffer = new byte[m_options.Blocksize];
@@ -186,7 +190,7 @@ namespace Duplicati.Library.Main.Operation
                                 {
                                     if (!await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
                                     {
-                                        await backendManager.WaitForEmptyAsync(db, null, cancellationToken).ConfigureAwait(false);
+                                        await backendManager.WaitForEmptyAsync(db, cancellationToken).ConfigureAwait(false);
                                         return;
                                     }
 
@@ -211,7 +215,7 @@ namespace Duplicati.Library.Main.Operation
                                 catch (Exception ex)
                                 {
                                     Logging.Log.WriteErrorMessage(LOGTAG, "RemoteFileVerificationError", ex, "Failed to perform verification for file: {0}, please run verify; message: {1}", n.Name, ex.Message);
-                                    if (ex is System.Threading.ThreadAbortException)
+                                    if (ex.IsCancellationException())
                                         throw;
                                 }
                         }
@@ -223,7 +227,7 @@ namespace Duplicati.Library.Main.Operation
                         {
                             if (!await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
                             {
-                                await backendManager.WaitForEmptyAsync(db, null, cancellationToken).ConfigureAwait(false);
+                                await backendManager.WaitForEmptyAsync(db, cancellationToken).ConfigureAwait(false);
                                 return;
                             }
 
@@ -260,20 +264,17 @@ namespace Duplicati.Library.Main.Operation
                                             db.CheckBlocklistCorrect(ixb.Hash, ixb.Length, ixb.Blocklist, blocksize, hashsize);
 
                                         // Register the new index file and link it to the block files
-                                        using (var tr = db.BeginTransaction())
+                                        var selfid = db.RegisterRemoteVolume(n.File.Name, RemoteVolumeType.Index, RemoteVolumeState.Uploading, size, new TimeSpan(0));
+                                        foreach (var rv in ifr.Volumes)
                                         {
-                                            var selfid = db.RegisterRemoteVolume(n.File.Name, RemoteVolumeType.Index, RemoteVolumeState.Uploading, size, new TimeSpan(0), tr);
-                                            foreach (var rv in ifr.Volumes)
-                                            {
-                                                // Guard against unknown block files
-                                                long id = db.GetRemoteVolumeID(rv.Filename, tr);
-                                                if (id == -1)
-                                                    Logging.Log.WriteWarningMessage(LOGTAG, "UnknownBlockFile", null, "Index file {0} references unknown block file: {1}", n.File.Name, rv.Filename);
-                                                else
-                                                    db.AddIndexBlockLink(selfid, id, tr);
-                                            }
-                                            tr.Commit();
+                                            // Guard against unknown block files
+                                            long id = db.GetRemoteVolumeID(rv.Filename);
+                                            if (id == -1)
+                                                Logging.Log.WriteWarningMessage(LOGTAG, "UnknownBlockFile", null, "Index file {0} references unknown block file: {1}", n.File.Name, rv.Filename);
+                                            else
+                                                db.AddIndexBlockLink(selfid, id);
                                         }
+                                        tr.CommitAndRestart();
                                     }
 
                                     // All checks fine, we accept the new index file
@@ -298,7 +299,7 @@ namespace Duplicati.Library.Main.Operation
                         catch (Exception ex)
                         {
                             Logging.Log.WriteErrorMessage(LOGTAG, "FailedExtraFileCleanup", ex, "Failed to perform cleanup for extra file: {0}, message: {1}", n.File.Name, ex.Message);
-                            if (ex is System.Threading.ThreadAbortException)
+                            if (ex.IsCancellationException())
                                 throw;
                         }
 
@@ -314,7 +315,7 @@ namespace Duplicati.Library.Main.Operation
                     {
                         if (!await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
                         {
-                            await backendManager.WaitForEmptyAsync(db, null, cancellationToken).ConfigureAwait(false);
+                            await backendManager.WaitForEmptyAsync(db, cancellationToken).ConfigureAwait(false);
                             return;
                         }
 
@@ -326,11 +327,11 @@ namespace Duplicati.Library.Main.Operation
                         Logging.Log.WriteInformationMessage(LOGTAG, "ReuploadingFileset", "Re-uploading fileset {0} from {1} as remote volume registration is missing, new filename: {2}", filesetId, timestamp, fsw.RemoteFilename);
 
                         if (!string.IsNullOrEmpty(m_options.ControlFiles))
-                            foreach (var p in m_options.ControlFiles.Split(new char[] { System.IO.Path.PathSeparator }, StringSplitOptions.RemoveEmptyEntries))
+                            foreach (var p in m_options.ControlFiles.Split(new char[] { Path.PathSeparator }, StringSplitOptions.RemoveEmptyEntries))
                                 fsw.AddControlFile(p, m_options.GetCompressionHintFromFilename(p));
 
                         fsw.CreateFilesetFile(isfull);
-                        db.WriteFileset(fsw, filesetId, null);
+                        db.WriteFileset(fsw, filesetId);
                         fsw.Close();
 
                         if (m_options.Dryrun)
@@ -341,12 +342,12 @@ namespace Duplicati.Library.Main.Operation
                         }
 
                         fsw.VolumeID = db.RegisterRemoteVolume(fsw.RemoteFilename, RemoteVolumeType.Files, -1, RemoteVolumeState.Temporary);
-                        db.LinkFilesetToVolume(filesetId, fsw.VolumeID, null);
+                        db.LinkFilesetToVolume(filesetId, fsw.VolumeID);
                         await backendManager.PutAsync(fsw, null, null, false, cancellationToken).ConfigureAwait(false);
                     }
 
                     if (anyDlistUploads)
-                        await backendManager.WaitForEmptyAsync(db, null, cancellationToken).ConfigureAwait(false);
+                        await backendManager.WaitForEmptyAsync(db, cancellationToken).ConfigureAwait(false);
 
                     foreach (var volumename in missingLocalFilesets)
                     {
@@ -362,8 +363,8 @@ namespace Duplicati.Library.Main.Operation
                                 if (compressor == null)
                                     throw new UserInformationException(string.Format("Failed to load compression module: {0}", parsed.CompressionModule), "FailedToLoadCompressionModule");
 
-                                var filesetid = db.CreateFileset(remoteVolume.ID, parsed.Time, transaction);
-                                RecreateDatabaseHandler.RecreateFilesetFromRemoteList(recreatedb, transaction, compressor, filesetid, m_options, new FilterExpression());
+                                var filesetid = db.CreateFileset(remoteVolume.ID, parsed.Time);
+                                RecreateDatabaseHandler.RecreateFilesetFromRemoteList(recreatedb, compressor, filesetid, m_options, new FilterExpression());
                                 transaction.Commit();
                             }
                         }
@@ -377,7 +378,7 @@ namespace Duplicati.Library.Main.Operation
                         {
                             if (!await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
                             {
-                                await backendManager.WaitForEmptyAsync(db, null, cancellationToken).ConfigureAwait(false);
+                                await backendManager.WaitForEmptyAsync(db, cancellationToken).ConfigureAwait(false);
                                 return;
                             }
 
@@ -394,16 +395,16 @@ namespace Duplicati.Library.Main.Operation
                                 newEntry = volumeWriter;
                                 volumeWriter.SetRemoteFilename(n.Name);
 
-                                db.WriteFileset(volumeWriter, filesetId, null);
+                                db.WriteFileset(volumeWriter, filesetId);
                                 DateTime filesetTime = db.FilesetTimes.First(x => x.Key == filesetId).Value;
                                 volumeWriter.CreateFilesetFile(db.IsFilesetFullBackup(filesetTime));
 
                                 volumeWriter.Close();
                                 if (m_options.Dryrun)
-                                    Logging.Log.WriteDryrunMessage(LOGTAG, "WouldReUploadFileset", "would re-upload fileset {0}, with size {1}, previous size {2}", n.Name, Library.Utility.Utility.FormatSizeString(new System.IO.FileInfo(volumeWriter.LocalFilename).Length), Library.Utility.Utility.FormatSizeString(n.Size));
+                                    Logging.Log.WriteDryrunMessage(LOGTAG, "WouldReUploadFileset", "would re-upload fileset {0}, with size {1}, previous size {2}", n.Name, Library.Utility.Utility.FormatSizeString(new FileInfo(volumeWriter.LocalFilename).Length), Library.Utility.Utility.FormatSizeString(n.Size));
                                 else
                                 {
-                                    db.UpdateRemoteVolume(volumeWriter.RemoteFilename, RemoteVolumeState.Uploading, -1, null, null);
+                                    db.UpdateRemoteVolume(volumeWriter.RemoteFilename, RemoteVolumeState.Uploading, -1, null);
                                     await backendManager.PutAsync(volumeWriter, null, null, false, cancellationToken).ConfigureAwait(false);
                                 }
                             }
@@ -441,10 +442,10 @@ namespace Duplicati.Library.Main.Operation
                                 w.Close();
 
                                 if (m_options.Dryrun)
-                                    Logging.Log.WriteDryrunMessage(LOGTAG, "WouldReUploadIndexFile", "would re-upload index file {0}, with size {1}, previous size {2}", n.Name, Library.Utility.Utility.FormatSizeString(new System.IO.FileInfo(w.LocalFilename).Length), Library.Utility.Utility.FormatSizeString(n.Size));
+                                    Logging.Log.WriteDryrunMessage(LOGTAG, "WouldReUploadIndexFile", "would re-upload index file {0}, with size {1}, previous size {2}", n.Name, Library.Utility.Utility.FormatSizeString(new FileInfo(w.LocalFilename).Length), Library.Utility.Utility.FormatSizeString(n.Size));
                                 else
                                 {
-                                    db.UpdateRemoteVolume(w.RemoteFilename, RemoteVolumeState.Uploading, -1, null, null);
+                                    db.UpdateRemoteVolume(w.RemoteFilename, RemoteVolumeState.Uploading, -1, null);
                                     await backendManager.PutAsync(w, null, null, false, cancellationToken).ConfigureAwait(false);
                                 }
                             }
@@ -469,8 +470,8 @@ namespace Duplicati.Library.Main.Operation
 
                                             try
                                             {
-                                                if (System.IO.File.Exists(file))
-                                                    using (var f = System.IO.File.OpenRead(file))
+                                                if (File.Exists(file))
+                                                    using (var f = File.OpenRead(file))
                                                     {
                                                         f.Position = offset;
                                                         if (size == Library.Utility.Utility.ForceStreamRead(f, buffer, size))
@@ -537,10 +538,10 @@ namespace Duplicati.Library.Main.Operation
                                     else
                                     {
                                         if (m_options.Dryrun)
-                                            Logging.Log.WriteDryrunMessage(LOGTAG, "WouldReUploadBlockFile", "would re-upload block file {0}, with size {1}, previous size {2}", n.Name, Library.Utility.Utility.FormatSizeString(new System.IO.FileInfo(w.LocalFilename).Length), Library.Utility.Utility.FormatSizeString(n.Size));
+                                            Logging.Log.WriteDryrunMessage(LOGTAG, "WouldReUploadBlockFile", "would re-upload block file {0}, with size {1}, previous size {2}", n.Name, Library.Utility.Utility.FormatSizeString(new FileInfo(w.LocalFilename).Length), Library.Utility.Utility.FormatSizeString(n.Size));
                                         else
                                         {
-                                            db.UpdateRemoteVolume(w.RemoteFilename, RemoteVolumeState.Uploading, -1, null, null);
+                                            db.UpdateRemoteVolume(w.RemoteFilename, RemoteVolumeState.Uploading, -1, null);
                                             await backendManager.PutAsync(w, null, null, false, cancellationToken).ConfigureAwait(false);
                                         }
                                     }
@@ -556,7 +557,7 @@ namespace Duplicati.Library.Main.Operation
 
                             Logging.Log.WriteErrorMessage(LOGTAG, "CleanupMissingFileError", ex, "Failed to perform cleanup for missing file: {0}, message: {1}", n.Name, ex.Message);
 
-                            if (ex is System.Threading.ThreadAbortException)
+                            if (ex.IsCancellationException())
                                 throw;
                         }
                     }
@@ -567,25 +568,25 @@ namespace Duplicati.Library.Main.Operation
                 }
 
                 m_result.OperationProgressUpdater.UpdateProgress(1);
-                await backendManager.WaitForEmptyAsync(db, null, cancellationToken).ConfigureAwait(false);
+                await backendManager.WaitForEmptyAsync(db, cancellationToken).ConfigureAwait(false);
                 // Clear the flag after a repair operation
                 if (!m_options.Dryrun)
                     db.TerminatedWithActiveUploads = false;
-                db.WriteResults();
+                db.WriteResults(m_result);
+                tr.Commit();
             }
         }
 
-        public void RunRepairCommon(DatabaseConnectionManager dbManager)
+        private void RunRepairCommon(DatabaseConnectionManager dbManager)
         {
             if (!dbManager.Exists)
                 throw new UserInformationException(string.Format("Database file does not exist: {0}", dbManager.Path), "DatabaseDoesNotExist");
 
             m_result.OperationProgressUpdater.UpdateProgress(0);
 
+            using (var tr = dbManager.BeginRootTransaction())
             using (var db = new LocalRepairDatabase(dbManager))
             {
-                db.SetResult(m_result);
-
                 Utility.UpdateOptionsFromDb(db, m_options);
 
                 if (db.RepairInProgress || db.PartiallyRecreated)
@@ -595,6 +596,7 @@ namespace Duplicati.Library.Main.Operation
                 db.FixDuplicateFileentries();
                 db.FixDuplicateBlocklistHashes(m_options.Blocksize, m_options.BlockhashSize);
                 db.FixMissingBlocklistHashes(m_options.BlockHashAlgorithm, m_options.Blocksize);
+                tr.Commit();
             }
         }
     }

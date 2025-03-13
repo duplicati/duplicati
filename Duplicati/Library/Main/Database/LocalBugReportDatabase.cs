@@ -38,17 +38,15 @@ namespace Duplicati.Library.Main.Database
 
         public void Fix()
         {
-            using (var tr = m_manager.BeginTransaction())
+            using (var tr = m_manager.BeginRootTransaction())
             using (var cmd = m_manager.CreateCommand())
             {
-                cmd.Transaction = tr;
                 var tablename = "PathMap-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
 
                 // TODO: Rewrite this to use PathPrefix
                 // TODO: Needs to be much faster
                 using (var upcmd = m_manager.CreateCommand())
                 {
-                    upcmd.Transaction = tr;
                     upcmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" (""ID"" INTEGER PRIMARY KEY, ""RealPath"" TEXT NOT NULL, ""Obfuscated"" TEXT NULL)", tablename));
                     upcmd.ExecuteNonQuery(string.Format(@"INSERT INTO ""{0}"" (""RealPath"") SELECT DISTINCT ""Path"" FROM ""File"" ORDER BY ""Path"" ", tablename));
                     upcmd.ExecuteNonQuery(string.Format(@"UPDATE ""{0}"" SET ""Obfuscated"" = ? || length(""RealPath"") || ? || ""ID"" || (CASE WHEN substr(""RealPath"", length(""RealPath"")) = ? THEN ? ELSE ? END) ", tablename), !OperatingSystem.IsWindows() ? "/" : "X:\\", Util.DirectorySeparatorString, Util.DirectorySeparatorString, Util.DirectorySeparatorString, ".bin");
@@ -75,12 +73,10 @@ namespace Duplicati.Library.Main.Database
 
                 cmd.ExecuteNonQuery(string.Format(@"DROP TABLE IF EXISTS ""{0}"" ", tablename));
 
-                using (new Logging.Timer(LOGTAG, "CommitUpdateBugReport", "CommitUpdateBugReport"))
-                    tr.Commit();
-
-                cmd.Transaction = null;
+                tr.CommitAndRestart("CommitUpdateBugReport");
 
                 cmd.ExecuteNonQuery("VACUUM");
+                tr.Commit();
             }
         }
     }

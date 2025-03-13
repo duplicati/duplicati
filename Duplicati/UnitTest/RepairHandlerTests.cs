@@ -74,13 +74,13 @@ namespace Duplicati.UnitTest
             List<int> expectedBlocksetIDs = new List<int>();
             List<int> expectedIndexes = new List<int>();
             List<string> expectedHashes = new List<string>();
-            using (IDbConnection connection = SQLiteLoader.LoadConnection(options["dbpath"]))
+            using (var connection = SQLiteLoader.LoadConnection(options["dbpath"]))
             {
                 // Read the contents of the BlocklistHash table so that we can
                 // compare them to the contents after the repair operation.
-                using (IDbCommand command = connection.CreateCommand())
+                using (var command = connection.CreateCommand())
                 {
-                    using (IDataReader reader = command.ExecuteReader(selectStatement))
+                    using (var reader = command.ExecuteReader(selectStatement))
                     {
                         while (reader.Read())
                         {

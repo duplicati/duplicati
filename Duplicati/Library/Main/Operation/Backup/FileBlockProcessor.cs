@@ -23,6 +23,7 @@ using System;
 using CoCoL;
 using Duplicati.Library.Main.Operation.Common;
 using System.Threading.Tasks;
+using Duplicati.Library.Main.Database;
 
 namespace Duplicati.Library.Main.Operation.Backup
 {
@@ -36,7 +37,7 @@ namespace Duplicati.Library.Main.Operation.Backup
         /// </summary>
         private static readonly string FILELOGTAG = Logging.Log.LogTagFromType(typeof(FileBlockProcessor)) + ".FileEntry";
 
-        public static Task Run(Channels channels, Options options, BackupDatabase database, BackupStatsCollector stats, ITaskReader taskreader)
+        public static Task Run(Channels channels, Options options, LocalBackupDatabase database, BackupStatsCollector stats, ITaskReader taskreader)
         {
             return AutomationExtensions.RunTask(
             new
@@ -57,7 +58,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                     try
                     {
                         var hint = options.GetCompressionHintFromFilename(e.Entry.Path);
-                        var oldHash = e.OldId < 0 ? null : await database.GetFileHashAsync(e.OldId);
+                        var oldHash = e.OldId < 0 ? null : await database.WithLockAsync(x => x.GetFileHash(e.OldId));
 
                         StreamProcessResult filestreamdata;
 
@@ -68,11 +69,12 @@ namespace Duplicati.Library.Main.Operation.Backup
                                 // If we have determined that metadata has not changed, just grab the ID
                                 if (!e.MetadataChanged)
                                 {
-                                    var res = await database.GetMetadataIDAsync(e.MetaHashAndSize.FileHash, e.MetaHashAndSize.Blob.Length);
-                                    if (res.Item1)
-                                        return res.Item2;
+                                    long res;
+                                    using (await database.LockAsync())
+                                        if (database.GetMetadatasetID(e.MetaHashAndSize.FileHash, e.MetaHashAndSize.Blob.Length, out res))
+                                            return res;
 
-                                    Logging.Log.WriteWarningMessage(FILELOGTAG, "UnexpectedMetadataLookup", null, "Metadata was reported as not changed, but still requires being added?\nHash: {0}, Length: {1}, ID: {2}, Path: {3}", e.MetaHashAndSize.FileHash, e.MetaHashAndSize.Blob.Length, res.Item2, e.Entry.Path);
+                                    Logging.Log.WriteWarningMessage(FILELOGTAG, "UnexpectedMetadataLookup", null, "Metadata was reported as not changed, but still requires being added?\nHash: {0}, Length: {1}, ID: {2}, Path: {3}", e.MetaHashAndSize.FileHash, e.MetaHashAndSize.Blob.Length, res, e.Entry.Path);
                                     e.MetadataChanged = true;
                                 }
 
@@ -110,18 +112,21 @@ namespace Duplicati.Library.Main.Operation.Backup
                                     Logging.Log.WriteVerboseMessage(FILELOGTAG, "WouldAddChangedFile", "Would add changed file {0}, size {1}", e.Entry.Path, Library.Utility.Utility.FormatSizeString(filesize));
                             }
 
-                            await database.AddFileAsync(e.PathPrefixID, e.Filename, e.LastWrite, filestreamdata.Blocksetid, metadataid);
+                            using (await database.LockAsync())
+                                database.AddFile(e.PathPrefixID, e.Filename, e.LastWrite, filestreamdata.Blocksetid, metadataid);
                         }
                         else if (e.MetadataChanged)
                         {
                             Logging.Log.WriteVerboseMessage(FILELOGTAG, "FileMetadataChanged", "File has only metadata changes {0}", e.Entry.Path);
-                            await database.AddFileAsync(e.PathPrefixID, e.Filename, e.LastWrite, filestreamdata.Blocksetid, metadataid);
+                            using (await database.LockAsync())
+                                database.AddFile(e.PathPrefixID, e.Filename, e.LastWrite, filestreamdata.Blocksetid, metadataid);
                         }
                         else if (e.TimestampChanged)
                         {
                             await stats.AddTimestampChangedFile();
                             Logging.Log.WriteVerboseMessage(FILELOGTAG, "FileTimestampChanged", "File has only timestamp changes {0}", e.Entry.Path);
-                            await database.AddUnmodifiedAsync(e.OldId, e.LastWrite);
+                            using (await database.LockAsync())
+                                database.AddUnmodifiedFile(e.OldId, e.LastWrite);
                         }
                         else /*if (e.OldId >= 0)*/
                         {
@@ -130,7 +135,8 @@ namespace Duplicati.Library.Main.Operation.Backup
 
                             try
                             {
-                                await database.AddUnmodifiedAsync(e.OldId, e.LastWrite);
+                                using (await database.LockAsync())
+                                    database.AddUnmodifiedFile(e.OldId, e.LastWrite);
                             }
                             catch (Exception ex)
                             {
