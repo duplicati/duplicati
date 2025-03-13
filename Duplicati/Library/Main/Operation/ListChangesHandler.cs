@@ -81,9 +81,9 @@ namespace Duplicati.Library.Main.Operation
             DateTime compareVersionTime;
 
             using (var tmpdb = useLocalDb ? null : new TempFile())
-            using (var activeManager = useLocalDb ? dbManager : new DatabaseConnectionManager(tmpdb))
-            using (var tr = activeManager.BeginRootTransaction())
-            using (var db = new LocalListChangesDatabase(activeManager))
+            using (var tmpManager = tmpdb == null ? null : new DatabaseConnectionManager(tmpdb))
+            using (var tr = (tmpManager ?? dbManager).BeginRootTransaction())
+            using (var db = new LocalListChangesDatabase(tmpManager ?? dbManager))
             using (var storageKeeper = db.CreateStorageHelper())
             {
                 if (useLocalDb)
