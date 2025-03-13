@@ -172,23 +172,27 @@ partial class BackendManager
             // Collect removed volumes for final db cleanup.
             var volsRemoved = new HashSet<string>();
 
-            // As we replace the list, we can now freely access the elements without locking
-            foreach (var e in entries)
-                if (e is RemoteVolumeUpdate update && update.State == RemoteVolumeState.Deleted)
-                {
-                    db.UpdateRemoteVolume(update.Remotename, RemoteVolumeState.Deleted, update.Size, update.Hash, true, TimeSpan.FromHours(2));
-                    volsRemoved.Add(update.Remotename);
-                }
-                else if (e is RemoteVolumeUpdate dbUpdate)
-                    db.UpdateRemoteVolume(dbUpdate.Remotename, dbUpdate.State, dbUpdate.Size, dbUpdate.Hash);
-                else if (e is RenameRemoteVolume rename)
-                    db.RenameRemoteFile(rename.Oldname, rename.Newname);
-                else if (e != null)
-                    Log.WriteErrorMessage(LOGTAG, "InvalidQueueElement", null, "Queue had element of type: {0}, {1}", e.GetType(), e);
+            // If this is a local backup database, we lock it for the entire operation
+            using ((db as LocalBackupDatabase)?.LockAsync())
+            {
+                // As we replace the list, we can now freely access the elements without locking
+                foreach (var e in entries)
+                    if (e is RemoteVolumeUpdate update && update.State == RemoteVolumeState.Deleted)
+                    {
+                        db.UpdateRemoteVolume(update.Remotename, RemoteVolumeState.Deleted, update.Size, update.Hash, true, TimeSpan.FromHours(2));
+                        volsRemoved.Add(update.Remotename);
+                    }
+                    else if (e is RemoteVolumeUpdate dbUpdate)
+                        db.UpdateRemoteVolume(dbUpdate.Remotename, dbUpdate.State, dbUpdate.Size, dbUpdate.Hash);
+                    else if (e is RenameRemoteVolume rename)
+                        db.RenameRemoteFile(rename.Oldname, rename.Newname);
+                    else if (e != null)
+                        Log.WriteErrorMessage(LOGTAG, "InvalidQueueElement", null, "Queue had element of type: {0}, {1}", e.GetType(), e);
 
-            // Finally remove volumes from DB.
-            if (volsRemoved.Count > 0)
-                db.RemoveRemoteVolumes(volsRemoved);
+                // Finally remove volumes from DB.
+                if (volsRemoved.Count > 0)
+                    db.RemoveRemoteVolumes(volsRemoved);
+            }
 
             return true;
         }
