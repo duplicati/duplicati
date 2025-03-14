@@ -20,7 +20,9 @@
 // DEALINGS IN THE SOFTWARE.
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading;
+using System.Threading.Tasks;
 using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Main.Operation
@@ -36,35 +38,34 @@ namespace Duplicati.Library.Main.Operation
             m_result = result;
         }
 
-        public void Run(IEnumerable<string> filterstrings, IBackendManager backendManager, Library.Utility.IFilter compositefilter)
+        public async Task RunAsync(IEnumerable<string> filterstrings, IBackendManager backendManager, Library.Utility.IFilter compositefilter)
         {
-            var cancellationToken = CancellationToken.None;
             if (string.IsNullOrEmpty(m_options.Restorepath))
                 throw new Exception("Cannot restore control files without --restore-path");
-            if (!System.IO.Directory.Exists(m_options.Restorepath))
-                System.IO.Directory.CreateDirectory(m_options.Restorepath);
+            if (!Directory.Exists(m_options.Restorepath))
+                Directory.CreateDirectory(m_options.Restorepath);
 
-            using (var tmpdb = new Library.Utility.TempFile())
-            using (var db = new Database.LocalDatabase(System.IO.File.Exists(m_options.Dbpath) ? m_options.Dbpath : (string)tmpdb, "RestoreControlFiles", true))
+            using (var tmpdb = new TempFile())
+            using (var db = new Database.LocalDatabase(File.Exists(m_options.Dbpath) ? m_options.Dbpath : (string)tmpdb, "RestoreControlFiles", true))
             {
                 m_result.SetDatabase(db);
 
-                var filter = Library.Utility.JoinedFilterExpression.Join(new Library.Utility.FilterExpression(filterstrings), compositefilter);
+                var filter = JoinedFilterExpression.Join(new FilterExpression(filterstrings), compositefilter);
 
                 try
                 {
-                    var filteredList = ListFilesHandler.ParseAndFilterFilesets(backendManager.ListAsync(cancellationToken).Await(), m_options);
+                    var filteredList = ListFilesHandler.ParseAndFilterFilesets(await backendManager.ListAsync(m_result.TaskControl.ProgressToken).ConfigureAwait(false), m_options);
                     if (filteredList.Count == 0)
                         throw new Exception("No filesets found on remote target");
 
-                    Exception lastEx = new Exception("No suitable files found on remote target");
+                    var lastEx = new Exception("No suitable files found on remote target");
 
                     foreach (var fileversion in filteredList)
                         try
                         {
-                            if (!m_result.TaskControl.ProgressRendevouz().Await())
+                            if (!await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
                             {
-                                backendManager.WaitForEmptyAsync(db, null, cancellationToken).Await();
+                                await backendManager.WaitForEmptyAsync(db, null, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
                                 return;
                             }
 
@@ -72,14 +73,14 @@ namespace Duplicati.Library.Main.Operation
                             var entry = db.GetRemoteVolume(file.Name);
 
                             var res = new List<string>();
-                            using (var tmpfile = backendManager.GetAsync(file.Name, entry.Hash, entry.Size < 0 ? file.Size : entry.Size, cancellationToken).Await())
+                            using (var tmpfile = await backendManager.GetAsync(file.Name, entry.Hash, entry.Size < 0 ? file.Size : entry.Size, m_result.TaskControl.ProgressToken).ConfigureAwait(false))
                             using (var tmp = new Volumes.FilesetVolumeReader(RestoreHandler.GetCompressionModule(file.Name), tmpfile, m_options))
                                 foreach (var cf in tmp.ControlFiles)
-                                    if (Library.Utility.FilterExpression.Matches(filter, cf.Key))
+                                    if (FilterExpression.Matches(filter, cf.Key))
                                     {
-                                        var targetpath = System.IO.Path.Combine(m_options.Restorepath, cf.Key);
-                                        using (var ts = System.IO.File.Create(targetpath))
-                                            Library.Utility.Utility.CopyStream(cf.Value, ts);
+                                        var targetpath = Path.Combine(m_options.Restorepath, cf.Key);
+                                        using (var ts = File.Create(targetpath))
+                                            await Library.Utility.Utility.CopyStreamAsync(cf.Value, ts, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
                                         res.Add(targetpath);
                                     }
 
@@ -100,7 +101,7 @@ namespace Duplicati.Library.Main.Operation
                 }
                 finally
                 {
-                    backendManager.WaitForEmptyAsync(db, null, cancellationToken).Await();
+                    await backendManager.WaitForEmptyAsync(db, null, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
                 }
 
                 db.WriteResults();

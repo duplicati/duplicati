@@ -45,7 +45,7 @@ namespace Duplicati.Library.Main.Operation
             m_result = result;
         }
 
-        public async Task Run(IBackendManager backendManager, IEnumerable<string> filterstrings, IFilter compositefilter)
+        public async Task RunAsync(IBackendManager backendManager, IEnumerable<string> filterstrings, IFilter compositefilter)
         {
             var cancellationToken = m_result.TaskControl.ProgressToken;
             var parsedfilter = new FilterExpression(filterstrings);

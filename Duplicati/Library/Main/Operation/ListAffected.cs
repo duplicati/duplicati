@@ -23,6 +23,8 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using Duplicati.Library.Interface;
+using System.Threading.Tasks;
+using System.IO;
 
 namespace Duplicati.Library.Main.Operation
 {
@@ -36,13 +38,13 @@ namespace Duplicati.Library.Main.Operation
             m_options = options;
             m_result = result;
         }
-            
-        public void Run(List<string> args, Action<Duplicati.Library.Interface.IListAffectedResults> callback = null)
+
+        public Task RunAsync(List<string> args, Action<IListAffectedResults> callback = null)
         {
-            if (!System.IO.File.Exists(m_options.Dbpath))
+            if (!File.Exists(m_options.Dbpath))
                 throw new UserInformationException(string.Format("Database file does not exist: {0}", m_options.Dbpath), "DatabaseDoesNotExist");
 
-            using(var db = new Database.LocalListAffectedDatabase(m_options.Dbpath))
+            using (var db = new Database.LocalListAffectedDatabase(m_options.Dbpath))
             {
                 m_result.SetDatabase(db);
                 if (callback == null)
@@ -66,6 +68,8 @@ namespace Duplicati.Library.Main.Operation
                     callback(m_result);
                 }
             }
+
+            return Task.CompletedTask;
         }
     }
 }
