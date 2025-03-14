@@ -20,9 +20,11 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System;
+using System.Data;
 using System.Linq;
 using System.Collections.Generic;
 using Duplicati.Library.Common.IO;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Main.Database
 {
@@ -53,15 +55,15 @@ namespace Duplicati.Library.Main.Database
         {
             IEnumerable<IFileset> Sets { get; }
             IEnumerable<IFileset> QuickSets { get; }
-            IEnumerable<IFileversion> SelectFiles(Library.Utility.IFilter filter);
-            IEnumerable<IFileversion> GetLargestPrefix(Library.Utility.IFilter filter);
-            IEnumerable<IFileversion> SelectFolderContents(Library.Utility.IFilter filter);
+            IEnumerable<IFileversion> SelectFiles(IFilter filter);
+            IEnumerable<IFileversion> GetLargestPrefix(IFilter filter);
+            IEnumerable<IFileversion> SelectFolderContents(IFilter filter);
             void TakeFirst();
         }
 
         private class FileSets : IFileSets
         {
-            private readonly System.Data.IDbConnection m_connection;
+            private readonly IDbConnection m_connection;
             private string m_tablename;
             private readonly KeyValuePair<long, DateTime>[] m_filesets;
 
@@ -71,7 +73,7 @@ namespace Duplicati.Library.Main.Database
                 m_filesets = owner.FilesetTimes.ToArray();
                 m_tablename = "Filesets-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
                 var tmp = owner.GetFilelistWhereClause(time, versions, m_filesets);
-                string query = tmp.Item1;
+                var query = tmp.Item1;
                 var args = tmp.Item2;
 
                 using (var cmd = m_connection.CreateCommand())
@@ -91,35 +93,35 @@ namespace Duplicati.Library.Main.Database
 
                 public Fileset(long version, int isFullBackup, DateTime time, long filecount, long filesizes)
                 {
-                    this.Version = version;
-                    this.IsFullBackup = isFullBackup;
-                    this.Time = time;
-                    this.FileCount = filecount;
-                    this.FileSizes = filesizes;
+                    Version = version;
+                    IsFullBackup = isFullBackup;
+                    Time = time;
+                    FileCount = filecount;
+                    FileSizes = filesizes;
                 }
             }
 
             private class Fileversion : IFileversion
             {
-                private readonly System.Data.IDataReader m_reader;
+                private readonly IDataReader m_reader;
                 public string Path { get; private set; }
                 public bool More { get; private set; }
 
-                public Fileversion(System.Data.IDataReader reader)
+                public Fileversion(IDataReader reader)
                 {
                     m_reader = reader;
-                    this.Path = reader.GetValue(0).ToString();
-                    this.More = true;
+                    Path = reader.GetValue(0).ToString();
+                    More = true;
                 }
 
                 public IEnumerable<long> Sizes
                 {
                     get
                     {
-                        while (this.More && this.Path == m_reader.GetValue(0).ToString())
+                        while (More && Path == m_reader.GetValue(0).ToString())
                         {
                             yield return m_reader.ConvertValueToInt64(1, -1);
-                            this.More = m_reader.Read();
+                            More = m_reader.Read();
                         }
                     }
                 }
@@ -131,12 +133,12 @@ namespace Duplicati.Library.Main.Database
                 public IEnumerable<long> Sizes { get { return new long[0]; } }
             }
 
-            public IEnumerable<IFileversion> GetLargestPrefix(Library.Utility.IFilter filter)
+            public IEnumerable<IFileversion> GetLargestPrefix(IFilter filter)
             {
                 return GetLargestPrefix(filter, null);
             }
 
-            private IEnumerable<IFileversion> GetLargestPrefix(Library.Utility.IFilter filter, string prefixrule)
+            private IEnumerable<IFileversion> GetLargestPrefix(IFilter filter, string prefixrule)
             {
                 using (var tmpnames = new FilteredFilenameTable(m_connection, filter, null))
                 using (var cmd = m_connection.CreateCommand())
@@ -151,7 +153,7 @@ namespace Duplicati.Library.Main.Database
                     // Then we recursively find the largest prefix
                     cmd.CommandText = FormatInvariant($@"SELECT ""Path"" FROM ""{tmpnames.Tablename}"" ORDER BY LENGTH(""Path"") DESC LIMIT 1");
                     var v0 = cmd.ExecuteScalar();
-                    string maxpath = "";
+                    var maxpath = "";
                     if (v0 != null)
                         maxpath = v0.ToString();
 
@@ -159,7 +161,7 @@ namespace Duplicati.Library.Main.Database
 
                     cmd.CommandText = FormatInvariant($@"SELECT COUNT(*) FROM ""{tmpnames.Tablename}""");
                     var filecount = cmd.ExecuteScalarInt64(0);
-                    long foundfiles = -1;
+                    var foundfiles = -1L;
 
                     //TODO: Handle FS case-sensitive?
                     cmd.CommandText = FormatInvariant($@"SELECT COUNT(*) FROM ""{tmpnames.Tablename}"" WHERE SUBSTR(""Path"", 1, ?) = ?");
@@ -198,14 +200,11 @@ namespace Duplicati.Library.Main.Database
                         return roots.Concat(rootsUNC).Select(x => GetLargestPrefix(filter, x).First()).Distinct().ToArray();
                     }
 
-                    return
-                        new IFileversion[] {
-                            new FileversionFixed { Path = maxpath == "" ? "" : Util.AppendDirSeparator(maxpath, dirsep) }
-                        };
+                    return [new FileversionFixed { Path = maxpath == "" ? "" : Util.AppendDirSeparator(maxpath, dirsep) }];
                 }
             }
 
-            private IEnumerable<string> SelectFolderEntries(System.Data.IDbCommand cmd, string prefix, string table)
+            private IEnumerable<string> SelectFolderEntries(IDbCommand cmd, string prefix, string table)
             {
                 if (!string.IsNullOrEmpty(prefix))
                     prefix = Util.AppendDirSeparator(prefix, Util.GuessDirSeparator(prefix));
@@ -228,7 +227,7 @@ namespace Duplicati.Library.Main.Database
                     }
             }
 
-            public IEnumerable<IFileversion> SelectFolderContents(Library.Utility.IFilter filter)
+            public IEnumerable<IFileversion> SelectFolderContents(IFilter filter)
             {
                 var tbname = "Filenames-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
                 try
@@ -236,17 +235,17 @@ namespace Duplicati.Library.Main.Database
                     string pathprefix;
                     if (filter == null || filter.Empty)
                         pathprefix = "";
-                    else if (filter as Library.Utility.FilterExpression == null || ((Library.Utility.FilterExpression)filter).Type != Duplicati.Library.Utility.FilterType.Simple || ((Library.Utility.FilterExpression)filter).GetSimpleList().Length != 1)
+                    else if (filter as FilterExpression == null || ((FilterExpression)filter).Type != FilterType.Simple || ((FilterExpression)filter).GetSimpleList().Length != 1)
                         throw new ArgumentException("Filter for list-folder-contents must be a path prefix with no wildcards", nameof(filter));
                     else
-                        pathprefix = ((Library.Utility.FilterExpression)filter).GetSimpleList().First();
+                        pathprefix = ((FilterExpression)filter).GetSimpleList().First();
 
                     var dirsep = Util.GuessDirSeparator(pathprefix);
 
                     if (pathprefix.Length > 0 || dirsep == "/")
                         pathprefix = Util.AppendDirSeparator(pathprefix, dirsep);
 
-                    using (var tmpnames = new FilteredFilenameTable(m_connection, new Library.Utility.FilterExpression(new string[] { pathprefix + "*" }, true), null))
+                    using (var tmpnames = new FilteredFilenameTable(m_connection, new FilterExpression(new string[] { pathprefix + "*" }, true), null))
                     using (var cmd = m_connection.CreateCommand())
                     {
                         //First we trim the filelist to exclude filenames not found in any of the filesets
@@ -321,7 +320,7 @@ namespace Duplicati.Library.Main.Database
                 }
             }
 
-            public IEnumerable<IFileversion> SelectFiles(Library.Utility.IFilter filter)
+            public IEnumerable<IFileversion> SelectFiles(IFilter filter)
             {
                 using (var tmpnames = new FilteredFilenameTable(m_connection, filter, null))
                 using (var cmd = m_connection.CreateCommand())
@@ -360,23 +359,17 @@ namespace Duplicati.Library.Main.Database
                 {
                     var dict = new Dictionary<long, long>();
                     for (var i = 0; i < m_filesets.Length; i++)
-                    {
                         dict[m_filesets[i].Key] = i;
-                    }
 
                     using (var cmd = m_connection.CreateCommand())
-                    {
-                        using (var rd = cmd.ExecuteReader(@"SELECT DISTINCT ""ID"", ""IsFullBackup"" FROM ""Fileset"" ORDER BY ""Timestamp"" DESC "))
+                    using (var rd = cmd.ExecuteReader(@"SELECT DISTINCT ""ID"", ""IsFullBackup"" FROM ""Fileset"" ORDER BY ""Timestamp"" DESC "))
+                        while (rd.Read())
                         {
-                            while (rd.Read())
-                            {
-                                var id = rd.GetInt64(0);
-                                var backupType = rd.GetInt32(1);
-                                var e = dict[id];
-                                yield return new Fileset(e, backupType, m_filesets[e].Value, -1L, -1L);
-                            }
+                            var id = rd.GetInt64(0);
+                            var backupType = rd.GetInt32(1);
+                            var e = dict[id];
+                            yield return new Fileset(e, backupType, m_filesets[e].Value, -1L, -1L);
                         }
-                    }
                 }
             }
 
@@ -386,31 +379,25 @@ namespace Duplicati.Library.Main.Database
                 {
                     var dict = new Dictionary<long, long>();
                     for (var i = 0; i < m_filesets.Length; i++)
-                    {
                         dict[m_filesets[i].Key] = i;
-                    }
 
                     var summation = FormatInvariant(
                         $@"SELECT ""A"".""FilesetID"" AS ""FilesetID"", COUNT(*) AS ""FileCount"", SUM(""C"".""Length"") AS ""FileSizes"" FROM ""FilesetEntry"" A, ""File"" B, ""Blockset"" C WHERE ""A"".""FileID"" = ""B"".""ID"" AND ""B"".""BlocksetID"" = ""C"".""ID"" AND ""A"".""FilesetID"" IN (SELECT DISTINCT ""FilesetID"" FROM ""{m_tablename}"") GROUP BY ""A"".""FilesetID"" ");
 
                     using (var cmd = m_connection.CreateCommand())
-                    {
-                        using (var rd = cmd.ExecuteReader(FormatInvariant(
-                            $@"SELECT DISTINCT ""A"".""FilesetID"", ""A"".""IsFullBackup"", ""B"".""FileCount"", ""B"".""FileSizes"" FROM ""{m_tablename}"" A LEFT OUTER JOIN ( {summation} ) B ON ""A"".""FilesetID"" = ""B"".""FilesetID"" ORDER BY ""A"".""Timestamp"" DESC "))
-                        )
+                    using (var rd = cmd.ExecuteReader(FormatInvariant(
+                        $@"SELECT DISTINCT ""A"".""FilesetID"", ""A"".""IsFullBackup"", ""B"".""FileCount"", ""B"".""FileSizes"" FROM ""{m_tablename}"" A LEFT OUTER JOIN ( {summation} ) B ON ""A"".""FilesetID"" = ""B"".""FilesetID"" ORDER BY ""A"".""Timestamp"" DESC "))
+                    )
+                        while (rd.Read())
                         {
-                            while (rd.Read())
-                            {
-                                var id = rd.GetInt64(0);
-                                var isFullBackup = rd.GetInt32(1);
-                                var e = dict[id];
-                                var filecount = rd.ConvertValueToInt64(2, -1L);
-                                var filesizes = rd.ConvertValueToInt64(3, -1L);
+                            var id = rd.GetInt64(0);
+                            var isFullBackup = rd.GetInt32(1);
+                            var e = dict[id];
+                            var filecount = rd.ConvertValueToInt64(2, -1L);
+                            var filesizes = rd.ConvertValueToInt64(3, -1L);
 
-                                yield return new Fileset(e, isFullBackup, m_filesets[e].Value, filecount, filesizes);
-                            }
+                            yield return new Fileset(e, isFullBackup, m_filesets[e].Value, filecount, filesizes);
                         }
-                    }
                 }
             }
 
@@ -421,9 +408,7 @@ namespace Duplicati.Library.Main.Database
                     try
                     {
                         using (var cmd = m_connection.CreateCommand())
-                        {
                             cmd.ExecuteNonQuery(FormatInvariant(@$"DROP TABLE IF EXISTS ""{m_tablename}"" "));
-                        }
                     }
                     catch { }
                     finally { m_tablename = null; }

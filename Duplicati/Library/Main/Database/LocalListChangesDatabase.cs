@@ -20,6 +20,7 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System;
+using System.Data;
 using System.Collections.Generic;
 using Duplicati.Library.Utility;
 
@@ -35,13 +36,13 @@ namespace Duplicati.Library.Main.Database
 
         public interface IStorageHelper : IDisposable
         {
-            void AddElement(string path, string filehash, string metahash, long size, Library.Interface.ListChangesElementType type, bool asNew);
+            void AddElement(string path, string filehash, string metahash, long size, Interface.ListChangesElementType type, bool asNew);
 
-            void AddFromDb(long filesetId, bool asNew, Library.Utility.IFilter filter);
+            void AddFromDb(long filesetId, bool asNew, IFilter filter);
 
             IChangeCountReport CreateChangeCountReport();
             IChangeSizeReport CreateChangeSizeReport();
-            IEnumerable<Tuple<Library.Interface.ListChangesChangeType, Library.Interface.ListChangesElementType, string>> CreateChangedFileReport();
+            IEnumerable<Tuple<Interface.ListChangesChangeType, Interface.ListChangesElementType, string>> CreateChangedFileReport();
         }
 
         public interface IChangeCountReport
@@ -94,16 +95,16 @@ namespace Duplicati.Library.Main.Database
 
         private class StorageHelper : IStorageHelper
         {
-            private readonly System.Data.IDbConnection m_connection;
-            private System.Data.IDbTransaction m_transaction;
+            private readonly IDbConnection m_connection;
+            private IDbTransaction m_transaction;
 
-            private System.Data.IDbCommand m_insertPreviousElementCommand;
-            private System.Data.IDbCommand m_insertCurrentElementCommand;
+            private IDbCommand m_insertPreviousElementCommand;
+            private IDbCommand m_insertCurrentElementCommand;
 
             private string m_previousTable;
             private string m_currentTable;
 
-            public StorageHelper(System.Data.IDbConnection con)
+            public StorageHelper(IDbConnection con)
             {
                 m_connection = con;
                 m_previousTable = "Previous-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
@@ -111,38 +112,28 @@ namespace Duplicati.Library.Main.Database
 
                 m_transaction = m_connection.BeginTransaction();
 
-                using (var cmd = m_connection.CreateCommand())
+                using (var cmd = m_connection.CreateCommand(m_transaction))
                 {
-                    cmd.Transaction = m_transaction;
-
                     cmd.ExecuteNonQuery(FormatInvariant($@"CREATE TEMPORARY TABLE ""{m_previousTable}"" (""Path"" TEXT NOT NULL, ""FileHash"" TEXT NULL, ""MetaHash"" TEXT NOT NULL, ""Size"" INTEGER NOT NULL, ""Type"" INTEGER NOT NULL) "));
                     cmd.ExecuteNonQuery(FormatInvariant($@"CREATE TEMPORARY TABLE ""{m_currentTable}"" (""Path"" TEXT NOT NULL, ""FileHash"" TEXT NULL, ""MetaHash"" TEXT NOT NULL, ""Size"" INTEGER NOT NULL, ""Type"" INTEGER NOT NULL) "));
                 }
 
-                m_insertPreviousElementCommand = m_connection.CreateCommand();
-                m_insertPreviousElementCommand.Transaction = m_transaction;
-                m_insertPreviousElementCommand.CommandText = FormatInvariant($@"INSERT INTO ""{m_previousTable}"" (""Path"", ""FileHash"", ""MetaHash"", ""Size"", ""Type"") VALUES (?,?,?,?,?)");
-                m_insertPreviousElementCommand.AddParameters(5);
-
-                m_insertCurrentElementCommand = m_connection.CreateCommand();
-                m_insertCurrentElementCommand.Transaction = m_transaction;
-                m_insertCurrentElementCommand.CommandText = FormatInvariant($@"INSERT INTO ""{m_currentTable}"" (""Path"", ""FileHash"", ""MetaHash"", ""Size"", ""Type"") VALUES (?,?,?,?,?)");
-                m_insertCurrentElementCommand.AddParameters(5);
+                m_insertPreviousElementCommand = m_connection.CreateCommand(m_transaction, FormatInvariant($@"INSERT INTO ""{m_previousTable}"" (""Path"", ""FileHash"", ""MetaHash"", ""Size"", ""Type"") VALUES (?,?,?,?,?)"));
+                m_insertCurrentElementCommand = m_connection.CreateCommand(FormatInvariant($@"INSERT INTO ""{m_currentTable}"" (""Path"", ""FileHash"", ""MetaHash"", ""Size"", ""Type"") VALUES (?,?,?,?,?)"));
             }
 
-            public void AddFromDb(long filesetId, bool asNew, Library.Utility.IFilter filter)
+            public void AddFromDb(long filesetId, bool asNew, IFilter filter)
             {
                 var tablename = asNew ? m_currentTable : m_previousTable;
 
-                var folders = FormatInvariant($@"SELECT ""File"".""Path"" AS ""Path"", NULL AS ""FileHash"", ""Blockset"".""Fullhash"" AS ""MetaHash"", -1 AS ""Size"", {(int)Library.Interface.ListChangesElementType.Folder} AS ""Type"", ""FilesetEntry"".""FilesetID"" AS ""FilesetID"" FROM ""File"",""FilesetEntry"",""Metadataset"",""Blockset"" WHERE ""File"".""ID"" = ""FilesetEntry"".""FileID"" AND ""File"".""BlocksetID"" = -100 AND ""Metadataset"".""ID""=""File"".""MetadataID"" AND ""Metadataset"".""BlocksetID"" = ""Blockset"".""ID"" ");
-                var symlinks = FormatInvariant($@"SELECT ""File"".""Path"" AS ""Path"", NULL AS ""FileHash"", ""Blockset"".""Fullhash"" AS ""MetaHash"", -1 AS ""Size"", {(int)Library.Interface.ListChangesElementType.Symlink} AS ""Type"", ""FilesetEntry"".""FilesetID"" AS ""FilesetID"" FROM ""File"",""FilesetEntry"",""Metadataset"",""Blockset"" WHERE ""File"".""ID"" = ""FilesetEntry"".""FileID"" AND ""File"".""BlocksetID"" = -200 AND ""Metadataset"".""ID""=""File"".""MetadataID"" AND ""Metadataset"".""BlocksetID"" = ""Blockset"".""ID"" ");
-                var files = FormatInvariant($@"SELECT ""File"".""Path"" AS ""Path"", ""FB"".""FullHash"" AS ""FileHash"", ""MB"".""Fullhash"" AS ""MetaHash"", ""FB"".""Length"" AS ""Size"", {(int)Library.Interface.ListChangesElementType.File} AS ""Type"", ""FilesetEntry"".""FilesetID"" AS ""FilesetID"" FROM ""File"",""FilesetEntry"",""Metadataset"",""Blockset"" MB, ""Blockset"" FB WHERE ""File"".""ID"" = ""FilesetEntry"".""FileID"" AND ""File"".""BlocksetID"" >= 0 AND ""Metadataset"".""ID""=""File"".""MetadataID"" AND ""Metadataset"".""BlocksetID"" = ""MB"".""ID"" AND ""File"".""BlocksetID"" = ""FB"".""ID"" ");
+                var folders = FormatInvariant($@"SELECT ""File"".""Path"" AS ""Path"", NULL AS ""FileHash"", ""Blockset"".""Fullhash"" AS ""MetaHash"", -1 AS ""Size"", {(int)Interface.ListChangesElementType.Folder} AS ""Type"", ""FilesetEntry"".""FilesetID"" AS ""FilesetID"" FROM ""File"",""FilesetEntry"",""Metadataset"",""Blockset"" WHERE ""File"".""ID"" = ""FilesetEntry"".""FileID"" AND ""File"".""BlocksetID"" = -100 AND ""Metadataset"".""ID""=""File"".""MetadataID"" AND ""Metadataset"".""BlocksetID"" = ""Blockset"".""ID"" ");
+                var symlinks = FormatInvariant($@"SELECT ""File"".""Path"" AS ""Path"", NULL AS ""FileHash"", ""Blockset"".""Fullhash"" AS ""MetaHash"", -1 AS ""Size"", {(int)Interface.ListChangesElementType.Symlink} AS ""Type"", ""FilesetEntry"".""FilesetID"" AS ""FilesetID"" FROM ""File"",""FilesetEntry"",""Metadataset"",""Blockset"" WHERE ""File"".""ID"" = ""FilesetEntry"".""FileID"" AND ""File"".""BlocksetID"" = -200 AND ""Metadataset"".""ID""=""File"".""MetadataID"" AND ""Metadataset"".""BlocksetID"" = ""Blockset"".""ID"" ");
+                var files = FormatInvariant($@"SELECT ""File"".""Path"" AS ""Path"", ""FB"".""FullHash"" AS ""FileHash"", ""MB"".""Fullhash"" AS ""MetaHash"", ""FB"".""Length"" AS ""Size"", {(int)Interface.ListChangesElementType.File} AS ""Type"", ""FilesetEntry"".""FilesetID"" AS ""FilesetID"" FROM ""File"",""FilesetEntry"",""Metadataset"",""Blockset"" MB, ""Blockset"" FB WHERE ""File"".""ID"" = ""FilesetEntry"".""FileID"" AND ""File"".""BlocksetID"" >= 0 AND ""Metadataset"".""ID""=""File"".""MetadataID"" AND ""Metadataset"".""BlocksetID"" = ""MB"".""ID"" AND ""File"".""BlocksetID"" = ""FB"".""ID"" ");
                 var combined = "(" + folders + " UNION " + symlinks + " UNION " + files + ")";
 
 
-                using (var cmd = m_connection.CreateCommand())
+                using (var cmd = m_connection.CreateCommand(m_transaction))
                 {
-                    cmd.Transaction = m_transaction;
                     if (filter == null || filter.Empty)
                     {
                         // Simple case, select everything
@@ -182,33 +173,27 @@ namespace Duplicati.Library.Main.Database
                     else
                     {
                         // Do row-wise iteration
-                        object[] values = new object[5];
-                        using (var cmd2 = m_connection.CreateCommand())
-                        {
-                            cmd2.CommandText = FormatInvariant($@"INSERT INTO ""{tablename}"" (""Path"", ""FileHash"", ""MetaHash"", ""Size"", ""Type"") VALUES (?,?,?,?,?)");
-                            cmd2.AddParameters(5);
-                            cmd2.Transaction = m_transaction;
-
-                            using (var rd = cmd.ExecuteReader(FormatInvariant($@"SELECT ""A"".""Path"", ""A"".""FileHash"", ""A"".""MetaHash"", ""A"".""Size"", ""A"".""Type"" FROM {combined} A WHERE ""A"".""FilesetID"" = ?"), filesetId))
-                                while (rd.Read())
+                        var values = new object[5];
+                        using (var cmd2 = m_connection.CreateCommand(m_transaction, FormatInvariant($@"INSERT INTO ""{tablename}"" (""Path"", ""FileHash"", ""MetaHash"", ""Size"", ""Type"") VALUES (?,?,?,?,?)")))
+                        using (var rd = cmd.ExecuteReader(FormatInvariant($@"SELECT ""A"".""Path"", ""A"".""FileHash"", ""A"".""MetaHash"", ""A"".""Size"", ""A"".""Type"" FROM {combined} A WHERE ""A"".""FilesetID"" = ?"), filesetId))
+                            while (rd.Read())
+                            {
+                                rd.GetValues(values);
+                                if (values[0] != null && values[0] != DBNull.Value && FilterExpression.Matches(filter, values[0].ToString()))
                                 {
-                                    rd.GetValues(values);
-                                    if (values[0] != null && values[0] != DBNull.Value && Library.Utility.FilterExpression.Matches(filter, values[0].ToString()))
-                                    {
-                                        cmd2.SetParameterValue(0, values[0]);
-                                        cmd2.SetParameterValue(1, values[1]);
-                                        cmd2.SetParameterValue(2, values[2]);
-                                        cmd2.SetParameterValue(3, values[3]);
-                                        cmd2.SetParameterValue(4, values[4]);
-                                        cmd2.ExecuteNonQuery();
-                                    }
+                                    cmd2.SetParameterValue(0, values[0]);
+                                    cmd2.SetParameterValue(1, values[1]);
+                                    cmd2.SetParameterValue(2, values[2]);
+                                    cmd2.SetParameterValue(3, values[3]);
+                                    cmd2.SetParameterValue(4, values[4]);
+                                    cmd2.ExecuteNonQuery();
                                 }
-                        }
+                            }
                     }
                 }
             }
 
-            public void AddElement(string path, string filehash, string metahash, long size, Library.Interface.ListChangesElementType type, bool asNew)
+            public void AddElement(string path, string filehash, string metahash, long size, Interface.ListChangesElementType type, bool asNew)
             {
                 var cmd = asNew ? m_insertCurrentElementCommand : m_insertPreviousElementCommand;
                 cmd.SetParameterValue(0, path);
@@ -219,7 +204,7 @@ namespace Duplicati.Library.Main.Database
                 cmd.ExecuteNonQuery();
             }
 
-            private static IEnumerable<string> ReaderToStringList(System.Data.IDataReader rd)
+            private static IEnumerable<string> ReaderToStringList(IDataReader rd)
             {
                 using (rd)
                     while (rd.Read())
@@ -248,10 +233,8 @@ namespace Duplicati.Library.Main.Database
                 var deleted = sqls.Item2;
                 //var modified = sqls.Item3;
 
-                using (var cmd = m_connection.CreateCommand())
+                using (var cmd = m_connection.CreateCommand(m_transaction))
                 {
-                    cmd.Transaction = m_transaction;
-
                     var result = new ChangeSizeReport();
 
                     result.PreviousSize = cmd.ExecuteScalarInt64(FormatInvariant($@"SELECT SUM(""Size"") FROM ""{m_previousTable}"" "), 0);
@@ -271,57 +254,54 @@ namespace Duplicati.Library.Main.Database
                 var deleted = @"SELECT COUNT(*) FROM (" + sqls.Item2 + ")";
                 var modified = @"SELECT COUNT(*) FROM (" + sqls.Item3 + ")";
 
-                using (var cmd = m_connection.CreateCommand())
+                using (var cmd = m_connection.CreateCommand(m_transaction))
                 {
-                    cmd.Transaction = m_transaction;
-
                     var result = new ChangeCountReport();
-                    result.AddedFolders = cmd.ExecuteScalarInt64(added, 0, (int)Library.Interface.ListChangesElementType.Folder);
-                    result.AddedSymlinks = cmd.ExecuteScalarInt64(added, 0, (int)Library.Interface.ListChangesElementType.Symlink);
-                    result.AddedFiles = cmd.ExecuteScalarInt64(added, 0, (int)Library.Interface.ListChangesElementType.File);
+                    result.AddedFolders = cmd.ExecuteScalarInt64(added, 0, (int)Interface.ListChangesElementType.Folder);
+                    result.AddedSymlinks = cmd.ExecuteScalarInt64(added, 0, (int)Interface.ListChangesElementType.Symlink);
+                    result.AddedFiles = cmd.ExecuteScalarInt64(added, 0, (int)Interface.ListChangesElementType.File);
 
-                    result.DeletedFolders = cmd.ExecuteScalarInt64(deleted, 0, (int)Library.Interface.ListChangesElementType.Folder);
-                    result.DeletedSymlinks = cmd.ExecuteScalarInt64(deleted, 0, (int)Library.Interface.ListChangesElementType.Symlink);
-                    result.DeletedFiles = cmd.ExecuteScalarInt64(deleted, 0, (int)Library.Interface.ListChangesElementType.File);
+                    result.DeletedFolders = cmd.ExecuteScalarInt64(deleted, 0, (int)Interface.ListChangesElementType.Folder);
+                    result.DeletedSymlinks = cmd.ExecuteScalarInt64(deleted, 0, (int)Interface.ListChangesElementType.Symlink);
+                    result.DeletedFiles = cmd.ExecuteScalarInt64(deleted, 0, (int)Interface.ListChangesElementType.File);
 
-                    result.ModifiedFolders = cmd.ExecuteScalarInt64(modified, 0, (int)Library.Interface.ListChangesElementType.Folder);
-                    result.ModifiedSymlinks = cmd.ExecuteScalarInt64(modified, 0, (int)Library.Interface.ListChangesElementType.Symlink);
-                    result.ModifiedFiles = cmd.ExecuteScalarInt64(modified, 0, (int)Library.Interface.ListChangesElementType.File);
+                    result.ModifiedFolders = cmd.ExecuteScalarInt64(modified, 0, (int)Interface.ListChangesElementType.Folder);
+                    result.ModifiedSymlinks = cmd.ExecuteScalarInt64(modified, 0, (int)Interface.ListChangesElementType.Symlink);
+                    result.ModifiedFiles = cmd.ExecuteScalarInt64(modified, 0, (int)Interface.ListChangesElementType.File);
 
                     return result;
                 }
             }
 
-            public IEnumerable<Tuple<Library.Interface.ListChangesChangeType, Library.Interface.ListChangesElementType, string>> CreateChangedFileReport()
+            public IEnumerable<Tuple<Interface.ListChangesChangeType, Interface.ListChangesElementType, string>> CreateChangedFileReport()
             {
                 var sqls = GetSqls(false);
                 var added = sqls.Item1;
                 var deleted = sqls.Item2;
                 var modified = sqls.Item3;
 
-                using (var cmd = m_connection.CreateCommand())
+                using (var cmd = m_connection.CreateCommand(m_transaction))
                 {
-                    cmd.Transaction = m_transaction;
-                    foreach (var s in ReaderToStringList(cmd.ExecuteReader(added, (int)Library.Interface.ListChangesElementType.Folder)))
-                        yield return new Tuple<Library.Interface.ListChangesChangeType, Library.Interface.ListChangesElementType, string>(Library.Interface.ListChangesChangeType.Added, Library.Interface.ListChangesElementType.Folder, s);
-                    foreach (var s in ReaderToStringList(cmd.ExecuteReader(added, (int)Library.Interface.ListChangesElementType.Symlink)))
-                        yield return new Tuple<Library.Interface.ListChangesChangeType, Library.Interface.ListChangesElementType, string>(Library.Interface.ListChangesChangeType.Added, Library.Interface.ListChangesElementType.Symlink, s);
-                    foreach (var s in ReaderToStringList(cmd.ExecuteReader(added, (int)Library.Interface.ListChangesElementType.File)))
-                        yield return new Tuple<Library.Interface.ListChangesChangeType, Library.Interface.ListChangesElementType, string>(Library.Interface.ListChangesChangeType.Added, Library.Interface.ListChangesElementType.File, s);
+                    foreach (var s in ReaderToStringList(cmd.ExecuteReader(added, (int)Interface.ListChangesElementType.Folder)))
+                        yield return new Tuple<Interface.ListChangesChangeType, Interface.ListChangesElementType, string>(Interface.ListChangesChangeType.Added, Interface.ListChangesElementType.Folder, s);
+                    foreach (var s in ReaderToStringList(cmd.ExecuteReader(added, (int)Interface.ListChangesElementType.Symlink)))
+                        yield return new Tuple<Interface.ListChangesChangeType, Interface.ListChangesElementType, string>(Interface.ListChangesChangeType.Added, Interface.ListChangesElementType.Symlink, s);
+                    foreach (var s in ReaderToStringList(cmd.ExecuteReader(added, (int)Interface.ListChangesElementType.File)))
+                        yield return new Tuple<Interface.ListChangesChangeType, Interface.ListChangesElementType, string>(Interface.ListChangesChangeType.Added, Interface.ListChangesElementType.File, s);
 
-                    foreach (var s in ReaderToStringList(cmd.ExecuteReader(deleted, (int)Library.Interface.ListChangesElementType.Folder)))
-                        yield return new Tuple<Library.Interface.ListChangesChangeType, Library.Interface.ListChangesElementType, string>(Library.Interface.ListChangesChangeType.Deleted, Library.Interface.ListChangesElementType.Folder, s);
-                    foreach (var s in ReaderToStringList(cmd.ExecuteReader(deleted, (int)Library.Interface.ListChangesElementType.Symlink)))
-                        yield return new Tuple<Library.Interface.ListChangesChangeType, Library.Interface.ListChangesElementType, string>(Library.Interface.ListChangesChangeType.Deleted, Library.Interface.ListChangesElementType.Symlink, s);
-                    foreach (var s in ReaderToStringList(cmd.ExecuteReader(deleted, (int)Library.Interface.ListChangesElementType.File)))
-                        yield return new Tuple<Library.Interface.ListChangesChangeType, Library.Interface.ListChangesElementType, string>(Library.Interface.ListChangesChangeType.Deleted, Library.Interface.ListChangesElementType.File, s);
+                    foreach (var s in ReaderToStringList(cmd.ExecuteReader(deleted, (int)Interface.ListChangesElementType.Folder)))
+                        yield return new Tuple<Interface.ListChangesChangeType, Interface.ListChangesElementType, string>(Interface.ListChangesChangeType.Deleted, Interface.ListChangesElementType.Folder, s);
+                    foreach (var s in ReaderToStringList(cmd.ExecuteReader(deleted, (int)Interface.ListChangesElementType.Symlink)))
+                        yield return new Tuple<Interface.ListChangesChangeType, Interface.ListChangesElementType, string>(Interface.ListChangesChangeType.Deleted, Interface.ListChangesElementType.Symlink, s);
+                    foreach (var s in ReaderToStringList(cmd.ExecuteReader(deleted, (int)Interface.ListChangesElementType.File)))
+                        yield return new Tuple<Interface.ListChangesChangeType, Interface.ListChangesElementType, string>(Interface.ListChangesChangeType.Deleted, Interface.ListChangesElementType.File, s);
 
-                    foreach (var s in ReaderToStringList(cmd.ExecuteReader(modified, (int)Library.Interface.ListChangesElementType.Folder)))
-                        yield return new Tuple<Library.Interface.ListChangesChangeType, Library.Interface.ListChangesElementType, string>(Library.Interface.ListChangesChangeType.Modified, Library.Interface.ListChangesElementType.Folder, s);
-                    foreach (var s in ReaderToStringList(cmd.ExecuteReader(modified, (int)Library.Interface.ListChangesElementType.Symlink)))
-                        yield return new Tuple<Library.Interface.ListChangesChangeType, Library.Interface.ListChangesElementType, string>(Library.Interface.ListChangesChangeType.Modified, Library.Interface.ListChangesElementType.Symlink, s);
-                    foreach (var s in ReaderToStringList(cmd.ExecuteReader(modified, (int)Library.Interface.ListChangesElementType.File)))
-                        yield return new Tuple<Library.Interface.ListChangesChangeType, Library.Interface.ListChangesElementType, string>(Library.Interface.ListChangesChangeType.Modified, Library.Interface.ListChangesElementType.File, s);
+                    foreach (var s in ReaderToStringList(cmd.ExecuteReader(modified, (int)Interface.ListChangesElementType.Folder)))
+                        yield return new Tuple<Interface.ListChangesChangeType, Interface.ListChangesElementType, string>(Interface.ListChangesChangeType.Modified, Interface.ListChangesElementType.Folder, s);
+                    foreach (var s in ReaderToStringList(cmd.ExecuteReader(modified, (int)Interface.ListChangesElementType.Symlink)))
+                        yield return new Tuple<Interface.ListChangesChangeType, Interface.ListChangesElementType, string>(Interface.ListChangesChangeType.Modified, Interface.ListChangesElementType.Symlink, s);
+                    foreach (var s in ReaderToStringList(cmd.ExecuteReader(modified, (int)Interface.ListChangesElementType.File)))
+                        yield return new Tuple<Interface.ListChangesChangeType, Interface.ListChangesElementType, string>(Interface.ListChangesChangeType.Modified, Interface.ListChangesElementType.File, s);
                 }
             }
 

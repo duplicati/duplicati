@@ -42,25 +42,25 @@ namespace Duplicati.Library.Main.Database
         /// </summary>
         private static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(LocalDatabase));
 
-        protected readonly System.Data.IDbConnection m_connection;
+        protected readonly IDbConnection m_connection;
         protected readonly long m_operationid = -1;
         private bool m_hasExecutedVacuum;
 
-        private readonly System.Data.IDbCommand m_updateremotevolumeCommand;
-        private readonly System.Data.IDbCommand m_selectremotevolumesCommand;
-        private readonly System.Data.IDbCommand m_selectremotevolumeCommand;
-        private readonly System.Data.IDbCommand m_removeremotevolumeCommand;
-        private readonly System.Data.IDbCommand m_removedeletedremotevolumeCommand;
-        private readonly System.Data.IDbCommand m_selectremotevolumeIdCommand;
-        private readonly System.Data.IDbCommand m_createremotevolumeCommand;
-        private readonly System.Data.IDbCommand m_selectduplicateRemoteVolumesCommand;
+        private readonly IDbCommand m_updateremotevolumeCommand;
+        private readonly IDbCommand m_selectremotevolumesCommand;
+        private readonly IDbCommand m_selectremotevolumeCommand;
+        private readonly IDbCommand m_removeremotevolumeCommand;
+        private readonly IDbCommand m_removedeletedremotevolumeCommand;
+        private readonly IDbCommand m_selectremotevolumeIdCommand;
+        private readonly IDbCommand m_createremotevolumeCommand;
+        private readonly IDbCommand m_selectduplicateRemoteVolumesCommand;
 
-        private readonly System.Data.IDbCommand m_insertlogCommand;
-        private readonly System.Data.IDbCommand m_insertremotelogCommand;
-        private readonly System.Data.IDbCommand m_insertIndexBlockLink;
+        private readonly IDbCommand m_insertlogCommand;
+        private readonly IDbCommand m_insertremotelogCommand;
+        private readonly IDbCommand m_insertIndexBlockLink;
 
-        private readonly System.Data.IDbCommand m_findpathprefixCommand;
-        private readonly System.Data.IDbCommand m_insertpathprefixCommand;
+        private readonly IDbCommand m_findpathprefixCommand;
+        private readonly IDbCommand m_insertpathprefixCommand;
 
         protected BasicResults m_result;
 
@@ -69,23 +69,23 @@ namespace Duplicati.Library.Main.Database
 
         public DateTime OperationTimestamp { get; private set; }
 
-        internal System.Data.IDbConnection Connection { get { return m_connection; } }
+        internal IDbConnection Connection { get { return m_connection; } }
 
         public bool IsDisposed { get; private set; }
 
         public bool ShouldCloseConnection { get; set; }
 
-        protected static System.Data.IDbConnection CreateConnection(string path)
+        protected static IDbConnection CreateConnection(string path)
         {
-            path = System.IO.Path.GetFullPath(path);
-            if (!System.IO.Directory.Exists(System.IO.Path.GetDirectoryName(path)))
-                System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(path));
+            path = Path.GetFullPath(path);
+            if (!Directory.Exists(Path.GetDirectoryName(path)))
+                Directory.CreateDirectory(Path.GetDirectoryName(path));
 
-            var c = Duplicati.Library.SQLiteHelper.SQLiteLoader.LoadConnection(path);
+            var c = SQLiteHelper.SQLiteLoader.LoadConnection(path);
 
             try
             {
-                Library.SQLiteHelper.DatabaseUpgrader.UpgradeDatabase(c, path, typeof(LocalDatabase));
+                SQLiteHelper.DatabaseUpgrader.UpgradeDatabase(c, path, typeof(LocalDatabase));
             }
             catch
             {
@@ -127,23 +127,23 @@ namespace Duplicati.Library.Main.Database
         public LocalDatabase(LocalDatabase db)
             : this(db.m_connection)
         {
-            this.OperationTimestamp = db.OperationTimestamp;
-            this.m_connection = db.m_connection;
-            this.m_operationid = db.m_operationid;
-            this.m_result = db.m_result;
+            OperationTimestamp = db.OperationTimestamp;
+            m_connection = db.m_connection;
+            m_operationid = db.m_operationid;
+            m_result = db.m_result;
         }
 
         /// <summary>
         /// Creates a new database instance and starts a new operation
         /// </summary>
         /// <param name="operation">The name of the operation. If null, continues last operation</param>
-        public LocalDatabase(System.Data.IDbConnection connection, string operation)
+        public LocalDatabase(IDbConnection connection, string operation)
             : this(connection)
         {
-            this.OperationTimestamp = DateTime.UtcNow;
+            OperationTimestamp = DateTime.UtcNow;
             m_connection = connection;
 
-            if (m_connection.State != System.Data.ConnectionState.Open)
+            if (m_connection.State != ConnectionState.Open)
                 m_connection.Open();
 
             if (operation != null)
@@ -167,57 +167,21 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
-        private LocalDatabase(System.Data.IDbConnection connection)
+        private LocalDatabase(IDbConnection connection)
         {
-            m_updateremotevolumeCommand = connection.CreateCommand();
-            m_selectremotevolumesCommand = connection.CreateCommand();
-            m_selectduplicateRemoteVolumesCommand = connection.CreateCommand();
-            m_selectremotevolumeCommand = connection.CreateCommand();
-            m_insertlogCommand = connection.CreateCommand();
-            m_insertremotelogCommand = connection.CreateCommand();
-            m_removeremotevolumeCommand = connection.CreateCommand();
-            m_removedeletedremotevolumeCommand = connection.CreateCommand();
-            m_selectremotevolumeIdCommand = connection.CreateCommand();
-            m_createremotevolumeCommand = connection.CreateCommand();
-            m_insertIndexBlockLink = connection.CreateCommand();
-            m_findpathprefixCommand = connection.CreateCommand();
-            m_insertpathprefixCommand = connection.CreateCommand();
-
-            m_insertlogCommand.CommandText = @"INSERT INTO ""LogData"" (""OperationID"", ""Timestamp"", ""Type"", ""Message"", ""Exception"") VALUES (?, ?, ?, ?, ?)";
-            m_insertlogCommand.AddParameters(5);
-
-            m_insertremotelogCommand.CommandText = @"INSERT INTO ""RemoteOperation"" (""OperationID"", ""Timestamp"", ""Operation"", ""Path"", ""Data"") VALUES (?, ?, ?, ?, ?)";
-            m_insertremotelogCommand.AddParameters(5);
-
-            m_updateremotevolumeCommand.CommandText = @"UPDATE ""Remotevolume"" SET ""OperationID"" = ?, ""State"" = ?, ""Hash"" = ?, ""Size"" = ? WHERE ""Name"" = ?";
-            m_updateremotevolumeCommand.AddParameters(5);
-
-            m_selectremotevolumesCommand.CommandText = @"SELECT ""ID"", ""Name"", ""Type"", ""Size"", ""Hash"", ""State"", ""DeleteGraceTime"" FROM ""Remotevolume""";
-
-            m_selectremotevolumeCommand.CommandText = m_selectremotevolumesCommand.CommandText + @" WHERE ""Name"" = ?";
-            m_selectduplicateRemoteVolumesCommand.CommandText = FormatInvariant($@"SELECT DISTINCT ""Name"", ""State"" FROM ""Remotevolume"" WHERE ""Name"" IN (SELECT ""Name"" FROM ""Remotevolume"" WHERE ""State"" IN ('{RemoteVolumeState.Deleted.ToString()}', '{RemoteVolumeState.Deleting.ToString()}')) AND NOT ""State"" IN ('{RemoteVolumeState.Deleted.ToString()}', '{RemoteVolumeState.Deleting.ToString()}')");
-
-            m_selectremotevolumeCommand.AddParameter();
-
-            m_removeremotevolumeCommand.CommandText = @"DELETE FROM ""Remotevolume"" WHERE ""Name"" = ? AND (""DeleteGraceTime"" < ? OR ""State"" != ?)";
-            m_removeremotevolumeCommand.AddParameters(3);
-
-            m_removedeletedremotevolumeCommand.CommandText = FormatInvariant($@"DELETE FROM ""Remotevolume"" WHERE ""State"" == '{RemoteVolumeState.Deleted.ToString()}' AND (""DeleteGraceTime"" < ? OR LENGTH(""DeleteGraceTime"") > 12) "); // >12 is to handle removal of old records that were in ticks
-            m_removedeletedremotevolumeCommand.AddParameter();
-
-            m_selectremotevolumeIdCommand.CommandText = @"SELECT ""ID"" FROM ""Remotevolume"" WHERE ""Name"" = ?";
-
-            m_createremotevolumeCommand.CommandText = @"INSERT INTO ""Remotevolume"" (""OperationID"", ""Name"", ""Type"", ""State"", ""Size"", ""VerificationCount"", ""DeleteGraceTime"") VALUES (?, ?, ?, ?, ?, ?, ?); SELECT last_insert_rowid();";
-            m_createremotevolumeCommand.AddParameters(7);
-
-            m_insertIndexBlockLink.CommandText = @"INSERT INTO ""IndexBlockLink"" (""IndexVolumeID"", ""BlockVolumeID"") VALUES (?, ?)";
-            m_insertIndexBlockLink.AddParameters(2);
-
-            m_findpathprefixCommand.CommandText = @"SELECT ""ID"" FROM ""PathPrefix"" WHERE ""Prefix"" = ?";
-            m_findpathprefixCommand.AddParameter();
-
-            m_insertpathprefixCommand.CommandText = @"INSERT INTO ""PathPrefix"" (""Prefix"") VALUES (?); SELECT last_insert_rowid(); ";
-            m_insertpathprefixCommand.AddParameter();
+            m_insertlogCommand = connection.CreateCommand(@"INSERT INTO ""LogData"" (""OperationID"", ""Timestamp"", ""Type"", ""Message"", ""Exception"") VALUES (?, ?, ?, ?, ?)");
+            m_insertremotelogCommand = connection.CreateCommand(@"INSERT INTO ""RemoteOperation"" (""OperationID"", ""Timestamp"", ""Operation"", ""Path"", ""Data"") VALUES (?, ?, ?, ?, ?)");
+            m_updateremotevolumeCommand = connection.CreateCommand(@"UPDATE ""Remotevolume"" SET ""OperationID"" = ?, ""State"" = ?, ""Hash"" = ?, ""Size"" = ? WHERE ""Name"" = ?");
+            m_selectremotevolumesCommand = connection.CreateCommand(@"SELECT ""ID"", ""Name"", ""Type"", ""Size"", ""Hash"", ""State"", ""DeleteGraceTime"" FROM ""Remotevolume""");
+            m_selectremotevolumeCommand = connection.CreateCommand(m_selectremotevolumesCommand.CommandText + @" WHERE ""Name"" = ?");
+            m_selectduplicateRemoteVolumesCommand = connection.CreateCommand(FormatInvariant($@"SELECT DISTINCT ""Name"", ""State"" FROM ""Remotevolume"" WHERE ""Name"" IN (SELECT ""Name"" FROM ""Remotevolume"" WHERE ""State"" IN ('{RemoteVolumeState.Deleted.ToString()}', '{RemoteVolumeState.Deleting.ToString()}')) AND NOT ""State"" IN ('{RemoteVolumeState.Deleted.ToString()}', '{RemoteVolumeState.Deleting.ToString()}')"));
+            m_removeremotevolumeCommand = connection.CreateCommand(@"DELETE FROM ""Remotevolume"" WHERE ""Name"" = ? AND (""DeleteGraceTime"" < ? OR ""State"" != ?)");
+            m_removedeletedremotevolumeCommand = connection.CreateCommand(FormatInvariant($@"DELETE FROM ""Remotevolume"" WHERE ""State"" == '{RemoteVolumeState.Deleted.ToString()}' AND (""DeleteGraceTime"" < ? OR LENGTH(""DeleteGraceTime"") > 12) ")); // >12 is to handle removal of old records that were in ticks
+            m_selectremotevolumeIdCommand = connection.CreateCommand(@"SELECT ""ID"" FROM ""Remotevolume"" WHERE ""Name"" = ?");
+            m_createremotevolumeCommand = connection.CreateCommand(@"INSERT INTO ""Remotevolume"" (""OperationID"", ""Name"", ""Type"", ""State"", ""Size"", ""VerificationCount"", ""DeleteGraceTime"") VALUES (?, ?, ?, ?, ?, ?, ?); SELECT last_insert_rowid();");
+            m_insertIndexBlockLink = connection.CreateCommand(@"INSERT INTO ""IndexBlockLink"" (""IndexVolumeID"", ""BlockVolumeID"") VALUES (?, ?)");
+            m_findpathprefixCommand = connection.CreateCommand(@"SELECT ""ID"" FROM ""PathPrefix"" WHERE ""Prefix"" = ?");
+            m_insertpathprefixCommand = connection.CreateCommand(@"INSERT INTO ""PathPrefix"" (""Prefix"") VALUES (?); SELECT last_insert_rowid(); ");
         }
 
         internal void SetResult(BasicResults result)
@@ -233,17 +197,17 @@ namespace Duplicati.Library.Main.Database
             return Library.Utility.Utility.EPOCH.AddSeconds(seconds);
         }
 
-        public void UpdateRemoteVolume(string name, RemoteVolumeState state, long size, string hash, System.Data.IDbTransaction transaction = null)
+        public void UpdateRemoteVolume(string name, RemoteVolumeState state, long size, string hash, IDbTransaction transaction = null)
         {
             UpdateRemoteVolume(name, state, size, hash, false, transaction);
         }
 
-        public void UpdateRemoteVolume(string name, RemoteVolumeState state, long size, string hash, bool suppressCleanup, System.Data.IDbTransaction transaction = null)
+        public void UpdateRemoteVolume(string name, RemoteVolumeState state, long size, string hash, bool suppressCleanup, IDbTransaction transaction = null)
         {
             UpdateRemoteVolume(name, state, size, hash, suppressCleanup, new TimeSpan(0), transaction);
         }
 
-        public void UpdateRemoteVolume(string name, RemoteVolumeState state, long size, string hash, bool suppressCleanup, TimeSpan deleteGraceTime, System.Data.IDbTransaction transaction = null)
+        public void UpdateRemoteVolume(string name, RemoteVolumeState state, long size, string hash, bool suppressCleanup, TimeSpan deleteGraceTime, IDbTransaction transaction = null)
         {
             m_updateremotevolumeCommand.Transaction = transaction;
             m_updateremotevolumeCommand.SetParameterValue(0, m_operationid);
@@ -292,8 +256,8 @@ namespace Duplicati.Library.Main.Database
 
         public Tuple<string, object[]> GetFilelistWhereClause(DateTime time, long[] versions, IEnumerable<KeyValuePair<long, DateTime>> filesetslist = null, bool singleTimeMatch = false)
         {
-            var filesets = (filesetslist ?? this.FilesetTimes).ToArray();
-            StringBuilder query = new StringBuilder();
+            var filesets = (filesetslist ?? FilesetTimes).ToArray();
+            var query = new StringBuilder();
             var args = new List<object>();
             if (time.Ticks > 0 || (versions != null && versions.Length > 0))
             {
@@ -311,8 +275,7 @@ namespace Duplicati.Library.Main.Database
 
                 if (versions != null && versions.Length > 0)
                 {
-                    StringBuilder qs = new StringBuilder();
-
+                    var qs = new StringBuilder();
                     foreach (var v in versions)
                     {
                         if (v >= 0 && v < filesets.Length)
@@ -342,13 +305,13 @@ namespace Duplicati.Library.Main.Database
             return new Tuple<string, object[]>(query.ToString(), args.ToArray());
         }
 
-        public long GetRemoteVolumeID(string file, System.Data.IDbTransaction transaction = null)
+        public long GetRemoteVolumeID(string file, IDbTransaction transaction = null)
         {
             m_selectremotevolumeIdCommand.Transaction = transaction;
             return m_selectremotevolumeIdCommand.ExecuteScalarInt64(null, -1, file);
         }
 
-        public IEnumerable<KeyValuePair<string, long>> GetRemoteVolumeIDs(IEnumerable<string> files, System.Data.IDbTransaction transaction = null)
+        public IEnumerable<KeyValuePair<string, long>> GetRemoteVolumeIDs(IEnumerable<string> files, IDbTransaction transaction = null)
         {
             using (var cmd = m_connection.CreateCommand(transaction))
             {
@@ -362,7 +325,7 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
-        public RemoteVolumeEntry GetRemoteVolume(string file, System.Data.IDbTransaction transaction = null)
+        public RemoteVolumeEntry GetRemoteVolume(string file, IDbTransaction transaction = null)
         {
             m_selectremotevolumeCommand.Transaction = transaction;
             m_selectremotevolumeCommand.SetParameterValue(0, file);
@@ -392,7 +355,7 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
-        public IEnumerable<RemoteVolumeEntry> GetRemoteVolumes(System.Data.IDbTransaction transaction = null)
+        public IEnumerable<RemoteVolumeEntry> GetRemoteVolumes(IDbTransaction transaction = null)
         {
             m_selectremotevolumesCommand.Transaction = transaction;
             using (var rd = m_selectremotevolumesCommand.ExecuteReader())
@@ -418,7 +381,7 @@ namespace Duplicati.Library.Main.Database
         /// <param name="operation">The operation performed</param>
         /// <param name="path">The path involved</param>
         /// <param name="data">Any data relating to the operation</param>
-        public void LogRemoteOperation(string operation, string path, string data, System.Data.IDbTransaction transaction)
+        public void LogRemoteOperation(string operation, string path, string data, IDbTransaction transaction)
         {
             m_insertremotelogCommand.Transaction = transaction;
             m_insertremotelogCommand.SetParameterValue(0, m_operationid);
@@ -435,7 +398,7 @@ namespace Duplicati.Library.Main.Database
         /// <param name="type">The message type</param>
         /// <param name="message">The message</param>
         /// <param name="exception">An optional exception</param>
-        public void LogMessage(string type, string message, Exception exception, System.Data.IDbTransaction transaction)
+        public void LogMessage(string type, string message, Exception exception, IDbTransaction transaction)
         {
             m_insertlogCommand.Transaction = transaction;
             m_insertlogCommand.SetParameterValue(0, m_operationid);
@@ -446,12 +409,11 @@ namespace Duplicati.Library.Main.Database
             m_insertlogCommand.ExecuteNonQuery();
         }
 
-        public void UnlinkRemoteVolume(string name, RemoteVolumeState state, System.Data.IDbTransaction transaction = null)
+        public void UnlinkRemoteVolume(string name, RemoteVolumeState state, IDbTransaction transaction = null)
         {
             using (var tr = new TemporaryTransactionWrapper(m_connection, transaction))
-            using (var cmd = m_connection.CreateCommand())
+            using (var cmd = m_connection.CreateCommand(tr.Parent))
             {
-                cmd.Transaction = tr.Parent;
                 var c = cmd.ExecuteNonQuery(@"DELETE FROM ""RemoteVolume"" WHERE ""Name"" = ? AND ""State"" = ? ", name, state.ToString());
                 if (c != 1)
                     throw new Exception($"Unexpected number of remote volumes deleted: {c}, expected {1}");
@@ -470,10 +432,8 @@ namespace Duplicati.Library.Main.Database
             if (names == null || !names.Any()) return;
 
             using (var tr = new TemporaryTransactionWrapper(m_connection, transaction))
-            using (var deletecmd = m_connection.CreateCommand())
+            using (var deletecmd = m_connection.CreateCommand(tr.Parent))
             {
-                deletecmd.Transaction = tr.Parent;
-
                 string temptransguid = Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
                 var volidstable = "DelVolSetIds-" + temptransguid;
                 var blocksetidstable = "DelBlockSetIds-" + temptransguid;
@@ -555,7 +515,7 @@ AND Fileset.ID NOT IN
 
                 // Clean up temp tables for subqueries. We truncate content and then try to delete.
                 // Drop in try-block, as it fails in nested transactions (SQLite problem)
-                // System.Data.SQLite.SQLiteException (0x80004005): database table is locked
+                // SQLite.SQLiteException (0x80004005): database table is locked
                 deletecmd.ExecuteNonQuery(FormatInvariant($@"DELETE FROM ""{blocksetidstable}"" "));
                 deletecmd.ExecuteNonQuery(FormatInvariant($@"DELETE FROM ""{volidstable}"" "));
                 try
@@ -592,17 +552,17 @@ AND Fileset.ID NOT IN
             return RegisterRemoteVolume(name, type, state, size, new TimeSpan(0), null);
         }
 
-        public long RegisterRemoteVolume(string name, RemoteVolumeType type, RemoteVolumeState state, System.Data.IDbTransaction transaction)
+        public long RegisterRemoteVolume(string name, RemoteVolumeType type, RemoteVolumeState state, IDbTransaction transaction)
         {
             return RegisterRemoteVolume(name, type, state, new TimeSpan(0), transaction);
         }
 
-        public long RegisterRemoteVolume(string name, RemoteVolumeType type, RemoteVolumeState state, TimeSpan deleteGraceTime, System.Data.IDbTransaction transaction)
+        public long RegisterRemoteVolume(string name, RemoteVolumeType type, RemoteVolumeState state, TimeSpan deleteGraceTime, IDbTransaction transaction)
         {
             return RegisterRemoteVolume(name, type, state, -1, deleteGraceTime, transaction);
         }
 
-        public long RegisterRemoteVolume(string name, RemoteVolumeType type, RemoteVolumeState state, long size, TimeSpan deleteGraceTime, System.Data.IDbTransaction transaction)
+        public long RegisterRemoteVolume(string name, RemoteVolumeType type, RemoteVolumeState state, long size, TimeSpan deleteGraceTime, IDbTransaction transaction)
         {
             using (var tr = new TemporaryTransactionWrapper(m_connection, transaction))
             {
@@ -679,31 +639,27 @@ AND Fileset.ID NOT IN
         public bool IsFilesetFullBackup(DateTime filesetTime)
         {
             using (var cmd = m_connection.CreateCommand())
+            using (var rd = cmd.ExecuteReader(FormatInvariant($@"SELECT ""IsFullBackup"" FROM ""Fileset"" WHERE ""Timestamp"" = {Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(filesetTime)}")))
             {
-                using (var rd = cmd.ExecuteReader(FormatInvariant($@"SELECT ""IsFullBackup"" FROM ""Fileset"" WHERE ""Timestamp"" = {Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(filesetTime)}")))
-                {
-                    if (!rd.Read())
-                    {
-                        return false;
-                    }
-                    var isFullBackup = rd.GetInt32(0);
-                    return isFullBackup == BackupType.FULL_BACKUP;
-                }
+                if (!rd.Read())
+                    return false;
+                var isFullBackup = rd.GetInt32(0);
+                return isFullBackup == BackupType.FULL_BACKUP;
             }
         }
 
         // TODO: Remove this
-        public System.Data.IDbTransaction BeginTransaction()
+        public IDbTransaction BeginTransaction()
         {
             return m_connection.BeginTransaction();
         }
 
         protected class TemporaryTransactionWrapper : IDisposable
         {
-            private readonly System.Data.IDbTransaction m_parent;
+            private readonly IDbTransaction m_parent;
             private readonly bool m_isTemporary;
 
-            public TemporaryTransactionWrapper(System.Data.IDbConnection connection, System.Data.IDbTransaction transaction)
+            public TemporaryTransactionWrapper(IDbConnection connection, IDbTransaction transaction)
             {
                 if (transaction != null)
                 {
@@ -729,10 +685,10 @@ AND Fileset.ID NOT IN
                     m_parent.Dispose();
             }
 
-            public System.Data.IDbTransaction Parent { get { return m_parent; } }
+            public IDbTransaction Parent { get { return m_parent; } }
         }
 
-        private IEnumerable<KeyValuePair<string, string>> GetDbOptionList(System.Data.IDbTransaction transaction = null)
+        private IEnumerable<KeyValuePair<string, string>> GetDbOptionList(IDbTransaction transaction = null)
         {
             using (var cmd = m_connection.CreateCommand(transaction))
             using (var rd = cmd.ExecuteReader(@"SELECT ""Key"", ""Value"" FROM ""Configuration"" "))
@@ -740,7 +696,7 @@ AND Fileset.ID NOT IN
                     yield return new KeyValuePair<string, string>(rd.GetValue(0).ToString(), rd.GetValue(1).ToString());
         }
 
-        public IDictionary<string, string> GetDbOptions(System.Data.IDbTransaction transaction = null)
+        public IDictionary<string, string> GetDbOptions(IDbTransaction transaction = null)
         {
             return GetDbOptionList(transaction).ToDictionary(x => x.Key, x => x.Value);
         }
@@ -794,12 +750,11 @@ AND Fileset.ID NOT IN
         /// </summary>
         /// <param name="options">The options to set</param>
         /// <param name="transaction">An optional transaction</param>
-        public void SetDbOptions(IDictionary<string, string> options, System.Data.IDbTransaction transaction = null)
+        public void SetDbOptions(IDictionary<string, string> options, IDbTransaction transaction = null)
         {
             using (var tr = new TemporaryTransactionWrapper(m_connection, transaction))
-            using (var cmd = m_connection.CreateCommand())
+            using (var cmd = m_connection.CreateCommand(tr.Parent))
             {
-                cmd.Transaction = tr.Parent;
                 cmd.ExecuteNonQuery(@"DELETE FROM ""Configuration"" ");
                 foreach (var kp in options)
                     cmd.ExecuteNonQuery(@"INSERT INTO ""Configuration"" (""Key"", ""Value"") VALUES (?, ?) ", kp.Key, kp.Value);
@@ -814,7 +769,7 @@ AND Fileset.ID NOT IN
                 return cmd.ExecuteScalarInt64(@"SELECT COUNT(*) FROM ""Block"" WHERE ""Size"" > ?", -1, fhblocksize);
         }
 
-        public void VerifyConsistency(long blocksize, long hashsize, bool verifyfilelists, System.Data.IDbTransaction transaction)
+        public void VerifyConsistency(long blocksize, long hashsize, bool verifyfilelists, IDbTransaction transaction)
         {
             using (var cmd = m_connection.CreateCommand(transaction))
             {
@@ -952,12 +907,12 @@ ON
 
             public Block(string hash, long size)
             {
-                this.Hash = hash;
-                this.Size = size;
+                Hash = hash;
+                Size = size;
             }
         }
 
-        public IEnumerable<IBlock> GetBlocks(long volumeid, System.Data.IDbTransaction transaction = null)
+        public IEnumerable<IBlock> GetBlocks(long volumeid, IDbTransaction transaction = null)
         {
             using (var cmd = m_connection.CreateCommand(transaction))
             using (var rd = cmd.ExecuteReader(@"SELECT DISTINCT ""Hash"", ""Size"" FROM ""Block"" WHERE ""VolumeID"" = ?", volumeid))
@@ -969,13 +924,13 @@ ON
         {
             private class BlocklistHashEnumerator : IEnumerator<string>
             {
-                private readonly System.Data.IDataReader m_reader;
+                private readonly IDataReader m_reader;
                 private readonly BlocklistHashEnumerable m_parent;
                 private string m_path = null;
                 private bool m_first = true;
                 private string m_current = null;
 
-                public BlocklistHashEnumerator(BlocklistHashEnumerable parent, System.Data.IDataReader reader)
+                public BlocklistHashEnumerator(BlocklistHashEnumerable parent, IDataReader reader)
                 {
                     m_reader = reader;
                     m_parent = parent;
@@ -987,7 +942,7 @@ ON
                 {
                 }
 
-                object System.Collections.IEnumerator.Current { get { return this.Current; } }
+                object System.Collections.IEnumerator.Current { get { return Current; } }
 
                 public bool MoveNext()
                 {
@@ -1032,12 +987,12 @@ ON
                 }
             }
 
-            private readonly System.Data.IDataReader m_reader;
+            private readonly IDataReader m_reader;
 
-            public BlocklistHashEnumerable(System.Data.IDataReader reader)
+            public BlocklistHashEnumerable(IDataReader reader)
             {
                 m_reader = reader;
-                this.MoreData = true;
+                MoreData = true;
             }
 
             public bool MoreData { get; protected set; }
@@ -1049,7 +1004,7 @@ ON
 
             System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
             {
-                return this.GetEnumerator();
+                return GetEnumerator();
             }
         }
 
@@ -1181,11 +1136,10 @@ ORDER BY
 
 ";
 
-        public void WriteFileset(Volumes.FilesetVolumeWriter filesetvolume, long filesetId, System.Data.IDbTransaction transaction)
+        public void WriteFileset(Volumes.FilesetVolumeWriter filesetvolume, long filesetId, IDbTransaction transaction)
         {
-            using (var cmd = m_connection.CreateCommand())
+            using (var cmd = m_connection.CreateCommand(transaction))
             {
-                cmd.Transaction = transaction;
                 cmd.CommandText = LIST_FOLDERS_AND_SYMLINKS;
                 cmd.AddParameter(FOLDER_BLOCKSET_ID);
                 cmd.AddParameter(SYMLINK_BLOCKSET_ID);
@@ -1256,22 +1210,20 @@ ORDER BY
             }
         }
 
-        public void LinkFilesetToVolume(long filesetid, long volumeid, System.Data.IDbTransaction transaction)
+        public void LinkFilesetToVolume(long filesetid, long volumeid, IDbTransaction transaction)
         {
-            using (var cmd = m_connection.CreateCommand())
+            using (var cmd = m_connection.CreateCommand(transaction))
             {
-                cmd.Transaction = transaction;
                 var c = cmd.ExecuteNonQuery(@"UPDATE ""Fileset"" SET ""VolumeID"" = ? WHERE ""ID"" = ?", volumeid, filesetid);
                 if (c != 1)
                     throw new Exception($"Failed to link filesetid {filesetid} to volumeid {volumeid}");
             }
         }
 
-        public void PushTimestampChangesToPreviousVersion(long filesetId, System.Data.IDbTransaction transaction)
+        public void PushTimestampChangesToPreviousVersion(long filesetId, IDbTransaction transaction)
         {
-            using (var cmd = m_connection.CreateCommand())
+            using (var cmd = m_connection.CreateCommand(transaction))
             {
-                cmd.Transaction = transaction;
                 var query = @"
 UPDATE FilesetEntry AS oldVersion
 SET Lastmodified = tempVersion.Lastmodified
@@ -1290,37 +1242,34 @@ AND oldVersion.FilesetID = (SELECT ID FROM Fileset WHERE ID != ? ORDER BY Timest
         public class FilteredFilenameTable : IDisposable
         {
             public string Tablename { get; private set; }
-            private readonly System.Data.IDbConnection m_connection;
+            private readonly IDbConnection m_connection;
 
-            public FilteredFilenameTable(System.Data.IDbConnection connection, Library.Utility.IFilter filter, System.Data.IDbTransaction transaction)
+            public FilteredFilenameTable(IDbConnection connection, IFilter filter, IDbTransaction transaction)
             {
                 m_connection = connection;
                 Tablename = "Filenames-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
-                var type = Library.Utility.FilterType.Regexp;
+                var type = FilterType.Regexp;
                 if (filter is FilterExpression expression)
                     type = expression.Type;
 
                 // Bugfix: SQLite does not handle case-insensitive LIKE with non-ascii characters
-                if (type != Library.Utility.FilterType.Regexp && !Library.Utility.Utility.IsFSCaseSensitive && filter.ToString().Any(x => x > 127))
-                    type = Library.Utility.FilterType.Regexp;
+                if (type != FilterType.Regexp && !Library.Utility.Utility.IsFSCaseSensitive && filter.ToString().Any(x => x > 127))
+                    type = FilterType.Regexp;
 
                 if (filter.Empty)
                 {
-                    using (var cmd = m_connection.CreateCommand())
+                    using (var cmd = m_connection.CreateCommand(transaction))
                     {
-                        cmd.Transaction = transaction;
                         cmd.ExecuteNonQuery(FormatInvariant($@"CREATE TEMPORARY TABLE ""{Tablename}"" AS SELECT DISTINCT ""Path"" FROM ""File"" "));
                         return;
                     }
                 }
 
-                if (type == Library.Utility.FilterType.Regexp || type == Library.Utility.FilterType.Group)
+                if (type == FilterType.Regexp || type == FilterType.Group)
                 {
-                    using (var cmd = m_connection.CreateCommand())
+                    using (var cmd = m_connection.CreateCommand(transaction))
                     {
                         // TODO: Optimize this to not rely on the "File" view, and not instantiate the paths in full
-
-                        cmd.Transaction = transaction;
                         cmd.ExecuteNonQuery(FormatInvariant($@"CREATE TEMPORARY TABLE ""{Tablename}"" (""Path"" TEXT NOT NULL)"));
                         using (var tr = new TemporaryTransactionWrapper(m_connection, transaction))
                         {
@@ -1332,7 +1281,7 @@ AND oldVersion.FilesetID = (SELECT ID FROM Fileset WHERE ID != ? ORDER BY Timest
                                 while (rd.Read())
                                 {
                                     var p = rd.GetValue(0).ToString();
-                                    if (Library.Utility.FilterExpression.Matches(filter, p))
+                                    if (FilterExpression.Matches(filter, p))
                                     {
                                         cmd.SetParameterValue(0, p);
                                         cmd.ExecuteNonQuery();
@@ -1348,7 +1297,7 @@ AND oldVersion.FilesetID = (SELECT ID FROM Fileset WHERE ID != ? ORDER BY Timest
                 {
                     var sb = new StringBuilder();
                     var args = new List<object>();
-                    foreach (var f in ((Library.Utility.FilterExpression)filter).GetSimpleList())
+                    foreach (var f in ((FilterExpression)filter).GetSimpleList())
                     {
                         if (type == FilterType.Wildcard)
                         {
@@ -1364,10 +1313,9 @@ AND oldVersion.FilesetID = (SELECT ID FROM Fileset WHERE ID != ? ORDER BY Timest
 
                     sb.Length = sb.Length - " OR ".Length;
 
-                    using (var cmd = m_connection.CreateCommand())
                     using (var tr = new TemporaryTransactionWrapper(m_connection, transaction))
+                    using (var cmd = m_connection.CreateCommand(tr.Parent))
                     {
-                        cmd.Transaction = tr.Parent;
                         cmd.ExecuteNonQuery(FormatInvariant($@"CREATE TEMPORARY TABLE ""{Tablename}"" (""Path"" TEXT NOT NULL)"));
                         cmd.ExecuteNonQuery(FormatInvariant($@"INSERT INTO ""{Tablename}"" SELECT DISTINCT ""Path"" FROM ""File"" WHERE {sb}"), args.ToArray());
                         tr.Commit();
@@ -1388,13 +1336,11 @@ AND oldVersion.FilesetID = (SELECT ID FROM Fileset WHERE ID != ? ORDER BY Timest
             }
         }
 
-        public void RenameRemoteFile(string oldname, string newname, System.Data.IDbTransaction transaction)
+        public void RenameRemoteFile(string oldname, string newname, IDbTransaction transaction)
         {
             using (var tr = new TemporaryTransactionWrapper(m_connection, transaction))
-            using (var cmd = m_connection.CreateCommand())
+            using (var cmd = m_connection.CreateCommand(tr.Parent))
             {
-                cmd.Transaction = tr.Parent;
-
                 //Rename the old entry, to preserve ID links
                 var c = cmd.ExecuteNonQuery(@"UPDATE ""Remotevolume"" SET ""Name"" = ? WHERE ""Name"" = ?", newname, oldname);
                 if (c != 1)
@@ -1417,19 +1363,18 @@ AND oldVersion.FilesetID = (SELECT ID FROM Fileset WHERE ID != ? ORDER BY Timest
         /// <param name="volumeid">The ID of the fileset volume to update</param>
         /// <param name="timestamp">The timestamp of the operation to create</param>
         /// <param name="transaction">An optional external transaction</param>
-        public virtual long CreateFileset(long volumeid, DateTime timestamp, System.Data.IDbTransaction transaction = null)
+        public virtual long CreateFileset(long volumeid, DateTime timestamp, IDbTransaction transaction = null)
         {
-            using (var cmd = m_connection.CreateCommand())
             using (var tr = new TemporaryTransactionWrapper(m_connection, transaction))
+            using (var cmd = m_connection.CreateCommand(tr.Parent))
             {
-                cmd.Transaction = tr.Parent;
                 var id = cmd.ExecuteScalarInt64(@"INSERT INTO ""Fileset"" (""OperationID"", ""Timestamp"", ""VolumeID"", ""IsFullBackup"") VALUES (?, ?, ?, ?); SELECT last_insert_rowid();", -1, m_operationid, Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(timestamp), volumeid, BackupType.PARTIAL_BACKUP);
                 tr.Commit();
                 return id;
             }
         }
 
-        public void AddIndexBlockLink(long indexVolumeID, long blockVolumeID, System.Data.IDbTransaction transaction)
+        public void AddIndexBlockLink(long indexVolumeID, long blockVolumeID, IDbTransaction transaction)
         {
             m_insertIndexBlockLink.Transaction = transaction;
             m_insertIndexBlockLink.SetParameterValue(0, indexVolumeID);
@@ -1445,7 +1390,7 @@ AND oldVersion.FilesetID = (SELECT ID FROM Fileset WHERE ID != ? ORDER BY Timest
         /// <param name="hashsize">The size of the hash</param>
         /// <param name="transaction">An optional external transaction</param>
         /// <returns>An enumerable of tuples containing the blocklist hash, the blocklist data and the length of the data</returns>
-        public IEnumerable<Tuple<string, byte[], int>> GetBlocklists(long volumeid, long blocksize, int hashsize, System.Data.IDbTransaction transaction = null)
+        public IEnumerable<Tuple<string, byte[], int>> GetBlocklists(long volumeid, long blocksize, int hashsize, IDbTransaction transaction = null)
         {
             using (var cmd = m_connection.CreateCommand(transaction))
             {
@@ -1491,13 +1436,9 @@ AND oldVersion.FilesetID = (SELECT ID FROM Fileset WHERE ID != ? ORDER BY Timest
         public void UpdateFullBackupStateInFileset(long fileSetId, bool isFullBackup, IDbTransaction transaction = null)
         {
             using (var tr = new TemporaryTransactionWrapper(m_connection, transaction))
+            using (var cmd = m_connection.CreateCommand(tr.Parent))
             {
-                using (var cmd = m_connection.CreateCommand())
-                {
-                    cmd.Transaction = tr.Parent;
-                    cmd.ExecuteNonQuery(@"UPDATE ""Fileset"" SET ""IsFullBackup"" = ? WHERE ""ID"" = ?;", isFullBackup, fileSetId);
-                }
-
+                cmd.ExecuteNonQuery(@"UPDATE ""Fileset"" SET ""IsFullBackup"" = ? WHERE ""ID"" = ?;", isFullBackup, fileSetId);
                 tr.Commit();
             }
         }
@@ -1524,16 +1465,14 @@ AND oldVersion.FilesetID = (SELECT ID FROM Fileset WHERE ID != ? ORDER BY Timest
         public IEnumerable<KeyValuePair<long, DateTime>> GetIncompleteFilesets(IDbTransaction transaction)
         {
             using (var cmd = m_connection.CreateCommand(transaction))
-            {
-                using (var rd = cmd.ExecuteReader(FormatInvariant(@$"SELECT DISTINCT ""Fileset"".""ID"", ""Fileset"".""Timestamp"" FROM ""Fileset"", ""RemoteVolume"" WHERE ""RemoteVolume"".""ID"" = ""Fileset"".""VolumeID"" AND ""Fileset"".""ID"" IN (SELECT ""FilesetID"" FROM ""FilesetEntry"")  AND (""RemoteVolume"".""State"" = '{RemoteVolumeState.Uploading}' OR ""RemoteVolume"".""State"" = '{RemoteVolumeState.Temporary}')")))
-                    while (rd.Read())
-                    {
-                        yield return new KeyValuePair<long, DateTime>(
-                            rd.GetInt64(0),
-                            ParseFromEpochSeconds(rd.GetInt64(1)).ToLocalTime()
-                        );
-                    }
-            }
+            using (var rd = cmd.ExecuteReader(FormatInvariant(@$"SELECT DISTINCT ""Fileset"".""ID"", ""Fileset"".""Timestamp"" FROM ""Fileset"", ""RemoteVolume"" WHERE ""RemoteVolume"".""ID"" = ""Fileset"".""VolumeID"" AND ""Fileset"".""ID"" IN (SELECT ""FilesetID"" FROM ""FilesetEntry"")  AND (""RemoteVolume"".""State"" = '{RemoteVolumeState.Uploading}' OR ""RemoteVolume"".""State"" = '{RemoteVolumeState.Temporary}')")))
+                while (rd.Read())
+                {
+                    yield return new KeyValuePair<long, DateTime>(
+                        rd.GetInt64(0),
+                        ParseFromEpochSeconds(rd.GetInt64(1)).ToLocalTime()
+                    );
+                }
         }
 
         /// <summary>
@@ -1557,7 +1496,7 @@ AND oldVersion.FilesetID = (SELECT ID FROM Fileset WHERE ID != ? ORDER BY Timest
                         ParseFromEpochSeconds(rd.GetInt64(6)).ToLocalTime()
                     );
                 else
-                    return default(RemoteVolumeEntry);
+                    return default;
         }
 
         public void PurgeLogData(DateTime threshold)
@@ -1590,11 +1529,11 @@ AND oldVersion.FilesetID = (SELECT ID FROM Fileset WHERE ID != ? ORDER BY Timest
             if (IsDisposed)
                 return;
 
-            DisposeAllFields<System.Data.IDbCommand>(this, false);
+            DisposeAllFields<IDbCommand>(this, false);
 
             if (ShouldCloseConnection && m_connection != null)
             {
-                if (m_connection.State == System.Data.ConnectionState.Open && !m_hasExecutedVacuum)
+                if (m_connection.State == ConnectionState.Open && !m_hasExecutedVacuum)
                 {
                     using (var transaction = m_connection.BeginTransaction())
                     using (var command = m_connection.CreateCommand(transaction))
@@ -1606,7 +1545,7 @@ AND oldVersion.FilesetID = (SELECT ID FROM Fileset WHERE ID != ? ORDER BY Timest
                         {
                             transaction.Commit();
                         }
-                        catch (System.Data.SQLite.SQLiteException ex)
+                        catch (SQLite.SQLiteException ex)
                         {
                             Logging.Log.WriteVerboseMessage(LOGTAG, "FailedToCommitTransaction", ex, "Failed to commit transaction after pragma optimize, usually caused by the a no-op transaction");
                         }
@@ -1697,7 +1636,7 @@ AND oldVersion.FilesetID = (SELECT ID FROM Fileset WHERE ID != ? ORDER BY Timest
         /// <returns>The path prefix ID.</returns>
         /// <param name="prefix">The path to get the prefix for.</param>
         /// <param name="transaction">The transaction to use for insertion, or null for no transaction</param>
-        public long GetOrCreatePathPrefix(string prefix, System.Data.IDbTransaction transaction)
+        public long GetOrCreatePathPrefix(string prefix, IDbTransaction transaction)
         {
             // Ring-buffer style lookup
             for (var i = 0; i < m_pathPrefixLookup.Length; i++)
@@ -1727,8 +1666,8 @@ AND oldVersion.FilesetID = (SELECT ID FROM Fileset WHERE ID != ? ORDER BY Timest
         /// The path separators on this system
         /// </summary>
         private static readonly char[] _pathseparators = new char[] {
-            System.IO.Path.DirectorySeparatorChar,
-            System.IO.Path.AltDirectorySeparatorChar,
+            Path.DirectorySeparatorChar,
+            Path.AltDirectorySeparatorChar,
         };
 
         /// <summary>

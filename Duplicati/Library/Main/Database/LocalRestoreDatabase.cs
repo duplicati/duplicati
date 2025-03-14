@@ -82,9 +82,9 @@ namespace Duplicati.Library.Main.Database
         /// </remarks>
         public void CreateProgressTracker(bool createFilesNewlyDoneTracker)
         {
-            m_fileprogtable = "FileProgress-" + this.m_temptabsetguid;
-            m_totalprogtable = "TotalProgress-" + this.m_temptabsetguid;
-            m_filesnewlydonetable = createFilesNewlyDoneTracker ? "FilesNewlyDone-" + this.m_temptabsetguid : null;
+            m_fileprogtable = "FileProgress-" + m_temptabsetguid;
+            m_totalprogtable = "TotalProgress-" + m_temptabsetguid;
+            m_filesnewlydonetable = createFilesNewlyDoneTracker ? "FilesNewlyDone-" + m_temptabsetguid : null;
 
             using (var cmd = m_connection.CreateCommand())
             {
@@ -199,7 +199,7 @@ END ");
         }
 
 
-        public Tuple<long, long> PrepareRestoreFilelist(DateTime restoretime, long[] versions, Library.Utility.IFilter filter)
+        public Tuple<long, long> PrepareRestoreFilelist(DateTime restoretime, long[] versions, IFilter filter)
         {
             m_tempfiletable = "Fileset-" + m_temptabsetguid;
             m_tempblocktable = "Blocks-" + m_temptabsetguid;
@@ -214,7 +214,7 @@ END ");
 
                     m_restoreTime = ParseFromEpochSeconds(cmd.ExecuteScalarInt64(@"SELECT ""Timestamp"" FROM ""Fileset"" WHERE ""ID"" = ?", 0, filesetId));
 
-                    var ix = this.FilesetTimes.Select((value, index) => new { value.Key, index })
+                    var ix = FilesetTimes.Select((value, index) => new { value.Key, index })
                             .Where(n => n.Key == filesetId)
                             .Select(pair => pair.index + 1)
                             .FirstOrDefault() - 1;
@@ -291,28 +291,20 @@ END ");
                         cmd.AddParameter(filesetId);
 
                         object[] values = new object[4];
-                        using (var cmd2 = m_connection.CreateCommand())
-                        {
-                            cmd2.CommandText = FormatInvariant($@"INSERT INTO ""{m_tempfiletable}"" (""ID"", ""Path"", ""BlocksetID"", ""MetadataID"", ""DataVerified"") VALUES (?,?,?,?,0)");
-                            cmd2.AddParameter();
-                            cmd2.AddParameter();
-                            cmd2.AddParameter();
-                            cmd2.AddParameter();
-
-                            using (var rd = cmd.ExecuteReader())
-                                while (rd.Read())
+                        using (var cmd2 = m_connection.CreateCommand(FormatInvariant($@"INSERT INTO ""{m_tempfiletable}"" (""ID"", ""Path"", ""BlocksetID"", ""MetadataID"", ""DataVerified"") VALUES (?,?,?,?,0)")))
+                        using (var rd = cmd.ExecuteReader())
+                            while (rd.Read())
+                            {
+                                rd.GetValues(values);
+                                if (values[1] != null && values[1] != DBNull.Value && Library.Utility.FilterExpression.Matches(filter, values[1].ToString()))
                                 {
-                                    rd.GetValues(values);
-                                    if (values[1] != null && values[1] != DBNull.Value && Library.Utility.FilterExpression.Matches(filter, values[1].ToString()))
-                                    {
-                                        cmd2.SetParameterValue(0, values[0]);
-                                        cmd2.SetParameterValue(1, values[1]);
-                                        cmd2.SetParameterValue(2, values[2]);
-                                        cmd2.SetParameterValue(3, values[3]);
-                                        cmd2.ExecuteNonQuery();
-                                    }
+                                    cmd2.SetParameterValue(0, values[0]);
+                                    cmd2.SetParameterValue(1, values[1]);
+                                    cmd2.SetParameterValue(2, values[2]);
+                                    cmd2.SetParameterValue(3, values[3]);
+                                    cmd2.ExecuteNonQuery();
                                 }
-                        }
+                            }
                     }
 
                     //creating indexes after insertion is much faster
@@ -362,7 +354,7 @@ END ");
             {
                 cmd.CommandText = FormatInvariant($@"SELECT ""Path"" FROM ""{m_tempfiletable}"" ORDER BY LENGTH(""Path"") DESC LIMIT 1");
                 var v0 = cmd.ExecuteScalar();
-                string maxpath = "";
+                var maxpath = "";
                 if (v0 != null && v0 != DBNull.Value)
                     maxpath = v0.ToString();
 
@@ -370,7 +362,7 @@ END ");
 
                 cmd.CommandText = FormatInvariant($@"SELECT COUNT(*) FROM ""{m_tempfiletable}""");
                 var filecount = cmd.ExecuteScalarInt64(-1);
-                long foundfiles = -1;
+                var foundfiles = -1L;
 
                 //TODO: Handle FS case-sensitive?
                 cmd.CommandText = FormatInvariant($@"SELECT COUNT(*) FROM ""{m_tempfiletable}"" WHERE SUBSTR(""Path"", 1, ?) = ?");
@@ -475,7 +467,7 @@ END ");
                 cmd.CommandText = FormatInvariant($@"INSERT INTO ""{m_tempblocktable}"" (""FileID"", ""Index"", ""Hash"", ""Size"", ""Restored"", ""Metadata"", ""VolumeId"", ""BlockId"") SELECT DISTINCT ""{m_tempfiletable}"".""ID"", ""BlocksetEntry"".""Index"", ""Block"".""Hash"", ""Block"".""Size"", 0, 0, ""Block"".""VolumeID"", ""Block"".""ID"" FROM ""{m_tempfiletable}"", ""BlocksetEntry"", ""Block"" WHERE ""{m_tempfiletable}"".""BlocksetID"" = ""BlocksetEntry"".""BlocksetID"" AND ""BlocksetEntry"".""BlockID"" = ""Block"".""ID"" ");
                 var p1 = cmd.ExecuteNonQuery();
 
-                int p2 = 0;
+                var p2 = 0;
                 if (!skipMetadata)
                 {
                     cmd.CommandText = FormatInvariant($@"INSERT INTO ""{m_tempblocktable}"" (""FileID"", ""Index"", ""Hash"", ""Size"", ""Restored"", ""Metadata"", ""VolumeId"", ""BlockId"") SELECT DISTINCT ""{m_tempfiletable}"".""ID"", ""BlocksetEntry"".""Index"", ""Block"".""Hash"", ""Block"".""Size"", 0, 1, ""Block"".""VolumeID"", ""Block"".""ID""   FROM ""{m_tempfiletable}"", ""BlocksetEntry"", ""Block"", ""Metadataset"" WHERE ""{m_tempfiletable}"".""MetadataID"" = ""Metadataset"".""ID"" AND ""Metadataset"".""BlocksetID"" = ""BlocksetEntry"".""BlocksetID"" AND ""BlocksetEntry"".""BlockID"" = ""Block"".""ID"" ");
@@ -566,9 +558,9 @@ END ");
 
         private class ExistingFile : IExistingFile
         {
-            private readonly System.Data.IDataReader m_reader;
+            private readonly IDataReader m_reader;
 
-            public ExistingFile(System.Data.IDataReader rd) { m_reader = rd; HasMore = true; }
+            public ExistingFile(IDataReader rd) { m_reader = rd; HasMore = true; }
 
             public string TargetPath { get { return m_reader.ConvertValueToString(0); } }
             public string TargetHash { get { return m_reader.ConvertValueToString(1); } }
@@ -579,9 +571,9 @@ END ");
 
             private class ExistingFileBlock : IExistingFileBlock
             {
-                private readonly System.Data.IDataReader m_reader;
+                private readonly IDataReader m_reader;
 
-                public ExistingFileBlock(System.Data.IDataReader rd) { m_reader = rd; }
+                public ExistingFileBlock(IDataReader rd) { m_reader = rd; }
 
                 public string Hash { get { return m_reader.ConvertValueToString(4); } }
                 public long Index { get { return m_reader.ConvertValueToInt64(5); } }
@@ -592,8 +584,8 @@ END ");
             {
                 get
                 {
-                    string p = this.TargetPath;
-                    while (HasMore && p == this.TargetPath)
+                    string p = TargetPath;
+                    while (HasMore && p == TargetPath)
                     {
                         yield return new ExistingFileBlock(m_reader);
                         HasMore = m_reader.Read();
@@ -601,7 +593,7 @@ END ");
                 }
             }
 
-            public static IEnumerable<IExistingFile> GetExistingFilesWithBlocks(System.Data.IDbConnection connection, string tablename)
+            public static IEnumerable<IExistingFile> GetExistingFilesWithBlocks(IDbConnection connection, string tablename)
             {
                 using (var cmd = connection.CreateCommand())
                 {
@@ -636,16 +628,16 @@ END ");
             {
                 private class BlockSource : IBlockSource
                 {
-                    private readonly System.Data.IDataReader m_reader;
-                    public BlockSource(System.Data.IDataReader rd) { m_reader = rd; }
+                    private readonly IDataReader m_reader;
+                    public BlockSource(IDataReader rd) { m_reader = rd; }
 
                     public string Path { get { return m_reader.ConvertValueToString(6); } }
                     public long Offset { get { return m_reader.ConvertValueToInt64(7); } }
                     public bool IsMetadata { get { return false; } }
                 }
 
-                private readonly System.Data.IDataReader m_reader;
-                public BlockDescriptor(System.Data.IDataReader rd) { m_reader = rd; HasMore = true; }
+                private readonly IDataReader m_reader;
+                public BlockDescriptor(IDataReader rd) { m_reader = rd; HasMore = true; }
 
                 private string TargetPath { get { return m_reader.ConvertValueToString(0); } }
 
@@ -661,11 +653,11 @@ END ");
                 {
                     get
                     {
-                        var p = this.TargetPath;
-                        var h = this.Hash;
-                        var s = this.Size;
+                        var p = TargetPath;
+                        var h = Hash;
+                        var s = Size;
 
-                        while (HasMore && p == this.TargetPath && h == this.Hash && s == this.Size)
+                        while (HasMore && p == TargetPath && h == Hash && s == Size)
                         {
                             yield return new BlockSource(m_reader);
                             HasMore = m_reader.Read();
@@ -674,8 +666,8 @@ END ");
                 }
             }
 
-            private readonly System.Data.IDataReader m_reader;
-            public LocalBlockSource(System.Data.IDataReader rd) { m_reader = rd; HasMore = true; }
+            private readonly IDataReader m_reader;
+            public LocalBlockSource(IDataReader rd) { m_reader = rd; HasMore = true; }
 
             public string TargetPath { get { return m_reader.ConvertValueToString(0); } }
             public long TargetFileID { get { return m_reader.ConvertValueToInt64(1); } }
@@ -686,8 +678,8 @@ END ");
             {
                 get
                 {
-                    var p = this.TargetPath;
-                    while (HasMore && p == this.TargetPath)
+                    var p = TargetPath;
+                    while (HasMore && p == TargetPath)
                     {
                         var c = new BlockDescriptor(m_reader);
                         var h = c.Hash;
@@ -696,13 +688,13 @@ END ");
                         yield return c;
 
                         HasMore = c.HasMore;
-                        while (HasMore && c.Hash == h && c.Size == s && this.TargetPath == p)
+                        while (HasMore && c.Hash == h && c.Size == s && TargetPath == p)
                             HasMore = m_reader.Read();
                     }
                 }
             }
 
-            public static IEnumerable<ILocalBlockSource> GetFilesAndSourceBlocks(System.Data.IDbConnection connection, string filetablename, string blocktablename, long blocksize, bool skipMetadata)
+            public static IEnumerable<ILocalBlockSource> GetFilesAndSourceBlocks(IDbConnection connection, string filetablename, string blocktablename, long blocksize, bool skipMetadata)
             {
                 using (var cmd = connection.CreateCommand())
                 {
@@ -786,9 +778,9 @@ ORDER BY ""BB"".""MaxIndex"" ");
             private readonly string m_blocktablename;
             private readonly long m_blocksize;
 
-            private readonly System.Data.IDbConnection m_connection;
+            private readonly IDbConnection m_connection;
 
-            public FilesAndMetadata(System.Data.IDbConnection connection, string filetablename, string blocktablename, long blocksize, BlockVolumeReader curvolume)
+            public FilesAndMetadata(IDbConnection connection, string filetablename, string blocktablename, long blocksize, BlockVolumeReader curvolume)
             {
                 m_filetablename = filetablename;
                 m_blocktablename = blocktablename;
@@ -830,16 +822,16 @@ ORDER BY ""BB"".""MaxIndex"" ");
             {
                 private class PatchBlock : IPatchBlock
                 {
-                    private readonly System.Data.IDataReader m_reader;
-                    public PatchBlock(System.Data.IDataReader rd) { m_reader = rd; }
+                    private readonly IDataReader m_reader;
+                    public PatchBlock(IDataReader rd) { m_reader = rd; }
 
                     public long Offset { get { return m_reader.ConvertValueToInt64(2); } }
                     public long Size { get { return m_reader.ConvertValueToInt64(3); } }
                     public string Key { get { return m_reader.ConvertValueToString(4); } }
                 }
 
-                private readonly System.Data.IDataReader m_reader;
-                public VolumePatch(System.Data.IDataReader rd) { m_reader = rd; HasMore = true; }
+                private readonly IDataReader m_reader;
+                public VolumePatch(IDataReader rd) { m_reader = rd; HasMore = true; }
 
                 public string Path { get { return m_reader.ConvertValueToString(0); } }
                 public long FileID { get { return m_reader.ConvertValueToInt64(1); } }
@@ -849,8 +841,8 @@ ORDER BY ""BB"".""MaxIndex"" ");
                 {
                     get
                     {
-                        string p = this.Path;
-                        while (HasMore && p == this.Path)
+                        string p = Path;
+                        while (HasMore && p == Path)
                         {
                             yield return new PatchBlock(m_reader);
                             HasMore = m_reader.Read();
@@ -879,7 +871,7 @@ ORDER BY ""A"".""TargetPath"", ""BB"".""Index""");
                                 while (more)
                                 {
                                     var f = new VolumePatch(rd);
-                                    string current = f.Path;
+                                    var current = f.Path;
                                     yield return f;
 
                                     more = f.HasMore;
@@ -939,7 +931,7 @@ ORDER BY ""A"".""TargetPath"", ""BB"".""Index""");
         {
             if (!m_connection_pool.TryTake(out var connection))
             {
-                connection = (System.Data.IDbConnection)Activator.CreateInstance(Duplicati.Library.SQLiteHelper.SQLiteLoader.SQLiteConnectionType);
+                connection = (IDbConnection)Activator.CreateInstance(Duplicati.Library.SQLiteHelper.SQLiteLoader.SQLiteConnectionType);
                 connection.ConnectionString = m_connection.ConnectionString + ";Cache=Shared;";
                 connection.Open();
 
@@ -959,9 +951,9 @@ ORDER BY ""A"".""TargetPath"", ""BB"".""Index""");
 
             public FileToRestore(long id, string path, string hash, long length)
             {
-                this.Path = path;
-                this.Hash = hash;
-                this.Length = length;
+                Path = path;
+                Hash = hash;
+                Length = length;
             }
         }
 
@@ -1174,54 +1166,44 @@ ORDER BY ""A"".""TargetPath"", ""BB"".""Index""");
         /// </summary>
         private class DirectBlockMarker : IBlockMarker
         {
-            private System.Data.IDbCommand m_insertblockCommand;
-            private System.Data.IDbCommand m_resetfileCommand;
-            private System.Data.IDbCommand m_updateAsRestoredCommand;
-            private System.Data.IDbCommand m_updateFileAsDataVerifiedCommand;
-            private System.Data.IDbCommand m_statUpdateCommand;
+            private IDbCommand m_insertblockCommand;
+            private IDbCommand m_resetfileCommand;
+            private IDbCommand m_updateAsRestoredCommand;
+            private IDbCommand m_updateFileAsDataVerifiedCommand;
+            private IDbCommand m_statUpdateCommand;
+            private IDbTransaction m_transaction;
             private bool m_hasUpdates = false;
 
             private readonly string m_blocktablename;
             private readonly string m_filetablename;
 
-            public DirectBlockMarker(System.Data.IDbConnection connection, string blocktablename, string filetablename, string statstablename)
+            public DirectBlockMarker(IDbConnection connection, string blocktablename, string filetablename, string statstablename)
             {
-                m_insertblockCommand = connection.CreateCommand();
-                m_resetfileCommand = connection.CreateCommand();
-                m_updateAsRestoredCommand = connection.CreateCommand();
-                m_updateFileAsDataVerifiedCommand = connection.CreateCommand();
-                m_statUpdateCommand = connection.CreateCommand();
-
-                m_insertblockCommand.Transaction = connection.BeginTransaction();
-                m_resetfileCommand.Transaction = m_insertblockCommand.Transaction;
-                m_updateAsRestoredCommand.Transaction = m_insertblockCommand.Transaction;
-                m_updateFileAsDataVerifiedCommand.Transaction = m_insertblockCommand.Transaction;
-                m_statUpdateCommand.Transaction = m_insertblockCommand.Transaction;
-
+                m_transaction = connection.BeginTransaction();
                 m_blocktablename = blocktablename;
                 m_filetablename = filetablename;
 
-                m_insertblockCommand.CommandText = FormatInvariant($@"UPDATE ""{m_blocktablename}"" SET ""Restored"" = 1
-WHERE ""FileID"" = ? AND ""Index"" = ? AND ""Hash"" = ? AND ""Size"" = ? AND ""Metadata"" = ? AND ""Restored"" = 0 ");
+                m_insertblockCommand = connection.CreateCommand(m_transaction, FormatInvariant($@"UPDATE ""{m_blocktablename}"" SET ""Restored"" = 1
+WHERE ""FileID"" = ? AND ""Index"" = ? AND ""Hash"" = ? AND ""Size"" = ? AND ""Metadata"" = ? AND ""Restored"" = 0 "));
                 m_insertblockCommand.AddParameters(5);
 
-                m_resetfileCommand.CommandText = FormatInvariant($@"UPDATE ""{m_blocktablename}"" SET ""Restored"" = 0 WHERE ""FileID"" = ? ");
+                m_resetfileCommand = connection.CreateCommand(m_transaction, FormatInvariant($@"UPDATE ""{m_blocktablename}"" SET ""Restored"" = 0 WHERE ""FileID"" = ? "));
                 m_resetfileCommand.AddParameters(1);
 
-                m_updateAsRestoredCommand.CommandText = FormatInvariant($@"UPDATE ""{m_blocktablename}"" SET ""Restored"" = 1 WHERE ""FileID"" = ? AND ""Metadata"" <= ? ");
+                m_updateAsRestoredCommand = connection.CreateCommand(m_transaction, FormatInvariant($@"UPDATE ""{m_blocktablename}"" SET ""Restored"" = 1 WHERE ""FileID"" = ? AND ""Metadata"" <= ? "));
                 m_updateAsRestoredCommand.AddParameters(2);
 
-                m_updateFileAsDataVerifiedCommand.CommandText = FormatInvariant($@"UPDATE ""{m_filetablename}"" SET ""DataVerified"" = 1 WHERE ""ID"" = ?");
+                m_updateFileAsDataVerifiedCommand = connection.CreateCommand(m_transaction, FormatInvariant($@"UPDATE ""{m_filetablename}"" SET ""DataVerified"" = 1 WHERE ""ID"" = ?"));
                 m_updateFileAsDataVerifiedCommand.AddParameters(1);
 
                 if (statstablename != null)
                 {
                     // Fields in Stats: TotalFiles, TotalBlocks, TotalSize
                     //                  FilesFullyRestored, FilesPartiallyRestored, BlocksRestored, SizeRestored
-                    m_statUpdateCommand.CommandText = FormatInvariant($@"SELECT SUM(""FilesFullyRestored""), SUM(""SizeRestored"") FROM ""{statstablename}"" ");
+                    m_statUpdateCommand = connection.CreateCommand(m_transaction, FormatInvariant($@"SELECT SUM(""FilesFullyRestored""), SUM(""SizeRestored"") FROM ""{statstablename}"" "));
                 }
                 else // very slow fallback if stats tables were not created
-                    m_statUpdateCommand.CommandText = FormatInvariant($@"SELECT COUNT(DISTINCT ""FileID""), SUM(""Size"") FROM ""{m_blocktablename}"" WHERE ""Restored"" = 1 ");
+                    m_statUpdateCommand = connection.CreateCommand(m_transaction, FormatInvariant($@"SELECT COUNT(DISTINCT ""FileID""), SUM(""Size"") FROM ""{m_blocktablename}"" WHERE ""Restored"" = 1 "));
 
             }
 
@@ -1290,40 +1272,22 @@ WHERE ""FileID"" = ? AND ""Index"" = ? AND ""Hash"" = ? AND ""Size"" = ? AND ""M
 
             public void Commit()
             {
-                var tr = m_insertblockCommand.Transaction;
                 m_insertblockCommand.Dispose();
                 m_insertblockCommand = null;
                 using (new Logging.Timer(LOGTAG, "CommitBlockMarker", "CommitBlockMarker"))
-                    tr.Commit();
-                tr.Dispose();
+                    m_transaction.Commit();
+                m_transaction.Dispose();
+                m_transaction = null;
             }
 
             public void Dispose()
             {
-                if (m_insertblockCommand != null)
-                    try { m_insertblockCommand.Dispose(); }
-                    catch { }
-                    finally { m_insertblockCommand = null; }
-
-                if (m_resetfileCommand != null)
-                    try { m_resetfileCommand.Dispose(); }
-                    catch { }
-                    finally { m_resetfileCommand = null; }
-
-                if (m_updateAsRestoredCommand != null)
-                    try { m_updateAsRestoredCommand.Dispose(); }
-                    catch { }
-                    finally { m_updateAsRestoredCommand = null; }
-
-                if (m_updateFileAsDataVerifiedCommand != null)
-                    try { m_updateFileAsDataVerifiedCommand.Dispose(); }
-                    catch { }
-                    finally { m_updateFileAsDataVerifiedCommand = null; }
-
-                if (m_statUpdateCommand != null)
-                    try { m_statUpdateCommand.Dispose(); }
-                    catch { }
-                    finally { m_statUpdateCommand = null; }
+                m_insertblockCommand?.Dispose();
+                m_resetfileCommand?.Dispose();
+                m_updateAsRestoredCommand?.Dispose();
+                m_updateFileAsDataVerifiedCommand?.Dispose();
+                m_statUpdateCommand?.Dispose();
+                m_transaction?.Dispose();
             }
         }
 
@@ -1372,18 +1336,18 @@ WHERE ""FileID"" = ? AND ""Index"" = ? AND ""Hash"" = ? AND ""Size"" = ? AND ""M
         {
             private class BlockEntry : IBlockEntry
             {
-                private readonly System.Data.IDataReader m_rd;
+                private readonly IDataReader m_rd;
                 private readonly long m_blocksize;
-                public BlockEntry(System.Data.IDataReader rd, long blocksize) { m_rd = rd; m_blocksize = blocksize; }
+                public BlockEntry(IDataReader rd, long blocksize) { m_rd = rd; m_blocksize = blocksize; }
                 public long Offset { get { return m_rd.ConvertValueToInt64(3) * m_blocksize; } }
                 public long Index { get { return m_rd.ConvertValueToInt64(3); } }
                 public long Size { get { return m_rd.ConvertValueToInt64(5); } }
                 public string Hash { get { return m_rd.ConvertValueToString(4); } }
             }
 
-            private readonly System.Data.IDataReader m_rd;
+            private readonly IDataReader m_rd;
             private readonly long m_blocksize;
-            public FastSource(System.Data.IDataReader rd, long blocksize) { m_rd = rd; m_blocksize = blocksize; MoreData = true; }
+            public FastSource(IDataReader rd, long blocksize) { m_rd = rd; m_blocksize = blocksize; MoreData = true; }
             public bool MoreData { get; private set; }
             public string TargetPath { get { return m_rd.ConvertValueToString(0); } }
             public long TargetFileID { get { return m_rd.ConvertValueToInt64(2); } }
@@ -1393,12 +1357,12 @@ WHERE ""FileID"" = ? AND ""Index"" = ? AND ""Hash"" = ? AND ""Size"" = ? AND ""M
             {
                 get
                 {
-                    var tid = this.TargetFileID;
+                    var tid = TargetFileID;
 
                     do
                     {
                         yield return new BlockEntry(m_rd, m_blocksize);
-                    } while ((MoreData = m_rd.Read()) && tid == this.TargetFileID);
+                    } while ((MoreData = m_rd.Read()) && tid == TargetFileID);
 
                 }
             }
@@ -1407,37 +1371,32 @@ WHERE ""FileID"" = ? AND ""Index"" = ? AND ""Hash"" = ? AND ""Size"" = ? AND ""M
         public IEnumerable<IFastSource> GetFilesAndSourceBlocksFast(long blocksize)
         {
             using (var transaction = m_connection.BeginTransaction())
+            using (var cmdReader = m_connection.CreateCommand())
+            using (var cmd = m_connection.CreateCommand(transaction))
             {
-                using (var cmdReader = m_connection.CreateCommand())
+                cmd.CommandText = FormatInvariant($@"UPDATE ""{m_tempfiletable}"" SET ""LocalSourceExists"" = 1 WHERE Path = ?");
+                cmd.AddParameters(1);
+
+                var fileset = FormatInvariant($@"SELECT DISTINCT ""{m_tempfiletable}"".""Path"" FROM ""{m_tempfiletable}""");
+                using (var rd = cmdReader.ExecuteReader(fileset))
                 {
-                    using (var cmd = m_connection.CreateCommand())
+                    while (rd.Read())
                     {
-                        cmd.CommandText = FormatInvariant($@"UPDATE ""{m_tempfiletable}"" SET ""LocalSourceExists"" = 1 WHERE Path = ?");
-                        cmd.AddParameters(1);
-                        cmd.Transaction = transaction;
-
-                        var fileset = FormatInvariant($@"SELECT DISTINCT ""{m_tempfiletable}"".""Path"" FROM ""{m_tempfiletable}""");
-                        using (var rd = cmdReader.ExecuteReader(fileset))
+                        var sourcepath = rd.GetValue(0).ToString();
+                        if (SystemIO.IO_OS.FileExists(sourcepath))
                         {
-                            while (rd.Read())
-                            {
-                                var sourcepath = rd.GetValue(0).ToString();
-                                if (SystemIO.IO_OS.FileExists(sourcepath))
-                                {
-                                    cmd.SetParameterValue(0, sourcepath);
-                                    cmd.ExecuteNonQuery();
-                                }
-                                else
-                                {
-                                    Logging.Log.WriteVerboseMessage(LOGTAG, "LocalSourceMissing", "Local source file not found: {0}", sourcepath);
-                                }
-                            }
+                            cmd.SetParameterValue(0, sourcepath);
+                            cmd.ExecuteNonQuery();
                         }
-
-                        //This localSourceExists index will make the query engine to start by searching FileSet table. As the result is ordered by FileSet.ID, we will get the cursor "instantly"
-                        cmd.ExecuteNonQuery(FormatInvariant($@"CREATE INDEX ""{m_tempfiletable}_LocalSourceExists"" ON ""{m_tempfiletable}"" (""LocalSourceExists"")"));
+                        else
+                        {
+                            Logging.Log.WriteVerboseMessage(LOGTAG, "LocalSourceMissing", "Local source file not found: {0}", sourcepath);
+                        }
                     }
                 }
+
+                //This localSourceExists index will make the query engine to start by searching FileSet table. As the result is ordered by FileSet.ID, we will get the cursor "instantly"
+                cmd.ExecuteNonQuery(FormatInvariant($@"CREATE INDEX ""{m_tempfiletable}_LocalSourceExists"" ON ""{m_tempfiletable}"" (""LocalSourceExists"")"));
                 transaction.Commit();
             }
 
@@ -1505,7 +1464,7 @@ ORDER BY ""{m_tempfiletable}"".""ID"", ""{m_tempblocktable}"".""Index"" ");
             {
                 if (rd.Read())
                 {
-                    var more = false;
+                    bool more;
                     do
                     {
                         var n = new FastSource(rd, blocksize);

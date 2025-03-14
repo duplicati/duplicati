@@ -20,6 +20,7 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System;
+using System.Data;
 using System.Linq;
 using System.Collections.Generic;
 
@@ -51,13 +52,13 @@ namespace Duplicati.Library.Main.Database
             public string Hash { get; private set; }
             public long VerificationCount { get; private set; }
 
-            public RemoteVolume(System.Data.IDataReader rd)
+            public RemoteVolume(IDataReader rd)
             {
-                this.ID = rd.GetInt64(0);
-                this.Name = rd.GetString(1);
-                this.Size = rd.ConvertValueToInt64(2);
-                this.Hash = rd.ConvertValueToString(3);
-                this.VerificationCount = rd.ConvertValueToInt64(4);
+                ID = rd.GetInt64(0);
+                Name = rd.GetString(1);
+                Size = rd.ConvertValueToInt64(2);
+                Hash = rd.ConvertValueToString(3);
+                VerificationCount = rd.ConvertValueToInt64(4);
             }
         }
 
@@ -171,30 +172,26 @@ namespace Duplicati.Library.Main.Database
 
         private abstract class Basiclist : IDisposable
         {
-            protected readonly System.Data.IDbConnection m_connection;
+            protected readonly IDbConnection m_connection;
             protected readonly string m_volumename;
             protected string m_tablename;
-            protected System.Data.IDbTransaction m_transaction;
-            protected System.Data.IDbCommand m_insertCommand;
+            protected IDbTransaction m_transaction;
+            protected IDbCommand m_insertCommand;
 
-            protected Basiclist(System.Data.IDbConnection connection, string volumename, string tablePrefix, string tableFormat, string insertCommand, int insertArguments)
+            protected Basiclist(IDbConnection connection, string volumename, string tablePrefix, string tableFormat, string insertCommand)
             {
                 m_connection = connection;
                 m_volumename = volumename;
                 m_transaction = m_connection.BeginTransaction();
                 var tablename = tablePrefix + "-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
 
-                using (var cmd = m_connection.CreateCommand())
+                using (var cmd = m_connection.CreateCommand(m_transaction))
                 {
-                    cmd.Transaction = m_transaction;
                     cmd.ExecuteNonQuery(FormatInvariant($@"CREATE TEMPORARY TABLE ""{tablename}"" {tableFormat}"));
                     m_tablename = tablename;
                 }
 
-                m_insertCommand = m_connection.CreateCommand();
-                m_insertCommand.Transaction = m_transaction;
-                m_insertCommand.CommandText = FormatInvariant($@"INSERT INTO ""{m_tablename}"" {insertCommand}");
-                m_insertCommand.AddParameters(insertArguments);
+                m_insertCommand = m_connection.CreateCommand(m_transaction, FormatInvariant($@"INSERT INTO ""{m_tablename}"" {insertCommand}"));
             }
 
             public virtual void Dispose()
@@ -202,31 +199,21 @@ namespace Duplicati.Library.Main.Database
                 if (m_tablename != null)
                     try
                     {
-                        using (var cmd = m_connection.CreateCommand())
-                        {
-                            cmd.Transaction = m_transaction;
+                        using (var cmd = m_connection.CreateCommand(m_transaction))
                             cmd.ExecuteNonQuery(FormatInvariant($@"DROP TABLE IF EXISTS ""{m_tablename}"""));
-                        }
                     }
                     catch { }
                     finally { m_tablename = null; }
 
-                if (m_insertCommand != null)
-                    try { m_insertCommand.Dispose(); }
-                    catch { }
-                    finally { m_insertCommand = null; }
-
-                if (m_transaction != null)
-                    try { m_transaction.Rollback(); }
-                    catch { }
-                    finally { m_transaction = null; }
+                m_insertCommand?.Dispose();
+                m_transaction?.Rollback();
             }
         }
 
         public interface IFilelist : IDisposable
         {
             void Add(string path, long size, string hash, long metasize, string metahash, IEnumerable<string> blocklistHashes, FilelistEntryType type, DateTime time);
-            IEnumerable<KeyValuePair<Library.Interface.TestEntryStatus, string>> Compare();
+            IEnumerable<KeyValuePair<Interface.TestEntryStatus, string>> Compare();
         }
 
         private class Filelist : Basiclist, IFilelist
@@ -234,10 +221,8 @@ namespace Duplicati.Library.Main.Database
             private const string TABLE_PREFIX = "Filelist";
             private const string TABLE_FORMAT = @"(""Path"" TEXT NOT NULL, ""Size"" INTEGER NOT NULL, ""Hash"" TEXT NULL, ""Metasize"" INTEGER NOT NULL, ""Metahash"" TEXT NOT NULL)";
             private const string INSERT_COMMAND = @"(""Path"", ""Size"", ""Hash"", ""Metasize"", ""Metahash"") VALUES (?,?,?,?,?)";
-            private const int INSERT_ARGUMENTS = 5;
-
-            public Filelist(System.Data.IDbConnection connection, string volumename)
-                : base(connection, volumename, Filelist.TABLE_PREFIX, Filelist.TABLE_FORMAT, Filelist.INSERT_COMMAND, Filelist.INSERT_ARGUMENTS)
+            public Filelist(IDbConnection connection, string volumename)
+                : base(connection, volumename, TABLE_PREFIX, TABLE_FORMAT, INSERT_COMMAND)
             {
             }
 
@@ -261,10 +246,8 @@ namespace Duplicati.Library.Main.Database
                 var modified = FormatInvariant($@"SELECT ? AS ""Type"", ""E"".""Path"" AS ""Path"" FROM ""{m_tablename}"" E, ""{cmpName}"" D WHERE ""D"".""Path"" = ""E"".""Path"" AND (""D"".""Size"" != ""E"".""Size"" OR ""D"".""Hash"" != ""E"".""Hash"" OR ""D"".""Metasize"" != ""E"".""Metasize"" OR ""D"".""Metahash"" != ""E"".""Metahash"")  ");
                 var drop = FormatInvariant($@"DROP TABLE IF EXISTS ""{cmpName}"" ");
 
-                using (var cmd = m_connection.CreateCommand())
+                using (var cmd = m_connection.CreateCommand(m_transaction))
                 {
-                    cmd.Transaction = m_transaction;
-
                     try
                     {
                         cmd.ExecuteNonQuery(create, m_volumename);
@@ -293,10 +276,9 @@ namespace Duplicati.Library.Main.Database
             private const string TABLE_PREFIX = "Indexlist";
             private const string TABLE_FORMAT = @"(""Name"" TEXT NOT NULL, ""Hash"" TEXT NOT NULL, ""Size"" INTEGER NOT NULL)";
             private const string INSERT_COMMAND = @"(""Name"", ""Hash"", ""Size"") VALUES (?,?,?)";
-            private const int INSERT_ARGUMENTS = 3;
 
-            public Indexlist(System.Data.IDbConnection connection, string volumename)
-                : base(connection, volumename, Indexlist.TABLE_PREFIX, Indexlist.TABLE_FORMAT, Indexlist.INSERT_COMMAND, Indexlist.INSERT_ARGUMENTS)
+            public Indexlist(IDbConnection connection, string volumename)
+                : base(connection, volumename, TABLE_PREFIX, TABLE_FORMAT, INSERT_COMMAND)
             {
             }
 
@@ -317,10 +299,8 @@ namespace Duplicati.Library.Main.Database
                 var modified = FormatInvariant($@"SELECT ? AS ""Type"", ""E"".""Name"" AS ""Name"" FROM ""{m_tablename}"" E, ""{cmpName}"" D WHERE ""D"".""Name"" = ""E"".""Name"" AND (""D"".""Hash"" != ""E"".""Hash"" OR ""D"".""Size"" != ""E"".""Size"") ");
                 var drop = FormatInvariant($@"DROP TABLE IF EXISTS ""{cmpName}"" ");
 
-                using (var cmd = m_connection.CreateCommand())
+                using (var cmd = m_connection.CreateCommand(m_transaction))
                 {
-                    cmd.Transaction = m_transaction;
-
                     try
                     {
                         cmd.ExecuteNonQuery(create, m_volumename);
@@ -349,10 +329,9 @@ namespace Duplicati.Library.Main.Database
             private const string TABLE_PREFIX = "Blocklist";
             private const string TABLE_FORMAT = @"(""Hash"" TEXT NOT NULL, ""Size"" INTEGER NOT NULL)";
             private const string INSERT_COMMAND = @"(""Hash"", ""Size"") VALUES (?,?)";
-            private const int INSERT_ARGUMENTS = 2;
 
-            public Blocklist(System.Data.IDbConnection connection, string volumename)
-                : base(connection, volumename, Blocklist.TABLE_PREFIX, Blocklist.TABLE_FORMAT, Blocklist.INSERT_COMMAND, Blocklist.INSERT_ARGUMENTS)
+            public Blocklist(IDbConnection connection, string volumename)
+                : base(connection, volumename, TABLE_PREFIX, TABLE_FORMAT, INSERT_COMMAND)
             { }
 
             public void AddBlock(string hash, long size)
@@ -362,7 +341,7 @@ namespace Duplicati.Library.Main.Database
                 m_insertCommand.ExecuteNonQuery();
             }
 
-            public IEnumerable<KeyValuePair<Duplicati.Library.Interface.TestEntryStatus, string>> Compare()
+            public IEnumerable<KeyValuePair<Interface.TestEntryStatus, string>> Compare()
             {
                 var cmpName = "CmpTable-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
                 var curBlocks = @"SELECT ""Block"".""Hash"" AS ""Hash"", ""Block"".""Size"" AS ""Size"" FROM ""Remotevolume"", ""Block"" WHERE ""Remotevolume"".""Name"" = ? AND ""Remotevolume"".""ID"" = ""Block"".""VolumeID""";
@@ -374,10 +353,8 @@ namespace Duplicati.Library.Main.Database
                 var modified = FormatInvariant($@"SELECT ? AS ""Type"", ""E"".""Hash"" AS ""Hash"" FROM ""{m_tablename}"" E, ""{cmpName}"" D WHERE ""D"".""Hash"" = ""E"".""Hash"" AND ""D"".""Size"" != ""E"".""Size""  ");
                 var drop = FormatInvariant($@"DROP TABLE IF EXISTS ""{cmpName}"" ");
 
-                using (var cmd = m_connection.CreateCommand())
+                using (var cmd = m_connection.CreateCommand(m_transaction))
                 {
-                    cmd.Transaction = m_transaction;
-
                     try
                     {
                         cmd.ExecuteNonQuery(create, m_volumename, m_volumename, m_volumename);

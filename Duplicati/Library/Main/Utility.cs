@@ -167,7 +167,6 @@ namespace Duplicati.Library.Main
                 newDict.Add("passphrase", Library.Utility.Utility.ByteArrayAsHexString(Library.Utility.Utility.RepeatedHashWithSalt(options.Passphrase, salt, 1200)));
             }
 
-
             var needsUpdate = false;
             foreach (var k in newDict)
                 if (!opts.ContainsKey(k.Key))
