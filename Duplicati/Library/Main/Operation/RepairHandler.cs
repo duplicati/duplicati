@@ -49,11 +49,11 @@ namespace Duplicati.Library.Main.Operation
                 throw new UserInformationException(Strings.Common.PassphraseChangeUnsupported, "PassphraseChangeUnsupported");
         }
 
-        public void Run(IBackendManager backendManager, IFilter filter)
+        public async Task RunAsync(IBackendManager backendManager, IFilter filter)
         {
-            if (!System.IO.File.Exists(m_options.Dbpath))
+            if (!File.Exists(m_options.Dbpath))
             {
-                RunRepairLocal(backendManager, filter);
+                await RunRepairLocalAsync(backendManager, filter).ConfigureAwait(false);
                 RunRepairCommon();
                 m_result.EndTime = DateTime.UtcNow;
                 return;
@@ -78,47 +78,48 @@ namespace Duplicati.Library.Main.Operation
                 }
                 else
                 {
-                    var baseName = System.IO.Path.ChangeExtension(m_options.Dbpath, "backup");
+                    var baseName = Path.ChangeExtension(m_options.Dbpath, "backup");
                     var i = 0;
-                    while (System.IO.File.Exists(baseName) && i++ < 1000)
-                        baseName = System.IO.Path.ChangeExtension(m_options.Dbpath, "backup-" + i.ToString());
+                    while (File.Exists(baseName) && i++ < 1000)
+                        baseName = Path.ChangeExtension(m_options.Dbpath, "backup-" + i.ToString());
 
                     Logging.Log.WriteInformationMessage(LOGTAG, "RenamingDatabase", "Renaming existing db from {0} to {1}", m_options.Dbpath, baseName);
-                    System.IO.File.Move(m_options.Dbpath, baseName);
+                    File.Move(m_options.Dbpath, baseName);
                 }
 
-                RunRepairLocal(backendManager, filter);
+                await RunRepairLocalAsync(backendManager, filter).ConfigureAwait(false);
                 RunRepairCommon();
             }
             else
             {
                 RunRepairCommon();
-                RunRepairRemote(backendManager, m_result.TaskControl.ProgressToken).Await();
+                await RunRepairRemoteAsync(backendManager, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
             }
 
             m_result.EndTime = DateTime.UtcNow;
 
         }
 
-        public void RunRepairLocal(IBackendManager backendManager, Library.Utility.IFilter filter)
+        public async Task RunRepairLocalAsync(IBackendManager backendManager, IFilter filter)
         {
             m_result.RecreateDatabaseResults = new RecreateDatabaseResults(m_result);
             using (new Logging.Timer(LOGTAG, "RecreateDbForRepair", "Recreate database for repair"))
-            using (var f = m_options.Dryrun ? new Library.Utility.TempFile() : null)
+            using (var f = m_options.Dryrun ? new TempFile() : null)
             {
-                if (f != null && System.IO.File.Exists(f))
-                    System.IO.File.Delete(f);
+                if (f != null && File.Exists(f))
+                    File.Delete(f);
 
                 var filelistfilter = RestoreHandler.FilterNumberedFilelist(m_options.Time, m_options.Version);
 
-                new RecreateDatabaseHandler(m_options, (RecreateDatabaseResults)m_result.RecreateDatabaseResults)
-                    .Run(m_options.Dryrun ? (string)f : m_options.Dbpath, backendManager, filter, filelistfilter, null);
+                await new RecreateDatabaseHandler(m_options, (RecreateDatabaseResults)m_result.RecreateDatabaseResults)
+                    .RunAsync(m_options.Dryrun ? (string)f : m_options.Dbpath, backendManager, filter, filelistfilter, null)
+                    .ConfigureAwait(false);
             }
         }
 
-        public async Task RunRepairRemote(IBackendManager backendManager, CancellationToken cancellationToken)
+        public async Task RunRepairRemoteAsync(IBackendManager backendManager, CancellationToken cancellationToken)
         {
-            if (!System.IO.File.Exists(m_options.Dbpath))
+            if (!File.Exists(m_options.Dbpath))
                 throw new UserInformationException(string.Format("Database file does not exist: {0}", m_options.Dbpath), "RepairDatabaseFileDoesNotExist");
 
             m_result.OperationProgressUpdater.UpdateProgress(0);
@@ -579,7 +580,7 @@ namespace Duplicati.Library.Main.Operation
 
         public void RunRepairCommon()
         {
-            if (!System.IO.File.Exists(m_options.Dbpath))
+            if (!File.Exists(m_options.Dbpath))
                 throw new UserInformationException(string.Format("Database file does not exist: {0}", m_options.Dbpath), "DatabaseDoesNotExist");
 
             m_result.OperationProgressUpdater.UpdateProgress(0);

@@ -37,15 +37,16 @@ namespace Duplicati.Library.Main.Operation
             m_result = result;
         }
 
-        public virtual void Run()
-        {
-            using (var db = new Database.LocalDatabase(m_options.Dbpath, "Vacuum", false))
+        public virtual Task RunAsync()
+            => Task.Run(() =>
             {
-                m_result.SetDatabase(db);
-                m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Vacuum_Running);
-                db.Vacuum();
-                m_result.EndTime = DateTime.UtcNow;
-            }
-        }
+                using (var db = new Database.LocalDatabase(m_options.Dbpath, "Vacuum", false))
+                {
+                    m_result.SetDatabase(db);
+                    m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Vacuum_Running);
+                    db.Vacuum();
+                    m_result.EndTime = DateTime.UtcNow;
+                }
+            });
     }
 }

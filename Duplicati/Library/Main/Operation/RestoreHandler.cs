@@ -102,7 +102,7 @@ namespace Duplicati.Library.Main.Operation
                 };
         }
 
-        public void Run(string[] paths, IBackendManager backendManager, Library.Utility.IFilter filter)
+        public async Task RunAsync(string[] paths, IBackendManager backendManager, Library.Utility.IFilter filter)
         {
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_Begin);
 
@@ -126,8 +126,9 @@ namespace Duplicati.Library.Main.Operation
                     db = new LocalRestoreDatabase(tmpdb);
                     m_result.RecreateDatabaseResults = new RecreateDatabaseResults(m_result);
                     using (new Logging.Timer(LOGTAG, "RecreateTempDbForRestore", "Recreate temporary database for restore"))
-                        new RecreateDatabaseHandler(m_options, (RecreateDatabaseResults)m_result.RecreateDatabaseResults)
-                            .DoRun(backendManager, db, false, filter, filelistfilter, null).Await();
+                        await new RecreateDatabaseHandler(m_options, (RecreateDatabaseResults)m_result.RecreateDatabaseResults)
+                            .DoRunAsync(backendManager, db, false, filter, filelistfilter, null)
+                            .ConfigureAwait(false);
 
                     if (!m_options.SkipMetadata)
                         ApplyStoredMetadata(m_options, new RestoreHandlerMetadataStorage());
@@ -139,9 +140,9 @@ namespace Duplicati.Library.Main.Operation
                 }
 
                 if (m_options.RestoreLegacy)
-                    DoRun(backendManager, db, filter, m_result.TaskControl.ProgressToken).Await();
+                    await DoRunAsync(backendManager, db, filter, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
                 else
-                    DoRunNew(backendManager, db, filter, m_result.TaskControl.ProgressToken).Await();
+                    await DoRunNewAsync(backendManager, db, filter, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
 
                 db.WriteResults();
             }
@@ -307,7 +308,7 @@ namespace Duplicati.Library.Main.Operation
         /// </summary>
         /// <param name="database">The database containing information about the restore.</param>
         /// <param name="filter">The filter of which files to restore.</param>
-        private async Task DoRunNew(IBackendManager backendManager, LocalRestoreDatabase database, Library.Utility.IFilter filter, CancellationToken cancellationToken)
+        private async Task DoRunNewAsync(IBackendManager backendManager, LocalRestoreDatabase database, Library.Utility.IFilter filter, CancellationToken cancellationToken)
         {
             // Perform initial setup
             Utility.UpdateOptionsFromDb(database, m_options);
@@ -403,7 +404,7 @@ namespace Duplicati.Library.Main.Operation
 
             // Drop the temp tables
             database.DropRestoreTable();
-            await backendManager.WaitForEmptyAsync(database, null, CancellationToken.None).ConfigureAwait(false);
+            await backendManager.WaitForEmptyAsync(database, null, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
 
             // Report that the restore is complete
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_Complete);
@@ -416,7 +417,7 @@ namespace Duplicati.Library.Main.Operation
         /// </summary>
         /// <param name="database">The database containing information about the restore.</param>
         /// <param name="filter">The filter of which files to restore.</param>
-        private async Task DoRun(IBackendManager backendManager, LocalRestoreDatabase database, Library.Utility.IFilter filter, CancellationToken cancellationToken)
+        private async Task DoRunAsync(IBackendManager backendManager, LocalRestoreDatabase database, Library.Utility.IFilter filter, CancellationToken cancellationToken)
         {
             //In this case, we check that the remote storage fits with the database.
             //We can then query the database and find the blocks that we need to do the restore
