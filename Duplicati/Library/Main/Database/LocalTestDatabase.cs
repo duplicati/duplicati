@@ -187,13 +187,13 @@ namespace Duplicati.Library.Main.Database
                 using (var cmd = m_connection.CreateCommand())
                 {
                     cmd.Transaction = m_transaction;
-                    cmd.ExecuteNonQuery(FormatInvariant(@"CREATE TEMPORARY TABLE ""{0}"" {1}", tablename, tableFormat));
+                    cmd.ExecuteNonQuery(FormatInvariant($@"CREATE TEMPORARY TABLE ""{tablename}"" {tableFormat}"));
                     m_tablename = tablename;
                 }
 
                 m_insertCommand = m_connection.CreateCommand();
                 m_insertCommand.Transaction = m_transaction;
-                m_insertCommand.CommandText = FormatInvariant(@"INSERT INTO ""{0}"" {1}", m_tablename, insertCommand);
+                m_insertCommand.CommandText = FormatInvariant($@"INSERT INTO ""{m_tablename}"" {insertCommand}");
                 m_insertCommand.AddParameters(insertArguments);
             }
 
@@ -205,7 +205,7 @@ namespace Duplicati.Library.Main.Database
                         using (var cmd = m_connection.CreateCommand())
                         {
                             cmd.Transaction = m_transaction;
-                            cmd.ExecuteNonQuery(FormatInvariant(@"DROP TABLE IF EXISTS ""{0}""", m_tablename));
+                            cmd.ExecuteNonQuery(FormatInvariant($@"DROP TABLE IF EXISTS ""{m_tablename}"""));
                         }
                     }
                     catch { }
@@ -255,11 +255,11 @@ namespace Duplicati.Library.Main.Database
             {
                 var cmpName = "CmpTable-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
 
-                var create = @"CREATE TEMPORARY TABLE ""{1}"" AS SELECT ""A"".""Path"" AS ""Path"", CASE WHEN ""B"".""Fullhash"" IS NULL THEN -1 ELSE ""B"".""Length"" END AS ""Size"", ""B"".""Fullhash"" AS ""Hash"", ""C"".""Length"" AS ""Metasize"", ""C"".""Fullhash"" AS ""Metahash"" FROM (SELECT ""File"".""Path"", ""File"".""BlocksetID"" AS ""FileBlocksetID"", ""Metadataset"".""BlocksetID"" AS ""MetadataBlocksetID"" from ""Remotevolume"", ""Fileset"", ""FilesetEntry"", ""File"", ""Metadataset"" WHERE ""Remotevolume"".""Name"" = ? AND ""Fileset"".""VolumeID"" = ""Remotevolume"".""ID"" AND ""Fileset"".""ID"" = ""FilesetEntry"".""FilesetID"" AND ""File"".""ID"" = ""FilesetEntry"".""FileID"" AND ""File"".""MetadataID"" = ""Metadataset"".""ID"") A LEFT OUTER JOIN ""Blockset"" B ON ""B"".""ID"" = ""A"".""FileBlocksetID"" LEFT OUTER JOIN ""Blockset"" C ON ""C"".""ID""=""A"".""MetadataBlocksetID"" ";
-                var extra = @"SELECT ? AS ""Type"", ""{0}"".""Path"" AS ""Path"" FROM ""{0}"" WHERE ""{0}"".""Path"" NOT IN ( SELECT ""Path"" FROM ""{1}"" )";
-                var missing = @"SELECT ? AS ""Type"", ""Path"" AS ""Path"" FROM ""{1}"" WHERE ""Path"" NOT IN (SELECT ""Path"" FROM ""{0}"")";
-                var modified = @"SELECT ? AS ""Type"", ""E"".""Path"" AS ""Path"" FROM ""{0}"" E, ""{1}"" D WHERE ""D"".""Path"" = ""E"".""Path"" AND (""D"".""Size"" != ""E"".""Size"" OR ""D"".""Hash"" != ""E"".""Hash"" OR ""D"".""Metasize"" != ""E"".""Metasize"" OR ""D"".""Metahash"" != ""E"".""Metahash"")  ";
-                var drop = @"DROP TABLE IF EXISTS ""{1}"" ";
+                var create = FormatInvariant($@"CREATE TEMPORARY TABLE ""{cmpName}"" AS SELECT ""A"".""Path"" AS ""Path"", CASE WHEN ""B"".""Fullhash"" IS NULL THEN -1 ELSE ""B"".""Length"" END AS ""Size"", ""B"".""Fullhash"" AS ""Hash"", ""C"".""Length"" AS ""Metasize"", ""C"".""Fullhash"" AS ""Metahash"" FROM (SELECT ""File"".""Path"", ""File"".""BlocksetID"" AS ""FileBlocksetID"", ""Metadataset"".""BlocksetID"" AS ""MetadataBlocksetID"" from ""Remotevolume"", ""Fileset"", ""FilesetEntry"", ""File"", ""Metadataset"" WHERE ""Remotevolume"".""Name"" = ? AND ""Fileset"".""VolumeID"" = ""Remotevolume"".""ID"" AND ""Fileset"".""ID"" = ""FilesetEntry"".""FilesetID"" AND ""File"".""ID"" = ""FilesetEntry"".""FileID"" AND ""File"".""MetadataID"" = ""Metadataset"".""ID"") A LEFT OUTER JOIN ""Blockset"" B ON ""B"".""ID"" = ""A"".""FileBlocksetID"" LEFT OUTER JOIN ""Blockset"" C ON ""C"".""ID""=""A"".""MetadataBlocksetID"" ");
+                var extra = FormatInvariant($@"SELECT ? AS ""Type"", ""{m_tablename}"".""Path"" AS ""Path"" FROM ""{m_tablename}"" WHERE ""{m_tablename}"".""Path"" NOT IN ( SELECT ""Path"" FROM ""{cmpName}"" )");
+                var missing = FormatInvariant($@"SELECT ? AS ""Type"", ""Path"" AS ""Path"" FROM ""{cmpName}"" WHERE ""Path"" NOT IN (SELECT ""Path"" FROM ""{m_tablename}"")");
+                var modified = FormatInvariant($@"SELECT ? AS ""Type"", ""E"".""Path"" AS ""Path"" FROM ""{m_tablename}"" E, ""{cmpName}"" D WHERE ""D"".""Path"" = ""E"".""Path"" AND (""D"".""Size"" != ""E"".""Size"" OR ""D"".""Hash"" != ""E"".""Hash"" OR ""D"".""Metasize"" != ""E"".""Metasize"" OR ""D"".""Metahash"" != ""E"".""Metahash"")  ");
+                var drop = FormatInvariant($@"DROP TABLE IF EXISTS ""{cmpName}"" ");
 
                 using (var cmd = m_connection.CreateCommand())
                 {
@@ -267,15 +267,15 @@ namespace Duplicati.Library.Main.Database
 
                     try
                     {
-                        cmd.ExecuteNonQuery(FormatInvariant(create, m_tablename, cmpName), m_volumename);
-                        using (var rd = cmd.ExecuteReader(FormatInvariant(extra + " UNION " + missing + " UNION " + modified, m_tablename, cmpName), (int)Library.Interface.TestEntryStatus.Extra, (int)Library.Interface.TestEntryStatus.Missing, (int)Library.Interface.TestEntryStatus.Modified))
+                        cmd.ExecuteNonQuery(create, m_volumename);
+                        using (var rd = cmd.ExecuteReader(FormatInvariant($"{extra} UNION {missing} UNION {modified}"), (int)Library.Interface.TestEntryStatus.Extra, (int)Library.Interface.TestEntryStatus.Missing, (int)Library.Interface.TestEntryStatus.Modified))
                             while (rd.Read())
                                 yield return new KeyValuePair<Duplicati.Library.Interface.TestEntryStatus, string>((Duplicati.Library.Interface.TestEntryStatus)rd.GetInt64(0), rd.GetString(1));
 
                     }
                     finally
                     {
-                        try { cmd.ExecuteNonQuery(FormatInvariant(drop, m_tablename, cmpName)); }
+                        try { cmd.ExecuteNonQuery(drop); }
                         catch { }
                     }
                 }
@@ -311,11 +311,11 @@ namespace Duplicati.Library.Main.Database
             public IEnumerable<KeyValuePair<Duplicati.Library.Interface.TestEntryStatus, string>> Compare()
             {
                 var cmpName = "CmpTable-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
-                var create = @"CREATE TEMPORARY TABLE ""{1}"" AS SELECT ""A"".""Name"", ""A"".""Hash"", ""A"".""Size"" FROM ""Remotevolume"" A, ""Remotevolume"" B, ""IndexBlockLink"" WHERE ""B"".""Name"" = ? AND ""A"".""ID"" = ""IndexBlockLink"".""BlockVolumeID"" AND ""B"".""ID"" = ""IndexBlockLink"".""IndexVolumeID"" ";
-                var extra = @"SELECT ? AS ""Type"", ""{0}"".""Name"" AS ""Name"" FROM ""{0}"" WHERE ""{0}"".""Name"" NOT IN ( SELECT ""Name"" FROM ""{1}"" )";
-                var missing = @"SELECT ? AS ""Type"", ""Name"" AS ""Name"" FROM ""{1}"" WHERE ""Name"" NOT IN (SELECT ""Name"" FROM ""{0}"")";
-                var modified = @"SELECT ? AS ""Type"", ""E"".""Name"" AS ""Name"" FROM ""{0}"" E, ""{1}"" D WHERE ""D"".""Name"" = ""E"".""Name"" AND (""D"".""Hash"" != ""E"".""Hash"" OR ""D"".""Size"" != ""E"".""Size"") ";
-                var drop = @"DROP TABLE IF EXISTS ""{1}"" ";
+                var create = FormatInvariant($@"CREATE TEMPORARY TABLE ""{cmpName}"" AS SELECT ""A"".""Name"", ""A"".""Hash"", ""A"".""Size"" FROM ""Remotevolume"" A, ""Remotevolume"" B, ""IndexBlockLink"" WHERE ""B"".""Name"" = ? AND ""A"".""ID"" = ""IndexBlockLink"".""BlockVolumeID"" AND ""B"".""ID"" = ""IndexBlockLink"".""IndexVolumeID"" ");
+                var extra = FormatInvariant($@"SELECT ? AS ""Type"", ""{m_tablename}"".""Name"" AS ""Name"" FROM ""{m_tablename}"" WHERE ""{m_tablename}"".""Name"" NOT IN ( SELECT ""Name"" FROM ""{cmpName}"" )");
+                var missing = FormatInvariant($@"SELECT ? AS ""Type"", ""Name"" AS ""Name"" FROM ""{cmpName}"" WHERE ""Name"" NOT IN (SELECT ""Name"" FROM ""{m_tablename}"")");
+                var modified = FormatInvariant($@"SELECT ? AS ""Type"", ""E"".""Name"" AS ""Name"" FROM ""{m_tablename}"" E, ""{cmpName}"" D WHERE ""D"".""Name"" = ""E"".""Name"" AND (""D"".""Hash"" != ""E"".""Hash"" OR ""D"".""Size"" != ""E"".""Size"") ");
+                var drop = FormatInvariant($@"DROP TABLE IF EXISTS ""{cmpName}"" ");
 
                 using (var cmd = m_connection.CreateCommand())
                 {
@@ -323,15 +323,15 @@ namespace Duplicati.Library.Main.Database
 
                     try
                     {
-                        cmd.ExecuteNonQuery(FormatInvariant(create, m_tablename, cmpName), m_volumename);
-                        using (var rd = cmd.ExecuteReader(FormatInvariant(extra + " UNION " + missing + " UNION " + modified, m_tablename, cmpName), (int)Library.Interface.TestEntryStatus.Extra, (int)Library.Interface.TestEntryStatus.Missing, (int)Library.Interface.TestEntryStatus.Modified))
+                        cmd.ExecuteNonQuery(create, m_volumename);
+                        using (var rd = cmd.ExecuteReader(FormatInvariant($"{extra} UNION {missing} UNION {modified}"), (int)Library.Interface.TestEntryStatus.Extra, (int)Library.Interface.TestEntryStatus.Missing, (int)Library.Interface.TestEntryStatus.Modified))
                             while (rd.Read())
                                 yield return new KeyValuePair<Duplicati.Library.Interface.TestEntryStatus, string>((Duplicati.Library.Interface.TestEntryStatus)rd.GetInt64(0), rd.GetString(1));
 
                     }
                     finally
                     {
-                        try { cmd.ExecuteNonQuery(FormatInvariant(drop, m_tablename, cmpName)); }
+                        try { cmd.ExecuteNonQuery(drop); }
                         catch { }
                     }
                 }
@@ -368,11 +368,11 @@ namespace Duplicati.Library.Main.Database
                 var curBlocks = @"SELECT ""Block"".""Hash"" AS ""Hash"", ""Block"".""Size"" AS ""Size"" FROM ""Remotevolume"", ""Block"" WHERE ""Remotevolume"".""Name"" = ? AND ""Remotevolume"".""ID"" = ""Block"".""VolumeID""";
                 var duplBlocks = @"SELECT ""Block"".""Hash"" AS ""Hash"", ""Block"".""Size"" AS ""Size"" FROM ""DuplicateBlock"", ""Block"" WHERE ""DuplicateBlock"".""VolumeID"" = (SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""Name"" = ?) AND ""Block"".""ID"" = ""DuplicateBlock"".""BlockID""";
                 var delBlocks = @"SELECT ""DeletedBlock"".""Hash"" AS ""Hash"", ""DeletedBlock"".""Size"" AS ""Size"" FROM ""DeletedBlock"", ""RemoteVolume"" WHERE ""RemoteVolume"".""Name"" = ? AND ""RemoteVolume"".""ID"" = ""DeletedBlock"".""VolumeID""";
-                var create = @"CREATE TEMPORARY TABLE ""{0}"" AS SELECT DISTINCT ""Hash"" AS ""Hash"", ""Size"" AS ""Size"" FROM ({1} UNION {2} UNION {3})";
-                var extra = @"SELECT ? AS ""Type"", ""{0}"".""Hash"" AS ""Hash"" FROM ""{0}"" WHERE ""{0}"".""Hash"" NOT IN ( SELECT ""Hash"" FROM ""{1}"" )";
-                var missing = @"SELECT ? AS ""Type"", ""Hash"" AS ""Hash"" FROM ""{1}"" WHERE ""Hash"" NOT IN (SELECT ""Hash"" FROM ""{0}"")";
-                var modified = @"SELECT ? AS ""Type"", ""E"".""Hash"" AS ""Hash"" FROM ""{0}"" E, ""{1}"" D WHERE ""D"".""Hash"" = ""E"".""Hash"" AND ""D"".""Size"" != ""E"".""Size""  ";
-                var drop = @"DROP TABLE IF EXISTS ""{1}"" ";
+                var create = FormatInvariant($@"CREATE TEMPORARY TABLE ""{cmpName}"" AS SELECT DISTINCT ""Hash"" AS ""Hash"", ""Size"" AS ""Size"" FROM ({curBlocks} UNION {delBlocks} UNION {duplBlocks})");
+                var extra = FormatInvariant($@"SELECT ? AS ""Type"", ""{m_tablename}"".""Hash"" AS ""Hash"" FROM ""{m_tablename}"" WHERE ""{m_tablename}"".""Hash"" NOT IN ( SELECT ""Hash"" FROM ""{cmpName}"" )");
+                var missing = FormatInvariant($@"SELECT ? AS ""Type"", ""Hash"" AS ""Hash"" FROM ""{cmpName}"" WHERE ""Hash"" NOT IN (SELECT ""Hash"" FROM ""{m_tablename}"")");
+                var modified = FormatInvariant($@"SELECT ? AS ""Type"", ""E"".""Hash"" AS ""Hash"" FROM ""{m_tablename}"" E, ""{cmpName}"" D WHERE ""D"".""Hash"" = ""E"".""Hash"" AND ""D"".""Size"" != ""E"".""Size""  ");
+                var drop = FormatInvariant($@"DROP TABLE IF EXISTS ""{cmpName}"" ");
 
                 using (var cmd = m_connection.CreateCommand())
                 {
@@ -380,15 +380,15 @@ namespace Duplicati.Library.Main.Database
 
                     try
                     {
-                        cmd.ExecuteNonQuery(FormatInvariant(create, cmpName, curBlocks, delBlocks, duplBlocks), m_volumename, m_volumename, m_volumename);
-                        using (var rd = cmd.ExecuteReader(FormatInvariant(extra + " UNION " + missing + " UNION " + modified, m_tablename, cmpName), (int)Library.Interface.TestEntryStatus.Extra, (int)Library.Interface.TestEntryStatus.Missing, (int)Library.Interface.TestEntryStatus.Modified))
+                        cmd.ExecuteNonQuery(create, m_volumename, m_volumename, m_volumename);
+                        using (var rd = cmd.ExecuteReader(FormatInvariant($"{extra} UNION {missing} UNION {modified}"), (int)Library.Interface.TestEntryStatus.Extra, (int)Library.Interface.TestEntryStatus.Missing, (int)Library.Interface.TestEntryStatus.Modified))
                             while (rd.Read())
                                 yield return new KeyValuePair<Duplicati.Library.Interface.TestEntryStatus, string>((Duplicati.Library.Interface.TestEntryStatus)rd.GetInt64(0), rd.GetString(1));
 
                     }
                     finally
                     {
-                        try { cmd.ExecuteNonQuery(FormatInvariant(drop, m_tablename, cmpName)); }
+                        try { cmd.ExecuteNonQuery(drop); }
                         catch { }
                     }
                 }

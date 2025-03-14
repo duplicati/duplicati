@@ -95,14 +95,14 @@ namespace Duplicati.Library.Main.Database
                 m_tablename = "TempDeletedFilesTable-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
 
                 using (var cmd = m_connection.CreateCommand(m_transaction))
-                    cmd.ExecuteNonQuery(FormatInvariant(@"CREATE TEMPORARY TABLE ""{0}"" (""FileID"" INTEGER PRIMARY KEY) ", m_tablename));
+                    cmd.ExecuteNonQuery(FormatInvariant($@"CREATE TEMPORARY TABLE ""{m_tablename}"" (""FileID"" INTEGER PRIMARY KEY) "));
             }
 
             public void ApplyFilter(Action<System.Data.IDbCommand, long, string> filtercommand)
             {
                 using (var cmd = m_connection.CreateCommand(m_transaction))
                     filtercommand(cmd, ParentID, m_tablename);
-                
+
                 PostFilterChecks();
             }
 
@@ -117,8 +117,8 @@ namespace Duplicati.Library.Main.Database
                     var filenamestable = "Filenames-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
                     using (var cmd = m_connection.CreateCommand(m_transaction))
                     {
-                        cmd.ExecuteNonQuery(FormatInvariant(@"CREATE TEMPORARY TABLE ""{0}"" (""Path"" TEXT NOT NULL) ", filenamestable));
-                        cmd.CommandText = FormatInvariant(@"INSERT INTO ""{0}"" (""Path"") VALUES (?)", filenamestable);
+                        cmd.ExecuteNonQuery(FormatInvariant($@"CREATE TEMPORARY TABLE ""{filenamestable}"" (""Path"" TEXT NOT NULL) "));
+                        cmd.CommandText = FormatInvariant($@"INSERT INTO ""{filenamestable}"" (""Path"") VALUES (?)");
                         cmd.AddParameter();
 
                         foreach (var s in p)
@@ -127,8 +127,8 @@ namespace Duplicati.Library.Main.Database
                             cmd.ExecuteNonQuery();
                         }
 
-                        cmd.ExecuteNonQuery(FormatInvariant(@"INSERT INTO ""{0}"" (""FileID"") SELECT DISTINCT ""A"".""FileID"" FROM ""FilesetEntry"" A, ""File"" B WHERE ""A"".""FilesetID"" = ? AND ""A"".""FileID"" = ""B"".""ID"" AND ""B"".""Path"" IN ""{1}""", m_tablename, filenamestable), ParentID);
-                        cmd.ExecuteNonQuery(FormatInvariant(@"DROP TABLE IF EXISTS ""{0}"" ", filenamestable));
+                        cmd.ExecuteNonQuery(FormatInvariant($@"INSERT INTO ""{m_tablename}"" (""FileID"") SELECT DISTINCT ""A"".""FileID"" FROM ""FilesetEntry"" A, ""File"" B WHERE ""A"".""FilesetID"" = ? AND ""A"".""FileID"" = ""B"".""ID"" AND ""B"".""Path"" IN ""{filenamestable}"""), ParentID);
+                        cmd.ExecuteNonQuery(FormatInvariant($@"DROP TABLE IF EXISTS ""{filenamestable}"" "));
                     }
                 }
                 else
@@ -138,7 +138,7 @@ namespace Duplicati.Library.Main.Database
                     using (var cmd = m_connection.CreateCommand(m_transaction))
                     using (var cmd2 = m_connection.CreateCommand(m_transaction))
                     {
-                        cmd2.CommandText = FormatInvariant(@"INSERT INTO ""{0}"" (""FileID"") VALUES (?)", m_tablename);
+                        cmd2.CommandText = FormatInvariant($@"INSERT INTO ""{m_tablename}"" (""FileID"") VALUES (?)");
                         cmd2.AddParameters(1);
 
                         using (var rd = cmd.ExecuteReader(@"SELECT ""B"".""Path"", ""A"".""FileID"" FROM ""FilesetEntry"" A, ""File"" B WHERE ""A"".""FilesetID"" = ? AND ""A"".""FileID"" = ""B"".""ID"" ", ParentID))
@@ -161,9 +161,9 @@ namespace Duplicati.Library.Main.Database
             {
                 using (var cmd = m_connection.CreateCommand(m_transaction))
                 {
-                    RemovedFileCount = cmd.ExecuteScalarInt64(FormatInvariant(@"SELECT COUNT(*) FROM ""{0}""", m_tablename), 0);
-                    RemovedFileSize = cmd.ExecuteScalarInt64(FormatInvariant(@"SELECT SUM(""C"".""Length"") FROM ""{0}"" A, ""FileLookup"" B, ""Blockset"" C WHERE ""A"".""FileID"" = ""B"".""ID"" AND ""B"".""BlocksetID"" = ""C"".""ID"" ", m_tablename), 0);
-                    var filesetcount = cmd.ExecuteScalarInt64(FormatInvariant(@"SELECT COUNT(*) FROM ""FilesetEntry"" WHERE ""FilesetID"" = " + ParentID), 0);
+                    RemovedFileCount = cmd.ExecuteScalarInt64(FormatInvariant($@"SELECT COUNT(*) FROM ""{m_tablename}"""), 0);
+                    RemovedFileSize = cmd.ExecuteScalarInt64(FormatInvariant($@"SELECT SUM(""C"".""Length"") FROM ""{m_tablename}"" A, ""FileLookup"" B, ""Blockset"" C WHERE ""A"".""FileID"" = ""B"".""ID"" AND ""B"".""BlocksetID"" = ""C"".""ID"" "), 0);
+                    var filesetcount = cmd.ExecuteScalarInt64(FormatInvariant($@"SELECT COUNT(*) FROM ""FilesetEntry"" WHERE ""FilesetID"" = {ParentID}"), 0);
                     if (filesetcount == RemovedFileCount)
                         throw new Duplicati.Library.Interface.UserInformationException($"Refusing to purge {RemovedFileCount} files from fileset with ID {ParentID}, as that would remove the entire fileset.\nTo delete a fileset, use the \"delete\" command.", "PurgeWouldRemoveEntireFileset");
                 }
@@ -176,15 +176,15 @@ namespace Duplicati.Library.Main.Database
                 m_parentdb.UpdateFullBackupStateInFileset(filesetid, isFullBackup);
 
                 using (var cmd = m_connection.CreateCommand(m_transaction))
-                    cmd.ExecuteNonQuery(FormatInvariant(@"INSERT INTO ""FilesetEntry"" (""FilesetID"", ""FileID"", ""Lastmodified"") SELECT ?, ""FileID"", ""LastModified"" FROM ""FilesetEntry"" WHERE ""FilesetID"" = ? AND ""FileID"" NOT IN ""{0}"" ", m_tablename), filesetid, ParentID);
+                    cmd.ExecuteNonQuery(FormatInvariant($@"INSERT INTO ""FilesetEntry"" (""FilesetID"", ""FileID"", ""Lastmodified"") SELECT ?, ""FileID"", ""LastModified"" FROM ""FilesetEntry"" WHERE ""FilesetID"" = ? AND ""FileID"" NOT IN ""{m_tablename}"" "), filesetid, ParentID);
 
                 return new Tuple<long, long>(remotevolid, filesetid);
             }
-            
+
             public IEnumerable<KeyValuePair<string, long>> ListAllDeletedFiles()
             {
                 using (var cmd = m_connection.CreateCommand(m_transaction))
-                using (var rd = cmd.ExecuteReader(FormatInvariant(@"SELECT ""B"".""Path"", ""C"".""Length"" FROM ""{0}"" A, ""File"" B, ""Blockset"" C WHERE ""A"".""FileID"" = ""B"".""ID"" AND ""B"".""BlocksetID"" = ""C"".""ID"" ", m_tablename)))
+                using (var rd = cmd.ExecuteReader(FormatInvariant($@"SELECT ""B"".""Path"", ""C"".""Length"" FROM ""{m_tablename}"" A, ""File"" B, ""Blockset"" C WHERE ""A"".""FileID"" = ""B"".""ID"" AND ""B"".""BlocksetID"" = ""C"".""ID"" ")))
                     while (rd.Read())
                         yield return new KeyValuePair<string, long>(rd.ConvertValueToString(0), rd.ConvertValueToInt64(1));
             }
@@ -194,7 +194,7 @@ namespace Duplicati.Library.Main.Database
                 try
                 {
                     using (var cmd = m_connection.CreateCommand(m_transaction))
-                        cmd.ExecuteNonQuery(@"DROP TABLE IF EXISTS ""{0}""", m_tablename);
+                        cmd.ExecuteNonQuery(FormatInvariant($@"DROP TABLE IF EXISTS ""{m_tablename}"""));
                 }
                 catch
                 {
@@ -202,5 +202,5 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
-   }
+    }
 }

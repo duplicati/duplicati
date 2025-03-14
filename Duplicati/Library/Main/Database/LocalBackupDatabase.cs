@@ -185,14 +185,10 @@ namespace Duplicati.Library.Main.Database
                         @"  WHERE ""A"".""ID"" = ""B"".""FileID"" " +
                         @"    AND ""B"".""FilesetID"" = ? ";
 
-                    m_findfileCommand.CommandText = FormatInvariant(
-                        @"SELECT ""C"".""ID"" AS ""FileID"", ""C"".""LastModified"", ""D"".""Length"", ""E"".""FullHash"" as ""Metahash"", ""E"".""Length"" AS ""Metasize"" " +
-                        @"  FROM " +
-                        @"  ({0}) AS ""C"", ""Blockset"" AS ""D"", ""Blockset"" AS ""E"", ""Metadataset"" ""F"" " +
-                        @" WHERE ""C"".""BlocksetID"" == ""D"".""ID"" AND ""C"".""MetadataID"" == ""F"".""ID"" AND ""F"".""BlocksetID"" = ""E"".""ID"" " +
-                        @" LIMIT 1",
-                        getLastFileEntryForPath
-                    );
+                    m_findfileCommand.CommandText = FormatInvariant($@"SELECT ""C"".""ID"" AS ""FileID"", ""C"".""LastModified"", ""D"".""Length"", ""E"".""FullHash"" as ""Metahash"", ""E"".""Length"" AS ""Metasize""
+FROM ({getLastFileEntryForPath}) AS ""C"", ""Blockset"" AS ""D"", ""Blockset"" AS ""E"", ""Metadataset"" ""F"" 
+WHERE ""C"".""BlocksetID"" == ""D"".""ID"" AND ""C"".""MetadataID"" == ""F"".""ID"" AND ""F"".""BlocksetID"" = ""E"".""ID"" 
+LIMIT 1");
                     break;
 
                 // Potentially faster query: https://forum.duplicati.com/t/release-2-0-3-10-canary-2018-08-30/4497/25
@@ -616,22 +612,22 @@ SELECT ""BlocklistHash"".""BlocksetID"" FROM ""BlocklistHash"" WHERE ""Blocklist
                 {
                     var subqueryFiles = @"SELECT ""File"".""Path"" AS ""Path"", ""A"".""Fullhash"" AS ""Filehash"", ""B"".""Fullhash"" AS ""Metahash"" FROM ""File"", ""FilesetEntry"", ""Blockset"" A, ""Blockset"" B, ""Metadataset""  WHERE ""File"".""ID"" = ""FilesetEntry"".""FileID"" AND ""A"".""ID"" = ""File"".""BlocksetID"" AND ""FilesetEntry"".""FilesetID"" = ? AND ""File"".""MetadataID"" = ""Metadataset"".""ID"" AND ""Metadataset"".""BlocksetID"" = ""B"".""ID"" ";
 
-                    cmd.ExecuteNonQuery(FormatInvariant(@"CREATE TEMPORARY TABLE ""{0}"" AS " + subqueryFiles, tmpName1), lastFilesetId);
-                    cmd.ExecuteNonQuery(FormatInvariant(@"CREATE TEMPORARY TABLE ""{0}"" AS " + subqueryFiles, tmpName2), m_filesetId);
-                    cmd.ExecuteNonQuery(FormatInvariant(@"CREATE INDEX ""nn_tmpName1"" ON ""{0}"" (""Path"")", tmpName1));
-                    cmd.ExecuteNonQuery(FormatInvariant(@"CREATE INDEX ""nn_tmpName2"" ON ""{0}"" (""Path"")", tmpName2));
+                    cmd.ExecuteNonQuery(FormatInvariant($@"CREATE TEMPORARY TABLE ""{tmpName1}"" AS {subqueryFiles}"), lastFilesetId);
+                    cmd.ExecuteNonQuery(FormatInvariant($@"CREATE TEMPORARY TABLE ""{tmpName2}"" AS {subqueryFiles}"), m_filesetId);
+                    cmd.ExecuteNonQuery(FormatInvariant($@"CREATE INDEX ""nn_tmpName1"" ON ""{tmpName1}"" (""Path"")"));
+                    cmd.ExecuteNonQuery(FormatInvariant($@"CREATE INDEX ""nn_tmpName2"" ON ""{tmpName2}"" (""Path"")"));
 
 
-                    results.AddedFiles = cmd.ExecuteScalarInt64(FormatInvariant(@"SELECT COUNT(*) FROM ""File"" INNER JOIN ""FilesetEntry"" ON ""File"".""ID"" = ""FilesetEntry"".""FileID"" WHERE ""FilesetEntry"".""FilesetID"" = ? AND ""File"".""BlocksetID"" != ? AND ""File"".""BlocksetID"" != ? AND NOT ""File"".""Path"" IN (SELECT ""Path"" FROM ""{0}"")", tmpName1), 0, m_filesetId, FOLDER_BLOCKSET_ID, SYMLINK_BLOCKSET_ID);
-                    results.DeletedFiles = cmd.ExecuteScalarInt64(FormatInvariant(@"SELECT COUNT(*) FROM ""{0}"" WHERE ""{0}"".""Path"" NOT IN (SELECT ""Path"" FROM ""File"" INNER JOIN ""FilesetEntry"" ON ""File"".""ID"" = ""FilesetEntry"".""FileID"" WHERE ""FilesetEntry"".""FilesetID"" = ?)", tmpName1), 0, m_filesetId);
-                    results.ModifiedFiles = cmd.ExecuteScalarInt64(FormatInvariant(@"SELECT COUNT(*) FROM ""{0}"" A, ""{1}"" B WHERE ""A"".""Path"" = ""B"".""Path"" AND (""A"".""Filehash"" != ""B"".""Filehash"" OR ""A"".""Metahash"" != ""B"".""Metahash"")", tmpName1, tmpName2), 0);
+                    results.AddedFiles = cmd.ExecuteScalarInt64(FormatInvariant($@"SELECT COUNT(*) FROM ""File"" INNER JOIN ""FilesetEntry"" ON ""File"".""ID"" = ""FilesetEntry"".""FileID"" WHERE ""FilesetEntry"".""FilesetID"" = ? AND ""File"".""BlocksetID"" != ? AND ""File"".""BlocksetID"" != ? AND NOT ""File"".""Path"" IN (SELECT ""Path"" FROM ""{tmpName1}"")"), 0, m_filesetId, FOLDER_BLOCKSET_ID, SYMLINK_BLOCKSET_ID);
+                    results.DeletedFiles = cmd.ExecuteScalarInt64(FormatInvariant($@"SELECT COUNT(*) FROM ""{tmpName1}"" WHERE ""{tmpName1}"".""Path"" NOT IN (SELECT ""Path"" FROM ""File"" INNER JOIN ""FilesetEntry"" ON ""File"".""ID"" = ""FilesetEntry"".""FileID"" WHERE ""FilesetEntry"".""FilesetID"" = ?)"), 0, m_filesetId);
+                    results.ModifiedFiles = cmd.ExecuteScalarInt64(FormatInvariant($@"SELECT COUNT(*) FROM ""{tmpName1}"" A, ""{tmpName2}"" B WHERE ""A"".""Path"" = ""B"".""Path"" AND (""A"".""Filehash"" != ""B"".""Filehash"" OR ""A"".""Metahash"" != ""B"".""Metahash"")"), 0);
 
                 }
                 finally
                 {
-                    try { cmd.ExecuteNonQuery(FormatInvariant(@"DROP TABLE IF EXISTS ""{0}"";", tmpName1)); }
+                    try { cmd.ExecuteNonQuery(FormatInvariant($@"DROP TABLE IF EXISTS ""{tmpName1}"";")); }
                     catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, "DisposeError", ex, "Dispose temp table error"); }
-                    try { cmd.ExecuteNonQuery(FormatInvariant(@"DROP TABLE IF EXISTS ""{0}"";", tmpName2)); }
+                    try { cmd.ExecuteNonQuery(FormatInvariant($@"DROP TABLE IF EXISTS ""{tmpName2}"";")); }
                     catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, "DisposeError", ex, "Dispose temp table error"); }
                 }
             }
