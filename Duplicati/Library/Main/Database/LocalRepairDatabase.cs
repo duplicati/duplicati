@@ -20,9 +20,8 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System;
-using System.Linq;
+using System.Data;
 using System.Collections.Generic;
-using System.Security.Cryptography;
 using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Main.Database
@@ -58,12 +57,12 @@ namespace Duplicati.Library.Main.Database
             long Offset { get; }
         }
 
-        public interface IBlockWithSources : LocalBackupDatabase.IBlock
+        public interface IBlockWithSources : IBlock
         {
             IEnumerable<IBlockSource> Sources { get; }
         }
 
-        private class BlockWithSources : LocalBackupDatabase.Block, IBlockWithSources
+        private class BlockWithSources : Block, IBlockWithSources
         {
             private class BlockSource : IBlockSource
             {
@@ -78,10 +77,10 @@ namespace Duplicati.Library.Main.Database
                 }
             }
 
-            private readonly System.Data.IDataReader m_rd;
+            private readonly IDataReader m_rd;
             public bool Done { get; private set; }
 
-            public BlockWithSources(System.Data.IDataReader rd)
+            public BlockWithSources(IDataReader rd)
                 : base(rd.GetString(0), rd.GetInt64(1))
             {
                 m_rd = rd;
@@ -141,21 +140,20 @@ namespace Duplicati.Library.Main.Database
 
         private class MissingBlockList : IMissingBlockList
         {
-            private readonly System.Data.IDbConnection m_connection;
+            private readonly IDbConnection m_connection;
             private readonly TemporaryTransactionWrapper m_transaction;
-            private System.Data.IDbCommand m_insertCommand;
+            private IDbCommand m_insertCommand;
             private string m_tablename;
             private readonly string m_volumename;
 
-            public MissingBlockList(string volumename, System.Data.IDbConnection connection, System.Data.IDbTransaction transaction)
+            public MissingBlockList(string volumename, IDbConnection connection, IDbTransaction transaction)
             {
                 m_connection = connection;
                 m_transaction = new TemporaryTransactionWrapper(m_connection, transaction);
                 m_volumename = volumename;
                 var tablename = "MissingBlocks-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
-                using (var cmd = m_connection.CreateCommand())
+                using (var cmd = m_connection.CreateCommand(m_transaction.Parent))
                 {
-                    cmd.Transaction = m_transaction.Parent;
                     cmd.ExecuteNonQuery(FormatInvariant($@"CREATE TEMPORARY TABLE ""{tablename}"" (""Hash"" TEXT NOT NULL, ""Size"" INTEGER NOT NULL, ""Restored"" INTEGER NOT NULL) "));
                     m_tablename = tablename;
 
@@ -166,10 +164,7 @@ namespace Duplicati.Library.Main.Database
                     cmd.ExecuteNonQuery(FormatInvariant($@"CREATE UNIQUE INDEX ""{tablename}-Ix"" ON ""{tablename}"" (""Hash"", ""Size"", ""Restored"")"));
                 }
 
-                m_insertCommand = m_connection.CreateCommand();
-                m_insertCommand.Transaction = m_transaction.Parent;
-                m_insertCommand.CommandText = FormatInvariant($@"UPDATE ""{tablename}"" SET ""Restored"" = ? WHERE ""Hash"" = ? AND ""Size"" = ? AND ""Restored"" = ? ");
-                m_insertCommand.AddParameters(4);
+                m_insertCommand = m_connection.CreateCommand(m_transaction.Parent, FormatInvariant($@"UPDATE ""{tablename}"" SET ""Restored"" = ? WHERE ""Hash"" = ? AND ""Size"" = ? AND ""Restored"" = ? "));
             }
 
             public bool SetBlockRestored(string hash, long size)
@@ -238,7 +233,7 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
-        public IMissingBlockList CreateBlockList(string volumename, System.Data.IDbTransaction transaction = null)
+        public IMissingBlockList CreateBlockList(string volumename, IDbTransaction transaction = null)
         {
             return new MissingBlockList(volumename, m_connection, transaction);
         }
@@ -248,8 +243,6 @@ namespace Duplicati.Library.Main.Database
             using (var tr = m_connection.BeginTransaction())
             using (var cmd = m_connection.CreateCommand(tr))
             {
-                cmd.Transaction = tr;
-
                 var sql_count =
                     @"SELECT COUNT(*) FROM (" +
                     @" SELECT DISTINCT c1 FROM (" +
@@ -281,9 +274,8 @@ namespace Duplicati.Library.Main.Database
                             SELECT MIN(""ID"") AS ""ID"", ""Path"", ""BlocksetID"", ""MetadataID"", COUNT(*) as ""Entries"" FROM ""{tablename}"" GROUP BY ""Path"", ""BlocksetID"", ""MetadataID"") 
                             WHERE ""Entries"" > 1 ORDER BY ""ID""");
 
-                    using (var c2 = m_connection.CreateCommand())
+                    using (var c2 = m_connection.CreateCommand(tr))
                     {
-                        c2.Transaction = tr;
                         c2.CommandText = FormatInvariant($@"UPDATE ""FilesetEntry"" SET ""FileID"" = ? WHERE ""FileID"" IN (SELECT ""ID"" FROM ""{tablename}"" WHERE ""Path"" = ? AND ""BlocksetID"" = ? AND ""MetadataID"" = ?)");
                         c2.CommandText += FormatInvariant($@"; DELETE FROM ""{tablename}"" WHERE ""Path"" = ? AND ""BlocksetID"" = ? AND ""MetadataID"" = ? AND ""ID"" != ?");
                         foreach (var rd in cmd.ExecuteReaderEnumerable(sql))
@@ -298,7 +290,7 @@ namespace Duplicati.Library.Main.Database
                     cmd.CommandText = sql_count;
                     x = cmd.ExecuteScalarInt64(0);
                     if (x > 1)
-                        throw new Duplicati.Library.Interface.UserInformationException("Repair failed, there are still duplicate metadatahashes!", "DuplicateHashesRepairFailed");
+                        throw new Interface.UserInformationException("Repair failed, there are still duplicate metadatahashes!", "DuplicateHashesRepairFailed");
 
                     Logging.Log.WriteInformationMessage(LOGTAG, "DuplicateMetadataHashesFixed", "Duplicate metadatahashes repaired succesfully");
                     tr.Commit();
@@ -333,7 +325,7 @@ namespace Duplicati.Library.Main.Database
                     cmd.CommandText = sql_count;
                     x = cmd.ExecuteScalarInt64(0);
                     if (x > 1)
-                        throw new Duplicati.Library.Interface.UserInformationException("Repair failed, there are still duplicate file entries!", "DuplicateFilesRepairFailed");
+                        throw new Interface.UserInformationException("Repair failed, there are still duplicate file entries!", "DuplicateFilesRepairFailed");
 
                     Logging.Log.WriteInformationMessage(LOGTAG, "DuplicateFileEntriesFixed", "Duplicate file entries repaired succesfully");
                     tr.Commit();
@@ -437,7 +429,7 @@ namespace Duplicati.Library.Main.Database
 
                     itemswithnoblocklisthash = cmd.ExecuteScalarInt64(countsql, 0);
                     if (itemswithnoblocklisthash != 0)
-                        throw new Duplicati.Library.Interface.UserInformationException($"Failed to repair, after repair {itemswithnoblocklisthash} blocklisthashes were missing", "MissingBlocklistHashesRepairFailed");
+                        throw new Interface.UserInformationException($"Failed to repair, after repair {itemswithnoblocklisthash} blocklisthashes were missing", "MissingBlocklistHashesRepairFailed");
 
                     Logging.Log.WriteInformationMessage(LOGTAG, "MissingBlocklisthashesRepaired", "Missing blocklisthashes repaired succesfully");
                     tr.Commit();
@@ -482,7 +474,7 @@ namespace Duplicati.Library.Main.Database
                     var real_count = cmd.ExecuteScalarInt64(@"SELECT Count(*) FROM ""BlocklistHash""", 0);
 
                     if (real_count != unique_count)
-                        throw new Duplicati.Library.Interface.UserInformationException($"Failed to repair, result should have been {unique_count} blocklist hashes, but result was {real_count} blocklist hashes", "DuplicateBlocklistHashesRepairFailed");
+                        throw new Interface.UserInformationException($"Failed to repair, result should have been {unique_count} blocklist hashes, but result was {real_count} blocklist hashes", "DuplicateBlocklistHashesRepairFailed");
 
                     try
                     {
@@ -490,7 +482,7 @@ namespace Duplicati.Library.Main.Database
                     }
                     catch (Exception ex)
                     {
-                        throw new Duplicati.Library.Interface.UserInformationException("Repaired blocklisthashes, but the database was broken afterwards, rolled back changes", "DuplicateBlocklistHashesRepairFailed", ex);
+                        throw new Interface.UserInformationException("Repaired blocklisthashes, but the database was broken afterwards, rolled back changes", "DuplicateBlocklistHashesRepairFailed", ex);
                     }
 
                     Logging.Log.WriteInformationMessage(LOGTAG, "DuplicateBlocklistHashesRepaired", "Duplicate blocklisthashes repaired succesfully");

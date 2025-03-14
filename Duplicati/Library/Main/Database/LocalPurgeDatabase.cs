@@ -20,6 +20,7 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System;
+using System.Data;
 using System.Collections.Generic;
 using Duplicati.Library.Utility;
 
@@ -38,12 +39,12 @@ namespace Duplicati.Library.Main.Database
         {
         }
 
-        public ITemporaryFileset CreateTemporaryFileset(long parentid, System.Data.IDbTransaction transaction)
+        public ITemporaryFileset CreateTemporaryFileset(long parentid, IDbTransaction transaction)
         {
             return new TemporaryFileset(parentid, this, m_connection, transaction);
         }
 
-        public string GetRemoteVolumeNameForFileset(long id, System.Data.IDbTransaction transaction)
+        public string GetRemoteVolumeNameForFileset(long id, IDbTransaction transaction)
         {
             using (var cmd = m_connection.CreateCommand(transaction))
             using (var rd = cmd.ExecuteReader(@"SELECT ""B"".""Name"" FROM ""Fileset"" A, ""RemoteVolume"" B WHERE ""A"".""VolumeID"" = ""B"".""ID"" AND ""A"".""ID"" = ? ", id))
@@ -53,7 +54,7 @@ namespace Duplicati.Library.Main.Database
                     return rd.ConvertValueToString(0);
         }
 
-        internal long CountOrphanFiles(System.Data.IDbTransaction transaction)
+        internal long CountOrphanFiles(IDbTransaction transaction)
         {
             using (var cmd = m_connection.CreateCommand(transaction))
             using (var rd = cmd.ExecuteReader(@"SELECT COUNT(*) FROM ""FileLookup"" WHERE ""ID"" NOT IN (SELECT DISTINCT ""FileID"" FROM ""FilesetEntry"")"))
@@ -70,15 +71,15 @@ namespace Duplicati.Library.Main.Database
             long RemovedFileSize { get; }
 
             void ApplyFilter(Library.Utility.IFilter filter);
-            void ApplyFilter(Action<System.Data.IDbCommand, long, string> filtercommand);
+            void ApplyFilter(Action<IDbCommand, long, string> filtercommand);
             Tuple<long, long> ConvertToPermanentFileset(string name, DateTime timestamp, bool isFullBackup);
             IEnumerable<KeyValuePair<string, long>> ListAllDeletedFiles();
         }
 
         private class TemporaryFileset : ITemporaryFileset
         {
-            private readonly System.Data.IDbConnection m_connection;
-            private readonly System.Data.IDbTransaction m_transaction;
+            private readonly IDbConnection m_connection;
+            private readonly IDbTransaction m_transaction;
             private readonly string m_tablename;
             private readonly LocalPurgeDatabase m_parentdb;
 
@@ -86,9 +87,9 @@ namespace Duplicati.Library.Main.Database
             public long RemovedFileCount { get; private set; }
             public long RemovedFileSize { get; private set; }
 
-            public TemporaryFileset(long parentid, LocalPurgeDatabase parentdb, System.Data.IDbConnection connection, System.Data.IDbTransaction transaction)
+            public TemporaryFileset(long parentid, LocalPurgeDatabase parentdb, IDbConnection connection, IDbTransaction transaction)
             {
-                this.ParentID = parentid;
+                ParentID = parentid;
                 m_parentdb = parentdb;
                 m_connection = connection;
                 m_transaction = transaction;
@@ -98,7 +99,7 @@ namespace Duplicati.Library.Main.Database
                     cmd.ExecuteNonQuery(FormatInvariant($@"CREATE TEMPORARY TABLE ""{m_tablename}"" (""FileID"" INTEGER PRIMARY KEY) "));
             }
 
-            public void ApplyFilter(Action<System.Data.IDbCommand, long, string> filtercommand)
+            public void ApplyFilter(Action<IDbCommand, long, string> filtercommand)
             {
                 using (var cmd = m_connection.CreateCommand(m_transaction))
                     filtercommand(cmd, ParentID, m_tablename);
@@ -134,7 +135,7 @@ namespace Duplicati.Library.Main.Database
                 else
                 {
                     // Do row-wise iteration
-                    object[] values = new object[2];
+                    var values = new object[2];
                     using (var cmd = m_connection.CreateCommand(m_transaction))
                     using (var cmd2 = m_connection.CreateCommand(m_transaction))
                     {
@@ -165,7 +166,7 @@ namespace Duplicati.Library.Main.Database
                     RemovedFileSize = cmd.ExecuteScalarInt64(FormatInvariant($@"SELECT SUM(""C"".""Length"") FROM ""{m_tablename}"" A, ""FileLookup"" B, ""Blockset"" C WHERE ""A"".""FileID"" = ""B"".""ID"" AND ""B"".""BlocksetID"" = ""C"".""ID"" "), 0);
                     var filesetcount = cmd.ExecuteScalarInt64(FormatInvariant($@"SELECT COUNT(*) FROM ""FilesetEntry"" WHERE ""FilesetID"" = {ParentID}"), 0);
                     if (filesetcount == RemovedFileCount)
-                        throw new Duplicati.Library.Interface.UserInformationException($"Refusing to purge {RemovedFileCount} files from fileset with ID {ParentID}, as that would remove the entire fileset.\nTo delete a fileset, use the \"delete\" command.", "PurgeWouldRemoveEntireFileset");
+                        throw new Interface.UserInformationException($"Refusing to purge {RemovedFileCount} files from fileset with ID {ParentID}, as that would remove the entire fileset.\nTo delete a fileset, use the \"delete\" command.", "PurgeWouldRemoveEntireFileset");
                 }
             }
 

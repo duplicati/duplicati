@@ -18,34 +18,30 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 namespace Duplicati.Library.Main.Database
 {
     public class RemoteVolume : IRemoteVolume
     {
-        public RemoteVolume(Library.Interface.IFileEntry file, string hash = null)
+        public RemoteVolume(Interface.IFileEntry file, string hash = null)
         {
-            this.Name = file.Name;
-            this.Size = file.Size;
-            this.Hash = hash;
-            this.File = file;
+            Name = file.Name;
+            Size = file.Size;
+            Hash = hash;
+            File = file;
         }
 
         public RemoteVolume(string name, string hash, long size)
         {
-            this.Name = name;
-            this.Hash = hash;
-            this.Size = size;
-            this.File = null;
+            Name = name;
+            Hash = hash;
+            Size = size;
+            File = null;
         }
 
         public string Name { get; private set; }
         public string Hash { get; private set; }
         public long Size { get; private set; }
-        public Library.Interface.IFileEntry File { get; private set; }
+        public Interface.IFileEntry File { get; private set; }
     }
 }

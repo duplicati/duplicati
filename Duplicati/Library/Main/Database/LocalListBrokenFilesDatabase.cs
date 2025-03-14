@@ -21,6 +21,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 
 namespace Duplicati.Library.Main.Database
@@ -76,7 +77,7 @@ WHERE ""BlocksetID"" IS NULL OR ""BlocksetID"" IN
             ShouldCloseConnection = false;
         }
 
-        public IEnumerable<Tuple<DateTime, long, long>> GetBrokenFilesets(DateTime time, long[] versions, System.Data.IDbTransaction transaction)
+        public IEnumerable<Tuple<DateTime, long, long>> GetBrokenFilesets(DateTime time, long[] versions, IDbTransaction transaction)
         {
             var query = BROKEN_FILE_SETS;
             var clause = GetFilelistWhereClause(time, versions);
@@ -91,7 +92,7 @@ WHERE ""BlocksetID"" IS NULL OR ""BlocksetID"" IN
                         yield return new Tuple<DateTime, long, long>(ParseFromEpochSeconds(rd.ConvertValueToInt64(0, 0)), rd.ConvertValueToInt64(1, -1), rd.ConvertValueToInt64(2, 0));
         }
 
-        public IEnumerable<Tuple<string, long>> GetBrokenFilenames(long filesetid, System.Data.IDbTransaction transaction)
+        public IEnumerable<Tuple<string, long>> GetBrokenFilenames(long filesetid, IDbTransaction transaction)
         {
             using (var cmd = Connection.CreateCommand(transaction))
                 foreach (var rd in cmd.ExecuteReaderEnumerable(BROKEN_FILE_NAMES, filesetid))
@@ -99,13 +100,13 @@ WHERE ""BlocksetID"" IS NULL OR ""BlocksetID"" IN
                         yield return new Tuple<string, long>(rd.ConvertValueToString(0), rd.ConvertValueToInt64(1));
         }
 
-        public void InsertBrokenFileIDsIntoTable(long filesetid, string tablename, string IDfieldname, System.Data.IDbTransaction transaction)
+        public void InsertBrokenFileIDsIntoTable(long filesetid, string tablename, string IDfieldname, IDbTransaction transaction)
         {
             using (var cmd = Connection.CreateCommand(transaction))
                 cmd.ExecuteNonQuery(INSERT_BROKEN_IDS(tablename, IDfieldname), filesetid);
         }
 
-        public void RemoveMissingBlocks(IEnumerable<string> names, System.Data.IDbTransaction transaction)
+        public void RemoveMissingBlocks(IEnumerable<string> names, IDbTransaction transaction)
         {
             if (names == null || !names.Any()) return;
             if (transaction == null)
@@ -113,7 +114,7 @@ WHERE ""BlocksetID"" IS NULL OR ""BlocksetID"" IN
 
             using (var deletecmd = m_connection.CreateCommand(transaction))
             {
-                string temptransguid = Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
+                var temptransguid = Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
                 var volidstable = "DelVolSetIds-" + temptransguid;
 
                 // Create and fill a temp table with the volids to delete. We avoid using too many parameters that way.
@@ -137,7 +138,7 @@ WHERE ""BlocksetID"" IS NULL OR ""BlocksetID"" IN
 
                 // Clean up temp tables for subqueries. We truncate content and then try to delete.
                 // Drop in try-block, as it fails in nested transactions (SQLite problem)
-                // System.Data.SQLite.SQLiteException (0x80004005): database table is locked
+                // SQLite.SQLiteException (0x80004005): database table is locked
                 deletecmd.ExecuteNonQuery(FormatInvariant($@"DELETE FROM ""{volidstable}"" "));
                 try
                 {
@@ -148,7 +149,7 @@ WHERE ""BlocksetID"" IS NULL OR ""BlocksetID"" IN
             }
         }
 
-        public long GetFilesetFileCount(long filesetid, System.Data.IDbTransaction transaction)
+        public long GetFilesetFileCount(long filesetid, IDbTransaction transaction)
         {
             using (var cmd = m_connection.CreateCommand(transaction))
                 return cmd.ExecuteScalarInt64(@"SELECT COUNT(*) FROM ""FilesetEntry"" WHERE ""FilesetID"" = ?", 0, filesetid);

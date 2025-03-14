@@ -777,7 +777,7 @@ namespace Duplicati.Library.Utility
 
             return (T)(object)flags;
         }
-        
+
         /// <summary> 
         /// Parses an option with int value, returning the default value if the option is not found or cannot be parsed 
         /// </summary> 
@@ -785,9 +785,9 @@ namespace Duplicati.Library.Utility
         /// <param name="value">The value to look for in the settings</param> 
         /// <param name="default">default value</param> 
         /// <returns></returns> 
-        public static int ParseIntOption(IReadOnlyDictionary<string, string?> options, string value, int @default) 
-        { 
-            return options.TryGetValue(value, out var opt) && int.TryParse(opt ?? string.Empty, out var result) ? result : @default; 
+        public static int ParseIntOption(IReadOnlyDictionary<string, string?> options, string value, int @default)
+        {
+            return options.TryGetValue(value, out var opt) && int.TryParse(opt ?? string.Empty, out var result) ? result : @default;
         }
 
         /// <summary>
@@ -1546,7 +1546,7 @@ namespace Duplicati.Library.Utility
             collection.Import(pfxPath, password, X509KeyStorageFlags.Exportable | X509KeyStorageFlags.PersistKeySet);
             return collection;
         }
-        
+
         /// <summary>
         /// Probes the system for the presence of a loopback address on IPv4
         /// </summary>
@@ -1564,7 +1564,6 @@ namespace Duplicati.Library.Utility
         /// <returns></returns>
         public static string IpVersionCompatibleLoopback =>
             HasIPv4Loopback ? IPAddress.Loopback.ToString() : $"[{IPAddress.IPv6Loopback.ToString()}]";
-        
 
         /// <summary>
         /// Flattens an exception and its inner exceptions
@@ -1650,7 +1649,7 @@ namespace Duplicati.Library.Utility
         /// </summary>
         /// <param name="formattable">The formattable string</param>
         /// <returns>The formatted string</returns>
-        public static string FormatInvariant(FormattableString formattable)
+        public static string FormatInvariant(this FormattableString formattable)
             => formattable.ToString(CultureInfo.InvariantCulture);
     }
 }

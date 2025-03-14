@@ -33,7 +33,7 @@ namespace Duplicati.Library.Main.Database
             ShouldCloseConnection = true;
         }
 
-        private class ListResultFileset : Duplicati.Library.Interface.IListResultFileset
+        private class ListResultFileset : Interface.IListResultFileset
         {
             public long Version { get; set; }
             public int IsFullBackup { get; set; }
@@ -42,24 +42,24 @@ namespace Duplicati.Library.Main.Database
             public long FileSizes { get; set; }
         }
 
-        private class ListResultFile : Duplicati.Library.Interface.IListResultFile
+        private class ListResultFile : Interface.IListResultFile
         {
             public string Path { get; set; }
             public IEnumerable<long> Sizes { get; set; }
         }
 
-        private class ListResultRemoteLog : Duplicati.Library.Interface.IListResultRemoteLog
+        private class ListResultRemoteLog : Interface.IListResultRemoteLog
         {
             public DateTime Timestamp { get; set; }
             public string Message { get; set; }
         }
 
-        private class ListResultRemoteVolume : Duplicati.Library.Interface.IListResultRemoteVolume
+        private class ListResultRemoteVolume : Interface.IListResultRemoteVolume
         {
             public string Name { get; set; }
         }
 
-        public IEnumerable<Duplicati.Library.Interface.IListResultFileset> GetFilesets(IEnumerable<string> items)
+        public IEnumerable<Interface.IListResultFileset> GetFilesets(IEnumerable<string> items)
         {
             var filesets = FilesetTimes.ToArray();
             var dict = new Dictionary<long, long>();
@@ -88,7 +88,7 @@ SELECT ""ID"" FROM ""Fileset"" WHERE ""VolumeID"" IN ( SELECT ""ID"" FROM ""Remo
                 }
         }
 
-        public IEnumerable<Duplicati.Library.Interface.IListResultFile> GetFiles(IEnumerable<string> items)
+        public IEnumerable<Interface.IListResultFile> GetFiles(IEnumerable<string> items)
         {
             var sql = FormatInvariant($@"SELECT DISTINCT ""Path"" FROM (
 SELECT ""Path"" FROM ""File"" WHERE ""BlocksetID"" IN (SELECT ""BlocksetID"" FROM ""BlocksetEntry"" WHERE ""BlockID"" IN (SELECT ""ID"" FROM ""Block"" WHERE ""VolumeID"" IN (SELECT ""ID"" from ""RemoteVolume"" WHERE ""Name"" IN ({string.Join(",", items.Select(x => "?"))}))))
@@ -112,7 +112,7 @@ SELECT ""Path"" FROM ""File"" WHERE ""ID"" IN ( SELECT ""FileID"" FROM ""Fileset
 
         }
 
-        public IEnumerable<Duplicati.Library.Interface.IListResultRemoteLog> GetLogLines(IEnumerable<string> items)
+        public IEnumerable<Interface.IListResultRemoteLog> GetLogLines(IEnumerable<string> items)
         {
             var sql = FormatInvariant($@"
 SELECT ""TimeStamp"", ""Message"" || ' ' || CASE WHEN ""Exception"" IS NULL THEN '' ELSE ""Exception"" END FROM ""LogData"" WHERE {string.Join(" OR ", items.Select(x => @"""Message"" LIKE ?"))}
@@ -132,7 +132,7 @@ SELECT ""Timestamp"", ""Data"" FROM ""RemoteOperation"" WHERE ""Path"" IN ({stri
                     };
         }
 
-        public IEnumerable<Duplicati.Library.Interface.IListResultRemoteVolume> GetVolumes(IEnumerable<string> items)
+        public IEnumerable<Interface.IListResultRemoteVolume> GetVolumes(IEnumerable<string> items)
         {
             var sql = FormatInvariant($@"SELECT DISTINCT ""Name"" FROM ( 
 SELECT ""Name"" FROM ""Remotevolume"" WHERE ""ID"" IN ( SELECT ""VolumeID"" FROM ""Block"" WHERE ""ID"" IN ( SELECT ""BlockID"" FROM ""BlocksetEntry"" WHERE ""BlocksetID"" IN ( SELECT ""BlocksetID"" FROM ""FileLookup"" WHERE ""ID"" IN ( SELECT ""FileID"" FROM ""FilesetEntry"" WHERE ""FilesetID"" IN ( SELECT ""ID"" FROM ""Fileset"" WHERE ""VolumeID"" IN ( SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""Name"" IN ({string.Join(",", items.Select(x => "?"))}))))))) 
