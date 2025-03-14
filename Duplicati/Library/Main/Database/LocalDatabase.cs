@@ -97,6 +97,14 @@ namespace Duplicati.Library.Main.Database
             return c;
         }
 
+        /// <summary>
+        /// Formats the string using the invariant culture
+        /// </summary>
+        /// <param name="formattable">The formattable string</param>
+        /// <returns>The formatted string</returns>
+        public static string FormatInvariant(FormattableString formattable)
+            => Library.Utility.Utility.FormatInvariant(formattable);
+
         public static bool Exists(string path)
         {
             return File.Exists(path);
@@ -187,14 +195,14 @@ namespace Duplicati.Library.Main.Database
             m_selectremotevolumesCommand.CommandText = @"SELECT ""ID"", ""Name"", ""Type"", ""Size"", ""Hash"", ""State"", ""DeleteGraceTime"" FROM ""Remotevolume""";
 
             m_selectremotevolumeCommand.CommandText = m_selectremotevolumesCommand.CommandText + @" WHERE ""Name"" = ?";
-            m_selectduplicateRemoteVolumesCommand.CommandText = string.Format(@"SELECT DISTINCT ""Name"", ""State"" FROM ""Remotevolume"" WHERE ""Name"" IN (SELECT ""Name"" FROM ""Remotevolume"" WHERE ""State"" IN ('{0}', '{1}')) AND NOT ""State"" IN ('{0}', '{1}')", RemoteVolumeState.Deleted.ToString(), RemoteVolumeState.Deleting.ToString());
+            m_selectduplicateRemoteVolumesCommand.CommandText = FormatInvariant($@"SELECT DISTINCT ""Name"", ""State"" FROM ""Remotevolume"" WHERE ""Name"" IN (SELECT ""Name"" FROM ""Remotevolume"" WHERE ""State"" IN ('{RemoteVolumeState.Deleted.ToString()}', '{RemoteVolumeState.Deleting.ToString()}')) AND NOT ""State"" IN ('{RemoteVolumeState.Deleted.ToString()}', '{RemoteVolumeState.Deleting.ToString()}')");
 
             m_selectremotevolumeCommand.AddParameter();
 
             m_removeremotevolumeCommand.CommandText = @"DELETE FROM ""Remotevolume"" WHERE ""Name"" = ? AND (""DeleteGraceTime"" < ? OR ""State"" != ?)";
             m_removeremotevolumeCommand.AddParameters(3);
 
-            m_removedeletedremotevolumeCommand.CommandText = $@"DELETE FROM ""Remotevolume"" WHERE ""State"" == '{RemoteVolumeState.Deleted.ToString()}' AND (""DeleteGraceTime"" < ? OR LENGTH(""DeleteGraceTime"") > 12) "; // >12 is to handle removal of old records that were in ticks
+            m_removedeletedremotevolumeCommand.CommandText = FormatInvariant($@"DELETE FROM ""Remotevolume"" WHERE ""State"" == '{RemoteVolumeState.Deleted.ToString()}' AND (""DeleteGraceTime"" < ? OR LENGTH(""DeleteGraceTime"") > 12) "); // >12 is to handle removal of old records that were in ticks
             m_removedeletedremotevolumeCommand.AddParameter();
 
             m_selectremotevolumeIdCommand.CommandText = @"SELECT ""ID"" FROM ""Remotevolume"" WHERE ""Name"" = ?";
@@ -446,7 +454,7 @@ namespace Duplicati.Library.Main.Database
                 cmd.Transaction = tr.Parent;
                 var c = cmd.ExecuteNonQuery(@"DELETE FROM ""RemoteVolume"" WHERE ""Name"" = ? AND ""State"" = ? ", name, state.ToString());
                 if (c != 1)
-                    throw new Exception(string.Format("Unexpected number of remote volumes deleted: {0}, expected {1}", c, 1));
+                    throw new Exception($"Unexpected number of remote volumes deleted: {c}, expected {1}");
 
                 tr.Commit();
             }
@@ -471,8 +479,8 @@ namespace Duplicati.Library.Main.Database
                 var blocksetidstable = "DelBlockSetIds-" + temptransguid;
 
                 // Create and fill a temp table with the volids to delete. We avoid using too many parameters that way.
-                deletecmd.ExecuteNonQuery(string.Format(@"CREATE TEMP TABLE ""{0}"" (""ID"" INTEGER PRIMARY KEY)", volidstable));
-                deletecmd.CommandText = string.Format(@"INSERT OR IGNORE INTO ""{0}"" (""ID"") VALUES (?)", volidstable);
+                deletecmd.ExecuteNonQuery(FormatInvariant($@"CREATE TEMP TABLE ""{volidstable}"" (""ID"" INTEGER PRIMARY KEY)"));
+                deletecmd.CommandText = FormatInvariant($@"INSERT OR IGNORE INTO ""{volidstable}"" (""ID"") VALUES (?)");
                 deletecmd.Parameters.Clear();
                 deletecmd.AddParameters(1);
                 foreach (var name in names)
@@ -481,82 +489,81 @@ namespace Duplicati.Library.Main.Database
                     deletecmd.SetParameterValue(0, volumeid);
                     deletecmd.ExecuteNonQuery();
                 }
-                var volIdsSubQuery = string.Format(@"SELECT ""ID"" FROM ""{0}"" ", volidstable);
+                var volIdsSubQuery = FormatInvariant($@"SELECT ""ID"" FROM ""{volidstable}"" ");
                 deletecmd.Parameters.Clear();
 
 
-                var bsIdsSubQuery = string.Format(
-                      @"SELECT DISTINCT ""BlocksetEntry"".""BlocksetID"" FROM ""BlocksetEntry"", ""Block"""
-                    + @" WHERE ""BlocksetEntry"".""BlockID"" = ""Block"".""ID"" AND ""Block"".""VolumeID"" IN ({0}) "
-                    + @"UNION ALL "
-                    + @"SELECT DISTINCT ""BlocksetID"" FROM ""BlocklistHash"""
-                    + @" WHERE ""Hash"" IN (SELECT ""Hash"" FROM ""Block"" WHERE ""VolumeID"" IN ({0}))"
-                    , volIdsSubQuery);
+                var bsIdsSubQuery = FormatInvariant(@$"
+SELECT DISTINCT ""BlocksetEntry"".""BlocksetID"" FROM ""BlocksetEntry"", ""Block""
+WHERE ""BlocksetEntry"".""BlockID"" = ""Block"".""ID"" AND ""Block"".""VolumeID"" IN ({volIdsSubQuery}) 
+UNION ALL 
+SELECT DISTINCT ""BlocksetID"" FROM ""BlocklistHash""
+WHERE ""Hash"" IN (SELECT ""Hash"" FROM ""Block"" WHERE ""VolumeID"" IN ({volIdsSubQuery}))");
 
                 // Create a temporary table to cache subquery result, as it might take long (SQLite does not cache at all). 
-                deletecmd.ExecuteNonQuery(string.Format(@"CREATE TEMP TABLE ""{0}"" (""ID"" INTEGER PRIMARY KEY)", blocksetidstable));
-                deletecmd.ExecuteNonQuery(string.Format(@"INSERT OR IGNORE INTO ""{0}"" (""ID"") {1}", blocksetidstable, bsIdsSubQuery));
-                bsIdsSubQuery = string.Format(@"SELECT DISTINCT ""ID"" FROM ""{0}"" ", blocksetidstable);
+                deletecmd.ExecuteNonQuery(FormatInvariant($@"CREATE TEMP TABLE ""{blocksetidstable}"" (""ID"" INTEGER PRIMARY KEY)"));
+                deletecmd.ExecuteNonQuery(FormatInvariant($@"INSERT OR IGNORE INTO ""{blocksetidstable}"" (""ID"") {bsIdsSubQuery}"));
+                bsIdsSubQuery = FormatInvariant($@"SELECT DISTINCT ""ID"" FROM ""{blocksetidstable}"" ");
                 deletecmd.Parameters.Clear();
 
                 // Create a temp table to associate metadata that is being deleted to a fileset
-                var metadataFilesetQuery = $@"SELECT Metadataset.ID, FilesetEntry.FilesetID
+                var metadataFilesetQuery = FormatInvariant($@"SELECT Metadataset.ID, FilesetEntry.FilesetID
 FROM Metadataset
 INNER JOIN FileLookup ON FileLookup.MetadataID = Metadataset.ID
 INNER JOIN FilesetEntry ON FilesetEntry.FileID = FileLookup.ID
 WHERE Metadataset.BlocksetID IN ({bsIdsSubQuery})
-OR Metadataset.ID IN (SELECT MetadataID FROM FileLookup WHERE BlocksetID IN ({bsIdsSubQuery}))";
+OR Metadataset.ID IN (SELECT MetadataID FROM FileLookup WHERE BlocksetID IN ({bsIdsSubQuery}))");
 
                 var metadataFilesetTable = @"DelMetadataFilesetIds-" + temptransguid;
-                deletecmd.ExecuteNonQuery($@"CREATE TEMP TABLE ""{metadataFilesetTable}"" (MetadataID INTEGER PRIMARY KEY, FilesetID INTEGER)");
-                deletecmd.ExecuteNonQuery($@"INSERT OR IGNORE INTO ""{metadataFilesetTable}"" (MetadataID, FilesetID) {metadataFilesetQuery}");
+                deletecmd.ExecuteNonQuery(FormatInvariant($@"CREATE TEMP TABLE ""{metadataFilesetTable}"" (MetadataID INTEGER PRIMARY KEY, FilesetID INTEGER)"));
+                deletecmd.ExecuteNonQuery(FormatInvariant($@"INSERT OR IGNORE INTO ""{metadataFilesetTable}"" (MetadataID, FilesetID) {metadataFilesetQuery}"));
 
                 // Delete FilesetEntry rows that had their metadata deleted
-                deletecmd.ExecuteNonQuery($@"DELETE FROM FilesetEntry
+                deletecmd.ExecuteNonQuery(FormatInvariant($@"DELETE FROM FilesetEntry
 WHERE FilesetEntry.FilesetID IN (SELECT DISTINCT FilesetID FROM ""{metadataFilesetTable}"")
 AND FilesetEntry.FileID IN (
 	SELECT FilesetEntry.FileID
 	FROM FilesetEntry
 	INNER JOIN FileLookup ON FileLookup.ID = FilesetEntry.FileID
-	WHERE FileLookup.MetadataID IN (SELECT MetadataID FROM ""{metadataFilesetTable}""))");
+	WHERE FileLookup.MetadataID IN (SELECT MetadataID FROM ""{metadataFilesetTable}""))"));
 
                 // Delete FilesetEntry rows that had their blocks deleted
-                deletecmd.ExecuteNonQuery($@"DELETE FROM FilesetEntry WHERE FilesetEntry.FileID IN (
+                deletecmd.ExecuteNonQuery(FormatInvariant($@"DELETE FROM FilesetEntry WHERE FilesetEntry.FileID IN (
 SELECT ID FROM FileLookup
-WHERE FileLookup.BlocksetID IN ({bsIdsSubQuery}))");
-                deletecmd.ExecuteNonQuery($@"DELETE FROM FileLookup WHERE FileLookup.MetadataID IN (SELECT MetadataID FROM ""{metadataFilesetTable}"")");
+WHERE FileLookup.BlocksetID IN ({bsIdsSubQuery}))"));
+                deletecmd.ExecuteNonQuery(FormatInvariant($@"DELETE FROM FileLookup WHERE FileLookup.MetadataID IN (SELECT MetadataID FROM ""{metadataFilesetTable}"")"));
 
-                deletecmd.ExecuteNonQuery(string.Format(@"DELETE FROM ""Metadataset"" WHERE ""BlocksetID"" IN ({0})", bsIdsSubQuery));
-                deletecmd.ExecuteNonQuery(string.Format(@"DELETE FROM ""FileLookup"" WHERE ""BlocksetID"" IN ({0})", bsIdsSubQuery));
-                deletecmd.ExecuteNonQuery(string.Format(@"DELETE FROM ""Blockset"" WHERE ""ID"" IN ({0})", bsIdsSubQuery));
-                deletecmd.ExecuteNonQuery(string.Format(@"DELETE FROM ""BlocksetEntry"" WHERE ""BlocksetID"" IN ({0})", bsIdsSubQuery));
-                deletecmd.ExecuteNonQuery(string.Format(@"DELETE FROM ""BlocklistHash"" WHERE ""BlocklistHash"".""BlocksetID"" IN ({0})", bsIdsSubQuery));
+                deletecmd.ExecuteNonQuery(FormatInvariant($@"DELETE FROM ""Metadataset"" WHERE ""BlocksetID"" IN ({bsIdsSubQuery})"));
+                deletecmd.ExecuteNonQuery(FormatInvariant($@"DELETE FROM ""FileLookup"" WHERE ""BlocksetID"" IN ({bsIdsSubQuery})"));
+                deletecmd.ExecuteNonQuery(FormatInvariant($@"DELETE FROM ""Blockset"" WHERE ""ID"" IN ({bsIdsSubQuery})"));
+                deletecmd.ExecuteNonQuery(FormatInvariant($@"DELETE FROM ""BlocksetEntry"" WHERE ""BlocksetID"" IN ({bsIdsSubQuery})"));
+                deletecmd.ExecuteNonQuery(FormatInvariant($@"DELETE FROM ""BlocklistHash"" WHERE ""BlocklistHash"".""BlocksetID"" IN ({bsIdsSubQuery})"));
 
                 // If the volume is a block or index volume, this will update the crosslink table, otherwise nothing will happen
-                deletecmd.ExecuteNonQuery(string.Format(@"DELETE FROM ""IndexBlockLink"" WHERE ""BlockVolumeID"" IN ({0}) OR ""IndexVolumeID"" IN ({0})", volIdsSubQuery));
-                deletecmd.ExecuteNonQuery(string.Format(@"DELETE FROM ""Block"" WHERE ""VolumeID"" IN ({0})", volIdsSubQuery));
-                deletecmd.ExecuteNonQuery(string.Format(@"DELETE FROM ""DeletedBlock"" WHERE ""VolumeID"" IN ({0})", volIdsSubQuery));
-                deletecmd.ExecuteNonQuery(string.Format(@"DELETE FROM ""ChangeJournalData"" WHERE ""FilesetID"" IN (SELECT ""ID"" FROM ""Fileset"" WHERE ""VolumeID"" IN ({0}))", volIdsSubQuery));
-                deletecmd.ExecuteNonQuery($@"DELETE FROM FilesetEntry WHERE FilesetID IN (SELECT ID FROM Fileset WHERE VolumeID IN ({volIdsSubQuery}))");
-                deletecmd.ExecuteNonQuery($@"DELETE FROM Fileset WHERE VolumeID IN ({volIdsSubQuery})");
+                deletecmd.ExecuteNonQuery(FormatInvariant($@"DELETE FROM ""IndexBlockLink"" WHERE ""BlockVolumeID"" IN ({volIdsSubQuery}) OR ""IndexVolumeID"" IN ({volIdsSubQuery})"));
+                deletecmd.ExecuteNonQuery(FormatInvariant($@"DELETE FROM ""Block"" WHERE ""VolumeID"" IN ({volIdsSubQuery})"));
+                deletecmd.ExecuteNonQuery(FormatInvariant($@"DELETE FROM ""DeletedBlock"" WHERE ""VolumeID"" IN ({volIdsSubQuery})"));
+                deletecmd.ExecuteNonQuery(FormatInvariant($@"DELETE FROM ""ChangeJournalData"" WHERE ""FilesetID"" IN (SELECT ""ID"" FROM ""Fileset"" WHERE ""VolumeID"" IN ({volIdsSubQuery}))"));
+                deletecmd.ExecuteNonQuery(FormatInvariant($@"DELETE FROM FilesetEntry WHERE FilesetID IN (SELECT ID FROM Fileset WHERE VolumeID IN ({volIdsSubQuery}))"));
+                deletecmd.ExecuteNonQuery(FormatInvariant($@"DELETE FROM Fileset WHERE VolumeID IN ({volIdsSubQuery})"));
 
                 // Delete from Fileset if FilesetEntry rows were deleted by related metadata and there are no references in FilesetEntry anymore
-                deletecmd.ExecuteNonQuery($@"DELETE FROM Fileset WHERE Fileset.ID IN
+                deletecmd.ExecuteNonQuery(FormatInvariant($@"DELETE FROM Fileset WHERE Fileset.ID IN
 (SELECT DISTINCT FilesetID FROM ""{metadataFilesetTable}"")
 AND Fileset.ID NOT IN
-    (SELECT DISTINCT FilesetID FROM FilesetEntry)");
+    (SELECT DISTINCT FilesetID FROM FilesetEntry)"));
 
                 // Clean up temp tables for subqueries. We truncate content and then try to delete.
                 // Drop in try-block, as it fails in nested transactions (SQLite problem)
                 // System.Data.SQLite.SQLiteException (0x80004005): database table is locked
-                deletecmd.ExecuteNonQuery(string.Format(@"DELETE FROM ""{0}"" ", blocksetidstable));
-                deletecmd.ExecuteNonQuery(string.Format(@"DELETE FROM ""{0}"" ", volidstable));
+                deletecmd.ExecuteNonQuery(FormatInvariant($@"DELETE FROM ""{blocksetidstable}"" "));
+                deletecmd.ExecuteNonQuery(FormatInvariant($@"DELETE FROM ""{volidstable}"" "));
                 try
                 {
                     deletecmd.CommandTimeout = 2;
-                    deletecmd.ExecuteNonQuery(string.Format(@"DROP TABLE IF EXISTS ""{0}"" ", blocksetidstable));
-                    deletecmd.ExecuteNonQuery(string.Format(@"DROP TABLE IF EXISTS ""{0}"" ", volidstable));
-                    deletecmd.ExecuteNonQuery(string.Format(@"DROP TABLE IF EXISTS ""{0}"" ", metadataFilesetTable));
+                    deletecmd.ExecuteNonQuery(FormatInvariant($@"DROP TABLE IF EXISTS ""{blocksetidstable}"" "));
+                    deletecmd.ExecuteNonQuery(FormatInvariant($@"DROP TABLE IF EXISTS ""{volidstable}"" "));
+                    deletecmd.ExecuteNonQuery(FormatInvariant($@"DROP TABLE IF EXISTS ""{metadataFilesetTable}"" "));
                 }
                 catch { /* Ignore, will be deleted on close anyway. */ }
 
@@ -673,7 +680,7 @@ AND Fileset.ID NOT IN
         {
             using (var cmd = m_connection.CreateCommand())
             {
-                using (var rd = cmd.ExecuteReader($@"SELECT ""IsFullBackup"" FROM ""Fileset"" WHERE ""Timestamp"" = {Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(filesetTime)}"))
+                using (var rd = cmd.ExecuteReader(FormatInvariant($@"SELECT ""IsFullBackup"" FROM ""Fileset"" WHERE ""Timestamp"" = {Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(filesetTime)}")))
                 {
                     if (!rd.Read())
                     {
@@ -864,11 +871,11 @@ ON
                 var unique_count = cmd.ExecuteScalarInt64(@"SELECT Count(*) FROM (SELECT DISTINCT ""BlocksetID"", ""Index"" FROM ""BlocklistHash"")", 0);
 
                 if (real_count != unique_count)
-                    throw new DatabaseInconsistencyException(string.Format("Found {0} blocklist hashes, but there should be {1}. Run repair to fix it.", real_count, unique_count));
+                    throw new DatabaseInconsistencyException($"Found {real_count} blocklist hashes, but there should be {unique_count}. Run repair to fix it.");
 
-                var itemswithnoblocklisthash = cmd.ExecuteScalarInt64(string.Format(@"SELECT COUNT(*) FROM (SELECT * FROM (SELECT ""N"".""BlocksetID"", ((""N"".""BlockCount"" + {0} - 1) / {0}) AS ""BlocklistHashCountExpected"", CASE WHEN ""G"".""BlocklistHashCount"" IS NULL THEN 0 ELSE ""G"".""BlocklistHashCount"" END AS ""BlocklistHashCountActual"" FROM (SELECT ""BlocksetID"", COUNT(*) AS ""BlockCount"" FROM ""BlocksetEntry"" GROUP BY ""BlocksetID"") ""N"" LEFT OUTER JOIN (SELECT ""BlocksetID"", COUNT(*) AS ""BlocklistHashCount"" FROM ""BlocklistHash"" GROUP BY ""BlocksetID"") ""G"" ON ""N"".""BlocksetID"" = ""G"".""BlocksetID"" WHERE ""N"".""BlockCount"" > 1) WHERE ""BlocklistHashCountExpected"" != ""BlocklistHashCountActual"")", blocksize / hashsize), 0);
+                var itemswithnoblocklisthash = cmd.ExecuteScalarInt64(FormatInvariant($@"SELECT COUNT(*) FROM (SELECT * FROM (SELECT ""N"".""BlocksetID"", ((""N"".""BlockCount"" + {blocksize / hashsize} - 1) / {blocksize / hashsize}) AS ""BlocklistHashCountExpected"", CASE WHEN ""G"".""BlocklistHashCount"" IS NULL THEN 0 ELSE ""G"".""BlocklistHashCount"" END AS ""BlocklistHashCountActual"" FROM (SELECT ""BlocksetID"", COUNT(*) AS ""BlockCount"" FROM ""BlocksetEntry"" GROUP BY ""BlocksetID"") ""N"" LEFT OUTER JOIN (SELECT ""BlocksetID"", COUNT(*) AS ""BlocklistHashCount"" FROM ""BlocklistHash"" GROUP BY ""BlocksetID"") ""G"" ON ""N"".""BlocksetID"" = ""G"".""BlocksetID"" WHERE ""N"".""BlockCount"" > 1) WHERE ""BlocklistHashCountExpected"" != ""BlocklistHashCountActual"")"), 0);
                 if (itemswithnoblocklisthash != 0)
-                    throw new DatabaseInconsistencyException(string.Format("Found {0} file(s) with missing blocklist hashes", itemswithnoblocklisthash));
+                    throw new DatabaseInconsistencyException($"Found {itemswithnoblocklisthash} file(s) with missing blocklist hashes");
 
                 if (cmd.ExecuteScalarInt64(@"SELECT COUNT(*) FROM ""Blockset"" WHERE ""Length"" > 0 AND ""ID"" NOT IN (SELECT ""BlocksetId"" FROM ""BlocksetEntry"")") != 0)
                     throw new DatabaseInconsistencyException("Detected non-empty blocksets with no associated blocks!");
@@ -884,7 +891,7 @@ ON
                             if (reader.Read())
                                 throw new DatabaseInconsistencyException($"Detected 1 fileset with missing volume: FilesetId = {reader.ConvertValueToInt64(0)}, Time = ({ParseFromEpochSeconds(reader.ConvertValueToInt64(1))}), unmatched VolumeID {reader.ConvertValueToInt64(2)}");
 
-                    throw new DatabaseInconsistencyException(string.Format("Detected {0} filesets with missing volumes", filesetsMissingVolumes));
+                    throw new DatabaseInconsistencyException($"Detected {filesetsMissingVolumes} filesets with missing volumes");
                 }
 
                 var volumesMissingFilests = cmd.ExecuteScalarInt64(@"SELECT COUNT(*) FROM ""RemoteVolume"" WHERE ""Type"" = ? AND ""State"" != ? AND ""ID"" NOT IN (SELECT ""VolumeID"" FROM ""Fileset"")", 0, RemoteVolumeType.Files.ToString(), RemoteVolumeState.Deleted.ToString());
@@ -895,7 +902,7 @@ ON
                             if (reader.Read())
                                 throw new DatabaseInconsistencyException($"Detected 1 volume with missing filesets: VolumeId = {reader.ConvertValueToInt64(0)}, Name = {reader.ConvertValueToString(1)}, State = {reader.ConvertValueToString(2)}");
 
-                    throw new DatabaseInconsistencyException(string.Format("Detected {0} volumes with missing filesets", volumesMissingFilests));
+                    throw new DatabaseInconsistencyException($"Detected {volumesMissingFilests} volumes with missing filesets");
                 }
 
                 var nonAttachedFiles = cmd.ExecuteScalarInt64(@"SELECT COUNT(*) FROM ""FilesetEntry"" WHERE ""FileID"" NOT IN (SELECT ""ID"" FROM ""FileLookup"")");
@@ -909,9 +916,9 @@ ON
                     {
                         foreach (var filesetid in cmd.ExecuteReaderEnumerable(@"SELECT ""ID"" FROM ""Fileset"" ").Select(x => x.ConvertValueToInt64(0, -1)))
                         {
-                            var expandedCmd = string.Format(@"SELECT COUNT(*) FROM (SELECT DISTINCT ""Path"" FROM ({0}) UNION SELECT DISTINCT ""Path"" FROM ({1}))", LocalDatabase.LIST_FILESETS, LocalDatabase.LIST_FOLDERS_AND_SYMLINKS);
+                            var expandedCmd = FormatInvariant($@"SELECT COUNT(*) FROM (SELECT DISTINCT ""Path"" FROM ({LocalDatabase.LIST_FILESETS}) UNION SELECT DISTINCT ""Path"" FROM ({LocalDatabase.LIST_FOLDERS_AND_SYMLINKS}))");
                             var expandedlist = cmd2.ExecuteScalarInt64(expandedCmd, 0, filesetid, FOLDER_BLOCKSET_ID, SYMLINK_BLOCKSET_ID, filesetid);
-                            //var storedfilelist = cmd2.ExecuteScalarInt64(string.Format(@"SELECT COUNT(*) FROM ""FilesetEntry"", ""FileLookup"" WHERE ""FilesetEntry"".""FilesetID"" = ? AND ""FileLookup"".""ID"" = ""FilesetEntry"".""FileID"" AND ""FileLookup"".""BlocksetID"" != ? AND ""FileLookup"".""BlocksetID"" != ?"), 0, filesetid, FOLDER_BLOCKSET_ID, SYMLINK_BLOCKSET_ID);
+                            //var storedfilelist = cmd2.ExecuteScalarInt64(FormatInvariant(@"SELECT COUNT(*) FROM ""FilesetEntry"", ""FileLookup"" WHERE ""FilesetEntry"".""FilesetID"" = ? AND ""FileLookup"".""ID"" = ""FilesetEntry"".""FileID"" AND ""FileLookup"".""BlocksetID"" != ? AND ""FileLookup"".""BlocksetID"" != ?"), 0, filesetid, FOLDER_BLOCKSET_ID, SYMLINK_BLOCKSET_ID);
                             var storedlist = cmd2.ExecuteScalarInt64(@"SELECT COUNT(*) FROM ""FilesetEntry"" WHERE ""FilesetEntry"".""FilesetID"" = ?", 0, filesetid);
 
                             if (expandedlist != storedlist)
@@ -919,8 +926,8 @@ ON
                                 var filesetname = filesetid.ToString();
                                 var fileset = FilesetTimes.Zip(Enumerable.Range(0, FilesetTimes.Count()), (a, b) => new Tuple<long, long, DateTime>(b, a.Key, a.Value)).FirstOrDefault(x => x.Item2 == filesetid);
                                 if (fileset != null)
-                                    filesetname = string.Format("version {0}: {1} (database id: {2})", fileset.Item1, fileset.Item3, fileset.Item2);
-                                anyError.Add(string.Format("Unexpected difference in fileset {0}, found {1} entries, but expected {2}", filesetname, expandedlist, storedlist));
+                                    filesetname = $"version {fileset.Item1}: {fileset.Item3} (database id: {fileset.Item2})";
+                                anyError.Add($"Unexpected difference in fileset {filesetname}, found {expandedlist} entries, but expected {storedlist}");
                             }
                         }
                     }
@@ -1256,7 +1263,7 @@ ORDER BY
                 cmd.Transaction = transaction;
                 var c = cmd.ExecuteNonQuery(@"UPDATE ""Fileset"" SET ""VolumeID"" = ? WHERE ""ID"" = ?", volumeid, filesetid);
                 if (c != 1)
-                    throw new Exception(string.Format("Failed to link filesetid {0} to volumeid {1}", filesetid, volumeid));
+                    throw new Exception($"Failed to link filesetid {filesetid} to volumeid {volumeid}");
             }
         }
 
@@ -1302,7 +1309,7 @@ AND oldVersion.FilesetID = (SELECT ID FROM Fileset WHERE ID != ? ORDER BY Timest
                     using (var cmd = m_connection.CreateCommand())
                     {
                         cmd.Transaction = transaction;
-                        cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" AS SELECT DISTINCT ""Path"" FROM ""File"" ", Tablename));
+                        cmd.ExecuteNonQuery(FormatInvariant($@"CREATE TEMPORARY TABLE ""{Tablename}"" AS SELECT DISTINCT ""Path"" FROM ""File"" "));
                         return;
                     }
                 }
@@ -1314,10 +1321,10 @@ AND oldVersion.FilesetID = (SELECT ID FROM Fileset WHERE ID != ? ORDER BY Timest
                         // TODO: Optimize this to not rely on the "File" view, and not instantiate the paths in full
 
                         cmd.Transaction = transaction;
-                        cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" (""Path"" TEXT NOT NULL)", Tablename));
+                        cmd.ExecuteNonQuery(FormatInvariant($@"CREATE TEMPORARY TABLE ""{Tablename}"" (""Path"" TEXT NOT NULL)"));
                         using (var tr = new TemporaryTransactionWrapper(m_connection, transaction))
                         {
-                            cmd.CommandText = string.Format(@"INSERT INTO ""{0}"" (""Path"") VALUES (?)", Tablename);
+                            cmd.CommandText = FormatInvariant($@"INSERT INTO ""{Tablename}"" (""Path"") VALUES (?)");
                             cmd.AddParameter();
                             cmd.Transaction = tr.Parent;
                             using (var c2 = m_connection.CreateCommand())
@@ -1361,8 +1368,8 @@ AND oldVersion.FilesetID = (SELECT ID FROM Fileset WHERE ID != ? ORDER BY Timest
                     using (var tr = new TemporaryTransactionWrapper(m_connection, transaction))
                     {
                         cmd.Transaction = tr.Parent;
-                        cmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" (""Path"" TEXT NOT NULL)", Tablename));
-                        cmd.ExecuteNonQuery(string.Format(@"INSERT INTO ""{0}"" SELECT DISTINCT ""Path"" FROM ""File"" WHERE " + sb, Tablename), args.ToArray());
+                        cmd.ExecuteNonQuery(FormatInvariant($@"CREATE TEMPORARY TABLE ""{Tablename}"" (""Path"" TEXT NOT NULL)"));
+                        cmd.ExecuteNonQuery(FormatInvariant($@"INSERT INTO ""{Tablename}"" SELECT DISTINCT ""Path"" FROM ""File"" WHERE {sb}"), args.ToArray());
                         tr.Commit();
                     }
                 }
@@ -1374,7 +1381,7 @@ AND oldVersion.FilesetID = (SELECT ID FROM Fileset WHERE ID != ? ORDER BY Timest
                     try
                     {
                         using (var cmd = m_connection.CreateCommand())
-                            cmd.ExecuteNonQuery(string.Format(@"DROP TABLE IF EXISTS ""{0}"" ", Tablename));
+                            cmd.ExecuteNonQuery(FormatInvariant(@$"DROP TABLE IF EXISTS ""{Tablename}"" "));
                     }
                     catch { }
                     finally { Tablename = null; }
@@ -1391,7 +1398,7 @@ AND oldVersion.FilesetID = (SELECT ID FROM Fileset WHERE ID != ? ORDER BY Timest
                 //Rename the old entry, to preserve ID links
                 var c = cmd.ExecuteNonQuery(@"UPDATE ""Remotevolume"" SET ""Name"" = ? WHERE ""Name"" = ?", newname, oldname);
                 if (c != 1)
-                    throw new Exception(string.Format("Unexpected result from renaming \"{0}\" to \"{1}\", expected {2} got {3}", oldname, newname, 1, c));
+                    throw new Exception($"Unexpected result from renaming \"{oldname}\" to \"{newname}\", expected {1} got {c}");
 
                 // Grab the type of entry
                 var type = (RemoteVolumeType)Enum.Parse(typeof(RemoteVolumeType), cmd.ExecuteScalar(@"SELECT ""Type"" FROM ""Remotevolume"" WHERE ""Name"" = ?", newname).ToString(), true);
@@ -1443,13 +1450,11 @@ AND oldVersion.FilesetID = (SELECT ID FROM Fileset WHERE ID != ? ORDER BY Timest
             using (var cmd = m_connection.CreateCommand(transaction))
             {
                 // Group subquery by hash to ensure that each blocklist hash appears only once in the result
-                var sql = string.Format(@"SELECT ""A"".""Hash"", ""C"".""Hash"" FROM " +
-                    @"(SELECT ""BlocklistHash"".""BlocksetID"", ""Block"".""Hash"", ""BlocklistHash"".""Index"" FROM  ""BlocklistHash"",""Block"" WHERE  ""BlocklistHash"".""Hash"" = ""Block"".""Hash"" AND ""Block"".""VolumeID"" = ? GROUP BY ""Block"".""Hash"", ""Block"".""Size"") A, " +
-                    @" ""BlocksetEntry"" B, ""Block"" C WHERE ""B"".""BlocksetID"" = ""A"".""BlocksetID"" AND " +
-                    @" ""B"".""Index"" >= (""A"".""Index"" * {0}) AND ""B"".""Index"" < ((""A"".""Index"" + 1) * {0}) AND ""C"".""ID"" = ""B"".""BlockID"" " +
-                    @" ORDER BY ""A"".""BlocksetID"", ""B"".""Index""",
-                    blocksize / hashsize
-                );
+                var sql = FormatInvariant($@"SELECT ""A"".""Hash"", ""C"".""Hash"" FROM 
+(SELECT ""BlocklistHash"".""BlocksetID"", ""Block"".""Hash"", ""BlocklistHash"".""Index"" FROM  ""BlocklistHash"",""Block"" WHERE  ""BlocklistHash"".""Hash"" = ""Block"".""Hash"" AND ""Block"".""VolumeID"" = ? GROUP BY ""Block"".""Hash"", ""Block"".""Size"") A,
+ ""BlocksetEntry"" B, ""Block"" C WHERE ""B"".""BlocksetID"" = ""A"".""BlocksetID"" AND 
+ ""B"".""Index"" >= (""A"".""Index"" * {blocksize / hashsize}) AND ""B"".""Index"" < ((""A"".""Index"" + 1) * {blocksize / hashsize}) AND ""C"".""ID"" = ""B"".""BlockID"" 
+ ORDER BY ""A"".""BlocksetID"", ""B"".""Index""");
 
                 string curHash = null;
                 int count = 0;
@@ -1520,7 +1525,7 @@ AND oldVersion.FilesetID = (SELECT ID FROM Fileset WHERE ID != ? ORDER BY Timest
         {
             using (var cmd = m_connection.CreateCommand(transaction))
             {
-                using (var rd = cmd.ExecuteReader(@$"SELECT DISTINCT ""Fileset"".""ID"", ""Fileset"".""Timestamp"" FROM ""Fileset"", ""RemoteVolume"" WHERE ""RemoteVolume"".""ID"" = ""Fileset"".""VolumeID"" AND ""Fileset"".""ID"" IN (SELECT ""FilesetID"" FROM ""FilesetEntry"")  AND (""RemoteVolume"".""State"" = '{RemoteVolumeState.Uploading}' OR ""RemoteVolume"".""State"" = '{RemoteVolumeState.Temporary}')"))
+                using (var rd = cmd.ExecuteReader(FormatInvariant(@$"SELECT DISTINCT ""Fileset"".""ID"", ""Fileset"".""Timestamp"" FROM ""Fileset"", ""RemoteVolume"" WHERE ""RemoteVolume"".""ID"" = ""Fileset"".""VolumeID"" AND ""Fileset"".""ID"" IN (SELECT ""FilesetID"" FROM ""FilesetEntry"")  AND (""RemoteVolume"".""State"" = '{RemoteVolumeState.Uploading}' OR ""RemoteVolume"".""State"" = '{RemoteVolumeState.Temporary}')")))
                     while (rd.Read())
                     {
                         yield return new KeyValuePair<long, DateTime>(
