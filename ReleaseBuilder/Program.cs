@@ -61,6 +61,8 @@ class Program
         "linux-arm7-cli.zip",
         "linux-arm7-cli.deb",
         "linux-arm7-cli.docker",
+        "linux-arm7-agent.zip",
+        "linux-arm7-agent.deb",
 
         "linux-arm64-gui.zip",
         "linux-arm64-gui.deb",
