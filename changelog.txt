@@ -1,3 +1,41 @@
+2025-03-15 - 2.1.0.111_canary_2025-03-15
+==========
+This release is a canary release intended to be used for testing.
+
+# Major changes in this version
+
+- Restore improvements
+This version has a few tweaks to the new restore flow that makes it more robust.
+
+- Improved validation
+To safeguard against internal errors, there is now a more strict validation before performing cleanup.
+The new logic checks if the previous operation failed and will only automatically repair the remote if this is the case.
+The repair command bypasses this check and can repair the remote regardless.
+
+If the previous run was fully completed, any leftover remote files are now treated as an error.
+Additionally, operations that does not change remote state (list, test, restore, etc) will not repair the remote state, but just verify that it is working for the requested operation.
+
+- Updates to ngclient
+Multiple updates to ngclient: improved auth flow, searchable menus, Windows filesystem support, restore from configuration, and more.
+
+# Potentially breaking changes (from 2.1.0.109)
+  - Location of data folder has changed in some cases, refer to previous release for details
+  - Permissions are now applied to the data folder, refer to previous release for details
+  - New user interface, `ngclient` is the default; there is a button to switch between the two
+
+## Detailed list of changes:
+- Reduced number of samples taken for testing
+- Improved restore flow
+- Improved error handling for Azure Blob storage
+- Improved help text for remote synchronization tool
+- Implemented more rigorous validation and safeguards for failed backups
+- Better support for IPv6 and unmapped localhost scenarios
+- Added check to avoid block sizes that are the same or less than volume size
+- Introduced more async calls for better thread usage in handlers
+- Added forced culture for SQL strings and simpler transaction logic
+- Added Arm v7 Agent builds
+- Improved certificate validation to check expiration and support root or intermediate certificate hashes
+
 2025-02-28 - 2.1.0.110_canary_2025-02-28
 ==========
 This release is a canary release intended to be used for testing.
