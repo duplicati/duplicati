@@ -231,6 +231,10 @@ You can supply multiple options with a comma separator, e.g. ""{0},{1}"". The sp
         public static string AcceptAnyCertificateShort { get { return LC.L(@"Accept any server certificate"); } }
         public static string AcceptSpecifiedCertificateLong { get { return LC.L(@"If your server certificate is reported as invalid (e.g. with self-signed certificates), you can supply the certificate hash (SHA1) to approve it anyway. The hash value must be entered in hex format without spaces or colons. You can enter multiple hashes separated by commas."); } }
         public static string AcceptSpecifiedCertificateShort { get { return LC.L(@"Optionally accept a known SSL certificate"); } }
+        public static string SendHttpRetriesLong { get { return LC.L(@"Use this option to set the number of retries to attempt if the HTTP request fails."); } }
+        public static string SendHttpRetriesShort { get { return LC.L(@"Set the number of retries"); } }
+        public static string SendHttpRetryDelayLong { get { return LC.L(@"Use this option to set the delay between retries."); } }
+        public static string SendHttpRetryDelayShort { get { return LC.L(@"Set the retry delay"); } }
     }
 
     internal static class ReportHelper

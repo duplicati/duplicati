@@ -22,9 +22,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Duplicati.Library.Interface;
-using Duplicati.Library.Logging;
-using System.Net.NetworkInformation;
-using Duplicati.Library.Modules.Builtin.ResultSerialization;
 using Artalk.Xmpp.Client;
 
 namespace Duplicati.Library.Modules.Builtin
