@@ -19,6 +19,8 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
+#nullable enable
+
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -27,7 +29,7 @@ namespace Duplicati.Library.Utility;
 
 public static class RetryHelper
 {
-    public static async Task<T> Retry<T>(Func<Task<T>> action, int maxRetries, TimeSpan delay, CancellationToken token)
+    public static async Task<T> Retry<T>(Func<Task<T>> action, Action<Exception, int>? errorCallback, int maxRetries, TimeSpan delay, CancellationToken token)
     {
         var attempt = 0;
 
@@ -37,21 +39,26 @@ public static class RetryHelper
             {
                 return await action();
             }
-            catch
+            catch (Exception ex)
             {
+                attempt++;
+                errorCallback?.Invoke(ex, attempt);
+
                 if (token.IsCancellationRequested)
                     throw;
                 if (attempt >= maxRetries)
                     throw;
-
-                attempt++;
             }
 
             await Task.Delay(delay, token);
         }
     }
 
+    public static async Task<T> Retry<T>(Func<Task<T>> action, int maxRetries, TimeSpan delay, CancellationToken token)
+        => await Retry(action, null, maxRetries, delay, token);
+    public static async Task Retry(Func<Task> action, Action<Exception, int>? errorCallback, int maxRetries, TimeSpan delay, CancellationToken token)
+        => await Retry(async () => { await action(); return true; }, errorCallback, maxRetries, delay, token);
     public static async Task Retry(Func<Task> action, int maxRetries, TimeSpan delay, CancellationToken token)
-        => await Retry(async () => { await action(); return true; }, maxRetries, delay, token);
+        => await Retry(async () => { await action(); return true; }, null, maxRetries, delay, token);
 
 }

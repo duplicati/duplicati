@@ -702,13 +702,29 @@ namespace Duplicati.Library.Utility
         /// </summary>
         /// <param name="options">The set of options to look for the setting in</param>
         /// <param name="value">The value to look for in the settings</param>
-        /// <returns></returns>
+        /// <returns>The parsed value, or the default value (<c>false</c>).</returns>
         public static bool ParseBoolOption(IReadOnlyDictionary<string, string?> options, string value)
         {
             if (options.TryGetValue(value, out var opt))
                 return ParseBool(opt, true);
             else
                 return false;
+        }
+
+        /// <summary>
+        /// Parses an integer option from the option set, returning the default value if the option is not found or cannot be parsed
+        /// </summary>
+        /// <param name="options">The set of options to look for the setting in</param>
+        /// <param name="value">The value to look for in the settings</param>
+        /// <param name="default">The default value to return if there are no matches.</param>
+        /// <returns>The parsed or default integer value.</returns>
+        public static TimeSpan ParseTimespanOption(IReadOnlyDictionary<string, string?> options, string value, string @default)
+        {
+            var opt = options.GetValueOrDefault(value);
+            if (string.IsNullOrWhiteSpace(opt))
+                opt = @default;
+
+            return Timeparser.ParseTimeSpan(opt);
         }
 
         /// <summary>
