@@ -357,6 +357,9 @@ namespace Duplicati.GUI.TrayIcon
                 case TrayIcons.IdleError:
                     this.trayIcon.Icon = AvaloniaRunner.LoadIcon("normal-error.png");
                     break;
+                case TrayIcons.IdleWarning:
+                    this.trayIcon.Icon = AvaloniaRunner.LoadIcon("normal-warning.png");
+                    break;
                 case TrayIcons.Paused:
                 case TrayIcons.PausedError:
                     this.trayIcon.Icon = AvaloniaRunner.LoadIcon("normal-pause.png");
@@ -399,7 +402,7 @@ namespace Duplicati.GUI.TrayIcon
                 trayIcon.Clicked += HandleTrayIconClick;
             }
         }
-        
+
         private readonly ClickDebouncer _clickDebouncer = new ClickDebouncer();
 
         private void HandleTrayIconClick(object? sender, EventArgs e)
