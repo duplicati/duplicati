@@ -1,4 +1,4 @@
-// Copyright (C) 2025, The Duplicati Team
+﻿// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -49,6 +49,11 @@ public class DuplicatiWebserver
     /// </summary>
     private static readonly string LOGTAG = Library.Logging.Log.LogTagFromType<DuplicatiWebserver>();
     /// <summary>
+    /// The name of the CORS policy
+    /// </summary>
+    public const string CorsPolicyName = "CustomCorsPolicy";
+
+    /// <summary>
     /// The configuration for the server
     /// </summary>
     public required IConfiguration Configuration { get; init; }
@@ -67,6 +72,16 @@ public class DuplicatiWebserver
     /// The port the server is listening on
     /// </summary>
     public required int Port { get; init; }
+
+    /// <summary>
+    /// The interfaces being listened to
+    /// </summary>
+    public required string Interface { get; init; }
+
+    /// <summary>
+    /// The port the server is listening on
+    /// </summary>
+    public required bool CorsEnabled { get; init; }
 
     /// <summary>
     /// The task that will be set when the server is terminated
@@ -93,6 +108,7 @@ public class DuplicatiWebserver
     /// <param name="AllowedHostnames">The allowed hostnames</param>
     /// <param name="DisableStaticFiles">If static files should be disabled</param>
     /// <param name="SPAPaths">The paths to serve as SPAs</param>
+    /// <param name="CorsOrigins">The origins to allow for CORS</param>
     public record InitSettings(
         string WebRoot,
         int Port,
@@ -101,7 +117,8 @@ public class DuplicatiWebserver
         string Servername,
         IEnumerable<string> AllowedHostnames,
         bool DisableStaticFiles,
-        IEnumerable<string> SPAPaths
+        IEnumerable<string> SPAPaths,
+        IEnumerable<string> CorsOrigins
     );
 
     /// <summary>
@@ -253,8 +270,27 @@ public class DuplicatiWebserver
 
         builder.Services.AddHttpClient();
 
+        var useCors = settings.CorsOrigins != null && settings.CorsOrigins.Any();
+        if (useCors)
+        {
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy(
+                    name: CorsPolicyName,
+                    policy =>
+                    {
+                        policy.WithOrigins(settings.CorsOrigins!.ToArray())
+                            .AllowAnyHeader()
+                            .AllowAnyMethod();
+                    });
+            });
+        }
+
         var app = builder.Build();
         HttpClientHelper.Configure(app.Services.GetRequiredService<IHttpClientFactory>());
+
+        if (useCors)
+            app.UseCors(CorsPolicyName);
 
         app.UseAuthentication();
         app.UseAuthorization();
@@ -304,11 +340,20 @@ public class DuplicatiWebserver
         // Preload static system info, for better first-load experience
         var _ = Task.Run(() => app.Services.GetRequiredService<ISystemInfoProvider>().GetSystemInfo(null));
 
+        // Get a string description of the listen interface used
+        var listenInterface = settings.Interface == System.Net.IPAddress.Any
+            ? "*"
+            : settings.Interface == System.Net.IPAddress.Loopback
+                ? "localhost"
+                : settings.Interface.ToString();
+
         return new DuplicatiWebserver()
         {
             Configuration = builder.Configuration,
             App = app,
-            Port = settings.Port
+            Port = settings.Port,
+            Interface = listenInterface,
+            CorsEnabled = useCors
         };
 
     }
@@ -345,7 +390,7 @@ public class DuplicatiWebserver
     public Task Start()
     {
         App.MapHealthChecks("/health");
-        App.AddEndpoints()
+        App.AddEndpoints(CorsEnabled)
             .UseNotifications("/notifications");
 
         return TerminationTask = App.RunAsync();

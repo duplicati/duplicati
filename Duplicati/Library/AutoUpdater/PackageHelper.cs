@@ -89,6 +89,14 @@ namespace Duplicati.Library.AutoUpdater
             /// The secret tool
             /// </summary>
             SecretTool,
+            /// <summary>
+            /// The sync tool
+            /// </summary>
+            SyncTool,
+            /// <summary>
+            /// The source tool
+            /// </summary>
+            SourceTool
 
         }
 
@@ -115,6 +123,8 @@ namespace Duplicati.Library.AutoUpdater
                 NamedExecutable.Service => OperatingSystem.IsWindows() ? "Duplicati.Service.exe" : "duplicati-service",
                 NamedExecutable.Agent => OperatingSystem.IsWindows() ? "Duplicati.Agent.exe" : "duplicati-agent",
                 NamedExecutable.SecretTool => OperatingSystem.IsWindows() ? "Duplicati.CommandLine.SecretTool.exe" : "duplicati-secret-tool",
+                NamedExecutable.SyncTool => OperatingSystem.IsWindows() ? "Duplicati.CommandLine.SyncTool.exe" : "duplicati-sync-tool",
+                NamedExecutable.SourceTool => OperatingSystem.IsWindows() ? "Duplicati.CommandLine.Sourcetool.exe" : "duplicati-source-tool",
                 _ => throw new ArgumentException($"Named executable not known: {exe}", nameof(exe))
             };
 

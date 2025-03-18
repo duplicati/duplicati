@@ -28,6 +28,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Security;
+using System.Runtime.CompilerServices;
 using System.Security.Authentication;
 using System.Text;
 using System.Threading;
@@ -324,7 +325,7 @@ namespace Duplicati.Library.Backend
 
             var dataConnectionType = CoreUtility.ParseEnumOption(options, CONFIG_KEY_FTP_DATA_CONNECTION_TYPE, DEFAULT_DATA_CONNECTION_TYPE);
             var encryptionMode = CoreUtility.ParseEnumOption(options, CONFIG_KEY_FTP_ENCRYPTION_MODE, DEFAULT_ENCRYPTION_MODE);
-            var sslProtocols = CoreUtility.ParseEnumOption(options, CONFIG_KEY_FTP_SSL_PROTOCOLS, DEFAULT_SSL_PROTOCOLS);
+            var sslProtocols = CoreUtility.ParseFlagsOption(options, CONFIG_KEY_FTP_SSL_PROTOCOLS, DEFAULT_SSL_PROTOCOLS);
 
             // Process options of the legacy FTP backend
             if (ProtocolKey == "ftp")
@@ -366,63 +367,14 @@ namespace Duplicati.Library.Backend
         }
 
         /// <inheritdoc />
-        public IEnumerable<IFileEntry> List()
+        public async IAsyncEnumerable<IFileEntry> ListAsync([EnumeratorCancellation] CancellationToken cancelToken)
         {
+            FtpListItem[] items;
             try
             {
-                var list = new List<IFileEntry>();
                 var client = CreateClient(CancellationToken.None).Await();
                 var remotePath = PreparePathForClient(null);
-
-                foreach (var item in client.GetListing(remotePath, FtpListOption.Modify | FtpListOption.Size).Await())
-                {
-                    switch (item.Type)
-                    {
-                        case FtpObjectType.Directory:
-                            if (item.Name == "." || item.Name == "..")
-                                continue;
-
-                            list.Add(new FileEntry(item.Name, -1, new DateTime(), item.Modified)
-                            {
-                                IsFolder = true,
-                            });
-                            break;
-
-                        case FtpObjectType.File:
-                            list.Add(new FileEntry(item.Name, item.Size, new DateTime(), item.Modified));
-                            break;
-
-                        case FtpObjectType.Link:
-                            {
-                                if (item.Name == "." || item.Name == "..")
-                                    continue;
-
-                                if (item.LinkObject != null)
-                                {
-                                    switch (item.LinkObject.Type)
-                                    {
-                                        case FtpObjectType.Directory:
-                                            if (item.Name == "." || item.Name == "..")
-                                                continue;
-
-                                            list.Add(new FileEntry(item.Name, -1, new DateTime(), item.Modified)
-                                            {
-                                                IsFolder = true,
-                                            });
-                                            break;
-
-                                        case FtpObjectType.File:
-                                            list.Add(new FileEntry(item.Name, item.Size, new DateTime(), item.Modified));
-                                            break;
-                                    }
-                                }
-                                break;
-                            }
-
-                    }
-                }
-
-                return list;
+                items = await client.GetListing(remotePath, FtpListOption.Modify | FtpListOption.Size).ConfigureAwait(false);
             }
             catch (Exception e)
             {
@@ -430,6 +382,54 @@ namespace Duplicati.Library.Backend
                     throw e;
 
                 throw;
+            }
+
+            foreach (var item in items)
+            {
+                switch (item.Type)
+                {
+                    case FtpObjectType.Directory:
+                        if (item.Name == "." || item.Name == "..")
+                            continue;
+
+                        yield return new FileEntry(item.Name, -1, new DateTime(), item.Modified)
+                        {
+                            IsFolder = true,
+                        };
+                        break;
+
+                    case FtpObjectType.File:
+                        yield return new FileEntry(item.Name, item.Size, new DateTime(), item.Modified);
+                        break;
+
+                    case FtpObjectType.Link:
+                        {
+                            if (item.Name == "." || item.Name == "..")
+                                continue;
+
+                            if (item.LinkObject != null)
+                            {
+                                switch (item.LinkObject.Type)
+                                {
+                                    case FtpObjectType.Directory:
+                                        if (item.Name == "." || item.Name == "..")
+                                            continue;
+
+                                        yield return new FileEntry(item.Name, -1, new DateTime(), item.Modified)
+                                        {
+                                            IsFolder = true,
+                                        };
+                                        break;
+
+                                    case FtpObjectType.File:
+                                        yield return new FileEntry(item.Name, item.Size, new DateTime(), item.Modified);
+                                        break;
+                                }
+                            }
+                            break;
+                        }
+
+                }
             }
         }
 
@@ -552,8 +552,7 @@ namespace Duplicati.Library.Backend
             // Remove the file if it exists
             try
             {
-                var list = List();
-                if (list.Any(entry => entry.Name == TEST_FILE_NAME))
+                if (await ListAsync(cancellationToken).AnyAsync(entry => entry.Name == TEST_FILE_NAME).ConfigureAwait(false))
                     await DeleteAsync(TEST_FILE_NAME, cancellationToken).ConfigureAwait(false);
             }
             catch (Exception e)

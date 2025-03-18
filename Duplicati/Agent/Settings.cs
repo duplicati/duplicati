@@ -148,10 +148,8 @@ public sealed record Settings(
     /// <returns>The path to the settings file</returns>
     private static string GetSettingsPath()
     {
-        var folder = DatabaseLocator.GetDefaultStorageFolderWithDebugSupport(DefaultSettingsFilename);
-        if (!Directory.Exists(folder))
-            Directory.CreateDirectory(folder);
-
+        // Ideally, this should use DataFolderManager.DATAFOLDER, but we cannot due to backwards compatibility
+        var folder = Library.AutoUpdater.DataFolderLocator.GetDefaultStorageFolder(DefaultSettingsFilename, true);
         return Path.Combine(folder, DefaultSettingsFilename);
     }
 }

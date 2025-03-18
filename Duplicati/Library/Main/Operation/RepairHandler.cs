@@ -20,6 +20,7 @@
 // DEALINGS IN THE SOFTWARE.
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -48,11 +49,11 @@ namespace Duplicati.Library.Main.Operation
                 throw new UserInformationException(Strings.Common.PassphraseChangeUnsupported, "PassphraseChangeUnsupported");
         }
 
-        public void Run(IBackendManager backendManager, IFilter filter)
+        public async Task RunAsync(IBackendManager backendManager, IFilter filter)
         {
-            if (!System.IO.File.Exists(m_options.Dbpath))
+            if (!File.Exists(m_options.Dbpath))
             {
-                RunRepairLocal(backendManager, filter);
+                await RunRepairLocalAsync(backendManager, filter).ConfigureAwait(false);
                 RunRepairCommon();
                 m_result.EndTime = DateTime.UtcNow;
                 return;
@@ -77,47 +78,48 @@ namespace Duplicati.Library.Main.Operation
                 }
                 else
                 {
-                    var baseName = System.IO.Path.ChangeExtension(m_options.Dbpath, "backup");
+                    var baseName = Path.ChangeExtension(m_options.Dbpath, "backup");
                     var i = 0;
-                    while (System.IO.File.Exists(baseName) && i++ < 1000)
-                        baseName = System.IO.Path.ChangeExtension(m_options.Dbpath, "backup-" + i.ToString());
+                    while (File.Exists(baseName) && i++ < 1000)
+                        baseName = Path.ChangeExtension(m_options.Dbpath, "backup-" + i.ToString());
 
                     Logging.Log.WriteInformationMessage(LOGTAG, "RenamingDatabase", "Renaming existing db from {0} to {1}", m_options.Dbpath, baseName);
-                    System.IO.File.Move(m_options.Dbpath, baseName);
+                    File.Move(m_options.Dbpath, baseName);
                 }
 
-                RunRepairLocal(backendManager, filter);
+                await RunRepairLocalAsync(backendManager, filter).ConfigureAwait(false);
                 RunRepairCommon();
             }
             else
             {
                 RunRepairCommon();
-                RunRepairRemote(backendManager, m_result.TaskControl.ProgressToken).Await();
+                await RunRepairRemoteAsync(backendManager, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
             }
 
             m_result.EndTime = DateTime.UtcNow;
 
         }
 
-        public void RunRepairLocal(IBackendManager backendManager, Library.Utility.IFilter filter)
+        public async Task RunRepairLocalAsync(IBackendManager backendManager, IFilter filter)
         {
             m_result.RecreateDatabaseResults = new RecreateDatabaseResults(m_result);
             using (new Logging.Timer(LOGTAG, "RecreateDbForRepair", "Recreate database for repair"))
-            using (var f = m_options.Dryrun ? new Library.Utility.TempFile() : null)
+            using (var f = m_options.Dryrun ? new TempFile() : null)
             {
-                if (f != null && System.IO.File.Exists(f))
-                    System.IO.File.Delete(f);
+                if (f != null && File.Exists(f))
+                    File.Delete(f);
 
                 var filelistfilter = RestoreHandler.FilterNumberedFilelist(m_options.Time, m_options.Version);
 
-                new RecreateDatabaseHandler(m_options, (RecreateDatabaseResults)m_result.RecreateDatabaseResults)
-                    .Run(m_options.Dryrun ? (string)f : m_options.Dbpath, backendManager, filter, filelistfilter, null);
+                await new RecreateDatabaseHandler(m_options, (RecreateDatabaseResults)m_result.RecreateDatabaseResults)
+                    .RunAsync(m_options.Dryrun ? (string)f : m_options.Dbpath, backendManager, filter, filelistfilter, null)
+                    .ConfigureAwait(false);
             }
         }
 
-        public async Task RunRepairRemote(IBackendManager backendManager, CancellationToken cancellationToken)
+        public async Task RunRepairRemoteAsync(IBackendManager backendManager, CancellationToken cancellationToken)
         {
-            if (!System.IO.File.Exists(m_options.Dbpath))
+            if (!File.Exists(m_options.Dbpath))
                 throw new UserInformationException(string.Format("Database file does not exist: {0}", m_options.Dbpath), "RepairDatabaseFileDoesNotExist");
 
             m_result.OperationProgressUpdater.UpdateProgress(0);
@@ -134,12 +136,30 @@ namespace Duplicati.Library.Main.Operation
                 if (db.RepairInProgress)
                     throw new UserInformationException("The database was attempted repaired, but the repair did not complete. This database may be incomplete and the repair process is not allowed to alter remote files as that could result in data loss.", "DatabaseIsInRepairState");
 
-                var tp = await FilelistProcessor.RemoteListAnalysis(backendManager, m_options, db, m_result.BackendWriter, null).ConfigureAwait(false);
+                // If the last backup failed, guard the incomplete fileset, so we can create a synthetic filelist
+                var lastTempFilelist = db.GetLastIncompleteFilesetVolume(null);
+                var tp = await FilelistProcessor.RemoteListAnalysis(backendManager, m_options, db, m_result.BackendWriter, [lastTempFilelist.Name], null, FilelistProcessor.VerifyMode.VerifyAndCleanForced).ConfigureAwait(false);
+
                 var buffer = new byte[m_options.Blocksize];
                 var hashsize = HashFactory.HashSizeBytes(m_options.BlockHashAlgorithm);
 
+                var missingRemoteFilesets = db.MissingRemoteFilesets().ToList();
+                var missingLocalFilesets = db.MissingLocalFilesets().ToList();
+
                 var progress = 0;
-                var targetProgess = tp.ExtraVolumes.Count() + tp.MissingVolumes.Count() + tp.VerificationRequiredVolumes.Count();
+                var targetProgess = tp.ExtraVolumes.Count() + tp.MissingVolumes.Count() + tp.VerificationRequiredVolumes.Count() + missingRemoteFilesets.Count + missingLocalFilesets.Count;
+
+                var mostRecentLocal = db.FilesetTimes.Select(x => x.Value.ToLocalTime()).Append(DateTime.MinValue).Max();
+                var mostRecentRemote = tp.ParsedVolumes.Select(x => x.Time.ToLocalTime()).Append(DateTime.MinValue).Max();
+                if (mostRecentLocal < DateTime.UnixEpoch)
+                    throw new UserInformationException("The local database has no fileset times. Consider deleting the local database and run the repair operation again.", "LocalDatabaseHasNoFilesetTimes");
+                if (mostRecentRemote > mostRecentLocal)
+                {
+                    if (m_options.RepairIgnoreOutdatedDatabase)
+                        Logging.Log.WriteWarningMessage(LOGTAG, "RemoteFilesNewerThanLocalDatabase", null, "The remote files are newer ({0}) than the local database ({1}), this is likely because the database is outdated. Continuing as the options force ignoring this.", mostRecentRemote, mostRecentLocal);
+                    else
+                        throw new UserInformationException($"The remote files are newer ({mostRecentRemote}) than the local database ({mostRecentLocal}), this is likely because the database is outdated. Consider deleting the local database and run the repair operation again. If this is expected, set the option \"--repair-ignore-outdated-database\" ", "RemoteFilesNewerThanLocalDatabase");
+                }
 
                 if (m_options.Dryrun)
                 {
@@ -156,7 +176,7 @@ namespace Duplicati.Library.Main.Operation
                     }
                 }
 
-                if (tp.ExtraVolumes.Any() || tp.MissingVolumes.Any() || tp.VerificationRequiredVolumes.Any())
+                if (tp.ExtraVolumes.Any() || tp.MissingVolumes.Any() || tp.VerificationRequiredVolumes.Any() || missingRemoteFilesets.Any() || missingLocalFilesets.Any())
                 {
                     if (tp.VerificationRequiredVolumes.Any())
                     {
@@ -290,6 +310,69 @@ namespace Duplicati.Library.Main.Operation
                             throw new UserInformationException($"The backup storage destination is missing data files. You can either enable `--rebuild-missing-dblock-files` or run the purge command to remove these files. The following files are missing: {string.Join(", ", missingDblocks.Select(x => x.Name))}", "MissingDblockFiles");
                     }
 
+                    var anyDlistUploads = false;
+                    foreach (var (filesetId, timestamp, isfull) in missingRemoteFilesets)
+                    {
+                        if (!await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
+                        {
+                            await backendManager.WaitForEmptyAsync(db, null, cancellationToken).ConfigureAwait(false);
+                            return;
+                        }
+
+                        progress++;
+                        m_result.OperationProgressUpdater.UpdateProgress((float)progress / targetProgess);
+                        var fileTime = FilesetVolumeWriter.ProbeUnusedFilenameName(db, m_options, timestamp);
+
+                        var fsw = new FilesetVolumeWriter(m_options, fileTime);
+                        Logging.Log.WriteInformationMessage(LOGTAG, "ReuploadingFileset", "Re-uploading fileset {0} from {1} as remote volume registration is missing, new filename: {2}", filesetId, timestamp, fsw.RemoteFilename);
+
+                        if (!string.IsNullOrEmpty(m_options.ControlFiles))
+                            foreach (var p in m_options.ControlFiles.Split(new char[] { System.IO.Path.PathSeparator }, StringSplitOptions.RemoveEmptyEntries))
+                                fsw.AddControlFile(p, m_options.GetCompressionHintFromFilename(p));
+
+                        fsw.CreateFilesetFile(isfull);
+                        db.WriteFileset(fsw, filesetId, null);
+                        fsw.Close();
+
+                        if (m_options.Dryrun)
+                        {
+                            fsw.Dispose();
+                            Logging.Log.WriteDryrunMessage(LOGTAG, "WouldReUploadFileset", "would re-upload fileset {0}", fsw.RemoteFilename);
+                            continue;
+                        }
+
+                        fsw.VolumeID = db.RegisterRemoteVolume(fsw.RemoteFilename, RemoteVolumeType.Files, -1, RemoteVolumeState.Temporary);
+                        db.LinkFilesetToVolume(filesetId, fsw.VolumeID, null);
+                        await backendManager.PutAsync(fsw, null, null, false, cancellationToken).ConfigureAwait(false);
+                    }
+
+                    if (anyDlistUploads)
+                        await backendManager.WaitForEmptyAsync(db, null, cancellationToken).ConfigureAwait(false);
+
+                    foreach (var volumename in missingLocalFilesets)
+                    {
+                        var remoteVolume = db.GetRemoteVolume(volumename);
+                        using (var tmpfile = await backendManager.GetAsync(remoteVolume.Name, remoteVolume.Hash, remoteVolume.Size, cancellationToken).ConfigureAwait(false))
+                        {
+                            var parsed = VolumeBase.ParseFilename(remoteVolume.Name);
+                            using (var stream = new FileStream(tmpfile, FileMode.Open, FileAccess.Read, FileShare.Read))
+                            using (var compressor = DynamicLoader.CompressionLoader.GetModule(parsed.CompressionModule, stream, ArchiveMode.Read, m_options.RawOptions))
+                            using (var transaction = db.BeginTransaction())
+                            using (var recreatedb = new LocalRecreateDatabase(db, m_options))
+                            {
+                                if (compressor == null)
+                                    throw new UserInformationException(string.Format("Failed to load compression module: {0}", parsed.CompressionModule), "FailedToLoadCompressionModule");
+
+                                var filesetid = db.CreateFileset(remoteVolume.ID, parsed.Time, transaction);
+                                RecreateDatabaseHandler.RecreateFilesetFromRemoteList(recreatedb, transaction, compressor, filesetid, m_options, new FilterExpression());
+                                transaction.Commit();
+                            }
+                        }
+                    }
+
+                    if (!m_options.Dryrun && tp.MissingVolumes.Any())
+                        db.TerminatedWithActiveUploads = true;
+
                     foreach (var n in tp.MissingVolumes)
                     {
                         IDisposable newEntry = null;
@@ -417,7 +500,7 @@ namespace Duplicati.Library.Main.Operation
                                     }
 
                                     //Then we grab all remote volumes that have the missing blocks
-                                    await foreach (var (tmpfile, _, _, name) in backendManager.GetFilesOverlappedAsync(mbl.GetMissingBlockSources().ToList(), cancellationToken))
+                                    await foreach (var (tmpfile, _, _, name) in backendManager.GetFilesOverlappedAsync(mbl.GetMissingBlockSources().ToList(), cancellationToken).ConfigureAwait(false))
                                     {
                                         try
                                         {
@@ -489,13 +572,15 @@ namespace Duplicati.Library.Main.Operation
 
                 m_result.OperationProgressUpdater.UpdateProgress(1);
                 await backendManager.WaitForEmptyAsync(db, null, cancellationToken).ConfigureAwait(false);
+                if (!m_options.Dryrun)
+                    db.TerminatedWithActiveUploads = false;
                 db.WriteResults();
             }
         }
 
         public void RunRepairCommon()
         {
-            if (!System.IO.File.Exists(m_options.Dbpath))
+            if (!File.Exists(m_options.Dbpath))
                 throw new UserInformationException(string.Format("Database file does not exist: {0}", m_options.Dbpath), "DatabaseDoesNotExist");
 
             m_result.OperationProgressUpdater.UpdateProgress(0);

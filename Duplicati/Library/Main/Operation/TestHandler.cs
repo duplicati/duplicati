@@ -46,7 +46,7 @@ namespace Duplicati.Library.Main.Operation
             m_results = results;
         }
 
-        public void Run(long samples, IBackendManager backendManager)
+        public async Task RunAsync(long samples, IBackendManager backendManager)
         {
             if (!System.IO.File.Exists(m_options.Dbpath))
                 throw new UserInformationException(string.Format("Database file does not exist: {0}", m_options.Dbpath), "DatabaseDoesNotExist");
@@ -57,14 +57,14 @@ namespace Duplicati.Library.Main.Operation
                 Utility.UpdateOptionsFromDb(db, m_options);
                 Utility.VerifyOptionsAndUpdateDatabase(db, m_options);
                 db.VerifyConsistency(m_options.Blocksize, m_options.BlockhashSize, !m_options.DisableFilelistConsistencyChecks, null);
-                FilelistProcessor.VerifyRemoteList(backendManager, m_options, db, m_results.BackendWriter, true, null).Await();
+                await FilelistProcessor.VerifyRemoteList(backendManager, m_options, db, m_results.BackendWriter, latestVolumesOnly: true, verifyMode: FilelistProcessor.VerifyMode.VerifyOnly, null).ConfigureAwait(false);
 
-                DoRun(samples, db, backendManager).Await();
+                await DoRunAsync(samples, db, backendManager).ConfigureAwait(false);
                 db.WriteResults();
             }
         }
 
-        public async Task DoRun(long samples, LocalTestDatabase db, IBackendManager backend)
+        public async Task DoRunAsync(long samples, LocalTestDatabase db, IBackendManager backend)
         {
             var files = db.SelectTestTargets(samples, m_options).ToList();
 
@@ -74,14 +74,14 @@ namespace Duplicati.Library.Main.Operation
 
             if (m_options.FullRemoteVerification != Options.RemoteTestStrategy.False)
             {
-                await foreach (var (tf, hash, size, name) in backend.GetFilesOverlappedAsync(files, CancellationToken.None))
+                await foreach (var (tf, hash, size, name) in backend.GetFilesOverlappedAsync(files, m_results.TaskControl.ProgressToken).ConfigureAwait(false))
                 {
                     var vol = new RemoteVolume(name, hash, size);
                     try
                     {
-                        if (!m_results.TaskControl.ProgressRendevouz().Await())
+                        if (!await m_results.TaskControl.ProgressRendevouz().ConfigureAwait(false))
                         {
-                            backend.WaitForEmptyAsync(db, null, CancellationToken.None).Await();
+                            await backend.WaitForEmptyAsync(db, null, m_results.TaskControl.ProgressToken).ConfigureAwait(false);
                             m_results.EndTime = DateTime.UtcNow;
                             return;
                         }
@@ -138,7 +138,7 @@ namespace Duplicati.Library.Main.Operation
                 {
                     try
                     {
-                        if (!m_results.TaskControl.ProgressRendevouz().Await())
+                        if (!await m_results.TaskControl.ProgressRendevouz().ConfigureAwait(false))
                         {
                             m_results.EndTime = DateTime.UtcNow;
                             return;
@@ -152,7 +152,7 @@ namespace Duplicati.Library.Main.Operation
                             Logging.Log.WriteInformationMessage(LOGTAG, "MissingRemoteHash", "No hash or size recorded for {0}, performing full verification", f.Name);
                             KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>> res;
 
-                            (var tf, var hash, var size) = backend.GetWithInfoAsync(f.Name, f.Hash, f.Size, CancellationToken.None).Await();
+                            (var tf, var hash, var size) = await backend.GetWithInfoAsync(f.Name, f.Hash, f.Size, m_results.TaskControl.ProgressToken).ConfigureAwait(false);
 
                             using (tf)
                                 res = TestVolumeInternals(db, f, tf, m_options, 1);
@@ -176,7 +176,7 @@ namespace Duplicati.Library.Main.Operation
                         }
                         else
                         {
-                            using (var tf = backend.GetAsync(f.Name, f.Hash, f.Size, CancellationToken.None).Await())
+                            using (var tf = await backend.GetAsync(f.Name, f.Hash, f.Size, m_results.TaskControl.ProgressToken).ConfigureAwait(false))
                             { }
                         }
 

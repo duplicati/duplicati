@@ -21,6 +21,7 @@
 using System.Net.Http.Json;
 using System.Net.Security;
 using System.Text.Json;
+using Duplicati.Library.AutoUpdater;
 
 namespace Duplicati.CommandLine.ServerUtil;
 
@@ -185,10 +186,9 @@ public class Connection
         try
         {
             var opts = new Dictionary<string, string>();
-            if (!string.IsNullOrWhiteSpace(settings.ServerDatafolder))
-                opts.Add("server-datafolder", settings.ServerDatafolder);
-
-            if (File.Exists(Path.Combine(Server.Program.GetDataFolderPath(opts), Server.Program.SERVER_DATABASE_FILENAME)))
+            if (settings.Key != null)
+                opts["settings-encryption-key"] = settings.Key.Key;
+            if (File.Exists(Path.Combine(DataFolderManager.DATAFOLDER, DataFolderManager.SERVER_DATABASE_FILENAME)))
             {
                 string? cfg = null;
                 using (var connection = Duplicati.Server.Program.GetDatabaseConnection(opts, true))
@@ -220,9 +220,9 @@ public class Connection
                     return CreateConnectionWithClient(client, accessToken);
                 }
             }
-            else if (!string.IsNullOrWhiteSpace(settings.ServerDatafolder))
+            else if (!string.IsNullOrWhiteSpace(DataFolderManager.DATAFOLDER))
             {
-                Console.WriteLine($"No database found in {settings.ServerDatafolder}");
+                Console.WriteLine($"No database found in {DataFolderManager.DATAFOLDER}");
             }
         }
         catch (Exception ex)

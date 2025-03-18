@@ -24,6 +24,7 @@ using Duplicati.Library.Interface;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using System.Threading;
@@ -172,14 +173,15 @@ namespace Duplicati.Library.Backend
             get { return "file"; }
         }
 
-        public IEnumerable<IFileEntry> List()
+        /// <inheritdoc />
+        public IAsyncEnumerable<IFileEntry> ListAsync(CancellationToken cancelToken)
         {
             PreAuthenticate();
 
             if (!systemIO.DirectoryExists(m_path))
                 throw new FolderMissingException(Strings.FileBackend.FolderMissingError(m_path));
 
-            return systemIO.EnumerateFileEntries(m_path);
+            return systemIO.EnumerateFileEntries(m_path).ToAsyncEnumerable();
         }
 
 #if DEBUG_RETRY
@@ -281,10 +283,7 @@ namespace Duplicati.Library.Backend
         }
 
         public Task TestAsync(CancellationToken cancelToken)
-        {
-            this.TestList();
-            return Task.CompletedTask;
-        }
+            => this.TestListAsync(cancelToken);
 
         public Task CreateFolderAsync(CancellationToken cancelToken)
         {
@@ -452,14 +451,15 @@ namespace Duplicati.Library.Backend
                 long? sourceStreamLength = sourceStream == null ? null : Utility.Utility.GetStreamLength(sourceStream, out isStreamPostion);
 
                 if (sourceStreamLength.HasValue && targetFileInfo.Length != sourceStreamLength.Value)
-                    throw new FileMissingException($"Target file size ({targetFileInfo.Length:n0}) is different from the source length ({sourceStreamLength.Value:n0}){(isStreamPostion ? " - ending stream position)" : "")}. Target: {targetFilePath}");
+                    throw new FileMissingException($"Target file size ({targetFileInfo.Length:n0}) is different from the source length ({sourceStreamLength.Value:n0}){(isStreamPostion ? " - ending stream position" : "")}. Target: {targetFilePath}");
 
                 if (expectedLength.HasValue && targetFileInfo.Length != expectedLength.Value)
                     throw new FileMissingException($"Target file size ({targetFileInfo.Length:n0}) is different from the expected length ({expectedLength.Value:n0}). Target: {targetFilePath}");
             }
             catch
             {
-                try { System.IO.File.Delete(targetFilePath); } catch { }
+                try { System.IO.File.Delete(targetFilePath); }
+                catch { }
                 throw;
             }
         }

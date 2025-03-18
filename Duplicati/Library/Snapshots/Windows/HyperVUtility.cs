@@ -24,10 +24,9 @@ using System.IO;
 using System.Linq;
 using System.Management;
 using System.Runtime.Versioning;
-using Duplicati.Library.Common;
 using Duplicati.Library.Common.IO;
 
-namespace Duplicati.Library.Snapshots
+namespace Duplicati.Library.Snapshots.Windows
 {
     public class HyperVGuest : IEquatable<HyperVGuest>
     {
@@ -89,6 +88,11 @@ namespace Duplicati.Library.Snapshots
         /// The tag used for logging
         /// </summary>
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<HyperVUtility>();
+
+        /// <summary>
+        /// The System.IO abstraction for the Windows platform
+        /// </summary>
+        private static readonly ISystemIO IO_WIN = SystemIO.IO_OS;
 
         private readonly ManagementScope _wmiScope;
         private readonly string _vmIdField;
@@ -156,8 +160,9 @@ namespace Duplicati.Library.Snapshots
         /// Query Hyper-V for all Virtual Machines info
         /// </summary>
         /// <param name="bIncludePaths">Specify if returned data should contain VM paths</param>
+        /// <param name="provider">The provider to use for VSS</param>
         /// <returns>List of Hyper-V Machines</returns>
-        public void QueryHyperVGuestsInfo(bool bIncludePaths = false)
+        public void QueryHyperVGuestsInfo(SnapshotProvider provider, bool bIncludePaths = false)
         {
             if (!IsHyperVInstalled)
                 return;
@@ -174,7 +179,7 @@ namespace Duplicati.Library.Snapshots
                     if (bIncludePaths)
                     {
 
-                        foreach (var o in GetAllVMsPathsVSS())
+                        foreach (var o in GetAllVMsPathsVSS(provider))
                         {
                             foreach (var mObject in moCollection)
                             {
@@ -214,9 +219,9 @@ namespace Duplicati.Library.Snapshots
         /// For all Hyper-V guests it enumerate all associated paths using VSS data
         /// </summary>
         /// <returns>A collection of VMs and paths</returns>
-        private static IEnumerable<WriterMetaData> GetAllVMsPathsVSS()
+        private static IEnumerable<WriterMetaData> GetAllVMsPathsVSS(SnapshotProvider provider)
         {
-            using (var vssBackupComponents = new VssBackupComponents())
+            using (var vssBackupComponents = new SnapshotManager(provider))
             {
                 var writerGUIDS = new[] { HyperVWriterGuid };
 
@@ -251,7 +256,7 @@ namespace Duplicati.Library.Snapshots
             using (var mObject1 = new ManagementObjectSearcher(_wmiScope, new ObjectQuery(wmiQuery)).Get().Cast<ManagementObject>().First())
                 if (_wmiv2Namespace)
                 {
-                    path = SystemIO.IO_WIN.PathCombine((string)mObject1["ConfigurationDataRoot"], (string)mObject1["ConfigurationFile"]);
+                    path = IO_WIN.PathCombine((string)mObject1["ConfigurationDataRoot"], (string)mObject1["ConfigurationFile"]);
                     if (File.Exists(path))
                         result.Add(path);
 
@@ -261,10 +266,10 @@ namespace Duplicati.Library.Snapshots
                     {
                         foreach (var snap in snaps)
                         {
-                            path = SystemIO.IO_WIN.PathCombine((string)snap["ConfigurationDataRoot"], (string)snap["ConfigurationFile"]);
+                            path = IO_WIN.PathCombine((string)snap["ConfigurationDataRoot"], (string)snap["ConfigurationFile"]);
                             if (File.Exists(path))
                                 result.Add(path);
-                            path = Util.AppendDirSeparator(SystemIO.IO_WIN.PathCombine((string)snap["ConfigurationDataRoot"], (string)snap["SuspendDataRoot"]));
+                            path = Util.AppendDirSeparator(IO_WIN.PathCombine((string)snap["ConfigurationDataRoot"], (string)snap["SuspendDataRoot"]));
                             if (Directory.Exists(path))
                                 result.Add(path);
                         }
@@ -272,10 +277,10 @@ namespace Duplicati.Library.Snapshots
                 }
                 else
                 {
-                    path = SystemIO.IO_WIN.PathCombine((string)mObject1["ExternalDataRoot"], "Virtual Machines", vmID + ".xml");
+                    path = IO_WIN.PathCombine((string)mObject1["ExternalDataRoot"], "Virtual Machines", vmID + ".xml");
                     if (File.Exists(path))
                         result.Add(path);
-                    path = Util.AppendDirSeparator(SystemIO.IO_WIN.PathCombine((string)mObject1["ExternalDataRoot"], "Virtual Machines", vmID));
+                    path = Util.AppendDirSeparator(IO_WIN.PathCombine((string)mObject1["ExternalDataRoot"], "Virtual Machines", vmID));
                     if (Directory.Exists(path))
                         result.Add(path);
 
@@ -285,10 +290,10 @@ namespace Duplicati.Library.Snapshots
 
                     foreach (var snapID in snapsIDs)
                     {
-                        path = SystemIO.IO_WIN.PathCombine((string)mObject1["SnapshotDataRoot"], "Snapshots", snapID.Replace("Microsoft:", "") + ".xml");
+                        path = IO_WIN.PathCombine((string)mObject1["SnapshotDataRoot"], "Snapshots", snapID.Replace("Microsoft:", "") + ".xml");
                         if (File.Exists(path))
                             result.Add(path);
-                        path = Util.AppendDirSeparator(SystemIO.IO_WIN.PathCombine((string)mObject1["SnapshotDataRoot"], "Snapshots", snapID.Replace("Microsoft:", "")));
+                        path = Util.AppendDirSeparator(IO_WIN.PathCombine((string)mObject1["SnapshotDataRoot"], "Snapshots", snapID.Replace("Microsoft:", "")));
                         if (Directory.Exists(path))
                             result.Add(path);
                     }

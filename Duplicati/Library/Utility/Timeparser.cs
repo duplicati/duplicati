@@ -20,8 +20,6 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Duplicati.Library.Utility
 {
@@ -34,7 +32,7 @@ namespace Duplicati.Library.Utility
     {
         public static TimeSpan ParseTimeSpan(string datestring)
         {
-            DateTime dt = new DateTime(0, DateTimeKind.Local);
+            var dt = new DateTime(0, DateTimeKind.Local);
             return ParseTimeInterval(datestring, dt) - dt;
         }
 
@@ -48,16 +46,15 @@ namespace Duplicati.Library.Utility
             if (offset.Kind == DateTimeKind.Unspecified)
                 offset = new DateTime(offset.Ticks, DateTimeKind.Local);
 
-            int multiplier = negate ? -1 : 1;
+            var multiplier = negate ? -1 : 1;
 
             if (string.IsNullOrEmpty(datestring))
                 return offset;
 
-            if (String.Equals(datestring.Trim(), "now", StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(datestring.Trim(), "now", StringComparison.OrdinalIgnoreCase))
                 return DateTime.Now;
 
-            long l;
-            if (long.TryParse(datestring, System.Globalization.NumberStyles.Integer, null, out l))
+            if (long.TryParse(datestring, System.Globalization.NumberStyles.Integer, null, out var l))
                 return offset.AddSeconds(l * multiplier);
 
             if (DateTime.TryParse(datestring, System.Globalization.CultureInfo.CurrentCulture, System.Globalization.DateTimeStyles.AssumeLocal, out var t))
@@ -66,16 +63,15 @@ namespace Duplicati.Library.Utility
             if (Utility.TryDeserializeDateTime(datestring, out t))
                 return t;
 
-            char[] separators = new char[] { 's', 'm', 'h', 'D', 'W', 'M', 'Y' };
+            var separators = new char[] { 's', 'm', 'h', 'D', 'W', 'M', 'Y' };
 
-            int index = 0;
-            int previndex = 0;
+            int index;
+            var previndex = 0;
 
             while ((index = datestring.IndexOfAny(separators, previndex)) > 0)
             {
-                string partial = datestring.Substring(previndex, index - previndex).Trim();
-                int factor;
-                if (!int.TryParse(partial, System.Globalization.NumberStyles.Integer, null, out factor))
+                var partial = datestring.Substring(previndex, index - previndex).Trim();
+                if (!int.TryParse(partial, System.Globalization.NumberStyles.Integer, null, out var factor))
                     throw new Exception(Strings.Timeparser.InvalidIntegerError(partial));
 
                 factor *= multiplier;
@@ -134,11 +130,10 @@ namespace Duplicati.Library.Utility
             if (string.IsNullOrEmpty(datestring))
                 return offset;
 
-            if (String.Equals(datestring.Trim(), "now", StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(datestring.Trim(), "now", StringComparison.OrdinalIgnoreCase))
                 return DateTime.UtcNow;
 
-            long l;
-            if (long.TryParse(datestring, System.Globalization.NumberStyles.Integer, null, out l))
+            if (long.TryParse(datestring, System.Globalization.NumberStyles.Integer, null, out var l))
                 return keepTimeOfDay
                     ? timeZoneInfo.DSTAwareAddSeconds(offset, l * multiplier)
                     : timeZoneInfo.DSTAwareAddSeconds(DateTime.UtcNow, l * multiplier);
@@ -149,16 +144,15 @@ namespace Duplicati.Library.Utility
             if (Utility.TryDeserializeDateTime(datestring, out t))
                 return t;
 
-            char[] separators = ['s', 'm', 'h', 'D', 'W', 'M', 'Y'];
+            var separators = new char[] { 's', 'm', 'h', 'D', 'W', 'M', 'Y' };
 
             int index;
-            int previndex = 0;
+            var previndex = 0;
 
             while ((index = datestring.IndexOfAny(separators, previndex)) > 0)
             {
-                string partial = datestring.Substring(previndex, index - previndex).Trim();
-                int factor;
-                if (!int.TryParse(partial, System.Globalization.NumberStyles.Integer, null, out factor))
+                var partial = datestring.Substring(previndex, index - previndex).Trim();
+                if (!int.TryParse(partial, System.Globalization.NumberStyles.Integer, null, out var factor))
                     throw new Exception(Strings.Timeparser.InvalidIntegerError(partial));
 
                 factor *= multiplier;

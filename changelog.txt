@@ -1,3 +1,188 @@
+2025-03-15 - 2.1.0.111_canary_2025-03-15
+==========
+This release is a canary release intended to be used for testing.
+
+# Major changes in this version
+
+- Restore improvements
+This version has a few tweaks to the new restore flow that makes it more robust.
+
+- Improved validation
+To safeguard against internal errors, there is now a more strict validation before performing cleanup.
+The new logic checks if the previous operation failed and will only automatically repair the remote if this is the case.
+The repair command bypasses this check and can repair the remote regardless.
+
+If the previous run was fully completed, any leftover remote files are now treated as an error.
+Additionally, operations that does not change remote state (list, test, restore, etc) will not repair the remote state, but just verify that it is working for the requested operation.
+
+- Updates to ngclient
+Multiple updates to ngclient: improved auth flow, searchable menus, Windows filesystem support, restore from configuration, and more.
+
+# Potentially breaking changes (from 2.1.0.109)
+  - Location of data folder has changed in some cases, refer to previous release for details
+  - Permissions are now applied to the data folder, refer to previous release for details
+  - New user interface, `ngclient` is the default; there is a button to switch between the two
+
+## Detailed list of changes:
+- Reduced number of samples taken for testing
+- Improved restore flow
+- Improved error handling for Azure Blob storage
+- Improved help text for remote synchronization tool
+- Implemented more rigorous validation and safeguards for failed backups
+- Better support for IPv6 and unmapped localhost scenarios
+- Added check to avoid block sizes that are the same or less than volume size
+- Introduced more async calls for better thread usage in handlers
+- Added forced culture for SQL strings and simpler transaction logic
+- Added Arm v7 Agent builds
+- Improved certificate validation to check expiration and support root or intermediate certificate hashes
+
+2025-02-28 - 2.1.0.110_canary_2025-02-28
+==========
+This release is a canary release intended to be used for testing.
+
+# Major changes in this version
+
+- Restore improvements
+Building further on the new restore engine, this version has significant performance speedups during restore.
+
+- New signing keys
+The builds are now signed by "Duplicati Inc" for MacOS and Windows.
+The Windows signatures are now done with an extended validation (EV) certificate and should not trigger Windows Defender warnings.
+
+- New enumeration logic
+The enumeration of files and folders has been rewritten to better support some edge cases.
+
+- Improved pagination support
+All backends are updated to support the new list methods that supports pagination and cancellation. 
+The test method will now only load a single page of results, instead of listing all items.
+
+- Support for backend-as-source
+This version has support for backups of both remote and local data.
+In this version, S3, IDrive, SSH and CIFS sources are supported.
+The UI does not yet support this, but it is possible to read data from a remote location by "mounting" it into the local filesystem.
+For the commandline (and manual text entry in the UI) enter sources such as:
+```
+// Linux/MacOS
+@/mnt/s3-data|s3://example?auth-username=...
+
+// Windows
+@X:\server1|cifs://server/share?auth-username=...
+```
+
+# Potentially breaking changes (from 2.1.0.109)
+  - Location of data folder has changed in some cases, refer to previous release for details
+  - Permissions are now applied to the data folder, refer to previous release for details
+  - New user interface, `ngclient` is the default; there is a button to switch between the two
+
+## Detailed list of changes:
+- Improved script examples
+- Fixed double-click TrayIcon on Windows, thanks @Alex-Heard
+- Fixed an issue with CORS headers
+- Parallel downloads for restore
+- Report interface and port in Webserver startup message
+- Fixed missing example script on Windows
+- Fixed a case where a leading slash could be stripped from the path or a URL
+- Added additional Infomaniak endpoints, thanks @ochaze
+- Backend listing is now async for better pagination and cancellation support
+- Updated signing support for the release builds
+- Added a link from `ngax` to `ngclient` (the other way already exists)
+- Added alternate source providers and new enumeration process
+- Performance optimizations for restore process
+
+2025-02-11 - 2.1.0.109_canary_2025-02-11
+==========
+This release is a canary release intended to be used for testing.
+
+# Important change for Windows Service
+This build changes the folder locations for the `Duplicati-server.sqlite` file on Windows and Linux when running as a service.
+There is support for backwards compatibility, so existing installations should not be affected.
+
+The detailed changes are:
+Windows: Avoid storing data in `C:\Windows\System32\config\systemprofile\AppData\Local\Duplicati` and prefer `{CSIDL_COMMON_APPDATA}\Duplicati`
+Linux: Avoid storing data in `/Duplicati` and prefer `/var/lib/Duplicati`.
+
+If you are not running Duplicati as a service, this has no effect.
+If you are using `--server-datafolder` or `DUPLICATI_HOME`, this has no effect on the database, but may cause your machineid and installid to change.
+
+The `machineid.txt` and `installid.txt` would previously be stored in the local app data folder, even when using portable mode or choosing a specific data folder.
+This has been fixed, so the files will now follow the database.
+If you are using the Duplicati console or otherwise depend on these values, you need to move them into the folder where the database is stored.
+
+## Important for users running 2.1.0.108
+For **2.1.0.108 version only**, the service folder was `{SYSTEMDRIVE}\Users\LocalService\Duplicati` which was dropped.
+If you have only installed 2.1.0.108 and ended up using the previous folder, you must manually move it to `{CSIDL_COMMON_APPDATA}\Duplicati`.
+
+# Permissions on database and data folder
+This update sets permissions on the data folder and the databases to prevent unauthorized access from local accounts.
+To opt out of setting permissions on each startup, place a file named `insecure-permissions.txt` inside the data folder.
+
+# New user interface
+This version uses the `ngclient` as the default interface. If some feature is not working as expected, it is possible to switch back to the `ngax` client.
+To switch client, replace `ngclient` with `ngax` in the url, or use the `theme.html` page to choose the UI (example: `http://localhost:8200/theme.html`).
+Please report any issues with the new UI.
+
+# Removed timeout guard
+Due to many reports of failures with the timeout mechanism this has been removed in the current version. It will be added back into each of the backends later.
+
+# Added a new tool for offsite backup
+This release features a new tool: `Duplicati.CommandLine.SyncTool.exe` / `duplicati-sync-tool` which can be used to create copies of backup files in multiple locations. The tool is currently documented with the built-in help, and more documentation is on the way. The tool is intended to be more integrated into Duplicati later and enables a straightforward way to achieve 3-2-1 backups, including copies in immutable storage.
+
+## Detailed list of changes:
+- Support topics on Telegram reports
+- Added remote syncronization tool
+- Removed high-level backend timeout
+- Added guard to prevent dataloss on shared destinations
+- Added option to disable automatic update checks
+- Fixed a bug with the new restore that could cause incorrect files to be restored if files alredy exists
+- Fixed a case where updated timestamps were discarded if no data was changed
+- Added permission updates to data folder
+- Fixed automatic fallback on unsupported Zip files
+- Fixed multiple issues with TrayIcon state
+- Mark Mega.nz backend as deprecated
+- Switched to ngclient as the default UI
+- Added support for 429 responses on B2
+
+2025-01-31 - 2.1.0.108_canary_2025-01-31
+==========
+This release is a canary release intended to be used for testing.
+
+# Important change 
+This build changes the folder locations for the `Duplicati-server.sqlite` file on Windows and Linux when running as a service.
+There is support for backwards compatibility, so existing installations should not be affected.
+
+The detailed changes are:
+Windows: Avoid storing data in `C:\Windows\System32\config\systemprofile\AppData\Local\Duplicati` and prefer `{SystemRoot}\Users\LocalService\Duplicati`
+Linux: Avoid storing data in `/Duplicati` and prefer `/var/lib/Duplicati`.
+
+If you are not running Duplicati as a service, this has no effect.
+If you are using `--server-datafolder` or `DUPLICATI_HOME`, this has no effect on the database, but may cause your machineid and installid to change.
+
+The `machineid.txt` and `installid.txt` would previously be stored in the local app data folder, even when using portable mode or choosing a specific data folder.
+This has been fixed, so the files will now follow the database.
+If you are using the Duplicati console or otherwise depend on these values, you need to move them into the folder where the database is stored.
+
+# New UI
+This release contains an updated version of the new UI.
+In the url, change `ngax` to `ngclient` to try the new UI.
+
+## Detailed list of changes:
+- Fixed encoding of exported files
+- Fixed issue with restore trying to read files opened with write-only
+- Improved backend tester
+- Missing file detection during recreate is now a warning
+- Fixed Minio backend not throwing exceptions
+- Fixed hidden files display in source picker
+- Added additional source folders for MacOS
+- Removed SHA1 signatures on Windows signing
+- Rewrote the backend manager to better control backend (re-)use
+- Updated reporting to support sending OS type and backend type
+- Tagging Docker images with channel, thanks @stavros-k
+- Added support for CORS headers in the Webserver
+- Unified help arguments across all executables
+- Fixed parsing flags as multiple values for FTP SSL type
+- Added guard against storing files in Windows folder
+- Fixed crash in AutoUpdater
+
 2025-01-17 - 2.1.0.107_canary_2025-01-17
 ==========
 This release is a canary release intended to be used for testing.

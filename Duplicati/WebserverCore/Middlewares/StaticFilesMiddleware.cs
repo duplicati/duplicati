@@ -143,7 +143,7 @@ public static class StaticFilesExtensions
                 {
                     // Serve the static file
                     var file = new FileInfo(Path.Combine(spaConfig.BasePath, path.Value.Substring(spaConfig.Prefix.Length).TrimStart('/')));
-                    if (file.FullName.StartsWith(spaConfig.BasePath) && file.Exists && fileTypeMappings.Mappings.TryGetValue(Path.GetExtension(file.Extension), out var contentType))
+                    if (file.FullName.StartsWith(spaConfig.BasePath, Library.Utility.Utility.ClientFilenameStringComparison) && file.Exists && fileTypeMappings.Mappings.TryGetValue(Path.GetExtension(file.Extension), out var contentType))
                     {
                         context.Response.ContentType = contentType;
                         context.Response.StatusCode = 200;

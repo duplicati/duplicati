@@ -19,21 +19,13 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net;
 using System.Text;
-using System.Text.RegularExpressions;
 using Duplicati.Library.Interface;
-using Duplicati.Library.Logging;
-using Duplicati.Library.Utility;
-using System.Net.NetworkInformation;
-using System.Net.Sockets;
 using MailKit.Net.Smtp;
 using MimeKit;
-using Duplicati.Library.Modules.Builtin.ResultSerialization;
 using DnsClient;
 
 namespace Duplicati.Library.Modules.Builtin
@@ -277,7 +269,7 @@ namespace Duplicati.Library.Modules.Builtin
                 lastServer = server;
                 try
                 {
-                    using (MemoryStream ms = new MemoryStream())
+                    using (var ms = new MemoryStream())
                     {
                         try
                         {

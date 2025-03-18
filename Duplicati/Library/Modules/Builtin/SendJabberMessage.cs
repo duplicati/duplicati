@@ -22,9 +22,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Duplicati.Library.Interface;
-using Duplicati.Library.Logging;
-using System.Net.NetworkInformation;
-using Duplicati.Library.Modules.Builtin.ResultSerialization;
 using Artalk.Xmpp.Client;
 
 namespace Duplicati.Library.Modules.Builtin
@@ -195,8 +192,7 @@ namespace Duplicati.Library.Modules.Builtin
 
         protected override void SendMessage(string subject, string body)
         {
-
-            var uri = new Library.Utility.Uri(m_username.Contains("://") ? m_username : "http://" + m_username);
+            var uri = new Utility.Uri(m_username.Contains("://") ? m_username : "http://" + m_username);
             var resource = uri.Path ?? "";
             if (resource.StartsWith("/", StringComparison.Ordinal))
                 resource = resource.Substring(1);

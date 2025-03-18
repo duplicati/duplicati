@@ -21,6 +21,7 @@
 using System.Runtime.Versioning;
 using System.Security.Principal;
 using Duplicati.Library.Snapshots;
+using Duplicati.Library.Snapshots.Windows;
 using Duplicati.WebserverCore.Abstractions;
 using Duplicati.WebserverCore.Exceptions;
 using Microsoft.AspNetCore.Mvc;
@@ -58,7 +59,7 @@ public class HyperV : IEndpointV1
         {
             if (string.IsNullOrEmpty(key))
             {
-                hypervUtility.QueryHyperVGuestsInfo();
+                hypervUtility.QueryHyperVGuestsInfo(SnapshotProvider.AlphaVSS);
                 return hypervUtility.Guests.Select(x => new Dto.TreeNodeDto()
                 {
                     id = x.ID.ToString(),
@@ -77,7 +78,7 @@ public class HyperV : IEndpointV1
             }
             else
             {
-                hypervUtility.QueryHyperVGuestsInfo(true);
+                hypervUtility.QueryHyperVGuestsInfo(SnapshotProvider.AlphaVSS, true);
                 var foundVMs = hypervUtility.Guests.FindAll(x => x.ID.Equals(new Guid(key)));
 
                 if (foundVMs.Count != 1)

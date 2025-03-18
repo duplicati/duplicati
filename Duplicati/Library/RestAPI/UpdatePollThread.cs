@@ -39,6 +39,7 @@ namespace Duplicati.Server
         private readonly object m_lock = new object();
         private AutoResetEvent m_waitSignal;
         private double m_downloadProgress;
+        private bool m_disableChecks = false;
 
         public bool IsUpdateRequested { get; private set; } = false;
 
@@ -56,8 +57,9 @@ namespace Duplicati.Server
             }
         }
 
-        public void Init()
+        public void Init(bool disableChecks)
         {
+            m_disableChecks = disableChecks;
             m_waitSignal = new AutoResetEvent(false);
             ThreadState = UpdatePollerStates.Waiting;
             m_thread = new Thread(Run)
@@ -115,15 +117,19 @@ namespace Duplicati.Server
 
                 if (nextCheck < DateTime.UtcNow || m_forceCheck)
                 {
+                    DateTime started = DateTime.UtcNow;
+                    connection.ApplicationSettings.LastUpdateCheck = started;
+                    nextCheck = connection.ApplicationSettings.NextUpdateCheck;
+
+                    // If this is not forced, and we have disabled checks, we just update the next check time
+                    if (m_disableChecks && !m_forceCheck)
+                        continue;
+
                     lock (m_lock)
                         m_forceCheck = false;
 
                     ThreadState = UpdatePollerStates.Checking;
                     eventPollNotify.SignalNewEvent();
-
-                    DateTime started = DateTime.UtcNow;
-                    connection.ApplicationSettings.LastUpdateCheck = started;
-                    nextCheck = connection.ApplicationSettings.NextUpdateCheck;
 
                     Library.AutoUpdater.ReleaseType rt;
                     if (!Enum.TryParse<Library.AutoUpdater.ReleaseType>(connection.ApplicationSettings.UpdateChannel, true, out rt))

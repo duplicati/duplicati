@@ -22,21 +22,19 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Duplicati.Library.Utility;
-using Duplicati.Library.Snapshots;
 using CoCoL;
-using Duplicati.Library.Common.IO;
+using Duplicati.Library.Interface;
+using Duplicati.Library.Snapshots.USN;
 
 namespace Duplicati.Library.Main.Operation.Backup
 {
     internal static class CountFilesHandler
     {
         public static async Task Run(
-            IEnumerable<string> sources,
-            ISnapshotService snapshot,
+            ISourceProvider sources,
             UsnJournalService journalService,
             BackupResults result,
             Options options,
-            IFilter sourcefilter,
             IFilter filter,
             HashSet<string> blacklistPaths,
             Common.ITaskReader taskreader,
@@ -47,9 +45,8 @@ namespace Duplicati.Library.Main.Operation.Backup
             using (Logging.Log.StartIsolatingScope(true))
             {
                 Channels channels = new();
-                var enumeratorTask = Backup.FileEnumerationProcess.Run(
-                    channels, sources, snapshot, journalService,
-                    options.FileAttributeFilter, sourcefilter, filter,
+                var enumeratorTask = FileEnumerationProcess.Run(
+                    channels, sources, journalService, options.FileAttributeFilter, filter,
                     options.SymlinkPolicy, options.HardlinkPolicy,
                     options.ExcludeEmptyFolders, options.IgnoreFilenames,
                     blacklistPaths, options.ChangedFilelist, taskreader, null, token);
@@ -68,14 +65,15 @@ namespace Duplicati.Library.Main.Operation.Backup
                     {
                         while (await taskreader.ProgressRendevouz() && !token.IsCancellationRequested)
                         {
-                            var path = await self.Input.ReadAsync();
+                            var entry = await self.Input.ReadAsync();
+                            if (entry.IsFolder)
+                                continue;
 
                             count++;
 
                             try
                             {
-                                if (SystemIO.IO_OS.FileExists(path))
-                                    size += snapshot.GetFileSize(path);
+                                size += entry.Size;
                             }
                             catch
                             {

@@ -19,6 +19,7 @@
     <ProjectReference Include="..\Localization\Duplicati.Library.Localization.csproj" />
     <ProjectReference Include="..\UsageReporter\Duplicati.Library.UsageReporter.csproj" />
     <ProjectReference Include="..\Modules\Builtin\Duplicati.Library.Modules.Builtin.csproj" />
+    <ProjectReference Include="..\SourceProvider\Builtin\Duplicati.Library.SourceProvider.Builtin.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -34,6 +35,7 @@
   <ItemGroup>
     <PackageReference Include="CoCoL" Version="1.8.1" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="System.Linq.Async" Version="6.0.1" />
   </ItemGroup>
 
 </Project>

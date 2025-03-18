@@ -28,9 +28,11 @@ using System.Linq;
 using Duplicati.Library.Interface;
 using Newtonsoft.Json;
 using System.Runtime.Versioning;
+using System.Security.Principal;
 
 namespace Duplicati.Library.Common.IO
 {
+    [SupportedOSPlatform("windows")]
     public struct SystemIOWindows : ISystemIO
     {
         // Based on the constant names used in
@@ -41,6 +43,16 @@ namespace Duplicati.Library.Common.IO
         private const string UncExtendedPathPrefix = @"\\?\UNC\";
 
         private static readonly string DIRSEP = Util.DirectorySeparatorString;
+
+        /// <summary>
+        /// The current user name
+        /// </summary>
+        private static readonly string CURRENT_USERNAME = WindowsIdentity.GetCurrent().Name;
+
+        /// <summary>
+        /// The LocalSystem user name
+        /// </summary>
+        private static readonly string LOCAL_SYSTEM_NAME = new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null).Translate(typeof(NTAccount)).Value;
 
         /// <summary>
         /// Prefix path with one of the extended device path prefixes
@@ -670,6 +682,68 @@ namespace Duplicati.Library.Common.IO
 
             if ((attr & System.IO.FileAttributes.ReparsePoint) == 0)
                 throw new System.IO.IOException(string.Format("Unable to create symlink, check account permissions: {0}", symlinkfile));
+        }
+
+        /// <summary>
+        /// Sets the unix permission user read-write Only.
+        /// </summary>
+        /// <param name="path">The file to set permissions on.</param>
+        public void FileSetPermissionUserRWOnly(string path)
+        {
+            // Create directory security settings
+            var security = new FileSecurity();
+
+            // Remove inherited permissions to ensure only the current user has access
+            security.SetAccessRuleProtection(true, false);
+
+            // Grant the current user read access
+            security.AddAccessRule(new FileSystemAccessRule(
+                CURRENT_USERNAME,
+                FileSystemRights.FullControl,
+                AccessControlType.Allow
+            ));
+
+            security.AddAccessRule(new FileSystemAccessRule(
+                LOCAL_SYSTEM_NAME,
+                FileSystemRights.FullControl,
+                AccessControlType.Allow
+            ));
+
+            // Adjust with the new security settings
+            new FileInfo(path).SetAccessControl(security);
+        }
+
+        /// <summary>
+        /// Sets the permission to read-write only for the current user.
+        /// </summary>
+        /// <param name="path">The directory to set permissions on.</param>
+        public void DirectorySetPermissionUserRWOnly(string path)
+        {
+            // Create directory security settings
+            var security = new DirectorySecurity();
+
+            // Remove inherited permissions to ensure only the current user has access
+            security.SetAccessRuleProtection(true, false);
+
+            // Grant the current user read access
+            security.AddAccessRule(new FileSystemAccessRule(
+                CURRENT_USERNAME,
+                FileSystemRights.FullControl,
+                InheritanceFlags.ContainerInherit | InheritanceFlags.ObjectInherit, // Apply to subfolders & files
+                PropagationFlags.None, // Keeps inheritance settings intact
+                AccessControlType.Allow
+            ));
+
+            security.AddAccessRule(new FileSystemAccessRule(
+                LOCAL_SYSTEM_NAME,
+                FileSystemRights.FullControl,
+                InheritanceFlags.ContainerInherit | InheritanceFlags.ObjectInherit, // Apply to subfolders & files
+                PropagationFlags.None, // Keeps inheritance settings intact
+                AccessControlType.Allow
+            ));
+
+            // Adjust with the new security settings
+            new DirectoryInfo(path).SetAccessControl(security);
         }
         #endregion
     }

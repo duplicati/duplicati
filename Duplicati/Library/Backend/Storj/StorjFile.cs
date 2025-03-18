@@ -33,6 +33,7 @@ namespace Duplicati.Library.Backend.Storj
         public DateTime LastAccess { get; set; }
 
         public DateTime LastModification { get; set; }
+        public DateTime Created { get; set; }
 
         public string Name { get; set; }
 

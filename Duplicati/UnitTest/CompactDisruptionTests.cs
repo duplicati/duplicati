@@ -135,13 +135,13 @@ namespace Duplicati.UnitTest
             target = new DeterministicErrorBackend().ProtocolKey + "://" + TARGETFOLDER;
             // Fail the compact after the first dblock put is completed
             bool firstPutCompleted = false;
-            DeterministicErrorBackend.ErrorGenerator = (string action, string remotename) =>
+            DeterministicErrorBackend.ErrorGenerator = (DeterministicErrorBackend.BackendAction action, string remotename) =>
             {
-                if (firstPutCompleted && (action == "get_0" || action == "get_1"))
+                if (firstPutCompleted && action.IsGetOperation)
                 {
                     return true;
                 }
-                if (action == "put_1" || action == "put_async")
+                if (action == DeterministicErrorBackend.BackendAction.PutAfter)
                 {
                     firstPutCompleted = true;
                 }
@@ -250,13 +250,13 @@ namespace Duplicati.UnitTest
             target = new DeterministicErrorBackend().ProtocolKey + "://" + TARGETFOLDER;
             // Fail the compact after the first dblock put is completed
             bool firstPutCompleted = false;
-            DeterministicErrorBackend.ErrorGenerator = (string action, string remotename) =>
+            DeterministicErrorBackend.ErrorGenerator = (DeterministicErrorBackend.BackendAction action, string remotename) =>
             {
-                if (firstPutCompleted && (action == "get_0" || action == "get_1"))
+                if (firstPutCompleted && action.IsGetOperation)
                 {
                     return true;
                 }
-                if (action == "put_1" || action == "put_async")
+                if (action == DeterministicErrorBackend.BackendAction.PutAfter)
                 {
                     firstPutCompleted = true;
                 }
@@ -382,13 +382,13 @@ namespace Duplicati.UnitTest
             target = new DeterministicErrorBackend().ProtocolKey + "://" + TARGETFOLDER;
             // Fail the compact after the first dblock put is completed
             bool firstPutCompleted = false;
-            DeterministicErrorBackend.ErrorGenerator = (string action, string remotename) =>
+            DeterministicErrorBackend.ErrorGenerator = (DeterministicErrorBackend.BackendAction action, string remotename) =>
             {
-                if (firstPutCompleted && (action == "get_0" || action == "get_1"))
+                if (firstPutCompleted && action.IsGetOperation)
                 {
                     return true;
                 }
-                if (action == "put_1" || action == "put_async")
+                if (action == DeterministicErrorBackend.BackendAction.PutAfter)
                 {
                     firstPutCompleted = true;
                 }
@@ -523,13 +523,13 @@ namespace Duplicati.UnitTest
             target = new DeterministicErrorBackend().ProtocolKey + "://" + TARGETFOLDER;
             // Fail the compact after the first dblock put is completed
             bool firstPutCompleted = false;
-            DeterministicErrorBackend.ErrorGenerator = (string action, string remotename) =>
+            DeterministicErrorBackend.ErrorGenerator = (DeterministicErrorBackend.BackendAction action, string remotename) =>
             {
-                if (firstPutCompleted && (action == "get_0" || action == "get_1"))
+                if (firstPutCompleted && action.IsGetOperation)
                 {
                     return true;
                 }
-                if (action == "put_1" || action == "put_async")
+                if (action == DeterministicErrorBackend.BackendAction.PutAfter)
                 {
                     firstPutCompleted = true;
                 }

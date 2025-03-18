@@ -25,6 +25,7 @@ using System.CommandLine.NamingConventionBinder;
 using System.CommandLine.Parsing;
 using System.Reactive.Linq;
 using System.Security.Cryptography;
+using Duplicati.Library.AutoUpdater;
 using Duplicati.Library.Encryption;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Logging;
@@ -33,7 +34,7 @@ using Duplicati.Library.RemoteControl;
 using Duplicati.Library.RestAPI;
 using Duplicati.Library.Utility;
 using Duplicati.Server;
-using Duplicati.WebserverCore.Abstractions;
+using Duplicati.WebserverCore.Services;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Duplicati.Agent;
@@ -44,12 +45,6 @@ public static class Program
     /// The log tag for messages from this class
     /// </summary>
     private static readonly string LogTag = Log.LogTagFromType(typeof(Program));
-
-    /// <summary>
-    /// Create a random pre-shared key for the agent
-    /// </summary>
-    private static string? PreSharedKey = null;
-
 
     /// <summary>
     /// Commandline arguments for the agent
@@ -123,6 +118,8 @@ public static class Program
             new Option<string?>("--secret-provider", description: "The secret provider to use", getDefaultValue: () => null),
             new Option<SecretProviderHelper.CachingLevel>("--secret-provider-cache", description: "The secret provider cache level", getDefaultValue: () => SecretProviderHelper.CachingLevel.None),
             new Option<string>("--secret-provider-pattern", description: "The secret provider pattern", getDefaultValue: () => SecretProviderHelper.DEFAULT_PATTERN),
+            new Option<bool>($"--{DataFolderManager.PORTABLE_MODE_OPTION}", description: "Use portable mode for locating the database and storing configuration", getDefaultValue: () => DataFolderManager.PORTABLE_MODE),
+            new Option<DirectoryInfo?>($"--{DataFolderManager.SERVER_DATAFOLDER_OPTION}", description: "The datafolder to use for locating the database and storing configuration", getDefaultValue: () => new DirectoryInfo(DataFolderManager.DATAFOLDER)),
         };
         runcmd.Handler = CommandHandler.Create<CommandLineArguments>(RunAgent);
 
@@ -166,6 +163,7 @@ public static class Program
                     context.ExitCode = 1;
                 }
             })
+            .UseAdditionalHelpAliases()
             .Build()
             .InvokeAsync(args);
     }
@@ -271,7 +269,7 @@ public static class Program
 
         // Set the pre-shared key for the agent
         if (!agentConfig.DisablePreSharedKey)
-            WebserverCore.Middlewares.PreSharedKeyFilter.PreSharedKey = PreSharedKey = RandomNumberGenerator.GetHexString(128);
+            WebserverCore.Middlewares.PreSharedKeyFilter.PreSharedKey = RandomNumberGenerator.GetHexString(128);
 
         using var cts = new CancellationTokenSource();
 
@@ -309,8 +307,10 @@ public static class Program
                     settings.CertificateUrl,
                     settings.ServerCertificates,
                     cts.Token,
-                    c => ReKey(agentConfig, c),
-                    (m) => OnMessage(m, agentConfig)
+                    OnConnect,
+                    m => ReKey(m, agentConfig),
+                    OnControl,
+                    OnMessage
                 )
             );
 
@@ -320,24 +320,19 @@ public static class Program
         }
     }
 
-    private static async Task OnMessage(KeepRemoteConnection.CommandMessage message, CommandLineArguments agentConfig)
+    private static Task<Dictionary<string, string?>> OnConnect(Dictionary<string, string?> metadata)
+        => FIXMEGlobal.Provider.GetRequiredService<IRemoteControllerHandler>().OnConnect(metadata);
+
+    private static Task OnControl(KeepRemoteConnection.ControlMessage message)
+        => FIXMEGlobal.Provider.GetRequiredService<IRemoteControllerHandler>().OnControl(message);
+
+    private static Task OnMessage(KeepRemoteConnection.CommandMessage message)
+        => FIXMEGlobal.Provider.GetRequiredService<IRemoteControllerHandler>().OnMessage(message);
+
+
+    private static Task ReKey(ClaimedClientData keydata, CommandLineArguments agentConfig)
     {
-        Log.WriteMessage(LogMessageType.Verbose, LogTag, "OnMessage", "Received message: {0}", message);
-
-        var provider = FIXMEGlobal.Provider.GetRequiredService<IJWTTokenProvider>();
-        var token = provider.CreateAccessToken("agent", provider.TemporaryFamilyId, TimeSpan.FromMinutes(2));
-        using var httpClient = FIXMEGlobal.Provider.GetRequiredService<IHttpClientFactory>().CreateClient();
-        httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
-        httpClient.BaseAddress = new System.Uri($"http://127.0.0.1:{agentConfig.WebservicePort}");
-
-        if (!string.IsNullOrWhiteSpace(WebserverCore.Middlewares.PreSharedKeyFilter.PreSharedKey))
-            httpClient.DefaultRequestHeaders.Add(WebserverCore.Middlewares.PreSharedKeyFilter.HeaderName, PreSharedKey);
-
-        await message.Handle(httpClient);
-    }
-
-    private static Task ReKey(CommandLineArguments agentConfig, ClaimedClientData keydata)
-    {
+        // ReKey is handled here because we store the config outside of the database
         Log.WriteMessage(LogMessageType.Verbose, LogTag, "ReKey", "Rekeying the settings");
         var settings = Settings.Load(agentConfig.AgentSettingsFile.FullName, agentConfig.AgentSettingsFilePassphrase);
         if (!string.IsNullOrWhiteSpace(keydata.JWT) && settings.JWT != keydata.JWT)

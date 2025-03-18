@@ -18,14 +18,13 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
-using Duplicati.Library.Common;
-using Duplicati.Library.Common.IO;
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Versioning;
 
-namespace Duplicati.Library.Snapshots
+namespace Duplicati.Library.Snapshots.Windows
 {
     public class MSSQLDB : IEquatable<MSSQLDB>
     {
@@ -152,14 +151,14 @@ namespace Duplicati.Library.Snapshots
         /// For all MS SQL databases it enumerate all associated paths using VSS data
         /// </summary>
         /// <returns>A collection of DBs and paths</returns>
-        public void QueryDBsInfo()
+        public void QueryDBsInfo(SnapshotProvider provider)
         {
             if (!IsMSSQLInstalled)
                 return;
 
             m_DBs.Clear();
 
-            using (var vssBackupComponents = new VssBackupComponents())
+            using (var vssBackupComponents = new SnapshotManager(provider))
             {
                 var writerGUIDS = new [] { MSSQLWriterGuid };
                 try

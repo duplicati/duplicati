@@ -23,17 +23,20 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
+using System.Net;
+using System.Net.NetworkInformation;
+using System.Net.Sockets;
+using System.Runtime.Versioning;
+using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
+using System.Threading.Tasks;
 using Duplicati.Library.Common.IO;
-using System.Globalization;
-using System.Runtime.Versioning;
-using System.Security.Cryptography.X509Certificates;
-using System.Security.Cryptography;
 
 namespace Duplicati.Library.Utility
 {
@@ -246,7 +249,7 @@ namespace Duplicati.Library.Utility
         /// <returns>A list of the full filenames and foldernames. Foldernames ends with the directoryseparator char</returns>
         public static IEnumerable<string> EnumerateFileSystemEntries(string basepath)
         {
-            return EnumerateFileSystemEntries(basepath, (rootpath, path, attributes) => true, SystemIO.IO_OS.GetDirectories, Directory.GetFiles, null);
+            return EnumerateFileSystemEntries(basepath, SystemIO.IO_OS.GetDirectories, Directory.GetFiles, null);
         }
 
         /// <summary>
@@ -276,13 +279,12 @@ namespace Duplicati.Library.Utility
         /// The search is recursive.
         /// </summary>
         /// <param name="rootpath">The folder to look in</param>
-        /// <param name="callback">The function to call with the filenames</param>
         /// <param name="folderList">A function to call that lists all folders in the supplied folder</param>
         /// <param name="fileList">A function to call that lists all files in the supplied folder</param>
         /// <param name="attributeReader">A function to call that obtains the attributes for an element, set to null to avoid reading attributes</param>
         /// <param name="errorCallback">An optional function to call with error messages.</param>
         /// <returns>A list of the full filenames</returns>
-        public static IEnumerable<string> EnumerateFileSystemEntries(string rootpath, EnumerationFilterDelegate callback, FileSystemInteraction folderList, FileSystemInteraction fileList, ExtractFileAttributes? attributeReader, ReportAccessError? errorCallback = null)
+        public static IEnumerable<string> EnumerateFileSystemEntries(string rootpath, FileSystemInteraction folderList, FileSystemInteraction fileList, ExtractFileAttributes? attributeReader, ReportAccessError? errorCallback = null)
         {
             var lst = new Stack<string>();
 
@@ -292,8 +294,7 @@ namespace Duplicati.Library.Utility
                 try
                 {
                     var attr = attributeReader?.Invoke(rootpath) ?? FileAttributes.Directory;
-                    if (callback(rootpath, rootpath, attr))
-                        lst.Push(rootpath);
+                    lst.Push(rootpath);
                 }
                 catch (System.Threading.ThreadAbortException)
                 {
@@ -302,7 +303,6 @@ namespace Duplicati.Library.Utility
                 catch (Exception ex)
                 {
                     errorCallback?.Invoke(rootpath, rootpath, ex);
-                    callback(rootpath, rootpath, FileAttributes.Directory | ATTRIBUTE_ERROR);
                 }
 
                 while (lst.Count > 0)
@@ -319,8 +319,7 @@ namespace Duplicati.Library.Utility
                             try
                             {
                                 var attr = attributeReader?.Invoke(sf) ?? FileAttributes.Directory;
-                                if (callback(rootpath, sf, attr))
-                                    lst.Push(sf);
+                                lst.Push(sf);
                             }
                             catch (System.Threading.ThreadAbortException)
                             {
@@ -329,7 +328,6 @@ namespace Duplicati.Library.Utility
                             catch (Exception ex)
                             {
                                 errorCallback?.Invoke(rootpath, sf, ex);
-                                callback(rootpath, sf, FileAttributes.Directory | ATTRIBUTE_ERROR);
                             }
                         }
                     }
@@ -340,7 +338,6 @@ namespace Duplicati.Library.Utility
                     catch (Exception ex)
                     {
                         errorCallback?.Invoke(rootpath, f, ex);
-                        callback(rootpath, f, FileAttributes.Directory | ATTRIBUTE_ERROR);
                     }
 
                     string[]? files = null;
@@ -357,54 +354,18 @@ namespace Duplicati.Library.Utility
                         catch (Exception ex)
                         {
                             errorCallback?.Invoke(rootpath, f, ex);
-                            callback(rootpath, f, FileAttributes.Directory | ATTRIBUTE_ERROR);
                         }
                     }
 
                     if (files != null)
                     {
                         foreach (var s in files)
-                        {
-                            try
-                            {
-                                var attr = attributeReader?.Invoke(s) ?? FileAttributes.Normal;
-                                if (!callback(rootpath, s, attr))
-                                    continue;
-                            }
-                            catch (System.Threading.ThreadAbortException)
-                            {
-                                throw;
-                            }
-                            catch (Exception ex)
-                            {
-                                errorCallback?.Invoke(rootpath, s, ex);
-                                callback(rootpath, s, ATTRIBUTE_ERROR);
-                                continue;
-                            }
                             yield return s;
-                        }
                     }
                 }
             }
             else
             {
-                try
-                {
-                    var attr = attributeReader?.Invoke(rootpath) ?? FileAttributes.Normal;
-                    if (!callback(rootpath, rootpath, attr))
-                        yield break;
-                }
-                catch (System.Threading.ThreadAbortException)
-                {
-                    throw;
-                }
-                catch (Exception ex)
-                {
-                    errorCallback?.Invoke(rootpath, rootpath, ex);
-                    callback(rootpath, rootpath, ATTRIBUTE_ERROR);
-                    yield break;
-                }
-
                 yield return rootpath;
             }
         }
@@ -741,13 +702,29 @@ namespace Duplicati.Library.Utility
         /// </summary>
         /// <param name="options">The set of options to look for the setting in</param>
         /// <param name="value">The value to look for in the settings</param>
-        /// <returns></returns>
+        /// <returns>The parsed value, or the default value (<c>false</c>).</returns>
         public static bool ParseBoolOption(IReadOnlyDictionary<string, string?> options, string value)
         {
             if (options.TryGetValue(value, out var opt))
                 return ParseBool(opt, true);
             else
                 return false;
+        }
+
+        /// <summary>
+        /// Parses an integer option from the option set, returning the default value if the option is not found or cannot be parsed
+        /// </summary>
+        /// <param name="options">The set of options to look for the setting in</param>
+        /// <param name="value">The value to look for in the settings</param>
+        /// <param name="default">The default value to return if there are no matches.</param>
+        /// <returns>The parsed or default integer value.</returns>
+        public static TimeSpan ParseTimespanOption(IReadOnlyDictionary<string, string?> options, string value, string @default)
+        {
+            var opt = options.GetValueOrDefault(value);
+            if (string.IsNullOrWhiteSpace(opt))
+                opt = @default;
+
+            return Timeparser.ParseTimeSpan(opt);
         }
 
         /// <summary>
@@ -758,7 +735,20 @@ namespace Duplicati.Library.Utility
         /// <param name="value">The value to look for in the settings</param>
         /// <param name="default">The default value to return if there are no matches.</param>
         /// <typeparam name="T">The enum type parameter.</typeparam>
-        public static T ParseEnumOption<T>(IReadOnlyDictionary<string, string?> options, string value, T @default)
+        public static T ParseEnumOption<T>(IReadOnlyDictionary<string, string?> options, string value, T @default) where T : struct, Enum
+        {
+            return options.TryGetValue(value, out var opt) ? ParseEnum(opt, @default) : @default;
+        }
+
+        /// <summary>
+        /// Parses a flags-type enum found in the options dictionary
+        /// </summary>
+        /// <returns>The parsed or default enum value.</returns>
+        /// <param name="options">The set of options to look for the setting in</param>
+        /// <param name="value">The value to look for in the settings</param>
+        /// <param name="default">The default value to return if there are no matches.</param>
+        /// <typeparam name="T">The enum type parameter.</typeparam>
+        public static T ParseFlagsOption<T>(IReadOnlyDictionary<string, string?> options, string value, T @default) where T : struct, Enum
         {
             return options.TryGetValue(value, out var opt) ? ParseEnum(opt, @default) : @default;
         }
@@ -770,7 +760,7 @@ namespace Duplicati.Library.Utility
         /// <param name="value">The string to parse.</param>
         /// <param name="default">The default value to return if there are no matches.</param>
         /// <typeparam name="T">The enum type parameter.</typeparam>
-        public static T ParseEnum<T>(string? value, T @default)
+        public static T ParseEnum<T>(string? value, T @default) where T : struct, Enum
         {
             if (string.IsNullOrWhiteSpace(value))
                 return @default;
@@ -779,6 +769,41 @@ namespace Duplicati.Library.Utility
                     return (T)Enum.Parse(typeof(T), s);
 
             return @default;
+        }
+
+        /// <summary>
+        /// Parses a string into a flags enum value.
+        /// </summary>
+        /// <typeparam name="T">The enum type to parse.</typeparam>
+        /// <param name="value">The value to parse.</param>
+        /// <param name="default">The default value to return if there are no matches.</param>
+        /// <returns></returns>
+        public static T ParseFlags<T>(string? value, T @default) where T : struct, Enum
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                return @default;
+
+            var flags = 0;
+            foreach (var s in value.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
+            {
+                var trimmed = s.Trim();
+                if (Enum.TryParse(trimmed, true, out T flag))
+                    flags = flags | (int)(object)flag;
+            }
+
+            return (T)(object)flags;
+        }
+
+        /// <summary> 
+        /// Parses an option with int value, returning the default value if the option is not found or cannot be parsed 
+        /// </summary> 
+        /// <param name="options">The set of options to look for the setting in</param> 
+        /// <param name="value">The value to look for in the settings</param> 
+        /// <param name="default">default value</param> 
+        /// <returns></returns> 
+        public static int ParseIntOption(IReadOnlyDictionary<string, string?> options, string value, int @default)
+        {
+            return options.TryGetValue(value, out var opt) && int.TryParse(opt ?? string.Empty, out var result) ? result : @default;
         }
 
         /// <summary>
@@ -987,7 +1012,7 @@ namespace Duplicati.Library.Utility
         /// <param name="collection">The collection to remove duplicate items from.</param>
         /// <param name="duplicateItems">The duplicate items in <paramref name="collection"/>.</param>
         /// <returns>The unique items from <paramref name="collection"/>.</returns>
-        public static ISet<T> GetUniqueItems<T>(IEnumerable<T> collection, out ISet<T> duplicateItems)
+        public static IList<T> GetUniqueItems<T>(IEnumerable<T> collection, out ISet<T> duplicateItems)
         {
             return GetUniqueItems(collection, EqualityComparer<T>.Default, out duplicateItems);
         }
@@ -1000,18 +1025,21 @@ namespace Duplicati.Library.Utility
         /// <param name="comparer">The <see cref="System.Collections.Generic.IEqualityComparer{T}"/> implementation to use when comparing values in the collection.</param>
         /// <param name="duplicateItems">The duplicate items in <paramref name="collection"/>.</param>
         /// <returns>The unique items from <paramref name="collection"/>.</returns>
-        public static ISet<T> GetUniqueItems<T>(IEnumerable<T> collection, IEqualityComparer<T> comparer, out ISet<T> duplicateItems)
+        public static IList<T> GetUniqueItems<T>(IEnumerable<T> collection, IEqualityComparer<T> comparer, out ISet<T> duplicateItems)
         {
             var uniqueItems = new HashSet<T>(comparer);
+            var results = new List<T>();
             duplicateItems = new HashSet<T>(comparer);
 
             foreach (var item in collection)
             {
-                if (!uniqueItems.Add(item))
+                if (uniqueItems.Add(item))
+                    results.Add(item);
+                else
                     duplicateItems.Add(item);
             }
 
-            return uniqueItems;
+            return results;
         }
 
         // <summary>
@@ -1536,6 +1564,24 @@ namespace Duplicati.Library.Utility
         }
 
         /// <summary>
+        /// Probes the system for the presence of a loopback address on IPv4
+        /// </summary>
+        public static bool HasIPv4Loopback =>
+            NetworkInterface.GetAllNetworkInterfaces()
+                .Where(ni => ni.OperationalStatus == OperationalStatus.Up)
+                .SelectMany(ni => ni.GetIPProperties().UnicastAddresses)
+                .Any(addr => addr.Address.AddressFamily == AddressFamily.InterNetwork
+                             && addr.Address.Equals(IPAddress.Loopback));
+
+        /// <summary>
+        /// On systems that have IPV4 and IPV6, the method will return the default loopback ( 127, 0, 0, 1)
+        /// On systems with IPV6 only, the method will return the IPV6 loopback (::1)
+        /// </summary>
+        /// <returns></returns>
+        public static string IpVersionCompatibleLoopback =>
+            HasIPv4Loopback ? IPAddress.Loopback.ToString() : $"[{IPAddress.IPv6Loopback.ToString()}]";
+
+        /// <summary>
         /// Flattens an exception and its inner exceptions
         /// </summary>
         /// <param name="ex">The exception to flatten</param>
@@ -1555,5 +1601,71 @@ namespace Duplicati.Library.Utility
             foreach (var iex in FlattenException(ex.InnerException))
                 yield return iex;
         }
+
+        /// <summary>
+        /// Guesses the URL scheme and returns it
+        /// </summary>
+        /// <param name="url">The URL to guess the scheme for</param>
+        /// <returns>The guessed scheme, or null if no scheme was found</returns>
+        public static string? GuessScheme(string url)
+        {
+            if (string.IsNullOrWhiteSpace(url))
+                return null;
+
+            var idx = url.IndexOf("://");
+            if (idx < 0 && idx < 15 && idx + "://".Length < url.Length)
+                return null;
+
+            return url.Substring(0, idx);
+        }
+
+        /// <summary>
+        /// Returns a url that is safe to display, by removing any credentials
+        /// </summary>
+        /// <param name="url">The url to sanitize</param>
+        /// <returns>The sanitized url</returns>
+        public static string GetUrlWithoutCredentials(string url)
+        {
+            // Assumed safe part of the url to show
+            const int maxShown = 25;
+            if (string.IsNullOrWhiteSpace(url))
+                return url;
+
+            // Use a reportable url without credentials
+            var sepIndex = Math.Max(0, url.IndexOf('|')) + 1;
+            var length = url.Length - sepIndex;
+            var shown = Math.Min(length, maxShown);
+            var hidden = length - maxShown;
+            var sanitizedUrl = $"{url[sepIndex..(sepIndex + shown)]}{new string('*', hidden)}";
+
+            // If we can parse it, this result is better
+            try
+            {
+                var uri = new Uri(url[sepIndex..]);
+                sanitizedUrl = new Uri($"{uri.Scheme}://{uri.Host}").SetPath(uri.Path).ToString();
+            }
+            catch
+            {
+            }
+
+            return sanitizedUrl;
+        }
+
+        /// <summary>
+        /// Formats the string using the invariant culture
+        /// </summary>
+        /// <param name="format">The format string</param>
+        /// <param name="args">The arguments to format</param>
+        /// <returns>The formatted string</returns>
+        public static string FormatInvariant(this string format, params object?[] args)
+            => string.Format(CultureInfo.InvariantCulture, format, args);
+
+        /// <summary>
+        /// Formats the string using the invariant culture
+        /// </summary>
+        /// <param name="formattable">The formattable string</param>
+        /// <returns>The formatted string</returns>
+        public static string FormatInvariant(this FormattableString formattable)
+            => formattable.ToString(CultureInfo.InvariantCulture);
     }
 }

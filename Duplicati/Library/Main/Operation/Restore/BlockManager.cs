@@ -1,25 +1,26 @@
 // Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
-// 
-// Permission is hereby granted, free of charge, to any person obtaining a 
-// copy of this software and associated documentation files (the "Software"), 
-// to deal in the Software without restriction, including without limitation 
-// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
-// and/or sell copies of the Software, and to permit persons to whom the 
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the "Software"),
+// to deal in the Software without restriction, including without limitation
+// the rights to use, copy, modify, merge, publish, distribute, sublicense,
+// and/or sell copies of the Software, and to permit persons to whom the
 // Software is furnished to do so, subject to the following conditions:
-// 
-// The above copyright notice and this permission notice shall be included in 
+//
+// The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
-// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
 using System;
+using System.Buffers;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data;
@@ -90,6 +91,19 @@ namespace Duplicati.Library.Main.Operation.Restore
             /// </summary>
             private readonly Stopwatch sw_get_wait;
             /// <summary>
+            /// Internal stopwatch for profiling setting a block in the cache.
+            /// </summary>
+            private readonly Stopwatch sw_set_set;
+            /// <summary>
+            /// Internal stopwatch for profiling getting a waiter to notify that the block is available.
+            /// </summary>
+            private readonly Stopwatch sw_set_wake_get;
+            /// <summary>
+            /// Internal stopwatch for profiling for waking up the waiting request.
+            /// </summary>
+            private readonly Stopwatch sw_set_wake_set;
+
+            /// <summary>
             /// Dictionary for keeping track of how many times each block is requested. Used to determine when a block is no longer needed.
             /// </summary>
             private readonly Dictionary<long, long> m_blockcount = new();
@@ -105,6 +119,14 @@ namespace Duplicati.Library.Main.Operation.Restore
             /// The options for the restore.
             /// </summary>
             private readonly Options m_options;
+            /// <summary>
+            /// The cache eviction options. Used for registering a callback when a block is evicted from the cache.
+            /// </summary>
+            private readonly MemoryCacheEntryOptions m_entry_options = new();
+            /// <summary>
+            /// Dictionary to keep track of how many active readers are accessing each block. On eviction, the byte[] buffer can only be returned to the ArrayPool if there are no active readers.
+            /// </summary>
+            private readonly ConcurrentDictionary<long, long> m_active_readers = [];
 
             /// <summary>
             /// Initializes a new instance of the <see cref="SleepableDictionary"/> class.
@@ -116,15 +138,39 @@ namespace Duplicati.Library.Main.Operation.Restore
             {
                 m_options = options;
                 m_volume_request = volume_request;
-                if (m_options.RestoreCacheMax > 0)
+                var cache_options = new MemoryCacheOptions();
+                m_block_cache = new MemoryCache(cache_options);
+                m_entry_options.RegisterPostEvictionCallback(async (key, value, reason, state) =>
                 {
-                    var cache_options = new MemoryCacheOptions();
-                    m_block_cache = new MemoryCache(cache_options);
-                }
+                    bool was_present = false;
+                    while (true)
+                    {
+                        lock (m_blockcount_lock)
+                        {
+                            if (m_active_readers.TryGetValue((long)key, out var ac))
+                            {
+                                if (ac == 0)
+                                {
+                                    was_present = true;
+                                    break;
+                                }
+                            }
+                            else
+                                break;
+                        }
+
+                        await Task.CompletedTask.ConfigureAwait(ConfigureAwaitOptions.ForceYielding);
+                    }
+                    if (was_present)
+                        ArrayPool<byte>.Shared.Return((byte[])value);
+                });
                 this.readers = readers;
                 sw_cacheevict = options.InternalProfiling ? new() : null;
                 sw_checkcounts = options.InternalProfiling ? new() : null;
                 sw_get_wait = options.InternalProfiling ? new() : null;
+                sw_set_set = options.InternalProfiling ? new() : null;
+                sw_set_wake_get = options.InternalProfiling ? new() : null;
+                sw_set_wake_set = options.InternalProfiling ? new() : null;
 
                 foreach (var (block_id, volume_id) in db.GetBlocksAndVolumeIDs(options.SkipMetadata))
                 {
@@ -142,16 +188,22 @@ namespace Duplicati.Library.Main.Operation.Restore
             /// the VolumeDownloader will be notified.
             /// </summary>
             /// <param name="blockRequest">The block request to check.</param>
-            /// <param name="decrement"></param>
-            public void CheckCounts(BlockRequest blockRequest)
+            public async Task CheckCounts(BlockRequest blockRequest)
             {
                 long error_block_id = -1;
                 long error_volume_id = -1;
                 var emit_evict = false;
+                byte[] data = null;
 
                 lock (m_blockcount_lock)
                 {
                     sw_checkcounts?.Start();
+
+                    var active = m_active_readers.TryGetValue(blockRequest.BlockID, out var ac) ? ac - 1 : 0;
+                    if (active == 0)
+                        m_active_readers.Remove(blockRequest.BlockID, out var _);
+                    else
+                        m_active_readers[blockRequest.BlockID] = active;
 
                     var block_count = m_blockcount.TryGetValue(blockRequest.BlockID, out var c) ? c - 1 : 0;
 
@@ -163,7 +215,8 @@ namespace Duplicati.Library.Main.Operation.Restore
                     {
                         // Evict the block from the cache and check if the volume is no longer needed.
                         m_blockcount.Remove(blockRequest.BlockID);
-                        m_block_cache?.Remove(blockRequest.BlockID);
+                        data = m_block_cache.Get<byte[]>(blockRequest.BlockID);
+                        m_block_cache.Remove(blockRequest.BlockID);
                     }
                     else // block_count < 0
                     {
@@ -177,7 +230,6 @@ namespace Duplicati.Library.Main.Operation.Restore
                     }
                     else if (vol_count == 0)
                     {
-                        // Notify the `VolumeManager` that it should evict the volume.
                         m_volumecount.Remove(blockRequest.VolumeID);
                         blockRequest.CacheDecrEvict = true;
                         emit_evict = true;
@@ -189,8 +241,12 @@ namespace Duplicati.Library.Main.Operation.Restore
                     sw_checkcounts?.Stop();
                 }
 
+                if (data != null)
+                    ArrayPool<byte>.Shared.Return(data);
+
+                // Notify the `VolumeManager` that it should evict the volume.
                 if (emit_evict)
-                    m_volume_request.Write(blockRequest);
+                    await m_volume_request.WriteAsync(blockRequest).ConfigureAwait(false);
 
                 if (error_block_id != -1)
                 {
@@ -210,32 +266,44 @@ namespace Duplicati.Library.Main.Operation.Restore
             /// </summary>
             /// <param name="block_request">The requested block.</param>
             /// <returns>A `Task` holding the data block.</returns>
-            public Task<byte[]> Get(BlockRequest block_request)
+            public async Task<byte[]> Get(BlockRequest block_request)
             {
-                // Check if the block is already in the cache, and return it if it is.
-                if (m_block_cache != null && m_block_cache.TryGetValue(block_request.BlockID, out byte[] value))
+                Logging.Log.WriteExplicitMessage(LOGTAG, "BlockCacheGet", "Getting block {0} from cache", block_request.BlockID);
+
+                lock (m_blockcount_lock)
                 {
-                    CheckCounts(block_request);
-                    return Task.FromResult(value);
+                    m_active_readers[block_request.BlockID] = m_active_readers.TryGetValue(block_request.BlockID, out var c) ? c + 1 : 1;
                 }
+
+                // Check if the block is already in the cache, and return it if it is.
+                if (m_block_cache.TryGetValue(block_request.BlockID, out byte[] value))
+                    return value;
 
                 // If the block is not in the cache, request it from the volume.
                 sw_get_wait?.Start();
-                var tcs = new TaskCompletionSource<byte[]>();
+                var tcs = new TaskCompletionSource<byte[]>(TaskCreationOptions.RunContinuationsAsynchronously);
                 var new_tcs = m_waiters.GetOrAdd(block_request.BlockID, tcs);
                 if (tcs == new_tcs)
                 {
-                    // We are the first to request this block
-                    m_volume_request.Write(block_request);
-                }
-                sw_get_wait?.Stop();
+                    Logging.Log.WriteExplicitMessage(LOGTAG, "BlockCacheGet", "Requesting block {0} from volume {1}", block_request.BlockID, block_request.VolumeID);
 
-                return new_tcs.Task.ContinueWith(t =>
+                    // We are the first to request this block
+                    await m_volume_request.WriteAsync(block_request).ConfigureAwait(false);
+
+                    sw_get_wait?.Stop();
+
+                    // Add a timeout monitor
+                    using var tcs1 = new CancellationTokenSource();
+                    var t = await Task.WhenAny(Task.Delay(TimeSpan.FromMinutes(5), tcs1.Token), new_tcs.Task).ConfigureAwait(false);
+                    if (t != new_tcs.Task)
+                        Logging.Log.WriteWarningMessage(LOGTAG, "BlockRequestTimeout", null, "Block request for block {0} has been in flight for over 5 minutes. This may be a deadlock.", block_request.BlockID);
+                }
+                else
                 {
-                    if (t.IsCompletedSuccessfully)
-                        CheckCounts(block_request);
-                    return t.Result;
-                });
+                    sw_get_wait?.Stop();
+                }
+
+                return await new_tcs.Task;
             }
 
             /// <summary>
@@ -246,22 +314,31 @@ namespace Duplicati.Library.Main.Operation.Restore
             /// removed, the requester will be given a `Task` that will be
             /// completed when the block is available.
             /// </summary>
-            /// <param name="key"></param>
-            /// <param name="value"></param>
+            /// <param name="blockRequest">The block request related to the value.</param>
+            /// <param name="value">The byte[] buffer holding the block data.</param>
             public void Set(BlockRequest blockRequest, byte[] value)
             {
-                m_block_cache?.Set(blockRequest.BlockID, value);
+                Logging.Log.WriteExplicitMessage(LOGTAG, "BlockCacheSet", "Setting block {0} in cache", blockRequest.BlockID);
+
+                sw_set_set?.Start();
+                m_block_cache.Set(blockRequest.BlockID, value);
+                sw_set_set?.Stop();
 
                 // Notify any waiters that the block is available.
+                sw_set_wake_get?.Start();
                 if (m_waiters.TryRemove(blockRequest.BlockID, out var tcs))
                 {
+                    sw_set_wake_get?.Stop();
+                    sw_set_wake_set?.Start();
                     tcs.SetResult(value);
+                    sw_set_wake_set?.Stop();
                 }
+                sw_set_wake_get?.Stop();
 
                 sw_cacheevict?.Start();
-                if (m_block_cache?.Count * m_options.Blocksize > m_options.RestoreCacheMax)
+                if (m_block_cache.Count > m_options.RestoreCacheMax)
                 {
-                    m_block_cache?.Compact(m_options.RestoreCacheEvict);
+                    m_block_cache.Compact(m_options.RestoreCacheMax == 0 ? 1.0 : m_options.RestoreCacheEvict);
                 }
                 sw_cacheevict?.Stop();
             }
@@ -294,7 +371,12 @@ namespace Duplicati.Library.Main.Operation.Restore
                 {
                     var blocks = m_blockcount.Where(x => x.Value != 0).Select(x => x.Key).ToArray();
                     var blockids = string.Join(", ", blocks);
-                    Logging.Log.WriteWarningMessage(LOGTAG, "BlockCountError", null, $"Block count in SleepableDictionarys block table is not zero: {blockcount}{Environment.NewLine}");//Blocks: {blockids}");
+                    Logging.Log.WriteWarningMessage(LOGTAG, "BlockCountError", null, $"Block count in SleepableDictionarys block table is not zero: {blockcount}{Environment.NewLine}");
+                }
+
+                if (m_active_readers.Count > 0)
+                {
+                    Logging.Log.WriteWarningMessage(LOGTAG, "BlockCountError", null, $"There are still {m_active_readers.Count} files being read by {m_active_readers.Sum(x => x.Value)} readers");
                 }
 
                 if (volumecount != 0)
@@ -306,7 +388,13 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                 if (m_options.InternalProfiling)
                 {
-                    Logging.Log.WriteProfilingMessage(LOGTAG, "InternalTimings", null, $"Sleepable dictionary - CheckCounts: {sw_checkcounts.ElapsedMilliseconds}ms, Get wait: {sw_get_wait.ElapsedMilliseconds}ms, Cache evict: {sw_cacheevict.ElapsedMilliseconds}ms");
+                    Logging.Log.WriteProfilingMessage(LOGTAG, "InternalTimings", $"Sleepable dictionary - CheckCounts: {sw_checkcounts.ElapsedMilliseconds}ms, Get wait: {sw_get_wait.ElapsedMilliseconds}ms, Set set: {sw_set_set.ElapsedMilliseconds}ms, Set wake get: {sw_set_wake_get.ElapsedMilliseconds}ms, Set wake set: {sw_set_wake_set.ElapsedMilliseconds}ms, Cache evict: {sw_cacheevict.ElapsedMilliseconds}ms");
+                }
+
+                if (m_block_cache.Count > 0)
+                {
+                    Logging.Log.WriteWarningMessage(LOGTAG, "BlockCacheMismatch", null, $"Internal Block cache is not empty: {m_block_cache.Count}");
+                    Logging.Log.WriteWarningMessage(LOGTAG, "BlockCacheMismatch", null, $"Block counts in cache ({m_blockcount.Count}): {string.Join(", ", m_blockcount.Select(x => x.Value))}");
                 }
             }
 
@@ -331,11 +419,12 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// accessing the cache for the blocks, and writing the resulting
         /// blocks back to the `FileProcessor`.
         /// </summary>
+        /// <param name="channels">The named channels for the restore operation.</param>
         /// <param name="db">The database holding information about how many of each block this restore requires.</param>
         /// <param name="options">The restore options.</param>
         /// <param name="fp_requests">The channels for reading block requests from the `FileProcessor`.</param>
         /// <param name="fp_responses">The channels for writing block responses back to the `FileProcessor`.</param>
-        public static Task Run(Channels channels, LocalRestoreDatabase db, Options options, IChannel<BlockRequest>[] fp_requests, IChannel<byte[]>[] fp_responses)
+        public static Task Run(Channels channels, LocalRestoreDatabase db, Options options, IChannel<BlockRequest>[] fp_requests, IChannel<Task<byte[]>>[] fp_responses)
         {
             return AutomationExtensions.RunTask(
             new
@@ -372,7 +461,7 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                         if (options.InternalProfiling)
                         {
-                            Logging.Log.WriteProfilingMessage(LOGTAG, "InternalTimings", null, $"Volume consumer - Read: {sw_read.ElapsedMilliseconds}ms, Set: {sw_set.ElapsedMilliseconds}ms");
+                            Logging.Log.WriteProfilingMessage(LOGTAG, "InternalTimings", $"Volume consumer - Read: {sw_read.ElapsedMilliseconds}ms, Set: {sw_set.ElapsedMilliseconds}ms");
                         }
 
                         // Cancel any remaining readers - although there shouldn't be any.
@@ -380,10 +469,12 @@ namespace Duplicati.Library.Main.Operation.Restore
                     }
                     catch (Exception ex)
                     {
-                        Logging.Log.WriteWarningMessage(LOGTAG, "VolumeConsumerError", ex, "Error in volume consumer");
+                        Logging.Log.WriteErrorMessage(LOGTAG, "VolumeConsumerError", ex, "Error in volume consumer");
+                        self.Input.Retire();
 
                         // Cancel any remaining readers - although there shouldn't be any.
                         cache.CancelAll();
+                        cache.Retire();
                     }
                 });
 
@@ -405,17 +496,17 @@ namespace Duplicati.Library.Main.Operation.Restore
                             {
                                 sw_cache?.Start();
                                 // Target file already had the block.
-                                cache.CheckCounts(block_request);
+                                await cache.CheckCounts(block_request).ConfigureAwait(false);
                                 sw_cache?.Stop();
                             }
                             else
                             {
                                 sw_get?.Start();
-                                var data = await cache.Get(block_request).ConfigureAwait(false);
+                                var datatask = cache.Get(block_request);
                                 sw_get?.Stop();
 
                                 sw_resp?.Start();
-                                await res.WriteAsync(data).ConfigureAwait(false);
+                                await res.WriteAsync(datatask).ConfigureAwait(false);
                                 sw_resp?.Stop();
                             }
                         }
@@ -426,9 +517,16 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                         if (options.InternalProfiling)
                         {
-                            Logging.Log.WriteProfilingMessage(LOGTAG, "InternalTimings", null, $"Block handler - Req: {sw_req.ElapsedMilliseconds}ms, Resp: {sw_resp.ElapsedMilliseconds}ms, Cache: {sw_cache.ElapsedMilliseconds}ms, Get: {sw_get.ElapsedMilliseconds}ms");
+                            Logging.Log.WriteProfilingMessage(LOGTAG, "InternalTimings", $"Block handler - Req: {sw_req.ElapsedMilliseconds}ms, Resp: {sw_resp.ElapsedMilliseconds}ms, Cache: {sw_cache.ElapsedMilliseconds}ms, Get: {sw_get.ElapsedMilliseconds}ms");
                         }
 
+                        cache.Retire();
+                    }
+                    catch (Exception ex)
+                    {
+                        Logging.Log.WriteErrorMessage(LOGTAG, "BlockHandlerError", ex, "Error in block handler");
+                        req.Retire();
+                        res.Retire();
                         cache.Retire();
                     }
                 })).ToArray();

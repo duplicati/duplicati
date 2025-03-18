@@ -19,12 +19,9 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
+using Azure;
+using Azure.Storage.Blobs.Models;
 using Duplicati.Library.Interface;
-using Microsoft.Azure.Storage.Shared.Protocol;
-using System.Collections.Generic;
-using System.IO;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Duplicati.Library.Backend.AzureBlob
 {
@@ -77,33 +74,22 @@ namespace Duplicati.Library.Backend.AzureBlob
             {
                 throw new UserInformationException(Strings.AzureBlobBackend.NoAccessKeyOrSasToken, "AzureNoAccessKeyOrSasToken");
             }
-
-
+            
             _azureBlob = new AzureBlobWrapper(storageAccountName, accessKey, sasToken, containerName);
         }
 
-        public string DisplayName
-        {
-            get { return Strings.AzureBlobBackend.DisplayName; }
-        }
+        public string DisplayName => Strings.AzureBlobBackend.DisplayName;
 
-        public string ProtocolKey
-        {
-            get { return "azure"; }
-        }
+        public string ProtocolKey => "azure";
 
-        public IEnumerable<IFileEntry> List()
-        {
-            return _azureBlob.ListContainerEntries();
-        }
+        public IAsyncEnumerable<IFileEntry> ListAsync(CancellationToken cancelToken)
+            => _azureBlob.ListContainerEntriesAsync(cancelToken);
 
         public async Task PutAsync(string remotename, string localname, CancellationToken cancelToken)
         {
-            using (var fs = File.Open(localname,
-                FileMode.Open, FileAccess.Read, FileShare.Read))
-            {
-                await PutAsync(remotename, fs, cancelToken);
-            }
+            await using var fs = File.Open(localname,
+                FileMode.Open, FileAccess.Read, FileShare.Read);
+            await PutAsync(remotename, fs, cancelToken).ConfigureAwait(false);
         }
 
         public Task PutAsync(string remotename, Stream input, CancellationToken cancelToken)
@@ -113,12 +99,10 @@ namespace Duplicati.Library.Backend.AzureBlob
 
         public async Task GetAsync(string remotename, string localname, CancellationToken cancellationToken)
         {
-            using (var fs = File.Open(localname,
+            await using var fs = File.Open(localname,
                 FileMode.Create, FileAccess.Write,
-                FileShare.None))
-            {
-                await GetAsync(remotename, fs, cancellationToken).ConfigureAwait(false);
-            }
+                FileShare.None);
+            await GetAsync(remotename, fs, cancellationToken).ConfigureAwait(false);
         }
 
         public Task GetAsync(string remotename, Stream output, CancellationToken cancellationToken)
@@ -161,42 +145,38 @@ namespace Duplicati.Library.Backend.AzureBlob
             }
         }
 
-        public string Description
-        {
-            get
-            {
-                return Strings.AzureBlobBackend.Description_v2;
-            }
-        }
+        public string Description => Strings.AzureBlobBackend.DescriptionV2;
 
         public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(_azureBlob.DnsNames);
 
         public Task TestAsync(CancellationToken cancellationToken)
-        {
-            return WrapWithExceptionHandler(Task.Run(() => this.TestList()));
-        }
+            => this.TestListAsync(cancellationToken);
 
         public Task CreateFolderAsync(CancellationToken cancellationToken)
         {
             return WrapWithExceptionHandler(_azureBlob.AddContainerAsync(cancellationToken));
         }
-
+       
+        /// <summary>
+        /// Wraps the task with exception handling
+        /// </summary>
         private async Task WrapWithExceptionHandler(Task task)
         {
             try
             {
                 await task.ConfigureAwait(false);
             }
-            catch (Microsoft.WindowsAzure.Storage.StorageException e)
-                when (e.RequestInformation.HttpStatusCode == 404
-                || e.RequestInformation.HttpStatusMessage == StorageErrorCodeStrings.ResourceNotFound)
+            catch (RequestFailedException e)
+                when (e.Status == 404
+                      || e.ErrorCode == BlobErrorCode.BlobNotFound
+                      || e.ErrorCode == BlobErrorCode.ResourceNotFound)
             {
                 throw new FileMissingException(e.Message, e);
             }
-            catch (Microsoft.WindowsAzure.Storage.StorageException e)
-                when (e.RequestInformation.HttpStatusMessage == StorageErrorCodeStrings.ContainerNotFound
-                || e.RequestInformation.HttpStatusMessage == StorageErrorCodeStrings.ContainerBeingDeleted
-                || e.RequestInformation.HttpStatusMessage == StorageErrorCodeStrings.ContainerDisabled)
+            catch (RequestFailedException e)
+                when (e.ErrorCode == BlobErrorCode.ContainerNotFound
+                      || e.ErrorCode == BlobErrorCode.ContainerBeingDeleted
+                      || e.ErrorCode == BlobErrorCode.ContainerDisabled)
             {
                 throw new FolderMissingException(e.Message, e);
             }

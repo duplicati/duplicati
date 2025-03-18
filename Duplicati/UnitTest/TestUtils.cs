@@ -24,25 +24,17 @@ using System.IO;
 using System.Collections.Generic;
 using Duplicati.Library.Utility;
 using System.Linq;
-using Duplicati.Library.Logging;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Library.Common.IO;
 using NUnit.Framework;
-using System.Runtime.InteropServices;
-using Duplicati.Library.Common;
 using Duplicati.Library.Interface;
 
 namespace Duplicati.UnitTest
 {
     public static class TestUtils
     {
-        /// <summary>
-        /// The log tag
-        /// </summary>
-        private static readonly string LOGTAG = Library.Logging.Log.LogTagFromType(typeof(TestUtils));
-
         public static Dictionary<string, string> DefaultOptions
         {
             get
@@ -159,22 +151,6 @@ namespace Duplicati.UnitTest
 
             if (timestampfailures > 20)
                 Console.WriteLine("Encountered additional {0} timestamp errors!", timestampfailures);
-        }
-
-        /// <summary>
-        /// Returns the index of a given string, using the file system case sensitivity
-        /// </summary>
-        /// <returns>The index of the entry or -1 if no entry was found</returns>
-        /// <param name='lst'>The list to search</param>
-        /// <param name='m'>The string to find</param>
-        private static int IndexOf(List<string> lst, string m)
-        {
-            StringComparison sc = Duplicati.Library.Utility.Utility.ClientFilenameStringComparison;
-            for (int i = 0; i < lst.Count; i++)
-                if (lst[i].Equals(m, sc))
-                    return i;
-
-            return -1;
         }
 
         /// <summary>
@@ -315,6 +291,9 @@ namespace Duplicati.UnitTest
             }
             Assert.AreEqual(0, results.Errors.Count(), "{0} errors:\n{1}", operation, string.Join("\n", results.Errors));
             Assert.AreEqual(0, results.Warnings.Count(), "{0} warnings:\n{1}", operation, string.Join("\n", results.Warnings));
+
+            if (results is ITestResults testResults)
+                Assert.IsFalse(testResults.Verifications.Any(p => p.Value.Any()), "{0} verifications:\n{1}", operation, string.Join("\n", testResults.Verifications.Select(p => string.Join("\n", p.Value))));
         }
     }
 }

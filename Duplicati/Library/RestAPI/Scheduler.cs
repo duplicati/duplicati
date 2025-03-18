@@ -143,7 +143,7 @@ namespace Duplicati.Server
             get
             {
                 lock (m_lock)
-                    return m_schedule.ToList();
+                    return (m_schedule ?? []).ToList();
             }
         }
 
@@ -152,7 +152,7 @@ namespace Duplicati.Server
         /// </summary>
         public List<Runner.IRunnerData> WorkerQueue
         {
-            get { return (from t in m_worker.CurrentTasks where t != null select t).ToList(); }
+            get { return m_worker?.CurrentTasks?.Where(t => t != null)?.ToList() ?? []; }
         }
 
         /// <summary>

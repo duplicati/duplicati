@@ -21,17 +21,17 @@
 
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
-using Duplicati.Library.Utility;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace Duplicati.Library.Backend
 {
-    public class Idrivee2Backend : IBackend, IStreamingBackend
+    public class Idrivee2Backend : IBackend, IStreamingBackend, IFolderEnabledBackend
     {
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<Idrivee2Backend>();
 
@@ -80,7 +80,6 @@ namespace Duplicati.Library.Backend
 
 
             m_s3Client = new S3AwsClient(accessKeyId, accessKeySecret, null, host, null, true, false, options);
-
         }
 
         public string GetRegionEndpoint(string url)
@@ -125,17 +124,10 @@ namespace Duplicati.Library.Backend
 
         public bool SupportsStreaming => true;
 
-
-        public IEnumerable<IFileEntry> List()
+        public async IAsyncEnumerable<IFileEntry> ListAsync([EnumeratorCancellation] CancellationToken cancelToken)
         {
-            foreach (IFileEntry file in Connection.ListBucket(m_bucket, m_prefix))
-            {
-                ((FileEntry)file).Name = file.Name.Substring(m_prefix.Length);
-                if (file.Name.StartsWith("/", StringComparison.Ordinal) && !m_prefix.StartsWith("/", StringComparison.Ordinal))
-                    ((FileEntry)file).Name = file.Name.Substring(1);
-
+            await foreach (IFileEntry file in Connection.ListBucketAsync(m_bucket, m_prefix, false, cancelToken).ConfigureAwait(false))
                 yield return file;
-            }
         }
 
         public async Task PutAsync(string remotename, string localname, CancellationToken cancelToken)
@@ -189,10 +181,7 @@ namespace Duplicati.Library.Backend
         }
 
         public Task TestAsync(CancellationToken cancelToken)
-        {
-            this.TestList();
-            return Task.CompletedTask;
-        }
+            => this.TestListAsync(cancelToken);
 
         public Task CreateFolderAsync(CancellationToken cancelToken)
         {
@@ -230,5 +219,20 @@ namespace Duplicati.Library.Backend
             //AWS SDK encodes the filenames correctly
             return m_prefix + name;
         }
+
+        /// <inheritdoc/>
+        public IAsyncEnumerable<IFileEntry> ListAsync(string path, CancellationToken cancellationToken)
+        {
+            var filterPath = GetFullKey(path);
+            if (!string.IsNullOrWhiteSpace(filterPath))
+                filterPath = Util.AppendDirSeparator(filterPath, "/");
+
+            return m_s3Client.ListBucketAsync(m_bucket, filterPath, true, cancellationToken);
+        }
+
+
+        /// <inheritdoc/>
+        public Task<IFileEntry> GetEntryAsync(string path, CancellationToken cancellationToken)
+            => Task.FromResult<IFileEntry>(null);
     }
 }

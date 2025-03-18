@@ -104,6 +104,16 @@ namespace Duplicati.Library.Compression.ZipCompression
         private readonly IZipArchive m_archive;
 
         /// <summary>
+        /// The fallback archive to use, if any
+        /// </summary>
+        private IZipArchive? m_fallbackArchive = null;
+
+        /// <summary>
+        /// The parameters used to create the archive
+        /// </summary>
+        private readonly (Stream Stream, ParsedZipOptions Options, CompressionLibrary Library) m_creationParams;
+
+        /// <summary>
         /// Default constructor, used to read file extension and supported commands
         /// </summary>
         public FileArchiveZip() { m_archive = null!; }
@@ -142,6 +152,7 @@ namespace Duplicati.Library.Compression.ZipCompression
             var unittestMode = Utility.Utility.ParseBoolOption(options.AsReadOnly(), "unittest-mode");
             var parsedOptions = new ParsedZipOptions(compressionLevel, compressionType, usingZip64, unittestMode);
 
+            var userCompressionLibrary = compressionLibrary;
             if (compressionLibrary == CompressionLibrary.Auto)
             {
                 if (compressionType != CompressionType.Deflate || usingZip64)
@@ -165,6 +176,7 @@ namespace Duplicati.Library.Compression.ZipCompression
             }
 
             m_archive = archive ?? new SharpCompressZipArchive(stream, mode, parsedOptions);
+            m_creationParams = (stream, parsedOptions, userCompressionLibrary);
         }
 
         #region IFileArchive Members
@@ -219,7 +231,9 @@ namespace Duplicati.Library.Compression.ZipCompression
 
         public void Dispose()
         {
-            m_archive.Dispose();
+            if (m_fallbackArchive == null)
+                m_archive.Dispose();
+            m_fallbackArchive?.Dispose();
         }
 
         public string[] ListFiles(string prefix)
@@ -229,7 +243,38 @@ namespace Duplicati.Library.Compression.ZipCompression
             => m_archive.ListFilesWithSize(prefix);
 
         public Stream? OpenRead(string file)
-            => m_archive.OpenRead(file);
+        {
+            // If we have started the fallback archive, we should continue using it
+            if (m_fallbackArchive != null)
+                return m_fallbackArchive.OpenRead(file);
+
+            try
+            {
+                return m_archive.OpenRead(file);
+            }
+            catch (Exception ex)
+            {
+                if (m_creationParams.Library == CompressionLibrary.Auto && m_archive is not SharpCompressZipArchive && m_creationParams.Stream.CanSeek)
+                {
+                    Log.WriteWarningMessage(LOGTAG, "CompressionReadErrorFallback", ex, "Failed to open file with built-in ZIP archive, falling back to SharpCompress");
+
+                    try
+                    {
+                        m_creationParams.Item1.Seek(0, SeekOrigin.Begin);
+                        m_archive.Dispose();
+                    }
+                    catch
+                    {
+
+                    }
+
+                    m_fallbackArchive = new SharpCompressZipArchive(m_creationParams.Stream, ArchiveMode.Read, m_creationParams.Options);
+                    return m_fallbackArchive.OpenRead(file);
+                }
+
+                throw;
+            }
+        }
 
         public DateTime GetLastWriteTime(string file)
             => m_archive.GetLastWriteTime(file);

@@ -1,22 +1,22 @@
 // Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
-// 
-// Permission is hereby granted, free of charge, to any person obtaining a 
-// copy of this software and associated documentation files (the "Software"), 
-// to deal in the Software without restriction, including without limitation 
-// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
-// and/or sell copies of the Software, and to permit persons to whom the 
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the "Software"),
+// to deal in the Software without restriction, including without limitation
+// the rights to use, copy, modify, merge, publish, distribute, sublicense,
+// and/or sell copies of the Software, and to permit persons to whom the
 // Software is furnished to do so, subject to the following conditions:
-// 
-// The above copyright notice and this permission notice shall be included in 
+//
+// The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
-// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
 using System;
@@ -102,7 +102,7 @@ namespace Duplicati.Library.Main.Operation
                 };
         }
 
-        public void Run(string[] paths, IBackendManager backendManager, Library.Utility.IFilter filter)
+        public async Task RunAsync(string[] paths, IBackendManager backendManager, Library.Utility.IFilter filter)
         {
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_Begin);
 
@@ -126,8 +126,9 @@ namespace Duplicati.Library.Main.Operation
                     db = new LocalRestoreDatabase(tmpdb);
                     m_result.RecreateDatabaseResults = new RecreateDatabaseResults(m_result);
                     using (new Logging.Timer(LOGTAG, "RecreateTempDbForRestore", "Recreate temporary database for restore"))
-                        new RecreateDatabaseHandler(m_options, (RecreateDatabaseResults)m_result.RecreateDatabaseResults)
-                            .DoRun(backendManager, db, false, filter, filelistfilter, null).Await();
+                        await new RecreateDatabaseHandler(m_options, (RecreateDatabaseResults)m_result.RecreateDatabaseResults)
+                            .DoRunAsync(backendManager, db, false, filter, filelistfilter, null)
+                            .ConfigureAwait(false);
 
                     if (!m_options.SkipMetadata)
                         ApplyStoredMetadata(m_options, new RestoreHandlerMetadataStorage());
@@ -139,9 +140,9 @@ namespace Duplicati.Library.Main.Operation
                 }
 
                 if (m_options.RestoreLegacy)
-                    DoRun(backendManager, db, filter, m_result.TaskControl.ProgressToken).Await();
+                    await DoRunAsync(backendManager, db, filter, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
                 else
-                    DoRunNew(backendManager, db, filter, m_result.TaskControl.ProgressToken).Await();
+                    await DoRunNewAsync(backendManager, db, filter, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
 
                 db.WriteResults();
             }
@@ -307,7 +308,7 @@ namespace Duplicati.Library.Main.Operation
         /// </summary>
         /// <param name="database">The database containing information about the restore.</param>
         /// <param name="filter">The filter of which files to restore.</param>
-        private async Task DoRunNew(IBackendManager backendManager, LocalRestoreDatabase database, Library.Utility.IFilter filter, CancellationToken cancellationToken)
+        private async Task DoRunNewAsync(IBackendManager backendManager, LocalRestoreDatabase database, Library.Utility.IFilter filter, CancellationToken cancellationToken)
         {
             // Perform initial setup
             Utility.UpdateOptionsFromDb(database, m_options);
@@ -317,29 +318,35 @@ namespace Duplicati.Library.Main.Operation
             if (!m_options.NoBackendverification)
             {
                 m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_PreRestoreVerify);
-                await FilelistProcessor.VerifyRemoteList(backendManager, m_options, database, m_result.BackendWriter, false, null).ConfigureAwait(false);
+                await FilelistProcessor.VerifyRemoteList(backendManager, m_options, database, m_result.BackendWriter, latestVolumesOnly: false, verifyMode: FilelistProcessor.VerifyMode.VerifyOnly, null).ConfigureAwait(false);
             }
 
             // Prepare the block and file list and create the directory structure
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_CreateFileList);
-            PrepareBlockAndFileList(database, m_options, filter, m_result);
+            using (new Logging.Timer(LOGTAG, "PrepareBlockList", "PrepareBlockList"))
+                PrepareBlockAndFileList(database, m_options, filter, m_result);
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_CreateTargetFolders);
-            await CreateDirectoryStructure(database, m_options, m_result).ConfigureAwait(false);
+            using (new Logging.Timer(LOGTAG, "CreateDirectory", "CreateDirectory"))
+                await CreateDirectoryStructure(database, m_options, m_result).ConfigureAwait(false);
             database.SetResult(m_result);
 
+            using var setup_log_timer = new Logging.Timer(LOGTAG, "RestoreNetworkSetup", "RestoreNetworkSetup");
             // Create the channels between BlockManager and FileProcessor
-            var fileprocessor_requests = new Channel<Restore.BlockRequest>[m_options.RestoreFileProcessors].Select(_ => ChannelManager.CreateChannel<Restore.BlockRequest>(buffersize: Restore.Channels.BufferSize)).ToArray();
-            var fileprocessor_responses = new Channel<byte[]>[m_options.RestoreFileProcessors].Select(_ => ChannelManager.CreateChannel<byte[]>(buffersize: Restore.Channels.BufferSize)).ToArray();
+            Restore.Channels.BufferSize = m_options.RestoreChannelBufferSize;
+            var fileprocessor_requests = Enumerable.Range(0, m_options.RestoreFileProcessors).Select(_ => ChannelManager.CreateChannel<Restore.BlockRequest>(buffersize: Restore.Channels.BufferSize)).ToArray();
+            var fileprocessor_responses = Enumerable.Range(0, m_options.RestoreFileProcessors).Select(_ => ChannelManager.CreateChannel<Task<byte[]>>(buffersize: Restore.Channels.BufferSize)).ToArray();
 
             // Create the process network
             Restore.Channels channels = new();
             var filelister = Restore.FileLister.Run(channels, database, m_options, m_result);
             var fileprocessors = Enumerable.Range(0, m_options.RestoreFileProcessors).Select(i => Restore.FileProcessor.Run(channels, database, fileprocessor_requests[i], fileprocessor_responses[i], m_options, m_result)).ToArray();
             var blockmanager = Restore.BlockManager.Run(channels, database, m_options, fileprocessor_requests, fileprocessor_responses);
-            var volumecache = Restore.VolumeManager.Run(channels, database, backendManager, m_options, m_result);
-            var volumedownloaders = Enumerable.Range(0, m_options.RestoreVolumeDownloaders).Select(i => Restore.VolumeDownloader.Run(channels, database, m_options, m_result)).ToArray();
-            var volumedecryptors = Enumerable.Range(0, m_options.RestoreVolumeDecryptors).Select(i => Restore.VolumeDecryptor.Run(channels, m_options)).ToArray();
+            var volumecache = Restore.VolumeManager.Run(channels, m_options);
+            var volumedownloaders = Enumerable.Range(0, m_options.RestoreVolumeDownloaders).Select(i => Restore.VolumeDownloader.Run(channels, database, backendManager, m_options, m_result)).ToArray();
+            var volumedecryptors = Enumerable.Range(0, m_options.RestoreVolumeDecryptors).Select(i => Restore.VolumeDecryptor.Run(channels, backendManager, m_options)).ToArray();
             var volumedecompressors = Enumerable.Range(0, m_options.RestoreVolumeDecompressors).Select(i => Restore.VolumeDecompressor.Run(channels, m_options)).ToArray();
+
+            setup_log_timer.Dispose();
 
             // Wait for the network to complete
             Task[] all =
@@ -354,6 +361,7 @@ namespace Duplicati.Library.Main.Operation
                 ];
 
             // Start the progress updater
+            using (new Logging.Timer(LOGTAG, "RestoreNetworkWait", "RestoreNetworkWait"))
             using (var kill_updater = new CancellationTokenSource())
             {
                 var updater = Task.Run(async () =>
@@ -396,7 +404,7 @@ namespace Duplicati.Library.Main.Operation
 
             // Drop the temp tables
             database.DropRestoreTable();
-            await backendManager.WaitForEmptyAsync(database, null, CancellationToken.None).ConfigureAwait(false);
+            await backendManager.WaitForEmptyAsync(database, null, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
 
             // Report that the restore is complete
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_Complete);
@@ -409,7 +417,7 @@ namespace Duplicati.Library.Main.Operation
         /// </summary>
         /// <param name="database">The database containing information about the restore.</param>
         /// <param name="filter">The filter of which files to restore.</param>
-        private async Task DoRun(IBackendManager backendManager, LocalRestoreDatabase database, Library.Utility.IFilter filter, CancellationToken cancellationToken)
+        private async Task DoRunAsync(IBackendManager backendManager, LocalRestoreDatabase database, Library.Utility.IFilter filter, CancellationToken cancellationToken)
         {
             //In this case, we check that the remote storage fits with the database.
             //We can then query the database and find the blocks that we need to do the restore
@@ -424,7 +432,7 @@ namespace Duplicati.Library.Main.Operation
                 if (!m_options.NoBackendverification)
                 {
                     m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_PreRestoreVerify);
-                    await FilelistProcessor.VerifyRemoteList(backendManager, m_options, database, m_result.BackendWriter, false, null).ConfigureAwait(false);
+                    await FilelistProcessor.VerifyRemoteList(backendManager, m_options, database, m_result.BackendWriter, latestVolumesOnly: false, verifyMode: FilelistProcessor.VerifyMode.VerifyOnly, null).ConfigureAwait(false);
                 }
 
                 //Figure out what files are to be patched, and what blocks are needed
@@ -489,28 +497,29 @@ namespace Duplicati.Library.Main.Operation
 
                 var brokenFiles = new List<string>();
 
-                await foreach (var (tmpfile, _, _, name) in backendManager.GetFilesOverlappedAsync(volumes, cancellationToken))
-                {
-                    try
+                using (new Logging.Timer(LOGTAG, "PatchWithBlocklist", "PatchWithBlocklist"))
+                    await foreach (var (tmpfile, _, _, name) in backendManager.GetFilesOverlappedAsync(volumes, cancellationToken).ConfigureAwait(false))
                     {
-                        if (!await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
+                        try
                         {
-                            await backendManager.WaitForEmptyAsync(database, null, cancellationToken).ConfigureAwait(false);
-                            return;
-                        }
+                            if (!await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
+                            {
+                                await backendManager.WaitForEmptyAsync(database, null, cancellationToken).ConfigureAwait(false);
+                                return;
+                            }
 
-                        using (tmpfile)
-                        using (var blocks = new BlockVolumeReader(GetCompressionModule(name), tmpfile, m_options))
-                            PatchWithBlocklist(database, blocks, m_options, m_result, m_blockbuffer, metadatastorage);
+                            using (tmpfile)
+                            using (var blocks = new BlockVolumeReader(GetCompressionModule(name), tmpfile, m_options))
+                                PatchWithBlocklist(database, blocks, m_options, m_result, m_blockbuffer, metadatastorage);
+                        }
+                        catch (Exception ex)
+                        {
+                            brokenFiles.Add(name);
+                            Logging.Log.WriteErrorMessage(LOGTAG, "PatchingFailed", ex, "Failed to patch with remote file: \"{0}\", message: {1}", name, ex.Message);
+                            if (ex is System.Threading.ThreadAbortException)
+                                throw;
+                        }
                     }
-                    catch (Exception ex)
-                    {
-                        brokenFiles.Add(name);
-                        Logging.Log.WriteErrorMessage(LOGTAG, "PatchingFailed", ex, "Failed to patch with remote file: \"{0}\", message: {1}", name, ex.Message);
-                        if (ex is System.Threading.ThreadAbortException)
-                            throw;
-                    }
-                }
 
                 var fileErrors = 0L;
 

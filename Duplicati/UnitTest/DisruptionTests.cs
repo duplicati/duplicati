@@ -25,6 +25,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Logging;
 using Duplicati.Library.Main;
 using Duplicati.Library.Main.Database;
 using Duplicati.Library.Main.Volumes;
@@ -50,11 +51,12 @@ namespace Duplicati.UnitTest
             }
         }
 
-        private async Task<IBackupResults> RunPartialBackup(Controller controller)
+        private async Task<(IBackupResults Result, List<string> ModifiedFiles)> RunPartialBackup(Controller controller)
         {
             this.ModifySourceFiles();
 
             var stopped = new TaskCompletionSource<bool>();
+            var modifiedFiles = new List<string>();
             controller.OnOperationStarted = r =>
             {
                 var pv = r as ITaskControlProvider;
@@ -63,7 +65,8 @@ namespace Duplicati.UnitTest
 #if DEBUG
                 pv.TaskControl.TestMethodCallback = (path) =>
                 {
-                    if (path.EndsWith(this.fileSizes[2] + "MB"))
+                    modifiedFiles.Add(path);
+                    if (modifiedFiles.Count == 3)
                     {
                         Thread.Sleep(500);
                         controller.Stop();
@@ -80,7 +83,7 @@ namespace Duplicati.UnitTest
             if (t != stopped.Task)
                 throw new Exception("Backup task completed before we could stop it");
 
-            return await backupTask.ConfigureAwait(false);
+            return (await backupTask.ConfigureAwait(false), modifiedFiles);
         }
 
         [SetUp]
@@ -121,7 +124,7 @@ namespace Duplicati.UnitTest
             // Run a partial backup.
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
-                IBackupResults backupResults = await this.RunPartialBackup(c).ConfigureAwait(false);
+                (var backupResults, _) = await this.RunPartialBackup(c).ConfigureAwait(false);
                 Assert.AreEqual(0, backupResults.Errors.Count());
                 Assert.AreEqual(1, backupResults.Warnings.Count());
             }
@@ -152,9 +155,7 @@ namespace Duplicati.UnitTest
             Dictionary<DateTime, int> backupTypeMap;
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
-                IPurgeFilesResults purgeResults = c.PurgeFiles(new Library.Utility.FilterExpression($"{this.DATAFOLDER}/*{this.fileSizes[0]}*"));
-                Assert.AreEqual(0, purgeResults.Errors.Count());
-                Assert.AreEqual(0, purgeResults.Warnings.Count());
+                TestUtils.AssertResults(c.PurgeFiles(new Library.Utility.FilterExpression($"{this.DATAFOLDER}/*{this.fileSizes[0]}*")));
 
                 List<IListResultFileset> filesets = c.List().Filesets.ToList();
                 Assert.AreEqual(2, filesets.Count);
@@ -178,9 +179,7 @@ namespace Duplicati.UnitTest
             // Run a repair and verify that the fileset file exists in the new dlist files.
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
-                IRepairResults repairResults = c.Repair();
-                Assert.AreEqual(0, repairResults.Errors.Count());
-                Assert.AreEqual(0, repairResults.Warnings.Count());
+                TestUtils.AssertResults(c.Repair());
 
                 List<IListResultFileset> filesets = c.List().Filesets.ToList();
                 Assert.AreEqual(2, filesets.Count);
@@ -217,9 +216,7 @@ namespace Duplicati.UnitTest
             DateTime firstBackupTime;
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
-                IBackupResults backupResults = c.Backup(new[] { this.DATAFOLDER });
-                Assert.AreEqual(0, backupResults.Errors.Count());
-                Assert.AreEqual(0, backupResults.Warnings.Count());
+                TestUtils.AssertResults(c.Backup(new[] { this.DATAFOLDER }));
                 firstBackupTime = c.List().Filesets.First().Time;
             }
 
@@ -230,9 +227,7 @@ namespace Duplicati.UnitTest
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
                 this.ModifySourceFiles();
-                IBackupResults backupResults = c.Backup(new[] { this.DATAFOLDER });
-                Assert.AreEqual(0, backupResults.Errors.Count());
-                Assert.AreEqual(0, backupResults.Warnings.Count());
+                TestUtils.AssertResults(c.Backup(new[] { this.DATAFOLDER }));
                 secondBackupTime = c.List().Filesets.First().Time;
             }
 
@@ -240,7 +235,7 @@ namespace Duplicati.UnitTest
             DateTime thirdBackupTime;
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
-                IBackupResults backupResults = await this.RunPartialBackup(c).ConfigureAwait(false);
+                (var backupResults, _) = await this.RunPartialBackup(c).ConfigureAwait(false);
                 Assert.AreEqual(0, backupResults.Errors.Count());
                 Assert.AreEqual(1, backupResults.Warnings.Count());
                 thirdBackupTime = c.List().Filesets.First().Time;
@@ -251,9 +246,7 @@ namespace Duplicati.UnitTest
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
                 options["keep-time"] = $"{(int)((DateTime.Now - firstBackupTime).TotalSeconds - (secondBackupTime - firstBackupTime).TotalSeconds / 2)}s";
-                IDeleteResults deleteResults = c.Delete();
-                Assert.AreEqual(0, deleteResults.Errors.Count());
-                Assert.AreEqual(0, deleteResults.Warnings.Count());
+                TestUtils.AssertResults(c.Delete());
 
                 List<IListResultFileset> filesets = c.List().Filesets.ToList();
                 Assert.AreEqual(2, filesets.Count);
@@ -267,7 +260,7 @@ namespace Duplicati.UnitTest
             // even when all the "recent" backups are partial.
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
-                IBackupResults backupResults = await this.RunPartialBackup(c).ConfigureAwait(false);
+                (var backupResults, _) = await this.RunPartialBackup(c).ConfigureAwait(false);
                 Assert.AreEqual(0, backupResults.Errors.Count());
                 Assert.AreEqual(1, backupResults.Warnings.Count());
                 DateTime fourthBackupTime = c.List().Filesets.First().Time;
@@ -275,9 +268,7 @@ namespace Duplicati.UnitTest
                 // Set the keep-time option so that the threshold lies after the most recent full backup
                 // and run the delete operation.
                 options["keep-time"] = "1s";
-                IDeleteResults deleteResults = c.Delete();
-                Assert.AreEqual(0, deleteResults.Errors.Count());
-                Assert.AreEqual(0, deleteResults.Warnings.Count());
+                TestUtils.AssertResults(c.Delete());
 
                 List<IListResultFileset> filesets = c.List().Filesets.ToList();
                 Assert.AreEqual(3, filesets.Count);
@@ -310,16 +301,14 @@ namespace Duplicati.UnitTest
             DateTime firstBackupTime;
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
-                IBackupResults backupResults = c.Backup(new[] { this.DATAFOLDER });
-                Assert.AreEqual(0, backupResults.Errors.Count());
-                Assert.AreEqual(0, backupResults.Warnings.Count());
+                TestUtils.AssertResults(c.Backup(new[] { this.DATAFOLDER }));
                 firstBackupTime = c.List().Filesets.First().Time;
             }
 
             // Run a partial backup.
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
-                IBackupResults backupResults = await this.RunPartialBackup(c).ConfigureAwait(false);
+                (var backupResults, _) = await this.RunPartialBackup(c).ConfigureAwait(false);
                 Assert.AreEqual(0, backupResults.Errors.Count());
                 Assert.AreEqual(1, backupResults.Warnings.Count());
             }
@@ -327,7 +316,7 @@ namespace Duplicati.UnitTest
             // Run a partial backup.
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
-                IBackupResults backupResults = await this.RunPartialBackup(c).ConfigureAwait(false);
+                (var backupResults, _) = await this.RunPartialBackup(c).ConfigureAwait(false);
                 Assert.AreEqual(0, backupResults.Errors.Count());
                 Assert.AreEqual(1, backupResults.Warnings.Count());
             }
@@ -337,9 +326,7 @@ namespace Duplicati.UnitTest
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
                 this.ModifySourceFiles();
-                IBackupResults backupResults = c.Backup(new[] { this.DATAFOLDER });
-                Assert.AreEqual(0, backupResults.Errors.Count());
-                Assert.AreEqual(0, backupResults.Warnings.Count());
+                TestUtils.AssertResults(c.Backup(new[] { this.DATAFOLDER }));
                 fourthBackupTime = c.List().Filesets.First().Time;
             }
 
@@ -347,7 +334,7 @@ namespace Duplicati.UnitTest
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
                 options["keep-versions"] = "2";
-                IBackupResults backupResults = await this.RunPartialBackup(c).ConfigureAwait(false);
+                (var backupResults, _) = await this.RunPartialBackup(c).ConfigureAwait(false);
                 Assert.AreEqual(0, backupResults.Errors.Count());
                 Assert.AreEqual(1, backupResults.Warnings.Count());
                 DateTime fifthBackupTime = c.List().Filesets.First().Time;
@@ -370,9 +357,7 @@ namespace Duplicati.UnitTest
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
                 this.ModifySourceFiles();
-                IBackupResults backupResults = c.Backup(new[] { this.DATAFOLDER });
-                Assert.AreEqual(0, backupResults.Errors.Count());
-                Assert.AreEqual(0, backupResults.Warnings.Count());
+                TestUtils.AssertResults(c.Backup(new[] { this.DATAFOLDER }));
                 DateTime sixthBackupTime = c.List().Filesets.First().Time;
 
                 // Since the last backup was full, we can now expect to have just the 2 most recent full backups.
@@ -404,16 +389,12 @@ namespace Duplicati.UnitTest
 
             // Run a full backup.
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
-            {
-                IBackupResults backupResults = c.Backup(new[] { this.DATAFOLDER });
-                Assert.AreEqual(0, backupResults.Errors.Count());
-                Assert.AreEqual(0, backupResults.Warnings.Count());
-            }
+                TestUtils.AssertResults(c.Backup(new[] { this.DATAFOLDER }));
 
             // Run a partial backup.
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
-                IBackupResults backupResults = await this.RunPartialBackup(c).ConfigureAwait(false);
+                (var backupResults, _) = await this.RunPartialBackup(c).ConfigureAwait(false);
                 Assert.AreEqual(0, backupResults.Errors.Count());
                 Assert.AreEqual(1, backupResults.Warnings.Count());
 
@@ -447,18 +428,14 @@ namespace Duplicati.UnitTest
             DateTime firstBackupTime;
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
-                IBackupResults backupResults = c.Backup(new[] { this.DATAFOLDER });
-                Assert.AreEqual(0, backupResults.Errors.Count());
-                Assert.AreEqual(0, backupResults.Warnings.Count());
+                TestUtils.AssertResults(c.Backup(new[] { this.DATAFOLDER }));
                 firstBackupTime = c.List().Filesets.First().Time;
 
                 List<IListResultFileset> filesets = c.List().Filesets.ToList();
                 Assert.AreEqual(1, filesets.Count);
 
                 this.ModifySourceFiles();
-                backupResults = c.Backup(new[] { this.DATAFOLDER });
-                Assert.AreEqual(0, backupResults.Errors.Count());
-                Assert.AreEqual(0, backupResults.Warnings.Count());
+                TestUtils.AssertResults(c.Backup(new[] { this.DATAFOLDER }));
                 DateTime secondBackupTime = c.List().Filesets.First().Time;
 
                 // Since the most recent backup is not considered in the retention logic, the only backup in the first time frame
@@ -477,7 +454,7 @@ namespace Duplicati.UnitTest
             DateTime thirdBackupTime;
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
-                IBackupResults backupResults = await this.RunPartialBackup(c).ConfigureAwait(false);
+                (var backupResults, _) = await this.RunPartialBackup(c).ConfigureAwait(false);
                 Assert.AreEqual(0, backupResults.Errors.Count());
                 Assert.AreEqual(1, backupResults.Warnings.Count());
                 thirdBackupTime = c.List().Filesets.First().Time;
@@ -500,9 +477,7 @@ namespace Duplicati.UnitTest
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
                 this.ModifySourceFiles();
-                IBackupResults backupResults = c.Backup(new[] { this.DATAFOLDER });
-                Assert.AreEqual(0, backupResults.Errors.Count());
-                Assert.AreEqual(0, backupResults.Warnings.Count());
+                TestUtils.AssertResults(c.Backup(new[] { this.DATAFOLDER }));
                 fourthBackupTime = c.List().Filesets.First().Time;
 
                 // Since the most recent backup is not considered in the retention logic, the third backup is the only backup
@@ -518,9 +493,7 @@ namespace Duplicati.UnitTest
                 Assert.AreEqual(BackupType.FULL_BACKUP, filesets[0].IsFullBackup);
 
                 this.ModifySourceFiles();
-                backupResults = c.Backup(new[] { this.DATAFOLDER });
-                Assert.AreEqual(0, backupResults.Errors.Count());
-                Assert.AreEqual(0, backupResults.Warnings.Count());
+                TestUtils.AssertResults(c.Backup(new[] { this.DATAFOLDER }));
                 DateTime fifthBackupTime = c.List().Filesets.First().Time;
 
                 // Since the most recent backup is not considered in the retention logic, we now have two backups in the
@@ -585,9 +558,7 @@ namespace Duplicati.UnitTest
             // Run a complete backup.
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
-                IBackupResults backupResults = c.Backup(new[] { this.DATAFOLDER });
-                Assert.AreEqual(0, backupResults.Errors.Count());
-                Assert.AreEqual(0, backupResults.Warnings.Count());
+                TestUtils.AssertResults(c.Backup(new[] { this.DATAFOLDER }));
 
                 Assert.AreEqual(1, c.List().Filesets.Count());
                 Assert.AreEqual(BackupType.FULL_BACKUP, c.List().Filesets.Single(x => x.Version == 0).IsFullBackup);
@@ -596,9 +567,11 @@ namespace Duplicati.UnitTest
             // Run a partial backup.
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
-                IBackupResults backupResults = await this.RunPartialBackup(c).ConfigureAwait(false);
+                (var backupResults, var modified) = await this.RunPartialBackup(c).ConfigureAwait(false);
                 Assert.AreEqual(0, backupResults.Errors.Count());
                 Assert.AreEqual(1, backupResults.Warnings.Count());
+                if (backupResults.ModifiedFiles == 0)
+                    throw new Exception($"No files were modified, likely the stop was issued too early, list is: {string.Join(", ", modified)}");
                 Assert.That(backupResults.ModifiedFiles, Is.GreaterThan(0), "No files were added, likely the stop was issued too early");
                 Assert.That(backupResults.ModifiedFiles, Is.LessThan(fileSizes.Length), "All files were added, likely the stop was issued too late");
 
@@ -612,14 +585,14 @@ namespace Duplicati.UnitTest
             Dictionary<string, string> restoreOptions = new Dictionary<string, string>(options) { ["restore-path"] = this.RESTOREFOLDER };
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, restoreOptions, null))
             {
-                IListResults lastResults = c.List("*");
-                string[] partialVersionFiles = lastResults.Files.Select(x => x.Path).Where(x => !Utility.IsFolder(x, File.GetAttributes)).ToArray();
+                var lastResults = c.List("*");
+                var partialVersionFiles = lastResults.Files.Select(x => x.Path).Where(x => !Utility.IsFolder(x, File.GetAttributes)).ToArray();
                 Assert.GreaterOrEqual(partialVersionFiles.Length, 1);
                 c.Restore(partialVersionFiles);
 
                 foreach (string filepath in partialVersionFiles)
                 {
-                    string filename = Path.GetFileName(filepath);
+                    var filename = Path.GetFileName(filepath);
                     TestUtils.AssertFilesAreEqual(filepath, Path.Combine(this.RESTOREFOLDER, filename ?? String.Empty), false, filename);
                 }
             }
@@ -628,9 +601,7 @@ namespace Duplicati.UnitTest
             File.Delete(this.DBFILE);
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
-                IRepairResults repairResults = c.Repair();
-                Assert.AreEqual(0, repairResults.Errors.Count());
-                Assert.AreEqual(0, repairResults.Warnings.Count());
+                TestUtils.AssertResults(c.Repair());
 
                 Assert.AreEqual(2, c.List().Filesets.Count());
                 Assert.AreEqual(BackupType.FULL_BACKUP, c.List().Filesets.Single(x => x.Version == 1).IsFullBackup);
@@ -640,9 +611,7 @@ namespace Duplicati.UnitTest
             // Run a complete backup. Listing the Filesets should include both full and partial backups.
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
-                IBackupResults backupResults = c.Backup(new[] { this.DATAFOLDER });
-                Assert.AreEqual(0, backupResults.Errors.Count());
-                Assert.AreEqual(0, backupResults.Warnings.Count());
+                TestUtils.AssertResults(c.Backup(new[] { this.DATAFOLDER }));
                 Assert.AreEqual(3, c.List().Filesets.Count());
 
                 Assert.AreEqual(BackupType.FULL_BACKUP, c.List().Filesets.Single(x => x.Version == 2).IsFullBackup);
@@ -654,13 +623,11 @@ namespace Duplicati.UnitTest
             restoreOptions["overwrite"] = "true";
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, restoreOptions, null))
             {
-                IListResults lastResults = c.List("*");
-                string[] fullVersionFiles = lastResults.Files.Select(x => x.Path).Where(x => !Utility.IsFolder(x, File.GetAttributes)).ToArray();
+                var lastResults = c.List("*");
+                var fullVersionFiles = lastResults.Files.Select(x => x.Path).Where(x => !Utility.IsFolder(x, File.GetAttributes)).ToArray();
                 Assert.AreEqual(this.fileSizes.Length, fullVersionFiles.Length);
 
-                IRestoreResults restoreResults = c.Restore(fullVersionFiles);
-                Assert.AreEqual(0, restoreResults.Errors.Count());
-                Assert.AreEqual(0, restoreResults.Warnings.Count());
+                TestUtils.AssertResults(c.Restore(fullVersionFiles));
 
                 foreach (string filepath in fullVersionFiles)
                 {
@@ -690,9 +657,7 @@ namespace Duplicati.UnitTest
             // Run a complete backup.
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
-                IBackupResults backupResults = c.Backup(new[] { this.DATAFOLDER });
-                Assert.AreEqual(0, backupResults.Errors.Count());
-                Assert.AreEqual(0, backupResults.Warnings.Count());
+                TestUtils.AssertResults(c.Backup(new[] { this.DATAFOLDER }));
 
                 List<IListResultFileset> filesets = c.List().Filesets.ToList();
                 Assert.AreEqual(1, filesets.Count);
@@ -703,29 +668,42 @@ namespace Duplicati.UnitTest
             this.ModifySourceFiles();
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
-                // ReSharper disable once AccessToDisposedClosure
-                Task backupTask = Task.Run(() => c.Backup(new[] { this.DATAFOLDER }));
-
-                // Block for a small amount of time to allow the ITaskControl to be associated
-                // with the Controller. Otherwise, the call to Stop will simply be a no-op.
-                Thread.Sleep(1000);
-
-                c.Abort();
-                try
+                var startedTcs = new TaskCompletionSource<bool>();
+                c.OnOperationStarted += results =>
                 {
-                    await backupTask.ConfigureAwait(false);
+                    ((BackupResults)results).OperationProgressUpdater.PhaseChanged += (phase, previousPhase) =>
+                    {
+                        if (phase == OperationPhase.Backup_ProcessingFiles)
+                            startedTcs.SetResult(true);
+                    };
+                };
+                
+                Task backupTask = Task.Run(() => c.Backup([DATAFOLDER]));
+
+                Task completedTask = await Task.WhenAny(startedTcs.Task, Task.Delay(5000));
+                if (completedTask == startedTcs.Task)
+                {
+                    c.Abort();
+                    try
+                    {
+                        await backupTask.ConfigureAwait(false);
+                        Assert.Fail("Expected OperationCanceledException but none was thrown.");
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        // Success, exception thrown as expected
+                    }
                 }
-                catch (TaskCanceledException)
+                else
                 {
+                    Assert.Fail("Operation did not reach ready state within timeout.");
                 }
             }
-
+            
             // The next backup should proceed without issues.
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
-                IBackupResults backupResults = c.Backup(new[] { this.DATAFOLDER });
-                Assert.AreEqual(0, backupResults.Errors.Count());
-                Assert.AreEqual(0, backupResults.Warnings.Count());
+                TestUtils.AssertResults(c.Backup(new[] { this.DATAFOLDER }));
 
                 List<IListResultFileset> filesets = c.List().Filesets.ToList();
                 Assert.AreEqual(2, filesets.Count);
@@ -737,19 +715,563 @@ namespace Duplicati.UnitTest
             Dictionary<string, string> restoreOptions = new Dictionary<string, string>(options) { ["restore-path"] = this.RESTOREFOLDER };
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, restoreOptions, null))
             {
-                IListResults lastResults = c.List("*");
-                string[] fullVersionFiles = lastResults.Files.Select(x => x.Path).Where(x => !Utility.IsFolder(x, File.GetAttributes)).ToArray();
+                var lastResults = c.List("*");
+                var fullVersionFiles = lastResults.Files.Select(x => x.Path).Where(x => !Utility.IsFolder(x, File.GetAttributes)).ToArray();
                 Assert.AreEqual(this.fileSizes.Length, fullVersionFiles.Length);
 
-                IRestoreResults restoreResults = c.Restore(fullVersionFiles);
-                Assert.AreEqual(0, restoreResults.Errors.Count());
-                Assert.AreEqual(0, restoreResults.Warnings.Count());
-
+                TestUtils.AssertResults(c.Restore(fullVersionFiles));
                 foreach (string filepath in fullVersionFiles)
                 {
                     string filename = Path.GetFileName(filepath);
                     TestUtils.AssertFilesAreEqual(filepath, Path.Combine(this.RESTOREFOLDER, filename ?? String.Empty), false, filename);
                 }
+            }
+        }
+
+        [Test]
+        [Category("Disruption")]
+        public void TestUploadExceptionWithNoRetries()
+        {
+            var testopts = TestOptions;
+            testopts["number-of-retries"] = "0";
+            testopts["dblock-size"] = "10mb";
+
+            // Make a base backup
+            using (var c = new Controller("file://" + TARGETFOLDER, testopts, null))
+                TestUtils.AssertResults(c.Backup(new string[] { DATAFOLDER }));
+
+            // Make a new backup that fails uploading a dblock file
+            ModifySourceFiles();
+
+            // Deterministic error backend
+            Library.DynamicLoader.BackendLoader.AddBackend(new DeterministicErrorBackend());
+            var failtarget = new DeterministicErrorBackend().ProtocolKey + "://" + TARGETFOLDER;
+
+            var hasFailed = false;
+            var secondUploadStarted = false;
+            var secondUploadCompleted = false;
+
+            // Fail the compact after the first dblock put is completed
+            DeterministicErrorBackend.ErrorGenerator = (DeterministicErrorBackend.BackendAction action, string remotename) =>
+            {
+                if (action.IsGetOperation)
+                {
+                    return true;
+                }
+
+                if (!hasFailed && action == DeterministicErrorBackend.BackendAction.PutBefore)
+                {
+                    // We only fail one upload, but there are no retries
+                    hasFailed = true;
+
+                    // Make sure we can start a second upload
+                    Thread.Sleep(1000);
+                    return true;
+                }
+
+                if (action == DeterministicErrorBackend.BackendAction.PutBefore)
+                    secondUploadStarted = true;
+                if (action == DeterministicErrorBackend.BackendAction.PutAfter)
+                    secondUploadCompleted = true;
+
+                return false;
+            };
+
+            using (var c = new Controller(failtarget, testopts, null))
+                Assert.Throws<DeterministicErrorBackend.DeterministicErrorBackendException>(() => c.Backup(new string[] { DATAFOLDER }));
+
+            Assert.That(secondUploadStarted, Is.True, "Second upload was not started");
+            Assert.That(secondUploadCompleted, Is.True, "Second upload was not started");
+
+            // Create a regular backup
+            using (var c = new Controller("file://" + TARGETFOLDER, testopts, null))
+                TestUtils.AssertResults(c.Backup(new string[] { DATAFOLDER }));
+
+            // Verify that all is in order
+            using (var c = new Controller("file://" + TARGETFOLDER, testopts.Expand(new { full_remote_verification = true }), null))
+                TestUtils.AssertResults(c.Test(long.MaxValue));
+
+            // Test that we can recreate
+            var recreatedDatabaseFile = Path.Combine(BASEFOLDER, "recreated-database.sqlite");
+            if (File.Exists(recreatedDatabaseFile))
+                File.Delete(recreatedDatabaseFile);
+
+            testopts["dbpath"] = recreatedDatabaseFile;
+
+            using (var c = new Controller("file://" + TARGETFOLDER, testopts, null))
+                TestUtils.AssertResults(c.Repair());
+
+            // Check that we have 3 versions
+            using (var c = new Controller("file://" + TARGETFOLDER, testopts, null))
+            {
+                var listResults = c.List();
+                TestUtils.AssertResults(listResults);
+                Assert.AreEqual(3, listResults.Filesets.Count());
+            }
+        }
+
+        [Test]
+        [Category("Disruption")]
+        [TestCase(true, false)]
+        [TestCase(false, false)]
+        [TestCase(true, true)]
+        [TestCase(false, true)]
+        public void TestUploadExceptionOnFirstDlistWithRepair(bool before, bool failOnLastDblock)
+        {
+            var testopts = TestOptions;
+            testopts["number-of-retries"] = "0";
+            testopts["dblock-size"] = "10mb";
+
+            // Deterministic error backend
+            Library.DynamicLoader.BackendLoader.AddBackend(new DeterministicErrorBackend());
+            var failtarget = new DeterministicErrorBackend().ProtocolKey + "://" + TARGETFOLDER;
+            var operation = before
+                ? DeterministicErrorBackend.BackendAction.PutBefore
+                : DeterministicErrorBackend.BackendAction.PutAfter;
+
+            // We expect to upload 7 volumes, and fail on the last one
+            var count = 7;
+            var failed = false;
+
+            // Fail when uploading the dlist file
+            DeterministicErrorBackend.ErrorGenerator = (DeterministicErrorBackend.BackendAction action, string remotename) =>
+            {
+                if (failOnLastDblock)
+                {
+                    if (action == operation && remotename.Contains(".dblock."))
+                    {
+                        if (Interlocked.Decrement(ref count) == 0)
+                        {
+                            // Allow others to progress
+                            Thread.Sleep(2000);
+                            failed = true;
+                            return true;
+                        }
+                    }
+                }
+                else
+                {
+                    if (action == operation && remotename.Contains(".dlist."))
+                    {
+                        failed = true;
+                        return true;
+                    }
+                }
+
+                return false;
+            };
+
+            using (var c = new Controller(failtarget, testopts, null))
+                Assert.Throws<DeterministicErrorBackend.DeterministicErrorBackendException>(() => c.Backup(new string[] { DATAFOLDER }));
+
+            Assert.That(failed, Is.True, "Failed to fail the upload");
+
+            // Make spacing for the next backup
+            Thread.Sleep(3000);
+
+            // Issue repair
+            using (var c = new Controller("file://" + TARGETFOLDER, testopts, null))
+                TestUtils.AssertResults(c.Repair());
+
+            // Verify that all is in order
+            using (var c = new Controller("file://" + TARGETFOLDER, testopts.Expand(new { full_remote_verification = true }), null))
+                TestUtils.AssertResults(c.Test(long.MaxValue));
+
+            // Make a new backup, should continue as normal
+            using (var c = new Controller("file://" + TARGETFOLDER, testopts, null))
+            {
+                var backupResults = c.Backup(new string[] { DATAFOLDER });
+                TestUtils.AssertResults(backupResults);
+                Assert.AreEqual(2, c.List().Filesets.Count());
+            }
+
+            // Test that we can recreate
+            var recreatedDatabaseFile = Path.Combine(BASEFOLDER, "recreated-database.sqlite");
+            if (File.Exists(recreatedDatabaseFile))
+                File.Delete(recreatedDatabaseFile);
+
+            testopts["dbpath"] = recreatedDatabaseFile;
+
+            using (var c = new Controller("file://" + TARGETFOLDER, testopts, null))
+                TestUtils.AssertResults(c.Repair());
+
+            // Check that we have 2 versions
+            using (var c = new Controller("file://" + TARGETFOLDER, testopts, null))
+            {
+                var listResults = c.List();
+                TestUtils.AssertResults(listResults);
+                Assert.AreEqual(2, listResults.Filesets.Count());
+            }
+        }
+
+        [Test]
+        [Category("Disruption")]
+        [TestCase(true, false)]
+        [TestCase(false, false)]
+        [TestCase(true, true)]
+        [TestCase(false, true)]
+        public void TestUploadExceptionOnFirstDlist(bool before, bool failOnLastDblock)
+        {
+            var testopts = TestOptions;
+            testopts["number-of-retries"] = "0";
+            testopts["dblock-size"] = "10mb";
+
+            // Deterministic error backend
+            Library.DynamicLoader.BackendLoader.AddBackend(new DeterministicErrorBackend());
+            var failtarget = new DeterministicErrorBackend().ProtocolKey + "://" + TARGETFOLDER;
+            var operation = before
+                ? DeterministicErrorBackend.BackendAction.PutBefore
+                : DeterministicErrorBackend.BackendAction.PutAfter;
+
+            // We expect to upload 7 volumes, and fail on the last one
+            var count = 7;
+            var failed = false;
+
+            // Fail when uploading the dlist file
+            DeterministicErrorBackend.ErrorGenerator = (DeterministicErrorBackend.BackendAction action, string remotename) =>
+            {
+                if (failOnLastDblock)
+                {
+                    if (action == operation && remotename.Contains(".dblock."))
+                    {
+                        if (Interlocked.Decrement(ref count) == 0)
+                        {
+                            // Allow others to progress
+                            Thread.Sleep(2000);
+                            failed = true;
+                            return true;
+                        }
+                    }
+                }
+                else
+                {
+                    if (action == operation && remotename.Contains(".dlist."))
+                    {
+                        failed = true;
+                        return true;
+                    }
+                }
+
+                return false;
+            };
+
+            using (var c = new Controller(failtarget, testopts, null))
+                Assert.Throws<DeterministicErrorBackend.DeterministicErrorBackendException>(() => c.Backup(new string[] { DATAFOLDER }));
+
+            Assert.That(failed, Is.True, "Failed to fail the upload");
+
+            // Make spacing for the next backup
+            Thread.Sleep(3000);
+
+            // Make a new backup, should continue as normal
+            using (var c = new Controller("file://" + TARGETFOLDER, testopts, null))
+            {
+                IBackupResults backupResults = c.Backup(new string[] { DATAFOLDER });
+                TestUtils.AssertResults(backupResults);
+                Assert.AreEqual(2, c.List().Filesets.Count());
+            }
+
+            // Verify that all is in order
+            using (var c = new Controller("file://" + TARGETFOLDER, testopts.Expand(new { full_remote_verification = true }), null))
+                TestUtils.AssertResults(c.Test(long.MaxValue));
+
+            // Test that we can recreate
+            var recreatedDatabaseFile = Path.Combine(BASEFOLDER, "recreated-database.sqlite");
+            if (File.Exists(recreatedDatabaseFile))
+                File.Delete(recreatedDatabaseFile);
+
+            testopts["dbpath"] = recreatedDatabaseFile;
+
+            using (var c = new Controller("file://" + TARGETFOLDER, testopts, null))
+                TestUtils.AssertResults(c.Repair());
+
+            // Check that we have 2 versions
+            using (var c = new Controller("file://" + TARGETFOLDER, testopts, null))
+            {
+                var listResults = c.List();
+                TestUtils.AssertResults(listResults);
+                Assert.AreEqual(2, listResults.Filesets.Count());
+            }
+        }
+
+        [Test]
+        [Category("Disruption")]
+        [TestCase(true)]
+        [TestCase(false)]
+        public void TestRepairWithNoDlist(bool before)
+        {
+            var testopts = TestOptions;
+            testopts["number-of-retries"] = "0";
+            testopts["dblock-size"] = "10mb";
+
+            // Deterministic error backend
+            Library.DynamicLoader.BackendLoader.AddBackend(new DeterministicErrorBackend());
+            var failtarget = new DeterministicErrorBackend().ProtocolKey + "://" + TARGETFOLDER;
+            var operation = before
+                ? DeterministicErrorBackend.BackendAction.PutBefore
+                : DeterministicErrorBackend.BackendAction.PutAfter;
+
+            // Fail when uploading the first dlist file
+            DeterministicErrorBackend.ErrorGenerator = (DeterministicErrorBackend.BackendAction action, string remotename) =>
+            {
+                if (action == operation && remotename.Contains(".dlist."))
+                    return true;
+
+                return false;
+            };
+
+            using (var c = new Controller(failtarget, testopts, null))
+                Assert.Throws<DeterministicErrorBackend.DeterministicErrorBackendException>(() => c.Backup(new string[] { DATAFOLDER }));
+
+            // Test that we can repair
+            using (var c = new Controller("file://" + TARGETFOLDER, testopts, null))
+                TestUtils.AssertResults(c.Repair());
+
+            // Check that we have 1 version
+            using (var c = new Controller("file://" + TARGETFOLDER, testopts, null))
+            {
+                var listResults = c.List();
+                TestUtils.AssertResults(listResults);
+                Assert.AreEqual(1, listResults.Filesets.Count());
+            }
+        }
+
+
+        [Test]
+        [Category("Disruption")]
+        [TestCase(true, true, 3, false)]
+        [TestCase(false, false, 3, false)]
+        [TestCase(true, false, 3, false)]
+        [TestCase(false, true, 3, false)]
+        [TestCase(true, true, 3, true)]
+        [TestCase(false, true, 3, true)]
+        public void TestMultiExceptionOnDlist(bool before, bool modifyInBetween, int runs, bool withBase)
+        {
+            var testopts = TestOptions;
+            testopts["number-of-retries"] = "0";
+            testopts["dblock-size"] = "10mb";
+            var expectedFilesets = withBase ? 3 : 2;
+
+            if (withBase)
+            {
+                // Make a regular backup
+                using (var c = new Controller("file://" + TARGETFOLDER, testopts, null))
+                    TestUtils.AssertResults(c.Backup(new string[] { DATAFOLDER }));
+            }
+
+
+            // Deterministic error backend
+            Library.DynamicLoader.BackendLoader.AddBackend(new DeterministicErrorBackend());
+            var failtarget = new DeterministicErrorBackend().ProtocolKey + "://" + TARGETFOLDER;
+            var operation = before
+                ? DeterministicErrorBackend.BackendAction.PutBefore
+                : DeterministicErrorBackend.BackendAction.PutAfter;
+
+            // Fail when uploading the first dlist file
+            DeterministicErrorBackend.ErrorGenerator = (DeterministicErrorBackend.BackendAction action, string remotename) =>
+            {
+                if (action == operation && remotename.Contains(".dlist."))
+                    return true;
+
+                return false;
+            };
+
+            for (var i = 0; i < runs; i++)
+            {
+                if (modifyInBetween)
+                    ModifySourceFiles();
+
+                using (var c = new Controller(failtarget, testopts, null))
+                    try
+                    {
+                        c.Backup(new string[] { DATAFOLDER });
+                    }
+                    catch (DeterministicErrorBackend.DeterministicErrorBackendException)
+                    {
+                    }
+
+                // Prevent clashes in timestamps
+                Thread.Sleep(3000);
+            }
+
+            if (modifyInBetween)
+                ModifySourceFiles();
+
+            // Make a new backup, should continue as normal
+            using (var c = new Controller("file://" + TARGETFOLDER, testopts, null))
+            {
+                var backupResults = c.Backup(new string[] { DATAFOLDER });
+                TestUtils.AssertResults(backupResults);
+                Assert.AreEqual(expectedFilesets, c.List().Filesets.Count());
+            }
+
+            // Verify that all is in order
+            using (var c = new Controller("file://" + TARGETFOLDER, testopts.Expand(new { full_remote_verification = true }), null))
+                TestUtils.AssertResults(c.Test(long.MaxValue));
+
+            // Test that we can recreate
+            var recreatedDatabaseFile = Path.Combine(BASEFOLDER, "recreated-database.sqlite");
+            if (File.Exists(recreatedDatabaseFile))
+                File.Delete(recreatedDatabaseFile);
+
+            testopts["dbpath"] = recreatedDatabaseFile;
+
+            using (var c = new Controller("file://" + TARGETFOLDER, testopts, null))
+                TestUtils.AssertResults(c.Repair());
+
+            // Check that we have 2 versions
+            using (var c = new Controller("file://" + TARGETFOLDER, testopts, null))
+            {
+                var listResults = c.List();
+                TestUtils.AssertResults(listResults);
+                Assert.AreEqual(expectedFilesets, listResults.Filesets.Count());
+            }
+        }
+
+        private class LogSink : IMessageSink
+        {
+            public List<string> StartedFiles { get; } = new List<string>();
+            public List<string> CompletedFiles { get; } = new List<string>();
+            public void BackendEvent(BackendActionType action, BackendEventType type, string path, long size)
+            {
+                if (action == BackendActionType.Put && type == BackendEventType.Started)
+                {
+                    this.StartedFiles.Add(path);
+                }
+                if (action == BackendActionType.Put && type == BackendEventType.Completed)
+                {
+                    this.CompletedFiles.Add(path);
+                }
+            }
+
+            public void SetBackendProgress(IBackendProgress progress)
+            {
+            }
+
+            public void SetOperationProgress(IOperationProgress progress)
+            {
+            }
+
+            public void WriteMessage(LogEntry entry)
+            {
+            }
+        }
+
+        [Test]
+        [Category("Disruption")]
+        public void TestDblockUploadWithOperationCancellation()
+        {
+            TestUploadWithOperationCancellation(".dblock.");
+        }
+
+
+        [Test]
+        [Category("Disruption")]
+        public void TestDindexUploadWithOperationCancellation()
+        {
+            TestUploadWithOperationCancellation(".dindex.");
+        }
+
+        [Test]
+        [Category("Disruption")]
+        public void TestDlistUploadWithOperationCancellation()
+        {
+            TestUploadWithOperationCancellation(".dlist.");
+        }
+
+        private void TestUploadWithOperationCancellation(string filefragment)
+        {
+            var testopts = TestOptions;
+            testopts["number-of-retries"] = "1";
+            testopts["dblock-size"] = "10mb";
+
+            // Make a base backup
+            using (var c = new Controller("file://" + TARGETFOLDER, testopts, null))
+                TestUtils.AssertResults(c.Backup(new string[] { DATAFOLDER }));
+
+            // Make a new backup that fails uploading a dblock file
+            ModifySourceFiles();
+
+            // Deterministic error backend
+            Library.DynamicLoader.BackendLoader.AddBackend(new DeterministicErrorBackend());
+            var failtarget = new DeterministicErrorBackend().ProtocolKey + "://" + TARGETFOLDER;
+            var uploadCount = 0;
+            var failstep = DeterministicErrorBackend.BackendAction.PutBefore;
+
+            // Fail the upload before
+            DeterministicErrorBackend.ErrorGenerator = (DeterministicErrorBackend.BackendAction action, string remotename) =>
+            {
+                if (action == failstep && remotename.Contains(filefragment))
+                {
+                    // Fail once with a cancellation
+                    if (Interlocked.Increment(ref uploadCount) == 1)
+                        throw new OperationCanceledException();
+                }
+
+                return false;
+            };
+
+            using (var c = new Controller(failtarget, testopts, null))
+            {
+                var sink = new LogSink();
+                c.AppendSink(sink);
+                var res = c.Backup(new string[] { DATAFOLDER });
+                if (uploadCount == 0)
+                    Assert.Fail("Upload count was not incremented");
+
+                Assert.AreEqual(2, c.List().Filesets.Count());
+                Assert.AreEqual(2, Directory.GetFiles(TARGETFOLDER, "*.dlist.*", SearchOption.TopDirectoryOnly).Count());
+                Assert.AreEqual(7 * 2 + 1, sink.CompletedFiles.Count); // 7 completed (dblock + dindex) + 1 dlist
+                Assert.AreEqual(7 * 2 + 2, sink.StartedFiles.Count); // 1 retry
+                Assert.AreEqual(sink.CompletedFiles.Count(x => x.Contains(".dblock.")), sink.CompletedFiles.Count(x => x.Contains(".dindex.")));
+                Assert.AreEqual(1, res.BackendStatistics.RetryAttempts);
+            }
+
+            uploadCount = 0;
+            failstep = DeterministicErrorBackend.BackendAction.PutAfter;
+
+            ModifySourceFiles();
+            using (var c = new Controller(failtarget, testopts, null))
+            {
+                var sink = new LogSink();
+                c.AppendSink(sink);
+                var res = c.Backup(new string[] { DATAFOLDER });
+                if (uploadCount == 0)
+                    Assert.Fail("Upload count was not incremented");
+
+                Assert.AreEqual(3, c.List().Filesets.Count());
+                Assert.AreEqual(3, Directory.GetFiles(TARGETFOLDER, "*.dlist.*", SearchOption.TopDirectoryOnly).Count());
+                Assert.AreEqual(7 * 2 + 1, sink.CompletedFiles.Count); // 7 completed (dblock + dindex) + 1 dlist
+                Assert.AreEqual(7 * 2 + 2, sink.StartedFiles.Count); // 1 retry
+                Assert.AreEqual(sink.CompletedFiles.Count(x => x.Contains(".dblock.")), sink.CompletedFiles.Count(x => x.Contains(".dindex.")));
+                Assert.AreEqual(1, res.BackendStatistics.RetryAttempts);
+            }
+
+            ModifySourceFiles();
+            // Create a regular backup
+            using (var c = new Controller("file://" + TARGETFOLDER, testopts, null))
+                TestUtils.AssertResults(c.Backup(new string[] { DATAFOLDER }));
+
+            // Verify that all is in order
+            using (var c = new Controller("file://" + TARGETFOLDER, testopts.Expand(new { full_remote_verification = true }), null))
+                TestUtils.AssertResults(c.Test(long.MaxValue));
+
+            // Test that we can recreate
+            var recreatedDatabaseFile = Path.Combine(BASEFOLDER, "recreated-database.sqlite");
+            if (File.Exists(recreatedDatabaseFile))
+                File.Delete(recreatedDatabaseFile);
+
+            testopts["dbpath"] = recreatedDatabaseFile;
+
+            using (var c = new Controller("file://" + TARGETFOLDER, testopts, null))
+                TestUtils.AssertResults(c.Repair());
+
+            // Check that we have 3 versions
+            using (var c = new Controller("file://" + TARGETFOLDER, testopts, null))
+            {
+                var listResults = c.List();
+                TestUtils.AssertResults(listResults);
+                Assert.AreEqual(4, listResults.Filesets.Count());
             }
         }
     }

@@ -114,6 +114,13 @@
             "stopAtEntry": false,
             "console": "internalConsole"
         },
-
+        {
+            "name": "Launch SourceTool executable",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "program": "${workspaceFolder}/Executables/net8/Duplicati.CommandLine.SourceTool/bin/Debug/net8.0/Duplicati.CommandLine.SourceTool",
+            "args": []
+        }
     ]
 }

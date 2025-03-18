@@ -55,6 +55,15 @@ internal interface IBackendManager : IDisposable
     Task<IEnumerable<IFileEntry>> ListAsync(CancellationToken cancelToken);
 
     /// <summary>
+    /// Decrypts the given file and returns the decrypted file
+    /// </summary>
+    /// <param name="volume">The file to decrypt</param>
+    /// <param name="volume_name">The name of the file. Used for detecting encryption algorithm if not specified in options or if it differs from the options</param>
+    /// <param name="options">The Duplicati options</param>
+    /// <returns>The decrypted file</returns>
+    TempFile DecryptFile(TempFile volume, string volume_name, Options options);
+
+    /// <summary>
     /// Deletes a file on the backend
     /// </summary>
     /// <param name="remotename">The name of the file to delete</param>
@@ -88,8 +97,18 @@ internal interface IBackendManager : IDisposable
     /// <param name="hash">The hash of the file to get, or <c>null</c> if not known</param>
     /// <param name="size">The size of the file to get, or -1 if not known</param>
     /// <param name="cancelToken">The cancellation token</param>
-    /// <returns></returns>
+    /// <returns>The downloaded file</returns>
     Task<TempFile> GetAsync(string remotename, string hash, long size, CancellationToken cancelToken);
+
+    /// <summary>
+    /// Gets a file from the backend without decrypting it
+    /// </summary>
+    /// <param name="remotename">The name of the remote volume</param>
+    /// <param name="hash">The hash of the volume</param>
+    /// <param name="size">The size of the volume</param>
+    /// <param name="cancelToken">The cancellation token</param>
+    /// <returns>The downloaded file</returns>
+    Task<TempFile> GetDirectAsync(string remotename, string hash, long size, CancellationToken cancelToken);
 
     /// <summary>
     /// Performs a download of the files specified, with pre-fetch to overlap the download and processing

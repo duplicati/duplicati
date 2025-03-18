@@ -27,6 +27,7 @@ using Duplicati.Library.Logging;
 using Duplicati.Library.Utility;
 using System.Linq;
 using Duplicati.Library.Common.IO;
+using System.Threading.Tasks;
 
 namespace Duplicati.UnitTest
 {
@@ -173,7 +174,7 @@ namespace Duplicati.UnitTest
                             try
                             {
                                 using (var bk = Duplicati.Library.DynamicLoader.BackendLoader.GetBackend(target, options))
-                                    foreach (var f in bk.List())
+                                    foreach (var f in bk.ListAsync(System.Threading.CancellationToken.None).ToBlockingEnumerable())
                                         if (!f.IsFolder)
                                             Utility.Await(bk.DeleteAsync(f.Name, System.Threading.CancellationToken.None));
                             }
@@ -215,7 +216,7 @@ namespace Duplicati.UnitTest
 
                     Duplicati.Library.Main.Options opts = new Duplicati.Library.Main.Options(options);
                     using (Duplicati.Library.Interface.IBackend bk = Duplicati.Library.DynamicLoader.BackendLoader.GetBackend(target, options))
-                        foreach (Duplicati.Library.Interface.IFileEntry fe in bk.List())
+                        foreach (Duplicati.Library.Interface.IFileEntry fe in bk.ListAsync(System.Threading.CancellationToken.None).ToBlockingEnumerable())
                             if (fe.Size > opts.VolumeSize)
                             {
                                 string msg = string.Format("The file {0} is {1} bytes larger than allowed", fe.Name, fe.Size - opts.VolumeSize);
@@ -406,6 +407,13 @@ namespace Duplicati.UnitTest
                         restoredname = System.IO.Path.Combine(System.IO.Path.Combine(tempfolder, System.IO.Path.GetFileName(rootfolder.Split(System.IO.Path.PathSeparator)[int.Parse(s.Substring(0, six))])), s.Substring(six + 1));
                     }
 
+                    if (!System.IO.File.Exists(sourcename))
+                    {
+                        Log.WriteErrorMessage(LOGTAG, "PartialRestoreMissingFile", null, "Partial restore, missing SOURCE file: {0}", sourcename);
+                        BasicSetupHelper.ProgressWriteLine("Partial restore missing file: " + sourcename);
+                        throw new Exception("Unittest is broken");
+                    }
+
                     if (!System.IO.File.Exists(restoredname))
                     {
                         Log.WriteErrorMessage(LOGTAG, "PartialRestoreMissingFile", null, "Partial restore missing file: {0}", restoredname);
@@ -413,13 +421,6 @@ namespace Duplicati.UnitTest
                     }
                     else
                     {
-                        if (!System.IO.File.Exists(sourcename))
-                        {
-                            Log.WriteErrorMessage(LOGTAG, "PartialRestoreMissingFile", null, "Partial restore missing file: {0}", sourcename);
-                            BasicSetupHelper.ProgressWriteLine("Partial restore missing file: " + sourcename);
-                            throw new Exception("Unittest is broken");
-                        }
-
                         TestUtils.AssertFilesAreEqual(sourcename, restoredname, verifymetadata, $"Partial restore file differs: {s}");
                     }
                 }

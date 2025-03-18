@@ -22,7 +22,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reactive.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
@@ -59,21 +61,47 @@ namespace Duplicati.Library.Backend
             m_dnsHost = servername;
         }
 
-        public IEnumerable<FileEntry> ListBucket(string bucketName, string prefix)
+        private static async IAsyncEnumerable<T> ToAsyncEnumerable<T>(
+            IObservable<T> observable,
+            [EnumeratorCancellation] CancellationToken cancellationToken = default)
+        {
+            var channel = Channel.CreateUnbounded<T>(); // Buffered channel for async iteration
+
+            using var subscription = observable.Subscribe(
+                item => channel.Writer.TryWrite(item),
+                ex => channel.Writer.TryComplete(ex),
+                () => channel.Writer.TryComplete()
+            );
+
+            while (await channel.Reader.WaitToReadAsync(cancellationToken))
+            {
+                while (channel.Reader.TryRead(out var item))
+                {
+                    yield return item;
+                }
+            }
+        }
+
+        public async IAsyncEnumerable<IFileEntry> ListBucketAsync(string bucketName, string prefix, bool recursive, [EnumeratorCancellation] CancellationToken cancellationToken)
         {
             ThrowExceptionIfBucketDoesNotExist(bucketName);
 
-            var observable = m_client.ListObjectsAsync(bucketName, prefix, true);
+            if (!string.IsNullOrWhiteSpace(prefix))
+                prefix = Util.AppendDirSeparator(prefix, "/");
 
-            foreach (var obj in observable.ToEnumerable())
+            var observable = m_client.ListObjectsAsync(bucketName, prefix, recursive, cancellationToken);
+            await foreach (var obj in ToAsyncEnumerable(observable, cancellationToken).ConfigureAwait(false))
             {
+                if (obj.Key == prefix || !obj.Key.StartsWith(prefix))
+                    continue;
+
                 yield return new FileEntry(
-                    obj.Key,
+                    obj.Key.Substring(prefix.Length),
                     (long)obj.Size,
                     Convert.ToDateTime(obj.LastModified),
-                    Convert.ToDateTime(obj.LastModified),
-                    obj.IsDir
-                );
+                    Convert.ToDateTime(obj.LastModified)
+                )
+                { IsFolder = obj.Key.EndsWith("/") };
             }
         }
 

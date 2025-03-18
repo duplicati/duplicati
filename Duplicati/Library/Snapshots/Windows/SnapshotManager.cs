@@ -21,13 +21,16 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Runtime.Versioning;
 using Alphaleonis.Win32.Vss;
+using Duplicati.Library.Common.IO;
 
-namespace Duplicati.Library.Common.IO
+namespace Duplicati.Library.Snapshots.Windows
 {
+    /// <summary>
+    /// Metadata from a writer instance
+    /// </summary>
     public class WriterMetaData
     {
         public string Name { get; set; }
@@ -36,16 +39,21 @@ namespace Duplicati.Library.Common.IO
         public List<string> Paths { get; set; }
     }
 
+    /// <summary>
+    /// The manager for the Windows snapshot
+    /// </summary>
     [SupportedOSPlatform("windows")]
-    public class VssBackupComponents : IDisposable
+    public class SnapshotManager : IDisposable
     {
         /// <summary>
         /// The tag used for logging messages
         /// </summary>
-        public static readonly string LOGTAG = Logging.Log.LogTagFromType<VssBackupComponents>();
+        private static readonly string LOGTAG = Logging.Log.LogTagFromType<SnapshotManager>();
 
-
-        private IVssBackupComponents _vssBackupComponents;
+        /// <summary>
+        /// The snapshot implementation
+        /// </summary>
+        private ISnapshotProvider _snapshotProvider;
 
         /// <summary>
         /// The list of snapshot ids for each volume, key is the path root, e.g. C:\.
@@ -69,26 +77,39 @@ namespace Duplicati.Library.Common.IO
         /// </summary>
         private List<DefineDosDevice> _mappedDrives;
 
-        public VssBackupComponents()
+        /// <summary>
+        /// Creates a new snapshot manager
+        /// </summary>
+        /// <param name="provider">The provider to use</param>
+        public SnapshotManager(SnapshotProvider provider)
         {
-            _vssBackupComponents = VssBackupComponentsHelper.GetVssBackupComponents();
+            _snapshotProvider = provider switch {
+                SnapshotProvider.AlphaVSS => AlphaVssBackup.Create(),
+                SnapshotProvider.Wmic => new WmicVssBackup(),
+                _ => throw new ArgumentException($"Invalid provider: {provider}")
+            };
         }
 
+        /// <summary>
+        /// Setup writers on the snapshot
+        /// </summary>
+        /// <param name="includedWriters">The explicitly included writers</param>
+        /// <param name="excludedWriters">The explicitly excluded writers</param>
         public void SetupWriters(Guid[] includedWriters, Guid[] excludedWriters)
         {
             if (includedWriters != null && includedWriters.Length > 0)
-                _vssBackupComponents.EnableWriterClasses(includedWriters);
+                _snapshotProvider.EnableWriterClasses(includedWriters);
 
             if (excludedWriters != null && excludedWriters.Length > 0)
-                _vssBackupComponents.DisableWriterClasses(excludedWriters);
+                _snapshotProvider.DisableWriterClasses(excludedWriters);
 
             try
             {
-                _vssBackupComponents.GatherWriterMetadata();
+                _snapshotProvider.GatherWriterMetadata();
             }
             finally
             {
-                _vssBackupComponents.FreeWriterMetadata();
+                _snapshotProvider.FreeWriterMetadata();
             }
 
             if (includedWriters == null)
@@ -97,15 +118,12 @@ namespace Duplicati.Library.Common.IO
             }
 
             // check if writers got enabled
-            foreach (var writerGUID in includedWriters)
-            {
-                if (!_vssBackupComponents.WriterMetadata.Any(o => o.WriterId.Equals(writerGUID)))
-                {
-                    throw new Exception(string.Format("Writer with GUID {0} was not added to VSS writer set.", writerGUID.ToString()));
-                }
-            }
+            _snapshotProvider.VerifyWriters(includedWriters);
         }
 
+        /// <summary>
+        /// Maps drives from snapshot paths
+        /// </summary>
         public void MapDrives()
         {
             _mappedDrives = new List<DefineDosDevice>();
@@ -124,6 +142,9 @@ namespace Duplicati.Library.Common.IO
             }
         }
 
+        /// <summary>
+        /// Makes a map of the snapshots for easy lookup
+        /// </summary>
         public void MapVolumesToSnapShots()
         {
             _volumeMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
@@ -133,41 +154,17 @@ namespace Duplicati.Library.Common.IO
                 // Attempting to get attributes on this path will fail, so we need to append a double backslash
                 // Strangely, the double backslash is not needed when acessing a subfolder, here a single backslash is enough,
                 // but double backslash works for both cases due to path normalization.
-                _volumeMap.Add(kvp.Key, Util.AppendDirSeparator(_vssBackupComponents.GetSnapshotProperties(kvp.Value).SnapshotDeviceObject) + "\\");
+                _volumeMap.Add(kvp.Key, Util.AppendDirSeparator(_snapshotProvider.GetSnapshotProperties(kvp.Value).SnapshotDeviceObject) + "\\");
             }
 
             _volumeReverseMap = _volumeMap.ToDictionary(x => x.Value, x => x.Key);
         }
 
-        public Dictionary<string, string> SnapshotDeviceAndVolumes
-        {
-            get
-            {
-                return _volumeReverseMap;
-            }
-        }
-
-        private List<string> GetPathsFromComponent(IVssWMComponent component)
-        {
-            var paths = new List<string>();
-
-            foreach (var file in component.Files)
-            {
-                if (file.FileSpecification.Contains("*"))
-                {
-                    if (Directory.Exists(Util.AppendDirSeparator(file.Path)))
-                        paths.Add(Util.AppendDirSeparator(file.Path));
-                }
-                else
-                {
-                    var fileWithSpec = SystemIO.IO_WIN.PathCombine(file.Path, file.FileSpecification);
-                    if (File.Exists(fileWithSpec))
-                        paths.Add(fileWithSpec);
-                }
-            }
-            return paths;
-
-        }
+        /// <summary>
+        /// Returns the map of snapshot path and logical path
+        /// </summary>
+        public Dictionary<string, string> SnapshotDeviceAndVolumes 
+            => _volumeReverseMap;
 
         /// <summary>
         /// Enumerable to iterate over components of the given writers.
@@ -176,38 +173,30 @@ namespace Duplicati.Library.Common.IO
         /// <returns>Anonymous object containing GUID, component name, logical path and paths of the component.</returns>
         /// <param name="writers">Writers.</param>
         public IEnumerable<WriterMetaData> ParseWriterMetaData(Guid[] writers)
-        {
-            // check if writers got enabled
-            foreach (var writerGUID in writers)
-            {
-                var writer = _vssBackupComponents.WriterMetadata.First(o => o.WriterId.Equals(writerGUID));
-                foreach (var component in writer.Components)
-                {
-                    yield return new WriterMetaData
-                    {
-                        Guid = writerGUID,
-                        Name = component.ComponentName,
-                        LogicalPath = component.LogicalPath,
-                        Paths = GetPathsFromComponent(component)
-                    };
-                }
-            }
-        }
+            => _snapshotProvider.ParseWriterMetaData(writers);
 
-
+        /// <summary>
+        /// Prepares the snapshot and notifies all writers
+        /// </summary>
+        /// <param name="sources">The soruces to include</param>
         public void InitShadowVolumes(IEnumerable<string> sources)
         {
-            _vssBackupComponents.StartSnapshotSet();
+            _snapshotProvider.StartSnapshotSet();
 
-            CheckSupportedVolumes(sources);
+            CheckAndAddSupportedVolumes(sources);
 
             //Make all writers aware that we are going to do the backup
-            _vssBackupComponents.PrepareForBackup();
+            _snapshotProvider.PrepareForBackup();
 
             //Create the shadow volumes
-            _vssBackupComponents.DoSnapshotSet();
+            _snapshotProvider.DoSnapshotSet();
         }
 
+        /// <summary>
+        /// Gets the snapshot path from the local path
+        /// </summary>
+        /// <param name="path">The local path</param>
+        /// <returns>The snapshot path</returns>
         public string GetVolumeFromCache(string path)
         {
             if (!_volumeMap.TryGetValue(path, out var volumePath))
@@ -216,25 +205,30 @@ namespace Duplicati.Library.Common.IO
             return volumePath;
         }
 
-        public void CheckSupportedVolumes(IEnumerable<string> sources)
+        /// <summary>
+        /// Checks if the volumes can be added and creates snapshots as needed
+        /// </summary>
+        /// <param name="sources">The sources to create snapshots for</param>
+        private void CheckAndAddSupportedVolumes(IEnumerable<string> sources)
         {
             //Figure out which volumes are in the set
             _volumes = new Dictionary<string, Guid>(StringComparer.OrdinalIgnoreCase);
             foreach (var s in sources)
             {
-                var drive = SystemIO.IO_WIN.GetPathRoot(s);
+                var drive = SystemIO.IO_OS.GetPathRoot(s);
                 if (!_volumes.ContainsKey(drive))
                 {
-                    if (!_vssBackupComponents.IsVolumeSupported(drive))
+                    if (!_snapshotProvider.IsVolumeSupported(drive))
                     {
                         throw new VssVolumeNotSupportedException(drive);
                     }
 
-                    _volumes.Add(drive, _vssBackupComponents.AddToSnapshotSet(drive));
+                    _volumes.Add(drive, _snapshotProvider.AddToSnapshotSet(drive));
                 }
             }
         }
 
+        /// <inheritdoc/>
         public void Dispose()
         {
             try
@@ -256,7 +250,7 @@ namespace Duplicati.Library.Common.IO
 
             try
             {
-                _vssBackupComponents?.BackupComplete();
+                _snapshotProvider?.BackupComplete();
             }
             catch (Exception ex)
             {
@@ -265,13 +259,13 @@ namespace Duplicati.Library.Common.IO
 
             try
             {
-                if (_vssBackupComponents != null)
+                if (_snapshotProvider != null)
                 {
                     foreach (var g in _volumes.Values)
                     {
                         try
                         {
-                            _vssBackupComponents.DeleteSnapshot(g, false);
+                            _snapshotProvider.DeleteSnapshot(g, false);
                         }
                         catch (Exception ex)
                         {
@@ -285,35 +279,11 @@ namespace Duplicati.Library.Common.IO
                 Logging.Log.WriteVerboseMessage(LOGTAG, "VSSSnapShotDeleteCleanError", ex, "Failed during VSS esnapshot closing");
             }
 
-            if (_vssBackupComponents != null)
+            if (_snapshotProvider != null)
             {
-                _vssBackupComponents.Dispose();
-                _vssBackupComponents = null;
+                _snapshotProvider.Dispose();
+                _snapshotProvider = null;
             }
-        }
-    }
-
-
-    public static class VssBackupComponentsHelper
-    {
-        public static IVssBackupComponents GetVssBackupComponents()
-        {
-            //Prepare the backup
-            IVssBackupComponents vssBackupComponents = CreateVssBackupComponents();
-            vssBackupComponents.InitializeForBackup(null);
-            vssBackupComponents.SetContext(VssSnapshotContext.Backup);
-            vssBackupComponents.SetBackupState(false, true, VssBackupType.Full, false);
-
-            return vssBackupComponents;
-        }
-
-        public static IVssBackupComponents CreateVssBackupComponents()
-        {
-            var vss = VssFactoryProvider.Default.GetVssFactory();
-            if (vss == null)
-                throw new InvalidOperationException();
-
-            return vss.CreateVssBackupComponents();
         }
     }
 }

@@ -99,6 +99,7 @@ namespace Duplicati.Library.Main
         public long UnknownFileCount { get; set; }
         public long KnownFileCount { get; set; }
         public long KnownFileSize { get; set; }
+        public long KnownFilesets { get; set; }
         public DateTime LastBackupDate { get; set; }
         public long BackupListCount { get; set; }
         public long TotalQuotaSpace { get; set; }
@@ -449,6 +450,7 @@ namespace Duplicati.Library.Main
         public long AddedFolders { get; internal set; }
         public long TooLargeFiles { get; internal set; }
         public long FilesWithError { get; internal set; }
+        public long TimestampChangedFiles { get; internal set; }
         public long ModifiedFolders { get; internal set; }
         public long ModifiedSymlinks { get; internal set; }
         public long AddedSymlinks { get; internal set; }

@@ -45,6 +45,11 @@ namespace Duplicati.Library.Common.IO
         public DateTime LastModification { get; set; } = new DateTime();
 
         /// <summary>
+        /// Gets or sets the time the file or folder was created
+        /// </summary>
+        public DateTime Created { get; set; } = new DateTime();
+
+        /// <summary>
         /// Gets or sets the size of the file or folder
         /// </summary>
         public long Size { get; set; } = -1;

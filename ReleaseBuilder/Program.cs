@@ -61,6 +61,8 @@ class Program
         "linux-arm7-cli.zip",
         "linux-arm7-cli.deb",
         "linux-arm7-cli.docker",
+        "linux-arm7-agent.zip",
+        "linux-arm7-agent.deb",
 
         "linux-arm64-gui.zip",
         "linux-arm64-gui.deb",
@@ -87,11 +89,6 @@ class Program
     .Select(x => PackageTarget.ParsePackageId(x))
     .Distinct()
     .ToList();
-
-    /// <summary>
-    /// The environment shared configuration
-    /// </summary>
-    public static readonly Configuration Configuration = Configuration.Create();
 
     /// <summary>
     /// The return code of the application; shared state

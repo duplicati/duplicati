@@ -45,6 +45,10 @@ internal enum MessageType
     /// </summary>
     Command,
     /// <summary>
+    /// A control message
+    /// </summary>
+    Control,
+    /// <summary>
     /// An unknown command
     /// </summary>
     Unknown
@@ -56,7 +60,9 @@ internal enum MessageType
 /// <param name="Token">The client token</param>
 /// <param name="PublicKey">The client public key</param>
 /// <param name="Version">The version of the client</param>
-public record AuthMessage(string Token, string PublicKey, string ClientVersion, int ProtocolVersion);
+/// <param name="ProtocolVersion">The protocol version of the client</param>
+/// <param name="Metadata">The optional metadata to send</param>
+public record AuthMessage(string Token, string PublicKey, string ClientVersion, int ProtocolVersion, Dictionary<string, string?>? Metadata);
 
 /// <summary>
 /// A message authentication response
@@ -74,6 +80,35 @@ internal sealed record AuthResultMessage(bool? Accepted, bool? WillReplaceToken,
 /// <param name="MachineName">The name of the machine</param>
 /// <param name="ServerVersion">The version of the server</param>
 public sealed record WelcomeMessage(string PublicKeyHash, string MachineName, string ServerVersion, IEnumerable<int> SupportedProtocolVersions);
+
+/// <summary>
+/// A message with a control request
+/// </summary>
+/// <param name="Command">The control command being requested</param>
+/// <param name="Parameters">The parameters for the command</param>
+public sealed record ControlRequestMessage(string Command, Dictionary<string, string?> Parameters)
+{
+    /// <summary>
+    /// The configure report url command
+    /// </summary>
+    public const string ConfigureReportUrlSet = "configure-report-url:set";
+    /// <summary>
+    /// A control message to return if the report url is configured
+    /// </summary>
+    public const string ConfigureReportUrlGet = "configure-report-url:get";
+    /// <summary>
+    /// The url parameter for the configure report url command
+    /// </summary>
+    public const string ConfigureReportUrlParameter = "url";
+
+}
+/// <summary>
+/// A message with a control response
+/// </summary>
+/// <param name="Success">Whether the command was successful</param>
+/// <param name="Output">The output of the command</param>
+/// <param name="ErrorMessage">The error message if the command failed</param>
+public sealed record ControlResponseMessage(bool Success, Dictionary<string, string?>? Output, string? ErrorMessage);
 
 /// <summary>
 /// A message to send a command
@@ -180,6 +215,7 @@ internal sealed record EnvelopedMessage
             "auth" => MessageType.Auth,
             "pong" => MessageType.Pong,
             "command" => MessageType.Command,
+            "control" => MessageType.Control,
             _ => MessageType.Unknown
         };
     }

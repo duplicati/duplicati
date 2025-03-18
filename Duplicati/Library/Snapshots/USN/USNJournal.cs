@@ -31,7 +31,7 @@ using System.Runtime.Versioning;
 using Duplicati.Library.Common.IO;
 using Microsoft.Win32.SafeHandles;
 
-namespace Duplicati.Library.Snapshots
+namespace Duplicati.Library.Snapshots.USN
 {
     /// <summary>
     /// Class that encapsulates USN journal access to a single volume
@@ -178,7 +178,7 @@ namespace Duplicati.Library.Snapshots
             if (path == null)
                 throw new Exception(Strings.USNHelper.UnexpectedPathFormat);
 
-            return SystemIO.IO_WIN.GetPathRoot(path);
+            return SystemIO.IO_OS.GetPathRoot(path);
         }
 
         public static string GetDeviceNameFromPath(string path)
@@ -509,7 +509,7 @@ namespace Duplicati.Library.Snapshots
                     var path = m_volume;
                     foreach (var r in pathList)
                     {
-                        path = SystemIO.IO_WIN.PathCombine(path, r.FileName);
+                        path = SystemIO.IO_OS.PathCombine(path, r.FileName);
                     }
 
                     if (rec.UsnRecord.FileAttributes.HasFlag(Win32USN.FileAttributes.Directory))

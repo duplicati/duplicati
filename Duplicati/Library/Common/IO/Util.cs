@@ -31,7 +31,15 @@ namespace Duplicati.Library.Common.IO
         /// </summary>
         public static readonly string DirectorySeparatorString = Path.DirectorySeparatorChar.ToString();
 
+        /// <summary>
+        /// A cached instance of the alternate directory separator as a string
+        /// </summary>
         public static readonly string AltDirectorySeparatorString = Path.AltDirectorySeparatorChar.ToString();
+
+        /// <summary>
+        /// Filename of a marker file that can be put inside the data folder to prevent Duplicati from fixing lax permissions
+        /// </summary>
+        public const string InsecurePermissionsMarkerFile = "insecure-permissions.txt";
 
         /// <summary>
         /// Appends the appropriate directory separator to paths, depending on OS.
@@ -65,6 +73,19 @@ namespace Duplicati.Library.Common.IO
         public static string GuessDirSeparator(string path)
         {
             return string.IsNullOrWhiteSpace(path) || path.StartsWith("/", StringComparison.Ordinal) ? "/" : "\\";
+        }
+
+        /// <summary>
+        /// Checks if the path is inside the Windows folder
+        /// </summary>
+        /// <param name="path">The path to check</param>
+        /// <returns><c>true</c> if the path is inside the Windows folder, <c>false</c> otherwise</returns>
+        public static bool IsPathUnderWindowsFolder(string path)
+        {
+            if (!OperatingSystem.IsWindows())
+                return false;
+
+            return path.StartsWith(AppendDirSeparator(Environment.GetFolderPath(Environment.SpecialFolder.Windows)), StringComparison.OrdinalIgnoreCase);
         }
     }
 }

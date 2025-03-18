@@ -28,6 +28,7 @@ using Duplicati.Library.Utility;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -69,6 +70,7 @@ namespace Duplicati.Library.Backend
         /// The DNS host of the S3 server
         /// </summary>
         private readonly string m_dnsHost;
+        private readonly bool m_useV2ListApi;
 
         /// <summary>
         /// The archive classes that are considered archive classes
@@ -98,6 +100,7 @@ namespace Duplicati.Library.Backend
 
             m_client = new AmazonS3Client(awsID, awsKey, cfg);
 
+            m_useV2ListApi = string.Equals(options.GetValueOrDefault("list-api-version", "v1"), "v2", StringComparison.OrdinalIgnoreCase);
             m_locationConstraint = locationConstraint;
             m_storageClass = storageClass;
             m_dnsHost = string.IsNullOrWhiteSpace(cfg.ServiceURL) ? null : new System.Uri(cfg.ServiceURL).Host;
@@ -243,32 +246,67 @@ namespace Duplicati.Library.Backend
             return m_client.DeleteObjectAsync(objectDeleteRequest, cancellationToken);
         }
 
-        public virtual IEnumerable<FileEntry> ListBucket(string bucketName, string prefix)
+        /// <summary>
+        /// Lists the contents of a bucket, using a plugable API call
+        /// </summary>
+        /// <param name="bucketName">The bucket to list</param>
+        /// <param name="prefix">The prefix to list</param>
+        /// <param name="recursive">If true, the list is recursive</param>
+        /// <param name="cancellationToken">The cancellation token</param>
+        /// <returns>The list of files</returns>
+        public async IAsyncEnumerable<IFileEntry> ListBucketAsync(string bucketName, string prefix, bool recursive, [EnumeratorCancellation] CancellationToken cancellationToken)
         {
-            bool isTruncated = true;
+            var isTruncated = true;
             string filename = null;
+            var delimiter = recursive ? "" : "/";
+            if (!string.IsNullOrWhiteSpace(prefix))
+                prefix = Util.AppendDirSeparator(prefix, "/");
 
             //TODO: Figure out if this is the case with AWSSDK too
             //Unfortunately S3 sometimes reports duplicate values when requesting more than one page of results
             //So, track the files that have already been returned and skip any duplicates.
-            HashSet<string> alreadyReturned = new HashSet<string>();
+            var alreadyReturned = new HashSet<string>();
 
             //We truncate after ITEM_LIST_LIMIT elements, and then repeat
             while (isTruncated)
             {
-                var listRequest = new ListObjectsRequest { BucketName = bucketName };
-
-                if (!string.IsNullOrEmpty(filename))
-                    listRequest.Marker = filename;
-
-                listRequest.MaxKeys = ITEM_LIST_LIMIT;
-                if (!string.IsNullOrEmpty(prefix))
-                    listRequest.Prefix = prefix;
-
-                ListObjectsResponse listResponse;
+                ListObjectsV2Response listResponse;
                 try
                 {
-                    listResponse = m_client.ListObjectsAsync(listRequest).Await();
+                    if (m_useV2ListApi)
+                    {
+                        var listRequest = new ListObjectsV2Request
+                        {
+                            BucketName = bucketName,
+                            Prefix = prefix,
+                            ContinuationToken = filename,
+                            MaxKeys = ITEM_LIST_LIMIT,
+                            Delimiter = delimiter
+                        };
+                        listResponse = await m_client.ListObjectsV2Async(listRequest, cancellationToken).ConfigureAwait(false);
+                    }
+                    else
+                    {
+                        // Use the V1 API
+                        var listRequest = new ListObjectsRequest
+                        {
+                            BucketName = bucketName,
+                            Prefix = prefix,
+                            Marker = filename,
+                            MaxKeys = ITEM_LIST_LIMIT,
+                            Delimiter = delimiter
+                        };
+                        var listResponsev1 = await m_client.ListObjectsAsync(listRequest, cancellationToken).ConfigureAwait(false);
+
+                        // Map the V1 response to the V2 response
+                        listResponse = new ListObjectsV2Response
+                        {
+                            CommonPrefixes = listResponsev1.CommonPrefixes,
+                            IsTruncated = listResponsev1.IsTruncated,
+                            NextContinuationToken = listResponsev1.NextMarker,
+                            S3Objects = listResponsev1.S3Objects
+                        };
+                    }
                 }
                 catch (AmazonS3Exception e)
                 {
@@ -282,18 +320,40 @@ namespace Duplicati.Library.Backend
                 }
 
                 isTruncated = listResponse.IsTruncated;
-                filename = listResponse.NextMarker;
+                filename = listResponse.NextContinuationToken;
+
+                foreach (var obj in listResponse.CommonPrefixes)
+                {
+                    if (obj == prefix || !obj.StartsWith(prefix))
+                        continue;
+
+                    // Because the prefixes are returned, and not the folder objects
+                    // we do not get the folder modification date
+                    yield return new FileEntry(
+                        obj.Substring(prefix.Length),
+                        -1,
+                        new DateTime(0),
+                        new DateTime(0)
+                    )
+                    { IsFolder = true };
+                }
 
                 foreach (var obj in listResponse.S3Objects.Where(obj => alreadyReturned.Add(obj.Key)))
                 {
-                    yield return new Common.IO.FileEntry(
-                        obj.Key,
+                    // Skip self-prefix, this discards the folder modification date :/
+                    if (obj.Key == prefix || !obj.Key.StartsWith(prefix))
+                        continue;
+
+                    yield return new FileEntry(
+                        obj.Key.Substring(prefix.Length),
                         obj.Size,
                         obj.LastModified,
-                        obj.LastModified,
-                        false,
-                        m_archiveClasses.Contains(obj.StorageClass)
-                    );
+                        obj.LastModified
+                    )
+                    {
+                        IsFolder = obj.Key.EndsWith("/"),
+                        IsArchived = m_archiveClasses.Contains(obj.StorageClass)
+                    };
                 }
             }
         }

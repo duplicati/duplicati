@@ -29,6 +29,7 @@ using System.Globalization;
 using System.Threading;
 using Duplicati.Library.Utility;
 using Duplicati.StreamUtil;
+using System.Threading.Tasks;
 
 namespace Duplicati.CommandLine.BackendTester
 {
@@ -83,7 +84,7 @@ namespace Duplicati.CommandLine.BackendTester
                 List<string> args = new List<string>(_args);
                 Dictionary<string, string> options = Library.Utility.CommandLineParser.ExtractOptions(args);
 
-                if (args.Count != 1 || String.Equals(args[0], "help", StringComparison.OrdinalIgnoreCase) || args[0] == "?")
+                if (args.Count != 1 || HelpOptionExtensions.IsArgumentAnyHelpString(args))
                 {
                     Console.WriteLine("Usage: <protocol>://<username>:<password>@<path>");
                     Console.WriteLine("Example: ftp://user:pass@server/folder");
@@ -118,16 +119,17 @@ namespace Duplicati.CommandLine.BackendTester
 
                 for (int i = 0; i < reruns; i++)
                 {
-                    Console.WriteLine("Starting run no {0}", i);
+                    Console.WriteLine(DateTime.Now.ToShortDateString() + " " + DateTime.Now.ToLongTimeString());
+                    Console.WriteLine(LogTimeStamp + "Starting run no {0}", i);
                     if (!Run(args, options, i == 0))
                         return 1;
                 }
-                Console.WriteLine("Unittest complete!");
+                Console.WriteLine(LogTimeStamp + "Unittest complete!");
                 return 0;
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Unittest failed: " + ex);
+                Console.WriteLine(LogTimeStamp + "Unittest failed: " + ex);
             }
 
             return 1;
@@ -172,7 +174,7 @@ namespace Duplicati.CommandLine.BackendTester
                 try
                 {
                     backend.TestAsync(CancellationToken.None).Await();
-                    curlist = backend.List();
+                    curlist = backend.ListAsync(CancellationToken.None).ToBlockingEnumerable().ToList();
                 }
                 catch (FolderMissingException)
                 {
@@ -181,11 +183,11 @@ namespace Duplicati.CommandLine.BackendTester
                         try
                         {
                             backend.CreateFolderAsync(CancellationToken.None).Await();
-                            curlist = backend.List();
+                            curlist = backend.ListAsync(CancellationToken.None).ToBlockingEnumerable().ToList();
                         }
                         catch (Exception ex)
                         {
-                            Console.WriteLine("Autocreate folder failed with message: " + ex.Message);
+                            Console.WriteLine(LogTimeStamp + "Autocreate folder failed with message: " + ex.Message);
                         }
                     }
 
@@ -199,7 +201,7 @@ namespace Duplicati.CommandLine.BackendTester
                         if (Library.Utility.Utility.ParseBoolOption(options, "auto-clean") && first)
                             if (Library.Utility.Utility.ParseBoolOption(options, "force"))
                             {
-                                Console.WriteLine("Auto clean, removing file: {0}", fe.Name);
+                                Console.WriteLine(LogTimeStamp + "Auto clean, removing file: {0}", fe.Name);
                                 backend.DeleteAsync(fe.Name, CancellationToken.None).Await();
                                 continue;
                             }
@@ -208,10 +210,10 @@ namespace Duplicati.CommandLine.BackendTester
 
                         var fileCount = curlist.Where(x => !x.IsFolder).Count();
                         var filenames = curlist.Where(x => !x.IsFolder).Select(x => x.Name).Take(10).ToList();
-                        Console.WriteLine($"*** Remote folder contains {fileCount} file(s), aborting");
-                        Console.WriteLine($"*** First {filenames.Count} file(s): {Environment.NewLine}{string.Join(Environment.NewLine, filenames)}");
+                        Console.WriteLine(LogTimeStamp + $"*** Remote folder contains {fileCount} file(s), aborting");
+                        Console.WriteLine(LogTimeStamp + $"*** First {filenames.Count} file(s): {Environment.NewLine}{string.Join(Environment.NewLine, filenames)}");
                         if (fileCount > filenames.Count)
-                            Console.WriteLine($"*** ... and {fileCount - filenames.Count} more file(s)");
+                            Console.WriteLine(LogTimeStamp + $"*** ... and {fileCount - filenames.Count} more file(s)");
                         return false;
                     }
 
@@ -232,7 +234,7 @@ namespace Duplicati.CommandLine.BackendTester
                 {
                     if (!(backend is IStreamingBackend) || disableStreaming)
                     {
-                        Console.WriteLine("Warning: Throttling is only supported in this tool on streaming backends");
+                        Console.WriteLine(LogTimeStamp + "Warning: Throttling is only supported in this tool on streaming backends");
                     }
 
                     throttleUpload = Duplicati.Library.Utility.Sizeparser.ParseSize(throttleUploadString, "kb");
@@ -243,15 +245,25 @@ namespace Duplicati.CommandLine.BackendTester
                 {
                     if (!(backend is IStreamingBackend) || disableStreaming)
                     {
-                        Console.WriteLine("Warning: Throttling is only supported in this tool on streaming backends");
+                        Console.WriteLine(LogTimeStamp + "Warning: Throttling is only supported in this tool on streaming backends");
                     }
 
                     throttleDownload = Duplicati.Library.Utility.Sizeparser.ParseSize(throttleDownloadString, "kb");
                 }
 
-                var readWriteTimeout = (int)TimeSpan.FromSeconds(10).TotalMilliseconds;
-                if (backend is ITimeoutExemptBackend)
-                    readWriteTimeout = Timeout.Infinite;
+                int readWriteTimeout = backend is ITimeoutExemptBackend ||
+                                       (Environment.GetEnvironmentVariable("READ_WRITE_TIMEOUT_SECONDS") is { } timeout
+                                        && int.TryParse(timeout, out var seconds)
+                                        && seconds == -1)
+                    ? Timeout.Infinite
+                    : Environment.GetEnvironmentVariable("READ_WRITE_TIMEOUT_SECONDS") is { } timeoutRetry
+                      && int.TryParse(timeoutRetry, out var secondsRetry)
+                        ? (int)TimeSpan.FromSeconds(secondsRetry).TotalMilliseconds
+                        : (int)TimeSpan.FromSeconds(60).TotalMilliseconds;
+
+                Console.WriteLine(LogTimeStamp + "Read Write Timeout set to {0}{1}",
+                    readWriteTimeout == Timeout.Infinite ? "infinite" : readWriteTimeout + " ms",
+                    backend is ITimeoutExemptBackend ? " (because implements ITimeoutExemptBackend)" : "");
 
                 // Allow overriding the timeout for the backend here, even if timeouts are disabled
                 if (options.TryGetValue("read-write-timeout", out var readWriteTimeoutString))
@@ -298,7 +310,7 @@ namespace Duplicati.CommandLine.BackendTester
                     byte[] dummyFileHash = null;
                     if (!skipOverwriteTest)
                     {
-                        Console.WriteLine("Uploading wrong files ...");
+                        Console.WriteLine(LogTimeStamp + "Uploading wrong files ...");
                         using (var dummy = Library.Utility.TempFile.WrapExistingFile(CreateRandomFile(tf, files.Count, 1024, 2048, rnd)))
                         {
                             using (var fs = new System.IO.FileStream(dummy, System.IO.FileMode.Open, System.IO.FileAccess.Read))
@@ -313,7 +325,7 @@ namespace Duplicati.CommandLine.BackendTester
 
                     }
 
-                    Console.WriteLine("Uploading files ...");
+                    Console.WriteLine(LogTimeStamp + "Uploading files ...");
 
                     for (int i = 0; i < files.Count; i++)
                         Uploadfile(files[i].localfilename, i, files[i].remotefilename, backend, disableStreaming, throttleUpload, readWriteTimeout);
@@ -328,7 +340,7 @@ namespace Duplicati.CommandLine.BackendTester
 
                         renamedFileNewName = CreateRandomRemoteFileName(min_filename_size, max_filename_size, allowedChars, trimFilenameSpaces, rnd);
 
-                        Console.WriteLine("Renaming file {0} from {1} to {2}", renameIndex, originalRenamedFile.remotefilename, renamedFileNewName);
+                        Console.WriteLine(LogTimeStamp + "Renaming file {0} from {1} to {2}", renameIndex, originalRenamedFile.remotefilename, renamedFileNewName);
 
                         renameEnabledBackend.RenameAsync(originalRenamedFile.remotefilename, renamedFileNewName, CancellationToken.None).Await();
                         files[renameIndex] = new TempFile(renamedFileNewName, originalRenamedFile.localfilename, originalRenamedFile.hash, originalRenamedFile.length);
@@ -336,13 +348,13 @@ namespace Duplicati.CommandLine.BackendTester
 
                     if (waitAfterUpload > TimeSpan.Zero)
                     {
-                        Console.WriteLine("Waiting {0} after upload", waitAfterUpload);
+                        Console.WriteLine(LogTimeStamp + "Waiting {0} after upload", waitAfterUpload);
                         Thread.Sleep(waitAfterUpload);
                     }
 
-                    Console.WriteLine("Verifying file list ...");
+                    Console.WriteLine(LogTimeStamp + "Verifying file list ...");
 
-                    curlist = backend.List();
+                    curlist = backend.ListAsync(CancellationToken.None).ToBlockingEnumerable().ToList();
                     foreach (var fe in curlist)
                         if (!fe.IsFolder)
                         {
@@ -351,12 +363,12 @@ namespace Duplicati.CommandLine.BackendTester
                                 if (tx.remotefilename == fe.Name)
                                 {
                                     if (tx.found)
-                                        Console.WriteLine("*** File with name {0} was found more than once", tx.remotefilename);
+                                        Console.WriteLine(LogTimeStamp + "*** File with name {0} was found more than once", tx.remotefilename);
                                     found = true;
                                     tx.found = true;
 
                                     if (fe.Size > 0 && tx.length != fe.Size)
-                                        Console.WriteLine("*** File with name {0} has size {1} but the size was reported as {2}", tx.remotefilename, tx.length, fe.Size);
+                                        Console.WriteLine(LogTimeStamp + "*** File with name {0} has size {1} but the size was reported as {2}", tx.remotefilename, tx.length, fe.Size);
 
                                     break;
                                 }
@@ -364,26 +376,26 @@ namespace Duplicati.CommandLine.BackendTester
                             if (!found)
                                 if (originalRenamedFile != null && renamedFileNewName != null && originalRenamedFile.remotefilename == fe.Name)
                                 {
-                                    Console.WriteLine("*** File with name {0} was found on server but was supposed to have been renamed to {1}!", fe.Name, renamedFileNewName);
+                                    Console.WriteLine(LogTimeStamp + "*** File with name {0} was found on server but was supposed to have been renamed to {1}!", fe.Name, renamedFileNewName);
                                 }
                                 else
                                 {
-                                    Console.WriteLine("*** File with name {0} was found on server but not uploaded!", fe.Name);
+                                    Console.WriteLine(LogTimeStamp + "*** File with name {0} was found on server but not uploaded!", fe.Name);
                                 }
                         }
 
                     foreach (var tx in files)
                         if (!tx.found)
-                            Console.WriteLine("*** File with name {0} was uploaded but not found afterwards", tx.remotefilename);
+                            Console.WriteLine(LogTimeStamp + "*** File with name {0} was uploaded but not found afterwards", tx.remotefilename);
 
-                    Console.WriteLine("Downloading files");
+                    Console.WriteLine(LogTimeStamp + "Downloading files");
 
                     for (int i = 0; i < files.Count; i++)
                     {
                         using (var cf = new Duplicati.Library.Utility.TempFile())
                         {
                             Exception e = null;
-                            Console.Write("Downloading file {0} ... ", i);
+                            Console.Write(LogTimeStamp + "Downloading file {0} ... ", i);
 
                             var sw = Stopwatch.StartNew();
 
@@ -410,22 +422,22 @@ namespace Duplicati.CommandLine.BackendTester
                             if (e != null)
                             {
                                 failAfterFinished = true;
-                                Console.WriteLine($"failed\n*** Error: {e} after {sw.ElapsedMilliseconds} ms");
+                                Console.WriteLine(LogTimeStamp + $"failed\n*** Error: {e} after {sw.ElapsedMilliseconds} ms");
                             }
                             else
-                                Console.WriteLine($"done in {sw.ElapsedMilliseconds} ms");
+                                Console.WriteLine($" done in {sw.ElapsedMilliseconds} ms");
 
-                            Console.Write("Checking hash ... ");
+                            Console.Write(LogTimeStamp + "Checking hash ... ");
 
                             using (var fs = new System.IO.FileStream(cf, System.IO.FileMode.Open, System.IO.FileAccess.Read))
                                 if (Convert.ToBase64String(sha.ComputeHash(fs)) != Convert.ToBase64String(files[i].hash))
                                 {
                                     if (dummyFileHash != null && Convert.ToBase64String(sha.ComputeHash(fs)) == Convert.ToBase64String(dummyFileHash))
-                                        Console.WriteLine("failed\n*** Downloaded file was the dummy file"); // Should this be failed?
+                                        Console.WriteLine(LogTimeStamp + "failed\n*** Downloaded file was the dummy file"); // Should this be failed?
                                     else
                                     {
                                         failAfterFinished = true;
-                                        Console.WriteLine("failed\n*** Downloaded file was corrupt");
+                                        Console.WriteLine(LogTimeStamp + "failed\n*** Downloaded file was corrupt");
                                     }
                                 }
                                 else
@@ -433,31 +445,31 @@ namespace Duplicati.CommandLine.BackendTester
                         }
                     }
 
-                    Console.WriteLine("Deleting files...");
+                    Console.WriteLine(LogTimeStamp + "Deleting files...");
 
                     foreach (var tx in files)
                         try { backend.DeleteAsync(tx.remotefilename, CancellationToken.None).Await(); }
                         catch (Exception ex)
                         {
                             failAfterFinished = true;
-                            Console.WriteLine("*** Failed to delete file {0}, message: {1}", tx.remotefilename, ex);
+                            Console.WriteLine(LogTimeStamp + "*** Failed to delete file {0}, message: {1}", tx.remotefilename, ex);
                         }
 
                     if (waitAfterDelete > TimeSpan.Zero)
                     {
-                        Console.WriteLine("Waiting {0} after delete", waitAfterDelete);
+                        Console.WriteLine(LogTimeStamp + "Waiting {0} after delete", waitAfterDelete);
                         Thread.Sleep(waitAfterDelete);
                     }
 
-                    curlist = backend.List();
+                    curlist = backend.ListAsync(CancellationToken.None).ToBlockingEnumerable().ToList();
                     foreach (var fe in curlist)
                         if (!fe.IsFolder)
                         {
-                            Console.WriteLine("*** Remote folder contains {0} after cleanup", fe.Name);
+                            Console.WriteLine(LogTimeStamp + "*** Remote folder contains {0} after cleanup", fe.Name);
                         }
 
                     // Test some error cases
-                    Console.WriteLine("Checking retrieval of non-existent file...");
+                    Console.WriteLine(LogTimeStamp + "Checking retrieval of non-existent file...");
                     var caughtExpectedException = false;
                     try
                     {
@@ -468,25 +480,25 @@ namespace Duplicati.CommandLine.BackendTester
                     }
                     catch (FileMissingException)
                     {
-                        Console.WriteLine("Caught expected FileMissingException");
+                        Console.WriteLine(LogTimeStamp + "Caught expected FileMissingException");
                         caughtExpectedException = true;
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine("*** Retrieval of non-existent file failed: {0}", ex);
+                        Console.WriteLine(LogTimeStamp + "*** Retrieval of non-existent file failed: {0}", ex);
                     }
 
                     if (!caughtExpectedException)
                     {
                         failAfterFinished = true;
-                        Console.WriteLine("*** Retrieval of non-existent file should have failed with FileMissingException");
+                        Console.WriteLine(LogTimeStamp + "*** Retrieval of non-existent file should have failed with FileMissingException");
                     }
                 }
 
                 // Test quota retrieval
                 if (backend is IQuotaEnabledBackend quotaEnabledBackend)
                 {
-                    Console.WriteLine("Checking quota...");
+                    Console.WriteLine(LogTimeStamp + "Checking quota...");
                     IQuotaInfo quota = null;
                     bool noException;
                     try
@@ -496,7 +508,7 @@ namespace Duplicati.CommandLine.BackendTester
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine("*** Checking quota information failed: {0}", ex);
+                        Console.WriteLine(LogTimeStamp + "*** Checking quota information failed: {0}", ex);
                         noException = false;
                     }
 
@@ -504,18 +516,18 @@ namespace Duplicati.CommandLine.BackendTester
                     {
                         if (quota != null)
                         {
-                            Console.WriteLine("Free Space:  {0}", Library.Utility.Utility.FormatSizeString(quota.FreeQuotaSpace));
-                            Console.WriteLine("Total Space: {0}", Library.Utility.Utility.FormatSizeString(quota.TotalQuotaSpace));
+                            Console.WriteLine(LogTimeStamp + "Free Space:  {0}", Library.Utility.Utility.FormatSizeString(quota.FreeQuotaSpace));
+                            Console.WriteLine(LogTimeStamp + "Total Space: {0}", Library.Utility.Utility.FormatSizeString(quota.TotalQuotaSpace));
                         }
                         else
                         {
-                            Console.WriteLine("Unable to retrieve quota information");
+                            Console.WriteLine(LogTimeStamp + "Unable to retrieve quota information");
                         }
                     }
                 }
 
                 // Test DNSName lookup
-                Console.WriteLine("Checking DNS names used by this backend...");
+                Console.WriteLine(LogTimeStamp + "Checking DNS names used by this backend...");
                 try
                 {
                     var dnsNames = backend.GetDNSNamesAsync(CancellationToken.None).Await();
@@ -528,12 +540,12 @@ namespace Duplicati.CommandLine.BackendTester
                     }
                     else
                     {
-                        Console.WriteLine("No DNS names reported");
+                        Console.WriteLine(LogTimeStamp + "No DNS names reported");
                     }
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine("*** Checking DNSName failed: {0}", ex);
+                    Console.WriteLine(LogTimeStamp + "*** Checking DNSName failed: {0}", ex);
                 }
             }
             finally
@@ -548,7 +560,7 @@ namespace Duplicati.CommandLine.BackendTester
 
         private static void Uploadfile(string localfilename, int i, string remotefilename, IBackend backend, bool disableStreaming, long throttle, int readWriteTimeout)
         {
-            Console.Write("Uploading file {0}, {1} ... ", i, Duplicati.Library.Utility.Utility.FormatSizeString(new System.IO.FileInfo(localfilename).Length));
+            Console.Write(LogTimeStamp + "Uploading file {0}, {1} ... ", i, Duplicati.Library.Utility.Utility.FormatSizeString(new System.IO.FileInfo(localfilename).Length));
             Exception e = null;
 
             var sw = Stopwatch.StartNew();
@@ -575,11 +587,11 @@ namespace Duplicati.CommandLine.BackendTester
 
             if (e != null)
             {
-                Console.WriteLine($"Failed to upload file {i}, error message: {e}, remote name: {remotefilename} after {sw.ElapsedMilliseconds} ms");
+                Console.WriteLine(LogTimeStamp + $"Failed to upload file {i}, error message: {e}, remote name: {remotefilename} after {sw.ElapsedMilliseconds} ms");
                 while (e.InnerException != null)
                 {
                     e = e.InnerException;
-                    Console.WriteLine("  Inner exception: {0}", e);
+                    Console.WriteLine(LogTimeStamp + "  Inner exception: {0}", e);
                 }
             }
             else
@@ -604,7 +616,7 @@ namespace Duplicati.CommandLine.BackendTester
 
         private static string CreateRandomFile(Library.Utility.TempFolder tf, int i, int min_file_size, int max_file_size, Random rnd)
         {
-            Console.Write("Generating file {0}", i);
+            Console.Write(LogTimeStamp + "Generating file {0}", i);
             string filename = System.IO.Path.Combine(tf, i.ToString());
             using (System.IO.FileStream fs = new System.IO.FileStream(filename, System.IO.FileMode.CreateNew, System.IO.FileAccess.Write))
             {
@@ -624,6 +636,8 @@ namespace Duplicati.CommandLine.BackendTester
 
             return filename;
         }
+
+        private static string LogTimeStamp => $"[{DateTime.Now:HH:mm:ss fff}] ";
 
         public static IList<ICommandLineArgument> SupportedCommands
         {

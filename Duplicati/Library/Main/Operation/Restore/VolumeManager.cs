@@ -1,26 +1,25 @@
 // Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
-// 
-// Permission is hereby granted, free of charge, to any person obtaining a 
-// copy of this software and associated documentation files (the "Software"), 
-// to deal in the Software without restriction, including without limitation 
-// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
-// and/or sell copies of the Software, and to permit persons to whom the 
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the "Software"),
+// to deal in the Software without restriction, including without limitation
+// the rights to use, copy, modify, merge, publish, distribute, sublicense,
+// and/or sell copies of the Software, and to permit persons to whom the
 // Software is furnished to do so, subject to the following conditions:
-// 
-// The above copyright notice and this permission notice shall be included in 
+//
+// The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
-// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
 using CoCoL;
-using Duplicati.Library.Main.Database;
 using Duplicati.Library.Main.Volumes;
 using Duplicati.Library.Utility;
 using System;
@@ -46,11 +45,9 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// <summary>
         /// Runs the volume manager process.
         /// </summary>
-        /// <param name="db">The local restore database, used to find the volume where a block is stored.</param>
-        /// <param name="backend">The backend manager, used to fetch the volumes from the backend.</param>
+        /// <param name="channels">The named channels for the restore operation.</param>
         /// <param name="options">The restore options.</param>
-        /// <param name="results">The restore results.</param>
-        public static Task Run(Channels channels, LocalRestoreDatabase db, IBackendManager backend, Options options, RestoreResults results)
+        public static Task Run(Channels channels, Options options)
         {
             return AutomationExtensions.RunTask(
                 new
@@ -62,7 +59,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                 async self =>
                 {
                     Dictionary<long, BlockVolumeReader> cache = [];
-                    Dictionary<long, TempFile> files = [];
+                    Dictionary<long, TempFile> tmpfiles = [];
                     Dictionary<long, List<BlockRequest>> in_flight = [];
 
                     Stopwatch sw_cache_set = options.InternalProfiling ? new() : null;
@@ -76,7 +73,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                     {
                         while (true)
                         {
-                            var msg = await self.VolumeRequestResponse.ReadAsync();
+                            var msg = await self.VolumeRequestResponse.ReadAsync().ConfigureAwait(false);
 
                             switch (msg)
                             {
@@ -87,32 +84,29 @@ namespace Duplicati.Library.Main.Operation.Restore
                                             sw_cache_evict?.Start();
                                             cache.Remove(request.VolumeID, out var reader);
                                             reader?.Dispose();
-                                            files.Remove(request.VolumeID, out var tempfile);
-                                            tempfile?.Dispose();
+                                            tmpfiles.Remove(request.VolumeID, out var tmpfile);
+                                            tmpfile?.Dispose();
                                             sw_cache_evict?.Stop();
                                         }
                                         else
                                         {
+                                            Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeRequest", "Requesting block {0} from volume {1}", request.BlockID, request.VolumeID);
                                             sw_request?.Start();
                                             if (cache.TryGetValue(request.VolumeID, out BlockVolumeReader reader))
                                             {
-                                                await self.DecompressRequest.WriteAsync((request, reader));
+                                                Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeRequest", "Block {0} found in cache", request.BlockID);
+                                                await self.DecompressRequest.WriteAsync((request, reader)).ConfigureAwait(false);
                                             }
                                             else
                                             {
+                                                Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeRequest", "Block {0} not found in cache, requesting volume {1}", request.BlockID, request.VolumeID);
                                                 if (in_flight.TryGetValue(request.VolumeID, out var waiters))
                                                 {
                                                     waiters.Add(request);
                                                 }
                                                 else
                                                 {
-                                                    sw_query?.Start();
-                                                    var (volume_name, volume_size, volume_hash) = db.GetVolumeInfo(request.VolumeID).First();
-                                                    sw_query?.Stop();
-                                                    sw_backend?.Start();
-                                                    var handle = backend.GetAsync(volume_name, volume_hash, volume_size, results.TaskControl.TransferToken);
-                                                    sw_backend?.Stop();
-                                                    await self.DownloadRequest.WriteAsync((request.VolumeID, handle));
+                                                    await self.DownloadRequest.WriteAsync(request.VolumeID).ConfigureAwait(false);
                                                     in_flight[request.VolumeID] = [request];
                                                 }
                                             }
@@ -120,16 +114,17 @@ namespace Duplicati.Library.Main.Operation.Restore
                                         }
                                         break;
                                     }
-                                case (long volume_id, TempFile temp_file, BlockVolumeReader reader):
+                                case (long volume_id, TempFile tmpfile, BlockVolumeReader reader):
                                     {
                                         sw_cache_set?.Start();
                                         cache[volume_id] = reader;
-                                        files[volume_id] = temp_file;
+                                        tmpfiles[volume_id] = tmpfile;
                                         sw_cache_set?.Stop();
                                         sw_wakeup?.Start();
                                         foreach (var request in in_flight[volume_id])
                                         {
-                                            await self.DecompressRequest.WriteAsync((request, reader));
+                                            Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeRequest", "Requesting block {0} from volume {1}", request.BlockID, volume_id);
+                                            await self.DecompressRequest.WriteAsync((request, reader)).ConfigureAwait(false);
                                         }
                                         in_flight.Remove(volume_id);
                                         sw_wakeup?.Stop();

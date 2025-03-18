@@ -45,6 +45,11 @@ internal class pCloudFileEntry : IFileEntry
     public DateTime LastModification { get; set; }
 
     /// <summary>
+    /// Creation of the file
+    /// </summary>
+    public DateTime Created { get; set; }
+
+    /// <summary>
     /// Filename or folder name
     /// </summary>
     public string Name { get; set; }

@@ -45,7 +45,7 @@ namespace Duplicati.Library.Main.Operation
             m_result = result;
         }
 
-        public async Task Run(IBackendManager backendManager, IEnumerable<string> filterstrings, IFilter compositefilter)
+        public async Task RunAsync(IBackendManager backendManager, IEnumerable<string> filterstrings, IFilter compositefilter)
         {
             var cancellationToken = m_result.TaskControl.ProgressToken;
             var parsedfilter = new FilterExpression(filterstrings);
@@ -176,7 +176,7 @@ namespace Duplicati.Library.Main.Operation
 
                 long flindex = 1;
                 var filteredListMap = filteredList.ToDictionary(x => x.Value.File.Name, x => x.Value);
-                await foreach (var (tmpfile, hash, size, name) in backendManager.GetFilesOverlappedAsync(filteredList.Select(x => new RemoteVolumeMapper(x.Value)), cancellationToken))
+                await foreach (var (tmpfile, hash, size, name) in backendManager.GetFilesOverlappedAsync(filteredList.Select(x => new RemoteVolumeMapper(x.Value)), cancellationToken).ConfigureAwait(false))
                 {
                     var flentry = filteredListMap[name];
                     using (tmpfile)
@@ -237,7 +237,7 @@ namespace Duplicati.Library.Main.Operation
         {
             var list = new List<IListResultFileset>();
             var map = filteredList.ToDictionary(x => x.Value.File.Name, x => x);
-            await foreach (var (file, hash, size, name) in backendManager.GetFilesOverlappedAsync(filteredList.Select(x => new RemoteVolumeMapper(x.Value)), cancelToken))
+            await foreach (var (file, hash, size, name) in backendManager.GetFilesOverlappedAsync(filteredList.Select(x => new RemoteVolumeMapper(x.Value)), cancelToken).ConfigureAwait(false))
             {
                 // We must obtain the partial/full status from the fileset file in the dlist files.
                 // Without this, the restore dialog will show all versions as full, or all versions

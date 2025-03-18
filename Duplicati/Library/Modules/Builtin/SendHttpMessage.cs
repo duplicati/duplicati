@@ -28,6 +28,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Duplicati.Library.Utility;
 using Uri = System.Uri;
+using System.Threading;
 
 namespace Duplicati.Library.Modules.Builtin
 {
@@ -113,6 +114,15 @@ namespace Duplicati.Library.Modules.Builtin
         /// </summary>
         private const string OPTION_ACCEPT_ANY_CERTIFICATE = "send-http-accept-any-ssl-certificate";
 
+        /// <summary>
+        /// The option used to specify the number of retries for sending the HTTP request
+        /// </summary>
+        private const string OPTION_SEND_HTTP_RETRIES = "send-http-retries";
+        /// <summary>
+        /// The option used to specify the delay between retries for sending the HTTP request
+        /// </summary>
+        private const string OPTION_SEND_HTTP_RETRY_DELAY = "send-http-retry-delay";
+
         #endregion
 
         #region Option defaults
@@ -128,6 +138,14 @@ namespace Duplicati.Library.Modules.Builtin
         /// Don't use the subject for HTTP
         /// </summary>
         protected override string DEFAULT_SUBJECT => string.Empty;
+        /// <summary>
+        /// The default number of retries
+        /// </summary>
+        private const int DEFAULT_RETRIES = 3;
+        /// <summary>
+        /// The default delay between retries
+        /// </summary>
+        private const string DEFAULT_RETRY_DELAY = "1s";
         #endregion
 
         #region Private variables
@@ -153,6 +171,15 @@ namespace Duplicati.Library.Modules.Builtin
         /// Specific hashes to be accepted by the certificate validator
         /// </summary>
         private string[] m_acceptSpecificCertificates;
+
+        /// <summary>
+        /// The number of retries to attempt
+        /// </summary>
+        private int m_retries;
+        /// <summary>
+        /// The delay between retries
+        /// </summary>
+        private TimeSpan m_retryDelay;
 
         #endregion
 
@@ -208,6 +235,9 @@ namespace Duplicati.Library.Modules.Builtin
 
                     new CommandLineArgument(OPTION_ACCEPT_ANY_CERTIFICATE, CommandLineArgument.ArgumentType.Boolean, Strings.SendHttpMessage.AcceptAnyCertificateShort, Strings.SendHttpMessage.AcceptAnyCertificateLong),
                     new CommandLineArgument(OPTION_ACCEPT_SPECIFIED_CERTIFICATE, CommandLineArgument.ArgumentType.String, Strings.SendHttpMessage.AcceptSpecifiedCertificateShort, Strings.SendHttpMessage.AcceptSpecifiedCertificateLong),
+
+                    new CommandLineArgument(OPTION_SEND_HTTP_RETRIES, CommandLineArgument.ArgumentType.Integer, Strings.SendHttpMessage.SendHttpRetriesShort, Strings.SendHttpMessage.SendHttpRetriesLong, DEFAULT_RETRIES.ToString()),
+                    new CommandLineArgument(OPTION_SEND_HTTP_RETRY_DELAY, CommandLineArgument.ArgumentType.Integer, Strings.SendHttpMessage.SendHttpRetryDelayShort, Strings.SendHttpMessage.SendHttpRetryDelayLong, DEFAULT_RETRY_DELAY),
                 });
             }
         }
@@ -266,8 +296,11 @@ namespace Duplicati.Library.Modules.Builtin
                 m_messageParameterName = DEFAULT_MESSAGE_PARAMETER_NAME;
 
             commandlineOptions.TryGetValue(OPTION_EXTRA_PARAMETERS, out m_extraParameters);
-            m_acceptAnyCertificate = commandlineOptions.ContainsKey(OPTION_ACCEPT_ANY_CERTIFICATE) && Utility.Utility.ParseBoolOption(commandlineOptions.AsReadOnly(), OPTION_ACCEPT_ANY_CERTIFICATE);
+            m_acceptAnyCertificate = Utility.Utility.ParseBoolOption(commandlineOptions.AsReadOnly(), OPTION_ACCEPT_ANY_CERTIFICATE);
             m_acceptSpecificCertificates = commandlineOptions.ContainsKey(OPTION_ACCEPT_SPECIFIED_CERTIFICATE) ? commandlineOptions[OPTION_ACCEPT_SPECIFIED_CERTIFICATE].Split([",", ";"], StringSplitOptions.RemoveEmptyEntries) : null;
+
+            m_retries = Utility.Utility.ParseIntOption(commandlineOptions.AsReadOnly(), OPTION_SEND_HTTP_RETRIES, DEFAULT_RETRIES);
+            m_retryDelay = Utility.Utility.ParseTimespanOption(commandlineOptions.AsReadOnly(), OPTION_SEND_HTTP_RETRY_DELAY, DEFAULT_RETRY_DELAY);
 
             return true;
         }
@@ -289,7 +322,7 @@ namespace Duplicati.Library.Modules.Builtin
                 contenttype = new MediaTypeHeaderValue("application/x-www-form-urlencoded");
                 var postData = $"{m_messageParameterName}={System.Uri.EscapeDataString(body)}";
                 if (!string.IsNullOrEmpty(m_extraParameters))
-                    postData += $"&{System.Uri.EscapeDataString(m_extraParameters)}";
+                    postData += $"&{m_extraParameters}";
                 data = Encoding.UTF8.GetBytes(postData);
             }
 
@@ -301,7 +334,9 @@ namespace Duplicati.Library.Modules.Builtin
             };
             request.Content.Headers.ContentType = contenttype;
 
-            try
+            Exception lastEx = null;
+
+            await RetryHelper.Retry(async () =>
             {
                 var response = await client.SendAsync(request);
                 var responseContent = await response.Content.ReadAsStringAsync();
@@ -315,18 +350,17 @@ namespace Duplicati.Library.Modules.Builtin
                 );
 
                 response.EnsureSuccessStatusCode();
-            }
-            catch (Exception ex)
+                lastEx = null;
+            }, (ex, retry) =>
             {
-                Logging.Log.WriteWarningMessage(LOGTAG, "HttpResponseError", ex, "HTTP Response request failed for: {0}", target.Url);
-                return ex;
-            }
+                Logging.Log.WriteWarningMessage(LOGTAG, "HttpResponseError", ex, "HTTP Response request attempt {0} of {1} failed for: {2}", retry, m_retries, target.Url);
+                lastEx = ex;
+            }, m_retries, m_retryDelay, CancellationToken.None);
 
-            return null;
+            return lastEx;
         }
 
         private Dictionary<ResultExportFormat, string> m_cachedBodyResults;
-        private string m_form_body = string.Empty;
 
         protected override string ReplaceTemplate(string input, object result, Exception exception, bool subjectline)
         {
@@ -364,7 +398,7 @@ namespace Duplicati.Library.Modules.Builtin
             foreach (var target in m_report_targets)
             {
                 if (m_cachedBodyResults.TryGetValue(target.Format, out var result))
-                    ex ??= SendMessage(client, target, subject, result).ConfigureAwait(false).GetAwaiter().GetResult();
+                    ex ??= SendMessage(client, target, subject, result).Await();
             }
 
             if (ex != null)

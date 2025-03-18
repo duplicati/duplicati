@@ -25,4 +25,4 @@ namespace Duplicati.WebserverCore.Dto;
 /// </summary>
 /// <param name="Exists">Whether the database path exists.</param>
 /// <param name="Path">The database path.</param>
-public sealed record GetDbPathDto(bool Exists, string Path);
+public sealed record GetDbPathDto(bool Exists, string? Path);

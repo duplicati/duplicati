@@ -78,6 +78,11 @@ public static partial class Command
                         // TODO: Self contained builds are bloating the build size
                         // Alternative is to require the .NET runtime to be installed
 
+                        // Build into isolated folder
+                        var buildfolder = Path.Combine(buildDir, target.BuildTargetString + "-out");
+                        if (Directory.Exists(buildfolder))
+                            Directory.Delete(buildfolder, true);
+
                         // Fix any RIDs that differ from .NET SDK
                         var archstring = target.Arch switch
                         {
@@ -88,7 +93,7 @@ public static partial class Command
                         var command = new string[] {
                             "dotnet", "publish", proj,
                             "-c", "Release",
-                            "-o", tmpfolder,
+                            "-o", buildfolder,
                             "-r", archstring,
                             $"/p:AssemblyVersion={releaseInfo.Version}",
                             $"/p:Version={releaseInfo.Version}-{releaseInfo.Channel}-{releaseInfo.Timestamp:yyyyMMdd}",
@@ -104,11 +109,17 @@ public static partial class Command
                             Console.WriteLine($"Error building {proj} for {target.BuildTargetString}: {ex.Message}");
                             throw;
                         }
+
+                        // Merge the build into the temporary target folder
+                        EnvHelper.CopyDirectory(buildfolder, tmpfolder, true);
+                        Directory.Delete(buildfolder, true);
                     }
 
                     // Perform any post-build steps, cleaning and signing as needed
                     await PostCompile.PrepareTargetDirectory(baseDir, tmpfolder, target, rtcfg, keepBuilds);
+                    await PostCompile.VerifyTargetDirectory(tmpfolder, target);
 
+                    // Move the final build to the output folder
                     Directory.Move(tmpfolder, outputFolder);
                 }
 

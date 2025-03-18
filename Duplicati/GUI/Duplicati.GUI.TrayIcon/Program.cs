@@ -24,9 +24,14 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
+using System.Threading;
+using Duplicati.Library.AutoUpdater;
 using Duplicati.Library.Interface;
 using Duplicati.Library.RestAPI;
+using Duplicati.Library.Utility;
 using Duplicati.Server;
+using Uri = System.Uri;
 
 namespace Duplicati.GUI.TrayIcon
 {
@@ -61,14 +66,12 @@ namespace Duplicati.GUI.TrayIcon
         private const string DETACHED_PROCESS = "detached-process";
         private const string BROWSER_COMMAND_OPTION = "browser-command";
 
-        private const string DEFAULT_HOSTURL = "http://localhost:8200";
+        private static string DEFAULT_HOSTURL => $"http://{Library.Utility.Utility.IpVersionCompatibleLoopback}:8200";
 
         private static string _browser_command = null;
         private static bool disableTrayIconLogin = false;
         private static bool openui = false;
-        private static Uri serverURL = new Uri(DEFAULT_HOSTURL);
-
-
+        private static Uri serverURL = new(DEFAULT_HOSTURL);
         public static string BrowserCommand { get { return _browser_command; } }
         public static Server.Database.Connection databaseConnection = null;
 
@@ -85,15 +88,7 @@ namespace Duplicati.GUI.TrayIcon
             if (OperatingSystem.IsWindows() && !Library.Utility.Utility.ParseBoolOption(options, DETACHED_PROCESS))
                 Library.Utility.Win32.AttachConsole(Library.Utility.Win32.ATTACH_PARENT_PROCESS);
 
-            foreach (string s in args)
-                if (
-                    s.Equals("help", StringComparison.OrdinalIgnoreCase) ||
-                    s.Equals("/help", StringComparison.OrdinalIgnoreCase) ||
-                    s.Equals("usage", StringComparison.OrdinalIgnoreCase) ||
-                    s.Equals("/usage", StringComparison.OrdinalIgnoreCase))
-                    options["help"] = "";
-
-            if (options.ContainsKey("help"))
+            if (HelpOptionExtensions.IsArgumentAnyHelpString(args))
             {
                 Console.WriteLine("Supported commandline arguments:");
                 Console.WriteLine();
@@ -154,7 +149,7 @@ namespace Duplicati.GUI.TrayIcon
             }
             else if (Library.Utility.Utility.ParseBoolOption(options, READCONFIGFROMDB_OPTION))
             {
-                if (File.Exists(Path.Combine(Server.Program.GetDataFolderPath(options), Server.Program.SERVER_DATABASE_FILENAME)))
+                if (File.Exists(Path.Combine(DataFolderManager.DATAFOLDER, DataFolderManager.SERVER_DATABASE_FILENAME)))
                 {
                     passwordSource = PasswordSource.Database;
                     databaseConnection = Server.Program.GetDatabaseConnection(options, true);
@@ -211,31 +206,43 @@ No password provided, unable to connect to server, exiting");
 
                 do
                 {
+                    if (reSpawn > 0)
+                        Thread.Sleep(1000);
+
                     try
                     {
                         ServicePointManager.SecurityProtocol = SecurityProtocolType.SystemDefault;
                         using (Connection = new HttpServerConnection(serverURL, password, passwordSource, disableTrayIconLogin, acceptedHostCertificate, options))
                         {
+                            // Make sure we have the latest status
+                            // This will throw an exception if the server is not running,
+                            // or the password is incorrect
+                            Connection.UpdateStatus().Await();
+
                             using (var tk = RunTrayIcon())
                             {
                                 if (hosted != null && Server.Program.ApplicationInstance != null)
                                     Server.Program.ApplicationInstance.SecondInstanceDetected +=
                                         new Server.SingleInstance.SecondInstanceDelegate(
-                                            x => { tk.ShowUrlInWindow(serverURL.ToString()); });
+                                            x => tk.ShowStatusWindow());
 
                                 // TODO: If we change to hosted browser this should be a callback
                                 if (openui)
                                 {
-                                    try
+                                    Connection.GetStatusWindowURLAsync().ContinueWith(t =>
                                     {
-                                        tk.ShowUrlInWindow(Connection.StatusWindowURL);
+                                        if (t.IsFaulted)
+                                        {
+                                            Console.WriteLine("Failed to get status window URL: " + t.Exception.Message);
+                                            tk.NotifyUser("Failed to get status window URL", t.Exception.Message, NotificationType.Error);
+                                            return;
+                                        }
 
+                                        tk.ShowUrlInWindow(t.Result);
                                         Server.Program.IsFirstRun = false;
                                         Server.Program.ServerPortChanged = false;
-                                    }
-                                    catch
-                                    {
-                                    }
+
+                                    });
                                 }
 
                                 // If the server shuts down, shut down the tray-icon as well
@@ -262,7 +269,7 @@ No password provided, unable to connect to server, exiting");
                             }
                         }
                     }
-                    catch (WebException ex)
+                    catch (HttpRequestException ex)
                     {
                         System.Diagnostics.Trace.WriteLine("Request error: " + ex);
                         Console.WriteLine("Request error: " + ex);

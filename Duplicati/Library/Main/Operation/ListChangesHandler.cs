@@ -23,6 +23,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
 
@@ -50,7 +51,7 @@ namespace Duplicati.Library.Main.Operation
             Tuple<long, DateTime, T> res;
             if (!long.TryParse(value, out indexValue))
             {
-                var t = Library.Utility.Timeparser.ParseTimeInterval(value, DateTime.Now, true);
+                var t = Timeparser.ParseTimeInterval(value, DateTime.Now, true);
                 res = list.OrderBy(x => Math.Abs((x.Item2 - t).Ticks)).First();
             }
             else
@@ -64,10 +65,9 @@ namespace Duplicati.Library.Main.Operation
             return res;
         }
 
-        public void Run(string baseVersion, string compareVersion, IBackendManager backendManager, IEnumerable<string> filterstrings, IFilter compositefilter, Action<IListChangesResults, IEnumerable<Tuple<ListChangesChangeType, ListChangesElementType, string>>> callback)
+        public async Task RunAsync(string baseVersion, string compareVersion, IBackendManager backendManager, IEnumerable<string> filterstrings, IFilter compositefilter, Action<IListChangesResults, IEnumerable<Tuple<ListChangesChangeType, ListChangesElementType, string>>> callback)
         {
-            var cancellationToken = CancellationToken.None;
-            var filter = Library.Utility.JoinedFilterExpression.Join(new Library.Utility.FilterExpression(filterstrings), compositefilter);
+            var filter = JoinedFilterExpression.Join(new FilterExpression(filterstrings), compositefilter);
 
             var useLocalDb = !m_options.NoLocalDb && System.IO.File.Exists(m_options.Dbpath);
             baseVersion = string.IsNullOrEmpty(baseVersion) ? "1" : baseVersion;
@@ -79,7 +79,7 @@ namespace Duplicati.Library.Main.Operation
             DateTime baseVersionTime;
             DateTime compareVersionTime;
 
-            using (var tmpdb = useLocalDb ? null : new Library.Utility.TempFile())
+            using (var tmpdb = useLocalDb ? null : new TempFile())
             using (var db = new Database.LocalListChangesDatabase(useLocalDb ? m_options.Dbpath : (string)tmpdb))
             using (var storageKeeper = db.CreateStorageHelper())
             {
@@ -106,11 +106,11 @@ namespace Duplicati.Library.Main.Operation
                 {
                     Logging.Log.WriteInformationMessage(LOGTAG, "NoLocalDatabase", "No local database, accessing remote store");
 
-                    var parsedlist = (from n in backendManager.ListAsync(cancellationToken).Await()
-                                      let p = Volumes.VolumeBase.ParseFilename(n)
-                                      where p != null && p.FileType == RemoteVolumeType.Files
-                                      orderby p.Time descending
-                                      select p).ToArray();
+                    var parsedlist = (await backendManager.ListAsync(m_result.TaskControl.ProgressToken).ConfigureAwait(false))
+                        .Select(n => Volumes.VolumeBase.ParseFilename(n))
+                        .Where(p => p != null && p.FileType == RemoteVolumeType.Files)
+                        .OrderByDescending(p => p.Time)
+                        .ToArray();
 
                     var numberedList = parsedlist.Zip(Enumerable.Range(0, parsedlist.Length), (a, b) => new Tuple<long, DateTime, Volumes.IParsedVolume>(b, a.Time, a)).ToList();
                     if (numberedList.Count < 2)
@@ -138,19 +138,19 @@ namespace Duplicati.Library.Main.Operation
                         }
                     };
 
-                    if (!m_result.TaskControl.ProgressRendevouz().Await())
+                    if (!await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
                         return;
 
-                    using (var tmpfile = backendManager.GetAsync(baseFile.File.Name, null, baseFile.File.Size, cancellationToken).Await())
+                    using (var tmpfile = await backendManager.GetAsync(baseFile.File.Name, null, baseFile.File.Size, m_result.TaskControl.ProgressToken).ConfigureAwait(false))
                     using (var rd = new Volumes.FilesetVolumeReader(RestoreHandler.GetCompressionModule(baseFile.File.Name), tmpfile, m_options))
                         foreach (var f in rd.Files)
                             if (FilterExpression.Matches(filter, f.Path))
                                 storageKeeper.AddElement(f.Path, f.Hash, f.Metahash, f.Size, conv(f.Type), false);
 
-                    if (!m_result.TaskControl.ProgressRendevouz().Await())
+                    if (!await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
                         return;
 
-                    using (var tmpfile = backendManager.GetAsync(compareFile.File.Name, null, compareFile.File.Size, cancellationToken).Await())
+                    using (var tmpfile = await backendManager.GetAsync(compareFile.File.Name, null, compareFile.File.Size, m_result.TaskControl.ProgressToken).ConfigureAwait(false))
                     using (var rd = new Volumes.FilesetVolumeReader(RestoreHandler.GetCompressionModule(compareFile.File.Name), tmpfile, m_options))
                         foreach (var f in rd.Files)
                             if (FilterExpression.Matches(filter, f.Path))

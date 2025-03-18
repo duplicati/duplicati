@@ -20,6 +20,7 @@
 // DEALINGS IN THE SOFTWARE.
 using System.CommandLine;
 using System.CommandLine.Binding;
+using Duplicati.Library.AutoUpdater;
 using Duplicati.Library.Main;
 
 namespace Duplicati.CommandLine.ServerUtil;
@@ -36,11 +37,15 @@ public class SettingsBinder : BinderBase<Settings>
     /// <summary>
     /// The host URL option.
     /// </summary>
-    public static readonly Option<Uri> hostUrlOption = new Option<Uri>("--hosturl", description: "The host URL to use", getDefaultValue: () => new Uri("http://localhost:8200"));
+    public static readonly Option<Uri> hostUrlOption = new Option<Uri>("--hosturl", description: "The host URL to use", getDefaultValue: () => new Uri($"http://{Library.Utility.Utility.IpVersionCompatibleLoopback}:8200"));
     /// <summary>
     /// The server datafolder option.
     /// </summary>
-    public static readonly Option<DirectoryInfo?> serverDatafolderOption = new Option<DirectoryInfo?>("--server-datafolder", description: "The server datafolder to use for locating the database", getDefaultValue: () => null);
+    public static readonly Option<DirectoryInfo?> serverDatafolderOption = new Option<DirectoryInfo?>($"--{DataFolderManager.SERVER_DATAFOLDER_OPTION}", description: "The server datafolder to use for locating the database and storing configuration", getDefaultValue: () => new DirectoryInfo(DataFolderManager.DATAFOLDER));
+    /// <summary>
+    /// The server portable mode option.
+    /// </summary>
+    public static readonly Option<bool> portableModeOption = new Option<bool>($"--{DataFolderManager.PORTABLE_MODE_OPTION}", description: "Use portable mode for locating the database and storing configuration", getDefaultValue: () => DataFolderManager.PORTABLE_MODE);
     /// <summary>
     /// The settings file option.
     /// </summary>
@@ -84,6 +89,7 @@ public class SettingsBinder : BinderBase<Settings>
         rootCommand.AddGlobalOption(passwordOption);
         rootCommand.AddGlobalOption(hostUrlOption);
         rootCommand.AddGlobalOption(serverDatafolderOption);
+        rootCommand.AddGlobalOption(portableModeOption);
         rootCommand.AddGlobalOption(settingsFileOption);
         rootCommand.AddGlobalOption(insecureOption);
         rootCommand.AddGlobalOption(settingsEncryptionKeyOption);
@@ -103,7 +109,6 @@ public class SettingsBinder : BinderBase<Settings>
         Settings.Load(
             bindingContext.ParseResult.GetValueForOption(passwordOption),
             bindingContext.ParseResult.GetValueForOption(hostUrlOption),
-            bindingContext.ParseResult.GetValueForOption(serverDatafolderOption)?.FullName,
             bindingContext.ParseResult.GetValueForOption(settingsFileOption)?.FullName ?? "settings.json",
             bindingContext.ParseResult.GetValueForOption(insecureOption),
             bindingContext.ParseResult.GetValueForOption(settingsEncryptionKeyOption) ?? Environment.GetEnvironmentVariable(Library.Encryption.EncryptedFieldHelper.ENVIROMENT_VARIABLE_NAME),

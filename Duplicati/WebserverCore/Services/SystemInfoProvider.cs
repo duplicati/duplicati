@@ -20,6 +20,7 @@
 // DEALINGS IN THE SOFTWARE.
 using System.Globalization;
 using Duplicati.Library.AutoUpdater;
+using Duplicati.Library.Localization;
 using Duplicati.Library.RestAPI;
 using Duplicati.Server;
 using Duplicati.Server.Serialization.Interface;
@@ -205,62 +206,87 @@ public class SystemInfoProvider : ISystemInfoProvider
     }
 
     /// <summary>
-    /// Cached static system information.
+    /// Creates a new instance of the <see cref="StaticSystemInformation"/> class.
     /// </summary>
-    private Lazy<StaticSystemInformation> _systemInfoBase = new(() => new StaticSystemInformation
-    {
-        APIVersion = 1,
-        PasswordPlaceholder = FIXMEGlobal.PASSWORD_PLACEHOLDER,
-        ServerVersion = UpdaterManager.SelfVersion.Version,
-        ServerVersionName = License.VersionNumbers.Version,
-        ServerVersionType = Library.AutoUpdater.UpdaterManager.SelfVersion.ReleaseType,
-        RemoteControlRegistrationUrl = Duplicati.Library.RemoteControl.RegisterForRemote.DefaultRegisterationUrl,
-        StartedBy = FIXMEGlobal.Origin,
-        DefaultUpdateChannel = Library.AutoUpdater.AutoUpdateSettings.DefaultUpdateChannel.ToString(),
-        DefaultUsageReportLevel = Library.UsageReporter.Reporter.DefaultReportLevel,
-        OSType = OperatingSystem.IsWindows() ? "Windows" : OperatingSystem.IsLinux() ? "Linux" : OperatingSystem.IsMacOS() ? "MacOS" : "Unknown",
-        OSVersion = Library.UsageReporter.OSInfoHelper.PlatformString,
-        DirectorySeparator = Path.DirectorySeparatorChar,
-        PathSeparator = Path.PathSeparator,
-        CaseSensitiveFilesystem = Library.Utility.Utility.IsFSCaseSensitive,
-        MachineName = Environment.MachineName,
-        PackageTypeId = Library.AutoUpdater.UpdaterManager.PackageTypeId,
-        UserName = OperatingSystem.IsWindows() ? System.Security.Principal.WindowsIdentity.GetCurrent().Name : Environment.UserName,
-        NewLine = Environment.NewLine,
-        CLRVersion = Environment.Version.ToString(),
-        Options = Server.Serializable.ServerSettings.Options,
-        CompressionModules = Server.Serializable.ServerSettings.CompressionModules,
-        EncryptionModules = Server.Serializable.ServerSettings.EncryptionModules,
-        BackendModules = Server.Serializable.ServerSettings.BackendModules,
-        GenericModules = Server.Serializable.ServerSettings.GenericModules,
-        WebModules = Server.Serializable.ServerSettings.WebModules,
-        ConnectionModules = Server.Serializable.ServerSettings.ConnectionModules,
-        ServerModules = Server.Serializable.ServerSettings.ServerModules,
-        SecretProviderModules = Server.Serializable.ServerSettings.SecretProviderModules,
-        UsingAlternateUpdateURLs = Library.AutoUpdater.AutoUpdateSettings.UsesAlternateURLs,
-        LogLevels = Enum.GetNames(typeof(Library.Logging.LogMessageType)),
-        SpecialFolders = SpecialFolders.Nodes.Select(n => new Dto.SystemInfoDto.SpecialFolderDto { ID = n.id, Path = n.resolvedpath }).ToArray(),
-        SupportedLocales = Library.Localization.LocalizationService.SupportedCultures
+    /// <returns>The new instance.</returns>
+    private static StaticSystemInformation CreateStaticSystemInformation()
+        => new StaticSystemInformation
+        {
+            APIVersion = 1,
+            PasswordPlaceholder = FIXMEGlobal.PASSWORD_PLACEHOLDER,
+            ServerVersion = UpdaterManager.SelfVersion.Version,
+            ServerVersionName = License.VersionNumbers.VERSION_NAME,
+            ServerVersionType = UpdaterManager.SelfVersion.ReleaseType,
+            RemoteControlRegistrationUrl = Library.RemoteControl.RegisterForRemote.DefaultRegisterationUrl,
+            StartedBy = FIXMEGlobal.Origin,
+            DefaultUpdateChannel = AutoUpdateSettings.DefaultUpdateChannel.ToString(),
+            DefaultUsageReportLevel = Library.UsageReporter.Reporter.DefaultReportLevel,
+            OSType = UpdaterManager.OperatingSystemName,
+            OSVersion = Library.UsageReporter.OSInfoHelper.PlatformString,
+            DirectorySeparator = Path.DirectorySeparatorChar,
+            PathSeparator = Path.PathSeparator,
+            CaseSensitiveFilesystem = Library.Utility.Utility.IsFSCaseSensitive,
+            MachineName = Environment.MachineName,
+            PackageTypeId = UpdaterManager.PackageTypeId,
+            UserName = OperatingSystem.IsWindows() ? System.Security.Principal.WindowsIdentity.GetCurrent().Name : Environment.UserName,
+            NewLine = Environment.NewLine,
+            CLRVersion = Environment.Version.ToString(),
+            Options = Server.Serializable.ServerSettings.Options,
+            CompressionModules = Server.Serializable.ServerSettings.CompressionModules,
+            EncryptionModules = Server.Serializable.ServerSettings.EncryptionModules,
+            BackendModules = Server.Serializable.ServerSettings.BackendModules,
+            GenericModules = Server.Serializable.ServerSettings.GenericModules,
+            WebModules = Server.Serializable.ServerSettings.WebModules,
+            ConnectionModules = Server.Serializable.ServerSettings.ConnectionModules,
+            ServerModules = Server.Serializable.ServerSettings.ServerModules,
+            SecretProviderModules = Server.Serializable.ServerSettings.SecretProviderModules,
+            UsingAlternateUpdateURLs = AutoUpdateSettings.UsesAlternateURLs,
+            LogLevels = Enum.GetNames(typeof(Library.Logging.LogMessageType)),
+            SpecialFolders = SpecialFolders.Nodes.Select(n => new Dto.SystemInfoDto.SpecialFolderDto { ID = n.id, Path = n.resolvedpath }).ToArray(),
+            SupportedLocales = Library.Localization.LocalizationService.SupportedCultures
                 .Select(x => new Dto.SystemInfoDto.LocaleDto
                 {
                     Code = x,
                     EnglishName = new CultureInfo(x).EnglishName,
                     DisplayName = new CultureInfo(x).NativeName
                 }).ToArray(),
-        TimeZones = Library.Utility.TimeZoneHelper.GetTimeZones()
+            TimeZones = Library.Utility.TimeZoneHelper.GetTimeZones()
                 .Select(x => new Dto.SystemInfoDto.TimeZoneDto
                 {
                     ID = x.Id,
                     DisplayName = x.DisplayName,
                     CurrentUTCOffset = x.CurrentUtcOffset.ToString()
                 }),
-    });
+        };
+
+    /// <summary>
+    /// The lock guarding the _systemInfoBases cache.
+    /// </summary>
+    private readonly object _lock = new();
+
+    /// <summary>
+    /// Cached static system information, the key is the language code.
+    /// </summary>
+    private Dictionary<string, StaticSystemInformation> _systemInfoBases = new(StringComparer.OrdinalIgnoreCase);
 
     /// <inheritdoc />
     public SystemInfoDto GetSystemInfo(CultureInfo? browserlanguage)
     {
         browserlanguage ??= CultureInfo.InvariantCulture;
-        var systeminfo = _systemInfoBase.Value;
+        var currentLanguage = LocalizationService.CurrentUI?.Culture.Name;
+        if (string.IsNullOrWhiteSpace(currentLanguage))
+            currentLanguage = CultureInfo.CurrentUICulture.Name;
+
+        StaticSystemInformation? systeminfo;
+
+        lock (_lock)
+        {
+            if (!_systemInfoBases.TryGetValue(currentLanguage, out systeminfo))
+            {
+                systeminfo = CreateStaticSystemInformation();
+                _systemInfoBases[currentLanguage] = systeminfo;
+            }
+        }
 
         // Return the system information, patch in dynamic values
         return new SystemInfoDto()
@@ -305,7 +331,7 @@ public class SystemInfoProvider : ISystemInfoProvider
                 DisplayName = browserlanguage.NativeName
             },
             SupportedLocales = systeminfo.SupportedLocales,
-            BrowserLocaleSupported = Library.Localization.LocalizationService.isCultureSupported(browserlanguage),
+            BrowserLocaleSupported = Library.Localization.LocalizationService.IsCultureSupported(browserlanguage),
             TimeZones = systeminfo.TimeZones,
         };
     }

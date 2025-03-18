@@ -26,11 +26,11 @@ using COSXML.Model.Tag;
 using COSXML.Utils;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
-using Duplicati.Library.Utility;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -178,7 +178,8 @@ namespace Duplicati.Library.Backend.TencentCOS
             return new CosXmlServer(config, cosCredentialProvider);
         }
 
-        public IEnumerable<IFileEntry> List()
+        /// <inheritdoc />
+        public async IAsyncEnumerable<IFileEntry> ListAsync([EnumeratorCancellation] CancellationToken cancelToken)
         {
             bool isTruncated = true;
             string filename = null;
@@ -186,26 +187,24 @@ namespace Duplicati.Library.Backend.TencentCOS
             while (isTruncated)
             {
                 cosXml = GetCosXml();
-                string bucket = _cosOptions.Bucket;
-                string prefix = _cosOptions.Path;
+                var bucket = _cosOptions.Bucket;
+                var prefix = _cosOptions.Path;
 
-                GetBucketRequest request = new GetBucketRequest(bucket);
-
+                var request = new GetBucketRequest(bucket);
                 request.SetSign(TimeUtils.GetCurrentTime(TimeUnit.SECONDS), 600);
 
                 if (!string.IsNullOrEmpty(filename))
-                {
                     request.SetMarker(filename);
-                }
 
                 if (!string.IsNullOrEmpty(prefix))
-                {
                     request.SetPrefix(prefix);
-                }
 
-                GetBucketResult result = cosXml.GetBucket(request);
+                var tcs = new TaskCompletionSource<GetBucketResult>();
+                cancelToken.Register(() => tcs.TrySetCanceled());
+                cosXml.GetBucket(request, (result) => tcs.SetResult(result as GetBucketResult), (clientEx, serverEx) => tcs.SetException((Exception)clientEx ?? serverEx));
+                var result = await tcs.Task.ConfigureAwait(false);
 
-                ListBucket info = result.listBucket;
+                var info = result.listBucket;
 
                 isTruncated = result.listBucket.isTruncated;
                 filename = result.listBucket.nextMarker;

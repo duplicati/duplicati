@@ -18,6 +18,7 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
+using System.Globalization;
 using Duplicati.Library.Localization;
 
 namespace Duplicati.WebserverCore.Middlewares;
@@ -30,7 +31,7 @@ public class LanguageFilter : IEndpointFilter
             ? LocalizationService.ParseCulture(locale)
             : null;
 
-        using (ci == null ? null : LocalizationService.TemporaryContext(ci))
+        using (LocalizationService.TemporaryContext(ci ?? CultureInfo.CurrentUICulture))
             return await next(context);
 
     }

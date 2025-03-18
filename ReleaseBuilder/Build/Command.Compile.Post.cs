@@ -65,6 +65,39 @@ public static partial class Command
         }
 
         /// <summary>
+        /// Verify that some files that are expected to be present in the target directory are there
+        /// </summary>
+        /// <param name="buildDir">The build directory to verify</param>
+        /// <param name="target">The target to verify for</param>
+        /// <returns>An awaitable task</returns>
+        public static Task VerifyTargetDirectory(string buildDir, PackageTarget target)
+        {
+            var rootFiles = Directory.EnumerateFiles(buildDir, "*", SearchOption.TopDirectoryOnly)
+                .Where(x => x.EndsWith(".dll", StringComparison.OrdinalIgnoreCase) || x.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
+                .Select(x => Path.GetFileName(x))
+                .ToHashSet(Duplicati.Library.Utility.Utility.ClientFilenameStringComparer);
+
+            // Random sample of files we expect
+            var probeFiles = new string[] {
+                "System.CommandLine.dll",
+                "System.CommandLine.NamingConventionBinder.dll",
+                "AWSSDK.S3.dll",
+                "CoCoL.dll",
+                "Duplicati.Library.Interface.dll",
+                "Google.Apis.Auth.dll",
+                "Google.Apis.Core.dll",
+                "SQLiteHelper.dll",
+                "SQLite.Interop.dll",
+            };
+
+            foreach (var f in probeFiles)
+                if (!rootFiles.Contains(f))
+                    throw new Exception($"Expected file {f} for {target.BuildTargetString}, but was not found in build directory {buildDir}");
+
+            return Task.CompletedTask;
+        }
+
+        /// <summary>
         /// Set of files that are unwanted despite the OS
         /// </summary>
         static readonly IReadOnlyList<string> UnwantedCommonFiles = [
@@ -248,14 +281,7 @@ public static partial class Command
             var licenseTarget = Path.Combine(tmpApp, "Contents", "Licenses");
             Directory.Move(Path.Combine(binDir, "licenses"), licenseTarget);
 
-            // Apply code signing, if requested
-            if (rtcfg.UseCodeSignSigning)
-            {
-                var entitlementFile = Path.Combine(resourcesDir, "Entitlements.plist");
-                await PackageSupport.SignMacOSBinaries(rtcfg, binDir, entitlementFile);
-                await rtcfg.Codesign(tmpApp, entitlementFile);
-            }
-
+            // Make files executable
             if (!OperatingSystem.IsWindows())
                 foreach (var f in Directory.EnumerateFiles(binDir, "*.launchagent.plist", SearchOption.TopDirectoryOnly))
                     File.SetUnixFileMode(f, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.GroupRead | UnixFileMode.OtherRead);
@@ -316,7 +342,7 @@ public static partial class Command
         /// <returns>An awaitable task</returns>
         static async Task SignWindowsExecutables(string buildDir, RuntimeConfig rtcfg)
         {
-            var cfg = Program.Configuration;
+            var cfg = rtcfg.Configuration;
             if (!rtcfg.UseAuthenticodeSigning)
                 return;
 

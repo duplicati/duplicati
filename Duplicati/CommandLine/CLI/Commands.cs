@@ -163,7 +163,7 @@ namespace Duplicati.CommandLine
             options.TryGetValue("dbpath", out dbpath);
             if (string.IsNullOrEmpty(dbpath))
             {
-                dbpath = Library.Main.DatabaseLocator.GetDatabasePath(backend, new Duplicati.Library.Main.Options(options), false, true);
+                dbpath = Library.Main.CLIDatabaseLocator.GetDatabasePathForCLI(backend, new Library.Main.Options(options), false, true);
                 if (dbpath != null)
                     options["dbpath"] = dbpath;
             }
@@ -366,7 +366,7 @@ namespace Duplicati.CommandLine
                 options.TryGetValue("dbpath", out dbpath);
                 if (string.IsNullOrEmpty(dbpath))
                 {
-                    dbpath = Library.Main.DatabaseLocator.GetDatabasePath(backend, new Duplicati.Library.Main.Options(options), false, true);
+                    dbpath = Library.Main.CLIDatabaseLocator.GetDatabasePathForCLI(backend, new Duplicati.Library.Main.Options(options), false, true);
                     if (dbpath != null)
                         options["dbpath"] = dbpath;
                 }
@@ -622,7 +622,7 @@ namespace Duplicati.CommandLine
                         switch (phase)
                         {
                             case Duplicati.Library.Main.OperationPhase.Backup_ProcessingFiles:
-                                output.MessageEvent("Scanning local files ...");
+                                output.MessageEvent("Scanning source files ...");
                                 periodicOutput.SetReady();
                                 break;
                             case Duplicati.Library.Main.OperationPhase.Backup_Finalize:
@@ -668,6 +668,7 @@ namespace Duplicati.CommandLine
                     if (parsedStats.KnownFileCount > 0)
                     {
                         output.MessageEvent(string.Format("  Remote files: {0}", parsedStats.KnownFileCount));
+                        output.MessageEvent(string.Format("  Remote filesets: {0}", parsedStats.KnownFilesets));
                         output.MessageEvent(string.Format("  Remote size: {0}", Library.Utility.Utility.FormatSizeString(parsedStats.KnownFileSize)));
                     }
 
@@ -820,7 +821,7 @@ namespace Duplicati.CommandLine
             if (string.IsNullOrEmpty(dbpath))
             {
                 if (args.Count > 0)
-                    dbpath = Library.Main.DatabaseLocator.GetDatabasePath(args[0], new Duplicati.Library.Main.Options(options), false, true);
+                    dbpath = Library.Main.CLIDatabaseLocator.GetDatabasePathForCLI(args[0], new Duplicati.Library.Main.Options(options), false, true);
 
                 if (dbpath == null)
                 {
@@ -866,7 +867,7 @@ namespace Duplicati.CommandLine
             options.TryGetValue("dbpath", out dbpath);
             if (string.IsNullOrEmpty(dbpath))
             {
-                dbpath = Library.Main.DatabaseLocator.GetDatabasePath(args[0], new Duplicati.Library.Main.Options(options), false, true);
+                dbpath = Library.Main.CLIDatabaseLocator.GetDatabasePathForCLI(args[0], new Duplicati.Library.Main.Options(options), false, true);
                 if (dbpath != null)
                     options["dbpath"] = dbpath;
             }
