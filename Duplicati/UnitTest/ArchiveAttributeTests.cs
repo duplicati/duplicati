@@ -32,6 +32,7 @@ using Duplicati.Library.Common.IO;
 
 namespace Duplicati.UnitTest
 {
+    [TestFixture]
     public class ArchiveAttributeTests : BasicSetupHelper
     {
         private class ArchiveEnabledBackend : IStreamingBackend
@@ -44,7 +45,7 @@ namespace Duplicati.UnitTest
             private readonly IStreamingBackend backend;
 
             public static string RealKey { get; set; }
-            public static Func<IEnumerable<IFileEntry>, IEnumerable<IFileEntry>> ListModifier { get; set; }
+            public static Func<IAsyncEnumerable<IFileEntry>, IAsyncEnumerable<IFileEntry>> ListModifier { get; set; }
 
             public ArchiveEnabledBackend()
             {
@@ -69,8 +70,8 @@ namespace Duplicati.UnitTest
                 => backend.GetAsync(remotename, filename, cancellationToken);
             public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken)
                 => GetDNSNamesAsync(cancelToken);
-            public IEnumerable<IFileEntry> List()
-                => ListModifier(backend.List());
+            public IAsyncEnumerable<IFileEntry> ListAsync(CancellationToken cancellationToken)
+                => ListModifier(backend.ListAsync(cancellationToken));
 
             public Task PutAsync(string remotename, Stream stream, CancellationToken cancelToken)
                 => backend.PutAsync(remotename, stream, cancelToken);
