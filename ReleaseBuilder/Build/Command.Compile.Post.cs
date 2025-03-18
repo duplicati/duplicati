@@ -88,6 +88,7 @@ public static partial class Command
                 "Google.Apis.Core.dll",
                 "SQLiteHelper.dll",
                 "SQLite.Interop.dll",
+                "Microsoft.IdentityModel.Abstractions.dll",
             };
 
             foreach (var f in probeFiles)
