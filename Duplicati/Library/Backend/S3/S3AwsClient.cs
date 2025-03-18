@@ -70,6 +70,9 @@ namespace Duplicati.Library.Backend
         /// The DNS host of the S3 server
         /// </summary>
         private readonly string m_dnsHost;
+        /// <summary>
+        /// The option to specify if the V2 list API should be used
+        /// </summary>
         private readonly bool m_useV2ListApi;
 
         /// <summary>
