@@ -365,10 +365,9 @@ namespace Duplicati.Library.Backend
                 var client = await CreateClient(cancelToken).ConfigureAwait(false);
                 var remotePath = PreparePathForClient(null);
 
-                items = await Utility.Utility.WithTimeout(async ct =>
-                {
-                    return await client.GetListing(remotePath, FtpListOption.Modify | FtpListOption.Size, ct).ConfigureAwait(false);
-                }, cancelToken, _timeouts.ListTimeout).ConfigureAwait(false);
+                items = await Utility.Utility.WithTimeout(_timeouts.ListTimeout, cancelToken, ct =>
+                    client.GetListing(remotePath, FtpListOption.Modify | FtpListOption.Size, ct)
+                ).ConfigureAwait(false);
             }
             catch (Exception e)
             {
@@ -506,10 +505,9 @@ namespace Duplicati.Library.Backend
             {
                 var client = await CreateClient(cancelToken).ConfigureAwait(false);
                 var clientRemoteName = PreparePathForClient(remotename);
-                await Utility.Utility.WithTimeout(async ct =>
-                {
-                    await client.DeleteFile(clientRemoteName, ct).ConfigureAwait(false);
-                }, cancelToken, _timeouts.ShortTimeout).ConfigureAwait(false);
+                await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancelToken, ct =>
+                    client.DeleteFile(clientRemoteName, ct)
+                ).ConfigureAwait(false);
             }
             catch (Exception e)
             {
@@ -534,14 +532,14 @@ namespace Duplicati.Library.Backend
             try
             {
                 var client = await CreateClient(cancellationToken).ConfigureAwait(false);
-                await Utility.Utility.WithTimeout(async ct =>
+                await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancellationToken, async ct =>
                 {
                     if (!_useCwdNames)
                     {
                         var folderpath = PreparePathForClient(null);
                         await client.SetWorkingDirectory(folderpath, ct).ConfigureAwait(false);
                     }
-                }, cancellationToken, _timeouts.ShortTimeout).ConfigureAwait(false);
+                }).ConfigureAwait(false);
             }
             catch (Exception e)
             {
@@ -623,7 +621,7 @@ namespace Duplicati.Library.Backend
                 var client = await CreateClient(cancellationToken, false).ConfigureAwait(false);
                 var clientPath = PreparePathForClient(null, false);
 
-                await Utility.Utility.WithTimeout(async ct =>
+                await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancellationToken, async ct =>
                 {
                     // Try to create the directory 
                     if (_useCwdNames && clientPath.Contains('/') && clientPath != "/")
@@ -645,7 +643,7 @@ namespace Duplicati.Library.Backend
                     {
                         await client.CreateDirectory(clientPath, true, ct);
                     }
-                }, cancellationToken, _timeouts.ShortTimeout).ConfigureAwait(false);
+                }).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -671,7 +669,7 @@ namespace Duplicati.Library.Backend
         {
             if (_client == null)
             {
-                _client = await Utility.Utility.WithTimeout(async ct =>
+                _client = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancellationToken, async ct =>
                 {
                     var client = new AsyncFtpClient
                     {
@@ -700,7 +698,7 @@ namespace Duplicati.Library.Backend
                     }
 
                     return client;
-                }, cancellationToken, _timeouts.ShortTimeout).ConfigureAwait(false);
+                }).ConfigureAwait(false);
             }
             return _client;
         }

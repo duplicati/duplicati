@@ -1672,11 +1672,11 @@ namespace Duplicati.Library.Utility
         /// <summary>
         /// Performs the function with an additional timeout
         /// </summary>
-        /// <param name="func">The function to invoke</param>
-        /// <param name="token">The cancellation token</param>
         /// <param name="timeout">The timeout to observe</param>
+        /// <param name="token">The cancellation token</param>
+        /// <param name="func">The function to invoke</param>
         /// <returns>The task</returns>
-        public static async Task WithTimeout(Func<CancellationToken, Task> func, CancellationToken token, TimeSpan timeout)
+        public static async Task WithTimeout(TimeSpan timeout, CancellationToken token, Func<CancellationToken, Task> func)
         {
             using var cts = CancellationTokenSource.CreateLinkedTokenSource(token);
             cts.CancelAfter(timeout);
@@ -1687,11 +1687,11 @@ namespace Duplicati.Library.Utility
         /// Performs the function with an additional timeout
         /// </summary>
         /// <typeparam name="T">The return type</typeparam>
-        /// <param name="func">The function to invoke</param>
-        /// <param name="token">The cancellation token</param>
         /// <param name="timeout">The timeout to observe</param>
+        /// <param name="token">The cancellation token</param>
+        /// <param name="func">The function to invoke</param>
         /// <returns>The task</returns>
-        public static async Task<T> WithTimeout<T>(Func<CancellationToken, Task<T>> func, CancellationToken token, TimeSpan timeout)
+        public static async Task<T> WithTimeout<T>(TimeSpan timeout, CancellationToken token, Func<CancellationToken, Task<T>> func)
         {
             using var cts = CancellationTokenSource.CreateLinkedTokenSource(token);
             cts.CancelAfter(timeout);

@@ -235,15 +235,15 @@ namespace Duplicati.Library.Backend
 
             try
             {
-                using var response = await Utility.Utility.WithTimeout(ct =>
-                    GetHttpClient().SendAsync(request, HttpCompletionOption.ResponseContentRead, ct),
-                    cancelToken, m_timeouts.ListTimeout).ConfigureAwait(false);
+                using var response = await Utility.Utility.WithTimeout(m_timeouts.ListTimeout, cancelToken, ct =>
+                    GetHttpClient().SendAsync(request, HttpCompletionOption.ResponseContentRead, ct)
+                ).ConfigureAwait(false);
 
                 response.EnsureSuccessStatusCode();
 
-                using var sourceStream = await Utility.Utility.WithTimeout(ct =>
-                    response.Content.ReadAsStreamAsync(ct),
-                    cancelToken, m_timeouts.ReadWriteTimeout).ConfigureAwait(false);
+                using var sourceStream = await Utility.Utility.WithTimeout(m_timeouts.ReadWriteTimeout, cancelToken, ct =>
+                    response.Content.ReadAsStreamAsync(ct)
+                ).ConfigureAwait(false);
 
                 using var timeoutStream = sourceStream.ObserveReadTimeout(m_timeouts.ReadWriteTimeout, false);
                 doc.Load(timeoutStream);
@@ -360,7 +360,7 @@ namespace Duplicati.Library.Backend
         {
             try
             {
-                await Utility.Utility.WithTimeout(async ct =>
+                await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, async ct =>
                 {
                     using var request = CreateRequest(remotename);
                     request.Method = HttpMethod.Delete;
@@ -368,7 +368,7 @@ namespace Duplicati.Library.Backend
                     var response = await GetHttpClient().SendAsync(request, ct).ConfigureAwait(false);
 
                     response.EnsureSuccessStatusCode();
-                }, cancelToken, m_timeouts.ShortTimeout).ConfigureAwait(false);
+                }).ConfigureAwait(false);
 
             }
             catch (HttpRequestException wex)
@@ -408,12 +408,12 @@ namespace Duplicati.Library.Backend
         ///<inheritdoc/>
         public async Task CreateFolderAsync(CancellationToken cancelToken)
         {
-            await Utility.Utility.WithTimeout(async ct =>
+            await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, async ct =>
             {
                 using var request = CreateRequest(string.Empty, new HttpMethod("MKCOL"));
                 using var response = await GetHttpClient().SendAsync(request, ct).ConfigureAwait(false);
                 response.EnsureSuccessStatusCode();
-            }, cancelToken, m_timeouts.ShortTimeout).ConfigureAwait(false);
+            }).ConfigureAwait(false);
         }
 
         #endregion
