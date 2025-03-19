@@ -212,10 +212,6 @@ namespace Duplicati.Library.SQLiteHelper
         /// <param name="path">Path to the file to open, which may not exist.</param>
         private static void OpenSQLiteFile(System.Data.IDbConnection con, string path)
         {
-            // Check if SQLite database exists before opening a connection to it.
-            // This information is used to 'fix' permissions on a newly created file.
-            var fileExists = SystemIO.IO_OS.FileExists(path);
-
             con.ConnectionString = "Data Source=" + path;
             con.Open();
             if (con is System.Data.SQLite.SQLiteConnection sqlitecon && !OperatingSystem.IsMacOS())
@@ -225,16 +221,9 @@ namespace Duplicati.Library.SQLiteHelper
                 sqlitecon.SetConfigurationOption(System.Data.SQLite.SQLiteConfigDbOpsEnum.SQLITE_DBCONFIG_DQS_DML, false);
             }
 
-            // Make the file only accessible by the current user
-            if (fileExists)
-            {
-                if (!SystemIO.IO_OS.FileExists(SystemIO.IO_OS.PathCombine(SystemIO.IO_OS.PathGetDirectoryName(path), Util.InsecurePermissionsMarkerFile)))
-                    SystemIO.IO_OS.FileSetPermissionUserRWOnly(path);
-            }
-            else
-            {
+            // Make the file only accessible by the current user, unless opting out
+            if (!SystemIO.IO_OS.FileExists(SystemIO.IO_OS.PathCombine(SystemIO.IO_OS.PathGetDirectoryName(path), Util.InsecurePermissionsMarkerFile)))
                 SystemIO.IO_OS.FileSetPermissionUserRWOnly(path);
-            }
         }
 
         /// <summary>
