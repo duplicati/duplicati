@@ -22,6 +22,7 @@
 using Azure;
 using Azure.Storage.Blobs.Models;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Utility.Options;
 
 namespace Duplicati.Library.Backend.AzureBlob
 {
@@ -44,38 +45,19 @@ namespace Duplicati.Library.Backend.AzureBlob
             var uri = new Utility.Uri(url);
             uri.RequireHost();
 
-            string storageAccountName = null;
-            string accessKey = null;
-            string sasToken = null;
-            string containerName = uri.Host.ToLowerInvariant();
+            var containerName = uri.Host.ToLowerInvariant();
 
-            if (options.ContainsKey("auth-username"))
-                storageAccountName = options["auth-username"];
-            if (options.ContainsKey("auth-password"))
-                accessKey = options["auth-password"];
+            var auth = AuthOptionsHelper.ParseWithAlias(options, uri, "azure-account-name", "azure-access-key");
+            var timeouts = TimeoutOptionsHelper.Parse(options);
 
-            if (options.ContainsKey("azure-account-name"))
-                storageAccountName = options["azure-account-name"];
-            if (options.ContainsKey("azure-access-key"))
-                accessKey = options["azure-access-key"];
-            if (options.ContainsKey("azure-access-sas-token"))
-                sasToken = options["azure-access-sas-token"];
-
-            if (!string.IsNullOrEmpty(uri.Username))
-                storageAccountName = uri.Username;
-            if (!string.IsNullOrEmpty(uri.Password))
-                accessKey = uri.Password;
-
-            if (string.IsNullOrWhiteSpace(storageAccountName))
-            {
+            var sasToken = options.GetValueOrDefault("azure-access-sas-token");
+            if (!auth.HasUsername)
                 throw new UserInformationException(Strings.AzureBlobBackend.NoStorageAccountName, "AzureNoAccountName");
-            }
-            if (string.IsNullOrWhiteSpace(accessKey) && string.IsNullOrWhiteSpace(sasToken))
-            {
+
+            if (!auth.HasPassword && string.IsNullOrWhiteSpace(sasToken))
                 throw new UserInformationException(Strings.AzureBlobBackend.NoAccessKeyOrSasToken, "AzureNoAccessKeyOrSasToken");
-            }
-            
-            _azureBlob = new AzureBlobWrapper(storageAccountName, accessKey, sasToken, containerName);
+
+            _azureBlob = new AzureBlobWrapper(auth.Username, auth.Password, sasToken, containerName, timeouts);
         }
 
         public string DisplayName => Strings.AzureBlobBackend.DisplayName;
@@ -119,29 +101,25 @@ namespace Duplicati.Library.Backend.AzureBlob
         {
             get
             {
-                return new List<ICommandLineArgument>(new ICommandLineArgument[] {
+                return [
                     new CommandLineArgument("azure-account-name",
                         CommandLineArgument.ArgumentType.String,
                         Strings.AzureBlobBackend.StorageAccountNameDescriptionShort,
-                        Strings.AzureBlobBackend.StorageAccountNameDescriptionLong),
+                        Strings.AzureBlobBackend.StorageAccountNameDescriptionLong,
+                        null,
+                        ["auth-username"]),
                     new CommandLineArgument("azure-access-key",
                         CommandLineArgument.ArgumentType.Password,
                         Strings.AzureBlobBackend.AccessKeyDescriptionShort,
-                        Strings.AzureBlobBackend.AccessKeyDescriptionLong),
+                        Strings.AzureBlobBackend.AccessKeyDescriptionLong,
+                        null,
+                        ["auth-password"]),
                     new CommandLineArgument("azure-access-sas-token",
                         CommandLineArgument.ArgumentType.Password,
                         Strings.AzureBlobBackend.SasTokenDescriptionShort,
                         Strings.AzureBlobBackend.SasTokenDescriptionLong),
-                    new CommandLineArgument("auth-password",
-                        CommandLineArgument.ArgumentType.Password,
-                        Strings.AzureBlobBackend.AuthPasswordDescriptionShort,
-                        Strings.AzureBlobBackend.AuthPasswordDescriptionLong),
-                    new CommandLineArgument("auth-username",
-                        CommandLineArgument.ArgumentType.String,
-                        Strings.AzureBlobBackend.AuthUsernameDescriptionShort,
-                        Strings.AzureBlobBackend.AuthUsernameDescriptionLong)
-                });
-
+                    .. TimeoutOptionsHelper.GetOptions()
+                ];
             }
         }
 
@@ -156,7 +134,7 @@ namespace Duplicati.Library.Backend.AzureBlob
         {
             return WrapWithExceptionHandler(_azureBlob.AddContainerAsync(cancellationToken));
         }
-       
+
         /// <summary>
         /// Wraps the task with exception handling
         /// </summary>
