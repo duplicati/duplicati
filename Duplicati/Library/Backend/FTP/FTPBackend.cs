@@ -273,31 +273,18 @@ namespace Duplicati.Library.Backend
             var u = new Utility.Uri(url);
             u.RequireHost();
 
-            if (!string.IsNullOrEmpty(u.Username))
+            var auth = AuthOptionsHelper.AuthOptions.Parse(options);
+            if (auth.HasUsername)
             {
-                _userInfo = new NetworkCredential
+                _userInfo = new NetworkCredential()
                 {
-                    UserName = u.Username
+                    UserName = auth.Username,
+                    Domain = ""
                 };
-                if (!string.IsNullOrEmpty(u.Password))
-                    _userInfo.Password = u.Password;
-                else if (options.ContainsKey("auth-password"))
-                    _userInfo.Password = options["auth-password"];
-            }
-            else
-            {
-                if (options.ContainsKey("auth-username"))
-                {
-                    _userInfo = new NetworkCredential();
-                    _userInfo.UserName = options["auth-username"];
-                    if (options.ContainsKey("auth-password"))
-                        _userInfo.Password = options["auth-password"];
-                }
-            }
 
-            //Bugfix, see http://connect.microsoft.com/VisualStudio/feedback/details/695227/networkcredential-default-constructor-leaves-domain-null-leading-to-null-object-reference-exceptions-in-framework-code
-            if (_userInfo != null)
-                _userInfo.Domain = "";
+                if (auth.HasPassword)
+                    _userInfo.Password = auth.Password;
+            }
 
             var parsedurl = u.SetScheme("ftp").SetQuery(null).SetCredentials(null, null).ToString();
             parsedurl = Util.AppendDirSeparator(parsedurl, "/");

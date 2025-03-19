@@ -85,6 +85,41 @@ public static class AuthOptionsHelper
                 options.GetValueOrDefault($"{prefix}auth-username"),
                 options.GetValueOrDefault($"{prefix}auth-password")
             );
+
+        /// <summary>
+        /// Parses the authentication options from a dictionary
+        /// </summary>
+        /// <param name="options">The dictionary to parse</param>
+        /// <param name="uri">The URI to get the default values from</param>
+        /// <param name="prefix">An optional prefix for the options</param>
+        /// <returns>The parsed authentication options</returns>
+        public static AuthOptions Parse(IReadOnlyDictionary<string, string?> options, Uri uri, string? prefix = null)
+        {
+            var optionUsername = options.GetValueOrDefault($"{prefix}auth-username");
+            var optionPassword = options.GetValueOrDefault($"{prefix}auth-password");
+
+            string? username = null;
+            string? password = null;
+            if (!string.IsNullOrEmpty(uri.Username))
+            {
+                username = uri.Username;
+                if (!string.IsNullOrEmpty(uri.Password))
+                    password = uri.Password;
+                else if (!string.IsNullOrWhiteSpace(optionPassword))
+                    password = optionPassword;
+            }
+            else
+            {
+                if (!string.IsNullOrWhiteSpace(optionUsername))
+                {
+                    username = optionUsername;
+                    if (!string.IsNullOrWhiteSpace(optionPassword))
+                        password = optionPassword;
+                }
+            }
+
+            return new AuthOptions(username, password);
+        }
     }
 
 }
