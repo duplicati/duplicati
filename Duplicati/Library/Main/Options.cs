@@ -26,6 +26,7 @@ using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
 using System.Globalization;
 using System.Threading;
+using Duplicati.Library.Utility.Options;
 
 namespace Duplicati.Library.Main
 {
@@ -281,7 +282,11 @@ namespace Duplicati.Library.Main
         /// <summary>
         /// Returns a list of options that are intentionally duplicate
         /// </summary>
-        public static string[] KnownDuplicates => ["auth-password", "auth-username", "accept-any-ssl-certificate", "accept-specified-ssl-hash"];
+        public static readonly IReadOnlySet<string> KnownDuplicates =
+            AuthOptionsHelper.GetOptions().Select(x => x.Name)
+            .Concat(SslOptionsHelper.GetOptions().Select(x => x.Name))
+            .Concat(TimeoutOptionsHelper.GetOptions().Select(x => x.Name))
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         /// <summary>
         /// A default backup name

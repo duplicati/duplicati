@@ -22,6 +22,7 @@ using System;
 using System.Collections.Generic;
 using System.Security.Authentication;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Utility.Options;
 using FluentFTP;
 
 namespace Duplicati.Library.Backend;
@@ -68,9 +69,8 @@ public class AlternateFTPBackend : FTP
     /// Overriden so that for the alternate FTP backend, we need to support the alternate config keys starting with "aftp"
     /// </summary>
     public override IList<ICommandLineArgument> SupportedCommands =>
-    new List<ICommandLineArgument>([
-        new CommandLineArgument("auth-password", CommandLineArgument.ArgumentType.Password, Strings.DescriptionAuthPasswordShort, Strings.DescriptionAuthPasswordLong),
-        new CommandLineArgument("auth-username", CommandLineArgument.ArgumentType.String, Strings.DescriptionAuthUsernameShort, Strings.DescriptionAuthUsernameLong),
+    [
+        .. AuthOptionsHelper.GetOptions(),
         new CommandLineArgument(CONFIG_KEY_DISABLE_UPLOAD_VERIFY, CommandLineArgument.ArgumentType.Boolean, Strings.DescriptionDisableUploadVerifyShort, Strings.DescriptionDisableUploadVerifyLong),
         new CommandLineArgument(CONFIG_KEY_FTP_RELATIVE_PATH, CommandLineArgument.ArgumentType.Boolean, Strings.DescriptionAbsolutePathShort, Strings.DescriptionAbsolutePathLong),
         new CommandLineArgument(CONFIG_KEY_FTP_USE_CWD_NAMES, CommandLineArgument.ArgumentType.Boolean, Strings.DescriptionUseCwdNamesShort, Strings.DescriptionUseCwdNamesLong),
@@ -80,5 +80,7 @@ public class AlternateFTPBackend : FTP
         new CommandLineArgument(CONFIG_KEY_FTP_UPLOAD_DELAY, CommandLineArgument.ArgumentType.Timespan, Strings.DescriptionUploadDelayShort, Strings.DescriptionUploadDelayLong, DEFAULT_UPLOAD_DELAY_STRING),
         new CommandLineArgument(CONFIG_KEY_FTP_LOGTOCONSOLE, CommandLineArgument.ArgumentType.Boolean, Strings.DescriptionLogToConsoleShort, Strings.DescriptionLogToConsoleLong),
         new CommandLineArgument(CONFIG_KEY_FTP_LOGPRIVATEINFOTOCONSOLE, CommandLineArgument.ArgumentType.Boolean, Strings.DescriptionLogPrivateInfoToConsoleShort, Strings.DescriptionLogPrivateInfoToConsoleLong, "false"),
-    ]);
+        .. SslOptionsHelper.GetCertOnlyOptions(),
+        .. TimeoutOptionsHelper.GetOptions(),
+    ];
 }

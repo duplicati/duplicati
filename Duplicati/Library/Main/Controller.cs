@@ -815,7 +815,7 @@ namespace Duplicati.Library.Main
                 if (l != null)
                     foreach (ICommandLineArgument a in l)
                     {
-                        if (supportedOptions.ContainsKey(a.Name) && !Options.KnownDuplicates.Contains(a.Name, StringComparer.OrdinalIgnoreCase))
+                        if (supportedOptions.ContainsKey(a.Name) && !Options.KnownDuplicates.Contains(a.Name))
                             Logging.Log.WriteWarningMessage(LOGTAG, "DuplicateOption", null, Strings.Controller.DuplicateOptionNameWarning(a.Name));
 
                         supportedOptions[a.Name] = a;
@@ -823,7 +823,7 @@ namespace Duplicati.Library.Main
                         if (a.Aliases != null)
                             foreach (string s in a.Aliases)
                             {
-                                if (supportedOptions.ContainsKey(s) && !Options.KnownDuplicates.Contains(s, StringComparer.OrdinalIgnoreCase))
+                                if (supportedOptions.ContainsKey(s) && !Options.KnownDuplicates.Contains(s))
                                     Logging.Log.WriteWarningMessage(LOGTAG, "DuplicateOption", null, Strings.Controller.DuplicateOptionNameWarning(s));
 
                                 supportedOptions[s] = a;

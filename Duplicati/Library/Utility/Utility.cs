@@ -37,6 +37,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Library.Common.IO;
+using Duplicati.StreamUtil;
 
 namespace Duplicati.Library.Utility
 {
@@ -1667,5 +1668,74 @@ namespace Duplicati.Library.Utility
         /// <returns>The formatted string</returns>
         public static string FormatInvariant(this FormattableString formattable)
             => formattable.ToString(CultureInfo.InvariantCulture);
+
+        /// <summary>
+        /// Performs the function with an additional timeout
+        /// </summary>
+        /// <param name="func">The function to invoke</param>
+        /// <param name="token">The cancellation token</param>
+        /// <param name="timeout">The timeout to observe</param>
+        /// <returns>The task</returns>
+        public static async Task WithTimeout(Func<CancellationToken, Task> func, CancellationToken token, TimeSpan timeout)
+        {
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(token);
+            cts.CancelAfter(timeout);
+            await func(cts.Token);
+        }
+
+        /// <summary>
+        /// Performs the function with an additional timeout
+        /// </summary>
+        /// <typeparam name="T">The return type</typeparam>
+        /// <param name="func">The function to invoke</param>
+        /// <param name="token">The cancellation token</param>
+        /// <param name="timeout">The timeout to observe</param>
+        /// <returns>The task</returns>
+        public static async Task<T> WithTimeout<T>(Func<CancellationToken, Task<T>> func, CancellationToken token, TimeSpan timeout)
+        {
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(token);
+            cts.CancelAfter(timeout);
+            return await func(cts.Token);
+        }
+
+        /// <summary>
+        /// Wraps the stream in a timeout observing stream
+        /// </summary>
+        /// <param name="stream">The stream to wrap</param>
+        /// <param name="timeout">The timeout to observe</param>
+        /// <param name="disposeBaseStream">A flag indicating if the base stream should be disposed</param>
+        /// <returns>The wrapped stream</returns>
+        public static Stream ObserveReadTimeout(this Stream stream, TimeSpan timeout, bool disposeBaseStream = true)
+        {
+            if (stream == null)
+                throw new ArgumentNullException(nameof(stream));
+
+            return new TimeoutObservingStream(stream, disposeBaseStream)
+            {
+                ReadTimeout = timeout.Ticks > 0 && timeout != Timeout.InfiniteTimeSpan
+                    ? (int)timeout.TotalMilliseconds
+                    : Timeout.Infinite
+            };
+        }
+
+        /// <summary>
+        /// Wraps the stream in a timeout observing stream
+        /// </summary>
+        /// <param name="stream">The stream to wrap</param>
+        /// <param name="timeout">The timeout to observe</param>
+        /// <param name="disposeBaseStream">A flag indicating if the base stream should be disposed</param>
+        /// <returns>The wrapped stream</returns>
+        public static Stream ObserveWriteTimeout(this Stream stream, TimeSpan timeout, bool disposeBaseStream = true)
+        {
+            if (stream == null)
+                throw new ArgumentNullException(nameof(stream));
+
+            return new TimeoutObservingStream(stream, disposeBaseStream)
+            {
+                WriteTimeout = timeout.Ticks > 0 && timeout != Timeout.InfiniteTimeSpan
+                    ? (int)timeout.TotalMilliseconds
+                    : Timeout.Infinite
+            };
+        }
     }
 }
