@@ -94,7 +94,7 @@ namespace Duplicati.Server
         /// <summary>
         /// The time to pause for, used to ensure that a user set pause can override the suspend pause
         /// </summary>
-        private DateTime m_suspendMinimumPause = new DateTime(0);
+        private DateTime m_suspendMinimumPause = new DateTime(0, DateTimeKind.Utc);
 
         /// <summary>
         /// Gets the current state for the control
@@ -124,7 +124,7 @@ namespace Duplicati.Server
         /// <summary>
         /// The time that the current pause is expected to expire
         /// </summary>
-        private DateTime m_waitTimeExpiration = new DateTime(0);
+        private DateTime m_waitTimeExpiration = new DateTime(0, DateTimeKind.Utc);
 
         /// <summary>
         /// The connection to use
@@ -142,6 +142,20 @@ namespace Duplicati.Server
         }
 
         /// <summary>
+        /// Clamps the milliseconds to a valid range for the timer
+        /// </summary>
+        /// <param name="duration">The duration to clamp</param>
+        /// <returns>The clamped milliseconds</returns>
+        private static long ClampMilliseconds(TimeSpan duration)
+        {
+            if (duration.TotalMilliseconds < 100)
+                return 100;
+            if (duration > TimeSpan.FromHours(24))
+                return (long)TimeSpan.FromHours(24).TotalMilliseconds;
+            return (long)duration.TotalMilliseconds;
+        }
+
+        /// <summary>
         /// Constructs a new instance of the LiveControl
         /// </summary>
         private void Init()
@@ -152,14 +166,14 @@ namespace Duplicati.Server
 
             if (!string.IsNullOrEmpty(settings.StartupDelayDuration) && settings.StartupDelayDuration != "0")
             {
-                long milliseconds = 0;
-                try { milliseconds = (long)Duplicati.Library.Utility.Timeparser.ParseTimeSpan(settings.StartupDelayDuration).TotalMilliseconds; }
+                var startupDelay = new TimeSpan(0);
+                try { startupDelay = Library.Utility.Timeparser.ParseTimeSpan(settings.StartupDelayDuration); }
                 catch { }
 
-                if (milliseconds > 0)
+                if (startupDelay.Ticks > 0)
                 {
-                    m_waitTimeExpiration = DateTime.Now.AddMilliseconds(milliseconds);
-                    m_waitTimer.Change(milliseconds, System.Threading.Timeout.Infinite);
+                    m_waitTimeExpiration = DateTime.UtcNow.Add(startupDelay);
+                    m_waitTimer.Change(ClampMilliseconds(startupDelay), System.Threading.Timeout.Infinite);
                     m_state = LiveControlState.Paused;
                 }
             }
@@ -169,17 +183,17 @@ namespace Duplicati.Server
             {
                 if (pausedUntil.Value.Ticks == 0)
                 {
-                    m_waitTimeExpiration = new DateTime(0);
+                    m_waitTimeExpiration = new DateTime(0, DateTimeKind.Utc);
                     m_waitTimer.Change(System.Threading.Timeout.Infinite, System.Threading.Timeout.Infinite);
                     m_state = LiveControlState.Paused;
                 }
                 else if (pausedUntil.Value > DateTime.UtcNow && pausedUntil.Value > m_waitTimeExpiration)
                 {
-                    var ms = (long)(pausedUntil.Value - DateTime.UtcNow).TotalMilliseconds;
-                    if (ms > 100)
+                    var period = pausedUntil.Value - DateTime.UtcNow;
+                    if (period.TotalMilliseconds > 100)
                     {
                         m_waitTimeExpiration = pausedUntil.Value;
-                        m_waitTimer.Change(ms, System.Threading.Timeout.Infinite);
+                        m_waitTimer.Change(ClampMilliseconds(period), System.Threading.Timeout.Infinite);
                         m_state = LiveControlState.Paused;
                     }
                 }
@@ -227,13 +241,13 @@ namespace Duplicati.Server
             lock (m_lock)
                 if (!string.IsNullOrEmpty(timeout))
                 {
-                    long milliseconds = (long)Duplicati.Library.Utility.Timeparser.ParseTimeSpan(timeout).TotalMilliseconds;
-                    m_waitTimeExpiration = DateTime.Now.AddMilliseconds(milliseconds);
-                    m_waitTimer.Change(milliseconds, System.Threading.Timeout.Infinite);
+                    var delay = Library.Utility.Timeparser.ParseTimeSpan(timeout);
+                    m_waitTimeExpiration = DateTime.UtcNow.Add(delay);
+                    m_waitTimer.Change(ClampMilliseconds(delay), System.Threading.Timeout.Infinite);
                 }
                 else
                 {
-                    m_waitTimeExpiration = new DateTime(0);
+                    m_waitTimeExpiration = new DateTime(0, DateTimeKind.Utc);
                     m_waitTimer.Change(System.Threading.Timeout.Infinite, System.Threading.Timeout.Infinite);
                 }
         }
@@ -267,7 +281,7 @@ namespace Duplicati.Server
             lock (m_lock)
             {
                 m_transfersPaused = alsoTransfers;
-                m_waitTimeExpiration = new DateTime(0);
+                m_waitTimeExpiration = new DateTime(0, DateTimeKind.Utc);
 
                 ResetTimer(null);
 
@@ -295,7 +309,7 @@ namespace Duplicati.Server
                     ResetTimer(null);
 
                     m_transfersPaused = false;
-                    m_waitTimeExpiration = new DateTime(0);
+                    m_waitTimeExpiration = new DateTime(0, DateTimeKind.Utc);
                     m_state = LiveControlState.Running;
                     if (StateChanged != null)
                         ev = CreateEvent();
@@ -326,8 +340,8 @@ namespace Duplicati.Server
             LiveControlEvent ev = null;
             lock (m_lock)
             {
-                m_waitTimeExpiration = DateTime.Now.AddMilliseconds((long)timeout.TotalMilliseconds);
-                m_waitTimer.Change((long)timeout.TotalMilliseconds, System.Threading.Timeout.Infinite);
+                m_waitTimeExpiration = DateTime.UtcNow.Add(timeout);
+                m_waitTimer.Change(ClampMilliseconds(timeout), System.Threading.Timeout.Infinite);
                 m_transfersPaused = alsoTransfers;
 
 
@@ -375,7 +389,7 @@ namespace Duplicati.Server
                 {
                     this.SetPauseMode();
                     m_pausedForSuspend = true;
-                    m_suspendMinimumPause = new DateTime(0);
+                    m_suspendMinimumPause = new DateTime(0, DateTimeKind.Utc);
                 }
                 else
                 {
@@ -393,7 +407,7 @@ namespace Duplicati.Server
                 //If we have been been paused due to suspending, we un-pause now
                 if (m_pausedForSuspend)
                 {
-                    long delayTicks = (m_suspendMinimumPause - DateTime.Now).Ticks;
+                    long delayTicks = (m_suspendMinimumPause - DateTime.UtcNow).Ticks;
 
                     var appset = m_connection.ApplicationSettings;
                     if (!string.IsNullOrEmpty(appset.StartupDelayDuration) && appset.StartupDelayDuration != "0")
@@ -411,7 +425,7 @@ namespace Duplicati.Server
                 }
 
                 m_pausedForSuspend = false;
-                m_suspendMinimumPause = new DateTime(0);
+                m_suspendMinimumPause = new DateTime(0, DateTimeKind.Utc);
             }
         }
 
