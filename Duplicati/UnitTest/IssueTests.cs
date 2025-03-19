@@ -157,7 +157,7 @@ namespace Duplicati.UnitTest
             };
             int test_filesize = 1024;
 
-            // TODO tjek om de gamle filer forbliver urørte.
+            // TODO check if the original files are untocuched
 
             var original_dir = Path.Combine(DATAFOLDER, "some_original_dir");
             Directory.CreateDirectory(original_dir);

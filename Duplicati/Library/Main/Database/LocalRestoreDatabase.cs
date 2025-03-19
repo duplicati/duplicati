@@ -959,29 +959,26 @@ ORDER BY ""A"".""TargetPath"", ""BB"".""Index""");
 
         public IEnumerable<IFileToRestore> GetFilesToRestore(bool onlyNonVerified)
         {
-            using (var cmd = m_connection.CreateCommand())
-            {
-                cmd.AddParameter(!onlyNonVerified);
-                using (var rd = cmd.ExecuteReader(FormatInvariant($@"SELECT ""{m_tempfiletable}"".""ID"", ""{m_tempfiletable}"".""TargetPath"", ""Blockset"".""FullHash"", ""Blockset"".""Length"" FROM ""{m_tempfiletable}"",""Blockset"" WHERE ""{m_tempfiletable}"".""BlocksetID"" = ""Blockset"".""ID"" AND ""{m_tempfiletable}"".""DataVerified"" <= ?")))
-                    while (rd.Read())
-                        yield return new FileToRestore(rd.ConvertValueToInt64(0), rd.ConvertValueToString(1), rd.ConvertValueToString(2), rd.ConvertValueToInt64(3));
-            }
+            using var cmd = m_connection.CreateCommand(FormatInvariant($@"SELECT ""{m_tempfiletable}"".""ID"", ""{m_tempfiletable}"".""TargetPath"", ""Blockset"".""FullHash"", ""Blockset"".""Length"" FROM ""{m_tempfiletable}"",""Blockset"" WHERE ""{m_tempfiletable}"".""BlocksetID"" = ""Blockset"".""ID"" AND ""{m_tempfiletable}"".""DataVerified"" <= @Verified"))
+                .SetParameterValue("@Verified", !onlyNonVerified);
+
+            using (var rd = cmd.ExecuteReader())
+                while (rd.Read())
+                    yield return new FileToRestore(rd.ConvertValueToInt64(0), rd.ConvertValueToString(1), rd.ConvertValueToString(2), rd.ConvertValueToInt64(3));
         }
 
         /// <summary>
         /// Returns a list of files and symlinks to restore.
         /// </summary>
-        /// <param name="onlyNonVerified">Flag to indicate if only files with non-verified data should be returned.</param>
         /// <returns>A list of files and symlinks to restore.</returns>
-        public IEnumerable<FileRequest> GetFilesAndSymlinksToRestore(bool onlyNonVerified)
+        public IEnumerable<FileRequest> GetFilesAndSymlinksToRestore()
         {
-            using var cmd = m_connection.CreateCommand();
-            cmd.AddParameter(!onlyNonVerified);
-            using var rd = cmd.ExecuteReader(FormatInvariant($@"
+            using var cmd = m_connection.CreateCommand(FormatInvariant($@"
                 SELECT F.ID, F.Path, F.TargetPath, IFNULL(B.FullHash, ''), IFNULL(B.Length, 0), F.BlocksetID
                 FROM ""{m_tempfiletable}"" F
                 LEFT JOIN Blockset B ON F.BlocksetID = B.ID
                 WHERE F.BlocksetID != {FOLDER_BLOCKSET_ID}"));
+            using var rd = cmd.ExecuteReader();
             while (rd.Read())
                 yield return new FileRequest(rd.ConvertValueToInt64(0), rd.ConvertValueToString(1), rd.ConvertValueToString(2), rd.ConvertValueToString(3), rd.ConvertValueToInt64(4), rd.ConvertValueToInt64(5));
         }
