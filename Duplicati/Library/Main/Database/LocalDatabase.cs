@@ -1381,7 +1381,7 @@ AND oldVersion.FilesetID = (SELECT ID FROM Fileset WHERE ID != @FilesetId ORDER 
                 // Grab the type of entry
                 var type = (RemoteVolumeType)Enum.Parse(
                     typeof(RemoteVolumeType),
-                    cmd.SetCommandAndParameters(@"SELECT ""Type"" FROM ""Remotevolume"" WHERE ""Name"" @Name")
+                    cmd.SetCommandAndParameters(@"SELECT ""Type"" FROM ""Remotevolume"" WHERE ""Name"" = @Name")
                         .SetParameterValue("@Name", newname)
                         .ExecuteScalar()
                         .ToString(),
