@@ -54,7 +54,7 @@ public class StatusService(
             ProgramState = GetProgramState(),
             HasWarning = settingsService.GetSettings().UnackedWarning,
             HasError = settingsService.GetSettings().UnackedError,
-            EstimatedPauseEnd = liveControls.EstimatedPauseEnd,
+            EstimatedPauseEnd = liveControls.EstimatedPauseEnd.ToUniversalTime(),
             SuggestedStatusIcon = MapStateToIcon(),
             UpdateDownloadLink = settingsService.GetSettings().NewVersionUpdateUrl
         };
@@ -65,7 +65,7 @@ public class StatusService(
 
     private void PullLiveControls(ServerStatusDto status)
     {
-        status.EstimatedPauseEnd = liveControls.EstimatedPauseEnd;
+        status.EstimatedPauseEnd = liveControls.EstimatedPauseEnd.ToUniversalTime();
         status.ProgramState = GetProgramState();
         status.SuggestedStatusIcon = MapStateToIcon();
     }
