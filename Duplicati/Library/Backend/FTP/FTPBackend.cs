@@ -1,4 +1,4 @@
-// Copyright (C) 2025, The Duplicati Team
+﻿// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -36,6 +36,7 @@ using System.Threading.Tasks;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
+using Duplicati.Library.Utility.Options;
 using FluentFTP;
 using FluentFTP.Client.BaseClient;
 using FluentFTP.Exceptions;
@@ -61,15 +62,6 @@ namespace Duplicati.Library.Backend
         /// The credentials used to authenticate with the FTP server
         /// </summary>
         private readonly NetworkCredential? _userInfo;
-        /// <summary>
-        /// Th option used to accept a specific SSL certificate hash
-        /// </summary>
-        private const string OPTION_ACCEPT_SPECIFIED_CERTIFICATE = "accept-specified-ssl-hash"; // Global option
-        /// <summary>
-        /// The option used to accept any SSL certificate
-        /// </summary>
-        private const string OPTION_ACCEPT_ANY_CERTIFICATE = "accept-any-ssl-certificate"; // Global option
-
         /// <summary>
         /// The default data connection type
         /// </summary>
@@ -207,14 +199,13 @@ namespace Duplicati.Library.Backend
         /// </summary>
         private readonly bool _diagnosticsLog;
         /// <summary>
-        /// The flag to indicate if all certificates should be accepted
+        /// The ssl certificate options to use
         /// </summary>
-        private readonly bool _accepAllCertificates;
+        private readonly SslOptionsHelper.SslCertificateOptions _sslOptions;
         /// <summary>
-        /// The valid certificate hashes
+        /// The timeout options to use
         /// </summary>
-        private readonly string[] _validHashes;
-
+        private readonly TimeoutOptionsHelper.Timeouts _timeouts;
         /// <summary>
         /// The localized name to display for this backend
         /// </summary>
@@ -237,9 +228,8 @@ namespace Duplicati.Library.Backend
 
         /// <inheritdoc />
         public virtual IList<ICommandLineArgument> SupportedCommands =>
-            new List<ICommandLineArgument>([
-                new CommandLineArgument("auth-password", CommandLineArgument.ArgumentType.Password, Strings.DescriptionAuthPasswordShort, Strings.DescriptionAuthPasswordLong),
-                new CommandLineArgument("auth-username", CommandLineArgument.ArgumentType.String, Strings.DescriptionAuthUsernameShort, Strings.DescriptionAuthUsernameLong),
+            [
+                .. AuthOptionsHelper.GetOptions(),
                 new CommandLineArgument(CONFIG_KEY_DISABLE_UPLOAD_VERIFY, CommandLineArgument.ArgumentType.Boolean, Strings.DescriptionDisableUploadVerifyShort, Strings.DescriptionDisableUploadVerifyLong),
                 new CommandLineArgument(CONFIG_KEY_FTP_ABSOLUTE_PATH, CommandLineArgument.ArgumentType.Boolean, Strings.DescriptionAbsolutePathShort, Strings.DescriptionAbsolutePathLong),
                 new CommandLineArgument(CONFIG_KEY_FTP_USE_CWD_NAMES, CommandLineArgument.ArgumentType.Boolean, Strings.DescriptionUseCwdNamesShort, Strings.DescriptionUseCwdNamesLong),
@@ -253,7 +243,9 @@ namespace Duplicati.Library.Backend
                 new CommandLineArgument(CONFIG_KEY_FTP_LEGACY_FTPPASSIVE, CommandLineArgument.ArgumentType.Boolean, Strings.DescriptionFTPPassiveShort, Strings.DescriptionFTPPassiveLong, "false", null, null, Strings.FtpPassiveDeprecated),
                 new CommandLineArgument(CONFIG_KEY_FTP_LEGACY_FTPREGULAR, CommandLineArgument.ArgumentType.Boolean, Strings.DescriptionFTPActiveShort, Strings.DescriptionFTPActiveLong, "true", null, null, Strings.FtpActiveDeprecated),
                 new CommandLineArgument(CONFIG_KEY_FTP_LEGACY_USESSL, CommandLineArgument.ArgumentType.Boolean, Strings.DescriptionUseSSLShort, Strings.DescriptionUseSSLLong, "false", null, null, Strings.UseSslDeprecated),
-            ]);
+                .. SslOptionsHelper.GetCertOnlyOptions(),
+                .. TimeoutOptionsHelper.GetOptions(),
+            ];
 
         /// <summary>
         /// Initialize a new instance.
@@ -261,7 +253,8 @@ namespace Duplicati.Library.Backend
         public FTP()
         {
             // TODO: Remove this constructor once static properties are introduced on IBackend
-            _validHashes = null!;
+            _sslOptions = null!;
+            _timeouts = null!;
             _ftpConfig = null!;
             _url = null!;
             _client = null!;
@@ -275,11 +268,7 @@ namespace Duplicati.Library.Backend
         [SuppressMessage("ReSharper", "VirtualMemberCallInConstructor")] // The behavior of accessing the virtual properties is as expected
         public FTP(string url, Dictionary<string, string?> options)
         {
-            _accepAllCertificates = CoreUtility.ParseBoolOption(options, OPTION_ACCEPT_ANY_CERTIFICATE);
-
-            options.TryGetValue(OPTION_ACCEPT_SPECIFIED_CERTIFICATE, out var certHash);
-
-            _validHashes = certHash?.Split([",", ";"], StringSplitOptions.RemoveEmptyEntries) ?? [];
+            _sslOptions = SslOptionsHelper.SslCertificateOptions.Parse(options);
 
             var u = new Utility.Uri(url);
             u.RequireHost();
@@ -352,6 +341,7 @@ namespace Duplicati.Library.Backend
             _logToConsole = CoreUtility.ParseBoolOption(options, CONFIG_KEY_FTP_LOGTOCONSOLE);
             _logPrivateInfoToConsole = CoreUtility.ParseBoolOption(options, CONFIG_KEY_FTP_LOGPRIVATEINFOTOCONSOLE);
             _diagnosticsLog = CoreUtility.ParseBoolOption(options, CONFIG_KEY_FTP_LOGDIAGNOSTICS);
+            _timeouts = TimeoutOptionsHelper.Timeouts.Parse(options);
 
             _ftpConfig = new FtpConfig
             {
@@ -359,7 +349,7 @@ namespace Duplicati.Library.Backend
                 EncryptionMode = encryptionMode,
                 SslProtocols = sslProtocols,
                 LogToConsole = _logToConsole,
-                ValidateAnyCertificate = _accepAllCertificates,
+                ValidateAnyCertificate = _sslOptions.AcceptAllCertificates,
                 Noop = true
             };
 
@@ -372,9 +362,12 @@ namespace Duplicati.Library.Backend
             FtpListItem[] items;
             try
             {
-                var client = CreateClient(CancellationToken.None).Await();
+                var client = await CreateClient(cancelToken).ConfigureAwait(false);
                 var remotePath = PreparePathForClient(null);
-                items = await client.GetListing(remotePath, FtpListOption.Modify | FtpListOption.Size).ConfigureAwait(false);
+
+                items = await Utility.Utility.WithTimeout(_timeouts.ListTimeout, cancelToken, ct =>
+                    client.GetListing(remotePath, FtpListOption.Modify | FtpListOption.Size, ct)
+                ).ConfigureAwait(false);
             }
             catch (Exception e)
             {
@@ -445,7 +438,8 @@ namespace Duplicati.Library.Backend
                 try { streamLen = input.Length; }
                 catch (NotSupportedException) { }
 
-                var status = await client.UploadStream(input, clientRemoteName, createRemoteDir: false, token: cancelToken, progress: null).ConfigureAwait(false);
+                using var timeoutStream = input.ObserveReadTimeout(_timeouts.ReadWriteTimeout, false);
+                var status = await client.UploadStream(timeoutStream, clientRemoteName, createRemoteDir: false, token: cancelToken, progress: null).ConfigureAwait(false);
                 if (status != FtpStatus.Success)
                     throw new UserInformationException(Strings.ErrorWriteFile(remotename, $"Status is {status}"), "FtpPutFailure");
 
@@ -485,6 +479,7 @@ namespace Duplicati.Library.Backend
                 var client = await CreateClient(cancelToken).ConfigureAwait(false);
                 var clientRemoteName = PreparePathForClient(remotename);
                 await using var inputStream = await client.OpenRead(clientRemoteName, token: cancelToken);
+                await using var timeoutStream = inputStream.ObserveReadTimeout(_timeouts.ReadWriteTimeout);
                 await CoreUtility.CopyStreamAsync(inputStream, output, false, cancelToken).ConfigureAwait(false);
             }
             catch (Exception e)
@@ -510,7 +505,9 @@ namespace Duplicati.Library.Backend
             {
                 var client = await CreateClient(cancelToken).ConfigureAwait(false);
                 var clientRemoteName = PreparePathForClient(remotename);
-                await client.DeleteFile(clientRemoteName, cancelToken);
+                await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancelToken, ct =>
+                    client.DeleteFile(clientRemoteName, ct)
+                ).ConfigureAwait(false);
             }
             catch (Exception e)
             {
@@ -535,11 +532,14 @@ namespace Duplicati.Library.Backend
             try
             {
                 var client = await CreateClient(cancellationToken).ConfigureAwait(false);
-                if (!_useCwdNames)
+                await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancellationToken, async ct =>
                 {
-                    var folderpath = PreparePathForClient(null);
-                    await client.SetWorkingDirectory(folderpath, cancellationToken).ConfigureAwait(false);
-                }
+                    if (!_useCwdNames)
+                    {
+                        var folderpath = PreparePathForClient(null);
+                        await client.SetWorkingDirectory(folderpath, ct).ConfigureAwait(false);
+                    }
+                }).ConfigureAwait(false);
             }
             catch (Exception e)
             {
@@ -618,28 +618,32 @@ namespace Duplicati.Library.Backend
         {
             try
             {
-                // Try to create the directory 
                 var client = await CreateClient(cancellationToken, false).ConfigureAwait(false);
                 var clientPath = PreparePathForClient(null, false);
-                if (_useCwdNames && clientPath.Contains('/') && clientPath != "/")
-                {
-                    // Go to the parent folder and create the folder
-                    var parentPath = clientPath.Substring(0, clientPath.LastIndexOf('/'));
-                    var folderName = clientPath.Substring(clientPath.LastIndexOf('/') + 1);
-                    await client.SetWorkingDirectory(parentPath, cancellationToken).ConfigureAwait(false);
-                    await client.CreateDirectory(folderName, true, cancellationToken).ConfigureAwait(false);
 
-                    // Reset the client and check that it works
-                    _client = null;
-                    client = await CreateClient(cancellationToken).ConfigureAwait(false);
-                    var cwd = await client.GetWorkingDirectory(cancellationToken).ConfigureAwait(false);
-                    if (!string.Equals(cwd?.TrimEnd('/'), clientPath, StringComparison.OrdinalIgnoreCase))
-                        throw new UserInformationException(Strings.ErrorCreateFolder(clientPath, cwd), "CreateFolderError");
-                }
-                else
+                await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancellationToken, async ct =>
                 {
-                    await client.CreateDirectory(clientPath, true, cancellationToken);
-                }
+                    // Try to create the directory 
+                    if (_useCwdNames && clientPath.Contains('/') && clientPath != "/")
+                    {
+                        // Go to the parent folder and create the folder
+                        var parentPath = clientPath.Substring(0, clientPath.LastIndexOf('/'));
+                        var folderName = clientPath.Substring(clientPath.LastIndexOf('/') + 1);
+                        await client.SetWorkingDirectory(parentPath, ct).ConfigureAwait(false);
+                        await client.CreateDirectory(folderName, true, ct).ConfigureAwait(false);
+
+                        // Reset the client and check that it works
+                        _client = null;
+                        client = await CreateClient(ct).ConfigureAwait(false);
+                        var cwd = await client.GetWorkingDirectory(ct).ConfigureAwait(false);
+                        if (!string.Equals(cwd?.TrimEnd('/'), clientPath, StringComparison.OrdinalIgnoreCase))
+                            throw new UserInformationException(Strings.ErrorCreateFolder(clientPath, cwd), "CreateFolderError");
+                    }
+                    else
+                    {
+                        await client.CreateDirectory(clientPath, true, ct);
+                    }
+                }).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -665,33 +669,36 @@ namespace Duplicati.Library.Backend
         {
             if (_client == null)
             {
-                var client = new AsyncFtpClient
+                _client = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancellationToken, async ct =>
                 {
-                    Host = _url.Host,
-                    Port = _url.Port == -1 ? 21 : _url.Port,
-                    Credentials = _userInfo,
-                    Config = _ftpConfig,
-                    Logger = _diagnosticsLog ? new DiagnosticsLogger() : null
-                };
+                    var client = new AsyncFtpClient
+                    {
+                        Host = _url.Host,
+                        Port = _url.Port == -1 ? 21 : _url.Port,
+                        Credentials = _userInfo,
+                        Config = _ftpConfig,
+                        Logger = _diagnosticsLog ? new DiagnosticsLogger() : null
+                    };
 
-                client.ValidateCertificate += HandleValidateCertificate;
-                await client.Connect(cancellationToken).ConfigureAwait(false);
+                    client.ValidateCertificate += HandleValidateCertificate;
+                    await client.Connect(ct).ConfigureAwait(false);
 
-                // Set up for relative paths
-                if (_relativePaths)
-                {
-                    _initialCwd = await client.GetWorkingDirectory(cancellationToken).ConfigureAwait(false);
-                    _initialCwd = _initialCwd?.TrimEnd('/');
-                }
+                    // Set up for relative paths
+                    if (_relativePaths)
+                    {
+                        _initialCwd = await client.GetWorkingDirectory(ct).ConfigureAwait(false);
+                        _initialCwd = _initialCwd?.TrimEnd('/');
+                    }
 
-                // Setup the initial working directory, if needed
-                if (cwdFlag ?? _useCwdNames)
-                {
-                    var clientPath = PreparePathForClient(null, false, client);
-                    await client.SetWorkingDirectory(clientPath, cancellationToken).ConfigureAwait(false);
-                }
+                    // Setup the initial working directory, if needed
+                    if (cwdFlag ?? _useCwdNames)
+                    {
+                        var clientPath = PreparePathForClient(null, false, client);
+                        await client.SetWorkingDirectory(clientPath, ct).ConfigureAwait(false);
+                    }
 
-                _client = client;
+                    return client;
+                }).ConfigureAwait(false);
             }
             return _client;
         }
@@ -703,7 +710,7 @@ namespace Duplicati.Library.Backend
         /// <param name="e">The event arguments.</param>
         private void HandleValidateCertificate(BaseFtpClient control, FtpSslValidationEventArgs e)
         {
-            if (e.PolicyErrors == SslPolicyErrors.None || _accepAllCertificates)
+            if (e.PolicyErrors == SslPolicyErrors.None || _sslOptions.AcceptAllCertificates)
             {
                 e.Accept = true;
                 return;
@@ -712,8 +719,8 @@ namespace Duplicati.Library.Backend
             e.Accept = false;
             try
             {
-                var certHash = (_validHashes != null && _validHashes.Length > 0) ? e.Certificate?.GetCertHashString() : null;
-                if (certHash != null && _validHashes != null && _validHashes.Any(hash => !string.IsNullOrEmpty(hash) && certHash.Equals(hash, StringComparison.OrdinalIgnoreCase)))
+                var certHash = (_sslOptions.AcceptSpecificCertificateHashes != null && _sslOptions.AcceptSpecificCertificateHashes.Length > 0) ? e.Certificate?.GetCertHashString() : null;
+                if (certHash != null && _sslOptions.AcceptSpecificCertificateHashes != null && _sslOptions.AcceptSpecificCertificateHashes.Any(hash => !string.IsNullOrEmpty(hash) && certHash.Equals(hash, StringComparison.OrdinalIgnoreCase)))
                     e.Accept = true;
             }
             catch
@@ -721,7 +728,7 @@ namespace Duplicati.Library.Backend
             }
 
             if (e.Accept == false && e.Certificate != null)
-                throw new SslCertificateValidator.InvalidCertificateException(e.Certificate?.GetCertHashString(), e.PolicyErrors);
+                throw new SslCertificateValidator.InvalidCertificateException(e.Certificate?.GetCertHashString() ?? "<unknown>", e.PolicyErrors);
         }
 
         /// <summary>
