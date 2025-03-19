@@ -172,7 +172,7 @@ namespace Duplicati.Library.Main.Database
             m_insertlogCommand = connection.CreateCommand(@"INSERT INTO ""LogData"" (""OperationID"", ""Timestamp"", ""Type"", ""Message"", ""Exception"") VALUES (?, ?, ?, ?, ?)");
             m_insertremotelogCommand = connection.CreateCommand(@"INSERT INTO ""RemoteOperation"" (""OperationID"", ""Timestamp"", ""Operation"", ""Path"", ""Data"") VALUES (?, ?, ?, ?, ?)");
             m_updateremotevolumeCommand = connection.CreateCommand(@"UPDATE ""Remotevolume"" SET ""OperationID"" = ?, ""State"" = ?, ""Hash"" = ?, ""Size"" = ? WHERE ""Name"" = ?");
-            m_selectremotevolumesCommand = connection.CreateCommand(@"SELECT ""ID"", ""Name"", ""Type"", ""Size"", ""Hash"", ""State"", ""DeleteGraceTime"" FROM ""Remotevolume""");
+            m_selectremotevolumesCommand = connection.CreateCommand(@"SELECT ""ID"", ""Name"", ""Type"", ""Size"", ""Hash"", ""State"", ""DeleteGraceTime"", ""ArchiveTime"" FROM ""Remotevolume""");
             m_selectremotevolumeCommand = connection.CreateCommand(m_selectremotevolumesCommand.CommandText + @" WHERE ""Name"" = ?");
             m_selectduplicateRemoteVolumesCommand = connection.CreateCommand(FormatInvariant($@"SELECT DISTINCT ""Name"", ""State"" FROM ""Remotevolume"" WHERE ""Name"" IN (SELECT ""Name"" FROM ""Remotevolume"" WHERE ""State"" IN ('{RemoteVolumeState.Deleted.ToString()}', '{RemoteVolumeState.Deleting.ToString()}')) AND NOT ""State"" IN ('{RemoteVolumeState.Deleted.ToString()}', '{RemoteVolumeState.Deleting.ToString()}')"));
             m_removeremotevolumeCommand = connection.CreateCommand(@"DELETE FROM ""Remotevolume"" WHERE ""Name"" = ? AND (""DeleteGraceTime"" < ? OR ""State"" != ?)");
@@ -204,10 +204,10 @@ namespace Duplicati.Library.Main.Database
 
         public void UpdateRemoteVolume(string name, RemoteVolumeState state, long size, string hash, bool suppressCleanup, IDbTransaction transaction = null)
         {
-            UpdateRemoteVolume(name, state, size, hash, suppressCleanup, new TimeSpan(0), transaction);
+            UpdateRemoteVolume(name, state, size, hash, suppressCleanup, new TimeSpan(0), null, transaction);
         }
 
-        public void UpdateRemoteVolume(string name, RemoteVolumeState state, long size, string hash, bool suppressCleanup, TimeSpan deleteGraceTime, IDbTransaction transaction = null)
+        public void UpdateRemoteVolume(string name, RemoteVolumeState state, long size, string hash, bool suppressCleanup, TimeSpan deleteGraceTime, bool? setArchived, IDbTransaction transaction = null)
         {
             m_updateremotevolumeCommand.Transaction = transaction;
             m_updateremotevolumeCommand.SetParameterValue(0, m_operationid);
@@ -232,7 +232,21 @@ namespace Duplicati.Library.Main.Database
                             Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(DateTime.UtcNow + deleteGraceTime),
                             name)) != 1)
                     {
-                        throw new Exception($"Unexpected number of updates when recording remote volume updates: {c}!");
+                        throw new Exception($"Unexpected number of updates when recording remote volume grace-time updates: {c}!");
+                    }
+                }
+            }
+
+            if (setArchived.HasValue)
+            {
+                using (var cmd = m_connection.CreateCommand(transaction))
+                {
+                    if ((c = cmd.ExecuteNonQuery(
+                            @"UPDATE ""RemoteVolume"" SET ""ArchiveTime"" = ? WHERE ""Name"" = ? ",
+                            setArchived.Value ? Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(DateTime.UtcNow) : null,
+                            name)) != 1)
+                    {
+                        throw new Exception($"Unexpected number of updates when recording remote volume archive-time updates: {c}!");
                     }
                 }
             }
@@ -338,7 +352,8 @@ namespace Duplicati.Library.Main.Database
                         rd.ConvertValueToInt64(3, -1),
                         (RemoteVolumeType)Enum.Parse(typeof(RemoteVolumeType), rd.GetValue(2).ToString()),
                         (RemoteVolumeState)Enum.Parse(typeof(RemoteVolumeState), rd.GetValue(5).ToString()),
-                        ParseFromEpochSeconds(rd.ConvertValueToInt64(6, 0))
+                        ParseFromEpochSeconds(rd.ConvertValueToInt64(6, 0)),
+                        ParseFromEpochSeconds(rd.ConvertValueToInt64(7, 0))
                     );
 
             return RemoteVolumeEntry.Empty;
@@ -369,7 +384,8 @@ namespace Duplicati.Library.Main.Database
                         rd.ConvertValueToInt64(3, -1),
                         (RemoteVolumeType)Enum.Parse(typeof(RemoteVolumeType), rd.GetValue(2).ToString()),
                         (RemoteVolumeState)Enum.Parse(typeof(RemoteVolumeState), rd.GetValue(5).ToString()),
-                        ParseFromEpochSeconds(rd.ConvertValueToInt64(6, 0))
+                        ParseFromEpochSeconds(rd.ConvertValueToInt64(6, 0)),
+                        ParseFromEpochSeconds(rd.ConvertValueToInt64(7, 0))
                     );
                 }
             }
@@ -1484,7 +1500,7 @@ AND oldVersion.FilesetID = (SELECT ID FROM Fileset WHERE ID != ? ORDER BY Timest
         public RemoteVolumeEntry GetRemoteVolumeFromFilesetID(long filesetID, IDbTransaction transaction = null)
         {
             using (var cmd = m_connection.CreateCommand(transaction))
-            using (var rd = cmd.ExecuteReader(@"SELECT ""RemoteVolume"".""ID"", ""Name"", ""Type"", ""Size"", ""Hash"", ""State"", ""DeleteGraceTime"" FROM ""RemoteVolume"", ""Fileset"" WHERE ""Fileset"".""VolumeID"" = ""RemoteVolume"".""ID"" AND ""Fileset"".""ID"" = ?", filesetID))
+            using (var rd = cmd.ExecuteReader(@"SELECT ""RemoteVolume"".""ID"", ""Name"", ""Type"", ""Size"", ""Hash"", ""State"", ""DeleteGraceTime"", ""ArchiveTime"" FROM ""RemoteVolume"", ""Fileset"" WHERE ""Fileset"".""VolumeID"" = ""RemoteVolume"".""ID"" AND ""Fileset"".""ID"" = ?", filesetID))
                 if (rd.Read())
                     return new RemoteVolumeEntry(
                         rd.ConvertValueToInt64(0, -1),
@@ -1493,10 +1509,11 @@ AND oldVersion.FilesetID = (SELECT ID FROM Fileset WHERE ID != ? ORDER BY Timest
                         rd.ConvertValueToInt64(3, -1),
                         (RemoteVolumeType)Enum.Parse(typeof(RemoteVolumeType), rd.GetValue(2).ToString()),
                         (RemoteVolumeState)Enum.Parse(typeof(RemoteVolumeState), rd.GetValue(5).ToString()),
-                        ParseFromEpochSeconds(rd.GetInt64(6)).ToLocalTime()
+                        new DateTime(rd.ConvertValueToInt64(6, 0), DateTimeKind.Utc),
+                        new DateTime(rd.ConvertValueToInt64(7, 0), DateTimeKind.Utc)
                     );
                 else
-                    return default;
+                    return default(RemoteVolumeEntry);
         }
 
         public void PurgeLogData(DateTime threshold)

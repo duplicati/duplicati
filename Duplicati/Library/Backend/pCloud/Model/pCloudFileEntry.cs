@@ -45,7 +45,7 @@ internal class pCloudFileEntry : IFileEntry
     public DateTime LastModification { get; set; }
 
     /// <summary>
-    /// Last modification of the file
+    /// Creation of the file
     /// </summary>
     public DateTime Created { get; set; }
 
@@ -58,4 +58,9 @@ internal class pCloudFileEntry : IFileEntry
     /// Size of the object in bytes
     /// </summary>
     public long Size { get; set; }
+
+    /// <summary>
+    /// Indicates if the file is archived
+    /// </summary>
+    public bool IsArchived => false;
 }

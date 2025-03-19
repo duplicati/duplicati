@@ -29,101 +29,45 @@ namespace Duplicati.Library.Common.IO
     /// </summary>
     public class FileEntry : IFileEntry
     {
-        private string m_name;
-        private DateTime m_lastAccess;
-        private DateTime m_lastModification;
-        private DateTime m_created;
-        private long m_size;
-        private bool m_isFolder;
-
         /// <summary>
         /// Gets or sets the file or folder name
         /// </summary>
-        public string Name
-        {
-            get { return m_name; }
-            set { m_name = value; }
-        }
+        public string Name { get; set; } = null;
 
         /// <summary>
         /// Gets or sets the time the file or folder was last accessed
         /// </summary>
-        public DateTime LastAccess
-        {
-            get { return m_lastAccess; }
-            set { m_lastAccess = value; }
-        }
+        public DateTime LastAccess { get; set; } = new DateTime();
 
         /// <summary>
         /// Gets or sets the time the file or folder was last modified
         /// </summary>
-        public DateTime LastModification
-        {
-            get { return m_lastModification; }
-            set { m_lastModification = value; }
-        }
+        public DateTime LastModification { get; set; } = new DateTime();
 
         /// <summary>
         /// Gets or sets the time the file or folder was created
         /// </summary>
-        public DateTime Created
-        {
-            get { return m_created; }
-            set { m_created = value; }
-        }
+        public DateTime Created { get; set; } = new DateTime();
 
         /// <summary>
         /// Gets or sets the size of the file or folder
         /// </summary>
-        public long Size
-        {
-            get { return m_size; }
-            set { m_size = value; }
-        }
+        public long Size { get; set; } = -1;
 
         /// <summary>
         /// Gets or sets a value indicating if the entry is a folder
         /// </summary>
-        public bool IsFolder
-        {
-            get { return m_isFolder; }
-            set { m_isFolder = value; }
-        }
+        public bool IsFolder { get; set; } = false;
+
+        /// <summary>
+        /// Gets or sets a value indicating if the entry is archived (not readable)
+        /// </summary>
+        public bool IsArchived { get; set; } = false;
 
         /// <summary>
         /// Helper function to initialize the instance to default values
         /// </summary>
-        private FileEntry()
-        {
-            m_name = null;
-            m_lastAccess = new DateTime();
-            m_lastModification = new DateTime();
-            m_size = -1;
-            m_isFolder = false;
-        }
-
-        /// <summary>
-        /// Constructs an entry using only the name.
-        /// The entry is assumed to be a file.
-        /// </summary>
-        /// <param name="filename">The name of the file</param>
-        public FileEntry(string filename)
-            : this()
-        {
-            m_name = filename;
-        }
-
-        /// <summary>
-        /// Constructs an entry using only the name and size.
-        /// The entry is assumed to be a file.
-        /// </summary>
-        /// <param name="filename">The name of the file</param>
-        /// <param name="size">The size of the file</param>
-        public FileEntry(string filename, long size)
-            : this(filename)
-        {
-            m_size = size;
-        }
+        private FileEntry() { }
 
         /// <summary>
         /// Constructs an entry supplying all information
@@ -132,11 +76,16 @@ namespace Duplicati.Library.Common.IO
         /// <param name="size">The size of the file or folder</param>
         /// <param name="lastAccess">The time the file or folder was last accessed</param>
         /// <param name="lastModified">The time the file or folder was last modified</param>
-        public FileEntry(string filename, long size, DateTime lastAccess, DateTime lastModified)
-            : this(filename, size)
+        /// <param name="isFolder">A value indicating if the entry is a folder</param>
+        /// <param name="isArchived">A value indicating if the entry is archived</param>
+        public FileEntry(string filename, long size = -1, DateTime lastAccess = default, DateTime lastModified = default, bool isFolder = false, bool isArchived = false)
         {
-            m_lastModification = lastModified;
-            m_lastAccess = lastAccess;
+            Name = filename;
+            Size = size;
+            LastAccess = lastAccess;
+            LastModification = lastModified;
+            IsFolder = isFolder;
+            IsArchived = isArchived;
         }
     }
 }

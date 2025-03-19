@@ -26,20 +26,20 @@ using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.Backend
 {
-    public interface IS3Client : IDisposable
-    {
-        IAsyncEnumerable<IFileEntry> ListBucketAsync(string bucketName, string prefix, bool recursive, CancellationToken cancellationToken);
+        public interface IS3Client : IDisposable
+        {
+                IAsyncEnumerable<IFileEntry> ListBucketAsync(string bucketName, string prefix, bool recursive, CancellationToken cancellationToken);
 
-        Task AddBucketAsync(string bucketName, CancellationToken cancelToken);
+                Task AddBucketAsync(string bucketName, CancellationToken cancelToken);
 
-        Task DeleteObjectAsync(string bucketName, string keyName, CancellationToken cancelToken);
+                Task DeleteObjectAsync(string bucketName, string keyName, CancellationToken cancelToken);
 
-        Task RenameFileAsync(string bucketName, string source, string target, CancellationToken cancelToken);
+                Task RenameFileAsync(string bucketName, string source, string target, CancellationToken cancelToken);
 
-        Task GetFileStreamAsync(string bucketName, string keyName, System.IO.Stream target, CancellationToken cancelToken);
+                Task GetFileStreamAsync(string bucketName, string keyName, System.IO.Stream target, CancellationToken cancelToken);
 
-        string GetDnsHost();
+                string GetDnsHost();
 
-        Task AddFileStreamAsync(string bucketName, string keyName, System.IO.Stream source, CancellationToken cancelToken);
-    }
+                Task AddFileStreamAsync(string bucketName, string keyName, System.IO.Stream source, CancellationToken cancelToken);
+        }
 }
