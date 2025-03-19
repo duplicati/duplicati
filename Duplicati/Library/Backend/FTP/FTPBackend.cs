@@ -268,12 +268,12 @@ namespace Duplicati.Library.Backend
         [SuppressMessage("ReSharper", "VirtualMemberCallInConstructor")] // The behavior of accessing the virtual properties is as expected
         public FTP(string url, Dictionary<string, string?> options)
         {
-            _sslOptions = SslOptionsHelper.SslCertificateOptions.Parse(options);
+            _sslOptions = SslOptionsHelper.Parse(options);
 
             var u = new Utility.Uri(url);
             u.RequireHost();
 
-            var auth = AuthOptionsHelper.AuthOptions.Parse(options);
+            var auth = AuthOptionsHelper.Parse(options);
             if (auth.HasUsername)
             {
                 _userInfo = new NetworkCredential()
@@ -328,7 +328,7 @@ namespace Duplicati.Library.Backend
             _logToConsole = CoreUtility.ParseBoolOption(options, CONFIG_KEY_FTP_LOGTOCONSOLE);
             _logPrivateInfoToConsole = CoreUtility.ParseBoolOption(options, CONFIG_KEY_FTP_LOGPRIVATEINFOTOCONSOLE);
             _diagnosticsLog = CoreUtility.ParseBoolOption(options, CONFIG_KEY_FTP_LOGDIAGNOSTICS);
-            _timeouts = TimeoutOptionsHelper.Timeouts.Parse(options);
+            _timeouts = TimeoutOptionsHelper.Parse(options);
 
             _ftpConfig = new FtpConfig
             {

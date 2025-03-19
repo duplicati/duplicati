@@ -124,7 +124,7 @@ namespace Duplicati.Library.Backend
             var u = new Utility.Uri(url);
             u.RequireHost();
             m_dnsName = u.Host;
-            var auth = AuthOptionsHelper.AuthOptions.Parse(options, u);
+            var auth = AuthOptionsHelper.Parse(options, u);
             if (auth.HasUsername)
             {
                 m_userInfo = new NetworkCredential() { Domain = "" };
@@ -133,7 +133,7 @@ namespace Duplicati.Library.Backend
                     m_userInfo.Password = auth.Password;
             }
 
-            m_certificateOptions = SslOptionsHelper.SslCertificateOptions.Parse(options);
+            m_certificateOptions = SslOptionsHelper.Parse(options);
             m_useIntegratedAuthentication = Utility.Utility.ParseBoolOption(options, "integrated-authentication");
             m_forceDigestAuthentication = Utility.Utility.ParseBoolOption(options, "force-digest-authentication");
 
@@ -158,7 +158,7 @@ namespace Duplicati.Library.Backend
             m_rawurlPort = new Utility.Uri(m_certificateOptions.UseSSL ? "https" : "http", u.Host, m_path, null, null, null, port).ToString();
             m_sanitizedUrl = new Utility.Uri(m_certificateOptions.UseSSL ? "https" : "http", u.Host, m_path).ToString();
             m_reverseProtocolUrl = new Utility.Uri(m_certificateOptions.UseSSL ? "http" : "https", u.Host, m_path).ToString();
-            m_timeouts = TimeoutOptionsHelper.Timeouts.Parse(options);
+            m_timeouts = TimeoutOptionsHelper.Parse(options);
         }
 
         /// <summary>

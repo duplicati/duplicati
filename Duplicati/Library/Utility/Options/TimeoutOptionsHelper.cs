@@ -61,26 +61,23 @@ public static class TimeoutOptionsHelper
     ];
 
     /// <summary>
+    /// Parses the timeout options from an options dictionary
+    /// </summary>
+    /// <param name="options">The options dictionary</param>
+    /// <param name="prefix">An optional prefix for the options</param>
+    /// <returns>The timeout configuration</returns>
+    public static Timeouts Parse(IReadOnlyDictionary<string, string?> options, string? prefix = null)
+        => new Timeouts(
+            Utility.ParseTimespanOption(options, $"{prefix}short-timeout", DEFAULT_SHORT_OPERATION_TIMEOUT),
+            Utility.ParseTimespanOption(options, $"{prefix}list-timeout", DEFAULT_LIST_OPERATION_TIMEOUT),
+            Utility.ParseTimespanOption(options, $"{prefix}read-write-timeout", DEFAULT_READ_WRITE_TIMEOUT)
+        );
+
+    /// <summary>
     /// Structure for timeout configuration
     /// </summary>
     /// <param name="ShortTimeout">The timeout in seconds for short operations like delete and create folder</param>
     /// <param name="ListTimeout">The timeout in seconds for listing files and folders</param>
     /// <param name="ReadWriteTimeout">The timeout in seconds for read and write operations.</param>
-    public sealed record Timeouts(TimeSpan ShortTimeout, TimeSpan ListTimeout, TimeSpan ReadWriteTimeout)
-    {
-        /// <summary>
-        /// Parses the timeout options from an options dictionary
-        /// </summary>
-        /// <param name="options">The options dictionary</param>
-        /// <param name="prefix">An optional prefix for the options</param>
-        /// <returns>The timeout configuration</returns>
-        public static Timeouts Parse(IReadOnlyDictionary<string, string?> options, string? prefix = null)
-            => new Timeouts(
-                Utility.ParseTimespanOption(options, $"{prefix}short-timeout", DEFAULT_SHORT_OPERATION_TIMEOUT),
-                Utility.ParseTimespanOption(options, $"{prefix}list-timeout", DEFAULT_LIST_OPERATION_TIMEOUT),
-                Utility.ParseTimespanOption(options, $"{prefix}read-write-timeout", DEFAULT_READ_WRITE_TIMEOUT)
-            );
-    }
-
-
+    public sealed record Timeouts(TimeSpan ShortTimeout, TimeSpan ListTimeout, TimeSpan ReadWriteTimeout);
 }
