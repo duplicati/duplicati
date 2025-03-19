@@ -61,19 +61,19 @@ public class LogData : IEndpointV1
 
         pagesize = Math.Max(10, Math.Min(500, pagesize));
 
-        cmd.CommandText = "SELECT * FROM \"" + tablename + "\"";
+        cmd.CommandText = $"SELECT * FROM \"{tablename}\"";
         if (!string.IsNullOrEmpty(pagingfield) && offset != null)
         {
             var p = cmd.CreateParameter();
             p.Value = offset.Value;
             cmd.Parameters.Add(p);
 
-            cmd.CommandText += " WHERE \"" + pagingfield + "\" < ?";
+            cmd.CommandText += $" WHERE \"{pagingfield}\" < ?";
         }
 
         if (!string.IsNullOrEmpty(pagingfield))
-            cmd.CommandText += " ORDER BY \"" + pagingfield + "\" DESC";
-        cmd.CommandText += " LIMIT " + pagesize.ToString();
+            cmd.CommandText += $" ORDER BY \"{pagingfield}\" DESC";
+        cmd.CommandText += $" LIMIT {pagesize}";
 
         using (var rd = cmd.ExecuteReader())
         {
