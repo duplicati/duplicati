@@ -116,7 +116,6 @@ namespace Duplicati.Library.Main.Operation
                 if (!m_options.NoLocalDb && SystemIO.IO_OS.FileExists(m_options.Dbpath))
                 {
                     db = new LocalRestoreDatabase(m_options.Dbpath);
-                    db.SetResult(m_result);
                 }
                 else
                 {
@@ -143,8 +142,6 @@ namespace Duplicati.Library.Main.Operation
                     await DoRunAsync(backendManager, db, filter, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
                 else
                     await DoRunNewAsync(backendManager, db, filter, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
-
-                db.WriteResults();
             }
             finally
             {
@@ -328,7 +325,6 @@ namespace Duplicati.Library.Main.Operation
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_CreateTargetFolders);
             using (new Logging.Timer(LOGTAG, "CreateDirectory", "CreateDirectory"))
                 await CreateDirectoryStructure(database, m_options, m_result).ConfigureAwait(false);
-            database.SetResult(m_result);
 
             using var setup_log_timer = new Logging.Timer(LOGTAG, "RestoreNetworkSetup", "RestoreNetworkSetup");
             // Create the channels between BlockManager and FileProcessor
@@ -424,7 +420,6 @@ namespace Duplicati.Library.Main.Operation
             //using (var database = new LocalRestoreDatabase(dbparent))
             using (var metadatastorage = new RestoreHandlerMetadataStorage())
             {
-                database.SetResult(m_result);
                 Utility.UpdateOptionsFromDb(database, m_options);
                 Utility.VerifyOptionsAndUpdateDatabase(database, m_options);
                 m_blockbuffer = new byte[m_options.Blocksize];

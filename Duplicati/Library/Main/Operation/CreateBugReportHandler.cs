@@ -69,7 +69,6 @@ namespace Duplicati.Library.Main.Operation
                 File.Copy(m_options.Dbpath, tmp, true);
                 using (var db = new LocalBugReportDatabase(tmp))
                 {
-                    m_result.SetDatabase(db);
                     db.Fix();
                     if (m_options.AutoVacuum)
                         db.Vacuum();

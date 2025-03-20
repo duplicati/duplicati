@@ -126,7 +126,6 @@ namespace Duplicati.Library.Main.Operation
 
             using (var db = new LocalRepairDatabase(m_options.Dbpath))
             {
-                m_result.SetDatabase(db);
                 Utility.UpdateOptionsFromDb(db, m_options);
                 Utility.VerifyOptionsAndUpdateDatabase(db, m_options);
 
@@ -574,7 +573,6 @@ namespace Duplicati.Library.Main.Operation
                 await backendManager.WaitForEmptyAsync(db, null, cancellationToken).ConfigureAwait(false);
                 if (!m_options.Dryrun)
                     db.TerminatedWithActiveUploads = false;
-                db.WriteResults();
             }
         }
 
@@ -587,8 +585,6 @@ namespace Duplicati.Library.Main.Operation
 
             using (var db = new LocalRepairDatabase(m_options.Dbpath))
             {
-                db.SetResult(m_result);
-
                 Utility.UpdateOptionsFromDb(db, m_options);
 
                 if (db.RepairInProgress || db.PartiallyRecreated)

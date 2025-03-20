@@ -65,11 +65,7 @@ namespace Duplicati.Library.Main.Operation
                 throw new UserInformationException(string.Format("Cannot recreate database because file already exists: {0}", path), "RecreateTargetDatabaseExists");
 
             using (var db = new LocalDatabase(path, "Recreate", true))
-            {
-                m_result.SetDatabase(db);
                 await DoRunAsync(backendManager, db, false, filter, filelistfilter, blockprocessor).ConfigureAwait(false);
-                db.WriteResults();
-            }
         }
 
         /// <summary>
@@ -85,8 +81,6 @@ namespace Duplicati.Library.Main.Operation
 
             using (var db = new LocalDatabase(m_options.Dbpath, "Recreate", true))
             {
-                m_result.SetDatabase(db);
-
                 if (db.FindMatchingFilesets(m_options.Time, m_options.Version).Any())
                     throw new UserInformationException("The version(s) being updated to, already exists", "UpdateVersionAlreadyExists");
 
@@ -101,7 +95,6 @@ namespace Duplicati.Library.Main.Operation
                     Utility.VerifyOptionsAndUpdateDatabase(db, m_options, null);
 
                 await DoRunAsync(backendManager, db, true, filter, filelistfilter, blockprocessor).ConfigureAwait(false);
-                db.WriteResults();
             }
         }
 
