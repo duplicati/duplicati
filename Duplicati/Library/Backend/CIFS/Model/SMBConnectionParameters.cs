@@ -26,84 +26,22 @@ namespace Duplicati.Library.Backend.CIFS.Model;
 /// <summary>
 /// Connection parameters for establishing an SMB connection.
 /// </summary>
-public record SMBConnectionParameters
-{
-   /// <summary>
-   /// The name or IP address of the SMB server
-   /// </summary>
-   public string ServerName { get; init; }
-
-   /// <summary>
-   /// The transport protocol type used for SMB communication
-   /// </summary>
-   public SMBTransportType TransportType { get; init; }
-
-   /// <summary>
-   /// The name of the network share to connect to
-   /// </summary>
-   public string ShareName { get; init; }
-
-   /// <summary>
-   /// The path within the share to access
-   /// </summary>
-   public string Path { get; init; }
-
-   /// <summary>
-   /// The authentication domain name
-   /// </summary>
-   public string AuthDomain { get; init; }
-
-   /// <summary>
-   /// The username for authentication
-   /// </summary>
-   public string AuthUser { get; init; }
-
-   /// <summary>
-   /// The password for authentication
-   /// </summary>
-   public string AuthPassword { get; init; }
-   
-   /// <summary>
-   /// Write buffer size for SMB operations (will be capped automatically by SMB negotiated values)
-   /// </summary>
-   public int? WriteBufferSize { get; init; }
-   
-   /// <summary>
-   /// Read buffer size for SMB operations (will be capped automatically by SMB negotiated values)
-   /// </summary>
-   public int? ReadBufferSize { get; init; }
-
-   /// <summary>
-   /// Creates a new instance of SMB connection parameters
-   /// </summary>
-   /// <param name="serverName">The name or IP address of the SMB server</param>
-   /// <param name="transportType">The transport protocol type used for SMB communication</param>
-   /// <param name="shareName">The name of the network share to connect to</param>
-   /// <param name="path">The path within the share to access</param>
-   /// <param name="authDomain">The authentication domain name</param>
-   /// <param name="authUser">The username for authentication</param>
-   /// <param name="authPassword">The password for authentication</param>
-   /// <param name="readBufferSize">Read buffer size for SMB operations (will be capped automatically by SMB negotiated values)</param>
-   /// <param name="writeBufferSize">Write buffer size for SMB operations (will be capped automatically by SMB negotiated values)</param>
-   public SMBConnectionParameters(
-       string serverName,
-       SMBTransportType transportType,
-       string shareName,
-       string path,
-       string authDomain,
-       string authUser,
-       string authPassword,
-       int? readBufferSize,
-       int? writeBufferSize)
-   {
-       ServerName = serverName;
-       TransportType = transportType;
-       ShareName = shareName;
-       Path = path;
-       AuthDomain = authDomain;
-       AuthUser = authUser;
-       AuthPassword = authPassword;
-       ReadBufferSize = readBufferSize;
-       WriteBufferSize = writeBufferSize;
-   }
-}
+/// <param name="ServerName">The name or IP address of the SMB server</param>
+/// <param name="TransportType">The transport protocol type used for SMB communication</param>
+/// <param name="ShareName">The name of the network share to connect to</param>
+/// <param name="Path">The path within the share to access</param>
+/// <param name="AuthDomain">The authentication domain name</param>
+/// <param name="AuthUser">The username for authentication</param>
+/// <param name="AuthPassword">The password for authentication</param>
+/// <param name="ReadBufferSize">Read buffer size for SMB operations (will be capped automatically by SMB negotiated values)</param>
+/// <param name="WriteBufferSize">Write buffer size for SMB operations (will be capped automatically by SMB negotiated values)</param>
+public sealed record SMBConnectionParameters(
+    string ServerName,
+    SMBTransportType TransportType,
+    string ShareName,
+    string Path,
+    string AuthDomain,
+    string AuthUser,
+    string AuthPassword,
+    int? ReadBufferSize,
+    int? WriteBufferSize);
