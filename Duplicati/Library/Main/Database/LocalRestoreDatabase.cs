@@ -921,9 +921,11 @@ ORDER BY ""A"".""TargetPath"", ""BB"".""Index""");
         {
             if (!m_connection_pool.TryTake(out var connection))
             {
-                connection = (IDbConnection)Activator.CreateInstance(SQLiteHelper.SQLiteLoader.SQLiteConnectionType);
+                connection = SQLiteHelper.SQLiteLoader.LoadConnection();
                 connection.ConnectionString = m_connection.ConnectionString + ";Cache=Shared;";
                 connection.Open();
+
+                SQLiteHelper.SQLiteLoader.ApplyCustomPragmas(connection);
 
                 using var cmd = connection.CreateCommand();
                 cmd.ExecuteNonQuery("PRAGMA journal_mode = WAL;");

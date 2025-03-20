@@ -100,6 +100,37 @@ namespace Duplicati.Library.SQLiteHelper
         }
 
         /// <summary>
+        /// Applies user-supplied custom pragmas to the SQLite connection
+        /// </summary>
+        /// <param name="con">The connection to apply the pragmas to.</param>
+        /// <returns>The connection with the pragmas applied.</returns>
+        public static System.Data.IDbConnection ApplyCustomPragmas(System.Data.IDbConnection con)
+        {
+            var opts = Environment.GetEnvironmentVariable("CUSTOMSQLITEOPTIONS_DUPLICATI");
+            if (opts == null)
+                return con;
+            var topts = opts.Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
+            if (topts.Length == 0)
+                return con;
+
+            using (var cmd = con.CreateCommand())
+                foreach (var opt in topts)
+                {
+                    Logging.Log.WriteVerboseMessage(LOGTAG, "CustomSQLiteOption", @"Setting custom SQLite option '{0}'.", opt);
+                    try
+                    {
+                        cmd.CommandText = string.Format("pragma {0}", opt);
+                        cmd.ExecuteNonQuery();
+                    }
+                    catch (Exception ex)
+                    {
+                        Logging.Log.WriteWarningMessage(LOGTAG, "CustomSQLiteOption", ex, @"Error setting custom SQLite option '{0}'.", opt);
+                    }
+                }
+            return con;
+        }
+
+        /// <summary>
         /// Loads an SQLite connection instance and opening the database
         /// </summary>
         /// <returns>The SQLite connection instance.</returns>
@@ -109,7 +140,7 @@ namespace Duplicati.Library.SQLiteHelper
             if (string.IsNullOrWhiteSpace(targetpath))
                 throw new ArgumentNullException(nameof(targetpath));
 
-            System.Data.IDbConnection con = LoadConnection();
+            var con = LoadConnection();
 
             try
             {
@@ -124,32 +155,7 @@ namespace Duplicati.Library.SQLiteHelper
             }
 
             // set custom Sqlite options
-            var opts = Environment.GetEnvironmentVariable("CUSTOMSQLITEOPTIONS_DUPLICATI");
-            if (opts != null)
-            {
-                var topts = opts.Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
-                if (topts.Length > 0)
-                {
-                    using (var cmd = con.CreateCommand())
-                    {
-                        foreach (var opt in topts)
-                        {
-                            Logging.Log.WriteVerboseMessage(LOGTAG, "CustomSQLiteOption", @"Setting custom SQLite option '{0}'.", opt);
-                            try
-                            {
-                                cmd.CommandText = string.Format("pragma {0}", opt);
-                                cmd.ExecuteNonQuery();
-                            }
-                            catch (Exception ex)
-                            {
-                                Logging.Log.WriteErrorMessage(LOGTAG, "CustomSQLiteOption", ex, @"Error setting custom SQLite option '{0}'.", opt);
-                            }
-                        }
-                    }
-                }
-            }
-
-            return con;
+            return ApplyCustomPragmas(con);
         }
 
         /// <summary>
@@ -189,9 +195,12 @@ namespace Duplicati.Library.SQLiteHelper
         /// </summary>
         private static void SetEnvironmentVariablesForSQLiteTempDir()
         {
-            System.Environment.SetEnvironmentVariable("SQLITE_TMPDIR", Library.Utility.TempFolder.SystemTempPath);
-            System.Environment.SetEnvironmentVariable("TMP", Library.Utility.TempFolder.SystemTempPath);
-            System.Environment.SetEnvironmentVariable("TEMP", Library.Utility.TempFolder.SystemTempPath);
+            // Allow the user to override the temp folder for SQLite
+            if (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("SQLITE_TMPDIR")))
+                Environment.SetEnvironmentVariable("SQLITE_TMPDIR", Utility.TempFolder.SystemTempPath);
+            Environment.SetEnvironmentVariable("TMPDIR", Utility.TempFolder.SystemTempPath);
+            Environment.SetEnvironmentVariable("TMP", Utility.TempFolder.SystemTempPath);
+            Environment.SetEnvironmentVariable("TEMP", Utility.TempFolder.SystemTempPath);
         }
 
         /// <summary>
