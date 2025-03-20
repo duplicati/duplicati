@@ -581,12 +581,14 @@ namespace Duplicati.UnitTest
 
             // Remove a fileset
             long filesetEntries;
+            long fileLookupEntries;
             using (var con = SQLiteLoader.LoadConnection(options["dbpath"]))
             using (var cmd = con.CreateCommand())
             {
                 filesetEntries = cmd.ExecuteScalarInt64("SELECT COUNT(*) FROM FilesetEntry");
-                var filesetId = cmd.ExecuteScalarInt64("SELECT FileId FROM FilesetEntry INNER JOIN FileLookup ON FilesetEntry.FileID = FileLookup.Id WHERE FileLookup.BlocksetID != -100 ORDER BY FilesetId DESC LIMIT 1");
-                Assert.AreEqual(1, cmd.ExecuteNonQuery("DELETE FROM FileLookup WHERE Id = ?", filesetId));
+                fileLookupEntries = cmd.ExecuteScalarInt64("SELECT COUNT(*) FROM FileLookup");
+                var fileId = cmd.ExecuteScalarInt64("SELECT FileId FROM FilesetEntry INNER JOIN FileLookup ON FilesetEntry.FileID = FileLookup.Id WHERE FileLookup.BlocksetID != -100 ORDER BY FilesetId DESC LIMIT 1");
+                Assert.AreEqual(1, cmd.ExecuteNonQuery("DELETE FROM FileLookup WHERE Id = ?", fileId));
             }
 
             // Should catch this in validation
@@ -605,7 +607,10 @@ namespace Duplicati.UnitTest
             // Check that entry was recreated
             using (var con = SQLiteLoader.LoadConnection(options["dbpath"]))
             using (var cmd = con.CreateCommand())
+            {
                 Assert.AreEqual(filesetEntries, cmd.ExecuteScalarInt64("SELECT COUNT(*) FROM FilesetEntry"));
+                Assert.AreEqual(fileLookupEntries, cmd.ExecuteScalarInt64("SELECT COUNT(*) FROM FileLookup"));
+            }
         }
     }
 }
