@@ -531,6 +531,11 @@ AND Fileset.ID NOT IN
                     m_removeremotevolumeCommand.ExecuteNonQuery();
                 }
 
+                // Validate before commiting changes
+                var nonAttachedFiles = deletecmd.ExecuteScalarInt64(@"SELECT COUNT(*) FROM ""FilesetEntry"" WHERE ""FileID"" NOT IN (SELECT ""ID"" FROM ""FileLookup"")");
+                if (nonAttachedFiles > 0)
+                    throw new ConstraintException($"Detected {nonAttachedFiles} file(s) in FilesetEntry without corresponding FileLookup entry");
+
                 tr.Commit();
             }
         }
@@ -873,7 +878,35 @@ ON
 
                 var nonAttachedFiles = cmd.ExecuteScalarInt64(@"SELECT COUNT(*) FROM ""FilesetEntry"" WHERE ""FileID"" NOT IN (SELECT ""ID"" FROM ""FileLookup"")");
                 if (nonAttachedFiles != 0)
-                    throw new DatabaseInconsistencyException($"Detected {nonAttachedFiles} file(s) in FilesetEntry without corresponding FileLookup entry");
+                {
+                    // Attempt to create a better error message by finding the first 10 fileset ids with the issue
+                    using var filesetIdReader = cmd.ExecuteReader(@"SELECT DISTINCT(FilesetID) FROM ""FilesetEntry"" WHERE ""FileID"" NOT IN (SELECT ""ID"" FROM ""FileLookup"") LIMIT 11");
+                    var filesetIds = new HashSet<long>();
+                    var overflow = false;
+                    while (filesetIdReader.Read())
+                    {
+                        if (filesetIds.Count >= 10)
+                        {
+                            overflow = true;
+                            break;
+                        }
+                        filesetIds.Add(filesetIdReader.ConvertValueToInt64(0));
+                    }
+
+                    var pairs = FilesetTimes
+                        .Select((x, i) => new { FilesetId = x.Key, Version = i, Time = x.Value })
+                        .Where(x => filesetIds.Contains(x.FilesetId))
+                        .Select(x => $"Fileset {x.Version}: {x.Time} (id = {x.FilesetId})");
+
+                    // Fall back to a generic error message if we can't find the fileset ids
+                    if (!pairs.Any())
+                        throw new DatabaseInconsistencyException($"Detected {nonAttachedFiles} file(s) in FilesetEntry without corresponding FileLookup entry");
+
+                    if (overflow)
+                        pairs = pairs.Append("... and more");
+
+                    throw new DatabaseInconsistencyException($"Detected {nonAttachedFiles} file(s) in FilesetEntry without corresponding FileLookup entry in the following filesets:{Environment.NewLine}{string.Join(Environment.NewLine, pairs)}");
+                }
 
                 if (verifyfilelists)
                 {

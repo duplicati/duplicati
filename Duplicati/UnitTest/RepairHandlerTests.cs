@@ -562,5 +562,50 @@ namespace Duplicati.UnitTest
             using (var cmd = con.CreateCommand())
                 Assert.AreEqual(2, cmd.ExecuteScalarInt64("SELECT COUNT(*) FROM Fileset"));
         }
+
+        [Test]
+        [Category("RepairHandler")]
+        public void ManufactureMissingFiles()
+        {
+            // Make two backups
+            var options = this.TestOptions;
+            using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
+                TestUtils.AssertResults(c.Backup(new[] { this.DATAFOLDER }));
+
+            // Make room for a new backup
+            Thread.Sleep(2000);
+
+            ModifyFile();
+            using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
+                TestUtils.AssertResults(c.Backup(new[] { this.DATAFOLDER }));
+
+            // Remove a fileset
+            long filesetEntries;
+            using (var con = SQLiteLoader.LoadConnection(options["dbpath"]))
+            using (var cmd = con.CreateCommand())
+            {
+                filesetEntries = cmd.ExecuteScalarInt64("SELECT COUNT(*) FROM FilesetEntry");
+                var filesetId = cmd.ExecuteScalarInt64("SELECT FileId FROM FilesetEntry INNER JOIN FileLookup ON FilesetEntry.FileID = FileLookup.Id WHERE FileLookup.BlocksetID != -100 ORDER BY FilesetId DESC LIMIT 1");
+                Assert.AreEqual(1, cmd.ExecuteNonQuery("DELETE FROM FileLookup WHERE Id = ?", filesetId));
+            }
+
+            // Should catch this in validation
+            using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
+                Assert.Throws<DatabaseInconsistencyException>(() => c.Backup(new[] { this.DATAFOLDER }));
+
+            using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
+            {
+                IRepairResults repairResults = c.Repair();
+                Assert.AreEqual(0, repairResults.Errors.Count());
+                Assert.AreEqual(0, repairResults.Warnings.Where(x => x.IndexOf("RemoteFilesNewerThanLocalDatabase", StringComparison.OrdinalIgnoreCase) < 0).Count());
+                Assert.AreEqual(2, Directory.EnumerateFiles(this.TARGETFOLDER, "*.dlist.*").Count());
+                Assert.AreEqual(2, c.List().Filesets.Count());
+            }
+
+            // Check that entry was recreated
+            using (var con = SQLiteLoader.LoadConnection(options["dbpath"]))
+            using (var cmd = con.CreateCommand())
+                Assert.AreEqual(filesetEntries, cmd.ExecuteScalarInt64("SELECT COUNT(*) FROM FilesetEntry"));
+        }
     }
 }
