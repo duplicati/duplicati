@@ -107,19 +107,16 @@ namespace Duplicati.Library.SQLiteHelper
         public static System.Data.IDbConnection ApplyCustomPragmas(System.Data.IDbConnection con)
         {
             var opts = Environment.GetEnvironmentVariable("CUSTOMSQLITEOPTIONS_DUPLICATI");
-            if (opts == null)
-                return con;
-            var topts = opts.Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
-            if (topts.Length == 0)
+            if (string.IsNullOrWhiteSpace(opts))
                 return con;
 
             using (var cmd = con.CreateCommand())
-                foreach (var opt in topts)
+                foreach (var opt in opts.Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries))
                 {
                     Logging.Log.WriteVerboseMessage(LOGTAG, "CustomSQLiteOption", @"Setting custom SQLite option '{0}'.", opt);
                     try
                     {
-                        cmd.CommandText = string.Format("pragma {0}", opt);
+                        cmd.CommandText = string.Format("PRAGMA {0}", opt);
                         cmd.ExecuteNonQuery();
                     }
                     catch (Exception ex)
