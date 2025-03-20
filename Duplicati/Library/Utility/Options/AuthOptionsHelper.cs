@@ -55,6 +55,10 @@ public static class AuthOptionsHelper
         new CommandLineArgument(password, CommandLineArgument.ArgumentType.Password, Strings.AuthSettingsHelper.DescriptionAuthPasswordShort, Strings.AuthSettingsHelper.DescriptionAuthPasswordLong, null, ["auth-password"])
     ];
 
+    /*
+
+    TODO: See if we can do without these, so we only have one way of parsing the auth options
+
     /// <summary>
     /// Parses the authentication options from a dictionary
     /// </summary>
@@ -86,6 +90,7 @@ public static class AuthOptionsHelper
 
         return new AuthOptions(optionUsername, optionPassword);
     }
+    */
 
     /// <summary>
     /// Parses the authentication options from a dictionary
