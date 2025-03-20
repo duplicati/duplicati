@@ -54,17 +54,13 @@ namespace Duplicati.Library.Main.Operation
             using (var db = new LocalDeleteDatabase(m_options.Dbpath, "Delete"))
             using (var tr = new ReusableTransaction(db))
             {
-                m_result.SetDatabase(db);
                 Utility.UpdateOptionsFromDb(db, m_options);
                 Utility.VerifyOptionsAndUpdateDatabase(db, m_options);
 
                 await DoRunAsync(db, tr, false, false, backendManager).ConfigureAwait(false);
 
                 if (!m_options.Dryrun)
-                {
                     tr.Commit("ComitDelete", restart: false);
-                    db.WriteResults();
-                }
             }
         }
 

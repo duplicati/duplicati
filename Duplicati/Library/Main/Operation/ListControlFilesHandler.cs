@@ -45,8 +45,6 @@ namespace Duplicati.Library.Main.Operation
             using (var tmpdb = new TempFile())
             using (var db = new LocalDatabase(System.IO.File.Exists(m_options.Dbpath) ? m_options.Dbpath : (string)tmpdb, "ListControlFiles", true))
             {
-                m_result.SetDatabase(db);
-
                 var filter = JoinedFilterExpression.Join(new Library.Utility.FilterExpression(filterstrings), compositefilter);
 
                 try

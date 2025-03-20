@@ -295,7 +295,6 @@ namespace Duplicati.Library.Main.Operation
                 try
                 {
                     database = new LocalBackupDatabase(options.Dbpath, options);
-                    result.SetDatabase(database);
                     result.Dryrun = options.Dryrun;
 
                     // Check the database integrity
@@ -343,14 +342,12 @@ namespace Duplicati.Library.Main.Operation
                             database.Dispose();
 
                             database = null;
-                            result.SetDatabase(null);
                             await new RepairHandler(options, (RepairResults)result.RepairResults)
                                 .RunAsync(backendManager, null)
                                 .ConfigureAwait(false);
 
                             // Re-open the database and backend manager
                             database = new LocalBackupDatabase(options.Dbpath, options);
-                            result.SetDatabase(database);
 
                             Log.WriteInformationMessage(LOGTAG, "BackendCleanupFinished", "Backend cleanup finished, retrying verification");
                             await FilelistProcessor.VerifyRemoteList(backendManager, options, database, result.BackendWriter, [lastTempFilelist.Name], [], logErrors: true, verifyMode: FilelistProcessor.VerifyMode.VerifyStrict).ConfigureAwait(false);
@@ -731,17 +728,6 @@ namespace Duplicati.Library.Main.Operation
                         }
                     }
 
-
-                    m_database.WriteResults();
-                    m_database.PurgeLogData(m_options.LogRetention);
-                    m_database.PurgeDeletedVolumes(DateTime.UtcNow);
-
-                    if (m_options.AutoVacuum)
-                    {
-                        m_result.VacuumResults = new VacuumResults(m_result);
-                        await new VacuumHandler(m_options, (VacuumResults)m_result.VacuumResults)
-                            .RunAsync();
-                    }
                     m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_Complete);
                     return;
                 }

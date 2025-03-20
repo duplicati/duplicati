@@ -62,8 +62,6 @@ namespace Duplicati.Library.Main.Database
         private readonly IDbCommand m_findpathprefixCommand;
         private readonly IDbCommand m_insertpathprefixCommand;
 
-        protected BasicResults m_result;
-
         public const long FOLDER_BLOCKSET_ID = -100;
         public const long SYMLINK_BLOCKSET_ID = -200;
 
@@ -130,7 +128,6 @@ namespace Duplicati.Library.Main.Database
             OperationTimestamp = db.OperationTimestamp;
             m_connection = db.m_connection;
             m_operationid = db.m_operationid;
-            m_result = db.m_result;
         }
 
         /// <summary>
@@ -184,11 +181,6 @@ namespace Duplicati.Library.Main.Database
             m_insertIndexBlockLink = connection.CreateCommand(@"INSERT INTO ""IndexBlockLink"" (""IndexVolumeID"", ""BlockVolumeID"") VALUES (@IndexVolumeId, @BlockVolumeId)");
             m_findpathprefixCommand = connection.CreateCommand(@"SELECT ""ID"" FROM ""PathPrefix"" WHERE ""Prefix"" = @Prefix");
             m_insertpathprefixCommand = connection.CreateCommand(@"INSERT INTO ""PathPrefix"" (""Prefix"") VALUES (@Prefix); SELECT last_insert_rowid(); ");
-        }
-
-        internal void SetResult(BasicResults result)
-        {
-            m_result = result;
         }
 
         /// <summary>
@@ -1651,20 +1643,23 @@ AND oldVersion.FilesetID = (SELECT ID FROM Fileset WHERE ID != @FilesetId ORDER 
                 throw new AggregateException(exceptions);
         }
 
-        public void WriteResults()
+        public void WriteResults(IBasicResults result)
         {
             if (IsDisposed)
                 return;
 
-            if (m_connection != null && m_result != null)
+            if (m_connection != null && result != null)
             {
-                m_result.FlushLog();
-                if (m_result.EndTime.Ticks == 0)
-                    m_result.EndTime = DateTime.UtcNow;
+                if (result is BasicResults basicResults)
+                {
+                    basicResults.FlushLog(this);
+                    if (basicResults.EndTime.Ticks == 0)
+                        basicResults.EndTime = DateTime.UtcNow;
+                }
 
                 var serializer = new JsonFormatSerializer();
                 LogMessage("Result",
-                    serializer.SerializeResults(m_result),
+                    serializer.SerializeResults(result),
                     null,
                     null
                 );

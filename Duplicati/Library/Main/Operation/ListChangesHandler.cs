@@ -83,8 +83,6 @@ namespace Duplicati.Library.Main.Operation
             using (var db = new Database.LocalListChangesDatabase(useLocalDb ? m_options.Dbpath : (string)tmpdb))
             using (var storageKeeper = db.CreateStorageHelper())
             {
-                m_result.SetDatabase(db);
-
                 if (useLocalDb)
                 {
                     var dbtimes = db.FilesetTimes.ToList();

@@ -46,7 +46,6 @@ namespace Duplicati.Library.Main.Operation
 
             using (var db = new Database.LocalListAffectedDatabase(m_options.Dbpath))
             {
-                m_result.SetDatabase(db);
                 if (callback == null)
                 {
                     m_result.SetResult(

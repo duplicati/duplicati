@@ -55,7 +55,6 @@ namespace Duplicati.Library.Main.Operation
             using (var db = new LocalDeleteDatabase(m_options.Dbpath, "Compact"))
             using (var tr = new ReusableTransaction(db))
             {
-                m_result.SetDatabase(db);
                 Utility.UpdateOptionsFromDb(db, m_options);
                 Utility.VerifyOptionsAndUpdateDatabase(db, m_options);
 
@@ -69,7 +68,7 @@ namespace Duplicati.Library.Main.Operation
                     tr.Commit("CommitCompact", restart: false);
                     if (changed)
                     {
-                        db.WriteResults();
+                        db.WriteResults(m_result);
                         if (m_options.AutoVacuum)
                         {
                             m_result.VacuumResults = new VacuumResults(m_result);
