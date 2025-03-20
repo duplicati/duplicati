@@ -276,8 +276,10 @@ namespace Duplicati.Library.Backend
 
                 if (errJson != null)
                     throw new DropboxException() { errorJSON = errJson };
+                else if (exception.Response is HttpWebResponse wresp)
+                    throw new InvalidDataException($"Non-json response (code: {wresp.StatusCode}, message: {wresp.StatusDescription}): {json}", ex);
                 else
-                    throw new InvalidDataException($"Non-json response: {json}");
+                    throw new InvalidDataException($"Non-json response: {json}", ex);
             }
         }
     }

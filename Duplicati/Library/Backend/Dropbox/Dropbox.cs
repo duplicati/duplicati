@@ -98,21 +98,6 @@ namespace Duplicati.Library.Backend
             return ife;
         }
 
-        private T HandleListExceptions<T>(Func<T> func)
-        {
-            try
-            {
-                return func();
-            }
-            catch (DropboxException de)
-            {
-                if (de.errorJSON["error"][".tag"].ToString() == "path" && de.errorJSON["error"]["path"][".tag"].ToString() == "not_found")
-                    throw new FolderMissingException();
-
-                throw;
-            }
-        }
-
         private async Task<T> HandleListExceptions<T>(Func<Task<T>> func)
         {
             try
