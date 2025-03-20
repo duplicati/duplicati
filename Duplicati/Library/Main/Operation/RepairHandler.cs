@@ -211,7 +211,7 @@ namespace Duplicati.Library.Main.Operation
                                 catch (Exception ex)
                                 {
                                     Logging.Log.WriteErrorMessage(LOGTAG, "RemoteFileVerificationError", ex, "Failed to perform verification for file: {0}, please run verify; message: {1}", n.Name, ex.Message);
-                                    if (ex is System.Threading.ThreadAbortException)
+                                    if (ex.IsAbortException())
                                         throw;
                                 }
                         }
@@ -298,7 +298,7 @@ namespace Duplicati.Library.Main.Operation
                         catch (Exception ex)
                         {
                             Logging.Log.WriteErrorMessage(LOGTAG, "FailedExtraFileCleanup", ex, "Failed to perform cleanup for extra file: {0}, message: {1}", n.File.Name, ex.Message);
-                            if (ex is System.Threading.ThreadAbortException)
+                            if (ex.IsAbortException())
                                 throw;
                         }
 
@@ -559,7 +559,7 @@ namespace Duplicati.Library.Main.Operation
 
                             Logging.Log.WriteErrorMessage(LOGTAG, "CleanupMissingFileError", ex, "Failed to perform cleanup for missing file: {0}, message: {1}", n.Name, ex.Message);
 
-                            if (ex is System.Threading.ThreadAbortException)
+                            if (ex.IsAbortException())
                                 throw;
                         }
                     }
