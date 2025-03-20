@@ -461,7 +461,7 @@ namespace Duplicati.Library.Main
                         // This would also allow us to control the unclean shutdown flag,
                         // by toggling this on start and completion of transfers in the manager,
                         // instead of relying on the operations to correctly toggle the flag
-                        if (File.Exists(m_options.Dbpath))
+                        if (LocalDatabase.Exists(m_options.Dbpath))
                         {
                             using (var db = new LocalDatabase(m_options.Dbpath, result.MainOperation.ToString(), true))
                                 backend.StopRunnerAndFlushMessages(db, null).Await();
@@ -474,10 +474,33 @@ namespace Duplicati.Library.Main
 
                     if (resultSetter.EndTime.Ticks == 0)
                         resultSetter.EndTime = DateTime.UtcNow;
-                    result.SetDatabase(null);
-                    if (result is BasicResults r)
+                    resultSetter.Interrupted = false;
+
+                    if (LocalDatabase.Exists(m_options.Dbpath) && !m_options.Dryrun)
                     {
-                        r.Interrupted = false;
+                        using (var db = new LocalDatabase(m_options.Dbpath, null, true))
+                        {
+                            db.WriteResults(result);
+                            db.PurgeLogData(m_options.LogRetention);
+                            db.PurgeDeletedVolumes(DateTime.UtcNow);
+
+                            // Vacuum is done AFTER the results are written to the database
+                            // This means that the information about the vacuum is not stored in the database,
+                            // but will be reported in the log output and messages sent with any of the reporting modules
+                            if (m_options.AutoVacuum && result is IResultsWithVacuum vacuumResults && result is BasicResults basicResults)
+                            {
+                                try
+                                {
+                                    vacuumResults.VacuumResults = new VacuumResults(basicResults);
+                                    new Operation.VacuumHandler(m_options, (VacuumResults)vacuumResults.VacuumResults)
+                                        .RunAsync().Await();
+                                }
+                                catch (Exception ex)
+                                {
+                                    Logging.Log.WriteVerboseMessage(LOGTAG, "FailedToVacuum", ex, "Failed to vacuum database");
+                                }
+                            }
+                        }
                     }
 
                     OperationComplete(result, null);
@@ -486,76 +509,56 @@ namespace Duplicati.Library.Main
 
                     return result;
                 }
-                catch (Exception ex)
+                // Handle custom abort exception from run-script
+                catch (OperationAbortException oae)
                 {
                     resultSetter.EndTime = DateTime.UtcNow;
+                    // Log this as a normal operation, as the script raising the exception,
+                    // has already populated either warning or log messages as required
+                    Logging.Log.WriteInformationMessage(LOGTAG, "AbortOperation", "Aborting operation by request, requested result: {0}", oae.AbortReason);
 
-                    if (ex is OperationAbortException oae)
+                    resultSetter.Interrupted = true;
+                    try
                     {
-                        // Log this as a normal operation, as the script raising the exception,
-                        // has already populated either warning or log messages as required
-                        Logging.Log.WriteInformationMessage(LOGTAG, "AbortOperation", "Aborting operation by request, requested result: {0}", oae.AbortReason);
-
-                        if (result is BasicResults basicResults)
-                        {
-                            basicResults.Interrupted = true;
-                            try
-                            {
-                                // No operation was started in database, so write logs to new operation
-                                using (var db = new LocalDatabase(m_options.Dbpath, result.MainOperation.ToString(), true))
-                                {
-                                    basicResults.SetDatabase(db);
-                                    db.WriteResults();
-                                }
-
-                                // Do not propagate the cancel exception
-                                OperationComplete(result, null);
-                            }
-                            catch { }
-                        }
-                        else
-                        {
-                            // Perform the module shutdown
-                            OperationComplete(result, ex);
-                        }
-
-                        return result;
+                        // No operation was started in database, so write logs to new operation
+                        if (LocalDatabase.Exists(m_options.Dbpath) && !m_options.Dryrun)
+                            using (var db = new LocalDatabase(m_options.Dbpath, result.MainOperation.ToString(), true))
+                                db.WriteResults(result);
                     }
-                    else
+                    catch (Exception we)
                     {
-                        Logging.Log.WriteErrorMessage(LOGTAG, "FailedOperation", ex, Strings.Controller.FailedOperationMessage(m_options.MainAction, ex.Message));
-
-                        if (result is BasicResults basicResults)
-                        {
-                            try
-                            {
-                                basicResults.OperationProgressUpdater.UpdatePhase(OperationPhase.Error);
-                                basicResults.Fatal = true;
-                                // Write logs to previous operation if database exists
-                                if (LocalDatabase.Exists(m_options.Dbpath))
-                                {
-                                    using (var db = new LocalDatabase(m_options.Dbpath, null, true))
-                                    {
-                                        basicResults.SetDatabase(db);
-                                        db.WriteResults();
-                                    }
-                                }
-
-                                // Report the result, and the failure
-                                OperationComplete(result, ex);
-
-                            }
-                            catch { }
-                        }
-                        else
-                        {
-                            // Perform the module shutdown
-                            OperationComplete(result, ex);
-                        }
-
-                        throw;
+                        Logging.Log.WriteWarningMessage(LOGTAG, "FailedWriteOperation", we, we.Message);
                     }
 
+                    // Do not propagate the cancel exception
+                    OperationComplete(result, null);
+
+                    return result;
+                }
+                catch (Exception ex)
+                {
+                    Logging.Log.WriteErrorMessage(LOGTAG, "FailedOperation", ex, Strings.Controller.FailedOperationMessage(m_options.MainAction, ex.Message));
+
+                    try
+                    {
+                        if (result is BasicResults basicResults)
+                            basicResults.OperationProgressUpdater.UpdatePhase(OperationPhase.Error);
+
+                        resultSetter.Fatal = true;
+                        // Write logs to previous operation if database exists
+                        if (LocalDatabase.Exists(m_options.Dbpath) && !m_options.Dryrun)
+                            using (var db = new LocalDatabase(m_options.Dbpath, null, true))
+                                db.WriteResults(result);
+                    }
+                    catch (Exception we)
+                    {
+                        Logging.Log.WriteWarningMessage(LOGTAG, "FailedWriteOperation", we, we.Message);
+                    }
+
+                    // Report the result, and the failure
+                    OperationComplete(result, ex);
+
+                    throw;
                 }
                 finally
                 {

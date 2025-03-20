@@ -116,10 +116,7 @@ namespace Duplicati.Library.Main.Operation
                                 .DoRunAsync(rmdb, deltr, true, false, backendManager).ConfigureAwait(false);
 
                             if (!m_options.Dryrun)
-                            {
                                 deltr.Commit("CommitDelete", restart: false);
-                                rmdb.WriteResults();
-                            }
                         }
 
                         pgoffset += (pgspan * fully_emptied.Length);

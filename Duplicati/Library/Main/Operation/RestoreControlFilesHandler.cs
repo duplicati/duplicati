@@ -48,8 +48,6 @@ namespace Duplicati.Library.Main.Operation
             using (var tmpdb = new TempFile())
             using (var db = new Database.LocalDatabase(File.Exists(m_options.Dbpath) ? m_options.Dbpath : (string)tmpdb, "RestoreControlFiles", true))
             {
-                m_result.SetDatabase(db);
-
                 var filter = JoinedFilterExpression.Join(new FilterExpression(filterstrings), compositefilter);
 
                 try
@@ -103,8 +101,6 @@ namespace Duplicati.Library.Main.Operation
                 {
                     await backendManager.WaitForEmptyAsync(db, null, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
                 }
-
-                db.WriteResults();
             }
         }
     }

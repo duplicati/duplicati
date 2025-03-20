@@ -245,7 +245,6 @@ namespace Duplicati.Library.Main.Operation
                             .ConfigureAwait(false);
 
                         ctr.Commit(restart: false);
-                        cdb.WriteResults();
                     }
                 }
 
