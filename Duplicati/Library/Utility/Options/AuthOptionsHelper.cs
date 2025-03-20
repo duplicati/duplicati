@@ -176,10 +176,12 @@ public static class AuthOptionsHelper
         /// <summary>
         /// Throws an exception if the username and password are not set
         /// </summary>
-        public void RequireCredentials()
+        public AuthOptions RequireCredentials()
         {
             if (!IsValid())
                 throw new UserInformationException(Strings.AuthSettingsHelper.UsernameAndPasswordRequired, "UsernameAndPasswordRequired");
+
+            return this;
         }
     }
 

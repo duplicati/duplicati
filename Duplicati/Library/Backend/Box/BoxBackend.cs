@@ -19,8 +19,12 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
+#nullable enable
+
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Utility;
+using Duplicati.Library.Utility.Options;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -37,9 +41,10 @@ namespace Duplicati.Library.Backend.Box
     public class BoxBackend : IBackend, IStreamingBackend
     {
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<BoxBackend>();
-
-        private const string AUTHID_OPTION = "authid";
         private const string REALLY_DELETE_OPTION = "box-delete-from-trash";
+
+        private const string OAUTH_MODULE = "box.com";
+        private static readonly string OAUTH_LOGIN_URL = OAuthHelper.OAUTH_LOGIN_URL(OAUTH_MODULE);
 
         private const string BOX_API_URL = "https://api.box.com/2.0";
         private const string BOX_UPLOAD_URL = "https://upload.box.com/api/2.0/files";
@@ -50,26 +55,28 @@ namespace Duplicati.Library.Backend.Box
         private readonly string m_path;
         private readonly bool m_deleteFromTrash;
 
-        private string m_currentfolder;
+        private readonly TimeoutOptionsHelper.Timeouts m_timeouts;
+
+        private string? m_currentfolder;
         private readonly Dictionary<string, string> m_filecache = new Dictionary<string, string>();
 
         private class BoxHelper : OAuthHelper
         {
             public BoxHelper(string authid)
-                : base(authid, "box.com")
+                : base(authid, OAUTH_MODULE)
             {
                 AutoAuthHeader = true;
             }
 
             protected override void ParseException(Exception ex)
             {
-                Exception newex = null;
+                Exception? newex = null;
                 try
                 {
                     if (ex is WebException exception && exception.Response is HttpWebResponse hs)
                     {
-                        string rawdata = null;
-                        using (var rs = Library.Utility.AsyncHttpRequest.TrySetTimeout(hs.GetResponseStream()))
+                        string? rawdata = null;
+                        using (var rs = AsyncHttpRequest.TrySetTimeout(hs.GetResponseStream()))
                         using (var sr = new System.IO.StreamReader(rs))
                             rawdata = sr.ReadToEnd();
 
@@ -79,7 +86,7 @@ namespace Duplicati.Library.Backend.Box
                         newex = new Exception("Raw message: " + rawdata);
 
                         var msg = JsonConvert.DeserializeObject<ErrorResponse>(rawdata);
-                        newex = new Exception(string.Format("{0} - {1}: {2}", msg.Status, msg.Code, msg.Message));
+                        newex = new Exception(string.Format("{0} - {1}: {2}", msg?.Status, msg?.Code, msg?.Message));
 
                         /*if (msg.ContextInfo != null && msg.ContextInfo.Length > 0)
                             newex = new Exception(string.Format("{0} - {1}: {2}{3}{4}", msg.Status, msg.Code, msg.Message, Environment.NewLine, string.Join("; ", from n in msg.ContextInfo select n.Message)));
@@ -100,56 +107,63 @@ namespace Duplicati.Library.Backend.Box
         // This constructor is needed by the BackendLoader.
         public BoxBackend()
         {
+            m_oauth = null!;
+            m_path = null!;
+            m_timeouts = null!;
         }
 
         // ReSharper disable once UnusedMember.Global
         // This constructor is needed by the BackendLoader.
-        public BoxBackend(string url, Dictionary<string, string> options)
+        public BoxBackend(string url, Dictionary<string, string?> options)
         {
             var uri = new Utility.Uri(url);
 
             m_path = Util.AppendDirSeparator(uri.HostAndPath, "/");
 
-            string authid = null;
-            if (options.ContainsKey(AUTHID_OPTION))
-                authid = options[AUTHID_OPTION];
-
+            var authid = AuthIdOptionsHelper.Parse(options)
+                .RequireCredentials(OAUTH_LOGIN_URL);
             m_deleteFromTrash = Library.Utility.Utility.ParseBoolOption(options, REALLY_DELETE_OPTION);
+            m_timeouts = TimeoutOptionsHelper.Parse(options);
 
-            m_oauth = new BoxHelper(authid);
+            m_oauth = new BoxHelper(authid.AuthId!);
         }
 
         private async Task<string> GetCurrentFolderWithCacheAsync(CancellationToken cancelToken)
         {
             if (m_currentfolder == null)
-                await GetCurrentFolderAsync(false, cancelToken).ConfigureAwait(false);
+                return await GetCurrentFolderAsync(false, cancelToken).ConfigureAwait(false);
 
             return m_currentfolder;
         }
 
-        private async Task GetCurrentFolderAsync(bool create, CancellationToken cancelToken)
+        private async Task<string> GetCurrentFolderAsync(bool create, CancellationToken cancelToken)
         {
             var parentid = "0";
 
             foreach (var p in m_path.Split(new string[] { "/" }, StringSplitOptions.RemoveEmptyEntries))
             {
-                var el = (MiniFolder)await PagedFileListResponse(parentid, true, cancelToken).FirstOrDefaultAsync(x => x.Name == p).ConfigureAwait(false);
+                var el = (MiniFolder?)await PagedFileListResponse(parentid, true, cancelToken).FirstOrDefaultAsync(x => x.Name == p).ConfigureAwait(false);
                 if (el == null)
                 {
                     if (!create)
                         throw new FolderMissingException();
 
-                    el = await m_oauth.PostAndGetJSONDataAsync<ListFolderResponse>(
-                        string.Format("{0}/folders", BOX_API_URL),
-                        cancelToken,
-                        new CreateItemRequest() { Name = p, Parent = new IDReference() { ID = parentid } }
+                    el = await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, async tr =>
+                        await m_oauth.PostAndGetJSONDataAsync<ListFolderResponse>(
+                            string.Format("{0}/folders", BOX_API_URL),
+                            tr,
+                            new CreateItemRequest() { Name = p, Parent = new IDReference() { ID = parentid } }
+                        ).ConfigureAwait(false)
                     ).ConfigureAwait(false);
                 }
+
+                if (string.IsNullOrWhiteSpace(el.ID))
+                    throw new Exception("Folder ID is empty?");
 
                 parentid = el.ID;
             }
 
-            m_currentfolder = parentid;
+            return m_currentfolder = parentid;
         }
 
         private async Task<string> GetFileIDAsync(string name, CancellationToken cancelToken)
@@ -177,7 +191,9 @@ namespace Duplicati.Library.Backend.Box
 
             do
             {
-                var resp = await m_oauth.GetJSONDataAsync<ShortListResponse>($"{BOX_API_URL}/folders/{parentid}/items?limit={PAGE_SIZE}&offset={offset}&fields=name,size,modified_at", cancelToken).ConfigureAwait(false);
+                var resp = await Utility.Utility.WithTimeout(m_timeouts.ListTimeout, cancelToken, async ct
+                    => await m_oauth.GetJSONDataAsync<ShortListResponse>($"{BOX_API_URL}/folders/{parentid}/items?limit={PAGE_SIZE}&offset={offset}&fields=name,size,modified_at", ct).ConfigureAwait(false)
+                ).ConfigureAwait(false);
 
                 if (resp.Entries == null || resp.Entries.Length == 0)
                     break;
@@ -191,6 +207,12 @@ namespace Duplicati.Library.Backend.Box
                     }
                     else
                     {
+                        if (string.IsNullOrWhiteSpace(f.ID) || string.IsNullOrWhiteSpace(f.Name))
+                        {
+                            Logging.Log.WriteVerboseMessage(LOGTAG, "BoxFileList", null, "Skipping invalid entry");
+                            continue;
+                        }
+
                         if (!onlyfolders && f.Type == "file")
                             m_filecache[f.Name] = f.ID;
 
@@ -240,7 +262,12 @@ namespace Duplicati.Library.Backend.Box
 
                 items.Add(new MultipartItem(stream, "file", remotename));
 
-                var res = (await m_oauth.PostMultipartAndGetJSONDataAsync<FileList>(url, null, cancelToken, items.ToArray())).Entries.First();
+                // TODO: Add read-write-timeout when upgraded away from WebRequest
+
+                var res = (await m_oauth.PostMultipartAndGetJSONDataAsync<FileList>(url, null, cancelToken, items.ToArray())).Entries?.FirstOrDefault();
+                if (string.IsNullOrWhiteSpace(res?.ID))
+                    throw new Exception("Failed to get ID from uploaded file");
+
                 m_filecache[remotename] = res.ID;
             }
             catch
@@ -253,9 +280,13 @@ namespace Duplicati.Library.Backend.Box
         public async Task GetAsync(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
         {
             var fileId = await GetFileIDAsync(remotename, cancelToken).ConfigureAwait(false);
-            using (var resp = await m_oauth.GetResponseAsync(string.Format("{0}/files/{1}/content", BOX_API_URL, fileId), cancelToken).ConfigureAwait(false))
+            using var resp = await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, async ct
+                => await m_oauth.GetResponseAsync(string.Format("{0}/files/{1}/content", BOX_API_URL, fileId), cancelToken).ConfigureAwait(false)
+            ).ConfigureAwait(false);
+
             using (var rs = Duplicati.Library.Utility.AsyncHttpRequest.TrySetTimeout(resp.GetResponseStream()))
-                await Library.Utility.Utility.CopyStreamAsync(rs, stream, cancelToken).ConfigureAwait(false);
+            using (var ts = rs.ObserveReadTimeout(m_timeouts.ReadWriteTimeout))
+                await Library.Utility.Utility.CopyStreamAsync(ts, stream, cancelToken).ConfigureAwait(false);
         }
 
         #endregion
@@ -286,12 +317,16 @@ namespace Duplicati.Library.Backend.Box
             var fileid = await GetFileIDAsync(remotename, cancelToken).ConfigureAwait(false);
             try
             {
-                using (var r = await m_oauth.GetResponseAsync(string.Format("{0}/files/{1}", BOX_API_URL, fileid), cancelToken, null, "DELETE").ConfigureAwait(false))
+                using (var r = await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, async ct =>
+                    await m_oauth.GetResponseAsync(string.Format("{0}/files/{1}", BOX_API_URL, fileid), ct, null, "DELETE").ConfigureAwait(false)
+                ).ConfigureAwait(false))
                 {
                 }
 
                 if (m_deleteFromTrash)
-                    using (var r = await m_oauth.GetResponseAsync(string.Format("{0}/files/{1}/trash", BOX_API_URL, fileid), cancelToken, null, "DELETE").ConfigureAwait(false))
+                    using (var r = await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, async ct
+                        => await m_oauth.GetResponseAsync(string.Format("{0}/files/{1}/trash", BOX_API_URL, fileid), cancelToken, null, "DELETE").ConfigureAwait(false)
+                    ).ConfigureAwait(false))
                     {
                     }
             }
@@ -330,10 +365,11 @@ namespace Duplicati.Library.Backend.Box
         {
             get
             {
-                return new List<ICommandLineArgument>(new ICommandLineArgument[] {
-                    new CommandLineArgument(AUTHID_OPTION, CommandLineArgument.ArgumentType.Password, Strings.Box.AuthidShort, Strings.Box.AuthidLong(OAuthHelper.OAUTH_LOGIN_URL("box.com"))),
+                return [
+                    .. AuthIdOptionsHelper.GetOptions(OAUTH_LOGIN_URL),
                     new CommandLineArgument(REALLY_DELETE_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.Box.ReallydeleteShort, Strings.Box.ReallydeleteLong),
-                });
+                    .. TimeoutOptionsHelper.GetOptions()
+                ];
             }
         }
 
@@ -363,23 +399,23 @@ namespace Duplicati.Library.Backend.Box
         private class MiniUser : IDReference
         {
             [JsonProperty("type")]
-            public string Type { get; set; }
+            public string? Type { get; set; }
             [JsonProperty("name")]
-            public string Name { get; set; }
+            public string? Name { get; set; }
             [JsonProperty("login")]
-            public string Login { get; set; }
+            public string? Login { get; set; }
         }
 
         private class MiniFolder : IDReference
         {
             [JsonProperty("type")]
-            public string Type { get; set; }
+            public string? Type { get; set; }
             [JsonProperty("name")]
-            public string Name { get; set; }
+            public string? Name { get; set; }
             [JsonProperty("etag")]
-            public string ETag { get; set; }
+            public string? ETag { get; set; }
             [JsonProperty("sequence_id")]
-            public string SequenceID { get; set; }
+            public string? SequenceID { get; set; }
         }
 
         private class FileEntity : MiniFolder
@@ -387,7 +423,7 @@ namespace Duplicati.Library.Backend.Box
             public FileEntity() { Size = -1; }
 
             [JsonProperty("sha1")]
-            public string SHA1 { get; set; }
+            public string? SHA1 { get; set; }
 
             [JsonProperty("size", NullValueHandling = NullValueHandling.Ignore)]
             public long Size { get; set; }
@@ -400,7 +436,7 @@ namespace Duplicati.Library.Backend.Box
             [JsonProperty("total_count")]
             public long TotalCount { get; set; }
             [JsonProperty("entries")]
-            public MiniFolder[] Entries { get; set; }
+            public MiniFolder[]? Entries { get; set; }
         }
 
         private class FileList
@@ -408,7 +444,7 @@ namespace Duplicati.Library.Backend.Box
             [JsonProperty("total_count")]
             public long TotalCount { get; set; }
             [JsonProperty("entries")]
-            public FileEntity[] Entries { get; set; }
+            public FileEntity[]? Entries { get; set; }
             [JsonProperty("offset")]
             public long Offset { get; set; }
             [JsonProperty("limit")]
@@ -418,9 +454,9 @@ namespace Duplicati.Library.Backend.Box
         private class UploadEmail
         {
             [JsonProperty("access")]
-            public string Access { get; set; }
+            public string? Access { get; set; }
             [JsonProperty("email")]
-            public string Email { get; set; }
+            public string? Email { get; set; }
         }
 
         private class ListFolderResponse : MiniFolder
@@ -430,80 +466,80 @@ namespace Duplicati.Library.Backend.Box
             [JsonProperty("modified_at")]
             public DateTime ModifiedAt { get; set; }
             [JsonProperty("description")]
-            public string Description { get; set; }
+            public string? Description { get; set; }
             [JsonProperty("size")]
             public long Size { get; set; }
 
             [JsonProperty("path_collection")]
-            public FolderList PathCollection { get; set; }
+            public FolderList? PathCollection { get; set; }
 
             [JsonProperty("created_by")]
-            public MiniUser CreatedBy { get; set; }
+            public MiniUser? CreatedBy { get; set; }
             [JsonProperty("modified_by")]
-            public MiniUser ModifiedBy { get; set; }
+            public MiniUser? ModifiedBy { get; set; }
             [JsonProperty("owned_by")]
-            public MiniUser OwnedBy { get; set; }
+            public MiniUser? OwnedBy { get; set; }
 
             [JsonProperty("shared_link")]
-            public MiniUser SharedLink { get; set; }
+            public MiniUser? SharedLink { get; set; }
 
             [JsonProperty("folder_upload_email")]
-            public UploadEmail FolderUploadEmail { get; set; }
+            public UploadEmail? FolderUploadEmail { get; set; }
 
             [JsonProperty("parent")]
-            public MiniFolder Parent { get; set; }
+            public MiniFolder? Parent { get; set; }
 
             [JsonProperty("item_status")]
-            public string ItemStatus { get; set; }
+            public string? ItemStatus { get; set; }
 
             [JsonProperty("item_collection")]
-            public FileList ItemCollection { get; set; }
+            public FileList? ItemCollection { get; set; }
 
         }
 
         private class OrderEntry
         {
             [JsonProperty("by")]
-            public string By { get; set; }
+            public string? By { get; set; }
             [JsonProperty("direction")]
-            public string Direction { get; set; }
+            public string? Direction { get; set; }
         }
 
         private class ShortListResponse : FileList
         {
             [JsonProperty("order")]
-            public OrderEntry[] Order { get; set; }
+            public OrderEntry[]? Order { get; set; }
 
         }
 
         private class IDReference
         {
             [JsonProperty("id")]
-            public string ID { get; set; }
+            public string? ID { get; set; }
         }
 
         private class CreateItemRequest
         {
             [JsonProperty("name")]
-            public string Name { get; set; }
+            public string? Name { get; set; }
             [JsonProperty("parent")]
-            public IDReference Parent { get; set; }
+            public IDReference? Parent { get; set; }
         }
 
         private class ErrorResponse
         {
             [JsonProperty("type")]
-            public string Type { get; set; }
+            public string? Type { get; set; }
             [JsonProperty("status")]
             public int Status { get; set; }
             [JsonProperty("code")]
-            public string Code { get; set; }
+            public string? Code { get; set; }
             [JsonProperty("help_url")]
-            public string HelpUrl { get; set; }
+            public string? HelpUrl { get; set; }
             [JsonProperty("message")]
-            public string Message { get; set; }
+            public string? Message { get; set; }
             [JsonProperty("request_id")]
-            public string RequestId { get; set; }
+            public string? RequestId { get; set; }
 
         }
     }

@@ -65,8 +65,8 @@ namespace Duplicati.Library.Backend.AliyunOSS
             if (!string.IsNullOrEmpty(prefix))
                 _ossOptions.Path = prefix;
 
-            var auth = AuthOptionsHelper.ParseWithAlias(options, uri, OSS_ACCESS_KEY_ID, OSS_ACCESS_KEY_SECRET);
-            auth.RequireCredentials();
+            var auth = AuthOptionsHelper.ParseWithAlias(options, uri, OSS_ACCESS_KEY_ID, OSS_ACCESS_KEY_SECRET)
+                .RequireCredentials();
 
             _ossOptions.AccessKeyId = auth.Username;
             _ossOptions.AccessKeySecret = auth.Password;
