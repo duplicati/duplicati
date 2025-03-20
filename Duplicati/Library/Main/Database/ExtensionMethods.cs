@@ -22,6 +22,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using System.Text.RegularExpressions;
 
 #nullable enable
 
@@ -107,6 +108,25 @@ public static class ExtensionMethods
     }
 
     /// <summary>
+    /// Adds a parameter to the command with the given value.
+    /// </summary>
+    /// <typeparam name="T">The type of the command</typeparam>
+    /// <param name="self">The command to add the parameter to</param>
+    /// <param name="name">The name of the parameter</param>
+    /// <param name="value">The optional value of the parameter</param>
+    /// <returns>The command with the parameter added</returns>
+    public static T AddNamedParameter<T>(this T self, string? name, object? value = null)
+        where T : IDbCommand
+    {
+        var p = self.CreateParameter();
+        p.ParameterName = name;
+        if (value != null)
+            p.Value = value;
+        self.Parameters.Add(p);
+        return self;
+    }
+
+    /// <summary>
     /// Sets the parameter values for the command, the parameters must already be added.
     /// </summary>
     /// <typeparam name="T">The type of the command</typeparam>
@@ -122,6 +142,21 @@ public static class ExtensionMethods
     }
 
     /// <summary>
+    /// Sets the parameter values for the command, the parameters must already be added.
+    /// </summary>
+    /// <typeparam name="T">The type of the command</typeparam>
+    /// <param name="self">The command to set the parameter values for</param>
+    /// <param name="values">The values to set the parameters to</param>
+    /// <returns>The command with the parameter values set</returns>
+    public static T SetParameterValues<T>(this T self, Dictionary<string, object?> values)
+        where T : IDbCommand
+    {
+        foreach (var kvp in values)
+            ((IDataParameter)self.Parameters[kvp.Key]!).Value = kvp.Value;
+        return self;
+    }
+
+    /// <summary>
     /// Sets the parameter value for the command at the given index.
     /// </summary>
     /// <typeparam name="T">The type of the command</typeparam>
@@ -133,6 +168,21 @@ public static class ExtensionMethods
         where T : IDbCommand
     {
         ((IDataParameter)self.Parameters[index]!).Value = value;
+        return self;
+    }
+
+    /// <summary>
+    /// Sets the parameter value for the command at the given index.
+    /// </summary>
+    /// <typeparam name="T">The type of the command</typeparam>
+    /// <param name="self">The command to set the parameter value for</param>
+    /// <param name="name">The name of the parameter to set the value for</param>
+    /// <param name="value">The value to set the parameter to</param>
+    /// <returns>The command with the parameter value set</returns>
+    public static T SetParameterValue<T>(this T self, string name, object? value)
+        where T : IDbCommand
+    {
+        ((IDataParameter)self.Parameters[name]!).Value = value;
         return self;
     }
 
@@ -173,7 +223,7 @@ public static class ExtensionMethods
     /// <returns>The number of rows affected</returns>
     public static int ExecuteNonQuery(this IDbCommand self, bool writeLog)
     {
-        return ExecuteNonQuery(self, writeLog, null, null);
+        return ExecuteNonQuery(self, writeLog, null, (object?[]?)null);
     }
 
     /// <summary>
@@ -192,6 +242,38 @@ public static class ExtensionMethods
     /// Executes the command and returns the number of rows affected.
     /// </summary>
     /// <param name="self">The command instance to execute on</param>
+    /// <param name="cmd">The command string to execute</param>
+    /// <param name="values">The values to use as parameters. The parameters must already be added.</param>
+    /// <returns>The number of rows affected</returns>
+    public static int ExecuteNonQuery(this IDbCommand self, string cmd, Dictionary<string, object?> values)
+    {
+        return ExecuteNonQuery(self, true, cmd, values);
+    }
+
+    /// <summary>
+    /// Executes the command and returns the number of rows affected.
+    /// </summary>
+    /// <param name="self">The command instance to execute on</param>
+    /// <param name="writeLog">Whether to write a log entry</param>
+    /// <param name="cmd">The command string to execute</param>
+    /// <param name="values">The values to use as parameters. The parameters must already be added.</param>
+    /// <returns>The number of rows affected</returns>
+    public static int ExecuteNonQuery(this IDbCommand self, bool writeLog, string? cmd, Dictionary<string, object?> values)
+    {
+        if (cmd != null)
+            self.SetCommandAndParameters(cmd);
+
+        if (values != null && values.Count > 0)
+            self.SetParameterValues(values);
+
+        using (writeLog ? new Logging.Timer(LOGTAG, "ExecuteNonQuery", string.Format("ExecuteNonQuery: {0}", self.GetPrintableCommandText())) : null)
+            return self.ExecuteNonQuery();
+    }
+
+    /// <summary>
+    /// Executes the command and returns the number of rows affected.
+    /// </summary>
+    /// <param name="self">The command instance to execute on</param>
     /// <param name="writeLog">Whether to write a log entry</param>
     /// <param name="cmd">The command string to execute</param>
     /// <param name="values">The values to use as parameters. The parameters must already be added.</param>
@@ -199,17 +281,25 @@ public static class ExtensionMethods
     public static int ExecuteNonQuery(this IDbCommand self, bool writeLog, string? cmd, params object?[]? values)
     {
         if (cmd != null)
-            self.CommandText = cmd;
+            self.SetCommandAndParameters(cmd);
 
         if (values != null && values.Length > 0)
-        {
-            self.Parameters.Clear();
-            foreach (var n in values)
-                self.AddParameter(n);
-        }
+            self.SetParameterValues(values);
 
         using (writeLog ? new Logging.Timer(LOGTAG, "ExecuteNonQuery", string.Format("ExecuteNonQuery: {0}", self.GetPrintableCommandText())) : null)
             return self.ExecuteNonQuery();
+    }
+
+    /// <summary>
+    /// Executes the command and returns the number of rows affected.
+    /// </summary>
+    /// <param name="self">The command instance to execute on</param>
+    /// <param name="transaction">The transaction to use for the command</param>
+    /// <returns>The number of rows affected</returns>
+    public static int ExecuteNonQuery(this IDbCommand self, IDbTransaction transaction)
+    {
+        self.Transaction = transaction;
+        return self.ExecuteNonQuery();
     }
 
     /// <summary>
@@ -235,14 +325,10 @@ public static class ExtensionMethods
     public static object? ExecuteScalar(this IDbCommand self, bool writeLog, string cmd, params object[] values)
     {
         if (cmd != null)
-            self.CommandText = cmd;
+            self.SetCommandAndParameters(cmd);
 
         if (values != null && values.Length > 0)
-        {
-            self.Parameters.Clear();
-            foreach (var n in values)
-                self.AddParameter(n);
-        }
+            self.SetParameterValues(values);
 
         using (writeLog ? new Logging.Timer(LOGTAG, "ExecuteScalar", string.Format("ExecuteScalar: {0}", self.GetPrintableCommandText())) : null)
             return self.ExecuteScalar();
@@ -268,6 +354,19 @@ public static class ExtensionMethods
     /// <returns>The scalar int64 value of the first row as a string</returns>
     public static long ExecuteScalarInt64(this IDbCommand self, long defaultvalue = -1)
     {
+        return ExecuteScalarInt64(self, true, null, defaultvalue);
+    }
+
+    /// <summary>
+    /// Executes the command and returns the scalar int64 value of the first row as a string.
+    /// </summary>
+    /// <param name="self">The command instance to execute on</param>
+    /// <param name="transaction">The transaction to use for the command</param>
+    /// <param name="defaultvalue">The default value to return if no value is found</param>
+    /// <returns>The scalar int64 value of the first row as a string</returns>
+    public static long ExecuteScalarInt64(this IDbCommand self, IDbTransaction transaction, long defaultvalue = -1)
+    {
+        self.Transaction = transaction;
         return ExecuteScalarInt64(self, true, null, defaultvalue);
     }
 
@@ -321,14 +420,10 @@ public static class ExtensionMethods
     public static long ExecuteScalarInt64(this IDbCommand self, bool writeLog, string? cmd, long defaultvalue, params object?[]? values)
     {
         if (cmd != null)
-            self.CommandText = cmd;
+            self.SetCommandAndParameters(cmd);
 
         if (values != null && values.Length > 0)
-        {
-            self.Parameters.Clear();
-            foreach (var n in values)
-                self.AddParameter(n);
-        }
+            self.SetParameterValues(values);
 
         using (writeLog ? new Logging.Timer(LOGTAG, "ExecuteScalarInt64", string.Format("ExecuteScalarInt64: {0}", self.GetPrintableCommandText())) : null)
         using (var rd = self.ExecuteReader())
@@ -337,6 +432,19 @@ public static class ExtensionMethods
 
         return defaultvalue;
     }
+
+    /// <summary>
+    /// Executes the command and returns a data reader.
+    /// </summary>
+    /// <param name="self">The command instance to execute on</param>
+    /// <param name="cmd">The command string to execute</param>
+    /// <param name="values">The values to use as parameters. The parameters must already be added.</param>
+    /// <returns>A <see cref="IDataReader"/> instance</returns>
+    public static IDataReader ExecuteReader(this IDbCommand self, string cmd, Dictionary<string, object> values)
+    {
+        return ExecuteReader(self, true, cmd, values);
+    }
+
 
     /// <summary>
     /// Executes the command and returns a data reader.
@@ -361,14 +469,30 @@ public static class ExtensionMethods
     public static IDataReader ExecuteReader(this IDbCommand self, bool writeLog, string cmd, params object[] values)
     {
         if (cmd != null)
-            self.CommandText = cmd;
+            self.SetCommandAndParameters(cmd);
 
         if (values != null && values.Length > 0)
-        {
-            self.Parameters.Clear();
-            foreach (var n in values)
-                self.AddParameter(n);
-        }
+            self.SetParameterValues(values);
+
+        using (writeLog ? new Logging.Timer(LOGTAG, "ExecuteReader", string.Format("ExecuteReader: {0}", self.GetPrintableCommandText())) : null)
+            return self.ExecuteReader();
+    }
+
+    /// <summary>
+    /// Executes the command and returns a data reader.
+    /// </summary>
+    /// <param name="self">The command instance to execute on</param>
+    /// <param name="writeLog">Whether to write a log entry</param>
+    /// <param name="cmd">The command string to execute</param>
+    /// <param name="values">The values to use as parameters. The parameters must already be added.</param>
+    /// <returns>A <see cref="IDataReader"/> instance</returns>
+    public static IDataReader ExecuteReader(this IDbCommand self, bool writeLog, string cmd, Dictionary<string, object?> values)
+    {
+        if (cmd != null)
+            self.SetCommandAndParameters(cmd);
+
+        if (values != null && values.Count > 0)
+            self.SetParameterValues(values);
 
         using (writeLog ? new Logging.Timer(LOGTAG, "ExecuteReader", string.Format("ExecuteReader: {0}", self.GetPrintableCommandText())) : null)
             return self.ExecuteReader();
@@ -436,10 +560,45 @@ public static class ExtensionMethods
         var cmd = self.CreateCommand();
         cmd.Transaction = transaction;
         if (!string.IsNullOrEmpty(cmdtext))
+            cmd.SetCommandAndParameters(cmdtext);
+        return cmd;
+    }
+
+    /// <summary>
+    /// Sets the command text and adds parameters to the command.
+    /// </summary>
+    /// <param name="cmd">The command to set the command text and add parameters to.</param>
+    /// <param name="transaction">The transaction to use for the command.</param>
+    /// <param name="cmdtext">The command text to set.</param>
+    /// <returns>The command with the command text set and parameters added.</returns>
+    public static IDbCommand SetCommandAndParameters(this IDbCommand cmd, IDbTransaction transaction, string cmdtext)
+    {
+        cmd.Transaction = transaction;
+        return cmd.SetCommandAndParameters(cmdtext);
+    }
+
+    /// <summary>
+    /// Sets the command text and adds parameters to the command.
+    /// </summary>
+    /// <param name="cmd">The command to set the command text and add parameters to.</param>
+    /// <param name="cmdtext">The command text to set.</param>
+    /// <returns>The command with the command text set and parameters added.</returns>
+    public static IDbCommand SetCommandAndParameters(this IDbCommand cmd, string cmdtext)
+    {
+        cmd.CommandText = cmdtext;
+        cmd.Parameters.Clear();
+        cmd.AddParameters(cmdtext.Count(c => c == '?'));
+
+        var parameters = Regex.Matches(cmdtext, @"@\w+");
+        var found = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (Match match in parameters)
         {
-            cmd.CommandText = cmdtext;
-            cmd.AddParameters(cmdtext.Count(c => c == '?'));
+            if (found.Contains(match.Value))
+                continue;
+            found.Add(match.Value);
+            cmd.AddNamedParameter(match.Value);
         }
+
         return cmd;
     }
 
