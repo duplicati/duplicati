@@ -204,7 +204,7 @@ namespace Duplicati.Library.Backend.Box
 
             var existing = _fileCache.ContainsKey(remotename);
 
-            var multipartForm = new MultipartFormDataContent("----DuplicatiFormBoundary" + Guid.NewGuid().ToString("N"));
+            var multipartForm = new MultipartFormDataContent();
 
             try
             {
