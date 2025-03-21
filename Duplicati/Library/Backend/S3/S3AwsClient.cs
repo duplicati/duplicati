@@ -151,7 +151,7 @@ namespace Duplicati.Library.Backend
         public virtual async Task AddFileStreamAsync(string bucketName, string keyName, Stream source,
             CancellationToken cancelToken)
         {
-            using var ts = source.ObserveReadTimeout(m_timeouts.ReadWriteTimeout);
+            using var ts = source.ObserveReadTimeout(m_timeouts.ReadWriteTimeout, false);
             var objectAddRequest = new PutObjectRequest
             {
                 BucketName = bucketName,

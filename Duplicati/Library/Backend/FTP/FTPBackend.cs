@@ -457,7 +457,7 @@ namespace Duplicati.Library.Backend
             {
                 var client = await CreateClient(cancelToken).ConfigureAwait(false);
                 var clientRemoteName = PreparePathForClient(remotename);
-                await using var inputStream = await client.OpenRead(clientRemoteName, token: cancelToken);
+                await using var inputStream = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancelToken, ct => client.OpenRead(clientRemoteName, token: ct)).ConfigureAwait(false);
                 await using var timeoutStream = inputStream.ObserveReadTimeout(_timeouts.ReadWriteTimeout);
                 await CoreUtility.CopyStreamAsync(inputStream, output, false, cancelToken).ConfigureAwait(false);
             }

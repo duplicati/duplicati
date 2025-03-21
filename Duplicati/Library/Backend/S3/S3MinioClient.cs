@@ -204,7 +204,7 @@ namespace Duplicati.Library.Backend
 
             try
             {
-                using var t = source.ObserveReadTimeout(m_timeouts.ReadWriteTimeout);
+                using var t = source.ObserveReadTimeout(m_timeouts.ReadWriteTimeout, false);
                 await m_client.PutObjectAsync(bucketName,
                     keyName,
                     t,

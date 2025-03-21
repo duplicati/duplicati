@@ -199,7 +199,7 @@ namespace Duplicati.Library.Backend
 
             if (!auth.HasUsername)
                 throw new UserInformationException(Strings.S3Backend.NoAMZUserIDError, "S3NoAmzUserID");
-            if (auth.HasPassword)
+            if (!auth.HasPassword)
                 throw new UserInformationException(Strings.S3Backend.NoAMZKeyError, "S3NoAmzKey");
 
             var useSSL = Utility.Utility.ParseBoolOption(options, SSL_OPTION);
