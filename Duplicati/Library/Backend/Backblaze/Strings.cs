@@ -38,6 +38,6 @@ namespace Duplicati.Library.Backend.Strings
         public static string B2pagesizeDescriptionShort { get { return LC.L(@"The size of file-listing pages"); } }
         public static string B2downloadurlDescriptionLong { get { return LC.L(@"Change this if you want to use your custom domain to download files, and uploading will not be affected. The default download URL depends on your account and looks like ""https://f00X.backblazeb2.com""."); } }
         public static string B2downloadurlDescriptionShort { get { return LC.L(@"The base URL to use for downloading files"); } }
-        public static string InvalidPageSizeError(string argname, string value) { return LC.L(@"The setting ""{0}"" is invalid for ""{1}"". It must be an integer larger than zero.", value, argname); }
+        public static string InvalidPageSizeError(string argname, string? value) { return LC.L(@"The setting ""{0}"" is invalid for ""{1}"". It must be an integer larger than zero.", value, argname); }
     }
 }

@@ -24,13 +24,8 @@ using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
 using Duplicati.Library.Utility.Options;
-using System;
-using System.Collections.Generic;
-using System.IO;
 using System.Net;
 using System.Runtime.CompilerServices;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Duplicati.Library.Backend.AliyunOSS
 {
@@ -52,30 +47,29 @@ namespace Duplicati.Library.Backend.AliyunOSS
         private readonly TimeoutOptionsHelper.Timeouts _timeouts;
 
         public OSS()
-        { }
-
-        public OSS(string url, Dictionary<string, string> options)
         {
-            _ossOptions = new AliyunOSSOptions();
+            _ossOptions = null!;
+            _timeouts = null!;
+        }
+
+        public OSS(string url, Dictionary<string, string?> options)
+        {
             _timeouts = TimeoutOptionsHelper.Parse(options);
 
             var uri = new Utility.Uri(url?.Trim());
             var prefix = uri.HostAndPath?.TrimPath();
 
-            if (!string.IsNullOrEmpty(prefix))
-                _ossOptions.Path = prefix;
-
             var auth = AuthOptionsHelper.ParseWithAlias(options, uri, OSS_ACCESS_KEY_ID, OSS_ACCESS_KEY_SECRET)
                 .RequireCredentials();
 
-            _ossOptions.AccessKeyId = auth.Username;
-            _ossOptions.AccessKeySecret = auth.Password;
-
-            if (options.ContainsKey(OSS_BUCKET_NAME))
-                _ossOptions.BucketName = options[OSS_BUCKET_NAME];
-
-            if (options.ContainsKey(OSS_ENDPOINT))
-                _ossOptions.Endpoint = options[OSS_ENDPOINT];
+            _ossOptions = new AliyunOSSOptions()
+            {
+                BucketName = options.GetValueOrDefault(OSS_BUCKET_NAME),
+                Endpoint = options.GetValueOrDefault(OSS_ENDPOINT),
+                AccessKeyId = auth.Username!,
+                AccessKeySecret = auth.Password!,
+                Path = prefix ?? string.Empty
+            };
         }
 
         private OssClient GetClient(bool isUseNewServiceClient = true)

@@ -40,8 +40,8 @@ public sealed record SMBConnectionParameters(
     SMBTransportType TransportType,
     string ShareName,
     string Path,
-    string AuthDomain,
-    string AuthUser,
-    string AuthPassword,
+    string? AuthDomain,
+    string? AuthUser,
+    string? AuthPassword,
     int? ReadBufferSize,
     int? WriteBufferSize);

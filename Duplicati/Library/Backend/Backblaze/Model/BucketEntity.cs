@@ -34,17 +34,17 @@ internal class BucketEntity : AccountIDEntity
     /// This property can be null as specified by the NullValueHandling attribute.
     /// </summary>
     [JsonProperty("bucketId", NullValueHandling = NullValueHandling.Ignore)]
-    public string BucketID { get; set; }
+    public string? BucketID { get; set; }
 
     /// <summary>
     /// Gets or sets the name of the bucket.
     /// </summary>
     [JsonProperty("bucketName")]
-    public string BucketName { get; set; }
+    public required string BucketName { get; set; }
 
     /// <summary>
     /// Gets or sets the type of the bucket (e.g., "allPrivate", "allPublic").
     /// </summary>
     [JsonProperty("bucketType")]
-    public string BucketType { get; set; }
+    public string? BucketType { get; set; }
 }

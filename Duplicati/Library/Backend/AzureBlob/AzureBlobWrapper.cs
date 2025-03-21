@@ -60,7 +60,7 @@ namespace Duplicati.Library.Backend.AzureBlob
         /// <param name="sasToken">The Shared Access Signature (SAS) token for authentication.</param>
         /// <param name="containerName">The name of the blob container.</param>
         /// <param name="timeouts">The timeout options.</param>
-        public AzureBlobWrapper(string accountName, string accessKey, string sasToken, string containerName, TimeoutOptionsHelper.Timeouts timeouts)
+        public AzureBlobWrapper(string accountName, string? accessKey, string? sasToken, string containerName, TimeoutOptionsHelper.Timeouts timeouts)
         {
             BlobServiceClient blobServiceClient;
             if (sasToken != null)

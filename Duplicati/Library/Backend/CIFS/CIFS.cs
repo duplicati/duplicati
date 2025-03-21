@@ -19,15 +19,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
-#nullable enable
-
-using System;
 using Duplicati.Library.Interface;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Duplicati.Library.Backend.CIFS;
 using Duplicati.Library.Backend.CIFS.Model;
 using SMBLibrary;

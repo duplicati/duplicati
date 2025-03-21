@@ -36,11 +36,12 @@ namespace Duplicati.Library.Backend.AzureBlob
         // This constructor is needed by the BackendLoader.
         public AzureBlobBackend()
         {
+            _azureBlob = null!;
         }
 
         // ReSharper disable once UnusedMember.Global
         // This constructor is needed by the BackendLoader.
-        public AzureBlobBackend(string url, Dictionary<string, string> options)
+        public AzureBlobBackend(string url, Dictionary<string, string?> options)
         {
             var uri = new Utility.Uri(url);
             uri.RequireHost();
@@ -57,7 +58,7 @@ namespace Duplicati.Library.Backend.AzureBlob
             if (!auth.HasPassword && string.IsNullOrWhiteSpace(sasToken))
                 throw new UserInformationException(Strings.AzureBlobBackend.NoAccessKeyOrSasToken, "AzureNoAccessKeyOrSasToken");
 
-            _azureBlob = new AzureBlobWrapper(auth.Username, auth.Password, sasToken, containerName, timeouts);
+            _azureBlob = new AzureBlobWrapper(auth.Username!, auth.Password, sasToken, containerName, timeouts);
         }
 
         public string DisplayName => Strings.AzureBlobBackend.DisplayName;

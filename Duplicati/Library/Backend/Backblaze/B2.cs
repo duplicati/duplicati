@@ -100,7 +100,7 @@ public class B2 : IStreamingBackend, ITimeoutExemptBackend
     /// <summary>
     /// The type of bucket (e.g., allPrivate, allPublic) being accessed or created
     /// </summary>
-    private readonly string _bucketType;
+    private readonly string? _bucketType;
 
     /// <summary>
     /// The number of files to retrieve per API request
@@ -110,7 +110,7 @@ public class B2 : IStreamingBackend, ITimeoutExemptBackend
     /// <summary>
     /// Custom download URL for the B2 service, if specified
     /// </summary>
-    private readonly string _downloadUrl;
+    private readonly string? _downloadUrl;
 
     /// <summary>
     /// Helper class for handling B2 authentication and API requests
@@ -125,17 +125,17 @@ public class B2 : IStreamingBackend, ITimeoutExemptBackend
     /// <summary>
     /// Cached upload URL and authorization token for file uploads
     /// </summary>
-    private UploadUrlResponse _uploadUrl;
+    private UploadUrlResponse? _uploadUrl;
 
     /// <summary>
     /// Cache of file listings, mapping filenames to their versions
     /// </summary>
-    private Dictionary<string, List<FileEntity>> _filecache;
+    private Dictionary<string, List<FileEntity>>? _filecache;
 
     /// <summary>
     /// The current bucket entity containing bucket information and credentials
     /// </summary>
-    private BucketEntity _bucket;
+    private BucketEntity? _bucket;
 
     /// <summary>
     /// A scoped instance of Http client to be used with the backend, this will use a
@@ -154,6 +154,12 @@ public class B2 : IStreamingBackend, ITimeoutExemptBackend
     /// </summary>
     public B2()
     {
+        _bucketName = null!;
+        _prefix = null!;
+        _urlencodedPrefix = null!;
+        _b2AuthHelper = null!;
+        _timeouts = null!;
+        _httpClient = null!;
     }
 
     /// <summary>
@@ -161,7 +167,7 @@ public class B2 : IStreamingBackend, ITimeoutExemptBackend
     /// </summary>
     /// <param name="url">URL in Duplicati Uri format</param>
     /// <param name="options">options to be used in the backend</param>
-    public B2(string url, Dictionary<string, string> options)
+    public B2(string url, Dictionary<string, string?> options)
     {
         var uri = new Utility.Uri(url);
 
@@ -201,7 +207,7 @@ public class B2 : IStreamingBackend, ITimeoutExemptBackend
         _httpClient = HttpClientHelper.CreateClient();
         _httpClient.Timeout = Timeout.InfiniteTimeSpan;
 
-        _b2AuthHelper = new B2AuthHelper(auth.Username, auth.Password, _httpClient);
+        _b2AuthHelper = new B2AuthHelper(auth.Username!, auth.Password!, _httpClient);
         _timeouts = TimeoutOptionsHelper.Parse(options);
 
     }
@@ -253,7 +259,11 @@ public class B2 : IStreamingBackend, ITimeoutExemptBackend
         _uploadUrl = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancellationToken, async ct
             => await _b2AuthHelper.PostAndGetJsonDataAsync<UploadUrlResponse>(
                 $"{_b2AuthHelper.ApiUrl}/b2api/v1/b2_get_upload_url",
-                new UploadUrlRequest { BucketID = (await GetBucketAsync(cancellationToken)).BucketID },
+                new UploadUrlRequest
+                {
+                    BucketID = (await GetBucketAsync(cancellationToken)).BucketID
+                        ?? throw new Exception("BucketID is null")
+                },
                 ct).ConfigureAwait(false)
         ).ConfigureAwait(false);
 
@@ -300,7 +310,7 @@ public class B2 : IStreamingBackend, ITimeoutExemptBackend
 
     public async Task PutAsync(string remotename, Stream stream, CancellationToken cancelToken)
     {
-        TempFile tmp = null;
+        TempFile? tmp = null;
 
         var measure = stream;
         while (measure is OverrideableStream os &&
@@ -363,7 +373,8 @@ public class B2 : IStreamingBackend, ITimeoutExemptBackend
             UploadFileResponse fileinfo;
             using (var tr = new StreamReader(rdata))
             await using (var jr = new Newtonsoft.Json.JsonTextReader(tr))
-                fileinfo = new Newtonsoft.Json.JsonSerializer().Deserialize<UploadFileResponse>(jr);
+                fileinfo = new Newtonsoft.Json.JsonSerializer().Deserialize<UploadFileResponse>(jr)
+                    ?? throw new Exception("Failed to parse response");
 
             // Delete old versions
             if (_filecache!.ContainsKey(remotename))
@@ -417,7 +428,7 @@ public class B2 : IStreamingBackend, ITimeoutExemptBackend
             : _b2AuthHelper.CreateRequest(
                 $"{DownloadUrl}/{_urlencodedPrefix}{Utility.Uri.UrlPathEncode(remotename)}");
 
-        HttpResponseMessage response = null;
+        HttpResponseMessage? response = null;
         try
         {
             // For GetAsync, no timeout is specified. The only thing that can stop it is the cancellation token
@@ -446,13 +457,13 @@ public class B2 : IStreamingBackend, ITimeoutExemptBackend
     /// Implementation of interface method for listing remote folder contents
     /// </summary>
     /// <returns>List of IFileEntry with directory listing result</returns>
-    private async Task RebuildFileCache(CancellationToken cancellationToken)
+    private async Task<Dictionary<string, List<FileEntity>>> RebuildFileCache(CancellationToken cancellationToken)
     {
         _filecache = null;
         var cache = new Dictionary<string, List<FileEntity>>();
-        string nextFileId = null;
-        string nextFileName = null;
-        string listVersionUrl = $"{_b2AuthHelper.ApiUrl}/b2api/v1/b2_list_file_versions";
+        string? nextFileId = null;
+        string? nextFileName = null;
+        var listVersionUrl = $"{_b2AuthHelper.ApiUrl}/b2api/v1/b2_list_file_versions";
 
         var listRetryHelper = RetryAfterHelper.CreateOrGetRetryAfterHelper(listVersionUrl);
 
@@ -465,7 +476,8 @@ public class B2 : IStreamingBackend, ITimeoutExemptBackend
                         $"{_b2AuthHelper.ApiUrl}/b2api/v1/b2_list_file_versions",
                         new ListFilesRequest
                         {
-                            BucketID = (await GetBucketAsync(cancellationToken)).BucketID,
+                            BucketID = (await GetBucketAsync(cancellationToken)).BucketID
+                                ?? throw new Exception("BucketID is null"),
                             MaxFileCount = _pageSize,
                             Prefix = _prefix,
                             StartFileID = nextFileId,
@@ -509,7 +521,7 @@ public class B2 : IStreamingBackend, ITimeoutExemptBackend
             }
         } while (nextFileId != null);
 
-        _filecache = cache;
+        return _filecache = cache;
     }
 
     /// <summary>
@@ -518,8 +530,8 @@ public class B2 : IStreamingBackend, ITimeoutExemptBackend
     /// <returns>List of IFileEntry with directory listing result</returns>
     public async IAsyncEnumerable<IFileEntry> ListAsync([EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        await RebuildFileCache(cancellationToken).ConfigureAwait(false);
-        foreach (var x in _filecache)
+        var filecache = await RebuildFileCache(cancellationToken).ConfigureAwait(false);
+        foreach (var x in filecache)
         {
             var newest = x.Value.OrderByDescending(y => y.UploadTimestamp).First();
             var ts = Utility.Utility.EPOCH.AddMilliseconds(newest.UploadTimestamp);
@@ -560,10 +572,11 @@ public class B2 : IStreamingBackend, ITimeoutExemptBackend
     {
         try
         {
-            if (_filecache == null || !_filecache.ContainsKey(remotename))
-                await RebuildFileCache(cancellationToken).ConfigureAwait(false);
+            var filecache = _filecache;
+            if (filecache == null || !filecache.ContainsKey(remotename))
+                filecache = await RebuildFileCache(cancellationToken).ConfigureAwait(false);
 
-            if (!_filecache.TryGetValue(remotename, out var value))
+            if (!filecache.TryGetValue(remotename, out var value))
                 throw new FileMissingException();
 
             foreach (var n in value.OrderBy(x => x.UploadTimestamp))
@@ -579,7 +592,7 @@ public class B2 : IStreamingBackend, ITimeoutExemptBackend
                     ).ConfigureAwait(false)
                 ).ConfigureAwait(false);
 
-            _filecache[remotename].Clear();
+            filecache[remotename].Clear();
         }
         catch
         {
@@ -627,11 +640,12 @@ public class B2 : IStreamingBackend, ITimeoutExemptBackend
     public string Description => Strings.B2.Description;
 
     /// <inheritdoc/>
-    public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(new string[] {
+    public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(new string?[] {
             new System.Uri(B2AuthHelper.AUTH_URL).Host,
             _b2AuthHelper?.ApiDnsName,
             _b2AuthHelper?.DownloadDnsName
         }.Where(x => !string.IsNullOrEmpty(x))
+        .Select(x => x!)
         .ToArray());
 
     /// <summary>

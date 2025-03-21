@@ -40,7 +40,7 @@ public class B2AuthHelper(string userid, string password, HttpClient httpClient)
     /// <summary>
     /// Cached authorization response
     /// </summary>
-    private AuthResponse _CachedAuthResponse;
+    private AuthResponse? _CachedAuthResponse;
 
     /// <summary>
     /// Cached authorization response expiration time
@@ -93,7 +93,7 @@ public class B2AuthHelper(string userid, string password, HttpClient httpClient)
     /// <param name="url">The URL for the request</param>
     /// <param name="method">HTTP method (defaults to GET if null)</param>
     /// <returns>Configured HttpRequestMessage</returns>
-    public override HttpRequestMessage CreateRequest(string url, string method = null)
+    public override HttpRequestMessage CreateRequest(string url, string? method = null)
     {
         HttpRequestMessage request = base.CreateRequest(url, method);
         request.Headers.TryAddWithoutValidation("Authorization", AuthorizationToken);
@@ -115,16 +115,16 @@ public class B2AuthHelper(string userid, string password, HttpClient httpClient)
     /// <summary>
     /// API DNS Name
     /// </summary>
-    public string ApiDnsName =>
-        _CachedAuthResponse == null || string.IsNullOrWhiteSpace(_CachedAuthResponse.APIUrl)
+    public string? ApiDnsName =>
+        string.IsNullOrWhiteSpace(_CachedAuthResponse?.APIUrl)
             ? null
             : new Uri(_CachedAuthResponse.APIUrl).Host;
 
     /// <summary>
     /// Download DNS Name
     /// </summary>
-    public string DownloadDnsName =>
-        _CachedAuthResponse == null || string.IsNullOrWhiteSpace(_CachedAuthResponse.DownloadUrl)
+    public string? DownloadDnsName =>
+        string.IsNullOrWhiteSpace(_CachedAuthResponse?.DownloadUrl)
             ? null
             : new Uri(_CachedAuthResponse.DownloadUrl).Host;
 
@@ -137,7 +137,7 @@ public class B2AuthHelper(string userid, string password, HttpClient httpClient)
 
             while (true)
             {
-                HttpResponseMessage response = null;
+                HttpResponseMessage? response = null;
                 try
                 {
 
@@ -197,19 +197,19 @@ public class B2AuthHelper(string userid, string password, HttpClient httpClient)
     /// <param name="ex">Exception to be parsed</param>
     /// <param name="responseContext">Response context</param>
     /// <exception cref="Exception">New detailed exception</exception>
-    public override void AttemptParseAndThrowException(Exception ex, HttpResponseMessage responseContext = null)
+    public override void AttemptParseAndThrowException(Exception ex, HttpResponseMessage? responseContext = null)
     {
         if (ex is not HttpRequestException || responseContext == null)
             return;
 
-        if (ex is HttpRequestException && responseContext != null && responseContext.StatusCode == HttpStatusCode.TooManyRequests)
+        if (ex is HttpRequestException && responseContext.StatusCode == HttpStatusCode.TooManyRequests)
             throw new TooManyRequestException(responseContext.Headers.RetryAfter);
 
         using var stream = responseContext.Content.ReadAsStream();
         using var reader = new StreamReader(stream);
         var rawData = reader.ReadToEnd();
         var errorResponse = JsonConvert.DeserializeObject<ErrorResponse>(rawData);
-        throw new UserInformationException($"Backblaze ErrorResponse: {errorResponse.Status} - {errorResponse.Code}: {errorResponse.Message}", "BackblazeErrorResponse");
+        throw new UserInformationException($"Backblaze ErrorResponse: {errorResponse?.Status} - {errorResponse?.Code}: {errorResponse?.Message}", "BackblazeErrorResponse");
     }
 
     /// <summary>
