@@ -511,7 +511,7 @@ namespace Duplicati.Library.Main.Operation
                         {
                             brokenFiles.Add(name);
                             Logging.Log.WriteErrorMessage(LOGTAG, "PatchingFailed", ex, "Failed to patch with remote file: \"{0}\", message: {1}", name, ex.Message);
-                            if (ex is System.Threading.ThreadAbortException)
+                            if (ex.IsAbortException())
                                 throw;
                         }
                     }
@@ -535,7 +535,7 @@ namespace Duplicati.Library.Main.Operation
                     {
                         fileErrors++;
                         Logging.Log.WriteErrorMessage(LOGTAG, "RestoreFileFailed", ex, "Failed to restore empty file: \"{0}\". Error message was: {1}", file.Path, ex.Message);
-                        if (ex is System.Threading.ThreadAbortException)
+                        if (ex.IsAbortException())
                             throw;
                     }
                 }
@@ -587,7 +587,7 @@ namespace Duplicati.Library.Main.Operation
                             {
                                 fileErrors++;
                                 Logging.Log.WriteErrorMessage(LOGTAG, "RestoreFileFailed", ex, "Failed to restore file: \"{0}\". Error message was: {1}", file.Path, ex.Message);
-                                if (ex is System.Threading.ThreadAbortException)
+                                if (ex.IsAbortException())
                                     throw;
                             }
                         }
@@ -742,7 +742,7 @@ namespace Duplicati.Library.Main.Operation
                                 catch (Exception ex)
                                 {
                                     Logging.Log.WriteWarningMessage(LOGTAG, "PatchingFileLocalFailed", ex, "Failed to patch file: \"{0}\" with data from local file \"{1}\", message: {2}", targetpath, sourcepath, ex.Message);
-                                    if (ex is System.Threading.ThreadAbortException)
+                                    if (ex.IsAbortException())
                                         throw;
                                 }
                             }
@@ -763,7 +763,7 @@ namespace Duplicati.Library.Main.Operation
                     catch (Exception ex)
                     {
                         Logging.Log.WriteWarningMessage(LOGTAG, "PatchingFileLocalFailed", ex, "Failed to patch file: \"{0}\" with local data, message: {1}", targetpath, ex.Message);
-                        if (ex is System.Threading.ThreadAbortException)
+                        if (ex.IsAbortException())
                             throw;
                         if (options.UnittestMode)
                             throw;
@@ -859,7 +859,7 @@ namespace Duplicati.Library.Main.Operation
                                     catch (Exception ex)
                                     {
                                         Logging.Log.WriteWarningMessage(LOGTAG, "PatchingFileLocalFailed", ex, "Failed to patch file: \"{0}\" with data from local file \"{1}\", message: {2}", targetpath, source.Path, ex.Message);
-                                        if (ex is System.Threading.ThreadAbortException)
+                                        if (ex.IsAbortException())
                                             throw;
                                     }
                                 }
@@ -1108,7 +1108,7 @@ namespace Duplicati.Library.Main.Operation
                         catch (Exception ex)
                         {
                             Logging.Log.WriteWarningMessage(LOGTAG, "TargetFileReadError", ex, "Failed to read target file: \"{0}\", message: {1}", targetpath, ex.Message);
-                            if (ex is System.Threading.ThreadAbortException)
+                            if (ex.IsAbortException())
                                 throw;
                             if (options.UnittestMode)
                                 throw;
