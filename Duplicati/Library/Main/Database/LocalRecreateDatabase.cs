@@ -638,11 +638,17 @@ DELETE FROM ""RemoteVolume"" WHERE ""Type"" = '{RemoteVolumeType.Blocks}' AND ""
                 var cnt = cmd.ExecuteScalarInt64(countsql);
                 if (cnt > 0)
                 {
-                    Logging.Log.WriteWarningMessage(LOGTAG, "MissingVolumesDetected", null, "Found {0} missing volumes; attempting to replace blocks from existing volumes", cnt);
-                    cmd.ExecuteNonQuery(sql);
-
-                    var cnt2 = cmd.ExecuteScalarInt64(countsql);
-                    Logging.Log.WriteVerboseMessage(LOGTAG, "ReplacedMissingVolumes", "Replaced blocks for {0} missing volumes; there are now {1} missing volumes", cnt, cnt2);
+                    try
+                    {
+                        cmd.ExecuteNonQuery(sql);
+                        var cnt2 = cmd.ExecuteScalarInt64(countsql);
+                        Logging.Log.WriteWarningMessage(LOGTAG, "MissingVolumesDetected", null, "Replaced blocks for {0} missing volumes; there are now {1} missing volumes", cnt, cnt2);
+                    }
+                    catch (Exception ex)
+                    {
+                        Logging.Log.WriteWarningMessage(LOGTAG, "MissingVolumesDetected", ex, "Found {0} missing volumes; failed while attempting to replace blocks from existing volumes", cnt);
+                        throw;
+                    }
                 }
             }
         }

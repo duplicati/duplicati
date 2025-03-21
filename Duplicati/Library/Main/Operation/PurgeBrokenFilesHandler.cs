@@ -167,6 +167,10 @@ namespace Duplicati.Library.Main.Operation
                     Logging.Log.WriteInformationMessage(LOGTAG, "UpdatingDatabase", "Purge completed, and consistency checks completed, marking database as complete");
                     db.RepairInProgress = false;
                 }
+                else
+                {
+                    db.VerifyConsistency(m_options.Blocksize, m_options.BlockhashSize, true, null);
+                }
 
                 m_result.OperationProgressUpdater.UpdateProgress(1.0f);
 

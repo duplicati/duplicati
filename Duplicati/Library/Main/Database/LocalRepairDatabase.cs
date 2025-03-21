@@ -51,6 +51,38 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
+        /// <summary>
+        /// Gets a list of filesets that are missing files
+        /// </summary>
+        /// <param name="transaction">An optional transaction</param>
+        /// <returns>A list of fileset IDs and timestamps</returns>
+        public IEnumerable<KeyValuePair<long, DateTime>> GetFilesetsWithMissingFiles(IDbTransaction transaction)
+        {
+            using (var cmd = m_connection.CreateCommand(transaction))
+            using (var rd = cmd.ExecuteReader(@"SELECT ID, Timestamp FROM Fileset WHERE ID IN (SELECT FilesetID FROM ""FilesetEntry"" WHERE ""FileID"" NOT IN (SELECT ""ID"" FROM ""FileLookup""))"))
+                while (rd.Read())
+                {
+                    yield return new KeyValuePair<long, DateTime>(
+                        rd.GetInt64(0),
+                        ParseFromEpochSeconds(rd.GetInt64(1)).ToLocalTime()
+                    );
+                }
+        }
+
+        /// <summary>
+        /// Deletes all fileset entries for a given fileset
+        /// </summary>
+        /// <param name="filesetid">The fileset ID</param>
+        /// <param name="transaction">An optional transaction</param>
+        /// <returns>The number of deleted entries</returns>
+        public int DeleteFilesetEntries(long filesetid, IDbTransaction transaction = null)
+        {
+            using (var cmd = m_connection.CreateCommand(transaction))
+                return cmd.SetCommandAndParameters(@"DELETE FROM ""FilesetEntry"" WHERE ""FilesetID"" = @FilesetId")
+                    .SetParameterValue("@FilesetId", filesetid)
+                    .ExecuteNonQuery();
+        }
+
         public interface IBlockSource
         {
             string File { get; }
