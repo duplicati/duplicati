@@ -20,8 +20,8 @@
 // DEALINGS IN THE SOFTWARE.
 
 using Duplicati.Library.Interface;
-using Duplicati.Library.Backend.CIFS;
-using Duplicati.Library.Backend.CIFS.Model;
+using Duplicati.Library.Backend.SMB;
+using Duplicati.Library.Backend.SMB.Model;
 using SMBLibrary;
 using Duplicati.Library.SourceProvider;
 using System.Runtime.CompilerServices;
@@ -33,22 +33,22 @@ namespace Duplicati.Library.Backend;
 /// <summary>
 /// Native CIFS/SMB Backend implementation
 /// </summary>
-public class CIFSBackend : IStreamingBackend, IFolderEnabledBackend
+public class SMBBackend : IStreamingBackend, IFolderEnabledBackend
 {
     /// <summary>
     /// Implementation of interface property for the backend key
     /// </summary>
-    public string ProtocolKey => "cifs";
+    public virtual string ProtocolKey => "smb";
 
     /// <summary>
     /// Implementation of interface property for the backend display name
     /// </summary>
-    public string DisplayName => Strings.CIFSBackend.DisplayName;
+    public virtual string DisplayName => Strings.SMBBackend.DisplayName;
 
     /// <summary>
     /// Implementation of interface property for the backend description
     /// </summary>
-    public string Description => Strings.CIFSBackend.Description;
+    public virtual string Description => Strings.SMBBackend.Description;
 
     /// <summary>
     /// Hostname only (no ports or paths) to be used on DNS resolutions.
@@ -112,7 +112,7 @@ public class CIFSBackend : IStreamingBackend, IFolderEnabledBackend
     /// <summary>
     /// Empty constructor is required for the backend to be loaded by the backend factory
     /// </summary>
-    public CIFSBackend()
+    public SMBBackend()
     {
         _DnsName = null!;
         _connectionParameters = null!;
@@ -124,7 +124,7 @@ public class CIFSBackend : IStreamingBackend, IFolderEnabledBackend
     /// </summary>
     /// <param name="url">URL in Duplicati Uri format</param>
     /// <param name="options">options to be used in the backend</param>
-    public CIFSBackend(string url, Dictionary<string, string?> options)
+    public SMBBackend(string url, Dictionary<string, string?> options)
     {
         if (string.IsNullOrEmpty(url))
             throw new ArgumentNullException(nameof(url));
@@ -182,7 +182,7 @@ public class CIFSBackend : IStreamingBackend, IFolderEnabledBackend
     public IList<ICommandLineArgument> SupportedCommands =>
         [
             .. AuthOptionsHelper.GetOptions(),
-            new CommandLineArgument(AUTH_DOMAIN_OPTION, CommandLineArgument.ArgumentType.String, Strings.CIFSBackend.DescriptionAuthDomainShort, Strings.CIFSBackend.DescriptionAuthDomainLong),
+            new CommandLineArgument(AUTH_DOMAIN_OPTION, CommandLineArgument.ArgumentType.String, Strings.SMBBackend.DescriptionAuthDomainShort, Strings.SMBBackend.DescriptionAuthDomainLong),
             new CommandLineArgument(TRANSPORT_OPTION, CommandLineArgument.ArgumentType.Enumeration, Strings.Options.TransportShort, Strings.Options.TransportLong, DEFAULT_TRANSPORT, null, _transportMap.Keys.ToArray()),
             new CommandLineArgument(READ_BUFFER_SIZE_OPTION, CommandLineArgument.ArgumentType.String, Strings.Options.DescriptionReadBufferSizeShort, Strings.Options.DescriptionReadBufferSizeLong),
             new CommandLineArgument(WRITE_BUFFER_SIZE_OPTION, CommandLineArgument.ArgumentType.String, Strings.Options.DescriptionWriteBufferSizeShort, Strings.Options.DescriptionWriteBufferSizeLong),

@@ -19,15 +19,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
-#nullable enable
-
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using Duplicati.Library.Backend.CIFS.Model;
+using Duplicati.Library.Backend.SMB.Model;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Localization.Short;
@@ -37,7 +29,7 @@ using SMBLibrary;
 using SMBLibrary.Client;
 using FileAttributes = SMBLibrary.FileAttributes;
 
-namespace Duplicati.Library.Backend.CIFS;
+namespace Duplicati.Library.Backend.SMB;
 
 /// <summary>
 /// Class the wraps the SMB connection and file store objects, handling the connection,

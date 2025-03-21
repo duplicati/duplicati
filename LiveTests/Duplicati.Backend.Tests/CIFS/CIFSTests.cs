@@ -21,22 +21,22 @@
 
 using DotNet.Testcontainers.Images;
 
-namespace Duplicati.Backend.Tests.CIFS;
+namespace Duplicati.Backend.Tests.SMB;
 
 /// <summary>
-/// CIFS Tests
+/// SMB Tests
 /// </summary>
 [TestClass]
-public sealed class CIFSTests : BaseSftpgoTest
+public sealed class SMBTests : BaseSftpgoTest
 {
 
     /// <summary>
-    /// Test CIFS with TestContainers creating a Samba Server with TestContainers.
+    /// Test SMB with TestContainers creating a Samba Server with TestContainers.
     ///
     /// This test has no requirement of environment variables.
     /// </summary>
     [TestMethod]
-    public async Task TestCIFS()
+    public async Task TestSMB()
     {
         var outputConsumer = new OutputConsumer();
         var randomPassword = GeneratePassword();
@@ -73,7 +73,7 @@ smbd --foreground --no-process-group --debug-stdout";
 
         var container = new ContainerBuilder()
             .WithImage("ubuntu:22.04")
-            .WithImagePullPolicy(PullPolicy.Missing) 
+            .WithImagePullPolicy(PullPolicy.Missing)
             .WithCommand("/bin/bash", "-c", "apt-get update && " +
                 "DEBIAN_FRONTEND=noninteractive apt-get install -y samba && " +
                 "bash /etc/samba/entrypoint.sh")
@@ -92,7 +92,7 @@ smbd --foreground --no-process-group --debug-stdout";
         var exitCode = CommandLine.BackendTester.Program.Main(
             new[]
             {
-                $"cifs://localhost/testshare1/new/?transport=directtcp&auth-domain&auth-username=smbuser1&auth-password={randomPassword}",
+                $"sMB://localhost/testshare1/new/?transport=directtcp&auth-domain&auth-username=smbuser1&auth-password={randomPassword}",
             }.Concat(Parameters.GlobalTestParameters).ToArray());
 
         Console.WriteLine(await outputConsumer.GetStreamsOutput());

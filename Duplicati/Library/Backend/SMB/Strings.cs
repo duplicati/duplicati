@@ -23,7 +23,7 @@ using Duplicati.Library.Localization.Short;
 
 namespace Duplicati.Library.Backend.Strings
 {
-    internal static class CIFSBackend
+    internal static class SMBBackend
     {
 
         public static string DescriptionAuthDomainLong => LC.L(@"The domain used to connect to the server. This may also be supplied as the environment variable ""AUTH_DOMAIN"".");

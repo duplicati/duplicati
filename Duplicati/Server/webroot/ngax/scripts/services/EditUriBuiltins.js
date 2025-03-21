@@ -35,8 +35,9 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
     EditUriBackendConfig.templates['aliyunoss']   = 'templates/backends/aliyunoss.html';
     EditUriBackendConfig.templates['e2']          = 'templates/backends/e2.html';
     EditUriBackendConfig.templates['pcloud']      = 'templates/backends/pcloud.html';
-    EditUriBackendConfig.templates['cifs']        = 'templates/backends/cifs.html';
-    
+    EditUriBackendConfig.templates['smb']        = 'templates/backends/smb.html';
+    EditUriBackendConfig.templates['cifs']        = 'templates/backends/smb.html';
+
     EditUriBackendConfig.testers['s3'] = function(scope, callback) {
 
         if (scope.s3_server != 's3.amazonaws.com')
@@ -296,11 +297,12 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
         }
         return this['oauth-base'].apply(this, arguments); 
     };
-    EditUriBackendConfig.loaders['cifs']      = function(scope) {
+    EditUriBackendConfig.loaders['smb']      = function(scope) {
         if (scope.Transport === undefined || scope.Transport === '') {
             scope.Transport = 'directtcp';
         }
     };
+    EditUriBackendConfig.loaders['cifs'] = EditUriBackendConfig.loaders['smb'];
 
     EditUriBackendConfig.loaders['openstack'] = function (scope) {
         if (scope.openstack_providers == null) {
@@ -614,7 +616,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
         EditUriBackendConfig.mergeServerAndPath(scope);
     }
 
-    EditUriBackendConfig.parsers['cifs'] = function (scope, module, server, path, port, options) {
+    EditUriBackendConfig.parsers['smb'] = function (scope, module, server, path, port, options) {
         if (options['--transport'])
             scope.Transport = options['--transport'];
         else
@@ -632,6 +634,8 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
         scope.Path = slashIndex >= 0 ? path.substring(slashIndex + 1).replace(/[/\\]+$/, '') : "";
 
     };
+
+    EditUriBackendConfig.parsers['cifs'] = EditUriBackendConfig.parsers['smb'];
 
 
     // Builders take the scope and produce the uri output
@@ -976,7 +980,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
         return url;
     }
 
-    EditUriBackendConfig.builders['cifs'] = function (scope) {
+    EditUriBackendConfig.builders['smb'] = function (scope) {
         var opts = {
             'transport': scope.Transport,
             'auth-domain': scope.Domain
@@ -1001,12 +1005,16 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
         );
     }
 
-    EditUriBackendConfig.validaters['cifs'] = function (scope, continuation) {
+    EditUriBackendConfig.builders['cifs'] = EditUriBackendConfig.builders['smb'];
+
+    EditUriBackendConfig.validaters['smb'] = function (scope, continuation) {
         if (EditUriBackendConfig.require_server(scope)
             && EditUriBackendConfig.require_username(scope)
             && EditUriBackendConfig.require_field(scope, 'ShareName', gettextCatalog.getString('Share name')))
             continuation();
     };
+
+    EditUriBackendConfig.validaters['smb'] = EditUriBackendConfig.validaters['cifs'];
     
     EditUriBackendConfig.validaters['file'] = function (scope, continuation) {
         if (EditUriBackendConfig.require_path(scope))

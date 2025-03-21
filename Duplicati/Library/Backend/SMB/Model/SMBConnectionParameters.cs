@@ -21,7 +21,7 @@
 
 using SMBLibrary;
 
-namespace Duplicati.Library.Backend.CIFS.Model;
+namespace Duplicati.Library.Backend.SMB.Model;
 
 /// <summary>
 /// Connection parameters for establishing an SMB connection.
