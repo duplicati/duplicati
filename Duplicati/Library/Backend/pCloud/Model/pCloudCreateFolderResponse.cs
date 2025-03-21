@@ -19,7 +19,6 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
-#nullable enable
 namespace Duplicati.Library.Backend.pCloud;
 
 /// <summary>
@@ -42,5 +41,5 @@ internal record pCloudCreateFolderResponse
     /// <summary>
     /// Detailed metadata about the created or existing folder
     /// </summary>
-    public pCloudFolderMetadata? metadata { get; init; } 
+    public pCloudFolderMetadata? metadata { get; init; }
 }

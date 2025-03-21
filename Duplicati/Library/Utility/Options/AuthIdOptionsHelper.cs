@@ -33,6 +33,10 @@ namespace Duplicati.Library.Utility.Options;
 public static class AuthIdOptionsHelper
 {
     /// <summary>
+    /// The authentication ID option, without a prefix
+    /// </summary>
+    public const string AuthId = "authid";
+    /// <summary>
     /// Gets the authentication options
     /// </summary>
     /// <param name="tokenurl">The URL to use for the token</param>
@@ -40,7 +44,7 @@ public static class AuthIdOptionsHelper
     /// <returns>The authentication options</returns>
     public static CommandLineArgument[] GetOptions(string tokenurl, string? prefix = null) =>
     [
-        new CommandLineArgument($"{prefix}authid", CommandLineArgument.ArgumentType.String, Strings.AuthIdSettingsHelper.AuthidShort, Strings.AuthIdSettingsHelper.AuthidLong(tokenurl))
+        new CommandLineArgument($"{prefix}{AuthId}", CommandLineArgument.ArgumentType.String, Strings.AuthIdSettingsHelper.AuthidShort, Strings.AuthIdSettingsHelper.AuthidLong(tokenurl))
     ];
 
     /// <summary>
@@ -50,7 +54,7 @@ public static class AuthIdOptionsHelper
     /// <param name="prefix">An optional prefix for the options</param>
     /// <returns>The parsed authentication options</returns>
     public static AuthIdOptions Parse(IReadOnlyDictionary<string, string?> options, string? prefix = null)
-        => new AuthIdOptions(options.GetValueOrDefault($"{prefix}authid"));
+        => new AuthIdOptions(options.GetValueOrDefault($"{prefix}{AuthId}"));
 
     /// <summary>
     /// Structure to hold the authentication options
