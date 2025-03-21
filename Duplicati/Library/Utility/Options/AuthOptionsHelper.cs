@@ -33,6 +33,15 @@ namespace Duplicati.Library.Utility.Options;
 public static class AuthOptionsHelper
 {
     /// <summary>
+    /// The authentication username option, without a prefix
+    /// </summary>
+    public const string AuthUsername = "auth-username";
+    /// <summary>
+    /// The authentication password option, without a prefix
+    /// </summary>
+    public const string AuthPassword = "auth-password";
+
+    /// <summary>
     /// Gets the authentication options
     /// </summary>
     /// <param name="prefix">An optional prefix for the options</param>
