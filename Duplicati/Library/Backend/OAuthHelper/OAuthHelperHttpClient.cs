@@ -25,6 +25,7 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading;
+using System.Threading.Tasks;
 using Duplicati.Library.Utility;
 
 namespace Duplicati.Library;
@@ -83,10 +84,12 @@ public class OAuthHelperHttpClient : JsonWebHelperHttpClient
                 Strings.OAuthHelper.MissingAuthID(OAuthLoginUrl), "MissingAuthID");
     }
 
-    private HttpRequestMessage CreateRequest(string url, string method, bool noAuthorization)
+    private HttpRequestMessage CreateRequest(string url, string method, bool noAuthorization, CancellationToken cancellationToken = default)
     {
-        var request = base.CreateRequest(url, method);
-        if (!noAuthorization && AutoAuthHeader && !string.Equals(OAuthContextSettings.ServerURL, url)) request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", AccessToken);
+        var request = new HttpRequestMessage(string.IsNullOrEmpty(method) ? HttpMethod.Get : new HttpMethod(method), url);
+        request.Headers.Add("User-Agent", UserAgent);
+        if (!noAuthorization && AutoAuthHeader && !string.Equals(OAuthContextSettings.ServerURL, url)) request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", 
+            GetAccessTokenAsync(cancellationToken).Await());
         return request;
     }
 
@@ -94,11 +97,9 @@ public class OAuthHelperHttpClient : JsonWebHelperHttpClient
     {
         return CreateRequest(url, method, false);
     }
-
-    private string AccessToken
+    
+    private async Task <string> GetAccessTokenAsync(CancellationToken cancellationToken)
     {
-        get
-        {
             if (AccessTokenOnly)
                 return _Authid;
 
@@ -111,17 +112,17 @@ public class OAuthHelperHttpClient : JsonWebHelperHttpClient
                     HttpResponseMessage response = null;
                     try
                     {
-                        using var request = base.CreateRequest(OAuthContextSettings.ServerURL);
-
-                        request.Headers.TryAddWithoutValidation("X-AuthID", _Authid);
-
                         using var timeoutToken = new CancellationTokenSource();
                         timeoutToken.CancelAfter(TimeSpan.FromSeconds(AUTHENTICATION_TIMEOUT_SECONDS));
+                        using var combinedCancellationToken = CancellationTokenSource.CreateLinkedTokenSource(timeoutToken.Token, cancellationToken);
+                        
+                        using var request = CreateRequest(OAuthContextSettings.ServerURL, "GET", false, combinedCancellationToken.Token);
 
-                        response = _httpClient.Send(request, timeoutToken.Token);
+                        request.Headers.TryAddWithoutValidation("X-AuthID", _Authid);
+                        response = await _httpClient.SendAsync(request, combinedCancellationToken.Token).ConfigureAwait(false);
                         response.EnsureSuccessStatusCode();
 
-                        var res = ReadJsonResponse<OAuthServiceResponse>(response);
+                        var res = await ReadJsonResponseAsync<OAuthServiceResponse>(response, combinedCancellationToken.Token).ConfigureAwait(false);
 
                         _mTokenExpires = DateTime.UtcNow.AddSeconds(res.expires - 30);
                         if (AutoV2 && !string.IsNullOrWhiteSpace(res.v2_authid))
@@ -153,7 +154,6 @@ public class OAuthHelperHttpClient : JsonWebHelperHttpClient
                             if (string.IsNullOrWhiteSpace(msg))
                                 msg = response.StatusCode.ToString();
 
-                            //TODO: Test; this was ported from old code but looks fragile.
                             if (response.StatusCode == HttpStatusCode.ServiceUnavailable)
                             {
                                 string errorKey = msg == response.StatusCode.ToString()
@@ -171,7 +171,7 @@ public class OAuthHelperHttpClient : JsonWebHelperHttpClient
 
                         if (retries >= (clientError ? 1 : MAX_AUTHORIZATION_RETRIES))
                         {
-                            AttemptParseAndThrowException(ex, response);
+                            await AttemptParseAndThrowExceptionAsync(ex, response, cancellationToken).ConfigureAwait(false);
                             throw;
                         }
 
@@ -187,6 +187,5 @@ public class OAuthHelperHttpClient : JsonWebHelperHttpClient
             }
 
             return _Token;
-        }
     }
 }

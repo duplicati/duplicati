@@ -32,6 +32,7 @@ using System.Threading.Tasks;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Logging;
+using Duplicati.Library.Utility;
 using Newtonsoft.Json;
 using Uri = Duplicati.Library.Utility.Uri;
 
@@ -66,15 +67,21 @@ namespace Duplicati.Library.Backend.Box
 
             public override void AttemptParseAndThrowException(Exception ex, HttpResponseMessage responseContext = null)
             {
+                AttemptParseAndThrowExceptionAsync(ex, responseContext).Await();
+            }
+
+            public override async Task AttemptParseAndThrowExceptionAsync(Exception ex, HttpResponseMessage responseContext = null,
+                CancellationToken cancellationToken = default)
+            {
                 if (ex is not HttpRequestException || responseContext == null)
                     return;
-               
-                if (ex is HttpRequestException && responseContext is { StatusCode: HttpStatusCode.TooManyRequests })
+                
+                if (responseContext is { StatusCode: HttpStatusCode.TooManyRequests })
                     throw new TooManyRequestException(responseContext.Headers.RetryAfter);
 
-                using var stream = responseContext.Content.ReadAsStream();
+                await using var stream = await responseContext.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
                 using var reader = new StreamReader(stream);
-                var rawData = reader.ReadToEnd();
+                var rawData = await reader.ReadToEndAsync(cancellationToken).ConfigureAwait(false);
                 var errorResponse = JsonConvert.DeserializeObject<ErrorResponse>(rawData);
                 throw new UserInformationException($"Box.com ErrorResponse: {errorResponse.Status} - {errorResponse.Code}: {errorResponse.Message}", "box.com");
             }
