@@ -642,8 +642,7 @@ public class B2 : IStreamingBackend, ITimeoutExemptBackend
             new System.Uri(B2AuthHelper.AUTH_URL).Host,
             _b2AuthHelper?.ApiDnsName,
             _b2AuthHelper?.DownloadDnsName
-        }.Where(x => !string.IsNullOrEmpty(x))
-        .Select(x => x!)
+        }.WhereNotNullOrWhiteSpace()
         .ToArray());
 
     /// <summary>

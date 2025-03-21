@@ -192,6 +192,16 @@ public static class AuthOptionsHelper
 
             return this;
         }
+
+        /// <summary>
+        /// Returns the username and password after checking that they are set
+        /// </summary>
+        /// <returns>The username and password</returns>
+        public (string Username, string Password) GetCredentials()
+        {
+            RequireCredentials();
+            return (Username!, Password!);
+        }
     }
 
 }
