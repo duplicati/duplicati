@@ -53,14 +53,11 @@ namespace Duplicati.Library.Main.Operation
 
             using (var db = new LocalTestDatabase(m_options.Dbpath))
             {
-                db.SetResult(m_results);
                 Utility.UpdateOptionsFromDb(db, m_options);
                 Utility.VerifyOptionsAndUpdateDatabase(db, m_options);
                 db.VerifyConsistency(m_options.Blocksize, m_options.BlockhashSize, !m_options.DisableFilelistConsistencyChecks, null);
                 await FilelistProcessor.VerifyRemoteList(backendManager, m_options, db, m_results.BackendWriter, latestVolumesOnly: true, verifyMode: FilelistProcessor.VerifyMode.VerifyOnly, null).ConfigureAwait(false);
-
                 await DoRunAsync(samples, db, backendManager).ConfigureAwait(false);
-                db.WriteResults();
             }
         }
 

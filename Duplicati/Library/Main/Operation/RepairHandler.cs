@@ -126,7 +126,6 @@ namespace Duplicati.Library.Main.Operation
 
             using (var db = new LocalRepairDatabase(m_options.Dbpath))
             {
-                m_result.SetDatabase(db);
                 Utility.UpdateOptionsFromDb(db, m_options);
                 Utility.VerifyOptionsAndUpdateDatabase(db, m_options);
 
@@ -145,9 +144,10 @@ namespace Duplicati.Library.Main.Operation
 
                 var missingRemoteFilesets = db.MissingRemoteFilesets().ToList();
                 var missingLocalFilesets = db.MissingLocalFilesets().ToList();
+                var emptyIndexFiles = db.EmptyIndexFiles().ToList();
 
                 var progress = 0;
-                var targetProgess = tp.ExtraVolumes.Count() + tp.MissingVolumes.Count() + tp.VerificationRequiredVolumes.Count() + missingRemoteFilesets.Count + missingLocalFilesets.Count;
+                var targetProgess = tp.ExtraVolumes.Count() + tp.MissingVolumes.Count() + tp.VerificationRequiredVolumes.Count() + missingRemoteFilesets.Count + missingLocalFilesets.Count + emptyIndexFiles.Count;
 
                 var mostRecentLocal = db.FilesetTimes.Select(x => x.Value.ToLocalTime()).Append(DateTime.MinValue).Max();
                 var mostRecentRemote = tp.ParsedVolumes.Select(x => x.Time.ToLocalTime()).Append(DateTime.MinValue).Max();
@@ -176,7 +176,7 @@ namespace Duplicati.Library.Main.Operation
                     }
                 }
 
-                if (tp.ExtraVolumes.Any() || tp.MissingVolumes.Any() || tp.VerificationRequiredVolumes.Any() || missingRemoteFilesets.Any() || missingLocalFilesets.Any())
+                if (tp.ExtraVolumes.Any() || tp.MissingVolumes.Any() || tp.VerificationRequiredVolumes.Any() || missingRemoteFilesets.Any() || missingLocalFilesets.Any() || emptyIndexFiles.Any())
                 {
                     if (tp.VerificationRequiredVolumes.Any())
                     {
@@ -564,6 +564,43 @@ namespace Duplicati.Library.Main.Operation
                                 throw;
                         }
                     }
+
+                    foreach (var emptyIndexFile in emptyIndexFiles)
+                    {
+                        try
+                        {
+                            if (!await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
+                            {
+                                await backendManager.WaitForEmptyAsync(db, null, cancellationToken).ConfigureAwait(false);
+                                return;
+                            }
+
+                            progress++;
+                            m_result.OperationProgressUpdater.UpdateProgress((float)progress / targetProgess);
+
+                            if (m_options.Dryrun)
+                                Logging.Log.WriteDryrunMessage(LOGTAG, "WouldDeleteEmptyIndexFile", "would delete empty index file {0}", emptyIndexFile);
+                            else
+                            {
+                                if (emptyIndexFile.Size > 2048)
+                                {
+                                    Logging.Log.WriteWarningMessage(LOGTAG, "LargeEmptyIndexFile", null, "The empty index file {0} is larger than expected, choosing not to delete it", emptyIndexFile);
+                                }
+                                else
+                                {
+                                    Logging.Log.WriteInformationMessage(LOGTAG, "DeletingEmptyIndexFile", "Deleting empty index file {0}", emptyIndexFile);
+                                    await backendManager.DeleteAsync(emptyIndexFile.Name, emptyIndexFile.Size, false, cancellationToken).ConfigureAwait(false);
+                                }
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Logging.Log.WriteErrorMessage(LOGTAG, "CleanupEmptyIndexFileError", ex, "Failed to perform cleanup for empty index file: {0}, message: {1}", emptyIndexFile, ex.Message);
+
+                            if (ex is System.Threading.ThreadAbortException)
+                                throw;
+                        }
+                    }
                 }
                 else
                 {
@@ -574,7 +611,6 @@ namespace Duplicati.Library.Main.Operation
                 await backendManager.WaitForEmptyAsync(db, null, cancellationToken).ConfigureAwait(false);
                 if (!m_options.Dryrun)
                     db.TerminatedWithActiveUploads = false;
-                db.WriteResults();
             }
         }
 
@@ -587,8 +623,6 @@ namespace Duplicati.Library.Main.Operation
 
             using (var db = new LocalRepairDatabase(m_options.Dbpath))
             {
-                db.SetResult(m_result);
-
                 Utility.UpdateOptionsFromDb(db, m_options);
 
                 if (db.RepairInProgress || db.PartiallyRecreated)
