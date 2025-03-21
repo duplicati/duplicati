@@ -297,11 +297,7 @@ namespace Duplicati.Library.Utility
                     var attr = attributeReader?.Invoke(rootpath) ?? FileAttributes.Directory;
                     lst.Push(rootpath);
                 }
-                catch (System.Threading.ThreadAbortException)
-                {
-                    throw;
-                }
-                catch (Exception ex)
+                catch (Exception ex) when (!ex.IsAbortException())
                 {
                     errorCallback?.Invoke(rootpath, rootpath, ex);
                 }
@@ -322,21 +318,13 @@ namespace Duplicati.Library.Utility
                                 var attr = attributeReader?.Invoke(sf) ?? FileAttributes.Directory;
                                 lst.Push(sf);
                             }
-                            catch (System.Threading.ThreadAbortException)
-                            {
-                                throw;
-                            }
-                            catch (Exception ex)
+                            catch (Exception ex) when (!ex.IsAbortException())
                             {
                                 errorCallback?.Invoke(rootpath, sf, ex);
                             }
                         }
                     }
-                    catch (System.Threading.ThreadAbortException)
-                    {
-                        throw;
-                    }
-                    catch (Exception ex)
+                    catch (Exception ex) when (!ex.IsAbortException())
                     {
                         errorCallback?.Invoke(rootpath, f, ex);
                     }
@@ -348,11 +336,7 @@ namespace Duplicati.Library.Utility
                         {
                             files = fileList(f);
                         }
-                        catch (System.Threading.ThreadAbortException)
-                        {
-                            throw;
-                        }
-                        catch (Exception ex)
+                        catch (Exception ex) when (!ex.IsAbortException())
                         {
                             errorCallback?.Invoke(rootpath, f, ex);
                         }
@@ -1650,6 +1634,26 @@ namespace Duplicati.Library.Utility
             }
 
             return sanitizedUrl;
+        }
+
+        /// <summary>
+        /// Checks if an exception is a stop, cancel or timeout exception
+        /// </summary>
+        /// <param name="ex">The operation to check</param>
+        /// <returns><c>true</c> if the exception is a stop or cancel exception, <c>false</c> otherwise</returns>
+        public static bool IsAbortOrCancelException(this Exception ex)
+        {
+            return ex is OperationCanceledException || ex is ThreadAbortException || ex is TaskCanceledException || ex is TimeoutException;
+        }
+
+        /// <summary>
+        /// Checks if an exception is a stop exception
+        /// </summary>
+        /// <param name="ex">The operation to check</param>
+        /// <returns><c>true</c> if the exception is a stop exception, <c>false</c> otherwise</returns>
+        public static bool IsAbortException(this Exception ex)
+        {
+            return ex is OperationCanceledException || ex is ThreadAbortException;
         }
 
         /// <summary>

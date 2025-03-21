@@ -90,7 +90,7 @@ namespace Duplicati.Library.Main.Operation
                         catch (Exception ex)
                         {
                             lastEx = ex;
-                            if (ex is System.Threading.ThreadAbortException)
+                            if (ex.IsAbortException())
                                 throw;
                         }
 
