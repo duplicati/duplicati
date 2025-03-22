@@ -19,23 +19,17 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
-#nullable enable
-
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using Duplicati.Library.Backend.CIFS.Model;
+using Duplicati.Library.Backend.SMB.Model;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Localization.Short;
+using Duplicati.Library.Utility;
+using Duplicati.Library.Utility.Options;
 using SMBLibrary;
 using SMBLibrary.Client;
 using FileAttributes = SMBLibrary.FileAttributes;
 
-namespace Duplicati.Library.Backend.CIFS;
+namespace Duplicati.Library.Backend.SMB;
 
 /// <summary>
 /// Class the wraps the SMB connection and file store objects, handling the connection,
@@ -46,7 +40,7 @@ public class SMBShareConnection : IDisposable, IAsyncDisposable
     /// <summary>
     /// SMBConnection client
     /// </summary>
-    private readonly SMB2Client _smb2Client = new();
+    private readonly SMB2Client _smb2Client;
 
     /// <summary>
     /// Shared fileStore object.
@@ -59,10 +53,18 @@ public class SMBShareConnection : IDisposable, IAsyncDisposable
     private readonly SMBConnectionParameters _connectionParameters;
 
     /// <summary>
+    /// The timeouts to use for operations.
+    /// </summary>
+    private readonly TimeoutOptionsHelper.Timeouts _timeouts;
+
+    /// <summary>
     /// The semaphore to ensure that only one operation is performed at a time.
     /// </summary>
     private readonly SemaphoreSlim _semaphore = new(1, 1);
 
+    /// <summary>
+    /// Flag to indicate if the object has been disposed.
+    /// </summary>
     private bool _disposed;
 
     /// <summary>
@@ -71,23 +73,51 @@ public class SMBShareConnection : IDisposable, IAsyncDisposable
     /// It throws specific exceptions for connection and authentication failures.
     /// </summary>
     /// <param name="connectionParameters">Connection Parameters</param>
-    /// <exception cref="UserInformationException">Exception to be displayed to user</exception>
-    public SMBShareConnection(SMBConnectionParameters connectionParameters)
+    /// <param name="timeouts">Timeouts to use for operations</param>
+    private SMBShareConnection(SMB2Client client, ISMBFileStore fileStore, SMBConnectionParameters connectionParameters, TimeoutOptionsHelper.Timeouts timeouts)
     {
         _connectionParameters = connectionParameters;
+        _timeouts = timeouts;
+        _smbFileStore = fileStore;
+        _smb2Client = client;
+    }
 
-        if (!_smb2Client.Connect(connectionParameters.ServerName, connectionParameters.TransportType))
+    /// <summary>
+    /// Creates a new SMBShareConnection object asynchronously.
+    /// </summary>
+    /// <param name="connectionParameters">The connection parameters</param>
+    /// <param name="timeouts">The timeouts to use for operations</param>
+    /// <param name="cancellationToken">The cancellation token</param>
+    /// <returns>The SMBShareConnection object</returns>
+    /// <exception cref="UserInformationException">Exception to be displayed to user</exception>
+    public static async Task<SMBShareConnection> CreateAsync(SMBConnectionParameters connectionParameters, TimeoutOptionsHelper.Timeouts timeouts, CancellationToken cancellationToken)
+    {
+        var client = new SMB2Client();
+        var connected = await Utility.Utility.WithTimeout(timeouts.ShortTimeout, cancellationToken, _ =>
+            client.Connect(connectionParameters.ServerName, connectionParameters.TransportType)
+        ).ConfigureAwait(false);
+
+        if (!connected)
             throw new UserInformationException($"{LC.L("Failed to connect to server")} {connectionParameters.ServerName}", "ConnectionError");
 
-        var status = _smb2Client.Login(connectionParameters.AuthDomain ?? "", connectionParameters.AuthUser ?? "", connectionParameters.AuthPassword ?? "");
+        var status = await Utility.Utility.WithTimeout(timeouts.ShortTimeout, cancellationToken, _ =>
+            client.Login(connectionParameters.AuthDomain ?? "", connectionParameters.AuthUser ?? "", connectionParameters.AuthPassword ?? "")
+        ).ConfigureAwait(false);
 
         if (status != NTStatus.STATUS_SUCCESS)
             throw new UserInformationException($"{LC.L("Failed to authenticate to server")} {connectionParameters.ServerName} with status {status}", "ConnectionError");
 
-        _smbFileStore = _smb2Client.TreeConnect(connectionParameters.ShareName, out status);
+        (var res, status) = await Utility.Utility.WithTimeout(timeouts.ShortTimeout, cancellationToken, _ =>
+            {
+                var res = client.TreeConnect(connectionParameters.ShareName, out status);
+                return (res, status);
+            }
+        ).ConfigureAwait(false);
 
-        if (status != NTStatus.STATUS_SUCCESS)
+        if (status != NTStatus.STATUS_SUCCESS || res == null)
             throw new UserInformationException($"{LC.L("Failed to connect to share")} {connectionParameters.ShareName} with status {status}", "ConnectionError");
+
+        return new SMBShareConnection(client, res, connectionParameters, timeouts);
     }
 
     /// <summary>
@@ -101,33 +131,33 @@ public class SMBShareConnection : IDisposable, IAsyncDisposable
         await _semaphore.WaitAsync(cancellationToken);
         try
         {
-            NTStatus status;
-            object fileHandle;
-            FileStatus fileStatus;
-            status = _smbFileStore.CreateFile(out fileHandle, out fileStatus, NormalizeSlashes(Path.Combine(_connectionParameters.Path, fileName)),
-                AccessMask.GENERIC_WRITE | AccessMask.DELETE | AccessMask.SYNCHRONIZE,
-                FileAttributes.Normal,
-                ShareAccess.None,
-                CreateDisposition.FILE_OPEN,
-                CreateOptions.FILE_NON_DIRECTORY_FILE | CreateOptions.FILE_SYNCHRONOUS_IO_ALERT,
-                null);
-
-            if (status == NTStatus.STATUS_OBJECT_NAME_NOT_FOUND)
-                throw new FileMissingException();
-
-            if (status == NTStatus.STATUS_SUCCESS)
+            await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancellationToken, _ =>
             {
-                var fileDispositionInformation = new FileDispositionInformation
+                var status = _smbFileStore.CreateFile(out var fileHandle, out var fileStatus, NormalizeSlashes(Path.Combine(_connectionParameters.Path, fileName)),
+                    AccessMask.GENERIC_WRITE | AccessMask.DELETE | AccessMask.SYNCHRONIZE,
+                    FileAttributes.Normal,
+                    ShareAccess.None,
+                    CreateDisposition.FILE_OPEN,
+                    CreateOptions.FILE_NON_DIRECTORY_FILE | CreateOptions.FILE_SYNCHRONOUS_IO_ALERT,
+                    null);
+
+                if (status == NTStatus.STATUS_OBJECT_NAME_NOT_FOUND)
+                    throw new FileMissingException();
+
+                if (status == NTStatus.STATUS_SUCCESS)
                 {
-                    DeletePending = true
-                };
-                status = _smbFileStore.SetFileInformation(fileHandle, fileDispositionInformation);
-                if (status != NTStatus.STATUS_SUCCESS)
-                    throw new UserInformationException($"{LC.L("Failed to delete file on DeleteAsync")} with status {status}", "DeleteFileError");
-                status = _smbFileStore.CloseFile(fileHandle);
-                if (status != NTStatus.STATUS_SUCCESS)
-                    throw new UserInformationException($"{LC.L("Failed to close file on DeleteAsync")} with status {status}", "CloseFileError");
-            }
+                    var fileDispositionInformation = new FileDispositionInformation
+                    {
+                        DeletePending = true
+                    };
+                    status = _smbFileStore.SetFileInformation(fileHandle, fileDispositionInformation);
+                    if (status != NTStatus.STATUS_SUCCESS)
+                        throw new UserInformationException($"{LC.L("Failed to delete file on DeleteAsync")} with status {status}", "DeleteFileError");
+                    status = _smbFileStore.CloseFile(fileHandle);
+                    if (status != NTStatus.STATUS_SUCCESS)
+                        throw new UserInformationException($"{LC.L("Failed to close file on DeleteAsync")} with status {status}", "CloseFileError");
+                }
+            }).ConfigureAwait(false);
         }
         finally
         {
@@ -147,10 +177,10 @@ public class SMBShareConnection : IDisposable, IAsyncDisposable
         try
         {
             // Normalize path separators to forward slashes and trim any trailing separators
-            string linuxNormalizedPath = path.Replace('/', '\\').TrimEnd('\\');
-            string currentPath = "";
+            var linuxNormalizedPath = path.Replace('/', '\\').TrimEnd('\\');
+            var currentPath = "";
 
-            foreach (string part in linuxNormalizedPath.Split('\\', StringSplitOptions.RemoveEmptyEntries))
+            foreach (var part in linuxNormalizedPath.Split('\\', StringSplitOptions.RemoveEmptyEntries))
             {
                 if (string.IsNullOrWhiteSpace(part) || part == ".")
                     continue;
@@ -159,20 +189,23 @@ public class SMBShareConnection : IDisposable, IAsyncDisposable
                 object? fileHandle = null;
                 try
                 {
-                    NTStatus status = _smbFileStore.CreateFile(
-                        out fileHandle,
-                        out FileStatus fileStatus,
-                        currentPath,
-                        AccessMask.GENERIC_WRITE | AccessMask.SYNCHRONIZE,
-                        FileAttributes.Normal,
-                        ShareAccess.None,
-                        CreateDisposition.FILE_CREATE,
-                        CreateOptions.FILE_DIRECTORY_FILE | CreateOptions.FILE_SYNCHRONOUS_IO_ALERT,
-                        null
-                    );
-                    if (status != NTStatus.STATUS_SUCCESS &&
-                        status != NTStatus.STATUS_OBJECT_NAME_COLLISION) // Ignore if directory already exists
-                        throw new UserInformationException($"{LC.L("Failed to create directory")} {currentPath} with status{status}", "CreateDirectoryError");
+                    await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancellationToken, _ =>
+                    {
+                        var status = _smbFileStore.CreateFile(
+                            out fileHandle,
+                            out var fileStatus,
+                            currentPath,
+                            AccessMask.GENERIC_WRITE | AccessMask.SYNCHRONIZE,
+                            FileAttributes.Normal,
+                            ShareAccess.None,
+                            CreateDisposition.FILE_CREATE,
+                            CreateOptions.FILE_DIRECTORY_FILE | CreateOptions.FILE_SYNCHRONOUS_IO_ALERT,
+                            null
+                        );
+                        if (status != NTStatus.STATUS_SUCCESS &&
+                            status != NTStatus.STATUS_OBJECT_NAME_COLLISION) // Ignore if directory already exists
+                            throw new UserInformationException($"{LC.L("Failed to create directory")} {currentPath} with status{status}", "CreateDirectoryError");
+                    }).ConfigureAwait(false);
                 }
                 finally
                 {
@@ -207,32 +240,37 @@ public class SMBShareConnection : IDisposable, IAsyncDisposable
         {
             try
             {
-                var status = _smbFileStore.CreateFile(
-                    out directoryHandle,
-                    out fileStatus,
-                    NormalizeSlashes(path),
-                    AccessMask.GENERIC_READ,
-                    FileAttributes.Directory,
-                    ShareAccess.Read | ShareAccess.Write,
-                    CreateDisposition.FILE_OPEN,
-                    CreateOptions.FILE_DIRECTORY_FILE,
-                    null);
+                var fileList = await Utility.Utility.WithTimeout(_timeouts.ListTimeout, cancellationToken, _ =>
+                {
+                    var status = _smbFileStore.CreateFile(
+                        out directoryHandle,
+                        out fileStatus,
+                        NormalizeSlashes(path),
+                        AccessMask.GENERIC_READ,
+                        FileAttributes.Directory,
+                        ShareAccess.Read | ShareAccess.Write,
+                        CreateDisposition.FILE_OPEN,
+                        CreateOptions.FILE_DIRECTORY_FILE,
+                        null);
 
-                if (status != NTStatus.STATUS_SUCCESS && fileStatus != FileStatus.FILE_OPENED)
-                    if (status == NTStatus.STATUS_OBJECT_PATH_NOT_FOUND || status == NTStatus.STATUS_OBJECT_NAME_NOT_FOUND)
-                        throw new FolderMissingException();
-                    else
-                        throw new UserInformationException($"{LC.L("Failed to open directory")} {NormalizeSlashes(path)} with status {status}", "DirectoryOpenError");
+                    if (status != NTStatus.STATUS_SUCCESS && fileStatus != FileStatus.FILE_OPENED)
+                        if (status == NTStatus.STATUS_OBJECT_PATH_NOT_FOUND || status == NTStatus.STATUS_OBJECT_NAME_NOT_FOUND)
+                            throw new FolderMissingException();
+                        else
+                            throw new UserInformationException($"{LC.L("Failed to open directory")} {NormalizeSlashes(path)} with status {status}", "DirectoryOpenError");
 
-                List<QueryDirectoryFileInformation> fileList;
-                status = _smbFileStore.QueryDirectory(
-                    out fileList,
-                    directoryHandle,
-                    "*",
-                    FileInformationClass.FileDirectoryInformation);
+                    List<QueryDirectoryFileInformation> fileList;
+                    status = _smbFileStore.QueryDirectory(
+                        out fileList,
+                        directoryHandle,
+                        "*",
+                        FileInformationClass.FileDirectoryInformation);
 
-                if (status != NTStatus.STATUS_NO_MORE_FILES)
-                    throw new UserInformationException($"{LC.L("Failed to query directory contents")} with status {status}", "DirectoryQueryError");
+                    if (status != NTStatus.STATUS_NO_MORE_FILES)
+                        throw new UserInformationException($"{LC.L("Failed to query directory contents")} with status {status}", "DirectoryQueryError");
+
+                    return fileList;
+                }).ConfigureAwait(false);
 
                 return
                 [
@@ -279,18 +317,22 @@ public class SMBShareConnection : IDisposable, IAsyncDisposable
 
         try
         {
-            object? fileHandle;
-            FileStatus fileStatus;
-            NTStatus status = _smbFileStore.CreateFile(out fileHandle, out fileStatus,
+            (var status, var fileStatus, var fileHandle) = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancellationToken, _ =>
+            {
+                var status = _smbFileStore.CreateFile(out var fileHandle, out var fileStatus,
                 NormalizeSlashes(Path.Combine(_connectionParameters.Path, filename)),
                 AccessMask.GENERIC_READ | AccessMask.SYNCHRONIZE, FileAttributes.Normal, ShareAccess.Read,
                 CreateDisposition.FILE_OPEN,
                 CreateOptions.FILE_NON_DIRECTORY_FILE | CreateOptions.FILE_SYNCHRONOUS_IO_ALERT, null);
+                return (status, fileStatus, fileHandle);
+            }
+            ).ConfigureAwait(false);
 
             if (status == NTStatus.STATUS_SUCCESS || fileStatus != FileStatus.FILE_DOES_NOT_EXIST)
             {
                 byte[] data;
                 long bytesRead = 0;
+                using var timeoutStream = destinationStream.ObserveWriteTimeout(_timeouts.ReadWriteTimeout, false);
                 while (!cancellationToken.IsCancellationRequested)
                 {
                     // Use the provided read buffer size if set, otherwise use the protocol negotiated maximum. Never exceed the negotiated maximum.
@@ -303,10 +345,10 @@ public class SMBShareConnection : IDisposable, IAsyncDisposable
                         break;
 
                     bytesRead += data.Length;
-                    await destinationStream.WriteAsync(data, 0, data.Length, cancellationToken);
+                    await timeoutStream.WriteAsync(data, 0, data.Length, cancellationToken);
                 }
 
-                await destinationStream.FlushAsync(cancellationToken);
+                await timeoutStream.FlushAsync(cancellationToken);
 
                 if (fileHandle != null)
                 {
@@ -321,7 +363,7 @@ public class SMBShareConnection : IDisposable, IAsyncDisposable
                 throw new FolderMissingException();
             else
                 throw new UserInformationException(
-                    $"{LC.L("Failed to open file with error")} {filename} with status {status.ToString()}",
+                    $"{LC.L("Failed to open file with error")} {filename} with status {status}",
                     "FileOpenError");
         }
         finally
@@ -343,25 +385,29 @@ public class SMBShareConnection : IDisposable, IAsyncDisposable
         await _semaphore.WaitAsync(cancellationToken);
         try
         {
-            object fileHandle;
-            FileStatus fileStatus;
-            NTStatus status = _smbFileStore.CreateFile(out fileHandle, out fileStatus,
-                NormalizeSlashes(Path.Combine(_connectionParameters.Path, filename)),
-                AccessMask.GENERIC_WRITE | AccessMask.SYNCHRONIZE,
-                FileAttributes.Normal, ShareAccess.None,
-                CreateDisposition.FILE_SUPERSEDE,
-                CreateOptions.FILE_NON_DIRECTORY_FILE | CreateOptions.FILE_SYNCHRONOUS_IO_ALERT,
-                null);
+            (var status, var fileStatus, var fileHandle) = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancellationToken, _ =>
+            {
+                var status = _smbFileStore.CreateFile(out var fileHandle, out var fileStatus,
+                    NormalizeSlashes(Path.Combine(_connectionParameters.Path, filename)),
+                    AccessMask.GENERIC_WRITE | AccessMask.SYNCHRONIZE,
+                    FileAttributes.Normal, ShareAccess.None,
+                    CreateDisposition.FILE_SUPERSEDE,
+                    CreateOptions.FILE_NON_DIRECTORY_FILE | CreateOptions.FILE_SYNCHRONOUS_IO_ALERT,
+                    null);
+                return (status, fileStatus, fileHandle);
+            }).ConfigureAwait(false);
+
             if (status == NTStatus.STATUS_SUCCESS)
             {
                 // Use the provided write buffer size if set, otherwise use the protocol negotiated maximum. Never exceed the negotiated maximum.
-                byte[] buffer = new byte[Math.Min(_connectionParameters.WriteBufferSize ?? (int)_smb2Client.MaxWriteSize, _smb2Client.MaxWriteSize)];
+                var buffer = new byte[Math.Min(_connectionParameters.WriteBufferSize ?? (int)_smb2Client.MaxWriteSize, _smb2Client.MaxWriteSize)];
                 int bytesRead;
                 int numberOfBytesWritten;
                 int offset = 0;
-                while (!cancellationToken.IsCancellationRequested && sourceStream.Position < sourceStream.Length)
+                using var timeoutStream = sourceStream.ObserveReadTimeout(_timeouts.ReadWriteTimeout, false);
+                while (!cancellationToken.IsCancellationRequested && timeoutStream.Position < timeoutStream.Length)
                 {
-                    bytesRead = await sourceStream.ReadAsync(buffer, cancellationToken);
+                    bytesRead = await timeoutStream.ReadAsync(buffer, cancellationToken);
                     if (bytesRead == 0)
                         break;
                     status = _smbFileStore.WriteFile(out numberOfBytesWritten, fileHandle, offset, buffer.Take(bytesRead).ToArray());

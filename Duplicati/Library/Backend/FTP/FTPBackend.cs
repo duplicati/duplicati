@@ -19,20 +19,12 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
-#nullable enable
-
-using System;
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.IO;
-using System.Linq;
 using System.Net;
 using System.Net.Security;
 using System.Runtime.CompilerServices;
 using System.Security.Authentication;
 using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
@@ -268,36 +260,23 @@ namespace Duplicati.Library.Backend
         [SuppressMessage("ReSharper", "VirtualMemberCallInConstructor")] // The behavior of accessing the virtual properties is as expected
         public FTP(string url, Dictionary<string, string?> options)
         {
-            _sslOptions = SslOptionsHelper.SslCertificateOptions.Parse(options);
+            _sslOptions = SslOptionsHelper.Parse(options);
 
             var u = new Utility.Uri(url);
             u.RequireHost();
 
-            if (!string.IsNullOrEmpty(u.Username))
+            var auth = AuthOptionsHelper.Parse(options, u);
+            if (auth.HasUsername)
             {
-                _userInfo = new NetworkCredential
+                _userInfo = new NetworkCredential()
                 {
-                    UserName = u.Username
+                    UserName = auth.Username,
+                    Domain = ""
                 };
-                if (!string.IsNullOrEmpty(u.Password))
-                    _userInfo.Password = u.Password;
-                else if (options.ContainsKey("auth-password"))
-                    _userInfo.Password = options["auth-password"];
-            }
-            else
-            {
-                if (options.ContainsKey("auth-username"))
-                {
-                    _userInfo = new NetworkCredential();
-                    _userInfo.UserName = options["auth-username"];
-                    if (options.ContainsKey("auth-password"))
-                        _userInfo.Password = options["auth-password"];
-                }
-            }
 
-            //Bugfix, see http://connect.microsoft.com/VisualStudio/feedback/details/695227/networkcredential-default-constructor-leaves-domain-null-leading-to-null-object-reference-exceptions-in-framework-code
-            if (_userInfo != null)
-                _userInfo.Domain = "";
+                if (auth.HasPassword)
+                    _userInfo.Password = auth.Password;
+            }
 
             var parsedurl = u.SetScheme("ftp").SetQuery(null).SetCredentials(null, null).ToString();
             parsedurl = Util.AppendDirSeparator(parsedurl, "/");
@@ -341,7 +320,7 @@ namespace Duplicati.Library.Backend
             _logToConsole = CoreUtility.ParseBoolOption(options, CONFIG_KEY_FTP_LOGTOCONSOLE);
             _logPrivateInfoToConsole = CoreUtility.ParseBoolOption(options, CONFIG_KEY_FTP_LOGPRIVATEINFOTOCONSOLE);
             _diagnosticsLog = CoreUtility.ParseBoolOption(options, CONFIG_KEY_FTP_LOGDIAGNOSTICS);
-            _timeouts = TimeoutOptionsHelper.Timeouts.Parse(options);
+            _timeouts = TimeoutOptionsHelper.Parse(options);
 
             _ftpConfig = new FtpConfig
             {
@@ -478,7 +457,7 @@ namespace Duplicati.Library.Backend
             {
                 var client = await CreateClient(cancelToken).ConfigureAwait(false);
                 var clientRemoteName = PreparePathForClient(remotename);
-                await using var inputStream = await client.OpenRead(clientRemoteName, token: cancelToken);
+                await using var inputStream = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancelToken, ct => client.OpenRead(clientRemoteName, token: ct)).ConfigureAwait(false);
                 await using var timeoutStream = inputStream.ObserveReadTimeout(_timeouts.ReadWriteTimeout);
                 await CoreUtility.CopyStreamAsync(inputStream, output, false, cancelToken).ConfigureAwait(false);
             }

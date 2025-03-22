@@ -56,6 +56,22 @@ public static class SslOptionsHelper
     ];
 
     /// <summary>
+    /// Parses the SSL certificate options from a dictionary
+    /// </summary>
+    /// <param name="options">The dictionary to parse</param>
+    /// <param name="prefix">An optional prefix for the options</param>
+    /// <returns>The parsed SSL certificate options</returns>
+    public static SslCertificateOptions Parse(IReadOnlyDictionary<string, string?> options, string? prefix = null)
+    {
+        var acceptSpecificCertificatesString = options.TryGetValue($"{prefix}accept-specified-ssl-hash", out var value) ? value : null;
+        return new SslCertificateOptions(
+            Utility.ParseBoolOption(options, $"{prefix}use-ssl"),
+            Utility.ParseBoolOption(options, $"{prefix}accept-any-ssl-certificate"),
+            string.IsNullOrWhiteSpace(acceptSpecificCertificatesString) ? [] : acceptSpecificCertificatesString.Split([",", ";"], StringSplitOptions.RemoveEmptyEntries)
+        );
+    }
+
+    /// <summary>
     /// Structure to hold the SSL certificate options
     /// </summary>
     /// <param name="UseSSL">Flag to indicate if SSL is used</param>
@@ -63,22 +79,6 @@ public static class SslOptionsHelper
     /// <param name="AcceptSpecificCertificateHashes">Array of specific certificate hashes to accept</param>
     public sealed record SslCertificateOptions(bool UseSSL, bool AcceptAllCertificates, string[] AcceptSpecificCertificateHashes)
     {
-        /// <summary>
-        /// Parses the SSL certificate options from a dictionary
-        /// </summary>
-        /// <param name="options">The dictionary to parse</param>
-        /// <param name="prefix">An optional prefix for the options</param>
-        /// <returns>The parsed SSL certificate options</returns>
-        public static SslCertificateOptions Parse(IReadOnlyDictionary<string, string?> options, string? prefix = null)
-        {
-            var acceptSpecificCertificatesString = options.TryGetValue($"{prefix}accept-specified-ssl-hash", out var value) ? value : null;
-            return new SslCertificateOptions(
-                Utility.ParseBoolOption(options, $"{prefix}use-ssl"),
-                Utility.ParseBoolOption(options, $"{prefix}accept-any-ssl-certificate"),
-                string.IsNullOrWhiteSpace(acceptSpecificCertificatesString) ? [] : acceptSpecificCertificatesString.Split([",", ";"], StringSplitOptions.RemoveEmptyEntries)
-            );
-        }
-
         /// <summary>
         /// Creates a handler with the SSL certificate options
         /// </summary>

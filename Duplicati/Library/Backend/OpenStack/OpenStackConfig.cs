@@ -19,18 +19,14 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
-using System;
 using Duplicati.Library.Interface;
-using System.Collections.Generic;
-using System.Linq;
-using Duplicati.Library.Localization.Short;
 
 namespace Duplicati.Library.Backend.OpenStack
 {
     public class SwiftConfig : IWebModule
     {
         private const ConfigType DEFAULT_CONFIG_TYPE = ConfigType.Providers;
-        private static readonly string DEFAULT_CONFIG_TYPE_STR = Enum.GetName(typeof(ConfigType), DEFAULT_CONFIG_TYPE);
+        private static readonly string DEFAULT_CONFIG_TYPE_STR = DEFAULT_CONFIG_TYPE.ToString();
         private const string KEY_CONFIGTYPE = "openstack-config";
 
         public enum ConfigType
@@ -42,42 +38,32 @@ namespace Duplicati.Library.Backend.OpenStack
         {
         }
 
-        public System.Collections.Generic.IDictionary<string, string> Execute(System.Collections.Generic.IDictionary<string, string> options)
+        public IDictionary<string, string> Execute(IDictionary<string, string> options)
         {
-            string k;
-            options.TryGetValue(KEY_CONFIGTYPE, out k);
+            options.TryGetValue(KEY_CONFIGTYPE, out var k);
             if (string.IsNullOrWhiteSpace(k))
                 k = DEFAULT_CONFIG_TYPE_STR;
 
-            ConfigType ct;
-            if (!Enum.TryParse<ConfigType>(k, true, out ct))
+            if (!Enum.TryParse<ConfigType>(k, true, out var ct))
                 ct = DEFAULT_CONFIG_TYPE;
 
             switch (ct)
             {
                 case ConfigType.Versions:
-                    return OpenStack.OpenStackStorage.OPENSTACK_VERSIONS.ToDictionary((x) => x.Key, (y) => y.Value);
+                    return OpenStackStorage.OPENSTACK_VERSIONS.ToDictionary((x) => x.Key, (y) => y.Value);
                 default:
-                    return OpenStack.OpenStackStorage.KNOWN_OPENSTACK_PROVIDERS.ToDictionary((x) => x.Key, (y) => y.Value);
+                    return OpenStackStorage.KNOWN_OPENSTACK_PROVIDERS.ToDictionary((x) => x.Key, (y) => y.Value);
             }
         }
 
-        public string Key { get { return "openstack-getconfig"; } }
+        public string Key => "openstack-getconfig";
 
-        public string DisplayName { get { return LC.L("OpenStack configuration module"); } }
+        public string DisplayName => Strings.SwiftConfig.DisplayName;
 
-        public string Description { get { return LC.L("Expose OpenStack configuration as a web module"); } }
+        public string Description => Strings.SwiftConfig.Description;
 
-
-        public System.Collections.Generic.IList<ICommandLineArgument> SupportedCommands
-        {
-            get
-            {
-                return new List<ICommandLineArgument>([
-                    new CommandLineArgument(KEY_CONFIGTYPE, CommandLineArgument.ArgumentType.Enumeration, LC.L("The config to get"), LC.L("Provide different config values"), DEFAULT_CONFIG_TYPE_STR, Enum.GetNames(typeof(ConfigType)))
-
-                ]);
-            }
-        }
+        public IList<ICommandLineArgument> SupportedCommands => [
+            new CommandLineArgument(KEY_CONFIGTYPE, CommandLineArgument.ArgumentType.Enumeration, Strings.SwiftConfig.ConfigTypeOptionShort, Strings.SwiftConfig.ConfigTypeOptionLong, DEFAULT_CONFIG_TYPE_STR, Enum.GetNames(typeof(ConfigType)))
+        ];
     }
 }

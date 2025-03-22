@@ -34,14 +34,14 @@ internal class ListFilesRequest : BucketIDEntity
     /// Used for pagination to continue listing from a specific point.
     /// </summary>
     [JsonProperty("startFileName", NullValueHandling = NullValueHandling.Ignore)]
-    public string StartFileName { get; set; }
+    public string? StartFileName { get; set; }
 
     /// <summary>
     /// Gets or sets the file ID to start listing from.
     /// Used in conjunction with StartFileName for pagination.
     /// </summary>
     [JsonProperty("startFileId", NullValueHandling = NullValueHandling.Ignore)]
-    public string StartFileID { get; set; }
+    public string? StartFileID { get; set; }
 
     /// <summary>
     /// Gets or sets the maximum number of files to return in a single request.
@@ -54,5 +54,5 @@ internal class ListFilesRequest : BucketIDEntity
     /// Only files whose names begin with this prefix will be returned.
     /// </summary>
     [JsonProperty("prefix")]
-    public string Prefix { get; set; }
+    public required string Prefix { get; set; }
 }

@@ -44,6 +44,14 @@ namespace Duplicati.Library.Backend.Strings
         public static string VersionOptionShort { get { return LC.L(@"The keystone API version to use"); } }
         public static string RegionOptionLong { get { return LC.L(@"By default, the first reported endpoint will be used for file transfers. To select a specific region, provide the region name. If no such region is supported, the default (first reported) endpoint is used."); } }
         public static string RegionOptionShort { get { return LC.L(@"Supply the prefered region for endpoints"); } }
+    }
+
+    internal static class SwiftConfig
+    {
+        public static string Description { get { return LC.L(@"Expose OpenStack configuration as a web module"); } }
+        public static string DisplayName { get { return LC.L(@"OpenStack configuration module"); } }
+        public static string ConfigTypeOptionLong { get { return LC.L(@"Provide different config values"); } }
+        public static string ConfigTypeOptionShort { get { return LC.L(@"The config to get"); } }
 
     }
 }

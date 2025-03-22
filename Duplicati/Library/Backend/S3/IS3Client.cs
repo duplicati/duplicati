@@ -18,10 +18,6 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
 using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.Backend
@@ -36,10 +32,10 @@ namespace Duplicati.Library.Backend
 
         Task RenameFileAsync(string bucketName, string source, string target, CancellationToken cancelToken);
 
-        Task GetFileStreamAsync(string bucketName, string keyName, System.IO.Stream target, CancellationToken cancelToken);
+        Task GetFileStreamAsync(string bucketName, string keyName, Stream target, CancellationToken cancelToken);
 
-        string GetDnsHost();
+        string? GetDnsHost();
 
-        Task AddFileStreamAsync(string bucketName, string keyName, System.IO.Stream source, CancellationToken cancelToken);
+        Task AddFileStreamAsync(string bucketName, string keyName, Stream source, CancellationToken cancelToken);
     }
 }

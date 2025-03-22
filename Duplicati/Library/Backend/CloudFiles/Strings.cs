@@ -19,16 +19,14 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 using Duplicati.Library.Localization.Short;
-namespace Duplicati.Library.Backend.Strings {
-    internal static class CloudFiles {
+namespace Duplicati.Library.Backend.Strings
+{
+    internal static class CloudFiles
+    {
         public static string Description_v2 { get { return LC.L(@"This backend can read and write data to CloudFiles. Allowed format is ""cloudfiles://container/folder""."); } }
         public static string DisplayName { get { return LC.L(@"Rackspace CloudFiles"); } }
         public static string DescriptionAuthenticationURLLong_v2(string optionname) { return LC.L(@"CloudFiles use different servers for authentication based on where the account resides. Use this option to set an alternate authentication URL. This option overrides --{0}.", optionname); }
         public static string DescriptionAuthenticationURLShort { get { return LC.L(@"Provide another authentication URL"); } }
-        public static string DescriptionAuthPasswordLong { get { return LC.L(@"The password used to connect to the server. This may also be supplied as the environment variable ""AUTH_PASSWORD""."); } }
-        public static string DescriptionAuthPasswordShort { get { return LC.L(@"Supply the password used to connect to the server"); } }
-        public static string DescriptionAuthUsernameLong { get { return LC.L(@"The username used to connect to the server. This may also be supplied as the environment variable ""AUTH_USERNAME""."); } }
-        public static string DescriptionAuthUsernameShort { get { return LC.L(@"Supply the username used to connect to the server"); } }
         public static string DescriptionPasswordLong { get { return LC.L(@"The API Access Key used to authenticate with CloudFiles."); } }
         public static string DescriptionPasswordShort { get { return LC.L(@"Supply the access key used to connect to the server"); } }
         public static string DescriptionUKAccountLong(string optionname, string optionvalue) { return LC.L(@"Duplicati will assume that the credentials given are for a US account. Use this option if the account is a UK based account. Note that this is equivalent to setting --{0}={1}.", optionname, optionvalue); }
@@ -41,5 +39,6 @@ namespace Duplicati.Library.Backend.Strings {
         public static string NoAPIKeyError { get { return LC.L(@"No CloudFiles API Access Key given"); } }
         public static string NoUserIDError { get { return LC.L(@"No CloudFiles userID given"); } }
         public static string UnexpectedResponseError { get { return LC.L(@"Unexpected CloudFiles response. Perhaps the API has changed?"); } }
+        public static string DeprecatedFormatWarning(string hostname) { return LC.L(@$"The URL is using the marker hostname {hostname} which is no longer supported. Please use the new format ""cloudfiles://container/folder"" instead."); }
     }
 }

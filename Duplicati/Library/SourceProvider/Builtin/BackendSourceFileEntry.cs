@@ -19,6 +19,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
+using System.Diagnostics.CodeAnalysis;
 using System.IO.Pipelines;
 using System.Runtime.CompilerServices;
 using Duplicati.Library.Common.IO;
@@ -322,7 +323,8 @@ public class BackendSourceFileEntry(BackendSourceProvider parent, string path, b
     /// </summary>
     /// <param name="path">The path to normalize</param>
     /// <returns>The normalized path</returns>
-    public static string NormalizePathTo(string path, char separator)
+    [return: NotNullIfNotNull("path")]
+    public static string? NormalizePathTo(string? path, char separator)
     {
         if (string.IsNullOrEmpty(path))
             return path;

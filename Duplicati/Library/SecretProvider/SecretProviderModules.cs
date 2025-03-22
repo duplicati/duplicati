@@ -20,6 +20,7 @@
 // DEALINGS IN THE SOFTWARE.
 
 using Duplicati.Library.Interface;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.SecretProvider;
 
@@ -40,7 +41,6 @@ public static class SecretProviderModules
         OperatingSystem.IsLinux() ? new UnixPassProvider() : null,
         OperatingSystem.IsLinux() ? new LibSecretLinuxProvider() : null,
     }
-    .Where(x => x != null)
-    .Select(x => x!)
+    .WhereNotNull()
     .ToList();
 }

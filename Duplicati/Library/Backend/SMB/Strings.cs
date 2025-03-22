@@ -23,13 +23,9 @@ using Duplicati.Library.Localization.Short;
 
 namespace Duplicati.Library.Backend.Strings
 {
-    internal static class CIFSBackend
+    internal static class SMBBackend
     {
 
-        public static string DescriptionAuthPasswordLong => LC.L(@"The password used to connect to the server. This may also be supplied as the environment variable ""AUTH_PASSWORD"".");
-        public static string DescriptionAuthPasswordShort => LC.L(@"Supply the password used to connect to the server");
-        public static string DescriptionAuthUsernameLong => LC.L(@"The username used to connect to the server. This may also be supplied as the environment variable ""AUTH_USERNAME"".");
-        public static string DescriptionAuthUsernameShort => LC.L(@"Supply the username used to connect to the server");
         public static string DescriptionAuthDomainLong => LC.L(@"The domain used to connect to the server. This may also be supplied as the environment variable ""AUTH_DOMAIN"".");
         public static string DescriptionAuthDomainShort => LC.L(@"Supply the domain used to connect to the server");
         public static string Description => LC.L(@"This backend can read and write data to CIFS/SMB destinations. Allowed format is ""cifs://server/share"".");

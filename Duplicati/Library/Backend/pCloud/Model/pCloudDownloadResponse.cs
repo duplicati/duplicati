@@ -19,8 +19,6 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
-using System.Collections.Generic;
-
 namespace Duplicati.Library.Backend.pCloud;
 
 /// <summary>
@@ -44,5 +42,5 @@ internal record pCloudDownloadResponse
     /// Download path to be used with the host
     /// </summary>
     public string path { get; init; } = string.Empty;
-    
+
 }

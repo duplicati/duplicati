@@ -95,4 +95,12 @@ namespace Duplicati.Library.Utility.Strings
         public static string DescriptionAuthUsernameShort { get { return LC.L(@"Supply the username used to connect to the server"); } }
         public static string UsernameAndPasswordRequired { get { return LC.L(@"Authentication requires both a username and a password"); } }
     }
+
+    internal static class AuthIdSettingsHelper
+    {
+        public static string AuthidLong(string url) { return LC.L(@"The authorization token retrieved from {0}", url); }
+        public static string AuthidShort { get { return LC.L(@"The authorization code"); } }
+        public static string MissingAuthID(string url) { return LC.L(@"You need an AuthID to use this destination. You can get it from: {0}", url); }
+
+    }
 }

@@ -19,32 +19,29 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
-using Newtonsoft.Json;
+using SMBLibrary;
 
-namespace Duplicati.Library.Backend.Backblaze.Model;
+namespace Duplicati.Library.Backend.SMB.Model;
 
 /// <summary>
-/// Represents a bucket entity in the Backblaze B2 storage system.
-/// Contains information about a storage bucket including its identifier and type.
+/// Connection parameters for establishing an SMB connection.
 /// </summary>
-internal class BucketEntity : AccountIDEntity
-{
-    /// <summary>
-    /// Gets or sets the unique identifier of the bucket.
-    /// This property can be null as specified by the NullValueHandling attribute.
-    /// </summary>
-    [JsonProperty("bucketId", NullValueHandling = NullValueHandling.Ignore)]
-    public string? BucketID { get; set; }
-
-    /// <summary>
-    /// Gets or sets the name of the bucket.
-    /// </summary>
-    [JsonProperty("bucketName")]
-    public required string BucketName { get; set; }
-
-    /// <summary>
-    /// Gets or sets the type of the bucket (e.g., "allPrivate", "allPublic").
-    /// </summary>
-    [JsonProperty("bucketType")]
-    public string? BucketType { get; set; }
-}
+/// <param name="ServerName">The name or IP address of the SMB server</param>
+/// <param name="TransportType">The transport protocol type used for SMB communication</param>
+/// <param name="ShareName">The name of the network share to connect to</param>
+/// <param name="Path">The path within the share to access</param>
+/// <param name="AuthDomain">The authentication domain name</param>
+/// <param name="AuthUser">The username for authentication</param>
+/// <param name="AuthPassword">The password for authentication</param>
+/// <param name="ReadBufferSize">Read buffer size for SMB operations (will be capped automatically by SMB negotiated values)</param>
+/// <param name="WriteBufferSize">Write buffer size for SMB operations (will be capped automatically by SMB negotiated values)</param>
+public sealed record SMBConnectionParameters(
+    string ServerName,
+    SMBTransportType TransportType,
+    string ShareName,
+    string Path,
+    string? AuthDomain,
+    string? AuthUser,
+    string? AuthPassword,
+    int? ReadBufferSize,
+    int? WriteBufferSize);

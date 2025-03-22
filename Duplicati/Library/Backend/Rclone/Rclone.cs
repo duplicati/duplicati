@@ -21,16 +21,12 @@
 
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Utility.Options;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Runtime.CompilerServices;
 using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Duplicati.Library.Backend
 {
@@ -51,22 +47,28 @@ namespace Duplicati.Library.Backend
         private readonly string remote_path;
         private readonly string opt_rclone;
         private readonly string rclone_executable;
+        private readonly TimeoutOptionsHelper.Timeouts timeouts;
 
         public Rclone()
         {
-
+            local_repo = null!;
+            remote_repo = null!;
+            remote_path = null!;
+            opt_rclone = null!;
+            rclone_executable = null!;
+            timeouts = null!;
         }
 
-        public Rclone(string url, Dictionary<string, string> options)
+        public Rclone(string url, Dictionary<string, string?> options)
         {
             var uri = new Utility.Uri(url);
             /*should check here if program is installed */
 
-            local_repo = options.GetValueOrDefault(OPTION_LOCAL_REPO, local_repo);
-            remote_repo = options.GetValueOrDefault(OPTION_REMOTE_REPO, remote_repo);
-            remote_path = options.GetValueOrDefault(OPTION_REMOTE_PATH, remote_path);
-            opt_rclone = options.GetValueOrDefault(OPTION_RCLONE, opt_rclone) ?? "";
-            rclone_executable = options.GetValueOrDefault(OPTION_RCLONE_EXECUTABLE, rclone_executable);
+            local_repo = options.GetValueOrDefault(OPTION_LOCAL_REPO) ?? "";
+            remote_repo = options.GetValueOrDefault(OPTION_REMOTE_REPO) ?? "";
+            remote_path = options.GetValueOrDefault(OPTION_REMOTE_PATH) ?? "";
+            opt_rclone = options.GetValueOrDefault(OPTION_RCLONE) ?? "";
+            rclone_executable = options.GetValueOrDefault(OPTION_RCLONE_EXECUTABLE) ?? "";
 
             if (string.IsNullOrWhiteSpace(local_repo))
                 local_repo = "local";
@@ -77,6 +79,8 @@ namespace Duplicati.Library.Backend
             if (string.IsNullOrWhiteSpace(rclone_executable))
                 rclone_executable = "rclone";
 
+            timeouts = TimeoutOptionsHelper.Parse(options);
+
 #if DEBUG
             Console.WriteLine("Constructor {0}: {1}:{2} {3}", local_repo, remote_repo, remote_path, opt_rclone);
 #endif
@@ -84,17 +88,11 @@ namespace Duplicati.Library.Backend
 
         #region IBackendInterface Members
 
-        public string DisplayName
-        {
-            get { return Strings.Rclone.DisplayName; }
-        }
+        public string DisplayName => Strings.Rclone.DisplayName;
 
-        public string ProtocolKey
-        {
-            get { return "rclone"; }
-        }
+        public string ProtocolKey => "rclone";
 
-        private async Task<string> RcloneCommandExecuter(String command, String arguments, CancellationToken cancelToken)
+        private async Task<string> RcloneCommandExecuter(string command, string arguments, TimeSpan timeout, CancellationToken cancelToken)
         {
             StringBuilder outputBuilder = new StringBuilder();
             StringBuilder errorBuilder = new StringBuilder();
@@ -122,11 +120,11 @@ namespace Duplicati.Library.Backend
                 EnableRaisingEvents = true
             };
             // attach the event handler for OutputDataReceived before starting the process
-            process.OutputDataReceived += new System.Diagnostics.DataReceivedEventHandler
+            process.OutputDataReceived += new DataReceivedEventHandler
             (
-                delegate (object sender, System.Diagnostics.DataReceivedEventArgs e)
+                delegate (object sender, DataReceivedEventArgs e)
                 {
-                    if (!String.IsNullOrEmpty(e.Data))
+                    if (!string.IsNullOrEmpty(e.Data))
                     {
 #if DEBUG
                         //  Console.Error.WriteLine(String.Format("output {0}", e.Data));
@@ -137,12 +135,12 @@ namespace Duplicati.Library.Backend
                 }
             );
 
-            process.ErrorDataReceived += new System.Diagnostics.DataReceivedEventHandler
+            process.ErrorDataReceived += new DataReceivedEventHandler
             (
-                delegate (object sender, System.Diagnostics.DataReceivedEventArgs e)
+                delegate (object sender, DataReceivedEventArgs e)
                 {
 
-                    if (!String.IsNullOrEmpty(e.Data))
+                    if (!string.IsNullOrEmpty(e.Data))
                     {
 #if DEBUG
                         Console.Error.WriteLine("error {0}", e.Data);
@@ -160,11 +158,17 @@ namespace Duplicati.Library.Backend
             process.BeginOutputReadLine();
             process.BeginErrorReadLine();
 
+            using var timer = timeout == Timeout.InfiniteTimeSpan
+                ? new TaskCompletionSource<bool>().Task
+                : Task.Delay(timeout);
+
+            var killed = false;
             while (!process.HasExited)
             {
                 await Task.Delay(500).ConfigureAwait(false);
-                if (cancelToken.IsCancellationRequested)
+                if (cancelToken.IsCancellationRequested || timer.IsCompleted)
                 {
+                    killed = true;
                     process.Kill();
                     process.WaitForExit();
                 }
@@ -174,18 +178,20 @@ namespace Duplicati.Library.Backend
             process.CancelErrorRead();
 
             if (errorBuilder.ToString().Contains(RCLONE_ERROR_DIRECTORY_NOT_FOUND))
-            {
                 throw new FolderMissingException(errorBuilder.ToString());
-            }
 
             if (errorBuilder.ToString().Contains(RCLONE_ERROR_CONFIG_NOT_FOUND))
-            {
                 throw new Exception($"Missing config file? {errorBuilder}");
-            }
 
             if (errorBuilder.Length > 0)
-            {
                 throw new Exception(errorBuilder.ToString());
+
+            if (killed)
+            {
+                if (timer.IsCompleted)
+                    throw new TimeoutException();
+
+                throw new TaskCanceledException();
             }
 
             return outputBuilder.ToString();
@@ -200,16 +206,15 @@ namespace Duplicati.Library.Backend
             try
             {
 
-                str_result = await RcloneCommandExecuter(rclone_executable, $"lsjson {remote_repo}:{remote_path}", cancelToken).ConfigureAwait(false);
+                str_result = await RcloneCommandExecuter(rclone_executable, $"lsjson {remote_repo}:{remote_path}", timeouts.ListTimeout, cancelToken).ConfigureAwait(false);
                 // this will give an error if the executable does not exist.
             }
-
             catch (FolderMissingException ex)
             {
                 throw new FolderMissingException(ex);
             }
 
-            using (JsonReader jsonReader = new JsonTextReader(new StringReader(str_result)))
+            using (var jsonReader = new JsonTextReader(new StringReader(str_result)))
             {
                 //no date parsing by JArray needed, will be parsed later
                 jsonReader.DateParseHandling = DateParseHandling.None;
@@ -220,14 +225,19 @@ namespace Duplicati.Library.Backend
 #if DEBUG
                     Console.Error.WriteLine(item);
 #endif
-                    FileEntry fe = new FileEntry(
-                        item.GetValue("Name").Value<string>(),
-                        item.GetValue("Size").Value<long>(),
-                        DateTime.Parse(item.GetValue("ModTime").Value<string>()),
-                        DateTime.Parse(item.GetValue("ModTime").Value<string>())
+                    var modTimeString = item.GetValue("ModTime")?.Value<string>();
+                    var modTime = string.IsNullOrWhiteSpace(modTimeString)
+                        ? new DateTime(0)
+                        : DateTime.Parse(modTimeString);
+
+                    var fe = new FileEntry(
+                        item.GetValue("Name")?.Value<string>(),
+                        item.GetValue("Size")?.Value<long>() ?? -1,
+                        modTime,
+                        modTime
                     )
                     {
-                        IsFolder = item.GetValue("IsDir").Value<bool>()
+                        IsFolder = item.GetValue("IsDir")?.Value<bool>() ?? false
                     };
                     yield return fe;
                 }
@@ -238,7 +248,7 @@ namespace Duplicati.Library.Backend
         {
             try
             {
-                await RcloneCommandExecuter(rclone_executable, $"copyto {local_repo}:{filename} {remote_repo}:{remote_path}/{remotename}", cancelToken).ConfigureAwait(false);
+                await RcloneCommandExecuter(rclone_executable, $"copyto {local_repo}:{filename} {remote_repo}:{remote_path}/{remotename}", Timeout.InfiniteTimeSpan, cancelToken).ConfigureAwait(false);
             }
             catch (FolderMissingException ex)
             {
@@ -250,7 +260,7 @@ namespace Duplicati.Library.Backend
         {
             try
             {
-                await RcloneCommandExecuter(rclone_executable, $"copyto {remote_repo}:{Path.Combine(this.remote_path, remotename)} {local_repo}:{filename}", cancelToken).ConfigureAwait(false);
+                await RcloneCommandExecuter(rclone_executable, $"copyto {remote_repo}:{Path.Combine(this.remote_path, remotename)} {local_repo}:{filename}", Timeout.InfiniteTimeSpan, cancelToken).ConfigureAwait(false);
             }
             catch (FolderMissingException ex)
             {
@@ -264,7 +274,7 @@ namespace Duplicati.Library.Backend
             // Will give a "directory not found" error if the file does not exist, need to change that to a missing file exception
             try
             {
-                await RcloneCommandExecuter(rclone_executable, $"delete {remote_repo}:{Path.Combine(remote_path, remotename)}", cancelToken).ConfigureAwait(false);
+                await RcloneCommandExecuter(rclone_executable, $"delete {remote_repo}:{Path.Combine(remote_path, remotename)}", timeouts.ShortTimeout, cancelToken).ConfigureAwait(false);
             }
             catch (FolderMissingException ex)
             {
@@ -272,28 +282,17 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public IList<ICommandLineArgument> SupportedCommands
-        {
-            get
-            {
-                return new List<ICommandLineArgument>([
-                    new CommandLineArgument(OPTION_LOCAL_REPO, CommandLineArgument.ArgumentType.String, Strings.Rclone.RcloneLocalRepoShort, Strings.Rclone.RcloneLocalRepoLong, "local"),
-                    new CommandLineArgument(OPTION_REMOTE_REPO, CommandLineArgument.ArgumentType.String, Strings.Rclone.RcloneRemoteRepoShort, Strings.Rclone.RcloneRemoteRepoLong, "remote"),
-                    new CommandLineArgument(OPTION_REMOTE_PATH, CommandLineArgument.ArgumentType.String, Strings.Rclone.RcloneRemotePathShort, Strings.Rclone.RcloneRemotePathLong, "backup"),
-                    new CommandLineArgument(OPTION_RCLONE, CommandLineArgument.ArgumentType.String, Strings.Rclone.RcloneOptionRcloneShort, Strings.Rclone.RcloneOptionRcloneLong, ""),
-                    new CommandLineArgument(OPTION_RCLONE_EXECUTABLE, CommandLineArgument.ArgumentType.String, Strings.Rclone.RcloneExecutableShort, Strings.Rclone.RcloneExecutableLong, "rclone")
-                ]);
+        public IList<ICommandLineArgument> SupportedCommands => [
+            new CommandLineArgument(OPTION_LOCAL_REPO, CommandLineArgument.ArgumentType.String, Strings.Rclone.RcloneLocalRepoShort, Strings.Rclone.RcloneLocalRepoLong, "local"),
+            new CommandLineArgument(OPTION_REMOTE_REPO, CommandLineArgument.ArgumentType.String, Strings.Rclone.RcloneRemoteRepoShort, Strings.Rclone.RcloneRemoteRepoLong, "remote"),
+            new CommandLineArgument(OPTION_REMOTE_PATH, CommandLineArgument.ArgumentType.String, Strings.Rclone.RcloneRemotePathShort, Strings.Rclone.RcloneRemotePathLong, "backup"),
+            new CommandLineArgument(OPTION_RCLONE, CommandLineArgument.ArgumentType.String, Strings.Rclone.RcloneOptionRcloneShort, Strings.Rclone.RcloneOptionRcloneLong, ""),
+            new CommandLineArgument(OPTION_RCLONE_EXECUTABLE, CommandLineArgument.ArgumentType.String, Strings.Rclone.RcloneExecutableShort, Strings.Rclone.RcloneExecutableLong, "rclone"),
+            .. TimeoutOptionsHelper.GetOptions()
+                .Where(x => x.Name != TimeoutOptionsHelper.READ_WRITE_TIMEOUT_OPTION)
+        ];
 
-            }
-        }
-
-        public string Description
-        {
-            get
-            {
-                return Strings.Rclone.Description;
-            }
-        }
+        public string Description => Strings.Rclone.Description;
 
         public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(new[] { remote_repo });
 
@@ -302,7 +301,7 @@ namespace Duplicati.Library.Backend
 
         public Task CreateFolderAsync(CancellationToken cancelToken)
         {
-            return RcloneCommandExecuter(rclone_executable, $"mkdir {remote_repo}:{remote_path}", cancelToken);
+            return RcloneCommandExecuter(rclone_executable, $"mkdir {remote_repo}:{remote_path}", timeouts.ShortTimeout, cancelToken);
         }
 
         #endregion

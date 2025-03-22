@@ -18,7 +18,6 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
-using System.Collections.Generic;
 
 using Duplicati.Library.Interface;
 
@@ -30,56 +29,33 @@ namespace Duplicati.Library.Backend
         private const string DEFAULT_DRIVE_PATH = "/me/drive";
         private const string PROTOCOL_KEY = "onedrivev2";
 
-        private readonly string drivePath;
+        private readonly Task<string> drivePath;
 
-        public OneDrive() { } // Constructor needed for dynamic loading to find it
-
-        public OneDrive(string url, Dictionary<string, string> options)
-            : base(url, OneDrive.PROTOCOL_KEY, options)
+        public OneDrive()
         {
-            string driveId;
-            if (options.TryGetValue(DRIVE_ID_OPTION, out driveId))
-            {
-                this.drivePath = string.Format("/drives/{0}", driveId);
-            }
-            else
-            {
-                this.drivePath = DEFAULT_DRIVE_PATH;
-            }
+            // Constructor needed for dynamic loading to find it
+            drivePath = null!;
         }
 
-        public override string ProtocolKey
+        public OneDrive(string url, Dictionary<string, string?> options)
+            : base(url, PROTOCOL_KEY, options)
         {
-            get { return OneDrive.PROTOCOL_KEY; }
+            var driveId = options.GetValueOrDefault(DRIVE_ID_OPTION);
+            drivePath = Task.FromResult(string.IsNullOrWhiteSpace(driveId)
+                ? DEFAULT_DRIVE_PATH
+                : string.Format("/drives/{0}", driveId));
         }
 
-        public override string DisplayName
-        {
-            get { return Strings.OneDrive.DisplayName; }
-        }
+        public override string ProtocolKey => PROTOCOL_KEY;
 
-        protected override string DrivePath
-        {
-            get { return this.drivePath; }
-        }
+        public override string DisplayName => Strings.OneDrive.DisplayName;
 
-        protected override DescriptionTemplateDelegate DescriptionTemplate
-        {
-            get
-            {
-                return Strings.OneDrive.Description;
-            }
-        }
+        protected override Task<string> GetDrivePath(CancellationToken cancelToken) => drivePath;
 
-        protected override IList<ICommandLineArgument> AdditionalSupportedCommands
-        {
-            get
-            {
-                return new ICommandLineArgument[]
-                {
-                    new CommandLineArgument(DRIVE_ID_OPTION, CommandLineArgument.ArgumentType.String, Strings.OneDrive.DriveIdShort, Strings.OneDrive.DriveIdLong(DEFAULT_DRIVE_PATH)),
-                };
-            }
-        }
+        protected override DescriptionTemplateDelegate DescriptionTemplate => Strings.OneDrive.Description;
+
+        protected override IList<ICommandLineArgument> AdditionalSupportedCommands => [
+            new CommandLineArgument(DRIVE_ID_OPTION, CommandLineArgument.ArgumentType.String, Strings.OneDrive.DriveIdShort, Strings.OneDrive.DriveIdLong(DEFAULT_DRIVE_PATH)),
+        ];
     }
 }
