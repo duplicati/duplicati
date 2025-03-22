@@ -57,7 +57,7 @@ namespace Duplicati.Library.Backend
         private readonly int m_port = 22;
         private readonly bool m_useRelativePath;
         private readonly TimeoutOptionsHelper.Timeouts m_timeouts;
-        private string m_initialDirectory;
+        private string? m_initialDirectory;
 
         private SftpClient? m_con;
 
@@ -69,11 +69,9 @@ namespace Duplicati.Library.Backend
             m_options = null!;
             m_timeouts = null!;
             m_con = null!;
-            m_initialDirectory = null!;
         }
 
         public SSHv2(string url, Dictionary<string, string?> options)
-            : this()
         {
             m_options = options;
             var uri = new Utility.Uri(url);
@@ -88,6 +86,7 @@ namespace Duplicati.Library.Backend
             m_fingerprint = options.GetValueOrDefault(SSH_FINGERPRINT_OPTION);
             m_fingerprintallowall = Utility.Utility.ParseBoolOption(options, SSH_FINGERPRINT_ACCEPT_ANY_OPTION);
             m_useRelativePath = Utility.Utility.ParseBoolOption(options, SSH_RELATIVE_PATH_OPTION);
+            m_timeouts = TimeoutOptionsHelper.Parse(options);
 
             m_path = uri.Path;
 
@@ -353,7 +352,7 @@ namespace Duplicati.Library.Backend
                 return;
 
             var targetPath = m_useRelativePath
-                ? Util.AppendDirSeparator(m_initialDirectory, "/") + m_path
+                ? Util.AppendDirSeparator(m_initialDirectory ?? "", "/") + m_path
                 : m_path;
 
             var workingDir = Util.AppendDirSeparator(connection.WorkingDirectory, "/");
