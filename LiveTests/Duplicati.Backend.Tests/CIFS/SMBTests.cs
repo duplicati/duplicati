@@ -31,12 +31,12 @@ public sealed class SMBTests : BaseSftpgoTest
 {
 
     /// <summary>
-    /// Test SMB with TestContainers creating a Samba Server with TestContainers.
+    /// Test Smb with TestContainers creating a Samba Server with TestContainers.
     ///
     /// This test has no requirement of environment variables.
     /// </summary>
     [TestMethod]
-    public async Task TestSMB()
+    public async Task TestSmb()
     {
         var outputConsumer = new OutputConsumer();
         var randomPassword = GeneratePassword();
@@ -92,7 +92,7 @@ smbd --foreground --no-process-group --debug-stdout";
         var exitCode = CommandLine.BackendTester.Program.Main(
             new[]
             {
-                $"sMB://localhost/testshare1/new/?transport=directtcp&auth-domain&auth-username=smbuser1&auth-password={randomPassword}",
+                $"smb://localhost/testshare1/new/?transport=directtcp&auth-domain&auth-username=smbuser1&auth-password={randomPassword}",
             }.Concat(Parameters.GlobalTestParameters).ToArray());
 
         Console.WriteLine(await outputConsumer.GetStreamsOutput());
