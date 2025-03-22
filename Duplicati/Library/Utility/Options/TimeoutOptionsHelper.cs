@@ -49,15 +49,28 @@ public static class TimeoutOptionsHelper
     public const string DEFAULT_READ_WRITE_TIMEOUT = "30s";
 
     /// <summary>
+    /// The name of the short timeout option, without a prefix
+    /// </summary>
+    public const string SHORT_TIMEOUT_OPTION = "short-timeout";
+    /// <summary>
+    /// The name of the list timeout option, without a prefix
+    /// </summary>
+    public const string LIST_TIMEOUT_OPTION = "list-timeout";
+    /// <summary>
+    /// The name of the read-write timeout option, without a prefix
+    /// </summary>
+    public const string READ_WRITE_TIMEOUT_OPTION = "read-write-timeout";
+
+    /// <summary>
     /// Gets the timeout options
     /// </summary>
     /// <param name="prefix">An optional prefix for the options</param>
     /// <returns>The timeout options</returns>
     public static CommandLineArgument[] GetOptions(string? prefix = null) =>
     [
-        new CommandLineArgument($"{prefix}short-timeout", CommandLineArgument.ArgumentType.Timespan, Strings.TimeoutSettingsHelper.DescriptionShortTimeoutShort, Strings.TimeoutSettingsHelper.DescriptionShortTimeoutLong, DEFAULT_SHORT_OPERATION_TIMEOUT),
-        new CommandLineArgument($"{prefix}list-timeout", CommandLineArgument.ArgumentType.Timespan, Strings.TimeoutSettingsHelper.DescriptionListTimeoutShort, Strings.TimeoutSettingsHelper.DescriptionListTimeoutLong, DEFAULT_LIST_OPERATION_TIMEOUT),
-        new CommandLineArgument($"{prefix}read-write-timeout", CommandLineArgument.ArgumentType.Timespan, Strings.TimeoutSettingsHelper.DescriptionReadWriteTimeoutShort, Strings.TimeoutSettingsHelper.DescriptionReadWriteTimeoutLong, DEFAULT_READ_WRITE_TIMEOUT)
+        new CommandLineArgument($"{prefix}{SHORT_TIMEOUT_OPTION}", CommandLineArgument.ArgumentType.Timespan, Strings.TimeoutSettingsHelper.DescriptionShortTimeoutShort, Strings.TimeoutSettingsHelper.DescriptionShortTimeoutLong, DEFAULT_SHORT_OPERATION_TIMEOUT),
+        new CommandLineArgument($"{prefix}{LIST_TIMEOUT_OPTION}", CommandLineArgument.ArgumentType.Timespan, Strings.TimeoutSettingsHelper.DescriptionListTimeoutShort, Strings.TimeoutSettingsHelper.DescriptionListTimeoutLong, DEFAULT_LIST_OPERATION_TIMEOUT),
+        new CommandLineArgument($"{prefix}{READ_WRITE_TIMEOUT_OPTION}", CommandLineArgument.ArgumentType.Timespan, Strings.TimeoutSettingsHelper.DescriptionReadWriteTimeoutShort, Strings.TimeoutSettingsHelper.DescriptionReadWriteTimeoutLong, DEFAULT_READ_WRITE_TIMEOUT)
     ];
 
     /// <summary>
@@ -68,9 +81,9 @@ public static class TimeoutOptionsHelper
     /// <returns>The timeout configuration</returns>
     public static Timeouts Parse(IReadOnlyDictionary<string, string?> options, string? prefix = null)
         => new Timeouts(
-            Utility.ParseTimespanOption(options, $"{prefix}short-timeout", DEFAULT_SHORT_OPERATION_TIMEOUT),
-            Utility.ParseTimespanOption(options, $"{prefix}list-timeout", DEFAULT_LIST_OPERATION_TIMEOUT),
-            Utility.ParseTimespanOption(options, $"{prefix}read-write-timeout", DEFAULT_READ_WRITE_TIMEOUT)
+            Utility.ParseTimespanOption(options, $"{prefix}{SHORT_TIMEOUT_OPTION}", DEFAULT_SHORT_OPERATION_TIMEOUT),
+            Utility.ParseTimespanOption(options, $"{prefix}{LIST_TIMEOUT_OPTION}", DEFAULT_LIST_OPERATION_TIMEOUT),
+            Utility.ParseTimespanOption(options, $"{prefix}{READ_WRITE_TIMEOUT_OPTION}", DEFAULT_READ_WRITE_TIMEOUT)
         );
 
     /// <summary>
