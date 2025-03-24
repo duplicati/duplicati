@@ -93,14 +93,14 @@ namespace Duplicati.Library.Main.Database
                 cmd.ExecuteNonQuery(FormatInvariant($@"CREATE TEMPORARY TABLE ""{m_fileprogtable}"" (
 ""FileId"" INTEGER PRIMARY KEY,
 ""TotalBlocks"" INTEGER NOT NULL, ""TotalSize"" INTEGER NOT NULL,
-""BlocksRestored"" INTEGER NOT NULL, ""SizeRestored"" INTEGER NOT NULL 
+""BlocksRestored"" INTEGER NOT NULL, ""SizeRestored"" INTEGER NOT NULL
 )"));
 
                 cmd.ExecuteNonQuery(FormatInvariant($@"DROP TABLE IF EXISTS ""{m_totalprogtable}"" "));
                 cmd.ExecuteNonQuery(FormatInvariant($@"CREATE TEMPORARY TABLE ""{m_totalprogtable}"" (
 ""TotalFiles"" INTEGER NOT NULL, ""TotalBlocks"" INTEGER NOT NULL, ""TotalSize"" INTEGER NOT NULL,
 ""FilesFullyRestored"" INTEGER NOT NULL, ""FilesPartiallyRestored"" INTEGER NOT NULL,
-""BlocksRestored"" INTEGER NOT NULL, ""SizeRestored"" INTEGER NOT NULL 
+""BlocksRestored"" INTEGER NOT NULL, ""SizeRestored"" INTEGER NOT NULL
 )"));
 
                 if (createFilesNewlyDoneTracker)
@@ -121,10 +121,10 @@ namespace Duplicati.Library.Main.Database
                     // We use a LEFT JOIN to allow for empty files (no data Blocks)
                     sql = FormatInvariant($@" INSERT INTO ""{m_fileprogtable}"" (""FileId"", ""TotalBlocks"", ""TotalSize"", ""BlocksRestored"", ""SizeRestored"")
 SELECT   ""F"".""ID"", IFNULL(COUNT(""B"".""ID""), 0), IFNULL(SUM(""B"".""Size""), 0)
-       , IFNULL(COUNT(CASE ""B"".""Restored"" WHEN 1 THEN ""B"".""ID"" ELSE NULL END), 0) 
-       , IFNULL(SUM(CASE ""B"".""Restored"" WHEN 1 THEN ""B"".""Size"" ELSE 0 END), 0) 
+       , IFNULL(COUNT(CASE ""B"".""Restored"" WHEN 1 THEN ""B"".""ID"" ELSE NULL END), 0)
+       , IFNULL(SUM(CASE ""B"".""Restored"" WHEN 1 THEN ""B"".""Size"" ELSE 0 END), 0)
   FROM ""{m_tempfiletable}"" ""F"" LEFT JOIN ""{m_tempblocktable}"" ""B""
-       ON  ""B"".""FileID"" = ""F"".""ID"" 
+       ON  ""B"".""FileID"" = ""F"".""ID""
  WHERE ""B"".""Metadata"" IS NOT 1
  GROUP BY ""F"".""ID"" ");
 
@@ -132,13 +132,13 @@ SELECT   ""F"".""ID"", IFNULL(COUNT(""B"".""ID""), 0), IFNULL(SUM(""B"".""Size""
                     cmd.ExecuteNonQuery(sql);
 
                     sql = FormatInvariant($@"INSERT INTO ""{m_totalprogtable}"" (
-  ""TotalFiles"", ""TotalBlocks"", ""TotalSize"" 
+  ""TotalFiles"", ""TotalBlocks"", ""TotalSize""
 , ""FilesFullyRestored"", ""FilesPartiallyRestored"", ""BlocksRestored"", ""SizeRestored""
- ) 
- SELECT   IFNULL(COUNT(""P"".""FileId""), 0), IFNULL(SUM(""P"".""TotalBlocks""), 0), IFNULL(SUM(""P"".""TotalSize""), 0) 
-        , IFNULL(COUNT(CASE WHEN ""P"".""BlocksRestored"" = ""P"".""TotalBlocks"" THEN 1 ELSE NULL END), 0) 
-        , IFNULL(COUNT(CASE WHEN ""P"".""BlocksRestored"" BETWEEN 1 AND ""P"".""TotalBlocks"" - 1 THEN 1 ELSE NULL END), 0) 
-        , IFNULL(SUM(""P"".""BlocksRestored""), 0), IFNULL(SUM(""P"".""SizeRestored""), 0) 
+ )
+ SELECT   IFNULL(COUNT(""P"".""FileId""), 0), IFNULL(SUM(""P"".""TotalBlocks""), 0), IFNULL(SUM(""P"".""TotalSize""), 0)
+        , IFNULL(COUNT(CASE WHEN ""P"".""BlocksRestored"" = ""P"".""TotalBlocks"" THEN 1 ELSE NULL END), 0)
+        , IFNULL(COUNT(CASE WHEN ""P"".""BlocksRestored"" BETWEEN 1 AND ""P"".""TotalBlocks"" - 1 THEN 1 ELSE NULL END), 0)
+        , IFNULL(SUM(""P"".""BlocksRestored""), 0), IFNULL(SUM(""P"".""SizeRestored""), 0)
    FROM ""{m_fileprogtable}"" ""P"" ");
 
                     // Will result in a single line (no support to also track metadata)
@@ -152,25 +152,25 @@ SELECT   ""F"".""ID"", IFNULL(COUNT(""B"".""ID""), 0), IFNULL(SUM(""B"".""Size""
 
                     // A trigger to update the file-stat entry each time a block changes restoration state.
                     sql = FormatInvariant($@"CREATE TEMPORARY TRIGGER ""TrackRestoredBlocks_{m_tempblocktable}"" AFTER UPDATE OF ""Restored"" ON ""{m_tempblocktable}""
-WHEN OLD.""Restored"" != NEW.""Restored"" AND NEW.""Metadata"" = 0 
-BEGIN UPDATE ""{m_fileprogtable}"" 
-   SET ""BlocksRestored"" = ""{m_fileprogtable}"".""BlocksRestored"" + (NEW.""Restored"" - OLD.""Restored"") 
-     , ""SizeRestored"" = ""{m_fileprogtable}"".""SizeRestored"" + ((NEW.""Restored"" - OLD.""Restored"") * NEW.Size) 
- WHERE ""{m_fileprogtable}"".""FileId"" = NEW.""FileID"" 
+WHEN OLD.""Restored"" != NEW.""Restored"" AND NEW.""Metadata"" = 0
+BEGIN UPDATE ""{m_fileprogtable}""
+   SET ""BlocksRestored"" = ""{m_fileprogtable}"".""BlocksRestored"" + (NEW.""Restored"" - OLD.""Restored"")
+     , ""SizeRestored"" = ""{m_fileprogtable}"".""SizeRestored"" + ((NEW.""Restored"" - OLD.""Restored"") * NEW.Size)
+ WHERE ""{m_fileprogtable}"".""FileId"" = NEW.""FileID""
 ; END ");
                     cmd.ExecuteNonQuery(sql);
 
                     // A trigger to update total stats each time a file stat changed (nested triggering by file-stats)
                     sql = FormatInvariant($@"CREATE TEMPORARY TRIGGER ""UpdateTotalStats_{m_fileprogtable}"" AFTER UPDATE ON ""{m_fileprogtable}""
-BEGIN UPDATE ""{m_totalprogtable}"" 
-   SET ""FilesFullyRestored"" = ""{m_totalprogtable}"".""FilesFullyRestored"" 
-               + (CASE WHEN NEW.""BlocksRestored"" = NEW.""TotalBlocks"" THEN 1 ELSE 0 END) 
-               - (CASE WHEN OLD.""BlocksRestored"" = OLD.""TotalBlocks"" THEN 1 ELSE 0 END) 
-     , ""FilesPartiallyRestored"" = ""{m_totalprogtable}"".""FilesPartiallyRestored"" 
-               + (CASE WHEN NEW.""BlocksRestored"" BETWEEN 1 AND NEW.""TotalBlocks"" - 1 THEN 1 ELSE 0 END) 
-               - (CASE WHEN OLD.""BlocksRestored"" BETWEEN 1 AND OLD.""TotalBlocks"" - 1 THEN 1 ELSE 0 END) 
+BEGIN UPDATE ""{m_totalprogtable}""
+   SET ""FilesFullyRestored"" = ""{m_totalprogtable}"".""FilesFullyRestored""
+               + (CASE WHEN NEW.""BlocksRestored"" = NEW.""TotalBlocks"" THEN 1 ELSE 0 END)
+               - (CASE WHEN OLD.""BlocksRestored"" = OLD.""TotalBlocks"" THEN 1 ELSE 0 END)
+     , ""FilesPartiallyRestored"" = ""{m_totalprogtable}"".""FilesPartiallyRestored""
+               + (CASE WHEN NEW.""BlocksRestored"" BETWEEN 1 AND NEW.""TotalBlocks"" - 1 THEN 1 ELSE 0 END)
+               - (CASE WHEN OLD.""BlocksRestored"" BETWEEN 1 AND OLD.""TotalBlocks"" - 1 THEN 1 ELSE 0 END)
      , ""BlocksRestored"" = ""{m_totalprogtable}"".""BlocksRestored"" + NEW.""BlocksRestored"" - OLD.""BlocksRestored""
-     , ""SizeRestored"" = ""{m_totalprogtable}"".""SizeRestored"" + NEW.""SizeRestored"" - OLD.""SizeRestored"" 
+     , ""SizeRestored"" = ""{m_totalprogtable}"".""SizeRestored"" + NEW.""SizeRestored"" - OLD.""SizeRestored""
 ; END");
                     cmd.ExecuteNonQuery(sql);
 
@@ -179,9 +179,9 @@ BEGIN UPDATE ""{m_totalprogtable}""
                     {
                         // A trigger checking if a file is done (all blocks restored in file-stat) (nested triggering by file-stats)
                         sql = FormatInvariant($@"CREATE TEMPORARY TRIGGER ""UpdateFilesNewlyDone_{m_fileprogtable}"" AFTER UPDATE OF ""BlocksRestored"", ""TotalBlocks"" ON ""{m_fileprogtable}""
-WHEN NEW.""BlocksRestored"" = NEW.""TotalBlocks""  
-BEGIN 
-   INSERT OR IGNORE INTO ""{m_filesnewlydonetable}"" (""ID"") VALUES (NEW.""FileId""); 
+WHEN NEW.""BlocksRestored"" = NEW.""TotalBlocks""
+BEGIN
+   INSERT OR IGNORE INTO ""{m_filesnewlydonetable}"" (""ID"") VALUES (NEW.""FileId"");
 END ");
                         cmd.ExecuteNonQuery(sql);
                     }
@@ -735,12 +735,12 @@ END ");
                 // One could also use like the average block number in a volume, that needs to be measured.
 
                 cmd.CommandText = FormatInvariant($@"SELECT ""RV"".""Name"", ""RV"".""Hash"", ""RV"".""Size"", ""BB"".""MaxIndex""
-FROM ""RemoteVolume"" ""RV"" INNER JOIN 
-      (SELECT ""TB"".""VolumeID"", MAX(""TB"".""Index"") as ""MaxIndex"" 
-         FROM ""{m_tempblocktable}"" ""TB"" 
-        WHERE ""TB"".""Restored"" = 0 
-        GROUP BY  ""TB"".""VolumeID"" 
-      ) as ""BB"" ON ""RV"".""ID"" = ""BB"".""VolumeID"" 
+FROM ""RemoteVolume"" ""RV"" INNER JOIN
+      (SELECT ""TB"".""VolumeID"", MAX(""TB"".""Index"") as ""MaxIndex""
+         FROM ""{m_tempblocktable}"" ""TB""
+        WHERE ""TB"".""Restored"" = 0
+        GROUP BY  ""TB"".""VolumeID""
+      ) as ""BB"" ON ""RV"".""ID"" = ""BB"".""VolumeID""
 ORDER BY ""BB"".""MaxIndex"" ");
 
                 using (var rd = cmd.ExecuteReader())
@@ -848,10 +848,10 @@ ORDER BY ""BB"".""MaxIndex"" ");
                     using (var cmd = m_connection.CreateCommand())
                     {
                         // The IN-clause with subquery enables SQLite to use indexes better. Three way join (A,B,C) is slow here!
-                        cmd.CommandText = FormatInvariant($@"  SELECT DISTINCT ""A"".""TargetPath"", ""BB"".""FileID"", (""BB"".""Index"" * {m_blocksize}), ""BB"".""Size"", ""BB"".""Hash"" 
-FROM ""{m_filetablename}"" ""A"", ""{m_blocktablename}"" ""BB"" 
+                        cmd.CommandText = FormatInvariant($@"  SELECT DISTINCT ""A"".""TargetPath"", ""BB"".""FileID"", (""BB"".""Index"" * {m_blocksize}), ""BB"".""Size"", ""BB"".""Hash""
+FROM ""{m_filetablename}"" ""A"", ""{m_blocktablename}"" ""BB""
 WHERE ""A"".""ID"" = ""BB"".""FileID"" AND ""BB"".""Restored"" = 0 AND ""BB"".""Metadata"" = {"0"}
-AND ""BB"".""ID"" IN  (SELECT ""B"".""ID"" FROM ""{m_blocktablename}"" ""B"", ""{m_tmptable}"" ""C"" WHERE ""B"".""Hash"" = ""C"".""Hash"" AND ""B"".""Size"" = ""C"".""Size"") 
+AND ""BB"".""ID"" IN  (SELECT ""B"".""ID"" FROM ""{m_blocktablename}"" ""B"", ""{m_tmptable}"" ""C"" WHERE ""B"".""Hash"" = ""C"".""Hash"" AND ""B"".""Size"" = ""C"".""Size"")
 ORDER BY ""A"".""TargetPath"", ""BB"".""Index""");
                         using (var rd = cmd.ExecuteReader())
                         {
@@ -881,10 +881,10 @@ ORDER BY ""A"".""TargetPath"", ""BB"".""Index""");
                     using (var cmd = m_connection.CreateCommand())
                     {
                         // The IN-clause with subquery enables SQLite to use indexes better. Three way join (A,B,C) is slow here!
-                        cmd.CommandText = FormatInvariant($@"  SELECT DISTINCT ""A"".""TargetPath"", ""BB"".""FileID"", (""BB"".""Index"" * {m_blocksize}), ""BB"".""Size"", ""BB"".""Hash"" 
- FROM ""{m_filetablename}"" ""A"", ""{m_blocktablename}"" ""BB"" 
+                        cmd.CommandText = FormatInvariant($@"  SELECT DISTINCT ""A"".""TargetPath"", ""BB"".""FileID"", (""BB"".""Index"" * {m_blocksize}), ""BB"".""Size"", ""BB"".""Hash""
+ FROM ""{m_filetablename}"" ""A"", ""{m_blocktablename}"" ""BB""
 WHERE ""A"".""ID"" = ""BB"".""FileID"" AND ""BB"".""Restored"" = 0 AND ""BB"".""Metadata"" = {"1"}
-  AND ""BB"".""ID"" IN  (SELECT ""B"".""ID"" FROM ""{m_blocktablename}"" ""B"", ""{m_tmptable}"" ""C"" WHERE ""B"".""Hash"" = ""C"".""Hash"" AND ""B"".""Size"" = ""C"".""Size"") 
+  AND ""BB"".""ID"" IN  (SELECT ""B"".""ID"" FROM ""{m_blocktablename}"" ""B"", ""{m_tmptable}"" ""C"" WHERE ""B"".""Hash"" = ""C"".""Hash"" AND ""B"".""Size"" = ""C"".""Size"")
 ORDER BY ""A"".""TargetPath"", ""BB"".""Index""");
                         using (var rd = cmd.ExecuteReader())
                         {
@@ -1409,7 +1409,7 @@ WHERE ""FileID"" = @TargetFileId AND ""Index"" = @Index AND ""Hash"" = @Hash AND
                 cmd.ExecuteNonQuery(FormatInvariant($@"UPDATE ""{m_tempfiletable}"" SET LatestBlocksetId = (SELECT BlocksetId FROM ""{m_latestblocktable}"" WHERE Path = ""{m_tempfiletable}"".Path)"));
             }
 
-            var sources = FormatInvariant($@"  
+            var sources = FormatInvariant($@"
 SELECT DISTINCT
     ""{m_tempfiletable}"".""TargetPath"",
     ""{m_tempfiletable}"".""Path"",
@@ -1426,7 +1426,7 @@ WHERE
     ""BlocksetEntry"".""BlocksetID"" = ""{m_tempfiletable}"".""LatestBlocksetID"" AND
     ""BlocksetEntry"".""BlockID"" = ""{m_tempblocktable}"".""BlockID"" AND
     ""BlocksetEntry"".""Index"" = ""{m_tempblocktable}"".""Index"" AND
-    {whereclause} 
+    {whereclause}
 ORDER BY ""{m_tempfiletable}"".""ID"", ""{m_tempblocktable}"".""Index"" ");
 
             using (var cmd = m_connection.CreateCommand())
