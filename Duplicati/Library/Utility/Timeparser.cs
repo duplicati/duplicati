@@ -31,9 +31,50 @@ namespace Duplicati.Library.Utility
     public static class Timeparser
     {
         public static TimeSpan ParseTimeSpan(string datestring)
+            => ParseTimeSpan(datestring, false);
+
+        public static TimeSpan ParseTimeSpan(string datestring, bool negate)
         {
-            var dt = new DateTime(0, DateTimeKind.Local);
-            return ParseTimeInterval(datestring, dt) - dt;
+            var multiplier = negate ? -1 : 1;
+            var offset = TimeSpan.Zero;
+
+            if (string.IsNullOrEmpty(datestring))
+                return offset;
+
+            if (long.TryParse(datestring, System.Globalization.NumberStyles.Integer, null, out var l))
+                return offset.Add(TimeSpan.FromSeconds(l * multiplier));
+
+            var separators = new char[] { 's', 'm', 'h', 'D', 'W', 'M', 'Y' };
+
+            int index;
+            var previndex = 0;
+
+            while ((index = datestring.IndexOfAny(separators, previndex)) > 0)
+            {
+                var partial = datestring.Substring(previndex, index - previndex).Trim();
+                if (!int.TryParse(partial, System.Globalization.NumberStyles.Integer, null, out var factor))
+                    throw new Exception(Strings.Timeparser.InvalidIntegerError(partial));
+
+                factor *= multiplier;
+
+                offset += datestring[index] switch
+                {
+                    's' => TimeSpan.FromSeconds(factor),
+                    'm' => TimeSpan.FromMinutes(factor),
+                    'h' => TimeSpan.FromHours(factor),
+                    'D' => TimeSpan.FromDays(factor),
+                    'W' => TimeSpan.FromDays(factor * 7),
+                    'M' => TimeSpan.FromDays(factor * 30),
+                    'Y' => TimeSpan.FromDays(factor * 365),
+                    _ => throw new Exception(Strings.Timeparser.InvalidSpecifierError(datestring[index])),
+                };
+                previndex = index + 1;
+            }
+
+            if (datestring.Substring(previndex).Trim().Length > 0)
+                throw new Exception(Strings.Timeparser.UnparsedDataFragmentError(datestring.Substring(previndex)));
+
+            return offset;
         }
 
         public static DateTime ParseTimeInterval(string datestring, DateTime offset)
