@@ -162,7 +162,7 @@ public class pCloudBackend : IStreamingBackend
     /// Implementation of interface property to return supported command parameters
     /// </summary>
     public IList<ICommandLineArgument> SupportedCommands => [
-        new CommandLineArgument(AuthIdOptionsHelper.AuthId,
+        new CommandLineArgument(AuthIdOptionsHelper.AuthIdOption,
             CommandLineArgument.ArgumentType.Password,
             Strings.pCloudBackend.AuthPasswordDescriptionShort,
             Strings.pCloudBackend.AuthPasswordDescriptionLong(TOKEN_URL)),

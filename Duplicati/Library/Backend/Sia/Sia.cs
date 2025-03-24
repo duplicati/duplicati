@@ -453,7 +453,7 @@ namespace Duplicati.Library.Backend.Sia
                     new CommandLineArgument(SIA_PASSWORD, CommandLineArgument.ArgumentType.Password, Strings.Sia.SiaPasswordShort, Strings.Sia.SiaPasswordLong, null),
                     new CommandLineArgument(SIA_REDUNDANCY, CommandLineArgument.ArgumentType.Decimal, Strings.Sia.SiaRedundancyDescriptionShort, Strings.Sia.SiaRedundancyDescriptionLong, "1.5"),
                     .. TimeoutOptionsHelper.GetOptions()
-                        .Where(x => x.Name != TimeoutOptionsHelper.READ_WRITE_TIMEOUT_OPTION)
+                        .Where(x => x.Name != TimeoutOptionsHelper.ReadWriteTimeoutOption)
                 ]);
 
         public string Description => Strings.Sia.Description;

@@ -356,7 +356,7 @@ namespace Duplicati.Library.Backend.OpenStack
             options.TryGetValue(REGION_OPTION, out m_region);
 
             if (!auth.HasUsername)
-                throw new UserInformationException(Strings.OpenStack.MissingOptionError(AuthOptionsHelper.AuthUsername), "OpenStackMissingUsername");
+                throw new UserInformationException(Strings.OpenStack.MissingOptionError(AuthOptionsHelper.AuthUsernameOption), "OpenStackMissingUsername");
 
             m_username = auth.Username!;
             m_password = auth.Password;
@@ -372,7 +372,7 @@ namespace Duplicati.Library.Backend.OpenStack
             {
                 case "v3":
                     if (string.IsNullOrWhiteSpace(m_password))
-                        throw new UserInformationException(Strings.OpenStack.MissingOptionError(AuthOptionsHelper.AuthPassword), "OpenStackMissingPassword");
+                        throw new UserInformationException(Strings.OpenStack.MissingOptionError(AuthOptionsHelper.AuthPasswordOption), "OpenStackMissingPassword");
                     if (string.IsNullOrWhiteSpace(m_domainName))
                         throw new UserInformationException(Strings.OpenStack.MissingOptionError(DOMAINNAME_OPTION), "OpenStackMissingDomainName");
                     if (string.IsNullOrWhiteSpace(m_tenantName))
@@ -383,7 +383,7 @@ namespace Duplicati.Library.Backend.OpenStack
                     if (string.IsNullOrWhiteSpace(m_apikey))
                     {
                         if (string.IsNullOrWhiteSpace(m_password))
-                            throw new UserInformationException(Strings.OpenStack.MissingOptionError(AuthOptionsHelper.AuthPassword), "OpenStackMissingPassword");
+                            throw new UserInformationException(Strings.OpenStack.MissingOptionError(AuthOptionsHelper.AuthPasswordOption), "OpenStackMissingPassword");
                         if (string.IsNullOrWhiteSpace(m_tenantName))
                             throw new UserInformationException(Strings.OpenStack.MissingOptionError(TENANTNAME_OPTION), "OpenStackMissingTenantName");
                     }
@@ -649,8 +649,8 @@ namespace Duplicati.Library.Backend.OpenStack
 
                 return [
                     new CommandLineArgument(DOMAINNAME_OPTION, CommandLineArgument.ArgumentType.String, Strings.OpenStack.DomainnameOptionShort, Strings.OpenStack.DomainnameOptionLong),
-                    new CommandLineArgument(AuthOptionsHelper.AuthUsername, CommandLineArgument.ArgumentType.String, Strings.OpenStack.UsernameOptionShort, Strings.OpenStack.UsernameOptionLong),
-                    new CommandLineArgument(AuthOptionsHelper.AuthPassword, CommandLineArgument.ArgumentType.Password, Strings.OpenStack.PasswordOptionShort, Strings.OpenStack.PasswordOptionLong(TENANTNAME_OPTION)),
+                    new CommandLineArgument(AuthOptionsHelper.AuthUsernameOption, CommandLineArgument.ArgumentType.String, Strings.OpenStack.UsernameOptionShort, Strings.OpenStack.UsernameOptionLong),
+                    new CommandLineArgument(AuthOptionsHelper.AuthPasswordOption, CommandLineArgument.ArgumentType.Password, Strings.OpenStack.PasswordOptionShort, Strings.OpenStack.PasswordOptionLong(TENANTNAME_OPTION)),
                     new CommandLineArgument(TENANTNAME_OPTION, CommandLineArgument.ArgumentType.String, Strings.OpenStack.TenantnameOptionShort, Strings.OpenStack.TenantnameOptionLong),
                     new CommandLineArgument(APIKEY_OPTION, CommandLineArgument.ArgumentType.Password, Strings.OpenStack.ApikeyOptionShort, Strings.OpenStack.ApikeyOptionLong),
                     new CommandLineArgument(AUTHURI_OPTION, CommandLineArgument.ArgumentType.String, Strings.OpenStack.AuthuriOptionShort, Strings.OpenStack.AuthuriOptionLong(authuris.ToString())),

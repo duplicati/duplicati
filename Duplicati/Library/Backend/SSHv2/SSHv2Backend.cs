@@ -190,7 +190,7 @@ namespace Duplicati.Library.Backend
                 Strings.SSHv2Backend.DescriptionSshkeyLong(KEYFILE_URI)),
             new CommandLineArgument(SSH_TIMEOUT_OPTION, CommandLineArgument.ArgumentType.Timespan,
                 Strings.SSHv2Backend.DescriptionSshtimeoutShort, Strings.SSHv2Backend.DescriptionSshtimeoutLong,
-                "0", null,null, Strings.SSHv2Backend.TimeoutDeprecated(SSH_TIMEOUT_OPTION, TimeoutOptionsHelper.SHORT_TIMEOUT_OPTION, TimeoutOptionsHelper.LIST_TIMEOUT_OPTION, TimeoutOptionsHelper.READ_WRITE_TIMEOUT_OPTION)),
+                "0", null,null, Strings.SSHv2Backend.TimeoutDeprecated(SSH_TIMEOUT_OPTION, TimeoutOptionsHelper.ShortTimeoutOption, TimeoutOptionsHelper.ListTimeoutOption, TimeoutOptionsHelper.ReadWriteTimeoutOption)),
             new CommandLineArgument(SSH_KEEPALIVE_OPTION, CommandLineArgument.ArgumentType.Timespan,
                 Strings.SSHv2Backend.DescriptionSshkeepaliveShort,
                 Strings.SSHv2Backend.DescriptionSshkeepaliveLong, "0"),

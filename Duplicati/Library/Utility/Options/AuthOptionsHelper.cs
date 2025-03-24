@@ -35,11 +35,11 @@ public static class AuthOptionsHelper
     /// <summary>
     /// The authentication username option, without a prefix
     /// </summary>
-    public const string AuthUsername = "auth-username";
+    public const string AuthUsernameOption = "auth-username";
     /// <summary>
     /// The authentication password option, without a prefix
     /// </summary>
-    public const string AuthPassword = "auth-password";
+    public const string AuthPasswordOption = "auth-password";
 
     /// <summary>
     /// Gets the authentication options
@@ -48,58 +48,9 @@ public static class AuthOptionsHelper
     /// <returns>The authentication options</returns>
     public static CommandLineArgument[] GetOptions(string? prefix = null) =>
     [
-        new CommandLineArgument($"{prefix}auth-username", CommandLineArgument.ArgumentType.String, Strings.AuthSettingsHelper.DescriptionAuthUsernameShort, Strings.AuthSettingsHelper.DescriptionAuthUsernameLong),
-        new CommandLineArgument($"{prefix}auth-password", CommandLineArgument.ArgumentType.Password, Strings.AuthSettingsHelper.DescriptionAuthPasswordShort, Strings.AuthSettingsHelper.DescriptionAuthPasswordLong)
+        new CommandLineArgument($"{prefix}{AuthUsernameOption}", CommandLineArgument.ArgumentType.String, Strings.AuthSettingsHelper.DescriptionAuthUsernameShort, Strings.AuthSettingsHelper.DescriptionAuthUsernameLong),
+        new CommandLineArgument($"{prefix}{AuthPasswordOption}", CommandLineArgument.ArgumentType.Password, Strings.AuthSettingsHelper.DescriptionAuthPasswordShort, Strings.AuthSettingsHelper.DescriptionAuthPasswordLong)
     ];
-
-    /// <summary>
-    /// Gets the authentication options
-    /// </summary>
-    /// <param name="username">The name of the username options</param>
-    /// <param name="password">The name of the password options</param>
-    /// <returns>The authentication options</returns>
-    public static CommandLineArgument[] GetOptionsWithAlias(string username, string password) =>
-    [
-        new CommandLineArgument(username, CommandLineArgument.ArgumentType.String, Strings.AuthSettingsHelper.DescriptionAuthUsernameShort, Strings.AuthSettingsHelper.DescriptionAuthUsernameLong, null, ["auth-username"]),
-        new CommandLineArgument(password, CommandLineArgument.ArgumentType.Password, Strings.AuthSettingsHelper.DescriptionAuthPasswordShort, Strings.AuthSettingsHelper.DescriptionAuthPasswordLong, null, ["auth-password"])
-    ];
-
-    /*
-
-    TODO: See if we can do without these, so we only have one way of parsing the auth options
-
-    /// <summary>
-    /// Parses the authentication options from a dictionary
-    /// </summary>
-    /// <param name="options">The dictionary to parse</param>
-    /// <param name="prefix">An optional prefix for the options</param>
-    /// <returns>The parsed authentication options</returns>
-    public static AuthOptions Parse(IReadOnlyDictionary<string, string?> options, string? prefix = null)
-        => new AuthOptions(
-            options.GetValueOrDefault($"{prefix}auth-username"),
-            options.GetValueOrDefault($"{prefix}auth-password")
-        );
-
-    /// <summary>
-    /// Parses the authentication options from a dictionary
-    /// </summary>
-    /// <param name="options">The dictionary to parse</param>
-    /// <param name="username">The name of the username options</param>
-    /// <param name="password">The name of the password options</param>
-    /// <returns>The parsed authentication options</returns>
-    public static AuthOptions ParseWithAlias(IReadOnlyDictionary<string, string?> options, string username, string password)
-    {
-        var optionUsername = options.GetValueOrDefault(username);
-        var optionPassword = options.GetValueOrDefault(password);
-
-        if (string.IsNullOrWhiteSpace(optionUsername))
-            optionUsername = options.GetValueOrDefault("auth-username");
-        if (string.IsNullOrWhiteSpace(optionPassword))
-            optionPassword = options.GetValueOrDefault("auth-password");
-
-        return new AuthOptions(optionUsername, optionPassword);
-    }
-    */
 
     /// <summary>
     /// Parses the authentication options from a dictionary
@@ -133,8 +84,8 @@ public static class AuthOptionsHelper
     /// <returns>The parsed authentication options</returns>
     public static AuthOptions Parse(IReadOnlyDictionary<string, string?> options, Uri uri, string? prefix = null)
     {
-        var optionUsername = options.GetValueOrDefault($"{prefix}auth-username");
-        var optionPassword = options.GetValueOrDefault($"{prefix}auth-password");
+        var optionUsername = options.GetValueOrDefault($"{prefix}{AuthUsernameOption}");
+        var optionPassword = options.GetValueOrDefault($"{prefix}{AuthPasswordOption}");
 
         // Prefer the URL values, if set
         string? username = null;

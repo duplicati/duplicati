@@ -289,7 +289,7 @@ namespace Duplicati.Library.Backend
             new CommandLineArgument(OPTION_RCLONE, CommandLineArgument.ArgumentType.String, Strings.Rclone.RcloneOptionRcloneShort, Strings.Rclone.RcloneOptionRcloneLong, ""),
             new CommandLineArgument(OPTION_RCLONE_EXECUTABLE, CommandLineArgument.ArgumentType.String, Strings.Rclone.RcloneExecutableShort, Strings.Rclone.RcloneExecutableLong, "rclone"),
             .. TimeoutOptionsHelper.GetOptions()
-                .Where(x => x.Name != TimeoutOptionsHelper.READ_WRITE_TIMEOUT_OPTION)
+                .Where(x => x.Name != TimeoutOptionsHelper.ReadWriteTimeoutOption)
         ];
 
         public string Description => Strings.Rclone.Description;

@@ -146,8 +146,8 @@ namespace Duplicati.Library.Backend
         public IList<ICommandLineArgument> SupportedCommands =>
         [
             .. S3AwsClient.GetAwsExtendedOptions(),
-            new CommandLineArgument(AUTH_USERNAME_OPTION, CommandLineArgument.ArgumentType.String, Strings.Idrivee2Backend.KeyIDDescriptionShort, Strings.Idrivee2Backend.KeyIDDescriptionLong,null, [AuthOptionsHelper.AuthUsername], null),
-            new CommandLineArgument(AUTH_PASSWORD_OPTION, CommandLineArgument.ArgumentType.Password, Strings.Idrivee2Backend.KeySecretDescriptionShort, Strings.Idrivee2Backend.KeySecretDescriptionLong, null, [AuthOptionsHelper.AuthPassword ], null),
+            new CommandLineArgument(AUTH_USERNAME_OPTION, CommandLineArgument.ArgumentType.String, Strings.Idrivee2Backend.KeyIDDescriptionShort, Strings.Idrivee2Backend.KeyIDDescriptionLong,null, [AuthOptionsHelper.AuthUsernameOption], null),
+            new CommandLineArgument(AUTH_PASSWORD_OPTION, CommandLineArgument.ArgumentType.Password, Strings.Idrivee2Backend.KeySecretDescriptionShort, Strings.Idrivee2Backend.KeySecretDescriptionLong, null, [AuthOptionsHelper.AuthPasswordOption ], null),
             .. TimeoutOptionsHelper.GetOptions(),
         ];
 
