@@ -36,14 +36,22 @@ public class OAuthHelperHttpClient : JsonWebHelperHttpClient
     private string _Authid;
     private DateTime _mTokenExpires = DateTime.UtcNow;
     private string OAuthLoginUrl { get; }
-        
+
     /// <summary>
     /// Timeout for authentication requests
     /// </summary>
-    private const int AUTHENTICATION_TIMEOUT_SECONDS = 25;
+    private static readonly TimeSpan AUTHENTICATION_TIMEOUT = TimeSpan.FromSeconds(25);
 
+    /// <summary>
+    /// Maximum number of retries for authorization
+    /// </summary>
     private const int MAX_AUTHORIZATION_RETRIES = 5;
 
+    /// <summary>
+    /// URL to use for OAuth login
+    /// </summary>
+    /// <param name="modulename">The name of the module</param>
+    /// <returns>The URL to use for OAuth login</returns>
     private static string OAUTH_LOGIN_URL(string modulename)
     {
         var u = new Utility.Uri(OAuthContextSettings.ServerURL);
@@ -84,108 +92,105 @@ public class OAuthHelperHttpClient : JsonWebHelperHttpClient
                 Strings.OAuthHelper.MissingAuthID(OAuthLoginUrl), "MissingAuthID");
     }
 
-    private HttpRequestMessage CreateRequest(string url, string method, bool noAuthorization, CancellationToken cancellationToken = default)
+    private async Task<HttpRequestMessage> CreateRequestAsync(string url, HttpMethod method, bool noAuthorization, CancellationToken cancellationToken)
     {
-        var request = new HttpRequestMessage(string.IsNullOrEmpty(method) ? HttpMethod.Get : new HttpMethod(method), url);
+        var request = new HttpRequestMessage(method, url);
         request.Headers.Add("User-Agent", UserAgent);
-        if (!noAuthorization && AutoAuthHeader && !string.Equals(OAuthContextSettings.ServerURL, url)) request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", 
-            GetAccessTokenAsync(cancellationToken).Await());
+        if (!noAuthorization && AutoAuthHeader && !string.Equals(OAuthContextSettings.ServerURL, url)) request.Headers.Authorization = new AuthenticationHeaderValue("Bearer",
+            await GetAccessTokenAsync(cancellationToken).ConfigureAwait(false));
         return request;
     }
 
-    public override HttpRequestMessage CreateRequest(string url, string method = null)
-    {
-        return CreateRequest(url, method, false);
-    }
-    
-    private async Task <string> GetAccessTokenAsync(CancellationToken cancellationToken)
-    {
-            if (AccessTokenOnly)
-                return _Authid;
+    public override Task<HttpRequestMessage> CreateRequestAsync(string url, HttpMethod method, CancellationToken cancellationToken)
+        => CreateRequestAsync(url, method, false, cancellationToken);
 
-            if (_Token == null || _mTokenExpires < DateTime.UtcNow)
+    private async Task<string> GetAccessTokenAsync(CancellationToken cancellationToken)
+    {
+        if (AccessTokenOnly)
+            return _Authid;
+
+        if (_Token == null || _mTokenExpires < DateTime.UtcNow)
+        {
+            var retries = 0;
+
+            while (true)
             {
-                var retries = 0;
-
-                while (true)
+                HttpResponseMessage response = null;
+                try
                 {
-                    HttpResponseMessage response = null;
-                    try
-                    {
-                        using var timeoutToken = new CancellationTokenSource();
-                        timeoutToken.CancelAfter(TimeSpan.FromSeconds(AUTHENTICATION_TIMEOUT_SECONDS));
-                        using var combinedCancellationToken = CancellationTokenSource.CreateLinkedTokenSource(timeoutToken.Token, cancellationToken);
-                        
-                        using var request = CreateRequest(OAuthContextSettings.ServerURL, "GET", false, combinedCancellationToken.Token);
+                    using var request = await CreateRequestAsync(OAuthContextSettings.ServerURL, HttpMethod.Get, false, cancellationToken).ConfigureAwait(false);
 
+                    return await Utility.Utility.WithTimeout(AUTHENTICATION_TIMEOUT, cancellationToken, async ct =>
+                    {
                         request.Headers.TryAddWithoutValidation("X-AuthID", _Authid);
-                        response = await _httpClient.SendAsync(request, combinedCancellationToken.Token).ConfigureAwait(false);
+                        response = await _httpClient.SendAsync(request, ct).ConfigureAwait(false);
                         response.EnsureSuccessStatusCode();
 
-                        var res = await ReadJsonResponseAsync<OAuthServiceResponse>(response, combinedCancellationToken.Token).ConfigureAwait(false);
+                        var res = await ReadJsonResponseAsync<OAuthServiceResponse>(response, ct).ConfigureAwait(false);
 
                         _mTokenExpires = DateTime.UtcNow.AddSeconds(res.expires - 30);
                         if (AutoV2 && !string.IsNullOrWhiteSpace(res.v2_authid))
                             _Authid = res.v2_authid;
                         return _Token = res.access_token;
-                    }
-                    catch (Exception ex)
-                    {
-                        var clientError = false;
-
-                        try
-                        {
-                            // Only retry once on client errors
-                            if (ex is HttpRequestException { StatusCode: not null } exception)
-                            {
-                                var sc = (int)exception.StatusCode;
-                                clientError = sc is >= 400 and <= 499;
-                            }
-                        }
-                        catch
-                        {
-                            // ignored
-                        }
-
-                        if (response != null && response.Headers.Contains("X-Reason"))
-                        {
-                            var msg = response.Headers.GetValues("X-Reason").FirstOrDefault();
-
-                            if (string.IsNullOrWhiteSpace(msg))
-                                msg = response.StatusCode.ToString();
-
-                            if (response.StatusCode == HttpStatusCode.ServiceUnavailable)
-                            {
-                                string errorKey = msg == response.StatusCode.ToString()
-                                    ? "OAuthOverQuotaError"
-                                    : "OAuthLoginError";
-
-                                string errorMessage = errorKey == "OAuthOverQuotaError"
-                                    ? Strings.OAuthHelper.OverQuotaError
-                                    : Strings.OAuthHelper.AuthorizationFailure(msg, OAuthLoginUrl);
-
-                                throw new Interface.UserInformationException(errorMessage, errorKey,
-                                    errorKey == "OAuthLoginError" ? ex : null);
-                            }
-                        }
-
-                        if (retries >= (clientError ? 1 : MAX_AUTHORIZATION_RETRIES))
-                        {
-                            await AttemptParseAndThrowExceptionAsync(ex, response, cancellationToken).ConfigureAwait(false);
-                            throw;
-                        }
-
-                        Thread.Sleep(TimeSpan.FromSeconds(Math.Pow(2, retries)));
-                        retries++;
-                    }
-                    finally
-                    {
-                        response?.Dispose();
-                    }
-                    
+                    }).ConfigureAwait(false);
                 }
-            }
+                catch (Exception ex)
+                {
+                    var clientError = false;
 
-            return _Token;
+                    try
+                    {
+                        // Only retry once on client errors
+                        if (ex is HttpRequestException { StatusCode: not null } exception)
+                        {
+                            var sc = (int)exception.StatusCode;
+                            clientError = sc is >= 400 and <= 499;
+                        }
+                    }
+                    catch
+                    {
+                        // ignored
+                    }
+
+                    if (response != null && response.Headers.Contains("X-Reason"))
+                    {
+                        var msg = response.Headers.GetValues("X-Reason").FirstOrDefault();
+
+                        if (string.IsNullOrWhiteSpace(msg))
+                            msg = response.StatusCode.ToString();
+
+                        if (response.StatusCode == HttpStatusCode.ServiceUnavailable)
+                        {
+                            string errorKey = msg == response.StatusCode.ToString()
+                                ? "OAuthOverQuotaError"
+                                : "OAuthLoginError";
+
+                            string errorMessage = errorKey == "OAuthOverQuotaError"
+                                ? Strings.OAuthHelper.OverQuotaError
+                                : Strings.OAuthHelper.AuthorizationFailure(msg, OAuthLoginUrl);
+
+                            throw new Interface.UserInformationException(errorMessage, errorKey,
+                                errorKey == "OAuthLoginError" ? ex : null);
+                        }
+                    }
+
+                    if (retries >= (clientError ? 1 : MAX_AUTHORIZATION_RETRIES))
+                    {
+                        await AttemptParseAndThrowExceptionAsync(ex, response, cancellationToken).ConfigureAwait(false);
+                        throw;
+                    }
+
+                    Thread.Sleep(TimeSpan.FromSeconds(Math.Pow(2, retries)));
+                    retries++;
+                }
+                finally
+                {
+                    response?.Dispose();
+                }
+
+            }
+        }
+
+        return _Token;
     }
 }
