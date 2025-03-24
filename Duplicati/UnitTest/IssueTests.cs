@@ -442,6 +442,47 @@ namespace Duplicati.UnitTest
 
 
         [Test]
+        [Category("Restore"), Category("Bug")]
+        public void Issue6068FolderMetadata([Values] bool restoreLegacy)
+        {
+            // Reproduction of Issue #6068
+            // The folder metadata is not restored
+
+            var testopts = new Dictionary<string, string>(TestOptions);
+
+            var original_dir_name = "some_original_dir";
+            var original_dir = Path.Combine(DATAFOLDER, original_dir_name);
+            var restored_dir = Path.Combine(RESTOREFOLDER, original_dir_name);
+            Directory.CreateDirectory(original_dir);
+
+            // Backup the files
+            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
+            {
+                IBackupResults backupResults = c.Backup([DATAFOLDER]);
+                TestUtils.AssertResults(backupResults);
+            }
+
+            // Sleep to ensure timestamps are different
+            System.Threading.Tasks.Task.Delay(1000).Wait();
+
+            // Attempt to restore to another folder
+            testopts["restore-path"] = RESTOREFOLDER;
+            testopts["restore-legacy"] = restoreLegacy.ToString().ToLower();
+            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
+            {
+                var restoreResults = c.Restore([]);
+                Assert.That(restoreResults.RestoredFiles, Is.EqualTo(0), "No files should have been restored.");
+            }
+
+            // Assert that the original folders date modified and date created are the same as the restored folder
+            var original_dir_info = new DirectoryInfo(original_dir);
+            var restored_dir_info = new DirectoryInfo(restored_dir);
+            Assert.That(original_dir_info.CreationTime, Is.EqualTo(restored_dir_info.CreationTime), "Creation time should be equal");
+            Assert.That(original_dir_info.LastWriteTime, Is.EqualTo(restored_dir_info.LastWriteTime), "Last write time should be equal");
+        }
+
+
+        [Test]
         [Category("Disruption"), Category("Bug")]
         public void TestSystematicErrors5023()
         {
