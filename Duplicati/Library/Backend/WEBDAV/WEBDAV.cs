@@ -137,8 +137,9 @@ namespace Duplicati.Library.Backend
             m_useIntegratedAuthentication = Utility.Utility.ParseBoolOption(options, "integrated-authentication");
             m_forceDigestAuthentication = Utility.Utility.ParseBoolOption(options, "force-digest-authentication");
 
-            if (!m_useIntegratedAuthentication && m_userInfo == null)
-                throw new UserInformationException(Strings.WEBDAV.UsernameAndPasswordRequired, "UsernameAndPasswordRequired");
+            // Explicitly support setups with no username and password
+            if (m_forceDigestAuthentication && m_userInfo == null)
+                throw new UserInformationException(Strings.WEBDAV.UsernameRequired, "UsernameRequired");
 
             m_url = u.SetScheme(m_certificateOptions.UseSSL ? "https" : "http").SetCredentials(null, null).SetQuery(null).ToString();
             m_url = Util.AppendDirSeparator(m_url, "/");
@@ -185,14 +186,13 @@ namespace Duplicati.Library.Backend
                 m_httpClient = HttpClientHelper.CreateClient(httpHandler);
                 m_httpClient.Timeout = Timeout.InfiniteTimeSpan;
 
-                if (!m_useIntegratedAuthentication && !m_forceDigestAuthentication)
+                if (!m_useIntegratedAuthentication && !m_forceDigestAuthentication && m_userInfo != null)
                 {
                     m_httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue(
                         "Basic",
-                        Convert.ToBase64String(System.Text.Encoding.ASCII.GetBytes($"{m_userInfo!.UserName}:{m_userInfo.Password}"))
+                        Convert.ToBase64String(System.Text.Encoding.ASCII.GetBytes($"{m_userInfo.UserName}:{m_userInfo.Password}"))
                     );
                 }
-
             }
 
             return m_httpClient;
