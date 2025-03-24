@@ -186,6 +186,9 @@ namespace Duplicati.Library.Utility
             if (h.Length == 1 && p.StartsWith(":", StringComparison.Ordinal))
             {
                 p = h + p;
+                if (p.IndexOfAny(System.IO.Path.GetInvalidPathChars()) >= 0)
+                    throw new ArgumentException(Strings.Uri.UriParseError(url), nameof(url));
+                p = System.IO.Path.GetFullPath(p);
                 h = null;
             }
 
