@@ -335,6 +335,7 @@ namespace Duplicati.Library.Main.Operation
             // Create the process network
             Restore.Channels channels = new();
             var filelister = Restore.FileLister.Run(channels, database, m_options, m_result);
+            Restore.FileProcessor.file_processors_restoring_files = m_options.RestoreFileProcessors;
             var fileprocessors = Enumerable.Range(0, m_options.RestoreFileProcessors).Select(i => Restore.FileProcessor.Run(channels, database, fileprocessor_requests[i], fileprocessor_responses[i], m_options, m_result)).ToArray();
             var blockmanager = Restore.BlockManager.Run(channels, database, m_options, fileprocessor_requests, fileprocessor_responses);
             var volumecache = Restore.VolumeManager.Run(channels, m_options);

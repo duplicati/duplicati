@@ -24,6 +24,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using CoCoL;
 using Duplicati.Library.Common.IO;
@@ -48,6 +49,10 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// The log tag for this class.
         /// </summary>
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<FileProcessor>();
+        /// <summary>
+        /// The number of file processors that are still restoring files. It is set by the <see cref="RestoreHandler"/>.
+        /// </summary>
+        public static int file_processors_restoring_files;
 
         /// <summary>
         /// Runs the file processor process that restores the files that need to be restored.
@@ -84,6 +89,9 @@ namespace Duplicati.Library.Main.Operation.Restore
                 Stopwatch sw_work_results = options.InternalProfiling ? new() : null;
                 Stopwatch sw_work_meta = options.InternalProfiling ? new() : null;
 
+                // Indicates whether this FileProcessor is still restoring files
+                var decremented = false;
+
                 try
                 {
                     using var filehasher = HashFactory.CreateHasher(options.FileHashAlgorithm);
@@ -96,6 +104,20 @@ namespace Duplicati.Library.Main.Operation.Restore
                         sw_file?.Start();
                         var file = await self.Input.ReadAsync().ConfigureAwait(false);
                         sw_file?.Stop();
+
+                        if (file.BlocksetID == LocalDatabase.FOLDER_BLOCKSET_ID && !options.SkipMetadata)
+                        {
+                            // Check if there are other FileProcessor's still restoring files
+                            if (!decremented)
+                            {
+                                await RendesvouzBeforeProcessingFolderMetadata();
+                                decremented = true;
+                            }
+
+                            await RestoreMetadata(db, file, block_request, block_response, options, sw_meta, sw_work_meta, sw_req, sw_resp);
+
+                            continue;
+                        }
 
                         // Get information about the blocks for the file
                         // TODO rather than keeping all of the blocks in memory, we could do a single pass over the blocks using a cursor, only keeping the relevant block requests in memory. Maybe even only a single block request at a time.
@@ -436,6 +458,9 @@ namespace Duplicati.Library.Main.Operation.Restore
                 }
                 finally
                 {
+                    if (!decremented)
+                        Interlocked.Decrement(ref file_processors_restoring_files);
+
                     block_request.Retire();
                     block_response.Retire();
                 }
@@ -521,6 +546,20 @@ namespace Duplicati.Library.Main.Operation.Restore
             newname = tr;
 
             return newname;
+        }
+
+        /// <summary>
+        /// Rendesvouz with the other FileProcessor's before processing folder metadata.
+        /// </summary>
+        /// <returns>An awaitable task that completes once all of the FileProcessor's have rendezvoused.</returns>
+        private static async Task RendesvouzBeforeProcessingFolderMetadata()
+        {
+            Interlocked.Decrement(ref file_processors_restoring_files);
+
+            while (file_processors_restoring_files > 0)
+            {
+                await Task.CompletedTask.ConfigureAwait(ConfigureAwaitOptions.ForceYielding);
+            }
         }
 
         /// <summary>

@@ -71,7 +71,14 @@ namespace Duplicati.Library.Main.Operation.Restore
                     sw_write?.Start();
                     foreach (var file in files)
                         await self.Output.WriteAsync(file).ConfigureAwait(false);
-                    sw_write?.Stop();
+
+                    if (!options.SkipMetadata)
+                    {
+                        var folders = db.GetFolderMetadataToRestore().ToArray();
+
+                        foreach (var folder in folders)
+                            await self.Output.WriteAsync(folder).ConfigureAwait(false);
+                    }
                 }
                 catch (Exception ex)
                 {

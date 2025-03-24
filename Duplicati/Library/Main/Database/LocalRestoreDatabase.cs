@@ -976,6 +976,22 @@ ORDER BY ""A"".""TargetPath"", ""BB"".""Index""");
         }
 
         /// <summary>
+        /// Returns a list of folders to restore. Used to restore folder metadata.
+        /// </summary>
+        /// <returns>A list of folders to restore.</returns>
+        public IEnumerable<FileRequest> GetFolderMetadataToRestore()
+        {
+            using var cmd = m_connection.CreateCommand();
+            using var rd = cmd.ExecuteReader(FormatInvariant($@"
+                SELECT F.ID, '', F.TargetPath, '', 0, {FOLDER_BLOCKSET_ID}
+                FROM ""{m_tempfiletable}"" F
+                WHERE F.BlocksetID = {FOLDER_BLOCKSET_ID} AND F.MetadataID IS NOT NULL AND F.MetadataID >= 0"));
+
+            while (rd.Read())
+                yield return new FileRequest(rd.ConvertValueToInt64(0), rd.ConvertValueToString(1), rd.ConvertValueToString(2), rd.ConvertValueToString(3), rd.ConvertValueToInt64(4), rd.ConvertValueToInt64(5));
+        }
+
+        /// <summary>
         /// Returns a list of blocks and their volume IDs. Used by the <see cref="BlockManager"/> to keep track of blocks and volumes to automatically evict them from the respective caches.
         /// </summary>
         /// <param name="skipMetadata">Flag indicating whether the returned blocks should exclude the metadata blocks.</param>
@@ -996,7 +1012,6 @@ ORDER BY ""A"".""TargetPath"", ""BB"".""Index""");
                 INNER JOIN ""Metadataset"" ON ""{m_tempfiletable}"".""MetadataID"" = ""Metadataset"".""ID""
                 INNER JOIN ""BlocksetEntry"" ON ""Metadataset"".""BlocksetID"" = ""BlocksetEntry"".""BlocksetID""
                 INNER JOIN ""Block"" ON ""BlocksetEntry"".""BlockID"" = ""Block"".""ID""
-                WHERE ""{m_tempfiletable}"".""BlocksetID"" IS NOT {FOLDER_BLOCKSET_ID}
             ")));
             while (reader.Read())
                 yield return (reader.ConvertValueToInt64(0), reader.ConvertValueToInt64(1));
