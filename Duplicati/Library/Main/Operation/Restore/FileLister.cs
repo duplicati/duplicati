@@ -56,28 +56,35 @@ namespace Duplicati.Library.Main.Operation.Restore
             },
             async self =>
             {
-                Stopwatch sw_prework = options.InternalProfiling ? new() : null;
-                Stopwatch sw_write = options.InternalProfiling ? new() : null;
+                Stopwatch sw_get_files = options.InternalProfiling ? new() : null;
+                Stopwatch sw_write_file = options.InternalProfiling ? new() : null;
+                Stopwatch sw_get_folders = options.InternalProfiling ? new() : null;
+                Stopwatch sw_write_folder = options.InternalProfiling ? new() : null;
 
                 bool threw_exception = false;
 
                 try
                 {
-                    sw_prework?.Start();
+                    sw_get_files?.Start();
                     var files = db.GetFilesAndSymlinksToRestore().OrderByDescending(x => x.Length).ToArray(); // Get started on big files first
                     result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_DownloadingRemoteFiles);
-                    sw_prework?.Stop();
+                    sw_get_files?.Stop();
 
-                    sw_write?.Start();
+                    sw_write_file?.Start();
                     foreach (var file in files)
                         await self.Output.WriteAsync(file).ConfigureAwait(false);
+                    sw_write_file?.Stop();
 
                     if (!options.SkipMetadata)
                     {
+                        sw_get_folders?.Start();
                         var folders = db.GetFolderMetadataToRestore().ToArray();
+                        sw_get_folders?.Stop();
 
+                        sw_write_folder?.Start();
                         foreach (var folder in folders)
                             await self.Output.WriteAsync(folder).ConfigureAwait(false);
+                        sw_write_folder?.Stop();
                     }
                 }
                 catch (Exception ex)
@@ -93,7 +100,7 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                     if (options.InternalProfiling)
                     {
-                        Logging.Log.WriteProfilingMessage(LOGTAG, "InternalTimings", $"Prework: {sw_prework.ElapsedMilliseconds}ms, Write: {sw_write.ElapsedMilliseconds}ms");
+                        Logging.Log.WriteProfilingMessage(LOGTAG, "InternalTimings", $"Get files: {sw_get_files.ElapsedMilliseconds}ms, Write files: {sw_write_file.ElapsedMilliseconds}ms, Get folders: {sw_get_folders.ElapsedMilliseconds}ms, Write folders: {sw_write_folder.ElapsedMilliseconds}ms");
                     }
                 }
             });
