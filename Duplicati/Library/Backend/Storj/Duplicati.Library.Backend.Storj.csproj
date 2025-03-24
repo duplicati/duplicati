@@ -3,8 +3,10 @@
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <OutputType>Library</OutputType>
-		<Description>Storj backend for Duplicati</Description>
-	  <Copyright>Copyright © 2025 Team Duplicati, MIT license</Copyright>
+	<Description>Storj backend for Duplicati</Description>
+	<Copyright>Copyright © 2025 Team Duplicati, MIT license</Copyright>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
 	<ItemGroup>
