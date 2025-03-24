@@ -112,5 +112,31 @@ namespace Duplicati.UnitTest
                 }
             }
         }
+
+        [Test]
+        [Category("UriUtility")]
+        public static void TestUriParsePaths()
+        {
+            if (System.OperatingSystem.IsWindows())
+            {
+                var a = new Library.Utility.Uri("file://c:/a/b");
+                var b = new Library.Utility.Uri("c:/a/b/");
+
+                Assert.AreEqual(a.ToString(), b.ToString());
+                Assert.AreEqual(a.Path, b.Path);
+
+                a = new Library.Utility.Uri("file://C:\\a\\b");
+                b = new Library.Utility.Uri("C:\\a\\b\\");
+                Assert.AreEqual(a.ToString(), b.ToString());
+                Assert.AreEqual(a.Path, b.Path);
+            }
+            else
+            {
+                var a = new Library.Utility.Uri("file:///a/b");
+                var b = new Library.Utility.Uri("/a/b/");
+                Assert.AreEqual(a.ToString(), b.ToString());
+                Assert.AreEqual(a.Path, b.Path);
+            }
+        }
     }
 }
