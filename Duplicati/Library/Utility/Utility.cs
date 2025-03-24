@@ -1717,7 +1717,6 @@ namespace Duplicati.Library.Utility
                     throw new TimeoutException();
                 throw;
             }
-
         }
 
         /// <summary>

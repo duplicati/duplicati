@@ -19,7 +19,6 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
-using System;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 
@@ -41,7 +40,7 @@ namespace Duplicati.Library.Backend
             public ResourceType dwType;
             public ResourceDisplayType dwDisplayType;
             public ResourceUsage dwUsage;
-            public string LocalName;
+            public string? LocalName;
             public string RemoteName;
             public string Comment;
             public string Provider;
@@ -111,7 +110,7 @@ namespace Duplicati.Library.Backend
 
             try
             {
-                NETRESOURCE rsc = new NETRESOURCE();
+                var rsc = new NETRESOURCE();
 
                 rsc.dwScope = ResourceScope.RESOURCE_GLOBALNET;
                 rsc.dwType = ResourceType.RESOURCETYPE_DISK;
