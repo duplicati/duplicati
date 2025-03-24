@@ -34,14 +34,37 @@ namespace Duplicati.Library.Utility.Options;
 public static class SslOptionsHelper
 {
     /// <summary>
+    /// The name of the ssl option without a prefix
+    /// </summary>
+    public const string USE_SSL_OPTION = "use-ssl";
+    /// <summary>
+    /// The name of the accept any ssl certificate option without a prefix
+    /// </summary>
+    public const string ACCEPT_ANY_SSL_CERTIFICATE_OPTION = "accept-any-ssl-certificate";
+    /// <summary>
+    /// The name of the accept specified ssl hash option without a prefix
+    /// </summary>
+    public const string ACCEPT_SPECIFIED_SSL_HASH_OPTION = "accept-specified-ssl-hash";
+
+    /// <summary>
     /// Gets the SSL certificate options for certificate only
     /// </summary>
     /// <param name="prefix">An optional prefix for the options</param>
     /// <returns>The SSL certificate options</returns>
     public static CommandLineArgument[] GetCertOnlyOptions(string? prefix = null) =>
     [
-        new CommandLineArgument($"{prefix}accept-any-ssl-certificate", CommandLineArgument.ArgumentType.Boolean, Strings.SslOptionsHelper.DescriptionAcceptAnyCertificateShort, Strings.SslOptionsHelper.DescriptionAcceptAnyCertificateLong, "false"),
-        new CommandLineArgument($"{prefix}accept-specified-ssl-hash", CommandLineArgument.ArgumentType.String, Strings.SslOptionsHelper.DescriptionAcceptHashShort, Strings.SslOptionsHelper.DescriptionAcceptHashLong)
+        new CommandLineArgument($"{prefix}{ACCEPT_ANY_SSL_CERTIFICATE_OPTION}", CommandLineArgument.ArgumentType.Boolean, Strings.SslOptionsHelper.DescriptionAcceptAnyCertificateShort, Strings.SslOptionsHelper.DescriptionAcceptAnyCertificateLong, "false"),
+        new CommandLineArgument($"{prefix}{ACCEPT_SPECIFIED_SSL_HASH_OPTION}", CommandLineArgument.ArgumentType.String, Strings.SslOptionsHelper.DescriptionAcceptHashShort, Strings.SslOptionsHelper.DescriptionAcceptHashLong)
+    ];
+
+    /// <summary>
+    /// Gets the SSL certificate options for SSL only
+    /// </summary>
+    /// <param name="prefix">An optional prefix for the options</param>
+    /// <returns>The SSL certificate options</returns>
+    public static CommandLineArgument[] GetSslOnlyOption(string? prefix = null) =>
+    [
+        new CommandLineArgument($"{prefix}{USE_SSL_OPTION}", CommandLineArgument.ArgumentType.Boolean, Strings.SslOptionsHelper.DescriptionUseSSLShort, Strings.SslOptionsHelper.DescriptionUseSSLLong, "false")
     ];
 
     /// <summary>
@@ -51,7 +74,7 @@ public static class SslOptionsHelper
     /// <returns>The SSL certificate options</returns>
     public static CommandLineArgument[] GetOptions(string? prefix = null) =>
     [
-        new CommandLineArgument($"{prefix}use-ssl", CommandLineArgument.ArgumentType.Timespan, Strings.SslOptionsHelper.DescriptionUseSSLShort, Strings.SslOptionsHelper.DescriptionUseSSLLong),
+        .. GetSslOnlyOption(prefix),
         .. GetCertOnlyOptions(prefix)
     ];
 
@@ -63,10 +86,10 @@ public static class SslOptionsHelper
     /// <returns>The parsed SSL certificate options</returns>
     public static SslCertificateOptions Parse(IReadOnlyDictionary<string, string?> options, string? prefix = null)
     {
-        var acceptSpecificCertificatesString = options.TryGetValue($"{prefix}accept-specified-ssl-hash", out var value) ? value : null;
+        var acceptSpecificCertificatesString = options.TryGetValue($"{prefix}{ACCEPT_SPECIFIED_SSL_HASH_OPTION}", out var value) ? value : null;
         return new SslCertificateOptions(
-            Utility.ParseBoolOption(options, $"{prefix}use-ssl"),
-            Utility.ParseBoolOption(options, $"{prefix}accept-any-ssl-certificate"),
+            Utility.ParseBoolOption(options, $"{prefix}{USE_SSL_OPTION}"),
+            Utility.ParseBoolOption(options, $"{prefix}{ACCEPT_ANY_SSL_CERTIFICATE_OPTION}"),
             string.IsNullOrWhiteSpace(acceptSpecificCertificatesString) ? [] : acceptSpecificCertificatesString.Split([",", ";"], StringSplitOptions.RemoveEmptyEntries)
         );
     }
