@@ -1047,12 +1047,12 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
     };
     
     EditUriBackendConfig.validaters['webdav'] = function (scope, continuation) {
-        var res =
-            EditUriBackendConfig.require_server(scope) &&
-            EditUriBackendConfig.require_username(scope);
-
+        var res = EditUriBackendConfig.require_server(scope);
+        
         if (res)
-            EditUriBackendConfig.recommend_path(scope, continuation);
+            EditUriBackendConfig.recommend_username(scope, () => {
+                EditUriBackendConfig.recommend_path(scope, continuation);
+            });
     };
 
     EditUriBackendConfig.validaters['webdav'] = EditUriBackendConfig.validaters['webdav'];
