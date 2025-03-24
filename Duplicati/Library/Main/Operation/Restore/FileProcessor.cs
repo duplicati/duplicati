@@ -110,7 +110,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                             // Check if there are other FileProcessor's still restoring files
                             if (!decremented)
                             {
-                                await RendesvouzBeforeProcessingFolderMetadata();
+                                await RendezvousBeforeProcessingFolderMetadata();
                                 decremented = true;
                             }
 
@@ -549,10 +549,10 @@ namespace Duplicati.Library.Main.Operation.Restore
         }
 
         /// <summary>
-        /// Rendesvouz with the other FileProcessor's before processing folder metadata.
+        /// Rendezvous with the other FileProcessor's before processing folder metadata.
         /// </summary>
         /// <returns>An awaitable task that completes once all of the FileProcessor's have rendezvoused.</returns>
-        private static async Task RendesvouzBeforeProcessingFolderMetadata()
+        private static async Task RendezvousBeforeProcessingFolderMetadata()
         {
             Interlocked.Decrement(ref file_processors_restoring_files);
 
