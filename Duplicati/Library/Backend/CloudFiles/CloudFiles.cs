@@ -177,6 +177,9 @@ namespace Duplicati.Library.Backend
                     catch { } //Ignore
                 }
 
+                if (lst == null)
+                    yield break;
+
                 var lastItemName = "";
                 foreach (System.Xml.XmlNode n in lst)
                 {

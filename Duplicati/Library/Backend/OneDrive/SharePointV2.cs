@@ -86,7 +86,7 @@ namespace Duplicati.Library.Backend
                 uri = new Uri(string.Format("{0}:{1}", uri.Scheme, uri.LocalPath));
             }
 
-            var site = await this.GetSharePointSite(uri, cancelToken).ConfigureAwait(false);
+            var site = await GetSharePointSite(uri, cancelToken).ConfigureAwait(false);
             if (site != null)
             {
                 // Get the web URL of the site's main drive
@@ -112,7 +112,7 @@ namespace Duplicati.Library.Backend
             return await base.GetRootPathFromUrlAsync(url, cancelToken).ConfigureAwait(false);
         }
 
-        private async Task<SharePointSite> GetSharePointSite(Uri url, CancellationToken cancelToken)
+        private async Task<SharePointSite?> GetSharePointSite(Uri url, CancellationToken cancelToken)
         {
             var uri = new UriBuilder(url);
 

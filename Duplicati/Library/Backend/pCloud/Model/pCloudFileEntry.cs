@@ -51,7 +51,7 @@ internal class pCloudFileEntry : IFileEntry
     /// <summary>
     /// Filename or folder name
     /// </summary>
-    public string Name { get; set; }
+    public string? Name { get; set; }
 
     /// <summary>
     /// Size of the object in bytes

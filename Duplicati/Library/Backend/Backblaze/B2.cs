@@ -280,12 +280,14 @@ public class B2 : IStreamingBackend, ITimeoutExemptBackend
     private async Task<string> GetFileId(string filename, CancellationToken cancelToken)
     {
         if (_filecache != null && _filecache.TryGetValue(filename, out var value))
-            return value.OrderByDescending(x => x.UploadTimestamp).First().FileID;
+            return value.OrderByDescending(x => x.UploadTimestamp).First().FileID
+                ?? throw new InvalidDataException("Missing file ID");
 
         await RebuildFileCache(cancelToken).ConfigureAwait(false);
 
         if (_filecache != null && _filecache.TryGetValue(filename, out var value1))
-            return value1.OrderByDescending(x => x.UploadTimestamp).First().FileID;
+            return value1.OrderByDescending(x => x.UploadTimestamp).First().FileID
+                ?? throw new InvalidDataException("Missing file ID");
 
         throw new FileMissingException();
     }
@@ -493,6 +495,9 @@ public class B2 : IStreamingBackend, ITimeoutExemptBackend
 
                 foreach (var file in resp.Files)
                 {
+                    if (string.IsNullOrWhiteSpace(file.FileName))
+                        continue;
+
                     if (!file.FileName.StartsWith(_prefix, StringComparison.Ordinal))
                         continue;
 

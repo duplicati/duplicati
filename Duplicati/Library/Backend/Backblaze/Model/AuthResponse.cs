@@ -29,11 +29,11 @@ namespace Duplicati.Library.Backend.Backblaze.Model;
 internal class AuthResponse
 {
     [JsonProperty("accountId")]
-    public string AccountID { get; set; }
+    public string? AccountID { get; set; }
     [JsonProperty("apiUrl")]
-    public string APIUrl { get; set; }
+    public string? APIUrl { get; set; }
     [JsonProperty("authorizationToken")]
-    public string AuthorizationToken { get; set; }
+    public string? AuthorizationToken { get; set; }
     [JsonProperty("downloadUrl")]
-    public string DownloadUrl { get; set; }
+    public string? DownloadUrl { get; set; }
 }
