@@ -584,6 +584,7 @@ namespace Duplicati.Library.Backend
                     bufCnt += lastreadsize;
 
                 using (var contentChunk = new MemoryStream(buf, 0, bufCnt, false))
+                using (var timeoutStream = contentChunk.ObserveReadTimeout(m_timeouts.ReadWriteTimeout))
                 {
                     ClientResult<long>? bytesUploaded = null;
                     if (uploadFile == null)
@@ -592,13 +593,13 @@ namespace Duplicati.Library.Backend
                         var fileInfo = new FileCreationInformation();
                         fileInfo.Url = uniqueFileName;
                         fileInfo.Overwrite = true;
-                        fileInfo.ContentStream = (bufCnt < blockSize) ? contentChunk : new MemoryStream(0);
+                        fileInfo.ContentStream = (bufCnt < blockSize) ? timeoutStream : new MemoryStream(0);
                         uploadFile = folder.Files.Add(fileInfo);
 
                         if (bufCnt < blockSize)
                             needsFinalize = false;
                         else
-                            bytesUploaded = uploadFile.StartUpload(uploadId, contentChunk); // new OverrideableStream(chunkStream));
+                            bytesUploaded = uploadFile.StartUpload(uploadId, timeoutStream); // new OverrideableStream(chunkStream));
                     }
                     else
                     {
@@ -606,19 +607,19 @@ namespace Duplicati.Library.Backend
                         //uploadFile = ctx.Web.GetFileByServerRelativeUrl(folder.ServerRelativeUrl + System.IO.Path.AltDirectorySeparatorChar + uniqueFileName);
                         if (bufCnt < blockSize) // Last block: end sliced upload by calling FinishUpload.
                         {
-                            uploadFile = uploadFile.FinishUpload(uploadId, fileoffset, contentChunk);
+                            uploadFile = uploadFile.FinishUpload(uploadId, fileoffset, timeoutStream);
                             needsFinalize = false; // signal no final call necessary.
                         }
                         else // Continue sliced upload.
                         {
-                            bytesUploaded = uploadFile.ContinueUpload(uploadId, fileoffset, contentChunk);
+                            bytesUploaded = uploadFile.ContinueUpload(uploadId, fileoffset, timeoutStream);
                         }
                     }
 
                     if (bytesUploaded == null)
                         ctx.Load(uploadFile, f => f.Length);
 
-                    await Utility.Utility.WithTimeout(m_timeouts.ReadWriteTimeout, cancelToken, _ => ctx.ExecuteQueryAsync()).ConfigureAwait(false);
+                    await ctx.ExecuteQueryAsync().ConfigureAwait(false);
                     // Check consistency and update fileoffset for the next slice.
                     if (bytesUploaded != null)
                     {
