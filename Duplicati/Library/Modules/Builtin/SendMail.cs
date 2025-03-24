@@ -80,6 +80,11 @@ namespace Duplicati.Library.Modules.Builtin
         /// </summary>
         private const string OPTION_RESULT_FORMAT = "send-mail-result-output-format";
         /// <summary>
+        /// Option used to specify extra parameters
+        /// </summary>
+        private const string OPTION_EXTRA_DATA_PARAMETERS = "send-mail-extra-data-parameters";
+
+        /// <summary>
         /// Option used to set the log level for mail reports
         /// </summary>
         private const string OPTION_LOG_LEVEL = "send-mail-log-level";
@@ -150,29 +155,25 @@ namespace Duplicati.Library.Modules.Builtin
         /// <summary>
         /// Gets a list of supported commandline arguments
         /// </summary>
-        public override IList<ICommandLineArgument> SupportedCommands
-        {
-            get
-            {
-                return new List<ICommandLineArgument>(new ICommandLineArgument[] {
-                    new CommandLineArgument(OPTION_RECIPIENT, CommandLineArgument.ArgumentType.String, Strings.SendMail.OptionRecipientShort, Strings.SendMail.OptionRecipientLong),
-                    new CommandLineArgument(OPTION_SENDER, CommandLineArgument.ArgumentType.String, Strings.SendMail.OptionSenderShort, Strings.SendMail.OptionSenderLong, DEFAULT_SENDER),
-                    new CommandLineArgument(OPTION_SUBJECT, CommandLineArgument.ArgumentType.String, Strings.SendMail.OptionSubjectShort, Strings.SendMail.OptionSubjectLong(OPTION_BODY), DEFAULT_SUBJECT),
-                    new CommandLineArgument(OPTION_BODY, CommandLineArgument.ArgumentType.String, Strings.SendMail.OptionBodyShort, Strings.SendMail.OptionBodyLong, DEFAULT_BODY),
-                    new CommandLineArgument(OPTION_SERVER, CommandLineArgument.ArgumentType.String, Strings.SendMail.OptionServerShort, Strings.SendMail.OptionServerLong),
-                    new CommandLineArgument(OPTION_USERNAME, CommandLineArgument.ArgumentType.String, Strings.SendMail.OptionUsernameShort, Strings.SendMail.OptionUsernameLong),
-                    new CommandLineArgument(OPTION_PASSWORD, CommandLineArgument.ArgumentType.String, Strings.SendMail.OptionPasswordShort, Strings.SendMail.OptionPasswordLong),
-                    new CommandLineArgument(OPTION_SENDLEVEL, CommandLineArgument.ArgumentType.String, Strings.SendMail.OptionSendlevelShort, Strings.SendMail.OptionSendlevelLong(ParsedResultType.Success.ToString(), ParsedResultType.Warning.ToString(), ParsedResultType.Error.ToString(), ParsedResultType.Fatal.ToString(), "All"), DEFAULT_LEVEL, null, Enum.GetNames(typeof(ParsedResultType)).Union(new string [] { "All" }).ToArray()),
-                    new CommandLineArgument(OPTION_SENDALL, CommandLineArgument.ArgumentType.Boolean, Strings.SendHttpMessage.SendhttpanyoperationShort, Strings.SendHttpMessage.SendhttpanyoperationLong),
+        public override IList<ICommandLineArgument> SupportedCommands =>
+        [
+            new CommandLineArgument(OPTION_RECIPIENT, CommandLineArgument.ArgumentType.String, Strings.SendMail.OptionRecipientShort, Strings.SendMail.OptionRecipientLong),
+            new CommandLineArgument(OPTION_SENDER, CommandLineArgument.ArgumentType.String, Strings.SendMail.OptionSenderShort, Strings.SendMail.OptionSenderLong, DEFAULT_SENDER),
+            new CommandLineArgument(OPTION_SUBJECT, CommandLineArgument.ArgumentType.String, Strings.SendMail.OptionSubjectShort, Strings.SendMail.OptionSubjectLong(OPTION_BODY), DEFAULT_SUBJECT),
+            new CommandLineArgument(OPTION_BODY, CommandLineArgument.ArgumentType.String, Strings.SendMail.OptionBodyShort, Strings.SendMail.OptionBodyLong, DEFAULT_BODY),
+            new CommandLineArgument(OPTION_SERVER, CommandLineArgument.ArgumentType.String, Strings.SendMail.OptionServerShort, Strings.SendMail.OptionServerLong),
+            new CommandLineArgument(OPTION_USERNAME, CommandLineArgument.ArgumentType.String, Strings.SendMail.OptionUsernameShort, Strings.SendMail.OptionUsernameLong),
+            new CommandLineArgument(OPTION_PASSWORD, CommandLineArgument.ArgumentType.String, Strings.SendMail.OptionPasswordShort, Strings.SendMail.OptionPasswordLong),
+            new CommandLineArgument(OPTION_SENDLEVEL, CommandLineArgument.ArgumentType.String, Strings.SendMail.OptionSendlevelShort, Strings.SendMail.OptionSendlevelLong(ParsedResultType.Success.ToString(), ParsedResultType.Warning.ToString(), ParsedResultType.Error.ToString(), ParsedResultType.Fatal.ToString(), "All"), DEFAULT_LEVEL, null, Enum.GetNames(typeof(ParsedResultType)).Union(new string [] { "All" }).ToArray()),
+            new CommandLineArgument(OPTION_SENDALL, CommandLineArgument.ArgumentType.Boolean, Strings.SendHttpMessage.SendhttpanyoperationShort, Strings.SendHttpMessage.SendhttpanyoperationLong),
+            new CommandLineArgument(OPTION_EXTRA_DATA_PARAMETERS, CommandLineArgument.ArgumentType.String, Strings.SendMail.SendmailextradataparametersShort, Strings.SendMail.SendmailextradataparametersLong),
 
-                    new CommandLineArgument(OPTION_LOG_LEVEL, CommandLineArgument.ArgumentType.Enumeration, Strings.ReportHelper.OptionLoglevelShort, Strings.ReportHelper.OptionLoglevelLong, DEFAULT_LOG_LEVEL.ToString(), null, Enum.GetNames(typeof(Logging.LogMessageType))),
-                    new CommandLineArgument(OPTION_LOG_FILTER, CommandLineArgument.ArgumentType.String, Strings.ReportHelper.OptionLogfilterShort, Strings.ReportHelper.OptionLogfilterLong),
-                    new CommandLineArgument(OPTION_MAX_LOG_LINES, CommandLineArgument.ArgumentType.Integer, Strings.ReportHelper.OptionmaxloglinesShort, Strings.ReportHelper.OptionmaxloglinesLong, DEFAULT_LOGLINES.ToString()),
+            new CommandLineArgument(OPTION_LOG_LEVEL, CommandLineArgument.ArgumentType.Enumeration, Strings.ReportHelper.OptionLoglevelShort, Strings.ReportHelper.OptionLoglevelLong, DEFAULT_LOG_LEVEL.ToString(), null, Enum.GetNames(typeof(Logging.LogMessageType))),
+            new CommandLineArgument(OPTION_LOG_FILTER, CommandLineArgument.ArgumentType.String, Strings.ReportHelper.OptionLogfilterShort, Strings.ReportHelper.OptionLogfilterLong),
+            new CommandLineArgument(OPTION_MAX_LOG_LINES, CommandLineArgument.ArgumentType.Integer, Strings.ReportHelper.OptionmaxloglinesShort, Strings.ReportHelper.OptionmaxloglinesLong, DEFAULT_LOGLINES.ToString()),
 
-                    new CommandLineArgument(OPTION_RESULT_FORMAT, CommandLineArgument.ArgumentType.Enumeration, Strings.ReportHelper.ResultFormatShort, Strings.ReportHelper.ResultFormatLong(Enum.GetNames(typeof(ResultExportFormat))), DEFAULT_EXPORT_FORMAT.ToString(), null, Enum.GetNames(typeof(ResultExportFormat))),
-                });
-            }
-        }
+            new CommandLineArgument(OPTION_RESULT_FORMAT, CommandLineArgument.ArgumentType.Enumeration, Strings.ReportHelper.ResultFormatShort, Strings.ReportHelper.ResultFormatLong(Enum.GetNames(typeof(ResultExportFormat))), DEFAULT_EXPORT_FORMAT.ToString(), null, Enum.GetNames(typeof(ResultExportFormat))),
+        ];
 
         protected override string SubjectOptionName => OPTION_SUBJECT;
         protected override string BodyOptionName => OPTION_BODY;
@@ -182,6 +183,7 @@ namespace Duplicati.Library.Modules.Builtin
         protected override string LogFilterOptionName => OPTION_LOG_FILTER;
         protected override string LogLinesOptionName => OPTION_MAX_LOG_LINES;
         protected override string ResultFormatOptionName => OPTION_RESULT_FORMAT;
+        protected override string ExtraDataOptionName => OPTION_EXTRA_DATA_PARAMETERS;
 
         /// <summary>
         /// This method is the interception where the module can interact with the execution environment and modify the settings.

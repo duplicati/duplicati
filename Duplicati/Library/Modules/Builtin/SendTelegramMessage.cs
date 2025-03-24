@@ -75,6 +75,10 @@ public class SendTelegramMessage : ReportHelper
     /// Option used to specify what format the result is sent in.
     /// </summary>
     private const string OPTION_RESULT_FORMAT = "send-telegram-result-output-format";
+    /// <summary>
+    /// Option used to specify extra parameters
+    /// </summary>
+    private const string OPTION_EXTRA_DATA_PARAMETERS = "send-telegram-extra-data-parameters";
 
     /// <summary>
     /// Option used to set the log level
@@ -88,7 +92,7 @@ public class SendTelegramMessage : ReportHelper
     /// Option used to set the maximum number of log lines
     /// </summary>
     private const string OPTION_MAX_LOG_LINES = "send-telegram-max-log-lines";
-    
+
     /// <summary>
     /// Telegram message maximum length.
     /// </summary>
@@ -135,21 +139,22 @@ public class SendTelegramMessage : ReportHelper
     /// <summary>
     /// Gets a list of supported commandline arguments
     /// </summary>
-    public override IList<ICommandLineArgument> SupportedCommands
-        => [
-            new CommandLineArgument(OPTION_CHANNEL, CommandLineArgument.ArgumentType.String, Strings.SendTelegramMessage.SendTelegramChannelShort, Strings.SendTelegramMessage.SendTelegramChannelLong),
-            new CommandLineArgument(OPTION_MESSAGE, CommandLineArgument.ArgumentType.String, Strings.SendTelegramMessage.SendTelegramMessageShort, Strings.SendTelegramMessage.SendTelegramMessageLong, DEFAULT_BODY),
-            new CommandLineArgument(OPTION_BOTID, CommandLineArgument.ArgumentType.String, Strings.SendTelegramMessage.SendTelegramBotIdShort, Strings.SendTelegramMessage.SendTelegramBotIdLong),
-            new CommandLineArgument(OPTION_APIKEY, CommandLineArgument.ArgumentType.String, Strings.SendTelegramMessage.SendTelegramApiKeyShort, Strings.SendTelegramMessage.SendTelegramApiKeyLong),
-            new CommandLineArgument(OPTION_SENDLEVEL, CommandLineArgument.ArgumentType.String, Strings.SendTelegramMessage.SendTelegramLevelShort, Strings.SendTelegramMessage.SendTelegramlevelLong(ParsedResultType.Success.ToString(), ParsedResultType.Warning.ToString(), ParsedResultType.Error.ToString(), ParsedResultType.Fatal.ToString(), "All"), DEFAULT_LEVEL, null, Enum.GetNames(typeof(ParsedResultType)).Union(new string[] { "All" } ).ToArray()),
-            new CommandLineArgument(OPTION_SENDALL, CommandLineArgument.ArgumentType.Boolean, Strings.SendTelegramMessage.SendTelegramManyOperationShort, Strings.SendTelegramMessage.SendTelegramManyOperationLong),
-            new CommandLineArgument(OPTION_LOG_LEVEL, CommandLineArgument.ArgumentType.Enumeration, Strings.ReportHelper.OptionLoglevelShort, Strings.ReportHelper.OptionLoglevelLong, DEFAULT_LOG_LEVEL.ToString(), null, Enum.GetNames(typeof(Logging.LogMessageType))),
-            new CommandLineArgument(OPTION_LOG_FILTER, CommandLineArgument.ArgumentType.String, Strings.ReportHelper.OptionLogfilterShort, Strings.ReportHelper.OptionLogfilterLong),
-            new CommandLineArgument(OPTION_MAX_LOG_LINES, CommandLineArgument.ArgumentType.Integer, Strings.ReportHelper.OptionmaxloglinesShort, Strings.ReportHelper.OptionmaxloglinesLong, DEFAULT_LOGLINES.ToString()),
-            new CommandLineArgument(OPTION_RESULT_FORMAT, CommandLineArgument.ArgumentType.Enumeration, Strings.ReportHelper.ResultFormatShort, Strings.ReportHelper.ResultFormatLong(Enum.GetNames(typeof(ResultExportFormat))), DEFAULT_EXPORT_FORMAT.ToString(), null, Enum.GetNames(typeof(ResultExportFormat))),
-            new CommandLineArgument(OPTION_TOPICID, CommandLineArgument.ArgumentType.String, Strings.SendTelegramMessage.SendTelegramTopicShort, Strings.SendTelegramMessage.SendTelegramTopicLong),
-        ];
-    
+    public override IList<ICommandLineArgument> SupportedCommands =>
+    [
+        new CommandLineArgument(OPTION_CHANNEL, CommandLineArgument.ArgumentType.String, Strings.SendTelegramMessage.SendTelegramChannelShort, Strings.SendTelegramMessage.SendTelegramChannelLong),
+        new CommandLineArgument(OPTION_MESSAGE, CommandLineArgument.ArgumentType.String, Strings.SendTelegramMessage.SendTelegramMessageShort, Strings.SendTelegramMessage.SendTelegramMessageLong, DEFAULT_BODY),
+        new CommandLineArgument(OPTION_EXTRA_DATA_PARAMETERS, CommandLineArgument.ArgumentType.String, Strings.SendTelegramMessage.SendTelegramExtraDataParametersShort, Strings.SendTelegramMessage.SendTelegramExtraDataParametersLong),
+        new CommandLineArgument(OPTION_BOTID, CommandLineArgument.ArgumentType.String, Strings.SendTelegramMessage.SendTelegramBotIdShort, Strings.SendTelegramMessage.SendTelegramBotIdLong),
+        new CommandLineArgument(OPTION_APIKEY, CommandLineArgument.ArgumentType.String, Strings.SendTelegramMessage.SendTelegramApiKeyShort, Strings.SendTelegramMessage.SendTelegramApiKeyLong),
+        new CommandLineArgument(OPTION_SENDLEVEL, CommandLineArgument.ArgumentType.String, Strings.SendTelegramMessage.SendTelegramLevelShort, Strings.SendTelegramMessage.SendTelegramlevelLong(ParsedResultType.Success.ToString(), ParsedResultType.Warning.ToString(), ParsedResultType.Error.ToString(), ParsedResultType.Fatal.ToString(), "All"), DEFAULT_LEVEL, null, Enum.GetNames(typeof(ParsedResultType)).Union(new string[] { "All" } ).ToArray()),
+        new CommandLineArgument(OPTION_SENDALL, CommandLineArgument.ArgumentType.Boolean, Strings.SendTelegramMessage.SendTelegramManyOperationShort, Strings.SendTelegramMessage.SendTelegramManyOperationLong),
+        new CommandLineArgument(OPTION_LOG_LEVEL, CommandLineArgument.ArgumentType.Enumeration, Strings.ReportHelper.OptionLoglevelShort, Strings.ReportHelper.OptionLoglevelLong, DEFAULT_LOG_LEVEL.ToString(), null, Enum.GetNames(typeof(Logging.LogMessageType))),
+        new CommandLineArgument(OPTION_LOG_FILTER, CommandLineArgument.ArgumentType.String, Strings.ReportHelper.OptionLogfilterShort, Strings.ReportHelper.OptionLogfilterLong),
+        new CommandLineArgument(OPTION_MAX_LOG_LINES, CommandLineArgument.ArgumentType.Integer, Strings.ReportHelper.OptionmaxloglinesShort, Strings.ReportHelper.OptionmaxloglinesLong, DEFAULT_LOGLINES.ToString()),
+        new CommandLineArgument(OPTION_RESULT_FORMAT, CommandLineArgument.ArgumentType.Enumeration, Strings.ReportHelper.ResultFormatShort, Strings.ReportHelper.ResultFormatLong(Enum.GetNames(typeof(ResultExportFormat))), DEFAULT_EXPORT_FORMAT.ToString(), null, Enum.GetNames(typeof(ResultExportFormat))),
+        new CommandLineArgument(OPTION_TOPICID, CommandLineArgument.ArgumentType.String, Strings.SendTelegramMessage.SendTelegramTopicShort, Strings.SendTelegramMessage.SendTelegramTopicLong),
+    ];
+
     protected override string SubjectOptionName => OPTION_MESSAGE;
     protected override string BodyOptionName => OPTION_MESSAGE;
     protected override string ActionLevelOptionName => OPTION_SENDLEVEL;
@@ -158,6 +163,7 @@ public class SendTelegramMessage : ReportHelper
     protected override string LogFilterOptionName => OPTION_LOG_FILTER;
     protected override string LogLinesOptionName => OPTION_MAX_LOG_LINES;
     protected override string ResultFormatOptionName => OPTION_RESULT_FORMAT;
+    protected override string ExtraDataOptionName => OPTION_EXTRA_DATA_PARAMETERS;
 
     /// <summary>
     /// The server username
@@ -195,14 +201,14 @@ public class SendTelegramMessage : ReportHelper
     }
 
     #endregion
-    
+
     /// <inheritdoc />
     protected override string ReplaceTemplate(string input, object result, Exception exception, bool subjectline)
     {
         // No need to do the expansion as we throw away the result
         return subjectline ? string.Empty : base.ReplaceTemplate(input, result, exception, subjectline);
     }
-    
+
     /// <summary>
     /// Sends message to telegram
     /// </summary>
@@ -213,13 +219,13 @@ public class SendTelegramMessage : ReportHelper
         try
         {
             if (string.IsNullOrEmpty(body))
-                return; 
-            
+                return;
+
             // Combine subject and body
             body = string.Join(Environment.NewLine, subject, body);
 
             // Split message into chunks if needed
-            var messages = body.Length <= TELEGRAM_MAX_LENGTH 
+            var messages = body.Length <= TELEGRAM_MAX_LENGTH
                 ? [body]
                 : Enumerable.Range(0, (body.Length + TELEGRAM_MAX_LENGTH - 1) / TELEGRAM_MAX_LENGTH)
                     .Select(i => body.Substring(
@@ -233,11 +239,11 @@ public class SendTelegramMessage : ReportHelper
         }
         catch (Exception e)
         {
-            Logging.Log.WriteWarningMessage(LOGTAG, "telegramSendError", e, 
+            Logging.Log.WriteWarningMessage(LOGTAG, "telegramSendError", e,
                 "Failed to process message for telegram: {0}", e.Message);
         }
     }
-    
+
     /// <summary>
     /// Sends the message/partial message to telegram
     /// </summary>
@@ -252,13 +258,13 @@ public class SendTelegramMessage : ReportHelper
                 throw new Exception("Telegram Bot ID is required and not set");
             if (string.IsNullOrWhiteSpace(m_apikey))
                 throw new Exception("Telegram API Key is required and not set");
-            
+
             var p = new
             {
                 chat_id = Uri.EscapeDataString(m_channelId),
                 message_thread_id = string.IsNullOrWhiteSpace(m_topicId) ? null : Uri.EscapeDataString(m_topicId),
                 parse_mode = "Markdown",
-                text = Uri.EscapeDataString(totalParts > 1 
+                text = Uri.EscapeDataString(totalParts > 1
                     ? $"Part {partNumber}/{totalParts}:\n{message}"
                     : message),
                 botId = Uri.EscapeDataString(m_botid),
@@ -268,7 +274,7 @@ public class SendTelegramMessage : ReportHelper
             var baseUrl = $"https://api.telegram.org/bot{p.botId}:{p.apiKey}/sendMessage";
             var url = $"{baseUrl}?chat_id={p.chat_id}&parse_mode={p.parse_mode}&text={p.text}" +
                       $"{(!string.IsNullOrWhiteSpace(m_topicId) ? $"&message_thread_id={m_topicId}" : string.Empty)}";
-            
+
             using var timeoutToken = new CancellationTokenSource();
             timeoutToken.CancelAfter(REQUEST_TIMEOUT);
 
@@ -277,14 +283,14 @@ public class SendTelegramMessage : ReportHelper
             var responseContent = await response.Content.ReadAsStringAsync(timeoutToken.Token).ConfigureAwait(false);
 
             if (!responseContent.Contains("\"ok\":true"))
-                Logging.Log.WriteWarningMessage(LOGTAG, "telegramSendError", null, 
-                    "Failed to send to telegram messages part {0}/{1}: {2}", 
+                Logging.Log.WriteWarningMessage(LOGTAG, "telegramSendError", null,
+                    "Failed to send to telegram messages part {0}/{1}: {2}",
                     partNumber, totalParts, responseContent);
         }
         catch (Exception e)
         {
-            Logging.Log.WriteWarningMessage(LOGTAG, "telegramSendError", e, 
-                "Failed to send to telegram messages part {0}/{1}: {2}", 
+            Logging.Log.WriteWarningMessage(LOGTAG, "telegramSendError", e,
+                "Failed to send to telegram messages part {0}/{1}: {2}",
                 partNumber, totalParts, e.Message);
         }
     }

@@ -83,6 +83,10 @@ namespace Duplicati.Library.Modules.Builtin
         /// Name of the option used to the output format
         /// </summary>
         protected abstract string ResultFormatOptionName { get; }
+        /// <summary>
+        /// Name of the option used to specify extra data to include in the report
+        /// </summary>
+        protected abstract string ExtraDataOptionName { get; }
 
         /// <summary>
         /// The default subject or title line
@@ -184,13 +188,17 @@ namespace Duplicati.Library.Modules.Builtin
         /// </summary>
         private bool m_sendAll;
         /// <summary>
+        /// The extra values to include in the report
+        /// </summary>
+        private Dictionary<string, string> m_extraValues;
+        /// <summary>
         /// The log scope that should be disposed
         /// </summary>
         private IDisposable m_logscope;
         /// <summary>
         /// The log storage
         /// </summary>
-        private Utility.FileBackedStringList m_logstorage;
+        private FileBackedStringList m_logstorage;
         /// <summary>
         /// Serializer to use when serializing the message.
         /// </summary>
@@ -224,6 +232,21 @@ namespace Duplicati.Library.Modules.Builtin
             m_isConfigured = true;
             m_options.TryGetValue(SubjectOptionName, out m_subject);
             m_options.TryGetValue(BodyOptionName, out m_body);
+            m_options.TryGetValue(ExtraDataOptionName, out var extraData);
+            if (!string.IsNullOrWhiteSpace(extraData))
+            {
+                if (extraData.Trim().StartsWith("{") && extraData.Trim().EndsWith("}"))
+                {
+                    m_extraValues = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, string>>(extraData);
+                }
+                else
+                {
+                    var values = Utility.Uri.ParseQueryString(extraData);
+                    m_extraValues = values.AllKeys
+                        .Where(x => !string.IsNullOrWhiteSpace(x))
+                        .ToDictionary(key => key, key => values[key]);
+                }
+            }
 
             string tmp;
             m_options.TryGetValue(ActionLevelOptionName, out tmp);
@@ -263,7 +286,7 @@ namespace Duplicati.Library.Modules.Builtin
                 m_body = DEFAULT_BODY;
 
             m_options.TryGetValue(LogFilterOptionName, out var logfilterstring);
-            var filter = Utility.FilterExpression.ParseLogFilter(logfilterstring);
+            var filter = FilterExpression.ParseLogFilter(logfilterstring);
             var logLevel = Utility.Utility.ParseEnumOption(m_options, LogLevelOptionName, DEFAULT_LOG_LEVEL);
 
             m_logstorage = new FileBackedStringList();
@@ -439,7 +462,7 @@ namespace Duplicati.Library.Modules.Builtin
                         extra[key] = GetDefaultValue(key);
 
                 // Add any options that are whitelisted or used in the template
-                foreach (KeyValuePair<string, string> kv in m_options)
+                foreach (var kv in m_options)
                     if (EXTRA_TEMPLATE_KEYS.Contains(kv.Key) || input.IndexOf($"%{kv.Key}%", StringComparison.OrdinalIgnoreCase) >= 0)
                         extra[kv.Key] = kv.Value;
 
@@ -447,6 +470,10 @@ namespace Duplicati.Library.Modules.Builtin
                 foreach (var key in EXTRA_TEMPLATE_KEYS)
                     if (!extra.ContainsKey(key))
                         extra[key] = GetDefaultValue(key);
+
+                if (m_extraValues != null)
+                    foreach (var v in m_extraValues)
+                        extra[v.Key] = v.Value;
 
                 return resultFormatSerializer.Serialize(result, exception, LogLines, extra);
             }
@@ -472,6 +499,11 @@ namespace Duplicati.Library.Modules.Builtin
                 foreach (var key in EXTRA_TEMPLATE_KEYS)
                     if (!m_options.ContainsKey(key))
                         input = Regex.Replace(input, $"%{key}%", GetDefaultValue(key) ?? "", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+
+                if (m_extraValues != null)
+                    foreach (var v in m_extraValues)
+                        input = Regex.Replace(input, $"%{v.Key}%", v.Value, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+
 
                 // Remove any remaining template keys
                 input = Regex.Replace(input, "\\%[^\\%]+\\%", "");
