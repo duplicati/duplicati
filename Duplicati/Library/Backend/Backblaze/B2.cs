@@ -207,8 +207,8 @@ public class B2 : IStreamingBackend, ITimeoutExemptBackend
         _httpClient = HttpClientHelper.CreateClient();
         _httpClient.Timeout = Timeout.InfiniteTimeSpan;
 
-        _b2AuthHelper = new B2AuthHelper(auth.Username!, auth.Password!, _httpClient);
         _timeouts = TimeoutOptionsHelper.Parse(options);
+        _b2AuthHelper = new B2AuthHelper(auth.Username!, auth.Password!, _httpClient, _timeouts);
 
     }
 
@@ -224,16 +224,18 @@ public class B2 : IStreamingBackend, ITimeoutExemptBackend
     /// <exception cref="FolderMissingException"></exception>
     private async Task<BucketEntity> GetBucketAsync(CancellationToken cancellationToken)
     {
-        if (_bucket != null) return _bucket;
+        if (_bucket != null)
+            return _bucket;
 
+        var config = await _b2AuthHelper.GetConfigAsync(cancellationToken).ConfigureAwait(false);
         await _cacheLock.WaitAsync(cancellationToken).ConfigureAwait(false);
 
         try
         {
             var buckets = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancellationToken, async ct
                 => await _b2AuthHelper.PostAndGetJsonDataAsync<ListBucketsResponse>(
-                    $"{_b2AuthHelper.ApiUrl}/b2api/v1/b2_list_buckets",
-                    new ListBucketsRequest(accountId: _b2AuthHelper.AccountId),
+                    $"{config.APIUrl}/b2api/v1/b2_list_buckets",
+                    new ListBucketsRequest(accountId: config.AccountID),
                     ct).ConfigureAwait(false)
             ).ConfigureAwait(false);
 
@@ -256,12 +258,15 @@ public class B2 : IStreamingBackend, ITimeoutExemptBackend
         if (_uploadUrl != null)
             return _uploadUrl;
 
+        var config = await _b2AuthHelper.GetConfigAsync(cancellationToken).ConfigureAwait(false);
+        var bucket = await GetBucketAsync(cancellationToken).ConfigureAwait(false);
+
         _uploadUrl = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancellationToken, async ct
             => await _b2AuthHelper.PostAndGetJsonDataAsync<UploadUrlResponse>(
-                $"{_b2AuthHelper.ApiUrl}/b2api/v1/b2_get_upload_url",
+                $"{config.APIUrl}/b2api/v1/b2_get_upload_url",
                 new UploadUrlRequest
                 {
-                    BucketID = (await GetBucketAsync(cancellationToken)).BucketID
+                    BucketID = bucket.BucketID
                         ?? throw new Exception("BucketID is null")
                 },
                 ct).ConfigureAwait(false)
@@ -291,11 +296,6 @@ public class B2 : IStreamingBackend, ITimeoutExemptBackend
 
         throw new FileMissingException();
     }
-
-    /// <summary>
-    /// Returns the DownloadURL, either cached, or making a call to the server's /b2_authorize_account
-    /// </summary>
-    private string DownloadUrl => string.IsNullOrEmpty(_downloadUrl) ? _b2AuthHelper.DownloadUrl : _downloadUrl;
 
     /// <inheritdoc/>
     public IList<ICommandLineArgument> SupportedCommands =>
@@ -418,15 +418,16 @@ public class B2 : IStreamingBackend, ITimeoutExemptBackend
     /// <exception cref="Exception">Exceptions arising from either code execution or FileMissingException</exception>
     public async Task GetAsync(string remotename, Stream stream, CancellationToken cancellationToken)
     {
-
         if (_filecache == null || !_filecache.ContainsKey(remotename))
             await RebuildFileCache(cancellationToken).ConfigureAwait(false);
 
+        var config = await _b2AuthHelper.GetConfigAsync(cancellationToken).ConfigureAwait(false);
+
         using var request = _filecache != null && _filecache.ContainsKey(remotename)
-            ? _b2AuthHelper.CreateRequest(
-                $"{DownloadUrl}/b2api/v1/b2_download_file_by_id?fileId={Utility.Uri.UrlEncode(await GetFileId(remotename, cancellationToken))}")
-            : _b2AuthHelper.CreateRequest(
-                $"{DownloadUrl}/{_urlencodedPrefix}{Utility.Uri.UrlPathEncode(remotename)}");
+            ? await _b2AuthHelper.CreateRequestAsync(
+                $"{config.DownloadUrl}/b2api/v1/b2_download_file_by_id?fileId={Utility.Uri.UrlEncode(await GetFileId(remotename, cancellationToken))}", HttpMethod.Get, cancellationToken).ConfigureAwait(false)
+            : await _b2AuthHelper.CreateRequestAsync(
+                $"{config.DownloadUrl}/{_urlencodedPrefix}{Utility.Uri.UrlPathEncode(remotename)}", HttpMethod.Get, cancellationToken).ConfigureAwait(false);
 
         HttpResponseMessage? response = null;
         try
@@ -444,7 +445,7 @@ public class B2 : IStreamingBackend, ITimeoutExemptBackend
             if (B2AuthHelper.GetExceptionStatusCode(ex) == HttpStatusCode.NotFound)
                 throw new FileMissingException();
 
-            _b2AuthHelper.AttemptParseAndThrowException(ex, response);
+            await _b2AuthHelper.AttemptParseAndThrowExceptionAsync(ex, response, cancellationToken).ConfigureAwait(false);
             throw;
         }
         finally
@@ -463,7 +464,8 @@ public class B2 : IStreamingBackend, ITimeoutExemptBackend
         var cache = new Dictionary<string, List<FileEntity>>();
         string? nextFileId = null;
         string? nextFileName = null;
-        var listVersionUrl = $"{_b2AuthHelper.ApiUrl}/b2api/v1/b2_list_file_versions";
+        var config = await _b2AuthHelper.GetConfigAsync(cancellationToken).ConfigureAwait(false);
+        var listVersionUrl = $"{config.APIUrl}/b2api/v1/b2_list_file_versions";
 
         var listRetryHelper = RetryAfterHelper.CreateOrGetRetryAfterHelper(listVersionUrl);
 
@@ -473,7 +475,7 @@ public class B2 : IStreamingBackend, ITimeoutExemptBackend
             {
                 var resp = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancellationToken, async ct
                     => await _b2AuthHelper.PostAndGetJsonDataAsync<ListFilesResponse>(
-                        $"{_b2AuthHelper.ApiUrl}/b2api/v1/b2_list_file_versions",
+                        $"{config.APIUrl}/b2api/v1/b2_list_file_versions",
                         new ListFilesRequest
                         {
                             BucketID = (await GetBucketAsync(cancellationToken)).BucketID
@@ -582,10 +584,12 @@ public class B2 : IStreamingBackend, ITimeoutExemptBackend
             if (!filecache.TryGetValue(remotename, out var value))
                 throw new FileMissingException();
 
+            var config = await _b2AuthHelper.GetConfigAsync(cancellationToken).ConfigureAwait(false);
+
             foreach (var n in value.OrderBy(x => x.UploadTimestamp))
                 await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancellationToken, async ct
                     => await _b2AuthHelper.PostAndGetJsonDataAsync<DeleteResponse>(
-                        $"{_b2AuthHelper.ApiUrl}/b2api/v1/b2_delete_file_version",
+                        $"{config.APIUrl}/b2api/v1/b2_delete_file_version",
                         new DeleteRequest
                         {
                             FileName = _prefix + remotename,
@@ -619,12 +623,13 @@ public class B2 : IStreamingBackend, ITimeoutExemptBackend
     /// <exception cref="Exception"></exception>
     public async Task CreateFolderAsync(CancellationToken cancellationToken)
     {
+        var config = await _b2AuthHelper.GetConfigAsync(cancellationToken);
         _bucket = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancellationToken, async ct
             => await _b2AuthHelper.PostAndGetJsonDataAsync<BucketEntity>(
-                $"{_b2AuthHelper.ApiUrl}/b2api/v1/b2_create_bucket",
+                $"{config.APIUrl}/b2api/v1/b2_create_bucket",
                 new BucketEntity
                 {
-                    AccountID = _b2AuthHelper.AccountId,
+                    AccountID = config.AccountID,
                     BucketName = _bucketName,
                     BucketType = _bucketType
                 },
@@ -643,12 +648,18 @@ public class B2 : IStreamingBackend, ITimeoutExemptBackend
     public string Description => Strings.B2.Description;
 
     /// <inheritdoc/>
-    public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(new string?[] {
-            new System.Uri(B2AuthHelper.AUTH_URL).Host,
-            _b2AuthHelper?.ApiDnsName,
-            _b2AuthHelper?.DownloadDnsName
+    public async Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken)
+    {
+        var config = await _b2AuthHelper.GetConfigAsync(cancelToken);
+        return new string?[] {
+            B2AuthHelper.AUTH_URL,
+            config.APIUrl,
+            config.DownloadUrl
         }.WhereNotNullOrWhiteSpace()
-        .ToArray());
+        .Select(x => new System.Uri(x).Host)
+        .Distinct()
+        .ToArray();
+    }
 
     /// <summary>
     /// Handles disposal of the backend's resources.

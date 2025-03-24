@@ -23,9 +23,9 @@ using System.Net;
 using System.Text;
 using Duplicati.Library.Backend.Backblaze.Model;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Utility.Options;
 using Newtonsoft.Json;
 using Exception = System.Exception;
-using Uri = System.Uri;
 
 namespace Duplicati.Library.Backend.Backblaze;
 
@@ -35,8 +35,17 @@ namespace Duplicati.Library.Backend.Backblaze;
 /// <param name="userid">Username</param>
 /// <param name="password">Password</param>
 /// <param name="httpClient">HttpClient instance to use and pass along to JsonWebHelperHttpClient</param>
-public class B2AuthHelper(string userid, string password, HttpClient httpClient) : JsonWebHelperHttpClient(httpClient)
+public class B2AuthHelper(string userid, string password, HttpClient httpClient, TimeoutOptionsHelper.Timeouts timeouts) : JsonWebHelperHttpClient(httpClient)
 {
+    /// <summary>
+    /// The configuration details after authorization
+    /// </summary>
+    /// <param name="AccountID">The account ID</param>
+    /// <param name="APIUrl">The API URL</param>
+    /// <param name="AuthorizationToken">The authorization token</param>
+    /// <param name="DownloadUrl">The download URL</param>
+    public record AuthResponse(string AccountID, string APIUrl, string AuthorizationToken, string DownloadUrl);
+
     /// <summary>
     /// Cached authorization response
     /// </summary>
@@ -58,34 +67,9 @@ public class B2AuthHelper(string userid, string password, HttpClient httpClient)
     internal const string AUTH_URL = "https://api.backblazeb2.com/b2api/v1/b2_authorize_account";
 
     /// <summary>
-    /// Timeout for authentication requests
-    /// </summary>
-    private const int AUTHENTICATION_TIMEOUT_SECONDS = 10;
-
-    /// <summary>
     /// Maximum number of retries for authorization
     /// </summary>
     private const int MAX_AUTHORIZATION_RETRIES = 5;
-
-    /// <summary>
-    /// Authorization token (fetches from Config, which will refresh if needed)
-    /// </summary>
-    private string AuthorizationToken => Config.AuthorizationToken;
-
-    /// <summary>
-    /// API URL (fetches from Config, which will refresh if needed)
-    /// </summary>
-    public string ApiUrl => Config.APIUrl;
-
-    /// <summary>
-    /// Download URL (fetches from Config, which will refresh if needed)
-    /// </summary>
-    public string DownloadUrl => Config.DownloadUrl;
-
-    /// <summary>
-    /// Account ID (fetches from Config, which will refresh if needed)
-    /// </summary>
-    public string AccountId => Config.AccountID;
 
     /// <summary>
     /// Creates an HTTP request message with authorization header
@@ -93,10 +77,11 @@ public class B2AuthHelper(string userid, string password, HttpClient httpClient)
     /// <param name="url">The URL for the request</param>
     /// <param name="method">HTTP method (defaults to GET if null)</param>
     /// <returns>Configured HttpRequestMessage</returns>
-    public override HttpRequestMessage CreateRequest(string url, string? method = null)
+    public override async Task<HttpRequestMessage> CreateRequestAsync(string url, HttpMethod method, CancellationToken cancellationToken)
     {
-        HttpRequestMessage request = base.CreateRequest(url, method);
-        request.Headers.TryAddWithoutValidation("Authorization", AuthorizationToken);
+        var request = await base.CreateRequestAsync(url, method, cancellationToken).ConfigureAwait(false);
+        var config = await GetConfigAsync(cancellationToken).ConfigureAwait(false);
+        request.Headers.TryAddWithoutValidation("Authorization", config.AuthorizationToken);
         request.Headers.Add("User-Agent", UserAgent);
         return request;
     }
@@ -105,88 +90,91 @@ public class B2AuthHelper(string userid, string password, HttpClient httpClient)
     /// Cleans the url to remove trailing slashes
     /// </summary>
     /// <param name="url">URL</param>
-    private string DropTrailingSlashes(string url)
+    private static string DropTrailingSlashes(string url)
     {
+        if (string.IsNullOrWhiteSpace(url))
+            return url;
+
         while (url.EndsWith("/", StringComparison.Ordinal))
             url = url.Substring(0, url.Length - 1);
         return url;
     }
 
-    /// <summary>
-    /// API DNS Name
-    /// </summary>
-    public string? ApiDnsName =>
-        string.IsNullOrWhiteSpace(_CachedAuthResponse?.APIUrl)
-            ? null
-            : new Uri(_CachedAuthResponse.APIUrl).Host;
-
-    /// <summary>
-    /// Download DNS Name
-    /// </summary>
-    public string? DownloadDnsName =>
-        string.IsNullOrWhiteSpace(_CachedAuthResponse?.DownloadUrl)
-            ? null
-            : new Uri(_CachedAuthResponse.DownloadUrl).Host;
-
-    private AuthResponse Config
+    public async Task<AuthResponse> GetConfigAsync(CancellationToken cancelToken)
     {
-        get
+        if (_CachedAuthResponse != null && _configExpires >= DateTime.UtcNow)
+            return _CachedAuthResponse;
+
+        var retries = 0;
+
+        while (true)
         {
-            if (_CachedAuthResponse != null && _configExpires >= DateTime.UtcNow) return _CachedAuthResponse;
-            var retries = 0;
-
-            while (true)
+            HttpResponseMessage? response = null;
+            try
             {
-                HttpResponseMessage? response = null;
-                try
+                using var request = await base.CreateRequestAsync(AUTH_URL, HttpMethod.Get, cancelToken).ConfigureAwait(false);
+
+                request.Headers.Add("Authorization", $"Basic {Convert.ToBase64String(Encoding.UTF8.GetBytes(userid + ":" + password))}");
+                request.Headers.Add("ContentType", "application/json; charset=utf-8");
+
+
+                var authResponse = await Utility.Utility.WithTimeout(timeouts.ShortTimeout, cancelToken, async ct =>
                 {
-
-                    using var request = base.CreateRequest(AUTH_URL);
-
-                    request.Headers.Add("Authorization", $"Basic {Convert.ToBase64String(Encoding.UTF8.GetBytes(userid + ":" + password))}");
-                    request.Headers.Add("ContentType", "application/json; charset=utf-8");
-
-                    using var timeoutToken = new CancellationTokenSource();
-                    timeoutToken.CancelAfter(TimeSpan.FromSeconds(AUTHENTICATION_TIMEOUT_SECONDS));
-
-                    response = _httpClient.Send(request, timeoutToken.Token);
+                    response = await _httpClient.SendAsync(request, ct).ConfigureAwait(false);
                     response.EnsureSuccessStatusCode();
 
-                    _CachedAuthResponse = ReadJsonResponse<AuthResponse>(response);
-                    _CachedAuthResponse.APIUrl = DropTrailingSlashes(_CachedAuthResponse.APIUrl);
-                    _CachedAuthResponse.DownloadUrl = DropTrailingSlashes(_CachedAuthResponse.DownloadUrl);
-                    _configExpires = DateTime.UtcNow + TimeSpan.FromMinutes(CACHE_EXPIRATION_MINUTES);
+                    return await ReadJsonResponseAsync<ApiAuthResponse>(response, ct).ConfigureAwait(false)
+                        ?? throw new Exception("Failed to parse authorization response");
+                }).ConfigureAwait(false);
 
-                    response.Dispose();
-                    return _CachedAuthResponse;
-                }
-                catch (Exception ex)
+                if (string.IsNullOrWhiteSpace(authResponse.AccountID))
+                    throw new Exception("Account ID is missing from authorization response");
+
+                if (string.IsNullOrWhiteSpace(authResponse.APIUrl))
+                    throw new Exception("API URL is missing from authorization response");
+
+                if (string.IsNullOrWhiteSpace(authResponse.AuthorizationToken))
+                    throw new Exception("Authorization token is missing from authorization response");
+
+                if (string.IsNullOrWhiteSpace(authResponse.DownloadUrl))
+                    throw new Exception("Download URL is missing from authorization response");
+
+                authResponse.APIUrl = DropTrailingSlashes(authResponse.APIUrl);
+                authResponse.DownloadUrl = DropTrailingSlashes(authResponse.DownloadUrl);
+                _configExpires = DateTime.UtcNow + TimeSpan.FromMinutes(CACHE_EXPIRATION_MINUTES);
+
+                return _CachedAuthResponse = new AuthResponse(authResponse.AccountID, authResponse.APIUrl, authResponse.AuthorizationToken, authResponse.DownloadUrl);
+            }
+            catch (Exception ex)
+            {
+                var clientError = false;
+
+                try
                 {
-                    var clientError = false;
-
-                    try
+                    // Only retry once on client errors
+                    if (ex is HttpRequestException { StatusCode: not null } exception)
                     {
-                        // Only retry once on client errors
-                        if (ex is HttpRequestException { StatusCode: not null } exception)
-                        {
-                            var sc = (int)exception.StatusCode;
-                            clientError = sc is >= 400 and <= 499;
-                        }
+                        var sc = (int)exception.StatusCode;
+                        clientError = sc is >= 400 and <= 499;
                     }
-                    catch
-                    {
-                        // ignored
-                    }
-
-                    if (retries >= (clientError ? 1 : MAX_AUTHORIZATION_RETRIES))
-                    {
-                        AttemptParseAndThrowException(ex, response);
-                        throw;
-                    }
-
-                    Thread.Sleep(TimeSpan.FromSeconds(Math.Pow(2, retries)));
-                    retries++;
                 }
+                catch
+                {
+                    // ignored
+                }
+
+                if (retries >= (clientError ? 1 : MAX_AUTHORIZATION_RETRIES))
+                {
+                    await AttemptParseAndThrowExceptionAsync(ex, response, cancelToken);
+                    throw;
+                }
+
+                Thread.Sleep(TimeSpan.FromSeconds(Math.Pow(2, retries)));
+                retries++;
+            }
+            finally
+            {
+                response?.Dispose();
             }
         }
     }
@@ -197,7 +185,7 @@ public class B2AuthHelper(string userid, string password, HttpClient httpClient)
     /// <param name="ex">Exception to be parsed</param>
     /// <param name="responseContext">Response context</param>
     /// <exception cref="Exception">New detailed exception</exception>
-    public override void AttemptParseAndThrowException(Exception ex, HttpResponseMessage? responseContext = null)
+    public override async Task AttemptParseAndThrowExceptionAsync(Exception ex, HttpResponseMessage? responseContext, CancellationToken cancelToken)
     {
         if (ex is not HttpRequestException || responseContext == null)
             return;
@@ -205,11 +193,16 @@ public class B2AuthHelper(string userid, string password, HttpClient httpClient)
         if (ex is HttpRequestException && responseContext.StatusCode == HttpStatusCode.TooManyRequests)
             throw new TooManyRequestException(responseContext.Headers.RetryAfter);
 
-        using var stream = responseContext.Content.ReadAsStream();
-        using var reader = new StreamReader(stream);
-        var rawData = reader.ReadToEnd();
-        var errorResponse = JsonConvert.DeserializeObject<ErrorResponse>(rawData);
-        throw new UserInformationException($"Backblaze ErrorResponse: {errorResponse?.Status} - {errorResponse?.Code}: {errorResponse?.Message}", "BackblazeErrorResponse");
+        var rawData = await Utility.Utility.WithTimeout(timeouts.ShortTimeout, cancelToken, ct =>
+        {
+            using var stream = responseContext.Content.ReadAsStream();
+            using var reader = new StreamReader(stream);
+            return reader.ReadToEnd();
+        }).ConfigureAwait(false);
+
+        var errorResponse = JsonConvert.DeserializeObject<ErrorResponse>(rawData)
+            ?? new ErrorResponse { Status = (int)responseContext.StatusCode, Message = responseContext.ReasonPhrase };
+        throw new UserInformationException($"Backblaze ErrorResponse: {errorResponse.Status} - {errorResponse.Code}: {errorResponse.Message}", "BackblazeErrorResponse");
     }
 
     /// <summary>

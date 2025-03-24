@@ -26,7 +26,7 @@ namespace Duplicati.Library.Backend.Backblaze.Model;
 /// <summary>
 /// Model for JSON parsing of AuthResponse
 /// </summary>
-internal class AuthResponse
+internal class ApiAuthResponse
 {
     [JsonProperty("accountId")]
     public string? AccountID { get; set; }
