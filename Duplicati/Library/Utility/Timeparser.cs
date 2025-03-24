@@ -117,32 +117,17 @@ namespace Duplicati.Library.Utility
 
                 factor *= multiplier;
 
-                switch (datestring[index])
+                offset = datestring[index] switch
                 {
-                    case 's':
-                        offset = offset.AddSeconds(factor);
-                        break;
-                    case 'm':
-                        offset = offset.AddMinutes(factor);
-                        break;
-                    case 'h':
-                        offset = offset.AddHours(factor);
-                        break;
-                    case 'D':
-                        offset = offset.AddDays(factor);
-                        break;
-                    case 'W':
-                        offset = offset.AddDays(factor * 7);
-                        break;
-                    case 'M':
-                        offset = offset.AddMonths(factor);
-                        break;
-                    case 'Y':
-                        offset = offset.AddYears(factor);
-                        break;
-                    default:
-                        throw new Exception(Strings.Timeparser.InvalidSpecifierError(datestring[index]));
-                }
+                    's' => offset.AddSeconds(factor),
+                    'm' => offset.AddMinutes(factor),
+                    'h' => offset.AddHours(factor),
+                    'D' => offset.AddDays(factor),
+                    'W' => offset.AddDays(factor * 7),
+                    'M' => offset.AddMonths(factor),
+                    'Y' => offset.AddYears(factor),
+                    _ => throw new Exception(Strings.Timeparser.InvalidSpecifierError(datestring[index])),
+                };
                 previndex = index + 1;
             }
 
