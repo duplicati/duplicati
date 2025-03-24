@@ -78,7 +78,7 @@ public class SendTelegramMessage : ReportHelper
     /// <summary>
     /// Option used to specify extra parameters
     /// </summary>
-    private const string OPTION_EXTRA_DATA_PARAMETERS = "send-telegram-extra-data-parameters";
+    private const string OPTION_EXTRA_PARAMETERS = "send-telegram-extra-parameters";
 
     /// <summary>
     /// Option used to set the log level
@@ -143,7 +143,7 @@ public class SendTelegramMessage : ReportHelper
     [
         new CommandLineArgument(OPTION_CHANNEL, CommandLineArgument.ArgumentType.String, Strings.SendTelegramMessage.SendTelegramChannelShort, Strings.SendTelegramMessage.SendTelegramChannelLong),
         new CommandLineArgument(OPTION_MESSAGE, CommandLineArgument.ArgumentType.String, Strings.SendTelegramMessage.SendTelegramMessageShort, Strings.SendTelegramMessage.SendTelegramMessageLong, DEFAULT_BODY),
-        new CommandLineArgument(OPTION_EXTRA_DATA_PARAMETERS, CommandLineArgument.ArgumentType.String, Strings.SendTelegramMessage.SendTelegramExtraDataParametersShort, Strings.SendTelegramMessage.SendTelegramExtraDataParametersLong),
+        new CommandLineArgument(OPTION_EXTRA_PARAMETERS, CommandLineArgument.ArgumentType.String, Strings.SendTelegramMessage.SendTelegramExtraParametersShort, Strings.SendTelegramMessage.SendTelegramExtraParametersLong),
         new CommandLineArgument(OPTION_BOTID, CommandLineArgument.ArgumentType.String, Strings.SendTelegramMessage.SendTelegramBotIdShort, Strings.SendTelegramMessage.SendTelegramBotIdLong),
         new CommandLineArgument(OPTION_APIKEY, CommandLineArgument.ArgumentType.String, Strings.SendTelegramMessage.SendTelegramApiKeyShort, Strings.SendTelegramMessage.SendTelegramApiKeyLong),
         new CommandLineArgument(OPTION_SENDLEVEL, CommandLineArgument.ArgumentType.String, Strings.SendTelegramMessage.SendTelegramLevelShort, Strings.SendTelegramMessage.SendTelegramlevelLong(ParsedResultType.Success.ToString(), ParsedResultType.Warning.ToString(), ParsedResultType.Error.ToString(), ParsedResultType.Fatal.ToString(), "All"), DEFAULT_LEVEL, null, Enum.GetNames(typeof(ParsedResultType)).Union(new string[] { "All" } ).ToArray()),
@@ -163,7 +163,7 @@ public class SendTelegramMessage : ReportHelper
     protected override string LogFilterOptionName => OPTION_LOG_FILTER;
     protected override string LogLinesOptionName => OPTION_MAX_LOG_LINES;
     protected override string ResultFormatOptionName => OPTION_RESULT_FORMAT;
-    protected override string ExtraDataOptionName => OPTION_EXTRA_DATA_PARAMETERS;
+    protected override string ExtraDataOptionName => OPTION_EXTRA_PARAMETERS;
 
     /// <summary>
     /// The server username
