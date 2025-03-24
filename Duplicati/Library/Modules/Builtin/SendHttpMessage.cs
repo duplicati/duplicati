@@ -319,11 +319,17 @@ namespace Duplicati.Library.Modules.Builtin
             }
             else
             {
+                const int chuncksize = 2048;
                 contenttype = new MediaTypeHeaderValue("application/x-www-form-urlencoded");
-                var postData = $"{m_messageParameterName}={System.Uri.EscapeDataString(body)}";
+                var sb = new StringBuilder();
+                sb.Append(m_messageParameterName).Append("=");
+                for (int i = 0; i < body.Length; i += chuncksize)
+                    sb.Append(System.Uri.EscapeDataString(body.Substring(i, Math.Min(chuncksize, body.Length - i))));
+
                 if (!string.IsNullOrEmpty(m_extraParameters))
-                    postData += $"&{m_extraParameters}";
-                data = Encoding.UTF8.GetBytes(postData);
+                    sb.Append("&").Append(m_extraParameters);
+
+                data = Encoding.UTF8.GetBytes(sb.ToString());
             }
 
             var request = new HttpRequestMessage
