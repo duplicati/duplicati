@@ -185,8 +185,8 @@ namespace Duplicati.Library.Utility
             // file://c:\test support
             if (h.Length == 1 && p.StartsWith(":", StringComparison.Ordinal))
             {
-                h = h + p;
-                p = "";
+                p = h + p;
+                h = null;
             }
 
             this.Host = h;
