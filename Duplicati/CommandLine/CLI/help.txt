@@ -118,13 +118,33 @@ Usage: %CLI_EXE% find <storage-URL> ["<filename>"] [<options>]
 > duplicati.commandline.exe help restore
 
 Usage: %CLI_EXE% restore <storage-URL> ["<filename>"] [<options>]
-  
-  Restores <filename> to its original destination. If <filename> exists already, <filename> is changed to <filename-timestamp.extension>. To restore all files use "*" or leave empty.
+
+  Restores <filename> to its original destination. If <filename> exists already and --overwrite=false is set, then <filename> is changed to <filename-timestamp.extension>. To restore all files use "*" or leave empty.
 
   --overwrite=<boolean>
     Overwrites existing files.
+  --restore-cache-max=<size>
+    Use this option to set the maximum size of the cache used for restoring files. The cache is used to store the data blocks that are downloaded from the remote storage. It assumes that the value is divisable by the block size, except for when it is 0, which disables the block cache. The default value is 4gb. This option is ignored if --restore-legacy=true is set.
+  --restore-cache-evict=<int>
+    Use this option to set the eviction ratio of the data block cache during restore. The eviction ratio is the percentage of the cache that is evicted when the cache is full. The default value is 50, which means that 50% of the cache is evicted when the cache is full. This option is ignored if --restore-legacy=true is set.
+  --restore-channel-buffer-size=<int>
+    Use this option to set the size of the buffers of the channels used during restore. The buffers are used to allow for better asynchronous communication between the processes in the restore flow. Increasing the buffer size may improve restore performance. The default value is the number of processors in the system. This option is ignored if --restore-legacy=true is set.
+  --restore-file-processors=<int>
+    Use this option to set the number of concurrent FileProcessors processes used during restore. A FileProcessor processes one file at a time, and increasing the number of FileProcessors may improve restore performance. The default value is half of the number of processors in the system. This option is ignored if --restore-legacy=true is set.
+  --restore-legacy=<bool>
+    Use this option to use the legacy restore method. The legacy restore method is slower than the new method, but may be more reliable in some cases. The default is false, which means that the new restore method is used.
   --restore-path=<string>
     Restores files to <restore-path> instead of their original destination. Top folders are removed if possible.
+  --restore-preallocate-size=<bool>
+    Use this option to toggle whether to set the size of the restored files before they are written to disk. This can help to reduce fragmentation and improve performance on some filesystems, such as those based on HDDs. The default is false, which means that the size of the restored files is not set before they are written to disk. This option is ignored if --restore-legacy=true is set.
+  --restore-volume-decompressors=<int>
+    Use this option to set the number of concurrent FileDecompressor processes used during restore. A FileDecompressor processes one volume at a time, and increasing the number of FileDecompressors may improve restore performance if the bottleneck is decompression. The default value is half of the number of processors in the system. This option is ignored if --restore-legacy=true is set.
+  --restore-volume-decryptors=<int>
+    Use this option to set the number of concurrent FileDecryptor processes used during restore. A FileDecryptor processes one volume at a time, and increasing the number of FileDecryptors may improve restore performance if the bottleneck is decryption. The default value is half of the number of processors in the system. This option is ignored if --restore-legacy=true is set.
+  --restore-volume-downloaders=<int>
+    Use this option to set the number of concurrent FileDownloader processes used during restore. A FileDownloader processes one volume at a time, and increasing the number of FileDownloaders may improve restore performance if the bottleneck is downloading. The default value is half of the number of processors in the system. This option is ignored if --restore-legacy=true is set.
+  --skip-metadata=<bool>
+    Use this option to skip the metadata restore. The default is false, which means that metadata is restored.
   --time=<time>
     Restore files that are older than the specified time.
   --version=<int>
