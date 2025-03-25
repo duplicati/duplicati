@@ -19,20 +19,13 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using System.Net;
-using System.Net.Http;
 using System.Net.Http.Json;
 using System.Runtime.CompilerServices;
-using System.Threading;
-using System.Threading.Tasks;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
-using Duplicati.Library.Logging;
 using Duplicati.Library.Utility;
+using Duplicati.Library.Utility.Options;
 using Newtonsoft.Json;
 using Uri = Duplicati.Library.Utility.Uri;
 
@@ -40,8 +33,7 @@ namespace Duplicati.Library.Backend.Box
 {
     public class BoxBackend : IStreamingBackend
     {
-        private static readonly string LOGTAG = Log.LogTagFromType<BoxBackend>();
-
+        private static readonly string TOKEN_URL = OAuthHelper.OAUTH_LOGIN_URL("box.com");
         private const string AUTHID_OPTION = "authid";
         private const string REALLY_DELETE_OPTION = "box-delete-from-trash";
 
@@ -54,92 +46,98 @@ namespace Duplicati.Library.Backend.Box
         private readonly string _path;
         private readonly bool _deleteFromTrash;
 
-        private string _currentFolder;
+        private string? _currentFolder;
         private readonly Dictionary<string, string> _fileCache = new();
+        private readonly TimeoutOptionsHelper.Timeouts _timeouts;
 
         private class BoxHelper : OAuthHelperHttpClient
         {
-            public BoxHelper(string authid)
+            private readonly TimeoutOptionsHelper.Timeouts _timeouts;
+            public BoxHelper(string authid, TimeoutOptionsHelper.Timeouts timeouts)
                 : base(authid, "box.com")
             {
                 AutoAuthHeader = true;
+                _timeouts = timeouts;
             }
 
-            public override void AttemptParseAndThrowException(Exception ex, HttpResponseMessage responseContext = null)
-            {
-                AttemptParseAndThrowExceptionAsync(ex, responseContext).Await();
-            }
-
-            public override async Task AttemptParseAndThrowExceptionAsync(Exception ex, HttpResponseMessage responseContext = null,
-                CancellationToken cancellationToken = default)
+            public override async Task AttemptParseAndThrowExceptionAsync(Exception ex, HttpResponseMessage responseContext, CancellationToken cancellationToken)
             {
                 if (ex is not HttpRequestException || responseContext == null)
                     return;
-                
+
                 if (responseContext is { StatusCode: HttpStatusCode.TooManyRequests })
                     throw new TooManyRequestException(responseContext.Headers.RetryAfter);
 
                 await using var stream = await responseContext.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
                 using var reader = new StreamReader(stream);
-                var rawData = await reader.ReadToEndAsync(cancellationToken).ConfigureAwait(false);
-                var errorResponse = JsonConvert.DeserializeObject<ErrorResponse>(rawData);
+                var rawData = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancellationToken, ct => reader.ReadToEndAsync(ct)).ConfigureAwait(false);
+                var errorResponse = JsonConvert.DeserializeObject<ErrorResponse>(rawData)
+                    ?? new ErrorResponse { Status = (int)responseContext.StatusCode, Code = "Unknown", Message = rawData };
                 throw new UserInformationException($"Box.com ErrorResponse: {errorResponse.Status} - {errorResponse.Code}: {errorResponse.Message}", "box.com");
             }
         }
 
         public BoxBackend()
         {
+            _oAuthHelper = null!;
+            _path = null!;
+            _timeouts = null!;
         }
-        
-        public BoxBackend(string url, Dictionary<string, string> options)
+
+        public BoxBackend(string url, Dictionary<string, string?> options)
         {
             var uri = new Uri(url);
 
             _path = Util.AppendDirSeparator(uri.HostAndPath, "/");
 
-            string authid = null;
-            if (options.TryGetValue(AUTHID_OPTION, out var option))
-                authid = option;
+            var authid = AuthIdOptionsHelper.Parse(options)
+                .RequireCredentials(TOKEN_URL)
+                .AuthId!;
 
             _deleteFromTrash = Utility.Utility.ParseBoolOption(options, REALLY_DELETE_OPTION);
+            _timeouts = TimeoutOptionsHelper.Parse(options);
 
-            _oAuthHelper = new BoxHelper(authid);
+            _oAuthHelper = new BoxHelper(authid, _timeouts);
+
         }
 
         private async Task<string> GetCurrentFolderWithCacheAsync(CancellationToken cancelToken)
         {
             if (_currentFolder == null)
-                await GetCurrentFolderAsync(false, cancelToken).ConfigureAwait(false);
+                return await GetCurrentFolderAsync(false, cancelToken).ConfigureAwait(false);
 
             return _currentFolder;
         }
 
-        private async Task GetCurrentFolderAsync(bool create, CancellationToken cancelToken)
+        private async Task<string> GetCurrentFolderAsync(bool create, CancellationToken cancelToken)
         {
             var parentid = "0";
 
             foreach (var p in _path.Split(["/"], StringSplitOptions.RemoveEmptyEntries))
             {
-                var el = (MiniFolder)await PagedFileListResponse(parentid, true, cancelToken).FirstOrDefaultAsync(x => x.Name == p, cancellationToken: cancelToken).ConfigureAwait(false);
+                var el = (MiniFolder?)await PagedFileListResponse(parentid, true, cancelToken).FirstOrDefaultAsync(x => x.Name == p, cancellationToken: cancelToken).ConfigureAwait(false);
                 if (el == null)
                 {
                     if (!create)
                         throw new FolderMissingException();
-                    
-                    el = await _oAuthHelper.PostAndGetJsonDataAsync<ListFolderResponse>(
+
+                    el = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancelToken, ct => _oAuthHelper.PostAndGetJsonDataAsync<ListFolderResponse>(
                         $"{BOX_API_URL}/folders",
                         new CreateItemRequest
                         {
-                            Name = p, Parent = new IDReference { ID = parentid }
+                            Name = p,
+                            Parent = new IDReference { ID = parentid }
                         },
-                        cancelToken
-                    ).ConfigureAwait(false);
+                        ct
+                    )).ConfigureAwait(false);
                 }
 
                 parentid = el.ID;
+                if (string.IsNullOrWhiteSpace(parentid))
+                    throw new InvalidDataException($"Invalid folder ID for {p} in {_path}");
             }
 
-            _currentFolder = parentid;
+            return _currentFolder = parentid;
         }
 
         private async Task<string> GetFileIdAsync(string name, CancellationToken cancelToken)
@@ -167,13 +165,16 @@ namespace Duplicati.Library.Backend.Box
 
             do
             {
-                var resp = await _oAuthHelper.GetJsonDataAsync<ShortListResponse>($"{BOX_API_URL}/folders/{parentid}/items?limit={PAGE_SIZE}&offset={offset}&fields=name,size,modified_at", cancelToken).ConfigureAwait(false);
+                var resp = await Utility.Utility.WithTimeout(_timeouts.ListTimeout, cancelToken, ct => _oAuthHelper.GetJsonDataAsync<ShortListResponse>($"{BOX_API_URL}/folders/{parentid}/items?limit={PAGE_SIZE}&offset={offset}&fields=name,size,modified_at", ct)).ConfigureAwait(false);
 
                 if (resp.Entries == null || resp.Entries.Length == 0)
                     break;
 
                 foreach (var f in resp.Entries)
                 {
+                    if (string.IsNullOrWhiteSpace(f.Name) || string.IsNullOrWhiteSpace(f.ID))
+                        continue;
+
                     if (onlyfolders && f.Type != "folder")
                     {
                         done = true;
@@ -222,12 +223,15 @@ namespace Duplicati.Library.Backend.Box
                 else
                 {
                     url = $"{BOX_UPLOAD_URL}/content";
-                    multipartForm.Add(JsonContent.Create(createreq),"attributes");
+                    multipartForm.Add(JsonContent.Create(createreq), "attributes");
                 }
-                
-                multipartForm.Add(new StreamContent(stream), "file", remotename);
-                
-                var res = (await _oAuthHelper.PostMultipartAndGetJsonDataAsync<FileList>(url, cancelToken, multipartForm)).Entries.First();
+
+                using var timeoutStream = stream.ObserveReadTimeout(_timeouts.ReadWriteTimeout, false);
+                multipartForm.Add(new StreamContent(timeoutStream), "file", remotename);
+
+                var res = (await _oAuthHelper.PostMultipartAndGetJsonDataAsync<FileList>(url, cancelToken, multipartForm)).Entries?.FirstOrDefault();
+                if (res == null || string.IsNullOrWhiteSpace(res.ID))
+                    throw new InvalidDataException("No file ID returned after upload");
                 _fileCache[remotename] = res.ID;
             }
             catch
@@ -240,11 +244,12 @@ namespace Duplicati.Library.Backend.Box
         public async Task GetAsync(string remotename, Stream stream, CancellationToken cancelToken)
         {
             var fileId = await GetFileIdAsync(remotename, cancelToken).ConfigureAwait(false);
-            using var request = _oAuthHelper.CreateRequest($"{BOX_API_URL}/files/{fileId}/content");
-            using var resp = await _oAuthHelper.GetResponseAsync(request, cancelToken).ConfigureAwait(false);
+            using var request = await _oAuthHelper.CreateRequestAsync($"{BOX_API_URL}/files/{fileId}/content", HttpMethod.Get, cancelToken).ConfigureAwait(false);
+            using var resp = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancelToken, ct => _oAuthHelper.GetResponseAsync(request, HttpCompletionOption.ResponseHeadersRead, ct)).ConfigureAwait(false);
             resp.EnsureSuccessStatusCode();
-            await using var responseStream = await resp.Content.ReadAsStreamAsync(cancelToken).ConfigureAwait(false);
-            await Utility.Utility.CopyStreamAsync(responseStream, stream, cancelToken).ConfigureAwait(false);
+            await using var responseStream = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancelToken, ct => resp.Content.ReadAsStreamAsync(ct)).ConfigureAwait(false);
+            using var ts = responseStream.ObserveReadTimeout(_timeouts.ReadWriteTimeout);
+            await Utility.Utility.CopyStreamAsync(ts, stream, cancelToken).ConfigureAwait(false);
         }
 
         public async IAsyncEnumerable<IFileEntry> ListAsync([EnumeratorCancellation] CancellationToken cancelToken)
@@ -271,16 +276,15 @@ namespace Duplicati.Library.Backend.Box
             var fileId = await GetFileIdAsync(remotename, cancelToken).ConfigureAwait(false);
             try
             {
-                using (var request = _oAuthHelper.CreateRequest($"{BOX_API_URL}/files/{fileId}","DELETE"))
-                using (var r = await _oAuthHelper.GetResponseAsync(request, cancelToken).ConfigureAwait(false))
+                using (var request = await _oAuthHelper.CreateRequestAsync($"{BOX_API_URL}/files/{fileId}", HttpMethod.Delete, cancelToken).ConfigureAwait(false))
+                using (var r = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancelToken, ct => _oAuthHelper.GetResponseAsync(request, HttpCompletionOption.ResponseContentRead, ct)).ConfigureAwait(false))
                 {
                 }
 
                 if (_deleteFromTrash)
                 {
-                    using var request = _oAuthHelper.CreateRequest($"{BOX_API_URL}/files/{fileId}/trash","DELETE");
-                    using (var r = await _oAuthHelper
-                               .GetResponseAsync(request, cancelToken).ConfigureAwait(false))
+                    using (var request = await _oAuthHelper.CreateRequestAsync($"{BOX_API_URL}/files/{fileId}/trash", HttpMethod.Delete, cancelToken).ConfigureAwait(false))
+                    using (var r = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancelToken, ct => _oAuthHelper.GetResponseAsync(request, HttpCompletionOption.ResponseContentRead, ct)).ConfigureAwait(false))
                     {
                     }
                 }
@@ -305,21 +309,21 @@ namespace Duplicati.Library.Backend.Box
         public string ProtocolKey => "box";
 
         public IList<ICommandLineArgument> SupportedCommands =>
-            new List<ICommandLineArgument>([
-                new CommandLineArgument(AUTHID_OPTION, CommandLineArgument.ArgumentType.Password, Strings.Box.AuthidShort, Strings.Box.AuthidLong(OAuthHelper.OAUTH_LOGIN_URL("box.com"))),
-                new CommandLineArgument(REALLY_DELETE_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.Box.ReallydeleteShort, Strings.Box.ReallydeleteLong)
-            ]);
+        [
+            .. AuthIdOptionsHelper.GetOptions(TOKEN_URL),
+            new CommandLineArgument(REALLY_DELETE_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.Box.ReallydeleteShort, Strings.Box.ReallydeleteLong),
+            .. TimeoutOptionsHelper.GetOptions()
+        ];
 
         public string Description => Strings.Box.Description;
 
         public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(new[] {
             new System.Uri(BOX_API_URL).Host,
             new System.Uri(BOX_UPLOAD_URL).Host
-        });
+        }.Distinct().WhereNotNullOrWhiteSpace().ToArray());
 
         public void Dispose()
         {
         }
     }
 }
-

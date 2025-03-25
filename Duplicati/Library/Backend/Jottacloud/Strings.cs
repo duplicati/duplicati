@@ -19,13 +19,12 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 using Duplicati.Library.Localization.Short;
-namespace Duplicati.Library.Backend.Strings {
+namespace Duplicati.Library.Backend.Strings
+{
     internal static class Jottacloud
     {
         public static string Description { get { return LC.L(@"This backend can read and write data to Jottacloud using its REST protocol. Allowed format is ""jottacloud://folder/subfolder""."); } }
         public static string DisplayName { get { return LC.L(@"Jottacloud"); } }
-        public static string AuthidLong(string url) { return LC.L(@"The authorization token retrieved from {0}", url); }
-        public static string AuthidShort { get { return LC.L(@"The authorization code"); } }
         public static string NoUsernameError { get { return LC.L(@"No username found"); } }
         public static string NoPathError { get { return LC.L(@"No path given. Files cannot be uploaded to the root folder"); } }
         public static string IllegalMountPoint { get { return LC.L(@"Illegal mount point given."); } }

@@ -21,14 +21,11 @@
 
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
-using System;
-using System.Collections.Generic;
-using System.Linq;
+using Duplicati.Library.Utility;
+using Duplicati.Library.Utility.Options;
 using System.Net;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Duplicati.Library.Backend
 {
@@ -36,54 +33,57 @@ namespace Duplicati.Library.Backend
     // This class is instantiated dynamically in the BackendLoader.
     public class CloudFiles : IBackend, IStreamingBackend
     {
+        /// <summary>
+        /// The log tag for this class
+        /// </summary>
+        private static readonly string LOGTAG = Logging.Log.LogTagFromType<CloudFiles>();
+
         public const string AUTH_URL_US = "https://identity.api.rackspacecloud.com/auth";
         public const string AUTH_URL_UK = "https://lon.auth.api.rackspacecloud.com/v1.0";
         private const string DUMMY_HOSTNAME = "api.mosso.com";
+
+        private const string AUTH_USERNAME_OPTION = "cloudfiles-username";
+        private const string AUTH_PASSWORD_OPTION = "cloudfiles-accesskey";
 
         private const int ITEM_LIST_LIMIT = 1000;
         private readonly string m_username;
         private readonly string m_password;
         private readonly string m_path;
 
-        private string m_storageUrl = null;
-        private string m_authToken = null;
+        private string? m_storageUrl = null;
+        private string? m_authToken = null;
         private readonly string m_authUrl;
+        private readonly TimeoutOptionsHelper.Timeouts m_timeouts;
 
         // ReSharper disable once UnusedMember.Global
         // This constructor is needed by the BackendLoader.
         public CloudFiles()
         {
+            m_username = null!;
+            m_password = null!;
+            m_path = null!;
+            m_authUrl = null!;
+            m_timeouts = null!;
         }
 
         // ReSharper disable once UnusedMember.Global
         // This constructor is needed by the BackendLoader.
-        public CloudFiles(string url, Dictionary<string, string> options)
+        public CloudFiles(string url, Dictionary<string, string?> options)
         {
             var uri = new Utility.Uri(url);
+            var auth = AuthOptionsHelper.ParseWithAlias(options, uri, AUTH_USERNAME_OPTION, AUTH_PASSWORD_OPTION);
 
-            if (options.ContainsKey("auth-username"))
-                m_username = options["auth-username"];
-            if (options.ContainsKey("auth-password"))
-                m_password = options["auth-password"];
-
-            if (options.ContainsKey("cloudfiles-username"))
-                m_username = options["cloudfiles-username"];
-            if (options.ContainsKey("cloudfiles-accesskey"))
-                m_password = options["cloudfiles-accesskey"];
-
-            if (!string.IsNullOrEmpty(uri.Username))
-                m_username = uri.Username;
-            if (!string.IsNullOrEmpty(uri.Password))
-                m_password = uri.Password;
-
-            if (string.IsNullOrEmpty(m_username))
+            if (!auth.HasUsername)
                 throw new UserInformationException(Strings.CloudFiles.NoUserIDError, "CloudFilesNoUserID");
-            if (string.IsNullOrEmpty(m_password))
+            if (auth.HasPassword)
                 throw new UserInformationException(Strings.CloudFiles.NoAPIKeyError, "CloudFilesNoApiKey");
+
+            (m_username, m_password) = auth.GetCredentials();
 
             //Fallback to the previous format
             if (url.Contains(DUMMY_HOSTNAME))
             {
+                Logging.Log.WriteWarningMessage(LOGTAG, "CloudFilesDeprecatedFormat", null, Strings.CloudFiles.DeprecatedFormatWarning(DUMMY_HOSTNAME));
                 var u = new System.Uri(url);
 
                 if (!string.IsNullOrEmpty(u.UserInfo))
@@ -117,8 +117,11 @@ namespace Duplicati.Library.Backend
             if (!m_path.StartsWith("/", StringComparison.Ordinal))
                 m_path = "/" + m_path;
 
-            if (!options.TryGetValue("cloudfiles-authentication-url", out m_authUrl))
-                m_authUrl = Utility.Utility.ParseBoolOption(options, "cloudfiles-uk-account") ? AUTH_URL_UK : AUTH_URL_US;
+            var authUrl = options.GetValueOrDefault("cloudfiles-authentication-url");
+            if (string.IsNullOrEmpty(authUrl))
+                authUrl = Utility.Utility.ParseBoolOption(options, "cloudfiles-uk-account") ? AUTH_URL_UK : AUTH_URL_US;
+            m_authUrl = authUrl;
+            m_timeouts = TimeoutOptionsHelper.Parse(options);
         }
 
         #region IBackend Members
@@ -139,19 +142,20 @@ namespace Duplicati.Library.Backend
             var markerUrl = "";
 
             bool repeat;
-
             do
             {
                 var doc = new System.Xml.XmlDocument();
-
-                var req = CreateRequest("", extraUrl + markerUrl);
+                var req = await CreateRequest("", extraUrl + markerUrl, cancelToken).ConfigureAwait(false);
 
                 try
                 {
-                    var areq = new Utility.AsyncHttpRequest(req);
-                    using (var resp = (HttpWebResponse)areq.GetResponse())
-                    using (var s = areq.GetResponseStream())
-                        doc.Load(s);
+                    await Utility.Utility.WithTimeout(m_timeouts.ListTimeout, cancelToken, _ =>
+                    {
+                        var areq = new Utility.AsyncHttpRequest(req);
+                        using (var resp = (HttpWebResponse)areq.GetResponse())
+                        using (var s = areq.GetResponseStream())
+                            doc.Load(s);
+                    }).ConfigureAwait(false);
                 }
                 catch (WebException wex)
                 {
@@ -163,26 +167,26 @@ namespace Duplicati.Library.Backend
                     throw;
                 }
 
-                System.Xml.XmlNodeList lst = doc.SelectNodes("container/object");
+                var lst = doc.SelectNodes("container/object");
 
                 //Perhaps the folder does not exist?
                 //The response should be 404 from the server, but it is not :(
-                if (lst.Count == 0 && markerUrl == "") //Only on first iteration
+                if (lst == null || lst.Count == 0 && markerUrl == "") //Only on first iteration
                 {
                     try { await CreateFolderAsync(cancelToken).ConfigureAwait(false); }
                     catch { } //Ignore
                 }
 
+                if (lst == null)
+                    yield break;
+
                 var lastItemName = "";
                 foreach (System.Xml.XmlNode n in lst)
                 {
-                    var name = n["name"].InnerText;
-                    long size;
-                    DateTime mod;
-
-                    if (!long.TryParse(n["bytes"].InnerText, out size))
+                    var name = n["name"]?.InnerText;
+                    if (!long.TryParse(n["bytes"]?.InnerText, out var size))
                         size = -1;
-                    if (!DateTime.TryParse(n["last_modified"].InnerText, out mod))
+                    if (!DateTime.TryParse(n["last_modified"]?.InnerText, out var mod))
                         mod = new DateTime();
 
                     lastItemName = name;
@@ -199,61 +203,55 @@ namespace Duplicati.Library.Backend
 
         public async Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
         {
-            using (System.IO.FileStream fs = System.IO.File.OpenRead(filename))
+            using (var fs = File.OpenRead(filename))
                 await PutAsync(remotename, fs, cancelToken);
         }
 
         public async Task GetAsync(string remotename, string filename, CancellationToken cancelToken)
         {
-            using (System.IO.FileStream fs = System.IO.File.Create(filename))
+            using (var fs = File.Create(filename))
                 await GetAsync(remotename, fs, cancelToken).ConfigureAwait(false);
         }
 
-        public Task DeleteAsync(string remotename, CancellationToken cancelToken)
+        public async Task DeleteAsync(string remotename, CancellationToken cancelToken)
         {
             try
             {
-                var req = CreateRequest("/" + remotename, "");
-
-                req.Method = "DELETE";
-                var areq = new Utility.AsyncHttpRequest(req);
-                using (var resp = (HttpWebResponse)areq.GetResponse())
+                var req = await CreateRequest("/" + remotename, "", cancelToken).ConfigureAwait(false);
+                await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, _ =>
                 {
-                    if (resp.StatusCode == System.Net.HttpStatusCode.NotFound)
-                        throw new FileMissingException();
+                    req.Method = "DELETE";
+                    var areq = new AsyncHttpRequest(req);
+                    using (var resp = (HttpWebResponse)areq.GetResponse())
+                    {
+                        if (resp.StatusCode == HttpStatusCode.NotFound)
+                            throw new FileMissingException();
 
-                    if ((int)resp.StatusCode >= 300)
-                        throw new WebException(Strings.CloudFiles.FileDeleteError, null, WebExceptionStatus.ProtocolError, resp);
-                    else
-                        using (areq.GetResponseStream())
-                        { }
-                }
+                        if ((int)resp.StatusCode >= 300)
+                            throw new WebException(Strings.CloudFiles.FileDeleteError, null, WebExceptionStatus.ProtocolError, resp);
+                        else
+                            using (areq.GetResponseStream())
+                            { }
+                    }
+                }).ConfigureAwait(false);
             }
-            catch (System.Net.WebException wex)
+            catch (WebException wex)
             {
-                if (wex.Response is HttpWebResponse response && response.StatusCode == System.Net.HttpStatusCode.NotFound)
+                if (wex.Response is HttpWebResponse response && response.StatusCode == HttpStatusCode.NotFound)
                     throw new FileMissingException(wex);
                 else
                     throw;
             }
-
-            return Task.CompletedTask;
         }
 
-        public IList<ICommandLineArgument> SupportedCommands
-        {
-            get
-            {
-                return new List<ICommandLineArgument>([
-                    new CommandLineArgument("auth-password", CommandLineArgument.ArgumentType.Password, Strings.CloudFiles.DescriptionAuthPasswordShort, Strings.CloudFiles.DescriptionAuthPasswordLong),
-                    new CommandLineArgument("auth-username", CommandLineArgument.ArgumentType.String, Strings.CloudFiles.DescriptionAuthUsernameShort, Strings.CloudFiles.DescriptionAuthUsernameLong),
-                    new CommandLineArgument("cloudfiles-username", CommandLineArgument.ArgumentType.String, Strings.CloudFiles.DescriptionUsernameShort, Strings.CloudFiles.DescriptionUsernameLong, null, new string[] {"auth-username"} ),
-                    new CommandLineArgument("cloudfiles-accesskey", CommandLineArgument.ArgumentType.Password, Strings.CloudFiles.DescriptionPasswordShort, Strings.CloudFiles.DescriptionPasswordLong, null, new string[] {"auth-password"}),
-                    new CommandLineArgument("cloudfiles-uk-account", CommandLineArgument.ArgumentType.Boolean, Strings.CloudFiles.DescriptionUKAccountShort, Strings.CloudFiles.DescriptionUKAccountLong("cloudfiles-authentication-url", AUTH_URL_UK)),
-                    new CommandLineArgument("cloudfiles-authentication-url", CommandLineArgument.ArgumentType.String, Strings.CloudFiles.DescriptionAuthenticationURLShort, Strings.CloudFiles.DescriptionAuthenticationURLLong_v2("cloudfiles-uk-account"), AUTH_URL_US),
-                ]);
-            }
-        }
+        public IList<ICommandLineArgument> SupportedCommands =>
+        [
+            new CommandLineArgument(AUTH_USERNAME_OPTION, CommandLineArgument.ArgumentType.String, Strings.CloudFiles.DescriptionUsernameShort, Strings.CloudFiles.DescriptionUsernameLong, null, [AuthOptionsHelper.AuthUsernameOption] ),
+            new CommandLineArgument(AUTH_PASSWORD_OPTION, CommandLineArgument.ArgumentType.Password, Strings.CloudFiles.DescriptionPasswordShort, Strings.CloudFiles.DescriptionPasswordLong, null, [AuthOptionsHelper.AuthPasswordOption]),
+            new CommandLineArgument("cloudfiles-uk-account", CommandLineArgument.ArgumentType.Boolean, Strings.CloudFiles.DescriptionUKAccountShort, Strings.CloudFiles.DescriptionUKAccountLong("cloudfiles-authentication-url", AUTH_URL_UK)),
+            new CommandLineArgument("cloudfiles-authentication-url", CommandLineArgument.ArgumentType.String, Strings.CloudFiles.DescriptionAuthenticationURLShort, Strings.CloudFiles.DescriptionAuthenticationURLLong_v2("cloudfiles-uk-account"), AUTH_URL_US),
+            .. TimeoutOptionsHelper.GetOptions(),
+        ];
 
         public string Description
         {
@@ -268,15 +266,16 @@ namespace Duplicati.Library.Backend
             //The "Folder not found" is not detectable :(
             this.TestListAsync(cancelToken);
 
-        public Task CreateFolderAsync(CancellationToken cancelToken)
+        public async Task CreateFolderAsync(CancellationToken cancelToken)
         {
-            var createReq = CreateRequest("", "");
-            createReq.Method = "PUT";
-            var areq = new Utility.AsyncHttpRequest(createReq);
-            using (var resp = (HttpWebResponse)areq.GetResponse())
-            { }
-
-            return Task.CompletedTask;
+            var createReq = await CreateRequest("", "", cancelToken).ConfigureAwait(false);
+            await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, _ =>
+            {
+                createReq.Method = "PUT";
+                var areq = new AsyncHttpRequest(createReq);
+                using (var resp = (HttpWebResponse)areq.GetResponse())
+                { }
+            }).ConfigureAwait(false);
         }
 
         #endregion
@@ -292,41 +291,45 @@ namespace Duplicati.Library.Backend
         #region IStreamingBackend Members
 
         public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(
-            new string[] {
+            new string?[] {
                 new System.Uri(m_authUrl).Host,
                 string.IsNullOrWhiteSpace(m_storageUrl) ? null : new System.Uri(m_storageUrl).Host
             }
-            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .WhereNotNullOrWhiteSpace()
             .ToArray()
         );
 
         public async Task GetAsync(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
         {
-            var req = CreateRequest("/" + remotename, "");
+            var req = await CreateRequest("/" + remotename, "", cancelToken).ConfigureAwait(false);
             req.Method = "GET";
 
-            var areq = new Utility.AsyncHttpRequest(req);
+            var areq = new AsyncHttpRequest(req);
             using (var resp = areq.GetResponse())
-            using (var s = areq.GetResponseStream())
+            using (var s = await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, _ => areq.GetResponseStream()).ConfigureAwait(false))
+            using (var timeoutStream = s.ObserveReadTimeout(m_timeouts.ReadWriteTimeout))
             using (var hasher = MD5.Create())
-            using (var mds = new Utility.HashCalculatingStream(s, hasher))
+            using (var mds = new HashCalculatingStream(timeoutStream, hasher))
             {
-                string md5Hash = resp.Headers["ETag"];
+                var md5Hash = resp.Headers["ETag"];
                 await Utility.Utility.CopyStreamAsync(mds, stream, true, cancelToken).ConfigureAwait(false);
 
-                if (!String.Equals(mds.GetFinalHashString(), md5Hash, StringComparison.OrdinalIgnoreCase))
+                if (!string.Equals(mds.GetFinalHashString(), md5Hash, StringComparison.OrdinalIgnoreCase))
                     throw new Exception(Strings.CloudFiles.ETagVerificationError);
             }
         }
 
         public async Task PutAsync(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
         {
-            HttpWebRequest req = CreateRequest("/" + remotename, "");
+            var req = await CreateRequest("/" + remotename, "", cancelToken).ConfigureAwait(false);
             req.Method = "PUT";
             req.ContentType = "application/octet-stream";
 
             try { req.ContentLength = stream.Length; }
             catch { }
+
+            // TODO: When reviewing this, lets build a common method to unwrap the stream passed from
+            // BackendManager.PutOperation, so we can use the same logic to compute hashes in all backends
 
             //If we can pre-calculate the MD5 hash before transmission, do so
             /*if (stream.CanSeek)
@@ -353,22 +356,23 @@ namespace Duplicati.Library.Backend
             //TODO: We cannot use the local MD5 calculation, because that could involve a throttled read,
             // and may invoke various events
             {
-                string fileHash = null;
+                string? fileHash = null;
 
                 long streamLen = -1;
                 try { streamLen = stream.Length; }
                 catch { }
 
-                Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
-                using (System.IO.Stream s = areq.GetRequestStream(streamLen))
+                var areq = new AsyncHttpRequest(req);
+                using (var s = areq.GetRequestStream(streamLen))
+                using (var timeoutStream = s.ObserveWriteTimeout(m_timeouts.ReadWriteTimeout))
                 using (var hasher = MD5.Create())
-                using (var mds = new Utility.HashCalculatingStream(s, hasher))
+                using (var mds = new HashCalculatingStream(timeoutStream, hasher))
                 {
                     await Utility.Utility.CopyStreamAsync(stream, mds, tryRewindSource: true, cancelToken: cancelToken);
                     fileHash = mds.GetFinalHashString();
                 }
 
-                string md5Hash = null;
+                string? md5Hash = null;
 
                 //We need to verify the eTag locally
                 try
@@ -390,7 +394,7 @@ namespace Duplicati.Library.Backend
                 }
 
 
-                if (md5Hash == null || !String.Equals(md5Hash, fileHash, StringComparison.OrdinalIgnoreCase))
+                if (md5Hash == null || !string.Equals(md5Hash, fileHash, StringComparison.OrdinalIgnoreCase))
                 {
                     //Remove the broken file
                     try { await DeleteAsync(remotename, cancelToken); }
@@ -403,29 +407,32 @@ namespace Duplicati.Library.Backend
 
         #endregion
 
-        private HttpWebRequest CreateRequest(string remotename, string query)
+        private async Task<HttpWebRequest> CreateRequest(string remotename, string query, CancellationToken cancelToken)
         {
             //If this is the first call, get an authentication token
             if (string.IsNullOrEmpty(m_authToken) || string.IsNullOrEmpty(m_storageUrl))
             {
-                var authReq = (HttpWebRequest)HttpWebRequest.Create(m_authUrl);
-                authReq.Headers.Add("X-Auth-User", m_username);
-                authReq.Headers.Add("X-Auth-Key", m_password);
-                authReq.Method = "GET";
-
-                var areq = new Utility.AsyncHttpRequest(authReq);
-                using (var resp = areq.GetResponse())
+                await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, _ =>
                 {
-                    m_storageUrl = resp.Headers["X-Storage-Url"];
-                    m_authToken = resp.Headers["X-Auth-Token"];
-                }
+                    var authReq = (HttpWebRequest)HttpWebRequest.Create(m_authUrl);
+                    authReq.Headers.Add("X-Auth-User", m_username);
+                    authReq.Headers.Add("X-Auth-Key", m_password);
+                    authReq.Method = "GET";
 
-                if (string.IsNullOrEmpty(m_authToken) || string.IsNullOrEmpty(m_storageUrl))
-                    throw new Exception(Strings.CloudFiles.UnexpectedResponseError);
+                    var areq = new AsyncHttpRequest(authReq);
+                    using (var resp = areq.GetResponse())
+                    {
+                        m_storageUrl = resp.Headers["X-Storage-Url"];
+                        m_authToken = resp.Headers["X-Auth-Token"];
+                    }
+
+                    if (string.IsNullOrEmpty(m_authToken) || string.IsNullOrEmpty(m_storageUrl))
+                        throw new Exception(Strings.CloudFiles.UnexpectedResponseError);
+                }).ConfigureAwait(false);
             }
 
             var req = (HttpWebRequest)HttpWebRequest.Create(m_storageUrl + UrlEncode(m_path + remotename) + query);
-            req.Headers.Add("X-Auth-Token", UrlEncode(m_authToken));
+            req.Headers.Add("X-Auth-Token", UrlEncode(m_authToken!));
 
             req.UserAgent = "Duplicati CloudFiles Backend v" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
             req.KeepAlive = false;
@@ -435,9 +442,9 @@ namespace Duplicati.Library.Backend
             return req;
         }
 
-        private string UrlEncode(string value)
+        private static string UrlEncode(string value)
         {
-            return Library.Utility.Uri.UrlEncode(value).Replace("+", "%20").Replace("%2f", "/");
+            return Utility.Uri.UrlEncode(value).Replace("+", "%20").Replace("%2f", "/");
         }
     }
 }

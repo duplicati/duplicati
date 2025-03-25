@@ -34,14 +34,14 @@ internal class FileEntity
     /// This ID is used to reference the file in various API operations.
     /// </summary>
     [JsonProperty("fileId")]
-    public string FileID { get; set; }
+    public string? FileID { get; set; }
 
     /// <summary>
     /// Gets or sets the name of the file as stored in Backblaze B2.
     /// This is the full path of the file within the bucket.
     /// </summary>
     [JsonProperty("fileName")]
-    public string FileName { get; set; }
+    public string? FileName { get; set; }
 
     /// <summary>
     /// Gets or sets the action performed on the file.
@@ -49,7 +49,7 @@ internal class FileEntity
     /// and "delete" for deleted files.
     /// </summary>
     [JsonProperty("action")]
-    public string Action { get; set; }
+    public string? Action { get; set; }
 
     /// <summary>
     /// Gets or sets the size of the file in bytes.

@@ -32,5 +32,5 @@ internal abstract class BucketIDEntity
     /// Gets or sets the unique identifier of the bucket.
     /// </summary>
     [JsonProperty("bucketId")]
-    public string BucketID { get; set; }
+    public string? BucketID { get; set; }
 }
