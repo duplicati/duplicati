@@ -81,7 +81,7 @@ public class ProcessBasedActionDelay : IDisposable
     /// Adds a new task to the processor
     /// </summary>
     /// <param name="action">The action to execute</param>
-    public void ExecuteAction(Action action)
+    public async Task ExecuteAction(Action action)
     {
         // Note: WriteNoWait() is used to avoid waiting for the action to be read,
         // as this would cause deadlocks if called from within the processor.
@@ -89,9 +89,9 @@ public class ProcessBasedActionDelay : IDisposable
         var task = m_inboundActionChannel.WriteAsync(action);
 
         // Observe if the channel is full or retired
-        Task.WaitAny(task, Task.Delay(500));
+        await Task.WhenAny(task, Task.Delay(500));
         if (task.IsCompleted)
-            task.Await();
+            await task;
     }
 
     /// <summary>

@@ -26,6 +26,8 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading;
+using CoCoL;
+using Duplicati.CommandLine;
 using Duplicati.Library.AutoUpdater;
 using Duplicati.Library.Interface;
 using Duplicati.Library.RestAPI;
@@ -221,7 +223,7 @@ No password provided, unable to connect to server, exiting");
                             {
                                 if (hosted != null && Server.Program.ApplicationInstance != null)
                                     Server.Program.ApplicationInstance.SecondInstanceDetected +=
-                                        new Server.SingleInstance.SecondInstanceDelegate(
+                                        new SingleInstance.SecondInstanceDelegate(
                                             x => tk.ShowStatusWindow());
 
                                 // TODO: If we change to hosted browser this should be a callback
@@ -252,8 +254,9 @@ No password provided, unable to connect to server, exiting");
                                     tk.InvokeExit();
                                 };
 
+                                Connection.ConnectionClosed = shutdownEvent;
                                 if (hosted != null)
-                                    hosted.InstanceShutdown += shutdownEvent;
+                                    hosted.InstanceShutdown = shutdownEvent;
 
                                 tk.Init(_args);
 
@@ -263,7 +266,9 @@ No password provided, unable to connect to server, exiting");
                                 // Make sure that the server shutdown does not access the tray-icon,
                                 // as it would be disposed by now
                                 if (hosted != null)
-                                    hosted.InstanceShutdown -= shutdownEvent;
+                                    hosted.InstanceShutdown = null;
+                                Connection.ConnectionClosed = null;
+
                             }
                         }
                     }

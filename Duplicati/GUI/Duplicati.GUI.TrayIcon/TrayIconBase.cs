@@ -23,6 +23,7 @@ using System;
 using Duplicati.Server.Serialization;
 using Duplicati.Server.Serialization.Interface;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Duplicati.GUI.TrayIcon
 {
@@ -95,12 +96,17 @@ namespace Duplicati.GUI.TrayIcon
 
         public void InvokeExit()
         {
-            UpdateUIState(() => { this.Exit(); });
+            UpdateUIState(() =>
+            {
+                Program.Connection?.Close();
+                this.Exit();
+            });
         }
 
-        protected virtual void UpdateUIState(Action action)
+        protected virtual Task UpdateUIState(Action action)
         {
             action();
+            return Task.CompletedTask;
         }
 
         protected abstract IMenuItem CreateMenuItem(string text, MenuIcons icon, Action callback, IList<IMenuItem> subitems);
@@ -115,7 +121,7 @@ namespace Duplicati.GUI.TrayIcon
 
         protected virtual void RegisterStatusUpdateCallback()
         {
-            Program.Connection.OnStatusUpdated += OnStatusUpdated;
+            Program.Connection.OnStatusUpdated = OnStatusUpdated;
         }
 
         protected virtual void RegisterNotificationCallback()
@@ -159,12 +165,12 @@ namespace Duplicati.GUI.TrayIcon
             m_reconnectMenu.SetHidden(true);
             m_openMenu = CreateMenuItem("Open", MenuIcons.Status, OnStatusClicked, null);
             m_openMenu.SetDefault(true);
-            return new IMenuItem[] {
+            return [
                 m_reconnectMenu,
                 m_openMenu,
                 m_pauseMenu = CreateMenuItem("Pause", MenuIcons.Pause, OnPauseClicked, null ),
                 m_quitMenu = CreateMenuItem("Quit", MenuIcons.Quit, OnQuitClicked, null),
-            };
+            ];
         }
 
         private void Reconnect()
@@ -218,9 +224,8 @@ namespace Duplicati.GUI.TrayIcon
                 Program.Connection.Pause();
         }
 
-        protected void OnStatusUpdated(IServerStatus status)
-        {
-            this.UpdateUIState(() =>
+        protected Task OnStatusUpdated(IServerStatus status)
+            => this.UpdateUIState(() =>
             {
                 switch (status.SuggestedStatusIcon)
                 {
@@ -266,7 +271,6 @@ namespace Duplicati.GUI.TrayIcon
                 m_pauseMenu.SetHidden(status.SuggestedStatusIcon == SuggestedStatusIcon.Disconnected);
                 m_reconnectMenu.SetHidden(status.SuggestedStatusIcon != SuggestedStatusIcon.Disconnected);
             });
-        }
 
         #region IDisposable implementation
         public abstract void Dispose();
