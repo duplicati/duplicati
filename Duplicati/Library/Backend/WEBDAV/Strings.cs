@@ -36,6 +36,6 @@ This can be because the file is deleted or unavailable, but it can also be becau
 Error message: {3}", foldername, filename, extension, errormessage); }
         public static string DescriptionDebugPropfindLong { get { return LC.L(@"To aid in debugging issues, it is possible to set a path to a file that will be overwritten with the PROPFIND response."); } }
         public static string DescriptionDebugPropfindShort { get { return LC.L(@"Dump the PROPFIND response"); } }
-        public static string UsernameAndPasswordRequired { get { return LC.L(@"Non-integrated authentication requires both a username and a password"); } }
+        public static string UsernameRequired { get { return LC.L(@"Digest authentication requires a username to be set"); } }
     }
 }

@@ -29,9 +29,9 @@ namespace Duplicati.Library.Backend.Backblaze.Model;
 internal class ErrorResponse
 {
     [JsonProperty("code")]
-    public string Code { get; set; }
+    public string? Code { get; set; }
     [JsonProperty("message")]
-    public string Message { get; set; }
+    public string? Message { get; set; }
     [JsonProperty("status")]
     public long Status { get; set; }
 }

@@ -255,7 +255,7 @@ namespace Duplicati.Library.Main.Operation
                         catch (Exception ex)
                         {
                             Logging.Log.WriteWarningMessage(LOGTAG, "FileProcessingFailed", ex, "Failed to process file: {0}", entry.Name);
-                            if (ex is System.Threading.ThreadAbortException)
+                            if (ex.IsAbortException())
                             {
                                 m_result.EndTime = DateTime.UtcNow;
                                 throw;
@@ -384,7 +384,7 @@ namespace Duplicati.Library.Main.Operation
                             {
                                 //Not fatal
                                 Logging.Log.WriteErrorMessage(LOGTAG, "IndexFileProcessingFailed", ex, "Failed to process index file: {0}", name);
-                                if (ex is System.Threading.ThreadAbortException)
+                                if (ex.IsAbortException())
                                 {
                                     m_result.EndTime = DateTime.UtcNow;
                                     throw;

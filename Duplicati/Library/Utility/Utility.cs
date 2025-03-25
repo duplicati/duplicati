@@ -297,11 +297,7 @@ namespace Duplicati.Library.Utility
                     var attr = attributeReader?.Invoke(rootpath) ?? FileAttributes.Directory;
                     lst.Push(rootpath);
                 }
-                catch (System.Threading.ThreadAbortException)
-                {
-                    throw;
-                }
-                catch (Exception ex)
+                catch (Exception ex) when (!ex.IsAbortException())
                 {
                     errorCallback?.Invoke(rootpath, rootpath, ex);
                 }
@@ -322,21 +318,13 @@ namespace Duplicati.Library.Utility
                                 var attr = attributeReader?.Invoke(sf) ?? FileAttributes.Directory;
                                 lst.Push(sf);
                             }
-                            catch (System.Threading.ThreadAbortException)
-                            {
-                                throw;
-                            }
-                            catch (Exception ex)
+                            catch (Exception ex) when (!ex.IsAbortException())
                             {
                                 errorCallback?.Invoke(rootpath, sf, ex);
                             }
                         }
                     }
-                    catch (System.Threading.ThreadAbortException)
-                    {
-                        throw;
-                    }
-                    catch (Exception ex)
+                    catch (Exception ex) when (!ex.IsAbortException())
                     {
                         errorCallback?.Invoke(rootpath, f, ex);
                     }
@@ -348,11 +336,7 @@ namespace Duplicati.Library.Utility
                         {
                             files = fileList(f);
                         }
-                        catch (System.Threading.ThreadAbortException)
-                        {
-                            throw;
-                        }
-                        catch (Exception ex)
+                        catch (Exception ex) when (!ex.IsAbortException())
                         {
                             errorCallback?.Invoke(rootpath, f, ex);
                         }
@@ -1653,6 +1637,26 @@ namespace Duplicati.Library.Utility
         }
 
         /// <summary>
+        /// Checks if an exception is a stop, cancel or timeout exception
+        /// </summary>
+        /// <param name="ex">The operation to check</param>
+        /// <returns><c>true</c> if the exception is a stop or cancel exception, <c>false</c> otherwise</returns>
+        public static bool IsAbortOrCancelException(this Exception ex)
+        {
+            return ex is OperationCanceledException || ex is ThreadAbortException || ex is TaskCanceledException || ex is TimeoutException;
+        }
+
+        /// <summary>
+        /// Checks if an exception is a stop exception
+        /// </summary>
+        /// <param name="ex">The operation to check</param>
+        /// <returns><c>true</c> if the exception is a stop exception, <c>false</c> otherwise</returns>
+        public static bool IsAbortException(this Exception ex)
+        {
+            return ex is OperationCanceledException || ex is ThreadAbortException;
+        }
+
+        /// <summary>
         /// Formats the string using the invariant culture
         /// </summary>
         /// <param name="format">The format string</param>
@@ -1676,11 +1680,66 @@ namespace Duplicati.Library.Utility
         /// <param name="token">The cancellation token</param>
         /// <param name="func">The function to invoke</param>
         /// <returns>The task</returns>
+        public static async Task WithTimeout(TimeSpan timeout, CancellationToken token, Action<CancellationToken> func)
+        {
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(token);
+            cts.CancelAfter(timeout);
+            try
+            {
+                await Task.Run(() => func(cts.Token), cts.Token).ConfigureAwait(false);
+            }
+            catch (TaskCanceledException)
+            {
+                if (cts.IsCancellationRequested)
+                    throw new TimeoutException();
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Performs the function with an additional timeout
+        /// </summary>
+        /// <param name="timeout">The timeout to observe</param>
+        /// <param name="token">The cancellation token</param>
+        /// <param name="func">The function to invoke</param>
+        /// <returns>The task</returns>
+        public static async Task<T> WithTimeout<T>(TimeSpan timeout, CancellationToken token, Func<CancellationToken, T> func)
+        {
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(token);
+            cts.CancelAfter(timeout);
+            try
+            {
+                return await Task.Run(() => func(cts.Token), cts.Token).ConfigureAwait(false);
+            }
+            catch (TaskCanceledException)
+            {
+                if (cts.IsCancellationRequested)
+                    throw new TimeoutException();
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Performs the function with an additional timeout
+        /// </summary>
+        /// <param name="timeout">The timeout to observe</param>
+        /// <param name="token">The cancellation token</param>
+        /// <param name="func">The function to invoke</param>
+        /// <returns>The task</returns>
         public static async Task WithTimeout(TimeSpan timeout, CancellationToken token, Func<CancellationToken, Task> func)
         {
             using var cts = CancellationTokenSource.CreateLinkedTokenSource(token);
             cts.CancelAfter(timeout);
-            await func(cts.Token);
+            try
+            {
+                await func(cts.Token);
+            }
+            catch (TaskCanceledException)
+            {
+                if (cts.IsCancellationRequested)
+                    throw new TimeoutException();
+                throw;
+            }
         }
 
         /// <summary>
@@ -1695,7 +1754,16 @@ namespace Duplicati.Library.Utility
         {
             using var cts = CancellationTokenSource.CreateLinkedTokenSource(token);
             cts.CancelAfter(timeout);
-            return await func(cts.Token);
+            try
+            {
+                return await func(cts.Token);
+            }
+            catch (TaskCanceledException)
+            {
+                if (cts.IsCancellationRequested)
+                    throw new TimeoutException();
+                throw;
+            }
         }
 
         /// <summary>

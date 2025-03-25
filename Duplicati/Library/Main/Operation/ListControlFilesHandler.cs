@@ -75,11 +75,9 @@ namespace Duplicati.Library.Main.Operation
                             lastEx = null;
                             break;
                         }
-                        catch (Exception ex)
+                        catch (Exception ex) when (!ex.IsAbortException())
                         {
                             lastEx = ex;
-                            if (ex is System.Threading.ThreadAbortException)
-                                throw;
                         }
 
                     if (lastEx != null)

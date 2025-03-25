@@ -136,6 +136,8 @@ To enable SMTP over SSL, use the format smtps://example.com. To enable SMTP STAR
         public static string SendMailLog(string message) { return LC.L(@"Whole SMTP communication: {0}", message); }
         public static string SendMailFailedRetryError(string failedserver, string message, string retryserver) { return LC.L(@"Failed to send email with server: {0}, message: {1}, retrying with {2}", failedserver, message, retryserver); }
         public static string SendMailSuccess(string server) { return LC.L(@"Email sent successfully using server: {0}", server); }
+        public static string SendmailextraparametersLong { get { return LC.L(@"Use this option to set extra parameters for the message body. This parameter can either be a querystring (e.g. 'parameter1=value1&parameter2=value2') or a JSON key/value object."); } }
+        public static string SendmailextraparametersShort { get { return LC.L(@"Extra parameters for the message sent"); } }
     }
     internal static class SendJabberMessage
     {
@@ -163,6 +165,8 @@ You can supply multiple options with a comma separator, e.g. ""{0},{1}"". The sp
         public static string SendxmppanyoperationLong { get { return LC.L(@"By default, messages will only be sent after a backup operation. Use this option to send messages for all operations."); } }
         public static string SendxmppanyoperationShort { get { return LC.L(@"Send messages for all operations"); } }
         public static string LoginTimeoutError { get { return LC.L(@"Timeout occurred while logging in to jabber server"); } }
+        public static string SendxmppextraparametersLong { get { return LC.L(@"Use this option to set extra parameters for the message body. This parameter can either be a querystring (e.g. 'parameter1=value1&parameter2=value2') or a JSON key/value object."); } }
+        public static string SendxmppextraparametersShort { get { return LC.L(@"Extra parameters for the message sent"); } }
     }
 
     internal static class SendTelegramMessage
@@ -194,6 +198,8 @@ You can supply multiple options with a comma separator, e.g. ""{0},{1}"". The sp
         public static string SendTelegramLevelShort => LC.L(@"The messages to send");
         public static string SendTelegramManyOperationLong => LC.L(@"By default, messages will only be sent after a backup operation. Use this option to send messages for all operations.");
         public static string SendTelegramManyOperationShort => LC.L(@"Send messages for all operations");
+        public static string SendTelegramExtraParametersLong { get { return LC.L(@"Use this option to set extra parameters for the message body. This parameter can either be a querystring (e.g. 'parameter1=value1&parameter2=value2') or a JSON key/value object."); } }
+        public static string SendTelegramExtraParametersShort { get { return LC.L(@"Extra parameters for the message sent"); } }
     }
 
     internal static class SendHttpMessage
@@ -214,8 +220,8 @@ All command line options are also reported within %value%, e.g. %volsize%. Any u
         public static string SendhttpmessageShort { get { return LC.L(@"The message template"); } }
         public static string SendhttpmessageparameternameLong { get { return LC.L(@"Use this option to set a name of the parameter to send the message as."); } }
         public static string SendhttpmessageparameternameShort { get { return LC.L(@"The name of the parameter to send the message as"); } }
-        public static string SendhttpextraparametersLong { get { return LC.L(@"Use this option to set extra parameters to add to the http message, e.g. ""parameter1=value1&parameter2=value2"""); } }
-        public static string SendhttpextraparametersShort { get { return LC.L(@"Extra parameters to add to the http message"); } }
+        public static string SendhttpextraparametersLong { get { return LC.L(@"Use this option to set extra parameters for the message body. This parameter can either be a querystring (e.g. 'parameter1=value1&parameter2=value2') or a JSON key/value object."); } }
+        public static string SendhttpextraparametersShort { get { return LC.L(@"Extra parameters for the message sent"); } }
         public static string SendhttplevelLong(string success, string warning, string error, string fatal, string all) { return LC.L(@"You can specify one of ""{0}"", ""{1}"", ""{2}"", ""{3}"". 
 You can supply multiple options with a comma separator, e.g. ""{0},{1}"". The special value ""{4}"" is a shorthand for ""{0},{1},{2},{3}"" and will cause all backup operations to send a message.", success, warning, error, fatal, all); }
         public static string SendhttplevelShort { get { return LC.L(@"The messages to send"); } }

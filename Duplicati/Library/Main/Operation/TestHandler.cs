@@ -121,7 +121,7 @@ namespace Duplicati.Library.Main.Operation
                     {
                         m_results.AddResult(vol.Name, new KeyValuePair<Duplicati.Library.Interface.TestEntryStatus, string>[] { new KeyValuePair<Duplicati.Library.Interface.TestEntryStatus, string>(Duplicati.Library.Interface.TestEntryStatus.Error, ex.Message) });
                         Logging.Log.WriteErrorMessage(LOGTAG, "RemoteFileProcessingFailed", ex, "Failed to process file {0}", vol.Name);
-                        if (ex is System.Threading.ThreadAbortException)
+                        if (ex.IsAbortException())
                         {
                             m_results.EndTime = DateTime.UtcNow;
                             throw;
@@ -184,7 +184,7 @@ namespace Duplicati.Library.Main.Operation
                     {
                         m_results.AddResult(f.Name, [new KeyValuePair<TestEntryStatus, string>(TestEntryStatus.Error, ex.Message)]);
                         Logging.Log.WriteErrorMessage(LOGTAG, "FailedToProcessFile", ex, "Failed to process file {0}", f.Name);
-                        if (ex is ThreadAbortException || ex is TaskCanceledException)
+                        if (ex.IsAbortOrCancelException())
                         {
                             m_results.EndTime = DateTime.UtcNow;
                             throw;
