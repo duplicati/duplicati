@@ -137,7 +137,7 @@ namespace Duplicati.Library.Main.Operation
                     throw new UserInformationException("The database was attempted repaired, but the repair did not complete. This database may be incomplete and the repair process is not allowed to alter remote files as that could result in data loss.", "DatabaseIsInRepairState");
 
                 // Ensure the database is consistent before we start fixing the remote
-                db.VerifyConsistency(m_options.Blocksize, m_options.BlockhashSize, true, null);
+                db.VerifyConsistencyForRepair(m_options.Blocksize, m_options.BlockhashSize, true, null);
 
                 // If the last backup failed, guard the incomplete fileset, so we can create a synthetic filelist
                 var lastTempFilelist = db.GetLastIncompleteFilesetVolume(null);

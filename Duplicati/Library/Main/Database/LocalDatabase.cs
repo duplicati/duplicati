@@ -769,7 +769,35 @@ AND Fileset.ID NOT IN
                     .ExecuteScalarInt64(-1);
         }
 
+        /// <summary>
+        /// Verifies the consistency of the database
+        /// </summary>
+        /// <param name="blocksize">The block size in bytes</param>
+        /// <param name="hashsize">The hash size in byts</param>
+        /// <param name="verifyfilelists">Also verify filelists (can be slow)</param>
+        /// <param name="transaction">The transaction to run in</param>
         public void VerifyConsistency(long blocksize, long hashsize, bool verifyfilelists, IDbTransaction transaction)
+            => VerifyConsistencyInner(blocksize, hashsize, verifyfilelists, false, transaction);
+
+        /// <summary>
+        /// Verifies the consistency of the database prior to repair
+        /// </summary>
+        /// <param name="blocksize">The block size in bytes</param>
+        /// <param name="hashsize">The hash size in byts</param>
+        /// <param name="verifyfilelists">Also verify filelists (can be slow)</param>
+        /// <param name="transaction">The transaction to run in</param>
+        public void VerifyConsistencyForRepair(long blocksize, long hashsize, bool verifyfilelists, IDbTransaction transaction)
+            => VerifyConsistencyInner(blocksize, hashsize, verifyfilelists, true, transaction);
+
+        /// <summary>
+        /// Verifies the consistency of the database
+        /// </summary>
+        /// <param name="blocksize">The block size in bytes</param>
+        /// <param name="hashsize">The hash size in byts</param>
+        /// <param name="verifyfilelists">Also verify filelists (can be slow)</param>
+        /// <param name="laxVerifyForRepair">Disable verify for errors that will be fixed by repair</param>
+        /// <param name="transaction">The transaction to run in</param>
+        private void VerifyConsistencyInner(long blocksize, long hashsize, bool verifyfilelists, bool laxVerifyForRepair, IDbTransaction transaction)
         {
             using (var cmd = m_connection.CreateCommand(transaction))
             {
@@ -841,39 +869,42 @@ ON
                     .ExecuteScalarInt64(0) != 0)
                     throw new DatabaseInconsistencyException("Detected files associated with non-existing blocksets!");
 
-                var filesetsMissingVolumes = cmd.SetCommandAndParameters(@"SELECT COUNT(*) FROM ""Fileset"" WHERE ""VolumeID"" NOT IN (SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""Type"" = @Type AND ""State"" != @State)")
+                if (!laxVerifyForRepair)
+                {
+                    var filesetsMissingVolumes = cmd.SetCommandAndParameters(@"SELECT COUNT(*) FROM ""Fileset"" WHERE ""VolumeID"" NOT IN (SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""Type"" = @Type AND ""State"" != @State)")
                     .SetParameterValue("@Type", RemoteVolumeType.Files.ToString())
                     .SetParameterValue("@State", RemoteVolumeState.Deleted.ToString())
                     .ExecuteScalarInt64(0);
 
-                if (filesetsMissingVolumes != 0)
-                {
-                    if (filesetsMissingVolumes == 1)
-                        using (var reader = cmd.SetCommandAndParameters(@"SELECT ""ID"", ""Timestamp"", ""VolumeID"" FROM ""Fileset"" WHERE ""VolumeID"" NOT IN (SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""Type"" = @Type AND ""State"" != @State)")
-                            .SetParameterValue("@Type", RemoteVolumeType.Files.ToString())
-                            .SetParameterValue("@State", RemoteVolumeState.Deleted.ToString())
-                            .ExecuteReader())
-                            if (reader.Read())
-                                throw new DatabaseInconsistencyException($"Detected 1 fileset with missing volume: FilesetId = {reader.ConvertValueToInt64(0)}, Time = ({ParseFromEpochSeconds(reader.ConvertValueToInt64(1))}), unmatched VolumeID {reader.ConvertValueToInt64(2)}");
+                    if (filesetsMissingVolumes != 0)
+                    {
+                        if (filesetsMissingVolumes == 1)
+                            using (var reader = cmd.SetCommandAndParameters(@"SELECT ""ID"", ""Timestamp"", ""VolumeID"" FROM ""Fileset"" WHERE ""VolumeID"" NOT IN (SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""Type"" = @Type AND ""State"" != @State)")
+                                .SetParameterValue("@Type", RemoteVolumeType.Files.ToString())
+                                .SetParameterValue("@State", RemoteVolumeState.Deleted.ToString())
+                                .ExecuteReader())
+                                if (reader.Read())
+                                    throw new DatabaseInconsistencyException($"Detected 1 fileset with missing volume: FilesetId = {reader.ConvertValueToInt64(0)}, Time = ({ParseFromEpochSeconds(reader.ConvertValueToInt64(1))}), unmatched VolumeID {reader.ConvertValueToInt64(2)}");
 
-                    throw new DatabaseInconsistencyException($"Detected {filesetsMissingVolumes} filesets with missing volumes");
-                }
+                        throw new DatabaseInconsistencyException($"Detected {filesetsMissingVolumes} filesets with missing volumes");
+                    }
 
-                var volumesMissingFilests = cmd.SetCommandAndParameters(@"SELECT COUNT(*) FROM ""RemoteVolume"" WHERE ""Type"" = @Type AND ""State"" != @State AND ""ID"" NOT IN (SELECT ""VolumeID"" FROM ""Fileset"")")
-                    .SetParameterValue("@Type", RemoteVolumeType.Files.ToString())
-                    .SetParameterValue("@State", RemoteVolumeState.Deleted.ToString())
-                    .ExecuteScalarInt64(0);
-                if (volumesMissingFilests != 0)
-                {
-                    if (volumesMissingFilests == 1)
-                        using (var reader = cmd.SetCommandAndParameters(@"SELECT ""ID"", ""Name"", ""State"" FROM ""RemoteVolume"" WHERE ""Type"" = @Type AND ""State"" != @State AND ""ID"" NOT IN (SELECT ""VolumeID"" FROM ""Fileset"")")
-                            .SetParameterValue("@Type", RemoteVolumeType.Files.ToString())
-                            .SetParameterValue("@State", RemoteVolumeState.Deleted.ToString())
-                            .ExecuteReader())
-                            if (reader.Read())
-                                throw new DatabaseInconsistencyException($"Detected 1 volume with missing filesets: VolumeId = {reader.ConvertValueToInt64(0)}, Name = {reader.ConvertValueToString(1)}, State = {reader.ConvertValueToString(2)}");
+                    var volumesMissingFilests = cmd.SetCommandAndParameters(@"SELECT COUNT(*) FROM ""RemoteVolume"" WHERE ""Type"" = @Type AND ""State"" != @State AND ""ID"" NOT IN (SELECT ""VolumeID"" FROM ""Fileset"")")
+                        .SetParameterValue("@Type", RemoteVolumeType.Files.ToString())
+                        .SetParameterValue("@State", RemoteVolumeState.Deleted.ToString())
+                        .ExecuteScalarInt64(0);
+                    if (volumesMissingFilests != 0)
+                    {
+                        if (volumesMissingFilests == 1)
+                            using (var reader = cmd.SetCommandAndParameters(@"SELECT ""ID"", ""Name"", ""State"" FROM ""RemoteVolume"" WHERE ""Type"" = @Type AND ""State"" != @State AND ""ID"" NOT IN (SELECT ""VolumeID"" FROM ""Fileset"")")
+                                .SetParameterValue("@Type", RemoteVolumeType.Files.ToString())
+                                .SetParameterValue("@State", RemoteVolumeState.Deleted.ToString())
+                                .ExecuteReader())
+                                if (reader.Read())
+                                    throw new DatabaseInconsistencyException($"Detected 1 volume with missing filesets: VolumeId = {reader.ConvertValueToInt64(0)}, Name = {reader.ConvertValueToString(1)}, State = {reader.ConvertValueToString(2)}");
 
-                    throw new DatabaseInconsistencyException($"Detected {volumesMissingFilests} volumes with missing filesets");
+                        throw new DatabaseInconsistencyException($"Detected {volumesMissingFilests} volumes with missing filesets");
+                    }
                 }
 
                 var nonAttachedFiles = cmd.ExecuteScalarInt64(@"SELECT COUNT(*) FROM ""FilesetEntry"" WHERE ""FileID"" NOT IN (SELECT ""ID"" FROM ""FileLookup"")");
