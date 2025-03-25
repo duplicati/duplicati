@@ -65,7 +65,12 @@ namespace Duplicati.Library.Main.Operation
                 throw new UserInformationException(string.Format("Cannot recreate database because file already exists: {0}", path), "RecreateTargetDatabaseExists");
 
             using (var db = new LocalDatabase(path, "Recreate", true))
+            {
                 await DoRunAsync(backendManager, db, false, filter, filelistfilter, blockprocessor).ConfigureAwait(false);
+
+                // Ensure database is consistent after the recreate
+                db.VerifyConsistency(m_options.Blocksize, m_options.BlockhashSize, true, null);
+            }
         }
 
         /// <summary>

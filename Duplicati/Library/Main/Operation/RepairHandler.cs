@@ -93,6 +93,7 @@ namespace Duplicati.Library.Main.Operation
             else
             {
                 RunRepairCommon();
+                await RunRepairBrokenFilesets(backendManager).ConfigureAwait(false);
                 await RunRepairRemoteAsync(backendManager, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
             }
 
@@ -117,7 +118,7 @@ namespace Duplicati.Library.Main.Operation
             }
         }
 
-        public async Task RunRepairRemoteAsync(IBackendManager backendManager, CancellationToken cancellationToken)
+        private async Task RunRepairRemoteAsync(IBackendManager backendManager, CancellationToken cancellationToken)
         {
             if (!File.Exists(m_options.Dbpath))
                 throw new UserInformationException(string.Format("Database file does not exist: {0}", m_options.Dbpath), "RepairDatabaseFileDoesNotExist");
@@ -134,6 +135,9 @@ namespace Duplicati.Library.Main.Operation
 
                 if (db.RepairInProgress)
                     throw new UserInformationException("The database was attempted repaired, but the repair did not complete. This database may be incomplete and the repair process is not allowed to alter remote files as that could result in data loss.", "DatabaseIsInRepairState");
+
+                // Ensure the database is consistent before we start fixing the remote
+                db.VerifyConsistencyForRepair(m_options.Blocksize, m_options.BlockhashSize, true, null);
 
                 // If the last backup failed, guard the incomplete fileset, so we can create a synthetic filelist
                 var lastTempFilelist = db.GetLastIncompleteFilesetVolume(null);
@@ -611,6 +615,43 @@ namespace Duplicati.Library.Main.Operation
                 await backendManager.WaitForEmptyAsync(db, null, cancellationToken).ConfigureAwait(false);
                 if (!m_options.Dryrun)
                     db.TerminatedWithActiveUploads = false;
+            }
+        }
+
+        public async Task RunRepairBrokenFilesets(IBackendManager backendManager)
+        {
+            if (!File.Exists(m_options.Dbpath))
+                throw new UserInformationException(string.Format("Database file does not exist: {0}", m_options.Dbpath), "DatabaseDoesNotExist");
+
+            using (var db = new LocalRepairDatabase(m_options.Dbpath))
+            using (var tr = new ReusableTransaction(db))
+            {
+                var sets = db.GetFilesetsWithMissingFiles(null).ToList();
+                if (sets.Count == 0)
+                    return;
+
+                Logging.Log.WriteInformationMessage(LOGTAG, "RepairingBrokenFilesets", "Repairing {0} broken filesets", sets.Count);
+                var ix = 0;
+                foreach (var entry in sets)
+                {
+                    ix++;
+                    Logging.Log.WriteInformationMessage(LOGTAG, "RepairingBrokenFileset", "Repairing broken fileset {0} of {1}: {2}", ix, sets.Count, entry.Value);
+                    var volume = db.GetRemoteVolumeFromFilesetID(entry.Key, tr.Transaction);
+                    var parsed = VolumeBase.ParseFilename(volume.Name);
+                    using var tmpfile = await backendManager.GetAsync(volume.Name, volume.Hash, volume.Size, CancellationToken.None).ConfigureAwait(false);
+                    using var stream = new FileStream(tmpfile, FileMode.Open, FileAccess.Read, FileShare.Read);
+                    using var compressor = DynamicLoader.CompressionLoader.GetModule(parsed.CompressionModule, stream, ArchiveMode.Read, m_options.RawOptions);
+                    if (compressor == null)
+                        throw new UserInformationException(string.Format("Failed to load compression module: {0}", parsed.CompressionModule), "FailedToLoadCompressionModule");
+
+                    // Clear out the old fileset
+                    db.DeleteFilesetEntries(entry.Key, tr.Transaction);
+                    using (var rdb = new LocalRecreateDatabase(db, m_options))
+                        RecreateDatabaseHandler.RecreateFilesetFromRemoteList(rdb, tr.Transaction, compressor, entry.Key, m_options, new FilterExpression());
+
+                    tr.Commit();
+                }
+
             }
         }
 
