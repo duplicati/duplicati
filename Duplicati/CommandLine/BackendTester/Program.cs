@@ -456,7 +456,7 @@ namespace Duplicati.CommandLine.BackendTester
                         catch (Exception ex)
                         {
                             failAfterFinished = true;
-                            Console.WriteLine(LogTimeStamp + "*** Failed to delete file {0}, message: {1}", tx.remotefilename, ex);
+                            Console.WriteLine(LogTimeStamp + "*** Failed to delete file {0}, message: {1}", files[i].remotefilename, ex);
                         }
 
                     if (waitAfterDelete > TimeSpan.Zero)
