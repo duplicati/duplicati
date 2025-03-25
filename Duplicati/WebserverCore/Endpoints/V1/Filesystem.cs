@@ -20,6 +20,7 @@
 // DEALINGS IN THE SOFTWARE.
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Snapshots;
+using Duplicati.Library.Utility;
 using Duplicati.Server;
 using Duplicati.WebserverCore.Abstractions;
 using Duplicati.WebserverCore.Exceptions;
@@ -110,8 +111,7 @@ public class Filesystem : IEndpointV1
                             && di.IsReady // Only try to create TreeNode entries for drives who were ready 'now'
                         )
                         .Select(TryCreateTreeNodeForDrive) // This will try to create a TreeNode for selected drives
-                        .Where(tn => tn != null) // This filters out such entries that could not be created
-                        .Select(x => x!);
+                        .WhereNotNull(); // This filters out such entries that could not be created
             }
             else
             {

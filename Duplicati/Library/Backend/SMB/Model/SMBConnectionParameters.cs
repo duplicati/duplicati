@@ -19,27 +19,29 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
-using Newtonsoft.Json;
+using SMBLibrary;
 
-namespace Duplicati.Library.Backend.Backblaze.Model;
+namespace Duplicati.Library.Backend.SMB.Model;
 
 /// <summary>
-/// Represents a request to delete a file from Backblaze B2.
-/// Contains the necessary information to identify the file to be deleted.
+/// Connection parameters for establishing an SMB connection.
 /// </summary>
-internal class DeleteRequest
-{
-    /// <summary>
-    /// Gets or sets the name of the file to be deleted.
-    /// This is the full path of the file in the bucket.
-    /// </summary>
-    [JsonProperty("fileName")]
-    public string? FileName { get; set; }
-
-    /// <summary>
-    /// Gets or sets the unique identifier of the file to be deleted.
-    /// This ID is assigned by Backblaze B2 when the file is uploaded.
-    /// </summary>
-    [JsonProperty("fileId")]
-    public string? FileId { get; set; }
-}
+/// <param name="ServerName">The name or IP address of the SMB server</param>
+/// <param name="TransportType">The transport protocol type used for SMB communication</param>
+/// <param name="ShareName">The name of the network share to connect to</param>
+/// <param name="Path">The path within the share to access</param>
+/// <param name="AuthDomain">The authentication domain name</param>
+/// <param name="AuthUser">The username for authentication</param>
+/// <param name="AuthPassword">The password for authentication</param>
+/// <param name="ReadBufferSize">Read buffer size for SMB operations (will be capped automatically by SMB negotiated values)</param>
+/// <param name="WriteBufferSize">Write buffer size for SMB operations (will be capped automatically by SMB negotiated values)</param>
+public sealed record SMBConnectionParameters(
+    string ServerName,
+    SMBTransportType TransportType,
+    string ShareName,
+    string Path,
+    string? AuthDomain,
+    string? AuthUser,
+    string? AuthPassword,
+    int? ReadBufferSize,
+    int? WriteBufferSize);

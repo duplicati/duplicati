@@ -19,42 +19,36 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
-using System;
 using Duplicati.Library.Interface;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using Duplicati.Library.Backend.CIFS;
-using Duplicati.Library.Backend.CIFS.Model;
+using Duplicati.Library.Backend.SMB;
+using Duplicati.Library.Backend.SMB.Model;
 using SMBLibrary;
 using Duplicati.Library.SourceProvider;
 using System.Runtime.CompilerServices;
 using Duplicati.Library.Common.IO;
-using System.Runtime.CompilerServices;
+using Duplicati.Library.Utility.Options;
 
 namespace Duplicati.Library.Backend;
 
 /// <summary>
 /// Native CIFS/SMB Backend implementation
 /// </summary>
-public class CIFSBackend : IStreamingBackend, IFolderEnabledBackend
+public class SMBBackend : IStreamingBackend, IFolderEnabledBackend
 {
     /// <summary>
     /// Implementation of interface property for the backend key
     /// </summary>
-    public string ProtocolKey => "cifs";
+    public virtual string ProtocolKey => "smb";
 
     /// <summary>
     /// Implementation of interface property for the backend display name
     /// </summary>
-    public string DisplayName => Strings.CIFSBackend.DisplayName;
+    public virtual string DisplayName => Strings.SMBBackend.DisplayName;
 
     /// <summary>
     /// Implementation of interface property for the backend description
     /// </summary>
-    public string Description => Strings.CIFSBackend.Description;
+    public virtual string Description => Strings.SMBBackend.Description;
 
     /// <summary>
     /// Hostname only (no ports or paths) to be used on DNS resolutions.
@@ -69,12 +63,17 @@ public class CIFSBackend : IStreamingBackend, IFolderEnabledBackend
     /// <summary>
     /// Cache of parsed connection parameters
     /// </summary>
-    private SMBConnectionParameters _connectionParameters;
+    private readonly SMBConnectionParameters _connectionParameters;
+
+    /// <summary>
+    /// Timeout options to be used in the backend
+    /// </summary>
+    private readonly TimeoutOptionsHelper.Timeouts _timeouts;
 
     /// <summary>
     /// Shared connection between all methods to avoid re-authentication
     /// </summary>
-    private SMBShareConnection _sharedConnection;
+    private SMBShareConnection? _sharedConnection;
 
     /// <summary>
     /// Read buffer size for SMB operations (will be capped automatically by SMB negotiated values)
@@ -97,16 +96,6 @@ public class CIFSBackend : IStreamingBackend, IFolderEnabledBackend
     private const string AUTH_DOMAIN_OPTION = "auth-domain";
 
     /// <summary>
-    /// Username for authentication
-    /// </summary>
-    private const string AUTH_USERNAME_OPTION = "auth-username";
-
-    /// <summary>
-    /// Password for authentication
-    /// </summary>
-    private const string AUTH_PASSWORD_OPTION = "auth-password";
-
-    /// <summary>
     /// Defines the default transport to be used in CIFS connection
     /// </summary>
     private const string DEFAULT_TRANSPORT = "directtcp";
@@ -123,8 +112,11 @@ public class CIFSBackend : IStreamingBackend, IFolderEnabledBackend
     /// <summary>
     /// Empty constructor is required for the backend to be loaded by the backend factory
     /// </summary>
-    public CIFSBackend()
+    public SMBBackend()
     {
+        _DnsName = null!;
+        _connectionParameters = null!;
+        _timeouts = null!;
     }
 
     /// <summary>
@@ -132,7 +124,7 @@ public class CIFSBackend : IStreamingBackend, IFolderEnabledBackend
     /// </summary>
     /// <param name="url">URL in Duplicati Uri format</param>
     /// <param name="options">options to be used in the backend</param>
-    public CIFSBackend(string url, Dictionary<string, string> options)
+    public SMBBackend(string url, Dictionary<string, string?> options)
     {
         if (string.IsNullOrEmpty(url))
             throw new ArgumentNullException(nameof(url));
@@ -146,37 +138,39 @@ public class CIFSBackend : IStreamingBackend, IFolderEnabledBackend
         var input = uri.Path.TrimEnd('/');
         var slashIndex = input.IndexOf('/');  // Find first slash to separate server and share if present.
 
-        options.TryGetValue(AUTH_USERNAME_OPTION, out string authUsername);
-        options.TryGetValue(AUTH_PASSWORD_OPTION, out string authPassword);
-        options.TryGetValue(AUTH_DOMAIN_OPTION, out string authDomain);
-        options.TryGetValue(TRANSPORT_OPTION, out string transport);
+        var auth = AuthOptionsHelper.Parse(options, uri);
+        var authDomain = options.GetValueOrDefault(AUTH_DOMAIN_OPTION);
+        var transport = options.GetValueOrDefault(TRANSPORT_OPTION);
 
         int? readBufferSize = null, writeBufferSize = null;
 
-        options.TryGetValue(READ_BUFFER_SIZE_OPTION, out string readBufferSizeConfig);
-        if (!string.IsNullOrWhiteSpace(readBufferSizeConfig)) readBufferSize = Int32.TryParse(readBufferSizeConfig, out int value) ? value : null;
+        var readBufferSizeConfig = options.GetValueOrDefault(READ_BUFFER_SIZE_OPTION);
+        if (!string.IsNullOrWhiteSpace(readBufferSizeConfig))
+            readBufferSize = int.TryParse(readBufferSizeConfig, out int value) ? value : null;
 
-        options.TryGetValue(WRITE_BUFFER_SIZE_OPTION, out string writeBufferSizeConfig);
-        if (!string.IsNullOrWhiteSpace(writeBufferSizeConfig)) writeBufferSize = Int32.TryParse(readBufferSizeConfig, out int value) ? value : null;
+        var writeBufferSizeConfig = options.GetValueOrDefault(WRITE_BUFFER_SIZE_OPTION);
+        if (!string.IsNullOrWhiteSpace(writeBufferSizeConfig))
+            writeBufferSize = int.TryParse(readBufferSizeConfig, out int value) ? value : null;
 
         // Normalize to 10KB minimum buffers size
         readBufferSize = readBufferSize < 1024 * 10 ? null : readBufferSize;
         writeBufferSize = writeBufferSize < 1024 * 10 ? null : writeBufferSize;
 
-        SMBTransportType transportType = _transportMap.TryGetValue(
+        var transportType = _transportMap.TryGetValue(
             string.IsNullOrEmpty(transport) ? DEFAULT_TRANSPORT : transport.ToLower(),
             out SMBTransportType type)
             ? type
             : throw new UserInformationException($"Transport must be one of: {string.Join(", ", _transportMap.Keys)}", "CIFSConfig");
 
+        _timeouts = TimeoutOptionsHelper.Parse(options);
         _connectionParameters = new SMBConnectionParameters(
             uri.Host,
             transportType,
             slashIndex >= 0 ? input[..slashIndex] : input,
             slashIndex >= 0 ? input[(slashIndex + 1)..] : "",
             authDomain,
-            authUsername,
-            authPassword,
+            auth.Username,
+            auth.Password,
             readBufferSize,
             writeBufferSize
         );
@@ -186,14 +180,14 @@ public class CIFSBackend : IStreamingBackend, IFolderEnabledBackend
     /// Implementation of interface property to return supported command parameters
     /// </summary>
     public IList<ICommandLineArgument> SupportedCommands =>
-        new List<ICommandLineArgument>([
-            new CommandLineArgument(AUTH_PASSWORD_OPTION, CommandLineArgument.ArgumentType.Password, Strings.CIFSBackend.DescriptionAuthPasswordShort, Strings.CIFSBackend.DescriptionAuthPasswordLong),
-            new CommandLineArgument(AUTH_USERNAME_OPTION, CommandLineArgument.ArgumentType.String, Strings.CIFSBackend.DescriptionAuthUsernameShort, Strings.CIFSBackend.DescriptionAuthUsernameLong),
-            new CommandLineArgument(AUTH_DOMAIN_OPTION, CommandLineArgument.ArgumentType.String, Strings.CIFSBackend.DescriptionAuthDomainShort, Strings.CIFSBackend.DescriptionAuthDomainLong),
+        [
+            .. AuthOptionsHelper.GetOptions(),
+            new CommandLineArgument(AUTH_DOMAIN_OPTION, CommandLineArgument.ArgumentType.String, Strings.SMBBackend.DescriptionAuthDomainShort, Strings.SMBBackend.DescriptionAuthDomainLong),
             new CommandLineArgument(TRANSPORT_OPTION, CommandLineArgument.ArgumentType.Enumeration, Strings.Options.TransportShort, Strings.Options.TransportLong, DEFAULT_TRANSPORT, null, _transportMap.Keys.ToArray()),
             new CommandLineArgument(READ_BUFFER_SIZE_OPTION, CommandLineArgument.ArgumentType.String, Strings.Options.DescriptionReadBufferSizeShort, Strings.Options.DescriptionReadBufferSizeLong),
-            new CommandLineArgument(WRITE_BUFFER_SIZE_OPTION, CommandLineArgument.ArgumentType.String, Strings.Options.DescriptionWriteBufferSizeShort, Strings.Options.DescriptionWriteBufferSizeLong)
-        ]);
+            new CommandLineArgument(WRITE_BUFFER_SIZE_OPTION, CommandLineArgument.ArgumentType.String, Strings.Options.DescriptionWriteBufferSizeShort, Strings.Options.DescriptionWriteBufferSizeLong),
+            .. TimeoutOptionsHelper.GetOptions()
+        ];
 
     /// <summary>
     /// Implementation of interface method for listing remote folder contents
@@ -201,7 +195,8 @@ public class CIFSBackend : IStreamingBackend, IFolderEnabledBackend
     /// <returns>List of IFileEntry with directory listing result</returns>
     public async IAsyncEnumerable<IFileEntry> ListAsync([EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        foreach (var v in await GetConnection().ListAsync(_connectionParameters.Path, cancellationToken).ConfigureAwait(false))
+        var con = await GetConnectionAsync(cancellationToken).ConfigureAwait(false);
+        foreach (var v in await con.ListAsync(_connectionParameters.Path, cancellationToken).ConfigureAwait(false))
             yield return v;
     }
 
@@ -230,7 +225,8 @@ public class CIFSBackend : IStreamingBackend, IFolderEnabledBackend
     /// <exception cref="Exception">Exceptions arising from either code execution</exception>
     public async Task PutAsync(string remotename, Stream input, CancellationToken cancellationToken)
     {
-        await GetConnection().PutAsync(remotename, input, cancellationToken).ConfigureAwait(false);
+        var con = await GetConnectionAsync(cancellationToken).ConfigureAwait(false);
+        await con.PutAsync(remotename, input, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -259,7 +255,8 @@ public class CIFSBackend : IStreamingBackend, IFolderEnabledBackend
     /// <exception cref="Exception">Exceptions arising from either code execution or FileMissingException</exception>
     public async Task GetAsync(string remotename, Stream output, CancellationToken cancellationToken)
     {
-        await GetConnection().GetAsync(remotename, output, cancellationToken).ConfigureAwait(false);
+        var con = await GetConnectionAsync(cancellationToken).ConfigureAwait(false);
+        await con.GetAsync(remotename, output, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -272,7 +269,8 @@ public class CIFSBackend : IStreamingBackend, IFolderEnabledBackend
     /// <exception cref="Exception">Exceptions arising from either code execution or business logic errors</exception>
     public async Task DeleteAsync(string remotename, CancellationToken cancellationToken)
     {
-        await GetConnection().DeleteAsync(remotename, cancellationToken).ConfigureAwait(false);
+        var con = await GetConnectionAsync(cancellationToken).ConfigureAwait(false);
+        await con.DeleteAsync(remotename, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -291,7 +289,8 @@ public class CIFSBackend : IStreamingBackend, IFolderEnabledBackend
     public async Task TestAsync(CancellationToken cancellationToken)
     {
         // This will throw an exception if the folder is missing
-        await GetConnection().ListAsync(_connectionParameters.Path, cancellationToken).ConfigureAwait(false);
+        var con = await GetConnectionAsync(cancellationToken).ConfigureAwait(false);
+        await con.ListAsync(_connectionParameters.Path, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -308,7 +307,8 @@ public class CIFSBackend : IStreamingBackend, IFolderEnabledBackend
         if (pathParts == null || pathParts.Length == 0)
             return;
 
-        await GetConnection().CreateFolderAsync(_connectionParameters.Path, cancellationToken)
+        var con = await GetConnectionAsync(cancellationToken).ConfigureAwait(false);
+        await con.CreateFolderAsync(_connectionParameters.Path ?? "", cancellationToken)
             .ConfigureAwait(false);
     }
 
@@ -316,7 +316,8 @@ public class CIFSBackend : IStreamingBackend, IFolderEnabledBackend
     /// Gets or creates a shared SMB connection
     /// </summary>
     /// <returns>An SMB connection that can be used for file operations</returns>
-    private SMBShareConnection GetConnection() => _sharedConnection ??= new SMBShareConnection(_connectionParameters);
+    private async Task<SMBShareConnection> GetConnectionAsync(CancellationToken cancellationToken)
+        => _sharedConnection ??= await SMBShareConnection.CreateAsync(_connectionParameters, _timeouts, cancellationToken).ConfigureAwait(false);
 
 
 
@@ -337,18 +338,19 @@ public class CIFSBackend : IStreamingBackend, IFolderEnabledBackend
     }
 
     /// <inheritdoc/>
-    public async IAsyncEnumerable<IFileEntry> ListAsync(string path, [EnumeratorCancellation] CancellationToken cancellationToken)
+    public async IAsyncEnumerable<IFileEntry> ListAsync(string? path, [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         var sourcePath = _connectionParameters.Path;
         if (!string.IsNullOrWhiteSpace(sourcePath))
             sourcePath = Util.AppendDirSeparator(sourcePath, "/");
 
-        foreach (var v in await GetConnection().ListAsync(sourcePath + BackendSourceFileEntry.NormalizePathTo(path, '/'), cancellationToken).ConfigureAwait(false))
+        var con = await GetConnectionAsync(cancellationToken).ConfigureAwait(false);
+        foreach (var v in await con.ListAsync(sourcePath + BackendSourceFileEntry.NormalizePathTo(path, '/'), cancellationToken).ConfigureAwait(false))
             if (v.Name != "." && v.Name != "..")
                 yield return v;
     }
 
     /// <inheritdoc/>
-    public Task<IFileEntry> GetEntryAsync(string path, CancellationToken cancellationToken)
-        => Task.FromResult<IFileEntry>(null);
+    public Task<IFileEntry?> GetEntryAsync(string path, CancellationToken cancellationToken)
+        => Task.FromResult<IFileEntry?>(null);
 }

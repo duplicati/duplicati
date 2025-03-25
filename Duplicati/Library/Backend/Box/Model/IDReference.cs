@@ -4,5 +4,5 @@ namespace Duplicati.Library.Backend.Box;
 
 public class IDReference
 {
-    [JsonProperty("id")] public string ID { get; set; }
+    [JsonProperty("id")] public string? ID { get; set; }
 }

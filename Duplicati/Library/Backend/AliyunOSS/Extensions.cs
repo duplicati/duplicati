@@ -28,7 +28,8 @@ namespace Duplicati.Library.Backend.AliyunOSS
         /// </summary>
         /// <param name="path">The path to trim.</param>
         /// <returns>The trimmed path.</returns>
-        public static string TrimPath(this string path)
+        [return: System.Diagnostics.CodeAnalysis.NotNullIfNotNull("path")]
+        public static string? TrimPath(this string? path)
         {
             return path?.Trim().Trim('/').Trim('\\').Trim('/').Trim();
         }

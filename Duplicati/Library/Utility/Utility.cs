@@ -1680,11 +1680,66 @@ namespace Duplicati.Library.Utility
         /// <param name="token">The cancellation token</param>
         /// <param name="func">The function to invoke</param>
         /// <returns>The task</returns>
+        public static async Task WithTimeout(TimeSpan timeout, CancellationToken token, Action<CancellationToken> func)
+        {
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(token);
+            cts.CancelAfter(timeout);
+            try
+            {
+                await Task.Run(() => func(cts.Token), cts.Token).ConfigureAwait(false);
+            }
+            catch (TaskCanceledException)
+            {
+                if (cts.IsCancellationRequested)
+                    throw new TimeoutException();
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Performs the function with an additional timeout
+        /// </summary>
+        /// <param name="timeout">The timeout to observe</param>
+        /// <param name="token">The cancellation token</param>
+        /// <param name="func">The function to invoke</param>
+        /// <returns>The task</returns>
+        public static async Task<T> WithTimeout<T>(TimeSpan timeout, CancellationToken token, Func<CancellationToken, T> func)
+        {
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(token);
+            cts.CancelAfter(timeout);
+            try
+            {
+                return await Task.Run(() => func(cts.Token), cts.Token).ConfigureAwait(false);
+            }
+            catch (TaskCanceledException)
+            {
+                if (cts.IsCancellationRequested)
+                    throw new TimeoutException();
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Performs the function with an additional timeout
+        /// </summary>
+        /// <param name="timeout">The timeout to observe</param>
+        /// <param name="token">The cancellation token</param>
+        /// <param name="func">The function to invoke</param>
+        /// <returns>The task</returns>
         public static async Task WithTimeout(TimeSpan timeout, CancellationToken token, Func<CancellationToken, Task> func)
         {
             using var cts = CancellationTokenSource.CreateLinkedTokenSource(token);
             cts.CancelAfter(timeout);
-            await func(cts.Token);
+            try
+            {
+                await func(cts.Token);
+            }
+            catch (TaskCanceledException)
+            {
+                if (cts.IsCancellationRequested)
+                    throw new TimeoutException();
+                throw;
+            }
         }
 
         /// <summary>
@@ -1699,7 +1754,16 @@ namespace Duplicati.Library.Utility
         {
             using var cts = CancellationTokenSource.CreateLinkedTokenSource(token);
             cts.CancelAfter(timeout);
-            return await func(cts.Token);
+            try
+            {
+                return await func(cts.Token);
+            }
+            catch (TaskCanceledException)
+            {
+                if (cts.IsCancellationRequested)
+                    throw new TimeoutException();
+                throw;
+            }
         }
 
         /// <summary>
