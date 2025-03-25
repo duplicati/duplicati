@@ -605,11 +605,11 @@ namespace Duplicati.Library.Common.IO
         [SupportedOSPlatform("windows")]
         public void SetMetadata(string path, Dictionary<string, string> data, bool restorePermissions)
         {
-            var isDirTarget = path.EndsWith(DIRSEP, StringComparison.Ordinal);
-            var targetpath = isDirTarget ? path.Substring(0, path.Length - 1) : path;
-
             if (restorePermissions)
             {
+                var isDirTarget = path.EndsWith(DIRSEP, StringComparison.Ordinal);
+                var targetpath = isDirTarget ? path.Substring(0, path.Length - 1) : path;
+
                 FileSystemSecurity rules = isDirTarget ? GetAccessControlDir(targetpath) : GetAccessControlFile(targetpath);
 
                 if (data.ContainsKey("win-ext:accessrulesprotected"))
