@@ -43,6 +43,7 @@ namespace Duplicati.GUI.TrayIcon
     {
         private static readonly string LOGTAG = Log.LogTagFromType<AvaloniaRunner>();
         private AvaloniaApp? application;
+        private bool closed = false;
         private ProcessBasedActionDelay actionDelayer = new ProcessBasedActionDelay();
         private IEnumerable<AvaloniaMenuItem> menuItems = Enumerable.Empty<AvaloniaMenuItem>();
 
@@ -51,10 +52,10 @@ namespace Duplicati.GUI.TrayIcon
             base.Init(args);
         }
 
-        protected override void UpdateUIState(Action action)
+        protected override Task UpdateUIState(Action action)
             => RunOnUIThread(action);
 
-        internal void RunOnUIThread(Action action)
+        internal Task RunOnUIThread(Action action)
             => actionDelayer.ExecuteAction(() =>
             {
                 try
@@ -70,6 +71,9 @@ namespace Duplicati.GUI.TrayIcon
 
         private void RunOnUIThreadInternal(Action action)
         {
+            if (closed)
+                return;
+
             if (Dispatcher.UIThread.CheckAccess())
                 action();
             else
@@ -188,7 +192,12 @@ namespace Duplicati.GUI.TrayIcon
 
         protected override void Exit()
         {
-            UpdateUIState(() => this.application?.Shutdown());
+            UpdateUIState(() =>
+            {
+                this.closed = true;
+                this.application?.Shutdown();
+
+            });
         }
 
         protected override void SetIcon(TrayIcons icon)
