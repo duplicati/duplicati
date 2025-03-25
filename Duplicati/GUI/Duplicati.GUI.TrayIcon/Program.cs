@@ -68,7 +68,7 @@ namespace Duplicati.GUI.TrayIcon
         private const string DETACHED_PROCESS = "detached-process";
         private const string BROWSER_COMMAND_OPTION = "browser-command";
 
-        private static string DEFAULT_HOSTURL => $"http://{Library.Utility.Utility.IpVersionCompatibleLoopback}:8200";
+        private static string DEFAULT_HOSTURL => $"http://{Utility.IpVersionCompatibleLoopback}:8200";
 
         private static string _browser_command = null;
         private static bool disableTrayIconLogin = false;
@@ -83,25 +83,25 @@ namespace Duplicati.GUI.TrayIcon
         [STAThread]
         public static int Main(string[] _args)
         {
-            Library.AutoUpdater.PreloadSettingsLoader.ConfigurePreloadSettings(ref _args, Library.AutoUpdater.PackageHelper.NamedExecutable.TrayIcon);
-            List<string> args = new List<string>(_args);
-            Dictionary<string, string> options = Library.Utility.CommandLineParser.ExtractOptions(args);
+            PreloadSettingsLoader.ConfigurePreloadSettings(ref _args, PackageHelper.NamedExecutable.TrayIcon);
+            var args = new List<string>(_args);
+            var options = CommandLineParser.ExtractOptions(args);
 
-            if (OperatingSystem.IsWindows() && !Library.Utility.Utility.ParseBoolOption(options, DETACHED_PROCESS))
-                Library.Utility.Win32.AttachConsole(Library.Utility.Win32.ATTACH_PARENT_PROCESS);
+            if (OperatingSystem.IsWindows() && !Utility.ParseBoolOption(options, DETACHED_PROCESS))
+                Win32.AttachConsole(Win32.ATTACH_PARENT_PROCESS);
 
             if (HelpOptionExtensions.IsArgumentAnyHelpString(args))
             {
                 Console.WriteLine("Supported commandline arguments:");
                 Console.WriteLine();
 
-                foreach (ICommandLineArgument arg in SupportedCommands)
+                foreach (ICommandLineArgument arg in AllSupportedCommands)
                     Console.WriteLine("--{0}: {1}", arg.Name, arg.LongDescription);
 
                 Console.WriteLine("Additionally, these server options are also supported:");
                 Console.WriteLine();
 
-                foreach (ICommandLineArgument arg in Server.Program.SupportedCommands)
+                foreach (ICommandLineArgument arg in WebserverSupportedCommands)
                     Console.WriteLine("--{0}: {1}", arg.Name, arg.LongDescription);
 
                 return 0;
@@ -114,7 +114,30 @@ namespace Duplicati.GUI.TrayIcon
             string password = null;
             var passwordSource = PasswordSource.SuppliedPassword;
             var acceptedHostCertificate = options.GetValueOrDefault(ACCEPTED_SSL_CERTIFICATE, null);
-            if (!Library.Utility.Utility.ParseBoolOption(options, NOHOSTEDSERVER_OPTION))
+            var detached = Utility.ParseBoolOption(options, NOHOSTEDSERVER_OPTION);
+
+            var supportedCommands = BasicSupportedCommands.AsEnumerable();
+            if (detached)
+            {
+                var detachedWebserverOptions = new HashSet<string>()
+                {
+                    WebServerLoader.OPTION_WEBSERVICE_PASSWORD,
+                    WebServerLoader.OPTION_PORT
+                };
+                supportedCommands = DetachSupportedCommands
+                    .Concat(supportedCommands)
+                    .Concat(WebserverSupportedCommands.Where(x => detachedWebserverOptions.Contains(x.Name)));
+            }
+            else
+            {
+                supportedCommands = supportedCommands.Concat(WebserverSupportedCommands);
+            }
+
+            // Validate options, and log to console
+            using (var logger = new ConsoleOutput(Console.Out, options))
+                CommandLineArgumentValidator.ValidateArguments(supportedCommands, options, Server.Program.KnownDuplicateOptions);
+
+            if (!detached)
             {
                 try
                 {
@@ -149,7 +172,7 @@ namespace Duplicati.GUI.TrayIcon
                     acceptedHostCertificate = Server.Program.DataConnection.ApplicationSettings.ServerSSLCertificate?.FirstOrDefault(x => x.HasPrivateKey)?.GetCertHashString();
 
             }
-            else if (Library.Utility.Utility.ParseBoolOption(options, READCONFIGFROMDB_OPTION))
+            else if (Utility.ParseBoolOption(options, READCONFIGFROMDB_OPTION))
             {
                 if (File.Exists(Path.Combine(DataFolderManager.DATAFOLDER, DataFolderManager.SERVER_DATABASE_FILENAME)))
                 {
@@ -292,24 +315,32 @@ No password provided, unable to connect to server, exiting");
         private static TrayIconBase RunTrayIcon()
             => new AvaloniaRunner();
 
-        public static ICommandLineArgument[] SupportedCommands
-        {
-            get
-            {
-                var args = new List<ICommandLineArgument>()
-                {
-                    new CommandLineArgument(HOSTURL_OPTION, CommandLineArgument.ArgumentType.String, "Selects the url to connect to", "Supply the url that the TrayIcon will connect to and show status for", DEFAULT_HOSTURL),
-                    new CommandLineArgument(NOHOSTEDSERVER_OPTION, CommandLineArgument.ArgumentType.String, "Disables local server", "Set this option to not spawn a local service, use if the TrayIcon should connect to a running service"),
-                    new CommandLineArgument(READCONFIGFROMDB_OPTION, CommandLineArgument.ArgumentType.String, "Read server connection info from DB", $"Set this option to read server connection info for running service from its database (only together with {NOHOSTEDSERVER_OPTION})"),
-                    new CommandLineArgument(BROWSER_COMMAND_OPTION, CommandLineArgument.ArgumentType.String, "Sets the browser command", "Set this option to override the default browser detection"),
-                    new CommandLineArgument(ACCEPTED_SSL_CERTIFICATE, CommandLineArgument.ArgumentType.String, "Accepts a specific SSL certificate", "Set this option to accept a specific SSL certificate, the value should be the hash of the certificate in hexadecimal format. Use * to accept any certificate (dangerous)"),
-                };
+        public static ICommandLineArgument[] DetachSupportedCommands =>
+        [
+            new CommandLineArgument(HOSTURL_OPTION, CommandLineArgument.ArgumentType.String, "Selects the url to connect to", "Supply the url that the TrayIcon will connect to and show status for", DEFAULT_HOSTURL),
+            new CommandLineArgument(NOHOSTEDSERVER_OPTION, CommandLineArgument.ArgumentType.String, "Disables local server", "Set this option to not spawn a local service, use if the TrayIcon should connect to a running service"),
+            new CommandLineArgument(READCONFIGFROMDB_OPTION, CommandLineArgument.ArgumentType.String, "Read server connection info from DB", $"Set this option to read server connection info for running service from its database (only together with {NOHOSTEDSERVER_OPTION})"),
+        ];
 
-                if (OperatingSystem.IsWindows())
-                    args.Add(new CommandLineArgument(DETACHED_PROCESS, CommandLineArgument.ArgumentType.String, "Runs the tray-icon detached", "This option runs the tray-icon in detached mode, meaning that the process will exit immediately and not send output to the console of the caller"));
+        public static ICommandLineArgument[] BasicSupportedCommands =>
+        [
+            new CommandLineArgument(BROWSER_COMMAND_OPTION, CommandLineArgument.ArgumentType.String, "Sets the browser command", "Set this option to override the default browser detection"),
+            new CommandLineArgument(ACCEPTED_SSL_CERTIFICATE, CommandLineArgument.ArgumentType.String, "Accepts a specific SSL certificate", "Set this option to accept a specific SSL certificate, the value should be the hash of the certificate in hexadecimal format. Use * to accept any certificate (dangerous)"),
+            .. WindowsSupportedCommands
+        ];
 
-                return args.ToArray();
-            }
-        }
+        private static ICommandLineArgument[] WindowsSupportedCommands =>
+            OperatingSystem.IsWindows()
+                ? [new CommandLineArgument(DETACHED_PROCESS, CommandLineArgument.ArgumentType.String, "Runs the tray-icon detached", "This option runs the tray-icon in detached mode, meaning that the process will exit immediately and not send output to the console of the caller")]
+                : [];
+
+        public static ICommandLineArgument[] WebserverSupportedCommands
+            => Server.Program.SupportedCommands;
+
+        public static ICommandLineArgument[] AllSupportedCommands =>
+        [
+            .. DetachSupportedCommands,
+            .. BasicSupportedCommands
+        ];
     }
 }
