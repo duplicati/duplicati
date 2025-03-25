@@ -185,8 +185,11 @@ namespace Duplicati.Library.Utility
             // file://c:\test support
             if (h.Length == 1 && p.StartsWith(":", StringComparison.Ordinal))
             {
-                h = h + p;
-                p = "";
+                p = h + p;
+                if (p.IndexOfAny(System.IO.Path.GetInvalidPathChars()) >= 0)
+                    throw new ArgumentException(Strings.Uri.UriParseError(url), nameof(url));
+                p = System.IO.Path.GetFullPath(p);
+                h = null;
             }
 
             this.Host = h;

@@ -115,55 +115,61 @@ namespace Duplicati.Library.Modules.Builtin
             return passphrase;
         }
 
-        private static string ReadPassphraseFromConsole(bool confirm)
+        /// <summary>
+        /// Reads a passphrase from the console, masking the input
+        /// </summary>
+        /// <returns>The entered passphrase</returns>
+        private static string ReadPassphraseLine()
         {
-            StringBuilder passphrase = new StringBuilder();
-
+            var passphrase = new StringBuilder();
             while (true)
             {
-                ConsoleKeyInfo k = Console.ReadKey(true);
+                var k = Console.ReadKey(true);
                 if (k.Key == ConsoleKey.Enter)
-                    break;
+                    return passphrase.ToString();
 
                 if (k.Key == ConsoleKey.Escape)
                     throw new Interface.CancelException("");
 
-                if (k.KeyChar != '\0')
+                if (k.Key == ConsoleKey.Backspace)
+                {
+                    if (passphrase.Length > 0)
+                    {
+                        passphrase.Length -= 1;
+
+                        // Move the cursor back, overwrite the '*' with space, and move back again
+                        Console.Write("\b \b");
+                    }
+
+                    continue;
+                }
+
+                if (k.KeyChar != '\0' && !char.IsControl(k.KeyChar))
                     passphrase.Append(k.KeyChar);
 
                 // Provide feedback to the user
                 Console.Write("*");
             }
+        }
 
+        private static string ReadPassphraseFromConsole(bool confirm)
+        {
+            var passphrase = ReadPassphraseLine();
             Console.WriteLine();
 
             if (confirm)
             {
-                Console.Write("\n" + Strings.ConsolePasswordInput.ConfirmPassphrasePrompt + ": ");
-                StringBuilder password2 = new StringBuilder();
+                Console.Write(Strings.ConsolePasswordInput.ConfirmPassphrasePrompt + ": ");
 
-                while (true)
-                {
-                    ConsoleKeyInfo k = Console.ReadKey(true);
-                    if (k.Key == ConsoleKey.Enter)
-                        break;
-
-                    if (k.Key == ConsoleKey.Escape)
-                        return null;
-
-                    password2.Append(k.KeyChar);
-
-                    // Provide feedback to the user
-                    Console.Write("*");
-                }
+                var password2 = ReadPassphraseLine();
                 Console.WriteLine();
 
                 if (passphrase.ToString() != password2.ToString())
-                    throw new Duplicati.Library.Interface.UserInformationException(Strings.ConsolePasswordInput.PassphraseMismatchError, "PassphraseMismatch");
+                    throw new Interface.UserInformationException(Strings.ConsolePasswordInput.PassphraseMismatchError, "PassphraseMismatch");
             }
 
             if (string.IsNullOrWhiteSpace(passphrase.ToString()))
-                throw new Duplicati.Library.Interface.UserInformationException(Strings.ConsolePasswordInput.EmptyPassphraseError, "EmptyPassphrase");
+                throw new Interface.UserInformationException(Strings.ConsolePasswordInput.EmptyPassphraseError, "EmptyPassphrase");
 
             return passphrase.ToString();
         }
