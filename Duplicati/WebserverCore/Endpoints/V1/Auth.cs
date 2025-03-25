@@ -49,7 +49,7 @@ public partial class Auth : IEndpointV1
                 {
                     var result = await loginProvider.PerformLoginWithRefreshToken(refreshTokenString, ct);
                     AddCookie(httpContextAccessor.HttpContext, cookieName, result.RefreshToken, DateTimeOffset.UtcNow.AddMinutes(jWTConfig.RefreshTokenDurationInMinutes));
-                    return new Dto.AccessTokenOutput(result.AccessToken);
+                    return new Dto.AccessTokenOutputDto(result.AccessToken);
                 }
                 catch (Exception ex)
                 {
@@ -73,7 +73,7 @@ public partial class Auth : IEndpointV1
                 var result = await loginProvider.PerformLoginWithSigninToken(input.SigninToken, input.RememberMe ?? false, ct);
                 if (!string.IsNullOrWhiteSpace(result.RefreshToken))
                     AddCookie(httpContextAccessor.HttpContext!, cookieName, result.RefreshToken, DateTimeOffset.UtcNow.AddMinutes(jWTConfig.RefreshTokenDurationInMinutes));
-                return new Dto.AccessTokenOutput(result.AccessToken);
+                return new Dto.AccessTokenOutputDto(result.AccessToken);
             }
             catch (Exception ex)
             {
@@ -95,7 +95,7 @@ public partial class Auth : IEndpointV1
                 var result = await loginProvider.PerformLoginWithPassword(input.Password, input.RememberMe ?? false, ct);
                 if (!string.IsNullOrWhiteSpace(result.RefreshToken))
                     AddCookie(httpContextAccessor.HttpContext!, cookieName, result.RefreshToken, DateTimeOffset.UtcNow.AddMinutes(jWTConfig.RefreshTokenDurationInMinutes));
-                return new Dto.AccessTokenOutput(result.AccessToken);
+                return new Dto.AccessTokenOutputDto(result.AccessToken);
             }
             catch (Exception ex)
             {
@@ -143,7 +143,7 @@ public partial class Auth : IEndpointV1
             if (!res.Value)
                 throw new UnauthorizedException("Cannot generate multiple forever tokens, restart the server to generate a new one");
 
-            return new Dto.AccessTokenOutput(tokenProvider.CreateForeverToken());
+            return new Dto.AccessTokenOutputDto(tokenProvider.CreateForeverToken());
         }).RequireAuthorization();
     }
 

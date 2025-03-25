@@ -20,4 +20,4 @@
 // DEALINGS IN THE SOFTWARE.
 namespace Duplicati.WebserverCore.Dto;
 
-public record AccessTokenOutput(string AccessToken);
+public record CrashLogOutputDto(string? Logdata);
