@@ -31,9 +31,50 @@ namespace Duplicati.Library.Utility
     public static class Timeparser
     {
         public static TimeSpan ParseTimeSpan(string datestring)
+            => ParseTimeSpan(datestring, false);
+
+        public static TimeSpan ParseTimeSpan(string datestring, bool negate)
         {
-            var dt = new DateTime(0, DateTimeKind.Local);
-            return ParseTimeInterval(datestring, dt) - dt;
+            var multiplier = negate ? -1 : 1;
+            var offset = TimeSpan.Zero;
+
+            if (string.IsNullOrEmpty(datestring))
+                return offset;
+
+            if (long.TryParse(datestring, System.Globalization.NumberStyles.Integer, null, out var l))
+                return offset.Add(TimeSpan.FromSeconds(l * multiplier));
+
+            var separators = new char[] { 's', 'm', 'h', 'D', 'W', 'M', 'Y' };
+
+            int index;
+            var previndex = 0;
+
+            while ((index = datestring.IndexOfAny(separators, previndex)) > 0)
+            {
+                var partial = datestring.Substring(previndex, index - previndex).Trim();
+                if (!int.TryParse(partial, System.Globalization.NumberStyles.Integer, null, out var factor))
+                    throw new Exception(Strings.Timeparser.InvalidIntegerError(partial));
+
+                factor *= multiplier;
+
+                offset += datestring[index] switch
+                {
+                    's' => TimeSpan.FromSeconds(factor),
+                    'm' => TimeSpan.FromMinutes(factor),
+                    'h' => TimeSpan.FromHours(factor),
+                    'D' => TimeSpan.FromDays(factor),
+                    'W' => TimeSpan.FromDays(factor * 7),
+                    'M' => TimeSpan.FromDays(factor * 30),
+                    'Y' => TimeSpan.FromDays(factor * 365),
+                    _ => throw new Exception(Strings.Timeparser.InvalidSpecifierError(datestring[index])),
+                };
+                previndex = index + 1;
+            }
+
+            if (datestring.Substring(previndex).Trim().Length > 0)
+                throw new Exception(Strings.Timeparser.UnparsedDataFragmentError(datestring.Substring(previndex)));
+
+            return offset;
         }
 
         public static DateTime ParseTimeInterval(string datestring, DateTime offset)
@@ -76,32 +117,17 @@ namespace Duplicati.Library.Utility
 
                 factor *= multiplier;
 
-                switch (datestring[index])
+                offset = datestring[index] switch
                 {
-                    case 's':
-                        offset = offset.AddSeconds(factor);
-                        break;
-                    case 'm':
-                        offset = offset.AddMinutes(factor);
-                        break;
-                    case 'h':
-                        offset = offset.AddHours(factor);
-                        break;
-                    case 'D':
-                        offset = offset.AddDays(factor);
-                        break;
-                    case 'W':
-                        offset = offset.AddDays(factor * 7);
-                        break;
-                    case 'M':
-                        offset = offset.AddMonths(factor);
-                        break;
-                    case 'Y':
-                        offset = offset.AddYears(factor);
-                        break;
-                    default:
-                        throw new Exception(Strings.Timeparser.InvalidSpecifierError(datestring[index]));
-                }
+                    's' => offset.AddSeconds(factor),
+                    'm' => offset.AddMinutes(factor),
+                    'h' => offset.AddHours(factor),
+                    'D' => offset.AddDays(factor),
+                    'W' => offset.AddDays(factor * 7),
+                    'M' => offset.AddMonths(factor),
+                    'Y' => offset.AddYears(factor),
+                    _ => throw new Exception(Strings.Timeparser.InvalidSpecifierError(datestring[index])),
+                };
                 previndex = index + 1;
             }
 
@@ -122,6 +148,10 @@ namespace Duplicati.Library.Utility
         /// <returns>The calculated time</returns>
         public static DateTime DSTAwareParseTimeInterval(string datestring, DateTime offset, TimeZoneInfo timeZoneInfo, bool keepTimeOfDay, bool negate = false)
         {
+            // Use non-DST-aware version if we are not fixing this to the current time-of-day
+            if (!keepTimeOfDay)
+                return ParseTimeInterval(datestring, offset, negate);
+
             if (offset.Kind == DateTimeKind.Unspecified)
                 offset = new DateTime(offset.Ticks, DateTimeKind.Utc);
 
@@ -134,9 +164,7 @@ namespace Duplicati.Library.Utility
                 return DateTime.UtcNow;
 
             if (long.TryParse(datestring, System.Globalization.NumberStyles.Integer, null, out var l))
-                return keepTimeOfDay
-                    ? timeZoneInfo.DSTAwareAddSeconds(offset, l * multiplier)
-                    : timeZoneInfo.DSTAwareAddSeconds(DateTime.UtcNow, l * multiplier);
+                return timeZoneInfo.DSTAwareAddSeconds(offset, l * multiplier);
 
             if (DateTime.TryParse(datestring, System.Globalization.CultureInfo.CurrentCulture, System.Globalization.DateTimeStyles.AssumeLocal, out var t))
                 return t;
@@ -157,44 +185,17 @@ namespace Duplicati.Library.Utility
 
                 factor *= multiplier;
 
-                switch (datestring[index])
+                offset = datestring[index] switch
                 {
-                    case 's':
-                        offset = keepTimeOfDay
-                            ? timeZoneInfo.DSTAwareAddSeconds(offset, factor)
-                            : offset.AddSeconds(factor);
-                        break;
-                    case 'm':
-                        offset = keepTimeOfDay
-                            ? timeZoneInfo.DSTAwareAddMinutes(offset, factor)
-                            : offset.AddMinutes(factor);
-                        break;
-                    case 'h':
-                        offset = keepTimeOfDay
-                            ? timeZoneInfo.DSTAwareAddHours(offset, factor)
-                            : offset.AddHours(factor);
-                        break;
-                    case 'D':
-                        offset = timeZoneInfo.DSTAwareAddDays(offset, factor);
-                        break;
-                    case 'W':
-                        offset = keepTimeOfDay
-                            ? timeZoneInfo.DSTAwareAddDays(offset, factor * 7)
-                            : offset.AddDays(factor * 7);
-                        break;
-                    case 'M':
-                        offset = keepTimeOfDay
-                            ? timeZoneInfo.DSTAwareAddMonths(offset, factor)
-                            : offset.AddMonths(factor);
-                        break;
-                    case 'Y':
-                        offset = keepTimeOfDay
-                            ? timeZoneInfo.DSTAwareAddYears(offset, factor)
-                            : offset.AddYears(factor);
-                        break;
-                    default:
-                        throw new Exception(Strings.Timeparser.InvalidSpecifierError(datestring[index]));
-                }
+                    's' => timeZoneInfo.DSTAwareAddSeconds(offset, factor),
+                    'm' => timeZoneInfo.DSTAwareAddMinutes(offset, factor),
+                    'h' => timeZoneInfo.DSTAwareAddHours(offset, factor),
+                    'D' => timeZoneInfo.DSTAwareAddDays(offset, factor),
+                    'W' => timeZoneInfo.DSTAwareAddDays(offset, factor * 7),
+                    'M' => timeZoneInfo.DSTAwareAddMonths(offset, factor),
+                    'Y' => timeZoneInfo.DSTAwareAddYears(offset, factor),
+                    _ => throw new Exception(Strings.Timeparser.InvalidSpecifierError(datestring[index])),
+                };
                 previndex = index + 1;
             }
 

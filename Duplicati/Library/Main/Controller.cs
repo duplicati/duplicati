@@ -1124,7 +1124,7 @@ namespace Duplicati.Library.Main
             {
                 try
                 {
-                    Library.Utility.Sizeparser.ParseSize(value);
+                    Sizeparser.ParseSize(value);
                 }
                 catch
                 {
@@ -1138,7 +1138,7 @@ namespace Duplicati.Library.Main
             {
                 try
                 {
-                    Library.Utility.Timeparser.ParseTimeSpan(value);
+                    Timeparser.ParseTimeSpan(value);
                 }
                 catch
                 {
