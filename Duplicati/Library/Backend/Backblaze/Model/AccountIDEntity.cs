@@ -29,5 +29,5 @@ namespace Duplicati.Library.Backend.Backblaze.Model;
 internal abstract class AccountIDEntity
 {
     [JsonProperty("accountId")]
-    public string AccountID { get; set; }
+    public string? AccountID { get; set; }
 }

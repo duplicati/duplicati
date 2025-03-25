@@ -19,18 +19,16 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
-using System.Collections.Generic;
-
 namespace Duplicati.Library.Backend.pCloud;
 
-    /// <summary>
-    /// Error codes/strings for pcloud. They will not be subject to translation so messages
-    /// can be googled to help users diagnose issues.
-    /// 
-    /// </summary>
-    internal static class pCloudErrorList
-    {
-        internal static readonly Dictionary<int, string> ErrorMessages = new()
+/// <summary>
+/// Error codes/strings for pcloud. They will not be subject to translation so messages
+/// can be googled to help users diagnose issues.
+/// 
+/// </summary>
+internal static class pCloudErrorList
+{
+    internal static readonly Dictionary<int, string> ErrorMessages = new()
         {
             { 1000, "Log in required." },
             { 1001, "No full path or name/folderid provided." },
@@ -46,4 +44,4 @@ namespace Duplicati.Library.Backend.pCloud;
             { 4000, "Too many login tries from this IP address." },
             { 5002, "Internal error, no servers available. Try again later." }
         };
-    }
+}

@@ -21,21 +21,18 @@
 
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Runtime.CompilerServices;
+using Duplicati.Library.Utility.Options;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Duplicati.Library.Backend
 {
     public class S3 : IBackend, IStreamingBackend, IRenameEnabledBackend, IFolderEnabledBackend
     {
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<S3>();
+
+        private const string AUTH_USERNAME_OPTION = "aws-access-key-id";
+        private const string AUTH_PASSWORD_OPTION = "aws-secret-access-key";
 
         private const string STORAGECLASS_OPTION = "s3-storage-class";
         private const string SERVER_NAME = "s3-server-name";
@@ -180,33 +177,29 @@ namespace Duplicati.Library.Backend
         private readonly bool m_recurseLists;
 
         private const string DEFAULT_S3_HOST = "s3.amazonaws.com";
-        private IS3Client s3Client;
+        private readonly IS3Client m_s3Client;
 
         public S3()
         {
+            m_bucket = null!;
+            m_prefix = null!;
+            m_s3Client = null!;
         }
 
-        public S3(string url, Dictionary<string, string> options)
+        public S3(string url, Dictionary<string, string?> options)
         {
             var uri = new Utility.Uri(url);
             uri.RequireHost();
 
             m_bucket = uri.Host;
             m_prefix = uri.Path;
+            var timeout = TimeoutOptionsHelper.Parse(options);
 
-            if (!options.TryGetValue("aws-access-key-id", out var awsID))
-                options.TryGetValue("auth-username", out awsID);
-            if (!options.TryGetValue("aws-secret-access-key", out var awsKey))
-                options.TryGetValue("auth-password", out awsKey);
+            var auth = AuthOptionsHelper.ParseWithAlias(options, uri, AUTH_USERNAME_OPTION, AUTH_PASSWORD_OPTION);
 
-            if (!string.IsNullOrEmpty(uri.Username))
-                awsID = uri.Username;
-            if (!string.IsNullOrEmpty(uri.Password))
-                awsKey = uri.Password;
-
-            if (string.IsNullOrEmpty(awsID))
+            if (!auth.HasUsername)
                 throw new UserInformationException(Strings.S3Backend.NoAMZUserIDError, "S3NoAmzUserID");
-            if (string.IsNullOrEmpty(awsKey))
+            if (!auth.HasPassword)
                 throw new UserInformationException(Strings.S3Backend.NoAMZKeyError, "S3NoAmzKey");
 
             var useSSL = Utility.Utility.ParseBoolOption(options, SSL_OPTION);
@@ -240,13 +233,14 @@ namespace Duplicati.Library.Backend
 
             var s3ClientOptionValue = options.GetValueOrDefault(S3_CLIENT_OPTION);
 
+            (var awsID, var awsKey) = auth.GetCredentials();
             if (string.IsNullOrWhiteSpace(s3ClientOptionValue) || string.Equals(s3ClientOptionValue, "aws", StringComparison.OrdinalIgnoreCase))
             {
-                s3Client = new S3AwsClient(awsID, awsKey, locationConstraint, hostname, storageClass, useSSL, disableChunkEncoding, options);
+                m_s3Client = new S3AwsClient(awsID, awsKey, locationConstraint, hostname, storageClass, useSSL, disableChunkEncoding, timeout, options);
             }
             else if (string.Equals(s3ClientOptionValue, "minio", StringComparison.OrdinalIgnoreCase))
             {
-                s3Client = new S3MinioClient(awsID, awsKey, locationConstraint, hostname, storageClass, useSSL, options);
+                m_s3Client = new S3MinioClient(awsID, awsKey, locationConstraint, hostname, storageClass, useSSL, timeout, options);
             }
             else
             {
@@ -310,8 +304,8 @@ namespace Duplicati.Library.Backend
         {
             get
             {
-                StringBuilder hostnames = new StringBuilder();
-                StringBuilder locations = new StringBuilder();
+                var hostnames = new StringBuilder();
+                var locations = new StringBuilder();
                 foreach (var s in KNOWN_S3_PROVIDERS)
                     hostnames.AppendLine(string.Format("{0}: {1}", s.Key, s.Value));
 
@@ -320,9 +314,9 @@ namespace Duplicati.Library.Backend
 
                 var exts = S3AwsClient.GetAwsExtendedOptions();
 
-                var normal = new ICommandLineArgument[] {
-                    new CommandLineArgument("aws-secret-access-key", CommandLineArgument.ArgumentType.Password, Strings.S3Backend.AMZKeyDescriptionShort, Strings.S3Backend.AMZKeyDescriptionLong,null, new string[] {"auth-password"}, null ),
-                    new CommandLineArgument("aws-access-key-id", CommandLineArgument.ArgumentType.String, Strings.S3Backend.AMZUserIDDescriptionShort, Strings.S3Backend.AMZUserIDDescriptionLong, null, new string[] {"auth-username"}, null),
+                return [
+                    new CommandLineArgument("aws-access-key-id", CommandLineArgument.ArgumentType.String, Strings.S3Backend.AMZUserIDDescriptionShort, Strings.S3Backend.AMZUserIDDescriptionLong, null, [AuthOptionsHelper.AuthUsernameOption], null),
+                    new CommandLineArgument("aws-secret-access-key", CommandLineArgument.ArgumentType.Password, Strings.S3Backend.AMZKeyDescriptionShort, Strings.S3Backend.AMZKeyDescriptionLong,null, [AuthOptionsHelper.AuthPasswordOption], null ),
                     new CommandLineArgument(STORAGECLASS_OPTION, CommandLineArgument.ArgumentType.String, Strings.S3Backend.S3StorageclassDescriptionShort, Strings.S3Backend.S3StorageclassDescriptionLong),
                     new CommandLineArgument(SERVER_NAME, CommandLineArgument.ArgumentType.String, Strings.S3Backend.S3ServerNameDescriptionShort, Strings.S3Backend.S3ServerNameDescriptionLong(hostnames.ToString()), DEFAULT_S3_HOST),
                     new CommandLineArgument(LOCATION_OPTION, CommandLineArgument.ArgumentType.String, Strings.S3Backend.S3LocationDescriptionShort, Strings.S3Backend.S3LocationDescriptionLong(locations.ToString())),
@@ -331,12 +325,9 @@ namespace Duplicati.Library.Backend
                     new CommandLineArgument(S3_DISABLE_CHUNK_ENCODING_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.S3Backend.DescriptionDisableChunkEncodingShort, Strings.S3Backend.DescriptionDisableChunkEncodingLong, "false"),
                     new CommandLineArgument(S3_LIST_API_VERSION_OPTION, CommandLineArgument.ArgumentType.Enumeration, Strings.S3Backend.DescriptionListApiVersionShort, Strings.S3Backend.DescriptionListApiVersionLong, "v1", null, ["v1", "v2"]),
                     new CommandLineArgument(S3_RECURSIVE_LIST, CommandLineArgument.ArgumentType.Boolean, Strings.S3Backend.DescriptionRecursiveListShort, Strings.S3Backend.DescriptionRecursiveListLong, "false"),
-                    new CommandLineArgument("auth-password", CommandLineArgument.ArgumentType.Password, Strings.S3Backend.AuthPasswordDescriptionShort, Strings.S3Backend.AuthPasswordDescriptionLong),
-                    new CommandLineArgument("auth-username", CommandLineArgument.ArgumentType.String, Strings.S3Backend.AuthUsernameDescriptionShort, Strings.S3Backend.AuthUsernameDescriptionLong),
-                };
-
-                return normal.Union(exts).ToList();
-
+                    .. TimeoutOptionsHelper.GetOptions(),
+                    .. exts
+                ];
             }
         }
 
@@ -372,37 +363,42 @@ namespace Duplicati.Library.Backend
 
         public void Dispose()
         {
-            s3Client?.Dispose();
-            s3Client = null;
+            m_s3Client?.Dispose();
         }
 
         #endregion
 
         private IS3Client Connection
         {
-            get { return s3Client; }
+            get { return m_s3Client; }
         }
 
-        public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(new[] { s3Client.GetDnsHost() });
-
-        private string GetFullKey(string name)
+        public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken)
         {
-            //AWS SDK encodes the filenames correctly
-            return m_prefix + name;
+            var host = m_s3Client.GetDnsHost();
+            return Task.FromResult<string[]>(
+                string.IsNullOrWhiteSpace(host)
+                ? []
+                : [host]
+            );
         }
+
+        private string GetFullKey(string? name)
+            //AWS SDK encodes the filenames correctly
+            => $"{m_prefix}{name}";
 
         /// <inheritdoc/>
-        public IAsyncEnumerable<IFileEntry> ListAsync(string path, CancellationToken cancellationToken)
+        public IAsyncEnumerable<IFileEntry> ListAsync(string? path, CancellationToken cancellationToken)
         {
             var filterPath = GetFullKey(path);
             if (!string.IsNullOrWhiteSpace(filterPath))
                 filterPath = Util.AppendDirSeparator(filterPath, "/");
 
-            return s3Client.ListBucketAsync(m_bucket, filterPath, m_recurseLists, cancellationToken);
+            return m_s3Client.ListBucketAsync(m_bucket, filterPath, m_recurseLists, cancellationToken);
         }
 
         /// <inheritdoc/>
-        public Task<IFileEntry> GetEntryAsync(string path, CancellationToken cancellationToken)
-            => Task.FromResult<IFileEntry>(null);
+        public Task<IFileEntry?> GetEntryAsync(string path, CancellationToken cancellationToken)
+            => Task.FromResult<IFileEntry?>(null);
     }
 }

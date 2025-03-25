@@ -31,7 +31,7 @@ internal class ListBucketsRequest : AccountIDEntity
     /// Initializes a new instance of the ListBucketsRequest class.
     /// </summary>
     /// <param name="accountId">The account ID for which to list buckets.</param>
-    public ListBucketsRequest(string accountId)
+    public ListBucketsRequest(string? accountId)
     {
         AccountID = accountId;
     }

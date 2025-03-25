@@ -19,32 +19,47 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
-using Newtonsoft.Json;
-
-namespace Duplicati.Library.Backend.Backblaze.Model;
+namespace Duplicati.Library.Backend;
 
 /// <summary>
-/// Represents a bucket entity in the Backblaze B2 storage system.
-/// Contains information about a storage bucket including its identifier and type.
+/// Native CIFS/SMB Backend implementation
 /// </summary>
-internal class BucketEntity : AccountIDEntity
+public class CIFSBackend : SMBBackend
 {
     /// <summary>
-    /// Gets or sets the unique identifier of the bucket.
-    /// This property can be null as specified by the NullValueHandling attribute.
+    /// Log tag for the backend
     /// </summary>
-    [JsonProperty("bucketId", NullValueHandling = NullValueHandling.Ignore)]
-    public string? BucketID { get; set; }
+    public static readonly string LOGTAG = Logging.Log.LogTagFromType<CIFSBackend>();
+    /// <summary>
+    /// Gets the protocol key for the backend
+    /// </summary>
+    public override string ProtocolKey => "cifs";
 
     /// <summary>
-    /// Gets or sets the name of the bucket.
+    /// Gets the display name for the backend
     /// </summary>
-    [JsonProperty("bucketName")]
-    public required string BucketName { get; set; }
+    public override string DisplayName => "CIFS (deprecated)";
 
     /// <summary>
-    /// Gets or sets the type of the bucket (e.g., "allPrivate", "allPublic").
+    /// Gets the description for the backend
     /// </summary>
-    [JsonProperty("bucketType")]
-    public string? BucketType { get; set; }
+    public override string Description => "Same as SMB backend, but with a different name. Use SMB instead.";
+
+    /// <summary>
+    /// Empty constructor is required for the backend to be loaded by the backend factory
+    /// </summary>
+    public CIFSBackend() : base()
+    {
+    }
+
+    /// <summary>
+    /// Actual constructor for the backend that accepts the url and options
+    /// </summary>
+    /// <param name="url">URL in Duplicati Uri format</param>
+    /// <param name="options">options to be used in the backend</param>
+    public CIFSBackend(string url, Dictionary<string, string?> options)
+        : base(url, options)
+    {
+        Logging.Log.WriteWarningMessage(LOGTAG, "DeprecatedCIFSBackend", null, "The CIFS backend is deprecated, please use the SMB backend instead.");
+    }
 }

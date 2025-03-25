@@ -3,6 +3,8 @@
     <TargetFramework>net8.0</TargetFramework>
     <OutputType>Library</OutputType>
     <Copyright>Copyright © 2025 Team Duplicati, MIT license</Copyright>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Common\Duplicati.Library.Common.csproj" />

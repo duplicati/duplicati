@@ -1,4 +1,3 @@
-using System;
 using Newtonsoft.Json;
 
 namespace Duplicati.Library.Backend.Box;
@@ -10,7 +9,7 @@ public class FileEntity : MiniFolder
         Size = -1;
     }
 
-    [JsonProperty("sha1")] public string SHA1 { get; set; }
+    [JsonProperty("sha1")] public string? SHA1 { get; set; }
 
     [JsonProperty("size", NullValueHandling = NullValueHandling.Ignore)]
     public long Size { get; set; }

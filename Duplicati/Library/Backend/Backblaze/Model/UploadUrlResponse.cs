@@ -34,12 +34,12 @@ internal class UploadUrlResponse : BucketIDEntity
     /// This URL is specific to the bucket and should be used for subsequent upload requests.
     /// </summary>
     [JsonProperty("uploadUrl")]
-    public string UploadUrl { get; set; }
+    public string? UploadUrl { get; set; }
 
     /// <summary>
     /// Gets or sets the authorization token required for upload requests.
     /// This token must be included in the headers when uploading files using the UploadUrl.
     /// </summary>
     [JsonProperty("authorizationToken")]
-    public string AuthorizationToken { get; set; }
+    public string? AuthorizationToken { get; set; }
 }
