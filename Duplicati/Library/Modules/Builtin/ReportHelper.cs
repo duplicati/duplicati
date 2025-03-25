@@ -24,6 +24,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using Duplicati.Library.AutoUpdater;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Modules.Builtin.ResultSerialization;
 using Duplicati.Library.Utility;
@@ -386,6 +387,10 @@ namespace Duplicati.Library.Modules.Builtin
         /// The next scheduled run template key
         /// </summary>
         private const string NEXT_SCHEDULED_RUN = "next-scheduled-run";
+        /// <summary>
+        /// The destination type template key
+        /// </summary>
+        private const string UPDATE_CHANNEL = "update-channel";
 
         /// <summary>
         /// The list of regular template keys
@@ -399,7 +404,8 @@ namespace Duplicati.Library.Modules.Builtin
         /// </summary>
         private static readonly IReadOnlySet<string> EXTRA_TEMPLATE_KEYS = new HashSet<string>([
             MACHINE_ID, BACKUP_ID, BACKUP_NAME, MACHINE_NAME,
-            OPERATING_SYSTEM, INSTALLATION_TYPE, DESTINATION_TYPE, NEXT_SCHEDULED_RUN
+            OPERATING_SYSTEM, INSTALLATION_TYPE, DESTINATION_TYPE, NEXT_SCHEDULED_RUN,
+            UPDATE_CHANNEL
         ], StringComparer.OrdinalIgnoreCase);
 
         /// <summary>
@@ -420,21 +426,23 @@ namespace Duplicati.Library.Modules.Builtin
                 case PARSEDRESULT:
                     return m_parsedresultlevel;
                 case MACHINE_ID:
-                    return AutoUpdater.DataFolderManager.MachineID;
+                    return DataFolderManager.MachineID;
                 case BACKUP_ID:
                     return Utility.Utility.ByteArrayAsHexString(Utility.Utility.RepeatedHashWithSalt(m_remoteurl, SALT));
                 case BACKUP_NAME:
                     return System.IO.Path.GetFileNameWithoutExtension(Utility.Utility.getEntryAssembly().Location);
                 case MACHINE_NAME:
-                    return AutoUpdater.DataFolderManager.MachineName;
+                    return DataFolderManager.MachineName;
                 case OPERATING_SYSTEM:
-                    return AutoUpdater.UpdaterManager.OperatingSystemName;
+                    return UpdaterManager.OperatingSystemName;
                 case INSTALLATION_TYPE:
-                    return AutoUpdater.UpdaterManager.PackageTypeId;
+                    return UpdaterManager.PackageTypeId;
                 case DESTINATION_TYPE:
                     // Only return the url scheme, as the rest could contain sensitive information
                     var ix = m_remoteurl?.IndexOf("://", StringComparison.OrdinalIgnoreCase) ?? -1;
                     return Utility.Utility.GuessScheme(m_remoteurl) ?? "file";
+                case UPDATE_CHANNEL:
+                    return UpdaterManager.CurrentChannel.ToString();
                 default:
                     return null;
             }
