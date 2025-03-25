@@ -536,18 +536,26 @@ namespace Duplicati.UnitTest
             // Create OS specific files and directories
             var os_special_dir = Path.Combine(original_dir, "os_special_dir");
             Directory.CreateDirectory(os_special_dir);
+            var default_dir_attrs = new DirectoryInfo(os_special_dir).Attributes;
             var os_special_file = Path.Combine(os_special_dir, "os_special_file");
             TestUtils.WriteTestFile(os_special_file, 1024);
+            var default_file_attrs = File.GetAttributes(os_special_file);
 
             if (OperatingSystem.IsWindows())
             {
                 // Set only the current user to have access to both the file and the directory
-                var rules_dir = new DirectoryInfo(os_special_dir).GetAccessControl();
+                var dir_info = new DirectoryInfo(os_special_dir);
+                var rules_dir = dir_info.GetAccessControl();
+                rules_dir.GetAccessRules(true, true, typeof(System.Security.Principal.NTAccount));
                 rules_dir.AddAccessRule(new FileSystemAccessRule(Environment.UserName, FileSystemRights.FullControl, AccessControlType.Allow));
-                rules_dir.AddAccessRule(new FileSystemAccessRule("Everyone", FileSystemRights.ReadAndExecute, AccessControlType.Deny));
-                var rules_file = new FileInfo(os_special_file).GetAccessControl();
+                rules_dir.AddAccessRule(new FileSystemAccessRule("Everyone", FileSystemRights.ReadAndExecute, AccessControlType.Allow));
+                dir_info.SetAccessControl(rules_dir);
+
+                var file_info = new FileInfo(os_special_file);
+                var rules_file = file_info.GetAccessControl();
                 rules_file.AddAccessRule(new FileSystemAccessRule(Environment.UserName, FileSystemRights.FullControl, AccessControlType.Allow));
-                rules_file.AddAccessRule(new FileSystemAccessRule("Everyone", FileSystemRights.ReadAndExecute, AccessControlType.Deny));
+                rules_file.AddAccessRule(new FileSystemAccessRule("Everyone", FileSystemRights.ReadAndExecute, AccessControlType.Allow));
+                file_info.SetAccessControl(rules_file);
             }
             else // Mac and Linux
             {
@@ -612,37 +620,51 @@ namespace Duplicati.UnitTest
                     var original_dir_rules = original_dir_info.GetAccessControl().GetAccessRules(true, true, typeof(System.Security.Principal.NTAccount));
                     var restored_dir_rules = restored_dir_info.GetAccessControl().GetAccessRules(true, true, typeof(System.Security.Principal.NTAccount));
 
-                    if (skip_metadata && original_dir_info.Attributes != FileAttributes.Directory)
+                    // Disable only on Windows warning, as the if ensures this.
+#pragma warning disable CA1416
+                    static bool cmp_elem(FileSystemAccessRule a, FileSystemAccessRule b) =>
+                        a.IdentityReference.Value == b.IdentityReference.Value &&
+                        a.FileSystemRights == b.FileSystemRights &&
+                        a.AccessControlType == b.AccessControlType;
+#pragma warning restore CA1416
+
+                    static bool cmp_coll(AuthorizationRuleCollection a, AuthorizationRuleCollection b) =>
+                        a.Count == b.Count &&
+                        a.Cast<FileSystemAccessRule>().Zip(b.Cast<FileSystemAccessRule>(), cmp_elem).All(x => x);
+
+                    if (skip_metadata && original_dir_info.Attributes != default_dir_attrs)
                         Assert.That(original_dir_info.Attributes, Is.Not.EqualTo(restored_dir_info.Attributes), "Directory attributes should not be equal");
                     else
                         Assert.That(original_dir_info.Attributes, Is.EqualTo(restored_dir_info.Attributes), "Directory attributes should be equal");
 
+                    var dir_permissions_equal = cmp_coll(original_dir_rules, restored_dir_rules);
                     if (restorePermissions && !skip_metadata)
-                        Assert.That(original_dir_rules, Is.EquivalentTo(restored_dir_rules), "Directory permissions should be equal");
+                        Assert.That(dir_permissions_equal, Is.True, "Directory permissions should be equal");
                     else
-                        Assert.That(original_dir_rules, Is.Not.EquivalentTo(restored_dir_rules), "Directory permissions should not be equal");
+                        Assert.That(dir_permissions_equal, Is.False, "Directory permissions should not be equal");
 
                     var original_file_info = new FileInfo(os_special_file);
                     var restored_file_info = new FileInfo(os_special_file.Replace(DATAFOLDER, RESTOREFOLDER));
                     var original_file_rules = original_file_info.GetAccessControl().GetAccessRules(true, true, typeof(System.Security.Principal.NTAccount));
                     var restored_file_rules = restored_file_info.GetAccessControl().GetAccessRules(true, true, typeof(System.Security.Principal.NTAccount));
 
-                    if (skip_metadata && original_file_info.Attributes != FileAttributes.Normal)
+                    if (skip_metadata && original_file_info.Attributes != default_file_attrs)
                         Assert.That(original_file_info.Attributes, Is.Not.EqualTo(restored_file_info.Attributes), "File attributes should not be equal");
                     else
                         Assert.That(original_file_info.Attributes, Is.EqualTo(restored_file_info.Attributes), "File attributes should be equal");
 
+                    var file_permissions_equal = cmp_coll(original_file_rules, restored_file_rules);
                     if (restorePermissions && !skip_metadata)
-                        Assert.That(original_file_rules, Is.EqualTo(restored_file_rules), "File permissions should be equal");
+                        Assert.That(file_permissions_equal, Is.True, "File permissions should be equal");
                     else
-                        Assert.That(original_file_rules, Is.Not.EqualTo(restored_file_rules), "File permissions should not be equal");
+                        Assert.That(file_permissions_equal, Is.False, "File permissions should not be equal");
                 }
                 else
                 {
                     var original_dir_info = new DirectoryInfo(os_special_dir);
                     var restored_dir_info = new DirectoryInfo(os_special_dir.Replace(DATAFOLDER, RESTOREFOLDER));
 
-                    if (skip_metadata && original_dir_info.Attributes != FileAttributes.Directory)
+                    if (skip_metadata && original_dir_info.Attributes != default_dir_attrs)
                         Assert.That(original_dir_info.Attributes, Is.Not.EqualTo(restored_dir_info.Attributes), "Directory attributes should not be equal");
                     else
                         Assert.That(original_dir_info.Attributes, Is.EqualTo(restored_dir_info.Attributes), "Directory attributes should be equal");
@@ -655,7 +677,7 @@ namespace Duplicati.UnitTest
                     var original_file_info = new FileInfo(os_special_file);
                     var restored_file_info = new FileInfo(os_special_file.Replace(DATAFOLDER, RESTOREFOLDER));
 
-                    if (skip_metadata && original_file_info.Attributes != FileAttributes.Normal)
+                    if (skip_metadata && original_file_info.Attributes != default_file_attrs)
                         Assert.That(original_file_info.Attributes, Is.Not.EqualTo(restored_file_info.Attributes), "File attributes should not be equal");
                     else
                         Assert.That(original_file_info.Attributes, Is.EqualTo(restored_file_info.Attributes), "File attributes should be equal");
