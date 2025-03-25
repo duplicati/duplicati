@@ -27,6 +27,7 @@ using System.Security.Authentication;
 using System.Text;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Logging;
 using Duplicati.Library.Utility;
 using Duplicati.Library.Utility.Options;
 using FluentFTP;
@@ -50,6 +51,7 @@ namespace Duplicati.Library.Backend
     /// </summary>
     public class FTP : IStreamingBackend
     {
+        private static readonly string LogTag = Log.LogTagFromType(typeof(FTP));
         /// <summary>
         /// The credentials used to authenticate with the FTP server
         /// </summary>
@@ -67,6 +69,12 @@ namespace Duplicati.Library.Backend
         /// </summary>
         private static readonly SslProtocols DEFAULT_SSL_PROTOCOLS = SslProtocols.None; // NOTE: None means "use system default"        
 
+        /// <summary>
+        /// Configuration key for the flag to ignore the PureFTPd limit issue, suppressing the exceptions.
+        ///
+        /// Chosen not to have ftp prefix to be agnostic between aftp and ftp
+        /// </summary>
+            protected virtual string CONFIG_KEY_FTP_IGNORE_PUREFTP => "ignore-pureftpd-limit-issue";
         /// <summary>
         /// The configuration key for the FTP encryption mode
         /// </summary>
@@ -177,7 +185,10 @@ namespace Duplicati.Library.Backend
         /// The wait time after each upload before checking the file size
         /// </summary>
         private readonly TimeSpan _uploadWaitTime;
-
+        /// <summary>
+        /// Flag to ignore the PureFTPd limit issue, suppressing the exceptions.
+        /// </summary>
+        private readonly bool _IgnorePureFTPdLimitIssue;
         /// <summary>
         /// The flag to indicate if the dialog should be logged to the console
         /// </summary>
@@ -235,6 +246,7 @@ namespace Duplicati.Library.Backend
                 new CommandLineArgument(CONFIG_KEY_FTP_LEGACY_FTPPASSIVE, CommandLineArgument.ArgumentType.Boolean, Strings.DescriptionFTPPassiveShort, Strings.DescriptionFTPPassiveLong, "false", null, null, Strings.FtpPassiveDeprecated),
                 new CommandLineArgument(CONFIG_KEY_FTP_LEGACY_FTPREGULAR, CommandLineArgument.ArgumentType.Boolean, Strings.DescriptionFTPActiveShort, Strings.DescriptionFTPActiveLong, "true", null, null, Strings.FtpActiveDeprecated),
                 new CommandLineArgument(CONFIG_KEY_FTP_LEGACY_USESSL, CommandLineArgument.ArgumentType.Boolean, Strings.DescriptionUseSSLShort, Strings.DescriptionUseSSLLong, "false", null, null, Strings.UseSslDeprecated),
+                new CommandLineArgument(CONFIG_KEY_FTP_IGNORE_PUREFTP, CommandLineArgument.ArgumentType.Boolean, Strings.DescriptionIgnorePureFTPShort, Strings.DescriptionIgnorePureFTPLong, "false"),
                 .. SslOptionsHelper.GetCertOnlyOptions(),
                 .. TimeoutOptionsHelper.GetOptions(),
             ];
@@ -332,6 +344,8 @@ namespace Duplicati.Library.Backend
                 Noop = true
             };
 
+            _IgnorePureFTPdLimitIssue = CoreUtility.ParseBoolOption(options, CONFIG_KEY_FTP_IGNORE_PUREFTP);
+            
             if (_logPrivateInfoToConsole) _ftpConfig.LogHost = _ftpConfig.LogPassword = _ftpConfig.LogUserName = true;
         }
 
@@ -347,6 +361,19 @@ namespace Duplicati.Library.Backend
                 items = await Utility.Utility.WithTimeout(_timeouts.ListTimeout, cancelToken, ct =>
                     client.GetListing(remotePath, FtpListOption.Modify | FtpListOption.Size, ct)
                 ).ConfigureAwait(false);
+
+                if (client.ServerType == FtpServer.PureFTPd)
+                {
+                    // If the list was truncated an exception has to be raised as the listing is incomplete and can lead to misleading backup/restore results
+                    if( client.LastReplies.Any(x =>
+                           x.Code == "226" &&
+                           x.Message.Contains("truncated", StringComparison.InvariantCultureIgnoreCase)))
+                        throw new UserInformationException("PureFTPd server effectively truncated the listing due to LimitRecursion parameter - please check documentation for more information", "PureFTPdTruncatedListing");
+                    
+                    // If no truncation occured and the ignore flag is not set, issue an advisory message
+                    if (!_IgnorePureFTPdLimitIssue)
+                        Log.WriteWarningMessage(LogTag, "PureFTPdIssue", null, Strings.DescriptionIgnorePureFTPLong);
+                } 
             }
             catch (Exception e)
             {
@@ -507,6 +534,28 @@ namespace Duplicati.Library.Backend
         /// <inheritdoc />
         public async Task TestAsync(CancellationToken cancellationToken)
         {
+            
+            // Start with a simple list and pureFTP detection
+            try
+            {
+                var client = await CreateClient(cancellationToken).ConfigureAwait(false);
+                await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancellationToken, async ct =>
+                {
+                    await ListAsync(cancellationToken).AnyAsync(cancellationToken).ConfigureAwait(false);
+                }).ConfigureAwait(false);
+                
+                if (client.ServerType == FtpServer.PureFTPd && !_IgnorePureFTPdLimitIssue)
+                    throw new UserInformationException(Strings.DescriptionIgnorePureFTPLong, "PureFTPdDetected");
+                
+            }
+            catch (Exception e)
+            {
+                if (TranslateException(null, ref e))
+                    throw e;
+
+                throw;
+            }
+            
             // Try to set the working directory to trigger a folder-not-found exception
             try
             {
@@ -531,7 +580,7 @@ namespace Duplicati.Library.Backend
             // Remove the file if it exists
             try
             {
-                if (await ListAsync(cancellationToken).AnyAsync(entry => entry.Name == TEST_FILE_NAME).ConfigureAwait(false))
+                if (await ListAsync(cancellationToken).AnyAsync(entry => entry.Name == TEST_FILE_NAME, cancellationToken: cancellationToken).ConfigureAwait(false))
                     await DeleteAsync(TEST_FILE_NAME, cancellationToken).ConfigureAwait(false);
             }
             catch (Exception e)
