@@ -23,9 +23,6 @@ namespace Duplicati.Library.Backend.Strings
 {
     internal static class MicrosoftGraph
     {
-        public static string AuthIdLong(string url) { return LC.L(@"The authorization token retrieved from {0}", url); }
-        public static string AuthIdShort { get { return LC.L(@"The authorization code"); } }
-        public static string MissingAuthId(string url) { return LC.L(@"No Auth-ID was provided - you can get one from {0}", url); }
         public static string FragmentSizeLong { get { return LC.L(@"Size of individual fragments which are uploaded separately for large files. It is recommended to be between 5-10 MiB (though a smaller value may work better on a slower or less reliable connection), and to be a multiple of 320 KiB."); } }
         public static string FragmentSizeShort { get { return LC.L(@"Fragment size for large uploads"); } }
         public static string FragmentRetryCountLong { get { return LC.L(@"Number of retry attempts made for each fragment before failing the overall file upload."); } }
@@ -52,7 +49,7 @@ namespace Duplicati.Library.Backend.Strings
         public static string SiteIdLong { get { return LC.L(@"ID of the site to store data in."); } }
         public static string SiteIdShort { get { return LC.L(@"ID of the site"); } }
         public static string MissingSiteId { get { return LC.L(@"No site ID was provided"); } }
-        public static string ConflictingSiteId(string given, string found) { return LC.L(@"Conflicting site IDs used: given {0} but found {1}", given, found); }
+        public static string MissingDriveInfo { get { return LC.L(@"No drive information was returned"); } }
     }
 
     internal static class MicrosoftGroup

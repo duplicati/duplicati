@@ -164,7 +164,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.p
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Crashlog", "Duplicati\Library\Crashlog\Duplicati.Library.Crashlog.csproj", "{8ACA2736-3C69-4FA5-BCF9-5EDF50CAF332}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.CIFS", "Duplicati\Library\Backend\CIFS\Duplicati.Library.Backend.CIFS.csproj", "{836E0557-B40C-4DC7-9A2A-5C062F9ACC6B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.SMB", "Duplicati\Library\Backend\SMB\Duplicati.Library.Backend.SMB.csproj", "{836E0557-B40C-4DC7-9A2A-5C062F9ACC6B}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.SourceProviders", "Duplicati\Library\SourceProviders\Duplicati.Library.SourceProviders.csproj", "{8A2C7A9F-3EC8-4DE5-A9FA-9E4BCF955EF3}"
 EndProject

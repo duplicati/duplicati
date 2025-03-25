@@ -33,19 +33,19 @@ internal class UploadFileResponse : AccountIDEntity
     /// Gets or sets the unique identifier of the bucket containing the file.
     /// </summary>
     [JsonProperty("bucketId")]
-    public string BucketID { get; set; }
+    public string? BucketID { get; set; }
 
     /// <summary>
     /// Gets or sets the unique identifier assigned to the uploaded file.
     /// </summary>
     [JsonProperty("fileId")]
-    public string FileID { get; set; }
+    public string? FileID { get; set; }
 
     /// <summary>
     /// Gets or sets the name of the uploaded file.
     /// </summary>
     [JsonProperty("fileName")]
-    public string FileName { get; set; }
+    public string? FileName { get; set; }
 
     /// <summary>
     /// Gets or sets the size of the uploaded file in bytes.
@@ -57,11 +57,11 @@ internal class UploadFileResponse : AccountIDEntity
     /// Gets or sets the SHA1 hash of the file content.
     /// </summary>
     [JsonProperty("contentSha1")]
-    public string ContentSha1 { get; set; }
+    public string? ContentSha1 { get; set; }
 
     /// <summary>
     /// Gets or sets the MIME type of the uploaded file.
     /// </summary>
     [JsonProperty("contentType")]
-    public string ContentType { get; set; }
+    public string? ContentType { get; set; }
 }

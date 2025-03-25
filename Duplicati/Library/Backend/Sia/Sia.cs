@@ -21,14 +21,11 @@
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
+using Duplicati.Library.Utility.Options;
 using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
 using System.Globalization;
 using System.Net;
 using System.Runtime.CompilerServices;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Duplicati.Library.Backend.Sia
 {
@@ -42,35 +39,41 @@ namespace Duplicati.Library.Backend.Sia
         private readonly int m_apiport;
         private readonly string m_targetpath;
         private readonly float m_redundancy;
-        private readonly string m_authorization;
+        private readonly string? m_authorization;
+        private readonly TimeoutOptionsHelper.Timeouts m_timeouts;
 
         // ReSharper disable once UnusedMember.Global
         // This constructor is needed by the BackendLoader.
         public Sia()
         {
+            m_apihost = null!;
+            m_targetpath = null!;
+            m_timeouts = null!;
         }
 
         // ReSharper disable once UnusedMember.Global
         // This constructor is needed by the BackendLoader.
-        public Sia(string url, Dictionary<string, string> options)
+        public Sia(string url, Dictionary<string, string?> options)
         {
             var uri = new Utility.Uri(url);
 
             m_apihost = uri.Host;
             m_apiport = uri.Port;
             m_targetpath = uri.Path;
+            m_timeouts = TimeoutOptionsHelper.Parse(options);
 
             m_redundancy = 1.5F;
-            if (options.ContainsKey(SIA_REDUNDANCY))
-                m_redundancy = (float)decimal.Parse(options[SIA_REDUNDANCY], CultureInfo.InvariantCulture);
+            var redundancyString = options.GetValueOrDefault(SIA_REDUNDANCY);
+            if (!string.IsNullOrWhiteSpace(redundancyString))
+                m_redundancy = (float)decimal.Parse(redundancyString, CultureInfo.InvariantCulture);
 
             if (m_apiport <= 0)
                 m_apiport = 9980;
 
-            if (options.ContainsKey(SIA_TARGETPATH))
-            {
-                m_targetpath = options[SIA_TARGETPATH];
-            }
+            var targetPathString = options.GetValueOrDefault(SIA_TARGETPATH);
+            if (!string.IsNullOrWhiteSpace(targetPathString))
+                m_targetpath = targetPathString;
+
             while (m_targetpath.Contains("//"))
                 m_targetpath = m_targetpath.Replace("//", "/");
             while (m_targetpath.StartsWith("/", StringComparison.Ordinal))
@@ -82,14 +85,14 @@ namespace Duplicati.Library.Backend.Sia
                 m_targetpath = "backup";
 
             m_authorization = options.ContainsKey(SIA_PASSWORD) && !string.IsNullOrEmpty(options[SIA_PASSWORD])
-                ? "Basic " + System.Convert.ToBase64String(System.Text.Encoding.GetEncoding("ISO-8859-1").GetBytes(":" + options[SIA_PASSWORD]))
+                ? "Basic " + Convert.ToBase64String(System.Text.Encoding.GetEncoding("ISO-8859-1").GetBytes(":" + options[SIA_PASSWORD]))
                 : null;
         }
 
-        private System.Net.HttpWebRequest CreateRequest(string endpoint)
+        private HttpWebRequest CreateRequest(string endpoint)
         {
             string baseurl = "http://" + m_apihost + ":" + m_apiport;
-            System.Net.HttpWebRequest req = (System.Net.HttpWebRequest)System.Net.HttpWebRequest.Create(baseurl + endpoint);
+            var req = (HttpWebRequest)WebRequest.Create(baseurl + endpoint);
 
             if (m_authorization != null)
             {
@@ -103,27 +106,25 @@ namespace Duplicati.Library.Backend.Sia
             return req;
         }
 
-        private string getResponseBodyOnError(string context, System.Net.WebException wex)
+        private async Task<string> GetResponseBodyOnError(string context, WebException wex, CancellationToken cancellationToken)
         {
-            HttpWebResponse response = wex.Response as HttpWebResponse;
+            var response = wex.Response as HttpWebResponse;
             if (response is null)
-            {
                 return $"{context} failed with error: {wex.Message}";
-            }
 
-            string body = "";
-            using (System.IO.Stream data = response.GetResponseStream())
-            using (var reader = new System.IO.StreamReader(data))
+            var body = await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancellationToken, _ =>
             {
-                body = reader.ReadToEnd();
-            }
+                using (var data = response.GetResponseStream())
+                using (var reader = new StreamReader(data))
+                    return reader.ReadToEnd();
+            }).ConfigureAwait(false);
             return string.Format("{0} failed, response: {1}", context, body);
         }
 
         public class SiaFile
         {
             [JsonProperty("siapath")]
-            public string Siapath { get; set; }
+            public string? Siapath { get; set; }
             [JsonProperty("available")]
             public bool Available { get; set; }
             [JsonProperty("filesize")]
@@ -137,29 +138,29 @@ namespace Duplicati.Library.Backend.Sia
         public class SiaFileList
         {
             [JsonProperty("files")]
-            public SiaFile[] Files { get; set; }
+            public SiaFile[]? Files { get; set; }
         }
 
         public class SiaDownloadFile
         {
             [JsonProperty("siapath")]
-            public string Siapath { get; set; }
+            public string? Siapath { get; set; }
             [JsonProperty("destination")]
-            public string Destination { get; set; }
+            public string? Destination { get; set; }
             [JsonProperty("filesize")]
             public long Filesize { get; set; }
             [JsonProperty("received")]
             public long Received { get; set; }
             [JsonProperty("starttime")]
-            public string Starttime { get; set; }
+            public string? Starttime { get; set; }
             [JsonProperty("error")]
-            public string Error { get; set; }
+            public string? Error { get; set; }
         }
 
         public class SiaDownloadList
         {
             [JsonProperty("downloads")]
-            public SiaDownloadFile[] Files { get; set; }
+            public SiaDownloadFile[]? Files { get; set; }
         }
 
         private async Task<SiaFileList> GetFiles(CancellationToken cancelToken)
@@ -173,29 +174,28 @@ namespace Duplicati.Library.Backend.Sia
             try
             {
                 var req = CreateRequest(endpoint);
-                req.Method = System.Net.WebRequestMethods.Http.Get;
+                req.Method = WebRequestMethods.Http.Get;
 
-                var areq = new Utility.AsyncHttpRequest(req);
+                var areq = new AsyncHttpRequest(req);
 
-                using (var resp = (System.Net.HttpWebResponse)areq.GetResponse())
+                using (var resp = await Utility.Utility.WithTimeout(m_timeouts.ListTimeout, cancelToken, _ => (HttpWebResponse)areq.GetResponse()).ConfigureAwait(false))
                 {
                     int code = (int)resp.StatusCode;
                     if (code < 200 || code >= 300)
-                        throw new System.Net.WebException(resp.StatusDescription, null, System.Net.WebExceptionStatus.ProtocolError, resp);
+                        throw new WebException(resp.StatusDescription, null, WebExceptionStatus.ProtocolError, resp);
 
                     var serializer = new JsonSerializer();
 
-                    using (var rs = areq.GetResponseStream())
-                    using (var sr = new System.IO.StreamReader(rs))
-                    using (var jr = new Newtonsoft.Json.JsonTextReader(sr))
-                    {
-                        fl = (SiaFileList)serializer.Deserialize(jr, typeof(SiaFileList));
-                    }
+                    using (var rs = await Utility.Utility.WithTimeout(m_timeouts.ListTimeout, cancelToken, _ => areq.GetResponseStream()).ConfigureAwait(false))
+                    using (var sr = new StreamReader(rs))
+                    using (var jr = new JsonTextReader(sr))
+                        fl = serializer.Deserialize<SiaFileList>(jr)
+                            ?? throw new Exception("Failed to deserialize response");
                 }
             }
-            catch (System.Net.WebException wex)
+            catch (WebException wex)
             {
-                throw new Exception(getResponseBodyOnError(endpoint, wex));
+                throw new Exception(await GetResponseBodyOnError(endpoint, wex, cancelToken).ConfigureAwait(false));
             }
             return fl;
         }
@@ -219,44 +219,43 @@ namespace Duplicati.Library.Backend.Sia
             return false;
         }
 
-        private SiaDownloadList GetDownloads()
+        private async Task<SiaDownloadList> GetDownloads(CancellationToken cancelToken)
         {
             var fl = new SiaDownloadList();
             string endpoint = "/renter/downloads";
 
             try
             {
-                System.Net.HttpWebRequest req = CreateRequest(endpoint);
-                req.Method = System.Net.WebRequestMethods.Http.Get;
+                var req = CreateRequest(endpoint);
+                req.Method = WebRequestMethods.Http.Get;
 
-                Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
+                var areq = new AsyncHttpRequest(req);
 
-                using (System.Net.HttpWebResponse resp = (System.Net.HttpWebResponse)areq.GetResponse())
+                using (var resp = await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, _ => (HttpWebResponse)areq.GetResponse()).ConfigureAwait(false))
                 {
                     int code = (int)resp.StatusCode;
                     if (code < 200 || code >= 300)
-                        throw new System.Net.WebException(resp.StatusDescription, null, System.Net.WebExceptionStatus.ProtocolError, resp);
+                        throw new WebException(resp.StatusDescription, null, WebExceptionStatus.ProtocolError, resp);
 
                     var serializer = new JsonSerializer();
 
-                    using (var rs = areq.GetResponseStream())
-                    using (var sr = new System.IO.StreamReader(rs))
-                    using (var jr = new Newtonsoft.Json.JsonTextReader(sr))
-                    {
-                        fl = (SiaDownloadList)serializer.Deserialize(jr, typeof(SiaDownloadList));
-                    }
+                    using (var rs = await Utility.Utility.WithTimeout(m_timeouts.ListTimeout, cancelToken, _ => areq.GetResponseStream()))
+                    using (var sr = new StreamReader(rs))
+                    using (var jr = new JsonTextReader(sr))
+                        fl = serializer.Deserialize<SiaDownloadList>(jr)
+                            ?? throw new Exception("Failed to deserialize response");
                 }
             }
-            catch (System.Net.WebException wex)
+            catch (WebException wex)
             {
-                throw new Exception(getResponseBodyOnError(endpoint, wex));
+                throw new Exception(await GetResponseBodyOnError(endpoint, wex, cancelToken).ConfigureAwait(false));
             }
             return fl;
         }
 
-        private bool IsDownloadComplete(string siafilename, string localname)
+        private async Task<bool> IsDownloadComplete(string siafilename, string localname, CancellationToken cancelToken)
         {
-            SiaDownloadList fl = GetDownloads();
+            var fl = await GetDownloads(cancelToken).ConfigureAwait(false);
             if (fl.Files == null)
                 return false;
 
@@ -273,10 +272,10 @@ namespace Duplicati.Library.Backend.Sia
                         try
                         {
                             // Sia seems to keep the file open/locked for a while, make sure we can open it
-                            System.IO.FileStream fs = new System.IO.FileStream(localname, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.ReadWrite);
-                            fs.Close();
+                            using (var fs = new FileStream(localname, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                                fs.Close();
                         }
-                        catch (System.IO.IOException)
+                        catch (IOException)
                         {
                             return false;
                         }
@@ -298,15 +297,9 @@ namespace Duplicati.Library.Backend.Sia
             return Task.CompletedTask;
         }
 
-        public string DisplayName
-        {
-            get { return Strings.Sia.DisplayName; }
-        }
+        public string DisplayName => Strings.Sia.DisplayName;
 
-        public string ProtocolKey
-        {
-            get { return "sia"; }
-        }
+        public string ProtocolKey => "sia";
 
         /// <inheritdoc />
         public async IAsyncEnumerable<IFileEntry> ListAsync([EnumeratorCancellation] CancellationToken cancelToken)
@@ -316,7 +309,7 @@ namespace Duplicati.Library.Backend.Sia
             {
                 fl = await GetFiles(cancelToken).ConfigureAwait(false);
             }
-            catch (System.Net.WebException wex)
+            catch (WebException wex)
             {
                 throw new Exception("failed to call /renter/files " + wex.Message);
             }
@@ -327,9 +320,9 @@ namespace Duplicati.Library.Backend.Sia
                 {
                     // Sia returns a complete file list, but we're only interested in files that are
                     // in our target path
-                    if (f.Siapath.StartsWith(m_targetpath, StringComparison.Ordinal))
+                    if (f.Siapath != null && f.Siapath.StartsWith(m_targetpath, StringComparison.Ordinal))
                     {
-                        FileEntry fe = new FileEntry(f.Siapath.Substring(m_targetpath.Length + 1))
+                        var fe = new FileEntry(f.Siapath.Substring(m_targetpath.Length + 1))
                         {
                             Size = f.Filesize,
                             IsFolder = false
@@ -370,7 +363,7 @@ namespace Duplicati.Library.Backend.Sia
             }
             catch (WebException wex)
             {
-                throw new Exception(getResponseBodyOnError(endpoint, wex));
+                throw new Exception(await GetResponseBodyOnError(endpoint, wex, cancelToken).ConfigureAwait(false));
             }
         }
 
@@ -384,27 +377,27 @@ namespace Duplicati.Library.Backend.Sia
             {
                 endpoint = string.Format("/renter/download/{0}/{1}?destination={2}",
                     m_targetpath,
-                    Library.Utility.Uri.UrlEncode(remotename).Replace("+", "%20"),
-                    Library.Utility.Uri.UrlEncode(tmpfilename).Replace("+", "%20")
+                    Utility.Uri.UrlEncode(remotename).Replace("+", "%20"),
+                    Utility.Uri.UrlEncode(tmpfilename).Replace("+", "%20")
                 );
-                System.Net.HttpWebRequest req = CreateRequest(endpoint);
-                req.Method = System.Net.WebRequestMethods.Http.Get;
+                var req = CreateRequest(endpoint);
+                req.Method = WebRequestMethods.Http.Get;
 
-                Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
+                var areq = new AsyncHttpRequest(req);
 
-                using (System.Net.HttpWebResponse resp = (System.Net.HttpWebResponse)areq.GetResponse())
+                using (var resp = (HttpWebResponse)areq.GetResponse())
                 {
                     int code = (int)resp.StatusCode;
                     if (code < 200 || code >= 300)
-                        throw new System.Net.WebException(resp.StatusDescription, null, System.Net.WebExceptionStatus.ProtocolError, resp);
+                        throw new WebException(resp.StatusDescription, null, WebExceptionStatus.ProtocolError, resp);
 
-                    while (!IsDownloadComplete(siafile, localname))
+                    while (!await IsDownloadComplete(siafile, localname, cancelToken).ConfigureAwait(false))
                         await Task.Delay(5000, cancelToken).ConfigureAwait(false);
 
-                    System.IO.File.Copy(tmpfilename, localname, true);
+                    File.Copy(tmpfilename, localname, true);
                     try
                     {
-                        System.IO.File.Delete(tmpfilename);
+                        File.Delete(tmpfilename);
                     }
                     catch (Exception)
                     {
@@ -412,16 +405,16 @@ namespace Duplicati.Library.Backend.Sia
                     }
                 }
             }
-            catch (System.Net.WebException wex)
+            catch (WebException wex)
             {
-                if (wex.Response is HttpWebResponse response && response.StatusCode == System.Net.HttpStatusCode.NotFound)
+                if (wex.Response is HttpWebResponse response && response.StatusCode == HttpStatusCode.NotFound)
                     throw new FileMissingException(wex);
                 else
-                    throw new Exception(getResponseBodyOnError(endpoint, wex));
+                    throw new Exception(await GetResponseBodyOnError(endpoint, wex, cancelToken).ConfigureAwait(false));
             }
         }
 
-        public Task DeleteAsync(string remotename, CancellationToken cancellationToken)
+        public async Task DeleteAsync(string remotename, CancellationToken cancellationToken)
         {
             string endpoint = "";
 
@@ -429,51 +422,41 @@ namespace Duplicati.Library.Backend.Sia
             {
                 endpoint = string.Format("/renter/delete/{0}/{1}",
                     m_targetpath,
-                    Library.Utility.Uri.UrlEncode(remotename).Replace("+", "%20")
+                    Utility.Uri.UrlEncode(remotename).Replace("+", "%20")
                 );
-                System.Net.HttpWebRequest req = CreateRequest(endpoint);
-                req.Method = System.Net.WebRequestMethods.Http.Post;
+                var req = CreateRequest(endpoint);
+                req.Method = WebRequestMethods.Http.Post;
 
-                Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
-
-                using (System.Net.HttpWebResponse resp = (System.Net.HttpWebResponse)areq.GetResponse())
+                await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancellationToken, _ =>
                 {
-                    int code = (int)resp.StatusCode;
-                    if (code < 200 || code >= 300)
-                        throw new System.Net.WebException(resp.StatusDescription, null, System.Net.WebExceptionStatus.ProtocolError, resp);
-                }
+                    var areq = new AsyncHttpRequest(req);
+                    using (var resp = (HttpWebResponse)areq.GetResponse())
+                    {
+                        int code = (int)resp.StatusCode;
+                        if (code < 200 || code >= 300)
+                            throw new WebException(resp.StatusDescription, null, WebExceptionStatus.ProtocolError, resp);
+                    }
+                }).ConfigureAwait(false);
             }
-            catch (System.Net.WebException wex)
+            catch (WebException wex)
             {
-                if (wex.Response is HttpWebResponse response && response.StatusCode == System.Net.HttpStatusCode.NotFound)
+                if (wex.Response is HttpWebResponse response && response.StatusCode == HttpStatusCode.NotFound)
                     throw new FileMissingException(wex);
                 else
-                    throw new Exception(getResponseBodyOnError(endpoint, wex));
+                    throw new Exception(await GetResponseBodyOnError(endpoint, wex, cancellationToken).ConfigureAwait(false));
             }
-
-            return Task.CompletedTask;
         }
 
 
-        public IList<ICommandLineArgument> SupportedCommands
-        {
-            get
-            {
-                return new List<ICommandLineArgument>([
+        public IList<ICommandLineArgument> SupportedCommands => new List<ICommandLineArgument>([
                     new CommandLineArgument(SIA_TARGETPATH, CommandLineArgument.ArgumentType.String, Strings.Sia.SiaPathDescriptionShort, Strings.Sia.SiaPathDescriptionLong, "/backup"),
                     new CommandLineArgument(SIA_PASSWORD, CommandLineArgument.ArgumentType.Password, Strings.Sia.SiaPasswordShort, Strings.Sia.SiaPasswordLong, null),
                     new CommandLineArgument(SIA_REDUNDANCY, CommandLineArgument.ArgumentType.Decimal, Strings.Sia.SiaRedundancyDescriptionShort, Strings.Sia.SiaRedundancyDescriptionLong, "1.5"),
+                    .. TimeoutOptionsHelper.GetOptions()
+                        .Where(x => x.Name != TimeoutOptionsHelper.ReadWriteTimeoutOption)
                 ]);
-            }
-        }
 
-        public string Description
-        {
-            get
-            {
-                return Strings.Sia.Description;
-            }
-        }
+        public string Description => Strings.Sia.Description;
 
         public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(new[] { new System.Uri(m_apihost).Host });
 
