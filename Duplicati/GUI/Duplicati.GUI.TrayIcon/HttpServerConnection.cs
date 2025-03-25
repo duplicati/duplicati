@@ -31,9 +31,9 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
+using CoCoL;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.RestAPI;
-using Duplicati.Library.Utility;
 using Duplicati.Server.Serialization;
 using Duplicati.Server.Serialization.Interface;
 using Duplicati.WebserverCore;
@@ -90,8 +90,8 @@ namespace Duplicati.GUI.TrayIcon
         private string m_accesstoken;
         private bool m_isTryingWithPassword;
 
-        public delegate void StatusUpdateDelegate(IServerStatus status);
-        public event StatusUpdateDelegate OnStatusUpdated;
+        public Func<IServerStatus, Task> OnStatusUpdated;
+        public Action ConnectionClosed;
 
         public long m_lastNotificationId = -1;
         public DateTime m_firstNotificationTime;
@@ -104,18 +104,16 @@ namespace Duplicati.GUI.TrayIcon
 
         private volatile IServerStatus m_status = new ServerStatusImpl(LiveControlState.Paused, SuggestedStatusIcon.Disconnected, 0, 0, 0);
 
-        private volatile bool m_shutdown = false;
-        private volatile Thread m_requestThread;
-        private volatile Thread m_pollThread;
-        private readonly AutoResetEvent m_waitLock;
+        private Task m_requestHandlerTask;
+        private Task m_pollThread;
+        private readonly CancellationTokenSource m_stopToken = new CancellationTokenSource();
 
         private readonly Dictionary<string, string> m_options;
         private readonly Program.PasswordSource m_passwordSource;
 
         public IServerStatus Status { get { return m_status; } }
 
-        private readonly object m_lock = new object();
-        private readonly Queue<BackgroundRequest> m_workQueue = new Queue<BackgroundRequest>();
+        private readonly IChannel<BackgroundRequest> m_workQueue = Channel.Create<BackgroundRequest>(name: "TrayIconRequestQueue");
 
         public HttpServerConnection(System.Uri server, string password, Program.PasswordSource passwordSource, bool disableTrayIconLogin, string acceptedHostCertificate, Dictionary<string, string> options)
         {
@@ -162,15 +160,22 @@ namespace Duplicati.GUI.TrayIcon
                 }
             };
 
-            m_waitLock = new AutoResetEvent(false);
-            m_requestThread = new Thread(ThreadRunner);
-            m_pollThread = new Thread(LongPollRunner);
+            m_requestHandlerTask = ThreadRunner();
+            m_pollThread = LongPollRunner();
 
-            m_requestThread.Name = "TrayIcon Request Thread";
-            m_pollThread.Name = "TrayIcon Longpoll Thread";
+            m_requestHandlerTask.ContinueWith(t =>
+            {
+                if (t.IsFaulted)
+                    Library.Logging.Log.WriteWarningMessage(LOGTAG, "TrayIconRequestError", t.Exception, "Crashed request handler");
+                ConnectionClosed?.Invoke();
+            });
 
-            m_requestThread.Start();
-            m_pollThread.Start();
+            m_pollThread.ContinueWith(t =>
+            {
+                if (t.IsFaulted)
+                    Library.Logging.Log.WriteWarningMessage(LOGTAG, "TrayIconRequestError", t.Exception, "Crashed poll thread");
+                ConnectionClosed?.Invoke();
+            });
         }
 
         public Task UpdateStatus()
@@ -184,7 +189,7 @@ namespace Duplicati.GUI.TrayIcon
             m_lastEventId = m_status.LastEventID;
 
             if (OnStatusUpdated != null)
-                OnStatusUpdated(m_status);
+                await OnStatusUpdated(m_status).ConfigureAwait(false);
 
             if (m_lastNotificationId != m_status.LastNotificationUpdateID)
             {
@@ -220,65 +225,54 @@ namespace Duplicati.GUI.TrayIcon
                 m_disableTrayIconLogin = Library.Utility.Utility.ParseBool(str, false);
         }
 
-        private void LongPollRunner()
+        private async Task LongPollRunner()
         {
             var started = DateTime.Now;
             var errorCount = 0;
+            var hasConnected = false;
 
-            // TODO: Add an upper limit to the number of errors,
-            // or implement a "disconnected" state
-            while (!m_shutdown)
+            while (!m_stopToken.IsCancellationRequested)
             {
                 try
                 {
                     var waitTime = TimeSpan.FromSeconds(Math.Min(10, errorCount * 2)) - (DateTime.Now - started);
                     if (waitTime.TotalSeconds > 0)
-                        Thread.Sleep(waitTime);
+                        await Task.Delay(waitTime, m_stopToken.Token).ConfigureAwait(false);
                     started = DateTime.Now;
-                    UpdateStatusAsync(true).Await();
+                    await UpdateStatusAsync(true);
                     errorCount = 0;
+                    hasConnected = true;
+                }
+                catch (Exception ex) when (ex.IsRetiredException() || m_stopToken.IsCancellationRequested)
+                {
+                    Library.Logging.Log.WriteVerboseMessage(LOGTAG, "TrayIconPollRequestError", ex, "Failed to get response");
+                    return;
                 }
                 catch (Exception ex)
                 {
                     errorCount++;
                     // More than 1 error, and we are disconnected
-                    if (errorCount >= 2)
-                        Task.Run(() => { OnStatusUpdated?.Invoke(new ServerStatusImpl(LiveControlState.Paused, SuggestedStatusIcon.Disconnected, m_lastEventId, m_lastDataUpdateId, m_lastNotificationId)); }).Await();
+                    if (errorCount >= 2 && OnStatusUpdated != null || !hasConnected)
+                        await OnStatusUpdated.Invoke(new ServerStatusImpl(LiveControlState.Paused, SuggestedStatusIcon.Disconnected, m_lastEventId, m_lastDataUpdateId, m_lastNotificationId));
                     System.Diagnostics.Trace.WriteLine("Request error: " + ex.Message);
-                    Library.Logging.Log.WriteWarningMessage(LOGTAG, "TrayIconRequestError", ex, "Failed to get response");
+                    Library.Logging.Log.WriteWarningMessage(LOGTAG, "TrayIconPollRequestError", ex, "Failed to get response");
                 }
             }
         }
 
-        private void ThreadRunner()
+        private async Task ThreadRunner()
         {
-            while (!m_shutdown)
+            while (true)
             {
                 try
                 {
-                    BackgroundRequest req;
-                    bool any = false;
-                    do
-                    {
-                        req = null;
-
-                        lock (m_lock)
-                            if (m_workQueue.Count > 0)
-                                req = m_workQueue.Dequeue();
-
-                        if (m_shutdown)
-                            break;
-
-                        if (req != null)
-                        {
-                            any = true;
-                            PerformRequestAsync<string>(req.Method, req.Endpoint, req.Body, req.Timeout).Await();
-                        }
-
-                    } while (req != null);
-
-                    if (!(any || m_shutdown))
-                        m_waitLock.WaitOne(TimeSpan.FromMinutes(1), true);
+                    var req = await m_workQueue.ReadAsync().ConfigureAwait(false);
+                    await PerformRequestAsync<string>(req.Method, req.Endpoint, req.Body, req.Timeout).ConfigureAwait(false);
+                }
+                catch (Exception ex) when (ex.IsRetiredException() || m_stopToken.IsCancellationRequested)
+                {
+                    Library.Logging.Log.WriteVerboseMessage(LOGTAG, "TrayIconRequestError", ex, "Failed to get response");
+                    return;
                 }
                 catch (Exception ex)
                 {
@@ -290,15 +284,9 @@ namespace Duplicati.GUI.TrayIcon
 
         public void Close()
         {
-            m_shutdown = true;
-            m_waitLock.Set();
-            m_pollThread.Interrupt();
-            m_pollThread.Join(TimeSpan.FromSeconds(10));
-            if (!m_requestThread.Join(TimeSpan.FromSeconds(10)))
-            {
-                m_requestThread.Interrupt();
-                m_requestThread.Join(TimeSpan.FromSeconds(10));
-            }
+            m_stopToken.Cancel();
+            m_workQueue.Retire();
+            ConnectionClosed?.Invoke();
         }
 
         private sealed record SigninResponse(string AccessToken);
@@ -396,11 +384,7 @@ namespace Duplicati.GUI.TrayIcon
 
         private void ExecuteAndNotify(string method, string urifragment, string body)
         {
-            lock (m_lock)
-            {
-                m_workQueue.Enqueue(new BackgroundRequest(method, urifragment, body, null));
-                m_waitLock.Set();
-            }
+            m_workQueue.WriteNoWait(new BackgroundRequest(method, urifragment, body, null));
         }
 
         public void Pause(string duration = null)
