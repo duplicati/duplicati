@@ -866,8 +866,8 @@ namespace Duplicati.Library.Main
             {
                 if (supportedOptions.TryGetValue(s, out var arg) && arg != null)
                 {
-                    string validationMessage = ValidateOptionValue(arg, s, ropts[s]);
-                    if (validationMessage != null)
+                    var validationMessage = CommandLineArgumentValidator.ValidateOptionValue(arg, s, ropts[s]);
+                    if (!string.IsNullOrWhiteSpace(validationMessage))
                         Logging.Log.WriteWarningMessage(LOGTAG, "OptionValidationError", null, validationMessage);
                 }
             }
@@ -1043,7 +1043,7 @@ namespace Duplicati.Library.Main
                             if (excludes)
                             {
                                 Logging.Log.WriteVerboseMessage(LOGTAG, "RemovingSubfolderSource", "Removing source \"{0}\" because it is a subfolder of \"{1}\", and using it as an include filter", sources[i], sources[j]);
-                                filter = Library.Utility.JoinedFilterExpression.Join(new FilterExpression(sources[i]), filter);
+                                filter = JoinedFilterExpression.Join(new FilterExpression(sources[i]), filter);
                             }
                             else
                                 Logging.Log.WriteVerboseMessage(LOGTAG, "RemovingSubfolderSource", "Removing source \"{0}\" because it is a subfolder or subfile of \"{1}\"", sources[i], sources[j]);
@@ -1057,96 +1057,6 @@ namespace Duplicati.Library.Main
                     }
 
             return sources.ToArray();
-        }
-
-        /// <summary>
-        /// Checks if the value passed to an option is actually valid.
-        /// </summary>
-        /// <param name="arg">The argument being validated</param>
-        /// <param name="optionname">The name of the option to validate</param>
-        /// <param name="value">The value to check</param>
-        /// <returns>Null if no errors are found, an error message otherwise</returns>
-        private static string ValidateOptionValue(ICommandLineArgument arg, string optionname, string value)
-        {
-            if (arg.Type == CommandLineArgument.ArgumentType.Enumeration)
-            {
-                bool found = false;
-                foreach (string v in arg.ValidValues ?? new string[0])
-                    if (string.Equals(v, value, StringComparison.OrdinalIgnoreCase))
-                    {
-                        found = true;
-                        break;
-                    }
-
-                if (!found)
-                    return Strings.Controller.UnsupportedEnumerationValue(optionname, value, arg.ValidValues ?? new string[0]);
-
-            }
-            else if (arg.Type == CommandLineArgument.ArgumentType.Flags)
-            {
-                bool validatedAllFlags = false;
-                var flags = (value ?? string.Empty).ToLowerInvariant().Split(new[] { "," }, StringSplitOptions.None).Select(flag => flag.Trim()).Distinct();
-                var validFlags = arg.ValidValues ?? new string[0];
-
-                foreach (var flag in flags)
-                {
-                    if (!validFlags.Any(validFlag => string.Equals(validFlag, flag, StringComparison.OrdinalIgnoreCase)))
-                    {
-                        validatedAllFlags = false;
-                        break;
-                    }
-
-                    validatedAllFlags = true;
-                }
-
-                if (!validatedAllFlags)
-                {
-                    return Strings.Controller.UnsupportedFlagsValue(optionname, value, validFlags);
-                }
-            }
-            else if (arg.Type == CommandLineArgument.ArgumentType.Boolean)
-            {
-                if (!string.IsNullOrEmpty(value) && Library.Utility.Utility.ParseBool(value, true) != Library.Utility.Utility.ParseBool(value, false))
-                    return Strings.Controller.UnsupportedBooleanValue(optionname, value);
-            }
-            else if (arg.Type == CommandLineArgument.ArgumentType.Integer)
-            {
-                if (!long.TryParse(value, out _))
-                    return Strings.Controller.UnsupportedIntegerValue(optionname, value);
-            }
-            else if (arg.Type == CommandLineArgument.ArgumentType.Path)
-            {
-                foreach (string p in value.Split(Path.DirectorySeparatorChar))
-                    if (p.IndexOfAny(Path.GetInvalidPathChars()) >= 0)
-                        return Strings.Controller.UnsupportedPathValue(optionname, p);
-            }
-            else if (arg.Type == CommandLineArgument.ArgumentType.Size)
-            {
-                try
-                {
-                    Sizeparser.ParseSize(value);
-                }
-                catch
-                {
-                    return Strings.Controller.UnsupportedSizeValue(optionname, value);
-                }
-
-                if (!string.IsNullOrWhiteSpace(value) && char.IsDigit(value.Last()))
-                    return Strings.Controller.NonQualifiedSizeValue(optionname, value);
-            }
-            else if (arg.Type == CommandLineArgument.ArgumentType.Timespan)
-            {
-                try
-                {
-                    Timeparser.ParseTimeSpan(value);
-                }
-                catch
-                {
-                    return Strings.Controller.UnsupportedTimeValue(optionname, value);
-                }
-            }
-
-            return null;
         }
 
         public void Pause(bool alsoTransfers)

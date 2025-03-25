@@ -27,23 +27,23 @@ namespace Duplicati.Library.Utility
 {
     public class FilterCollector
     {
-        private readonly List<Library.Utility.IFilter> m_filters = new List<Library.Utility.IFilter>();
-        private Library.Utility.IFilter Filter
+        private readonly List<IFilter> m_filters = new List<IFilter>();
+        private IFilter Filter
         {
             get
             {
                 if (m_filters.Count == 0)
-                    return new Library.Utility.FilterExpression();
+                    return new FilterExpression();
                 else if (m_filters.Count == 1)
                     return m_filters[0];
                 else
-                    return m_filters.Aggregate(Library.Utility.JoinedFilterExpression.Join);
+                    return m_filters.Aggregate(JoinedFilterExpression.Join);
             }
         }
 
         private Dictionary<string, string> DoExtractOptions(List<string> args, Func<string, string, bool> callbackHandler = null)
         {
-            return Library.Utility.CommandLineParser.ExtractOptions(args, (key, value) =>
+            return CommandLineParser.ExtractOptions(args, (key, value) =>
             {
                 if (!string.IsNullOrEmpty(value))
                 {
@@ -52,7 +52,7 @@ namespace Duplicati.Library.Utility
 
                     if (include || exclude)
                     {
-                        m_filters.Add(new Library.Utility.FilterExpression(Environment.ExpandEnvironmentVariables(value), include));
+                        m_filters.Add(new FilterExpression(Environment.ExpandEnvironmentVariables(value), include));
                         return false;
                     }
                 }
@@ -64,11 +64,11 @@ namespace Duplicati.Library.Utility
             });
         }
 
-        public static Tuple<Dictionary<string, string>, Library.Utility.IFilter> ExtractOptions(List<string> args, Func<string, string, bool> callbackHandler = null)
+        public static Tuple<Dictionary<string, string>, IFilter> ExtractOptions(List<string> args, Func<string, string, bool> callbackHandler = null)
         {
             var fc = new FilterCollector();
             var opts = fc.DoExtractOptions(args, callbackHandler);
-            return new Tuple<Dictionary<string, string>, Library.Utility.IFilter>(opts, fc.Filter);
+            return new Tuple<Dictionary<string, string>, IFilter>(opts, fc.Filter);
         }
     }
 }
