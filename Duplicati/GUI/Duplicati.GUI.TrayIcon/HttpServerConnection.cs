@@ -102,7 +102,7 @@ namespace Duplicati.GUI.TrayIcon
         private long m_lastDataUpdateId = -1;
         private bool m_disableTrayIconLogin;
 
-        private volatile IServerStatus m_status;
+        private volatile IServerStatus m_status = new ServerStatusImpl(LiveControlState.Paused, SuggestedStatusIcon.Disconnected, 0, 0, 0);
 
         private volatile bool m_shutdown = false;
         private volatile Thread m_requestThread;

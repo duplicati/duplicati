@@ -214,10 +214,8 @@ No password provided, unable to connect to server, exiting");
                         ServicePointManager.SecurityProtocol = SecurityProtocolType.SystemDefault;
                         using (Connection = new HttpServerConnection(serverURL, password, passwordSource, disableTrayIconLogin, acceptedHostCertificate, options))
                         {
-                            // Make sure we have the latest status
-                            // This will throw an exception if the server is not running,
-                            // or the password is incorrect
-                            Connection.UpdateStatus().Await();
+                            // Make sure we have the latest status, but don't care if it fails
+                            Connection.UpdateStatus().FireAndForget();
 
                             using (var tk = RunTrayIcon())
                             {
