@@ -447,8 +447,12 @@ namespace Duplicati.CommandLine.BackendTester
 
                     Console.WriteLine(LogTimeStamp + "Deleting files...");
 
-                    foreach (var tx in files)
-                        try { backend.DeleteAsync(tx.remotefilename, CancellationToken.None).Await(); }
+                    for (int i = 0; i < files.Count; i++)
+                        try
+                        {
+                            Console.WriteLine(LogTimeStamp + "Deleting file {0}", i);
+                            backend.DeleteAsync(files[i].remotefilename, CancellationToken.None).Await();
+                        }
                         catch (Exception ex)
                         {
                             failAfterFinished = true;
