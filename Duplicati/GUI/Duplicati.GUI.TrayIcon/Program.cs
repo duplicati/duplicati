@@ -67,6 +67,14 @@ namespace Duplicati.GUI.TrayIcon
 
         private const string DETACHED_PROCESS = "detached-process";
         private const string BROWSER_COMMAND_OPTION = "browser-command";
+        private static readonly IReadOnlySet<string> DETATCHED_WEBERVER_OPTIONS = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            WebServerLoader.OPTION_WEBSERVICE_PASSWORD,
+            WebServerLoader.OPTION_PORT,
+            DataFolderManager.SERVER_DATAFOLDER_OPTION,
+            DataFolderManager.PORTABLE_MODE_OPTION
+        };
+
 
         private static string DEFAULT_HOSTURL => $"http://{Utility.IpVersionCompatibleLoopback}:8200";
 
@@ -119,14 +127,8 @@ namespace Duplicati.GUI.TrayIcon
             var supportedCommands = BasicSupportedCommands.AsEnumerable();
             if (detached)
             {
-                var detachedWebserverOptions = new HashSet<string>()
-                {
-                    WebServerLoader.OPTION_WEBSERVICE_PASSWORD,
-                    WebServerLoader.OPTION_PORT
-                };
                 supportedCommands = DetachSupportedCommands
-                    .Concat(supportedCommands)
-                    .Concat(WebserverSupportedCommands.Where(x => detachedWebserverOptions.Contains(x.Name)));
+                    .Concat(supportedCommands);
             }
             else
             {
@@ -135,7 +137,7 @@ namespace Duplicati.GUI.TrayIcon
 
             // Validate options, and log to console
             using (var logger = new ConsoleOutput(Console.Out, options))
-                CommandLineArgumentValidator.ValidateArguments(supportedCommands, options, Server.Program.KnownDuplicateOptions);
+                CommandLineArgumentValidator.ValidateArguments(supportedCommands, options, Server.Program.KnownDuplicateOptions, new HashSet<string>());
 
             if (!detached)
             {
@@ -144,6 +146,9 @@ namespace Duplicati.GUI.TrayIcon
                     // Tell the hosted server it was started by the TrayIcon
                     FIXMEGlobal.Origin = "Tray icon";
                     passwordSource = PasswordSource.HostedServer;
+                    // Ignore TrayIcon specific settings
+                    foreach (var c in BasicSupportedCommands.Select(x => x.Name))
+                        Server.Program.ValidationIgnoredOptions.Add(c);
                     hosted = new HostedInstanceKeeper(_args);
                 }
                 catch (Exception ex)
@@ -317,13 +322,14 @@ No password provided, unable to connect to server, exiting");
 
         public static ICommandLineArgument[] DetachSupportedCommands =>
         [
-            new CommandLineArgument(HOSTURL_OPTION, CommandLineArgument.ArgumentType.String, "Selects the url to connect to", "Supply the url that the TrayIcon will connect to and show status for", DEFAULT_HOSTURL),
             new CommandLineArgument(NOHOSTEDSERVER_OPTION, CommandLineArgument.ArgumentType.String, "Disables local server", "Set this option to not spawn a local service, use if the TrayIcon should connect to a running service"),
             new CommandLineArgument(READCONFIGFROMDB_OPTION, CommandLineArgument.ArgumentType.String, "Read server connection info from DB", $"Set this option to read server connection info for running service from its database (only together with {NOHOSTEDSERVER_OPTION})"),
+            .. WebserverSupportedCommands.Where(x => DETATCHED_WEBERVER_OPTIONS.Contains(x.Name))
         ];
 
         public static ICommandLineArgument[] BasicSupportedCommands =>
         [
+            new CommandLineArgument(HOSTURL_OPTION, CommandLineArgument.ArgumentType.String, "Selects the url to connect to", "Supply the url that the TrayIcon will connect to and show status for", DEFAULT_HOSTURL),
             new CommandLineArgument(BROWSER_COMMAND_OPTION, CommandLineArgument.ArgumentType.String, "Sets the browser command", "Set this option to override the default browser detection"),
             new CommandLineArgument(ACCEPTED_SSL_CERTIFICATE, CommandLineArgument.ArgumentType.String, "Accepts a specific SSL certificate", "Set this option to accept a specific SSL certificate, the value should be the hash of the certificate in hexadecimal format. Use * to accept any certificate (dangerous)"),
             .. WindowsSupportedCommands

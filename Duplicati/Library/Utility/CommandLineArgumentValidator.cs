@@ -43,7 +43,7 @@ public static class CommandLineArgumentValidator
     /// Validates arguments against the supported commands
     /// </summary>
     /// <param name="arguments">The arguments supported<</param>
-    public static void ValidateArguments(IEnumerable<ICommandLineArgument> arguments, IReadOnlyDictionary<string, string?> options, HashSet<string> knownDuplicateOptions)
+    public static void ValidateArguments(IEnumerable<ICommandLineArgument> arguments, IReadOnlyDictionary<string, string?> options, IReadOnlySet<string> knownDuplicateOptions, IReadOnlySet<string> IgnoredOptions)
     {
         var allOptionsGrouped = arguments
             .SelectMany(option => (option.Aliases ?? []).Prepend(option.Name).Select(name => (Name: name, Option: option)))
@@ -57,7 +57,7 @@ public static class CommandLineArgumentValidator
         var allOptions = allOptionsGrouped
             .ToDictionary(x => x.Key, x => x.First().Option, StringComparer.OrdinalIgnoreCase);
 
-        foreach (var (key, value) in options)
+        foreach (var (key, value) in options.Where(x => !IgnoredOptions.Contains(x.Key)))
         {
             if (!allOptions.TryGetValue(key, out var option) || option == null)
             {

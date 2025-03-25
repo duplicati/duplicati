@@ -67,6 +67,10 @@ namespace Duplicati.Server
 #endif
 
         /// <summary>
+        /// Options to be ignored when validating the command line
+        /// </summary>
+        public static readonly HashSet<string> ValidationIgnoredOptions = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        /// <summary>
         /// The log tag for messages from this class
         /// </summary>
         private static readonly string LOGTAG = Library.Logging.Log.LogTagFromType<Program>();
@@ -250,7 +254,7 @@ namespace Duplicati.Server
             ConfigureLogging(commandlineOptions);
 
             // Validate after logging is configured
-            CommandLineArgumentValidator.ValidateArguments(SupportedCommands, commandlineOptions, KnownDuplicateOptions);
+            CommandLineArgumentValidator.ValidateArguments(SupportedCommands, commandlineOptions, KnownDuplicateOptions, ValidationIgnoredOptions);
 
             var crashed = false;
             var terminated = false;

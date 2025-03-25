@@ -35,7 +35,7 @@ namespace Duplicati.GUI.TrayIcon
 
         public HostedInstanceKeeper(string[] args)
         {
-            m_runner = new System.Threading.Thread((dummy_arg) =>
+            m_runner = new System.Threading.Thread(_ =>
             {
                 try
                 {
