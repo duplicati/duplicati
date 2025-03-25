@@ -22,13 +22,10 @@ using Aliyun.OSS;
 using Aliyun.OSS.Common;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
-using System;
-using System.Collections.Generic;
-using System.IO;
+using Duplicati.Library.Utility;
+using Duplicati.Library.Utility.Options;
 using System.Net;
 using System.Runtime.CompilerServices;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Duplicati.Library.Backend.AliyunOSS
 {
@@ -46,42 +43,33 @@ namespace Duplicati.Library.Backend.AliyunOSS
         private const string OSS_ACCESS_KEY_ID = "oss-access-key-id";
         private const string OSS_ACCESS_KEY_SECRET = "oss-access-key-secret";
 
-        private AliyunOSSOptions _ossOptions;
+        private readonly AliyunOSSOptions _ossOptions;
+        private readonly TimeoutOptionsHelper.Timeouts _timeouts;
 
         public OSS()
-        { }
-
-        public OSS(string url, Dictionary<string, string> options)
         {
-            _ossOptions = new AliyunOSSOptions();
+            _ossOptions = null!;
+            _timeouts = null!;
+        }
+
+        public OSS(string url, Dictionary<string, string?> options)
+        {
+            _timeouts = TimeoutOptionsHelper.Parse(options);
 
             var uri = new Utility.Uri(url?.Trim());
             var prefix = uri.HostAndPath?.TrimPath();
 
-            if (!string.IsNullOrEmpty(prefix))
-            {
-                _ossOptions.Path = prefix;
-            }
+            var auth = AuthOptionsHelper.ParseWithAlias(options, uri, OSS_ACCESS_KEY_ID, OSS_ACCESS_KEY_SECRET)
+                .RequireCredentials();
 
-            if (options.ContainsKey(OSS_ACCESS_KEY_ID))
+            _ossOptions = new AliyunOSSOptions()
             {
-                _ossOptions.AccessKeyId = options[OSS_ACCESS_KEY_ID];
-            }
-
-            if (options.ContainsKey(OSS_ACCESS_KEY_SECRET))
-            {
-                _ossOptions.AccessKeySecret = options[OSS_ACCESS_KEY_SECRET];
-            }
-
-            if (options.ContainsKey(OSS_BUCKET_NAME))
-            {
-                _ossOptions.BucketName = options[OSS_BUCKET_NAME];
-            }
-
-            if (options.ContainsKey(OSS_ENDPOINT))
-            {
-                _ossOptions.Endpoint = options[OSS_ENDPOINT];
-            }
+                BucketName = options.GetValueOrDefault(OSS_BUCKET_NAME),
+                Endpoint = options.GetValueOrDefault(OSS_ENDPOINT),
+                AccessKeyId = auth.Username!,
+                AccessKeySecret = auth.Password!,
+                Path = prefix ?? string.Empty
+            };
         }
 
         private OssClient GetClient(bool isUseNewServiceClient = true)
@@ -122,11 +110,11 @@ namespace Duplicati.Library.Backend.AliyunOSS
                 ObjectListing result;
                 try
                 {
-                    result = await Task.Run(() => client.ListObjects(listObjectsRequest), cancelToken).ConfigureAwait(ConfigureAwaitOptions.ForceYielding);
+                    result = await Utility.Utility.WithTimeout(_timeouts.ListTimeout, cancelToken, async ct => await Task.Run(() => client.ListObjects(listObjectsRequest), ct).ConfigureAwait(ConfigureAwaitOptions.ForceYielding))
+                        .ConfigureAwait(false);
+
                     if (result.HttpStatusCode != HttpStatusCode.OK)
-                    {
                         throw new Exception(result.HttpStatusCode.ToString());
-                    }
 
                 }
                 catch (OssException ex)
@@ -164,29 +152,27 @@ namespace Duplicati.Library.Backend.AliyunOSS
                 await GetAsync(remotename, fs, cancelToken).ConfigureAwait(false);
         }
 
-        public Task DeleteAsync(string remotename, CancellationToken cancelToken)
+        public async Task DeleteAsync(string remotename, CancellationToken cancelToken)
         {
             try
             {
                 var client = GetClient();
-
                 var bucketName = _ossOptions.BucketName;
-
                 var objectName = $"{_ossOptions.Path.TrimPath()}/{remotename}".TrimPath();
 
-                var res = client.DeleteObject(bucketName, objectName);
-                if (res?.HttpStatusCode != HttpStatusCode.OK)
+                await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancelToken, ct =>
                 {
-                    Logging.Log.WriteInformationMessage(LOGTAG, "Delete", "Delete object failed. it may have been deleted");
-                }
+                    var res = client.DeleteObject(bucketName, objectName);
+                    if (res?.HttpStatusCode != HttpStatusCode.OK)
+                        Logging.Log.WriteInformationMessage(LOGTAG, "Delete", "Delete object failed. it may have been deleted");
+                    return Task.CompletedTask;
+                });
             }
             catch (Exception ex)
             {
                 Logging.Log.WriteErrorMessage(LOGTAG, "Delete", ex, "Delete object failed. {0}", ex.Message);
                 throw;
             }
-
-            return Task.CompletedTask;
         }
 
         public Task TestAsync(CancellationToken cancelToken)
@@ -212,8 +198,9 @@ namespace Duplicati.Library.Backend.AliyunOSS
             var client = GetClient();
             try
             {
+                using var timeoutStream = stream.ObserveReadTimeout(_timeouts.ReadWriteTimeout, false);
                 var objectResult = await Task.Factory.FromAsync(
-                    (cb, state) => client.BeginPutObject(bucketName, objectName, stream, cb, state),
+                    (cb, state) => client.BeginPutObject(bucketName, objectName, timeoutStream, cb, state),
                     client.EndPutObject,
                     null).ConfigureAwait(false);
 
@@ -230,23 +217,24 @@ namespace Duplicati.Library.Backend.AliyunOSS
         public async Task GetAsync(string remotename, Stream stream, CancellationToken cancelToken)
         {
             var bucketName = _ossOptions.BucketName;
-
             var objectName = $"{_ossOptions.Path.TrimPath()}/{remotename}".TrimPath();
-
             var client = GetClient(false);
 
             try
             {
-                var obj = await Task.Factory.FromAsync(
-                    (cb, state) => client.BeginGetObject(bucketName, objectName, null, null),
-                    client.EndGetObject,
-                    null).ConfigureAwait(false);
+                var obj = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancelToken, async ct
+                    => await Task.Factory.FromAsync(
+                        (cb, state) => client.BeginGetObject(bucketName, objectName, null, null),
+                        client.EndGetObject,
+                        null).ConfigureAwait(false)
+                    ).ConfigureAwait(false);
 
                 if (obj.HttpStatusCode != HttpStatusCode.OK)
                     throw new Exception("Get failed");
 
                 using (var requestStream = obj.Content)
-                    await Library.Utility.Utility.CopyStreamAsync(requestStream, stream, cancelToken).ConfigureAwait(false);
+                using (var timeoutStream = requestStream.ObserveWriteTimeout(_timeouts.ReadWriteTimeout, false))
+                    await Utility.Utility.CopyStreamAsync(requestStream, timeoutStream, cancelToken).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -274,15 +262,15 @@ namespace Duplicati.Library.Backend.AliyunOSS
                 // copy file
                 var req = new CopyObjectRequest(sourceBucket, sourceObject, targetBucket, targetObject);
 
-                var res = await Task.Factory.FromAsync(
-                    (cb, state) => client.BeginCopyObject(req, cb, state),
-                    client.EndCopyResult,
-                    null).ConfigureAwait(false);
+                var res = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancelToken, async ct
+                    => await Task.Factory.FromAsync(
+                        (cb, state) => client.BeginCopyObject(req, cb, state),
+                        client.EndCopyResult,
+                        null).ConfigureAwait(false)
+                    ).ConfigureAwait(false);
 
                 if (res?.HttpStatusCode != HttpStatusCode.OK)
-                {
                     throw new Exception("file rename failed");
-                }
 
                 // del old file
                 await DeleteAsync(oldname, cancelToken).ConfigureAwait(false);
@@ -310,10 +298,11 @@ namespace Duplicati.Library.Backend.AliyunOSS
             get
             {
                 return new List<ICommandLineArgument>([
-                    new CommandLineArgument(OSS_ACCESS_KEY_ID, CommandLineArgument.ArgumentType.String, Strings.OSSBackend.OSSAccessKeyIdDescriptionShort, Strings.OSSBackend.OSSAccessKeyIdDescriptionLong),
-                    new CommandLineArgument(OSS_ACCESS_KEY_SECRET, CommandLineArgument.ArgumentType.Password, Strings.OSSBackend.OSSAccessKeySecretDescriptionShort, Strings.OSSBackend.OSSAccessKeySecretDescriptionLong),
+                    new CommandLineArgument(OSS_ACCESS_KEY_ID, CommandLineArgument.ArgumentType.String, Strings.OSSBackend.OSSAccessKeyIdDescriptionShort, Strings.OSSBackend.OSSAccessKeyIdDescriptionLong, null, [AuthOptionsHelper.AuthUsernameOption]),
+                    new CommandLineArgument(OSS_ACCESS_KEY_SECRET, CommandLineArgument.ArgumentType.Password, Strings.OSSBackend.OSSAccessKeySecretDescriptionShort, Strings.OSSBackend.OSSAccessKeySecretDescriptionLong, null, [AuthOptionsHelper.AuthPasswordOption]),
                     new CommandLineArgument(OSS_BUCKET_NAME, CommandLineArgument.ArgumentType.String, Strings.OSSBackend.OSSBucketNameDescriptionShort, Strings.OSSBackend.OSSBucketNameDescriptionLong),
-                    new CommandLineArgument(OSS_ENDPOINT, CommandLineArgument.ArgumentType.String, Strings.OSSBackend.OSSEndpointDescriptionShort, Strings.OSSBackend.OSSEndpointDescriptionLong)
+                    new CommandLineArgument(OSS_ENDPOINT, CommandLineArgument.ArgumentType.String, Strings.OSSBackend.OSSEndpointDescriptionShort, Strings.OSSBackend.OSSEndpointDescriptionLong),
+                    .. TimeoutOptionsHelper.GetOptions()
                 ]);
             }
         }

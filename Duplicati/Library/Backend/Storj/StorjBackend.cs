@@ -18,13 +18,11 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
+using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
-using System;
-using System.Collections.Generic;
-using System.IO;
+using Duplicati.Library.Utility;
+using Duplicati.Library.Utility.Options;
 using System.Runtime.CompilerServices;
-using System.Threading;
-using System.Threading.Tasks;
 using uplink.NET.Interfaces;
 using uplink.NET.Models;
 using uplink.NET.Services;
@@ -51,14 +49,15 @@ namespace Duplicati.Library.Backend.Storj
         private const string STORJ_DEFAULT_SATELLITE = "us1.storj.io:7777";
         private const string STORJ_DEFAULT_AUTH_METHOD = STORJ_AUTH_METHOD_API_KEY;
 
-        private readonly string _satellite;
-        private readonly string _api_key;
-        private readonly string _secret;
+        private readonly string? _satellite;
+        private readonly string? _api_key;
+        private readonly string? _secret;
         private readonly string _bucket;
-        private readonly string _folder;
-        private Access _access;
-        private IBucketService _bucketService;
-        private IObjectService _objectService;
+        private readonly string? _folder;
+        private readonly Access _access;
+        private readonly IBucketService _bucketService;
+        private readonly IObjectService _objectService;
+        private readonly TimeoutOptionsHelper.Timeouts _timeouts;
 
         public static readonly Dictionary<string, string> KNOWN_STORJ_SATELLITES = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase){
             { "US Central", "us1.storj.io:7777" },
@@ -77,7 +76,7 @@ namespace Duplicati.Library.Backend.Storj
             if (_libraryLoaded)
                 return;
 
-            Access.SetTempDirectory(Library.Utility.TempFolder.SystemTempPath);
+            Access.SetTempDirectory(Utility.TempFolder.SystemTempPath);
             _libraryLoaded = true;
         }
 
@@ -85,11 +84,16 @@ namespace Duplicati.Library.Backend.Storj
         // This constructor is needed by the BackendLoader.
         public Storj()
         {
+            _bucket = null!;
+            _access = null!;
+            _bucketService = null!;
+            _objectService = null!;
+            _timeouts = null!;
         }
 
         // ReSharper disable once UnusedMember.Global
         // This constructor is needed by the BackendLoader.
-        public Storj(string url, Dictionary<string, string> options)
+        public Storj(string url, Dictionary<string, string?> options)
         {
             InitStorjLibrary();
 
@@ -102,17 +106,13 @@ namespace Duplicati.Library.Backend.Storj
             }
             else
             {
-                //Create an access for a satellite, API key and encryption passphrase                    
+                //Create an access for a satellite, API key and encryption passphrase
                 _satellite = options.GetValueOrDefault(STORJ_SATELLITE, STORJ_DEFAULT_SATELLITE);
+                if (string.IsNullOrWhiteSpace(_satellite))
+                    _satellite = STORJ_DEFAULT_SATELLITE;
 
-                if (options.ContainsKey(STORJ_API_KEY))
-                {
-                    _api_key = options[STORJ_API_KEY];
-                }
-                if (options.ContainsKey(STORJ_SECRET))
-                {
-                    _secret = options[STORJ_SECRET];
-                }
+                _api_key = options.GetValueOrDefault(STORJ_API_KEY);
+                _secret = options.GetValueOrDefault(STORJ_SECRET);
 
                 _access = new Access(_satellite, _api_key, _secret, new Config() { UserAgent = STORJ_PARTNER_ID });
             }
@@ -121,53 +121,36 @@ namespace Duplicati.Library.Backend.Storj
             _objectService = new ObjectService(_access);
 
             //If no bucket was provided use the default "duplicati"-bucket
-            if (options.ContainsKey(STORJ_BUCKET))
-            {
-                _bucket = options[STORJ_BUCKET];
-            }
-            else
-            {
-                _bucket = "duplicati";
-            }
+            var bucket = options.GetValueOrDefault(STORJ_BUCKET);
+            _bucket = string.IsNullOrWhiteSpace(bucket)
+                ? STORJ_DEFAULT_BUCKET
+                : bucket;
 
-            if (options.ContainsKey(STORJ_FOLDER))
-            {
-                _folder = options[STORJ_FOLDER];
-            }
+            _folder = options.GetValueOrDefault(STORJ_FOLDER);
+            _timeouts = TimeoutOptionsHelper.Parse(options);
         }
 
-        public string DisplayName
-        {
-            get { return Strings.Storj.DisplayName; }
-        }
+        public string DisplayName => Strings.Storj.DisplayName;
 
         public string ProtocolKey => PROTOCOL_KEY;
 
-        public IList<ICommandLineArgument> SupportedCommands
-        {
-            get
-            {
-                return new List<ICommandLineArgument>(new ICommandLineArgument[] {
-                    new CommandLineArgument(STORJ_AUTH_METHOD, CommandLineArgument.ArgumentType.String, Strings.Storj.StorjAuthMethodDescriptionShort, Strings.Storj.StorjAuthMethodDescriptionLong, STORJ_DEFAULT_AUTH_METHOD, null, [STORJ_AUTH_METHOD_API_KEY, STORJ_AUTH_METHOD_ACCESS_GRANT]),
-                    new CommandLineArgument(STORJ_SATELLITE, CommandLineArgument.ArgumentType.String, Strings.Storj.StorjSatelliteDescriptionShort, Strings.Storj.StorjSatelliteDescriptionLong, STORJ_DEFAULT_SATELLITE),
-                    new CommandLineArgument(STORJ_API_KEY, CommandLineArgument.ArgumentType.String, Strings.Storj.StorjAPIKeyDescriptionShort, Strings.Storj.StorjAPIKeyDescriptionLong),
-                    new CommandLineArgument(STORJ_SECRET, CommandLineArgument.ArgumentType.Password, Strings.Storj.StorjSecretDescriptionShort, Strings.Storj.StorjSecretDescriptionLong),
-                    new CommandLineArgument(STORJ_SHARED_ACCESS, CommandLineArgument.ArgumentType.String, Strings.Storj.StorjSharedAccessDescriptionShort, Strings.Storj.StorjSharedAccessDescriptionLong),
-                    new CommandLineArgument(STORJ_BUCKET, CommandLineArgument.ArgumentType.String, Strings.Storj.StorjBucketDescriptionShort, Strings.Storj.StorjBucketDescriptionLong, STORJ_DEFAULT_BUCKET),
-                    new CommandLineArgument(STORJ_FOLDER, CommandLineArgument.ArgumentType.String, Strings.Storj.StorjFolderDescriptionShort, Strings.Storj.StorjFolderDescriptionLong),
-                });
-            }
-        }
+        public IList<ICommandLineArgument> SupportedCommands => [
+            new CommandLineArgument(STORJ_AUTH_METHOD, CommandLineArgument.ArgumentType.String, Strings.Storj.StorjAuthMethodDescriptionShort, Strings.Storj.StorjAuthMethodDescriptionLong, STORJ_DEFAULT_AUTH_METHOD, null, [STORJ_AUTH_METHOD_API_KEY, STORJ_AUTH_METHOD_ACCESS_GRANT]),
+            new CommandLineArgument(STORJ_SATELLITE, CommandLineArgument.ArgumentType.String, Strings.Storj.StorjSatelliteDescriptionShort, Strings.Storj.StorjSatelliteDescriptionLong, STORJ_DEFAULT_SATELLITE),
+            new CommandLineArgument(STORJ_API_KEY, CommandLineArgument.ArgumentType.String, Strings.Storj.StorjAPIKeyDescriptionShort, Strings.Storj.StorjAPIKeyDescriptionLong),
+            new CommandLineArgument(STORJ_SECRET, CommandLineArgument.ArgumentType.Password, Strings.Storj.StorjSecretDescriptionShort, Strings.Storj.StorjSecretDescriptionLong),
+            new CommandLineArgument(STORJ_SHARED_ACCESS, CommandLineArgument.ArgumentType.String, Strings.Storj.StorjSharedAccessDescriptionShort, Strings.Storj.StorjSharedAccessDescriptionLong),
+            new CommandLineArgument(STORJ_BUCKET, CommandLineArgument.ArgumentType.String, Strings.Storj.StorjBucketDescriptionShort, Strings.Storj.StorjBucketDescriptionLong, STORJ_DEFAULT_BUCKET),
+            new CommandLineArgument(STORJ_FOLDER, CommandLineArgument.ArgumentType.String, Strings.Storj.StorjFolderDescriptionShort, Strings.Storj.StorjFolderDescriptionLong),
+            .. TimeoutOptionsHelper.GetOptions(),
+        ];
 
-        public string Description
-        {
-            get
-            {
-                return Strings.Storj.Description;
-            }
-        }
+        public string Description => Strings.Storj.Description;
 
-        public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(Array.Empty<string>());
+        public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken)
+            => Task.FromResult<string[]>(string.IsNullOrWhiteSpace(_satellite)
+                ? []
+                : [_satellite.Split(':').First()]);
 
         public Task CreateFolderAsync(CancellationToken cancelToken)
         {
@@ -175,12 +158,15 @@ namespace Duplicati.Library.Backend.Storj
             return Task.CompletedTask;
         }
 
+        private Task<Bucket> GetBucketAsync(CancellationToken cancelToken)
+            => Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancelToken, _ => _bucketService.EnsureBucketAsync(_bucket));
+
         public async Task DeleteAsync(string remotename, CancellationToken cancelToken)
         {
             try
             {
-                var bucket = await _bucketService.EnsureBucketAsync(_bucket).ConfigureAwait(false);
-                await _objectService.DeleteObjectAsync(bucket, GetBasePath() + remotename).ConfigureAwait(false);
+                var bucket = await GetBucketAsync(cancelToken).ConfigureAwait(false);
+                await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancelToken, _ => _objectService.DeleteObjectAsync(bucket, GetBasePath() + remotename)).ConfigureAwait(false);
             }
             catch (Exception root)
             {
@@ -190,25 +176,13 @@ namespace Duplicati.Library.Backend.Storj
 
         public void Dispose()
         {
-            if (_objectService != null)
-            {
-                _objectService = null;
-            }
-            if (_bucketService != null)
-            {
-                _bucketService = null;
-            }
-            if (_access != null)
-            {
-                _access.Dispose();
-                _access = null;
-            }
+            _access?.Dispose();
         }
 
         public async Task GetAsync(string remotename, string filename, CancellationToken cancelToken)
         {
-            var bucket = await _bucketService.EnsureBucketAsync(_bucket).ConfigureAwait(false);
-            var download = await _objectService.DownloadObjectAsync(bucket, GetBasePath() + remotename, new DownloadOptions(), false).ConfigureAwait(false);
+            var bucket = await GetBucketAsync(cancelToken).ConfigureAwait(false);
+            var download = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancelToken, _ => _objectService.DownloadObjectAsync(bucket, GetBasePath() + remotename, new DownloadOptions(), false)).ConfigureAwait(false);
             await download.StartDownloadAsync().ConfigureAwait(false);
 
             if (download.Completed)
@@ -223,16 +197,19 @@ namespace Duplicati.Library.Backend.Storj
 
         public async Task GetAsync(string remotename, Stream stream, CancellationToken cancelToken)
         {
-            int index = 0;
-            var bucket = await _bucketService.EnsureBucketAsync(_bucket).ConfigureAwait(false);
-            var download = await _objectService.DownloadObjectAsync(bucket, GetBasePath() + remotename, new DownloadOptions(), false).ConfigureAwait(false);
+            var index = 0;
+            var bucket = await GetBucketAsync(cancelToken).ConfigureAwait(false);
+            var download = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancelToken, _ => _objectService.DownloadObjectAsync(bucket, GetBasePath() + remotename, new DownloadOptions(), false)).ConfigureAwait(false);
+            using var ts = stream.ObserveWriteTimeout(_timeouts.ReadWriteTimeout, false);
             download.DownloadOperationProgressChanged += (op) =>
             {
                 cancelToken.ThrowIfCancellationRequested();
-                int newPartLength = (int)op.BytesReceived - index;
-                byte[] newPart = new byte[newPartLength];
+                var newPartLength = (int)op.BytesReceived - index;
+                // TODO: Copy here should not be needed?
+                // ts.Write(op.DownloadedBytes, index, newPartLength);
+                var newPart = new byte[newPartLength];
                 Array.Copy(op.DownloadedBytes, index, newPart, 0, newPartLength);
-                stream.Write(newPart, 0, newPartLength);
+                ts.Write(newPart, 0, newPartLength);
                 index = index + newPartLength;
             };
             await download.StartDownloadAsync().ConfigureAwait(false);
@@ -241,9 +218,9 @@ namespace Duplicati.Library.Backend.Storj
         /// <inheritdoc />
         public async IAsyncEnumerable<IFileEntry> ListAsync([EnumeratorCancellation] CancellationToken cancelToken)
         {
-            var bucket = await _bucketService.EnsureBucketAsync(_bucket).ConfigureAwait(false);
+            var bucket = await GetBucketAsync(cancelToken).ConfigureAwait(false);
             var prefix = GetBasePath();
-            var objects = await _objectService.ListObjectsAsync(bucket, new ListObjectsOptions { Recursive = true, System = true, Custom = true, Prefix = prefix }).ConfigureAwait(false);
+            var objects = await Utility.Utility.WithTimeout(_timeouts.ListTimeout, cancelToken, _ => _objectService.ListObjectsAsync(bucket, new ListObjectsOptions { Recursive = true, System = true, Custom = true, Prefix = prefix })).ConfigureAwait(false);
 
             foreach (var obj in objects.Items)
             {
@@ -264,29 +241,19 @@ namespace Duplicati.Library.Backend.Storj
 
         public async Task PutAsync(string remotename, Stream stream, CancellationToken cancelToken)
         {
-            var bucket = await _bucketService.EnsureBucketAsync(_bucket).ConfigureAwait(false);
-            CustomMetadata custom = new CustomMetadata();
+            var bucket = await GetBucketAsync(cancelToken).ConfigureAwait(false);
+            var custom = new CustomMetadata();
             custom.Entries.Add(new CustomMetadataEntry { Key = StorjFile.STORJ_LAST_ACCESS, Value = DateTime.Now.ToUniversalTime().ToString("O") });
             custom.Entries.Add(new CustomMetadataEntry { Key = StorjFile.STORJ_LAST_MODIFICATION, Value = DateTime.Now.ToUniversalTime().ToString("O") });
-            var upload = await _objectService.UploadObjectAsync(bucket, GetBasePath() + remotename, new UploadOptions(), stream, custom, false).ConfigureAwait(false);
+            using var ts = stream.ObserveReadTimeout(_timeouts.ReadWriteTimeout, false);
+            var upload = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancelToken, _ => _objectService.UploadObjectAsync(bucket, GetBasePath() + remotename, new UploadOptions(), ts, custom, false)).ConfigureAwait(false);
             await upload.StartUploadAsync().ConfigureAwait(false);
             if (upload.Failed)
-            {
                 throw new Exception(upload.ErrorMessage);
-            }
         }
 
-        public async Task TestAsync(CancellationToken cancelToken)
-        {
-            var ct = CancellationTokenSource.CreateLinkedTokenSource(cancelToken);
-            var testTask = TestImplAsync(ct.Token);
-            ct.CancelAfter(10000);
-            await Task.WhenAny(testTask, Task.Delay(Timeout.Infinite, ct.Token)).ConfigureAwait(false);
-            if (testTask.IsCompleted)
-                await testTask.ConfigureAwait(false);
-            else if (!testTask.IsCompletedSuccessfully)
-                throw new Exception(Strings.Storj.TestConnectionFailed);
-        }
+        public Task TestAsync(CancellationToken cancelToken)
+            => Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancelToken, ct => TestImplAsync(ct));
 
         /// <summary>
         /// Test the connection by:
@@ -297,9 +264,9 @@ namespace Duplicati.Library.Backend.Storj
         /// <returns>true, if the test was successfull or and exception</returns>
         private async Task<bool> TestImplAsync(CancellationToken cancelToken)
         {
-            string testFileName = GetBasePath() + "duplicati_test.dat";
+            var testFileName = GetBasePath() + "duplicati_test.dat";
 
-            var bucket = await _bucketService.EnsureBucketAsync(_bucket).ConfigureAwait(false);
+            var bucket = await GetBucketAsync(cancelToken).ConfigureAwait(false);
             var upload = await _objectService.UploadObjectAsync(bucket, testFileName, new UploadOptions(), GetRandomBytes(256), false).ConfigureAwait(false);
             await upload.StartUploadAsync().ConfigureAwait(false);
 
@@ -309,9 +276,7 @@ namespace Duplicati.Library.Backend.Storj
             await _objectService.DeleteObjectAsync(bucket, testFileName).ConfigureAwait(false);
 
             if (download.Failed || download.BytesReceived != 256)
-            {
                 throw new Exception(download.ErrorMessage);
-            }
 
             return true;
         }
@@ -321,12 +286,9 @@ namespace Duplicati.Library.Backend.Storj
         /// </summary>
         /// <returns>The base path within a bucket where the backup shall be placed</returns>
         private string GetBasePath()
-        {
-            if (!string.IsNullOrEmpty(_folder))
-                return _folder + "/";
-            else
-                return "";
-        }
+            => string.IsNullOrWhiteSpace(_folder)
+                ? ""
+                : Util.AppendDirSeparator(_folder, "/");
 
         /// <summary>
         /// Creates some random bytes with the given length - just for testing the connection
@@ -335,10 +297,8 @@ namespace Duplicati.Library.Backend.Storj
         /// <returns>A byte-array with the given length</returns>
         private static byte[] GetRandomBytes(long length)
         {
-            byte[] bytes = new byte[length];
-            Random rand = new Random();
-            rand.NextBytes(bytes);
-
+            var bytes = new byte[length];
+            Random.Shared.NextBytes(bytes);
             return bytes;
         }
     }

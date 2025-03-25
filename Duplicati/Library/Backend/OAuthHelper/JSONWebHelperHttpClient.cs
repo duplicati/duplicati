@@ -46,23 +46,20 @@ public class JsonWebHelperHttpClient(HttpClient httpClient)
     /// Useragent string building method
     /// </summary>
     protected string UserAgent => $"Duplicati v{System.Reflection.Assembly.GetExecutingAssembly().GetName().Version}";
-    public event Action<HttpRequestMessage> CreateSetupHelper;
 
     /// <summary>
     /// Centralized method to prepare a request with the given URL and method setting useragent
     /// </summary>
     /// <param name="url">Url</param>
     /// <param name="method">Method</param>
-    public virtual HttpRequestMessage CreateRequest(string url, string method = null)
+    public virtual Task<HttpRequestMessage> CreateRequestAsync(string url, HttpMethod method, CancellationToken cancelToken)
     {
-        HttpRequestMessage request = new HttpRequestMessage(string.IsNullOrEmpty(method) ? HttpMethod.Get : new HttpMethod(method), url);
+        var request = new HttpRequestMessage(method, url);
         request.Headers.Add("User-Agent", UserAgent);
 
-        CreateSetupHelper?.Invoke(request);
-
-        return request;
+        return Task.FromResult(request);
     }
-    
+
     /// <summary>
     /// Performs a multipart post and parses the response as JSON
     /// </summary>
@@ -71,13 +68,13 @@ public class JsonWebHelperHttpClient(HttpClient httpClient)
     /// <param name="cancellationToken">Token to cancel the operation.</param>
     /// <param name="parts">The multipart items.</param>
     /// <typeparam name="T">The return type parameter.</typeparam>
-    public virtual async Task<T> PostMultipartAndGetJsonDataAsync<T>(string url, CancellationToken cancellationToken,  MultipartContent parts)
+    public virtual async Task<T> PostMultipartAndGetJsonDataAsync<T>(string url, CancellationToken cancellationToken, MultipartContent parts)
     {
         using var response = await PostMultipartAsync(url, cancellationToken, parts).ConfigureAwait(false);
-        return ReadJsonResponse<T>(response);
+        return await ReadJsonResponseAsync<T>(response, cancellationToken).ConfigureAwait(false);
     }
 
-    
+
     /// <summary>
     /// Performs a multipart post
     /// </summary>
@@ -87,11 +84,11 @@ public class JsonWebHelperHttpClient(HttpClient httpClient)
     /// <param name="parts">The multipart items.</param>
     protected virtual async Task<HttpResponseMessage> PostMultipartAsync(string url, CancellationToken cancellationToken, MultipartContent parts)
     {
-        using var req = CreateRequest(url, "POST");
+        using var req = await CreateRequestAsync(url, HttpMethod.Post, cancellationToken).ConfigureAwait(false);
         req.Content = parts;
         return await _httpClient.SendAsync(req, cancellationToken).ConfigureAwait(false);
     }
-    
+
     /// <summary>
     /// Execute Get request and return response and deserializes JSON response into the given type
     /// </summary>
@@ -101,7 +98,7 @@ public class JsonWebHelperHttpClient(HttpClient httpClient)
     /// <typeparam name="T">Destination Type</typeparam>
     protected virtual async Task<T> GetJsonDataAsync<T>(string url, CancellationToken cancellationToken, Action<HttpRequestMessage> setup = null)
     {
-        using var req = CreateRequest(url);
+        using var req = await CreateRequestAsync(url, HttpMethod.Get, cancellationToken).ConfigureAwait(false);
 
         if (setup != null)
             setup(req);
@@ -132,7 +129,7 @@ public class JsonWebHelperHttpClient(HttpClient httpClient)
             }
         ).ConfigureAwait(false);
     }
-    
+
     /// <summary>
     /// Executes a web request and json-deserializes the results as the specified type
     /// </summary>
@@ -142,7 +139,7 @@ public class JsonWebHelperHttpClient(HttpClient httpClient)
     /// <typeparam name="T">The type of data to return.</typeparam>
     public virtual async Task<T> GetJsonDataAsync<T>(string url, CancellationToken cancellationToken)
     {
-       
+
         return await GetJsonDataAsync<T>(
             url,
             cancellationToken,
@@ -161,35 +158,8 @@ public class JsonWebHelperHttpClient(HttpClient httpClient)
     /// <typeparam name="T">Destination Type</typeparam>
     protected virtual async Task<T> ReadJsonResponseAsync<T>(HttpRequestMessage req, CancellationToken cancellationToken)
     {
-        using var resp = await GetResponseAsync(req, cancellationToken).ConfigureAwait(false);
+        using var resp = await GetResponseAsync(req, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
         return await ReadJsonResponseAsync<T>(resp, cancellationToken).ConfigureAwait(false);
-    }
-
-    /// <summary>
-    /// Read the JSON response from the server and deserialize it into the given type
-    /// </summary>
-    /// <param name="response">Response object</param>
-    /// <typeparam name="T">Type to cast to</typeparam>
-    /// <returns></returns>
-    /// <exception cref="IOException">Exception when failing to deserialize the JSON to the Type</exception>
-    protected virtual T ReadJsonResponse<T>(HttpResponseMessage response)
-    {
-        using var rs = response.Content.ReadAsStream();
-        using var ps = new StreamPeekReader(rs);
-        try
-        {
-            using var tr = new StreamReader(ps);
-            using var jr = new JsonTextReader(tr);
-            return new JsonSerializer().Deserialize<T>(jr);
-        }
-        catch (Exception ex)
-        {
-            // If we get invalid JSON, report the peek value
-            if (ex is JsonReaderException)
-                throw new IOException($"Invalid JSON data: \"{ps.PeekData()}\"", ex);
-            // Otherwise, we have no additional help to offer
-            throw;
-        }
     }
 
     /// <summary>
@@ -224,18 +194,9 @@ public class JsonWebHelperHttpClient(HttpClient httpClient)
     /// Use this method to register an exception handler,
     /// which can throw another, more meaningful exception
     /// </summary>
-    public virtual async Task AttemptParseAndThrowExceptionAsync(Exception ex, HttpResponseMessage responseContext = null, CancellationToken cancellationToken = default)
+    public virtual Task AttemptParseAndThrowExceptionAsync(Exception ex, HttpResponseMessage responseContext, CancellationToken cancellationToken)
     {
-        
-    }
-
-    /// <summary>
-    /// Use this method to register an exception handler,
-    /// which can throw another, more meaningful exception
-    /// </summary>
-    public virtual void AttemptParseAndThrowException(Exception ex, HttpResponseMessage responseContext = null)
-    {
-        
+        return Task.CompletedTask;
     }
 
     /// <summary>
@@ -244,19 +205,19 @@ public class JsonWebHelperHttpClient(HttpClient httpClient)
     /// <param name="req">Request object</param>
     /// <param name="cancellationToken">Cancellation Token</param>
     /// <returns></returns>
-    public async Task<HttpResponseMessage> GetResponseAsync(HttpRequestMessage req, CancellationToken cancellationToken)
+    public async Task<HttpResponseMessage> GetResponseAsync(HttpRequestMessage req, HttpCompletionOption httpCompletionOption, CancellationToken cancellationToken)
     {
         HttpResponseMessage response = null;
         try
         {
-            response = await _httpClient.SendAsync(req, cancellationToken).ConfigureAwait(false);
-            
+            response = await _httpClient.SendAsync(req, httpCompletionOption, cancellationToken).ConfigureAwait(false);
+
             response.EnsureSuccessStatusCode();
             return response;
         }
         catch (Exception ex)
         {
-            AttemptParseAndThrowException(ex, response);
+            await AttemptParseAndThrowExceptionAsync(ex, response, cancellationToken).ConfigureAwait(false);
             throw;
         }
     }

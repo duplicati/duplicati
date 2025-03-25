@@ -131,4 +131,12 @@ backupApp.service('EditUriBackendConfig', function(AppService, AppUtils, SystemI
         return true;
     };
 
+    this.recommend_username = function(scope, continuation) {
+        if ((scope.Username || '').trim().length == 0)
+            return self.show_warning_dialog(gettextCatalog.getString('Most servers require a username, so you will likely need to enter one.\nAre you sure want to continue without a username?'), continuation);
+        else
+            continuation();
+    };
+
+
 });
