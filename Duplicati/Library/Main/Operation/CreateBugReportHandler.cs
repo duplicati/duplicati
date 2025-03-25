@@ -20,6 +20,7 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using Duplicati.Library.Interface;
@@ -74,8 +75,16 @@ namespace Duplicati.Library.Main.Operation
                         db.Vacuum();
                 }
 
+                // Apply zip64 option if not already set
+                var options = new Dictionary<string, string>(m_options.RawOptions);
+
+                // If the file is larger than 1GiB, switch to zip64 if possible
+                if (new FileInfo(tmp).Length > 1L * 1024 * 1024 * 1024)
+                    if (string.Equals(module, "zip", StringComparison.OrdinalIgnoreCase) && !options.ContainsKey("zip-compression-zip64"))
+                        options["zip-compression-zip64"] = "true";
+
                 using (var stream = new FileStream(m_targetpath, FileMode.Create, FileAccess.Write, FileShare.Read))
-                using (ICompression cm = DynamicLoader.CompressionLoader.GetModule(module, stream, Interface.ArchiveMode.Write, m_options.RawOptions))
+                using (ICompression cm = DynamicLoader.CompressionLoader.GetModule(module, stream, ArchiveMode.Write, options))
                 {
                     using (var cs = cm.CreateFile("log-database.sqlite", CompressionHint.Compressible, DateTime.UtcNow))
                     using (var fs = File.Open(tmp, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
