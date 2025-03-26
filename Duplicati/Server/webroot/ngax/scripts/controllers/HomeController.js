@@ -1,6 +1,21 @@
 backupApp.controller('HomeController', function ($scope, $location, ServerStatus, BackupList, AppService, AppUtils, DialogService, gettextCatalog) {
     $scope.backups = BackupList.watch($scope);
 
+    $scope.folderContext = null;
+
+    $scope.orderByFromState = function()
+    {
+        return ServerStatus.state.orderBy;
+    }
+
+    $scope.orderBy = $scope.orderByFromState();
+
+    $scope.openFolderContext = function(path) {
+        BackupList.getFolderContext(path).then(function(context) {
+            $scope.folderContext = context;
+        });
+    };
+
     $scope.doRun = function(id) {
         AppService.post('/backup/' + id + '/run').then(function() {
             if (ServerStatus.state.programState == 'Paused') {
@@ -55,6 +70,13 @@ backupApp.controller('HomeController', function ($scope, $location, ServerStatus
 
     $scope.doCreateBugReport = function(id, name) {
         AppService.post('/backup/' + id + '/createreport');
+    };
+    
+    $scope.doApplyOrder = function (orderby)
+    {
+        console.log('doapplyorder');
+        ServerStatus.state.orderBy = orderby;
+        BackupList.reload();
     };
 
     $scope.formatDuration = AppUtils.formatDuration;
