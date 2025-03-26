@@ -1,4 +1,4 @@
-// Copyright (C) 2025, The Duplicati Team
+﻿// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -506,6 +506,7 @@ namespace Duplicati.UnitTest
                 FileAttributes.ReadOnly,
                 FileAttributes.Hidden,
                 FileAttributes.System,
+                // TODO The Archive attribute has been disabled for now, as the CI doesn't behave as expected, but it works locally.
                 //FileAttributes.Archive
             };
 
@@ -606,6 +607,7 @@ namespace Duplicati.UnitTest
                         var filename = $"file_{attr}";
                         var original_file = Path.Combine(dir, filename);
                         var restored_file = original_file.Replace(DATAFOLDER, RESTOREFOLDER);
+                        // TODO we ignore the Archive attribute, as the CI sets this sporadically
                         var original_attrs = File.GetAttributes(original_file);
                         var restored_attrs = File.GetAttributes(restored_file);
                         if (skip_metadata && original_attrs != default_file_attrs)
