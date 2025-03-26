@@ -8,7 +8,7 @@ backupApp.controller('HomeController', function ($scope, $location, ServerStatus
         return ServerStatus.state.orderBy;
     }
 
-    $scope.orderBy = $scope.orderByFromState();
+    $scope.orderBy = null;
 
     $scope.openFolderContext = function(path) {
         BackupList.getFolderContext(path).then(function(context) {
@@ -74,10 +74,14 @@ backupApp.controller('HomeController', function ($scope, $location, ServerStatus
     
     $scope.doApplyOrder = function (orderby)
     {
-        console.log('doapplyorder');
         ServerStatus.state.orderBy = orderby;
+        AppService.patch('/serversettings', { 'backup-list-sort-order': orderby });
         BackupList.reload();
     };
+
+    $scope.$on('sortorder_changed', function() {
+        $scope.orderBy = $scope.orderByFromState();
+    });
 
     $scope.formatDuration = AppUtils.formatDuration;
 });

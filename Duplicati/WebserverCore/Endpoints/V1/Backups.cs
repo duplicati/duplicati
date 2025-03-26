@@ -82,7 +82,7 @@ public class Backups : IEndpointV1
                 ,
                 "nextrun" => x => x.Schedule?.Time,
                 "schedule" => x => string.IsNullOrWhiteSpace(x.Schedule?.Repeat),
-                "destination" => x => Library.Utility.Utility.GuessScheme(x.Backup.TargetURL),
+                "backend" => x => Library.Utility.Utility.GuessScheme(x.Backup.TargetURL),
                 _ => null
             };
 
