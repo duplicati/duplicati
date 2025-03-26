@@ -76,13 +76,41 @@ public class Backups : IEndpointV1
                 {
                     if (x.Backup.Metadata == null)
                         return null;
-                    x.Backup.Metadata.TryGetValue("LastSuccessfulRun", out var res);
+                    x.Backup.Metadata.TryGetValue("LastBackupStarted", out var res);
                     return res;
                 }
                 ,
                 "nextrun" => x => x.Schedule?.Time,
                 "schedule" => x => string.IsNullOrWhiteSpace(x.Schedule?.Repeat),
                 "backend" => x => Library.Utility.Utility.GuessScheme(x.Backup.TargetURL),
+                "sourcesize" => x =>
+                {
+                    if (x.Backup.Metadata == null)
+                        return null;
+                    x.Backup.Metadata.TryGetValue("SourceFilesSize", out var res);
+                    if (long.TryParse(res, out var l))
+                        return l;
+                    return null;
+                }
+                ,
+                "destinationsize" => x =>
+                {
+                    if (x.Backup.Metadata == null)
+                        return null;
+                    x.Backup.Metadata.TryGetValue("TargetFilesSize", out var res);
+                    if (long.TryParse(res, out var l))
+                        return l;
+                    return null;
+                }
+                ,
+                "duration" => x =>
+                {
+                    if (x.Backup.Metadata == null)
+                        return null;
+                    x.Backup.Metadata.TryGetValue("LastBackupDuration", out var res);
+                    return res;
+                }
+                ,
                 _ => null
             };
 
