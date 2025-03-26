@@ -99,8 +99,8 @@ public static class TimeZoneHelper
     /// <returns>The corrected time in UTC</returns>
     public static DateTime DSTAwareTimeAdjust(this TimeZoneInfo timeZoneInfo, DateTime before, DateTime after)
     {
-        var beforeLocal = TimeZoneInfo.ConvertTime(new DateTimeOffset(before.ToUniversalTime(), TimeSpan.Zero), timeZoneInfo);
-        var afterLocal = TimeZoneInfo.ConvertTime(new DateTimeOffset(after.ToUniversalTime(), TimeSpan.Zero), timeZoneInfo);
+        var beforeLocal = TimeZoneInfo.ConvertTime(new DateTimeOffset(before.Kind is DateTimeKind.Local ? before.ToUniversalTime() : before, TimeSpan.Zero), timeZoneInfo);
+        var afterLocal = TimeZoneInfo.ConvertTime(new DateTimeOffset(after.Kind is DateTimeKind.Local ? after.ToUniversalTime() : after, TimeSpan.Zero), timeZoneInfo);
 
         if (beforeLocal.Offset == afterLocal.Offset)
             return after;
