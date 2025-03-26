@@ -1,6 +1,7 @@
 backupApp.service('BackupList', function($rootScope, $timeout, AppService, AppUtils, ServerStatus, $http) {
     var list = [];
     var lookup = {};
+    var activeLoad = false;
 
     this.list = list;
     this.lookup = lookup;
@@ -35,6 +36,12 @@ backupApp.service('BackupList', function($rootScope, $timeout, AppService, AppUt
     };
 
     this.reload = function() {
+        // Wait until we know the sort order
+        if (ServerStatus.state.orderBy == null || activeLoad)
+            return;
+
+        // Prevent flickering
+        activeLoad = true;
         AppService.get('/backups?orderby='+ (ServerStatus.state.orderBy || '')).then(function(data) {
             list.length = 0;
 
@@ -48,6 +55,8 @@ backupApp.service('BackupList', function($rootScope, $timeout, AppService, AppUt
             }
 
             updateNextRunStamp();
+        }).finally(function() {
+            activeLoad = false;
         });
     };
 
@@ -63,4 +72,5 @@ backupApp.service('BackupList', function($rootScope, $timeout, AppService, AppUt
 
     $rootScope.$on('serverstatechanged.lastDataUpdateId', this.reload);
     $rootScope.$on('serverstatechanged.proposedSchedule', updateNextRunStamp);
+    $rootScope.$on('sortorder_changed', this.reload);
 });
