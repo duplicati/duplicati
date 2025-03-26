@@ -593,9 +593,9 @@ namespace Duplicati.UnitTest
                     var original_attrs = new DirectoryInfo(dir).Attributes;
                     var restored_attrs = new DirectoryInfo(restored_dir).Attributes;
                     if (skip_metadata && original_attrs != default_dir_attrs)
-                        Assert.That(original_attrs, Is.Not.EqualTo(restored_attrs), "Directory attributes should not be equal");
+                        Assert.That(original_attrs, Is.Not.EqualTo(restored_attrs), $"Directory attributes should not be equal for directory: {dir}");
                     else
-                        Assert.That(original_attrs, Is.EqualTo(restored_attrs), "Directory attributes should be equal");
+                        Assert.That(original_attrs, Is.EqualTo(restored_attrs), $"Directory attributes should be equal for directory: {dir}");
                 }
 
                 // Check the file attributes
@@ -607,9 +607,9 @@ namespace Duplicati.UnitTest
                         var original_attrs = File.GetAttributes(original_file);
                         var restored_attrs = File.GetAttributes(restored_file);
                         if (skip_metadata && original_attrs != default_file_attrs)
-                            Assert.That(original_attrs, Is.Not.EqualTo(restored_attrs), "File attributes should not be equal");
+                            Assert.That(original_attrs, Is.Not.EqualTo(restored_attrs), $"File attributes should not be equal for original file: {original_file}");
                         else
-                            Assert.That(original_attrs, Is.EqualTo(restored_attrs), "File attributes should be equal");
+                            Assert.That(original_attrs, Is.EqualTo(restored_attrs), $"File attributes should be equal for original file: {original_file}");
                     }
 
                 // Check the OS specific file and directory
