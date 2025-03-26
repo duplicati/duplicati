@@ -337,6 +337,7 @@ public class KeepRemoteConnection : IDisposable
                         { "install-id", DataFolderManager.InstallID },
                         { "machine-os", UpdaterManager.OperatingSystemName },
                         { "package-id", UpdaterManager.PackageTypeId },
+                        { "update-channel", UpdaterManager.CurrentChannel.ToString() }
                     });
 
                     SendEnvelope(

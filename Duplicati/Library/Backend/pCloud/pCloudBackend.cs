@@ -19,21 +19,15 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
-using System;
 using Duplicati.Library.Interface;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using System.Net;
-using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text.Json;
-using System.Threading;
-using System.Threading.Tasks;
 using Duplicati.Library.Backend.pCloud;
 using Duplicati.Library.Utility;
 using Uri = System.Uri;
 using System.Runtime.CompilerServices;
+using Duplicati.Library.Utility.Options;
 
 namespace Duplicati.Library.Backend;
 
@@ -42,6 +36,10 @@ namespace Duplicati.Library.Backend;
 /// </summary>
 public class pCloudBackend : IStreamingBackend
 {
+    /// <summary>
+    /// The URL used to get a new token
+    /// </summary>
+    private static readonly string TOKEN_URL = OAuthHelper.OAUTH_LOGIN_URL("pcloud");
     /// <summary>
     /// Implementation of interface property for the backend key
     /// </summary>
@@ -58,19 +56,9 @@ public class pCloudBackend : IStreamingBackend
     public string Description => Strings.pCloudBackend.Description;
 
     /// <summary>
-    /// The default timeout in seconds for PUT/GET file operations
-    /// </summary>
-    private const int LONG_OPERATION_TIMEOUT_SECONDS = 30000;
-
-    /// <summary>
-    /// The default timeout in seconds for LIST/CreateFolder operations
-    /// </summary>
-    private const int SHORT_OPERATION_TIMEOUT_SECONDS = 30;
-
-    /// <summary>
     /// The server URL to be used (pcloud uses 2 different endpoints depending if its an european or non european hosting)
     /// </summary>
-    private string _ServerUrl;
+    private readonly string _ServerUrl;
 
     /// <summary>
     /// Bearer token to be using in the API
@@ -80,12 +68,22 @@ public class pCloudBackend : IStreamingBackend
     /// <summary>
     /// Remote path/folder to use used in the backend
     /// </summary>
-    private string _Path;
+    private readonly string _Path;
 
     /// <summary>
     /// Hostname only (no ports or paths) to be used on DNS resolutions.
     /// </summary>
-    private string _DnsName;
+    private readonly string _DnsName;
+
+    /// <summary>
+    /// The timeouts to be used in the backend
+    /// </summary>
+    private readonly TimeoutOptionsHelper.Timeouts _Timeouts;
+
+    /// <summary>
+    /// HttpClient to be used for requests
+    /// </summary>
+    private readonly HttpClient _HttpClient;
 
     /// <summary>
     /// Variable being used to cache the folder ID, as it is required to upload files
@@ -93,11 +91,6 @@ public class pCloudBackend : IStreamingBackend
     /// requests
     /// </summary>
     private ulong? _CachedFolderID;
-
-    /// <summary>
-    /// Name of the authentication parameter/option
-    /// </summary>
-    private const string AUTHENTICATION_OPTION = "authid";
 
     /// <summary>
     /// Path separators (both Windows \ and unix /) to be used in path manipulation
@@ -118,6 +111,12 @@ public class pCloudBackend : IStreamingBackend
     /// </summary>
     public pCloudBackend()
     {
+        _ServerUrl = null!;
+        _Path = null!;
+        _DnsName = null!;
+        _Token = null!;
+        _Timeouts = null!;
+        _HttpClient = null!;
     }
 
     /// <summary>
@@ -125,14 +124,15 @@ public class pCloudBackend : IStreamingBackend
     /// </summary>
     /// <param name="url">URL in Duplicati Uri format</param>
     /// <param name="options">options to be used in the backend</param>
-    public pCloudBackend(string url, Dictionary<string, string> options)
+    public pCloudBackend(string url, Dictionary<string, string?> options)
     {
         var uri = new Utility.Uri(url);
         uri.RequireHost();
         _DnsName = uri.Host;
 
-        if (options.TryGetValue(AUTHENTICATION_OPTION, out var option))
-            _Token = option;
+        _Token = AuthIdOptionsHelper.Parse(options)
+            .RequireCredentials(TOKEN_URL)
+            .AuthId!;
 
         if (!PCLOUD_SERVERS.ContainsValue(uri.Host))
             throw new UserInformationException(Strings.pCloudBackend.InvalidServerSpecified,
@@ -144,24 +144,29 @@ public class pCloudBackend : IStreamingBackend
         // Ensure that the path is in the correct format, without starting or tailing slashes
         _Path = uri.Path.TrimStart(PATH_SEPARATORS).TrimEnd(PATH_SEPARATORS).Trim();
         _ServerUrl = uri.Host;
+        _Timeouts = TimeoutOptionsHelper.Parse(options);
+
+        var httpHandler = new HttpClientHandler();
+        _HttpClient = HttpClientHelper.CreateClient(httpHandler);
+        _HttpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
+            "Bearer",
+            _Token
+        );
+
+        // Set the timeout to infinite, all methods are called with cancelationTokens.
+        _HttpClient.Timeout = Timeout.InfiniteTimeSpan;
+
     }
 
     /// <summary>
     /// Implementation of interface property to return supported command parameters
     /// </summary>
-    public IList<ICommandLineArgument> SupportedCommands
-    {
-        get
-        {
-            return new List<ICommandLineArgument>(new ICommandLineArgument[]
-            {
-                new CommandLineArgument(AUTHENTICATION_OPTION,
-                    CommandLineArgument.ArgumentType.Password,
-                    Strings.pCloudBackend.AuthPasswordDescriptionShort,
-                    Strings.pCloudBackend.AuthPasswordDescriptionLong),
-            });
-        }
-    }
+    public IList<ICommandLineArgument> SupportedCommands => [
+        new CommandLineArgument(AuthIdOptionsHelper.AuthIdOption,
+            CommandLineArgument.ArgumentType.Password,
+            Strings.pCloudBackend.AuthPasswordDescriptionShort,
+            Strings.pCloudBackend.AuthPasswordDescriptionLong(TOKEN_URL)),
+    ];
 
     /// <summary>
     /// Implementation of interface method for listing remote folder contents.
@@ -195,20 +200,20 @@ public class pCloudBackend : IStreamingBackend
     /// <exception cref="Exception"></exception>
     private async Task<List<pCloudFolderContent>> ListWithMetadata(ulong folderId, CancellationToken cancellationToken)
     {
-        using var timeoutToken = new CancellationTokenSource();
-        timeoutToken.CancelAfter(TimeSpan.FromSeconds(SHORT_OPERATION_TIMEOUT_SECONDS));
-        using var combinedTokens =
-            CancellationTokenSource.CreateLinkedTokenSource(timeoutToken.Token, cancellationToken);
+        using var request = CreateRequest($"/listfolder?folderid={folderId}", HttpMethod.Get);
 
-        using var requestResources = CreateRequest($"/listfolder?folderid={folderId}", HttpMethod.Get);
-
-        using var response = await requestResources.HttpClient
-            .SendAsync(requestResources.RequestMessage, HttpCompletionOption.ResponseContentRead,
-                timeoutToken.Token).ConfigureAwait(false);
+        using var response = await Utility.Utility.WithTimeout(_Timeouts.ListTimeout, cancellationToken,
+            ct => _HttpClient
+                .SendAsync(request, HttpCompletionOption.ResponseContentRead,
+                ct)).ConfigureAwait(false);
 
         response.EnsureSuccessStatusCode();
-        var content = await response.Content.ReadAsStringAsync(timeoutToken.Token).ConfigureAwait(false);
-        var listFolderResponse = JsonSerializer.Deserialize<pCloudListFolderResponse>(content);
+        var content = await Utility.Utility.WithTimeout(_Timeouts.ListTimeout, cancellationToken,
+            ct => response.Content.ReadAsStringAsync(ct)
+        ).ConfigureAwait(false);
+
+        var listFolderResponse = JsonSerializer.Deserialize<pCloudListFolderResponse>(content)
+            ?? throw new Exception("Failed to deserialize list folder response");
 
         if (pCloudErrorList.ErrorMessages.TryGetValue(listFolderResponse.result, out var message))
             throw new Exception(message);
@@ -257,28 +262,22 @@ public class pCloudBackend : IStreamingBackend
     {
         _CachedFolderID ??= await GetFolderId(cancellationToken).ConfigureAwait(false);
 
-        using var timeoutToken = new CancellationTokenSource();
-        timeoutToken.CancelAfter(TimeSpan.FromSeconds(LONG_OPERATION_TIMEOUT_SECONDS));
-        using var combinedTokens =
-            CancellationTokenSource.CreateLinkedTokenSource(timeoutToken.Token, cancellationToken);
-
         var encodedPath = Uri.EscapeDataString(remotename);
 
-        using var requestResources =
+        using var request =
             CreateRequest($"/uploadfile?folderid={_CachedFolderID}&filename={encodedPath}&nopartial=1",
                 HttpMethod.Post);
-
-        requestResources.RequestMessage.Content = new StreamContent(input);
-        requestResources.RequestMessage.Content.Headers.ContentLength = input.Length;
-        requestResources.RequestMessage.Content.Headers.ContentType =
+        using var timeoutStream = input.ObserveReadTimeout(_Timeouts.ReadWriteTimeout, false);
+        request.Content = new StreamContent(timeoutStream);
+        request.Content.Headers.ContentLength = timeoutStream.Length;
+        request.Content.Headers.ContentType =
             new MediaTypeHeaderValue("application/octet-stream");
 
-        using var response = await requestResources.HttpClient.SendAsync(
-            requestResources.RequestMessage,
-            HttpCompletionOption.ResponseContentRead, combinedTokens.Token).ConfigureAwait(false);
+        using var response = await _HttpClient.SendAsync(request, HttpCompletionOption.ResponseContentRead, cancellationToken).ConfigureAwait(false);
 
-        var content = await response.Content.ReadAsStringAsync(combinedTokens.Token).ConfigureAwait(false);
-        var uploadResponse = JsonSerializer.Deserialize<pCloudUploadResponse>(content);
+        var content = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+        var uploadResponse = JsonSerializer.Deserialize<pCloudUploadResponse>(content)
+            ?? throw new Exception("Failed to deserialize upload response");
 
         if (pCloudErrorList.ErrorMessages.TryGetValue(uploadResponse.result, out var message))
             throw new Exception(message);
@@ -314,22 +313,18 @@ public class pCloudBackend : IStreamingBackend
     /// <exception cref="Exception">Exceptions arising from either code execution</exception>
     private async Task<string> GetFileLink(string filename, CancellationToken cancellationToken)
     {
-        using var timeoutToken = new CancellationTokenSource();
-        timeoutToken.CancelAfter(TimeSpan.FromSeconds(SHORT_OPERATION_TIMEOUT_SECONDS));
-        using var combinedTokens =
-            CancellationTokenSource.CreateLinkedTokenSource(timeoutToken.Token, cancellationToken);
+        using var request = CreateRequest($"/getfilelink?fileid={await GetFileId(filename, cancellationToken).ConfigureAwait(false)}", HttpMethod.Get);
 
-        using var requestResources = CreateRequest($"/getfilelink?fileid={await GetFileId(filename, cancellationToken).ConfigureAwait(false)}", HttpMethod.Get);
-
-        using var response = await requestResources.HttpClient.SendAsync(
-            requestResources.RequestMessage,
-            HttpCompletionOption.ResponseContentRead, combinedTokens.Token).ConfigureAwait(false);
+        using var response = await Utility.Utility.WithTimeout(_Timeouts.ShortTimeout, cancellationToken,
+            ct => _HttpClient.SendAsync(request, HttpCompletionOption.ResponseContentRead, ct)
+        ).ConfigureAwait(false);
 
         if (!response.IsSuccessStatusCode)
             throw new Exception($"Failed to get download link. Status: {response.StatusCode}");
 
-        var content = await response.Content.ReadAsStringAsync(combinedTokens.Token).ConfigureAwait(false);
-        var getFileIdResponse = JsonSerializer.Deserialize<pCloudDownloadResponse>(content);
+        var content = await Utility.Utility.WithTimeout(_Timeouts.ShortTimeout, cancellationToken, ct => response.Content.ReadAsStringAsync(ct)).ConfigureAwait(false);
+        var getFileIdResponse = JsonSerializer.Deserialize<pCloudDownloadResponse>(content)
+            ?? throw new Exception("Failed to deserialize getfilelink response");
 
         if (pCloudErrorList.ErrorMessages.TryGetValue(getFileIdResponse.result, out var message))
             throw new FileMissingException(message);
@@ -353,17 +348,12 @@ public class pCloudBackend : IStreamingBackend
     {
         try
         {
-            using var timeoutToken = new CancellationTokenSource();
-            timeoutToken.CancelAfter(TimeSpan.FromSeconds(LONG_OPERATION_TIMEOUT_SECONDS));
-            using var combinedTokens =
-                CancellationTokenSource.CreateLinkedTokenSource(timeoutToken.Token, cancellationToken);
+            using var request = CreateRequest(string.Empty, HttpMethod.Get);
+            request.RequestUri = new Uri(await GetFileLink(remotename, cancellationToken).ConfigureAwait(false));
 
-            using var requestResources = CreateRequest(string.Empty, HttpMethod.Get);
-
-            requestResources.RequestMessage.RequestUri = new Uri(await GetFileLink(remotename, cancellationToken).ConfigureAwait(false));
-
-            await requestResources.HttpClient.DownloadFile(requestResources.RequestMessage, output, null,
-                combinedTokens.Token).ConfigureAwait(false);
+            using var timeoutStream = output.ObserveWriteTimeout(_Timeouts.ReadWriteTimeout, false);
+            await _HttpClient.DownloadFile(request, timeoutStream, null,
+                cancellationToken).ConfigureAwait(false);
         }
         catch (HttpRequestException wex)
         {
@@ -396,21 +386,19 @@ public class pCloudBackend : IStreamingBackend
     /// <exception cref="Exception">Exceptions arising from either code execution or business logic when return code from pcloud indicates an error.</exception>
     public async Task DeleteAsync(string remotename, CancellationToken cancellationToken)
     {
-        using var timeoutToken = new CancellationTokenSource();
-        timeoutToken.CancelAfter(TimeSpan.FromSeconds(SHORT_OPERATION_TIMEOUT_SECONDS));
-        using var combinedTokens =
-            CancellationTokenSource.CreateLinkedTokenSource(timeoutToken.Token, cancellationToken);
+        using var request = CreateRequest($"/deletefile?fileid={await GetFileId(remotename, cancellationToken).ConfigureAwait(false)}", HttpMethod.Get);
 
-        using var requestResources = CreateRequest($"/deletefile?fileid={await GetFileId(remotename, cancellationToken).ConfigureAwait(false)}", HttpMethod.Get);
-
-        using var response = await requestResources.HttpClient.SendAsync(
-            requestResources.RequestMessage,
-            HttpCompletionOption.ResponseContentRead, combinedTokens.Token).ConfigureAwait(false);
+        using var response = await Utility.Utility.WithTimeout(_Timeouts.ShortTimeout, cancellationToken,
+            ct => _HttpClient.SendAsync(request, HttpCompletionOption.ResponseContentRead, ct)
+        ).ConfigureAwait(false);
 
         response.EnsureSuccessStatusCode();
 
-        var content = await response.Content.ReadAsStringAsync(combinedTokens.Token).ConfigureAwait(false);
-        var deleteFileResponse = JsonSerializer.Deserialize<pCloudDeleteResponse>(content);
+        var content = await Utility.Utility.WithTimeout(_Timeouts.ShortTimeout, cancellationToken,
+            ct => response.Content.ReadAsStringAsync(ct)
+        ).ConfigureAwait(false);
+        var deleteFileResponse = JsonSerializer.Deserialize<pCloudDeleteResponse>(content)
+            ?? throw new Exception("Failed to deserialize delete file response");
 
         // If no error code is matched, result was == 0 so it successfully created the folder
         if (deleteFileResponse.result == 2009)
@@ -422,7 +410,6 @@ public class pCloudBackend : IStreamingBackend
         if (deleteFileResponse.result != 0)
             throw new Exception(
                 Strings.pCloudBackend.FailedWithUnexpectedErrorCode("delete", deleteFileResponse.result));
-
     }
 
     /// <summary>
@@ -477,21 +464,19 @@ public class pCloudBackend : IStreamingBackend
     /// <returns>The folderID of the newly created folder</returns>
     private async Task<ulong> CreateFolder(CancellationToken cancellationToken, ulong parentFolderId, string folderName)
     {
-        using var timeoutToken = new CancellationTokenSource();
-        timeoutToken.CancelAfter(TimeSpan.FromSeconds(SHORT_OPERATION_TIMEOUT_SECONDS));
-        using var combinedTokens =
-            CancellationTokenSource.CreateLinkedTokenSource(timeoutToken.Token, cancellationToken);
+        using var request = CreateRequest($"/createfolderifnotexists?folderid={parentFolderId}&name={folderName}", HttpMethod.Get);
 
-        using var requestResources = CreateRequest($"/createfolderifnotexists?folderid={parentFolderId}&name={folderName}", HttpMethod.Get);
-
-        using var response = await requestResources.HttpClient.SendAsync(
-            requestResources.RequestMessage,
-            HttpCompletionOption.ResponseContentRead, combinedTokens.Token).ConfigureAwait(false);
+        using var response = await Utility.Utility.WithTimeout(_Timeouts.ShortTimeout, cancellationToken,
+            ct => _HttpClient.SendAsync(request, HttpCompletionOption.ResponseContentRead, ct)
+        ).ConfigureAwait(false);
 
         response.EnsureSuccessStatusCode();
 
-        var content = await response.Content.ReadAsStringAsync(combinedTokens.Token).ConfigureAwait(false);
-        var createFolderResponse = JsonSerializer.Deserialize<pCloudCreateFolderResponse>(content);
+        var content = await Utility.Utility.WithTimeout(_Timeouts.ShortTimeout, cancellationToken,
+            ct => response.Content.ReadAsStringAsync(ct)
+        ).ConfigureAwait(false);
+        var createFolderResponse = JsonSerializer.Deserialize<pCloudCreateFolderResponse>(content)
+            ?? throw new Exception("Failed to deserialize create folder response");
 
         if (pCloudErrorList.ErrorMessages.TryGetValue(createFolderResponse.result, out var message))
             throw new Exception(message);
@@ -545,54 +530,13 @@ public class pCloudBackend : IStreamingBackend
     }
 
     /// <summary>
-    /// Wrapper for the tupple of HttpClient and HttpRequestMessage used in web requests.
-    /// </summary>
-    /// <param name="HttpClient">The HTTPClient</param>
-    /// <param name="RequestMessage">The HttpRequestMessage object</param>
-    private record RequestResources(HttpClient HttpClient, HttpRequestMessage RequestMessage) : IDisposable
-    {
-        public void Dispose()
-        {
-            try
-            {
-                RequestMessage?.Dispose();
-            }
-            catch
-            {
-                // ignored
-            }
-
-            try
-            {
-                HttpClient?.Dispose();
-            }
-            catch
-            {
-                // ignored
-            }
-        }
-    }
-
-    /// <summary>
     /// Helper method to create request resources with the bearer token and default headers
     /// </summary>
     /// <param name="url">url to be appended after host</param>
     /// <param name="method">Http Method</param>
     /// <returns></returns>
-    private RequestResources CreateRequest(string url, HttpMethod method = null)
+    private HttpRequestMessage CreateRequest(string url, HttpMethod? method = null)
     {
-        HttpClient httpClient;
-        HttpClientHandler httpHandler = new HttpClientHandler();
-
-        httpClient = HttpClientHelper.CreateClient(httpHandler);
-        httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
-            "Bearer",
-            _Token
-        );
-
-        // Set the timeout to infinite, all methods are called with cancelationTokens.
-        httpClient.Timeout = Timeout.InfiniteTimeSpan;
-
         var request = new HttpRequestMessage(HttpMethod.Get, $"https://{_ServerUrl}/{url}");
         request.Headers.Add(HttpRequestHeader.UserAgent.ToString(),
             "Duplicati pCloud Client v" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version);
@@ -600,7 +544,7 @@ public class pCloudBackend : IStreamingBackend
         if (method != null)
             request.Method = method;
 
-        return new RequestResources(httpClient, request);
+        return request;
     }
 
     /// <summary>

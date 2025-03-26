@@ -440,7 +440,7 @@ public static class ExtensionMethods
     /// <param name="cmd">The command string to execute</param>
     /// <param name="values">The values to use as parameters. The parameters must already be added.</param>
     /// <returns>A <see cref="IDataReader"/> instance</returns>
-    public static IDataReader ExecuteReader(this IDbCommand self, string cmd, Dictionary<string, object> values)
+    public static IDataReader ExecuteReader(this IDbCommand self, string cmd, Dictionary<string, object?> values)
     {
         return ExecuteReader(self, true, cmd, values);
     }

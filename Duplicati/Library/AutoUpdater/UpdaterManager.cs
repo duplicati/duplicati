@@ -163,6 +163,11 @@ namespace Duplicati.Library.AutoUpdater
         public static string PackageTypeId => _packageTypeId.Value;
 
         /// <summary>
+        /// The release channel to use for updates
+        /// </summary>
+        public static ReleaseType CurrentChannel { get; set; } = AutoUpdateSettings.DefaultUpdateChannel;
+
+        /// <summary>
         /// The package type ID, lazy evaluated
         /// </summary>
         private static readonly Lazy<string> _packageTypeId = new(() =>

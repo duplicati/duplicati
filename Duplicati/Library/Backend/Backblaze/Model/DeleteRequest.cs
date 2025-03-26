@@ -34,12 +34,12 @@ internal class DeleteRequest
     /// This is the full path of the file in the bucket.
     /// </summary>
     [JsonProperty("fileName")]
-    public string FileName { get; set; }
+    public string? FileName { get; set; }
 
     /// <summary>
     /// Gets or sets the unique identifier of the file to be deleted.
     /// This ID is assigned by Backblaze B2 when the file is uploaded.
     /// </summary>
     [JsonProperty("fileId")]
-    public string FileId { get; set; }
+    public string? FileId { get; set; }
 }

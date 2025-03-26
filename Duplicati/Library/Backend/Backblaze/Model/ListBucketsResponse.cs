@@ -34,5 +34,5 @@ internal class ListBucketsResponse
     /// Each element contains information about a single bucket in the account.
     /// </summary>
     [JsonProperty("buckets")]
-    public BucketEntity[] Buckets { get; set; }
+    public BucketEntity[]? Buckets { get; set; }
 }

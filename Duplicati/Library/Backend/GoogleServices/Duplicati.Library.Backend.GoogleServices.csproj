@@ -4,7 +4,10 @@
     <TargetFramework>net8.0</TargetFramework>
     <OutputType>Library</OutputType>
     <Copyright>Copyright © 2025 Team Duplicati, MIT license</Copyright>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
+  
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="System.Linq.Async" Version="6.0.1" />

@@ -18,22 +18,6 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
+namespace Duplicati.WebserverCore.Dto;
 
-using Newtonsoft.Json;
-
-namespace Duplicati.Library.Backend.Backblaze.Model;
-
-/// <summary>
-/// Model for JSON parsing of AuthResponse
-/// </summary>
-internal class AuthResponse
-{
-    [JsonProperty("accountId")]
-    public string AccountID { get; set; }
-    [JsonProperty("apiUrl")]
-    public string APIUrl { get; set; }
-    [JsonProperty("authorizationToken")]
-    public string AuthorizationToken { get; set; }
-    [JsonProperty("downloadUrl")]
-    public string DownloadUrl { get; set; }
-}
+public record CrashLogOutputDto(string? Logdata);

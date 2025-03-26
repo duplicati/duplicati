@@ -95,4 +95,24 @@ namespace Duplicati.Library.Utility.Strings
         public static string DescriptionAuthUsernameShort { get { return LC.L(@"Supply the username used to connect to the server"); } }
         public static string UsernameAndPasswordRequired { get { return LC.L(@"Authentication requires both a username and a password"); } }
     }
+
+    internal static class AuthIdSettingsHelper
+    {
+        public static string AuthidLong(string url) { return LC.L(@"The authorization token retrieved from {0}", url); }
+        public static string AuthidShort { get { return LC.L(@"The authorization code"); } }
+        public static string MissingAuthID(string url) { return LC.L(@"You need an AuthID to use this destination. You can get it from: {0}", url); }
+
+    }
+
+    internal static class CommandLineArgumentValidator
+    {
+        public static string UnsupportedBooleanValue(string optionname, string value) { return LC.L(@"The value ""{1}"" supplied to --{0} does not parse into a valid boolean. This will be treated as if it was set to ""true""", optionname, value); }
+        public static string UnsupportedEnumerationValue(string optionname, string value, string[] values) { return LC.L(@"The option --{0} does not support the value ""{1}"". Supported values are: {2}", optionname, value, string.Join(", ", values)); }
+        public static string UnsupportedFlagsValue(string optionname, string value, string[] values) { return LC.L(@"The option --{0} does not support the value ""{1}"". Supported flag values are: {2}", optionname, value, string.Join(", ", values)); }
+        public static string UnsupportedIntegerValue(string optionname, string value) { return LC.L(@"The value ""{1}"" supplied to --{0} does not represent a valid integer", optionname, value); }
+        public static string UnsupportedPathValue(string optionname, string value) { return LC.L(@"The value ""{1}"" supplied to --{0} does not represent a valid path", optionname, value); }
+        public static string UnsupportedSizeValue(string optionname, string value) { return LC.L(@"The value ""{1}"" supplied to --{0} does not represent a valid size", optionname, value); }
+        public static string UnsupportedTimeValue(string optionname, string value) { return LC.L(@"The value ""{1}"" supplied to --{0} does not represent a valid time", optionname, value); }
+        public static string NonQualifiedSizeValue(string optionname, string value) { return LC.L(@"The size ""{1}"" supplied to --{0} does not have a multiplier (b, kb, mb, etc). A multiplier is recommended to avoid unexpected changes if the program is updated.", optionname, value); }
+    }
 }
