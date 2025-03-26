@@ -133,7 +133,7 @@ namespace Duplicati.Library.Main
         /// <summary>
         /// The default value for the size of the channel buffers during restore
         /// </summary>
-        private readonly int DEFAULT_RESTORE_CHANNEL_BUFFER_SIZE = 8;
+        private readonly int DEFAULT_RESTORE_CHANNEL_BUFFER_SIZE = Environment.ProcessorCount;
 
         /// <summary>
         /// An enumeration that describes the supported strategies for an optimization

@@ -26,7 +26,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Security.AccessControl;
 using System.Security.Cryptography;
+using System.Security.Principal;
 using System.Threading;
 
 namespace Duplicati.UnitTest
@@ -438,6 +440,288 @@ namespace Duplicati.UnitTest
                 restored_contents = File.ReadAllBytes(f2);
             }
             Assert.That(restored_contents, Is.EqualTo(original_contents), "Restored file should be equal to original file");
+        }
+
+
+        [Test]
+        [Category("Restore"), Category("Bug")]
+        public void Issue6068FolderMetadata([Values] bool restoreLegacy)
+        {
+            // Reproduction of Issue #6068
+            // The folder metadata is not restored
+
+            var testopts = new Dictionary<string, string>(TestOptions);
+
+            var original_dir_name = "some_original_dir";
+            var original_dir = Path.Combine(DATAFOLDER, original_dir_name);
+            var restored_dir = Path.Combine(RESTOREFOLDER, original_dir_name);
+            Directory.CreateDirectory(original_dir);
+
+            // Backup the files
+            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
+            {
+                IBackupResults backupResults = c.Backup([DATAFOLDER]);
+                TestUtils.AssertResults(backupResults);
+            }
+
+            // Sleep to ensure timestamps are different
+            System.Threading.Tasks.Task.Delay(1000).Wait();
+
+            // Attempt to restore to another folder
+            testopts["restore-path"] = RESTOREFOLDER;
+            testopts["restore-legacy"] = restoreLegacy.ToString().ToLower();
+            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
+            {
+                var restoreResults = c.Restore([]);
+                Assert.That(restoreResults.RestoredFiles, Is.EqualTo(0), "No files should have been restored.");
+            }
+
+            // Assert that the original folders date modified and date created are the same as the restored folder
+            var original_dir_info = new DirectoryInfo(original_dir);
+            var restored_dir_info = new DirectoryInfo(restored_dir);
+            Assert.That(original_dir_info.CreationTime, Is.EqualTo(restored_dir_info.CreationTime), "Creation time should be equal");
+            Assert.That(original_dir_info.LastWriteTime, Is.EqualTo(restored_dir_info.LastWriteTime), "Last write time should be equal");
+        }
+
+
+        [Test]
+        [Category("Restore"), Category("Bug")]
+        public void Issue6068FileAndFolderAttributesAndPermissions([Values] bool restorePermissions, [Values] bool restoreLegacy, [Values] bool skip_metadata)
+        {
+            // This test is to verify that permissions are restored correctly
+            // if the restore-permissions option is set, and that the
+            // attributes are restored regardless. Some discussion is in the
+            // related PR #6079
+
+            // Set the options according to the test parameters
+            var testopts = new Dictionary<string, string>(TestOptions)
+            {
+                ["restore-permissions"] = restorePermissions.ToString().ToLower(),
+                ["restore-legacy"] = restoreLegacy.ToString().ToLower(),
+                ["skip-metadata"] = skip_metadata.ToString().ToLower()
+            };
+
+            // The attributes to test
+            var attrs = new FileAttributes[] {
+                FileAttributes.ReadOnly,
+                FileAttributes.Hidden,
+                FileAttributes.System,
+                // TODO The Archive attribute has been disabled for now, as the CI doesn't behave as expected, but it works locally.
+                //FileAttributes.Archive
+            };
+
+            // Create the generated directories and files
+            var original_dir = Path.Combine(DATAFOLDER, "some_original_dir");
+
+            var dirs = attrs
+                .Select(x => Path.Combine(original_dir, $"dir_{x}"))
+                .Prepend(original_dir)
+                .ToArray();
+
+            foreach (var dir in dirs)
+                Directory.CreateDirectory(dir);
+
+            foreach (var attr in attrs)
+                foreach (var dir in dirs)
+                {
+                    var file = Path.Combine(dir, $"file_{attr}");
+                    TestUtils.WriteTestFile(file, 1024);
+                    File.SetAttributes(file, attr);
+                }
+
+            foreach (var (attr, dir) in attrs.Zip(dirs.Skip(1)))
+                _ = new DirectoryInfo(dir)
+                {
+                    Attributes = attr
+                };
+
+            // Create OS specific files and directories
+            var os_special_dir = Path.Combine(original_dir, "os_special_dir");
+            Directory.CreateDirectory(os_special_dir);
+            var default_dir_attrs = new DirectoryInfo(os_special_dir).Attributes;
+            var os_special_file = Path.Combine(os_special_dir, "os_special_file");
+            TestUtils.WriteTestFile(os_special_file, 1024);
+            var default_file_attrs = File.GetAttributes(os_special_file);
+
+            if (OperatingSystem.IsWindows())
+            {
+                // Set only the current user to have access to both the file and the directory
+                var dir_info = new DirectoryInfo(os_special_dir);
+                var rules_dir = dir_info.GetAccessControl();
+                rules_dir.GetAccessRules(true, true, typeof(System.Security.Principal.NTAccount));
+                rules_dir.AddAccessRule(new FileSystemAccessRule(Environment.UserName, FileSystemRights.FullControl, AccessControlType.Allow));
+                rules_dir.AddAccessRule(new FileSystemAccessRule(new SecurityIdentifier(WellKnownSidType.WorldSid, null), FileSystemRights.ReadAndExecute, AccessControlType.Allow));
+                dir_info.SetAccessControl(rules_dir);
+
+                var file_info = new FileInfo(os_special_file);
+                var rules_file = file_info.GetAccessControl();
+                rules_file.AddAccessRule(new FileSystemAccessRule(Environment.UserName, FileSystemRights.FullControl, AccessControlType.Allow));
+                rules_file.AddAccessRule(new FileSystemAccessRule(new SecurityIdentifier(WellKnownSidType.WorldSid, null), FileSystemRights.ReadAndExecute, AccessControlType.Allow));
+                file_info.SetAccessControl(rules_file);
+            }
+            else // Mac and Linux
+            {
+                // Set the dir to 700 and the file to 600
+                _ = new DirectoryInfo(os_special_dir)
+                {
+                    UnixFileMode = UnixFileMode.UserExecute | UnixFileMode.UserRead | UnixFileMode.UserWrite
+                };
+                _ = new FileInfo(os_special_file)
+                {
+                    UnixFileMode = UnixFileMode.UserRead | UnixFileMode.UserWrite
+                };
+            }
+
+            try
+            {
+                // Backup the files
+                using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
+                {
+                    IBackupResults backupResults = c.Backup([DATAFOLDER]);
+                    TestUtils.AssertResults(backupResults);
+                }
+
+                // Restore the files
+                testopts["restore-path"] = RESTOREFOLDER;
+                using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
+                {
+                    var restoreResults = c.Restore([]);
+                }
+
+                // Check the folder attributes
+                foreach (var dir in dirs.Skip(1))
+                {
+                    var restored_dir = dir.Replace(DATAFOLDER, RESTOREFOLDER);
+                    var original_attrs = new DirectoryInfo(dir).Attributes;
+                    var restored_attrs = new DirectoryInfo(restored_dir).Attributes;
+                    if (skip_metadata && original_attrs != default_dir_attrs)
+                        Assert.That(original_attrs, Is.Not.EqualTo(restored_attrs), $"Directory attributes should not be equal for directory: {dir}");
+                    else
+                        Assert.That(original_attrs, Is.EqualTo(restored_attrs), $"Directory attributes should be equal for directory: {dir}");
+                }
+
+                // Check the file attributes
+                foreach (var attr in attrs)
+                    foreach (var dir in dirs)
+                    {
+                        var filename = $"file_{attr}";
+                        var original_file = Path.Combine(dir, filename);
+                        var restored_file = original_file.Replace(DATAFOLDER, RESTOREFOLDER);
+                        // TODO we ignore the Archive attribute, as the CI sets this sporadically
+                        var original_attrs = File.GetAttributes(original_file);
+                        var restored_attrs = File.GetAttributes(restored_file);
+                        if (skip_metadata && original_attrs != default_file_attrs)
+                            Assert.That(original_attrs & ~FileAttributes.Archive, Is.Not.EqualTo(restored_attrs & ~FileAttributes.Archive), $"File attributes should not be equal for original file: {original_file}");
+                        else
+                            Assert.That(original_attrs & ~FileAttributes.Archive, Is.EqualTo(restored_attrs & ~FileAttributes.Archive), $"File attributes should be equal for original file: {original_file}");
+                    }
+
+                // Check the OS specific file and directory
+                if (OperatingSystem.IsWindows())
+                {
+                    var original_dir_info = new DirectoryInfo(os_special_dir);
+                    var restored_dir_info = new DirectoryInfo(os_special_dir.Replace(DATAFOLDER, RESTOREFOLDER));
+                    var original_dir_rules = original_dir_info.GetAccessControl().GetAccessRules(true, true, typeof(System.Security.Principal.NTAccount));
+                    var restored_dir_rules = restored_dir_info.GetAccessControl().GetAccessRules(true, true, typeof(System.Security.Principal.NTAccount));
+
+                    // Disable only on Windows warning, as the if ensures this.
+#pragma warning disable CA1416
+                    static bool cmp_elem(FileSystemAccessRule a, FileSystemAccessRule b) =>
+                        a.IdentityReference.Value == b.IdentityReference.Value &&
+                        a.FileSystemRights == b.FileSystemRights &&
+                        a.AccessControlType == b.AccessControlType;
+#pragma warning restore CA1416
+
+                    static bool cmp_coll(AuthorizationRuleCollection a, AuthorizationRuleCollection b) =>
+                        a.Count == b.Count &&
+                        a.Cast<FileSystemAccessRule>().Zip(b.Cast<FileSystemAccessRule>(), cmp_elem).All(x => x);
+
+                    if (skip_metadata && original_dir_info.Attributes != default_dir_attrs)
+                        Assert.That(original_dir_info.Attributes, Is.Not.EqualTo(restored_dir_info.Attributes), "Directory attributes should not be equal");
+                    else
+                        Assert.That(original_dir_info.Attributes, Is.EqualTo(restored_dir_info.Attributes), "Directory attributes should be equal");
+
+                    var dir_permissions_equal = cmp_coll(original_dir_rules, restored_dir_rules);
+                    if (restorePermissions && !skip_metadata)
+                        Assert.That(dir_permissions_equal, Is.True, "Directory permissions should be equal");
+                    else
+                        Assert.That(dir_permissions_equal, Is.False, "Directory permissions should not be equal");
+
+                    var original_file_info = new FileInfo(os_special_file);
+                    var restored_file_info = new FileInfo(os_special_file.Replace(DATAFOLDER, RESTOREFOLDER));
+                    var original_file_rules = original_file_info.GetAccessControl().GetAccessRules(true, true, typeof(System.Security.Principal.NTAccount));
+                    var restored_file_rules = restored_file_info.GetAccessControl().GetAccessRules(true, true, typeof(System.Security.Principal.NTAccount));
+
+                    if (skip_metadata && original_file_info.Attributes != default_file_attrs)
+                        Assert.That(original_file_info.Attributes, Is.Not.EqualTo(restored_file_info.Attributes), "File attributes should not be equal");
+                    else
+                        Assert.That(original_file_info.Attributes, Is.EqualTo(restored_file_info.Attributes), "File attributes should be equal");
+
+                    var file_permissions_equal = cmp_coll(original_file_rules, restored_file_rules);
+                    if (restorePermissions && !skip_metadata)
+                        Assert.That(file_permissions_equal, Is.True, "File permissions should be equal");
+                    else
+                        Assert.That(file_permissions_equal, Is.False, "File permissions should not be equal");
+                }
+                else
+                {
+                    var original_dir_info = new DirectoryInfo(os_special_dir);
+                    var restored_dir_info = new DirectoryInfo(os_special_dir.Replace(DATAFOLDER, RESTOREFOLDER));
+
+                    if (skip_metadata && original_dir_info.Attributes != default_dir_attrs)
+                        Assert.That(original_dir_info.Attributes, Is.Not.EqualTo(restored_dir_info.Attributes), "Directory attributes should not be equal");
+                    else
+                        Assert.That(original_dir_info.Attributes, Is.EqualTo(restored_dir_info.Attributes), "Directory attributes should be equal");
+
+                    if (restorePermissions && !skip_metadata)
+                        Assert.That(original_dir_info.UnixFileMode, Is.EqualTo(restored_dir_info.UnixFileMode), "Directory permissions should be equal");
+                    else
+                        Assert.That(original_dir_info.UnixFileMode, Is.Not.EqualTo(restored_dir_info.UnixFileMode), "Directory permissions should not be equal");
+
+                    var original_file_info = new FileInfo(os_special_file);
+                    var restored_file_info = new FileInfo(os_special_file.Replace(DATAFOLDER, RESTOREFOLDER));
+
+                    if (skip_metadata && original_file_info.Attributes != default_file_attrs)
+                        Assert.That(original_file_info.Attributes, Is.Not.EqualTo(restored_file_info.Attributes), "File attributes should not be equal");
+                    else
+                        Assert.That(original_file_info.Attributes, Is.EqualTo(restored_file_info.Attributes), "File attributes should be equal");
+
+                    if (restorePermissions && !skip_metadata)
+                        Assert.That(original_file_info.UnixFileMode, Is.EqualTo(restored_file_info.UnixFileMode), "File permissions should be equal");
+                    else
+                        Assert.That(original_file_info.UnixFileMode, Is.Not.EqualTo(restored_file_info.UnixFileMode), "File permissions should not be equal");
+                }
+            }
+            finally
+            {
+                // Revert the attributes so the cleanup can proceed
+                foreach (var dir in dirs)
+                {
+                    _ = new DirectoryInfo(dir)
+                    {
+                        Attributes = FileAttributes.Normal | FileAttributes.Directory
+                    };
+                    var restored_dir = dir.Replace(DATAFOLDER, RESTOREFOLDER);
+                    if (Directory.Exists(restored_dir))
+                        _ = new DirectoryInfo(restored_dir)
+                        {
+                            Attributes = FileAttributes.Normal | FileAttributes.Directory
+                        };
+                }
+
+                foreach (var attr in attrs)
+                    foreach (var dir in dirs)
+                    {
+                        var file = Path.Combine(dir, $"file_{attr}");
+                        File.SetAttributes(file, FileAttributes.Normal);
+                        var restored_file = file.Replace(DATAFOLDER, RESTOREFOLDER);
+                        if (File.Exists(restored_file))
+                            File.SetAttributes(restored_file, FileAttributes.Normal);
+                    }
+
+                // Special dirs can be ignored, as they should only block other
+                // users from accessing the files
+            }
         }
 
 
