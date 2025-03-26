@@ -35,9 +35,9 @@ public static class CrashlogHelper
     /// </summary>
     private static readonly string SystemTempPath
 #if DEBUG
-        = Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly()?.Location) ?? System.IO.Path.GetTempPath();
+        = Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly()?.Location) ?? Path.GetTempPath();
 #else
-        = System.IO.Path.GetTempPath();
+        = Path.GetTempPath();
 #endif
 
     /// <summary>
@@ -71,10 +71,8 @@ public static class CrashlogHelper
     /// </summary>
     /// <typeparam name="T">The return type of the method</typeparam>
     /// <param name="method">The method to wrap</param>
-    /// <param name="logdir">The directory to write the crashlog to</param>
-    /// <param name="applicationName">The name of the application to write to the crashlog</param>
     /// <returns>The result of the method</returns>
-    public static T WrapWithCrashLog<T>(Func<T> method, string? logdir = null, string? applicationName = null)
+    public static T WrapWithCrashLog<T>(Func<T> method)
     {
         try
         {
@@ -83,7 +81,7 @@ public static class CrashlogHelper
         }
         catch (Exception ex)
         {
-            LogCrashException(ex, logdir, applicationName);
+            LogCrashException(ex);
             throw;
         }
         finally
@@ -97,10 +95,8 @@ public static class CrashlogHelper
     /// </summary>
     /// <typeparam name="T">The return type of the method</typeparam>
     /// <param name="method">The method to wrap</param>
-    /// <param name="logdir">The directory to write the crashlog to</param>
-    /// <param name="applicationName">The name of the application to write to the crashlog</param>
     /// <returns>The result of the method</returns>
-    public static async Task<T> WrapWithCrashLog<T>(Func<Task<T>> method, string? logdir = null, string? applicationName = null)
+    public static async Task<T> WrapWithCrashLog<T>(Func<Task<T>> method)
     {
         try
         {
@@ -109,7 +105,7 @@ public static class CrashlogHelper
         }
         catch (Exception ex)
         {
-            LogCrashException(ex, logdir, applicationName);
+            LogCrashException(ex);
             throw;
         }
         finally
@@ -119,12 +115,47 @@ public static class CrashlogHelper
     }
 
     /// <summary>
+    /// The application name
+    /// </summary>
+    private static readonly string ApplicationName = System.Reflection.Assembly.GetEntryAssembly()?.GetName().Name ?? Guid.NewGuid().ToString()[..8];
+
+    /// <summary>
+    /// Gets the path to the crashlog file
+    /// </summary>
+    /// <returns>The path to the crashlog file</returns>
+    private static string GetLogFilePath()
+    {
+        var logdir = string.IsNullOrWhiteSpace(DefaultLogDir)
+            ? SystemTempPath
+            : DefaultLogDir;
+
+        return Path.Combine(logdir, $"{ApplicationName}-crashlog.txt");
+    }
+
+    /// <summary>
+    /// Gets the last crashlog, if any
+    /// </summary>
+    /// <returns>The last crashlog, or null if none</returns>
+    public static string? GetLastCrashLog()
+    {
+        try
+        {
+            var path = GetLogFilePath();
+            if (!File.Exists(path))
+                return null;
+            return File.ReadAllText(path);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
     /// Logs the exception to a file
     /// </summary>
     /// <param name="ex">The exception to log</param>
-    /// <param name="logdir">The directory to write the crashlog to</param>
-    /// <param name="applicationName">The name of the application to write to the crashlog</param>
-    public static void LogCrashException(Exception ex, string? logdir, string? applicationName)
+    public static void LogCrashException(Exception ex)
     {
         try
         {
@@ -136,20 +167,7 @@ public static class CrashlogHelper
 
         try
         {
-            if (string.IsNullOrWhiteSpace(logdir))
-            {
-                var def = DefaultLogDir;
-                logdir = string.IsNullOrWhiteSpace(def)
-                    ? SystemTempPath
-                    : def;
-            }
-
-            applicationName = string.IsNullOrWhiteSpace(applicationName)
-                ? System.Reflection.Assembly.GetEntryAssembly()?.GetName().Name ?? Guid.NewGuid().ToString()[..8]
-                : applicationName;
-
-            var report_file = System.IO.Path.Combine(logdir, $"{applicationName}-crashlog.txt");
-            System.IO.File.WriteAllText(report_file, ex.ToString());
+            File.WriteAllText(GetLogFilePath(), ex.ToString());
         }
         catch (Exception writeex)
         {
