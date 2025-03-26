@@ -1,4 +1,4 @@
-backupApp.service('BackupList', function($rootScope, $timeout, AppService, AppUtils, ServerStatus) {
+backupApp.service('BackupList', function($rootScope, $timeout, AppService, AppUtils, ServerStatus, $http) {
     var list = [];
     var lookup = {};
 
@@ -34,8 +34,8 @@ backupApp.service('BackupList', function($rootScope, $timeout, AppService, AppUt
         $rootScope.$broadcast('backuplistchanged');
     };
 
-    var reload = function() {
-        AppService.get('/backups').then(function(data) {
+    this.reload = function() {
+        AppService.get('/backups?orderby='+ (ServerStatus.state.orderBy || '')).then(function(data) {
             list.length = 0;
 
             for (var prop in lookup)
@@ -51,7 +51,16 @@ backupApp.service('BackupList', function($rootScope, $timeout, AppService, AppUt
         });
     };
 
+    this.getFolderContext = function(path) {
+        return $http.get('/api/folder-context', {
+            params: {
+                path: path
+            }
+        }).then(function(response) {
+            return response.data;
+        });
+    };
 
-    $rootScope.$on('serverstatechanged.lastDataUpdateId', reload);
+    $rootScope.$on('serverstatechanged.lastDataUpdateId', this.reload);
     $rootScope.$on('serverstatechanged.proposedSchedule', updateNextRunStamp);
 });

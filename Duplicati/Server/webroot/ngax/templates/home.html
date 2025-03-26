@@ -1,5 +1,19 @@
 <div class="home">
-    <div class="tasks" ng-controller="HomeController">
+
+    
+     <div class="tasks" ng-controller="HomeController">
+
+        <div class="orderbox">
+        <label for="orderby" translate>Order by</label>
+        <select id="orderby" name="orderby" ng-model="orderBy" 
+                ng-change="doApplyOrder(orderBy)"
+                ng-init="orderBy = orderByFromState()">
+            <option value="id" translate>Create Order</option>
+            <option value="backend" translate>Destination Type</option>
+            <option value="lastrun" translate>Last Run</option>
+            <option value="name" translate>Name</option>
+        </select>
+       </div>
         <div class="tasklist">
             <div ng-repeat="item in backups" class="task">
                 <a href ng-click="$parent.TaskMenuID == item.Backup.ID ? $parent.TaskMenuID = null : $parent.TaskMenuID = item.Backup.ID">

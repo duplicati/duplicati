@@ -30,8 +30,8 @@ public class Backups : IEndpointV1
 {
     public static void Map(RouteGroupBuilder group)
     {
-        group.MapGet("/backups", ([FromServices] Connection connection)
-            => ExecuteGet(connection))
+        group.MapGet("/backups", ([FromServices] Connection connection, [FromQuery] string? orderBy)
+            => ExecuteGet(connection, orderBy))
                .RequireAuthorization();
 
         group.MapPost("/backups", ([FromServices] Connection connection, [FromBody] Dto.BackupAndScheduleInputDto input, [FromQuery] bool? temporary, [FromQuery] bool? existingdb)
@@ -48,7 +48,7 @@ public class Backups : IEndpointV1
         }).RequireAuthorization();
     }
 
-    private static IEnumerable<Dto.BackupAndScheduleOutputDto> ExecuteGet(Connection connection)
+    private static IEnumerable<Dto.BackupAndScheduleOutputDto> ExecuteGet(Connection connection, string? orderBy)
     {
         var schedules = connection.Schedules;
         var backups = connection.Backups;
@@ -59,6 +59,18 @@ public class Backups : IEndpointV1
             Backup = n,
             Schedule = schedules.FirstOrDefault(x => x.Tags != null && x.Tags.Contains("ID=" + n.ID))
         });
+        
+        Func<Dto.BackupAndScheduleOutputDto, object> getSortKey = x => orderBy?.ToLower() switch
+        {
+            null => x.Backup.ID,
+            "id" => x.Backup.ID,
+            "name" => x.Backup.Name,
+            "lastrun" => x.Schedule?.LastRun ?? DateTime.MinValue,
+            "backend" => string.IsNullOrEmpty(x.Backup.TargetURL) || !x.Backup.TargetURL.Contains(':') 
+                ? string.Empty 
+                : x.Backup.TargetURL.Substring(0, x.Backup.TargetURL.IndexOf(':')),
+            _ => x.Backup.ID
+        };
 
         return all.Select(x => new Dto.BackupAndScheduleOutputDto()
         {
@@ -98,7 +110,8 @@ public class Backups : IEndpointV1
                 Rule = x.Schedule.Rule,
                 AllowedDays = x.Schedule.AllowedDays
             }
-        });
+        }).OrderBy(getSortKey)
+        .ThenBy(x => x.Backup.Name);
     }
     private static Dto.ImportBackupOutputDto ExecuteImport(Connection connection, bool cmdline, bool import_metadata, bool direct, string passphrase, string tempfile)
     {

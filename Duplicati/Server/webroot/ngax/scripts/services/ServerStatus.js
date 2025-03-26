@@ -24,7 +24,8 @@ backupApp.service('ServerStatus', function ($rootScope, $timeout, AppService, Ap
         updatedVersion: null,
         updateDownloadProgress: 0,
         proposedSchedule: [],
-        schedulerQueueIds: []
+        schedulerQueueIds: [],
+        orderBy: 'id'
     };
 
     this.state = state;
