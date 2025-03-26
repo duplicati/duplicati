@@ -231,15 +231,22 @@ namespace Duplicati.GUI.TrayIcon
             return "linux";
         }
 
-
+        private static Dictionary<string, Bitmap> BitmapCache = new Dictionary<string, Bitmap>();
         internal static Bitmap LoadBitmap(string iconName)
         {
-            return new Bitmap(AssetLoader.Open(new Uri($"avares://{Assembly.GetExecutingAssembly().FullName}/Assets/icons/{GetThemePath()}/" + iconName)));
+            if (BitmapCache.TryGetValue(iconName, out var bitmap))
+                return bitmap;
+
+            return BitmapCache[iconName] = new Bitmap(AssetLoader.Open(new Uri($"avares://{Assembly.GetExecutingAssembly().FullName}/Assets/icons/{GetThemePath()}/" + iconName)));
         }
 
+        private static Dictionary<string, WindowIcon> IconCache = new Dictionary<string, WindowIcon>();
         internal static WindowIcon LoadIcon(string iconName)
         {
-            return new WindowIcon(LoadBitmap(iconName));
+            if (IconCache.TryGetValue(iconName, out var icon))
+                return icon;
+
+            return IconCache[iconName] = new WindowIcon(LoadBitmap(iconName));
         }
     }
 
