@@ -520,12 +520,15 @@ namespace Duplicati.UnitTest
             foreach (var dir in dirs)
                 Directory.CreateDirectory(dir);
 
+            // Save a map of what the backed up files' attributes were before the backup
+            Dictionary<string, FileAttributes> attr_map = [];
             foreach (var attr in attrs)
                 foreach (var dir in dirs)
                 {
                     var file = Path.Combine(dir, $"file_{attr}");
                     TestUtils.WriteTestFile(file, 1024);
                     File.SetAttributes(file, attr);
+                    attr_map[file] = File.GetAttributes(file); // Read back the attributes
                 }
 
             foreach (var (attr, dir) in attrs.Zip(dirs.Skip(1)))
@@ -603,9 +606,10 @@ namespace Duplicati.UnitTest
                 foreach (var attr in attrs)
                     foreach (var dir in dirs)
                     {
-                        var original_file = Path.Combine(dir, $"file_{attr}");
+                        var filename = $"file_{attr}";
+                        var original_file = Path.Combine(dir, filename);
                         var restored_file = original_file.Replace(DATAFOLDER, RESTOREFOLDER);
-                        var original_attrs = File.GetAttributes(original_file);
+                        var original_attrs = attr_map[original_file];
                         var restored_attrs = File.GetAttributes(restored_file);
                         if (skip_metadata && original_attrs != default_file_attrs)
                             Assert.That(original_attrs, Is.Not.EqualTo(restored_attrs), $"File attributes should not be equal for original file: {original_file}");
