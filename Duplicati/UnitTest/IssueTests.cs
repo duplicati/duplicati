@@ -609,7 +609,7 @@ namespace Duplicati.UnitTest
                         if (skip_metadata && original_attrs != default_file_attrs)
                             Assert.That(original_attrs, Is.Not.EqualTo(restored_attrs), "File attributes should not be equal");
                         else
-                            Assert.That(File.GetAttributes(original_file), Is.EqualTo(File.GetAttributes(restored_file)), "File attributes should be equal");
+                            Assert.That(original_attrs, Is.EqualTo(restored_attrs), "File attributes should be equal");
                     }
 
                 // Check the OS specific file and directory
