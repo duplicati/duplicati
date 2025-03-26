@@ -592,7 +592,7 @@ namespace Duplicati.UnitTest
                     var restored_dir = dir.Replace(DATAFOLDER, RESTOREFOLDER);
                     var original_attrs = new DirectoryInfo(dir).Attributes;
                     var restored_attrs = new DirectoryInfo(restored_dir).Attributes;
-                    if (skip_metadata && original_attrs != FileAttributes.Directory)
+                    if (skip_metadata && original_attrs != default_dir_attrs)
                         Assert.That(original_attrs, Is.Not.EqualTo(restored_attrs), "Directory attributes should not be equal");
                     else
                         Assert.That(original_attrs, Is.EqualTo(restored_attrs), "Directory attributes should be equal");
@@ -606,7 +606,7 @@ namespace Duplicati.UnitTest
                         var restored_file = original_file.Replace(DATAFOLDER, RESTOREFOLDER);
                         var original_attrs = File.GetAttributes(original_file);
                         var restored_attrs = File.GetAttributes(restored_file);
-                        if (skip_metadata && original_attrs != FileAttributes.Normal)
+                        if (skip_metadata && original_attrs != default_file_attrs)
                             Assert.That(original_attrs, Is.Not.EqualTo(restored_attrs), "File attributes should not be equal");
                         else
                             Assert.That(File.GetAttributes(original_file), Is.EqualTo(File.GetAttributes(restored_file)), "File attributes should be equal");
