@@ -78,6 +78,7 @@ public class AlternateFTPBackend : FTP
         new CommandLineArgument(CONFIG_KEY_FTP_UPLOAD_DELAY, CommandLineArgument.ArgumentType.Timespan, Strings.DescriptionUploadDelayShort, Strings.DescriptionUploadDelayLong, DEFAULT_UPLOAD_DELAY_STRING),
         new CommandLineArgument(CONFIG_KEY_FTP_LOGTOCONSOLE, CommandLineArgument.ArgumentType.Boolean, Strings.DescriptionLogToConsoleShort, Strings.DescriptionLogToConsoleLong),
         new CommandLineArgument(CONFIG_KEY_FTP_LOGPRIVATEINFOTOCONSOLE, CommandLineArgument.ArgumentType.Boolean, Strings.DescriptionLogPrivateInfoToConsoleShort, Strings.DescriptionLogPrivateInfoToConsoleLong, "false"),
+        new CommandLineArgument(CONFIG_KEY_FTP_IGNORE_PUREFTP, CommandLineArgument.ArgumentType.Boolean, Strings.DescriptionIgnorePureFTPShort, Strings.DescriptionIgnorePureFTPLong, "false"),
         .. SslOptionsHelper.GetCertOnlyOptions(),
         .. TimeoutOptionsHelper.GetOptions(),
     ];
