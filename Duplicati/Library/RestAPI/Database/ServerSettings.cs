@@ -73,6 +73,7 @@ namespace Duplicati.Server.Database
             public const string PAUSED_UNTIL = "paused-until";
             public const string LAST_UPDATE_CHECK_VERSION = "last-update-check-version";
             public const string ADDITIONAL_REPORT_URL = "additional-report-url";
+            public const string BACKUP_LIST_SORT_ORDER = "backup-list-sort-order";
         }
 
         private readonly Dictionary<string, string?> settings;
@@ -874,6 +875,21 @@ namespace Duplicati.Server.Database
                 SaveSettings();
             }
         }
+
+        public string? BackupListSortOrder
+        {
+            get
+            {
+                return settings[CONST.BACKUP_LIST_SORT_ORDER];
+            }
+            set
+            {
+                lock (databaseConnection.m_lock)
+                    settings[CONST.BACKUP_LIST_SORT_ORDER] = value;
+                SaveSettings();
+            }
+        }
+
     }
 }
 
