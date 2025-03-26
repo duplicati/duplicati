@@ -28,6 +28,7 @@ using System.IO;
 using System.Linq;
 using System.Security.AccessControl;
 using System.Security.Cryptography;
+using System.Security.Principal;
 using System.Threading;
 
 namespace Duplicati.UnitTest
@@ -548,13 +549,13 @@ namespace Duplicati.UnitTest
                 var rules_dir = dir_info.GetAccessControl();
                 rules_dir.GetAccessRules(true, true, typeof(System.Security.Principal.NTAccount));
                 rules_dir.AddAccessRule(new FileSystemAccessRule(Environment.UserName, FileSystemRights.FullControl, AccessControlType.Allow));
-                rules_dir.AddAccessRule(new FileSystemAccessRule("Everyone", FileSystemRights.ReadAndExecute, AccessControlType.Allow));
+                rules_dir.AddAccessRule(new FileSystemAccessRule(new SecurityIdentifier(WellKnownSidType.WorldSid, null), FileSystemRights.ReadAndExecute, AccessControlType.Allow));
                 dir_info.SetAccessControl(rules_dir);
 
                 var file_info = new FileInfo(os_special_file);
                 var rules_file = file_info.GetAccessControl();
                 rules_file.AddAccessRule(new FileSystemAccessRule(Environment.UserName, FileSystemRights.FullControl, AccessControlType.Allow));
-                rules_file.AddAccessRule(new FileSystemAccessRule("Everyone", FileSystemRights.ReadAndExecute, AccessControlType.Allow));
+                rules_file.AddAccessRule(new FileSystemAccessRule(new SecurityIdentifier(WellKnownSidType.WorldSid, null), FileSystemRights.ReadAndExecute, AccessControlType.Allow));
                 file_info.SetAccessControl(rules_file);
             }
             else // Mac and Linux
