@@ -30,8 +30,8 @@ public class Backups : IEndpointV1
 {
     public static void Map(RouteGroupBuilder group)
     {
-        group.MapGet("/backups", ([FromServices] Connection connection, [FromQuery] string? sort = null)
-            => ExecuteGet(connection, sort))
+        group.MapGet("/backups", ([FromServices] Connection connection, [FromQuery] string? orderBy = null)
+            => ExecuteGet(connection, orderBy))
                .RequireAuthorization();
 
         group.MapPost("/backups", ([FromServices] Connection connection, [FromBody] Dto.BackupAndScheduleInputDto input, [FromQuery] bool? temporary, [FromQuery] bool? existingdb)
@@ -48,7 +48,7 @@ public class Backups : IEndpointV1
         }).RequireAuthorization();
     }
 
-    private static IEnumerable<Dto.BackupAndScheduleOutputDto> ExecuteGet(Connection connection, string? sort)
+    private static IEnumerable<Dto.BackupAndScheduleOutputDto> ExecuteGet(Connection connection, string? orderBy)
     {
         var schedules = connection.Schedules;
         var backups = connection.Backups.AsEnumerable();
@@ -56,6 +56,7 @@ public class Backups : IEndpointV1
         IEnumerable<Dto.BackupAndScheduleOutputDto> ApplySorting(IEnumerable<Dto.BackupAndScheduleOutputDto> backups, string sort)
         {
             var asc = true;
+            sort = sort.ToLowerInvariant().Trim();
             if (sort.StartsWith("-"))
             {
                 asc = false;
@@ -153,12 +154,12 @@ public class Backups : IEndpointV1
         });
 
         // Use DB setting if not set
-        if (string.IsNullOrWhiteSpace(sort))
-            sort = connection.ApplicationSettings.BackupListSortOrder;
+        if (string.IsNullOrWhiteSpace(orderBy))
+            orderBy = connection.ApplicationSettings.BackupListSortOrder;
 
         // Apply sorting, if any
-        if (!string.IsNullOrWhiteSpace(sort))
-            foreach (var direction in sort.Split(","))
+        if (!string.IsNullOrWhiteSpace(orderBy))
+            foreach (var direction in orderBy.Split(","))
                 res = ApplySorting(res, direction);
 
         return res;
