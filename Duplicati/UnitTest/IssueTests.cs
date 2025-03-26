@@ -506,7 +506,7 @@ namespace Duplicati.UnitTest
                 FileAttributes.ReadOnly,
                 FileAttributes.Hidden,
                 FileAttributes.System,
-                FileAttributes.Archive
+                //FileAttributes.Archive
             };
 
             // Create the generated directories and files
