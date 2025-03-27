@@ -23,8 +23,8 @@ namespace Duplicati.Library.Backend.Strings
 {
     internal static class FilenBackend
     {
-        public static string Description => LC.L(@"This backend can read and write data to Filen.io using its REST protocol. Allowed format is ""filen://folder/subfolder"".");
-        public static string DisplayName => LC.L(@"Local folder or drive");
+        public static string Description => LC.L(@"This backend can read and write data to Filen.io using its REST protocol. Supported format is ""filen://folder/subfolder"".");
+        public static string DisplayName => LC.L(@"Filen.io");
         public static string TwoFactorShort => LC.L(@"Optional 2-factor code");
         public static string TwoFactorLong => LC.L(@"The 2-factor code to use for authentication, leave empty if the account is not MFA protected. Not that a new code must be provided by the user for each authentication attempt.");
         public static string MoveToTrashShort => LC.L(@"Move to trash");

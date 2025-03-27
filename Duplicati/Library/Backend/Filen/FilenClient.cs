@@ -20,6 +20,7 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System.Net.Http.Headers;
+using System.Net.Http.Json;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
@@ -269,13 +270,13 @@ public class FilenClient : IDisposable
     {
         response.EnsureSuccessStatusCode();
 
-        var json = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
-        var result = JsonSerializer.Deserialize<FilenResponseEnvelope<T>>(json);
-        //var result = await response.Content.ReadFromJsonAsync<FilenResponse<T>>(cancellationToken).ConfigureAwait(false);
+        // var json = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+        // var result = JsonSerializer.Deserialize<FilenResponseEnvelope<T>>(json);
+        var result = await response.Content.ReadFromJsonAsync<FilenResponseEnvelope<T>>(cancellationToken).ConfigureAwait(false);
         if (result is null)
             throw new Exception("Failed to read response");
         if (!result.Status || !string.IsNullOrWhiteSpace(result.Error))
-            throw new Exception($"Server returned error: {result.Error ?? result.Message ?? "Unknown"}");
+            throw new UserInformationException($"{result.Error ?? result.Message ?? "Unknown"}", "FilenAPIError");
 
         return result.Data;
     }
@@ -456,6 +457,8 @@ public class FilenClient : IDisposable
                 bytesRead += read;
             }
 
+            Logging.Log.WriteVerboseMessage(LOGTAG, "UploadingChunk", "Uploading chunk {0}, size {1}", chunk, bytesRead);
+
             // Stream is exhausted
             if (bytesRead == 0) break;
 
@@ -481,6 +484,8 @@ public class FilenClient : IDisposable
             var res = await ExtractDataFromResponse<ChunkUploadResponse>(response, cancellationToken).ConfigureAwait(false);
             chunk++;
         }
+
+        Logging.Log.WriteVerboseMessage(LOGTAG, "UploadingChunk", "Finished uploading {0} chunks", chunk);
 
         return chunk;
     }
@@ -554,6 +559,10 @@ public class FilenClient : IDisposable
         var totalSize = file.Size;
         while (downloaded < totalSize)
         {
+            if (chunk >= file.Chunks)
+                throw new Exception($"Attempted to download more chunks than available, expected {file.Chunks}, got {chunk}. File: {file.Name}, total size: {totalSize}, downloaded: {downloaded}");
+
+            Logging.Log.WriteVerboseMessage(LOGTAG, "DownloadingChunk", "Downloading chunk {0}, size {1}", chunk, totalSize - downloaded);
             var url = $"{EgestUrls[Random.Shared.Next(0, EgestUrls.Count)]}/{file.Region}/{file.Bucket}/{file.Uuid}/{chunk}";
             using var request = new HttpRequestMessage(HttpMethod.Get, url);
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _authResult.ApiKey);

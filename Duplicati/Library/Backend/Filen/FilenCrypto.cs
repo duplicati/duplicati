@@ -233,13 +233,13 @@ public static class FilenCrypto
         }
         else if (version == "003")
         {
-            Logging.Log.WriteWarningMessage(LOGTAG, "EncV3NotTested", null, "Encryption version 3 is not tested.");
+            Logging.Log.WriteVerboseMessage(LOGTAG, "EncV3NotTested", "Encryption version 3 encoutered for metadata, but this is not tested.");
             if (key.Key.Length != 64)
                 throw new ArgumentException($"Invalid key length {key.Key.Length}. Expected 64 (hex).", nameof(key));
 
             var keyBuffer = Convert.FromHexString(key.Key);
-            var ivBuffer = Convert.FromHexString(metadata.Substring(3, 24)); // Sliced from 3, length 24
-            var encrypted = Convert.FromBase64String(metadata.Substring(27));
+            var ivBuffer = Convert.FromHexString(metadata.Substring(3, 12)); // Sliced from 3, length 24
+            var encrypted = Convert.FromBase64String(metadata.Substring(15));
 
             return Encoding.UTF8.GetString(AesGcmDecrypt(keyBuffer, ivBuffer, encrypted));
         }
