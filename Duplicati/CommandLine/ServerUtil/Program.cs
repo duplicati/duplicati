@@ -18,10 +18,12 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
+
 using System.CommandLine;
 using System.CommandLine.Builder;
 using System.CommandLine.Parsing;
 using Duplicati.CommandLine.ServerUtil.Commands;
+using Duplicati.Library.AutoUpdater;
 using Duplicati.Library.Utility;
 
 namespace Duplicati.CommandLine.ServerUtil;
@@ -36,9 +38,9 @@ public static class Program
     /// </summary>
     /// <param name="args"></param>
     /// <returns>The return code</returns>
-    public static Task<int> Main(string[] args)
+    public static async Task<int> Main(string[] args)
     {
-        Library.AutoUpdater.PreloadSettingsLoader.ConfigurePreloadSettings(ref args, Library.AutoUpdater.PackageHelper.NamedExecutable.ServerUtil);
+        PreloadSettingsLoader.ConfigurePreloadSettings(ref args, PackageHelper.NamedExecutable.ServerUtil);
 
         var rootCmd = new RootCommand("Server CLI tool for Duplicati")
             {
@@ -53,36 +55,46 @@ public static class Program
                 Export.Create(),
                 Health.Create(),
                 IssueForeverToken.Create(),
-                ServerStatus.Create(),
+                ServerStatus.Create()
             };
 
         rootCmd = SettingsBinder.AddGlobalOptions(rootCmd);
 
-        return new CommandLineBuilder(rootCmd)
+        return await new CommandLineBuilder(rootCmd)
             .UseDefaults()
             .UseExceptionHandler((ex, context) =>
             {
+                OutputInterceptorBinder.Instance?.SetResult(false);
+                
                 if (ex is UserReportedException ure)
                 {
-                    Console.WriteLine(ure.Message);
+                    OutputInterceptorBinder.Instance?.AppendExceptionMessage(ure.Message);
                     context.ExitCode = 2;
                 }
                 else
                 {
-                    Console.WriteLine(ex.ToString());
+                    OutputInterceptorBinder.Instance?.AppendExceptionMessage(ex.ToString());
                     context.ExitCode = 1;
+                }
+
+                if (OutputInterceptorBinder.Instance != null)
+                {
+                    OutputInterceptorBinder.Instance.ExitCode = context.ExitCode;
+                    Console.WriteLine(OutputInterceptorBinder.Instance.GetSerializedResult());
                 }
             })
             .AddMiddleware(async (context, next) =>
             {
                 // Inject settings with custom binder
-                if (context.ParseResult.CommandResult?.Command is Command cmd)
+                if (context.ParseResult.CommandResult.Command is { } cmd)
                     context.BindingContext.AddService(_ => SettingsBinder.GetSettings(context.BindingContext));
-
+                
+                context.BindingContext.AddService(_ => OutputInterceptorBinder.GetConsoleInterceptor(context.BindingContext));
+                
                 await next(context);
+                Console.WriteLine(OutputInterceptorBinder.Instance?.GetSerializedResult());
             })
             .UseAdditionalHelpAliases()
-            .Build()
-            .InvokeAsync(args);
+            .Build().InvokeAsync(args);
     }
 }

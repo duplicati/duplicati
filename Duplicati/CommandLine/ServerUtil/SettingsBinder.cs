@@ -18,10 +18,14 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
+
 using System.CommandLine;
 using System.CommandLine.Binding;
 using Duplicati.Library.AutoUpdater;
+using Duplicati.Library.Encryption;
 using Duplicati.Library.Main;
+using Uri = System.Uri;
+using Utility = Duplicati.Library.Utility.Utility;
 
 namespace Duplicati.CommandLine.ServerUtil;
 
@@ -37,7 +41,7 @@ public class SettingsBinder : BinderBase<Settings>
     /// <summary>
     /// The host URL option.
     /// </summary>
-    public static readonly Option<Uri> hostUrlOption = new Option<Uri>("--hosturl", description: "The host URL to use", getDefaultValue: () => new Uri($"http://{Library.Utility.Utility.IpVersionCompatibleLoopback}:8200"));
+    public static readonly Option<Uri> hostUrlOption = new Option<Uri>("--hosturl", description: "The host URL to use", getDefaultValue: () => new Uri($"http://{Utility.IpVersionCompatibleLoopback}:8200"));
     /// <summary>
     /// The server datafolder option.
     /// </summary>
@@ -59,7 +63,7 @@ public class SettingsBinder : BinderBase<Settings>
     /// <summary>
     /// The settings encryption key option.
     /// </summary>
-    public static readonly Option<string?> settingsEncryptionKeyOption = new Option<string?>("--settings-encryption-key", description: $"The encryption key to use for the settings file. Can also be supplied with environment variable {Library.Encryption.EncryptedFieldHelper.ENVIROMENT_VARIABLE_NAME}", getDefaultValue: () => null);
+    public static readonly Option<string?> settingsEncryptionKeyOption = new Option<string?>("--settings-encryption-key", description: $"The encryption key to use for the settings file. Can also be supplied with environment variable {EncryptedFieldHelper.ENVIROMENT_VARIABLE_NAME}", getDefaultValue: () => null);
 
     /// <summary>
     /// The secret provider option.
@@ -80,6 +84,12 @@ public class SettingsBinder : BinderBase<Settings>
     public static readonly Option<string> acceptedHostCertificateOption = new Option<string>("--host-cert", description: "The SHA1 hash of the host certificate to accept. Use * for any certificate, same as --insecure (dangerous)", getDefaultValue: () => string.Empty);
 
     /// <summary>
+    /// Option to wrap stdout as a json.
+    /// </summary>
+    public static readonly Option<bool> jsonOutputOption =
+        new Option<bool>("--json", description: "Wraps stdout as a json", getDefaultValue: () => false);
+    
+    /// <summary>
     /// Adds global options to the root command.
     /// </summary>
     /// <param name="rootCommand">The root command to add the options to.</param>
@@ -97,6 +107,7 @@ public class SettingsBinder : BinderBase<Settings>
         rootCommand.AddGlobalOption(secretProviderCacheOption);
         rootCommand.AddGlobalOption(secretProviderPatternOption);
         rootCommand.AddGlobalOption(acceptedHostCertificateOption);
+        rootCommand.AddGlobalOption(jsonOutputOption);
         return rootCommand;
     }
 
@@ -111,7 +122,7 @@ public class SettingsBinder : BinderBase<Settings>
             bindingContext.ParseResult.GetValueForOption(hostUrlOption),
             bindingContext.ParseResult.GetValueForOption(settingsFileOption)?.FullName ?? "settings.json",
             bindingContext.ParseResult.GetValueForOption(insecureOption),
-            bindingContext.ParseResult.GetValueForOption(settingsEncryptionKeyOption) ?? Environment.GetEnvironmentVariable(Library.Encryption.EncryptedFieldHelper.ENVIROMENT_VARIABLE_NAME),
+            bindingContext.ParseResult.GetValueForOption(settingsEncryptionKeyOption) ?? Environment.GetEnvironmentVariable(EncryptedFieldHelper.ENVIROMENT_VARIABLE_NAME),
             bindingContext.ParseResult.GetValueForOption(secretProviderOption),
             bindingContext.ParseResult.GetValueForOption(secretProviderCacheOption),
             bindingContext.ParseResult.GetValueForOption(secretProviderPatternOption) ?? SecretProviderHelper.DEFAULT_PATTERN,

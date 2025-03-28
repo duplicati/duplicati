@@ -18,6 +18,7 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
+
 using System.CommandLine;
 using System.CommandLine.NamingConventionBinder;
 
@@ -27,23 +28,38 @@ public static class ServerStatus
 {
     public static Command Create() =>
         new Command("status", "Gets the server status")
-        .WithHandler(CommandHandler.Create<Settings>(async (settings) =>
+        .WithHandler(CommandHandler.Create<Settings, OutputInterceptor>(async (settings, output) =>
         {
-            var state = await (await settings.GetConnection()).GetServerState();
-            Console.WriteLine($"Server state: {state.ProgramState}");
+            var state = await (await settings.GetConnection(output)).GetServerState();
+            
+            output.AppendConsoleMessage($"Server state: {state.ProgramState}");
+            output.AppendCustomObject("ServerState", state.ProgramState);
+            
             if (state.ActiveTask != null)
-                Console.WriteLine($"Active task: [Task {state.ActiveTask.Item1}]: BackupId = {state.ActiveTask.Item2}");
+            {
+                output.AppendConsoleMessage(
+                    $"Active task: [Task {state.ActiveTask.Item1}]: BackupId = {state.ActiveTask.Item2}");
+                output.AppendCustomObject("ActiveTask",
+                    new { Task = state.ActiveTask.Item1, BackupId = state.ActiveTask.Item2 });
+            }
             else
-                Console.WriteLine("Active task: None");
+            {
+                output.AppendConsoleMessage("Active task: None");
+                output.AppendCustomObject("ActiveTask", null);
+            }
 
             if (state.SchedulerQueueIds.Any())
             {
-                Console.WriteLine("Scheduled tasks:");
-                foreach (var id in state.SchedulerQueueIds)
-                    Console.WriteLine($"  [Task {id.Item1}]: BackupId = {id.Item2}");
+                output.AppendConsoleMessage("Scheduled tasks:");
+                foreach (var (taskId, backupId) in state.SchedulerQueueIds) output.AppendConsoleMessage($"  [Task {taskId}]: BackupId = {backupId}");
+                output.AppendCustomObject("SchedulerTasks", state.SchedulerQueueIds.Select(id => new { Task = id.Item1, BackupId = id.Item2 }).ToArray());
             }
             else
-                Console.WriteLine("Scheduler tasks: Empty");
+            {
+                output.AppendConsoleMessage("Scheduler tasks: Empty");
+                output.AppendCustomObject("SchedulerTasks", null);
+            }
+            
+            output.SetResult(true);
         }));
-
 }

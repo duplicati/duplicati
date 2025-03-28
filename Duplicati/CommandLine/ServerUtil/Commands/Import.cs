@@ -18,6 +18,7 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
+
 using System.CommandLine;
 using System.CommandLine.NamingConventionBinder;
 
@@ -36,14 +37,17 @@ public static class Import
             },
             new Option<bool>(name: "--import-metadata", description: "Import metadata from the backup", getDefaultValue: () => false)
         }
-        .WithHandler(CommandHandler.Create<Settings, FileInfo, string, bool>(async (settings, file, passphrase, importMetadata) =>
+        .WithHandler(CommandHandler.Create<Settings, OutputInterceptor, FileInfo, string, bool>(async (settings, output, file, passphrase, importMetadata) =>
         {
             if (!file.Exists)
                 throw new UserReportedException($"File {file.FullName} does not exist");
 
-            Console.WriteLine($"Importing backup configuration from {file.FullName}");
+            output.AppendConsoleMessage($"Importing backup configuration from {file.FullName}");
             if (IsEncrypted(file))
             {
+                if (output.JsonOutputMode)
+                    throw new UserReportedException("No password provided with json mode.");
+                
                 if (string.IsNullOrWhiteSpace(passphrase))
                     passphrase = HelperMethods.ReadPasswordFromConsole("The file is encrypted. Please provide the encryption password: ");
 
@@ -52,16 +56,18 @@ public static class Import
 
                 if (settings.SecretProvider != null)
                 {
-                    var opts = new Dictionary<string, string?>() { { "password", passphrase } };
+                    var opts = new Dictionary<string, string?> { { "password", passphrase } };
                     await settings.ReplaceSecrets(opts).ConfigureAwait(false);
                     passphrase = opts["password"]!;
                 }
             }
 
-            var connection = await settings.GetConnection();
+            var connection = await settings.GetConnection(output);
             var result = await connection.ImportBackup(file.FullName, passphrase, importMetadata);
 
-            Console.WriteLine($"Imported \"{result.Name}\" with ID {result.ID}");
+            output.AppendConsoleMessage($"Imported \"{result.Name}\" with ID {result.ID}");
+            output.AppendCustomObject( "Imported",new {Id = result.ID, Name = result.Name});
+            output.SetResult(true);
         }));
 
     private static bool IsEncrypted(FileInfo file)

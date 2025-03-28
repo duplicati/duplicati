@@ -18,6 +18,7 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
+
 using System.CommandLine;
 using System.CommandLine.NamingConventionBinder;
 
@@ -35,18 +36,18 @@ public static class RunBackup
                 IsRequired = false
             },
             new Option<int>("--poll-interval", description: "The interval in seconds to poll for backup status", getDefaultValue: () => 5) {
-                IsRequired = false,
+                IsRequired = false
             },
             new Option<bool>("--quiet", "Do not print progress messages") {
                 IsRequired = false
             }
         }
-        .WithHandler(CommandHandler.Create<Settings, string, bool, int, bool>(async (settings, backup, wait, pollinterval, quiet) =>
+        .WithHandler(CommandHandler.Create<Settings, OutputInterceptor, string, bool, int, bool>(async (settings, output, backup, wait, pollinterval, quiet) =>
         {
             if (pollinterval < 1)
                 throw new UserReportedException("Poll interval must be at least 1 second");
 
-            var connection = await settings.GetConnection();
+            var connection = await settings.GetConnection(output);
 
             var matchingBackup = (await connection.ListBackups())
                 .FirstOrDefault(b => string.Equals(b.Name, backup, StringComparison.OrdinalIgnoreCase) || string.Equals(b.ID, backup));
@@ -55,21 +56,23 @@ public static class RunBackup
                 throw new UserReportedException("No backup found with supplied ID or name");
 
             if (!quiet)
-                Console.WriteLine($"Running backup {matchingBackup.Name} (ID: {matchingBackup.ID})");
+                output.AppendConsoleMessage($"Running backup {matchingBackup.Name} (ID: {matchingBackup.ID})");
+            
             await connection.RunBackup(matchingBackup.ID);
 
             if (wait)
             {
                 if (!quiet)
-                    Console.WriteLine("Waiting for backup to finish...");
-                await connection.WaitForBackup(matchingBackup.ID, TimeSpan.FromSeconds(pollinterval), (msg) =>
+                    output.AppendConsoleMessage("Waiting for backup to finish...");
+                await connection.WaitForBackup(matchingBackup.ID, TimeSpan.FromSeconds(pollinterval), msg =>
                 {
                     if (!quiet)
-                        Console.WriteLine($"[{DateTime.Now}]: {msg}");
+                        output.AppendConsoleMessage($"[{DateTime.Now}]: {msg}");
                 });
 
                 if (!quiet)
-                    Console.WriteLine("Backup finished");
+                    output.AppendConsoleMessage("Backup finished");
             }
+            output.SetResult(true);
         }));
 }

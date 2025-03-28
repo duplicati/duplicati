@@ -18,6 +18,7 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
+
 using System.CommandLine;
 using System.CommandLine.NamingConventionBinder;
 
@@ -27,30 +28,31 @@ public static class Health
 {
     public static Command Create() =>
         new Command("health", "Checks the server health endpoint")
-        .WithHandler(CommandHandler.Create<Settings>(async (settings) =>
+        .WithHandler(CommandHandler.Create<Settings, OutputInterceptor>(async (settings, output) =>
         {
-            using var client = new HttpClient(new HttpClientHandler()
+            using var client = new HttpClient(new HttpClientHandler
             {
                 ServerCertificateCustomValidationCallback = settings.Insecure
                        ? HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
                        : null
-            })
-            {
-                BaseAddress = settings.HostUrl,
-                Timeout = TimeSpan.FromSeconds(10)
-            };
+            });
+            client.BaseAddress = settings.HostUrl;
+            client.Timeout = TimeSpan.FromSeconds(10);
 
             try
             {
                 var response = await client.GetAsync("health");
                 response.EnsureSuccessStatusCode();
-
-                Console.WriteLine("Server is healthy");
+                output.SetResult(true);
+                output.AppendCustomObject("healthy", true);
+                output.AppendConsoleMessage("Server is healthy");
                 return 0;
             }
             catch (HttpRequestException)
             {
-                Console.WriteLine("Server is unhealthy");
+                output.AppendConsoleMessage("Server is unhealthy");
+                output.AppendCustomObject("healthy", false);
+                output.SetResult(false);
                 return 1;
             }
         })

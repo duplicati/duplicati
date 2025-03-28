@@ -18,9 +18,9 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
+
 using System.CommandLine;
 using System.CommandLine.NamingConventionBinder;
-using Duplicati.Library.Main;
 
 namespace Duplicati.CommandLine.ServerUtil.Commands;
 
@@ -31,26 +31,32 @@ public static class ChangePassword
         {
             new Argument<string>("new-password", "The new password to use") {
                 Arity = ArgumentArity.ZeroOrOne
-            },
+            }
         }
-        .WithHandler(CommandHandler.Create<Settings, string>(async (settings, newPassword) =>
+        .WithHandler(CommandHandler.Create<Settings, OutputInterceptor, string>(async (settings, output, newPassword) =>
         {
             // Ask for previous password first, if needed
-            var connection = await settings.GetConnection();
+            var connection = await settings.GetConnection(output);
 
             if (string.IsNullOrWhiteSpace(newPassword))
+            {
+                if (output.JsonOutputMode)
+                    throw new UserReportedException("No password provided with json mode.");
+                
                 newPassword = HelperMethods.ReadPasswordFromConsole("Please provide the new password: ");
+            }
 
             if (string.IsNullOrWhiteSpace(newPassword))
                 throw new UserReportedException("No password provided");
 
             if (settings.SecretProvider != null)
             {
-                var opts = new Dictionary<string, string?>() { { "password", newPassword } };
+                var opts = new Dictionary<string, string?> { { "password", newPassword } };
                 await settings.ReplaceSecrets(opts).ConfigureAwait(false);
                 newPassword = opts["password"]!;
             }
 
             await connection.ChangePassword(newPassword);
+            output.SetResult(true);
         }));
 }

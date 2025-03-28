@@ -18,6 +18,7 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
+
 using System.CommandLine;
 using System.CommandLine.NamingConventionBinder;
 
@@ -30,15 +31,17 @@ public static class Pause
         {
             new Argument<string?>("duration", description: "The duration to pause the server for", getDefaultValue: () => null) {
                 Arity = ArgumentArity.ZeroOrOne
-            },
+            }
         }
-        .WithHandler(CommandHandler.Create<Settings, string?>(async (settings, duration) =>
+        .WithHandler(CommandHandler.Create<Settings, OutputInterceptor, string?>(async (settings, output, duration) =>
         {
-            if (string.IsNullOrWhiteSpace(duration))
-                Console.WriteLine("Pausing the server indefinitely");
-            else
-                Console.WriteLine($"Pausing the server for {duration}");
+            output.AppendConsoleMessage(string.IsNullOrWhiteSpace(duration)
+                ? "Pausing the server indefinitely"
+                : $"Pausing the server for {duration}");
 
-            await (await settings.GetConnection()).Pause(duration);
+            await (await settings.GetConnection(output)).Pause(duration);
+            
+            // If no exception we presume success
+            output.SetResult(true);
         }));
 }
