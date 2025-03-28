@@ -251,8 +251,7 @@ namespace Duplicati.CommandLine.BackendTester
                     throttleDownload = Duplicati.Library.Utility.Sizeparser.ParseSize(throttleDownloadString, "kb");
                 }
 
-                int readWriteTimeout = backend is ITimeoutExemptBackend ||
-                                       (Environment.GetEnvironmentVariable("READ_WRITE_TIMEOUT_SECONDS") is { } timeout
+                int readWriteTimeout = (Environment.GetEnvironmentVariable("READ_WRITE_TIMEOUT_SECONDS") is { } timeout
                                         && int.TryParse(timeout, out var seconds)
                                         && seconds == -1)
                     ? Timeout.Infinite
@@ -262,8 +261,7 @@ namespace Duplicati.CommandLine.BackendTester
                         : (int)TimeSpan.FromSeconds(60).TotalMilliseconds;
 
                 Console.WriteLine(LogTimeStamp + "Read Write Timeout set to {0}{1}",
-                    readWriteTimeout == Timeout.Infinite ? "infinite" : readWriteTimeout + " ms",
-                    backend is ITimeoutExemptBackend ? " (because implements ITimeoutExemptBackend)" : "");
+                    readWriteTimeout == Timeout.Infinite ? "infinite" : readWriteTimeout + " ms");
 
                 // Allow overriding the timeout for the backend here, even if timeouts are disabled
                 if (options.TryGetValue("read-write-timeout", out var readWriteTimeoutString))

@@ -44,7 +44,7 @@ namespace Duplicati.Library.Backend
     /// Note that instead of using Task.Result to wait for the results of asynchronous operations,
     /// this class uses the Utility.Await() extension method, since it doesn't wrap exceptions in AggregateExceptions.
     /// </remarks>
-    public abstract class MicrosoftGraphBackend : IBackend, IStreamingBackend, IQuotaEnabledBackend, IRenameEnabledBackend, ITimeoutExemptBackend
+    public abstract class MicrosoftGraphBackend : IBackend, IStreamingBackend, IQuotaEnabledBackend, IRenameEnabledBackend
     {
         private static readonly string LOGTAG = Log.LogTagFromType<MicrosoftGraphBackend>();
 

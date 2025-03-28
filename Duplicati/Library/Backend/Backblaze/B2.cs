@@ -35,7 +35,7 @@ namespace Duplicati.Library.Backend.Backblaze;
 /// <summary>
 /// Backblaze B2 Backend
 /// </summary>
-public class B2 : IStreamingBackend, ITimeoutExemptBackend
+public class B2 : IStreamingBackend
 {
     /// <summary>
     /// The option key for specifying the Backblaze B2 account ID
@@ -354,8 +354,6 @@ public class B2 : IStreamingBackend, ITimeoutExemptBackend
         var uploadUrlData = await GetUploadUrlDataAsync(cancelToken).ConfigureAwait(false);
         try
         {
-
-            // For PutAsync, no timeout is specified. The only thing that can stop it is the cancellation token
             using var request = new HttpRequestMessage(HttpMethod.Post, uploadUrlData.UploadUrl);
             using var timeoutStream = stream.ObserveReadTimeout(_timeouts.ReadWriteTimeout, false);
 
@@ -432,8 +430,7 @@ public class B2 : IStreamingBackend, ITimeoutExemptBackend
         HttpResponseMessage? response = null;
         try
         {
-            // For GetAsync, no timeout is specified. The only thing that can stop it is the cancellation token
-            response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken)
+            response = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancellationToken, ct => _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, ct))
                 .ConfigureAwait(false);
             response.EnsureSuccessStatusCode();
             await using var responseStream = await response.Content.ReadAsStreamAsync(cancellationToken);
