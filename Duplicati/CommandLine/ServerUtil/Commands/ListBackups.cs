@@ -18,6 +18,7 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
+
 using System.CommandLine;
 using System.CommandLine.NamingConventionBinder;
 
@@ -27,22 +28,25 @@ public static class ListBackups
 {
     public static Command Create() =>
         new Command("list-backups", "List all backups")
-        .WithHandler(CommandHandler.Create<Settings>(async (settings) =>
+        .WithHandler(CommandHandler.Create<Settings, OutputInterceptor>(async (settings, output) =>
         {
-            var bks = await (await settings.GetConnection()).ListBackups();
+            var bks = await (await settings.GetConnection(output)).ListBackups();
 
-            if (!bks.Any())
+            var backupEntries = bks as Connection.BackupEntry[] ?? bks.ToArray();
+            if (backupEntries.Any())
             {
-                Console.WriteLine("No backups found");
-                return;
+                foreach (var bk in backupEntries)
+                {
+                    output.AppendConsoleMessage($"{bk.ID}: {bk.Name}");
+                    if (!string.IsNullOrEmpty(bk.Description))
+                        output.AppendConsoleMessage($"  {bk.Description}");
+                    output.AppendConsoleMessage(string.Empty);
+                }
+                output.AppendCustomObject("Backups", backupEntries.Select(id => new { Id = id.ID, Name = id.Name }).ToArray());
             }
+            else
+                output.AppendConsoleMessage("No backups found");
 
-            foreach (var bk in bks)
-            {
-                Console.WriteLine($"{bk.ID}: {bk.Name}");
-                if (!string.IsNullOrEmpty(bk.Description))
-                    Console.WriteLine($"  {bk.Description}");
-                Console.WriteLine();
-            }
+            output.SetResult(true);
         }));
 }

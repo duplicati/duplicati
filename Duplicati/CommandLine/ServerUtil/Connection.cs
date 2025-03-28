@@ -18,10 +18,12 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
+
 using System.Net.Http.Json;
 using System.Net.Security;
 using System.Text.Json;
 using Duplicati.Library.AutoUpdater;
+using Duplicati.WebserverCore.Middlewares;
 
 namespace Duplicati.CommandLine.ServerUtil;
 
@@ -135,17 +137,22 @@ public class Connection
     /// </summary>
     /// <param name="settings">The settings to use for the connection</param>
     /// <param name="obtainRefreshToken">Whether to obtain a refresh token</param>
+    /// <param name="console">Console messages interceptor</param>
     /// <returns>The connection</returns>
-    public static async Task<Connection> Connect(Settings settings, bool obtainRefreshToken = false)
+    public static async Task<Connection> Connect(Settings settings, bool obtainRefreshToken = false, OutputInterceptor? console = null)
     {
-        Console.WriteLine($"Connecting to {settings.HostUrl}...");
+        
+        if (console != null)
+            console.AppendConsoleMessage($"Connecting to {settings.HostUrl}...");
+        else
+            Console.WriteLine($"Connecting to {settings.HostUrl}...");
 
         var trustedCertificateHashes = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         if (!string.IsNullOrWhiteSpace(settings.AcceptedHostCertificate))
-            trustedCertificateHashes.UnionWith(settings.AcceptedHostCertificate.Split(new char[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
+            trustedCertificateHashes.UnionWith(settings.AcceptedHostCertificate.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
 
         // Configure the client for requests
-        var client = new HttpClient(new HttpClientHandler()
+        var client = new HttpClient(new HttpClientHandler
         {
             ServerCertificateCustomValidationCallback = settings.Insecure || trustedCertificateHashes.Contains("*")
                ? HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
@@ -156,7 +163,7 @@ public class Connection
                     if (cert == null)
                         return false;
                     return trustedCertificateHashes.Contains(cert.GetCertHashString());
-                }),
+                })
         })
         {
             BaseAddress = new Uri(settings.HostUrl + "api/v1/")
@@ -173,13 +180,16 @@ public class Connection
                 if (string.IsNullOrWhiteSpace(refreshToken))
                     throw new InvalidOperationException("Failed to get refresh token");
 
-                (settings with { RefreshToken = refreshToken }).Save();
+                (settings with { RefreshToken = refreshToken }).Save(console);
                 return CreateConnectionWithClient(client, accessToken);
             }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Failed to use refresh token: {ex.Message}");
+            if (console != null)
+                console.AppendExceptionMessage($"Failed to use refresh token: {ex.Message}");
+            else
+                Console.WriteLine($"Failed to use refresh token: {ex.Message}");
         }
 
         // If we can read the server database, try to create a signin token
@@ -191,7 +201,7 @@ public class Connection
             if (File.Exists(Path.Combine(DataFolderManager.DATAFOLDER, DataFolderManager.SERVER_DATABASE_FILENAME)))
             {
                 string? cfg = null;
-                using (var connection = Duplicati.Server.Program.GetDatabaseConnection(opts, true))
+                using (var connection = Server.Program.GetDatabaseConnection(opts, true))
                 {
                     cfg = connection.ApplicationSettings.JWTConfig;
                     if (settings.HostUrl.Scheme == "https" && connection.ApplicationSettings.ServerSSLCertificate != null && trustedCertificateHashes.Count == 0)
@@ -204,8 +214,8 @@ public class Connection
 
                 if (!string.IsNullOrWhiteSpace(cfg))
                 {
-                    var signinjwt = new WebserverCore.Middlewares.JWTTokenProvider(
-                        JsonSerializer.Deserialize<WebserverCore.Middlewares.JWTConfig>(cfg)
+                    var signinjwt = new JWTTokenProvider(
+                        JsonSerializer.Deserialize<JWTConfig>(cfg)
                             ?? throw new InvalidOperationException("Failed to deserialize JWTConfig")
                     ).CreateSigninToken("server-cli");
 
@@ -215,19 +225,25 @@ public class Connection
                         throw new InvalidOperationException("Failed to get access token");
 
                     if (!string.IsNullOrWhiteSpace(refreshToken))
-                        (settings with { RefreshToken = refreshToken }).Save();
+                        (settings with { RefreshToken = refreshToken }).Save(console);
 
                     return CreateConnectionWithClient(client, accessToken);
                 }
             }
             else if (!string.IsNullOrWhiteSpace(DataFolderManager.DATAFOLDER))
             {
-                Console.WriteLine($"No database found in {DataFolderManager.DATAFOLDER}");
+                if (console != null)
+                    console.AppendConsoleMessage($"No database found in {DataFolderManager.DATAFOLDER}");
+                else
+                    Console.WriteLine($"No database found in {DataFolderManager.DATAFOLDER}");
             }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Failed to obtain a signin token: {ex.Message}");
+            if (console != null)
+                console.AppendConsoleMessage($"Failed to obtain a signin token: {ex.Message}");
+            else
+                Console.WriteLine($"Failed to obtain a signin token: {ex.Message}");
         }
 
         // Otherwise, we need a password to log in
@@ -245,7 +261,7 @@ public class Connection
                 throw new InvalidOperationException("Failed to get access token");
 
             if (!string.IsNullOrWhiteSpace(refreshToken))
-                (settings with { RefreshToken = refreshToken }).Save();
+                (settings with { RefreshToken = refreshToken }).Save(console);
 
             return CreateConnectionWithClient(client, accessToken);
         }
@@ -277,7 +293,7 @@ public class Connection
     /// <returns>The access and refresh tokens</returns>
     private static Task<(string AccessToken, string? RefreshToken)> LoginWithPassword(HttpClient client, string password, bool obtainRefreshToken)
         => ParseAuthResponse(
-            client.PostAsync($"auth/login", JsonContent.Create(new { Password = password, RememberMe = obtainRefreshToken }))
+            client.PostAsync("auth/login", JsonContent.Create(new { Password = password, RememberMe = obtainRefreshToken }))
         );
 
     /// <summary>
@@ -289,7 +305,7 @@ public class Connection
     private static Task<(string AccessToken, string? RefreshToken)> LoginWithRefreshToken(HttpClient client, string refreshToken)
         => ParseAuthResponse(client.SendAsync(new HttpRequestMessage(HttpMethod.Post, "auth/refresh")
         {
-            Headers = { { "Cookie", $"RefreshToken_{client.BaseAddress!.Port}={refreshToken}" } },
+            Headers = { { "Cookie", $"RefreshToken_{client.BaseAddress!.Port}={refreshToken}" } }
         }));
 
 
@@ -309,7 +325,7 @@ public class Connection
             throw new InvalidOperationException("Failed to get access token");
 
         response.Headers.TryGetValues("Set-Cookie", out var cookies);
-        var refreshToken = cookies?.SelectMany(c => c.Split(';')).FirstOrDefault(c => c.StartsWith($"RefreshToken_"))?.Split('=', 2)[1];
+        var refreshToken = cookies?.SelectMany(c => c.Split(';')).FirstOrDefault(c => c.StartsWith("RefreshToken_"))?.Split('=', 2)[1];
 
         return (accessToken, refreshToken);
     }
@@ -332,7 +348,7 @@ public class Connection
     /// <returns>The task</returns>
     public async Task Resume()
     {
-        var response = await client.PostAsync($"serverstate/resume", null);
+        var response = await client.PostAsync("serverstate/resume", null);
         await EnsureSuccessStatusCodeWithParsing(response);
     }
 
@@ -383,7 +399,7 @@ public class Connection
     /// <returns>The server state</returns>
     public async Task<ServerState> GetServerState()
     {
-        var response = await client.GetAsync($"serverstate");
+        var response = await client.GetAsync("serverstate");
         await EnsureSuccessStatusCodeWithParsing(response);
         return await response.Content.ReadFromJsonAsync<ServerState>()
             ?? throw new InvalidDataException("Failed to parse server response");
@@ -451,7 +467,7 @@ public class Connection
             StopLevel.AfterCurrentFile => "stopaftercurrentfile",
             StopLevel.StopNow => "stopnow",
             StopLevel.Abort => "abort",
-            _ => throw new ArgumentOutOfRangeException(nameof(level)),
+            _ => throw new ArgumentOutOfRangeException(nameof(level))
         };
         var response = await client.PostAsync($"task/{Uri.EscapeDataString(taskId)}/{levelString}", null);
         await EnsureSuccessStatusCodeWithParsing(response);
@@ -461,15 +477,16 @@ public class Connection
     /// Logs out of the server
     /// </summary>
     /// <param name="settings">The settings to use</param>
+    /// <param name="output"></param>
     /// <returns>The task</returns>
-    public async Task Logout(Settings settings)
+    public async Task Logout(Settings settings, OutputInterceptor output)
     {
         var response = await client.SendAsync(new HttpRequestMessage(HttpMethod.Post, "auth/refresh/logout")
         {
             Headers = { { "Cookie", $"RefreshToken_{client.BaseAddress!.Port}={settings.RefreshToken}" } }
         });
         await EnsureSuccessStatusCodeWithParsing(response);
-        (settings with { RefreshToken = null }).Save();
+        (settings with { RefreshToken = null }).Save(output);
     }
 
     /// <summary>
@@ -539,7 +556,7 @@ public class Connection
     /// <returns>The token</returns>
     public async Task<string> CreateForeverToken()
     {
-        var (accessToken, _) = await ParseAuthResponse(client.PostAsync($"auth/issue-forever-token", null));
+        var (accessToken, _) = await ParseAuthResponse(client.PostAsync("auth/issue-forever-token", null));
         return accessToken;
     }
 
