@@ -182,6 +182,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.CommandLine.Sourc
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.CommandLine.SourceTool", "Executables\net8\Duplicati.CommandLine.SourceTool\Duplicati.CommandLine.SourceTool.csproj", "{4003BF90-6681-4155-9D06-639ED23FE3AB}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.Filen", "Duplicati\Library\Backend\Filen\Duplicati.Library.Backend.Filen.csproj", "{BD7F4E52-1898-4C4C-8722-FFE87B06718B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -512,6 +514,10 @@ Global
 		{4003BF90-6681-4155-9D06-639ED23FE3AB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4003BF90-6681-4155-9D06-639ED23FE3AB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4003BF90-6681-4155-9D06-639ED23FE3AB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BD7F4E52-1898-4C4C-8722-FFE87B06718B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BD7F4E52-1898-4C4C-8722-FFE87B06718B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BD7F4E52-1898-4C4C-8722-FFE87B06718B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BD7F4E52-1898-4C4C-8722-FFE87B06718B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -577,6 +583,7 @@ Global
 		{48D32674-0FE9-4407-B102-4AE46D93595F} = {6B46F6B1-1898-49B8-ADA7-5CAF68EB77E3}
 		{2873BCE2-2EA6-419D-BFFA-693FDB34926E} = {D19A38DD-68F1-4EF5-BF5F-8966CE0D9A5B}
 		{4003BF90-6681-4155-9D06-639ED23FE3AB} = {6B46F6B1-1898-49B8-ADA7-5CAF68EB77E3}
+		{BD7F4E52-1898-4C4C-8722-FFE87B06718B} = {E1A9B303-F281-45C5-A4F6-CADD9DE3F3C4}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {8B40BAFE-D862-4397-9495-8F5EAF5CE80C}

@@ -35,8 +35,9 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
     EditUriBackendConfig.templates['aliyunoss']   = 'templates/backends/aliyunoss.html';
     EditUriBackendConfig.templates['e2']          = 'templates/backends/e2.html';
     EditUriBackendConfig.templates['pcloud']      = 'templates/backends/pcloud.html';
-    EditUriBackendConfig.templates['smb']        = 'templates/backends/smb.html';
+    EditUriBackendConfig.templates['smb']         = 'templates/backends/smb.html';
     EditUriBackendConfig.templates['cifs']        = 'templates/backends/smb.html';
+    EditUriBackendConfig.templates['filen']       = 'templates/backends/filen.html';
 
     EditUriBackendConfig.testers['s3'] = function(scope, callback) {
 
@@ -637,6 +638,15 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
 
     EditUriBackendConfig.parsers['cifs'] = EditUriBackendConfig.parsers['smb'];
 
+    EditUriBackendConfig.parsers['filen'] = function (scope, module, server, path, port, options) {
+        console.log("filen parser", scope, module, server, path, port, options);
+        var p1 = server ?? '';
+        var p2 = path ?? '';
+        var combined = p1;
+        if (p1.length > 0 && p2.length > 0)
+            combined += '/' + p2;
+        scope.Path = combined;
+    };
 
     // Builders take the scope and produce the uri output
     EditUriBackendConfig.builders['s3'] = function (scope) {
@@ -1007,6 +1017,22 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
 
     EditUriBackendConfig.builders['cifs'] = EditUriBackendConfig.builders['smb'];
 
+    EditUriBackendConfig.builders['filen'] = function (scope) {
+        var opts = {};
+        EditUriBackendConfig.merge_in_advanced_options(scope, opts, true);
+        // Remove trailing and leading slashes        
+        if (scope.Path)
+            scope.Path = scope.Path.replace(/^[/\\]+/, '').replace(/[/\\]+$/, '');
+        else 
+            scope.Path = '';
+
+        return AppUtils.format('{0}://{1}{2}',
+            scope.Backend.Key,
+            scope.Path,
+            AppUtils.encodeDictAsUrl(opts)
+        );
+    }
+
     EditUriBackendConfig.validaters['smb'] = function (scope, continuation) {
         if (EditUriBackendConfig.require_server(scope)
             && EditUriBackendConfig.require_username(scope)
@@ -1016,6 +1042,11 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
 
     EditUriBackendConfig.validaters['smb'] = EditUriBackendConfig.validaters['cifs'];
     
+    EditUriBackendConfig.validaters['filen'] = function (scope, continuation) {
+        if (EditUriBackendConfig.require_username_and_password(scope))
+            EditUriBackendConfig.recommend_path(scope, continuation);
+    };
+
     EditUriBackendConfig.validaters['file'] = function (scope, continuation) {
         if (EditUriBackendConfig.require_path(scope))
             continuation();
