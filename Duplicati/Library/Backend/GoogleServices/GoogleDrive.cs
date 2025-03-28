@@ -33,7 +33,7 @@ namespace Duplicati.Library.Backend.GoogleDrive
 {
     // ReSharper disable once UnusedMember.Global
     // This class is instantiated dynamically in the BackendLoader.
-    public class GoogleDrive : IBackend, IStreamingBackend, IQuotaEnabledBackend, IRenameEnabledBackend, ITimeoutExemptBackend
+    public class GoogleDrive : IBackend, IStreamingBackend, IQuotaEnabledBackend, IRenameEnabledBackend
     {
         private const string TEAMDRIVE_ID = "googledrive-teamdrive-id";
         private const string FOLDER_MIMETYPE = "application/vnd.google-apps.folder";

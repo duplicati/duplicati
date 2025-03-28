@@ -35,7 +35,7 @@ namespace Duplicati.Library.Backend.Backblaze;
 /// <summary>
 /// Backblaze B2 Backend
 /// </summary>
-public class B2 : IStreamingBackend, ITimeoutExemptBackend
+public class B2 : IStreamingBackend
 {
     /// <summary>
     /// The option key for specifying the Backblaze B2 account ID
