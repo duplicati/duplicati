@@ -22,8 +22,7 @@
 using System;
 using System.IO;
 using System.Linq;
-using System.Security.Cryptography;
-using Duplicati.Library.Interface;
+using Duplicati.Library.Utility;
 using NUnit.Framework;
 
 namespace Duplicati.UnitTest
@@ -32,7 +31,7 @@ namespace Duplicati.UnitTest
     {
         [Test]
         [Category("Targeted")]
-        public void RunCommands()
+        public void FallbackToSharpCompressOnDecompressLzmaStreams()
         {
             var testopts = TestOptions;
             testopts["zip-compression-method"] = "lzma";
@@ -76,6 +75,67 @@ namespace Duplicati.UnitTest
             }
 
             TestUtils.AssertDirectoryTreesAreEquivalent(DATAFOLDER, RESTOREFOLDER, true, "Restore");
+
+        }
+
+        [Test]
+        [Category("Targeted")]
+        [TestCase("zip-sc")]
+        [TestCase("zip-io")]
+        public void SupportZip64WithDefaultSettings(string module)
+        {
+            const long testfileSize = 5L * 1024 * 1024 * 1024;
+            var testopts = TestOptions;
+            testopts["blocksize"] = "50kb";
+
+            if (module == "zip-sc")
+            {
+                module = "zip";
+                testopts["zip-compression-library"] = "SharpCompress";
+            }
+            else if (module == "zip-io")
+            {
+                module = "zip";
+                testopts["zip-compression-library"] = "BuiltIn";
+            }
+
+            string tempfilename;
+            // Create a 5GiB file
+            using var tempfile = new TempFile();
+            {
+                tempfilename = Path.GetFileName(tempfile.Name);
+                using (var fs = File.OpenWrite(tempfile))
+                    fs.SetLength(testfileSize);
+
+                var data = new byte[1024 * 1024 * 10];
+                File.WriteAllBytes(Path.Combine(DATAFOLDER, "a"), data);
+                using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { control_files = tempfile.Name }), null))
+                    TestUtils.AssertResults(c.Backup(new string[] { DATAFOLDER }));
+            }
+
+            // Delete the local database
+            File.Delete(DBFILE);
+
+            // Recreate the database
+            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
+                TestUtils.AssertResults(c.Repair());
+
+            var restoredfile = Path.Combine(RESTOREFOLDER, tempfilename);
+            try
+            {
+                // Restore control file
+                using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { restore_path = RESTOREFOLDER }), null))
+                    TestUtils.AssertResults(c.RestoreControlFiles(["*"]));
+
+                // Check that the control file was restored
+                Assert.That(File.Exists(restoredfile), Is.True, "Control file was not restored");
+                Assert.That(new FileInfo(restoredfile).Length, Is.EqualTo(testfileSize), "Control file had wrong size");
+            }
+            finally
+            {
+                // Delete the control file
+                File.Delete(restoredfile);
+            }
 
         }
     }
