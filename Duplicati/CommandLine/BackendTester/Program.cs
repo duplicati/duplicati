@@ -356,19 +356,22 @@ namespace Duplicati.CommandLine.BackendTester
                         if (!fe.IsFolder)
                         {
                             bool found = false;
-                            foreach (var tx in files)
+                            for (var i = 0; i < files.Count; i++)
+                            {
+                                var tx = files[i];
                                 if (tx.remotefilename == fe.Name)
                                 {
                                     if (tx.found)
-                                        Console.WriteLine($"{LogTimeStamp}*** File with name {tx.remotefilename} was found more than once");
+                                        Console.WriteLine($"{LogTimeStamp}*** File {i}) with name {tx.remotefilename} was found more than once");
                                     found = true;
                                     tx.found = true;
 
                                     if (fe.Size > 0 && tx.length != fe.Size)
-                                        Console.WriteLine($"{LogTimeStamp}*** File with name {tx.remotefilename} has size {tx.length} but the size was reported as {fe.Size}");
+                                        Console.WriteLine($"{LogTimeStamp}*** File {i} with name {tx.remotefilename} has size {tx.length} but the size was reported as {fe.Size}");
 
                                     break;
                                 }
+                            }
 
                             if (!found)
                                 if (originalRenamedFile != null && renamedFileNewName != null && originalRenamedFile.remotefilename == fe.Name)
@@ -381,9 +384,9 @@ namespace Duplicati.CommandLine.BackendTester
                                 }
                         }
 
-                    foreach (var tx in files)
-                        if (!tx.found)
-                            Console.WriteLine($"{LogTimeStamp}*** File with name {tx.remotefilename} was uploaded but not found afterwards");
+                    for (var i = 0; i < files.Count; i++)
+                        if (!files[i].found)
+                            Console.WriteLine($"{LogTimeStamp}*** File {i} with name {files[i].remotefilename} was uploaded but not found afterwards");
 
                     Console.WriteLine($"{LogTimeStamp}Downloading files");
 
