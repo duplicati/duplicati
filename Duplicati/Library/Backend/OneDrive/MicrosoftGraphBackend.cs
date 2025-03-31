@@ -179,6 +179,7 @@ namespace Duplicati.Library.Backend
             new CommandLineArgument(UPLOAD_SESSION_FRAGMENT_RETRY_COUNT_OPTION, CommandLineArgument.ArgumentType.Integer, Strings.MicrosoftGraph.FragmentRetryCountShort, Strings.MicrosoftGraph.FragmentRetryCountLong, UPLOAD_SESSION_FRAGMENT_DEFAULT_RETRY_COUNT.ToString()),
             new CommandLineArgument(UPLOAD_SESSION_FRAGMENT_RETRY_DELAY_OPTION, CommandLineArgument.ArgumentType.Integer, Strings.MicrosoftGraph.FragmentRetryDelayShort, Strings.MicrosoftGraph.FragmentRetryDelayLong, UPLOAD_SESSION_FRAGMENT_DEFAULT_RETRY_DELAY.ToString()),
             new CommandLineArgument("use-http-client", CommandLineArgument.ArgumentType.Boolean, Strings.MicrosoftGraph.UseHttpClientShort, Strings.MicrosoftGraph.UseHttpClientLong, "true", null, null, Strings.MicrosoftGraph.UseHttpClientDeprecated),
+            .. AdditionalSupportedCommands,
             .. TimeoutOptionsHelper.GetOptions()
         ];
 
