@@ -148,6 +148,7 @@ namespace Duplicati.Library.Backend.GoogleServices
             var retries = 0;
             var offset = 0L;
             var buffer = new byte[Library.Utility.Utility.DEFAULT_BUFFER_SIZE];
+            HttpWebResponse? resp = null;
 
             // Repeatedly try uploading until all retries are done
             while (true)
@@ -191,32 +192,30 @@ namespace Duplicati.Library.Backend.GoogleServices
                     }
 
                     // Check the response
-                    using (var resp = await Utility.Utility.WithTimeout(shortTimeout, cancelToken, _ => oauth.GetResponseWithoutException(areq)).ConfigureAwait(false))
+                    resp = await Utility.Utility.WithTimeout(shortTimeout, cancelToken, _ => oauth.GetResponseWithoutException(areq)).ConfigureAwait(false);
+                    var code = (int)resp.StatusCode;
+
+                    if (code == 308 && resp.Headers["Range"] != null)
                     {
-                        var code = (int)resp.StatusCode;
+                        offset = long.Parse(resp.Headers["Range"]!.Split(new char[] { '-' })[1]) + 1;
+                        retries = 0;
+                    }
+                    else if (code >= 200 && code <= 299)
+                    {
+                        offset += chunkSize;
+                        if (offset != stream.Length)
+                            throw new Exception(string.Format("Upload succeeded prematurely. Uploaded: {0}, total size: {1}", offset, stream.Length));
 
-                        if (code == 308 && resp.Headers["Range"] != null)
-                        {
-                            offset = long.Parse(resp.Headers["Range"]!.Split(new char[] { '-' })[1]) + 1;
-                            retries = 0;
-                        }
-                        else if (code >= 200 && code <= 299)
-                        {
-                            offset += chunkSize;
-                            if (offset != stream.Length)
-                                throw new Exception(string.Format("Upload succeeded prematurely. Uploaded: {0}, total size: {1}", offset, stream.Length));
+                        //Verify that the response is also valid
+                        var res = oauth.ReadJSONResponse<T>(resp);
+                        if (res == null)
+                            throw new Exception(string.Format("Upload succeeded, but no data was returned, status code: {0}", code));
 
-                            //Verify that the response is also valid
-                            var res = oauth.ReadJSONResponse<T>(resp);
-                            if (res == null)
-                                throw new Exception(string.Format("Upload succeeded, but no data was returned, status code: {0}", code));
-
-                            return res;
-                        }
-                        else
-                        {
-                            throw new WebException(string.Format("Unexpected status code: {0}", code), null, WebExceptionStatus.ServerProtocolViolation, resp);
-                        }
+                        return res;
+                    }
+                    else
+                    {
+                        throw new WebException(string.Format("Unexpected status code: {0}", code), null, WebExceptionStatus.ServerProtocolViolation, resp);
                     }
                 }
                 catch (Exception ex)
@@ -226,10 +225,18 @@ namespace Duplicati.Library.Backend.GoogleServices
                     // If we get a 5xx error, or some network issue, we retry
                     if (ex is WebException exception && exception.Response is HttpWebResponse response)
                     {
-                        var code = (int)response.StatusCode;
-                        retry = code >= 500 && code <= 599;
+                        try
+                        {
+                            var code = (int)response.StatusCode;
+                            retry = code >= 500 && code <= 599;
+                        }
+                        catch
+                        {
+                            // Assume this is a transient error
+                            retry = true;
+                        }
                     }
-                    else if (ex is System.Net.Sockets.SocketException || ex is System.IO.IOException || ex.InnerException is System.Net.Sockets.SocketException || ex.InnerException is System.IO.IOException)
+                    else if (ex is System.Net.Sockets.SocketException || ex is IOException || ex.InnerException is System.Net.Sockets.SocketException || ex.InnerException is System.IO.IOException)
                     {
                         retry = true;
                     }
@@ -237,7 +244,7 @@ namespace Duplicati.Library.Backend.GoogleServices
                     // Retry with exponential backoff
                     if (retry && retries < 5)
                     {
-                        System.Threading.Thread.Sleep(TimeSpan.FromSeconds(Math.Pow(2, retries)));
+                        Thread.Sleep(TimeSpan.FromSeconds(Math.Pow(2, retries)));
                         retries++;
 
                         // Ask server where we left off
@@ -245,6 +252,11 @@ namespace Duplicati.Library.Backend.GoogleServices
                     }
                     else
                         throw;
+                }
+                finally
+                {
+                    // Wait until the end of the request to dispose of the response, as it may be needed for error handling
+                    resp?.Dispose();
                 }
             }
         }
