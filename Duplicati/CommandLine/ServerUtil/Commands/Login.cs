@@ -18,6 +18,7 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
+
 using System.CommandLine;
 using System.CommandLine.NamingConventionBinder;
 
@@ -27,12 +28,12 @@ public static class Login
 {
     public static Command Create() =>
         new Command("login", "Logs in to the server")
-        .WithHandler(CommandHandler.Create<Settings>(async (settings) =>
+        .WithHandler(CommandHandler.Create<Settings, OutputInterceptor>(async (settings, output) =>
             {
-                Console.WriteLine("Logging in to the server");
-                await Connection.Connect(settings, true);
-
-                Console.WriteLine("Logged in, persistent token saved");
+                output.AppendConsoleMessage("Logging in to the server");
+                await Connection.Connect(settings, true, output);
+                output.AppendConsoleMessage("Logged in, persistent token saved");
+                output.SetResult(true);
             })
         );
 }
