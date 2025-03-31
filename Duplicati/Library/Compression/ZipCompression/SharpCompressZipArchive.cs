@@ -80,7 +80,7 @@ public class SharpCompressZipArchive : IZipArchive
     /// <summary>
     /// Flag indicating if we are using Zip64 extensions
     /// </summary>
-    private readonly bool m_usingZip64;
+    private const bool USE_ZIP64 = true;
     /// <summary>
     /// The default compression level to use
     /// </summary>
@@ -108,7 +108,6 @@ public class SharpCompressZipArchive : IZipArchive
         m_stream = stream;
         m_mode = mode;
 
-        m_usingZip64 = options.UseZip64;
         m_defaultCompressionLevel = options.DeflateCompressionLevel;
         m_compressionType = options.CompressionType;
         m_mode = mode;
@@ -120,7 +119,7 @@ public class SharpCompressZipArchive : IZipArchive
             {
                 CompressionType = m_compressionType,
                 DeflateCompressionLevel = m_defaultCompressionLevel,
-                UseZip64 = m_usingZip64
+                UseZip64 = USE_ZIP64
             };
 
             m_writer = WriterFactory.Open(m_stream, ArchiveType.Zip, compression);
@@ -335,7 +334,7 @@ public class SharpCompressZipArchive : IZipArchive
             throw new InvalidOperationException(Constants.CannotWriteWhileReading);
 
         m_flushBufferSize += Constants.CENTRAL_HEADER_ENTRY_SIZE + System.Text.Encoding.UTF8.GetByteCount(file);
-        if (m_usingZip64)
+        if (USE_ZIP64)
             m_flushBufferSize += Constants.CENTRAL_HEADER_ENTRY_SIZE_ZIP64_EXTRA;
 
         return ((ZipWriter)m_writer!).WriteToStream(file, new ZipWriterEntryOptions()

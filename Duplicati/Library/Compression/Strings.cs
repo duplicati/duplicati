@@ -32,6 +32,7 @@ namespace Duplicati.Library.Compression.Strings
         public static string CompressionmethodShort { get { return LC.L(@"Set the ZIP compression method"); } }
         public static string Compressionzip64Long { get { return LC.L(@"The ZIP64 format is required for files larger than 4GiB. Use this option to toggle it."); } }
         public static string Compressionzip64Short { get { return LC.L(@"Toggle ZIP64 support"); } }
+        public static string Compressionzip64Deprecated { get { return LC.L(@"ZIP64 support is now always enabled. This option is deprecated and will be removed in a future version."); } }
         public static string CompressionlibraryLong { get { return LC.L(@"This option changes the compression library used to read and write files. The SharpCompress library has more features and is more resilient where the built-in library is faster. When Auto is chosen, the built-in library will be used unless an option is added that requires SharpCompress."); } }
         public static string CompressionlibraryShort { get { return LC.L(@"Toggles the zip library to use"); } }
         public static string FileNotFoundError(string filename) { return LC.L(@"File not found: {0}", filename); }
