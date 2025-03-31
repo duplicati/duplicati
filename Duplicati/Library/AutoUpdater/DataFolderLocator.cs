@@ -34,6 +34,11 @@ namespace Duplicati.Library.AutoUpdater;
 public static class DataFolderLocator
 {
     /// <summary>
+    /// The log tag for this class
+    /// </summary>
+    private static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(DataFolderLocator));
+
+    /// <summary>
     /// Finds a default storage folder, using the operating system specific locations.
     /// The targetfilename is used to detect locations that are used in previous versions.
     /// If the targetfilename is found in an old location, but not the current, the old location is used.
@@ -52,15 +57,26 @@ public static class DataFolderLocator
         if (SystemIO.IO_OS.DirectoryExists(folder))
         {
             if (!SystemIO.IO_OS.FileExists(System.IO.Path.Combine(folder, Util.InsecurePermissionsMarkerFile)))
-                SystemIO.IO_OS.DirectorySetPermissionUserRWOnly(folder);
+                try { SystemIO.IO_OS.DirectorySetPermissionUserRWOnly(folder); }
+                catch (Exception ex)
+                {
+                    Logging.Log.WriteWarningMessage(LOGTAG, "FailedToSetPermissions", ex, "Failed to set permissions for {0}: {1}", folder, ex.Message);
+                }
         }
         else if (autoCreate)
         {
             // Create the folder
             SystemIO.IO_OS.DirectoryCreate(folder);
 
-            // Make sure the folder is only accessible by the current user
-            SystemIO.IO_OS.DirectorySetPermissionUserRWOnly(folder);
+            try
+            {
+                // Make sure the folder is only accessible by the current user
+                SystemIO.IO_OS.DirectorySetPermissionUserRWOnly(folder);
+            }
+            catch (Exception ex)
+            {
+                Logging.Log.WriteWarningMessage(LOGTAG, "FailedToSetPermissions", ex, "Failed to set permissions for {0}: {1}", folder, ex.Message);
+            }
         }
 
         return folder;

@@ -229,7 +229,8 @@ namespace Duplicati.Library.SQLiteHelper
 
             // Make the file only accessible by the current user, unless opting out
             if (!SystemIO.IO_OS.FileExists(SystemIO.IO_OS.PathCombine(SystemIO.IO_OS.PathGetDirectoryName(path), Util.InsecurePermissionsMarkerFile)))
-                SystemIO.IO_OS.FileSetPermissionUserRWOnly(path);
+                try { SystemIO.IO_OS.FileSetPermissionUserRWOnly(path); }
+                catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, "SQLiteFilePermissionError", ex, "Failed to set permissions on SQLite file '{0}'", path); }
         }
 
         /// <summary>
