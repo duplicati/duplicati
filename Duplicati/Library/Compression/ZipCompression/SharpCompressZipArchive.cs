@@ -119,7 +119,8 @@ public class SharpCompressZipArchive : IZipArchive
             var compression = new ZipWriterOptions(CompressionType.Deflate)
             {
                 CompressionType = m_compressionType,
-                DeflateCompressionLevel = m_defaultCompressionLevel
+                DeflateCompressionLevel = m_defaultCompressionLevel,
+                UseZip64 = m_usingZip64
             };
 
             m_writer = WriterFactory.Open(m_stream, ArchiveType.Zip, compression);
