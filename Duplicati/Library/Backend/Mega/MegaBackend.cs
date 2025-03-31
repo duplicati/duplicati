@@ -79,9 +79,9 @@ namespace Duplicati.Library.Backend.Mega
             if (options.ContainsKey("auth-two-factor-key"))
                 m_twoFactorKey = options["auth-two-factor-key"];
 
-            if (string.IsNullOrEmpty(m_username))
+            if (string.IsNullOrWhiteSpace(auth.Username))
                 throw new UserInformationException(Strings.MegaBackend.NoUsernameError, "MegaNoUsername");
-            if (string.IsNullOrEmpty(m_password))
+            if (string.IsNullOrWhiteSpace(auth.Password))
                 throw new UserInformationException(Strings.MegaBackend.NoPasswordError, "MegaNoPassword");
 
             (m_username, m_password) = auth.GetCredentials();
