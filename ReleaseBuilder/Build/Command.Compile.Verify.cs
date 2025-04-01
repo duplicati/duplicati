@@ -149,6 +149,10 @@ public static partial class Command
         /// <returns>The parsed output</returns>
         public static async Task<RootJson> AnalyzeProject(string slnpath)
         {
+            await ProcessHelper.ExecuteWithOutput([
+                "dotnet", "restore", slnpath
+            ]).ConfigureAwait(false);
+
             var output = await ProcessHelper.ExecuteWithOutput([
                 "dotnet", "list",
                 slnpath, "package",
