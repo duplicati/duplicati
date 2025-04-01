@@ -116,8 +116,8 @@ namespace Duplicati.UnitTest
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
                 TestUtils.AssertResults(c.Backup([DATAFOLDER]));
 
-            // using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
-            //     TestUtils.AssertResults(c.Test(long.MaxValue));
+            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
+                TestUtils.AssertResults(c.Test(long.MaxValue));
 
             // Test we can recrate without errors
             File.Delete(DBFILE);
