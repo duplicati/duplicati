@@ -48,22 +48,26 @@ public static class DataFolderLocator
     /// <param name="targetfilename">The filename to look for</param>
     /// <param name="autoCreate">Whether to create the folder if it does not exist</param>
     /// <returns>The default storage folder</returns>
-    public static string GetDefaultStorageFolder(string targetfilename, bool autoCreate)
+    public static string GetDefaultStorageFolder(string targetfilename, bool autoCreate, bool readOnly = false)
     {
         var folder = DataFolderManager.OVERRIDEN_DATAFOLDER
-            ? DataFolderManager.DATAFOLDER
+            ? DataFolderManager.GetDataFolder(true)
             : GetDefaultStorageFolderInternal(targetfilename, AutoUpdateSettings.AppName);
 
         if (SystemIO.IO_OS.DirectoryExists(folder))
         {
             if (!SystemIO.IO_OS.FileExists(System.IO.Path.Combine(folder, Util.InsecurePermissionsMarkerFile)))
-                try { SystemIO.IO_OS.DirectorySetPermissionUserRWOnly(folder); }
+                try
+                {
+                    if (!readOnly)
+                        SystemIO.IO_OS.DirectorySetPermissionUserRWOnly(folder);
+                }
                 catch (Exception ex)
                 {
                     Logging.Log.WriteWarningMessage(LOGTAG, "FailedToSetPermissions", ex, "Failed to set permissions for {0}: {1}", folder, ex.Message);
                 }
         }
-        else if (autoCreate)
+        else if (autoCreate && !readOnly) // AutoCreate and readonly become incongruent 
         {
             // Create the folder
             SystemIO.IO_OS.DirectoryCreate(folder);

@@ -96,7 +96,7 @@ namespace Duplicati.Library.Main
             if (!string.IsNullOrEmpty(options.Dbpath))
                 return options.Dbpath;
 
-            // Ideally, this should use DataFolderManager.DATAFOLDER, but we cannot due to backwards compatibility
+            // Ideally, this should use DataFolderManager.GetDataFolder(), but we cannot due to backwards compatibility
             var folder = AutoUpdater.DataFolderLocator.GetDefaultStorageFolder(CONFIG_FILE, true);
             // Emit a warning if the database is stored in the Windows folder
             if (Util.IsPathUnderWindowsFolder(folder))
@@ -245,7 +245,7 @@ namespace Duplicati.Library.Main
         /// <returns><c>true</c> if the path is in use, <c>false</c> otherwise</returns>
         public static bool IsDatabasePathInUse(string path)
         {
-            // Ideally, this should use DataFolderManager.DATAFOLDER, but we cannot due to backwards compatibility
+            // Ideally, this should use DataFolderManager.GetDataFolder(), but we cannot due to backwards compatibility
             var file = System.IO.Path.Combine(AutoUpdater.DataFolderLocator.GetDefaultStorageFolder(CONFIG_FILE, false), CONFIG_FILE);
             if (!System.IO.File.Exists(file))
                 return false;

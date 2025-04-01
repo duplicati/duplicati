@@ -73,8 +73,8 @@ public sealed record Settings(
     /// <param name="filename">The filename to use</param>
     /// <returns>The default storage folder</returns>
     private static string GetDefaultStorageFolder(string filename)
-        // Ideally, this should use DataFolderManager.DATAFOLDER, but we cannot due to backwards compatibility
-        => DataFolderLocator.GetDefaultStorageFolder(filename, true);
+        // Ideally, this should use DataFolderManager.GetDataFolder(), but we cannot due to backwards compatibility
+        => DataFolderLocator.GetDefaultStorageFolder(filename, true, true);
 
     /// <summary>
     /// Loads the settings from the settings file
@@ -179,7 +179,7 @@ public sealed record Settings(
 
         File.WriteAllText(SettingsFile, JsonSerializer.Serialize(LoadSettings(SettingsFile, thisKey)
             .Where(x => x.HostUrl != HostUrl)
-            .Append(new PersistedSettings(RefreshToken, HostUrl, DataFolderManager.DATAFOLDER))
+            .Append(new PersistedSettings(RefreshToken, HostUrl, DataFolderManager.GetDataFolder(false))) // Explicit false for clarity
             .Select(x => x with
             {
                 RefreshToken = string.IsNullOrWhiteSpace(x.RefreshToken) || thisKey == null

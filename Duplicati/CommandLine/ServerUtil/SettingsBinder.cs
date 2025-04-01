@@ -45,7 +45,7 @@ public class SettingsBinder : BinderBase<Settings>
     /// <summary>
     /// The server datafolder option.
     /// </summary>
-    public static readonly Option<DirectoryInfo?> serverDatafolderOption = new Option<DirectoryInfo?>($"--{DataFolderManager.SERVER_DATAFOLDER_OPTION}", description: "The server datafolder to use for locating the database and storing configuration", getDefaultValue: () => new DirectoryInfo(DataFolderManager.DATAFOLDER));
+    public static readonly Option<DirectoryInfo?> serverDatafolderOption = new Option<DirectoryInfo?>($"--{DataFolderManager.SERVER_DATAFOLDER_OPTION}", description: "The server datafolder to use for locating the database and storing configuration", getDefaultValue: () => new DirectoryInfo(DataFolderManager.GetDataFolder(true)));
     /// <summary>
     /// The server portable mode option.
     /// </summary>

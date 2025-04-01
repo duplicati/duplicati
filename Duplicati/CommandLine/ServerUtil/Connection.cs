@@ -198,7 +198,7 @@ public class Connection
             var opts = new Dictionary<string, string>();
             if (settings.Key != null)
                 opts["settings-encryption-key"] = settings.Key.Key;
-            if (File.Exists(Path.Combine(DataFolderManager.DATAFOLDER, DataFolderManager.SERVER_DATABASE_FILENAME)))
+            if (File.Exists(Path.Combine(DataFolderManager.GetDataFolder(true), DataFolderManager.SERVER_DATABASE_FILENAME)))
             {
                 string? cfg = null;
                 using (var connection = Server.Program.GetDatabaseConnection(opts, true))
@@ -230,12 +230,12 @@ public class Connection
                     return CreateConnectionWithClient(client, accessToken);
                 }
             }
-            else if (!string.IsNullOrWhiteSpace(DataFolderManager.DATAFOLDER))
+            else if (!string.IsNullOrWhiteSpace(DataFolderManager.GetDataFolder(true)))
             {
                 if (console != null)
-                    console.AppendConsoleMessage($"No database found in {DataFolderManager.DATAFOLDER}");
+                    console.AppendConsoleMessage($"No database found in {DataFolderManager.GetDataFolder(true)}");
                 else
-                    Console.WriteLine($"No database found in {DataFolderManager.DATAFOLDER}");
+                    Console.WriteLine($"No database found in {DataFolderManager.GetDataFolder(true)}");
             }
         }
         catch (Exception ex)
