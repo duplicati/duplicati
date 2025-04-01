@@ -28,7 +28,9 @@ backupApp.directive('advancedOptionsEditor', function() {
                 'retry-delay': 'shorttimespan',
                 'web-timeout': 'shorttimespan',
                 'read-write-timeout': 'shorttimespan',
-                'run-script-timeout': 'shorttimespan'
+                'run-script-timeout': 'shorttimespan',
+                'list-timeout': 'shorttimespan',
+                'short-timeout': 'shorttimespan'
             };
 
             var optionmap = null;
@@ -102,6 +104,8 @@ backupApp.directive('advancedOptionsEditor', function() {
                 else if (item.Type == 'Size')
                     return 'size';
                 else if (item.Type == 'Timespan')
+                    return 'timespan';
+                else if (item.Type == 'DateTime')
                     return 'timespan';
                 else if (item.Type == 'Decimal')
                     return 'decimal';
