@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -32,22 +32,9 @@ namespace Duplicati.Library.Compression.Strings
         public static string CompressionmethodShort { get { return LC.L(@"Set the ZIP compression method"); } }
         public static string Compressionzip64Long { get { return LC.L(@"The ZIP64 format is required for files larger than 4GiB. Use this option to toggle it."); } }
         public static string Compressionzip64Short { get { return LC.L(@"Toggle ZIP64 support"); } }
+        public static string Compressionzip64Deprecated { get { return LC.L(@"ZIP64 support is now always enabled. This option is deprecated and will be removed in a future version."); } }
         public static string CompressionlibraryLong { get { return LC.L(@"This option changes the compression library used to read and write files. The SharpCompress library has more features and is more resilient where the built-in library is faster. When Auto is chosen, the built-in library will be used unless an option is added that requires SharpCompress."); } }
         public static string CompressionlibraryShort { get { return LC.L(@"Toggles the zip library to use"); } }
         public static string FileNotFoundError(string filename) { return LC.L(@"File not found: {0}", filename); }
-    }
-    internal static class SevenZipCompression
-    {
-        public static string Description { get { return LC.L(@"*Experimental*: 7z Archive with LZMA2 support."); } }
-        public static string DisplayName { get { return LC.L(@"Experimental - 7z Archive"); } }
-        public static string NoWriterError { get { return LC.L(@"Archive not opened for writing"); } }
-        public static string NoReaderError { get { return LC.L(@"Archive not opened for reading"); } }
-        public static string FileNotFoundError { get { return LC.L(@"The given file is not part of this archive"); } }
-        public static string ThreadcountLong { get { return LC.L(@"The number of threads used in LZMA 2 compression. Defaults to the number of processor cores."); } }
-        public static string ThreadcountShort { get { return LC.L(@"Number of threads used in compression"); } }
-        public static string CompressionlevelLong { get { return LC.L(@"This option controls the compression level used. A setting of zero gives no compression, and a setting of 9 gives maximum compression."); } }
-        public static string CompressionlevelShort { get { return LC.L(@"Set the 7z compression level"); } }
-        public static string FastalgoLong { get { return LC.L(@"This option controls the compression algorithm used. Enabling this option will cause 7z to use the fast algorithm, which produces slightly less compression."); } }
-        public static string FastalgoShort { get { return LC.L(@"Set the 7z fast algorithm usage"); } }
     }
 }

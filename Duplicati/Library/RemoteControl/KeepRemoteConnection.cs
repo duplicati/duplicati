@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -19,10 +19,12 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
+using System.Diagnostics;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Security.Cryptography;
 using System.Text.Json;
+using Duplicati.Library.AutoUpdater;
 using Duplicati.Library.Logging;
 
 namespace Duplicati.Library.RemoteControl;
@@ -47,14 +49,14 @@ public class KeepRemoteConnection : IDisposable
     private static readonly TimeSpan ReconnectInterval = TimeSpan.FromSeconds(30);
 
     /// <summary>
-    /// The interval between reconnect attempts
-    /// </summary>
-    private static readonly TimeSpan NoResponseTimeout = TimeSpan.FromSeconds(30);
-
-    /// <summary>
     /// The interval between heartbeats
     /// </summary>
-    private static readonly TimeSpan HeartbeatInterval = TimeSpan.FromSeconds(15);
+    private static readonly TimeSpan HeartbeatInterval = TimeSpan.FromSeconds(60);
+
+    /// <summary>
+    /// The time between reconnect attempts if no response is received
+    /// </summary>
+    private static readonly TimeSpan NoResponseTimeout = HeartbeatInterval * 2;
 
     /// <summary>
     /// The minimum time between certificate refreshes
@@ -134,11 +136,19 @@ public class KeepRemoteConnection : IDisposable
     private RSA? _serverPublicKey;
 
     /// <summary>
+    /// The callback to call when connecting
+    /// </summary>
+    private readonly Func<Dictionary<string, string?>, Task<Dictionary<string, string?>>> _onConnect;
+    /// <summary>
     /// The callback to call when rekeying
     /// </summary>
     private readonly Func<ClaimedClientData, Task> _onReKey;
     /// <summary>
-    /// The callback to call when a message is received
+    /// The callback to call when a control message is received
+    /// </summary>
+    private readonly Func<ControlMessage, Task> _onControl;
+    /// <summary>
+    /// The callback to call when a command message is received
     /// </summary>
     private readonly Func<CommandMessage, Task> _onMessage;
 
@@ -168,16 +178,32 @@ public class KeepRemoteConnection : IDisposable
     /// </summary>
     /// <param name="serverUrl">The url to use</param>
     /// <param name="JWT">The JWT token to use</param>
+    /// <param name="certificateUrl">The certificate url to use</param>
     /// <param name="serverKeys">The server keys to use</param>
     /// <param name="cancellationToken">The token to cancel the connection</param>
-    private KeepRemoteConnection(string serverUrl, string JWT, string certificateUrl, IEnumerable<MiniServerCertificate> serverKeys, CancellationToken cancellationToken, Func<ClaimedClientData, Task> onReKey, Func<CommandMessage, Task> onMessage)
+    /// <param name="onConnect">The callback to call when connecting</param>
+    /// <param name="onReKey">The callback to call when rekeying</param>
+    /// <param name="onControl">The callback to call when a control message is received</param>
+    /// <param name="onMessage">The callback to call when a command message is received</param>
+    private KeepRemoteConnection(
+        string serverUrl,
+        string JWT,
+        string certificateUrl,
+        IEnumerable<MiniServerCertificate> serverKeys,
+        CancellationToken cancellationToken,
+        Func<Dictionary<string, string?>, Task<Dictionary<string, string?>>> onConnect,
+        Func<ClaimedClientData, Task> onReKey,
+        Func<ControlMessage, Task> onControl,
+        Func<CommandMessage, Task> onMessage)
     {
         _serverUrl = serverUrl;
         _certificateUrl = certificateUrl;
         _token = JWT;
         _serverKeys = serverKeys;
         _cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        _onConnect = onConnect;
         _onReKey = onReKey;
+        _onControl = onControl;
         _onMessage = onMessage;
 
         _client = new Websocket.Client.WebsocketClient(new Uri(serverUrl));
@@ -257,7 +283,7 @@ public class KeepRemoteConnection : IDisposable
                 return;
 
             _lastMessageReceived = DateTimeOffset.Now;
-            Log.WriteMessage(LogMessageType.Information, LogTag, "WebsocketMessage", "Received message from server: {0}", msg);
+            Log.WriteMessage(LogMessageType.Verbose, LogTag, "WebsocketMessage", "Received message from server: {0}", msg);
 
             try
             {
@@ -300,13 +326,28 @@ public class KeepRemoteConnection : IDisposable
                     }
 
                     _state = ConnectionState.WelcomeReceived;
+
+                    // Prepare basic metadata and allow additional metadata to be added
+                    var metadata = await _onConnect(new Dictionary<string, string?>() {
+                        { "client-version", UpdaterManager.SelfVersion?.Version ?? "0.0.0.0" },
+                        { "client-id", ClientId },
+                        { "client-uptime", (DateTime.Now - Process.GetCurrentProcess().StartTime).ToString() },
+                        { "machine-name", DataFolderManager.MachineName },
+                        { "machine-id", DataFolderManager.MachineID },
+                        { "install-id", DataFolderManager.InstallID },
+                        { "machine-os", UpdaterManager.OperatingSystemName },
+                        { "package-id", UpdaterManager.PackageTypeId },
+                        { "update-channel", UpdaterManager.CurrentChannel.ToString() }
+                    });
+
                     SendEnvelope(
                         welcomeEnvelope.RespondWith(
                             new AuthMessage(
                                 _token,
                                 ClientKey.ExportRSAPublicKeyPem(),
-                                AutoUpdater.UpdaterManager.SelfVersion?.Version ?? "0.0.0",
-                                PROTOCOL_VERSION
+                                UpdaterManager.SelfVersion?.Version ?? "0.0.0.0",
+                                PROTOCOL_VERSION,
+                                metadata
                             ),
                             "auth"
                         ),
@@ -348,6 +389,13 @@ public class KeepRemoteConnection : IDisposable
                         case MessageType.Command:
                             await _onMessage(new CommandMessage(
                                 envelope.GetPayload<CommandRequestMessage>(),
+                                response => SendEnvelope(envelope.RespondWith(response))
+                            ));
+                            break;
+
+                        case MessageType.Control:
+                            await _onControl(new ControlMessage(
+                                envelope.GetPayload<ControlRequestMessage>(),
                                 response => SendEnvelope(envelope.RespondWith(response))
                             ));
                             break;
@@ -403,13 +451,24 @@ public class KeepRemoteConnection : IDisposable
     /// <param name="certificateUrl">The certificate url to use</param>
     /// <param name="serverKeys">The server keys to use</param>
     /// <param name="cancellationToken">The token to cancel the connection</param>
+    /// <param name="onConnect">The callback to call when connecting</param>
     /// <param name="onReKey">The callback to call when rekeying</param>
-    /// <param name="onMessage">The callback to call when a message is received</param>
+    /// <param name="onControl">The callback to call when a control message is received</param>
+    /// <param name="onMessage">The callback to call when a command message is received</param>
     /// <returns></returns>
-    public static Task Start(string serverUrl, string JWT, string certificateUrl, IEnumerable<MiniServerCertificate> serverKeys, CancellationToken cancellationToken, Func<ClaimedClientData, Task> onReKey, Func<CommandMessage, Task> onMessage)
+    public static Task Start(
+        string serverUrl,
+        string JWT,
+        string certificateUrl,
+        IEnumerable<MiniServerCertificate> serverKeys,
+        CancellationToken cancellationToken,
+        Func<Dictionary<string, string?>, Task<Dictionary<string, string?>>> onConnect,
+        Func<ClaimedClientData, Task> onReKey,
+        Func<ControlMessage, Task> onControl,
+        Func<CommandMessage, Task> onMessage)
         => Task.Run(async () =>
         {
-            using var connection = new KeepRemoteConnection(serverUrl, JWT, certificateUrl, serverKeys, cancellationToken, onReKey, onMessage);
+            using var connection = new KeepRemoteConnection(serverUrl, JWT, certificateUrl, serverKeys, cancellationToken, onConnect, onReKey, onControl, onMessage);
             await connection._runnerTask;
         });
 
@@ -477,14 +536,24 @@ public class KeepRemoteConnection : IDisposable
     /// </summary>
     /// <param name="serverUrl">The url to use</param>
     /// <param name="JWT">The JWT token to use</param>
-    /// 
+    /// <param name="certificateUrl">The certificate url to use</param>
     /// <param name="serverKeys">The server keys to use</param>
+    /// <param name="onConnect">The callback to call when connecting</param>
     /// <param name="onReKey">The callback to call when rekeying</param>
+    /// <param name="onControl">The callback to call when a control message is received</param>
     /// <param name="onMessage">The callback to call when a message is received</param>
-    /// <param name="cancellationToken">The token to cancel the connection</param>
     /// <returns>The connection object</returns>
-    public static KeepRemoteConnection CreateRemoteListener(string serverUrl, string JWT, string certificateUrl, IEnumerable<MiniServerCertificate> serverKeys, CancellationToken cancellationToken, Func<ClaimedClientData, Task> onReKey, Func<CommandMessage, Task> onMessage)
-        => new KeepRemoteConnection(serverUrl, JWT, certificateUrl, serverKeys, cancellationToken, onReKey, onMessage);
+    public static KeepRemoteConnection CreateRemoteListener(
+        string serverUrl,
+        string JWT,
+        string certificateUrl,
+        IEnumerable<MiniServerCertificate> serverKeys,
+        CancellationToken cancellationToken,
+        Func<Dictionary<string, string?>, Task<Dictionary<string, string?>>> onConnect,
+        Func<ClaimedClientData, Task> onReKey,
+        Func<ControlMessage, Task> onControl,
+        Func<CommandMessage, Task> onMessage)
+        => new KeepRemoteConnection(serverUrl, JWT, certificateUrl, serverKeys, cancellationToken, onConnect, onReKey, onControl, onMessage);
 
     /// <summary>
     /// Requests a certificate refresh
@@ -586,5 +655,39 @@ public class KeepRemoteConnection : IDisposable
                 Respond(new CommandResponseMessage(500, ex.Message, null));
             }
         }
+    }
+
+    /// <summary>
+    /// A wrapper for allowing external code to handle a control message
+    /// </summary>
+    public sealed class ControlMessage
+    {
+        /// <summary>
+        /// The callback method that will receive the response
+        /// </summary>
+        private readonly Func<ControlResponseMessage, bool> _respondCommand;
+        /// <summary>
+        /// The command request message
+        /// </summary>
+        public ControlRequestMessage ControlRequestMessage { get; }
+
+        /// <summary>
+        /// Creates a new command message
+        /// </summary>
+        /// <param name="controlRequestMessage">The command request message</param>
+        /// <param name="respondCommand">The callback method that will receive the response</param>
+        public ControlMessage(ControlRequestMessage controlRequestMessage, Func<ControlResponseMessage, bool> respondCommand)
+        {
+            ControlRequestMessage = controlRequestMessage;
+            _respondCommand = respondCommand;
+        }
+
+        /// <summary>
+        /// Responds to the command message
+        /// </summary>
+        /// <param name="response">The response to send</param>
+        /// <returns>True if the response was sent</returns>
+        public bool Respond(ControlResponseMessage response)
+            => _respondCommand(response);
     }
 }

@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -18,13 +18,9 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
+
 using Duplicati.Library.Backend.MicrosoftGraph;
 using Duplicati.Library.Interface;
-using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Backend
 {
@@ -34,93 +30,76 @@ namespace Duplicati.Library.Backend
         private const string GROUP_ID_OPTION = "group-id";
         private const string PROTOCOL_KEY = "msgroup";
 
-        private readonly string drivePath;
+        private readonly Dictionary<string, string?> options;
+        private string? drivePath;
 
-        public MicrosoftGroup() { } // Constructor needed for dynamic loading to find it
-
-        public MicrosoftGroup(string url, Dictionary<string, string> options)
-            : base(url, MicrosoftGroup.PROTOCOL_KEY, options)
+        public MicrosoftGroup()
         {
-            string groupId = null;
-            string groupEmail;
-            if (options.TryGetValue(GROUP_EMAIL_OPTION, out groupEmail))
-            {
-                // TODO: Should not make network requests in constructor
-                groupId = this.GetGroupIdFromEmailAsync(groupEmail, CancellationToken.None).Await();
-            }
+            // Constructor needed for dynamic loading to find it
+            options = null!;
+        }
 
-            string groupIdOption;
-            if (options.TryGetValue(GROUP_ID_OPTION, out groupIdOption))
+        public MicrosoftGroup(string url, Dictionary<string, string?> options)
+            : base(url, PROTOCOL_KEY, options)
+        {
+            this.options = options;
+        }
+
+        public override string ProtocolKey => PROTOCOL_KEY;
+
+        public override string DisplayName => Strings.MicrosoftGroup.DisplayName;
+
+        protected override async Task<string> GetDrivePath(CancellationToken cancelToken)
+        {
+            if (string.IsNullOrEmpty(drivePath))
             {
-                if (!string.IsNullOrEmpty(groupId) && !string.Equals(groupId, groupIdOption))
+                string? groupId = null;
+                var groupEmail = options.GetValueOrDefault(GROUP_EMAIL_OPTION);
+                if (!string.IsNullOrWhiteSpace(groupEmail))
+                    groupId = await this.GetGroupIdFromEmailAsync(groupEmail, cancelToken).ConfigureAwait(false);
+
+                var groupIdOption = options.GetValueOrDefault(GROUP_ID_OPTION);
+                if (!string.IsNullOrWhiteSpace(groupIdOption))
                 {
-                    throw new UserInformationException(Strings.MicrosoftGroup.ConflictingGroupId(groupIdOption, groupId), "MicrosoftGroupConflictingGroupId");
+                    if (!string.IsNullOrEmpty(groupId) && !string.Equals(groupId, groupIdOption))
+                        throw new UserInformationException(Strings.MicrosoftGroup.ConflictingGroupId(groupIdOption, groupId), "MicrosoftGroupConflictingGroupId");
+
+                    groupId = groupIdOption;
                 }
 
-                groupId = groupIdOption;
+                if (string.IsNullOrWhiteSpace(groupId))
+                    throw new UserInformationException(Strings.MicrosoftGroup.MissingGroupIdAndEmailAddress, "MicrosoftGroupMissingGroupIdAndEmailAddress");
+
+                drivePath = string.Format("/groups/{0}/drive", groupId);
             }
 
-            if (string.IsNullOrEmpty(groupId))
-            {
-                throw new UserInformationException(Strings.MicrosoftGroup.MissingGroupIdAndEmailAddress, "MicrosoftGroupMissingGroupIdAndEmailAddress");
-            }
-
-            this.drivePath = string.Format("/groups/{0}/drive", groupId);
+            return drivePath;
         }
 
-        public override string ProtocolKey
-        {
-            get { return MicrosoftGroup.PROTOCOL_KEY; }
-        }
+        protected override DescriptionTemplateDelegate DescriptionTemplate => Strings.MicrosoftGroup.Description;
 
-        public override string DisplayName
-        {
-            get { return Strings.MicrosoftGroup.DisplayName; }
-        }
-
-        protected override string DrivePath
-        {
-            get { return this.drivePath; }
-        }
-
-        protected override DescriptionTemplateDelegate DescriptionTemplate
-        {
-            get
-            {
-                return Strings.MicrosoftGroup.Description;
-            }
-        }
-
-        protected override IList<ICommandLineArgument> AdditionalSupportedCommands
-        {
-            get
-            {
-                return
-                [
+        protected override IList<ICommandLineArgument> AdditionalSupportedCommands => [
                     new CommandLineArgument(GROUP_ID_OPTION, CommandLineArgument.ArgumentType.String, Strings.MicrosoftGroup.GroupIdShort, Strings.MicrosoftGroup.GroupIdLong),
                     new CommandLineArgument(GROUP_EMAIL_OPTION, CommandLineArgument.ArgumentType.String, Strings.MicrosoftGroup.GroupEmailShort, Strings.MicrosoftGroup.GroupEmailLong),
                 ];
-            }
-        }
 
         private async Task<string> GetGroupIdFromEmailAsync(string email, CancellationToken cancelToken)
         {
             // We can get all groups that have the given email as one of their addresses with:
             // https://graph.microsoft.com/v1.0/groups?$filter=mail eq '{email}' or proxyAddresses/any(x:x eq 'smtp:{email}')
             string request = string.Format("{0}/groups?$filter=mail eq '{1}' or proxyAddresses/any(x:x eq 'smtp:{1}')", this.ApiVersion, email);
-            var groups = await this.GetAsync<GraphCollection<Group>>(request, cancelToken).ConfigureAwait(false);
-            if (groups.Value.Length == 0)
-            {
+            var groups = await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, ct => GetAsync<GraphCollection<Group>>(request, ct)).ConfigureAwait(false);
+            if (groups.Value == null || groups.Value.Length == 0)
                 throw new UserInformationException(Strings.MicrosoftGroup.NoGroupsWithEmail(email), "MicrosoftGroupNoGroupsWithEmail");
-            }
-            else if (groups.Value.Length > 1)
-            {
+
+            if (groups.Value.Length > 1)
                 throw new UserInformationException(Strings.MicrosoftGroup.MultipleGroupsWithEmail(email), "MicrosoftGroupMultipleGroupsWithEmail");
-            }
-            else
-            {
-                return groups.Value.Single().Id;
-            }
+
+            var id = groups.Value.Single().Id;
+            if (string.IsNullOrEmpty(id))
+                throw new UserInformationException(Strings.MicrosoftGroup.NoGroupsWithEmail(email), "MicrosoftGroupNoGroupsWithEmail");
+
+            return id;
         }
     }
 }

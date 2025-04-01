@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -24,7 +24,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.Versioning;
-using Duplicati.Library.Common;
 using Duplicati.Library.Common.IO;
 
 namespace Duplicati.Library.Snapshots
@@ -37,24 +36,42 @@ namespace Duplicati.Library.Snapshots
         /// <summary>
         /// Loads a snapshot implementation for the current OS
         /// </summary>
-        /// <param name="folders">The list of folders to create snapshots of</param>
+        /// <param name="paths">The list of paths to create snapshots of</param>
         /// <param name="options">A set of commandline options</param>
+        /// <param name="followSymlinks">Whether to follow symlinks</param>
         /// <returns>The ISnapshotService implementation</returns>
-        public static ISnapshotService CreateSnapshot(IEnumerable<string> folders, Dictionary<string, string> options)
+        public static ISnapshotService CreateSnapshot(IEnumerable<string> paths, Dictionary<string, string> options, bool followSymlinks)
         {
-            if (OperatingSystem.IsMacOS() || OperatingSystem.IsLinux())
+            if (OperatingSystem.IsLinux())
             {
-                return CreateLinuxSnapshot(folders);
+                return CreateLinuxSnapshot(paths, followSymlinks);
             }
             else if (OperatingSystem.IsWindows())
             {
-                return CreateWindowsSnapshot(folders, options);
+                return CreateWindowsSnapshot(paths, options, followSymlinks);
             }
             else
             {
                 throw new NotSupportedException("Unsupported Operating System");
             }
-            
+        }
+
+        /// <summary>
+        /// Creates a snapshot implementation that does not use snapshots (i.e., regular file access)
+        /// </summary>
+        /// <param name="paths">The list of paths to create snapshots of</param>
+        /// <param name="ignoreAdvisoryLocking">Flag to ignore advisory locking</param>
+        /// <param name="followSymlinks">Whether to follow symlinks</param>
+        /// <returns>The ISnapshotService implementation</returns>
+        public static ISnapshotService CreateNoSnapshot(IEnumerable<string> paths, bool ignoreAdvisoryLocking, bool followSymlinks)
+        {
+            if (OperatingSystem.IsMacOS() || OperatingSystem.IsLinux())
+                return new NoSnapshotLinux(paths, ignoreAdvisoryLocking, followSymlinks);
+            else if (OperatingSystem.IsWindows())
+                return new NoSnapshotWindows(paths, followSymlinks);
+            else
+                throw new NotSupportedException("Unsupported Operating System");
+
         }
 
         // The two loader methods below guard against the type system attempting to load types
@@ -65,13 +82,14 @@ namespace Duplicati.Library.Snapshots
         /// Loads a snapshot implementation for Linux
         /// </summary>
         /// <param name="folders">The list of folders to create snapshots of</param>
+        /// <param name="followSymlinks">Whether to follow symlinks</param>
         /// <returns>The ISnapshotService implementation</returns>
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
         [SupportedOSPlatform("linux")]
         [SupportedOSPlatform("macOS")]
-        private static ISnapshotService CreateLinuxSnapshot(IEnumerable<string> folders)
+        private static ISnapshotService CreateLinuxSnapshot(IEnumerable<string> folders, bool followSymlinks)
         {
-            return new LinuxSnapshot(folders);
+            return new LinuxSnapshot(folders, followSymlinks);
         }
 
         /// <summary>
@@ -79,23 +97,13 @@ namespace Duplicati.Library.Snapshots
         /// </summary>
         /// <param name="folders">The list of folders to create snapshots of</param>
         /// <param name="options">A set of commandline options</param>
+        /// <param name="followSymlinks">Whether to follow symlinks</param>
         /// <returns>The ISnapshotService implementation</returns>
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
         [SupportedOSPlatform("windows")]
-        private static ISnapshotService CreateWindowsSnapshot(IEnumerable<string> folders, Dictionary<string, string> options)
+        private static ISnapshotService CreateWindowsSnapshot(IEnumerable<string> folders, Dictionary<string, string> options, bool followSymlinks)
         {
-            return new WindowsSnapshot(folders, options);
-        }
-
-        /// <summary>
-        /// Extension method for ISnapshotService which determines whether the given path is a symlink.
-        /// </summary>
-        /// <param name="snapshot">ISnapshotService implementation</param>
-        /// <param name="path">File or folder path</param>
-        /// <returns>Whether the path is a symlink</returns>
-        public static bool IsSymlink(this ISnapshotService snapshot, string path)
-        {
-            return snapshot.IsSymlink(path, snapshot.GetAttributes(path));
+            return new WindowsSnapshot(folders, options, followSymlinks);
         }
 
         /// <summary>

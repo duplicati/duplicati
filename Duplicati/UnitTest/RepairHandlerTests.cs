@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -24,6 +24,7 @@ using System.Data;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
+using System.Threading;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main;
 using Duplicati.Library.Main.Database;
@@ -41,6 +42,11 @@ namespace Duplicati.UnitTest
         public void SetUp()
         {
             File.WriteAllBytes(Path.Combine(this.DATAFOLDER, "file"), new byte[] { 0 });
+        }
+
+        public void ModifyFile()
+        {
+            File.WriteAllBytes(Path.Combine(this.DATAFOLDER, "file"), new byte[] { 1 });
         }
 
         [Test]
@@ -382,6 +388,228 @@ namespace Duplicati.UnitTest
                 Assert.AreEqual(0, backupResults.Errors.Count());
                 // First will recreate (4 files + 1 warning)
                 Assert.AreEqual(5, backupResults.Warnings.Count());
+            }
+        }
+
+        [Test]
+        [Category("RepairHandler")]
+        [TestCase("true")]
+        [TestCase("false")]
+        public void RepairExtraIndexFiles(string noEncryption)
+        {
+            // Extra index files will be added to the database and should have a correct link established
+            Dictionary<string, string> options = new Dictionary<string, string>(this.TestOptions) { ["no-encryption"] = noEncryption };
+            using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
+            {
+                IBackupResults backupResults = c.Backup(new[] { this.DATAFOLDER });
+                TestUtils.AssertResults(backupResults);
+            }
+
+            string[] dindexFiles = Directory.EnumerateFiles(this.TARGETFOLDER, "*dindex*").ToArray();
+            Assert.Greater(dindexFiles.Length, 0);
+            string origFile = dindexFiles.First();
+            // Duplicate index file
+            string dupFile = Path.Combine(TARGETFOLDER, Path.GetFileName(origFile).Replace(".dindex", "1.dindex"));
+            File.Copy(origFile, dupFile);
+
+            using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
+            {
+                IRepairResults repairResults = c.Repair();
+                TestUtils.AssertResults(repairResults);
+            }
+
+            // Check database block link
+            using (LocalDatabase db = new LocalDatabase(DBFILE, "Test", true))
+            {
+                long indexVolumeId = db.GetRemoteVolumeID(Path.GetFileName(origFile));
+                long duplicateVolumeId = db.GetRemoteVolumeID(Path.GetFileName(dupFile));
+                Assert.AreNotEqual(-1, indexVolumeId);
+                Assert.AreNotEqual(-1, duplicateVolumeId);
+
+                using (var cmd = db.Connection.CreateCommand())
+                {
+                    string sql = @"SELECT ""BlockVolumeID"" FROM ""IndexBlockLink"" WHERE ""IndexVolumeID"" = ?";
+                    long linkedIndexId = cmd.ExecuteScalarInt64(sql, -1, indexVolumeId);
+                    long linkedDuplicateId = cmd.ExecuteScalarInt64(sql, -1, duplicateVolumeId);
+                    Assert.AreEqual(linkedIndexId, linkedDuplicateId);
+                }
+            }
+        }
+
+        [Test]
+        [Category("RepairHandler")]
+        public void RepairMissingDlistFile()
+        {
+            // Make two backups
+            var options = this.TestOptions;
+            using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
+                TestUtils.AssertResults(c.Backup(new[] { this.DATAFOLDER }));
+
+            ModifyFile();
+            using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
+                TestUtils.AssertResults(c.Backup(new[] { this.DATAFOLDER }));
+
+            // Find and delete a dlist file
+            var dlistFile = Directory.EnumerateFiles(this.TARGETFOLDER, "*.dlist.*").First();
+            File.Delete(dlistFile);
+
+            using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
+            {
+                IRepairResults repairResults = c.Repair();
+                TestUtils.AssertResults(repairResults);
+                Assert.AreEqual(2, Directory.EnumerateFiles(this.TARGETFOLDER, "*.dlist.*").Count());
+            }
+        }
+
+        [Test]
+        [Category("RepairHandler")]
+        [TestCase("true")]
+        [TestCase("false")]
+        public void RepairMissingDlistVolume(bool deleteRemoteFile)
+        {
+            // Make two backups
+            var options = this.TestOptions;
+            using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
+                TestUtils.AssertResults(c.Backup(new[] { this.DATAFOLDER }));
+
+            ModifyFile();
+            using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
+                TestUtils.AssertResults(c.Backup(new[] { this.DATAFOLDER }));
+
+            // Find a dlist file
+            var dlistFile = Directory.EnumerateFiles(this.TARGETFOLDER, "*.dlist.*").First();
+            if (deleteRemoteFile)
+                File.Delete(dlistFile);
+            using (var con = SQLiteLoader.LoadConnection(options["dbpath"]))
+            using (var cmd = con.CreateCommand())
+                Assert.AreEqual(1, cmd.ExecuteNonQuery("DELETE FROM RemoteVolume WHERE Name = ?", Path.GetFileName(dlistFile)));
+
+            // Should catch this in validation
+            using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
+                Assert.Throws<DatabaseInconsistencyException>(() => c.Backup(new[] { this.DATAFOLDER }));
+
+            using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
+            {
+                IRepairResults repairResults = c.Repair();
+                TestUtils.AssertResults(repairResults);
+                Assert.AreEqual(2, Directory.EnumerateFiles(this.TARGETFOLDER, "*.dlist.*").Count());
+                Assert.AreEqual(2, c.List().Filesets.Count());
+            }
+
+            // Check that the entry was recreated
+            using (var con = SQLiteLoader.LoadConnection(options["dbpath"]))
+            using (var cmd = con.CreateCommand())
+                Assert.AreEqual(2, cmd.ExecuteScalarInt64("SELECT COUNT(*) FROM RemoteVolume WHERE Name LIKE '%.dlist.%' AND State != ?", -1, RemoteVolumeState.Deleted.ToString()));
+
+            // Delete the database and check that the result is correct
+            File.Delete(options["dbpath"]);
+
+            using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
+            {
+                IRepairResults repairResults = c.Repair();
+                TestUtils.AssertResults(repairResults);
+                Assert.AreEqual(2, c.List().Filesets.Count());
+
+                var r = c.Test(long.MaxValue);
+                Assert.AreEqual(0, r.Errors.Count());
+                Assert.AreEqual(0, r.Warnings.Count());
+                Assert.IsFalse(r.Verifications.Any(p => p.Value.Any()));
+            }
+        }
+
+        [Test]
+        [Category("RepairHandler")]
+        public void RepairMissingFilesetVolume()
+        {
+            // Make two backups
+            var options = this.TestOptions;
+            using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
+                TestUtils.AssertResults(c.Backup(new[] { this.DATAFOLDER }));
+
+            // Make room for a new backup
+            Thread.Sleep(2000);
+
+            ModifyFile();
+            using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
+                TestUtils.AssertResults(c.Backup(new[] { this.DATAFOLDER }));
+
+            // Remove a fileset
+            using (var con = SQLiteLoader.LoadConnection(options["dbpath"]))
+            using (var cmd = con.CreateCommand())
+            {
+                var filesetId = cmd.ExecuteScalarInt64("SELECT Id FROM Fileset ORDER BY Id DESC LIMIT 1");
+                Assert.AreEqual(1, cmd.ExecuteNonQuery("DELETE FROM Fileset WHERE Id = ?", filesetId));
+                cmd.ExecuteNonQuery("DELETE FROM FilesetEntry WHERE FilesetId = ?", filesetId);
+            }
+
+            // Should catch this in validation
+            using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
+                Assert.Throws<DatabaseInconsistencyException>(() => c.Backup(new[] { this.DATAFOLDER }));
+
+            // Since we have removed the entry that is being checked here, we need to disable the check
+            var repairOptions = new Dictionary<string, string>(options) { ["repair-ignore-outdated-database"] = "true" };
+            using (Controller c = new Controller("file://" + this.TARGETFOLDER, repairOptions, null))
+            {
+                IRepairResults repairResults = c.Repair();
+                Assert.AreEqual(0, repairResults.Errors.Count());
+                Assert.AreEqual(0, repairResults.Warnings.Where(x => x.IndexOf("RemoteFilesNewerThanLocalDatabase", StringComparison.OrdinalIgnoreCase) < 0).Count());
+                Assert.AreEqual(2, Directory.EnumerateFiles(this.TARGETFOLDER, "*.dlist.*").Count());
+                Assert.AreEqual(2, c.List().Filesets.Count());
+            }
+
+            // Check that entry was recreated
+            using (var con = SQLiteLoader.LoadConnection(options["dbpath"]))
+            using (var cmd = con.CreateCommand())
+                Assert.AreEqual(2, cmd.ExecuteScalarInt64("SELECT COUNT(*) FROM Fileset"));
+        }
+
+        [Test]
+        [Category("RepairHandler")]
+        public void ManufactureMissingFiles()
+        {
+            // Make two backups
+            var options = this.TestOptions;
+            using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
+                TestUtils.AssertResults(c.Backup(new[] { this.DATAFOLDER }));
+
+            // Make room for a new backup
+            Thread.Sleep(2000);
+
+            ModifyFile();
+            using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
+                TestUtils.AssertResults(c.Backup(new[] { this.DATAFOLDER }));
+
+            // Remove a fileset
+            long filesetEntries;
+            long fileLookupEntries;
+            using (var con = SQLiteLoader.LoadConnection(options["dbpath"]))
+            using (var cmd = con.CreateCommand())
+            {
+                filesetEntries = cmd.ExecuteScalarInt64("SELECT COUNT(*) FROM FilesetEntry");
+                fileLookupEntries = cmd.ExecuteScalarInt64("SELECT COUNT(*) FROM FileLookup");
+                var fileId = cmd.ExecuteScalarInt64("SELECT FileId FROM FilesetEntry INNER JOIN FileLookup ON FilesetEntry.FileID = FileLookup.Id WHERE FileLookup.BlocksetID != -100 ORDER BY FilesetId DESC LIMIT 1");
+                Assert.AreEqual(1, cmd.ExecuteNonQuery("DELETE FROM FileLookup WHERE Id = ?", fileId));
+            }
+
+            // Should catch this in validation
+            using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
+                Assert.Throws<DatabaseInconsistencyException>(() => c.Backup(new[] { this.DATAFOLDER }));
+
+            using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
+            {
+                var repairResults = c.Repair();
+                Assert.AreEqual(0, repairResults.Errors.Count());
+                Assert.AreEqual(0, repairResults.Warnings.Where(x => x.IndexOf("RemoteFilesNewerThanLocalDatabase", StringComparison.OrdinalIgnoreCase) < 0).Count());
+                Assert.AreEqual(2, Directory.EnumerateFiles(this.TARGETFOLDER, "*.dlist.*").Count());
+                Assert.AreEqual(2, c.List().Filesets.Count());
+            }
+
+            // Check that entry was recreated
+            using (var con = SQLiteLoader.LoadConnection(options["dbpath"]))
+            using (var cmd = con.CreateCommand())
+            {
+                Assert.AreEqual(filesetEntries, cmd.ExecuteScalarInt64("SELECT COUNT(*) FROM FilesetEntry"));
+                Assert.AreEqual(fileLookupEntries, cmd.ExecuteScalarInt64("SELECT COUNT(*) FROM FileLookup"));
             }
         }
     }

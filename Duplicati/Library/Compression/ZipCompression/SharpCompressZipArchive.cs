@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -77,9 +77,22 @@ public class SharpCompressZipArchive : IZipArchive
     /// </summary>
     private long m_flushBufferSize = 0;
 
-    private readonly bool m_usingZip64;
+    /// <summary>
+    /// Flag indicating if we are using Zip64 extensions
+    /// </summary>
+    private const bool USE_ZIP64 = true;
+    /// <summary>
+    /// The default compression level to use
+    /// </summary>
     private readonly CompressionLevel m_defaultCompressionLevel;
+    /// <summary>
+    /// The compression algorithm
+    /// </summary>
     private readonly CompressionType m_compressionType;
+    /// <summary>
+    /// Flag indicating if we are in unittest mode
+    /// </summary>
+    private readonly bool m_unittestMode;
 
     /// <summary>
     /// Constructs a new Zip instance.
@@ -95,17 +108,18 @@ public class SharpCompressZipArchive : IZipArchive
         m_stream = stream;
         m_mode = mode;
 
-        m_usingZip64 = options.UseZip64;
         m_defaultCompressionLevel = options.DeflateCompressionLevel;
         m_compressionType = options.CompressionType;
         m_mode = mode;
+        m_unittestMode = options.UnittestMode;
 
         if (mode == ArchiveMode.Write)
         {
             var compression = new ZipWriterOptions(CompressionType.Deflate)
             {
                 CompressionType = m_compressionType,
-                DeflateCompressionLevel = m_defaultCompressionLevel
+                DeflateCompressionLevel = m_defaultCompressionLevel,
+                UseZip64 = USE_ZIP64
             };
 
             m_writer = WriterFactory.Open(m_stream, ArchiveType.Zip, compression);
@@ -232,7 +246,18 @@ public class SharpCompressZipArchive : IZipArchive
             {
                 var d = new Dictionary<string, IEntry>(Duplicati.Library.Utility.Utility.ClientFilenameStringComparer);
                 foreach (var en in Archive.Entries)
+                {
+                    if (d.ContainsKey(en.Key))
+                        Logging.Log.WriteMessage(
+                            // Warning in unittest mode to trip tests, verbose otherwise
+                            m_unittestMode ? Logging.LogMessageType.Warning : Logging.LogMessageType.Verbose,
+                            LOGTAG,
+                            "DuplicateArchiveEntry",
+                            null,
+                            $"Found duplicate entry in archive: {en.Key}");
+
                     d[en.Key] = en;
+                }
                 m_entryDict = d;
             }
             catch (Exception ex)
@@ -309,7 +334,7 @@ public class SharpCompressZipArchive : IZipArchive
             throw new InvalidOperationException(Constants.CannotWriteWhileReading);
 
         m_flushBufferSize += Constants.CENTRAL_HEADER_ENTRY_SIZE + System.Text.Encoding.UTF8.GetByteCount(file);
-        if (m_usingZip64)
+        if (USE_ZIP64)
             m_flushBufferSize += Constants.CENTRAL_HEADER_ENTRY_SIZE_ZIP64_EXTRA;
 
         return ((ZipWriter)m_writer!).WriteToStream(file, new ZipWriterEntryOptions()

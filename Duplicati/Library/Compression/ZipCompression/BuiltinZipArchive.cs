@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -35,6 +35,10 @@ namespace Duplicati.Library.Compression.ZipCompression;
 /// </summary>
 public class BuiltinZipArchive : IZipArchive
 {
+    /// <summary>
+    /// The log tag
+    /// </summary>
+    private static readonly string LOGTAG = Library.Logging.Log.LogTagFromType<BuiltinZipArchive>();
     /// <summary>
     /// The wrapped zip archive
     /// </summary>
@@ -83,7 +87,7 @@ public class BuiltinZipArchive : IZipArchive
         m_archive = new ZipArchive(
             stream,
             mode == ArchiveMode.Read ? ZipArchiveMode.Read : ZipArchiveMode.Create,
-            true // Mimic SharpCompress behavior, don't dispose base stream
+            leaveOpen: true // Mimic SharpCompress behavior, don't dispose base stream
         );
 
         // Built-in ZipArchive has fewer compression levels
@@ -108,6 +112,15 @@ public class BuiltinZipArchive : IZipArchive
         {
             foreach (var entry in m_archive.Entries)
             {
+                if (m_entries.ContainsKey(entry.FullName))
+                    Logging.Log.WriteMessage(
+                        // Warning in unittest mode to trip tests, verbose otherwise
+                        options.UnittestMode ? Logging.LogMessageType.Warning : Logging.LogMessageType.Verbose,
+                        LOGTAG,
+                        "DuplicateArchiveEntry",
+                        null,
+                        $"Found duplicate entry in archive: {entry.FullName}");
+
                 m_entries[entry.FullName] = entry;
                 m_pathMappings[entry.FullName.Replace('\\', '/')] = entry.FullName;
             }

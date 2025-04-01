@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -23,9 +23,6 @@ namespace Duplicati.Library.Backend.Strings
 {
     internal static class MicrosoftGraph
     {
-        public static string AuthIdLong(string url) { return LC.L(@"The authorization token retrieved from {0}", url); }
-        public static string AuthIdShort { get { return LC.L(@"The authorization code"); } }
-        public static string MissingAuthId(string url) { return LC.L(@"No Auth-ID was provided - you can get one from {0}", url); }
         public static string FragmentSizeLong { get { return LC.L(@"Size of individual fragments which are uploaded separately for large files. It is recommended to be between 5-10 MiB (though a smaller value may work better on a slower or less reliable connection), and to be a multiple of 320 KiB."); } }
         public static string FragmentSizeShort { get { return LC.L(@"Fragment size for large uploads"); } }
         public static string FragmentRetryCountLong { get { return LC.L(@"Number of retry attempts made for each fragment before failing the overall file upload."); } }
@@ -34,12 +31,13 @@ namespace Duplicati.Library.Backend.Strings
         public static string FragmentRetryDelayShort { get { return LC.L(@"Millisecond delay between fragment errors"); } }
         public static string UseHttpClientLong { get { return LC.L(@"Use this option to set HttpClient class to perform HTTP requests."); } }
         public static string UseHttpClientShort { get { return LC.L(@"Whether the HttpClient class should be used"); } }
+        public static string UseHttpClientDeprecated { get { return LC.L(@"The option --use-http-client is deprecated and has no effect."); } }
     }
 
-    internal static class OneDriveV2
+    internal static class OneDrive
     {
         public static string Description(string mssadescription, string mssalink, string msopdescription, string msoplink) { return LC.L(@"Store files in Microsoft OneDrive or Microsoft OneDrive for Business via the Microsoft Graph API. Usage of this backend requires that you agree to the terms in {0} ({1}) and {2} ({3}).", mssadescription, mssalink, msopdescription, msoplink); }
-        public static string DisplayName { get { return LC.L(@"Microsoft OneDrive v2"); } }
+        public static string DisplayName { get { return LC.L(@"Microsoft OneDrive"); } }
         public static string DriveIdLong(string defaultDrive) { return LC.L(@"ID of the drive to store data in. If no drive is specified, the default OneDrive or OneDrive for Business drive will be used via '{0}'.", defaultDrive); }
         public static string DriveIdShort { get { return LC.L(@"Optional ID of the drive"); } }
     }
@@ -51,7 +49,7 @@ namespace Duplicati.Library.Backend.Strings
         public static string SiteIdLong { get { return LC.L(@"ID of the site to store data in."); } }
         public static string SiteIdShort { get { return LC.L(@"ID of the site"); } }
         public static string MissingSiteId { get { return LC.L(@"No site ID was provided"); } }
-        public static string ConflictingSiteId(string given, string found) { return LC.L(@"Conflicting site IDs used: given {0} but found {1}", given, found); }
+        public static string MissingDriveInfo { get { return LC.L(@"No drive information was returned"); } }
     }
 
     internal static class MicrosoftGroup

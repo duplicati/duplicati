@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -22,11 +22,11 @@
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Localization.Short;
-using System;
-using System.Collections.Generic;
+using Duplicati.Library.Utility;
+using Duplicati.Library.Utility.Options;
 using System.Net;
+using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
-using System.Threading;
 using System.Threading.Tasks;
 namespace Duplicati.Library.Backend
 {
@@ -34,7 +34,7 @@ namespace Duplicati.Library.Backend
     // This class is instantiated dynamically in the BackendLoader.
     public class Jottacloud : IBackend, IStreamingBackend
     {
-        private const string AUTHID_OPTION = "authid";
+        private static readonly string TOKEN_URL = OAuthHelper.OAUTH_LOGIN_URL("jottacloud");
         private const string JFS_ROOT = "https://jfs.jottacloud.com/jfs";
         private const string JFS_ROOT_UPLOAD = "https://up.jottacloud.com/jfs"; // Separate host for uploading files
         private const string JFS_BUILTIN_DEVICE = "Jotta"; // The built-in device used for the built-in Sync and Archive mount points.
@@ -59,6 +59,7 @@ namespace Duplicati.Library.Backend
         private static readonly string JFS_DEFAULT_THREADS = "4";
         private readonly int m_threads;
         private readonly long m_chunksize;
+        private readonly TimeoutOptionsHelper.Timeouts m_timeouts;
 
         private readonly JottacloudAuthHelper m_oauth;
 
@@ -69,23 +70,33 @@ namespace Duplicati.Library.Backend
         /// </summary>
         static Jottacloud()
         {
-            System.Net.ServicePointManager.DefaultConnectionLimit = 1000;
+            // TODO: Remove this when HttpClient migration is done
+            ServicePointManager.DefaultConnectionLimit = 1000;
         }
 
         public Jottacloud()
         {
+            m_device = null!;
+            m_mountPoint = null!;
+            m_path = null!;
+            m_url_device = null!;
+            m_url = null!;
+            m_url_upload = null!;
+            m_timeouts = null!;
+            m_oauth = null!;
         }
 
-        public Jottacloud(string url, Dictionary<string, string> options)
+        public Jottacloud(string url, Dictionary<string, string?> options)
         {
             // Duplicati back-end url for Jottacloud is in format "jottacloud://folder/subfolder", we transform them to
             // the Jottacloud REST API (JFS) url format "https://jfs.jottacloud.com/jfs/[username]/[device]/[mountpoint]/[folder]/[subfolder]".
 
             // Find out what JFS device to use.
-            if (options.ContainsKey(JFS_DEVICE_OPTION))
+            var device = options.GetValueOrDefault(JFS_DEVICE_OPTION);
+            if (!string.IsNullOrWhiteSpace(device))
             {
                 // Custom device specified.
-                m_device = options[JFS_DEVICE_OPTION];
+                m_device = device;
                 if (string.Equals(m_device, JFS_BUILTIN_DEVICE, StringComparison.OrdinalIgnoreCase))
                 {
                     m_device_builtin = true; // Device is configured, but value set to the built-in device!
@@ -104,10 +115,11 @@ namespace Duplicati.Library.Backend
             }
 
             // Find out what JFS mount point to use on the device.
-            if (options.ContainsKey(JFS_MOUNT_POINT_OPTION))
+            var mountPoint = options.GetValueOrDefault(JFS_MOUNT_POINT_OPTION);
+            if (!string.IsNullOrWhiteSpace(mountPoint))
             {
                 // Custom mount point specified.
-                m_mountPoint = options[JFS_MOUNT_POINT_OPTION];
+                m_mountPoint = mountPoint;
 
                 // If we are using the built-in device make sure we have picked a mount point that we can use.
                 if (m_device_builtin)
@@ -135,10 +147,10 @@ namespace Duplicati.Library.Backend
                     m_mountPoint = JFS_DEFAULT_CUSTOM_MOUNT_POINT; // Set a suitable default mount point for custom (backup) devices.
             }
 
-            string authid = null;
-            if (options.ContainsKey(AUTHID_OPTION))
-                authid = options[AUTHID_OPTION];
-            m_oauth = new JottacloudAuthHelper(authid);
+            var authId = AuthIdOptionsHelper.Parse(options)
+                .RequireCredentials(TOKEN_URL);
+
+            m_oauth = new JottacloudAuthHelper(authId.AuthId!);
 
             // Build URL
             var u = new Utility.Uri(url);
@@ -151,51 +163,54 @@ namespace Duplicati.Library.Backend
             m_url = m_url_device + "/" + m_mountPoint + "/" + m_path;
             m_url_upload = JFS_ROOT_UPLOAD + "/" + m_oauth.Username + "/" + m_device + "/" + m_mountPoint + "/" + m_path; // Different hostname, else identical to m_url.
 
-            m_threads = int.Parse(options.ContainsKey(JFS_THREADS) ? options[JFS_THREADS] : JFS_DEFAULT_THREADS);
+            var jfsThreads = options.GetValueOrDefault(JFS_THREADS);
+            if (string.IsNullOrWhiteSpace(jfsThreads))
+                jfsThreads = JFS_DEFAULT_THREADS;
 
-            if (!options.TryGetValue(JFS_CHUNKSIZE, out var tmp))
-            {
-                tmp = JFS_DEFAULT_CHUNKSIZE;
-            }
+            m_threads = int.Parse(jfsThreads);
 
-            var chunksize = Utility.Sizeparser.ParseSize(tmp, "mb");
+            var jfsChunksize = options.GetValueOrDefault(JFS_CHUNKSIZE);
+            if (string.IsNullOrWhiteSpace(jfsChunksize))
+                jfsChunksize = JFS_DEFAULT_CHUNKSIZE;
+
+            var chunksize = Sizeparser.ParseSize(jfsChunksize, "mb");
 
             // Chunk size is bound by BinaryReader.ReadBytes(length) where length is an int.
 
             if (chunksize > int.MaxValue || chunksize < 1024)
-            {
-                throw new ArgumentOutOfRangeException(nameof(chunksize), string.Format("The chunk size cannot be less than {0}, nor larger than {1}", Utility.Utility.FormatSizeString(1024), Utility.Utility.FormatSizeString(int.MaxValue)));
-            }
+                throw new ArgumentOutOfRangeException(nameof(chunksize), $"The chunk size cannot be less than {Utility.Utility.FormatSizeString(1024)}, nor larger than {Utility.Utility.FormatSizeString(int.MaxValue)}");
 
             m_chunksize = chunksize;
+            m_timeouts = TimeoutOptionsHelper.Parse(options);
         }
 
         #region IBackend Members
 
-        public string DisplayName
-        {
-            get { return Strings.Jottacloud.DisplayName; }
-        }
+        public string DisplayName => Strings.Jottacloud.DisplayName;
 
-        public string ProtocolKey
-        {
-            get { return "jottacloud"; }
-        }
+        public string ProtocolKey => "jottacloud";
 
-        public IEnumerable<IFileEntry> List()
+        /// <inheritdoc />
+        public async IAsyncEnumerable<IFileEntry> ListAsync([EnumeratorCancellation] CancellationToken cancelToken)
         {
+            // Remove warning until this backend is rewritten with HttpClient
+            await Task.CompletedTask;
+
             var doc = new System.Xml.XmlDocument();
             try
             {
                 // Send request and load XML response.
-                var req = CreateRequest(System.Net.WebRequestMethods.Http.Get, "", "", false);
-                var areq = new Utility.AsyncHttpRequest(req);
-                using (var rs = areq.GetResponseStream())
-                    doc.Load(rs);
+                var req = CreateRequest(WebRequestMethods.Http.Get, "", "", false);
+                var areq = new AsyncHttpRequest(req);
+                await Utility.Utility.WithTimeout(m_timeouts.ListTimeout, cancelToken, _ =>
+                {
+                    using (var rs = areq.GetResponseStream())
+                        doc.Load(rs);
+                }).ConfigureAwait(false);
             }
-            catch (System.Net.WebException wex)
+            catch (WebException wex)
             {
-                if (wex.Response is HttpWebResponse response && response.StatusCode == System.Net.HttpStatusCode.NotFound)
+                if (wex.Response is HttpWebResponse response && response.StatusCode == HttpStatusCode.NotFound)
                     throw new FolderMissingException(wex);
                 throw;
             }
@@ -204,50 +219,61 @@ namespace Duplicati.Library.Backend
             // We must check for "deleted" attribute, because files/folders which has it is deleted (attribute contains the timestamp of deletion)
             // so we treat them as non-existent here.
             var xRoot = doc.DocumentElement;
-            if (xRoot.Attributes["deleted"] != null)
-            {
+            if (xRoot == null)
                 throw new FolderMissingException();
-            }
-            foreach (System.Xml.XmlNode xFolder in xRoot.SelectNodes("folders/folder[not(@deleted)]"))
-            {
-                // Subfolders are only listed with name. We can get a timestamp by sending a request for each folder, but that is probably not necessary?
-                FileEntry fe = new FileEntry(xFolder.Attributes["name"].Value);
-                fe.IsFolder = true;
-                yield return fe;
-            }
-            foreach (System.Xml.XmlNode xFile in xRoot.SelectNodes("files/file[not(@deleted)]"))
-            {
-                var fe = ToFileEntry(xFile);
-                if (fe != null)
+            if (xRoot.Attributes["deleted"] != null)
+                throw new FolderMissingException();
+
+            var folders = xRoot.SelectNodes("folders/folder[not(@deleted)]");
+            if (folders != null)
+                foreach (System.Xml.XmlNode xFolder in folders)
                 {
-                    yield return fe;
+                    // Subfolders are only listed with name. We can get a timestamp by sending a request for each folder, but that is probably not necessary?
+                    var name = xFolder.Attributes?["name"]?.Value;
+                    if (string.IsNullOrEmpty(name))
+                        continue;
+
+                    yield return new FileEntry(name) { IsFolder = true };
                 }
-            }
+
+            var files = xRoot.SelectNodes("files/file[not(@deleted)]");
+            if (files != null)
+                foreach (System.Xml.XmlNode xFile in files)
+                {
+                    var fe = ToFileEntry(xFile);
+                    if (fe != null)
+                        yield return fe;
+                }
         }
 
-        public static IFileEntry ToFileEntry(System.Xml.XmlNode xFile)
+        public static IFileEntry? ToFileEntry(System.Xml.XmlNode? xFile)
         {
-            string name = xFile.Attributes["name"].Value;
+            if (xFile == null)
+                return null;
+
+            var name = xFile.Attributes?["name"]?.Value;
+            if (string.IsNullOrWhiteSpace(name))
+                return null;
+
             // Normal files have an "currentRevision", which represent the most recent successfully upload
             // (could also checked that currentRevision/state is "COMPLETED", but should not be necessary).
             // There might also be a newer "latestRevision" coming from an incomplete or corrupt upload,
             // but we ignore that here and use the information about the last valid version.
-            System.Xml.XmlNode xRevision = xFile.SelectSingleNode("currentRevision");
+            var xRevision = xFile.SelectSingleNode("currentRevision");
             if (xRevision != null)
             {
-                System.Xml.XmlNode xState = xRevision.SelectSingleNode("state");
+                var xState = xRevision.SelectSingleNode("state");
                 if (xState != null && xState.InnerText == "COMPLETED") // Think "currentRevision" always is a complete version, but just to be on the safe side..
                 {
-                    System.Xml.XmlNode xSize = xRevision.SelectSingleNode("size");
+                    var xSize = xRevision.SelectSingleNode("size");
                     long size;
                     if (xSize == null || !long.TryParse(xSize.InnerText, out size))
                         size = -1;
-                    DateTime lastModified;
-                    System.Xml.XmlNode xModified = xRevision.SelectSingleNode("modified"); // There is created, modified and updated time stamps, but not last accessed.
-                    if (xModified == null || !DateTime.TryParseExact(xModified.InnerText, JFS_DATE_FORMAT, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.AdjustToUniversal, out lastModified))
+
+                    var xModified = xRevision.SelectSingleNode("modified"); // There is created, modified and updated time stamps, but not last accessed.
+                    if (xModified == null || !DateTime.TryParseExact(xModified.InnerText, JFS_DATE_FORMAT, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.AdjustToUniversal, out var lastModified))
                         lastModified = new DateTime();
-                    FileEntry fe = new FileEntry(name, size, lastModified, lastModified);
-                    return fe;
+                    return new FileEntry(name, size, lastModified, lastModified);
                 }
             }
             return null;
@@ -256,22 +282,26 @@ namespace Duplicati.Library.Backend
         /// <summary>
         /// Retrieves info for a single file (used to determine file size for chunking)
         /// </summary>
-        /// <param name="remotename"></param>
-        /// <returns></returns>
-        public IFileEntry Info(string remotename)
+        /// <param name="remotename">The remote file name</param>
+        /// <param name="cancelToken">The cancellation token</param>
+        /// <returns>The file entry</returns>
+        public async Task<IFileEntry?> Info(string remotename, CancellationToken cancelToken)
         {
             var doc = new System.Xml.XmlDocument();
             try
             {
                 // Send request and load XML response.
-                var req = CreateRequest(System.Net.WebRequestMethods.Http.Get, remotename, "", false);
+                var req = CreateRequest(WebRequestMethods.Http.Get, remotename, "", false);
                 var areq = new Utility.AsyncHttpRequest(req);
-                using (var rs = areq.GetResponseStream())
-                    doc.Load(rs);
+                await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, _ =>
+                {
+                    using (var rs = areq.GetResponseStream())
+                        doc.Load(rs);
+                }).ConfigureAwait(false);
             }
-            catch (System.Net.WebException wex)
+            catch (WebException wex)
             {
-                if (wex.Response is HttpWebResponse response && response.StatusCode == System.Net.HttpStatusCode.NotFound)
+                if (wex.Response is HttpWebResponse response && response.StatusCode == HttpStatusCode.NotFound)
                     throw new FileMissingException(wex);
                 throw;
             }
@@ -280,80 +310,74 @@ namespace Duplicati.Library.Backend
             // We must check for "deleted" attribute, because files/folders which has it is deleted (attribute contains the timestamp of deletion)
             // so we treat them as non-existent here.
             var xFile = doc.DocumentElement;
-            if (xFile.Attributes["deleted"] != null)
-            {
+            if (xFile?.Attributes["deleted"] != null)
                 throw new FileMissingException(string.Format("{0}: {1}", LC.L("The requested file does not exist"), remotename));
-            }
 
             return ToFileEntry(xFile);
         }
 
         public async Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
         {
-            using (System.IO.FileStream fs = System.IO.File.OpenRead(filename))
+            using (var fs = File.OpenRead(filename))
                 await PutAsync(remotename, fs, cancelToken).ConfigureAwait(false);
         }
 
         public async Task GetAsync(string remotename, string filename, CancellationToken cancelToken)
         {
-            using (System.IO.FileStream fs = System.IO.File.Create(filename))
+            using (var fs = File.Create(filename))
                 await GetAsync(remotename, fs, cancelToken).ConfigureAwait(false);
         }
 
         public Task DeleteAsync(string remotename, CancellationToken cancelToken)
         {
-            System.Net.HttpWebRequest req = CreateRequest(System.Net.WebRequestMethods.Http.Post, remotename, "rm=true", false); // rm=true means permanent delete, dl=true would be move to trash.
-            Utility.AsyncHttpRequest areq = new Utility.AsyncHttpRequest(req);
-            using (System.Net.HttpWebResponse resp = (System.Net.HttpWebResponse)areq.GetResponse())
-            { }
+            var req = CreateRequest(WebRequestMethods.Http.Post, remotename, "rm=true", false); // rm=true means permanent delete, dl=true would be move to trash.
+            var areq = new Utility.AsyncHttpRequest(req);
 
-            return Task.CompletedTask;
-        }
-
-        public IList<ICommandLineArgument> SupportedCommands
-        {
-            get
+            return Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, _ =>
             {
-                return new List<ICommandLineArgument>([
-                    new CommandLineArgument(AUTHID_OPTION, CommandLineArgument.ArgumentType.Password, Strings.Jottacloud.AuthidShort, Strings.Jottacloud.AuthidLong(OAuthHelper.OAUTH_LOGIN_URL("jottacloud"))),
-                    new CommandLineArgument(JFS_DEVICE_OPTION, CommandLineArgument.ArgumentType.String, Strings.Jottacloud.DescriptionDeviceShort, Strings.Jottacloud.DescriptionDeviceLong(JFS_MOUNT_POINT_OPTION)),
-                    new CommandLineArgument(JFS_MOUNT_POINT_OPTION, CommandLineArgument.ArgumentType.String, Strings.Jottacloud.DescriptionMountPointShort, Strings.Jottacloud.DescriptionMountPointLong(JFS_DEVICE_OPTION)),
-                    new CommandLineArgument(JFS_THREADS, CommandLineArgument.ArgumentType.Integer, Strings.Jottacloud.ThreadsShort, Strings.Jottacloud.ThreadsLong, JFS_DEFAULT_THREADS),
-                    new CommandLineArgument(JFS_CHUNKSIZE, CommandLineArgument.ArgumentType.Size, Strings.Jottacloud.ChunksizeShort, Strings.Jottacloud.ChunksizeLong, JFS_DEFAULT_CHUNKSIZE),
-                ]);
-            }
+                using (var resp = (HttpWebResponse)areq.GetResponse())
+                { }
+            });
         }
 
-        public string Description
-        {
-            get { return Strings.Jottacloud.Description; }
-        }
+        public IList<ICommandLineArgument> SupportedCommands => [
+            .. AuthIdOptionsHelper.GetOptions(TOKEN_URL),
+            new CommandLineArgument(JFS_DEVICE_OPTION, CommandLineArgument.ArgumentType.String, Strings.Jottacloud.DescriptionDeviceShort, Strings.Jottacloud.DescriptionDeviceLong(JFS_MOUNT_POINT_OPTION)),
+            new CommandLineArgument(JFS_MOUNT_POINT_OPTION, CommandLineArgument.ArgumentType.String, Strings.Jottacloud.DescriptionMountPointShort, Strings.Jottacloud.DescriptionMountPointLong(JFS_DEVICE_OPTION)),
+            new CommandLineArgument(JFS_THREADS, CommandLineArgument.ArgumentType.Integer, Strings.Jottacloud.ThreadsShort, Strings.Jottacloud.ThreadsLong, JFS_DEFAULT_THREADS),
+            new CommandLineArgument(JFS_CHUNKSIZE, CommandLineArgument.ArgumentType.Size, Strings.Jottacloud.ChunksizeShort, Strings.Jottacloud.ChunksizeLong, JFS_DEFAULT_CHUNKSIZE),
+            .. TimeoutOptionsHelper.GetOptions(),
+        ];
+
+        public string Description => Strings.Jottacloud.Description;
 
         public Task TestAsync(CancellationToken cancelToken)
-        {
-            this.TestList();
-            return Task.CompletedTask;
-        }
+            => this.TestListAsync(cancelToken);
 
-        public Task CreateFolderAsync(CancellationToken cancelToken)
+        public async Task CreateFolderAsync(CancellationToken cancelToken)
         {
             // When using custom (backup) device we must create the device first (if not already exists).
             if (!m_device_builtin)
             {
-                var req = CreateRequest(System.Net.WebRequestMethods.Http.Post, m_url_device, "type=WORKSTATION"); // Hard-coding device type. Must be one of "WORKSTATION", "LAPTOP", "IMAC", "MACBOOK", "IPAD", "ANDROID", "IPHONE" or "WINDOWS_PHONE".
-                var areq = new Utility.AsyncHttpRequest(req);
-                using (var resp = (System.Net.HttpWebResponse)areq.GetResponse())
-                { }
+                var req = CreateRequest(WebRequestMethods.Http.Post, m_url_device, "type=WORKSTATION"); // Hard-coding device type. Must be one of "WORKSTATION", "LAPTOP", "IMAC", "MACBOOK", "IPAD", "ANDROID", "IPHONE" or "WINDOWS_PHONE".
+                var areq = new AsyncHttpRequest(req);
+                await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, _ =>
+                {
+                    using (var resp = (HttpWebResponse)areq.GetResponse())
+                    { }
+                }).ConfigureAwait(false);
             }
             // Create the folder path, and if using custom mount point it will be created as well in the same operation.
             {
-                var req = CreateRequest(System.Net.WebRequestMethods.Http.Post, "", "mkDir=true", false);
-                var areq = new Utility.AsyncHttpRequest(req);
-                using (var resp = (System.Net.HttpWebResponse)areq.GetResponse())
-                { }
+                var req = CreateRequest(WebRequestMethods.Http.Post, "", "mkDir=true", false);
+                var areq = new AsyncHttpRequest(req);
+                await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, _ =>
+                {
+                    using (var resp = (HttpWebResponse)areq.GetResponse())
+                    { }
+                }).ConfigureAwait(false);
             }
 
-            return Task.CompletedTask;
         }
 
         #endregion
@@ -366,44 +390,49 @@ namespace Duplicati.Library.Backend
 
         #endregion
 
-        private System.Net.HttpWebRequest CreateRequest(string method, string url, string queryparams)
+        private HttpWebRequest CreateRequest(string method, string url, string queryparams)
         {
             return m_oauth.CreateRequest(url + (string.IsNullOrEmpty(queryparams) || queryparams.Trim().Length == 0 ? "" : "?" + queryparams), method);
         }
 
-        private System.Net.HttpWebRequest CreateRequest(string method, string remotename, string queryparams, bool upload)
+        private HttpWebRequest CreateRequest(string method, string remotename, string queryparams, bool upload)
         {
             var url = (upload ? m_url_upload : m_url) + Library.Utility.Uri.UrlEncode(remotename).Replace("+", "%20");
             return CreateRequest(method, url, queryparams);
         }
 
         public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(new string[] {
-            new Uri(JFS_ROOT).Host,
-            new Uri(JFS_ROOT_UPLOAD).Host
+            new System.Uri(JFS_ROOT).Host,
+            new System.Uri(JFS_ROOT_UPLOAD).Host
         });
 
-        public async Task GetAsync(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
+        public async Task GetAsync(string remotename, Stream stream, CancellationToken cancelToken)
         {
             if (m_threads > 1)
             {
-                await ParallelGetAsync(remotename, stream, cancelToken).ConfigureAwait(false);
+                using (var timeoutStream = stream.ObserveWriteTimeout(m_timeouts.ReadWriteTimeout, false))
+                    await ParallelGetAsync(remotename, stream, cancelToken).ConfigureAwait(false);
                 return;
             }
             // Downloading from Jottacloud: Will only succeed if the file has a completed revision,
             // and if there are multiple versions of the file we will only get the latest completed version,
             // ignoring any incomplete or corrupt versions.
-            var req = CreateRequest(System.Net.WebRequestMethods.Http.Get, remotename, "mode=bin", false);
-            var areq = new Utility.AsyncHttpRequest(req);
-            using (var s = areq.GetResponseStream())
-                await Utility.Utility.CopyStreamAsync(s, stream, true, cancelToken).ConfigureAwait(false);
+            var req = CreateRequest(WebRequestMethods.Http.Get, remotename, "mode=bin", false);
+            var areq = new AsyncHttpRequest(req);
+            using (var s = await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, _ => areq.GetResponseStream()).ConfigureAwait(false))
+            using (var t = s.ObserveReadTimeout(m_timeouts.ReadWriteTimeout))
+                await Utility.Utility.CopyStreamAsync(t, stream, true, cancelToken).ConfigureAwait(false);
         }
 
         /// <summary>
         /// Fetches the file in chunks (parallelized)
         /// </summary>
-        public async Task ParallelGetAsync(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
+        public async Task ParallelGetAsync(string remotename, Stream stream, CancellationToken cancelToken)
         {
-            var size = Info(remotename).Size;
+            var info = await Info(remotename, cancelToken);
+            if (info == null)
+                throw new FileMissingException(remotename);
+            var size = info.Size;
 
             var chunks = new Queue<Tuple<long, long>>(); // Tuple => Position (from), Position (to)
 
@@ -426,11 +455,11 @@ namespace Duplicati.Library.Backend
                     var item = chunks.Dequeue();
                     tasks.Enqueue(Task.Run(() =>
                     {
-                        var req = CreateRequest(System.Net.WebRequestMethods.Http.Get, remotename, "mode=bin", false);
+                        var req = CreateRequest(WebRequestMethods.Http.Get, remotename, "mode=bin", false);
                         req.AddRange(item.Item1, item.Item2 - 1);
-                        var areq = new Utility.AsyncHttpRequest(req);
+                        var areq = new AsyncHttpRequest(req);
                         using (var s = areq.GetResponseStream())
-                        using (var reader = new System.IO.BinaryReader(s))
+                        using (var reader = new BinaryReader(s))
                         {
                             var length = item.Item2 - item.Item1;
                             return reader.ReadBytes((int)length);
@@ -442,7 +471,7 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public async Task PutAsync(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
+        public async Task PutAsync(string remotename, Stream stream, CancellationToken cancelToken)
         {
             // Some challenges with uploading to Jottacloud:
             // - Jottacloud supports use of a custom header where we can tell the server the MD5 hash of the file
@@ -459,32 +488,34 @@ namespace Duplicati.Library.Backend
             //   request the server to remove the file again and throw an exception. But there is a requirement that
             //   we specify the file size in a custom header. And if the stream is not seek-able we are not able
             //   to use stream.Length, so we are back at square one.
-            Duplicati.Library.Utility.TempFile tmpFile = null;
-            var baseStream = stream;
-            while (baseStream is Duplicati.Library.Utility.OverrideableStream)
-                baseStream = typeof(Duplicati.Library.Utility.OverrideableStream).GetField("m_basestream", System.Reflection.BindingFlags.DeclaredOnly | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic).GetValue(baseStream) as System.IO.Stream;
+
+            // TODO: This unwrapping code is shared with CloudFiles
+            TempFile? tmpFile = null;
+            Stream? baseStream = stream;
+            while (baseStream is OverrideableStream)
+                baseStream = typeof(OverrideableStream).GetField("m_basestream", System.Reflection.BindingFlags.DeclaredOnly | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)?.GetValue(baseStream) as System.IO.Stream;
             if (baseStream == null)
                 throw new Exception(string.Format("Unable to unwrap stream from: {0}", stream.GetType()));
             string md5Hash;
             if (baseStream.CanSeek)
             {
                 var originalPosition = baseStream.Position;
-                using (var md5 = System.Security.Cryptography.MD5.Create())
-                    md5Hash = Library.Utility.Utility.ByteArrayAsHexString(md5.ComputeHash(baseStream));
+                using (var md5 = MD5.Create())
+                    md5Hash = Utility.Utility.ByteArrayAsHexString(md5.ComputeHash(baseStream));
                 baseStream.Position = originalPosition;
             }
             else
             {
                 // No seeking possible, use a temp file
-                tmpFile = new Duplicati.Library.Utility.TempFile();
-                using (var os = System.IO.File.OpenWrite(tmpFile))
+                tmpFile = new TempFile();
+                using (var os = File.OpenWrite(tmpFile))
                 using (var hasher = MD5.Create())
-                using (var md5 = new Utility.HashCalculatingStream(baseStream, hasher))
+                using (var md5 = new HashCalculatingStream(baseStream, hasher))
                 {
                     await Utility.Utility.CopyStreamAsync(md5, os, true, cancelToken).ConfigureAwait(false);
                     md5Hash = md5.GetFinalHashString();
                 }
-                stream = System.IO.File.OpenRead(tmpFile);
+                stream = File.OpenRead(tmpFile);
             }
             try
             {
@@ -495,7 +526,7 @@ namespace Duplicati.Library.Backend
                 // HTTP 404 (Not Found) if file does not exists or it exists with a different hash, in which
                 // case we must send a new request to upload the new content.
                 var fileSize = stream.Length;
-                var req = CreateRequest(System.Net.WebRequestMethods.Http.Post, remotename, "umode=nomultipart", true);
+                var req = CreateRequest(WebRequestMethods.Http.Post, remotename, "umode=nomultipart", true);
                 req.Headers.Add("JMd5", md5Hash); // Not required, but it will make the server verify the content and mark the file as corrupt if there is a mismatch.
                 req.Headers.Add("JSize", fileSize.ToString()); // Required, and used to mark file as incomplete if we upload something  be the total size of the original file!
                 // File time stamp headers: Since we are working with a stream here we do not know the local file's timestamps,
@@ -506,14 +537,15 @@ namespace Duplicati.Library.Backend
                 req.ContentLength = fileSize;
 
                 // Write post data request
-                var areq = new Utility.AsyncHttpRequest(req);
+                var areq = new AsyncHttpRequest(req);
                 using (var rs = areq.GetRequestStream())
+                using (var ts = rs.ObserveWriteTimeout(m_timeouts.ReadWriteTimeout))
                     await Utility.Utility.CopyStreamAsync(stream, rs, true, cancelToken).ConfigureAwait(false);
                 // Send request, and check response
-                using (var resp = (System.Net.HttpWebResponse)areq.GetResponse())
+                using (var resp = (HttpWebResponse)areq.GetResponse())
                 {
-                    if (resp.StatusCode != System.Net.HttpStatusCode.Created)
-                        throw new System.Net.WebException(Strings.Jottacloud.FileUploadError, null, System.Net.WebExceptionStatus.ProtocolError, resp);
+                    if (resp.StatusCode != HttpStatusCode.Created)
+                        throw new WebException(Strings.Jottacloud.FileUploadError, null, WebExceptionStatus.ProtocolError, resp);
 
                     // Request seems to be successful, but we must verify the response XML content to be sure that the file
                     // was correctly uploaded: The server will verify the JSize header and mark the file as incomplete if
@@ -531,7 +563,7 @@ namespace Duplicati.Library.Backend
                         try { doc.Load(rs); }
                         catch (System.Xml.XmlException)
                         {
-                            throw new System.Net.WebException(Strings.Jottacloud.FileUploadError, System.Net.WebExceptionStatus.ProtocolError);
+                            throw new WebException(Strings.Jottacloud.FileUploadError, WebExceptionStatus.ProtocolError);
                         }
                         bool uploadCompletedSuccessfully = false;
                         var xFile = doc["file"];
@@ -546,7 +578,7 @@ namespace Duplicati.Library.Backend
                             }
                         }
                         if (!uploadCompletedSuccessfully) // Report error (and we just let the incomplete/corrupt file revision stay on the server..)
-                            throw new System.Net.WebException(Strings.Jottacloud.FileUploadError, System.Net.WebExceptionStatus.ProtocolError);
+                            throw new WebException(Strings.Jottacloud.FileUploadError, WebExceptionStatus.ProtocolError);
                     }
                 }
             }

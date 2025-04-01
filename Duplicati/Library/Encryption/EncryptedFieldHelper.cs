@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -76,32 +76,6 @@ public static class EncryptedFieldHelper
     public static bool IsKeyBlacklisted(string key)
         => DeviceIDHelper.EMPTY_DEVICE_ID_HASHES.Contains(key);
 
-
-    /// <summary>
-    /// The key based on the device ID
-    /// </summary>
-    private static readonly KeyInstance? DeviceIdKey = KeyInstance.CreateKeyIfValid(DeviceIDHelper.HasTrustedDeviceID ? DeviceIDHelper.GetDeviceIDHash() : null);
-
-    /// <summary>
-    /// The default key to use for encryption
-    /// </summary>
-    private static readonly KeyInstance? SuppliedKey = KeyInstance.CreateKeyIfValid(Environment.GetEnvironmentVariable(ENVIROMENT_VARIABLE_NAME));
-
-    /// <summary>
-    /// The default key to use for encryption
-    /// </summary>
-    private static readonly KeyInstance? DefaultKey = SuppliedKey ?? DeviceIdKey;
-
-    /// <summary>
-    /// Returns a value indicating if the default key is blacklisted and cannot be used
-    /// </summary>
-    public static bool IsDefaultKeyBlacklisted => DefaultKey?.IsBlacklisted ?? false;
-
-    /// <summary>
-    /// Returns a value indicating if the default key is valid
-    /// </summary>
-    public static bool HasValidDefaultKey => DefaultKey != null;
-
     /// <summary>
     /// Prefix used to identify an encrypted field
     /// </summary>
@@ -119,20 +93,6 @@ public static class EncryptedFieldHelper
     /// <returns><c>true</c> if the string is encrypted; <c>false</c> otherwise</returns>
     public static bool IsEncryptedString(string value)
         => !string.IsNullOrWhiteSpace(value) && value.StartsWith(HEADER_PREFIX);
-
-    /// <summary>
-    /// Decrypts a value from the database, if it is not encrypted, it will be returned as is.
-    /// 
-    /// If the value is encrypted, it will be decrypted using the key obtained from ActiveKey.
-    /// 
-    /// The check for encryption is done by checking the prefix of the string.
-    /// An additional check is done by hashing the content and comparing it to the hash
-    /// </summary>
-    /// <param name="value">data from the field</param>
-    /// <returns>Unencrypted data of the field</returns>
-    [return: NotNullIfNotNull("value")]
-    public static string? Decrypt(string? value)
-        => Decrypt(value, DefaultKey);
 
     /// <summary>
     /// Decrypts a value from the database, if it is not encrypted, it will be returned as is.
@@ -187,14 +147,6 @@ public static class EncryptedFieldHelper
         return value;
 
     }
-
-    /// <summary>
-    /// Encrypts a value to be stored in the database.
-    /// </summary>
-    /// <param name="value"></param>
-    /// <returns>The encrypted string</returns>
-    public static string Encrypt(string value)
-        => Encrypt(value, DefaultKey);
 
     /// <summary>
     /// Encrypts a value to be stored in the database.

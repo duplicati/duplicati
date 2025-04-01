@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -26,6 +26,14 @@ using System.Text;
 
 namespace Duplicati.Library.Utility
 {
+    // TODO: This class should be deleted.
+
+    // It was introduced to make it simpler to give the backend url on the commandline,
+    // and because the Mono implementation of System.Uri had some issues.
+    // Since Mono is no longer used, the only problem is the commandline,
+    // but it does not make sense to support "invalid" urls as that increases the complexity
+    // of the code and potentially introduces ambiguity for the user.
+
     /// <summary>
     /// Represents a relaxed parsing of a URL.
     /// The goal is to cover as many types of url's as possible,
@@ -49,7 +57,8 @@ namespace Duplicati.Library.Utility
         /// </summary>
         public readonly string Host;
         /// <summary>
-        /// The server path, e.g. index.html
+        /// The server path, e.g. index.html.
+        /// Note that the path does NOT have a leading /.
         /// </summary>
         public readonly string Path;
         /// <summary>
@@ -176,8 +185,11 @@ namespace Duplicati.Library.Utility
             // file://c:\test support
             if (h.Length == 1 && p.StartsWith(":", StringComparison.Ordinal))
             {
-                h = h + p;
-                p = "";
+                p = h + p;
+                if (p.IndexOfAny(System.IO.Path.GetInvalidPathChars()) >= 0)
+                    throw new ArgumentException(Strings.Uri.UriParseError(url), nameof(url));
+                p = System.IO.Path.GetFullPath(p);
+                h = null;
             }
 
             this.Host = h;
@@ -265,7 +277,7 @@ namespace Duplicati.Library.Utility
 
             if (!string.IsNullOrEmpty(path))
             {
-                if (!string.IsNullOrEmpty(host) && !path.StartsWith("/", StringComparison.Ordinal))
+                if (!string.IsNullOrEmpty(host))
                     s += "/";
                 s += path;
             }
@@ -449,7 +461,7 @@ namespace Duplicati.Library.Utility
         /// <param name="query">The query to parse</param>
         public static NameValueCollection ParseQueryString(string query)
         {
-            return Library.Utility.Uri.ParseQueryString(query, true);
+            return ParseQueryString(query, true);
         }
 
         /// <summary>
@@ -529,7 +541,7 @@ namespace Duplicati.Library.Utility
         {
             var builder = new UriBuilder(url)
             {
-                Path = (new UrlPath(ExtractPath(url)).Append(path)).ToString(),
+                Path = new UrlPath(ExtractPath(url)).Append(path).ToString(),
                 Query = query != null ? BuildUriQuery(query) : null
             };
             return builder.Uri.AbsoluteUri;
@@ -543,7 +555,7 @@ namespace Duplicati.Library.Utility
         /// <param name="url">URL.</param>
         public static string ExtractPath(string url)
         {
-            return (new Uri(url)).Path;
+            return new Uri(url).Path;
         }
 
         /// <summary>

@@ -1,4 +1,4 @@
-﻿// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -33,24 +33,33 @@ namespace Duplicati.Server
     public class LiveControls : ILiveControls
     {
         /// <summary>
+        /// Event that is activated the the live control state changes
+        /// </summary>
+        public sealed record LiveControlEvent
+        {
+            /// <summary>
+            /// The new state of the live control
+            /// </summary>
+            public required LiveControlState State { get; init; }
+            /// <summary>
+            /// A value that indicates if the transfers are paused
+            /// </summary>
+            public required bool TransfersPaused { get; init; }
+            /// <summary>
+            /// The time when processing will resume, or zero if paused indefinitely
+            /// </summary>
+            public required DateTime WaitTimeExpiration { get; init; }
+        }
+
+        /// <summary>
         /// The tag used for logging
         /// </summary>
         private static readonly string LOGTAG = Duplicati.Library.Logging.Log.LogTagFromType<LiveControls>();
 
         /// <summary>
-        /// An event that is activated when the pause state changes
+        /// An callback that is activated when the pause state changes
         /// </summary>
-        public event EventHandler StateChanged;
-
-        /// <summary>
-        /// An event that is activated when the thread priority changes
-        /// </summary>
-        public event EventHandler ThreadPriorityChanged;
-
-        /// <summary>
-        /// An event that is activated when the throttle speed changes
-        /// </summary>
-        public event EventHandler ThrottleSpeedChanged;
+        public Action<LiveControlEvent> StateChanged;
 
         /// <summary>
         /// The possible states for the live control
@@ -73,6 +82,11 @@ namespace Duplicati.Server
         private LiveControlState m_state;
 
         /// <summary>
+        /// A value that indicates if the transfers are paused
+        /// </summary>
+        private bool m_transfersPaused = false;
+
+        /// <summary>
         /// A value that indicates if the current pause state is caused by being suspended
         /// </summary>
         private bool m_pausedForSuspend = false;
@@ -80,85 +94,27 @@ namespace Duplicati.Server
         /// <summary>
         /// The time to pause for, used to ensure that a user set pause can override the suspend pause
         /// </summary>
-        private DateTime m_suspendMinimumPause = new DateTime(0);
+        private DateTime m_suspendMinimumPause = new DateTime(0, DateTimeKind.Utc);
 
         /// <summary>
         /// Gets the current state for the control
         /// </summary>
         public LiveControlState State { get { return m_state; } }
 
+        /// <summary>
+        /// Gets a value that indicates if the backups are running
+        /// </summary>
         public bool IsPaused => State == LiveControlState.Paused;
 
         /// <summary>
-        /// The internal variable that tracks the the priority
+        /// Gets a value that indicates if the transfers are paused
         /// </summary>
-        private System.Threading.ThreadPriority? m_priority;
-
-        /// <summary>
-        /// The internal variable that tracks the upload limit
-        /// </summary>
-        private long? m_uploadLimit;
-
-        /// <summary>
-        /// The internal variable that tracks the download limit
-        /// </summary>
-        private long? m_downloadLimit;
+        public bool TransfersPaused => m_transfersPaused;
 
         /// <summary>
         /// The object that ensures concurrent operations
         /// </summary>
         private readonly object m_lock = new object();
-
-        /// <summary>
-        /// Gets the current overridden thread priority
-        /// </summary>
-        public System.Threading.ThreadPriority? ThreadPriority
-        {
-            get { return m_priority; }
-            set
-            {
-                if (m_priority != value)
-                {
-                    m_priority = value;
-                    if (ThreadPriorityChanged != null)
-                        ThreadPriorityChanged(this, null);
-                }
-            }
-        }
-
-        /// <summary>
-        /// Gets the current upload limit in bps
-        /// </summary>
-        public long? UploadLimit
-        {
-            get { return m_uploadLimit; }
-            set
-            {
-                if (m_uploadLimit != value)
-                {
-                    m_uploadLimit = value;
-                    if (ThrottleSpeedChanged != null)
-                        ThrottleSpeedChanged(this, null);
-                }
-            }
-        }
-
-        /// <summary>
-        /// Gets the download limit in bps
-        /// </summary>
-        public long? DownloadLimit
-        {
-            get { return m_downloadLimit; }
-            set
-            {
-                if (m_downloadLimit != value)
-                {
-                    m_downloadLimit = value;
-                    if (ThrottleSpeedChanged != null)
-                        ThrottleSpeedChanged(this, null);
-                }
-            }
-        }
 
         /// <summary>
         /// The timer that is activated after a pause period.
@@ -168,7 +124,7 @@ namespace Duplicati.Server
         /// <summary>
         /// The time that the current pause is expected to expire
         /// </summary>
-        private DateTime m_waitTimeExpiration = new DateTime(0);
+        private DateTime m_waitTimeExpiration = new DateTime(0, DateTimeKind.Utc);
 
         /// <summary>
         /// The connection to use
@@ -186,6 +142,20 @@ namespace Duplicati.Server
         }
 
         /// <summary>
+        /// Clamps the milliseconds to a valid range for the timer
+        /// </summary>
+        /// <param name="duration">The duration to clamp</param>
+        /// <returns>The clamped milliseconds</returns>
+        private static long ClampMilliseconds(TimeSpan duration)
+        {
+            if (duration.TotalMilliseconds < 100)
+                return 100;
+            if (duration > TimeSpan.FromHours(24))
+                return (long)TimeSpan.FromHours(24).TotalMilliseconds;
+            return (long)duration.TotalMilliseconds;
+        }
+
+        /// <summary>
         /// Constructs a new instance of the LiveControl
         /// </summary>
         private void Init()
@@ -196,38 +166,38 @@ namespace Duplicati.Server
 
             if (!string.IsNullOrEmpty(settings.StartupDelayDuration) && settings.StartupDelayDuration != "0")
             {
-                long milliseconds = 0;
-                try { milliseconds = (long)Duplicati.Library.Utility.Timeparser.ParseTimeSpan(settings.StartupDelayDuration).TotalMilliseconds; }
+                var startupDelay = new TimeSpan(0);
+                try { startupDelay = Library.Utility.Timeparser.ParseTimeSpan(settings.StartupDelayDuration); }
                 catch { }
 
-                if (milliseconds > 0)
+                if (startupDelay.Ticks > 0)
                 {
-                    m_waitTimeExpiration = DateTime.Now.AddMilliseconds(milliseconds);
-                    m_waitTimer.Change(milliseconds, System.Threading.Timeout.Infinite);
+                    m_waitTimeExpiration = DateTime.UtcNow.Add(startupDelay);
+                    m_waitTimer.Change(ClampMilliseconds(startupDelay), System.Threading.Timeout.Infinite);
                     m_state = LiveControlState.Paused;
                 }
             }
 
-            m_priority = settings.ThreadPriorityOverride;
-            if (!string.IsNullOrEmpty(settings.DownloadSpeedLimit))
-                try
+            var pausedUntil = settings.PausedUntil;
+            if (pausedUntil != null)
+            {
+                if (pausedUntil.Value.Ticks == 0)
                 {
-                    m_downloadLimit = Library.Utility.Sizeparser.ParseSize(settings.DownloadSpeedLimit, "kb");
+                    m_waitTimeExpiration = new DateTime(0, DateTimeKind.Utc);
+                    m_waitTimer.Change(System.Threading.Timeout.Infinite, System.Threading.Timeout.Infinite);
+                    m_state = LiveControlState.Paused;
                 }
-                catch (Exception ex)
+                else if (pausedUntil.Value > DateTime.UtcNow && pausedUntil.Value > m_waitTimeExpiration)
                 {
-                    Library.Logging.Log.WriteErrorMessage(LOGTAG, "ParseDownloadLimitError", ex, "Failed to parse download limit: {0}", settings.DownloadSpeedLimit);
+                    var period = pausedUntil.Value - DateTime.UtcNow;
+                    if (period.TotalMilliseconds > 100)
+                    {
+                        m_waitTimeExpiration = pausedUntil.Value;
+                        m_waitTimer.Change(ClampMilliseconds(period), System.Threading.Timeout.Infinite);
+                        m_state = LiveControlState.Paused;
+                    }
                 }
-
-            if (!string.IsNullOrEmpty(settings.UploadSpeedLimit))
-                try
-                {
-                    m_uploadLimit = Library.Utility.Sizeparser.ParseSize(settings.UploadSpeedLimit, "kb");
-                }
-                catch (Exception ex)
-                {
-                    Library.Logging.Log.WriteErrorMessage(LOGTAG, "ParseUploadLimitError", ex, "Failed to parse upload limit: {0}", settings.UploadSpeedLimit);
-                }
+            }
 
             try
             {
@@ -248,6 +218,21 @@ namespace Duplicati.Server
         }
 
         /// <summary>
+        /// Creates a new event object
+        /// </summary>
+        /// <returns>A new event object</returns>
+        private LiveControlEvent CreateEvent()
+        {
+            lock (m_lock)
+                return new LiveControlEvent()
+                {
+                    State = m_state,
+                    TransfersPaused = m_transfersPaused,
+                    WaitTimeExpiration = m_waitTimeExpiration
+                };
+        }
+
+        /// <summary>
         /// Internal helper to reset the timeout timer
         /// </summary>
         /// <param name="timeout">The time to wait</param>
@@ -256,13 +241,13 @@ namespace Duplicati.Server
             lock (m_lock)
                 if (!string.IsNullOrEmpty(timeout))
                 {
-                    long milliseconds = (long)Duplicati.Library.Utility.Timeparser.ParseTimeSpan(timeout).TotalMilliseconds;
-                    m_waitTimeExpiration = DateTime.Now.AddMilliseconds(milliseconds);
-                    m_waitTimer.Change(milliseconds, System.Threading.Timeout.Infinite);
+                    var delay = Library.Utility.Timeparser.ParseTimeSpan(timeout);
+                    m_waitTimeExpiration = DateTime.UtcNow.Add(delay);
+                    m_waitTimer.Change(ClampMilliseconds(delay), System.Threading.Timeout.Infinite);
                 }
                 else
                 {
-                    m_waitTimeExpiration = new DateTime(0);
+                    m_waitTimeExpiration = new DateTime(0, DateTimeKind.Utc);
                     m_waitTimer.Change(System.Threading.Timeout.Infinite, System.Threading.Timeout.Infinite);
                 }
         }
@@ -272,33 +257,42 @@ namespace Duplicati.Server
         /// </summary>
         private void SetPauseMode()
         {
+            LiveControlEvent ev = null;
             lock (m_lock)
             {
                 if (m_state == LiveControlState.Running)
                 {
                     m_state = LiveControlState.Paused;
                     if (StateChanged != null)
-                        StateChanged(this, null);
+                        ev = CreateEvent();
                 }
             }
+
+            if (ev != null)
+                StateChanged(ev);
         }
 
         /// <summary>
         /// Pauses the backups until resumed
         /// </summary>
-        public void Pause()
+        public void Pause(bool alsoTransfers)
         {
+            LiveControlEvent ev = null;
             lock (m_lock)
             {
-                var fireEvent = m_waitTimeExpiration.Ticks != 0 && m_state == LiveControlState.Paused && StateChanged != null;
+                m_transfersPaused = alsoTransfers;
+                m_waitTimeExpiration = new DateTime(0, DateTimeKind.Utc);
 
                 ResetTimer(null);
 
-                if (fireEvent)
-                    StateChanged(this, null);
+                if (m_state == LiveControlState.Paused)
+                    ev = StateChanged == null ? null : CreateEvent();
                 else
                     SetPauseMode();
             }
+
+            if (ev != null)
+                StateChanged(ev);
         }
 
         /// <summary>
@@ -306,6 +300,7 @@ namespace Duplicati.Server
         /// </summary>
         public void Resume()
         {
+            LiveControlEvent ev = null;
             lock (m_lock)
             {
                 if (m_state == LiveControlState.Paused)
@@ -313,39 +308,52 @@ namespace Duplicati.Server
                     //Make sure that the timer is cleared
                     ResetTimer(null);
 
+                    m_transfersPaused = false;
+                    m_waitTimeExpiration = new DateTime(0, DateTimeKind.Utc);
                     m_state = LiveControlState.Running;
                     if (StateChanged != null)
-                        StateChanged(this, null);
+                        ev = CreateEvent();
                 }
             }
+
+            if (ev != null)
+                StateChanged(ev);
         }
 
         /// <summary>
         /// Suspends the backups for a given period
         /// </summary>
         /// <param name="timeout">The duration to wait</param>
-        public void Pause(string timeout)
+        /// <param name="alsoTransfers">If true, also pause the transfers</param>
+        public void Pause(string timeout, bool alsoTransfers)
         {
-            Pause(Duplicati.Library.Utility.Timeparser.ParseTimeSpan(timeout));
+            Pause(Duplicati.Library.Utility.Timeparser.ParseTimeSpan(timeout), alsoTransfers);
         }
 
         /// <summary>
         /// Suspends the backups for a given period
         /// </summary>
         /// <param name="timeout">The duration to wait</param>
-        public void Pause(TimeSpan timeout)
+        /// <param name="alsoTransfers">If true, also pause the transfers</param>
+        public void Pause(TimeSpan timeout, bool alsoTransfers)
         {
+            LiveControlEvent ev = null;
             lock (m_lock)
             {
-                m_waitTimeExpiration = DateTime.Now.AddMilliseconds((long)timeout.TotalMilliseconds);
-                m_waitTimer.Change((long)timeout.TotalMilliseconds, System.Threading.Timeout.Infinite);
+                m_waitTimeExpiration = DateTime.UtcNow.Add(timeout);
+                m_waitTimer.Change(ClampMilliseconds(timeout), System.Threading.Timeout.Infinite);
+                m_transfersPaused = alsoTransfers;
+
 
                 //We change the time, so we issue a new event
-                if (m_state == LiveControlState.Paused && StateChanged != null)
-                    StateChanged(this, null);
+                if (m_state == LiveControlState.Paused)
+                    ev = StateChanged == null ? null : CreateEvent();
                 else
                     SetPauseMode();
             }
+
+            if (ev != null)
+                StateChanged(ev);
         }
 
         /// <summary>
@@ -381,7 +389,7 @@ namespace Duplicati.Server
                 {
                     this.SetPauseMode();
                     m_pausedForSuspend = true;
-                    m_suspendMinimumPause = new DateTime(0);
+                    m_suspendMinimumPause = new DateTime(0, DateTimeKind.Utc);
                 }
                 else
                 {
@@ -399,7 +407,7 @@ namespace Duplicati.Server
                 //If we have been been paused due to suspending, we un-pause now
                 if (m_pausedForSuspend)
                 {
-                    long delayTicks = (m_suspendMinimumPause - DateTime.Now).Ticks;
+                    long delayTicks = (m_suspendMinimumPause - DateTime.UtcNow).Ticks;
 
                     var appset = m_connection.ApplicationSettings;
                     if (!string.IsNullOrEmpty(appset.StartupDelayDuration) && appset.StartupDelayDuration != "0")
@@ -408,7 +416,7 @@ namespace Duplicati.Server
 
                     if (delayTicks > 0)
                     {
-                        this.Pause(TimeSpan.FromTicks(delayTicks));
+                        this.Pause(TimeSpan.FromTicks(delayTicks), true);
                     }
                     else
                     {
@@ -417,7 +425,7 @@ namespace Duplicati.Server
                 }
 
                 m_pausedForSuspend = false;
-                m_suspendMinimumPause = new DateTime(0);
+                m_suspendMinimumPause = new DateTime(0, DateTimeKind.Utc);
             }
         }
 

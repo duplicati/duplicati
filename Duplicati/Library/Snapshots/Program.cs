@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -22,7 +22,7 @@
 using System;
 using System.Collections.Generic;
 using Duplicati.Library.AutoUpdater;
-using Duplicati.Library.Common;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Snapshots
 {
@@ -62,7 +62,7 @@ namespace Duplicati.Library.Snapshots
             return options;
         }
 
-        public static void Main(string[] _args)
+        public static int Main(string[] _args)
         {
             try
             {
@@ -72,13 +72,13 @@ namespace Duplicati.Library.Snapshots
                 if (args.Count == 0)
                     args = new List<string> { System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location) };
 
-                if (args.Count != 1)
+                if (args.Count != 1 || HelpOptionExtensions.IsArgumentAnyHelpString(args))
                 {
                     Console.WriteLine(@$"Usage:
 {PackageHelper.GetExecutableName(PackageHelper.NamedExecutable.Snapshots)} [test-folder]
 
 Where <test-folder> is the folder where files will be locked/created etc");
-                    return;
+                    return 1;
                 }
 
                 if (!System.IO.Directory.Exists(args[0]))
@@ -99,7 +99,7 @@ Where <test-folder> is the folder where files will be locked/created etc");
 
                         Console.WriteLine("Could open locked file {0}, cannot test", filename);
                         Console.WriteLine("* Test failed");
-                        return;
+                        return 1;
                     }
                     catch (Exception ex)
                     {
@@ -108,7 +108,7 @@ Where <test-folder> is the folder where files will be locked/created etc");
 
                     Console.WriteLine("Creating snapshot for folder: {0}", args[0]);
                     Console.WriteLine("If this fails, try to run as " + ((OperatingSystem.IsMacOS() || OperatingSystem.IsLinux()) ? "root" : "Administrator"));
-                    using (ISnapshotService snapshot = SnapshotUtility.CreateSnapshot(new[] { args[0] }, options))
+                    using (ISnapshotService snapshot = SnapshotUtility.CreateSnapshot(new[] { args[0] }, options, false))
                     {
                         Console.WriteLine("Attempting to read locked file via snapshot");
                         try
@@ -122,17 +122,19 @@ Where <test-folder> is the folder where files will be locked/created etc");
                         {
                             Console.WriteLine("The file {0} was locked even through snapshot, message: {1}", filename, ex);
                             Console.WriteLine("* Test failed");
-                            return;
+                            return 2;
                         }
                     }
                 }
 
                 Console.WriteLine("* Test passed");
+                return 0;
             }
             catch (Exception ex)
             {
                 Console.WriteLine("The snapshot tester failed: {0}", ex);
                 Console.WriteLine("* Test failed");
+                return 3;
             }
 
         }

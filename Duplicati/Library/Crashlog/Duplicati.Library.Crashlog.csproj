@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>    
+    <Description>Crashlog implementation</Description>
+	<RootNamespace>Duplicati.Library.Crashlog</RootNamespace>
+    <Copyright>Copyright © 2025 Team Duplicati, MIT license</Copyright>
+  </PropertyGroup>
+</Project>

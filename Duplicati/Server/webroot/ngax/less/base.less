@@ -618,6 +618,28 @@ div.captcha {
     }
 }
 
+.pauseoptions {
+    div.sublabel {
+        clear: both;
+        padding: 0 31px;
+        font-style: italic;
+    }
+
+    .input.checkbox {
+        margin-top: 10px;
+        input.checkbox {
+            width: auto;
+            height: auto;
+        }
+
+        label {
+            line-height: normal;
+            padding: 0 15px;
+            width: auto;
+        }
+    }
+}
+
 .centered-text {
     text-align: center;
 }
@@ -1207,6 +1229,11 @@ body {
                 }
 
                 .tasks {
+                    .orderbox
+                    {
+                        float: right;
+                    }
+
                     .tasklist {
                         .task {
                             border-top: 1px solid #eee;
@@ -2197,6 +2224,29 @@ div.modal-dialog {
                 width: auto;
             }
         }
+    }
+}
+
+.confirmdelete {
+    div.overview {
+        width: 420px;
+    }
+    div.word {
+        font-weight: bold;
+        padding: 12px;
+        border: 1px solid black;
+        margin-top: 12px;
+        margin-bottom: 12px;
+        background-color: #e0e0e0;
+        width: 420px;
+    }
+    
+    span.backupname {
+        font-weight: bold;
+    }
+
+    input.typedword {
+        float: none;
     }
 }
 

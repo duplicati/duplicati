@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -28,5 +28,6 @@ namespace Duplicati.Library.Backend.Strings
         public static string DisplayName { get { return LC.L(@"Dropbox"); } }
         public static string AuthidLong(string url) { return LC.L(@"The authorization token retrieved from {0}", url); }
         public static string AuthidShort { get { return LC.L(@"The authorization code"); } }
+        public static string OverQuotaError(string message) { return LC.L(@"The Dropbox account is over quota: {0}", message); }
     }
 }

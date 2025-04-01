@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -25,6 +25,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using Duplicati.Library.Utility;
+using System.Threading.Tasks;
 
 namespace Duplicati.CommandLine.RecoveryTool
 {
@@ -56,7 +57,7 @@ namespace Duplicati.CommandLine.RecoveryTool
 
                 Console.WriteLine("Listing files on backend: {0} ...", backend.ProtocolKey);
 
-                var lst = backend.List().ToList();
+                var lst = backend.ListAsync(CancellationToken.None).ToBlockingEnumerable().ToList();
 
                 Console.WriteLine("Found {0} files", lst.Count);
 

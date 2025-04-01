@@ -1,0 +1,15 @@
+<div ng-controller="ConfirmDeleteController" class="confirmdelete">
+  <form class="styled">
+    <div class="overview" translate>
+      To confirm you want to delete all remote files for
+      <span class="backupname">"{{selection.backupname}}"</span>, please enter
+      this phrase:
+    </div>
+
+    <div class="word">{{selection.requiredword}}</div>
+
+    <div>
+      <input type="text" class="typedword" ng-model="selection.typedword" />
+    </div>
+  </form>
+</div>

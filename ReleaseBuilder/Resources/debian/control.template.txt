@@ -3,7 +3,7 @@ Section: utils
 Priority: extra
 Maintainer: Kenneth Skovhede <kenneth@duplicati.com>
 Homepage: https://duplicati.com
-Package: duplicati
+Package: duplicati%PACKAGE_TYPE%
 Architecture: %ARCH%
 Depends: %DEPENDS%
 Version: %VERSION%

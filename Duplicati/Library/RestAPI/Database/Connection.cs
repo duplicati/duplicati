@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -28,18 +28,24 @@ using Duplicati.Library.RestAPI;
 using Duplicati.Library.Encryption;
 using Duplicati.Library.DynamicLoader;
 using Duplicati.Library.Main;
+using Duplicati.Library.AutoUpdater;
+using System.Data;
+using Duplicati.Library.Main.Database;
+
+#nullable enable
 
 namespace Duplicati.Server.Database
 {
     public class Connection : IDisposable
     {
-        private readonly System.Data.IDbConnection m_connection;
-        private readonly System.Data.IDbCommand m_errorcmd;
+        private readonly IDbConnection m_connection;
+        private readonly IDbCommand m_errorcmd;
         public readonly object m_lock = new object();
         public const int ANY_BACKUP_ID = -1;
         public const int SERVER_SETTINGS_ID = -2;
         private readonly Dictionary<string, Backup> m_temporaryBackups = new Dictionary<string, Backup>();
         private readonly bool m_encryptSensitiveFields;
+        private readonly EncryptedFieldHelper.KeyInstance? m_key;
         private static readonly HashSet<string> _encryptedFields =
             BackendLoader.Backends.SelectMany(x => x.SupportedCommands ?? [])
                 .Concat(EncryptionLoader.Modules.SelectMany(x => x.SupportedCommands ?? []))
@@ -59,17 +65,19 @@ namespace Duplicati.Server.Database
                 ])
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-        public Connection(System.Data.IDbConnection connection, bool disableFieldEncryption)
+        public Connection(IDbConnection connection, bool disableFieldEncryption, EncryptedFieldHelper.KeyInstance? key)
         {
             m_encryptSensitiveFields = !disableFieldEncryption;
+            m_key = key;
             m_connection = connection;
             m_errorcmd = m_connection.CreateCommand();
             m_errorcmd.CommandText = @"INSERT INTO ""ErrorLog"" (""BackupID"", ""Message"", ""Exception"", ""Timestamp"") VALUES (?,?,?,?)";
-            for (var i = 0; i < 4; i++)
-                m_errorcmd.Parameters.Add(m_errorcmd.CreateParameter());
+            m_errorcmd.AddParameters(4);
 
             this.ApplicationSettings = new ServerSettings(this);
         }
+
+        public bool IsEncryptingFields => m_encryptSensitiveFields;
 
         public void ReWriteAllFieldsIfEncryptionChanged()
         {
@@ -124,15 +132,16 @@ namespace Duplicati.Server.Database
             {
                 if (!long.TryParse(backupid, out long id))
                     id = -1;
-                ((System.Data.IDbDataParameter)m_errorcmd.Parameters[0]).Value = id;
-                ((System.Data.IDbDataParameter)m_errorcmd.Parameters[1]).Value = message;
-                ((System.Data.IDbDataParameter)m_errorcmd.Parameters[2]).Value = ex?.ToString();
-                ((System.Data.IDbDataParameter)m_errorcmd.Parameters[3]).Value = Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(DateTime.UtcNow);
+
+                m_errorcmd.SetParameterValue(0, id);
+                m_errorcmd.SetParameterValue(1, message);
+                m_errorcmd.SetParameterValue(2, ex?.ToString());
+                m_errorcmd.SetParameterValue(3, Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(DateTime.UtcNow));
                 m_errorcmd.ExecuteNonQuery();
             }
         }
 
-        public void ExecuteWithCommand(Action<System.Data.IDbCommand> f)
+        public void ExecuteWithCommand(Action<IDbCommand> f)
         {
             lock (m_lock)
                 using (var cmd = m_connection.CreateCommand())
@@ -144,9 +153,9 @@ namespace Duplicati.Server.Database
             var scheduleId = GetScheduleIDsFromTags(new string[] { "ID=" + backup.ID });
             return new Serializable.ImportExportStructure()
             {
-                CreatedByVersion = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString(),
+                CreatedByVersion = UpdaterManager.SelfVersion.Version ?? "Unknown",
                 Backup = (Database.Backup)backup,
-                Schedule = (Database.Schedule)(scheduleId.Any() ? GetSchedule(scheduleId.First()) : null),
+                Schedule = scheduleId != null && scheduleId.Any() ? (Schedule?)GetSchedule(scheduleId.First()) : null,
                 DisplayNames = SpecialFolders.GetSourceNames(backup)
             };
         }
@@ -179,34 +188,33 @@ namespace Duplicati.Server.Database
                     m_temporaryBackups.Add(backup.ID, (Backup)backup);
         }
 
-        public IBackup GetTemporaryBackup(string id)
+        public IBackup? GetTemporaryBackup(string id)
         {
             if (string.IsNullOrEmpty(id))
                 return null;
 
             lock (m_lock)
             {
-                Backup b;
-                m_temporaryBackups.TryGetValue(id, out b);
+                m_temporaryBackups.TryGetValue(id, out var b);
                 return b;
             }
         }
 
         public ServerSettings ApplicationSettings { get; private set; }
 
-        internal IDictionary<string, string> GetMetadata(long id)
+        internal IDictionary<string, string?> GetMetadata(long id)
         {
             lock (m_lock)
                 return ReadFromDb(
-                    (rd) => new KeyValuePair<string, string>(
-                        ConvertToString(rd, 0),
+                    (rd) => new KeyValuePair<string, string?>(
+                        ConvertToString(rd, 0) ?? "",
                         ConvertToString(rd, 1)
                     ),
                     @"SELECT ""Name"", ""Value"" FROM ""Metadata"" WHERE ""BackupID"" = ? ", id)
                     .ToDictionary((k) => k.Key, (k) => k.Value);
         }
 
-        internal void SetMetadata(IDictionary<string, string> values, long id, System.Data.IDbTransaction transaction)
+        internal void SetMetadata(IDictionary<string, string> values, long id, IDbTransaction? transaction)
         {
             lock (m_lock)
                 using (var tr = transaction == null ? m_connection.BeginTransaction() : null)
@@ -238,7 +246,7 @@ namespace Duplicati.Server.Database
                     .ToArray();
         }
 
-        internal void SetFilters(IEnumerable<IFilter> values, long id, System.Data.IDbTransaction transaction = null)
+        internal void SetFilters(IEnumerable<IFilter> values, long id, IDbTransaction? transaction = null)
         {
             lock (m_lock)
                 using (var tr = transaction == null ? m_connection.BeginTransaction() : null)
@@ -264,14 +272,14 @@ namespace Duplicati.Server.Database
                     {
                         Filter = ConvertToString(rd, 0) ?? "",
                         Name = ConvertToString(rd, 1) ?? "",
-                        Value = DecryptSensitiveFields(ConvertToString(rd, 2) ?? "")
+                        Value = DecryptSensitiveFields(ConvertToString(rd, 2) ?? "", m_key)
                         //TODO: Attach the argument information
                     },
                     @"SELECT ""Filter"", ""Name"", ""Value"" FROM ""Option"" WHERE ""BackupID"" = ?", id)
                     .ToArray();
         }
 
-        internal void SetSettings(IEnumerable<ISetting> values, long id, System.Data.IDbTransaction transaction = null)
+        internal void SetSettings(IEnumerable<ISetting> values, long id, IDbTransaction? transaction = null)
         {
             lock (m_lock)
                 using (var tr = transaction == null ? m_connection.BeginTransaction() : null)
@@ -281,7 +289,7 @@ namespace Duplicati.Server.Database
                         {
                             Filter = x.Filter,
                             Name = x.Name,
-                            Value = EncryptSensitiveFields(x.Name, x.Value)
+                            Value = EncryptSensitiveFields(x.Name, x.Value, m_key)
                         }).ToList();
 
                     OverwriteAndUpdateDb(
@@ -302,7 +310,7 @@ namespace Duplicati.Server.Database
                 }
         }
 
-        internal string[] GetSources(long id)
+        internal string?[] GetSources(long id)
         {
             lock (m_lock)
                 return ReadFromDb(
@@ -311,7 +319,7 @@ namespace Duplicati.Server.Database
                     .ToArray();
         }
 
-        internal void SetSources(IEnumerable<string> values, long id, System.Data.IDbTransaction transaction)
+        internal void SetSources(IEnumerable<string> values, long id, IDbTransaction transaction)
         {
             lock (m_lock)
                 using (var tr = transaction == null ? m_connection.BeginTransaction() : null)
@@ -359,7 +367,7 @@ namespace Duplicati.Server.Database
                 }
         }
 
-        public IBackup GetBackup(string id)
+        public IBackup? GetBackup(string id)
         {
             if (string.IsNullOrWhiteSpace(id))
                 throw new ArgumentNullException(nameof(id));
@@ -367,7 +375,7 @@ namespace Duplicati.Server.Database
             return long.TryParse(id, out long lid) ? GetBackup(lid) : GetTemporaryBackup(id);
         }
 
-        internal IBackup GetBackup(long id)
+        internal IBackup? GetBackup(long id)
         {
             lock (m_lock)
             {
@@ -378,7 +386,7 @@ namespace Duplicati.Server.Database
                         Name = ConvertToString(rd, 1),
                         Description = ConvertToString(rd, 2),
                         Tags = (ConvertToString(rd, 3) ?? "").Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries),
-                        TargetURL = EncryptedFieldHelper.Decrypt(ConvertToString(rd, 4)),
+                        TargetURL = EncryptedFieldHelper.Decrypt(ConvertToString(rd, 4), m_key),
                         DBPath = ConvertToString(rd, 5),
                     },
                     @"SELECT ""ID"", ""Name"", ""Description"", ""Tags"", ""TargetURL"", ""DBPath"" FROM ""Backup"" WHERE ID = ?", id)
@@ -391,7 +399,7 @@ namespace Duplicati.Server.Database
             }
         }
 
-        public ISchedule GetSchedule(long id)
+        public ISchedule? GetSchedule(long id)
         {
             lock (m_lock)
             {
@@ -460,12 +468,12 @@ namespace Duplicati.Server.Database
                 }
         }
 
-        public void AddOrUpdateBackupAndSchedule(IBackup item, ISchedule schedule)
+        public void AddOrUpdateBackupAndSchedule(IBackup item, ISchedule? schedule)
         {
             AddOrUpdateBackup(item, true, schedule);
         }
 
-        public string ValidateBackup(IBackup item, ISchedule schedule)
+        public string? ValidateBackup(IBackup item, ISchedule? schedule)
         {
             if (string.IsNullOrWhiteSpace(item.Name))
                 return "Missing a name";
@@ -572,12 +580,7 @@ namespace Duplicati.Server.Database
                 {
                     using (var cmd = m_connection.CreateCommand())
                     {
-                        cmd.Transaction = tr;
-                        cmd.Parameters.Add(cmd.CreateParameter());
-                        ((System.Data.IDbDataParameter)cmd.Parameters[0]).Value = path;
-                        cmd.Parameters.Add(cmd.CreateParameter());
-                        ((System.Data.IDbDataParameter)cmd.Parameters[1]).Value = item.ID;
-
+                        cmd.AddAndSetParameters(path, item.ID);
                         cmd.CommandText = @"UPDATE ""Backup"" SET ""DBPath""=? WHERE ""ID""=?";
                         cmd.ExecuteNonQuery();
                         tr.Commit();
@@ -589,7 +592,7 @@ namespace Duplicati.Server.Database
             FIXMEGlobal.StatusEventNotifyer.SignalNewEvent();
         }
 
-        private void AddOrUpdateBackup(IBackup item, bool updateSchedule, ISchedule schedule)
+        private void AddOrUpdateBackup(IBackup item, bool updateSchedule, ISchedule? schedule)
         {
             lock (m_lock)
             {
@@ -602,7 +605,7 @@ namespace Duplicati.Server.Database
 
                     for (var i = 0; i < 100; i++)
                     {
-                        var guess = System.IO.Path.Combine(folder, System.IO.Path.ChangeExtension(Duplicati.Library.Main.DatabaseLocator.GenerateRandomName(), ".sqlite"));
+                        var guess = System.IO.Path.Combine(folder, System.IO.Path.ChangeExtension(CLIDatabaseLocator.GenerateRandomName(), ".sqlite"));
                         if (!System.IO.File.Exists(guess))
                         {
                             ((Backup)item).DBPath = guess;
@@ -619,8 +622,8 @@ namespace Duplicati.Server.Database
                     OverwriteAndUpdateDb(
                         tr,
                         null,
-                        new object[] { long.Parse(item.ID ?? "-1") },
-                        new IBackup[] { item },
+                        [long.Parse(item.ID ?? "-1")],
+                        [item],
                         update ?
                             @"UPDATE ""Backup"" SET ""Name""=?, ""Description""=?, ""Tags""=?, ""TargetURL""=? WHERE ""ID""=?" :
                             @"INSERT INTO ""Backup"" (""Name"", ""Description"", ""Tags"", ""TargetURL"", ""DBPath"") VALUES (?,?,?,?,?)",
@@ -636,8 +639,8 @@ namespace Duplicati.Server.Database
                                 n.Name,
                                 n.Description ?? "" , // Description is optional but the column is set to NOT NULL, an additional check is welcome
                                 string.Join(",", n.Tags ?? new string[0]),
-                                m_encryptSensitiveFields ? EncryptedFieldHelper.Encrypt(n.TargetURL) : n.TargetURL,
-                                update ? item.ID : n.DBPath
+                                m_encryptSensitiveFields ? EncryptedFieldHelper.Encrypt(n.TargetURL, m_key) : n.TargetURL,
+                                update ? item.ID! : n.DBPath
                             };
                         });
 
@@ -649,9 +652,8 @@ namespace Duplicati.Server.Database
                             item.ID = ExecuteScalarInt64(cmd).ToString();
                         }
 
-                    var id = long.Parse(item.ID);
-
-                    if (long.Parse(item.ID) <= 0)
+                    var id = long.Parse(item.ID ?? "-1");
+                    if (id <= 0)
                         throw new Exception("Invalid addition, cannot update application settings through update method");
 
                     SetSources(item.Sources, id, tr);
@@ -670,12 +672,19 @@ namespace Duplicati.Server.Database
                             if (existing.Any())
                             {
                                 var cur = GetSchedule(existing.First());
-                                cur.AllowedDays = schedule.AllowedDays;
-                                cur.Repeat = schedule.Repeat;
-                                cur.Tags = schedule.Tags;
-                                cur.Time = schedule.Time;
+                                if (cur != null)
+                                {
+                                    cur.AllowedDays = schedule.AllowedDays;
+                                    cur.Repeat = schedule.Repeat;
+                                    cur.Tags = schedule.Tags;
+                                    cur.Time = schedule.Time;
 
-                                schedule = cur;
+                                    schedule = cur;
+                                }
+                                else
+                                {
+                                    schedule.ID = -1;
+                                }
                             }
                             else
                             {
@@ -706,7 +715,7 @@ namespace Duplicati.Server.Database
                 }
         }
 
-        private void AddOrUpdateSchedule(ISchedule item, System.Data.IDbTransaction tr)
+        private void AddOrUpdateSchedule(ISchedule item, IDbTransaction tr)
         {
             lock (m_lock)
             {
@@ -719,14 +728,14 @@ namespace Duplicati.Server.Database
                     update ?
                         @"UPDATE ""Schedule"" SET ""Tags""=?, ""Time""=?, ""Repeat""=?, ""LastRun""=?, ""Rule""=? WHERE ""ID""=?" :
                         @"INSERT INTO ""Schedule"" (""Tags"", ""Time"", ""Repeat"", ""LastRun"", ""Rule"") VALUES (?,?,?,?,?)",
-                    (n) => new object[] {
+                    (n) => [
                         string.Join(",", n.Tags),
                         Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(n.Time),
                         n.Repeat,
                         Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(n.LastRun),
                         n.Rule ?? "",
                         update ? (object)item.ID : null
-                    });
+                    ]);
 
                 if (!update)
                     using (var cmd = m_connection.CreateCommand())
@@ -806,7 +815,7 @@ namespace Duplicati.Server.Database
                             Name = ConvertToString(rd, 1),
                             Description = ConvertToString(rd, 2),
                             Tags = (ConvertToString(rd, 3) ?? "").Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries),
-                            TargetURL = EncryptedFieldHelper.Decrypt(ConvertToString(rd, 4)),
+                            TargetURL = EncryptedFieldHelper.Decrypt(ConvertToString(rd, 4), m_key),
                             DBPath = ConvertToString(rd, 5),
                         },
                         @"SELECT ""ID"", ""Name"", ""Description"", ""Tags"", ""TargetURL"", ""DBPath"" FROM ""Backup"" ")
@@ -874,8 +883,12 @@ namespace Duplicati.Server.Database
                 FIXMEGlobal.DataConnection.ApplicationSettings.UnackedWarning = notifications.Any(x => x.ID != id && x.Type == Duplicati.Server.Serialization.NotificationType.Warning);
             }
 
-            FIXMEGlobal.NotificationUpdateService.IncrementLastNotificationUpdateId();
-            FIXMEGlobal.StatusEventNotifyer.SignalNewEvent();
+            // Guard against dismissing notifications before the provider is initialized
+            if (FIXMEGlobal.Provider != null)
+            {
+                FIXMEGlobal.NotificationUpdateService.IncrementLastNotificationUpdateId();
+                FIXMEGlobal.StatusEventNotifyer.SignalNewEvent();
+            }
 
             return true;
         }
@@ -925,8 +938,7 @@ namespace Duplicati.Server.Database
             using (var tr = m_connection.BeginTransaction())
             {
                 cmd.Transaction = tr;
-                cmd.Parameters.Add(cmd.CreateParameter());
-                ((System.Data.IDbDataParameter)cmd.Parameters[0]).Value = -1;
+                cmd.AddAndSetParameters(-1);
                 cmd.CommandText = @"DELETE FROM ""Option"" WHERE ""BackupID"" = ?";
                 cmd.ExecuteNonQuery();
                 cmd.CommandText = @"DELETE FROM ""Metadata"" WHERE ""BackupID"" = ?";
@@ -937,9 +949,7 @@ namespace Duplicati.Server.Database
                 cmd.ExecuteNonQuery();
 
                 cmd.Parameters.Clear();
-                cmd.Parameters.Add(cmd.CreateParameter());
-
-                ((System.Data.IDbDataParameter)cmd.Parameters[0]).Value = "ID=-1";
+                cmd.AddAndSetParameters("ID=-1");
                 cmd.CommandText = @"DELETE FROM ""Schedule"" WHERE ""Tags"" = ?";
                 cmd.ExecuteNonQuery();
                 tr.Commit();
@@ -971,7 +981,7 @@ namespace Duplicati.Server.Database
                     .ToDictionary(x => x.Key, x => x.Last().Value);
         }
 
-        public void SetUISettings(string scheme, IDictionary<string, string> values, System.Data.IDbTransaction transaction = null)
+        public void SetUISettings(string scheme, IDictionary<string, string?> values, IDbTransaction? transaction = null)
         {
             lock (m_lock)
                 using (var tr = transaction == null ? m_connection.BeginTransaction() : null)
@@ -992,7 +1002,7 @@ namespace Duplicati.Server.Database
                 }
         }
 
-        public void UpdateUISettings(string scheme, IDictionary<string, string> values, System.Data.IDbTransaction transaction = null)
+        public void UpdateUISettings(string scheme, IDictionary<string, string?> values, IDbTransaction? transaction = null)
         {
             lock (m_lock)
                 using (var tr = transaction == null ? m_connection.BeginTransaction() : null)
@@ -1049,32 +1059,31 @@ namespace Duplicati.Server.Database
             {
                 cmd.Transaction = tr;
                 cmd.CommandText = @"DELETE FROM ""ErrorLog"" WHERE ""Timestamp"" < ?";
-                cmd.Parameters.Add(cmd.CreateParameter());
-                ((System.Data.IDataParameter)cmd.Parameters[0]).Value = t;
+                cmd.AddAndSetParameters(t);
                 cmd.ExecuteNonQuery();
 
                 tr.Commit();
             }
         }
 
-        private static DateTime ConvertToDateTime(System.Data.IDataReader rd, int index)
+        private static DateTime ConvertToDateTime(IDataReader rd, int index)
         {
             var unixTime = ConvertToInt64(rd, index);
             return unixTime == 0 ? new DateTime(0) : Library.Utility.Utility.EPOCH.AddSeconds(unixTime);
         }
 
-        private static bool ConvertToBoolean(System.Data.IDataReader rd, int index)
+        private static bool ConvertToBoolean(IDataReader rd, int index)
         {
             return ConvertToInt64(rd, index) == 1;
         }
 
-        private static string ConvertToString(System.Data.IDataReader rd, int index)
+        private static string? ConvertToString(IDataReader rd, int index)
         {
             var r = rd.GetValue(index);
             return r == null || r == DBNull.Value ? null : r.ToString();
         }
 
-        private static long ConvertToInt64(System.Data.IDataReader rd, int index)
+        private static long ConvertToInt64(IDataReader rd, int index)
         {
             try
             {
@@ -1088,24 +1097,24 @@ namespace Duplicati.Server.Database
             return -1;
         }
 
-        private static long ExecuteScalarInt64(System.Data.IDbCommand cmd, long defaultValue = -1)
+        private static long ExecuteScalarInt64(IDbCommand cmd, long defaultValue = -1)
         {
             using (var rd = cmd.ExecuteReader())
                 return rd.Read() ? ConvertToInt64(rd, 0) : defaultValue;
         }
 
-        private static string ExecuteScalarString(System.Data.IDbCommand cmd)
+        private static string? ExecuteScalarString(IDbCommand cmd)
         {
             using (var rd = cmd.ExecuteReader())
                 return rd.Read() ? ConvertToString(rd, 0) : null;
 
         }
 
-        private object ConvertToEnum(Type enumType, System.Data.IDataReader rd, int index, object @default)
+        private object? ConvertToEnum(Type enumType, IDataReader rd, int index, object? @default)
         {
             try
             {
-                return Enum.Parse(enumType, ConvertToString(rd, index));
+                return Enum.Parse(enumType, ConvertToString(rd, index) ?? string.Empty, true);
             }
             catch
             {
@@ -1115,13 +1124,13 @@ namespace Duplicati.Server.Database
         }
 
         // Overloaded function for legacy functionality
-        private bool DeleteFromDb(string tablename, long id, System.Data.IDbTransaction transaction = null)
+        private bool DeleteFromDb(string tablename, long id, IDbTransaction? transaction = null)
         {
             return DeleteFromDb(tablename, id, "ID", transaction);
         }
 
         // New function that allows to delete rows from tables with arbitrary identifier values (e.g. ID or BackupID)
-        private bool DeleteFromDb(string tablename, long id, string identifier, System.Data.IDbTransaction transaction = null)
+        private bool DeleteFromDb(string tablename, long id, string identifier, IDbTransaction? transaction = null)
         {
             if (transaction == null)
             {
@@ -1138,9 +1147,7 @@ namespace Duplicati.Server.Database
                 {
                     cmd.Transaction = transaction;
                     cmd.CommandText = string.Format(@"DELETE FROM ""{0}"" WHERE ""{1}""=?", tablename, identifier);
-                    var p = cmd.CreateParameter();
-                    p.Value = id;
-                    cmd.Parameters.Add(p);
+                    cmd.AddAndSetParameters(id);
 
                     var r = cmd.ExecuteNonQuery();
                     // Roll back the transaction if more than 1 ID was deleted. Multiple "BackupID" rows being deleted isn't a problem.
@@ -1151,14 +1158,14 @@ namespace Duplicati.Server.Database
             }
         }
 
-        private static IEnumerable<T> Read<T>(System.Data.IDbCommand cmd, Func<System.Data.IDataReader, T> f)
+        private static IEnumerable<T> Read<T>(IDbCommand cmd, Func<IDataReader, T> f)
         {
             using (var rd = cmd.ExecuteReader())
                 while (rd.Read())
                     yield return f(rd);
         }
 
-        private static IEnumerable<T> Read<T>(System.Data.IDataReader rd, Func<T> f)
+        private static IEnumerable<T> Read<T>(IDataReader rd, Func<T> f)
         {
             while (rd.Read())
                 yield return f();
@@ -1184,7 +1191,7 @@ namespace Duplicati.Server.Database
                  select n).ToArray();
         }
 
-        private IEnumerable<T> ReadFromDb<T>(string whereclause, params object[] args)
+        private IEnumerable<T> ReadFromDb<T>(string? whereclause, params object?[] args)
         {
             var properties = GetORMFields<T>();
 
@@ -1219,10 +1226,11 @@ namespace Duplicati.Server.Database
             }, sql, args);
         }
 
-        private void OverwriteAndUpdateDb<T>(System.Data.IDbTransaction transaction, string deleteSql, object[] deleteArgs, IEnumerable<T> values, bool updateExisting)
+        private void OverwriteAndUpdateDb<T>(IDbTransaction? transaction, string? deleteSql, object[]? deleteArgs, IEnumerable<T> values, bool updateExisting)
         {
             var properties = GetORMFields<T>();
-            var idfield = properties.FirstOrDefault(x => x.Name == "ID");
+            var idfield = properties.FirstOrDefault(x => x.Name == "ID")
+                ?? throw new Exception("No ID field found in type " + typeof(T).Name);
             properties = properties.Where(x => x.Name != "ID").ToArray();
 
             string sql;
@@ -1235,7 +1243,7 @@ namespace Duplicati.Server.Database
                     string.Join(@", ", properties.Select(x => string.Format(@"""{0}""=?", x.Name)))
                 );
 
-                properties = properties.Union(new System.Reflection.PropertyInfo[] { idfield }).ToArray();
+                properties = properties.Append(idfield).ToArray();
             }
             else
             {
@@ -1254,10 +1262,13 @@ namespace Duplicati.Server.Database
                 {
                     var val = x.GetValue(item, null);
 
-                    if (x.PropertyType.IsEnum)
-                        val = val.ToString();
-                    else if (x.PropertyType == typeof(DateTime))
-                        val = Library.Utility.Utility.NormalizeDateTimeToEpochSeconds((DateTime)val);
+                    if (val != null)
+                    {
+                        if (x.PropertyType.IsEnum)
+                            val = val.ToString();
+                        else if (x.PropertyType == typeof(DateTime))
+                            val = Library.Utility.Utility.NormalizeDateTimeToEpochSeconds((DateTime)val);
+                    }
 
                     return val;
                 }).ToArray();
@@ -1275,24 +1286,18 @@ namespace Duplicati.Server.Database
                 }
         }
 
-        private IEnumerable<T> ReadFromDb<T>(Func<System.Data.IDataReader, T> f, string sql, params object[] args)
+        private IEnumerable<T> ReadFromDb<T>(Func<IDataReader, T> f, string sql, params object?[]? args)
         {
             using (var cmd = m_connection.CreateCommand())
             {
                 cmd.CommandText = sql;
-                if (args != null)
-                    foreach (var a in args)
-                    {
-                        var p = cmd.CreateParameter();
-                        p.Value = a;
-                        cmd.Parameters.Add(p);
-                    }
+                cmd.AddAndSetParameters(args);
 
                 return Read(cmd, f).ToArray();
             }
         }
 
-        private void OverwriteAndUpdateDb<T>(System.Data.IDbTransaction transaction, string deleteSql, object[] deleteArgs, IEnumerable<T> values, string insertSql, Func<T, object[]> f)
+        private void OverwriteAndUpdateDb<T>(IDbTransaction? transaction, string? deleteSql, object[]? deleteArgs, IEnumerable<T> values, string insertSql, Func<T, object?[]> f)
         {
             using (var cmd = m_connection.CreateCommand())
             {
@@ -1301,14 +1306,7 @@ namespace Duplicati.Server.Database
                 if (!string.IsNullOrEmpty(deleteSql))
                 {
                     cmd.CommandText = deleteSql;
-                    if (deleteArgs != null)
-                        foreach (var a in deleteArgs)
-                        {
-                            var p = cmd.CreateParameter();
-                            p.Value = a;
-                            cmd.Parameters.Add(p);
-                        }
-
+                    cmd.AddAndSetParameters(deleteArgs);
                     cmd.ExecuteNonQuery();
                     cmd.Parameters.Clear();
                 }
@@ -1321,12 +1319,9 @@ namespace Duplicati.Server.Database
                     if (r == null)
                         continue;
 
-                    while (cmd.Parameters.Count < r.Length)
-                        cmd.Parameters.Add(cmd.CreateParameter());
-
-                    for (var i = 0; i < r.Length; i++)
-                        ((System.Data.IDbDataParameter)cmd.Parameters[i]).Value = r[i];
-
+                    if (cmd.Parameters.Count < r.Length)
+                        cmd.AddParameters(r.Length - cmd.Parameters.Count);
+                    cmd.SetParameterValues(r);
                     cmd.ExecuteNonQuery();
                 }
             }
@@ -1337,12 +1332,13 @@ namespace Duplicati.Server.Database
         /// </summary>
         /// <param name="fieldName">The fieldname used to determine if it will be encrypted</param>
         /// <param name="fieldValue">The field value</param>
+        /// <param name="key">The encryption key</param>
         /// <returns>The encrypted string or the original value</returns>
-        private static string EncryptSensitiveFields(string fieldName, string fieldValue)
+        private static string? EncryptSensitiveFields(string fieldName, string fieldValue, EncryptedFieldHelper.KeyInstance? key)
         {
             if (fieldValue != null)
                 return _encryptedFields.Contains(fieldName)
-                    ? EncryptedFieldHelper.Encrypt(fieldValue)
+                    ? EncryptedFieldHelper.Encrypt(fieldValue, key)
                     : fieldValue;
 
             return null;
@@ -1352,12 +1348,13 @@ namespace Duplicati.Server.Database
         /// Decrypts sensitive fields
         /// </summary>
         /// <param name="fieldValue">The field value</param>
+        /// <param name="key">The encryption key</param>
         /// <returns>The decrypted string</returns>
-        private static string DecryptSensitiveFields(string fieldValue)
+        private static string? DecryptSensitiveFields(string? fieldValue, EncryptedFieldHelper.KeyInstance? key)
         {
             if (fieldValue != null)
                 return EncryptedFieldHelper.IsEncryptedString(fieldValue)
-                    ? EncryptedFieldHelper.Decrypt(fieldValue)
+                    ? EncryptedFieldHelper.Decrypt(fieldValue, key)
                     : fieldValue;
 
             return null;

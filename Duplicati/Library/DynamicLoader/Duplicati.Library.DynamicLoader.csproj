@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <OutputType>Library</OutputType>
-    <Copyright>Copyright © 2024 Team Duplicati, MIT license</Copyright>
+    <Copyright>Copyright © 2025 Team Duplicati, MIT license</Copyright>
   </PropertyGroup>
 
   <ItemGroup>  
@@ -16,6 +16,8 @@
     <ProjectReference Include="..\Encryption\Duplicati.Library.Encryption.csproj" />
     <ProjectReference Include="..\Modules\Builtin\Duplicati.Library.Modules.Builtin.csproj" />
     <ProjectReference Include="..\AutoUpdater\Duplicati.Library.AutoUpdater.csproj" />
+    <ProjectReference Include="..\SecretProvider\Duplicati.Library.SecretProvider.csproj" />
+    <ProjectReference Include="..\SourceProviders\Duplicati.Library.SourceProviders.csproj" />
   </ItemGroup>
 
   <ItemGroup>

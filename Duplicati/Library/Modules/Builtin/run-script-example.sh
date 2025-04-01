@@ -50,7 +50,11 @@
 # If set to true, the script path will be parsed as a command line, and the
 # arguments will be passed to the script. If set to false (default), 
 # the script path will used as a single path.
-# Use double- or single-quotes to pass arguments with spaces.
+# If you do not have spaces in your script path or arguments, simply enter 
+# it as a string:
+# Example: --run-script-before="/path/to/script.sh arg1 arg2 --option=a"
+# If you have spaces in the path or arguements, use double- or single-quotes
+# around the elements that have spaces, similar to how you would do in a shell:
 # Example: --run-script-before="\"/path to/script.sh\" \"arg1 \" arg2"
 
 

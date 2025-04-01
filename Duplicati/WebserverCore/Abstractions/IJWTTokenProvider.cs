@@ -1,3 +1,23 @@
+// Copyright (C) 2025, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
 namespace Duplicati.WebserverCore.Abstractions;
 
 /// <summary>
@@ -57,13 +77,20 @@ public interface IJWTTokenProvider
     /// <param name="userId">The user ID the token is for.</param>
     /// <param name="tokenFamilyId">The token family ID the token is for.</param>
     /// <param name="expiration">The expiration time of the token, can only be shorter than the current.</param>
+    /// <returns>The JWT token.</returns>
     string CreateAccessToken(string userId, string tokenFamilyId, TimeSpan? expiration = null);
+    /// <summary>
+    /// Creates a JWT token that can be used to access resources &quot;forever&quot;.
+    /// </summary>
+    /// <returns>The JWT token.</returns>
+    string CreateForeverToken();
     /// <summary>
     /// Creates a JWT token that can be used to refresh an access token.
     /// </summary>
     /// <param name="userId">The user ID the token is for.</param>
     /// <param name="tokenFamilyId">The token family ID the token is for.</param>
     /// <param name="counter">The counter of the token family the token is for.</param>
+    /// <returns>The JWT token.</returns>
     string CreateRefreshToken(string userId, string tokenFamilyId, int counter);
 
     /// <summary>

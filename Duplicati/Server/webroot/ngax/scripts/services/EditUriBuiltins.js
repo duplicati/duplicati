@@ -30,10 +30,14 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
     EditUriBackendConfig.templates['dropbox']     = 'templates/backends/oauth.html';
     EditUriBackendConfig.templates['sia']         = 'templates/backends/sia.html';
     EditUriBackendConfig.templates['storj']       = 'templates/backends/storj.html';
-	  EditUriBackendConfig.templates['rclone']      = 'templates/backends/rclone.html';
+    EditUriBackendConfig.templates['rclone']      = 'templates/backends/rclone.html';
     EditUriBackendConfig.templates['cos']         = 'templates/backends/cos.html';
-	  EditUriBackendConfig.templates['aliyunoss']   = 'templates/backends/aliyunoss.html';
+    EditUriBackendConfig.templates['aliyunoss']   = 'templates/backends/aliyunoss.html';
     EditUriBackendConfig.templates['e2']          = 'templates/backends/e2.html';
+    EditUriBackendConfig.templates['pcloud']      = 'templates/backends/pcloud.html';
+    EditUriBackendConfig.templates['smb']         = 'templates/backends/smb.html';
+    EditUriBackendConfig.templates['cifs']        = 'templates/backends/smb.html';
+    EditUriBackendConfig.templates['filen']       = 'templates/backends/filen.html';
 
     EditUriBackendConfig.testers['s3'] = function(scope, callback) {
 
@@ -189,6 +193,10 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
         scope.oauth_create_token = Math.random().toString(36).substr(2) + Math.random().toString(36).substr(2);
         scope.oauth_service_link = 'https://duplicati-oauth-handler.appspot.com/';
         scope.oauth_start_link = scope.oauth_service_link + '?type=' + scope.Backend.Key + '&token=' + scope.oauth_create_token;
+
+        scope.oauth_service_link_v2 = 'https://oauth-service.duplicati.com/';
+        scope.oauth_start_link_v2 = scope.oauth_service_link_v2 + '?type=' + scope.Backend.Key + '&token=' + scope.oauth_create_token;
+
         scope.oauth_in_progress = false;
         
         // Handle a global override for OAuth or a local from advanced options
@@ -202,21 +210,29 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
                 if (!oauthurl.endsWith("/")) oauthurl += "/";
                 scope.oauth_global_server = oauthurl;
             }
-
-            if (!oauthurl.endsWith("/")) 
-                oauthurl += "/";
-            scope.oauth_service_link = oauthurl;
-            scope.oauth_start_link = scope.oauth_service_link + '?type=' + scope.Backend.Key + '&token=' + scope.oauth_create_token;
+            
+            if (oauthurl != null && oauthurl != '') {
+                if (!oauthurl.endsWith("/")) 
+                    oauthurl += "/";
+                scope.oauth_service_link = oauthurl;
+                scope.oauth_start_link = scope.oauth_service_link + '?type=' + scope.Backend.Key + '&token=' + scope.oauth_create_token;
+            }
         }, AppUtils.connectionError);
 
         scope.oauth_start_token_creation = function () {
+            scope.oauth_start_token_creation_any(scope.oauth_service_link);
+        }
+
+        scope.oauth_start_token_creation_v2 = function () {
+            scope.oauth_start_token_creation_any(scope.oauth_service_link_v2);
+        }
+
+        scope.oauth_start_token_creation_any = function (servicelink) {
 
             scope.oauth_in_progress = true;
 
             var w = 450;
             var h = 600;
-
-            var servicelink = scope.oauth_service_link;
 
             // Handle local override
             for (var n in scope.AdvancedOptions) {
@@ -276,6 +292,18 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
     EditUriBackendConfig.loaders['jottacloud']  = function() { return this['oauth-base'].apply(this, arguments); };
     EditUriBackendConfig.loaders['box']         = function() { return this['oauth-base'].apply(this, arguments); };
     EditUriBackendConfig.loaders['dropbox']     = function() { return this['oauth-base'].apply(this, arguments); };
+    EditUriBackendConfig.loaders['pcloud']      = function(scope) {
+        if (scope.Server == null || scope.Server == '') {
+            scope.Server = 'api.pcloud.com';
+        }
+        return this['oauth-base'].apply(this, arguments); 
+    };
+    EditUriBackendConfig.loaders['smb']      = function(scope) {
+        if (scope.Transport === undefined || scope.Transport === '') {
+            scope.Transport = 'directtcp';
+        }
+    };
+    EditUriBackendConfig.loaders['cifs'] = EditUriBackendConfig.loaders['smb'];
 
     EditUriBackendConfig.loaders['openstack'] = function (scope) {
         if (scope.openstack_providers == null) {
@@ -333,8 +361,8 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
 
         this['oauth-base'].apply(this, arguments);
     };
-
-    // Parsers take a decomposed uri input and sets up the scope variables
+    
+        // Parsers take a decomposed uri input and sets up the scope variables
     EditUriBackendConfig.parsers['file'] = function (scope, module, server, port, path, options) {
         if (scope.Path == null && scope.Server == null) {
             var ix = scope.uri.indexOf('?');
@@ -419,8 +447,8 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
             scope.AuthID = options['--authid'];
 
         delete options['--authid'];
-
-        EditUriBackendConfig.mergeServerAndPath(scope);
+        if (module !== 'pcloud')
+            EditUriBackendConfig.mergeServerAndPath(scope);
     };
 
     EditUriBackendConfig.parsers['googledrive'] = function() { return this['oauth-base'].apply(this, arguments); };
@@ -430,7 +458,8 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
     EditUriBackendConfig.parsers['jottacloud']  = function() { return this['oauth-base'].apply(this, arguments); };
     EditUriBackendConfig.parsers['box']         = function() { return this['oauth-base'].apply(this, arguments); };
     EditUriBackendConfig.parsers['dropbox']     = function() { return this['oauth-base'].apply(this, arguments); };
-
+    EditUriBackendConfig.parsers['pcloud']      = function() { return this['oauth-base'].apply(this, arguments); };
+    
     EditUriBackendConfig.parsers['openstack'] = function (scope, module, server, port, path, options) {
         scope.openstack_domainname = options['--openstack-domain-name'];
         scope.openstack_server = scope.openstack_server_custom = options['--openstack-authuri'];
@@ -588,6 +617,36 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
         EditUriBackendConfig.mergeServerAndPath(scope);
     }
 
+    EditUriBackendConfig.parsers['smb'] = function (scope, module, server, path, port, options) {
+        if (options['--transport'])
+            scope.Transport = options['--transport'];
+        else
+            scope.Transport = 'directtcp';
+        
+        if (options['--auth-domain'])
+            scope.Domain = options['--auth-domain'];
+
+        var nukeopts = ['--transport', '--auth-domain'];
+        for (var x in nukeopts)
+            delete options[nukeopts[x]];
+        
+        const slashIndex = path.indexOf('/');
+        scope.ShareName = slashIndex >= 0 ? path.substring(0, slashIndex).replace(/[/\\]+$/, '') : path.replace(/[/\\]+$/, '');
+        scope.Path = slashIndex >= 0 ? path.substring(slashIndex + 1).replace(/[/\\]+$/, '') : "";
+
+    };
+
+    EditUriBackendConfig.parsers['cifs'] = EditUriBackendConfig.parsers['smb'];
+
+    EditUriBackendConfig.parsers['filen'] = function (scope, module, server, path, port, options) {
+        console.log("filen parser", scope, module, server, path, port, options);
+        var p1 = server ?? '';
+        var p2 = path ?? '';
+        var combined = p1;
+        if (p1.length > 0 && p2.length > 0)
+            combined += '/' + p2;
+        scope.Path = combined;
+    };
 
     // Builders take the scope and produce the uri output
     EditUriBackendConfig.builders['s3'] = function (scope) {
@@ -649,6 +708,20 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
         );
 
         return url;
+    };
+
+    EditUriBackendConfig.builders['pcloud'] = function (scope) {
+        var opts = {
+            'authid': scope.AuthID
+        }
+        EditUriBackendConfig.merge_in_advanced_options(scope, opts, false);
+
+        return AppUtils.format('{0}://{1}/{2}{3}',
+            scope.Backend.Key,
+            scope.Server,
+            scope.Path || '',
+            AppUtils.encodeDictAsUrl(opts)
+        );
     };
 
     EditUriBackendConfig.builders['googledrive'] = function() { return this['oauth-base'].apply(this, arguments); };
@@ -916,8 +989,64 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
 
         return url;
     }
+
+    EditUriBackendConfig.builders['smb'] = function (scope) {
+        var opts = {
+            'transport': scope.Transport,
+            'auth-domain': scope.Domain
+        };
+
+        EditUriBackendConfig.merge_in_advanced_options(scope, opts, true);
+        // Remove trailing and leading slashes
+        if (scope.ShareName) 
+            scope.ShareName = scope.ShareName.replace(/^[/\\]+/, '').replace(/[/\\]+$/, '');
+        
+        if (scope.Path)
+            scope.Path = scope.Path.replace(/^[/\\]+/, '').replace(/[/\\]+$/, '');
+        else 
+            scope.Path = '';
+
+        return AppUtils.format('{0}://{1}/{2}/{3}/{4}',
+            scope.Backend.Key,
+            scope.Server,
+            scope.ShareName,
+            scope.Path,
+            AppUtils.encodeDictAsUrl(opts)
+        );
+    }
+
+    EditUriBackendConfig.builders['cifs'] = EditUriBackendConfig.builders['smb'];
+
+    EditUriBackendConfig.builders['filen'] = function (scope) {
+        var opts = {};
+        EditUriBackendConfig.merge_in_advanced_options(scope, opts, true);
+        // Remove trailing and leading slashes        
+        if (scope.Path)
+            scope.Path = scope.Path.replace(/^[/\\]+/, '').replace(/[/\\]+$/, '');
+        else 
+            scope.Path = '';
+
+        return AppUtils.format('{0}://{1}{2}',
+            scope.Backend.Key,
+            scope.Path,
+            AppUtils.encodeDictAsUrl(opts)
+        );
+    }
+
+    EditUriBackendConfig.validaters['smb'] = function (scope, continuation) {
+        if (EditUriBackendConfig.require_server(scope)
+            && EditUriBackendConfig.require_username(scope)
+            && EditUriBackendConfig.require_field(scope, 'ShareName', gettextCatalog.getString('Share name')))
+            continuation();
+    };
+
+    EditUriBackendConfig.validaters['smb'] = EditUriBackendConfig.validaters['cifs'];
     
-	
+    EditUriBackendConfig.validaters['filen'] = function (scope, continuation) {
+        if (EditUriBackendConfig.require_username_and_password(scope))
+            EditUriBackendConfig.recommend_path(scope, continuation);
+    };
+
     EditUriBackendConfig.validaters['file'] = function (scope, continuation) {
         if (EditUriBackendConfig.require_path(scope))
             continuation();
@@ -947,12 +1076,31 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
         if (res)
             EditUriBackendConfig.recommend_path(scope, continuation);
     };
+    
+    EditUriBackendConfig.validaters['webdav'] = function (scope, continuation) {
+        var res = EditUriBackendConfig.require_server(scope);
+        
+        if (res)
+            EditUriBackendConfig.recommend_username(scope, () => {
+                EditUriBackendConfig.recommend_path(scope, continuation);
+            });
+    };
 
-    EditUriBackendConfig.validaters['webdav'] = EditUriBackendConfig.validaters['ssh'];
+    EditUriBackendConfig.validaters['webdav'] = EditUriBackendConfig.validaters['webdav'];
     EditUriBackendConfig.validaters['cloudfiles'] = EditUriBackendConfig.validaters['ssh'];
     EditUriBackendConfig.validaters['tahoe'] = EditUriBackendConfig.validaters['ssh'];
 
+    EditUriBackendConfig.validaters['pcloud'] = function (scope, continuation) {
+        var res =
+            EditUriBackendConfig.require_server(scope) &&
+            EditUriBackendConfig.require_field(scope, 'AuthID', gettextCatalog.getString('AuthID'));
 
+        if (res)
+            EditUriBackendConfig.recommend_path(scope, function() {
+                continuation();
+            });
+    };
+    
     EditUriBackendConfig.validaters['authid-base'] = function (scope, continuation) {
         var res =
             EditUriBackendConfig.require_field(scope, 'AuthID', gettextCatalog.getString('AuthID'));
@@ -972,7 +1120,8 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
     EditUriBackendConfig.validaters['onedrive']    = EditUriBackendConfig.validaters['authid-base'];
     EditUriBackendConfig.validaters['onedrivev2']  = EditUriBackendConfig.validaters['authid-base'];
     EditUriBackendConfig.validaters['sharepoint']  = EditUriBackendConfig.validaters['authid-base'];
-
+    EditUriBackendConfig.validaters['pcloud']      = EditUriBackendConfig.validaters['pcloud'];
+    
     EditUriBackendConfig.validaters['msgroup'] = function (scope, continuation) {
 
         EditUriBackendConfig.validaters['authid-base'](scope, function () {
@@ -1176,7 +1325,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
 		if(res && scope['storj_auth_method'] == 'API key' && scope['storj_secret'] != scope['storj_secret_verify'])
 			res = EditUriBackendConfig.show_error_dialog(gettextCatalog.getString('The encryption passphrases do not match'));
 		
-		var re = new RegExp('^([a-z0-9]+([a-z0-9\-][a-z0-9])*)+(.[a-z0-9]+([a-z0-9\-][a-z0-9])*)*$');
+		var re = new RegExp('^([a-z0-9]+([a-z0-9-][a-z0-9])*)+(.[a-z0-9]+([a-z0-9-][a-z0-9])*)*$');
 		if(res && scope['storj_bucket'] && (!re.test(scope['storj_bucket']) || !(scope['storj_bucket'].length > 2 && scope['storj_bucket'].length < 64))){
 			res = EditUriBackendConfig.show_error_dialog(gettextCatalog.getString('Bucket name can only be between 3 and 63 characters long and contain only lower-case characters, numbers, periods and dashes'));
 		}

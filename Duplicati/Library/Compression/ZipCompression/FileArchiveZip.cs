@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -75,10 +75,6 @@ namespace Duplicati.Library.Compression.ZipCompression
         /// </summary>
         private const string COMPRESSION_METHOD_OPTION = "zip-compression-method";
         /// <summary>
-        /// The commandline option for toggling the ZIP64 support
-        /// </summary>
-        private const string COMPRESSION_ZIP64_OPTION = "zip-compression-zip64";
-        /// <summary>
         /// The commandline option for toggling the compression library
         /// </summary>
         private const string COMPRESSION_LIBRARY_OPTION = "zip-compression-library";
@@ -94,14 +90,19 @@ namespace Duplicati.Library.Compression.ZipCompression
         private const CompressionType DEFAULT_COMPRESSION_METHOD = CompressionType.Deflate;
 
         /// <summary>
-        /// The default setting for the ZIP64 support
-        /// </summary>
-        private const bool DEFAULT_ZIP64 = false;
-
-        /// <summary>
         /// The archive to use
         /// </summary>
         private readonly IZipArchive m_archive;
+
+        /// <summary>
+        /// The fallback archive to use, if any
+        /// </summary>
+        private IZipArchive? m_fallbackArchive = null;
+
+        /// <summary>
+        /// The parameters used to create the archive
+        /// </summary>
+        private readonly (Stream Stream, ParsedZipOptions Options, CompressionLibrary Library) m_creationParams;
 
         /// <summary>
         /// Default constructor, used to read file extension and supported commands
@@ -117,14 +118,10 @@ namespace Duplicati.Library.Compression.ZipCompression
         /// <param name="stream">The stream to read or write depending access mode</param>
         /// <param name="mode">The archive access mode</param>
         /// <param name="options">The options passed on the commandline</param>
-        public FileArchiveZip(Stream stream, ArchiveMode mode, IDictionary<string, string> options)
+        public FileArchiveZip(Stream stream, ArchiveMode mode, IDictionary<string, string?> options)
         {
             var compressionType = DEFAULT_COMPRESSION_METHOD;
             var compressionLevel = DEFAULT_COMPRESSION_LEVEL;
-
-            var usingZip64 = options.ContainsKey(COMPRESSION_ZIP64_OPTION)
-                ? Utility.Utility.ParseBoolOption(options.AsReadOnly(), COMPRESSION_ZIP64_OPTION)
-                : DEFAULT_ZIP64;
 
             CompressionType tmptype;
             if (options.TryGetValue(COMPRESSION_METHOD_OPTION, out var cpmethod) && Enum.TryParse<SharpCompress.Common.CompressionType>(cpmethod, true, out tmptype))
@@ -139,11 +136,13 @@ namespace Duplicati.Library.Compression.ZipCompression
             if (options.ContainsKey(COMPRESSION_LIBRARY_OPTION) && options.TryGetValue(COMPRESSION_LIBRARY_OPTION, out var cplib) && Enum.TryParse<CompressionLibrary>(cplib, true, out var tmpcplib))
                 compressionLibrary = tmpcplib;
 
-            var parsedOptions = new ParsedZipOptions(compressionLevel, compressionType, usingZip64);
+            var unittestMode = Utility.Utility.ParseBoolOption(options.AsReadOnly(), "unittest-mode");
+            var parsedOptions = new ParsedZipOptions(compressionLevel, compressionType, unittestMode);
 
+            var userCompressionLibrary = compressionLibrary;
             if (compressionLibrary == CompressionLibrary.Auto)
             {
-                if (compressionType != CompressionType.Deflate || usingZip64)
+                if (compressionType != CompressionType.Deflate)
                     compressionLibrary = CompressionLibrary.SharpCompress;
                 else
                     compressionLibrary = CompressionLibrary.BuiltIn;
@@ -164,6 +163,7 @@ namespace Duplicati.Library.Compression.ZipCompression
             }
 
             m_archive = archive ?? new SharpCompressZipArchive(stream, mode, parsedOptions);
+            m_creationParams = (stream, parsedOptions, userCompressionLibrary);
         }
 
         #region IFileArchive Members
@@ -204,7 +204,7 @@ namespace Duplicati.Library.Compression.ZipCompression
                     new CommandLineArgument(COMPRESSION_LEVEL_OPTION, CommandLineArgument.ArgumentType.Enumeration, Strings.FileArchiveZip.CompressionlevelShort, Strings.FileArchiveZip.CompressionlevelLong, DEFAULT_COMPRESSION_LEVEL.ToString(), null, new string[] {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"}),
                     new CommandLineArgument(COMPRESSION_LEVEL_OPTION_ALIAS, CommandLineArgument.ArgumentType.Enumeration, Strings.FileArchiveZip.CompressionlevelShort, Strings.FileArchiveZip.CompressionlevelLong, DEFAULT_COMPRESSION_LEVEL.ToString(), null, new string[] {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"}, Strings.FileArchiveZip.CompressionlevelDeprecated(COMPRESSION_LEVEL_OPTION)),
                     new CommandLineArgument(COMPRESSION_METHOD_OPTION, CommandLineArgument.ArgumentType.Enumeration, Strings.FileArchiveZip.CompressionmethodShort, Strings.FileArchiveZip.CompressionmethodLong(COMPRESSION_LEVEL_OPTION), DEFAULT_COMPRESSION_METHOD.ToString(), null, methods),
-                    new CommandLineArgument(COMPRESSION_ZIP64_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.FileArchiveZip.Compressionzip64Short, Strings.FileArchiveZip.Compressionzip64Long, DEFAULT_ZIP64.ToString()),
+                    new CommandLineArgument("zip-compression-zip64", CommandLineArgument.ArgumentType.Boolean, Strings.FileArchiveZip.Compressionzip64Short, Strings.FileArchiveZip.Compressionzip64Long, "true", null, null, Strings.FileArchiveZip.Compressionzip64Deprecated),
                     new CommandLineArgument(COMPRESSION_LIBRARY_OPTION, CommandLineArgument.ArgumentType.Enumeration, Strings.FileArchiveZip.CompressionlibraryShort, Strings.FileArchiveZip.CompressionlibraryLong, CompressionLibrary.Auto.ToString(), null, Enum.GetNames(typeof(CompressionLibrary)))
                 ]);
             }
@@ -218,7 +218,9 @@ namespace Duplicati.Library.Compression.ZipCompression
 
         public void Dispose()
         {
-            m_archive.Dispose();
+            if (m_fallbackArchive == null)
+                m_archive.Dispose();
+            m_fallbackArchive?.Dispose();
         }
 
         public string[] ListFiles(string prefix)
@@ -228,7 +230,38 @@ namespace Duplicati.Library.Compression.ZipCompression
             => m_archive.ListFilesWithSize(prefix);
 
         public Stream? OpenRead(string file)
-            => m_archive.OpenRead(file);
+        {
+            // If we have started the fallback archive, we should continue using it
+            if (m_fallbackArchive != null)
+                return m_fallbackArchive.OpenRead(file);
+
+            try
+            {
+                return m_archive.OpenRead(file);
+            }
+            catch (Exception ex)
+            {
+                if (m_creationParams.Library == CompressionLibrary.Auto && m_archive is not SharpCompressZipArchive && m_creationParams.Stream.CanSeek)
+                {
+                    Log.WriteWarningMessage(LOGTAG, "CompressionReadErrorFallback", ex, "Failed to open file with built-in ZIP archive, falling back to SharpCompress");
+
+                    try
+                    {
+                        m_creationParams.Item1.Seek(0, SeekOrigin.Begin);
+                        m_archive.Dispose();
+                    }
+                    catch
+                    {
+
+                    }
+
+                    m_fallbackArchive = new SharpCompressZipArchive(m_creationParams.Stream, ArchiveMode.Read, m_creationParams.Options);
+                    return m_fallbackArchive.OpenRead(file);
+                }
+
+                throw;
+            }
+        }
 
         public DateTime GetLastWriteTime(string file)
             => m_archive.GetLastWriteTime(file);

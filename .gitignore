@@ -19,4 +19,5 @@ changelog-news.txt
 .vs/
 /publish/
 ReleaseBuilder/build-temp/
-ReleaseBuilder/Resources/Windows/binfiles.wxs
+ReleaseBuilder/Resources/Windows/TrayIcon/binfiles.wxs
+ReleaseBuilder/Resources/Windows/Agent/binfiles.wxs

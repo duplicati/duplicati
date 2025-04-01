@@ -1,3 +1,23 @@
+// Copyright (C) 2025, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
 using System.Runtime.Versioning;
 using System.Text.RegularExpressions;
 
@@ -21,11 +41,20 @@ public static class EnvHelper
         if (string.IsNullOrWhiteSpace(value))
             value = defaultValue ?? string.Empty;
 
+        return ExpandEnv(value);
+    }
+
+    /// <summary>
+    /// Reads the environment key, and expands environment variables inside.
+    /// If no key is found, the default value is returned
+    /// </summary>
+    /// <param name="key">The key to use</param>
+    /// <returns>The expanded string</returns>
+    public static string ExpandEnv(string value)
         // Bash-style env expansion "${name}", done after normal env expansion
-        return Regex.Replace(Environment.ExpandEnvironmentVariables(value), "\\${(?<name>[^}]+)}", m =>
+        => Regex.Replace(Environment.ExpandEnvironmentVariables(value), "\\${(?<name>[^}]+)}", m =>
             Environment.GetEnvironmentVariable(m.Groups["name"].Value) ?? string.Empty
         );
-    }
 
     /// <summary>
     /// Reads the environment key, and expands environment variables inside.
@@ -44,16 +73,21 @@ public static class EnvHelper
     }
 
     /// <summary>
+    /// Extensions that are considered Windows executables
+    /// </summary>
+    private static readonly string[] WindowsExecutables = new[] { ".exe", ".cmd", ".ps1", ".bat" };
+
+    /// <summary>
     /// Returns an executable path
     /// </summary>
     /// <param name="path">The path to expand</param>
     /// <returns>The executable path</returns>
-    public static string GetExecutablePath(string path)
+    public static string[] GetExecutablePaths(string path)
         => string.IsNullOrWhiteSpace(path)
-            ? path
+            ? []
             : OperatingSystem.IsWindows()
-                ? Path.ChangeExtension(path, ".exe")
-                : path;
+                ? WindowsExecutables.Select(x => Path.ChangeExtension(path, x)).ToArray()
+                : [path];
 
     /// <summary>
     /// Returns a value if the path is executable
@@ -66,7 +100,7 @@ public static class EnvHelper
             return false;
 
         if (OperatingSystem.IsWindows())
-            return path.EndsWith(".exe");
+            return WindowsExecutables.Any(x => path.EndsWith(x, StringComparison.OrdinalIgnoreCase));
 
         return File.GetUnixFileMode(path).HasFlag(UnixFileMode.OtherExecute);
     }
@@ -82,23 +116,26 @@ public static class EnvHelper
     {
         if (!string.IsNullOrWhiteSpace(envkey))
         {
-            var target = GetExecutablePath(ExpandEnv(envkey, ""));
+            var targets = GetExecutablePaths(ExpandEnv(envkey, ""));
 
-            if (!string.IsNullOrWhiteSpace(target))
+            foreach (var target in targets)
             {
-                if (!File.Exists(target))
-                    throw new Exception($"Executable specified for {envkey} but not found: {target}");
-                if (!IsExecutable(target))
-                    throw new Exception($"File specified for {envkey} found but is not executable: {target}");
+                if (!string.IsNullOrWhiteSpace(target))
+                {
+                    if (!File.Exists(target))
+                        throw new Exception($"Executable specified for {envkey} but not found: {target}");
+                    if (!IsExecutable(target))
+                        throw new Exception($"File specified for {envkey} found but is not executable: {target}");
 
-                return target;
+                    return target;
+                }
             }
         }
 
         var folders = (Environment.GetEnvironmentVariable("PATH") ?? string.Empty).Split(Path.PathSeparator);
         return folders
             .Where(x => !string.IsNullOrWhiteSpace(x))
-            .Select(x => GetExecutablePath(Path.Combine(x, command)))
+            .SelectMany(x => GetExecutablePaths(Path.Combine(x, command)))
             .FirstOrDefault(IsExecutable)
                 ?? defaultValue;
     }
@@ -169,7 +206,7 @@ public static class EnvHelper
         var targetEntry = Path.GetFileName(path);
 
         // Use docker to set the ownership
-        await ProcessHelper.Execute(new[] { "docker", "run", "--mount", $"type=bind,source={baseFolder},target=/opt/mount", "alpine:latest", "chown", recursive ? "-R" : "", $"{uid}:{gid}", Path.Combine("/opt/mount", targetEntry) });
+        await ProcessHelper.Execute(["docker", "run", "--mount", $"type=bind,source={baseFolder},target=/opt/mount", "alpine:latest", "chown", recursive ? "-R" : "", $"{uid}:{gid}", Path.Combine("/opt/mount", targetEntry)]);
     }
 
     /// <summary>

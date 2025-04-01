@@ -1,0 +1,11 @@
+#!/bin/sh
+
+set -e
+
+# Identify the user installing the package
+USER=$(stat -f%Su /dev/console)
+
+# Load the LaunchAgent for the user
+launchctl bootstrap gui/$(id -u "$USER") "/Library/LaunchAgents/com.duplicati.agent.launchagent.plist"
+launchctl enable gui/$(id -u "$USER")/com.duplicati.agent.launchagent
+exit 0

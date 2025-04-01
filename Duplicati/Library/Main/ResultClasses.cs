@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -26,6 +26,8 @@ using Duplicati.Library.Main.Database;
 using Duplicati.Library.Logging;
 using System.Linq;
 using Newtonsoft.Json;
+using System.Text.Json.Serialization;
+using Duplicati.Library.Main.Operation.Common;
 
 namespace Duplicati.Library.Main
 {
@@ -53,12 +55,22 @@ namespace Duplicati.Library.Main
 
     internal interface ISetCommonOptions
     {
+        bool Interrupted { get; set; }
+        bool Fatal { get; set; }
         DateTime EndTime { get; set; }
         DateTime BeginTime { get; set; }
         IMessageSink MessageSink { get; set; }
         OperationMode MainOperation { get; }
+    }
 
-        void SetDatabase(LocalDatabase db);
+    internal interface ITaskControlProvider
+    {
+        ITaskControl TaskControl { get; }
+    }
+
+    internal interface IBackendWriterProvider
+    {
+        IBackendWriter BackendWriter { get; }
     }
 
     internal class BackendWriter : BasicResults, IBackendWriter, IBackendStatstics, IParsedBackendStatistics
@@ -87,6 +99,7 @@ namespace Duplicati.Library.Main
         public long UnknownFileCount { get; set; }
         public long KnownFileCount { get; set; }
         public long KnownFileSize { get; set; }
+        public long KnownFilesets { get; set; }
         public DateTime LastBackupDate { get; set; }
         public long BackupListCount { get; set; }
         public long TotalQuotaSpace { get; set; }
@@ -137,23 +150,8 @@ namespace Duplicati.Library.Main
         IBackendProgressUpdater IBackendWriter.BackendProgressUpdater { get { return base.BackendProgressUpdater; } }
     }
 
-    public interface ITaskControl
-    {
-        void Pause();
-        void Resume();
-        void Stop(bool allowCurrentFileToFinish);
-        void Abort();
-    }
 
-    internal enum TaskControlState
-    {
-        Run,
-        Pause,
-        Stop,
-        Abort
-    }
-
-    internal abstract class BasicResults : IBasicResults, ISetCommonOptions, ITaskControl, Logging.ILogDestination
+    internal abstract class BasicResults : IBasicResults, ISetCommonOptions, Logging.ILogDestination, ITaskControlProvider, IBackendWriterProvider
     {
         /// <summary>
         /// The tag used for logging
@@ -179,14 +177,10 @@ namespace Duplicati.Library.Main
             }
         }
 
-        protected LocalDatabase m_db;
         protected readonly BasicResults m_parent;
         protected System.Threading.Thread m_callerThread;
         protected readonly object m_lock = new object();
         protected readonly Queue<DbMessage> m_dbqueue;
-
-        private TaskControlState m_controlState = TaskControlState.Run;
-        private readonly System.Threading.ManualResetEvent m_pauseEvent = new System.Threading.ManualResetEvent(true);
 
         public virtual ParsedResultType ParsedResult
         {
@@ -203,7 +197,8 @@ namespace Duplicati.Library.Main
             }
         }
         public bool Interrupted { get; set; }
-        [JsonIgnore]
+        [System.Text.Json.Serialization.JsonIgnore]
+        [Newtonsoft.Json.JsonIgnore]
         public bool Fatal { get; set; }
 
         // ReSharper disable once UnusedMember.Global
@@ -220,10 +215,11 @@ namespace Duplicati.Library.Main
         protected readonly Library.Utility.FileBackedStringList m_warnings;
         protected readonly Library.Utility.FileBackedStringList m_errors;
         protected Library.Utility.FileBackedStringList m_retryAttempts;
-        
+
         protected IMessageSink m_messageSink;
 
-        [JsonIgnore]
+        [System.Text.Json.Serialization.JsonIgnore]
+        [Newtonsoft.Json.JsonIgnore]
         public IMessageSink MessageSink
         {
             get { return m_messageSink; }
@@ -262,27 +258,10 @@ namespace Duplicati.Library.Main
             }
         }
 
-        public void SetDatabase(LocalDatabase db)
+        public void FlushLog(LocalDatabase db)
         {
             if (m_parent != null)
-            {
-                m_parent.SetDatabase(db);
-            }
-            else
-            {
-                lock (m_lock)
-                {
-                    m_db = db;
-                    if (m_db != null)
-                        db.SetResult(this);
-                }
-            }
-        }
-
-        public void FlushLog()
-        {
-            if (m_parent != null)
-                m_parent.FlushLog();
+                m_parent.FlushLog(db);
             else
             {
                 lock (m_lock)
@@ -290,7 +269,7 @@ namespace Duplicati.Library.Main
                     while (m_dbqueue.Count > 0)
                     {
                         var el = m_dbqueue.Dequeue();
-                        m_db.LogMessage(el.Type, el.Message, el.Exception, null);
+                        db.LogMessage(el.Type, el.Message, el.Exception, null);
                     }
                 }
             }
@@ -331,21 +310,24 @@ namespace Duplicati.Library.Main
 
         }
 
-        [JsonIgnore]
+        [System.Text.Json.Serialization.JsonIgnore]
+        [Newtonsoft.Json.JsonIgnore]
         public IEnumerable<string> Messages { get { return m_messages; } }
 
         // ReSharper disable once UnusedMember.Global
         // This is referenced in the logs.
-        public int MessagesActualLength { get { return Messages == null ? 0 : Messages.Count();  } }
+        public int MessagesActualLength { get { return Messages == null ? 0 : Messages.Count(); } }
 
-        [JsonIgnore]
+        [System.Text.Json.Serialization.JsonIgnore]
+        [Newtonsoft.Json.JsonIgnore]
         public IEnumerable<string> Warnings { get { return m_warnings; } }
 
         // ReSharper disable once UnusedMember.Global
         // This is referenced in the logs.
         public int WarningsActualLength { get { return Warnings == null ? 0 : Warnings.Count(); } }
 
-        [JsonIgnore]
+        [System.Text.Json.Serialization.JsonIgnore]
+        [Newtonsoft.Json.JsonIgnore]
         public IEnumerable<string> Errors { get { return m_errors; } }
 
         // ReSharper disable once UnusedMember.Global
@@ -353,15 +335,17 @@ namespace Duplicati.Library.Main
         public int ErrorsActualLength { get { return Errors == null ? 0 : Errors.Count(); } }
 
         [JsonProperty(PropertyName = "Messages")]
+        [JsonPropertyName("Messages")]
         public IEnumerable<string> LimitedMessages { get { return Messages?.Take(SERIALIZATION_LIMIT); } }
         [JsonProperty(PropertyName = "Warnings")]
+        [JsonPropertyName("Warnings")]
         public IEnumerable<string> LimitedWarnings { get { return Warnings?.Take(SERIALIZATION_LIMIT); } }
         [JsonProperty(PropertyName = "Errors")]
+        [JsonPropertyName("Errors")]
         public IEnumerable<string> LimitedErrors { get { return Errors?.Take(SERIALIZATION_LIMIT); } }
 
-        protected readonly Operation.Common.TaskControl m_taskController;
-        public Operation.Common.ITaskReader TaskReader { get { return m_taskController; } }
-
+        protected readonly TaskControl m_taskController;
+        public ITaskControl TaskControl => m_parent?.TaskControl ?? m_taskController;
         protected BasicResults()
         {
             this.BeginTime = DateTime.UtcNow;
@@ -396,133 +380,9 @@ namespace Duplicati.Library.Main
             }
         }
 
-        [JsonIgnore]
+        [System.Text.Json.Serialization.JsonIgnore]
+        [Newtonsoft.Json.JsonIgnore]
         public IBackendWriter BackendWriter { get { return (IBackendWriter)this.BackendStatistics; } }
-
-        public event Action<TaskControlState> StateChangedEvent;
-
-        /// <summary>
-        /// Request that this task pauses.
-        /// </summary>
-        public void Pause()
-        {
-            if (m_parent != null)
-                m_parent.Pause();
-            else
-            {
-                lock (m_lock)
-                    if (m_controlState == TaskControlState.Run)
-                    {
-                        m_pauseEvent.Reset();
-                        m_controlState = TaskControlState.Pause;
-                    }
-
-                if (StateChangedEvent != null)
-                    StateChangedEvent(m_controlState);
-            }
-        }
-
-        /// <summary>
-        /// Request that this task resumes.
-        /// </summary>
-        public void Resume()
-        {
-            if (m_parent != null)
-                m_parent.Resume();
-            else
-            {
-                lock (m_lock)
-                    if (m_controlState == TaskControlState.Pause)
-                    {
-                        m_pauseEvent.Set();
-                        m_controlState = TaskControlState.Run;
-                    }
-
-                if (StateChangedEvent != null)
-                    StateChangedEvent(m_controlState);
-            }
-        }
-
-        /// <summary>
-        /// Request that this task stops.
-        /// </summary>
-        public void Stop(bool allowCurrentFileToFinish)
-        {
-            if (m_parent != null)
-                m_parent.Stop(allowCurrentFileToFinish);
-            else
-            {
-                lock (m_lock)
-                    if (m_controlState != TaskControlState.Abort)
-                    {
-                        m_controlState = TaskControlState.Stop;
-                        m_pauseEvent.Set();
-                        if (!allowCurrentFileToFinish)
-                        {
-                            m_taskController.Stop(true);
-                        }
-                    }
-
-                if (StateChangedEvent != null)
-                    StateChangedEvent(m_controlState);
-            }
-        }
-
-        /// <summary>
-        /// Request that this task aborts.
-        /// </summary>
-        public void Abort()
-        {
-            if (m_parent != null)
-                m_parent.Abort();
-            else
-            {
-                lock (m_lock)
-                {
-                    m_controlState = TaskControlState.Abort;
-                    m_pauseEvent.Set();
-                }
-
-                if (StateChangedEvent != null)
-                    StateChangedEvent(m_controlState);
-            }
-        }
-
-        /// <summary>
-        /// Helper method that the current running task can call to obtain the current state
-        /// </summary>
-        public TaskControlState TaskControlRendevouz()
-        {
-            if (m_parent != null)
-                return m_parent.TaskControlRendevouz();
-            else
-            {
-                // If we are paused, go into pause mode
-                m_pauseEvent.WaitOne();
-
-                // If we are aborted, throw exception
-                if (m_controlState == TaskControlState.Abort)
-                {
-                    System.Threading.Thread.CurrentThread.Interrupt();
-
-                    // For some reason, aborting the current thread does not always throw an exception
-                    throw new CancelException();
-                }
-
-                return m_controlState;
-            }
-        }
-
-        /// <summary>
-        /// Helper method to check if abort is requested
-        /// </summary>
-        public bool IsAbortRequested()
-        {
-            if (m_parent != null)
-                return m_parent.IsAbortRequested();
-            else
-                return m_controlState == TaskControlState.Abort;
-        }
 
         /// <summary>
         /// Returns a <see cref="System.String"/> that represents the current <see cref="Duplicati.Library.Main.BasicResults"/>.
@@ -565,7 +425,7 @@ namespace Duplicati.Library.Main
         }
     }
 
-    internal class BackupResults : BasicResults, IBackupResults
+    internal class BackupResults : BasicResults, IBackupResults, IResultsWithVacuum
     {
         public long DeletedFiles { get; internal set; }
         public long DeletedFolders { get; internal set; }
@@ -581,6 +441,7 @@ namespace Duplicati.Library.Main
         public long AddedFolders { get; internal set; }
         public long TooLargeFiles { get; internal set; }
         public long FilesWithError { get; internal set; }
+        public long TimestampChangedFiles { get; internal set; }
         public long ModifiedFolders { get; internal set; }
         public long ModifiedSymlinks { get; internal set; }
         public long AddedSymlinks { get; internal set; }
@@ -591,7 +452,7 @@ namespace Duplicati.Library.Main
         public override OperationMode MainOperation { get { return OperationMode.Backup; } }
 
         public ICompactResults CompactResults { get; internal set; }
-        public IVacuumResults VacuumResults { get; internal set; }
+        public IVacuumResults VacuumResults { get; set; }
         public IDeleteResults DeleteResults { get; internal set; }
         public IRepairResults RepairResults { get; internal set; }
         public ITestResults TestResults { get; internal set; }
@@ -610,19 +471,19 @@ namespace Duplicati.Library.Main
                     return ParsedResultType.Fatal;
                 }
                 else if ((CompactResults != null && CompactResults.ParsedResult == ParsedResultType.Error) ||
-                    (VacuumResults  != null && VacuumResults.ParsedResult  == ParsedResultType.Error) ||
-                    (DeleteResults  != null && DeleteResults.ParsedResult  == ParsedResultType.Error) ||
-                    (RepairResults  != null && RepairResults.ParsedResult  == ParsedResultType.Error) || 
-                    (TestResults    != null && TestResults.ParsedResult    == ParsedResultType.Error) ||
+                    (VacuumResults != null && VacuumResults.ParsedResult == ParsedResultType.Error) ||
+                    (DeleteResults != null && DeleteResults.ParsedResult == ParsedResultType.Error) ||
+                    (RepairResults != null && RepairResults.ParsedResult == ParsedResultType.Error) ||
+                    (TestResults != null && TestResults.ParsedResult == ParsedResultType.Error) ||
                     (Errors != null && Errors.Any()) || FilesWithError > 0)
                 {
                     return ParsedResultType.Error;
                 }
                 else if ((CompactResults != null && CompactResults.ParsedResult == ParsedResultType.Warning) ||
-                         (VacuumResults  != null && VacuumResults.ParsedResult  == ParsedResultType.Warning) ||
-                         (DeleteResults  != null && DeleteResults.ParsedResult  == ParsedResultType.Warning) ||
-                         (RepairResults  != null && RepairResults.ParsedResult  == ParsedResultType.Warning) ||
-                         (TestResults    != null && TestResults.ParsedResult    == ParsedResultType.Warning) ||
+                         (VacuumResults != null && VacuumResults.ParsedResult == ParsedResultType.Warning) ||
+                         (DeleteResults != null && DeleteResults.ParsedResult == ParsedResultType.Warning) ||
+                         (RepairResults != null && RepairResults.ParsedResult == ParsedResultType.Warning) ||
+                         (TestResults != null && TestResults.ParsedResult == ParsedResultType.Warning) ||
                          (Warnings != null && Warnings.Any()) || PartialBackup)
                 {
                     return ParsedResultType.Warning;
@@ -635,8 +496,16 @@ namespace Duplicati.Library.Main
         }
     }
 
-    internal class RestoreResults : BasicResults, Library.Interface.IRestoreResults
+    internal class RestoreResults : BasicResults, IRestoreResults
     {
+        /// <summary>
+        /// The list of broken local files - i.e. locally stored files that raised an error during restore.
+        /// </summary>
+        public Library.Utility.FileBackedStringList BrokenLocalFiles { get; internal set; } = [];
+        /// <summary>
+        /// The list of broken remote files - i.e. remotely stored files that raised an error during restore.
+        /// </summary>
+        public Library.Utility.FileBackedStringList BrokenRemoteFiles { get; internal set; } = [];
         public long RestoredFiles { get; internal set; }
         public long SizeOfRestoredFiles { get; internal set; }
         public long RestoredFolders { get; internal set; }
@@ -677,7 +546,7 @@ namespace Duplicati.Library.Main
         }
     }
 
-    internal class ListResultFile : Duplicati.Library.Interface.IListResultFile
+    internal class ListResultFile : IListResultFile
     {
         public string Path { get; private set; }
         public IEnumerable<long> Sizes { get; private set; }
@@ -688,7 +557,7 @@ namespace Duplicati.Library.Main
         }
     }
 
-    internal class ListResultFileset : Duplicati.Library.Interface.IListResultFileset
+    internal class ListResultFileset : IListResultFileset
     {
         public long Version { get; private set; }
         public int IsFullBackup { get; private set; }
@@ -705,32 +574,32 @@ namespace Duplicati.Library.Main
         }
     }
 
-    internal class ListResults : BasicResults, Duplicati.Library.Interface.IListResults
+    internal class ListResults : BasicResults, IListResults
     {
-        private IEnumerable<Duplicati.Library.Interface.IListResultFileset> m_filesets;
-        private IEnumerable<Duplicati.Library.Interface.IListResultFile> m_files;
+        private IEnumerable<IListResultFileset> m_filesets;
+        private IEnumerable<IListResultFile> m_files;
         public bool EncryptedFiles { get; set; }
 
-        public void SetResult(IEnumerable<Duplicati.Library.Interface.IListResultFileset> filesets, IEnumerable<Duplicati.Library.Interface.IListResultFile> files)
+        public void SetResult(IEnumerable<IListResultFileset> filesets, IEnumerable<IListResultFile> files)
         {
             m_filesets = filesets;
             m_files = files;
         }
 
-        public IEnumerable<Duplicati.Library.Interface.IListResultFileset> Filesets { get { return m_filesets; } }
-        public IEnumerable<Duplicati.Library.Interface.IListResultFile> Files { get { return m_files; } }
+        public IEnumerable<IListResultFileset> Filesets { get { return m_filesets; } }
+        public IEnumerable<IListResultFile> Files { get { return m_files; } }
 
         public override OperationMode MainOperation { get { return OperationMode.List; } }
     }
 
-    internal class ListAffectedResults : BasicResults, Duplicati.Library.Interface.IListAffectedResults
+    internal class ListAffectedResults : BasicResults, IListAffectedResults
     {
-        private IEnumerable<Duplicati.Library.Interface.IListResultFileset> m_filesets;
-        private IEnumerable<Duplicati.Library.Interface.IListResultFile> m_files;
-        private IEnumerable<Duplicati.Library.Interface.IListResultRemoteLog> m_logs;
-        private IEnumerable<Duplicati.Library.Interface.IListResultRemoteVolume> m_volumes;
+        private IEnumerable<IListResultFileset> m_filesets;
+        private IEnumerable<IListResultFile> m_files;
+        private IEnumerable<IListResultRemoteLog> m_logs;
+        private IEnumerable<IListResultRemoteVolume> m_volumes;
 
-        public void SetResult(IEnumerable<Duplicati.Library.Interface.IListResultFileset> filesets, IEnumerable<Duplicati.Library.Interface.IListResultFile> files, IEnumerable<Duplicati.Library.Interface.IListResultRemoteLog> logs, IEnumerable<Duplicati.Library.Interface.IListResultRemoteVolume> volumes)
+        public void SetResult(IEnumerable<IListResultFileset> filesets, IEnumerable<IListResultFile> files, IEnumerable<IListResultRemoteLog> logs, IEnumerable<IListResultRemoteVolume> volumes)
         {
             m_filesets = filesets;
             m_files = files;
@@ -738,17 +607,18 @@ namespace Duplicati.Library.Main
             m_volumes = volumes;
         }
 
-        public IEnumerable<Duplicati.Library.Interface.IListResultFileset> Filesets { get { return m_filesets; } }
-        public IEnumerable<Duplicati.Library.Interface.IListResultFile> Files { get { return m_files; } }
-        public IEnumerable<Duplicati.Library.Interface.IListResultRemoteLog> LogMessages { get { return m_logs; } }
-        public IEnumerable<Duplicati.Library.Interface.IListResultRemoteVolume> RemoteVolumes { get { return m_volumes; } }
+        public IEnumerable<IListResultFileset> Filesets { get { return m_filesets; } }
+        public IEnumerable<IListResultFile> Files { get { return m_files; } }
+        public IEnumerable<IListResultRemoteLog> LogMessages { get { return m_logs; } }
+        public IEnumerable<IListResultRemoteVolume> RemoteVolumes { get { return m_volumes; } }
 
         public override OperationMode MainOperation { get { return OperationMode.ListAffected; } }
     }
 
-    internal class DeleteResults : BasicResults, Duplicati.Library.Interface.IDeleteResults
+    internal class DeleteResults : BasicResults, IDeleteResults
     {
-        [JsonIgnore]
+        [System.Text.Json.Serialization.JsonIgnore]
+        [Newtonsoft.Json.JsonIgnore]
         public IEnumerable<Tuple<long, DateTime>> DeletedSets { get; private set; }
 
         // ReSharper disable once UnusedMember.Global
@@ -756,6 +626,7 @@ namespace Duplicati.Library.Main
         public int DeletedSetsActualLength { get { return DeletedSets == null ? 0 : DeletedSets.Count(); } }
 
         [JsonProperty(PropertyName = "DeletedSets")]
+        [JsonPropertyName("DeletedSets")]
         public IEnumerable<Tuple<long, DateTime>> LimitedDeletedSets { get { return DeletedSets?.Take(SERIALIZATION_LIMIT); } }
 
         public bool Dryrun { get; private set; }
@@ -793,7 +664,7 @@ namespace Duplicati.Library.Main
         }
     }
 
-    internal class RecreateDatabaseResults : BasicResults, Library.Interface.IRecreateDatabaseResults
+    internal class RecreateDatabaseResults : BasicResults, IRecreateDatabaseResults
     {
         public override OperationMode MainOperation { get { return OperationMode.Repair; } }
 
@@ -801,13 +672,13 @@ namespace Duplicati.Library.Main
         public RecreateDatabaseResults(BasicResults p) : base(p) { }
     }
 
-    internal class CreateLogDatabaseResults : BasicResults, Library.Interface.ICreateLogDatabaseResults
+    internal class CreateLogDatabaseResults : BasicResults, ICreateLogDatabaseResults
     {
         public override OperationMode MainOperation { get { return OperationMode.CreateLogDb; } }
         public string TargetPath { get; internal set; }
     }
 
-    internal class RestoreControlFilesResults : BasicResults, Library.Interface.IRestoreControlFilesResults
+    internal class RestoreControlFilesResults : BasicResults, IRestoreControlFilesResults
     {
         public IEnumerable<string> Files { get; private set; }
 
@@ -815,7 +686,7 @@ namespace Duplicati.Library.Main
         public void SetResult(IEnumerable<string> files) { this.Files = files; }
     }
 
-    internal class ListRemoteResults : BasicResults, Library.Interface.IListRemoteResults
+    internal class ListRemoteResults : BasicResults, IListRemoteResults
     {
         public IEnumerable<IFileEntry> Files { get; private set; }
 
@@ -823,13 +694,13 @@ namespace Duplicati.Library.Main
         public void SetResult(IEnumerable<IFileEntry> files) { this.Files = files; }
     }
 
-    internal class RepairResults : BasicResults, Library.Interface.IRepairResults
+    internal class RepairResults : BasicResults, IRepairResults
     {
         public override OperationMode MainOperation { get { return OperationMode.Repair; } }
 
         public RepairResults() : base() { }
         public RepairResults(BasicResults p) : base(p) { }
-        public Library.Interface.IRecreateDatabaseResults RecreateDatabaseResults { get; internal set; }
+        public IRecreateDatabaseResults RecreateDatabaseResults { get; internal set; }
 
         public override ParsedResultType ParsedResult
         {
@@ -858,7 +729,7 @@ namespace Duplicati.Library.Main
         }
     }
 
-    internal class CompactResults : BasicResults, Library.Interface.ICompactResults
+    internal class CompactResults : BasicResults, ICompactResults, IResultsWithVacuum
     {
         public long DeletedFileCount { get; internal set; }
         public long DownloadedFileCount { get; internal set; }
@@ -868,7 +739,7 @@ namespace Duplicati.Library.Main
         public long UploadedFileSize { get; internal set; }
         public bool Dryrun { get; internal set; }
 
-        public IVacuumResults VacuumResults { get; internal set; }
+        public IVacuumResults VacuumResults { get; set; }
 
         public override OperationMode MainOperation { get { return OperationMode.Compact; } }
 
@@ -876,7 +747,7 @@ namespace Duplicati.Library.Main
         public CompactResults(BasicResults p) : base(p) { }
     }
 
-    internal class ListChangesResults : BasicResults, Library.Interface.IListChangesResults
+    internal class ListChangesResults : BasicResults, IListChangesResults
     {
         public override OperationMode MainOperation { get { return OperationMode.ListChanges; } }
 
@@ -949,7 +820,8 @@ namespace Duplicati.Library.Main
         public override OperationMode MainOperation { get { return OperationMode.Test; } }
 
         private readonly List<KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>> m_verifications = new List<KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>>();
-        [JsonIgnore]
+        [System.Text.Json.Serialization.JsonIgnore]
+        [Newtonsoft.Json.JsonIgnore]
         public IEnumerable<KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>> Verifications { get { return m_verifications; } }
 
         // ReSharper disable once UnusedMember.Global
@@ -957,6 +829,7 @@ namespace Duplicati.Library.Main
         public int VerificationsActualLength { get { return Verifications == null ? 0 : Verifications.Count(); } }
 
         [JsonProperty(PropertyName = "Verifications")]
+        [JsonPropertyName("Verifications")]
         public IEnumerable<KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>> LimitedVerifications { get { return Verifications?.Take(SERIALIZATION_LIMIT); } }
 
         public KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>> AddResult(string volume, IEnumerable<KeyValuePair<TestEntryStatus, string>> changes)

@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -219,12 +219,13 @@ public class RegisterForRemote : IDisposable
         var basics = new Dictionary<string, string?>
         {
             { "instanceId", ClientInstanceId },
-            { "machineId", AutoUpdater.UpdaterManager.MachineID },
-            { "machineName", AutoUpdater.UpdaterManager.MachineName },
-            { "installId", AutoUpdater.UpdaterManager.InstallID },
+            { "machineId", AutoUpdater.DataFolderManager.MachineID },
+            { "machineName", AutoUpdater.DataFolderManager.MachineName },
+            { "installId", AutoUpdater.DataFolderManager.InstallID },
             { "localTime", DateTimeOffset.Now.ToString("o") },
             { "version", AutoUpdater.UpdaterManager.SelfVersion?.Version },
-            { "packageTypeId", AutoUpdater.UpdaterManager.PackageTypeId }
+            { "packageTypeId", AutoUpdater.UpdaterManager.PackageTypeId },
+            { "operatingSystem", AutoUpdater.UpdaterManager.OperatingSystemName }
         };
 
         // Pass any query parameters from the registration URL into the JSON body

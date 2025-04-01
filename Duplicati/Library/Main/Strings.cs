@@ -1,22 +1,22 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
-// 
-// Permission is hereby granted, free of charge, to any person obtaining a 
-// copy of this software and associated documentation files (the "Software"), 
-// to deal in the Software without restriction, including without limitation 
-// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
-// and/or sell copies of the Software, and to permit persons to whom the 
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the "Software"),
+// to deal in the Software without restriction, including without limitation
+// the rights to use, copy, modify, merge, publish, distribute, sublicense,
+// and/or sell copies of the Software, and to permit persons to whom the
 // Software is furnished to do so, subject to the following conditions:
-// 
-// The above copyright notice and this permission notice shall be included in 
+//
+// The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
-// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 using System;
 using Duplicati.Library.Localization.Short;
@@ -32,15 +32,8 @@ namespace Duplicati.Library.Main.Strings
         public static string NoSourceFoldersError { get { return LC.L(@"No source folders specified for backup"); } }
         public static string SourceIsMissingError(string foldername) { return LC.L(@"Backup aborted since the source path {0} does not exist. Please verify that the source path exists, or remove the source path from the backup configuration, or set the allow-missing-source option.", foldername); }
         public static string SourceUnauthorizedError(string foldername) { return LC.L(@"Unauthorized to access source folder {0}, aborting backup", foldername); }
-        public static string UnsupportedBooleanValue(string optionname, string value) { return LC.L(@"The value ""{1}"" supplied to --{0} does not parse into a valid boolean. This will be treated as if it was set to ""true""", optionname, value); }
-        public static string UnsupportedEnumerationValue(string optionname, string value, string[] values) { return LC.L(@"The option --{0} does not support the value ""{1}"". Supported values are: {2}", optionname, value, string.Join(", ", values)); }
-        public static string UnsupportedFlagsValue(string optionname, string value, string[] values) { return LC.L(@"The option --{0} does not support the value ""{1}"". Supported flag values are: {2}", optionname, value, string.Join(", ", values)); }
-        public static string UnsupportedIntegerValue(string optionname, string value) { return LC.L(@"The value ""{1}"" supplied to --{0} does not represent a valid integer", optionname, value); }
         public static string UnsupportedOptionDisabledModuleWarning(string optionname, string modulename) { return LC.L(@"The option --{0} is not supported because the module {1} is not currently loaded", optionname, modulename); }
         public static string UnsupportedOptionWarning(string optionname) { return LC.L(@"The supplied option --{0} is not supported and will be ignored", optionname); }
-        public static string UnsupportedPathValue(string optionname, string value) { return LC.L(@"The value ""{1}"" supplied to --{0} does not represent a valid path", optionname, value); }
-        public static string UnsupportedSizeValue(string optionname, string value) { return LC.L(@"The value ""{1}"" supplied to --{0} does not represent a valid size", optionname, value); }
-        public static string UnsupportedTimeValue(string optionname, string value) { return LC.L(@"The value ""{1}"" supplied to --{0} does not represent a valid time", optionname, value); }
         public static string StartingOperationMessage(OperationMode operationname) { return LC.L(@"The operation {0} has started", operationname); }
         public static string CompletedOperationMessage(OperationMode operationname) { return LC.L(@"The operation {0} has completed", operationname); }
         public static string FailedOperationMessage(OperationMode operationname, string errormessage) { return LC.L(@"The operation {0} has failed with error: {1}", operationname, errormessage); }
@@ -48,7 +41,6 @@ namespace Duplicati.Library.Main.Strings
         public static string FailedForceLocaleError(string exMsg) { return LC.L(@"Failed to apply 'force-locale' setting. Please try to update .NET-Framework. Exception was: ""{0}"" ", exMsg); }
         public static string SourceVolumeNameInvalidError(string filename) { return LC.L(@"The source {0} uses an invalid volume name, aborting backup", filename); }
         public static string SourceVolumeNameNotFoundError(string filename, Guid volumeGuid) { return LC.L(@"The source {0} is on volume {1}, which could not be found, aborting backup", filename, volumeGuid); }
-        public static string NonQualifiedSizeValue(string optionname, string value) { return LC.L(@"The size ""{1}"" supplied to --{0} does not have a multiplier (b, kb, mb, etc). A multiplier is recommended to avoid unexpected changes if the program is updated.", optionname, value); }
     }
 
     internal static class Options
@@ -95,12 +87,15 @@ namespace Duplicati.Library.Main.Strings
         public static string SkipfileslargerthanShort { get { return LC.L(@"Limit the size of files being backed up"); } }
         public static string TempdirLong { get { return LC.L(@"Use this option to supply an alternative folder for temporary storage. By default the system default temporary folder is used. Note that also SQLite will put temporary files in this temporary folder."); } }
         public static string TempdirShort { get { return LC.L(@"Temporary storage folder"); } }
+        public static string ThreadpriorityDeprecated { get { return LC.L(@"The option --thread-priority has no effect, use the operating system controls to set the process priority"); } }
         public static string ThreadpriorityLong { get { return LC.L(@"Select another thread priority for the process. Use this to set Duplicati to be more or less CPU intensive."); } }
         public static string ThreadpriorityShort { get { return LC.L(@"Thread priority"); } }
         public static string DblocksizeLong { get { return LC.L(@"This option can change the maximum size of dblock files. Changing the size can be useful if the backend has a limit on the size of each individual file."); } }
         public static string DblocksizeShort { get { return LC.L(@"Limit the size of the volumes"); } }
         public static string DisableStreamingLong { get { return LC.L(@"Use this option to disallow usage of the streaming interface, which means that transfer progress bars will not show, and bandwidth throttle settings will be ignored."); } }
         public static string DisableStreamingShort { get { return LC.L(@"Disable use of the streaming transfer method"); } }
+        public static string ReadWriteTimeoutShort { get { return LC.L(@"Set the read/write timeout for the connection"); } }
+        public static string ReadWriteTimeoutLong { get { return LC.L(@"The read/write timeout is the maximum amount of time to wait for any activity during a transfer. If no activity is detected for this period, the connection is considered broken and the transfer is aborted. Set to 0s to disabled"); } }
         public static string DontreadmanifestsLong { get { return LC.L(@"Use this option to make sure the contents of the manifest file are not read. This also implies that file hashes are not checked either. Use only for disaster recovery."); } }
         public static string DontreadmanifestsShort { get { return LC.L(@"Disable manifests verification"); } }
         public static string CompressionmoduleLong { get { return LC.L(@"Duplicati supports pluggable compression modules. Use this option to select a module to use for compression. This is only applied when creating new volumes, when reading an existing file, the filename is used to select the compression module."); } }
@@ -113,9 +108,11 @@ namespace Duplicati.Library.Main.Strings
         public static string EnablemoduleShort { get { return LC.L(@"Enable one or more modules"); } }
         public static string SnapshotpolicyLong { get { return LC.L(@"This setting controls the usage of snapshots, which allows Duplicati to backup files that are locked by other programs. If this is set to ""off"", Duplicati will not attempt to create a disk snapshot. Setting this to ""auto"" makes Duplicati attempt to create a snapshot, and fail silently if that was not allowed or supported (note that the OS may still log system warnings). A setting of ""on"" will also make Duplicati attempt to create a snapshot, but will produce a warning message in the log if it fails. Setting it to ""required"" will make Duplicati abort the backup if the snapshot creation fails. On windows this uses the Volume Shadow Copy Services (VSS) and requires administrative privileges. On Linux this uses Logical Volume Management (LVM) and requires root privileges."); } }
         public static string SnapshotpolicyShort { get { return LC.L(@"Control the use of disk snapshots"); } }
+        public static string SnapshotproviderLong { get { return LC.L(@"The snapshot provider implementation for Windows. The AlphaVSS is the most feature complete, but is not supported on Arm64. The WMIC based snapshot has less features, but is more portable. On Linux, only LVM is supported"); } }
+        public static string SnapshotproviderShort { get { return LC.L(@"The snapshot provider implementation to use"); } }
         public static string AsynchronousuploadfolderLong { get { return LC.L(@"The pre-generated volumes will be placed into the temporary folder by default. This option can set a different folder for placing the temporary volumes. Despite the name, this also works for synchronous runs."); } }
         public static string AsynchronousuploadfolderShort { get { return LC.L(@"The path where ready volumes are placed until uploaded"); } }
-        public static string AsynchronousuploadlimitLong { get { return LC.L(@"When performing asynchronous uploads, Duplicati will create volumes that can be uploaded. To prevent Duplicati from generating too many volumes, this option limits the number of pending uploads. Set to zero to disable the limit."); } }
+        public static string AsynchronousuploadlimitLong { get { return LC.L(@"When performing asynchronous uploads, Duplicati will create volumes that can be uploaded. To prevent Duplicati from generating too many volumes, this option limits the number of pending uploads. Set to zero to disable the limit.  The volume(s) that are being created are not counted in this limit. Use the option --concurrency-compressors=1 to limit the number of volumes being created."); } }
         public static string AsynchronousuploadlimitShort { get { return LC.L(@"The number of volumes to create ahead of time"); } }
         public static string AsynchronousconcurrentuploadlimitLong { get { return LC.L(@"When performing asynchronous uploads, the maximum number of concurrent uploads allowed. Set to zero to disable the limit."); } }
         public static string AsynchronousconcurrentuploadlimitShort { get { return LC.L(@"The number of concurrent uploads allowed"); } }
@@ -138,7 +135,7 @@ namespace Duplicati.Library.Main.Strings
         public static string DisabletimetoleranceShort { get { return LC.L(@"Deactivate tolerance when comparing times"); } }
         public static string ListverifyuploadsLong { get { return LC.L(@"Use this option to verify uploads by listing contents."); } }
         public static string ListverifyuploadsShort { get { return LC.L(@"Verify uploads by listing contents"); } }
-        public static string SynchronousuploadLong { get { return LC.L(@"Duplicati will upload files while scanning the disk and producing volumes, which usually makes the backup faster. Use this option to turn the behavior off, so that Duplicati will wait for each volume to complete."); } }
+        public static string SynchronousuploadLong { get { return LC.L(@"Disables uploading multiple files concurrently to preserve bandwith. This will have the same effect as setting --asynchronous-upload-limit=1 but additionally wait for related uploads. The volume that is being created is not counted in the upload limit."); } }
         public static string SynchronousuploadShort { get { return LC.L(@"Upload files synchronously"); } }
         public static string NoconnectionreuseLong { get { return LC.L(@"Duplicati will attempt to perform multiple operations on a single connection, as this avoids repeated login attempts, and thus speeds up the process. Use this option to ensure that each operation is performed on a seperate connection."); } }
         public static string NoconnectionreuseShort { get { return LC.L(@"Do not re-use connections"); } }
@@ -168,6 +165,8 @@ namespace Duplicati.Library.Main.Strings
         public static string MachineidShort { get { return LC.L(@"Machine ID"); } }
         public static string MachinenameLong { get { return LC.L(@"The name of the machine running the backup. This can be used to identify the machine when sending mail or running scripts."); } }
         public static string MachinenameShort { get { return LC.L(@"Machine name"); } }
+        public static string NextscheduledrunShort { get { return LC.L(@"The time of the next scheduled run"); } }
+        public static string NextscheduledrunLong { get { return LC.L(@"This property is a reporting option and does not affect the actual scheduled time. Use this option to inform a reporting destination about the next expected time the backup will run."); } }
         public static string CompressionextensionfileLong(string path) { return LC.L(@"Use this option to point to a text file where each line contains a file extension that indicates a non-compressible file. Files that have an extension found in the file will not be compressed, but simply stored in the archive. The file format ignores any lines that do not start with a period, and considers a space to indicate the end of the extension. A default file is supplied, that also serves as an example. The default file is placed in {0}.", path); }
         public static string CompressionextensionfileShort { get { return LC.L(@"Manage non-compressible file extensions"); } }
         public static string BlocksizeLong { get { return LC.L(@"The block size determines how files are fragmented. Choosing a large value will cause a larger overhead on file changes, choosing a small value will cause a large overhead on storage of file lists. Note that the value cannot be changed after remote files are created."); } }
@@ -181,8 +180,6 @@ namespace Duplicati.Library.Main.Strings
         public static string DisablefilepathcacheLong { get { return LC.L(@"Use this option to reduce the memory footprint by not keeping paths and modification timestamps in memory."); } }
         public static string DisablefilepathcacheShort { get { return LC.L(@"Reduce memory footprint by disabling in-memory lookups"); } }
         public static string DisablefilepathcacheDeprecated { get { return LC.L(@"The option --{0} is no longer used and has been deprecated.", "disable-filepath-cache"); } }
-        public static string UseblockcacheLong { get { return LC.L(@"Use this option to increase speed in exchange for extra memory use."); } }
-        public static string UseblockcacheShort { get { return LC.L(@"Store an in-memory block cache"); } }
         public static string NobackendverificationLong { get { return LC.L(@"If this option is set, the local database is not compared to the remote filelist on startup. The intended usage for this option is to work correctly in cases where the filelisting is broken or unavailable."); } }
         public static string NobackendverificationShort { get { return LC.L(@"Do not query backend at startup"); } }
         public static string IndexfilepolicyLong { get { return LC.L(@"The index files are used to limit the need for downloading dblock files when there is no local database present. The more information is recorded in the index files, the faster operations can proceed without the database. The tradeoff is that larger index files take up more remote space and which may never be used."); } }
@@ -225,7 +222,7 @@ namespace Duplicati.Library.Main.Strings
         public static string UploadverificationfileShort { get { return LC.L(@"Determine if verification files are uploaded"); } }
         public static string BackendtestsamplesLong(string optionname) { return LC.L(@"After a backup is completed, some (dblock, dindex, dlist) files from the remote backend are selected for verification. Use this option to change how many. If the option --{0} is also provided, the number of samples tested is the maximum implied by the two options. If this value is set to 0 or the option --{1} is set, no remote files are verified.", "backup-test-percentage", optionname); }
         public static string BackendtestsamplesShort { get { return LC.L(@"The number of samples to test after a backup"); } }
-        public static string BackendtestpercentageLong { get { return LC.L(@"After a backup is completed, some (dblock, dindex, dlist) files from the remote backend are selected for verification. Use this option to specify the percentage (between 0 and 100) of files to test. If the option --{0} is also provided, the number of samples tested is the maximum implied by the two options. If the option --{1} is provided, no remote files are verified.", "backup-test-samples", "no-backend-verification"); } }
+        public static string BackendtestpercentageLong { get { return LC.L(@"After a backup is completed, some samples (one sample is 1 dblock, 1 dindex, and 1 dlist) files from the remote backend are selected for verification. Use this option to specify the percentage (between 0 and 100) of samples to test. If the option --{0} is also provided, the number of samples tested is the maximum implied by the two options. If the option --{1} is provided, no remote files are verified.", "backup-test-samples", "no-backend-verification"); } }
         public static string BackendtestpercentageShort { get { return LC.L(@"The percentage of samples to test after a backup"); } }
         public static string FullremoteverificationLong(string optionname) { return LC.L(@"After a backup is completed, some (dblock, dindex, dlist) files from the remote backend are selected for verification. Use this option to turn on full verification, which will decrypt the files and examine the insides of each volume, instead of simply verifying the external hash. If the option --{0} is set, no remote files are verified. This option is automatically set when then verification is performed directly. ListAndIndexes is like True but only dlist and index volumes are handled.", optionname); }
         public static string FullremoteverificationShort { get { return LC.L(@"Activate in-depth verification of files"); } }
@@ -255,6 +252,8 @@ namespace Duplicati.Library.Main.Strings
         public static string LogretentionShort { get { return LC.L(@"Clean up old log data"); } }
         public static string RepaironlypathsLong { get { return LC.L(@"Use this option to build a searchable local database which only contains path information. This option is usable for quickly building a database to locate certain content without needing to reconstruct all information. The resulting database can be searched, but cannot be used to restore data with."); } }
         public static string RepaironlypathsShort { get { return LC.L(@"Repair database with paths"); } }
+        public static string RepairignoreoutdateddatabaseLong { get { return LC.L(@"Use this option to ignore that the remote destination contains newer contents than the database. This should only be used when the database is known to be correct, but the remote destination is not, as data can be lost otherwise."); } }
+        public static string RepairignoreoutdateddatabaseShort { get { return LC.L(@"Ignore outdated database files"); } }
         public static string ForcelocaleLong { get { return LC.L(@"By default, your system locale and culture settings will be used. In some cases you may prefer to run with another locale, for example to get messages in another language. Use this option to set the locale. Supply a blank string to choose the ""Invariant Culture""."); } }
         public static string ForcelocaleShort { get { return LC.L(@"Force the locale setting"); } }
         public static string ForceActualDateLong { get { return LC.L(@"By default, dates are displayed in the calendar format, meaning ""Today"" or ""Last Thursday"". By setting this option, only the actual dates are displayed, ""Nov 12, 2018, 8:01 AM"" for example."); } }
@@ -267,6 +266,8 @@ namespace Duplicati.Library.Main.Strings
         public static string ConcurrencyblockhashersShort { get { return LC.L(@"Specify the number of concurrent hashing processes"); } }
         public static string ConcurrencycompressorsLong { get { return LC.L(@"Use this option to set the number of processes that perform compression of output data."); } }
         public static string ConcurrencycompressorsShort { get { return LC.L(@"Specify the number of concurrent compression processes"); } }
+        public static string ConcurrencyfileprocessorsShort { get { return LC.L(@"[EXPERIMENTAL]Specify the number of concurrent files to open"); } }
+        public static string ConcurrencyfileprocessorsLong { get { return LC.L(@"Use this option to set the number of concurrent files to open. This could accelerate big backups involving lot of files, such as an initial backup"); } }
         public static string DisablesyntehticfilelistLong { get { return LC.L(@"If Duplicati detects that the previous backup did not complete, it will generate a filelist that is a merge of the last completed backup and the contents that were uploaded in the incomplete backup session."); } }
         public static string DisablesyntheticfilelistShort { get { return LC.L(@"Disable synthetic filelist"); } }
         public static string CheckfiletimeonlyLong { get { return LC.L(@"This option instructs Duplicati to not look at metadata or filesize when deciding to scan a file for changes. Use this option if you have a large number of files and notice that the scanning takes a long time with unmodified files."); } }
@@ -314,6 +315,36 @@ namespace Duplicati.Library.Main.Strings
         public static string AutoCompactIntervalShort { get { return LC.L("Minimum time between auto compactions"); } }
         public static string AutoVacuumIntervalLong { get { return LC.L("The minimum amount of time that must elapse after the last vacuum before another will be automatically triggered at the end of a backup job. Automatic vacuum can be a long-running process and may not be desirable to run after every single backup."); } }
         public static string AutoVacuumIntervalShort { get { return LC.L("Minimum time between auto vacuums"); } }
+        public static string SecretProviderShort { get { return LC.L("Secret provider to use for reading credentials"); } }
+        public static string SecretProviderLong(string toolname) { return LC.L("Configures a secret provider to use for reading credentials. Use the commandline tool {0} to test the provider and see supported options. This value is interpreted as an environment variable if it starts with '$' or begins and ends with '%'.", toolname); }
+        public static string SecretProviderPatternShort { get { return LC.L("Pattern for secrets"); } }
+        public static string SecretProviderPatternLong { get { return LC.L("Use this option to specify a pattern for secret provider options. The pattern is used to find values that are intended to be translated by the secret provider. Patterns are treated as a prefix, with support for braces."); } }
+        public static string SecretProviderCacheShort { get { return LC.L("Cache rules for the secret provider"); } }
+        public static string SecretProviderCacheLong { get { return LC.L("Use this option to set the allowed caching of credentials from the secret provider. Setting a cache level may reduce the security but allow the backups to continue despite provider outages."); } }
+
+        public static string CPUIntensityShort { get { return LC.L("CPU intensity level"); } }
+        public static string CPUIntensityLong { get { return LC.L("Set the CPU intensity level to limit CPU resource utilization. A higher number translates into a higher utilization budget. E.g. 10 would mean no restrictions. Must be an integer between 1-10."); } }
+
+        public static string RestoreCacheMaxShort { get { return LC.L("Maximum cache size for restoring files"); } }
+        public static string RestoreCacheMaxLong { get { return LC.L($"Use this option to set the maximum size of the cache used for restoring files. The cache is used to store the data blocks that are downloaded from the remote storage. It assumes that the value is divisable by the block size, except for when it is 0, which disables the block cache."); } }
+        public static string RestoreCacheEvictShort { get { return LC.L("Eviction ratio of the data block cache during restore"); } }
+        public static string RestoreCacheEvictLong { get { return LC.L("Use this option to set the eviction ratio of the data block cache during restore. The eviction ratio is the percentage of the cache that is evicted when the cache is full. The default value is 50, which means that 50% of the cache is evicted when the cache is full."); } }
+        public static string RestoreFileprocessorsShort { get { return LC.L("Number of concurrent FileProcessors processes used during restore"); } }
+        public static string RestoreFileprocessorsLong { get { return LC.L("Use this option to set the number of concurrent FileProcessors processes used during restore. A FileProcessor processes one file at a time, and increasing the number of FileProcessors may improve restore performance."); } }
+        public static string RestoreLegacyShort { get { return LC.L("Use legacy restore method"); } }
+        public static string RestoreLegacyLong { get { return LC.L("Use this option to use the legacy restore method. The legacy restore method is slower than the new method, but may be more reliable in some cases."); } }
+        public static string RestorePreallocateSizeShort { get { return LC.L("Preallocate size of restored files"); } }
+        public static string RestorePreallocateSizeLong { get { return LC.L("Use this option to toggle whether to set the size of the restored files before they are written to disk. This can help to reduce fragmentation and improve performance on some filesystems."); } }
+        public static string RestoreVolumeDecompressorsShort { get { return LC.L("Number of concurrent FileDecompressor processes used during restore"); } }
+        public static string RestoreVolumeDecompressorsLong { get { return LC.L("Use this option to set the number of concurrent FileDecompressor processes used during restore. A FileDecompressor processes one volume at a time, and increasing the number of FileDecompressors may improve restore performance if the bottleneck is decompression."); } }
+        public static string RestoreVolumeDecryptorsShort { get { return LC.L("Number of concurrent FileDecryptor processes used during restore"); } }
+        public static string RestoreVolumeDecryptorsLong { get { return LC.L("Use this option to set the number of concurrent FileDecryptor processes used during restore. A FileDecryptor processes one volume at a time, and increasing the number of FileDecryptors may improve restore performance if the bottleneck is decryption."); } }
+        public static string RestoreVolumeDownloadersShort { get { return LC.L("Number of concurrent FileDownloader processes used during restore"); } }
+        public static string RestoreVolumeDownloadersLong { get { return LC.L("Use this option to set the number of concurrent FileDownloader processes used during restore. A FileDownloader processes one volume at a time, and increasing the number of FileDownloaders may improve restore performance if the bottleneck is downloading."); } }
+        public static string RestoreChannelBufferSizeShort { get { return LC.L("Size of buffers of the channels used during restore"); } }
+        public static string RestoreChannelBufferSizeLong { get { return LC.L("Use this option to set the size of the buffers of the channels used during restore. The buffers are used to allow for better asynchronous communication between the processes in the restore flow. Increasing the buffer size may improve restore performance."); } }
+        public static string InternalProfilingShort { get { return LC.L("Enable internal profiling"); } }
+        public static string InternalProfilingLong { get { return LC.L("Use this option to enable internal profiling. Profiling is used to measure the performance of the internal code. The profiling data is written to the log file and can be used to identify performance bottlenecks."); } }
     }
 
     internal static class Common
@@ -322,6 +353,11 @@ namespace Duplicati.Library.Main.Strings
         public static string InvalidHashAlgorithm(string algorithm) { return LC.L(@"The cryptolibrary does not support the hash algorithm {0}", algorithm); }
         public static string PassphraseChangeUnsupported { get { return LC.L(@"The passphrase cannot be changed for an existing backup"); } }
         public static string SnapshotFailedError(string message) { return LC.L(@"Failed to create a snapshot: {0}", message); }
+    }
+
+    internal static class BackendMananger
+    {
+        public static string EncryptionModuleNotFound(string name) { return LC.L(@"The encryption module {0} was not found", name); }
     }
 
 }

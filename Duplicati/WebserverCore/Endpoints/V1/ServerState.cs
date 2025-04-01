@@ -1,3 +1,23 @@
+// Copyright (C) 2025, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
 using Duplicati.Server;
 using Duplicati.WebserverCore.Abstractions;
 using Duplicati.WebserverCore.Dto;
@@ -18,7 +38,7 @@ public class ServerState : IEndpointV1
 
         group.MapPost("/serverstate/pause",
             ([FromServices] IStatusService statusService, [FromServices] LiveControls liveControls,
-                [FromQuery] string? duration) => ExecutePause(liveControls, duration)).RequireAuthorization();
+                [FromQuery] string? duration, [FromQuery] bool? pauseTransfers) => ExecutePause(liveControls, duration, pauseTransfers)).RequireAuthorization();
 
         group.MapPost("/serverstate/resume",
             ([FromServices] IStatusService statusService, [FromServices] LiveControls liveControls) =>
@@ -60,7 +80,7 @@ public class ServerState : IEndpointV1
         return status;
     }
 
-    private static void ExecutePause(LiveControls liveControls, string? duration)
+    private static void ExecutePause(LiveControls liveControls, string? duration, bool? pauseTransfer)
     {
         var ts = TimeSpan.Zero;
         if (duration != null)
@@ -74,9 +94,9 @@ public class ServerState : IEndpointV1
             }
 
         if (ts.TotalMilliseconds > 0)
-            liveControls.Pause(ts);
+            liveControls.Pause(ts, pauseTransfer ?? false);
         else
-            liveControls.Pause();
+            liveControls.Pause(pauseTransfer ?? false);
     }
 
     private static void ExecuteResume(LiveControls liveControls)

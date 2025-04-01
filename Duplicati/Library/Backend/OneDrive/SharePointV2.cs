@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -18,12 +18,7 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
+
 using Duplicati.Library.Backend.MicrosoftGraph;
 using Duplicati.Library.Interface;
 
@@ -34,67 +29,40 @@ namespace Duplicati.Library.Backend
         private const string SITE_ID_OPTION = "site-id";
         private const string PROTOCOL_KEY = "sharepoint";
 
-        private readonly string drivePath;
-        private string siteId = null;
+        private readonly Task<string> drivePath;
+        private string siteId;
 
-        public SharePointV2() { } // Constructor needed for dynamic loading to find it
+        public SharePointV2()
+        {
+            // Constructor needed for dynamic loading to find it
+            drivePath = null!;
+            siteId = null!;
+        }
 
-        public SharePointV2(string url, Dictionary<string, string> options)
-            : base(url, SharePointV2.PROTOCOL_KEY, options)
+        public SharePointV2(string url, Dictionary<string, string?> options)
+            : base(url, PROTOCOL_KEY, options)
         {
             // Check to see if a site ID was explicitly provided
-            string siteIdOption;
-            if (options.TryGetValue(SITE_ID_OPTION, out siteIdOption))
-            {
-                if (!string.IsNullOrEmpty(this.siteId) && !string.Equals(this.siteId, siteIdOption))
-                {
-                    throw new UserInformationException(Strings.SharePointV2.ConflictingSiteId(siteIdOption, this.siteId), "SharePointConflictingSiteId");
-                }
-
-                this.siteId = siteIdOption;
-            }
-
-            if (string.IsNullOrEmpty(this.siteId))
-            {
+            var siteIdOption = options.GetValueOrDefault(SITE_ID_OPTION);
+            if (!string.IsNullOrWhiteSpace(siteIdOption))
+                siteId = siteIdOption;
+            else
                 throw new UserInformationException(Strings.SharePointV2.MissingSiteId, "SharePointMissingSiteId");
-            }
 
-            this.drivePath = string.Format("/sites/{0}/drive", this.siteId);
+            drivePath = Task.FromResult(string.Format("/sites/{0}/drive", siteId));
         }
 
-        public override string ProtocolKey
-        {
-            get { return SharePointV2.PROTOCOL_KEY; }
-        }
+        public override string ProtocolKey => PROTOCOL_KEY;
 
-        public override string DisplayName
-        {
-            get { return Strings.SharePointV2.DisplayName; }
-        }
+        public override string DisplayName => Strings.SharePointV2.DisplayName;
 
-        protected override string DrivePath
-        {
-            get { return this.drivePath; }
-        }
+        protected override Task<string> GetDrivePath(CancellationToken cancelToken) => drivePath;
 
-        protected override DescriptionTemplateDelegate DescriptionTemplate
-        {
-            get
-            {
-                return Strings.SharePointV2.Description;
-            }
-        }
+        protected override DescriptionTemplateDelegate DescriptionTemplate => Strings.SharePointV2.Description;
 
-        protected override IList<ICommandLineArgument> AdditionalSupportedCommands
-        {
-            get
-            {
-                return new ICommandLineArgument[]
-                {
-                    new CommandLineArgument(SITE_ID_OPTION, CommandLineArgument.ArgumentType.String, Strings.SharePointV2.SiteIdShort, Strings.SharePointV2.SiteIdLong),
-                };
-            }
-        }
+        protected override IList<ICommandLineArgument> AdditionalSupportedCommands => [
+            new CommandLineArgument(SITE_ID_OPTION, CommandLineArgument.ArgumentType.String, Strings.SharePointV2.SiteIdShort, Strings.SharePointV2.SiteIdLong),
+        ];
 
         /// <summary>
         /// This method takes an input URL, which could be either in the format that the old SharePoint backend accepted or
@@ -107,7 +75,7 @@ namespace Duplicati.Library.Backend
         /// <returns>Path within the drive</returns>
         protected override async Task<string> GetRootPathFromUrlAsync(string url, CancellationToken cancelToken)
         {
-            Uri uri = new Uri(url);
+            var uri = new Uri(url);
 
             // If the user gave a URL like "https://{tenant}.sharepoint.com/path" in the UI,
             // it might appear here as "sharepoint://https://{tenant}.sharepoint.com/path".
@@ -118,19 +86,22 @@ namespace Duplicati.Library.Backend
                 uri = new Uri(string.Format("{0}:{1}", uri.Scheme, uri.LocalPath));
             }
 
-            var site = await this.GetSharePointSite(uri, cancelToken).ConfigureAwait(false);
+            var site = await GetSharePointSite(uri, cancelToken).ConfigureAwait(false);
             if (site != null)
             {
                 // Get the web URL of the site's main drive
                 try
                 {
-                    var drive = await this.GetAsync<Drive>(string.Format("{0}/sites/{1}/drive", this.ApiVersion, site.Id), cancelToken).ConfigureAwait(false);
+                    var drive = await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, ct => this.GetAsync<Drive>(string.Format("{0}/sites/{1}/drive", this.ApiVersion, site.Id), ct)).ConfigureAwait(false);
 
-                    this.siteId = site.Id;
-                    var driveWebUrl = new Uri(drive.WebUrl);
+                    if (drive != null && !string.IsNullOrEmpty(drive.WebUrl) && !string.IsNullOrWhiteSpace(site.Id))
+                    {
+                        siteId = site.Id;
+                        var driveWebUrl = new Uri(drive.WebUrl);
 
-                    // Make sure to replace any "//" in the original path with "/", so the substrings line up.
-                    return uri.LocalPath.Replace("//", "/").Substring(driveWebUrl.LocalPath.Length);
+                        // Make sure to replace any "//" in the original path with "/", so the substrings line up.
+                        return uri.LocalPath.Replace("//", "/").Substring(driveWebUrl.LocalPath.Length);
+                    }
                 }
                 catch (MicrosoftGraphException)
                 {
@@ -141,7 +112,7 @@ namespace Duplicati.Library.Backend
             return await base.GetRootPathFromUrlAsync(url, cancelToken).ConfigureAwait(false);
         }
 
-        private async Task<SharePointSite> GetSharePointSite(Uri url, CancellationToken cancelToken)
+        private async Task<SharePointSite?> GetSharePointSite(Uri url, CancellationToken cancelToken)
         {
             var uri = new UriBuilder(url);
 
@@ -157,7 +128,7 @@ namespace Duplicati.Library.Backend
                 try
                 {
                     var request = string.Format("{0}:/{1}", requestBase, uri.Path.Substring(0, siteHint));
-                    return await this.GetAsync<SharePointSite>(request, cancelToken).ConfigureAwait(false);
+                    return await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, ct => this.GetAsync<SharePointSite>(request, ct)).ConfigureAwait(false);
                 }
                 catch (MicrosoftGraphException)
                 {
@@ -171,7 +142,7 @@ namespace Duplicati.Library.Backend
                 try
                 {
                     string request = string.Format("{0}:/{1}", requestBase, string.Join("/", pathPieces.Take(i)));
-                    return await this.GetAsync<SharePointSite>(request, cancelToken).ConfigureAwait(false);
+                    return await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, ct => this.GetAsync<SharePointSite>(request, ct)).ConfigureAwait(false);
                 }
                 catch (MicrosoftGraphException)
                 {

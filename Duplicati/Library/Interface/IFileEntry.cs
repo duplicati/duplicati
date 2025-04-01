@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -40,6 +40,10 @@ namespace Duplicati.Library.Interface
         /// The time the file or folder was last modified
         /// </summary>
         DateTime LastModification { get; }
+        /// <summary>
+        /// The time the file or folder was created
+        /// </summary>
+        DateTime Created { get; }
         /// <summary>
         /// The name of the file or folder
         /// </summary>

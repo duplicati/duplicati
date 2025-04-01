@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -49,7 +49,7 @@ public partial class Auth : IEndpointV1
                 {
                     var result = await loginProvider.PerformLoginWithRefreshToken(refreshTokenString, ct);
                     AddCookie(httpContextAccessor.HttpContext, cookieName, result.RefreshToken, DateTimeOffset.UtcNow.AddMinutes(jWTConfig.RefreshTokenDurationInMinutes));
-                    return new Dto.AccessTokenOutput(result.AccessToken);
+                    return new Dto.AccessTokenOutputDto(result.AccessToken);
                 }
                 catch (Exception ex)
                 {
@@ -73,7 +73,7 @@ public partial class Auth : IEndpointV1
                 var result = await loginProvider.PerformLoginWithSigninToken(input.SigninToken, input.RememberMe ?? false, ct);
                 if (!string.IsNullOrWhiteSpace(result.RefreshToken))
                     AddCookie(httpContextAccessor.HttpContext!, cookieName, result.RefreshToken, DateTimeOffset.UtcNow.AddMinutes(jWTConfig.RefreshTokenDurationInMinutes));
-                return new Dto.AccessTokenOutput(result.AccessToken);
+                return new Dto.AccessTokenOutputDto(result.AccessToken);
             }
             catch (Exception ex)
             {
@@ -95,7 +95,7 @@ public partial class Auth : IEndpointV1
                 var result = await loginProvider.PerformLoginWithPassword(input.Password, input.RememberMe ?? false, ct);
                 if (!string.IsNullOrWhiteSpace(result.RefreshToken))
                     AddCookie(httpContextAccessor.HttpContext!, cookieName, result.RefreshToken, DateTimeOffset.UtcNow.AddMinutes(jWTConfig.RefreshTokenDurationInMinutes));
-                return new Dto.AccessTokenOutput(result.AccessToken);
+                return new Dto.AccessTokenOutputDto(result.AccessToken);
             }
             catch (Exception ex)
             {
@@ -133,6 +133,17 @@ public partial class Auth : IEndpointV1
             }
             var singleOperationToken = tokenProvider.CreateSingleOperationToken("web-api", operation);
             return new Dto.SingleOperationTokenOutputDto(singleOperationToken);
+        }).RequireAuthorization();
+
+        group.MapPost("auth/issue-forever-token", ([FromServices] Connection connection, [FromServices] IJWTTokenProvider tokenProvider) =>
+        {
+            var res = connection.ApplicationSettings.ConsumeForeverToken();
+            if (res == null)
+                throw new UnauthorizedException("Forever tokens are not enabled");
+            if (!res.Value)
+                throw new UnauthorizedException("Cannot generate multiple forever tokens, restart the server to generate a new one");
+
+            return new Dto.AccessTokenOutputDto(tokenProvider.CreateForeverToken());
         }).RequireAuthorization();
     }
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -51,8 +51,9 @@ namespace Duplicati.Library.Interface
         /// <summary>
         /// Enumerates a list of files found on the remote location
         /// </summary>
+        /// <param name="cancellationToken">Token to cancel the operation.</param>
         /// <returns>The list of files</returns>
-        IEnumerable<IFileEntry> List();
+        IAsyncEnumerable<IFileEntry> ListAsync(CancellationToken cancellationToken);
 
         /// <summary>
         /// Puts the content of the file to the url passed

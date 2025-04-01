@@ -1,4 +1,4 @@
-﻿// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -23,7 +23,9 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using Duplicati.Library.Common.IO;
-using Duplicati.Library.Common;
+using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
+using System.IO;
 
 namespace Duplicati.Server
 {
@@ -130,6 +132,15 @@ namespace Duplicati.Server
 
                 try
                 {
+                    // PInvoke to get the download folder
+                    TryAdd(lst, Library.Utility.SHGetFolder.DownloadFolder, "%MY_DOWNLOADS%", "Downloads");
+                }
+                catch
+                {
+                }
+
+                try
+                {
                     // In case the UserProfile member points to junk
                     TryAdd(lst, System.IO.Path.Combine(Environment.GetEnvironmentVariable("HOMEDRIVE"), Environment.GetEnvironmentVariable("HOMEPATH")), "%HOME%", "Home");
                 }
@@ -140,12 +151,19 @@ namespace Duplicati.Server
             }
             else
             {
-                TryAdd(lst, Environment.SpecialFolder.MyDocuments, "%MY_DOCUMENTS%", "My Documents");
-                TryAdd(lst, Environment.SpecialFolder.MyMusic, "%MY_MUSIC%", "My Music");
-                TryAdd(lst, Environment.SpecialFolder.MyPictures, "%MY_PICTURES%", "My Pictures");
+                var homedir = Environment.GetEnvironmentVariable("HOME");
+                if (string.IsNullOrWhiteSpace(homedir))
+                    homedir = System.Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+
+                TryAdd(lst, Environment.SpecialFolder.MyDocuments, "%MY_DOCUMENTS%", "Documents");
+                TryAdd(lst, Environment.SpecialFolder.MyMusic, "%MY_MUSIC%", "Music");
+                TryAdd(lst, Environment.SpecialFolder.MyPictures, "%MY_PICTURES%", "Pictures");
                 TryAdd(lst, Environment.SpecialFolder.DesktopDirectory, "%DESKTOP%", "Desktop");
                 TryAdd(lst, Environment.GetEnvironmentVariable("HOME"), "%HOME%", "Home");
                 TryAdd(lst, Environment.SpecialFolder.UserProfile, "%HOME%", "Home");
+                TryAdd(lst, Path.Combine(homedir, "Movies"), "%MY_MOVIES%", "Movies");
+                TryAdd(lst, Path.Combine(homedir, "Downloads"), "%MY_DOWNLOADS%", "Downloads");
+                TryAdd(lst, Path.Combine(homedir, "Public"), "%MY_PUBLIC%", "Public");
             }
 
             Nodes = lst.ToArray();

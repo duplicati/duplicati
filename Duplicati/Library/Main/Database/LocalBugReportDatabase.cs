@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -40,22 +40,22 @@ namespace Duplicati.Library.Main.Database
 
         public void Fix()
         {
-            using(var tr = m_connection.BeginTransaction())
-            using(var cmd = m_connection.CreateCommand())
+            using (var tr = m_connection.BeginTransaction())
+            using (var cmd = m_connection.CreateCommand())
             {
                 cmd.Transaction = tr;
                 var tablename = "PathMap-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
 
                 // TODO: Rewrite this to use PathPrefix
                 // TODO: Needs to be much faster
-                using(var upcmd = m_connection.CreateCommand())
+                using (var upcmd = m_connection.CreateCommand())
                 {
-                
+
                     upcmd.Transaction = tr;
-                    upcmd.ExecuteNonQuery(string.Format(@"CREATE TEMPORARY TABLE ""{0}"" (""ID"" INTEGER PRIMARY KEY, ""RealPath"" TEXT NOT NULL, ""Obfuscated"" TEXT NULL)", tablename));
-                    upcmd.ExecuteNonQuery(string.Format(@"INSERT INTO ""{0}"" (""RealPath"") SELECT DISTINCT ""Path"" FROM ""File"" ORDER BY ""Path"" ", tablename));
-                    upcmd.ExecuteNonQuery(string.Format(@"UPDATE ""{0}"" SET ""Obfuscated"" = ? || length(""RealPath"") || ? || ""ID"" || (CASE WHEN substr(""RealPath"", length(""RealPath"")) = ? THEN ? ELSE ? END) ", tablename), !OperatingSystem.IsWindows() ? "/" : "X:\\", Util.DirectorySeparatorString, Util.DirectorySeparatorString, Util.DirectorySeparatorString, ".bin");
-                    
+                    upcmd.ExecuteNonQuery(FormatInvariant($@"CREATE TEMPORARY TABLE ""{tablename}"" (""ID"" INTEGER PRIMARY KEY, ""RealPath"" TEXT NOT NULL, ""Obfuscated"" TEXT NULL)"));
+                    upcmd.ExecuteNonQuery(FormatInvariant($@"INSERT INTO ""{tablename}"" (""RealPath"") SELECT DISTINCT ""Path"" FROM ""File"" ORDER BY ""Path"" "));
+                    upcmd.ExecuteNonQuery(FormatInvariant($@"UPDATE ""{tablename}"" SET ""Obfuscated"" = ? || length(""RealPath"") || ? || ""ID"" || (CASE WHEN substr(""RealPath"", length(""RealPath"")) = ? THEN ? ELSE ? END) "), !OperatingSystem.IsWindows() ? "/" : "X:\\", Util.DirectorySeparatorString, Util.DirectorySeparatorString, Util.DirectorySeparatorString, ".bin");
+
                     /*long id = 1;
                     using(var rd = cmd.ExecuteReader(string.Format(@"SELECT ""RealPath"", ""Obfuscated"" FROM ""{0}"" ", tablename)))
                         while(rd.Read())
@@ -66,21 +66,21 @@ namespace Duplicati.Library.Main.Database
                         */
                 }
 
-                cmd.ExecuteNonQuery(@"UPDATE ""LogData"" SET ""Message"" = 'ERASED!' WHERE ""Message"" LIKE '%/%' OR ""Message"" LIKE '%:\%' ");                
-                cmd.ExecuteNonQuery(@"UPDATE ""LogData"" SET ""Exception"" = 'ERASED!' WHERE ""Exception"" LIKE '%/%' OR ""Exception"" LIKE '%:\%' ");                
+                cmd.ExecuteNonQuery(@"UPDATE ""LogData"" SET ""Message"" = 'ERASED!' WHERE ""Message"" LIKE '%/%' OR ""Message"" LIKE '%:\%' ");
+                cmd.ExecuteNonQuery(@"UPDATE ""LogData"" SET ""Exception"" = 'ERASED!' WHERE ""Exception"" LIKE '%/%' OR ""Exception"" LIKE '%:\%' ");
 
                 cmd.ExecuteNonQuery(@"UPDATE ""Configuration"" SET ""Value"" = 'ERASED!' WHERE ""Key"" = 'passphrase' ");
 
-                cmd.ExecuteNonQuery(string.Format(@"CREATE TABLE ""FixedFile"" AS SELECT ""B"".""ID"" AS ""ID"", ""A"".""Obfuscated"" AS ""Path"", ""B"".""BlocksetID"" AS ""BlocksetID"", ""B"".""MetadataID"" AS ""MetadataID"" FROM ""{0}"" ""A"", ""File"" ""B"" WHERE ""A"".""RealPath"" = ""B"".""Path"" ", tablename));
+                cmd.ExecuteNonQuery(FormatInvariant($@"CREATE TABLE ""FixedFile"" AS SELECT ""B"".""ID"" AS ""ID"", ""A"".""Obfuscated"" AS ""Path"", ""B"".""BlocksetID"" AS ""BlocksetID"", ""B"".""MetadataID"" AS ""MetadataID"" FROM ""{tablename}"" ""A"", ""File"" ""B"" WHERE ""A"".""RealPath"" = ""B"".""Path"" "));
                 cmd.ExecuteNonQuery(@"DROP VIEW ""File"" ");
                 cmd.ExecuteNonQuery(@"DROP TABLE ""FileLookup"" ");
                 cmd.ExecuteNonQuery(@"DROP TABLE ""PathPrefix"" ");
 
-                cmd.ExecuteNonQuery(string.Format(@"DROP TABLE IF EXISTS ""{0}"" ", tablename));
-                
-                using(new Logging.Timer(LOGTAG, "CommitUpdateBugReport", "CommitUpdateBugReport"))
+                cmd.ExecuteNonQuery(FormatInvariant($@"DROP TABLE IF EXISTS ""{tablename}"" "));
+
+                using (new Logging.Timer(LOGTAG, "CommitUpdateBugReport", "CommitUpdateBugReport"))
                     tr.Commit();
-                
+
                 cmd.Transaction = null;
 
                 cmd.ExecuteNonQuery("VACUUM");

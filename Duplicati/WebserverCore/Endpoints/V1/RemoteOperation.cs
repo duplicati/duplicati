@@ -1,4 +1,26 @@
+// Copyright (C) 2025, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
 using Duplicati.Library.Interface;
+using Duplicati.Library.Main;
+using Duplicati.Library.RestAPI;
 using Duplicati.Server;
 using Duplicati.WebserverCore.Abstractions;
 using Duplicati.WebserverCore.Exceptions;
@@ -27,11 +49,11 @@ namespace Duplicati.WebserverCore.Endpoints.V1
 
         private static Dto.GetDbPathDto ExecuteDbPath(string uri)
         {
-            var path = Library.Main.DatabaseLocator.GetDatabasePath(uri, null, false, false);
+            var path = CLIDatabaseLocator.GetDatabasePathForCLI(uri, null, false, false);
             return new Dto.GetDbPathDto(!string.IsNullOrWhiteSpace(path), path);
         }
 
-        private static Dictionary<string, string> ParseUrlOptions(Library.Utility.Uri uri)
+        private static Dictionary<string, string?> ParseUrlOptions(Library.Utility.Uri uri)
         {
             var qp = uri.QueryParameters;
 
@@ -42,7 +64,7 @@ namespace Duplicati.WebserverCore.Endpoints.V1
             return opts;
         }
 
-        private static IEnumerable<IGenericModule> ConfigureModules(IDictionary<string, string> opts)
+        private static IEnumerable<IGenericModule> ConfigureModules(IDictionary<string, string?> opts)
         {
             // TODO: This works because the generic modules are implemented
             // with pre .NetCore logic, using static methods
@@ -65,10 +87,15 @@ namespace Duplicati.WebserverCore.Endpoints.V1
             }
         }
 
-        private static TupleDisposeWrapper GetBackend(string url)
+        private static async Task<TupleDisposeWrapper> GetBackend(string url, CancellationToken cancelToken)
         {
             var uri = new Library.Utility.Uri(url);
             var opts = ParseUrlOptions(uri);
+
+            var tmp = new[] { uri };
+            await SecretProviderHelper.ApplySecretProviderAsync([], tmp, opts, Library.Utility.TempFolder.SystemTempPath, FIXMEGlobal.SecretProvider, cancelToken);
+            url = tmp[0].ToString();
+
             var modules = ConfigureModules(opts);
             var backend = Library.DynamicLoader.BackendLoader.GetBackend(url, new Dictionary<string, string>());
             return new TupleDisposeWrapper(backend, modules);
@@ -80,7 +107,7 @@ namespace Duplicati.WebserverCore.Endpoints.V1
 
             try
             {
-                wrapper = GetBackend(url);
+                wrapper = await GetBackend(url, cancelToken);
 
                 using (var b = wrapper.Backend)
                 {

@@ -1,4 +1,4 @@
-﻿// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -24,7 +24,6 @@ using System.Linq;
 using System.Globalization;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
-using Duplicati.Library.Localization.Short;
 using Duplicati.Library.Logging;
 
 namespace Duplicati.Library.Localization
@@ -38,11 +37,6 @@ namespace Duplicati.Library.Localization
         /// The cache of services
         /// </summary>
         private static readonly Dictionary<CultureInfo, ILocalizationService> Services = new Dictionary<CultureInfo, ILocalizationService>();
-
-        /// <summary>
-        /// The key for accessing logical context
-        /// </summary>
-        internal const string LOGICAL_CONTEXT_KEY = "DUPLICATI_LOCALIZATION_CULTURE_CONTEXT";
 
         /// <summary>
         /// Regular expression to match a locale
@@ -97,10 +91,24 @@ namespace Duplicati.Library.Localization
         {
             get
             {
-                var lc = CallContext.GetData(LOGICAL_CONTEXT_KEY) as string;
+                var lc = LocalizationContext.Current;
                 if (!string.IsNullOrWhiteSpace(lc))
                     return Get(new CultureInfo(lc));
                 return Get(CultureInfo.CurrentCulture);
+            }
+        }
+
+        /// <summary>
+        /// Gets a localization provider with the current UI language
+        /// </summary>
+        public static ILocalizationService CurrentUI
+        {
+            get
+            {
+                var lc = LocalizationContext.Current;
+                if (!string.IsNullOrWhiteSpace(lc))
+                    return Get(new CultureInfo(lc));
+                return Get(CultureInfo.CurrentUICulture);
             }
         }
 
@@ -147,7 +155,7 @@ namespace Duplicati.Library.Localization
         /// <summary>
         /// Returns true if the culture has localization support
         /// </summary>
-        public static Boolean isCultureSupported(CultureInfo culture)
+        public static bool IsCultureSupported(CultureInfo culture)
         {
             return MoLocalizationService.isCultureSupported(culture);
         }

@@ -4,17 +4,11 @@
     <TargetFramework>net8.0</TargetFramework>
     <OutputType>Library</OutputType>
     <RootNamespace>Duplicati.Library.Compression</RootNamespace>
-    <Copyright>Copyright © 2024 Team Duplicati, MIT license</Copyright>
+    <Copyright>Copyright © 2025 Team Duplicati, MIT license</Copyright>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="sharpcompress" Version="0.36.0" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Reference Include="managed-lzma">
-      <HintPath>..\..\..\thirdparty\ManagedLZMA\managed-lzma.dll</HintPath>
-    </Reference>
+    <PackageReference Include="sharpcompress" Version="0.39.0" />
   </ItemGroup>
 
   <ItemGroup>

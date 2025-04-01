@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -22,6 +22,7 @@
 using System;
 using System.Linq;
 using System.Threading;
+using Duplicati.Library.AutoUpdater;
 using Duplicati.Server.Database;
 using Duplicati.Server.Serialization;
 
@@ -38,6 +39,7 @@ namespace Duplicati.Server
         private readonly object m_lock = new object();
         private AutoResetEvent m_waitSignal;
         private double m_downloadProgress;
+        private bool m_disableChecks = false;
 
         public bool IsUpdateRequested { get; private set; } = false;
 
@@ -55,8 +57,9 @@ namespace Duplicati.Server
             }
         }
 
-        public void Init()
+        public void Init(bool disableChecks)
         {
+            m_disableChecks = disableChecks;
             m_waitSignal = new AutoResetEvent(false);
             ThreadState = UpdatePollerStates.Waiting;
             m_thread = new Thread(Run)
@@ -114,26 +117,29 @@ namespace Duplicati.Server
 
                 if (nextCheck < DateTime.UtcNow || m_forceCheck)
                 {
+                    DateTime started = DateTime.UtcNow;
+                    connection.ApplicationSettings.LastUpdateCheck = started;
+                    nextCheck = connection.ApplicationSettings.NextUpdateCheck;
+
+                    // If this is not forced, and we have disabled checks, we just update the next check time
+                    if (m_disableChecks && !m_forceCheck)
+                        continue;
+
                     lock (m_lock)
                         m_forceCheck = false;
 
                     ThreadState = UpdatePollerStates.Checking;
                     eventPollNotify.SignalNewEvent();
 
-                    DateTime started = DateTime.UtcNow;
-                    connection.ApplicationSettings.LastUpdateCheck = started;
-                    nextCheck = connection.ApplicationSettings.NextUpdateCheck;
-
-                    Library.AutoUpdater.ReleaseType rt;
-                    if (!Enum.TryParse<Library.AutoUpdater.ReleaseType>(connection.ApplicationSettings.UpdateChannel, true, out rt))
-                        rt = Duplicati.Library.AutoUpdater.ReleaseType.Unknown;
+                    if (!Enum.TryParse<ReleaseType>(connection.ApplicationSettings.UpdateChannel, true, out var rt))
+                        rt = ReleaseType.Unknown;
 
                     // Choose the default channel in case we have unknown
-                    rt = rt == Duplicati.Library.AutoUpdater.ReleaseType.Unknown ? Duplicati.Library.AutoUpdater.AutoUpdateSettings.DefaultUpdateChannel : rt;
+                    rt = rt == ReleaseType.Unknown ? AutoUpdateSettings.DefaultUpdateChannel : rt;
 
                     try
                     {
-                        var update = Duplicati.Library.AutoUpdater.UpdaterManager.CheckForUpdate(rt);
+                        var update = UpdaterManager.CheckForUpdate(rt);
                         if (update != null)
                             connection.ApplicationSettings.UpdatedVersion = update;
                     }
@@ -161,8 +167,17 @@ namespace Duplicati.Server
                             connection.ApplicationSettings.UpdatedVersion = null;
                     }
 
+                    // If the update is the same or older than the current version, we discard it
+                    // NOTE: This check is also inside the UpdaterManager.CheckForUpdate method,
+                    // but we may have a stale version recorded, so we force-clear it here
+                    if (connection.ApplicationSettings.UpdatedVersion != null)
+                    {
+                        if (UpdaterManager.TryParseVersion(connection.ApplicationSettings.UpdatedVersion.Version) <= UpdaterManager.TryParseVersion(UpdaterManager.SelfVersion.Version))
+                            connection.ApplicationSettings.UpdatedVersion = null;
+                    }
+
                     var updatedinfo = connection.ApplicationSettings.UpdatedVersion;
-                    if (updatedinfo != null && Duplicati.Library.AutoUpdater.UpdaterManager.TryParseVersion(updatedinfo.Version) > System.Reflection.Assembly.GetExecutingAssembly().GetName().Version)
+                    if (updatedinfo != null && UpdaterManager.TryParseVersion(updatedinfo.Version) > UpdaterManager.TryParseVersion(UpdaterManager.SelfVersion.Version))
                     {
                         var package = updatedinfo.FindPackage();
 

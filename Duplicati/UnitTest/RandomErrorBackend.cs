@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -72,9 +72,9 @@ namespace Duplicati.UnitTest
         #endregion
 
         #region IBackend implementation
-        public IEnumerable<IFileEntry> List()
+        public IAsyncEnumerable<IFileEntry> ListAsync(CancellationToken cancellationToken)
         {
-            return m_backend.List();
+            return m_backend.ListAsync(cancellationToken);
         }
         public async Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
         {

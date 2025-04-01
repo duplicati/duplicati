@@ -1,4 +1,4 @@
-﻿// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -27,6 +27,10 @@ using Duplicati.Library.RestAPI;
 using System.Text.Json;
 using System.Text;
 using System.Security.Cryptography.X509Certificates;
+using Duplicati.Library.Utility;
+using Duplicati.Library.AutoUpdater;
+
+#nullable enable
 
 namespace Duplicati.Server.Database
 {
@@ -37,7 +41,6 @@ namespace Duplicati.Server.Database
             public const string STARTUP_DELAY = "startup-delay";
             public const string DOWNLOAD_SPEED_LIMIT = "max-download-speed";
             public const string UPLOAD_SPEED_LIMIT = "max-upload-speed";
-            public const string THREAD_PRIORITY = "thread-priority";
             public const string LAST_WEBSERVER_PORT = "last-webserver-port";
             public const string IS_FIRST_RUN = "is-first-run";
             public const string SERVER_PORT_CHANGED = "server-port-changed";
@@ -66,17 +69,28 @@ namespace Duplicati.Server.Database
             public const string DISABLE_SIGNIN_TOKENS = "disable-signin-tokens";
             public const string ENCRYPTED_FIELDS = "encrypted-fields";
             public const string PRELOAD_SETTINGS_HASH = "preload-settings-hash";
+            public const string TIMEZONE_OPTION = "server-timezone";
+            public const string PAUSED_UNTIL = "paused-until";
+            public const string LAST_UPDATE_CHECK_VERSION = "last-update-check-version";
+            public const string ADDITIONAL_REPORT_URL = "additional-report-url";
+            public const string BACKUP_LIST_SORT_ORDER = "backup-list-sort-order";
         }
 
-        private readonly Dictionary<string, string> settings;
+        private readonly Dictionary<string, string?> settings;
         private readonly Connection databaseConnection;
-        private Library.AutoUpdater.UpdateInfo m_latestUpdate;
+        private UpdateInfo? m_latestUpdate;
 
         internal ServerSettings(Connection con)
         {
-            settings = new Dictionary<string, string>();
+            settings = new Dictionary<string, string?>();
             databaseConnection = con;
             ReloadSettings();
+
+            // Slightly hacky way to set this, but the rest of the code
+            // relies on this value, and the database has an override
+            // so we sync it here and in the property setter
+            if (Enum.TryParse<ReleaseType>(UpdateChannel, true, out var rt))
+                UpdaterManager.CurrentChannel = rt;
         }
 
         public void ReloadSettings()
@@ -84,17 +98,18 @@ namespace Duplicati.Server.Database
             lock (databaseConnection.m_lock)
             {
                 settings.Clear();
-                foreach (var n in typeof(CONST).GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.DeclaredOnly | System.Reflection.BindingFlags.Static).Select(x => (string)x.GetValue(null)))
-                    settings[n] = null;
+                foreach (var n in typeof(CONST).GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.DeclaredOnly | System.Reflection.BindingFlags.Static).Select(x => (string?)x.GetValue(null)))
+                    if (!string.IsNullOrWhiteSpace(n))
+                        settings[n] = null;
                 foreach (var n in databaseConnection.GetSettings(Connection.SERVER_SETTINGS_ID))
                     settings[n.Name] = n.Value;
             }
         }
 
-        public void UpdateSettings(Dictionary<string, string> newsettings, bool clearExisting)
+        public void UpdateSettings(Dictionary<string, string?> newsettings, bool clearExisting)
         {
             if (newsettings == null)
-                throw new ArgumentNullException();
+                throw new ArgumentNullException(nameof(newsettings));
 
             lock (databaseConnection.m_lock)
             {
@@ -132,7 +147,7 @@ namespace Duplicati.Server.Database
                 FIXMEGlobal.NotificationUpdateService.IncrementLastDataUpdateId();
                 FIXMEGlobal.StatusEventNotifyer.SignalNewEvent();
                 // If throttle options were changed, update now
-                FIXMEGlobal.WorkerThreadsManager.UpdateThrottleSpeeds();
+                FIXMEGlobal.WorkerThreadsManager.UpdateThrottleSpeeds(UploadSpeedLimit, DownloadSpeedLimit);
             }
 
             // In case the usage reporter is enabled or disabled, refresh now
@@ -140,7 +155,7 @@ namespace Duplicati.Server.Database
                 FIXMEGlobal.StartOrStopUsageReporter();
         }
 
-        public string StartupDelayDuration
+        public string? StartupDelayDuration
         {
             get
             {
@@ -154,28 +169,24 @@ namespace Duplicati.Server.Database
             }
         }
 
-        public System.Threading.ThreadPriority? ThreadPriorityOverride
+        public DateTime? PausedUntil
         {
             get
             {
-                var tp = settings[CONST.THREAD_PRIORITY];
-                if (string.IsNullOrEmpty(tp))
+                if (long.TryParse(settings[CONST.PAUSED_UNTIL], out var t))
+                    return new DateTime(t, DateTimeKind.Utc);
+                else
                     return null;
-
-                System.Threading.ThreadPriority r;
-                if (Enum.TryParse<System.Threading.ThreadPriority>(tp, true, out r))
-                    return r;
-
-                return null;
             }
             set
             {
                 lock (databaseConnection.m_lock)
-                    settings[CONST.THREAD_PRIORITY] = value.HasValue ? Enum.GetName(typeof(System.Threading.ThreadPriority), value.Value) : null;
+                    settings[CONST.PAUSED_UNTIL] = value?.ToUniversalTime().Ticks.ToString();
+                SaveSettings();
             }
         }
 
-        public string DownloadSpeedLimit
+        public string? DownloadSpeedLimit
         {
             get
             {
@@ -189,7 +200,7 @@ namespace Duplicati.Server.Database
             }
         }
 
-        public string UploadSpeedLimit
+        public string? UploadSpeedLimit
         {
             get
             {
@@ -207,7 +218,7 @@ namespace Duplicati.Server.Database
         {
             get
             {
-                return Duplicati.Library.Utility.Utility.ParseBoolOption(settings, CONST.IS_FIRST_RUN);
+                return Utility.ParseBoolOption(settings, CONST.IS_FIRST_RUN);
             }
             set
             {
@@ -221,7 +232,7 @@ namespace Duplicati.Server.Database
         {
             get
             {
-                return Duplicati.Library.Utility.Utility.ParseBool(settings[CONST.UNACKED_ERROR], false);
+                return Utility.ParseBool(settings[CONST.UNACKED_ERROR], false);
             }
             set
             {
@@ -235,7 +246,7 @@ namespace Duplicati.Server.Database
         {
             get
             {
-                return Duplicati.Library.Utility.Utility.ParseBool(settings[CONST.UNACKED_WARNING], false);
+                return Utility.ParseBool(settings[CONST.UNACKED_WARNING], false);
             }
             set
             {
@@ -249,7 +260,7 @@ namespace Duplicati.Server.Database
         {
             get
             {
-                return Duplicati.Library.Utility.Utility.ParseBool(settings[CONST.SERVER_PORT_CHANGED], false);
+                return Utility.ParseBool(settings[CONST.SERVER_PORT_CHANGED], false);
             }
             set
             {
@@ -263,7 +274,7 @@ namespace Duplicati.Server.Database
         {
             get
             {
-                return Duplicati.Library.Utility.Utility.ParseBool(settings[CONST.DISABLE_TRAY_ICON_LOGIN], false);
+                return Utility.ParseBool(settings[CONST.DISABLE_TRAY_ICON_LOGIN], false);
             }
             set
             {
@@ -277,7 +288,7 @@ namespace Duplicati.Server.Database
         {
             get
             {
-                return Duplicati.Library.Utility.Utility.ParseBool(settings[CONST.AUTOGENERATED_PASSPHRASE], false);
+                return Utility.ParseBool(settings[CONST.AUTOGENERATED_PASSPHRASE], false);
             }
         }
 
@@ -285,7 +296,7 @@ namespace Duplicati.Server.Database
         {
             get
             {
-                return Duplicati.Library.Utility.Utility.ParseBool(settings[CONST.DISABLE_VISUAL_CAPTCHA], false);
+                return Utility.ParseBool(settings[CONST.DISABLE_VISUAL_CAPTCHA], false);
             }
             set
             {
@@ -299,7 +310,7 @@ namespace Duplicati.Server.Database
         {
             get
             {
-                return Duplicati.Library.Utility.Utility.ParseBool(settings[CONST.DISABLE_SIGNIN_TOKENS], false);
+                return Utility.ParseBool(settings[CONST.DISABLE_SIGNIN_TOKENS], false);
             }
             set
             {
@@ -393,7 +404,10 @@ namespace Duplicati.Server.Database
             if (string.IsNullOrWhiteSpace(password) || string.IsNullOrWhiteSpace(config))
                 return false;
 
-            return JsonSerializer.Deserialize<PbkdfConfig>(config).VerifyPassword(LegacyPreparePassword(password));
+            var cfg = JsonSerializer.Deserialize<PbkdfConfig>(config)
+                ?? throw new Exception("Unable to deserialize PBKDF configuration");
+
+            return cfg.VerifyPassword(LegacyPreparePassword(password));
         }
 
         /// <summary>
@@ -403,16 +417,17 @@ namespace Duplicati.Server.Database
         /// <returns>The hashed password</returns>
         private string LegacyPreparePassword(string password)
         {
-            if (string.IsNullOrWhiteSpace(settings[CONST.SERVER_PASSPHRASE_SALT]))
+            var salt = settings[CONST.SERVER_PASSPHRASE_SALT];
+            if (string.IsNullOrWhiteSpace(salt))
                 return password;
 
-            var buf = Convert.FromBase64String(settings[CONST.SERVER_PASSPHRASE_SALT]);
+            var buf = Convert.FromBase64String(salt);
             var sha256 = SHA256.Create();
             var str = Encoding.UTF8.GetBytes(password);
 
             sha256.TransformBlock(str, 0, str.Length, str, 0);
             sha256.TransformFinalBlock(buf, 0, buf.Length);
-            return Convert.ToBase64String(sha256.Hash);
+            return Convert.ToBase64String(sha256.Hash ?? throw new CryptographicUnexpectedOperationException("Calculated hash value is null"));
         }
 
         /// <summary>
@@ -470,7 +485,7 @@ namespace Duplicati.Server.Database
             SaveSettings();
         }
 
-        public void SetAllowedHostnames(string allowedHostnames)
+        public void SetAllowedHostnames(string? allowedHostnames)
         {
             lock (databaseConnection.m_lock)
                 settings[CONST.SERVER_ALLOWED_HOSTNAMES] = allowedHostnames;
@@ -478,9 +493,9 @@ namespace Duplicati.Server.Database
             SaveSettings();
         }
 
-        public string AllowedHostnames => settings[CONST.SERVER_ALLOWED_HOSTNAMES];
+        public string? AllowedHostnames => settings[CONST.SERVER_ALLOWED_HOSTNAMES];
 
-        public string JWTConfig
+        public string? JWTConfig
         {
             get => settings[CONST.JWT_CONFIG];
             set
@@ -491,7 +506,48 @@ namespace Duplicati.Server.Database
             }
         }
 
-        public string RemoteControlConfig
+        /// <summary>
+        /// The number of forever tokens that can be created.
+        /// A value of -1 means that forever tokens are disabled.
+        /// </summary>
+        /// <value>The number of forever tokens that can be created.</value>
+        /// <remarks>
+        /// This setting is not persisted in the database, as it is meant to be a temporary setting.
+        /// </remarks>
+        private int m_remainingForeverTokens = -1;
+
+        /// <summary>
+        /// Enables forever tokens
+        /// </summary>
+        public void EnableForeverTokens()
+        {
+            lock (databaseConnection.m_lock)
+                if (m_remainingForeverTokens == -1)
+                    m_remainingForeverTokens = 1;
+        }
+
+
+        /// <summary>
+        /// Consumes a forever token, if available
+        /// </summary>
+        /// <returns>True if a token was consumed, false if no tokens are available, null if forever tokens are disabled</returns>
+        public bool? ConsumeForeverToken()
+        {
+            lock (databaseConnection.m_lock)
+            {
+                if (m_remainingForeverTokens == -1)
+                    return null;
+                if (m_remainingForeverTokens == 0)
+                    return false;
+
+                if (m_remainingForeverTokens > 0)
+                    m_remainingForeverTokens--;
+
+                return true;
+            }
+        }
+
+        public string? RemoteControlConfig
         {
             get => settings[CONST.REMOTE_CONTROL_CONFIG];
             set
@@ -504,7 +560,7 @@ namespace Duplicati.Server.Database
 
         public bool RemoteControlEnabled
         {
-            get => Duplicati.Library.Utility.Utility.ParseBool(settings[CONST.REMOTE_CONTROL_ENABLED], false);
+            get => Utility.ParseBool(settings[CONST.REMOTE_CONTROL_ENABLED], false);
             set
             {
                 lock (databaseConnection.m_lock)
@@ -556,7 +612,7 @@ namespace Duplicati.Server.Database
             {
                 try
                 {
-                    return Duplicati.Library.Utility.Timeparser.ParseTimeInterval(UpdateCheckInterval, LastUpdateCheck);
+                    return Timeparser.ParseTimeInterval(UpdateCheckInterval, LastUpdateCheck);
                 }
                 catch
                 {
@@ -565,11 +621,12 @@ namespace Duplicati.Server.Database
             }
         }
 
-        public Library.AutoUpdater.UpdateInfo UpdatedVersion
+        public Library.AutoUpdater.UpdateInfo? UpdatedVersion
         {
             get
             {
-                if (string.IsNullOrWhiteSpace(settings[CONST.UPDATE_CHECK_NEW_VERSION]))
+                var updateNew = settings[CONST.UPDATE_CHECK_NEW_VERSION];
+                if (string.IsNullOrWhiteSpace(updateNew))
                     return null;
 
                 try
@@ -577,7 +634,7 @@ namespace Duplicati.Server.Database
                     if (m_latestUpdate != null)
                         return m_latestUpdate;
 
-                    using (var tr = new System.IO.StringReader(settings[CONST.UPDATE_CHECK_NEW_VERSION]))
+                    using (var tr = new System.IO.StringReader(updateNew))
                         return m_latestUpdate = Server.Serialization.Serializer.Deserialize<Library.AutoUpdater.UpdateInfo>(tr);
                 }
                 catch
@@ -588,10 +645,10 @@ namespace Duplicati.Server.Database
             }
             set
             {
-                string result = null;
+                string? result = null;
                 if (value != null)
                 {
-                    var sb = new System.Text.StringBuilder();
+                    var sb = new StringBuilder();
                     using (var tw = new System.IO.StringWriter(sb))
                         Server.Serialization.Serializer.SerializeJson(tw, value);
 
@@ -606,7 +663,7 @@ namespace Duplicati.Server.Database
             }
         }
 
-        public string ServerListenInterface
+        public string? ServerListenInterface
         {
             get
             {
@@ -624,7 +681,7 @@ namespace Duplicati.Server.Database
         {
             get
             {
-                return Duplicati.Library.Utility.Utility.ParseBool(settings[CONST.SERVER_DISABLE_HTTPS], false);
+                return Utility.ParseBool(settings[CONST.SERVER_DISABLE_HTTPS], false);
             }
             set
             {
@@ -642,15 +699,16 @@ namespace Duplicati.Server.Database
             }
         }
 
-        public X509Certificate2? ServerSSLCertificate
+        public X509Certificate2Collection? ServerSSLCertificate
         {
             get
             {
-                if (String.IsNullOrEmpty(settings[CONST.SERVER_SSL_CERTIFICATE]))
+                var certificate = settings[CONST.SERVER_SSL_CERTIFICATE];
+                if (string.IsNullOrEmpty(certificate))
                     return null;
 
-                return Library.Utility.Utility.LoadPfxCertificate(
-                    Convert.FromBase64String(settings[CONST.SERVER_SSL_CERTIFICATE]),
+                return Utility.LoadPfxCertificate(
+                    Convert.FromBase64String(certificate),
                     settings[CONST.SERVER_SSL_CERTIFICATEPASSWORD],
                     // Need to allow loading of plain-text certificates for backwards compatibility
                     allowUnsafeCertificateLoad: true
@@ -668,8 +726,13 @@ namespace Duplicati.Server.Database
                 }
                 else
                 {
+                    if (!value.Any(x => x.HasPrivateKey))
+                        throw new ArgumentException("The certificate must have a private key");
+
                     var password = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
-                    var certdata = Convert.ToBase64String(value.Export(X509ContentType.Pkcs12, password));
+                    var certdata = Convert.ToBase64String(value.Export(X509ContentType.Pkcs12, password)
+                        ?? throw new CryptographicUnexpectedOperationException("Exported certificate data is null"));
+
                     lock (databaseConnection.m_lock)
                     {
                         settings[CONST.SERVER_SSL_CERTIFICATE] = certdata;
@@ -685,7 +748,7 @@ namespace Duplicati.Server.Database
         {
             get
             {
-                return Duplicati.Library.Utility.Utility.ParseBool(settings[CONST.HAS_FIXED_INVALID_BACKUPID], false);
+                return Utility.ParseBool(settings[CONST.HAS_FIXED_INVALID_BACKUPID], false);
             }
             set
             {
@@ -695,7 +758,7 @@ namespace Duplicati.Server.Database
             }
         }
 
-        public string UpdateChannel
+        public string? UpdateChannel
         {
             get
             {
@@ -706,10 +769,15 @@ namespace Duplicati.Server.Database
                 lock (databaseConnection.m_lock)
                     settings[CONST.UPDATE_CHANNEL] = value;
                 SaveSettings();
+
+                if (string.IsNullOrWhiteSpace(value))
+                    UpdaterManager.CurrentChannel = AutoUpdateSettings.DefaultUpdateChannel;
+                else if (Enum.TryParse<ReleaseType>(value, true, out var rt))
+                    UpdaterManager.CurrentChannel = rt;
             }
         }
 
-        public string UsageReporterLevel
+        public string? UsageReporterLevel
         {
             get
             {
@@ -727,7 +795,7 @@ namespace Duplicati.Server.Database
         {
             get
             {
-                return Duplicati.Library.Utility.Utility.ParseBool(settings[CONST.ENCRYPTED_FIELDS], false);
+                return Utility.ParseBool(settings[CONST.ENCRYPTED_FIELDS], false);
             }
             set
             {
@@ -737,7 +805,7 @@ namespace Duplicati.Server.Database
             }
         }
 
-        public string PreloadSettingsHash
+        public string? PreloadSettingsHash
         {
             get
             {
@@ -750,6 +818,78 @@ namespace Duplicati.Server.Database
                 SaveSettings();
             }
         }
+
+        public TimeZoneInfo Timezone
+        {
+            get
+            {
+                var id = settings[CONST.TIMEZONE_OPTION];
+
+                // All times are stored in UTC in the database, prior to introducing the timezone option
+                if (string.IsNullOrEmpty(id))
+                    return TimeZoneInfo.Utc;
+
+                try
+                {
+                    if (!string.IsNullOrEmpty(id))
+                        return TimeZoneHelper.GetTimeZoneById(id)
+                            ?? TimeZoneInfo.Local;
+                }
+                catch
+                {
+                }
+                return TimeZoneInfo.Local;
+            }
+            set
+            {
+                lock (databaseConnection.m_lock)
+                    settings[CONST.TIMEZONE_OPTION] = value?.Id;
+                SaveSettings();
+            }
+        }
+
+        public string? LastConfigIssueCheckVersion
+        {
+            get
+            {
+                return settings[CONST.LAST_UPDATE_CHECK_VERSION];
+            }
+            set
+            {
+                lock (databaseConnection.m_lock)
+                    settings[CONST.LAST_UPDATE_CHECK_VERSION] = value;
+                SaveSettings();
+            }
+        }
+
+        public string? AdditionalReportUrl
+        {
+            get
+            {
+                return settings[CONST.ADDITIONAL_REPORT_URL];
+            }
+            set
+            {
+                lock (databaseConnection.m_lock)
+                    settings[CONST.ADDITIONAL_REPORT_URL] = value;
+                SaveSettings();
+            }
+        }
+
+        public string? BackupListSortOrder
+        {
+            get
+            {
+                return settings[CONST.BACKUP_LIST_SORT_ORDER];
+            }
+            set
+            {
+                lock (databaseConnection.m_lock)
+                    settings[CONST.BACKUP_LIST_SORT_ORDER] = value;
+                SaveSettings();
+            }
+        }
+
     }
 }
 

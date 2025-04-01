@@ -1,4 +1,4 @@
-﻿// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -23,8 +23,6 @@ using System.Text;
 using NUnit.Framework;
 
 using Duplicati.Library.Common.IO;
-using Duplicati.Library.Utility;
-using Duplicati.Library.Common;
 using System.Collections.Generic;
 using System;
 
@@ -62,13 +60,13 @@ namespace Duplicati.UnitTest
             var filePath = root + filename;
             var filePathWithExtendedDevicePathPrefix = SystemIOWindows.AddExtendedDevicePathPrefix(filePath);
 
-            var filePathWithExtendedDevicePathPrefixRoot = SystemIO.IO_WIN.GetPathRoot(filePathWithExtendedDevicePathPrefix);
+            var filePathWithExtendedDevicePathPrefixRoot = SystemIO.IO_OS.GetPathRoot(filePathWithExtendedDevicePathPrefix);
 
             //Prefixed with extended device path prefix remains prefixed
             Assert.AreEqual(SystemIOWindows.AddExtendedDevicePathPrefix(root), filePathWithExtendedDevicePathPrefixRoot);
 
             //Without extended device path prefix, no prefix. 
-            var filePathRoot = SystemIO.IO_WIN.GetPathRoot(filePath);
+            var filePathRoot = SystemIO.IO_OS.GetPathRoot(filePath);
             Assert.AreEqual(root, filePathRoot);
         }
 
@@ -282,7 +280,7 @@ namespace Duplicati.UnitTest
                 };
             foreach (var path in testCasesWherePathGetFullGivesSameResultsAsDotNet)
             {
-                var actual = SystemIO.IO_WIN.PathGetFullPath(path); 
+                var actual = SystemIO.IO_OS.PathGetFullPath(path);
                 var expected = System.IO.Path.GetFullPath(path);
                 Assert.AreEqual(expected, actual, $"Path: {path}");
             }
@@ -313,7 +311,7 @@ namespace Duplicati.UnitTest
             foreach (var keyValuePair in testCasesWherePathGetFullGivesDifferentResultsThanDotNet)
             {
                 var path = keyValuePair.Key;
-                var actual = SystemIO.IO_WIN.PathGetFullPath(path);
+                var actual = SystemIO.IO_OS.PathGetFullPath(path);
                 var expected = keyValuePair.Value;
                 Assert.AreEqual(expected, actual, $"Path: {path}");
             }

@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -23,7 +23,8 @@ using Duplicati.Library.Localization.Short;
 
 namespace Duplicati.Library.Backend.Strings
 {
-    internal static class OpenStack {
+    internal static class OpenStack
+    {
         public static string Description { get { return LC.L(@"This backend can read and write data to Swift (OpenStack Object Storage). Allowed format is ""openstack://container/folder""."); } }
         public static string DisplayName { get { return LC.L(@"OpenStack Simple Storage"); } }
         public static string MissingOptionError(string optionname) { return LC.L(@"Missing required option: {0}", optionname); }
@@ -37,12 +38,20 @@ namespace Duplicati.Library.Backend.Strings
         public static string TenantnameOptionShort { get { return LC.L(@"Supply the Tenant Name used to connect to the server"); } }
         public static string ApikeyOptionLong { get { return LC.L(@"The API key can be used to connect without supplying a password and tenant ID with some providers."); } }
         public static string ApikeyOptionShort { get { return LC.L(@"Supply the API key used to connect to the server"); } }
-        public static string AuthuriOptionLong(string providers) { return LC.L(@"The authentication URL is used to authenticate the user and find the storage service. The URL commonly ends with ""/v2.0"". Known providers are: {0}{1}", System.Environment.NewLine, providers); }
+        public static string AuthuriOptionLong(string providers) { return LC.L(@"The authentication URL is used to authenticate the user and find the storage service. The URL commonly ends with ""/v2.0"" for v2 and ""/v3"" for v3. Known providers are: {0}{1}", System.Environment.NewLine, providers); }
         public static string AuthuriOptionShort { get { return LC.L(@"Supply the authentication URL"); } }
         public static string VersionOptionLong { get { return LC.L(@"The keystone API version to use. Valid values are 'v2' and 'v3'."); } }
         public static string VersionOptionShort { get { return LC.L(@"The keystone API version to use"); } }
-        public static string RegionOptionLong { get { return LC.L(@"This option is only used when creating a container, and is used to indicate where the container should be placed. Consult your provider for a list of valid regions, or leave empty for the default region."); } }
-        public static string RegionOptionShort { get { return LC.L(@"Supply the region used for creating a container"); } }
+        public static string RegionOptionLong { get { return LC.L(@"By default, the first reported endpoint will be used for file transfers. To select a specific region, provide the region name. If no such region is supported, the default (first reported) endpoint is used."); } }
+        public static string RegionOptionShort { get { return LC.L(@"Supply the prefered region for endpoints"); } }
+    }
+
+    internal static class SwiftConfig
+    {
+        public static string Description { get { return LC.L(@"Expose OpenStack configuration as a web module"); } }
+        public static string DisplayName { get { return LC.L(@"OpenStack configuration module"); } }
+        public static string ConfigTypeOptionLong { get { return LC.L(@"Provide different config values"); } }
+        public static string ConfigTypeOptionShort { get { return LC.L(@"The config to get"); } }
 
     }
 }

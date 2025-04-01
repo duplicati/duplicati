@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+﻿// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -32,24 +32,65 @@ using Duplicati.WebserverCore.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http.Json;
+using Microsoft.AspNetCore.Server.Kestrel.Https;
 using Microsoft.Extensions.Configuration.Json;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.OpenApi.Models;
 
 namespace Duplicati.WebserverCore;
 
-public partial class DuplicatiWebserver
+/// <summary>
+/// Instance of the Duplicati webserver
+/// </summary>
+public class DuplicatiWebserver
 {
-    public IConfiguration Configuration { get; private set; }
+    /// <summary>
+    /// The log tag for this class
+    /// </summary>
+    private static readonly string LOGTAG = Library.Logging.Log.LogTagFromType<DuplicatiWebserver>();
+    /// <summary>
+    /// The name of the CORS policy
+    /// </summary>
+    public const string CorsPolicyName = "CustomCorsPolicy";
 
-    public WebApplication App { get; private set; }
+    /// <summary>
+    /// The configuration for the server
+    /// </summary>
+    public required IConfiguration Configuration { get; init; }
 
-    public IServiceProvider Provider { get; private set; }
+    /// <summary>
+    /// The web application
+    /// </summary>
+    public required WebApplication App { get; init; }
 
-    public int Port { get; private set; }
+    /// <summary>
+    /// The service provider
+    /// </summary>
+    public IServiceProvider Provider => App.Services;
 
+    /// <summary>
+    /// The port the server is listening on
+    /// </summary>
+    public required int Port { get; init; }
+
+    /// <summary>
+    /// The interfaces being listened to
+    /// </summary>
+    public required string Interface { get; init; }
+
+    /// <summary>
+    /// The port the server is listening on
+    /// </summary>
+    public required bool CorsEnabled { get; init; }
+
+    /// <summary>
+    /// The task that will be set when the server is terminated
+    /// </summary>
     public Task TerminationTask { get; private set; } = Task.CompletedTask;
 
+    /// <summary>
+    /// If Swagger should be enabled
+    /// </summary>
 #if DEBUG
     private static readonly bool EnableSwagger = true;
 #else
@@ -67,20 +108,27 @@ public partial class DuplicatiWebserver
     /// <param name="AllowedHostnames">The allowed hostnames</param>
     /// <param name="DisableStaticFiles">If static files should be disabled</param>
     /// <param name="SPAPaths">The paths to serve as SPAs</param>
+    /// <param name="CorsOrigins">The origins to allow for CORS</param>
     public record InitSettings(
         string WebRoot,
         int Port,
         System.Net.IPAddress Interface,
-        X509Certificate2? Certificate,
+        X509Certificate2Collection? Certificate,
         string Servername,
         IEnumerable<string> AllowedHostnames,
         bool DisableStaticFiles,
-        IEnumerable<string> SPAPaths
+        IEnumerable<string> SPAPaths,
+        IEnumerable<string> CorsOrigins
     );
 
-    public void InitWebServer(InitSettings settings, Connection connection)
+    /// <summary>
+    /// Creates a new webserver instance
+    /// </summary>
+    /// <param name="settings">The settings for the server</param>
+    /// <param name="connection">The connection to the database</param>
+    /// <returns>The new webserver instance</returns>
+    public static DuplicatiWebserver CreateWebServer(InitSettings settings, Connection connection)
     {
-        Port = settings.Port;
         var builder = WebApplication.CreateBuilder(new WebApplicationOptions()
         {
             ContentRootPath = settings.WebRoot,
@@ -104,7 +152,7 @@ public partial class DuplicatiWebserver
                 options.ListenAnyIP(settings.Port, listenOptions =>
                 {
                     if (settings.Certificate != null)
-                        listenOptions.UseHttps(settings.Certificate);
+                        ConfigureHttps(listenOptions, settings.Certificate);
                 });
             }
             else if (settings.Interface == System.Net.IPAddress.Loopback)
@@ -112,7 +160,7 @@ public partial class DuplicatiWebserver
                 options.ListenLocalhost(settings.Port, listenOptions =>
                 {
                     if (settings.Certificate != null)
-                        listenOptions.UseHttps(settings.Certificate);
+                        ConfigureHttps(listenOptions, settings.Certificate);
                 });
             }
             else
@@ -120,7 +168,7 @@ public partial class DuplicatiWebserver
                 options.Listen(settings.Interface, settings.Port, listenOptions =>
                 {
                     if (settings.Certificate != null)
-                        listenOptions.UseHttps(settings.Certificate);
+                        ConfigureHttps(listenOptions, settings.Certificate);
                 });
             }
         });
@@ -178,6 +226,7 @@ public partial class DuplicatiWebserver
                 options.Audience = jwtConfig.Audience;
                 options.SaveToken = true;
                 options.TokenValidationParameters = JWTTokenProvider.GetTokenValidationParameters(jwtConfig);
+                options.Configuration = new Microsoft.IdentityModel.Protocols.OpenIdConnect.OpenIdConnectConfiguration();
 
                 options.Events = new JwtBearerEvents
                 {
@@ -215,33 +264,50 @@ public partial class DuplicatiWebserver
                 .AddFilter("Microsoft", LogLevel.Warning)
                 .AddFilter("Microsoft.AspNetCore.DataProtection.KeyManagement.XmlKeyManager", LogLevel.Error)
                 .AddFilter("System", LogLevel.Warning)
-                .AddFilter("Duplicati", LogLevel.Warning);
+                .AddFilter("Duplicati", LogLevel.Warning)
+                .AddFilter("Microsoft.AspNetCore.Diagnostics", LogLevel.None);
         }
 
         builder.Services.AddHttpClient();
 
-        Configuration = builder.Configuration;
-        App = builder.Build();
-        Provider = App.Services;
+        var useCors = settings.CorsOrigins != null && settings.CorsOrigins.Any();
+        if (useCors)
+        {
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy(
+                    name: CorsPolicyName,
+                    policy =>
+                    {
+                        policy.WithOrigins(settings.CorsOrigins!.ToArray())
+                            .AllowAnyHeader()
+                            .AllowAnyMethod();
+                    });
+            });
+        }
 
-        HttpClientHelper.Configure(App.Services.GetRequiredService<IHttpClientFactory>());
+        var app = builder.Build();
+        HttpClientHelper.Configure(app.Services.GetRequiredService<IHttpClientFactory>());
 
-        App.UseAuthentication();
-        App.UseAuthorization();
+        if (useCors)
+            app.UseCors(CorsPolicyName);
+
+        app.UseAuthentication();
+        app.UseAuthorization();
 
         if (EnableSwagger)
         {
-            App.UseSwagger();
-            App.UseSwaggerUI(c =>
+            app.UseSwagger();
+            app.UseSwaggerUI(c =>
             {
                 c.SwaggerEndpoint("/swagger/v1/swagger.json", "Duplicati");
             });
         }
 
         if (!settings.DisableStaticFiles)
-            App.UseDefaultStaticFiles(settings.WebRoot, settings.SPAPaths);
+            app.UseDefaultStaticFiles(settings.WebRoot, settings.SPAPaths);
 
-        App.UseExceptionHandler(app =>
+        app.UseExceptionHandler(app =>
         {
             app.Run(async context =>
             {
@@ -257,6 +323,10 @@ public partial class DuplicatiWebserver
                 }
                 else
                 {
+                    // These are unexpected exceptions, so log them
+                    app.ApplicationServices.GetRequiredService<ILogger<DuplicatiWebserver>>()
+                        .LogError(thrownException, "Unhandled exception");
+
                     context.Response.StatusCode = 500;
                     context.Response.ContentType = "application/json";
                     await context.Response.WriteAsync(JsonSerializer.Serialize(new { Error = "An error occurred", Code = 500 }));
@@ -265,18 +335,71 @@ public partial class DuplicatiWebserver
         });
 
         if (connection.ApplicationSettings.RemoteControlEnabled)
-            App.Services.GetRequiredService<IRemoteController>().Enable();
+            app.Services.GetRequiredService<IRemoteController>().Enable();
+
+        // Preload static system info, for better first-load experience
+        var _ = Task.Run(() => app.Services.GetRequiredService<ISystemInfoProvider>().GetSystemInfo(null));
+
+        // Get a string description of the listen interface used
+        var listenInterface = settings.Interface == System.Net.IPAddress.Any
+            ? "*"
+            : settings.Interface == System.Net.IPAddress.Loopback
+                ? "localhost"
+                : settings.Interface.ToString();
+
+        return new DuplicatiWebserver()
+        {
+            Configuration = builder.Configuration,
+            App = app,
+            Port = settings.Port,
+            Interface = listenInterface,
+            CorsEnabled = useCors
+        };
+
     }
 
-    public Task Start(InitSettings settings)
+    /// <summary>
+    /// Configures HTTPS for the server
+    /// </summary>
+    /// <param name="listenOptions">The listen options</param>
+    /// <param name="certificates">The certificates to use</param>
+    private static void ConfigureHttps(Microsoft.AspNetCore.Server.Kestrel.Core.ListenOptions listenOptions, X509Certificate2Collection? certificates)
+    {
+        var servedCert = certificates?.FirstOrDefault(x => x.HasPrivateKey)
+            ?? throw new Exception("No certificate with private key found");
+
+        listenOptions.UseHttps(new HttpsConnectionAdapterOptions()
+        {
+            ServerCertificate = servedCert,
+            ServerCertificateChain = certificates
+        });
+
+        // This does not appear to have any effect,
+        // but setting it anyway in case it is needed in the future
+        listenOptions.UseHttps(new HttpsConnectionAdapterOptions()
+        {
+            ServerCertificate = servedCert,
+            ServerCertificateChain = certificates
+        });
+    }
+
+    /// <summary>
+    /// Starts the webserver
+    /// </summary>
+    /// <returns>The task that will be set when the server is terminated</returns>
+    public Task Start()
     {
         App.MapHealthChecks("/health");
-        App.AddEndpoints()
+        App.AddEndpoints(CorsEnabled)
             .UseNotifications("/notifications");
 
         return TerminationTask = App.RunAsync();
     }
 
+    /// <summary>
+    /// Stops the webserver
+    /// </summary>
+    /// <returns>An awaitable task</returns>
     public async Task Stop()
     {
         await App.StopAsync();

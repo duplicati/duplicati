@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -22,24 +22,29 @@ using Duplicati.Library.Localization.Short;
 
 namespace Duplicati.Library.Backend.Strings
 {
-    public static class Storj
+    internal static class Storj
     {
-        public static string Description { get { return LC.L(@"This backend can read and write data to the Storj DCS."); } }
-        public static string DisplayName { get { return LC.L(@"Storj DCS (Decentralized Cloud Storage)"); } }
-        public static string TestConnectionFailed { get { return LC.L(@"Connection-test failed."); } }
-        public static string StorjAuthMethodDescriptionLong { get { return LC.L(@"Specify the authentication method which describes which way to use to connect to the network - either via API key or via an access grant."); } }
-        public static string StorjAuthMethodDescriptionShort { get { return LC.L(@"Authentication method"); } }
-        public static string StorjSatelliteDescriptionLong { get { return LC.L(@"Specify the satellite that keeps track of all metadata. Use a Storj DCS server for high-performance SLA-backed connectivity or use a community server. Or even host your own."); } }
-        public static string StorjSatelliteDescriptionShort { get { return LC.L(@"Satellite"); } }
-        public static string StorjAPIKeyDescriptionLong { get { return LC.L(@"Supply the API key which grants access to a specific project on your chosen satellite. Head over to the dashboard of your satellite to create one if you do not already have an API key."); } }
-        public static string StorjAPIKeyDescriptionShort { get { return LC.L(@"API key"); } }
-        public static string StorjSecretDescriptionLong { get { return LC.L(@"Supply the encryption passphrase used to encrypt your data before sending it to the Storj network. This passphrase can be the only secret to provide - for Storj you do not necessary need any additional encryption (from Duplicati) in place."); } }
-        public static string StorjSecretDescriptionShort { get { return LC.L(@"Encryption passphrase"); } }
-        public static string StorjSharedAccessDescriptionLong { get { return LC.L(@"Supply the access grant which contains all information in one encrypted string. You may use it instead of a satellite, API key and secret."); } }
-        public static string StorjSharedAccessDescriptionShort { get { return LC.L(@"Access grant"); } }
-        public static string StorjBucketDescriptionLong { get { return LC.L(@"Specify the bucket for storing the backup."); } }
-        public static string StorjBucketDescriptionShort { get { return LC.L(@"Bucket"); } }
-        public static string StorjFolderDescriptionLong { get { return LC.L(@"Specify the folder in the bucket for storing the backup."); } }
-        public static string StorjFolderDescriptionShort { get { return LC.L(@"Folder"); } }
+        public static string Description => LC.L(@"This backend can read and write data to the Storj DCS.");
+        public static string DisplayName => LC.L(@"Storj DCS (Decentralized Cloud Storage)");
+        public static string StorjAuthMethodDescriptionLong => LC.L(@"Specify the authentication method which describes which way to use to connect to the network - either via API key or via an access grant.");
+        public static string StorjAuthMethodDescriptionShort => LC.L(@"Authentication method");
+        public static string StorjSatelliteDescriptionLong => LC.L(@"Specify the satellite that keeps track of all metadata. Use a Storj DCS server for high-performance SLA-backed connectivity or use a community server. Or even host your own.");
+        public static string StorjSatelliteDescriptionShort => LC.L(@"Satellite");
+        public static string StorjAPIKeyDescriptionLong => LC.L(@"Supply the API key which grants access to a specific project on your chosen satellite. Head over to the dashboard of your satellite to create one if you do not already have an API key.");
+        public static string StorjAPIKeyDescriptionShort => LC.L(@"API key");
+        public static string StorjSecretDescriptionLong => LC.L(@"Supply the encryption passphrase used to encrypt your data before sending it to the Storj network. This passphrase can be the only secret to provide - for Storj you do not necessary need any additional encryption (from Duplicati) in place.");
+        public static string StorjSecretDescriptionShort => LC.L(@"Encryption passphrase");
+        public static string StorjSharedAccessDescriptionLong => LC.L(@"Supply the access grant which contains all information in one encrypted string. You may use it instead of a satellite, API key and secret.");
+        public static string StorjSharedAccessDescriptionShort => LC.L(@"Access grant");
+        public static string StorjBucketDescriptionLong => LC.L(@"Specify the bucket for storing the backup.");
+        public static string StorjBucketDescriptionShort => LC.L(@"Bucket");
+        public static string StorjFolderDescriptionLong => LC.L(@"Specify the folder in the bucket for storing the backup.");
+        public static string StorjFolderDescriptionShort => LC.L(@"Folder");
+    }
+
+    internal static class StorjConfig
+    {
+        public static string DisplayName => LC.L("Storj DCS configuration module");
+        public static string Description => LC.L("Expose Storj DCS configuration as a web module");
     }
 }

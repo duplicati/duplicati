@@ -1,6 +1,24 @@
+// Copyright (C) 2025, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
 using System.Globalization;
-using Duplicati.Library.RestAPI;
-using Duplicati.Server;
 using Duplicati.WebserverCore.Abstractions;
 using Microsoft.AspNetCore.Mvc;
 
@@ -10,65 +28,14 @@ public class SystemInfo : IEndpointV1
 {
     public static void Map(RouteGroupBuilder group)
     {
-        group.MapGet("/systeminfo", ([FromServices] ILanguageService languageService) => Execute(languageService.GetLanguage())).RequireAuthorization();
+        group.MapGet("/systeminfo", ([FromServices] ILanguageService languageService, [FromServices] ISystemInfoProvider systemInfoProvider) => Execute(systemInfoProvider, languageService.GetLanguage())).RequireAuthorization();
         group.MapGet("/systeminfo/filtergroups", () => ExecuteFilterGroups()).RequireAuthorization();
     }
 
-    private static Dto.SystemInfoDto Execute(CultureInfo? browserlanguage)
-    {
-        browserlanguage ??= CultureInfo.InvariantCulture;
+    private static Dto.SystemInfoDto Execute(ISystemInfoProvider systemInfoProvider, CultureInfo? browserlanguage)
+        => systemInfoProvider.GetSystemInfo(browserlanguage);
 
-        return new Dto.SystemInfoDto()
-        {
-            APIVersion = 1,
-            PasswordPlaceholder = FIXMEGlobal.PASSWORD_PLACEHOLDER,
-            ServerVersion = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString(),
-            ServerVersionName = License.VersionNumbers.Version,
-            ServerVersionType = Library.AutoUpdater.UpdaterManager.SelfVersion.ReleaseType,
-            RemoteControlRegistrationUrl = Duplicati.Library.RemoteControl.RegisterForRemote.DefaultRegisterationUrl,
-            StartedBy = FIXMEGlobal.Origin,
-            DefaultUpdateChannel = Library.AutoUpdater.AutoUpdateSettings.DefaultUpdateChannel.ToString(),
-            DefaultUsageReportLevel = Library.UsageReporter.Reporter.DefaultReportLevel,
-            ServerTime = DateTime.Now,
-            OSType = OperatingSystem.IsWindows() ? "Windows" : OperatingSystem.IsLinux() ? "Linux" : OperatingSystem.IsMacOS() ? "MacOS" : "Unknown",
-            OSVersion = Library.UsageReporter.OSInfoHelper.PlatformString,
-            DirectorySeparator = Path.DirectorySeparatorChar,
-            PathSeparator = Path.PathSeparator,
-            CaseSensitiveFilesystem = Library.Utility.Utility.IsFSCaseSensitive,
-            MachineName = Environment.MachineName,
-            PackageTypeId = Library.AutoUpdater.UpdaterManager.PackageTypeId,
-            UserName = OperatingSystem.IsWindows() ? System.Security.Principal.WindowsIdentity.GetCurrent().Name : Environment.UserName,
-            NewLine = Environment.NewLine,
-            CLRVersion = Environment.Version.ToString(),
-            Options = Server.Serializable.ServerSettings.Options,
-            CompressionModules = Server.Serializable.ServerSettings.CompressionModules,
-            EncryptionModules = Server.Serializable.ServerSettings.EncryptionModules,
-            BackendModules = Server.Serializable.ServerSettings.BackendModules,
-            GenericModules = Server.Serializable.ServerSettings.GenericModules,
-            WebModules = Server.Serializable.ServerSettings.WebModules,
-            ConnectionModules = Server.Serializable.ServerSettings.ConnectionModules,
-            ServerModules = Server.Serializable.ServerSettings.ServerModules,
-            UsingAlternateUpdateURLs = Library.AutoUpdater.AutoUpdateSettings.UsesAlternateURLs,
-            LogLevels = Enum.GetNames(typeof(Library.Logging.LogMessageType)),
-            SpecialFolders = SpecialFolders.Nodes.Select(n => new Dto.SystemInfoDto.SpecialFolderDto { ID = n.id, Path = n.resolvedpath }),
-            BrowserLocale = new Dto.SystemInfoDto.LocaleDto()
-            {
-                Code = browserlanguage.Name,
-                EnglishName = browserlanguage.EnglishName,
-                DisplayName = browserlanguage.NativeName
-            },
-            SupportedLocales = Library.Localization.LocalizationService.SupportedCultures
-                .Select(x => new Dto.SystemInfoDto.LocaleDto
-                {
-                    Code = x,
-                    EnglishName = new CultureInfo(x).EnglishName,
-                    DisplayName = new CultureInfo(x).NativeName
-                }),
-            BrowserLocaleSupported = Library.Localization.LocalizationService.isCultureSupported(browserlanguage)
-        };
-    }
-
-    private static object ExecuteFilterGroups()
-        => new { FilterGroups = Library.Utility.FilterGroups.GetFilterStringMap() };
+    private static Dto.FilterGroupsDto ExecuteFilterGroups()
+        => new Dto.FilterGroupsDto(Library.Utility.FilterGroups.GetFilterStringMap());
 }
 
