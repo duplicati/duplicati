@@ -263,7 +263,6 @@ public class SendTelegramMessage : ReportHelper
             {
                 chat_id = Uri.EscapeDataString(m_channelId),
                 message_thread_id = string.IsNullOrWhiteSpace(m_topicId) ? null : Uri.EscapeDataString(m_topicId),
-                parse_mode = "Markdown",
                 text = Uri.EscapeDataString(totalParts > 1
                     ? $"Part {partNumber}/{totalParts}:\n{message}"
                     : message),
@@ -272,7 +271,7 @@ public class SendTelegramMessage : ReportHelper
             };
 
             var baseUrl = $"https://api.telegram.org/bot{p.botId}:{p.apiKey}/sendMessage";
-            var url = $"{baseUrl}?chat_id={p.chat_id}&parse_mode={p.parse_mode}&text={p.text}" +
+            var url = $"{baseUrl}?chat_id={p.chat_id}&text={p.text}" +
                       $"{(!string.IsNullOrWhiteSpace(m_topicId) ? $"&message_thread_id={m_topicId}" : string.Empty)}";
 
             using var timeoutToken = new CancellationTokenSource();
