@@ -19,6 +19,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 using System.Reflection;
+using System.Text;
 using System.Text.Json;
 
 namespace ReleaseBuilder.Build;
@@ -59,9 +60,9 @@ public static partial class Command
                 "System.Reactive.Linq.dll"
             };
 
-            foreach (var f in probeFiles)
-                if (!rootFiles.Contains(f))
-                    throw new Exception($"Expected file {f} for {target.BuildTargetString}, but was not found in build directory {buildDir}");
+            var missing = probeFiles.Where(x => !rootFiles.Contains(x)).ToArray();
+            if (missing.Length > 0)
+                throw new Exception($"Expected files {string.Join(", ", missing)} for {target.BuildTargetString}, but were not found in build directory {buildDir}");
 
             return Task.CompletedTask;
         }
@@ -78,9 +79,9 @@ public static partial class Command
             var expected = projectFiles.Select(x => Path.GetFileNameWithoutExtension(x))
                 .Select(x => target.OS == OSType.Windows ? $"{x}.exe" : x);
 
-            foreach (var f in expected)
-                if (!File.Exists(Path.Combine(buildDir, f)))
-                    throw new Exception($"Expected file {f} for {target.BuildTargetString}, but was not found in build directory {buildDir}");
+            var missing = expected.Where(x => !File.Exists(Path.Combine(buildDir, x))).ToArray();
+            if (missing.Length > 0)
+                throw new Exception($"Expected files {string.Join(", ", missing)} for {target.BuildTargetString}, but were not found in build directory {buildDir}");
 
             return Task.CompletedTask;
         }
@@ -273,6 +274,7 @@ public static partial class Command
                     return new KeyValuePair<string, List<DuplicatedVersion>>(x.Key, x.Value);
                 });
 
+            var mismatches = new List<(string Path, Version Expected, Version Actual)>();
             foreach (var entry in duplicatedVersions)
             {
                 var maxVersion = entry.Value.MaxBy(x => x.ParsedVersion)
@@ -282,8 +284,16 @@ public static partial class Command
                     continue;
 
                 var assemblyVersion = AssemblyName.GetAssemblyName(filename).Version;
-                if (assemblyVersion != maxVersion.ParsedVersion)
-                    throw new Exception($"Version mismatch for {filename}: expected {maxVersion.ParsedVersion}, got {assemblyVersion}");
+                if (assemblyVersion != null && assemblyVersion != maxVersion.ParsedVersion)
+                    mismatches.Add((filename, maxVersion.ParsedVersion, assemblyVersion));
+            }
+
+            if (mismatches.Count > 0)
+            {
+                var sb = new StringBuilder();
+                foreach (var mismatch in mismatches)
+                    sb.AppendLine($"File {mismatch.Path} has version {mismatch.Actual} but expected {mismatch.Expected}");
+                throw new Exception(sb.ToString());
             }
 
             return Task.CompletedTask;
