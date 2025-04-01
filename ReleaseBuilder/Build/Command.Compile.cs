@@ -53,6 +53,52 @@ public static partial class Command
             else
                 Console.WriteLine($"Building {buildArchTargets.Length} versions");
 
+            var temporarySolutionFiles = new Dictionary<PackageTarget, string>();
+            var distinctSolutions = buildArchTargets.GroupBy(x => $"{x.InterfaceString}{(x.OS == OSType.Windows ? $"-{x.OSString}" : "")}").ToArray();
+            Console.WriteLine($"Creating {distinctSolutions.Length} temporary solution files");
+            foreach (var tk in distinctSolutions)
+            {
+                var tmpslnfile = Path.Combine(buildDir, $"Duplicati-{tk.Key}.sln");
+                if (File.Exists(tmpslnfile))
+                    File.Delete(tmpslnfile);
+
+                var logOut = Path.Combine(logFolder, $"create-{tmpslnfile}.log");
+                using var logStream = new FileStream(logOut, FileMode.Create, FileAccess.Write, FileShare.Read);
+
+                await ProcessHelper.ExecuteWithOutput([
+                    "dotnet", "new", "sln",
+                    "--name", Path.GetFileNameWithoutExtension(tmpslnfile),
+                    "--output", buildDir
+                ],
+                logStream
+                ).ConfigureAwait(false);
+
+                var target = tk.First();
+                if (!sourceProjects.TryGetValue(target.Interface, out var buildProjects))
+                    throw new InvalidOperationException($"No projects found for {tk.Key}");
+
+                // Add the projects to the solution
+                foreach (var proj in buildProjects)
+                {
+                    if (target.OS != OSType.Windows && windowsOnlyProjects.Contains(proj))
+                        continue;
+
+                    var projpath = Path.Combine(baseDir, proj);
+                    if (!File.Exists(projpath))
+                        throw new FileNotFoundException($"Project file {projpath} not found");
+
+                    await ProcessHelper.ExecuteWithOutput([
+                        "dotnet", "sln", tmpslnfile,
+                        "add", projpath
+                    ],
+                    logStream
+                    ).ConfigureAwait(false);
+                }
+
+                foreach (var s in tk)
+                    temporarySolutionFiles[s] = tmpslnfile;
+            }
+
             foreach (var target in buildArchTargets)
             {
                 var outputFolder = Path.Combine(buildDir, target.BuildTargetString);
@@ -67,52 +113,34 @@ public static partial class Command
                     var tmpfolder = Path.Combine(buildDir, target.BuildTargetString + "-tmp");
                     Console.WriteLine($"Building {target.BuildTargetString} ...");
 
-                    if (!sourceProjects.TryGetValue(target.Interface, out var buildProjects))
-                        throw new InvalidOperationException($"No projects found for {target.Interface}");
-
-                    foreach (var proj in buildProjects)
+                    // Fix any RIDs that differ from .NET SDK
+                    var archstring = target.Arch switch
                     {
-                        if (target.OS != OSType.Windows && windowsOnlyProjects.Contains(proj))
-                            continue;
+                        ArchType.Arm7 => $"{target.OSString}-arm",
+                        _ => target.BuildArchString
+                    };
 
-                        // TODO: Self contained builds are bloating the build size
-                        // Alternative is to require the .NET runtime to be installed
+                    // TODO: Self contained builds are bloating the build size
+                    // Alternative is to require the .NET runtime to be installed
 
-                        // Build into isolated folder
-                        var buildfolder = Path.Combine(buildDir, target.BuildTargetString + "-out");
-                        if (Directory.Exists(buildfolder))
-                            Directory.Delete(buildfolder, true);
-
-                        // Fix any RIDs that differ from .NET SDK
-                        var archstring = target.Arch switch
-                        {
-                            ArchType.Arm7 => $"{target.OSString}-arm",
-                            _ => target.BuildArchString
-                        };
-
-                        var command = new string[] {
-                            "dotnet", "publish", proj,
-                            "-c", "Release",
-                            "-o", buildfolder,
+                    var command = new string[] {
+                            "dotnet", "publish", temporarySolutionFiles[target],
+                            "--configuration", "Release",
+                            "--output", tmpfolder,
                             "-r", archstring,
                             $"/p:AssemblyVersion={releaseInfo.Version}",
                             $"/p:Version={releaseInfo.Version}-{releaseInfo.Channel}-{releaseInfo.Timestamp:yyyyMMdd}",
                             "--self-contained", useHostedBuilds ? "false" : "true"
                         };
 
-                        try
-                        {
-                            await ProcessHelper.ExecuteWithLog(command, workingDirectory: tmpfolder, logFolder: logFolder, logFilename: (pid, isStdOut) => $"{Path.GetFileNameWithoutExtension(proj)}.{target.BuildTargetString}.{pid}.{(isStdOut ? "stdout" : "stderr")}.log");
-                        }
-                        catch (Exception ex)
-                        {
-                            Console.WriteLine($"Error building {proj} for {target.BuildTargetString}: {ex.Message}");
-                            throw;
-                        }
-
-                        // Merge the build into the temporary target folder
-                        EnvHelper.CopyDirectory(buildfolder, tmpfolder, true);
-                        Directory.Delete(buildfolder, true);
+                    try
+                    {
+                        await ProcessHelper.ExecuteWithLog(command, workingDirectory: tmpfolder, logFolder: logFolder, logFilename: (pid, isStdOut) => $"{target.BuildTargetString}.{pid}.{(isStdOut ? "stdout" : "stderr")}.log");
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error building for {target.BuildTargetString}: {ex.Message}");
+                        throw;
                     }
 
                     // Perform any post-build steps, cleaning and signing as needed
