@@ -35,6 +35,11 @@ namespace Duplicati.Library.AutoUpdater;
 public static class DataFolderManager
 {
     /// <summary>
+    /// The log tag for this class
+    /// </summary>
+    private static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(DataFolderManager));
+
+    /// <summary>
     /// The folder where the machine id is placed
     /// </summary>
     public static readonly string DATAFOLDER;
@@ -184,12 +189,20 @@ public static class DataFolderManager
         if (Directory.Exists(DATAFOLDER))
         {
             if (!File.Exists(Path.Combine(DATAFOLDER, Util.InsecurePermissionsMarkerFile)))
-                SystemIO.IO_OS.DirectorySetPermissionUserRWOnly(DATAFOLDER);
+                try { SystemIO.IO_OS.DirectorySetPermissionUserRWOnly(DATAFOLDER); }
+                catch (Exception ex)
+                {
+                    Logging.Log.WriteWarningMessage(LOGTAG, "FailedToSetPermissions", ex, "Failed to set permissions for {0}: {1}", DATAFOLDER, ex.Message);
+                }
         }
         else
         {
             Directory.CreateDirectory(DATAFOLDER);
-            SystemIO.IO_OS.DirectorySetPermissionUserRWOnly(DATAFOLDER);
+            try { SystemIO.IO_OS.DirectorySetPermissionUserRWOnly(DATAFOLDER); }
+            catch (Exception ex)
+            {
+                Logging.Log.WriteWarningMessage(LOGTAG, "FailedToSetPermissions", ex, "Failed to set permissions for {0}: {1}", DATAFOLDER, ex.Message);
+            }
         }
 
         if (!File.Exists(Path.Combine(DATAFOLDER, INSTALL_FILE)))
