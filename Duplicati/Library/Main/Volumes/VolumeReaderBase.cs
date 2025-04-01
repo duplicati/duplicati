@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -116,7 +116,12 @@ namespace Duplicati.Library.Main.Volumes
         {
             using (var stream = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.Read))
             using (var c = LoadCompressor(compressor, stream, options))
-            using (var s = c.OpenRead(FILESET_FILENAME))
+                return GetFilesetData(c, options);
+        }
+
+        public static FilesetData GetFilesetData(ICompression compressor, Options options)
+        {
+            using (var s = compressor.OpenRead(FILESET_FILENAME))
             {
                 if (s == null)
                 {
@@ -140,7 +145,19 @@ namespace Duplicati.Library.Main.Volumes
         {
             using (var stream = new System.IO.FileStream(file, FileMode.Open, FileAccess.Read, FileShare.Read))
             using (var c = LoadCompressor(compressor, stream, options))
-            using (var s = c.OpenRead(MANIFEST_FILENAME))
+                UpdateOptionsFromManifest(c, options);
+
+        }
+
+        /// <summary>
+        /// Updates the options with data from the manifest file, but does not overwrite existing values
+        /// </summary>
+        /// <param name="compressor">The compressor to use</param>
+        /// <param name="file">The file to read the manifest from</param>
+        /// <param name="options">The options to update</param>
+        public static void UpdateOptionsFromManifest(ICompression compressor, Options options)
+        {
+            using (var s = compressor.OpenRead(MANIFEST_FILENAME))
             using (var fs = new StreamReader(s, ENCODING))
             {
                 var d = JsonConvert.DeserializeObject<ManifestData>(fs.ReadToEnd());

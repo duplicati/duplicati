@@ -24,7 +24,8 @@ backupApp.service('ServerStatus', function ($rootScope, $timeout, AppService, Ap
         updatedVersion: null,
         updateDownloadProgress: 0,
         proposedSchedule: [],
-        schedulerQueueIds: []
+        schedulerQueueIds: [],
+        orderBy: null
     };
 
     this.state = state;
@@ -89,8 +90,14 @@ backupApp.service('ServerStatus', function ($rootScope, $timeout, AppService, Ap
         return AppService.post('/serverstate/resume');
     };
 
-    this.pause = function (duration) {
-        return AppService.post('/serverstate/pause' + (duration == null ? '' : '?duration=' + duration));
+    this.pause = function (duration, pauseTransfers) {
+        var query = '';
+        if (duration != null && duration != 'infinite' && duration != '')
+            query += '?duration=' + duration;
+        if (pauseTransfers === true)
+            query += (query.length > 0 ? '&' : '?') + 'pauseTransfers=true';
+
+        return AppService.post('/serverstate/pause' + query);
     };
 
     function notifyTaskCompleted(taskid) {
@@ -342,7 +349,10 @@ backupApp.service('ServerStatus', function ($rootScope, $timeout, AppService, Ap
 
     const reconnect_websocket = function () {
         const websocketProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const w = new WebSocket(`${websocketProtocol}//${window.location.host}/notifications?token=${AppService.access_token}`);
+        const parts = window.location.pathname.split('/').slice(0, -2); // Remove the last two segments (e.g., index.html and ngax)
+        const websocketPath = parts.join('/') + '/notifications';
+
+        const w = new WebSocket(`${websocketProtocol}//${window.location.host}${websocketPath}?token=${AppService.access_token}`);
         w.addEventListener("message", (event) => {
             const status = JSON.parse(event.data);
             handleServerState({data: status});

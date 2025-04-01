@@ -1,3 +1,23 @@
+// Copyright (C) 2025, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -12,16 +32,18 @@ public class DayOfWeekStringEnumConverter : JsonConverterFactory
             if (reader.TokenType != JsonTokenType.String)
                 throw new JsonException();
 
-            return reader.GetString()?.Trim()?.ToLowerInvariant() switch
+            var value = reader.GetString()?.Trim()?.ToLowerInvariant();
+
+            return value switch
             {
-                "sun" => DayOfWeek.Sunday,
-                "mon" => DayOfWeek.Monday,
-                "tue" => DayOfWeek.Tuesday,
-                "wed" => DayOfWeek.Wednesday,
-                "thu" => DayOfWeek.Thursday,
-                "fri" => DayOfWeek.Friday,
-                "sat" => DayOfWeek.Saturday,
-                _ => throw new JsonException()
+                "sun" or "sunday" => DayOfWeek.Sunday,
+                "mon" or "monday" => DayOfWeek.Monday,
+                "tue" or "tuesday" => DayOfWeek.Tuesday,
+                "wed" or "wednesday" => DayOfWeek.Wednesday,
+                "thu" or "thursday" => DayOfWeek.Thursday,
+                "fri" or "friday" => DayOfWeek.Friday,
+                "sat" or "saturday" => DayOfWeek.Saturday,
+                _ => throw new JsonException($"Invalid day of week: {value}"),
             };
         }
 
@@ -51,7 +73,7 @@ public class DayOfWeekStringEnumConverter : JsonConverterFactory
                     writer.WriteStringValue("sat");
                     break;
                 default:
-                    throw new JsonException();
+                    throw new JsonException($"Invalid day of week: {value}");
             }
             writer.WriteStringValue(value.ToString());
         }

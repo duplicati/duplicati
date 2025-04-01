@@ -36,7 +36,7 @@
             <label translate>Status: {{getRemoteControlStatusText()}}</label>
         </div>
 
-        <div ng-show="remoteControlState != 'unknown'">
+        <div ng-show="remoteControlState != 'unknown' &amp;&amp; SystemInfo.StartedBy != 'Agent'">
 
             <div class="input mixed multiple" ng-show="remoteControlState == 'inactive'">
                 <label for="remoteControlRegisterUrl" translate>Registration URL</label>
@@ -57,15 +57,15 @@
             </div>
 
             <div class="input mixed multiple" ng-show="remoteControlState == 'connected' || remoteControlState == 'enabled' ">
-                <input type="button" id="cancelRegisterRemote" class="submit" value="{{'Disable remote control' | translate}}" ng-click="disableRemoteControl()" />
+                <input type="button" id="disableRegisterRemote" class="submit" value="{{'Disable remote control' | translate}}" ng-click="disableRemoteControl()" />
             </div>
 
             <div class="input mixed multiple" ng-show="remoteControlState == 'disabled' ">
-                <input type="button" id="cancelRegisterRemote" class="submit" value="{{'Enable remote control' | translate}}" ng-click="enableRemoteControl()" />
+                <input type="button" id="enableRegisterRemote" class="submit" value="{{'Enable remote control' | translate}}" ng-click="enableRemoteControl()" />
             </div>
 
             <div class="input mixed multiple" ng-show="remoteControlState == 'disabled' ">
-                <input type="button" id="cancelRegisterRemote" class="submit" value="{{'Delete remote control setup' | translate}}" ng-click="deleteRemoteControl()" />
+                <input type="button" id="deleteRegisterRemote" class="submit" value="{{'Delete remote control setup' | translate}}" ng-click="deleteRemoteControl()" />
             </div>
         </div>
 
@@ -113,6 +113,16 @@
             </select>
         </div>
 
+        <div class="input mixed multiple">
+            <label for="timezone" translate>Time zone</label>
+            <select id="timezone" name="timezone" ng-model="timezone" ng-options="item.ID as item.DisplayName for item in SystemInfo.TimeZones">
+            </select>
+            <div class="input mixed multiple" ng-show="timezone != SystemInfo.ServerTimeZone ">
+                <input type="button" id="settimezonedefault" class="submit" value="{{'Set timezone to default' | translate}}" ng-click="timezone = SystemInfo.ServerTimeZone" />
+            </div>
+
+        </div>
+
         <h2 translate>Update channel</h2>
         <div class="input checkbox">
             <input type="radio" class="checkbox" id="updateChannelDefault" value="" name="updateChannel" ng-model="updateChannel" />
@@ -128,7 +138,7 @@
         <div class="input checkbox">
             <input type="radio" class="checkbox" id="updateChannelBeta" value="beta" name="updateChannel" ng-model="updateChannel" />
             <label for="updateChannelBeta" translate>Beta</label>
-            <div class="sublabel" translate>Try out the new features that we are working on. Currently the most stable version available. Test Restore data before using this in production environments.</div>
+            <div class="sublabel" translate>Try out the new features that we are working on. Test Backup &amp; Restore before using this in production environments.</div>
         </div>
         <div class="input checkbox">
             <input type="radio" class="checkbox" id="updateChannelExperimental" value="experimental" name="updateChannel" ng-model="updateChannel" />

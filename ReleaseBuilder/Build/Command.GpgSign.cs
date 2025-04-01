@@ -1,3 +1,23 @@
+// Copyright (C) 2025, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
 using System.IO.Compression;
 
 namespace ReleaseBuilder.Build;
@@ -33,7 +53,7 @@ public static partial class Command
 
                         await ProcessHelper.Execute(
                             [
-                                Program.Configuration.Commands.Gpg!,
+                                rtcfg.Configuration.Commands.Gpg!,
                                 "--pinentry-mode", "loopback",
                                 "--passphrase-fd", "0",
                                 "--batch", "--yes",
@@ -66,7 +86,7 @@ public static partial class Command
         static (string GpgId, string GpgPassphrase) GetGpgIdAndPassphrase(RuntimeConfig rtcfg)
         {
             using var ms = new MemoryStream();
-            using var fs = File.OpenRead(Program.Configuration.ConfigFiles.GpgKeyfile);
+            using var fs = File.OpenRead(rtcfg.Configuration.ConfigFiles.GpgKeyfile);
             SharpAESCrypt.SharpAESCrypt.Decrypt(rtcfg.KeyfilePassword, fs, ms);
             var parts = System.Text.Encoding.UTF8.GetString(ms.ToArray()).Split('\n', 2, StringSplitOptions.RemoveEmptyEntries);
             return (parts[0], parts[1]);

@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -27,6 +27,8 @@ using System.Threading.Tasks;
 using Duplicati.Server.Database;
 using Microsoft.AspNetCore.Connections;
 using Duplicati.Library.Utility;
+
+#nullable enable
 
 namespace Duplicati.Server;
 
@@ -66,6 +68,11 @@ public static class WebServerLoader
     public const string OPTION_WEBSERVICE_RESET_JWT_CONFIG = "webservice-reset-jwt-config";
 
     /// <summary>
+    /// Option for enabling the forever token
+    /// </summary>
+    public const string OPTION_WEBSERVICE_ENABLE_FOREVER_TOKEN = "webservice-enable-forever-token";
+
+    /// <summary>
     /// Option for disabling the visual captcha
     /// </summary>
     public const string OPTION_WEBSERVICE_DISABLE_VISUAL_CAPTCHA = "webservice-disable-visual-captcha";
@@ -91,6 +98,14 @@ public static class WebServerLoader
     /// Option for setting the webservice SPA paths
     /// </summary>
     public const string OPTION_WEBSERVICE_SPAPATHS = "webservice-spa-paths";
+    /// <summary>
+    /// The CORS origins to allow
+    /// </summary>
+    public const string OPTION_WEBSERVICE_CORS_ORIGINS = "webservice-cors-origins";
+    /// <summary>
+    /// Option for setting the webservice timezone
+    /// </summary>
+    public const string OPTION_WEBSERVICE_TIMEZONE = "webservice-timezone";
 
     /// <summary>
     /// The default path to the web root
@@ -110,22 +125,22 @@ public static class WebServerLoader
     /// <summary>
     /// Option for setting if to use HTTPS
     /// </summary>
-    public const string OPTION_DISABLEHTTPS = "webservice-disable-https";
+    public const string OPTION_WEBSERVICE_DISABLEHTTPS = "webservice-disable-https";
 
     /// <summary>
     /// Option for removing the SSL certificate from the datbase
     /// </summary>
-    public const string OPTION_REMOVESSLCERTIFICATE = "webservice-remove-sslcertificate";
+    public const string OPTION_WEBSERVICE_REMOVESSLCERTIFICATE = "webservice-remove-sslcertificate";
 
     /// <summary>
     /// Option for setting the webservice SSL certificate
     /// </summary>
-    public const string OPTION_SSLCERTIFICATEFILE = "webservice-sslcertificatefile";
+    public const string OPTION_WEBSERVICE_SSLCERTIFICATEFILE = "webservice-sslcertificatefile";
 
     /// <summary>
     /// Option for setting the webservice SSL certificate key
     /// </summary>
-    public const string OPTION_SSLCERTIFICATEFILEPASSWORD = "webservice-sslcertificatepassword";
+    public const string OPTION_WEBSERVICE_SSLCERTIFICATEFILEPASSWORD = "webservice-sslcertificatepassword";
 
     /// <summary>
     /// The default listening interface
@@ -143,15 +158,17 @@ public static class WebServerLoader
     /// <param name="AllowedHostnames">The allowed hostnames</param>
     /// <param name="DisableStaticFiles">If static files should be disabled</param>
     /// <param name="SPAPaths">The paths to serve as SPAs</param>
+    /// <param name="CorsOrigins">The origins to allow for CORS</param>
     public record ParsedWebserverSettings(
         string WebRoot,
         int Port,
         System.Net.IPAddress Interface,
-        X509Certificate2? Certificate,
+        X509Certificate2Collection? Certificate,
         string Servername,
         IEnumerable<string> AllowedHostnames,
         bool DisableStaticFiles,
-        IEnumerable<string> SPAPaths
+        IEnumerable<string> SPAPaths,
+        IEnumerable<string> CorsOrigins
     );
 
 
@@ -160,7 +177,7 @@ public static class WebServerLoader
     /// </summary>
     /// <param name="options">A set of options</param>
     /// <param name="createServer">The method to start the server</param>
-    public static async Task<TServer> TryRunServer<TServer>(IReadOnlyDictionary<string, string> options, Connection connection, Func<ParsedWebserverSettings, Task<TServer>> createServer)
+    public static async Task<TServer> TryRunServer<TServer>(IReadOnlyDictionary<string, string?> options, Connection connection, Func<ParsedWebserverSettings, Task<TServer>> createServer)
     {
         var ports = Enumerable.Empty<int>();
         options.TryGetValue(OPTION_PORT, out var portstring);
@@ -187,11 +204,11 @@ public static class WebServerLoader
         else if (interfacestring != "loopback")
             listenInterface = System.Net.IPAddress.Parse(interfacestring);
 
-        var removeCertificate = Library.Utility.Utility.ParseBoolOption(options, OPTION_REMOVESSLCERTIFICATE);
-        connection.ApplicationSettings.DisableHTTPS = removeCertificate || Library.Utility.Utility.ParseBoolOption(options, OPTION_DISABLEHTTPS);
+        var removeCertificate = Library.Utility.Utility.ParseBoolOption(options, OPTION_WEBSERVICE_REMOVESSLCERTIFICATE);
+        connection.ApplicationSettings.DisableHTTPS = removeCertificate || Library.Utility.Utility.ParseBoolOption(options, OPTION_WEBSERVICE_DISABLEHTTPS);
 
-        options.TryGetValue(OPTION_SSLCERTIFICATEFILE, out var certificateFile);
-        options.TryGetValue(OPTION_SSLCERTIFICATEFILEPASSWORD, out var certificateFilePassword);
+        options.TryGetValue(OPTION_WEBSERVICE_SSLCERTIFICATEFILE, out var certificateFile);
+        options.TryGetValue(OPTION_WEBSERVICE_SSLCERTIFICATEFILEPASSWORD, out var certificateFilePassword);
         certificateFilePassword = certificateFilePassword?.Trim();
 
         if (string.IsNullOrEmpty(certificateFile) && !string.IsNullOrEmpty(certificateFilePassword))
@@ -216,7 +233,7 @@ public static class WebServerLoader
 
         if (options.ContainsKey(OPTION_WEBROOT))
         {
-            string userroot = options[OPTION_WEBROOT];
+            var userroot = options[OPTION_WEBROOT];
 #if DEBUG
             //In debug mode we do not care where the path points
 #else
@@ -237,10 +254,11 @@ public static class WebServerLoader
             -1,
             listenInterface,
             connection.ApplicationSettings.UseHTTPS ? connection.ApplicationSettings.ServerSSLCertificate : null,
-            string.Format("{0} v{1}", Library.AutoUpdater.AutoUpdateSettings.AppName, System.Reflection.Assembly.GetExecutingAssembly().GetName().Version),
+            string.Format("{0} v{1}", Library.AutoUpdater.AutoUpdateSettings.AppName, Library.AutoUpdater.UpdaterManager.SelfVersion.Version),
             (connection.ApplicationSettings.AllowedHostnames ?? string.Empty).Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries),
             Duplicati.Library.Utility.Utility.ParseBoolOption(options, OPTION_WEBSERVICE_API_ONLY),
-            spaPathsString.Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries)
+            spaPathsString.Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries),
+            options.GetValueOrDefault(OPTION_WEBSERVICE_CORS_ORIGINS)?.Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries) ?? Enumerable.Empty<string>()
         );
 
         // Materialize the list of ports, and move the last-used port to the front, so we try the last-known port first

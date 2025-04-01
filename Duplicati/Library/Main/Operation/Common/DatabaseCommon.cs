@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -22,9 +22,7 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-using CoCoL;
 using Duplicati.Library.Main.Database;
-using System.Collections.Generic;
 
 namespace Duplicati.Library.Main.Operation.Common
 {
@@ -40,7 +38,7 @@ namespace Duplicati.Library.Main.Operation.Common
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<DatabaseCommon>();
 
         protected readonly LocalDatabase m_db;
-        protected System.Data.IDbTransaction m_transaction;
+        private System.Data.IDbTransaction m_transaction;
         protected readonly Options m_options;
 
         public DatabaseCommon(LocalDatabase db, Options options)
@@ -51,19 +49,26 @@ namespace Duplicati.Library.Main.Operation.Common
             m_transaction = db.BeginTransaction();
         }
 
+        protected System.Data.IDbTransaction GetTransaction()
+        {
+            if (m_transaction == null)
+                m_transaction = m_db.BeginTransaction();
+            return m_transaction;
+        }
+
         public Task<long> RegisterRemoteVolumeAsync(string name, RemoteVolumeType type, RemoteVolumeState state)
         {
-            return RunOnMain(() => m_db.RegisterRemoteVolume(name, type, state, m_transaction));
+            return RunOnMain(() => m_db.RegisterRemoteVolume(name, type, state, GetTransaction()));
         }
 
         public Task UpdateRemoteVolumeAsync(string name, RemoteVolumeState state, long size, string hash, bool suppressCleanup = false, TimeSpan deleteGraceTime = default(TimeSpan))
         {
-            return RunOnMain(() => m_db.UpdateRemoteVolume(name, state, size, hash, suppressCleanup, deleteGraceTime, m_transaction));
+            return RunOnMain(() => m_db.UpdateRemoteVolume(name, state, size, hash, suppressCleanup, deleteGraceTime, GetTransaction()));
         }
 
         public Task CommitTransactionAsync(string message, bool restart = true)
         {
-            return RunOnMain(() => 
+            return RunOnMain(() =>
             {
                 if (m_options.Dryrun)
                 {
@@ -73,27 +78,27 @@ namespace Duplicati.Library.Main.Operation.Common
                             m_transaction.Rollback();
                         m_transaction = null;
                     }
-                    return;                    
+                    return;
                 }
 
-                using(new Logging.Timer(LOGTAG, "CommitTransactionAsync", message))
-                    m_transaction.Commit();
-                if (restart)
-                    m_transaction = m_db.BeginTransaction();
-                else
+                if (m_transaction != null)
+                {
+                    using (new Logging.Timer(LOGTAG, "CommitTransactionAsync", message))
+                        m_transaction.Commit();
                     m_transaction = null;
+                }
             });
         }
 
-        public Task RollbackTransactionAsync(bool restart = true)
+        public Task RollbackTransactionAsync()
         {
             return RunOnMain(() =>
             {
-                m_transaction.Rollback();
-                if (restart)
-                    m_transaction = m_db.BeginTransaction();
-                else
+                if (m_transaction != null)
+                {
+                    m_transaction.Rollback();
                     m_transaction = null;
+                }
             });
         }
 
@@ -101,52 +106,50 @@ namespace Duplicati.Library.Main.Operation.Common
 
         public Task RenameRemoteFileAsync(string oldname, string newname)
         {
-            return RunOnMain(() => m_db.RenameRemoteFile(oldname, newname, m_transaction));
+            return RunOnMain(() => m_db.RenameRemoteFile(oldname, newname, GetTransaction()));
         }
 
         public Task LogRemoteOperationAsync(string operation, string path, string data)
         {
-            return RunOnMain(() => m_db.LogRemoteOperation(operation, path, data, m_transaction));
+            return RunOnMain(() => m_db.LogRemoteOperation(operation, path, data, GetTransaction()));
         }
 
         public Task<LocalDatabase.IBlock[]> GetBlocksAsync(long volumeid)
         {
             // TODO: Figure out how to return the enumerable, while keeping the lock
             // and not creating the entire result in memory
-            return RunOnMain(() => m_db.GetBlocks(volumeid, m_transaction).ToArray());
+            return RunOnMain(() => m_db.GetBlocks(volumeid, GetTransaction()).ToArray());
         }
 
         public Task<RemoteVolumeEntry> GetVolumeInfoAsync(string remotename)
         {
-            return RunOnMain(() => m_db.GetRemoteVolume(remotename, m_transaction));
+            return RunOnMain(() => m_db.GetRemoteVolume(remotename, GetTransaction()));
         }
 
         public Task<Tuple<string, byte[], int>[]> GetBlocklistsAsync(long volumeid, int blocksize, int hashsize)
         {
             // TODO: Figure out how to return the enumerable, while keeping the lock
             // and not creating the entire result in memory
-            return RunOnMain(() => m_db.GetBlocklists(volumeid, blocksize, hashsize, m_transaction).ToArray());
+            return RunOnMain(() => m_db.GetBlocklists(volumeid, blocksize, hashsize, GetTransaction()).ToArray());
         }
 
         public Task<long> GetRemoteVolumeIDAsync(string remotename)
         {
-            return RunOnMain(() => m_db.GetRemoteVolumeID(remotename, m_transaction));
+            return RunOnMain(() => m_db.GetRemoteVolumeID(remotename, GetTransaction()));
         }
 
         public Task AddIndexBlockLinkAsync(long indexVolumeID, long blockVolumeID)
         {
-            return RunOnMain(() => m_db.AddIndexBlockLink(indexVolumeID, blockVolumeID, m_transaction));
+            return RunOnMain(() => m_db.AddIndexBlockLink(indexVolumeID, blockVolumeID, GetTransaction()));
         }
 
 
         protected override void Dispose(bool isDisposing)
         {
             base.Dispose(isDisposing);
-            if (m_transaction != null)
-            {
-                m_transaction.Commit();
-                m_transaction = null;
-            }
+            var tr = System.Threading.Interlocked.Exchange(ref m_transaction, null);
+            tr?.Commit();
+            tr?.Dispose();
         }
 
     }

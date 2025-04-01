@@ -140,7 +140,7 @@
                     </div>
 
                     <div class="input checklinks">
-                        <a href class="{{EditSourceAdvanced ? 'inactive' : ''}}" ng-click="showhiddenfolders = !showhiddenfolders"><i class="fa {{showhiddenfolders ? 'fa-check' : ''}}"></i> {{'Show hidden folders' | translate}}</a>
+                        <a href class="{{EditSourceAdvanced ? 'inactive' : ''}}" ng-click="showhiddenfolders = !showhiddenfolders"><i class="fa {{showhiddenfolders ? 'fa-check' : ''}}"></i> {{'Show hidden items' | translate}}</a>
                     </div>
                     <div class="resizable filepicker" ng-hide="EditSourceAdvanced">
                         <source-folder-picker ng-sources="Backup.Sources" ng-filters="Backup.Filters" ng-show-hidden="showhiddenfolders" ng-exclude-attributes="ExcludeAttributes" ng-exclude-size="ExcludeFileSize"></source-folder-picker>
@@ -310,9 +310,11 @@
                     </select>
 
                     <div class="hint" translate>
-                        The backups will be split up into multiple files called volumes. Here you can set the maximum size of the individual volume files. <external-link link="'https://www.duplicati.com/articles/Choosing-Sizes/#remote-volume-size'">See this page for more information.</external-link>
+                        <p ng-show="(parseSizeString(Options['dblock-size']) &gt; 1024 * 1024 * 1024 * 2) || (parseSizeString(Options['dblock-size']) &lt; 1024 * 1024 * 5)" class="warning" translate>
+                            The chosen size is outside the recommended range. This may cause performance issues, excessively large temporary files or other problems.
+                        </p>
+                        The backups will be split up into multiple files called volumes. Here you can set the maximum size of the individual volume files. <external-link link="'https://forum.duplicati.com/t/choosing-sizes-in-duplicati/17683'">See this page for more information.</external-link>
                     </div>
-
                 </div>
 
                 <div class="input multiple text select keepBackups">

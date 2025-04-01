@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -83,7 +83,7 @@ namespace Duplicati.Library.Main.Volumes
                     throw new InvalidManifestException("FileHash", d.FileHash, filehash);
             }
         }
-        
+
         private class ParsedVolume : IParsedVolume
         {
             public RemoteVolumeType FileType { get; private set; }
@@ -104,11 +104,11 @@ namespace Duplicati.Library.Main.Volumes
                 dict[RemoteVolumeType.Blocks] = "dblock";
                 dict[RemoteVolumeType.Files] = "dlist";
                 dict[RemoteVolumeType.Index] = "dindex";
-                
+
                 var reversedict = new Dictionary<string, RemoteVolumeType>(System.StringComparer.OrdinalIgnoreCase);
-                foreach(var x in dict)
+                foreach (var x in dict)
                     reversedict[x.Value] = x.Key;
-                                
+
                 REMOTE_TYPENAME_MAP = dict;
                 REVERSE_REMOTE_TYPENAME_MAP = reversedict;
                 FILENAME_REGEXP = new System.Text.RegularExpressions.Regex(@"(?<prefix>[^\-]+)\-(([i|b|I|B](?<guid>[0-9A-Fa-f]+))|((?<time>\d{8}T\d{6}Z))).(?<filetype>(" + string.Join(")|(", dict.Values) + @"))\.(?<compression>[^\.]+)(\.(?<encryption>.+))?");
@@ -138,7 +138,7 @@ namespace Duplicati.Library.Main.Volumes
                 };
             }
         }
-        
+
         public static string GenerateFilename(RemoteVolumeType filetype, Options options, string guid, DateTime timestamp)
         {
             return GenerateFilename(filetype, options.Prefix, guid, timestamp, options.CompressionModule, options.NoEncryption ? null : options.EncryptionModule);
@@ -155,7 +155,7 @@ namespace Duplicati.Library.Main.Volumes
 
             if (!string.IsNullOrEmpty(encryptionmodule))
                 volumename += "." + encryptionmodule;
-                
+
             return volumename;
         }
 
@@ -182,14 +182,14 @@ namespace Duplicati.Library.Main.Volumes
         protected readonly long m_blocksize;
         protected readonly string m_blockhash;
         protected readonly string m_filehash;
-		protected readonly long m_blockhashsize;
+        protected readonly long m_blockhashsize;
 
         protected VolumeBase(Options options)
         {
             m_blocksize = options.Blocksize;
             m_blockhash = options.BlockHashAlgorithm;
             m_filehash = options.FileHashAlgorithm;
-			m_blockhashsize = options.BlockhashSize;
+            m_blockhashsize = options.BlockhashSize;
         }
     }
 }

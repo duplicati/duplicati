@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -22,6 +22,7 @@
 using System;
 using System.Threading.Tasks;
 using CoCoL;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.UsageReporter
 {
@@ -34,7 +35,7 @@ namespace Duplicati.Library.UsageReporter
         /// The tag used for logging
         /// </summary>
         private static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(Reporter));
-        
+
         /// <summary>
         /// The primary input channel for new report messages
         /// </summary>
@@ -126,7 +127,7 @@ namespace Duplicati.Library.UsageReporter
         public static void ShutDown()
         {
             if (_eventChannel != null && !_eventChannel.IsRetiredAsync.Result)
-                _eventChannel.Retire();
+                _eventChannel.RetireAsync().Await();
 
             if (ShutdownTask != null)
             {
@@ -194,7 +195,7 @@ namespace Duplicati.Library.UsageReporter
         /// <value><c>true</c> if is disabled; otherwise, <c>false</c>.</value>
         private static bool IsDisabled
         {
-            get 
+            get
             {
                 if (Forced_Disabled)
                     return true;

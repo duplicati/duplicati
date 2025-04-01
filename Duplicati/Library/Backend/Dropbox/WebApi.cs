@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -19,62 +19,41 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
-using Duplicati.Library.Utility;
-
 namespace Duplicati.Library.Backend.WebApi
 {
     public static class Dropbox
     {
         public static string CreateFolderUrl()
-        {
-            return Uri.UriBuilder(Url.API, Path.CreateFolder);
-        }
+            => Utility.Uri.UriBuilder(Url.API, Path.CreateFolder);
 
         public static string ListFilesUrl()
-        {
-            return Uri.UriBuilder(Url.API, Path.ListFolder);
-        }
+            => Utility.Uri.UriBuilder(Url.API, Path.ListFolder);
 
         public static string ListFilesContinueUrl()
-        {
-            return Uri.UriBuilder(Url.API, Path.ListFolderContinue);
-        }
+            => Utility.Uri.UriBuilder(Url.API, Path.ListFolderContinue);
 
         public static string DeleteUrl()
-        {
-            return Uri.UriBuilder(Url.API, Path.DeleteFolder);
-        }
+            => Utility.Uri.UriBuilder(Url.API, Path.DeleteFolder);
 
         public static string UploadSessionStartUrl()
-        {
-            return Uri.UriBuilder(Url.CONTENT_API_URL, Path.UploadSessionStart);
-        }
+            => Utility.Uri.UriBuilder(Url.CONTENT_API_URL, Path.UploadSessionStart);
 
         public static string UploadSessionAppendUrl()
-        {
-            return Uri.UriBuilder(Url.CONTENT_API_URL, Path.UploadSessionAppend);
-        }
+            => Utility.Uri.UriBuilder(Url.CONTENT_API_URL, Path.UploadSessionAppend);
 
         public static string UploadSessionFinishUrl()
-        {
-            return Uri.UriBuilder(Url.CONTENT_API_URL, Path.UploadSessionFinish);
-        }
+            => Utility.Uri.UriBuilder(Url.CONTENT_API_URL, Path.UploadSessionFinish);
 
         public static string DownloadFilesUrl()
-        {
-            return Uri.UriBuilder(Url.CONTENT_API_URL, Path.DownloadFiles);
-        }
+            => Utility.Uri.UriBuilder(Url.CONTENT_API_URL, Path.DownloadFiles);
 
         public static string[] Hosts()
-        {
-            return new[] { new System.Uri(Url.API).Host, new System.Uri(Url.CONTENT_API_URL).Host };
-
-        }
+            => [new Uri(Url.API).Host, new Uri(Url.CONTENT_API_URL).Host];
 
         private static class Url
         {
             public const string API = "https://api.dropboxapi.com/2";
-            public const string CONTENT_API_URL = "https://content.dropboxapi.com/2";            
+            public const string CONTENT_API_URL = "https://content.dropboxapi.com/2";
         }
 
         private static class Path

@@ -1,0 +1,3 @@
+#!/bin/sh
+systemctl enable duplicati-agent
+systemctl start duplicati-agent

@@ -1,5 +1,34 @@
 <div class="home">
-    <div class="tasks" ng-controller="HomeController">
+
+    
+     <div class="tasks" ng-controller="HomeController">
+
+        <div ng-if="orderBy != null" class="orderbox">
+            <label for="orderby" translate>Order by</label>
+            <select  id="orderby" name="orderby" ng-model="orderBy" 
+                    ng-change="doApplyOrder(orderBy)"
+                    ng-init="orderBy = orderByFromState()">
+                <option value="id" translate>Create Order</option>
+                <option value="backend" translate>Destination Type</option>
+                <option value="lastrun" translate>Last Run</option>
+                <option value="nextrun" translate>Next Scheduled Run</option>
+                <option value="name" translate>Name</option>
+                <option value="schedule" translate>Has Scheduled</option>
+                <option value="sourcesize" translate>Source size</option>
+                <option value="destinationsize" translate>Destination size</option>
+                <option value="duration" translate>Duration</option>
+
+                <option value="-id" translate>Create Order (descending)</option>
+                <option value="-backend" translate>Destination Type (descending)</option>
+                <option value="-lastrun" translate>Last Run (descending)</option>
+                <option value="-nextrun" translate>Next Scheduled Run (descending)</option>
+                <option value="-name" translate>Name (descending)</option>
+                <option value="-schedule" translate>Has Scheduled (descending)</option>
+                <option value="-sourcesize" translate>Source size (descending)</option>
+                <option value="-destinationsize" translate>Destination size (descending)</option>
+                <option value="-duration" translate>Duration (descending)</option>
+            </select>
+       </div>
         <div class="tasklist">
             <div ng-repeat="item in backups" class="task">
                 <a href ng-click="$parent.TaskMenuID == item.Backup.ID ? $parent.TaskMenuID = null : $parent.TaskMenuID = item.Backup.ID">

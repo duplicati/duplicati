@@ -1,5 +1,26 @@
+// Copyright (C) 2025, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Snapshots;
+using Duplicati.Library.Utility;
 using Duplicati.Server;
 using Duplicati.WebserverCore.Abstractions;
 using Duplicati.WebserverCore.Exceptions;
@@ -90,8 +111,7 @@ public class Filesystem : IEndpointV1
                             && di.IsReady // Only try to create TreeNode entries for drives who were ready 'now'
                         )
                         .Select(TryCreateTreeNodeForDrive) // This will try to create a TreeNode for selected drives
-                        .Where(tn => tn != null) // This filters out such entries that could not be created
-                        .Select(x => x!);
+                        .WhereNotNull(); // This filters out such entries that could not be created
             }
             else
             {
@@ -129,11 +149,11 @@ public class Filesystem : IEndpointV1
                     text = x.text,
                     iconCls = x.iconCls,
                     cls = "folder",
-                    leaf = false,
-                    hidden = false,
-                    symlink = false,
-                    temporary = false,
-                    systemFile = false,
+                    leaf = x.leaf,
+                    hidden = x.hidden,
+                    symlink = x.symlink,
+                    temporary = x.temporary,
+                    systemFile = x.systemFile,
                     fileSize = -1,
                     resolvedpath = x.id,
                     check = false
@@ -234,11 +254,11 @@ public class Filesystem : IEndpointV1
             {
                 var attr = SystemIO.IO_OS.GetFileAttributes(s);
                 var isSymlink = SystemIO.IO_OS.IsSymlink(s, attr);
-                var isFolder = (attr & FileAttributes.Directory) != 0;
+                var isFolder = attr.HasFlag(FileAttributes.Directory);
                 var isFile = !isFolder;
-                var isHidden = (attr & FileAttributes.Hidden) != 0;
-                bool isSystem = (attr & FileAttributes.System) != 0;
-                bool isTemporary = (attr & FileAttributes.Temporary) != 0;
+                var isHidden = attr.HasFlag(FileAttributes.Hidden);
+                bool isSystem = attr.HasFlag(FileAttributes.System);
+                bool isTemporary = attr.HasFlag(FileAttributes.Temporary);
                 long fileSize = -1;
 
                 var accessible = isFile || canAccess(s);

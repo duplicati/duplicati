@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -177,13 +177,12 @@ namespace Duplicati.UnitTest
             Assert.IsNotEmpty(decrypted);
             Assert.AreEqual(decrypted, sampleTargerURL);
 
-
             try
             {
-                // So far, this tests does not ensure it is using the default key, so lets check that
-                // by using the default key and checking if it still works, it should throw
+                // So far, this tests does not ensure it is using the any key, so lets check that
+                // by using the differnt key and checking if it still works, it should throw
                 // a SettingsKeymismatchException
-                var secondtest = EncryptedFieldHelper.Decrypt(encrypted);
+                var secondtest = EncryptedFieldHelper.Decrypt(encrypted, EncryptedFieldHelper.KeyInstance.CreateKey("another good and long password"));
 
             }
             catch (Exception ex)

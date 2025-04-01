@@ -1,3 +1,23 @@
+// Copyright (C) 2025, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
 using Duplicati.Library.RestAPI;
 using Duplicati.Server.Database;
 using Duplicati.WebserverCore.Abstractions;
@@ -10,8 +30,8 @@ public class Backups : IEndpointV1
 {
     public static void Map(RouteGroupBuilder group)
     {
-        group.MapGet("/backups", ([FromServices] Connection connection)
-            => ExecuteGet(connection))
+        group.MapGet("/backups", ([FromServices] Connection connection, [FromQuery] string? orderBy = null)
+            => ExecuteGet(connection, orderBy))
                .RequireAuthorization();
 
         group.MapPost("/backups", ([FromServices] Connection connection, [FromBody] Dto.BackupAndScheduleInputDto input, [FromQuery] bool? temporary, [FromQuery] bool? existingdb)
@@ -28,10 +48,91 @@ public class Backups : IEndpointV1
         }).RequireAuthorization();
     }
 
-    private static IEnumerable<Dto.BackupAndScheduleOutputDto> ExecuteGet(Connection connection)
+    private static IEnumerable<Dto.BackupAndScheduleOutputDto> ExecuteGet(Connection connection, string? orderBy)
     {
         var schedules = connection.Schedules;
-        var backups = connection.Backups;
+        var backups = connection.Backups.AsEnumerable();
+
+        IEnumerable<Dto.BackupAndScheduleOutputDto> ApplySorting(IEnumerable<Dto.BackupAndScheduleOutputDto> backups, string sort)
+        {
+            var asc = true;
+            sort = sort.ToLowerInvariant().Trim();
+            if (sort.StartsWith("-"))
+            {
+                asc = false;
+                sort = sort.Substring(1);
+            }
+            else if (sort.StartsWith("+"))
+            {
+                asc = true;
+                sort = sort.Substring(1);
+            }
+
+            Func<Dto.BackupAndScheduleOutputDto, object?>? selector = sort switch
+            {
+                "name" => x => x.Backup.Name,
+                "id" => x => x.Backup.ID,
+                "lastrun" => x =>
+                {
+                    if (x.Backup.Metadata == null)
+                        return null;
+                    x.Backup.Metadata.TryGetValue("LastBackupStarted", out var res);
+                    return res;
+                }
+                ,
+                "nextrun" => x => x.Schedule?.Time,
+                "schedule" => x => string.IsNullOrWhiteSpace(x.Schedule?.Repeat),
+                "backend" => x => Library.Utility.Utility.GuessScheme(x.Backup.TargetURL),
+                "sourcesize" => x =>
+                {
+                    if (x.Backup.Metadata == null)
+                        return null;
+                    x.Backup.Metadata.TryGetValue("SourceFilesSize", out var res);
+                    if (long.TryParse(res, out var l))
+                        return l;
+                    return null;
+                }
+                ,
+                "destinationsize" => x =>
+                {
+                    if (x.Backup.Metadata == null)
+                        return null;
+                    x.Backup.Metadata.TryGetValue("TargetFilesSize", out var res);
+                    if (long.TryParse(res, out var l))
+                        return l;
+                    return null;
+                }
+                ,
+                "duration" => x =>
+                {
+                    if (x.Backup.Metadata == null)
+                        return null;
+                    x.Backup.Metadata.TryGetValue("LastBackupDuration", out var res);
+                    return res;
+                }
+                ,
+                _ => null
+            };
+
+            // Ignore unknown sort fields
+            if (selector != null)
+            {
+                if (backups is IOrderedEnumerable<Dto.BackupAndScheduleOutputDto> backupsOrdered)
+                {
+                    return asc
+                        ? backupsOrdered.ThenBy(selector)
+                        : backupsOrdered.ThenByDescending(selector);
+                }
+                else
+                {
+                    return asc
+                        ? backups.OrderBy(selector)
+                        : backups.OrderByDescending(selector);
+                }
+            }
+
+            return backups;
+        }
 
         var all = backups.Select(n => new
         {
@@ -40,7 +141,7 @@ public class Backups : IEndpointV1
             Schedule = schedules.FirstOrDefault(x => x.Tags != null && x.Tags.Contains("ID=" + n.ID))
         });
 
-        return all.Select(x => new Dto.BackupAndScheduleOutputDto()
+        var res = all.Select(x => new Dto.BackupAndScheduleOutputDto()
         {
             Backup = new Dto.BackupDto()
             {
@@ -79,7 +180,19 @@ public class Backups : IEndpointV1
                 AllowedDays = x.Schedule.AllowedDays
             }
         });
+
+        // Use DB setting if not set
+        if (string.IsNullOrWhiteSpace(orderBy))
+            orderBy = connection.ApplicationSettings.BackupListSortOrder;
+
+        // Apply sorting, if any
+        if (!string.IsNullOrWhiteSpace(orderBy))
+            foreach (var direction in orderBy.Split(","))
+                res = ApplySorting(res, direction);
+
+        return res;
     }
+
     private static Dto.ImportBackupOutputDto ExecuteImport(Connection connection, bool cmdline, bool import_metadata, bool direct, string passphrase, string tempfile)
     {
         try
@@ -186,7 +299,7 @@ public class Backups : IEndpointV1
             {
                 if (existingDb)
                 {
-                    backup.DBPathSetter = Library.Main.DatabaseLocator.GetDatabasePath(data.Backup.TargetURL, null, false, false);
+                    backup.DBPathSetter = Library.Main.CLIDatabaseLocator.GetDatabasePathForCLI(data.Backup.TargetURL, null, false, false);
                     if (string.IsNullOrWhiteSpace(data.Backup.DBPath))
                         throw new Exception("Unable to find remote db path?");
                 }

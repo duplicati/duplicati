@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -86,7 +86,8 @@ namespace Duplicati.UnitTest
             {
                 IRestoreResults restoreResults = c.Restore(new[] { filePath });
                 Assert.AreEqual(0, restoreResults.Errors.Count());
-                Assert.AreEqual(0, restoreResults.Warnings.Count());
+                // TODO The expected warning is expected, as the 'dont-compress-restore-paths' option results in a warning about a folder not being created before restoring a file.
+                Assert.AreEqual(1, restoreResults.Warnings.Count());
             }
 
             // We need to strip the root part of the path. Otherwise, Path.Combine will simply return the second argument

@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -53,7 +53,7 @@ public static class BackendModules
         new Backend.Jottacloud(),
         new Backend.Mega.MegaBackend(),
         new Backend.MicrosoftGroup(),
-        new Backend.OneDriveV2(),
+        new Backend.OneDrive(),
         new Backend.OpenStack.OpenStackStorage(),
         new Backend.Rclone(),
         new Backend.S3(),
@@ -65,7 +65,11 @@ public static class BackendModules
         IsStorjSupported? new Backend.Storj.Storj() : null,
         new Backend.TahoeBackend(),
         new Backend.TencentCOS.COS(),
-        new Backend.WEBDAV()
+        new Backend.WEBDAV(),
+        new Backend.pCloudBackend(),
+        new Backend.SMBBackend(),
+        new Backend.CIFSBackend(),
+        new Backend.Filen.FilenBackend(),
     }
     .Where(x => x != null)
     .ToList();

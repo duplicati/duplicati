@@ -1,6 +1,0 @@
-#!/bin/bash
-
-set -e
-if /bin/launchctl list "com.duplicati.app.launchagent" &> /dev/null; then
-    /bin/launchctl unload "/Library/LaunchAgents/com.duplicati.app.launchagent.plist"
-fi

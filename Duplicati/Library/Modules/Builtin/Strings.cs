@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -62,6 +62,8 @@ namespace Duplicati.Library.Modules.Builtin.Strings
     {
         public static string Description { get { return LC.L(@"This module works internaly to parse source parameters to backup Hyper-V virtual machines"); } }
         public static string DisplayName { get { return LC.L(@"Configure Hyper-V module"); } }
+        public static string IgnoreConsistencyWarningShort { get { return LC.L(@"Ignore consistency warning"); } }
+        public static string IgnoreConsistencyWarningLong { get { return LC.L(@"This option will suppress the consistency warning that is normally issued when running on a client version of Windows. Enable this option if you are running on a client version of Windows and you are sure that crash-level consistency is acceptable for your use."); } }
     }
     internal static class MSSQLOptions
     {
@@ -134,6 +136,8 @@ To enable SMTP over SSL, use the format smtps://example.com. To enable SMTP STAR
         public static string SendMailLog(string message) { return LC.L(@"Whole SMTP communication: {0}", message); }
         public static string SendMailFailedRetryError(string failedserver, string message, string retryserver) { return LC.L(@"Failed to send email with server: {0}, message: {1}, retrying with {2}", failedserver, message, retryserver); }
         public static string SendMailSuccess(string server) { return LC.L(@"Email sent successfully using server: {0}", server); }
+        public static string SendmailextraparametersLong { get { return LC.L(@"Use this option to set extra parameters for the message body. This parameter can either be a querystring (e.g. 'parameter1=value1&parameter2=value2') or a JSON key/value object."); } }
+        public static string SendmailextraparametersShort { get { return LC.L(@"Extra parameters for the message sent"); } }
     }
     internal static class SendJabberMessage
     {
@@ -161,15 +165,18 @@ You can supply multiple options with a comma separator, e.g. ""{0},{1}"". The sp
         public static string SendxmppanyoperationLong { get { return LC.L(@"By default, messages will only be sent after a backup operation. Use this option to send messages for all operations."); } }
         public static string SendxmppanyoperationShort { get { return LC.L(@"Send messages for all operations"); } }
         public static string LoginTimeoutError { get { return LC.L(@"Timeout occurred while logging in to jabber server"); } }
+        public static string SendxmppextraparametersLong { get { return LC.L(@"Use this option to set extra parameters for the message body. This parameter can either be a querystring (e.g. 'parameter1=value1&parameter2=value2') or a JSON key/value object."); } }
+        public static string SendxmppextraparametersShort { get { return LC.L(@"Extra parameters for the message sent"); } }
     }
 
     internal static class SendTelegramMessage
     {
-        public static string Description { get { return LC.L(@"This module provides support for sending status reports via Telegram messages"); } }
-        public static string DisplayName { get { return LC.L(@"Telegram report module"); } }
-        public static string SendtelegramchannelLong { get { return LC.L(@"Use this option to set the channel ID."); } }
-        public static string SendtelegramchannelShort { get { return LC.L(@"Telegram channel ID"); } }
-        public static string SendtelegrammessageLong { get { return LC.L(@"This value can be a filename. If the file exists, the file contents will be used as the message.
+        public static string Description => LC.L(@"This module provides support for sending status reports via Telegram messages");
+        public static string DisplayName => LC.L(@"Telegram report module");
+        public static string SendTelegramChannelLong => LC.L(@"Use this option to set the channel ID.");
+        public static string SendTelegramChannelShort => LC.L(@"Telegram channel ID");
+        public static string SendTelegramMessageLong =>
+            LC.L(@"This value can be a filename. If the file exists, the file contents will be used as the message.
 
 In the message, certain tokens are replaced:
 %OPERATIONNAME% - The name of the operation, normally ""Backup""
@@ -177,19 +184,22 @@ In the message, certain tokens are replaced:
 %LOCALPATH% - The path to the local files or folders involved in the operation (if any)
 %PARSEDRESULT% - The parsed result, if the operation is a backup. Possible values are: Error, Warning, Success
 
-All command line options are also reported within %value%, e.g. %volsize%. Any unknown/unset value is removed."); } }
-        public static string SendtelegrammessageShort { get { return LC.L(@"The message template"); } }
-        public static string SendtelegrambotidLong { get { return LC.L(@"Use this option to set a bot ID for the bot that will send the message."); } }
+All command line options are also reported within %value%, e.g. %volsize%. Any unknown/unset value is removed.");
 
-        public static string SendtelegrambotidShort { get { return LC.L(@"The Telegram bot ID"); } }
-        public static string SendtelegramapikeyLong { get { return LC.L(@"Use this option to set a API key for the bot that will send the message."); } }
-        public static string SendtelegramapikeyShort { get { return LC.L(@"The Telegram API key"); } }
-        public static string SendtelegramlevelLong(string success, string warning, string error, string fatal, string all) { return LC.L(@"You can specify one of ""{0}"", ""{1}"", ""{2}"", ""{3}"". 
+        public static string SendTelegramMessageShort => LC.L(@"The message template");
+        public static string SendTelegramBotIdLong => LC.L(@"Use this option to set a bot ID for the bot that will send the message.");
+        public static string SendTelegramBotIdShort => LC.L(@"The Telegram bot ID");
+        public static string SendTelegramApiKeyLong => LC.L(@"Use this option to set a API key for the bot that will send the message.");
+        public static string SendTelegramApiKeyShort => LC.L(@"The Telegram API key");
+        public static string SendTelegramTopicShort => LC.L(@"The Telegram topic ID");
+        public static string SendTelegramTopicLong => LC.L(@"Topic ID for the Topic in the telegram group. For more information on Telegram setup, refer to documentation.");
+        public static string SendTelegramlevelLong(string success, string warning, string error, string fatal, string all) { return LC.L(@"You can specify one of ""{0}"", ""{1}"", ""{2}"", ""{3}"". 
 You can supply multiple options with a comma separator, e.g. ""{0},{1}"". The special value ""{4}"" is a shorthand for ""{0},{1},{2},{3}"" and will cause all backup operations to send a message.", success, warning, error, fatal, all); }
-        public static string SendtelegramlevelShort { get { return LC.L(@"The messages to send"); } }
-        public static string SendtelegramanyoperationLong { get { return LC.L(@"By default, messages will only be sent after a backup operation. Use this option to send messages for all operations."); } }
-        public static string SendtelegramanyoperationShort { get { return LC.L(@"Send messages for all operations"); } }
-        public static string LoginTimeoutError { get { return LC.L(@"Timeout occurred while sending to Telegram server"); } }
+        public static string SendTelegramLevelShort => LC.L(@"The messages to send");
+        public static string SendTelegramManyOperationLong => LC.L(@"By default, messages will only be sent after a backup operation. Use this option to send messages for all operations.");
+        public static string SendTelegramManyOperationShort => LC.L(@"Send messages for all operations");
+        public static string SendTelegramExtraParametersLong { get { return LC.L(@"Use this option to set extra parameters for the message body. This parameter can either be a querystring (e.g. 'parameter1=value1&parameter2=value2') or a JSON key/value object."); } }
+        public static string SendTelegramExtraParametersShort { get { return LC.L(@"Extra parameters for the message sent"); } }
     }
 
     internal static class SendHttpMessage
@@ -210,8 +220,8 @@ All command line options are also reported within %value%, e.g. %volsize%. Any u
         public static string SendhttpmessageShort { get { return LC.L(@"The message template"); } }
         public static string SendhttpmessageparameternameLong { get { return LC.L(@"Use this option to set a name of the parameter to send the message as."); } }
         public static string SendhttpmessageparameternameShort { get { return LC.L(@"The name of the parameter to send the message as"); } }
-        public static string SendhttpextraparametersLong { get { return LC.L(@"Use this option to set extra parameters to add to the http message, e.g. ""parameter1=value1&parameter2=value2"""); } }
-        public static string SendhttpextraparametersShort { get { return LC.L(@"Extra parameters to add to the http message"); } }
+        public static string SendhttpextraparametersLong { get { return LC.L(@"Use this option to set extra parameters for the message body. This parameter can either be a querystring (e.g. 'parameter1=value1&parameter2=value2') or a JSON key/value object."); } }
+        public static string SendhttpextraparametersShort { get { return LC.L(@"Extra parameters for the message sent"); } }
         public static string SendhttplevelLong(string success, string warning, string error, string fatal, string all) { return LC.L(@"You can specify one of ""{0}"", ""{1}"", ""{2}"", ""{3}"". 
 You can supply multiple options with a comma separator, e.g. ""{0},{1}"". The special value ""{4}"" is a shorthand for ""{0},{1},{2},{3}"" and will cause all backup operations to send a message.", success, warning, error, fatal, all); }
         public static string SendhttplevelShort { get { return LC.L(@"The messages to send"); } }
@@ -223,6 +233,14 @@ You can supply multiple options with a comma separator, e.g. ""{0},{1}"". The sp
         public static string SendhttpurlsformShort { get { return LC.L(@"HTTP report URLs for sending form data"); } }
         public static string SendhttpurlsjsonLong { get { return LC.L(@"Use this option to set HTTP report URLs for sending JSON data. This option accepts multiple URLs, seperated by a semi-colon. All URLs will receive the same data. Note that this option ignores the format and verb settings."); } }
         public static string SendhttpurlsjsonShort { get { return LC.L(@"HTTP report URLs for sending JSON data"); } }
+        public static string AcceptAnyCertificateLong { get { return LC.L(@"Use this option to accept any server certificate, regardless of what errors it may have. Please use --{0} instead, whenever possible.", "accept-specified-ssl-hash"); } }
+        public static string AcceptAnyCertificateShort { get { return LC.L(@"Accept any server certificate"); } }
+        public static string AcceptSpecifiedCertificateLong { get { return LC.L(@"If your server certificate is reported as invalid (e.g. with self-signed certificates), you can supply the certificate hash (SHA1) to approve it anyway. The hash value must be entered in hex format without spaces or colons. You can enter multiple hashes separated by commas."); } }
+        public static string AcceptSpecifiedCertificateShort { get { return LC.L(@"Optionally accept a known SSL certificate"); } }
+        public static string SendHttpRetriesLong { get { return LC.L(@"Use this option to set the number of retries to attempt if the HTTP request fails."); } }
+        public static string SendHttpRetriesShort { get { return LC.L(@"Set the number of retries"); } }
+        public static string SendHttpRetryDelayLong { get { return LC.L(@"Use this option to set the delay between retries."); } }
+        public static string SendHttpRetryDelayShort { get { return LC.L(@"Set the retry delay"); } }
     }
 
     internal static class ReportHelper

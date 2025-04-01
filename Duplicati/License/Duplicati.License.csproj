@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <OutputType>Library</OutputType>
-    <Copyright>Copyright © 2024 Team Duplicati, MIT license</Copyright>
+    <Copyright>Copyright © 2025 Team Duplicati, MIT license</Copyright>
   </PropertyGroup>
   
   <ItemGroup>
@@ -152,18 +152,6 @@
     </Content>
     <Content Include="..\..\thirdparty\MailKit\licensedata.json">
       <Link>licenses\MailKit\licensedata.json</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\ManagedLZMA\download.txt">
-      <Link>licenses\ManagedLZMA\download.txt</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\ManagedLZMA\license.txt">
-      <Link>licenses\ManagedLZMA\license.txt</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\thirdparty\ManagedLZMA\licensedata.json">
-      <Link>licenses\ManagedLZMA\licensedata.json</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="..\..\thirdparty\MegaApi\Homepage.txt">

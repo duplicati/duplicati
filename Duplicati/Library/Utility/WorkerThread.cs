@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -333,18 +333,17 @@ namespace Duplicati.Library.Utility
                 }
                 catch (Exception ex)
                 {
-                    try { System.Threading.Thread.ResetAbort(); }
-                    catch { }
-
+                    //TODO: Here where Thread.ResetAbort() was called we shall integrate the CancelationToken pattern.
                     if (OnError != null)
                         try { OnError(this, m_currentTask, ex); }
-                        catch { }
+                        catch
+                        {
+                            // ignored
+                        }
                 }
                 finally
                 {
-                    try { System.Threading.Thread.ResetAbort(); }
-                    catch { }
-
+                    //TODO: Here where Thread.ResetAbort() was called we shall integrate the CancelationToken pattern.
                     m_active = false;
                 }
 
@@ -356,7 +355,10 @@ namespace Duplicati.Library.Utility
                     catch (Exception ex)
                     {
                         try { OnError(this, task, ex); }
-                        catch { }
+                        catch
+                        {
+                            // ignored
+                        }
                     }
             }
         }

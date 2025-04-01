@@ -1,3 +1,23 @@
+// Copyright (C) 2025, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
 using Duplicati.Library.RestAPI;
 using Duplicati.WebserverCore.Abstractions;
 using Duplicati.WebserverCore.Exceptions;
@@ -9,16 +29,14 @@ public class Tasks : IEndpointV1
 {
     private enum TaskStopState
     {
-        StopAfterCurrentFile,
-        StopNow,
+        Stop,
         Abort
     }
     public static void Map(RouteGroupBuilder group)
     {
         group.MapGet("/tasks", Execute).RequireAuthorization();
         group.MapGet("/task/{taskid}", ([FromRoute] long taskId) => ExecuteGet(taskId)).RequireAuthorization();
-        group.MapPost("/task/{taskid}/stopaftercurrentfile", ([FromRoute] long taskId) => ExecutePost(taskId, TaskStopState.StopAfterCurrentFile)).RequireAuthorization();
-        group.MapPost("/task/{taskid}/stopnow", ([FromRoute] long taskId) => ExecutePost(taskId, TaskStopState.StopNow)).RequireAuthorization();
+        group.MapPost("/task/{taskid}/stop", ([FromRoute] long taskId) => ExecutePost(taskId, TaskStopState.Stop)).RequireAuthorization();
         group.MapPost("/task/{taskid}/abort", ([FromRoute] long taskId) => ExecutePost(taskId, TaskStopState.Abort)).RequireAuthorization();
 
     }
@@ -77,11 +95,8 @@ public class Tasks : IEndpointV1
 
         switch (stopState)
         {
-            case TaskStopState.StopAfterCurrentFile:
-                task.Stop(allowCurrentFileToFinish: true);
-                break;
-            case TaskStopState.StopNow:
-                task.Stop(allowCurrentFileToFinish: false);
+            case TaskStopState.Stop:
+                task.Stop();
                 break;
             case TaskStopState.Abort:
                 task.Abort();

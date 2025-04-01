@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -19,13 +19,12 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
-using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 
 namespace Duplicati.Library.Backend
 {
+    [SupportedOSPlatform("windows")]
     internal class Win32
     {
         [DllImport("mpr.dll")]
@@ -41,7 +40,7 @@ namespace Duplicati.Library.Backend
             public ResourceType dwType;
             public ResourceDisplayType dwDisplayType;
             public ResourceUsage dwUsage;
-            public string LocalName;
+            public string? LocalName;
             public string RemoteName;
             public string Comment;
             public string Provider;
@@ -111,7 +110,7 @@ namespace Duplicati.Library.Backend
 
             try
             {
-                NETRESOURCE rsc = new NETRESOURCE();
+                var rsc = new NETRESOURCE();
 
                 rsc.dwScope = ResourceScope.RESOURCE_GLOBALNET;
                 rsc.dwType = ResourceType.RESOURCETYPE_DISK;

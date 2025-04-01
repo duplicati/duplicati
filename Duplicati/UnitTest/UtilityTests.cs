@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -349,8 +349,7 @@ namespace Duplicati.UnitTest
             string[] duplicateItems = { "A", "c" };
 
             // Test with default comparer.
-            ISet<string> actualDuplicateItems;
-            ISet<string> actualUniqueItems = Utility.GetUniqueItems(collection, out actualDuplicateItems);
+            var actualUniqueItems = Utility.GetUniqueItems(collection, out var actualDuplicateItems);
 
             CollectionAssert.AreEquivalent(uniqueItems, actualUniqueItems);
             CollectionAssert.AreEquivalent(duplicateItems, actualDuplicateItems);

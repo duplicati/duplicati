@@ -1,4 +1,4 @@
-﻿// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -110,6 +110,37 @@ namespace Duplicati.UnitTest
                 {
                     Assert.IsNull(uri.Password);
                 }
+            }
+        }
+
+        [Test]
+        [Category("UriUtility")]
+        public static void TestUriParsePaths()
+        {
+            if (System.OperatingSystem.IsWindows())
+            {
+                var a = new Library.Utility.Uri("file://c:/a/b/");
+                var b = new Library.Utility.Uri("c:/a/b/");
+
+                Assert.AreEqual(a.ToString(), b.ToString());
+                Assert.AreEqual(a.Path, b.Path);
+
+                a = new Library.Utility.Uri("file://C:\\a\\b");
+                b = new Library.Utility.Uri("C:\\a\\b");
+                Assert.AreEqual(a.ToString(), b.ToString());
+                Assert.AreEqual(a.Path, b.Path);
+            }
+            else
+            {
+                var a = new Library.Utility.Uri("file:///a/b");
+                var b = new Library.Utility.Uri("/a/b");
+                Assert.AreEqual(a.ToString(), b.ToString());
+                Assert.AreEqual(a.Path, b.Path);
+
+                a = new Library.Utility.Uri("file:///a/b/");
+                b = new Library.Utility.Uri("/a/b/");
+                Assert.AreEqual(a.ToString(), b.ToString());
+                Assert.AreEqual(a.Path, b.Path);
             }
         }
     }

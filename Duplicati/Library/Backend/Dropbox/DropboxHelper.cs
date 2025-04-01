@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -18,14 +18,12 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
+
 using Duplicati.Library.Utility;
+using Duplicati.Library.Utility.Options;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using System;
-using System.IO;
 using System.Net;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Duplicati.Library.Backend
 {
@@ -34,16 +32,19 @@ namespace Duplicati.Library.Backend
         private const int DROPBOX_MAX_CHUNK_UPLOAD = 10 * 1024 * 1024; // 10 MB max upload
         private const string API_ARG_HEADER = "DROPBOX-API-arg";
 
-        public DropboxHelper(string accessToken)
+        private readonly TimeoutOptionsHelper.Timeouts m_timeouts;
+
+        public DropboxHelper(string accessToken, TimeoutOptionsHelper.Timeouts timeouts)
             : base(accessToken, "dropbox")
         {
+            m_timeouts = timeouts;
             base.AutoAuthHeader = true;
             // Pre 2022 tokens are direct Dropbox tokens (no ':')
             // Post 2022-02-21 tokens are regular authid tokens (with a ':')
             base.AccessTokenOnly = !accessToken.Contains(":");
         }
 
-        public ListFolderResult ListFiles(string path)
+        public async Task<ListFolderResult> ListFiles(string path, CancellationToken cancelToken)
         {
             var pa = new PathArg
             {
@@ -52,7 +53,9 @@ namespace Duplicati.Library.Backend
 
             try
             {
-                return PostAndGetJSONData<ListFolderResult>(WebApi.Dropbox.ListFilesUrl(), pa);
+                return await Utility.Utility.WithTimeout(m_timeouts.ListTimeout, cancelToken, ct =>
+                    PostAndGetJSONDataAsync<ListFolderResult>(WebApi.Dropbox.ListFilesUrl(), ct, pa)
+                ).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -61,13 +64,15 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public ListFolderResult ListFilesContinue(string cursor)
+        public async Task<ListFolderResult> ListFilesContinue(string cursor, CancellationToken cancelToken)
         {
             var lfca = new ListFolderContinueArg() { cursor = cursor };
 
             try
             {
-                return PostAndGetJSONData<ListFolderResult>(WebApi.Dropbox.ListFilesContinueUrl(), lfca);
+                return await Utility.Utility.WithTimeout(m_timeouts.ListTimeout, cancelToken, ct =>
+                    PostAndGetJSONDataAsync<ListFolderResult>(WebApi.Dropbox.ListFilesContinueUrl(), ct, lfca)
+                ).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -82,7 +87,9 @@ namespace Duplicati.Library.Backend
 
             try
             {
-                return await PostAndGetJSONDataAsync<FolderMetadata>(WebApi.Dropbox.CreateFolderUrl(), cancellationToken, pa).ConfigureAwait(false);
+                return await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancellationToken, ct =>
+                    PostAndGetJSONDataAsync<FolderMetadata>(WebApi.Dropbox.CreateFolderUrl(), ct, pa)
+                ).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -111,13 +118,14 @@ namespace Duplicati.Library.Backend
 
             ulong globalBytesRead = 0;
             using (var rs = areq.GetRequestStream())
+            using (var ts = rs.ObserveWriteTimeout(m_timeouts.ReadWriteTimeout))
             {
                 int bytesRead = 0;
                 do
                 {
                     bytesRead = await stream.ReadAsync(buffer, 0, sizeToRead, cancelToken).ConfigureAwait(false);
                     globalBytesRead += (ulong)bytesRead;
-                    await rs.WriteAsync(buffer, 0, bytesRead, cancelToken).ConfigureAwait(false);
+                    await ts.WriteAsync(buffer, 0, bytesRead, cancelToken).ConfigureAwait(false);
                 }
                 while (bytesRead > 0 && globalBytesRead < (ulong)chunksize);
             }
@@ -149,6 +157,7 @@ namespace Duplicati.Library.Backend
                 int bytesReadInRequest = 0;
                 sizeToRead = Math.Min(chunksize, (int)Utility.Utility.DEFAULT_BUFFER_SIZE);
                 using (var rs = areq.GetRequestStream())
+                using (var ts = rs.ObserveWriteTimeout(m_timeouts.ReadWriteTimeout))
                 {
                     int bytesRead = 0;
                     do
@@ -156,15 +165,18 @@ namespace Duplicati.Library.Backend
                         bytesRead = await stream.ReadAsync(buffer, 0, sizeToRead, cancelToken).ConfigureAwait(false);
                         bytesReadInRequest += bytesRead;
                         globalBytesRead += (ulong)bytesRead;
-                        await rs.WriteAsync(buffer, 0, bytesRead, cancelToken).ConfigureAwait(false);
+                        await ts.WriteAsync(buffer, 0, bytesRead, cancelToken).ConfigureAwait(false);
 
                     }
                     while (bytesRead > 0 && bytesReadInRequest < chunksize);
                 }
 
-                using (var response = GetResponse(areq))
-                using (var sr = new StreamReader(response.GetResponseStream()))
-                    await sr.ReadToEndAsync().ConfigureAwait(false);
+                await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, async ct =>
+                {
+                    using (var response = GetResponse(areq))
+                    using (var sr = new StreamReader(response.GetResponseStream()))
+                        await sr.ReadToEndAsync().ConfigureAwait(false);
+                }).ConfigureAwait(false);
             }
 
             // finish session and commit
@@ -180,7 +192,9 @@ namespace Duplicati.Library.Backend
                 req.ContentType = "application/octet-stream";
                 req.Timeout = 200000;
 
-                return ReadJSONResponse<FileMetaData>(req);
+                return await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, ct =>
+                    ReadJSONResponseAsync<FileMetaData>(req, ct)
+                ).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -198,8 +212,10 @@ namespace Duplicati.Library.Backend
                 var req = CreateRequest(WebApi.Dropbox.DownloadFilesUrl(), "POST");
                 req.Headers[API_ARG_HEADER] = JsonConvert.SerializeObject(pa);
 
-                using (var response = GetResponse(req))
-                    await Utility.Utility.CopyStreamAsync(response.GetResponseStream(), fs, cancelToken).ConfigureAwait(false);
+                using (var response = await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, ct => GetResponse(req)))
+                using (var rs = await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, ct => response.GetResponseStream()))
+                using (var ts = rs.ObserveReadTimeout(m_timeouts.ReadWriteTimeout))
+                    await Utility.Utility.CopyStreamAsync(ts, fs, cancelToken).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -212,10 +228,13 @@ namespace Duplicati.Library.Backend
         {
             try
             {
-                var pa = new PathArg() { path = path };
-                using (var response = await GetResponseAsync(WebApi.Dropbox.DeleteUrl(), cancelToken, pa).ConfigureAwait(false))
-                using (var sr = new StreamReader(response.GetResponseStream()))
-                    sr.ReadToEnd();
+                await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, async ct =>
+                {
+                    var pa = new PathArg() { path = path };
+                    using (var response = await GetResponseAsync(WebApi.Dropbox.DeleteUrl(), ct, pa).ConfigureAwait(false))
+                    using (var sr = new StreamReader(response.GetResponseStream()))
+                        await sr.ReadToEndAsync(ct).ConfigureAwait(false);
+                }).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -232,8 +251,9 @@ namespace Duplicati.Library.Backend
 
                 try
                 {
-                    using (var sr = new StreamReader(exception.Response.GetResponseStream()))
-                        json = sr.ReadToEnd();
+                    if (exception.Response != null)
+                        using (var sr = new StreamReader(exception.Response.GetResponseStream()))
+                            json = sr.ReadToEnd();
                 }
                 catch { }
 
@@ -245,26 +265,27 @@ namespace Duplicati.Library.Backend
                     if (httpResp.StatusCode == HttpStatusCode.NotFound)
                     {
                         if (filerequest)
-                            throw new Duplicati.Library.Interface.FileMissingException(json);
+                            throw new Interface.FileMissingException(json);
                         else
-                            throw new Duplicati.Library.Interface.FolderMissingException(json);
+                            throw new Interface.FolderMissingException(json);
                     }
                     if (httpResp.StatusCode == HttpStatusCode.Conflict)
                     {
                         //TODO: Should actually parse and see if something else happens
                         if (filerequest)
-                            throw new Duplicati.Library.Interface.FileMissingException(json);
+                            throw new Interface.FileMissingException(json);
                         else
-                            throw new Duplicati.Library.Interface.FolderMissingException(json);
+                            throw new Interface.FolderMissingException(json);
                     }
                     if (httpResp.StatusCode == HttpStatusCode.Unauthorized)
                         ThrowAuthException(json, exception);
+
                     if ((int)httpResp.StatusCode == 429 || (int)httpResp.StatusCode == 507)
-                        ThrowOverQuotaError();
+                        throw new Interface.UserInformationException(Strings.Dropbox.OverQuotaError(string.IsNullOrWhiteSpace(json) ? exception.Message : json), "DropboxOverQuotaError", ex);
                 }
 
 
-                JObject errJson = null;
+                JObject? errJson = null;
                 try
                 {
                     errJson = JObject.Parse(json);
@@ -275,20 +296,22 @@ namespace Duplicati.Library.Backend
 
                 if (errJson != null)
                     throw new DropboxException() { errorJSON = errJson };
+                else if (exception.Response is HttpWebResponse wresp)
+                    throw new InvalidDataException($"Non-json response (code: {wresp.StatusCode}, message: {wresp.StatusDescription}): {json}", ex);
                 else
-                    throw new InvalidDataException($"Non-json response: {json}");
+                    throw new InvalidDataException($"Non-json response: {json}", ex);
             }
         }
     }
 
     public class DropboxException : Exception
     {
-        public JObject errorJSON { get; set; }
+        public JObject? errorJSON { get; set; }
     }
 
     public class PathArg
     {
-        public string path { get; set; }
+        public string? path { get; set; }
     }
 
     public class FolderMetadata : MetaData
@@ -329,7 +352,7 @@ namespace Duplicati.Library.Backend
 
     public class UploadSessionCursor
     {
-        public string session_id { get; set; }
+        public string? session_id { get; set; }
         public ulong offset { get; set; }
     }
 
@@ -341,7 +364,7 @@ namespace Duplicati.Library.Backend
             autorename = false;
             mute = true;
         }
-        public string path { get; set; }
+        public string? path { get; set; }
         public string mode { get; set; }
         public bool autorename { get; set; }
         public bool mute { get; set; }
@@ -350,41 +373,40 @@ namespace Duplicati.Library.Backend
 
     public class UploadSessionStartResult
     {
-        public string session_id { get; set; }
+        public string? session_id { get; set; }
     }
 
     public class ListFolderResult
     {
+        public MetaData[]? entries { get; set; }
 
-        public MetaData[] entries { get; set; }
-
-        public string cursor { get; set; }
+        public string? cursor { get; set; }
         public bool has_more { get; set; }
     }
 
     public class ListFolderContinueArg
     {
-        public string cursor { get; set; }
+        public string? cursor { get; set; }
     }
 
     public class MetaData
     {
         [JsonProperty(".tag")]
-        public string tag { get; set; }
-        public string name { get; set; }
-        public string server_modified { get; set; }
+        public string? tag { get; set; }
+        public string? name { get; set; }
+        public string? server_modified { get; set; }
         public ulong size { get; set; }
         public bool IsFile { get { return tag == "file"; } }
 
         // While this is unused, the Dropbox API v2 documentation does not
         // declare this to be optional.
         // ReSharper disable once UnusedMember.Global
-        public string id { get; set; }
+        public string? id { get; set; }
 
         // While this is unused, the Dropbox API v2 documentation does not
         // declare this to be optional.
         // ReSharper disable once UnusedMember.Global
-        public string rev { get; set; }
+        public string? rev { get; set; }
     }
 
     public class FileMetaData : MetaData

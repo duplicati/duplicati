@@ -1,4 +1,4 @@
-﻿﻿// Copyright (C) 2024, The Duplicati Team
+﻿// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -19,8 +19,8 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
-using Duplicati.Library.Logging;
 using System;
+using System.Threading;
 
 namespace Duplicati.Library.Localization
 {
@@ -30,9 +30,13 @@ namespace Duplicati.Library.Localization
     internal class LocalizationContext : IDisposable
     {
         /// <summary>
+        /// The current culture, using an async local to keep the call context
+        /// </summary>
+        private static readonly AsyncLocal<string> _currentCulture = new();
+        /// <summary>
         /// The previous context
         /// </summary>
-        private readonly object m_prev;
+        private readonly string m_prev;
 
         /// <summary>
         /// Flag to prevent double dispose
@@ -45,11 +49,16 @@ namespace Duplicati.Library.Localization
         /// <param name="ci">The localization to use.</param>
         public LocalizationContext(System.Globalization.CultureInfo ci)
         {
-            m_prev = CallContext.GetData(LocalizationService.LOGICAL_CONTEXT_KEY) as string;
-            CallContext.SetData(LocalizationService.LOGICAL_CONTEXT_KEY, ci.Name);
+            m_prev = _currentCulture.Value;
+            _currentCulture.Value = ci.Name;
 
             m_isDisposed = false;
         }
+
+        /// <summary>
+        /// Returns the current culture value for the call context
+        /// </summary>
+        public static string Current => _currentCulture.Value;
 
         /// <summary>
         /// Releases all resource used by the <see cref="T:Duplicati.Library.Localization.LocalizationContext"/> object.
@@ -64,7 +73,7 @@ namespace Duplicati.Library.Localization
         {
             if (!m_isDisposed)
             {
-                CallContext.SetData(LocalizationService.LOGICAL_CONTEXT_KEY, m_prev);
+                _currentCulture.Value = m_prev;
                 m_isDisposed = true;
             }
         }

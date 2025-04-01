@@ -1,0 +1,25 @@
+<div class="input select">
+    <label for="pcloud_server" translate>Server</label>
+    <select name="pcloud_server"
+            id="pcloud_server"
+            ng-model="$parent.Server">
+        <option value="api.pcloud.com">
+            {{'pCloud Global (api.pcloud.com)' | translate}}
+        </option>
+        <option value="eapi.pcloud.com">
+            {{'pCloud EU (eapi.pcloud.com)' | translate}}
+        </option>
+    </select>
+</div>
+<div class="input text">
+    <label for="oauth_path" translate>Path on server</label>
+    <input type="text" name="oauth_path" id="oauth_path" ng-model="$parent.Path" placeholder="{{'Destination path' | translate}}" />
+</div>
+
+<div class="input text">
+    <label for="oauth_authid">
+        <a ng-show="oauth_in_progress" href="{{oauth_start_link_v2}}" target="_blank" translate>AuthID</a>
+        <a ng-hide="oauth_in_progress" href ng-click="oauth_start_token_creation_v2()" translate>AuthID</a>
+    </label>
+    <input type="text" name="oauth_authid" id="oauth_authid" ng-model="$parent.AuthID" placeholder="{{'Click the AuthID link to create an AuthID' | translate}}" />
+</div>

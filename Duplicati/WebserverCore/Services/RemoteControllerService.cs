@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -19,7 +19,6 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
-using System.Net.Http.Headers;
 using Duplicati.Library.RemoteControl;
 using Duplicati.Server.Database;
 using Duplicati.WebserverCore.Abstractions;
@@ -31,9 +30,8 @@ namespace Duplicati.WebserverCore.Services;
 /// Controller for toggling remote control.
 /// </summary>
 /// <param name="connection">The connection to the database</param>
-/// <param name="httpClientFactory">The HTTP client factory</param>
-/// <param name="jwtTokenProvider">The JWT token provider</param>
-public class RemoteControllerService(Connection connection, IHttpClientFactory httpClientFactory, IJWTTokenProvider jwtTokenProvider) : IRemoteController
+/// <param name="controllerHandler">The remote controller handler</param>
+public class RemoteControllerService(Connection connection, IRemoteControllerHandler controllerHandler) : IRemoteController
 {
     /// <summary>
     /// Gets a value indicating whether remote control is enabled.
@@ -73,7 +71,7 @@ public class RemoteControllerService(Connection connection, IHttpClientFactory h
         if (!CanEnable)
             throw new InvalidOperationException("Remote control is not configured");
 
-        var config = JsonConvert.DeserializeObject<RemoteControlConfig>(connection.ApplicationSettings.RemoteControlConfig)
+        var config = JsonConvert.DeserializeObject<RemoteControlConfig>(connection.ApplicationSettings.RemoteControlConfig ?? string.Empty)
             ?? throw new InvalidOperationException("Invalid remote control configuration");
 
         _keepRemoteConnection = KeepRemoteConnection.CreateRemoteListener(
@@ -82,53 +80,13 @@ public class RemoteControllerService(Connection connection, IHttpClientFactory h
             config.CertificateUrl,
             config.ServerCertificates,
             CancellationToken.None,
-            ReKey,
-            OnMessage
+            controllerHandler.OnConnect,
+            controllerHandler.ReKey,
+            controllerHandler.OnControl,
+            controllerHandler.OnMessage
         );
 
         connection.ApplicationSettings.RemoteControlEnabled = true;
-    }
-
-    /// <summary>
-    /// Re-keys the remote control connection.
-    /// </summary>
-    /// <param name="data">The data to re-key with</param>
-    /// <returns>An awaitable task</returns>
-    private Task ReKey(ClaimedClientData data)
-    {
-        var oldCerts = connection.ApplicationSettings.RemoteControlConfig == null
-            ? null
-            : JsonConvert.DeserializeObject<RemoteControlConfig>(connection.ApplicationSettings.RemoteControlConfig)?.ServerCertificates;
-
-        connection.ApplicationSettings.RemoteControlConfig = JsonConvert.SerializeObject(new RemoteControlConfig
-        {
-            Token = data.JWT,
-            ServerCertificates = data.ServerCertificates ?? oldCerts ?? [],
-            ServerUrl = data.ServerUrl,
-            CertificateUrl = data.CertificateUrl
-        });
-
-        // TODO: Implement changing the encryption key
-        // if (!string.IsNullOrWhiteSpace(data.LocalEncryptionKey) && data.LocalEncryptionKey != connection.ApplicationSettings.SettingsEncryptionKey)
-        //     connection.ChangeDbKey(keydata.LocalEncryptionKey);
-
-        return Task.CompletedTask;
-    }
-
-    /// <summary>
-    /// Handles a command message.
-    /// </summary>
-    /// <param name="commandMessage">The command message to handle</param>
-    /// <returns>An awaitable task</returns>
-    private async Task OnMessage(KeepRemoteConnection.CommandMessage commandMessage)
-    {
-        using var httpClient = httpClientFactory.CreateClient();
-        var token = jwtTokenProvider.CreateAccessToken("remote-control", jwtTokenProvider.TemporaryFamilyId, TimeSpan.FromMinutes(2));
-
-        httpClient.BaseAddress = new Uri($"{(connection.ApplicationSettings.UseHTTPS ? "https" : "http")}://127.0.0.1:{connection.ApplicationSettings.LastWebserverPort}");
-        httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
-        await commandMessage.Handle(httpClient);
     }
 
     /// </inheritdoc>

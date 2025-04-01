@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -26,21 +26,70 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http.Headers;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace Duplicati.Library
 {
+    /// <summary>
+    /// Helper class to manage the Retry-After header for a given URL.
+    /// </summary>
     public class RetryAfterHelper
     {
+        /// <summary>
+        /// The log tag for this class.
+        /// </summary>
         private static readonly string LOGTAG = Log.LogTagFromType<RetryAfterHelper>();
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="RetryAfterHelper"/> class.
+        /// </summary>
+        private RetryAfterHelper()
+        {
+        }
 
         // Whenever a response includes a Retry-After header, we'll update this timestamp with when we can next
         // send a request. And before sending any requests, we'll make sure to wait until at least this time.
         // Since this may be read and written by multiple threads, it is stored as a long and updated using Interlocked.Exchange.
         private long retryAfter = DateTimeOffset.MinValue.UtcTicks;
 
+        /// <summary>
+        /// The lock object to ensure thread safety for accessing the retry after helpers.
+        /// </summary>
+        private static object _lock = new object();
+        /// <summary>
+        /// Lookup table that maps the URL to the RetryAfterHelper for that URL.
+        /// </summary>
+        private static Dictionary<string, RetryAfterHelper> _retryAfterHelpers = new Dictionary<string, RetryAfterHelper>();
+
+        /// <summary>
+        /// Backends generally do not keep any state, but the retry after header is stateful,
+        /// as it depends on the last request. This method obtains a helper object for the url,
+        /// so a small amount of state can be shared between instances.
+        /// </summary>
+        /// <param name="url">The URL to get the RetryAfterHelper for.</param>
+        /// <returns>The RetryAfterHelper for the given URL.</returns>
+        public static RetryAfterHelper CreateOrGetRetryAfterHelper(string url)
+        {
+            lock (_lock)
+            {
+                // Remove any expired entries
+                foreach (var (k, h) in _retryAfterHelpers.ToArray())
+                    if (h.retryAfter < DateTimeOffset.UtcNow.UtcTicks)
+                        _retryAfterHelpers.Remove(k);
+
+                // Get the RetryAfterHelper for the given URL, or create a new one if it doesn't exist
+                if (!_retryAfterHelpers.TryGetValue(url, out var retryAfterHelper))
+                    _retryAfterHelpers[url] = retryAfterHelper = new RetryAfterHelper();
+
+                return retryAfterHelper;
+            }
+        }
+
+        /// <summary>
+        /// Sets the Retry-After header value for the next request.
+        /// </summary>
+        /// <param name="retryAfter">The Retry-After header value to set.</param>
         public void SetRetryAfter(RetryConditionHeaderValue retryAfter)
         {
             if (retryAfter != null)
@@ -82,27 +131,39 @@ namespace Duplicati.Library
             }
         }
 
+        /// <summary>
+        /// Waits for the time specified in the Retry-After header before returning.
+        /// </summary>
         public void WaitForRetryAfter()
         {
             this.WaitForRetryAfterAsync(CancellationToken.None).Await();
         }
 
+        /// <summary>
+        /// Waits for the time specified in the Retry-After header before continuing.
+        /// </summary>
+        /// <param name="cancelToken">The cancellation token to cancel the wait.</param>
+        /// <returns>A task that completes when the wait is done.</returns>
         public async Task WaitForRetryAfterAsync(CancellationToken cancelToken)
         {
             TimeSpan delay = this.GetDelayTime();
 
             if (delay > TimeSpan.Zero)
             {
-                Log.WriteProfilingMessage(
+                Log.WriteInformationMessage(
                     LOGTAG,
                     "RetryAfterWait",
                     "Waiting for {0} to respect Retry-After header",
                     delay);
 
-                await Task.Delay(delay).ConfigureAwait(false);
+                await Task.Delay(delay, cancelToken).ConfigureAwait(false);
             }
         }
 
+        /// <summary>
+        /// Gets the delay time until the next request can be made.
+        /// </summary>
+        /// <returns>The delay time until the next request can be made.</returns>
         private TimeSpan GetDelayTime()
         {
             // Make sure this is thread safe in case multiple calls are made concurrently to this backend

@@ -1,3 +1,23 @@
+// Copyright (C) 2025, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
 using System.CommandLine;
 using System.CommandLine.NamingConventionBinder;
 using System.Security.Cryptography;
@@ -65,6 +85,9 @@ public static partial class Command
         { "Duplicati.CommandLine.SharpAESCrypt", "duplicati-aescrypt" },
         { "Duplicati.CommandLine.Snapshots", "duplicati-snapshots" },
         { "Duplicati.CommandLine.ServerUtil", "duplicati-server-util" },
+        { "Duplicati.CommandLine.SecretTool", "duplicati-secret-tool" },
+        { "Duplicati.CommandLine.SyncTool", "duplicati-sync-tool" },
+        { "Duplicati.CommandLine.SourceTool", "duplicati-source-tool" },
         { "Duplicati.Service", "duplicati-service" },
         { "Duplicati.Agent", "duplicati-agent" },
         { "Duplicati.CommandLine", "duplicati-cli" },
@@ -200,6 +223,12 @@ public static partial class Command
 
         var passwordOption = SharedOptions.passwordOption;
 
+        var signkeyPinOption = new Option<string>(
+            name: "--signkey-pin",
+            description: "The pin to use for the signing key",
+            getDefaultValue: () => string.Empty
+        );
+
         var disableDockerPushOption = new Option<bool>(
             name: "--disable-docker-push",
             description: "Disables pushing the docker image to the repository",
@@ -219,7 +248,7 @@ public static partial class Command
         );
 
         var changelogFileOption = new Option<FileInfo>(
-            name: "--changelog-file",
+            name: "--changelog-news-file",
             description: "The path to the changelog news file. Contents from this file are prepended to the changelog.",
             getDefaultValue: () => new FileInfo(Path.GetFullPath("changelog-news.txt"))
         );
@@ -272,6 +301,18 @@ public static partial class Command
             getDefaultValue: () => false
         );
 
+        var resumeFromUploadOption = new Option<bool>(
+            name: "--resume-from-upload",
+            description: "Resumes the build process from the upload step",
+            getDefaultValue: () => false
+        );
+
+        var propagateReleaseOption = new Option<bool>(
+            name: "--propagate-release",
+            description: "Propagate the release to the next channel",
+            getDefaultValue: () => false
+        );
+
         var command = new System.CommandLine.Command("build", "Builds the packages for a release") {
             gitStashPushOption,
             releaseChannelArgument,
@@ -283,6 +324,7 @@ public static partial class Command
             disableAuthenticodeOption,
             disableCodeSignOption,
             passwordOption,
+            signkeyPinOption,
             macOsAppNameOption,
             disableDockerPushOption,
             dockerRepoOption,
@@ -294,7 +336,9 @@ public static partial class Command
             disableGithubUploadOption,
             disableUpdateServerReloadOption,
             disableDiscordAnnounceOption,
-            useHostedBuildsOption
+            useHostedBuildsOption,
+            resumeFromUploadOption,
+            propagateReleaseOption
         };
 
         command.Handler = CommandHandler.Create<CommandInput>(DoBuild);
@@ -315,10 +359,11 @@ public static partial class Command
     /// <param name="DisableAuthenticode">If authenticode signing should be disabled</param>
     /// <param name="DisableSignCode">If signcode should be disabled</param>
     /// <param name="Password">The password to use for the keyfile</param>
+    /// <param name="SignkeyPin">The pin to use for the signing key</param>
     /// <param name="DisableDockerPush">If the docker push should be disabled</param>
     /// <param name="MacOSAppName">The name of the MacOS app bundle</param>
     /// <param name="DockerRepo">The docker repository to push to</param>
-    /// <param name="ChangelogFile">The path to the changelog file</param>
+    /// <param name="ChangelogNewsFile">The path to the changelog news file</param>
     /// <param name="DisableNotarizeSigning">If notarize signing should be disabled</param>
     /// <param name="DisableGpgSigning">If GPG signing should be disabled</param>
     /// <param name="DisableS3Upload">If S3 upload should be disabled</param>
@@ -326,6 +371,8 @@ public static partial class Command
     /// <param name="DisableUpdateServerReload">If the update server should not be reloaded</param>
     /// <param name="DisableDiscordAnnounce">If forum posting should be disabled</param>
     /// <param name="UseHostedBuilds">If hosted builds should be used</param>
+    /// <param name="ResumeFromUpload">If the process should resume from the upload step</param>
+    /// <param name="PropagateRelease">If the release should be propagated to the next channel</param>
     record CommandInput(
         PackageTarget[] Targets,
         DirectoryInfo BuildPath,
@@ -338,22 +385,26 @@ public static partial class Command
         bool DisableAuthenticode,
         bool DisableSignCode,
         string Password,
+        string SignkeyPin,
         bool DisableDockerPush,
         string MacOSAppName,
         string DockerRepo,
-        FileInfo ChangelogFile,
+        FileInfo ChangelogNewsFile,
         bool DisableNotarizeSigning,
         bool DisableGpgSigning,
         bool DisableS3Upload,
         bool DisableGithubUpload,
         bool DisableUpdateServerReload,
         bool DisableDiscordAnnounce,
-        bool UseHostedBuilds
+        bool UseHostedBuilds,
+        bool ResumeFromUpload,
+        bool PropagateRelease
     );
 
     static async Task DoBuild(CommandInput input)
     {
         Console.WriteLine($"Building {input.Channel} release ...");
+        var configuration = Configuration.Create(input.Channel);
 
         var buildTargets = input.Targets;
 
@@ -364,15 +415,15 @@ public static partial class Command
             throw new FileNotFoundException($"Solution file not found: {input.SolutionFile.FullName}");
 
         // This could be fixed, so we will throw an exception if the build is not possible
-        if (buildTargets.Any(x => x.Package == PackageType.MSI) && !Program.Configuration.IsMSIBuildPossible())
+        if (buildTargets.Any(x => x.Package == PackageType.MSI) && !configuration.IsMSIBuildPossible())
             throw new Exception("WiX toolset not configured, cannot build MSI files");
 
         // This will be fixed in the future, but requires a new http-interface for Synology DSM
-        if (buildTargets.Any(x => x.Package == PackageType.SynologySpk) && !Program.Configuration.IsSynologyPkgPossible())
+        if (buildTargets.Any(x => x.Package == PackageType.SynologySpk) && !configuration.IsSynologyPkgPossible())
             throw new Exception("Synology SPK files are currently not supported");
 
         // This will not work, so to make it easier for non-MacOS developers, we will remove the MacOS packages
-        if (buildTargets.Any(x => x.Package == PackageType.MacPkg || x.Package == PackageType.DMG) && !Program.Configuration.IsMacPkgBuildPossible())
+        if (buildTargets.Any(x => x.Package == PackageType.MacPkg || x.Package == PackageType.DMG) && !configuration.IsMacPkgBuildPossible())
         {
             Console.WriteLine("MacOS packages requested but not running on MacOS, removing from build targets");
             buildTargets = buildTargets.Where(x => x.Package != PackageType.MacPkg && x.Package != PackageType.DMG).ToArray();
@@ -407,28 +458,28 @@ public static partial class Command
         if (!File.Exists(primaryCLI))
             throw new Exception($"Failed to locate project file: {primaryCLI}");
 
-        if (!input.ChangelogFile.Exists)
+        if (!input.ChangelogNewsFile.Exists)
         {
-            Console.WriteLine($"Changelog news file not found: {input.ChangelogFile.FullName}");
+            Console.WriteLine($"Changelog news file not found: {input.ChangelogNewsFile.FullName}");
             Console.WriteLine($"Create an empty file if you want a release without changes");
             if (OperatingSystem.IsWindows())
-                Console.WriteLine($"> type nul > {input.ChangelogFile.FullName}");
+                Console.WriteLine($"> type nul > {input.ChangelogNewsFile.FullName}");
             else
-                Console.WriteLine($"> touch {input.ChangelogFile.FullName}");
+                Console.WriteLine($"> touch {input.ChangelogNewsFile.FullName}");
 
             Program.ReturnCode = 1;
             return;
         }
 
-        if (input.ChangelogFile.LastAccessTimeUtc < DateTime.UtcNow.AddDays(-1))
+        if (input.ChangelogNewsFile.LastAccessTimeUtc < DateTime.UtcNow.AddDays(-1))
         {
-            Console.WriteLine($"Changelog news file was last modified {input.ChangelogFile.LastAccessTimeUtc:yyyy-MM-dd}, indicating a stale file");
+            Console.WriteLine($"Changelog news file was last modified {input.ChangelogNewsFile.LastAccessTimeUtc:yyyy-MM-dd}, indicating a stale file");
             Console.WriteLine($"Please update the file with the changelog news for the release");
             Program.ReturnCode = 1;
             return;
         }
 
-        var changelogNews = File.ReadAllText(input.ChangelogFile.FullName);
+        var changelogNews = File.ReadAllText(input.ChangelogNewsFile.FullName);
 
         var releaseInfo = string.IsNullOrWhiteSpace(input.Version)
             ? ReleaseInfo.Create(input.Channel, Version.Parse(File.ReadAllText(versionFilePath)), 1)
@@ -441,13 +492,14 @@ public static partial class Command
         if (string.IsNullOrWhiteSpace(keyfilePassword))
             keyfilePassword = ConsoleHelper.ReadPassword("Enter keyfile password");
 
-        var primarySignKey = LoadKeyFile(Program.Configuration.ConfigFiles.UpdaterKeyfile.FirstOrDefault(), keyfilePassword, false);
-        var additionalKeys = Program.Configuration.ConfigFiles.UpdaterKeyfile
+        var primarySignKey = LoadKeyFile(configuration.ConfigFiles.UpdaterKeyfile.FirstOrDefault(), keyfilePassword, false);
+        var additionalKeys = configuration.ConfigFiles.UpdaterKeyfile
             .Skip(1)
             .Select(x => LoadKeyFile(x, keyfilePassword, true));
 
         // Configure runtime environment
         var rtcfg = new RuntimeConfig(
+            configuration,
             releaseInfo,
             additionalKeys.Prepend(primarySignKey).ToList(),
             keyfilePassword,
@@ -471,6 +523,15 @@ public static partial class Command
                 throw new Exception($"The following packages cannot be built without Docker: {string.Join(", ", unsupportedBuilds.Select(x => x.PackageTargetString))}");
         }
 
+        // Prevent the system from going to sleep during the build
+        using var _ = new KeepAliveAssertion();
+
+        if (rtcfg.UseGithubUpload && !input.GitStashPush)
+        {
+            Console.WriteLine("Github upload requested, but pushing the tag is disabled");
+            Program.ReturnCode = 1;
+        }
+
         if (!input.KeepBuilds && Directory.Exists(input.BuildPath.FullName))
         {
             Console.WriteLine($"Deleting build folder: {input.BuildPath.FullName}");
@@ -482,7 +543,7 @@ public static partial class Command
 
         // Generally, the builds should happen with a clean source tree, 
         // but this can be disabled for debugging
-        if (input.GitStashPush)
+        if (input.GitStashPush && !input.ResumeFromUpload)
             await ProcessHelper.Execute(["git", "stash", "save", $"auto-build-{releaseInfo.Timestamp:yyyy-MM-dd}"], workingDirectory: baseDir);
 
         // Inject various files that will be embedded into the build artifacts
@@ -541,11 +602,11 @@ public static partial class Command
                 }),
                 Path.Combine(input.BuildPath.FullName, "packages"),
                 version: releaseInfo.Version.ToString(),
-                incompatibleUpdateUrl: ReplaceVersionPlaceholders(Program.Configuration.ExtraSettings.UpdateFromIncompatibleVersionUrl, releaseInfo),
-                genericUpdatePageUrl: ReplaceVersionPlaceholders(Program.Configuration.ExtraSettings.GenericUpdatePageUrl, releaseInfo),
+                incompatibleUpdateUrl: ReplaceVersionPlaceholders(configuration.ExtraSettings.UpdateFromIncompatibleVersionUrl, releaseInfo),
+                genericUpdatePageUrl: ReplaceVersionPlaceholders(configuration.ExtraSettings.GenericUpdatePageUrl, releaseInfo),
                 releaseType: releaseInfo.Channel.ToString().ToLowerInvariant(),
                 packages: builtPackages.Select(x => new PackageEntry(
-                    RemoteUrls: Program.Configuration.ExtraSettings.PackageUrls
+                    RemoteUrls: configuration.ExtraSettings.PackageUrls
                         .Select(u =>
                             ReplaceVersionPlaceholders(u, releaseInfo)
                             .Replace("${FILENAME}", HttpUtility.UrlEncode(Path.GetFileName(x.CreatedFile)))
@@ -575,6 +636,18 @@ public static partial class Command
             files.Add(sigfile);
         }
 
+        // Ensure the tag is pushed before uploading, so the uploaded files
+        // are associated with the release tag
+        if (input.GitStashPush && !input.ResumeFromUpload)
+            await GitPush.TagAndPush(baseDir, releaseInfo);
+
+        // Propagate the release to the next channel, if selected
+        var nextChannels = new[] { ReleaseChannel.Experimental, ReleaseChannel.Beta, ReleaseChannel.Stable }
+            .Where(x => x > releaseInfo.Channel)
+            .Where(x => rtcfg.ReleaseInfo.Channel != ReleaseChannel.Canary)
+            .Where(x => input.PropagateRelease)
+            .ToArray();
+
         if (rtcfg.UseS3Upload || rtcfg.UseGithubUpload)
         {
             Console.WriteLine("Build completed, uploading packages ...");
@@ -583,33 +656,37 @@ public static partial class Command
                 var manifestNames = new[] { $"duplicati-{releaseInfo.ReleaseName}.manifest", "latest-v2.manifest" };
 
                 var packageJson = Path.Combine(input.BuildPath.FullName, "packages", "latest-v2.json");
-                var packageJs = Path.Combine(input.BuildPath.FullName, "packages", "latest-v2.js");
                 var content = Upload.CreatePackageJson(builtPackages, rtcfg);
 
                 File.WriteAllText(packageJson, content);
-                File.WriteAllText(packageJs, $"duplicati_installers = {content};");
 
                 var uploads = files.Select(x => new Upload.UploadFile(x, Path.GetFileName(x)))
                    .Concat(manifestNames.Select(x => new Upload.UploadFile(manifestfile, x)))
                    .Append(new Upload.UploadFile(packageJson, Path.GetFileName(packageJson)))
-                   .Append(new Upload.UploadFile(packageJs, Path.GetFileName(packageJs)))
-                   .Append(new Upload.UploadFile(packageJson, $"latest-v2-{releaseInfo.Version}.json"))
-                   .Append(new Upload.UploadFile(packageJs, $"latest-v2-{releaseInfo.Version}.js"));
+                   .Append(new Upload.UploadFile(packageJson, $"latest-v2-{releaseInfo.Version}.json"));
 
-                await Upload.UploadToS3(uploads, rtcfg);
+                await Upload.UploadToS3(uploads, rtcfg, nextChannels);
             }
 
             if (rtcfg.UseGithubUpload)
+            {
+                if (!rtcfg.UseS3Upload && input.GitStashPush && !input.ResumeFromUpload)
+                {
+                    Console.WriteLine("Waiting for Github to create the release tag ...");
+                    await Task.Delay(TimeSpan.FromSeconds(30));
+                }
+
                 await Upload.UploadToGithub(
                     files.Select(x => new Upload.UploadFile(x, Path.GetFileName(x))),
                     rtcfg
                 );
+            }
         }
 
         if (rtcfg.UseUpdateServerReload)
         {
             Console.WriteLine("Release completed, reloading update server ...");
-            await Upload.ReloadUpdateServer(rtcfg);
+            await Upload.ReloadUpdateServer(rtcfg, nextChannels);
         }
 
         if (rtcfg.UseForumPosting)
@@ -620,10 +697,8 @@ public static partial class Command
 
         if (input.GitStashPush)
         {
-            await GitPush.TagAndPush(baseDir, releaseInfo);
-
             // Contents are added to changelog, so we can remove the file
-            input.ChangelogFile.Delete();
+            input.ChangelogNewsFile.Delete();
         }
 
         // Clean up the source tree
@@ -631,10 +706,18 @@ public static partial class Command
             if (Directory.Exists(folder))
                 Directory.Delete(folder, true);
 
-        await ProcessHelper.Execute(new[] {
+        // This often fails and should be fixed
+        try
+        {
+            await ProcessHelper.Execute(new[] {
                 "git", "checkout",
             }.Concat(revertableFiles.Select(x => Path.GetRelativePath(baseDir, x)))
-         , workingDirectory: baseDir);
+             , workingDirectory: baseDir);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Warning: Failed to clean source directory: {ex.Message}");
+        }
 
         Console.WriteLine("All done!");
     }
@@ -675,17 +758,29 @@ public static partial class Command
                 regex.Replace(File.ReadAllText(file), $"?v={releaseInfo.Version}")
             );
 
-        var wixFile = Path.Combine(baseDir, "ReleaseBuilder", "Resources", "Windows", "UpgradeData.wxi");
+        var wixFileGUI = Path.Combine(baseDir, "ReleaseBuilder", "Resources", "Windows", "TrayIcon", "UpgradeData.wxi");
         File.WriteAllText(
-            wixFile,
+            wixFileGUI,
             Regex.Replace(
-                File.ReadAllText(wixFile),
+                File.ReadAllText(wixFileGUI),
                 @"\<\?define ProductVersion\=\""" + versionre + @"\"" \?\>",
                 $"<?define ProductVersion=\"{releaseInfo.Version}\" ?>"
             )
         );
 
-        targetfiles.Add(wixFile);
+        targetfiles.Add(wixFileGUI);
+
+        var wixFileAgent = Path.Combine(baseDir, "ReleaseBuilder", "Resources", "Windows", "Agent", "UpgradeData.wxi");
+        File.WriteAllText(
+            wixFileAgent,
+            Regex.Replace(
+                File.ReadAllText(wixFileAgent),
+                @"\<\?define ProductVersion\=\""" + versionre + @"\"" \?\>",
+                $"<?define ProductVersion=\"{releaseInfo.Version}\" ?>"
+            )
+        );
+
+        targetfiles.Add(wixFileAgent);
 
         return targetfiles;
     }
@@ -701,7 +796,7 @@ public static partial class Command
     /// <returns>Modified files</returns>
     static Task<List<string>> PrepareSourceDirectory(string baseDir, ReleaseInfo releaseInfo, RuntimeConfig rtcfg)
     {
-        var urlstring = string.Join(";", Program.Configuration.ExtraSettings.UpdaterUrls.Select(x =>
+        var urlstring = string.Join(";", rtcfg.Configuration.ExtraSettings.UpdaterUrls.Select(x =>
             ReplaceVersionPlaceholders(x, releaseInfo)
             .Replace("${FILENAME}", HttpUtility.UrlEncode("latest-v2.manifest"))
         ));
@@ -749,8 +844,8 @@ public static partial class Command
             JsonSerializer.Serialize(new { Displayname = $"Duplicati v{releaseInfo.Version} - {releaseInfo.Channel}" }),
             Path.Combine(baseDir, "Duplicati", "Library", "AutoUpdater"),
             version: releaseInfo.Version.ToString(),
-            incompatibleUpdateUrl: ReplaceVersionPlaceholders(Program.Configuration.ExtraSettings.UpdateFromIncompatibleVersionUrl, releaseInfo),
-            genericUpdatePageUrl: ReplaceVersionPlaceholders(Program.Configuration.ExtraSettings.GenericUpdatePageUrl, releaseInfo),
+            incompatibleUpdateUrl: ReplaceVersionPlaceholders(rtcfg.Configuration.ExtraSettings.UpdateFromIncompatibleVersionUrl, releaseInfo),
+            genericUpdatePageUrl: ReplaceVersionPlaceholders(rtcfg.Configuration.ExtraSettings.GenericUpdatePageUrl, releaseInfo),
             releaseType: releaseInfo.Channel.ToString().ToLowerInvariant()
         );
 
@@ -785,7 +880,7 @@ public static partial class Command
 
         foreach (var target in targets)
         {
-            if (string.IsNullOrWhiteSpace(Program.Configuration.Commands.Npm))
+            if (string.IsNullOrWhiteSpace(rtcfg.Configuration.Commands.Npm))
                 throw new Exception("NPM command not found, but required for building");
 
             // Remove existing node_modules folder
@@ -803,7 +898,7 @@ public static partial class Command
             EnvHelper.CopyDirectory(target, tmp, true);
 
             // Run npm install in the temporary folder
-            await ProcessHelper.Execute(new[] { Program.Configuration.Commands.Npm, "ci" }, workingDirectory: tmp);
+            await ProcessHelper.Execute([rtcfg.Configuration.Commands.Npm, "ci"], workingDirectory: tmp);
             var basefolder = Directory.EnumerateDirectories(Path.Combine(tmp, "node_modules"), "*", SearchOption.AllDirectories)
                 .Where(x => File.Exists(Path.Combine(x, "index.html")))
                 .OrderBy(x => x.Length)

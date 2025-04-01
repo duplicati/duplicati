@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -52,23 +52,23 @@ namespace Duplicati.Library.Backend
         private class UserInfo
         {
             [JsonProperty("sub")]
-            public string Subject { get; set; }
+            public string? Subject { get; set; }
             [JsonProperty("email_verified")]
             public bool EmailVerified { get; set; }
             [JsonProperty("name")]
-            public string Name { get; set; }
+            public string? Name { get; set; }
             [JsonProperty("realm")]
-            public string Realm { get; set; }
+            public string? Realm { get; set; }
             [JsonProperty("preferred_username")]
-            public string PreferredUsername { get; set; } // The numeric internal username, same as Username
+            public string? PreferredUsername { get; set; } // The numeric internal username, same as Username
             [JsonProperty("given_name")]
-            public string GivenName { get; set; }
+            public string? GivenName { get; set; }
             [JsonProperty("family_name")]
-            public string FamilyName { get; set; }
+            public string? FamilyName { get; set; }
             [JsonProperty("email")]
-            public string Email { get; set; }
+            public string? Email { get; set; }
             [JsonProperty("username")]
-            public string Username { get; set; } // The numeric internal username, same as PreferredUsername
+            public string? Username { get; set; } // The numeric internal username, same as PreferredUsername
         }
     }
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -19,14 +19,6 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
-
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
-using Duplicati.Library.Interface;
-
 namespace Duplicati.Library.Backend
 {
     /// <summary>
@@ -39,29 +31,18 @@ namespace Duplicati.Library.Backend
     // This constructor is needed by the BackendLoader.
     public class OneDriveForBusinessBackend : SharePointBackend
     {
-        public override string ProtocolKey
-        {
-            get { return "od4b"; }
-        }
+        public override string ProtocolKey => "od4b";
 
-        public override string DisplayName
-        {
-            get { return Strings.OneDriveForBusiness.DisplayName; }
-        }
+        public override string DisplayName => Strings.OneDriveForBusiness.DisplayName;
 
-        public override string Description
-        {
-            get { return Strings.OneDriveForBusiness.Description; }
-        }
+        public override string Description => Strings.OneDriveForBusiness.Description;
 
         public OneDriveForBusinessBackend()
-            :base ()
+            : base()
         { }
 
-        public OneDriveForBusinessBackend(string url, Dictionary<string, string> options)
+        public OneDriveForBusinessBackend(string url, Dictionary<string, string?> options)
             : base(url, options)
         { }
-
-
     }
 }

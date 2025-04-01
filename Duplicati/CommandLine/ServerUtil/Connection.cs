@@ -1,6 +1,29 @@
+// Copyright (C) 2025, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
+
 using System.Net.Http.Json;
 using System.Net.Security;
 using System.Text.Json;
+using Duplicati.Library.AutoUpdater;
+using Duplicati.WebserverCore.Middlewares;
 
 namespace Duplicati.CommandLine.ServerUtil;
 
@@ -66,6 +89,18 @@ public class Connection
     );
 
     /// <summary>
+    /// The server state
+    /// </summary>
+    /// <param name="ActiveTask">The active task, if any</param>
+    /// <param name="ProgramState">The state of the server</param>
+    /// <param name="SchedulerQueueIds">The IDs of the tasks in the scheduler queue</param>
+    public sealed record ServerState(
+        Tuple<long, string>? ActiveTask,
+        string ProgramState,
+        IList<Tuple<long, string>> SchedulerQueueIds
+    );
+
+    /// <summary>
     /// The stop level
     /// </summary>
     public enum StopLevel
@@ -102,17 +137,22 @@ public class Connection
     /// </summary>
     /// <param name="settings">The settings to use for the connection</param>
     /// <param name="obtainRefreshToken">Whether to obtain a refresh token</param>
+    /// <param name="console">Console messages interceptor</param>
     /// <returns>The connection</returns>
-    public static async Task<Connection> Connect(Settings settings, bool obtainRefreshToken = false)
+    public static async Task<Connection> Connect(Settings settings, bool obtainRefreshToken = false, OutputInterceptor? console = null)
     {
-        Console.WriteLine($"Connecting to {settings.HostUrl}...");
+        
+        if (console != null)
+            console.AppendConsoleMessage($"Connecting to {settings.HostUrl}...");
+        else
+            Console.WriteLine($"Connecting to {settings.HostUrl}...");
 
         var trustedCertificateHashes = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         if (!string.IsNullOrWhiteSpace(settings.AcceptedHostCertificate))
-            trustedCertificateHashes.UnionWith(settings.AcceptedHostCertificate.Split(new char[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
+            trustedCertificateHashes.UnionWith(settings.AcceptedHostCertificate.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
 
         // Configure the client for requests
-        var client = new HttpClient(new HttpClientHandler()
+        var client = new HttpClient(new HttpClientHandler
         {
             ServerCertificateCustomValidationCallback = settings.Insecure || trustedCertificateHashes.Contains("*")
                ? HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
@@ -123,7 +163,7 @@ public class Connection
                     if (cert == null)
                         return false;
                     return trustedCertificateHashes.Contains(cert.GetCertHashString());
-                }),
+                })
         })
         {
             BaseAddress = new Uri(settings.HostUrl + "api/v1/")
@@ -140,36 +180,42 @@ public class Connection
                 if (string.IsNullOrWhiteSpace(refreshToken))
                     throw new InvalidOperationException("Failed to get refresh token");
 
-                (settings with { RefreshToken = refreshToken }).Save();
+                (settings with { RefreshToken = refreshToken }).Save(console);
                 return CreateConnectionWithClient(client, accessToken);
             }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Failed to use refresh token: {ex.Message}");
+            if (console != null)
+                console.AppendExceptionMessage($"Failed to use refresh token: {ex.Message}");
+            else
+                Console.WriteLine($"Failed to use refresh token: {ex.Message}");
         }
 
         // If we can read the server database, try to create a signin token
         try
         {
             var opts = new Dictionary<string, string>();
-            if (!string.IsNullOrWhiteSpace(settings.ServerDatafolder))
-                opts.Add("server-datafolder", settings.ServerDatafolder);
-
-            if (File.Exists(Path.Combine(Server.Program.GetDataFolderPath(opts), Server.Program.SERVER_DATABASE_FILENAME)))
+            if (settings.Key != null)
+                opts["settings-encryption-key"] = settings.Key.Key;
+            if (File.Exists(Path.Combine(DataFolderManager.DATAFOLDER, DataFolderManager.SERVER_DATABASE_FILENAME)))
             {
                 string? cfg = null;
-                using (var connection = Duplicati.Server.Program.GetDatabaseConnection(opts, true))
+                using (var connection = Server.Program.GetDatabaseConnection(opts, true))
                 {
                     cfg = connection.ApplicationSettings.JWTConfig;
                     if (settings.HostUrl.Scheme == "https" && connection.ApplicationSettings.ServerSSLCertificate != null && trustedCertificateHashes.Count == 0)
-                        trustedCertificateHashes.Add(connection.ApplicationSettings.ServerSSLCertificate.GetCertHashString());
+                    {
+                        var selfSignedCertHash = connection.ApplicationSettings.ServerSSLCertificate?.FirstOrDefault(x => x.HasPrivateKey)?.GetCertHashString();
+                        if (!string.IsNullOrWhiteSpace(selfSignedCertHash))
+                            trustedCertificateHashes.Add(selfSignedCertHash);
+                    }
                 }
 
                 if (!string.IsNullOrWhiteSpace(cfg))
                 {
-                    var signinjwt = new WebserverCore.Middlewares.JWTTokenProvider(
-                        JsonSerializer.Deserialize<WebserverCore.Middlewares.JWTConfig>(cfg)
+                    var signinjwt = new JWTTokenProvider(
+                        JsonSerializer.Deserialize<JWTConfig>(cfg)
                             ?? throw new InvalidOperationException("Failed to deserialize JWTConfig")
                     ).CreateSigninToken("server-cli");
 
@@ -179,19 +225,25 @@ public class Connection
                         throw new InvalidOperationException("Failed to get access token");
 
                     if (!string.IsNullOrWhiteSpace(refreshToken))
-                        (settings with { RefreshToken = refreshToken }).Save();
+                        (settings with { RefreshToken = refreshToken }).Save(console);
 
                     return CreateConnectionWithClient(client, accessToken);
                 }
             }
-            else if (!string.IsNullOrWhiteSpace(settings.ServerDatafolder))
+            else if (!string.IsNullOrWhiteSpace(DataFolderManager.DATAFOLDER))
             {
-                Console.WriteLine($"No database found in {settings.ServerDatafolder}");
+                if (console != null)
+                    console.AppendConsoleMessage($"No database found in {DataFolderManager.DATAFOLDER}");
+                else
+                    Console.WriteLine($"No database found in {DataFolderManager.DATAFOLDER}");
             }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Failed to obtain a signin token: {ex.Message}");
+            if (console != null)
+                console.AppendConsoleMessage($"Failed to obtain a signin token: {ex.Message}");
+            else
+                Console.WriteLine($"Failed to obtain a signin token: {ex.Message}");
         }
 
         // Otherwise, we need a password to log in
@@ -209,7 +261,7 @@ public class Connection
                 throw new InvalidOperationException("Failed to get access token");
 
             if (!string.IsNullOrWhiteSpace(refreshToken))
-                (settings with { RefreshToken = refreshToken }).Save();
+                (settings with { RefreshToken = refreshToken }).Save(console);
 
             return CreateConnectionWithClient(client, accessToken);
         }
@@ -239,9 +291,9 @@ public class Connection
     /// <param name="password">The password to use</param>
     /// <param name="obtainRefreshToken">Whether to obtain a refresh token</param>
     /// <returns>The access and refresh tokens</returns>
-    private static Task<(string? AccessToken, string? RefreshToken)> LoginWithPassword(HttpClient client, string password, bool obtainRefreshToken)
+    private static Task<(string AccessToken, string? RefreshToken)> LoginWithPassword(HttpClient client, string password, bool obtainRefreshToken)
         => ParseAuthResponse(
-            client.PostAsync($"auth/login", JsonContent.Create(new { Password = password, RememberMe = obtainRefreshToken }))
+            client.PostAsync("auth/login", JsonContent.Create(new { Password = password, RememberMe = obtainRefreshToken }))
         );
 
     /// <summary>
@@ -250,10 +302,10 @@ public class Connection
     /// <param name="client">The HTTP client</param>
     /// <param name="refreshToken">The refresh token to use</param>
     /// <returns>The access and refresh tokens</returns>
-    private static Task<(string? AccessToken, string? RefreshToken)> LoginWithRefreshToken(HttpClient client, string refreshToken)
+    private static Task<(string AccessToken, string? RefreshToken)> LoginWithRefreshToken(HttpClient client, string refreshToken)
         => ParseAuthResponse(client.SendAsync(new HttpRequestMessage(HttpMethod.Post, "auth/refresh")
         {
-            Headers = { { "Cookie", $"RefreshToken_{client.BaseAddress!.Port}={refreshToken}" } },
+            Headers = { { "Cookie", $"RefreshToken_{client.BaseAddress!.Port}={refreshToken}" } }
         }));
 
 
@@ -262,7 +314,7 @@ public class Connection
     /// </summary>
     /// <param name="response">The response to parse</param>
     /// <returns>The access and refresh tokens</returns>
-    private static async Task<(string? AccessToken, string? RefreshToken)> ParseAuthResponse(Task<HttpResponseMessage> responseTask)
+    private static async Task<(string AccessToken, string? RefreshToken)> ParseAuthResponse(Task<HttpResponseMessage> responseTask)
     {
         var response = await responseTask;
         await EnsureSuccessStatusCodeWithParsing(response);
@@ -273,7 +325,7 @@ public class Connection
             throw new InvalidOperationException("Failed to get access token");
 
         response.Headers.TryGetValues("Set-Cookie", out var cookies);
-        var refreshToken = cookies?.SelectMany(c => c.Split(';')).FirstOrDefault(c => c.StartsWith($"RefreshToken_"))?.Split('=', 2)[1];
+        var refreshToken = cookies?.SelectMany(c => c.Split(';')).FirstOrDefault(c => c.StartsWith("RefreshToken_"))?.Split('=', 2)[1];
 
         return (accessToken, refreshToken);
     }
@@ -296,7 +348,7 @@ public class Connection
     /// <returns>The task</returns>
     public async Task Resume()
     {
-        var response = await client.PostAsync($"serverstate/resume", null);
+        var response = await client.PostAsync("serverstate/resume", null);
         await EnsureSuccessStatusCodeWithParsing(response);
     }
 
@@ -342,6 +394,54 @@ public class Connection
     }
 
     /// <summary>
+    /// Gets the server state
+    /// </summary>
+    /// <returns>The server state</returns>
+    public async Task<ServerState> GetServerState()
+    {
+        var response = await client.GetAsync("serverstate");
+        await EnsureSuccessStatusCodeWithParsing(response);
+        return await response.Content.ReadFromJsonAsync<ServerState>()
+            ?? throw new InvalidDataException("Failed to parse server response");
+    }
+
+    /// <summary>
+    /// Runs a backup
+    /// </summary>
+    /// <param name="backupId">The ID of the backup</param>
+    /// <returns>The task</returns>
+    public async Task WaitForBackup(string backupId, TimeSpan delay, Action<string> statusMessage)
+    {
+        var state = await GetServerState();
+
+        if (!state.SchedulerQueueIds.Any(x => x.Item2 == backupId) && state.ActiveTask?.Item2 != backupId)
+            throw new UserReportedException("Backup is not queued or running");
+
+        var hasStarted = state.ActiveTask?.Item2 == backupId;
+
+        while (true)
+        {
+            await Task.Delay(delay);
+            state = await GetServerState();
+
+            if (state.ActiveTask?.Item2 == backupId)
+            {
+                statusMessage("Backup is running ...");
+                hasStarted = true;
+                continue;
+            }
+
+            if (!hasStarted && state.SchedulerQueueIds.Any(x => x.Item2 == backupId))
+            {
+                statusMessage("Backup is queued ...");
+                continue;
+            }
+
+            break;
+        }
+    }
+
+    /// <summary>
     /// Lists the active tasks
     /// </summary>
     /// <returns>The tasks</returns>
@@ -367,7 +467,7 @@ public class Connection
             StopLevel.AfterCurrentFile => "stopaftercurrentfile",
             StopLevel.StopNow => "stopnow",
             StopLevel.Abort => "abort",
-            _ => throw new ArgumentOutOfRangeException(nameof(level)),
+            _ => throw new ArgumentOutOfRangeException(nameof(level))
         };
         var response = await client.PostAsync($"task/{Uri.EscapeDataString(taskId)}/{levelString}", null);
         await EnsureSuccessStatusCodeWithParsing(response);
@@ -377,15 +477,16 @@ public class Connection
     /// Logs out of the server
     /// </summary>
     /// <param name="settings">The settings to use</param>
+    /// <param name="output"></param>
     /// <returns>The task</returns>
-    public async Task Logout(Settings settings)
+    public async Task Logout(Settings settings, OutputInterceptor output)
     {
         var response = await client.SendAsync(new HttpRequestMessage(HttpMethod.Post, "auth/refresh/logout")
         {
             Headers = { { "Cookie", $"RefreshToken_{client.BaseAddress!.Port}={settings.RefreshToken}" } }
         });
         await EnsureSuccessStatusCodeWithParsing(response);
-        (settings with { RefreshToken = null }).Save();
+        (settings with { RefreshToken = null }).Save(output);
     }
 
     /// <summary>
@@ -448,6 +549,17 @@ public class Connection
 
         return await response.Content.ReadAsStreamAsync();
     }
+
+    /// <summary>
+    /// Creates a forever token
+    /// </summary>
+    /// <returns>The token</returns>
+    public async Task<string> CreateForeverToken()
+    {
+        var (accessToken, _) = await ParseAuthResponse(client.PostAsync("auth/issue-forever-token", null));
+        return accessToken;
+    }
+
 
     /// <summary>
     /// The server error structure for JSON deserialization

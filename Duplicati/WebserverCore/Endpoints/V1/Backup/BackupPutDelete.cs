@@ -1,3 +1,23 @@
+// Copyright (C) 2025, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
 using System.Text.Json;
 using Duplicati.Library.RestAPI.Abstractions;
 using Duplicati.Server;
@@ -18,9 +38,9 @@ public class BackupPutDelete : IEndpointV1
             => ExecutePut(GetBackup(connection, id), connection, input))
             .RequireAuthorization();
 
-        group.MapDelete("/backup/{id}", ([FromServices] Connection connection, [FromServices] IWorkerThreadsManager workerThreadsManager, [FromServices] ICaptchaProvider captchaProvider, [FromServices] LiveControls liveControls, [FromServices] IHttpContextAccessor httpContextAccessor, [FromRoute] string id, [FromQuery(Name = "delete-remote-files")] bool? delete_remote_files, [FromQuery(Name = "delete-local-db")] bool? delete_local_db, [FromQuery(Name = "captcha-token")] string? captcha_token, [FromQuery(Name = "captcha-answer")] string? captcha_answer, [FromQuery] bool? force) =>
+        group.MapDelete("/backup/{id}", ([FromServices] Connection connection, [FromServices] IWorkerThreadsManager workerThreadsManager, [FromServices] LiveControls liveControls, [FromServices] IHttpContextAccessor httpContextAccessor, [FromRoute] string id, [FromQuery(Name = "delete-remote-files")] bool? delete_remote_files, [FromQuery(Name = "delete-local-db")] bool? delete_local_db, [FromQuery] bool? force) =>
         {
-            var res = ExecuteDelete(GetBackup(connection, id), workerThreadsManager, captchaProvider, liveControls, delete_remote_files ?? false, delete_local_db, captcha_token, captcha_answer, force ?? false);
+            var res = ExecuteDelete(GetBackup(connection, id), workerThreadsManager, liveControls, delete_remote_files ?? false, delete_local_db, force ?? false);
             if (res.Status != "OK" && httpContextAccessor.HttpContext != null)
                 httpContextAccessor.HttpContext.Response.StatusCode = 500;
             return res;
@@ -112,17 +132,8 @@ public class BackupPutDelete : IEndpointV1
         }
     }
 
-    private static Dto.DeleteBackupOutputDto ExecuteDelete(IBackup backup, IWorkerThreadsManager workerThreadsManager, ICaptchaProvider captchaProvider, LiveControls liveControls, bool delete_remote_files, bool? delete_local_db, string? captcha_token, string? captcha_answer, bool force)
+    private static Dto.DeleteBackupOutputDto ExecuteDelete(IBackup backup, IWorkerThreadsManager workerThreadsManager, LiveControls liveControls, bool delete_remote_files, bool? delete_local_db, bool force)
     {
-        if (delete_remote_files)
-        {
-            if (string.IsNullOrWhiteSpace(captcha_token) || string.IsNullOrWhiteSpace(captcha_answer))
-                throw new UnauthorizedException("Missing captcha");
-
-            if (!captchaProvider.SolvedCaptcha(captcha_token, "DELETE /backup/" + backup.ID, captcha_answer))
-                throw new ForbiddenException("Invalid captcha");
-        }
-
         if (workerThreadsManager.WorkerThread!.Active)
         {
             try
@@ -136,8 +147,10 @@ public class BackupPutDelete : IEndpointV1
                         return new Dto.DeleteBackupOutputDto("failed", "backup-in-progress", nt?.TaskID);
 
 
-                    bool hasPaused = liveControls.State == LiveControls.LiveControlState.Paused;
-                    liveControls.Pause();
+                    bool hasPaused = liveControls.State != LiveControls.LiveControlState.Paused;
+                    if (hasPaused)
+                        liveControls.Pause(true);
+                    nt.Abort();
 
                     for (int i = 0; i < 10; i++)
                         if (workerThreadsManager.WorkerThread.Active)

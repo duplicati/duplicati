@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -55,7 +55,7 @@ public sealed record RemoteControlConfig
 /// </summary>
 /// <param name="connection">The database connection</param>
 /// <param name="httpClientFactory">The HTTP client factory</param>
-public class RemoteControllerRegistrationService(Connection connection, IHttpClientFactory httpClientFactory) : IRemoteControllerRegistration
+public class RemoteControllerRegistrationService(Connection connection, IHttpClientFactory httpClientFactory, IRemoteController remoteController) : IRemoteControllerRegistration
 {
     /// <summary>
     /// The registration process controller this service is wrapping.
@@ -116,6 +116,10 @@ public class RemoteControllerRegistrationService(Connection connection, IHttpCli
                 CertificateUrl = claimData.CertificateUrl,
                 ServerUrl = claimData.ServerUrl
             });
+
+            // Automatically connect after we are registered
+            if (remoteController.CanEnable)
+                remoteController.Enable();
 
         });
     }

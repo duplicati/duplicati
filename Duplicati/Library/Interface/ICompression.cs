@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -59,20 +59,6 @@ namespace Duplicati.Library.Interface
         /// Indicates that the files is incompressible
         /// </summary>
         Noncompressible
-    }
-
-    /// <summary>
-    /// An interface for passing additional hints to the compressor
-    /// about the expected contents of the volume
-    /// </summary>
-    public interface ICompressionHinting : ICompression
-    {
-        /// <summary>
-        /// Gets or sets a value indicating whether this <see cref="Duplicati.Library.Interface.ICompression"/>
-        /// instance is in low overhead mode.
-        /// </summary>
-        /// <value><c>true</c> if low overhead mode; otherwise, <c>false</c>.</value>
-        bool LowOverheadMode { get; set; }
     }
 
     public interface IArchiveReader

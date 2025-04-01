@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -31,6 +31,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
+using CoCoL;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.RestAPI;
 using Duplicati.Server.Serialization;
@@ -87,9 +88,10 @@ namespace Duplicati.GUI.TrayIcon
         private readonly string m_baseUri;
         private string m_password;
         private string m_accesstoken;
+        private bool m_isTryingWithPassword;
 
-        public delegate void StatusUpdateDelegate(IServerStatus status);
-        public event StatusUpdateDelegate OnStatusUpdated;
+        public Func<IServerStatus, Task> OnStatusUpdated;
+        public Action ConnectionClosed;
 
         public long m_lastNotificationId = -1;
         public DateTime m_firstNotificationTime;
@@ -100,22 +102,20 @@ namespace Duplicati.GUI.TrayIcon
         private long m_lastDataUpdateId = -1;
         private bool m_disableTrayIconLogin;
 
-        private volatile IServerStatus m_status;
+        private volatile IServerStatus m_status = new ServerStatusImpl(LiveControlState.Paused, SuggestedStatusIcon.Disconnected, 0, 0, 0);
 
-        private volatile bool m_shutdown = false;
-        private volatile Thread m_requestThread;
-        private volatile Thread m_pollThread;
-        private readonly AutoResetEvent m_waitLock;
+        private Task m_requestHandlerTask;
+        private Task m_pollThread;
+        private readonly CancellationTokenSource m_stopToken = new CancellationTokenSource();
 
         private readonly Dictionary<string, string> m_options;
         private readonly Program.PasswordSource m_passwordSource;
 
         public IServerStatus Status { get { return m_status; } }
 
-        private readonly object m_lock = new object();
-        private readonly Queue<BackgroundRequest> m_workQueue = new Queue<BackgroundRequest>();
+        private readonly IChannel<BackgroundRequest> m_workQueue = Channel.Create<BackgroundRequest>(name: "TrayIconRequestQueue");
 
-        public HttpServerConnection(Uri server, string password, Program.PasswordSource passwordSource, bool disableTrayIconLogin, string acceptedHostCertificate, Dictionary<string, string> options)
+        public HttpServerConnection(System.Uri server, string password, Program.PasswordSource passwordSource, bool disableTrayIconLogin, string acceptedHostCertificate, Dictionary<string, string> options)
         {
             m_baseUri = Util.AppendDirSeparator(server.ToString(), "/");
 
@@ -131,7 +131,7 @@ namespace Duplicati.GUI.TrayIcon
 
             var acceptedCertificates = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             if (!string.IsNullOrWhiteSpace(acceptedHostCertificate))
-                acceptedCertificates.UnionWith(acceptedHostCertificate.Split(new char[] {',', ';'}, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
+                acceptedCertificates.UnionWith(acceptedHostCertificate.Split(new char[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
 
             HTTPCLIENT = new(new HttpClientHandler
             {
@@ -160,47 +160,53 @@ namespace Duplicati.GUI.TrayIcon
                 }
             };
 
-            // TODO: Not nice to do in constructor
-            // Get a connection
-            UpdateStatus(false);
+            m_requestHandlerTask = ThreadRunner();
+            m_pollThread = LongPollRunner();
 
-            m_waitLock = new AutoResetEvent(false);
-            m_requestThread = new Thread(ThreadRunner);
-            m_pollThread = new Thread(LongPollRunner);
+            m_requestHandlerTask.ContinueWith(t =>
+            {
+                if (t.IsFaulted)
+                    Library.Logging.Log.WriteWarningMessage(LOGTAG, "TrayIconRequestError", t.Exception, "Crashed request handler");
+                ConnectionClosed?.Invoke();
+            });
 
-            m_requestThread.Name = "TrayIcon Request Thread";
-            m_pollThread.Name = "TrayIcon Longpoll Thread";
-
-            m_requestThread.Start();
-            m_pollThread.Start();
+            m_pollThread.ContinueWith(t =>
+            {
+                if (t.IsFaulted)
+                    Library.Logging.Log.WriteWarningMessage(LOGTAG, "TrayIconRequestError", t.Exception, "Crashed poll thread");
+                ConnectionClosed?.Invoke();
+            });
         }
 
-        private void UpdateStatus(bool longpoll)
+        public Task UpdateStatus()
+            => UpdateStatusAsync(false);
+
+        private async Task UpdateStatusAsync(bool longpoll)
         {
             var query = longpoll ? $"?longpoll=true&lastEventId={m_lastEventId}&duration={LONGPOLL_TIMEOUT}" : "";
 
-            m_status = PerformRequest<ServerStatusImpl>("GET", $"/serverstate{query}", null, longpoll ? Library.Utility.Timeparser.ParseTimeSpan(LONGPOLL_TIMEOUT) : null);
+            m_status = await PerformRequestAsync<ServerStatusImpl>("GET", $"/serverstate{query}", null, longpoll ? Library.Utility.Timeparser.ParseTimeSpan(LONGPOLL_TIMEOUT) : null);
             m_lastEventId = m_status.LastEventID;
 
             if (OnStatusUpdated != null)
-                OnStatusUpdated(m_status);
+                await OnStatusUpdated(m_status).ConfigureAwait(false);
 
             if (m_lastNotificationId != m_status.LastNotificationUpdateID)
             {
                 m_lastNotificationId = m_status.LastNotificationUpdateID;
-                UpdateNotifications();
+                await UpdateNotificationsAsync().ConfigureAwait(false);
             }
 
             if (m_lastDataUpdateId != m_status.LastDataUpdateID)
             {
                 m_lastDataUpdateId = m_status.LastDataUpdateID;
-                UpdateApplicationSettings();
+                await UpdateApplicationSettingsAsync().ConfigureAwait(false);
             }
         }
 
-        private void UpdateNotifications()
+        private async Task UpdateNotificationsAsync()
         {
-            var notifications = PerformRequest<NotificationImpl[]>("GET", "/notifications", null, null);
+            var notifications = await PerformRequestAsync<NotificationImpl[]>("GET", "/notifications", null, null).ConfigureAwait(false);
             if (notifications != null)
             {
                 foreach (var n in notifications.Where(x => x.Timestamp > m_firstNotificationTime))
@@ -212,68 +218,61 @@ namespace Duplicati.GUI.TrayIcon
             }
         }
 
-        private void UpdateApplicationSettings()
+        private async Task UpdateApplicationSettingsAsync()
         {
-            var settings = PerformRequest<Dictionary<string, string>>("GET", "/serversettings", null, null);
+            var settings = await PerformRequestAsync<Dictionary<string, string>>("GET", "/serversettings", null, null).ConfigureAwait(false);
             if (settings != null && settings.TryGetValue("disable-tray-icon-login", out var str))
                 m_disableTrayIconLogin = Library.Utility.Utility.ParseBool(str, false);
         }
 
-        private void LongPollRunner()
+        private async Task LongPollRunner()
         {
             var started = DateTime.Now;
             var errorCount = 0;
+            var hasConnected = false;
 
-            while (!m_shutdown)
+            while (!m_stopToken.IsCancellationRequested)
             {
-                var waitTime = TimeSpan.FromSeconds(Math.Min(10, errorCount * 2)) - (DateTime.Now - started);
-                if (waitTime.TotalSeconds > 0)
-                    Thread.Sleep(waitTime);
-
                 try
                 {
+                    var waitTime = TimeSpan.FromSeconds(Math.Min(10, errorCount * 2)) - (DateTime.Now - started);
+                    if (waitTime.TotalSeconds > 0)
+                        await Task.Delay(waitTime, m_stopToken.Token).ConfigureAwait(false);
                     started = DateTime.Now;
-                    UpdateStatus(true);
+                    await UpdateStatusAsync(true);
                     errorCount = 0;
+                    hasConnected = true;
+                }
+                catch (Exception ex) when (ex.IsRetiredException() || m_stopToken.IsCancellationRequested)
+                {
+                    Library.Logging.Log.WriteVerboseMessage(LOGTAG, "TrayIconPollRequestError", ex, "Failed to get response");
+                    return;
                 }
                 catch (Exception ex)
                 {
                     errorCount++;
+                    // More than 1 error, and we are disconnected
+                    if (errorCount >= 2 && OnStatusUpdated != null || !hasConnected)
+                        await OnStatusUpdated.Invoke(new ServerStatusImpl(LiveControlState.Paused, SuggestedStatusIcon.Disconnected, m_lastEventId, m_lastDataUpdateId, m_lastNotificationId));
                     System.Diagnostics.Trace.WriteLine("Request error: " + ex.Message);
-                    Library.Logging.Log.WriteWarningMessage(LOGTAG, "TrayIconRequestError", ex, "Failed to get response");
+                    Library.Logging.Log.WriteWarningMessage(LOGTAG, "TrayIconPollRequestError", ex, "Failed to get response");
                 }
             }
         }
 
-        private void ThreadRunner()
+        private async Task ThreadRunner()
         {
-            while (!m_shutdown)
+            while (true)
             {
                 try
                 {
-                    BackgroundRequest req;
-                    bool any = false;
-                    do
-                    {
-                        req = null;
-
-                        lock (m_lock)
-                            if (m_workQueue.Count > 0)
-                                req = m_workQueue.Dequeue();
-
-                        if (m_shutdown)
-                            break;
-
-                        if (req != null)
-                        {
-                            any = true;
-                            PerformRequest<string>(req.Method, req.Endpoint, req.Body, req.Timeout);
-                        }
-
-                    } while (req != null);
-
-                    if (!(any || m_shutdown))
-                        m_waitLock.WaitOne(TimeSpan.FromMinutes(1), true);
+                    var req = await m_workQueue.ReadAsync().ConfigureAwait(false);
+                    await PerformRequestAsync<string>(req.Method, req.Endpoint, req.Body, req.Timeout).ConfigureAwait(false);
+                }
+                catch (Exception ex) when (ex.IsRetiredException() || m_stopToken.IsCancellationRequested)
+                {
+                    Library.Logging.Log.WriteVerboseMessage(LOGTAG, "TrayIconRequestError", ex, "Failed to get response");
+                    return;
                 }
                 catch (Exception ex)
                 {
@@ -285,56 +284,82 @@ namespace Duplicati.GUI.TrayIcon
 
         public void Close()
         {
-            m_shutdown = true;
-            m_waitLock.Set();
-            m_pollThread.Interrupt();
-            m_pollThread.Join(TimeSpan.FromSeconds(10));
-            if (!m_requestThread.Join(TimeSpan.FromSeconds(10)))
-            {
-                m_requestThread.Interrupt();
-                m_requestThread.Join(TimeSpan.FromSeconds(10));
-            }
+            m_stopToken.Cancel();
+            m_workQueue.Retire();
+            ConnectionClosed?.Invoke();
         }
 
         private sealed record SigninResponse(string AccessToken);
 
-        private T PerformRequest<T>(string method, string urlfragment, string body, TimeSpan? timeout)
+        private async Task<T> PerformRequestAsync<T>(string method, string urlfragment, string body, TimeSpan? timeout)
         {
             if (string.IsNullOrWhiteSpace(m_accesstoken) && !urlfragment.StartsWith("/auth/"))
-                ObtainAccessToken();
+                await ObtainAccessTokenAsync().ConfigureAwait(false);
 
-            var hasTriedPassword = false;
+            var hasTriedPassword = m_isTryingWithPassword;
 
             while (true)
             {
                 try
                 {
-                    return PerformRequestInternal<T>(method, urlfragment, body, timeout);
+                    return await PerformRequestInternalAsync<T>(method, urlfragment, body, timeout).ConfigureAwait(false);
                 }
-                catch (AggregateException aex)
+                catch (Exception ex)
+                    when (ex is HttpRequestException hex && (hex.StatusCode == HttpStatusCode.Unauthorized || hex.StatusCode == HttpStatusCode.Forbidden)
+                        || ex is AggregateException aex && aex.InnerExceptions.Any(x => x is HttpRequestException hex && (hex.StatusCode == HttpStatusCode.Unauthorized || hex.StatusCode == HttpStatusCode.Forbidden))
+                )
                 {
-                    if (hasTriedPassword || !aex.InnerExceptions.Any(x => x is HttpRequestException hex && hex.StatusCode == HttpStatusCode.Unauthorized))
+                    if (hasTriedPassword)
                         throw;
+
+                    // TODO: This error handling is error prone and can end up in infinite recursion
+                    // Should rewrite the entire class and use websockets instead
 
                     // Only try once, and clear the token for the next try
                     hasTriedPassword = true;
                     m_accesstoken = null;
-                    ObtainAccessToken();
+                    try
+                    {
+                        m_isTryingWithPassword = true;
+                        await ObtainAccessTokenAsync().ConfigureAwait(false);
+                    }
+                    finally
+                    {
+                        m_isTryingWithPassword = false;
+                    }
                 }
             }
         }
 
-        private void ObtainAccessToken()
+        private async Task ObtainAccessTokenAsync()
         {
-            var token = ObtainSignInToken();
+            // If we host the server, issue the access token from the service
+            if (FIXMEGlobal.IsServerStarted && m_passwordSource == Program.PasswordSource.HostedServer)
+            {
+                var provider = FIXMEGlobal.Provider.GetRequiredService<IJWTTokenProvider>();
+                m_accesstoken = provider.CreateAccessToken("trayicon", provider.TemporaryFamilyId);
+                return;
+            }
+
+            // If we know the password, issue a token from the API
+            if (!string.IsNullOrWhiteSpace(m_password))
+            {
+                m_accesstoken = (await PerformRequestInternalAsync<SigninResponse>("POST", "/auth/login", JsonSerializer.Serialize(new { Password = m_password }), null).ConfigureAwait(false)).AccessToken;
+                return;
+            }
+
+            // Otherwise, try to get a signin token
+            var token = await ObtainSignInTokenAsync().ConfigureAwait(false);
             if (string.IsNullOrWhiteSpace(token))
                 return;
-            m_accesstoken = PerformRequestInternal<SigninResponse>("POST", "/auth/signin", JsonSerializer.Serialize(new { SigninToken = token }), null).AccessToken;
+
+            // Use the signin token to get an access token
+            m_accesstoken = (await PerformRequestInternalAsync<SigninResponse>("POST", "/auth/signin", JsonSerializer.Serialize(new { SigninToken = token }), null).ConfigureAwait(false)).AccessToken;
         }
 
         private async Task<T> PerformRequestInternalAsync<T>(string method, string endpoint, string body, TimeSpan? timeout)
         {
-            var request = new HttpRequestMessage(new HttpMethod(method), new Uri(m_apiUri + endpoint));
+            var request = new HttpRequestMessage(new HttpMethod(method), new System.Uri(m_apiUri + endpoint));
             if (!string.IsNullOrWhiteSpace(m_accesstoken))
                 request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", m_accesstoken);
 
@@ -347,26 +372,19 @@ namespace Duplicati.GUI.TrayIcon
                 ? timeout.Value + TimeSpan.FromSeconds(5)
                 : TimeSpan.FromSeconds(100));
 
-            var response = await HTTPCLIENT.SendAsync(request, cts.Token);
+            var response = await HTTPCLIENT.SendAsync(request, cts.Token).ConfigureAwait(false);
             response.EnsureSuccessStatusCode();
 
             if (typeof(T) == typeof(string))
-                return (T)(object)await response.Content.ReadAsStringAsync();
+                return (T)(object)await response.Content.ReadAsStringAsync().ConfigureAwait(false);
 
-            using (var stream = await response.Content.ReadAsStreamAsync())
-                return await JsonSerializer.DeserializeAsync<T>(stream, serializerOptions);
+            using (var stream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false))
+                return await JsonSerializer.DeserializeAsync<T>(stream, serializerOptions).ConfigureAwait(false);
         }
-
-        private T PerformRequestInternal<T>(string method, string endpoint, string body, TimeSpan? timeout)
-            => PerformRequestInternalAsync<T>(method, endpoint, body, timeout).Result;
 
         private void ExecuteAndNotify(string method, string urifragment, string body)
         {
-            lock (m_lock)
-            {
-                m_workQueue.Enqueue(new BackgroundRequest(method, urifragment, body, null));
-                m_waitLock.Set();
-            }
+            m_workQueue.WriteNoWait(new BackgroundRequest(method, urifragment, body, null));
         }
 
         public void Pause(string duration = null)
@@ -386,21 +404,29 @@ namespace Duplicati.GUI.TrayIcon
         }
 
         private sealed record SigninTokenResponse(string Token);
-        private string IssueSigninToken(string password)
-            => PerformRequest<SigninTokenResponse>("POST", "/auth/issuesignintoken", JsonSerializer.Serialize(new { Password = password }), null).Token;
+        private async Task<string> IssueSigninTokenAsync(string password)
+            => (await PerformRequestInternalAsync<SigninTokenResponse>("POST", "/auth/issuesignintoken", JsonSerializer.Serialize(new { Password = password }), null).ConfigureAwait(false)).Token;
 
-        private string ObtainSignInToken()
+        private async Task<string> ObtainSignInTokenAsync()
         {
             string signinjwt = null;
 
             // If we host the server, issue the token from the service
             if (FIXMEGlobal.IsServerStarted && m_passwordSource == Program.PasswordSource.HostedServer)
+            {
+                if (FIXMEGlobal.DataConnection.ApplicationSettings.DisableSigninTokens)
+                    return null;
+
                 signinjwt = FIXMEGlobal.Provider.GetRequiredService<IJWTTokenProvider>().CreateSigninToken("trayicon");
+            }
 
             // If we have database access, grab the issuer key from the db and issue a token
             if (string.IsNullOrWhiteSpace(signinjwt) && m_passwordSource == Program.PasswordSource.Database)
             {
                 Program.databaseConnection.ApplicationSettings.ReloadSettings();
+                if (Program.databaseConnection.ApplicationSettings.DisableSigninTokens)
+                    return null;
+
                 var cfg = Program.databaseConnection.ApplicationSettings.JWTConfig;
                 if (!string.IsNullOrWhiteSpace(cfg))
                     signinjwt = new JWTTokenProvider(JsonSerializer.Deserialize<JWTConfig>(cfg)).CreateSigninToken("trayicon");
@@ -408,20 +434,28 @@ namespace Duplicati.GUI.TrayIcon
 
             // If we know the password, issue a token from the API
             if (string.IsNullOrWhiteSpace(signinjwt) && !string.IsNullOrWhiteSpace(m_password))
-                signinjwt = IssueSigninToken(m_password);
+                signinjwt = await IssueSigninTokenAsync(m_password);
 
             return signinjwt;
         }
 
-        public string StatusWindowURL
+        public async Task<string> GetStatusWindowURLAsync()
         {
-            get
+            string signinjwt = null;
+            if (!m_disableTrayIconLogin)
             {
-                var signinjwt = m_disableTrayIconLogin ? null : ObtainSignInToken();
-                return string.IsNullOrWhiteSpace(signinjwt)
-                    ? m_baseUri + STATUS_WINDOW
-                    : m_baseUri + SIGNIN_WINDOW + $"?token={signinjwt}";
+                try
+                {
+                    signinjwt = await ObtainSignInTokenAsync().ConfigureAwait(false);
+                }
+                catch
+                {
+                }
             }
+
+            return string.IsNullOrWhiteSpace(signinjwt)
+                ? m_baseUri + STATUS_WINDOW
+                : m_baseUri + SIGNIN_WINDOW + $"?token={signinjwt}";
         }
     }
 }

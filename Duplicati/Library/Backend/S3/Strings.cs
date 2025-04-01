@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -49,5 +49,31 @@ namespace Duplicati.Library.Backend.Strings
         public static string DescriptionDisableChunkEncodingShort { get { return LC.L(@"Disable chunk encoding (aws client only)"); } }
         public static string S3StorageclassDescriptionLong { get { return LC.L(@"Use this option to specify a storage class. If this option is not used, the server will choose a default storage class."); } }
         public static string S3StorageclassDescriptionShort { get { return LC.L(@"Specify storage class"); } }
+        public static string DescriptionListApiVersionShort { get { return LC.L(@"Specify the S3 list API version to use"); } }
+        public static string DescriptionListApiVersionLong { get { return LC.L(@"Use this option to specify the S3 list API version to use. This can be used to work around issues with some S3 providers."); } }
+        public static string DescriptionRecursiveListShort { get { return LC.L(@"Use this option to list all files in the bucket"); } }
+        public static string DescriptionRecursiveListLong { get { return LC.L(@"To reduce the number of objects listed, the default is to only list the first level of objects. Use this option to list all objects in the bucket."); } }
+        public static string UnknownS3ClientError(string client) { return LC.L(@"Unknown S3 client: {0}", client); }
     }
+
+    internal static class S3Config
+    {
+        public static string DisplayName => LC.L("S3 configuration module");
+        public static string Description => LC.L("Expose S3 configuration as a web module");
+        public static string ConfigTypeShort => LC.L("The config to get");
+        public static string ConfigTypeLong => LC.L("Provide different config values");
+    }
+
+    internal static class S3IAM
+    {
+        public static string DisplayName => LC.L("S3 IAM support module");
+        public static string Description => LC.L("Expose S3 IAM manipulation as a web module");
+        public static string OperationShort => LC.L("The operation to perform");
+        public static string OperationLong => LC.L("Select the operation to perform");
+        public static string UsernameShort => LC.L("The username to use");
+        public static string UsernameLong => LC.L("The Amazon Access Key ID");
+        public static string PasswordShort => LC.L("The password to use");
+        public static string PasswordLong => LC.L("The Amazon Secret Key");
+    }
+
 }

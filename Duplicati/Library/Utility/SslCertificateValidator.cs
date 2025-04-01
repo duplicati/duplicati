@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -19,61 +19,68 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
+#nullable enable
+
 using System;
+using System.Linq;
 using System.Net.Security;
 using System.Security.Cryptography.X509Certificates;
 
 namespace Duplicati.Library.Utility;
 
-public class SslCertificateValidator(bool acceptAll, string[] validHashes)
+public class SslCertificateValidator(bool acceptAll, string[]? validHashes)
 {
     [Serializable]
-    public class InvalidCertificateException : Exception
+    public class InvalidCertificateException(string certificate, SslPolicyErrors error)
+        : Exception(Strings.SslCertificateValidator.VerifyCertificateException(error, certificate))
     {
-        private readonly string m_certificate;
-        private readonly SslPolicyErrors m_errors = SslPolicyErrors.None;
+        private readonly string _mCertificate = certificate;
+        private readonly SslPolicyErrors _mErrors = error;
 
-        public string Certificate => m_certificate;
-        public SslPolicyErrors SslError => m_errors;
-
-        public InvalidCertificateException(string certificate, SslPolicyErrors error)
-            : base(Strings.SslCertificateValidator.VerifyCertificateException(error, certificate))
-        {
-            m_certificate = certificate;
-            m_errors = error;
-        }
+        public string Certificate => _mCertificate;
+        public SslPolicyErrors SslError => _mErrors;
     }
 
-    public bool ValidateServerCertificate(object sender, X509Certificate cert, X509Chain chain, SslPolicyErrors sslPolicyErrors)
+    public bool ValidateServerCertificate(object sender, X509Certificate? cert, X509Chain? chain, SslPolicyErrors sslPolicyErrors)
     {
-            
-        if (sslPolicyErrors == SslPolicyErrors.None)
-            return true;
-
         if (acceptAll)
             return true;
 
-        string certHash;
-
         try
         {
-            certHash = Utility.ByteArrayAsHexString(cert.GetCertHash());
-            if (certHash != null && validHashes != null)
+            DateTime now = DateTime.Now;
+
+            using var certificate = cert as X509Certificate2 ?? new X509Certificate2(cert ?? throw new ArgumentNullException(nameof(cert)));
+
+            if (!IsDateValid(certificate, now))
+                return false;
+
+            if (validHashes != null)
             {
-                foreach (var hash in validHashes)
-                {
-                    if (!string.IsNullOrEmpty(hash) && certHash.Equals(hash, StringComparison.OrdinalIgnoreCase))
-                    {
+                // Check main certificate hash
+                if (IsTrustedHash(Utility.ByteArrayAsHexString(certificate.GetCertHash())))
+                    return true;
+
+                // Check chain certificate from root for the hash (this allows custom CA certificates hashes to be added)
+                if (chain?.ChainElements != null)
+                    if (chain.ChainElements.Any(element => IsTrustedHash(Utility.ByteArrayAsHexString(element.Certificate.GetCertHash())) && IsDateValid(element.Certificate, now)))
                         return true;
-                    }
-                }
             }
+
+            // If no hash is found, perform the standard validations
+            return sslPolicyErrors == SslPolicyErrors.None && certificate.Verify();
         }
         catch (Exception ex)
         {
             throw new Exception(Strings.SslCertificateValidator.VerifyCertificateHashError(ex, sslPolicyErrors), ex);
         }
-
-        return false;
     }
+
+    private bool IsTrustedHash(string hash) =>
+        !string.IsNullOrWhiteSpace(hash) &&
+        validHashes != null &&
+        validHashes.Any(validHash => !string.IsNullOrEmpty(validHash) &&
+                                     hash.Equals(validHash, StringComparison.OrdinalIgnoreCase));
+    private bool IsDateValid(X509Certificate2 cert, DateTime now) => now <= cert.NotAfter && now >= cert.NotBefore;
+
 }

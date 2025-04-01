@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -41,15 +41,25 @@ namespace Duplicati.Library.Main.Operation.Backup
 
         public Task AddOpenedFile(long size)
         {
-            return RunOnMain(() => {
+            return RunOnMain(() =>
+            {
                 m_res.SizeOfOpenedFiles += size;
                 m_res.OpenedFiles++;
             });
         }
 
+        public Task AddTimestampChangedFile()
+        {
+            return RunOnMain(() =>
+            {
+                m_res.TimestampChangedFiles++;
+            });
+        }
+
         public Task AddAddedFile(long size)
         {
-            return RunOnMain(() => {
+            return RunOnMain(() =>
+            {
                 m_res.SizeOfAddedFiles += size;
                 m_res.AddedFiles++;
             });
@@ -57,7 +67,8 @@ namespace Duplicati.Library.Main.Operation.Backup
 
         public Task AddModifiedFile(long size)
         {
-            return RunOnMain(() => {
+            return RunOnMain(() =>
+            {
                 m_res.SizeOfModifiedFiles += size;
                 m_res.ModifiedFiles++;
             });
@@ -65,7 +76,8 @@ namespace Duplicati.Library.Main.Operation.Backup
 
         public Task AddExaminedFile(long size)
         {
-            return RunOnMain(() => {
+            return RunOnMain(() =>
+            {
                 m_res.SizeOfExaminedFiles += size;
                 m_res.ExaminedFiles++;
             });

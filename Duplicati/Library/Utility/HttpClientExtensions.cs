@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -25,6 +25,8 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 
+#nullable enable
+
 namespace Duplicati.Library.Utility;
 
 /// <summary>
@@ -43,20 +45,20 @@ public static class HttpClientExtensions
     /// <param name="progressReportingAction">Action for progress reporting</param>
     /// <param name="cancellationToken">Cancelation token</param>
     /// <returns></returns>
-    public static async Task DownloadFile(this HttpClient client, HttpRequestMessage request, string filename, Action<long> progressReportingAction = null, CancellationToken cancellationToken = default)
+    public static async Task DownloadFile(this HttpClient client, HttpRequestMessage request, string filename, Action<long>? progressReportingAction = null, CancellationToken cancellationToken = default)
     {
-        using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+        using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
         response.EnsureSuccessStatusCode();
-        using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
-        using var fileStream = System.IO.File.Create(filename);
+        await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
+        await using var fileStream = System.IO.File.Create(filename);
         if (progressReportingAction != null)
         {
             using var ProgressReportingStream = new ProgressReportingStream(stream, progressReportingAction);
-            await ProgressReportingStream.CopyToAsync(fileStream,cancellationToken);
+            await ProgressReportingStream.CopyToAsync(fileStream, cancellationToken).ConfigureAwait(false);
         }
         else
         {
-            await stream.CopyToAsync(fileStream, cancellationToken);
+            await stream.CopyToAsync(fileStream, cancellationToken).ConfigureAwait(false);
         }
     }
 
@@ -69,20 +71,19 @@ public static class HttpClientExtensions
     /// <param name="progressReportingAction">Action for progress reporting</param>
     /// <param name="cancellationToken">Cancelation token</param>
     /// <returns></returns>
-    public static async Task DownloadFile(this HttpClient client, HttpRequestMessage request, Stream fileStream, Action<long> progressReportingAction = null, CancellationToken cancellationToken = default)
+    public static async Task DownloadFile(this HttpClient client, HttpRequestMessage request, Stream fileStream, Action<long>? progressReportingAction = null, CancellationToken cancellationToken = default)
     {
-
-        using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+        using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
         response.EnsureSuccessStatusCode();
-        using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+        await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
         if (progressReportingAction != null)
         {
             using var ProgressReportingStream = new ProgressReportingStream(stream, progressReportingAction);
-            await ProgressReportingStream.CopyToAsync(fileStream, cancellationToken);
+            await ProgressReportingStream.CopyToAsync(fileStream, cancellationToken).ConfigureAwait(false);
         }
         else
         {
-            await stream.CopyToAsync(fileStream, cancellationToken);
+            await stream.CopyToAsync(fileStream, cancellationToken).ConfigureAwait(false);
         }
     }
 
@@ -92,8 +93,6 @@ public static class HttpClientExtensions
     /// <param name="client">The Http client reference</param>
     /// <param name="request">A prepared HttpRequestMessage (Presumably with a stream)</param>
     /// <param name="cancellationToken">Cancelation token</param>
-    public static async Task<HttpResponseMessage> UploadStream(this HttpClient client, HttpRequestMessage request,CancellationToken cancellationToken = default)
-    {
-        return await client.SendAsync(request,  HttpCompletionOption.ResponseContentRead, cancellationToken);    
-    }
+    public static Task<HttpResponseMessage> UploadStream(this HttpClient client, HttpRequestMessage request, CancellationToken cancellationToken = default)
+        => client.SendAsync(request, HttpCompletionOption.ResponseContentRead, cancellationToken);
 }
