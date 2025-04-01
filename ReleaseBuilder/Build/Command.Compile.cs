@@ -28,6 +28,33 @@ public static partial class Command
     private static class Compile
     {
         /// <summary>
+        /// Folders to remove from the build folder
+        /// </summary>
+        private static readonly IReadOnlySet<string> TempBuildFolders = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "bin",
+            "obj"
+        };
+
+        /// <summary>
+        /// Removes all temporary build folders from the base folder
+        /// </summary>
+        /// <param name="basefolder">The folder to clean</param>
+        /// <returns>>A task that completes when the clean is done</returns>
+        private static Task RemoveAllBuildTempFolders(string basefolder)
+        {
+            // Remove all obj and bin folders
+            foreach (var folder in Directory.GetDirectories(basefolder, "*", SearchOption.AllDirectories))
+            {
+                var name = Path.GetFileName(folder);
+                if (TempBuildFolders.Contains(name) && Directory.Exists(folder))
+                    Directory.Delete(folder, true);
+            }
+
+            return Task.CompletedTask;
+        }
+
+        /// <summary>
         /// Builds the projects listed in <paramref name="sourceProjects"/> for the distinct <paramref name="buildTargets"/>
         /// </summary>
         /// <param name="baseDir">The base solution folder</param>
@@ -113,8 +140,15 @@ public static partial class Command
                 }
             }
 
-            // Start the task now
-            var verifyRootJson = Verify.AnalyzeProject(Path.Combine(baseDir, "Duplicati.sln"));
+            var verifyRootJson = new Verify.RootJson(1, "", []);
+
+            // Set up analysis for the projects, if we are building any
+            if (!keepBuilds || buildOutputFolders.Any(x => !Directory.Exists(x.Value)))
+            {
+                // Make sure there is no cache from previous builds
+                await RemoveAllBuildTempFolders(baseDir).ConfigureAwait(false);
+                await Verify.AnalyzeProject(Path.Combine(baseDir, "Duplicati.sln")).ConfigureAwait(false);
+            }
 
             foreach ((var target, var outputFolder) in buildOutputFolders)
             {
@@ -126,6 +160,9 @@ public static partial class Command
                 else
                 {
                     var tmpfolder = Path.Combine(buildDir, target.BuildTargetString + "-tmp");
+                    if (Directory.Exists(tmpfolder))
+                        Directory.Delete(tmpfolder, true);
+
                     Console.WriteLine($"Building {target.BuildTargetString} ...");
 
                     // Fix any RIDs that differ from .NET SDK
@@ -135,22 +172,34 @@ public static partial class Command
                         _ => target.BuildArchString
                     };
 
+                    var buildTime = $"{DateTime.Now:yyyyMMdd-HHmmss}";
+                    string logNameFn(int pid, bool isStdOut)
+                        => $"{target.BuildTargetString}.{buildTime}.{(isStdOut ? "stdout" : "stderr")}.log";
+
+                    // Make sure there is no cache from previous builds
+                    await RemoveAllBuildTempFolders(baseDir).ConfigureAwait(false);
+
                     // TODO: Self contained builds are bloating the build size
                     // Alternative is to require the .NET runtime to be installed
 
                     var command = new string[] {
-                            "dotnet", "publish", temporarySolutionFiles[target],
-                            "--configuration", "Release",
-                            "--output", tmpfolder,
-                            "-r", archstring,
-                            $"/p:AssemblyVersion={releaseInfo.Version}",
-                            $"/p:Version={releaseInfo.Version}-{releaseInfo.Channel}-{releaseInfo.Timestamp:yyyyMMdd}",
-                            "--self-contained", useHostedBuilds ? "false" : "true"
-                        };
+                        "dotnet", "publish", temporarySolutionFiles[target],
+                        "--configuration", "Release",
+                        "--output", tmpfolder,
+                        "--runtime", archstring,
+                        "--self-contained", useHostedBuilds ? "false" : "true",
+                        // $"-p:UseSharedCompilation=false",
+                        $"-p:AssemblyVersion={releaseInfo.Version}",
+                        $"-p:Version={releaseInfo.Version}-{releaseInfo.Channel}-{releaseInfo.Timestamp:yyyyMMdd}",
+                    };
 
                     try
                     {
-                        await ProcessHelper.ExecuteWithLog(command, workingDirectory: tmpfolder, logFolder: logFolder, logFilename: (pid, isStdOut) => $"{target.BuildTargetString}.{pid}.{(isStdOut ? "stdout" : "stderr")}.log");
+                        await ProcessHelper.ExecuteWithLog(
+                            command,
+                            workingDirectory: tmpfolder,
+                            logFolder: logFolder,
+                            logFilename: logNameFn).ConfigureAwait(false);
                     }
                     catch (Exception ex)
                     {
@@ -162,7 +211,7 @@ public static partial class Command
                     await PostCompile.PrepareTargetDirectory(baseDir, tmpfolder, target, rtcfg, keepBuilds);
                     await Verify.VerifyTargetDirectory(tmpfolder, target);
                     await Verify.VerifyExecutables(tmpfolder, targetExecutables[target], target);
-                    await Verify.VerifyDuplicatedVersionsAreMaxVersions(tmpfolder, await verifyRootJson.ConfigureAwait(false));
+                    await Verify.VerifyDuplicatedVersionsAreMaxVersions(tmpfolder, verifyRootJson);
 
                     // Move the final build to the output folder
                     Directory.Move(tmpfolder, outputFolder);
