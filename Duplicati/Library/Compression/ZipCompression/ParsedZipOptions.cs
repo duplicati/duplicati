@@ -29,11 +29,9 @@ namespace Duplicati.Library.Compression.ZipCompression;
 /// </summary>
 /// <param name="DeflateCompressionLevel">The compression level to use</param>
 /// <param name="CompressionType">The compression type to use</param>
-/// <param name="UseZip64">Whether to use zip64 extensions</param>
 /// <param name="UnittestMode">Flag indicating if unittest mode is enabled</param>
 public sealed record ParsedZipOptions(
     CompressionLevel DeflateCompressionLevel,
     CompressionType CompressionType,
-    bool UseZip64,
     bool UnittestMode
 );
