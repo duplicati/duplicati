@@ -53,56 +53,65 @@ public static partial class Command
             else
                 Console.WriteLine($"Building {buildArchTargets.Length} versions");
 
+            var buildOutputFolders = buildArchTargets.ToDictionary(x => x, x => Path.Combine(buildDir, x.BuildTargetString));
             var temporarySolutionFiles = new Dictionary<PackageTarget, string>();
+            var targetExecutables = new Dictionary<PackageTarget, List<string>>();
             var distinctSolutions = buildArchTargets.GroupBy(x => $"{x.InterfaceString}{(x.OS == OSType.Windows ? $"-{x.OSString}" : "")}").ToArray();
             Console.WriteLine($"Creating {distinctSolutions.Length} temporary solution files");
             foreach (var tk in distinctSolutions)
             {
+                // Don't create a solution if all the output folders exist
+                if (tk.All(x => Directory.Exists(buildOutputFolders[x])))
+                    continue;
+
                 var tmpslnfile = Path.Combine(buildDir, $"Duplicati-{tk.Key}.sln");
-                if (File.Exists(tmpslnfile))
-                    File.Delete(tmpslnfile);
-
-                var logOut = Path.Combine(logFolder, $"create-{tmpslnfile}.log");
-                using var logStream = new FileStream(logOut, FileMode.Create, FileAccess.Write, FileShare.Read);
-
-                await ProcessHelper.ExecuteWithOutput([
-                    "dotnet", "new", "sln",
-                    "--name", Path.GetFileNameWithoutExtension(tmpslnfile),
-                    "--output", buildDir
-                ],
-                logStream
-                ).ConfigureAwait(false);
 
                 var target = tk.First();
                 if (!sourceProjects.TryGetValue(target.Interface, out var buildProjects))
                     throw new InvalidOperationException($"No projects found for {tk.Key}");
 
-                // Add the projects to the solution
-                foreach (var proj in buildProjects)
-                {
-                    if (target.OS != OSType.Windows && windowsOnlyProjects.Contains(proj))
-                        continue;
+                var actualBuildProjects = buildProjects
+                    .Where(x => target.OS == OSType.Windows || !windowsOnlyProjects.Contains(x))
+                    .ToList();
 
-                    var projpath = Path.Combine(baseDir, proj);
-                    if (!File.Exists(projpath))
-                        throw new FileNotFoundException($"Project file {projpath} not found");
+                // Faster debugging, keep the solution file
+                if (!File.Exists(tmpslnfile))
+                {
+                    var logOut = Path.Combine(logFolder, $"create-{Path.GetFileName(tmpslnfile)}.log");
+                    using var logStream = new FileStream(logOut, FileMode.Create, FileAccess.Write, FileShare.Read);
 
                     await ProcessHelper.ExecuteWithOutput([
-                        "dotnet", "sln", tmpslnfile,
-                        "add", projpath
-                    ],
-                    logStream
-                    ).ConfigureAwait(false);
+                        "dotnet", "new", "sln",
+                        "--name", Path.GetFileNameWithoutExtension(tmpslnfile),
+                        "--output", buildDir
+                    ], logStream).ConfigureAwait(false);
+
+                    // Add the projects to the solution
+                    foreach (var proj in actualBuildProjects)
+                    {
+                        var projpath = Path.Combine(baseDir, proj);
+                        if (!File.Exists(projpath))
+                            throw new FileNotFoundException($"Project file {projpath} not found");
+
+                        await ProcessHelper.ExecuteWithOutput([
+                            "dotnet", "sln", tmpslnfile,
+                            "add", projpath
+                        ], logStream).ConfigureAwait(false);
+                    }
                 }
 
                 foreach (var s in tk)
+                {
                     temporarySolutionFiles[s] = tmpslnfile;
+                    targetExecutables[s] = actualBuildProjects;
+                }
             }
 
-            foreach (var target in buildArchTargets)
-            {
-                var outputFolder = Path.Combine(buildDir, target.BuildTargetString);
+            // Start the task now
+            var verifyRootJson = Verify.AnalyzeProject(Path.Combine(baseDir, "Duplicati.sln"));
 
+            foreach ((var target, var outputFolder) in buildOutputFolders)
+            {
                 // Faster iteration for debugging is to keep the build folder
                 if (keepBuilds && Directory.Exists(outputFolder))
                 {
@@ -145,7 +154,9 @@ public static partial class Command
 
                     // Perform any post-build steps, cleaning and signing as needed
                     await PostCompile.PrepareTargetDirectory(baseDir, tmpfolder, target, rtcfg, keepBuilds);
-                    await PostCompile.VerifyTargetDirectory(tmpfolder, target);
+                    await Verify.VerifyTargetDirectory(tmpfolder, target);
+                    await Verify.VerifyExecutables(tmpfolder, targetExecutables[target], target);
+                    await Verify.VerifyDuplicatedVersionsAreMaxVersions(tmpfolder, await verifyRootJson.ConfigureAwait(false));
 
                     // Move the final build to the output folder
                     Directory.Move(tmpfolder, outputFolder);
