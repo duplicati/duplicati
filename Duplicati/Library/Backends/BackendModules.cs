@@ -69,6 +69,7 @@ public static class BackendModules
         new Backend.pCloudBackend(),
         new Backend.SMBBackend(),
         new Backend.CIFSBackend(),
+        new Backend.Filen.FilenBackend(),
     }
     .Where(x => x != null)
     .ToList();

@@ -78,7 +78,8 @@ backupApp.service('SystemInfo', function($rootScope, $timeout, $cookies, AppServ
 				'rclone': null,
                 'cos': null,
 				'aliyunoss': null,
-                'pcloud': null
+                'pcloud': null,
+                'filen': null,
             }
         };
 
