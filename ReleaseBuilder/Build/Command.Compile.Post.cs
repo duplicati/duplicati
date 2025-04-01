@@ -65,42 +65,6 @@ public static partial class Command
         }
 
         /// <summary>
-        /// Verify that some files that are expected to be present in the target directory are there
-        /// </summary>
-        /// <param name="buildDir">The build directory to verify</param>
-        /// <param name="target">The target to verify for</param>
-        /// <returns>An awaitable task</returns>
-        public static Task VerifyTargetDirectory(string buildDir, PackageTarget target)
-        {
-            var rootFiles = Directory.EnumerateFiles(buildDir, "*", SearchOption.TopDirectoryOnly)
-                .Where(x => x.EndsWith(".dll", StringComparison.OrdinalIgnoreCase) || x.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
-                .Select(x => Path.GetFileName(x))
-                .ToHashSet(Duplicati.Library.Utility.Utility.ClientFilenameStringComparer);
-
-            // Random sample of files we expect
-            var probeFiles = new string[] {
-                "System.CommandLine.dll",
-                "System.CommandLine.NamingConventionBinder.dll",
-                "AWSSDK.S3.dll",
-                "CoCoL.dll",
-                "Duplicati.Library.Interface.dll",
-                "Google.Apis.Auth.dll",
-                "Google.Apis.Core.dll",
-                "SQLiteHelper.dll",
-                "SQLite.Interop.dll",
-                "Microsoft.IdentityModel.Abstractions.dll",
-                "System.Reactive.dll",
-                "System.Reactive.Linq.dll"
-            };
-
-            foreach (var f in probeFiles)
-                if (!rootFiles.Contains(f))
-                    throw new Exception($"Expected file {f} for {target.BuildTargetString}, but was not found in build directory {buildDir}");
-
-            return Task.CompletedTask;
-        }
-
-        /// <summary>
         /// Set of files that are unwanted despite the OS
         /// </summary>
         static readonly IReadOnlyList<string> UnwantedCommonFiles = [
@@ -150,8 +114,7 @@ public static partial class Command
         /// </summary>
         /// <param name="os">The operating system to get the unwanted filenames for</param>
         /// <returns>The list of unwanted filenames</returns>
-        static IEnumerable<string> UnwantedFileGlobExps(OSType os)
-            => new[] {
+        static IEnumerable<string> UnwantedFileGlobExps(OSType os) => [
             "Thumbs.db",
             "desktop.ini",
             ".DS_Store",
@@ -159,8 +122,9 @@ public static partial class Command
             "*.pdb",
             "*.mdb",
             "._*",
-            os == OSType.Windows ? "*.sh" : "*.bat"
-            };
+            os == OSType.Windows ? "*.sh" : "*.bat",
+            os == OSType.Windows ? "*.sh" : "*.ps1"
+        ];
 
         /// <summary>
         /// Returns a regular expression mapping files that are not wanted in the build folders

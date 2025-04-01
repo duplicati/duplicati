@@ -28,6 +28,33 @@ public static partial class Command
     private static class Compile
     {
         /// <summary>
+        /// Folders to remove from the build folder
+        /// </summary>
+        private static readonly IReadOnlySet<string> TempBuildFolders = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "bin",
+            "obj"
+        };
+
+        /// <summary>
+        /// Removes all temporary build folders from the base folder
+        /// </summary>
+        /// <param name="basefolder">The folder to clean</param>
+        /// <returns>>A task that completes when the clean is done</returns>
+        private static Task RemoveAllBuildTempFolders(string basefolder)
+        {
+            // Remove all obj and bin folders
+            foreach (var folder in Directory.GetDirectories(basefolder, "*", SearchOption.AllDirectories))
+            {
+                var name = Path.GetFileName(folder);
+                if (TempBuildFolders.Contains(name) && Directory.Exists(folder))
+                    Directory.Delete(folder, true);
+            }
+
+            return Task.CompletedTask;
+        }
+
+        /// <summary>
         /// Builds the projects listed in <paramref name="sourceProjects"/> for the distinct <paramref name="buildTargets"/>
         /// </summary>
         /// <param name="baseDir">The base solution folder</param>
@@ -53,10 +80,78 @@ public static partial class Command
             else
                 Console.WriteLine($"Building {buildArchTargets.Length} versions");
 
-            foreach (var target in buildArchTargets)
+            var buildOutputFolders = buildArchTargets.ToDictionary(x => x, x => Path.Combine(buildDir, x.BuildTargetString));
+            var temporarySolutionFiles = new Dictionary<PackageTarget, string>();
+            var targetExecutables = new Dictionary<PackageTarget, List<string>>();
+            var distinctSolutions = buildArchTargets.GroupBy(x => $"{x.InterfaceString}{(x.OS == OSType.Windows ? $"-{x.OSString}" : "")}").ToArray();
+            Console.WriteLine($"Creating {distinctSolutions.Length} temporary solution files");
+            foreach (var tk in distinctSolutions)
             {
-                var outputFolder = Path.Combine(buildDir, target.BuildTargetString);
+                // Don't create a solution if all the output folders exist
+                if (tk.All(x => Directory.Exists(buildOutputFolders[x])))
+                    continue;
 
+                var tmpslnfile = Path.Combine(buildDir, $"Duplicati-{tk.Key}.sln");
+
+                var target = tk.First();
+                if (!sourceProjects.TryGetValue(target.Interface, out var buildProjects))
+                    throw new InvalidOperationException($"No projects found for {tk.Key}");
+
+                var actualBuildProjects = buildProjects
+                    .Where(x => target.OS == OSType.Windows || !windowsOnlyProjects.Contains(x))
+                    .ToList();
+
+                // Faster debugging, keep the solution file
+                if (!File.Exists(tmpslnfile))
+                {
+                    var logOut = Path.Combine(logFolder, $"create-{Path.GetFileName(tmpslnfile)}.log");
+                    using var logStream = new FileStream(logOut, FileMode.Create, FileAccess.Write, FileShare.Read);
+
+                    var tmpslnfile2 = Path.Combine(buildDir, $"tmp-Duplicati-{tk.Key}.sln");
+                    if (File.Exists(tmpslnfile2))
+                        File.Delete(tmpslnfile2);
+
+                    await ProcessHelper.ExecuteWithOutput([
+                        "dotnet", "new", "sln",
+                        "--name", Path.GetFileNameWithoutExtension(tmpslnfile2),
+                        "--output", buildDir
+                    ], logStream).ConfigureAwait(false);
+
+                    // Add the projects to the solution
+                    foreach (var proj in actualBuildProjects)
+                    {
+                        var projpath = Path.Combine(baseDir, proj);
+                        if (!File.Exists(projpath))
+                            throw new FileNotFoundException($"Project file {projpath} not found");
+
+                        await ProcessHelper.ExecuteWithOutput([
+                            "dotnet", "sln", tmpslnfile2,
+                            "add", projpath
+                        ], logStream).ConfigureAwait(false);
+                    }
+
+                    File.Move(tmpslnfile2, tmpslnfile, true);
+                }
+
+                foreach (var s in tk)
+                {
+                    temporarySolutionFiles[s] = tmpslnfile;
+                    targetExecutables[s] = actualBuildProjects;
+                }
+            }
+
+            var verifyRootJson = new Verify.RootJson(1, "", []);
+
+            // Set up analysis for the projects, if we are building any
+            if (!keepBuilds || buildOutputFolders.Any(x => !Directory.Exists(x.Value)))
+            {
+                // Make sure there is no cache from previous builds
+                await RemoveAllBuildTempFolders(baseDir).ConfigureAwait(false);
+                await Verify.AnalyzeProject(Path.Combine(baseDir, "Duplicati.sln")).ConfigureAwait(false);
+            }
+
+            foreach ((var target, var outputFolder) in buildOutputFolders)
+            {
                 // Faster iteration for debugging is to keep the build folder
                 if (keepBuilds && Directory.Exists(outputFolder))
                 {
@@ -65,59 +160,58 @@ public static partial class Command
                 else
                 {
                     var tmpfolder = Path.Combine(buildDir, target.BuildTargetString + "-tmp");
+                    if (Directory.Exists(tmpfolder))
+                        Directory.Delete(tmpfolder, true);
+
                     Console.WriteLine($"Building {target.BuildTargetString} ...");
 
-                    if (!sourceProjects.TryGetValue(target.Interface, out var buildProjects))
-                        throw new InvalidOperationException($"No projects found for {target.Interface}");
-
-                    foreach (var proj in buildProjects)
+                    // Fix any RIDs that differ from .NET SDK
+                    var archstring = target.Arch switch
                     {
-                        if (target.OS != OSType.Windows && windowsOnlyProjects.Contains(proj))
-                            continue;
+                        ArchType.Arm7 => $"{target.OSString}-arm",
+                        _ => target.BuildArchString
+                    };
 
-                        // TODO: Self contained builds are bloating the build size
-                        // Alternative is to require the .NET runtime to be installed
+                    var buildTime = $"{DateTime.Now:yyyyMMdd-HHmmss}";
+                    string logNameFn(int pid, bool isStdOut)
+                        => $"{target.BuildTargetString}.{buildTime}.{(isStdOut ? "stdout" : "stderr")}.log";
 
-                        // Build into isolated folder
-                        var buildfolder = Path.Combine(buildDir, target.BuildTargetString + "-out");
-                        if (Directory.Exists(buildfolder))
-                            Directory.Delete(buildfolder, true);
+                    // Make sure there is no cache from previous builds
+                    await RemoveAllBuildTempFolders(baseDir).ConfigureAwait(false);
 
-                        // Fix any RIDs that differ from .NET SDK
-                        var archstring = target.Arch switch
-                        {
-                            ArchType.Arm7 => $"{target.OSString}-arm",
-                            _ => target.BuildArchString
-                        };
+                    // TODO: Self contained builds are bloating the build size
+                    // Alternative is to require the .NET runtime to be installed
 
-                        var command = new string[] {
-                            "dotnet", "publish", proj,
-                            "-c", "Release",
-                            "-o", buildfolder,
-                            "-r", archstring,
-                            $"/p:AssemblyVersion={releaseInfo.Version}",
-                            $"/p:Version={releaseInfo.Version}-{releaseInfo.Channel}-{releaseInfo.Timestamp:yyyyMMdd}",
-                            "--self-contained", useHostedBuilds ? "false" : "true"
-                        };
+                    var command = new string[] {
+                        "dotnet", "publish", temporarySolutionFiles[target],
+                        "--configuration", "Release",
+                        "--output", tmpfolder,
+                        "--runtime", archstring,
+                        "--self-contained", useHostedBuilds ? "false" : "true",
+                        // $"-p:UseSharedCompilation=false",
+                        $"-p:AssemblyVersion={releaseInfo.Version}",
+                        $"-p:Version={releaseInfo.Version}-{releaseInfo.Channel}-{releaseInfo.Timestamp:yyyyMMdd}",
+                    };
 
-                        try
-                        {
-                            await ProcessHelper.ExecuteWithLog(command, workingDirectory: tmpfolder, logFolder: logFolder, logFilename: (pid, isStdOut) => $"{Path.GetFileNameWithoutExtension(proj)}.{target.BuildTargetString}.{pid}.{(isStdOut ? "stdout" : "stderr")}.log");
-                        }
-                        catch (Exception ex)
-                        {
-                            Console.WriteLine($"Error building {proj} for {target.BuildTargetString}: {ex.Message}");
-                            throw;
-                        }
-
-                        // Merge the build into the temporary target folder
-                        EnvHelper.CopyDirectory(buildfolder, tmpfolder, true);
-                        Directory.Delete(buildfolder, true);
+                    try
+                    {
+                        await ProcessHelper.ExecuteWithLog(
+                            command,
+                            workingDirectory: tmpfolder,
+                            logFolder: logFolder,
+                            logFilename: logNameFn).ConfigureAwait(false);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error building for {target.BuildTargetString}: {ex.Message}");
+                        throw;
                     }
 
                     // Perform any post-build steps, cleaning and signing as needed
                     await PostCompile.PrepareTargetDirectory(baseDir, tmpfolder, target, rtcfg, keepBuilds);
-                    await PostCompile.VerifyTargetDirectory(tmpfolder, target);
+                    await Verify.VerifyTargetDirectory(tmpfolder, target);
+                    await Verify.VerifyExecutables(tmpfolder, targetExecutables[target], target);
+                    await Verify.VerifyDuplicatedVersionsAreMaxVersions(tmpfolder, verifyRootJson);
 
                     // Move the final build to the output folder
                     Directory.Move(tmpfolder, outputFolder);
