@@ -80,9 +80,13 @@ public static partial class Command
                     var logOut = Path.Combine(logFolder, $"create-{Path.GetFileName(tmpslnfile)}.log");
                     using var logStream = new FileStream(logOut, FileMode.Create, FileAccess.Write, FileShare.Read);
 
+                    var tmpslnfile2 = Path.Combine(buildDir, $"tmp-Duplicati-{tk.Key}.sln");
+                    if (File.Exists(tmpslnfile2))
+                        File.Delete(tmpslnfile2);
+
                     await ProcessHelper.ExecuteWithOutput([
                         "dotnet", "new", "sln",
-                        "--name", Path.GetFileNameWithoutExtension(tmpslnfile),
+                        "--name", Path.GetFileNameWithoutExtension(tmpslnfile2),
                         "--output", buildDir
                     ], logStream).ConfigureAwait(false);
 
@@ -94,10 +98,12 @@ public static partial class Command
                             throw new FileNotFoundException($"Project file {projpath} not found");
 
                         await ProcessHelper.ExecuteWithOutput([
-                            "dotnet", "sln", tmpslnfile,
+                            "dotnet", "sln", tmpslnfile2,
                             "add", projpath
                         ], logStream).ConfigureAwait(false);
                     }
+
+                    File.Move(tmpslnfile2, tmpslnfile, true);
                 }
 
                 foreach (var s in tk)
