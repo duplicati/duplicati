@@ -293,7 +293,4 @@ CREATE TABLE "ChangeJournalData" (
     "ConfigHash" TEXT NOT NULL  
 );
 
-CREATE INDEX "DeletedBlockHashSize" ON "DeletedBlock" ("Hash", "Size");
-CREATE UNIQUE INDEX "DeletedBlockHashVolumeID" ON "DeletedBlock" ("Hash", "Size", "VolumeID");
-
 INSERT INTO "Version" ("Version") VALUES (14);
