@@ -67,16 +67,13 @@ namespace Duplicati.Library.Main.Database
                 dict[filesets[i].Key] = i;
 
             var sql = FormatInvariant($@"SELECT DISTINCT ""FilesetID"" FROM (
-SELECT ""FilesetID"" FROM ""FilesetEntry"" WHERE ""FileID"" IN ( SELECT ""ID"" FROM ""FileLookup"" WHERE ""BlocksetID"" IN ( SELECT ""BlocksetID"" FROM ""BlocksetEntry"" WHERE ""BlockID"" IN ( SELECT ""ID"" From ""Block"" WHERE ""VolumeID"" IN ( SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""Name"" IN ({string.Join(",", items.Select(x => "?"))})))))
+SELECT ""FilesetID"" FROM ""FilesetEntry"" WHERE ""FileID"" IN ( SELECT ""ID"" FROM ""FileLookup"" WHERE ""BlocksetID"" IN ( SELECT ""BlocksetID"" FROM ""BlocksetEntry"" WHERE ""BlockID"" IN ( SELECT ""ID"" From ""Block"" WHERE ""VolumeID"" IN ( SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""Name"" IN (@Names)))))
 UNION
-SELECT ""ID"" FROM ""Fileset"" WHERE ""VolumeID"" IN ( SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""Name"" IN ({string.Join(",", items.Select(x => "?"))}))
+SELECT ""ID"" FROM ""Fileset"" WHERE ""VolumeID"" IN ( SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""Name"" IN (@Names))
 )");
 
-            var it = new List<string>(items);
-            it.AddRange(items);
-
-            using (var cmd = m_connection.CreateCommand())
-            using (var rd = cmd.ExecuteReader(sql, it.ToArray()))
+            using (var cmd = m_connection.CreateCommand(sql).SetParameterValue("@Names", items.ToArray()))
+            using (var rd = cmd.ExecuteReader())
                 while (rd.Read())
                 {
                     var v = dict[rd.GetInt64(0)];
@@ -91,19 +88,15 @@ SELECT ""ID"" FROM ""Fileset"" WHERE ""VolumeID"" IN ( SELECT ""ID"" FROM ""Remo
         public IEnumerable<Interface.IListResultFile> GetFiles(IEnumerable<string> items)
         {
             var sql = FormatInvariant($@"SELECT DISTINCT ""Path"" FROM (
-SELECT ""Path"" FROM ""File"" WHERE ""BlocksetID"" IN (SELECT ""BlocksetID"" FROM ""BlocksetEntry"" WHERE ""BlockID"" IN (SELECT ""ID"" FROM ""Block"" WHERE ""VolumeID"" IN (SELECT ""ID"" from ""RemoteVolume"" WHERE ""Name"" IN ({string.Join(",", items.Select(x => "?"))}))))
+SELECT ""Path"" FROM ""File"" WHERE ""BlocksetID"" IN (SELECT ""BlocksetID"" FROM ""BlocksetEntry"" WHERE ""BlockID"" IN (SELECT ""ID"" FROM ""Block"" WHERE ""VolumeID"" IN (SELECT ""ID"" from ""RemoteVolume"" WHERE ""Name"" IN (@Names))))
  UNION 
-SELECT ""Path"" FROM ""File"" WHERE ""MetadataID"" IN (SELECT ""ID"" FROM ""Metadataset"" WHERE ""BlocksetID"" IN (SELECT ""BlocksetID"" FROM ""BlocksetEntry"" WHERE ""BlockID"" IN (SELECT ""ID"" FROM ""Block"" WHERE ""VolumeID"" IN (SELECT ""ID"" from ""RemoteVolume"" WHERE ""Name"" IN ({string.Join(",", items.Select(x => "?"))})))))
+SELECT ""Path"" FROM ""File"" WHERE ""MetadataID"" IN (SELECT ""ID"" FROM ""Metadataset"" WHERE ""BlocksetID"" IN (SELECT ""BlocksetID"" FROM ""BlocksetEntry"" WHERE ""BlockID"" IN (SELECT ""ID"" FROM ""Block"" WHERE ""VolumeID"" IN (SELECT ""ID"" from ""RemoteVolume"" WHERE ""Name"" IN (@Names)))))
  UNION 
-SELECT ""Path"" FROM ""File"" WHERE ""ID"" IN ( SELECT ""FileID"" FROM ""FilesetEntry"" WHERE ""FilesetID"" IN ( SELECT ""ID"" FROM ""Fileset"" WHERE ""VolumeID"" IN ( SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""Name"" IN ({string.Join(",", items.Select(x => "?"))}))))
+SELECT ""Path"" FROM ""File"" WHERE ""ID"" IN ( SELECT ""FileID"" FROM ""FilesetEntry"" WHERE ""FilesetID"" IN ( SELECT ""ID"" FROM ""Fileset"" WHERE ""VolumeID"" IN ( SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""Name"" IN (@Names))))
 ) ORDER BY ""Path""");
 
-            var it = new List<string>(items);
-            it.AddRange(items);
-            it.AddRange(items);
-
-            using (var cmd = m_connection.CreateCommand())
-            using (var rd = cmd.ExecuteReader(sql, it.ToArray()))
+            using (var cmd = m_connection.CreateCommand(sql).SetParameterValue("@Names", items.ToArray()))
+            using (var rd = cmd.ExecuteReader())
                 while (rd.Read())
                     yield return new ListResultFile()
                     {
@@ -115,15 +108,19 @@ SELECT ""Path"" FROM ""File"" WHERE ""ID"" IN ( SELECT ""FileID"" FROM ""Fileset
         public IEnumerable<Interface.IListResultRemoteLog> GetLogLines(IEnumerable<string> items)
         {
             var sql = FormatInvariant($@"
-SELECT ""TimeStamp"", ""Message"" || ' ' || CASE WHEN ""Exception"" IS NULL THEN '' ELSE ""Exception"" END FROM ""LogData"" WHERE {string.Join(" OR ", items.Select(x => @"""Message"" LIKE ?"))}
+SELECT ""TimeStamp"", ""Message"" || ' ' || CASE WHEN ""Exception"" IS NULL THEN '' ELSE ""Exception"" END FROM ""LogData"" WHERE {string.Join(" OR ", items.Select((x, i) => @$"""Message"" LIKE @Message{i}"))}
 UNION 
-SELECT ""Timestamp"", ""Data"" FROM ""RemoteOperation"" WHERE ""Path"" IN ({string.Join(",", items.Select(x => "?"))})");
+SELECT ""Timestamp"", ""Data"" FROM ""RemoteOperation"" WHERE ""Path"" IN (@Paths)");
 
             var it = new List<string>(from n in items select "%" + n + "%");
             it.AddRange(items);
 
-            using (var cmd = m_connection.CreateCommand())
-            using (var rd = cmd.ExecuteReader(sql, it.ToArray()))
+            var cmd = m_connection.CreateCommand(sql);
+            cmd.SetParameterValue("@Paths", items.ToArray());
+            foreach ((var x, var i) in items.Select((x, i) => (x, i)))
+                cmd.SetParameterValue($"@Message{i}", "%" + x + "%");
+
+            using (var rd = cmd.ExecuteReader())
                 while (rd.Read())
                     yield return new ListResultRemoteLog()
                     {
@@ -135,15 +132,13 @@ SELECT ""Timestamp"", ""Data"" FROM ""RemoteOperation"" WHERE ""Path"" IN ({stri
         public IEnumerable<Interface.IListResultRemoteVolume> GetVolumes(IEnumerable<string> items)
         {
             var sql = FormatInvariant($@"SELECT DISTINCT ""Name"" FROM ( 
-SELECT ""Name"" FROM ""Remotevolume"" WHERE ""ID"" IN ( SELECT ""VolumeID"" FROM ""Block"" WHERE ""ID"" IN ( SELECT ""BlockID"" FROM ""BlocksetEntry"" WHERE ""BlocksetID"" IN ( SELECT ""BlocksetID"" FROM ""FileLookup"" WHERE ""ID"" IN ( SELECT ""FileID"" FROM ""FilesetEntry"" WHERE ""FilesetID"" IN ( SELECT ""ID"" FROM ""Fileset"" WHERE ""VolumeID"" IN ( SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""Name"" IN ({string.Join(",", items.Select(x => "?"))}))))))) 
+SELECT ""Name"" FROM ""Remotevolume"" WHERE ""ID"" IN ( SELECT ""VolumeID"" FROM ""Block"" WHERE ""ID"" IN ( SELECT ""BlockID"" FROM ""BlocksetEntry"" WHERE ""BlocksetID"" IN ( SELECT ""BlocksetID"" FROM ""FileLookup"" WHERE ""ID"" IN ( SELECT ""FileID"" FROM ""FilesetEntry"" WHERE ""FilesetID"" IN ( SELECT ""ID"" FROM ""Fileset"" WHERE ""VolumeID"" IN ( SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""Name"" IN (@Names))))))) 
 UNION 
-SELECT ""Name"" FROM ""Remotevolume"" WHERE ""ID"" IN ( SELECT ""VolumeID"" FROM ""Block"" WHERE ""ID"" IN ( SELECT ""BlockID"" FROM ""BlocksetEntry"" WHERE ""BlocksetID"" IN ( SELECT ""BlocksetID"" FROM ""Metadataset"" WHERE ""ID"" IN ( SELECT ""MetadataID"" FROM ""FileLookup"" WHERE ""ID"" IN ( SELECT ""FileID"" FROM ""FilesetEntry"" WHERE ""FilesetID"" IN ( SELECT ""ID"" FROM ""Fileset"" WHERE ""VolumeID"" IN ( SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""Name"" IN ({string.Join(",", items.Select(x => "?"))}))))))))
+SELECT ""Name"" FROM ""Remotevolume"" WHERE ""ID"" IN ( SELECT ""VolumeID"" FROM ""Block"" WHERE ""ID"" IN ( SELECT ""BlockID"" FROM ""BlocksetEntry"" WHERE ""BlocksetID"" IN ( SELECT ""BlocksetID"" FROM ""Metadataset"" WHERE ""ID"" IN ( SELECT ""MetadataID"" FROM ""FileLookup"" WHERE ""ID"" IN ( SELECT ""FileID"" FROM ""FilesetEntry"" WHERE ""FilesetID"" IN ( SELECT ""ID"" FROM ""Fileset"" WHERE ""VolumeID"" IN ( SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""Name"" IN (@Names))))))))
 )");
-            var it = new List<string>(items);
-            it.AddRange(items);
 
-            using (var cmd = m_connection.CreateCommand())
-            using (var rd = cmd.ExecuteReader(sql, it.ToArray()))
+            using (var cmd = m_connection.CreateCommand(sql).SetParameterValue("@Names", items.ToArray()))
+            using (var rd = cmd.ExecuteReader())
                 while (rd.Read())
                     yield return new ListResultRemoteVolume()
                     {
