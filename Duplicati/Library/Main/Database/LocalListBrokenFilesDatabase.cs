@@ -121,9 +121,9 @@ WHERE ""BlocksetID"" IS NULL OR ""BlocksetID"" IN
         // Create and fill a temp table with the volids to delete. We avoid using too many parameters that way.
         deletecmd.ExecuteNonQuery(FormatInvariant($@"CREATE TEMP TABLE ""{volidstable}"" (""ID"" INTEGER PRIMARY KEY)"));
 
-        foreach (var slice in names.Chunk(128))
+        using (var tmptable = new TemporaryDbValueList(m_connection, transaction, names))
           deletecmd.SetCommandAndParameters(FormatInvariant($@"INSERT OR IGNORE INTO ""{volidstable}"" (""ID"") VALUES SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""Name"" IN (@Names)"))
-            .SetParameterValue("@Names", names.ToArray())
+            .ExpandInClauseParameter("@Names", tmptable)
             .ExecuteNonQuery();
 
         var volIdsSubQuery = FormatInvariant($@"SELECT ""ID"" FROM ""{volidstable}"" ");

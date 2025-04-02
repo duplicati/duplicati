@@ -42,6 +42,12 @@ namespace Duplicati.Library.Main.Database
         /// </summary>
         private static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(LocalDatabase));
 
+        /// <summary>
+        /// The chunk size for batch operations
+        /// </summary>
+        /// <remarks>SQLite has a limit of 999 parameters in a single statement</remarks>
+        public const int CHUNK_SIZE = 128;
+
         protected readonly IDbConnection m_connection;
         protected readonly long m_operationid = -1;
         private bool m_hasExecutedVacuum;
@@ -310,8 +316,9 @@ namespace Duplicati.Library.Main.Database
         {
             using (var cmd = m_connection.CreateCommand(transaction))
             {
+                using var tmptable = new TemporaryDbValueList(m_connection, transaction, files);
                 cmd.SetCommandAndParameters(@"SELECT ""Name"", ""ID"" FROM ""RemoteVolume"" WHERE ""Name"" IN (@Name)")
-                    .SetParameterValue("@Name", files);
+                    .ExpandInClauseParameter("@Name", tmptable);
 
                 using (var rd = cmd.ExecuteReader())
                     while (rd.Read())

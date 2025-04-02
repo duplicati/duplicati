@@ -71,8 +71,8 @@ SELECT ""FilesetID"" FROM ""FilesetEntry"" WHERE ""FileID"" IN ( SELECT ""ID"" F
 UNION
 SELECT ""ID"" FROM ""Fileset"" WHERE ""VolumeID"" IN ( SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""Name"" IN (@Names))
 )");
-
-            using (var cmd = m_connection.CreateCommand(sql).SetParameterValue("@Names", items.ToArray()))
+            using (var tmptable = new TemporaryDbValueList(m_connection, null, items))
+            using (var cmd = m_connection.CreateCommand(sql).ExpandInClauseParameter("@Names", tmptable))
             using (var rd = cmd.ExecuteReader())
                 while (rd.Read())
                 {
@@ -95,38 +95,40 @@ SELECT ""Path"" FROM ""File"" WHERE ""MetadataID"" IN (SELECT ""ID"" FROM ""Meta
 SELECT ""Path"" FROM ""File"" WHERE ""ID"" IN ( SELECT ""FileID"" FROM ""FilesetEntry"" WHERE ""FilesetID"" IN ( SELECT ""ID"" FROM ""Fileset"" WHERE ""VolumeID"" IN ( SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""Name"" IN (@Names))))
 ) ORDER BY ""Path""");
 
-            using (var cmd = m_connection.CreateCommand(sql).SetParameterValue("@Names", items.ToArray()))
+            using (var tmptable = new TemporaryDbValueList(m_connection, null, items))
+            using (var cmd = m_connection.CreateCommand(sql).ExpandInClauseParameter("@Names", tmptable))
             using (var rd = cmd.ExecuteReader())
                 while (rd.Read())
                     yield return new ListResultFile()
                     {
                         Path = Convert.ToString(rd.GetValue(0))
                     };
-
         }
 
         public IEnumerable<Interface.IListResultRemoteLog> GetLogLines(IEnumerable<string> items)
         {
-            var sql = FormatInvariant($@"
-SELECT ""TimeStamp"", ""Message"" || ' ' || CASE WHEN ""Exception"" IS NULL THEN '' ELSE ""Exception"" END FROM ""LogData"" WHERE {string.Join(" OR ", items.Select((x, i) => @$"""Message"" LIKE @Message{i}"))}
+            using var cmd = m_connection.CreateCommand();
+
+            foreach (var slice in items.Chunk(CHUNK_SIZE / 2))
+            {
+                var sql = FormatInvariant($@"
+SELECT ""TimeStamp"", ""Message"" || ' ' || CASE WHEN ""Exception"" IS NULL THEN '' ELSE ""Exception"" END FROM ""LogData"" WHERE {string.Join(" OR ", slice.Select((x, i) => @$"""Message"" LIKE @Message{i}"))}
 UNION 
 SELECT ""Timestamp"", ""Data"" FROM ""RemoteOperation"" WHERE ""Path"" IN (@Paths)");
 
-            var it = new List<string>(from n in items select "%" + n + "%");
-            it.AddRange(items);
+                cmd.SetCommandAndParameters(sql);
+                cmd.ExpandInClauseParameter("@Paths", items.ToArray());
+                foreach ((var x, var i) in items.Select((x, i) => (x, i)))
+                    cmd.SetParameterValue($"@Message{i}", "%" + x + "%");
 
-            var cmd = m_connection.CreateCommand(sql);
-            cmd.SetParameterValue("@Paths", items.ToArray());
-            foreach ((var x, var i) in items.Select((x, i) => (x, i)))
-                cmd.SetParameterValue($"@Message{i}", "%" + x + "%");
-
-            using (var rd = cmd.ExecuteReader())
-                while (rd.Read())
-                    yield return new ListResultRemoteLog()
-                    {
-                        Timestamp = ParseFromEpochSeconds(rd.GetInt64(0)),
-                        Message = rd.GetString(1)
-                    };
+                using (var rd = cmd.ExecuteReader())
+                    while (rd.Read())
+                        yield return new ListResultRemoteLog()
+                        {
+                            Timestamp = ParseFromEpochSeconds(rd.GetInt64(0)),
+                            Message = rd.GetString(1)
+                        };
+            }
         }
 
         public IEnumerable<Interface.IListResultRemoteVolume> GetVolumes(IEnumerable<string> items)
@@ -137,7 +139,7 @@ UNION
 SELECT ""Name"" FROM ""Remotevolume"" WHERE ""ID"" IN ( SELECT ""VolumeID"" FROM ""Block"" WHERE ""ID"" IN ( SELECT ""BlockID"" FROM ""BlocksetEntry"" WHERE ""BlocksetID"" IN ( SELECT ""BlocksetID"" FROM ""Metadataset"" WHERE ""ID"" IN ( SELECT ""MetadataID"" FROM ""FileLookup"" WHERE ""ID"" IN ( SELECT ""FileID"" FROM ""FilesetEntry"" WHERE ""FilesetID"" IN ( SELECT ""ID"" FROM ""Fileset"" WHERE ""VolumeID"" IN ( SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""Name"" IN (@Names))))))))
 )");
 
-            using (var cmd = m_connection.CreateCommand(sql).SetParameterValue("@Names", items.ToArray()))
+            using (var cmd = m_connection.CreateCommand(sql).ExpandInClauseParameter("@Names", items.ToArray()))
             using (var rd = cmd.ExecuteReader())
                 while (rd.Read())
                     yield return new ListResultRemoteVolume()

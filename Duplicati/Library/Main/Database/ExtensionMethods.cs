@@ -167,6 +167,10 @@ public static class ExtensionMethods
     public static T SetParameterValue<T>(this T self, int index, object? value)
         where T : IDbCommand
     {
+#if DEBUG
+        if (value is not null && value is System.Collections.IEnumerable && value is not string)
+            throw new ArgumentException($"Cannot set parameter '{index}' to an array or enumerable type, as the SQLite bindings does not support it.", nameof(value));
+#endif
         ((IDataParameter)self.Parameters[index]!).Value = value;
         return self;
     }
@@ -182,6 +186,10 @@ public static class ExtensionMethods
     public static T SetParameterValue<T>(this T self, string name, object? value)
         where T : IDbCommand
     {
+#if DEBUG
+        if (value is not null && value is System.Collections.IEnumerable && value is not string)
+            throw new ArgumentException($"Cannot set parameter '{name}' to an array or enumerable type, as the SQLite bindings does not support it.", nameof(value));
+#endif
         ((IDataParameter)self.Parameters[name]!).Value = value;
         return self;
     }
@@ -624,5 +632,61 @@ public static class ExtensionMethods
     /// <returns>The command with the parameters added</returns>
     public static IDbCommand CreateCommand(this IDbConnection self, string cmdtext)
         => CreateCommand(self, null, cmdtext);
-}
 
+    /// <summary>
+    /// Expands the given parameter name to a list of parameters for an IN clause.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="cmd"></param>
+    /// <param name="originalParamName"></param>
+    /// <param name="values"></param>
+    /// <exception cref="ArgumentException"></exception>
+    public static IDbCommand ExpandInClauseParameter<T>(this IDbCommand cmd, string originalParamName, IEnumerable<T> values)
+    {
+        if (string.IsNullOrWhiteSpace(originalParamName) || !originalParamName.StartsWith("@"))
+            throw new ArgumentException("Parameter name must start with '@'", nameof(originalParamName));
+
+        foreach (var p in cmd.Parameters)
+            if (p is IDataParameter parameter && parameter.ParameterName.Equals(originalParamName, StringComparison.OrdinalIgnoreCase))
+            {
+                cmd.Parameters.Remove(parameter);
+                break;
+            }
+
+        foreach ((var value, var index) in values.Select((value, index) => (value, index)))
+            cmd.AddNamedParameter($"{originalParamName}{index}", value);
+
+        var inClause = string.Join(", ", values.Select((_, index) => $"{originalParamName}{index}"));
+        if (string.IsNullOrWhiteSpace(inClause) && values.Any())
+            throw new ArgumentException("IN clause cannot be empty", nameof(values));
+
+#if DEBUG
+        if (!cmd.CommandText.Contains(originalParamName, StringComparison.OrdinalIgnoreCase))
+            throw new ArgumentException($"Command text does not contain parameter '{originalParamName}'", nameof(originalParamName));
+#endif
+        cmd.CommandText = cmd.CommandText.Replace(originalParamName, inClause, StringComparison.OrdinalIgnoreCase);
+
+        return cmd;
+    }
+
+    /// <summary>
+    /// Expands the given parameter name to a list of parameters for an IN clause.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="cmd"></param>
+    /// <param name="originalParamName"></param>
+    /// <param name="values"></param>
+    /// <exception cref="ArgumentException"></exception>
+    public static IDbCommand ExpandInClauseParameter(this IDbCommand cmd, string originalParamName, TemporaryDbValueList values)
+    {
+        if (string.IsNullOrWhiteSpace(originalParamName) || !originalParamName.StartsWith("@"))
+            throw new ArgumentException("Parameter name must start with '@'", nameof(originalParamName));
+
+        if (!values.IsTableCreated)
+            return ExpandInClauseParameter(cmd, originalParamName, values.Values);
+
+        // We have a temporary table, so we need to replace the parameter with the table name
+        cmd.CommandText = cmd.CommandText.Replace(originalParamName, values.GetInClause(), StringComparison.OrdinalIgnoreCase);
+        return cmd;
+    }
+}

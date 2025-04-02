@@ -70,11 +70,9 @@ namespace Duplicati.Library.Main.Database
             {
                 var deleted = 0;
 
-                //Process array in slices to prevent exceeding SQLITE_MAX_VARIABLE_NUMBER (default 999)
-                const int SLICE_SIZE = 128;
-                foreach (var slice in toDelete.Chunk(SLICE_SIZE))
+                using (var tempTable = new TemporaryDbValueList(m_connection, transaction, toDelete.Select(Library.Utility.Utility.NormalizeDateTimeToEpochSeconds)))
                     deleted += cmd.SetCommandAndParameters(@"DELETE FROM ""Fileset"" WHERE ""Timestamp"" IN (@Timestamps) ")
-                        .SetParameterValue("@Timestamps", slice.Select(Library.Utility.Utility.NormalizeDateTimeToEpochSeconds).ToArray())
+                        .ExpandInClauseParameter("@Timestamps", tempTable)
                         .ExecuteNonQuery();
 
                 if (deleted != toDelete.Length)
@@ -97,7 +95,7 @@ namespace Duplicati.Library.Main.Database
                 var updated = cmd.SetCommandAndParameters(@"UPDATE ""RemoteVolume"" SET ""State"" = @NewState WHERE ""Type"" = @CurrentType AND ""State"" IN (@AllowedStates) AND ""ID"" NOT IN (SELECT ""VolumeID"" FROM ""Fileset"") ")
                     .SetParameterValue("@NewState", RemoteVolumeState.Deleting.ToString())
                     .SetParameterValue("@CurrentType", RemoteVolumeType.Files.ToString())
-                    .SetParameterValue("@AllowedStates", new[] { RemoteVolumeState.Uploaded.ToString(), RemoteVolumeState.Verified.ToString(), RemoteVolumeState.Temporary.ToString(), RemoteVolumeState.Deleting.ToString() })
+                    .ExpandInClauseParameter("@AllowedStates", [RemoteVolumeState.Uploaded.ToString(), RemoteVolumeState.Verified.ToString(), RemoteVolumeState.Temporary.ToString(), RemoteVolumeState.Deleting.ToString()])
                     .ExecuteNonQuery();
 
                 if (deleted != updated)
@@ -187,7 +185,7 @@ namespace Duplicati.Library.Main.Database
                 {
                     cmd.SetCommandAndParameters(createtable)
                         .SetParameterValue("@Type", RemoteVolumeType.Blocks.ToString())
-                        .SetParameterValue("@AllowedStates", new[] { RemoteVolumeState.Uploaded.ToString(), RemoteVolumeState.Verified.ToString() })
+                        .ExpandInClauseParameter("@AllowedStates", [RemoteVolumeState.Uploaded.ToString(), RemoteVolumeState.Verified.ToString()])
                         .ExecuteNonQuery();
 
                     using (var rd = cmd.ExecuteReader(FormatInvariant($@"SELECT ""A"".""Name"", ""B"".""ActiveSize"", ""B"".""InactiveSize"", ""A"".""Size"" FROM ""Remotevolume"" A, ""{tmptablename}"" B WHERE ""A"".""ID"" = ""B"".""VolumeID"" ORDER BY ""B"".""Sorttime"" ASC ")))
@@ -384,9 +382,10 @@ namespace Duplicati.Library.Main.Database
                         .SetParameterValue("@VolumeId", deletedVolume.ID)
                         .ExecuteNonQuery();
 
-                    cmd.SetCommandAndParameters(FormatInvariant($@"CREATE {TEMPORARY} TABLE ""{replacementBlocks}"" AS SELECT ""BlockID"", MAX(""VolumeID"") AS ""VolumeID"" FROM ""DuplicateBlock"" WHERE ""VolumeID"" NOT IN (@VolumeIds) AND ""BlockID"" IN (SELECT ""ID"" FROM ""{updatedBlocks}"") GROUP BY ""BlockID"" "))
-                        .SetParameterValue("@VolumeIds", volumeIdsToBeRemoved.ToArray())
-                        .ExecuteNonQuery();
+                    using (var tempTable = new TemporaryDbValueList(m_connection, transaction, volumeIdsToBeRemoved))
+                        cmd.SetCommandAndParameters(FormatInvariant($@"CREATE {TEMPORARY} TABLE ""{replacementBlocks}"" AS SELECT ""BlockID"", MAX(""VolumeID"") AS ""VolumeID"" FROM ""DuplicateBlock"" WHERE ""VolumeID"" NOT IN (@VolumeIds) AND ""BlockID"" IN (SELECT ""ID"" FROM ""{updatedBlocks}"") GROUP BY ""BlockID"" "))
+                            .ExpandInClauseParameter("@VolumeIds", tempTable)
+                            .ExecuteNonQuery();
 
                     var targetCount = cmd.ExecuteScalarInt64(FormatInvariant($@"SELECT COUNT(*) FROM ""{updatedBlocks}"" "));
                     if (targetCount == 0)
@@ -412,7 +411,6 @@ namespace Duplicati.Library.Main.Database
                     try { cmd.ExecuteNonQuery(FormatInvariant($@"DROP TABLE IF EXISTS ""{replacementBlocks}"" ")); }
                     catch { }
                 }
-
             }
         }
 

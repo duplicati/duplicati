@@ -139,7 +139,7 @@ namespace Duplicati.Library.Main.Database
                     using (var cmd2 = m_connection.CreateCommand(m_transaction))
                     {
                         cmd2.SetCommandAndParameters(FormatInvariant($@"INSERT INTO ""{m_tablename}"" (""FileID"") VALUES (@FileId)"));
-                        cmd2.SetCommandAndParameters(@"SELECT ""B"".""Path"", ""A"".""FileID"" FROM ""FilesetEntry"" A, ""File"" B WHERE ""A"".""FilesetID"" = @FilesetId AND ""A"".""FileID"" = ""B"".""ID"" ")
+                        cmd.SetCommandAndParameters(@"SELECT ""B"".""Path"", ""A"".""FileID"" FROM ""FilesetEntry"" A, ""File"" B WHERE ""A"".""FilesetID"" = @FilesetId AND ""A"".""FileID"" = ""B"".""ID"" ")
                             .SetParameterValue("@FilesetId", ParentID);
                         using (var rd = cmd.ExecuteReader())
                             while (rd.Read())
