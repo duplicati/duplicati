@@ -148,7 +148,9 @@ namespace Duplicati.Library.Main.Database
 
                     //If we have a prefix rule, apply it
                     if (!string.IsNullOrWhiteSpace(prefixrule))
-                        cmd.ExecuteNonQuery(FormatInvariant($@"DELETE FROM ""{tmpnames.Tablename}"" WHERE SUBSTR(""Path"", 1, {prefixrule.Length}) != ?"), prefixrule);
+                        cmd.SetCommandAndParameters(FormatInvariant($@"DELETE FROM ""{tmpnames.Tablename}"" WHERE SUBSTR(""Path"", 1, {prefixrule.Length}) != @Rule"))
+                            .SetParameterValue("@Rule", prefixrule)
+                            .ExecuteNonQuery();
 
                     // Then we recursively find the largest prefix
                     cmd.CommandText = FormatInvariant($@"SELECT ""Path"" FROM ""{tmpnames.Tablename}"" ORDER BY LENGTH(""Path"") DESC LIMIT 1");
@@ -164,17 +166,14 @@ namespace Duplicati.Library.Main.Database
                     var foundfiles = -1L;
 
                     //TODO: Handle FS case-sensitive?
-                    cmd.CommandText = FormatInvariant($@"SELECT COUNT(*) FROM ""{tmpnames.Tablename}"" WHERE SUBSTR(""Path"", 1, ?) = ?");
-                    cmd.AddParameter();
-                    cmd.AddParameter();
+                    cmd.SetCommandAndParameters(FormatInvariant($@"SELECT COUNT(*) FROM ""{tmpnames.Tablename}"" WHERE SUBSTR(""Path"", 1, @PrefixLength) = @Prefix"));
 
                     while (filecount != foundfiles && maxpath.Length > 0)
                     {
                         var mp = Util.AppendDirSeparator(maxpath, dirsep);
-                        cmd.SetParameterValue(0, mp.Length);
-                        cmd.SetParameterValue(1, mp);
-
-                        foundfiles = cmd.ExecuteScalarInt64(0);
+                        foundfiles = cmd.SetParameterValue("@PrefixLength", mp.Length)
+                            .SetParameterValue("@Prefix", mp)
+                            .ExecuteScalarInt64(0);
 
                         if (filecount != foundfiles)
                         {
@@ -264,14 +263,10 @@ namespace Duplicati.Library.Main.Database
 
                         using (var c2 = m_connection.CreateCommand())
                         {
-                            c2.CommandText = FormatInvariant($@"INSERT INTO ""{tbname}"" (""Path"") VALUES (?)");
-                            c2.AddParameter();
-
+                            c2.SetCommandAndParameters(FormatInvariant($@"INSERT INTO ""{tbname}"" (""Path"") VALUES (@Path)"));
                             foreach (var n in SelectFolderEntries(cmd, pathprefix, tmpnames.Tablename).Distinct())
-                            {
-                                c2.SetParameterValue(0, n);
-                                c2.ExecuteNonQuery();
-                            }
+                                c2.SetParameterValue("@Path", n)
+                                    .ExecuteNonQuery();
 
                             c2.ExecuteNonQuery(FormatInvariant($@"CREATE INDEX ""{tbname}_PathIndex"" ON ""{tbname}"" (""Path"")"));
                         }
