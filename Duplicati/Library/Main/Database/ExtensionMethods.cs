@@ -513,6 +513,20 @@ public static class ExtensionMethods
     }
 
     /// <summary>
+    /// Executes the given command string `cmd` on the given database command `self` with the given values `values` and returns an enumerable of data readers.
+    /// </summary>
+    /// <param name="self">The database command to execute on.</param>
+    /// <param name="cmd">The command string to execute.</param>
+    /// <param name="values">The values that the command string should be parameterized with.</param>
+    /// <returns></returns>
+    public static IEnumerable<IDataReader> ExecuteReaderEnumerable(this IDbCommand self)
+    {
+        using var rd = self.ExecuteReader();
+        while (rd.Read())
+            yield return rd;
+    }
+
+    /// <summary>
     /// Converts the value at the given index of the given data reader to a string.
     /// </summary>
     /// <param name="reader">The data reader to convert the value from.</param>

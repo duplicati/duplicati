@@ -61,9 +61,9 @@ WHERE ""BlocksetID"" IS NULL OR ""BlocksetID"" IN
 ");
     private static readonly string BROKEN_FILE_SETS = FormatInvariant($@"SELECT DISTINCT ""B"".""Timestamp"", ""A"".""FilesetID"", COUNT(""A"".""FileID"") AS ""FileCount"" FROM ""FilesetEntry"" A, ""Fileset"" B WHERE ""A"".""FilesetID"" = ""B"".""ID"" AND ""A"".""FileID"" IN ({BROKEN_FILE_IDS})");
 
-    private static readonly string BROKEN_FILE_NAMES = FormatInvariant($@"SELECT ""A"".""Path"", ""B"".""Length"" FROM ""File"" A, ""Blockset"" B WHERE ""A"".""BlocksetID"" = ""B"".""ID"" AND ""A"".""ID"" IN ({BROKEN_FILE_IDS}) AND ""A"".""ID"" IN (SELECT ""FileID"" FROM ""FilesetEntry"" WHERE ""FilesetID"" = ?)");
+    private static readonly string BROKEN_FILE_NAMES = FormatInvariant($@"SELECT ""A"".""Path"", ""B"".""Length"" FROM ""File"" A, ""Blockset"" B WHERE ""A"".""BlocksetID"" = ""B"".""ID"" AND ""A"".""ID"" IN ({BROKEN_FILE_IDS}) AND ""A"".""ID"" IN (SELECT ""FileID"" FROM ""FilesetEntry"" WHERE ""FilesetID"" = @FilesetId)");
 
-    private static string INSERT_BROKEN_IDS(string tablename, string IDfieldname) => FormatInvariant($@"INSERT INTO ""{tablename}"" (""{IDfieldname}"") {BROKEN_FILE_IDS} AND ""ID"" IN (SELECT ""FileID"" FROM ""FilesetEntry"" WHERE ""FilesetID"" = ?)");
+    private static string INSERT_BROKEN_IDS(string tablename, string IDfieldname) => FormatInvariant($@"INSERT INTO ""{tablename}"" (""{IDfieldname}"") {BROKEN_FILE_IDS} AND ""ID"" IN (SELECT ""FileID"" FROM ""FilesetEntry"" WHERE ""FilesetID"" = @FilesetId)");
 
     public LocalListBrokenFilesDatabase(string path)
         : base(path, "ListBrokenFiles", false)
@@ -94,16 +94,17 @@ WHERE ""BlocksetID"" IS NULL OR ""BlocksetID"" IN
 
     public IEnumerable<Tuple<string, long>> GetBrokenFilenames(long filesetid, IDbTransaction transaction)
     {
-      using (var cmd = Connection.CreateCommand(transaction))
-        foreach (var rd in cmd.ExecuteReaderEnumerable(BROKEN_FILE_NAMES, filesetid))
+      using (var cmd = Connection.CreateCommand(transaction, BROKEN_FILE_NAMES).SetParameterValue("@FilesetId", filesetid))
+        foreach (var rd in cmd.ExecuteReaderEnumerable())
           if (!rd.IsDBNull(0))
             yield return new Tuple<string, long>(rd.ConvertValueToString(0), rd.ConvertValueToInt64(1));
     }
 
     public void InsertBrokenFileIDsIntoTable(long filesetid, string tablename, string IDfieldname, IDbTransaction transaction)
     {
-      using (var cmd = Connection.CreateCommand(transaction))
-        cmd.ExecuteNonQuery(INSERT_BROKEN_IDS(tablename, IDfieldname), filesetid);
+      using var cmd = Connection.CreateCommand(transaction, INSERT_BROKEN_IDS(tablename, IDfieldname))
+        .SetParameterValue("@FilesetId", filesetid);
+      cmd.ExecuteNonQuery();
     }
 
     public void RemoveMissingBlocks(IEnumerable<string> names, IDbTransaction transaction)
@@ -119,15 +120,12 @@ WHERE ""BlocksetID"" IS NULL OR ""BlocksetID"" IN
 
         // Create and fill a temp table with the volids to delete. We avoid using too many parameters that way.
         deletecmd.ExecuteNonQuery(FormatInvariant($@"CREATE TEMP TABLE ""{volidstable}"" (""ID"" INTEGER PRIMARY KEY)"));
-        deletecmd.CommandText = FormatInvariant($@"INSERT OR IGNORE INTO ""{volidstable}"" (""ID"") VALUES (?)");
-        deletecmd.Parameters.Clear();
-        deletecmd.AddParameters(1);
-        foreach (var name in names)
-        {
-          var volumeid = GetRemoteVolumeID(name, transaction);
-          deletecmd.SetParameterValue(0, volumeid);
-          deletecmd.ExecuteNonQuery();
-        }
+
+        foreach (var slice in names.Chunk(128))
+          deletecmd.SetCommandAndParameters(FormatInvariant($@"INSERT OR IGNORE INTO ""{volidstable}"" (""ID"") VALUES SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""Name"" IN (@Names)"))
+            .SetParameterValue("@Names", names.ToArray())
+            .ExecuteNonQuery();
+
         var volIdsSubQuery = FormatInvariant($@"SELECT ""ID"" FROM ""{volidstable}"" ");
         deletecmd.Parameters.Clear();
 
@@ -151,8 +149,9 @@ WHERE ""BlocksetID"" IS NULL OR ""BlocksetID"" IN
 
     public long GetFilesetFileCount(long filesetid, IDbTransaction transaction)
     {
-      using (var cmd = m_connection.CreateCommand(transaction))
-        return cmd.ExecuteScalarInt64(@"SELECT COUNT(*) FROM ""FilesetEntry"" WHERE ""FilesetID"" = ?", 0, filesetid);
+      using var cmd = m_connection.CreateCommand(transaction, @"SELECT COUNT(*) FROM ""FilesetEntry"" WHERE ""FilesetID"" = @FilesetId")
+        .SetParameterValue("@FilesetId", filesetid);
+      return cmd.ExecuteScalarInt64(0);
     }
   }
 }
