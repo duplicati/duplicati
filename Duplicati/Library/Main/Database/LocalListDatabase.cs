@@ -278,9 +278,6 @@ namespace Duplicati.Library.Main.Database
                         var filesWithSizes = FormatInvariant($@"SELECT ""Length"", ""FilesetEntry"".""FilesetID"", ""File"".""Path"" FROM ""Blockset"", ""FilesetEntry"", ""File"" WHERE ""File"".""BlocksetID"" = ""Blockset"".""ID"" AND ""FilesetEntry"".""FileID"" = ""File"".""ID"" AND FilesetEntry.""FilesetID"" IN (SELECT DISTINCT ""FilesetID"" FROM ""{m_tablename}"") ");
                         var query = @"SELECT ""C"".""Path"", ""D"".""Length"", ""C"".""FilesetID"" FROM (" + cartesianPathFileset + @") C LEFT OUTER JOIN (" + filesWithSizes + @") D ON ""C"".""FilesetID"" = ""D"".""FilesetID"" AND ""C"".""Path"" = ""D"".""Path""";
 
-                        cmd.AddParameter(pathprefix, "1");
-                        cmd.AddParameter(pathprefix.Length + 1, "2");
-
                         using (var rd = cmd.ExecuteReader(query))
                             if (rd.Read())
                             {
