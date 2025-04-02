@@ -51,7 +51,7 @@ public static class DataFolderLocator
     public static string GetDefaultStorageFolder(string targetfilename, bool autoCreate, bool readOnly = false)
     {
         var folder = DataFolderManager.OVERRIDEN_DATAFOLDER
-            ? DataFolderManager.GetDataFolder(true)
+            ? DataFolderManager.GetDataFolder(DataFolderManager.AccessMode.ProbeOnly)
             : GetDefaultStorageFolderInternal(targetfilename, AutoUpdateSettings.AppName);
 
         if (SystemIO.IO_OS.DirectoryExists(folder))

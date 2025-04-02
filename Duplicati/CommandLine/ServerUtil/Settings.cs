@@ -179,7 +179,7 @@ public sealed record Settings(
 
         File.WriteAllText(SettingsFile, JsonSerializer.Serialize(LoadSettings(SettingsFile, thisKey)
             .Where(x => x.HostUrl != HostUrl)
-            .Append(new PersistedSettings(RefreshToken, HostUrl, DataFolderManager.GetDataFolder(false))) // Explicit false for clarity
+            .Append(new PersistedSettings(RefreshToken, HostUrl, DataFolderManager.GetDataFolder(DataFolderManager.AccessMode.ReadWritePermissionSet)))
             .Select(x => x with
             {
                 RefreshToken = string.IsNullOrWhiteSpace(x.RefreshToken) || thisKey == null

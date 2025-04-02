@@ -34,6 +34,11 @@ namespace Duplicati.Library.AutoUpdater;
 /// </summary>
 public static class DataFolderManager
 {
+    public enum AccessMode
+    {
+        ProbeOnly,
+        ReadWritePermissionSet
+    }
     /// <summary>
     /// The log tag for this class
     /// </summary>
@@ -86,7 +91,7 @@ public static class DataFolderManager
     /// <summary>
     /// The folder where the machine id is placed
     /// </summary>
-    public static string GetDataFolder(bool probeOnly = false)
+    public static string GetDataFolder(AccessMode mode)
     {
         // Trigger portable mode, if the flag is set
         PORTABLE_MODE = ParseBoolSlim(ExtractOptionSlim(PORTABLE_MODE_OPTION));
@@ -129,7 +134,7 @@ public static class DataFolderManager
             if (!File.Exists(Path.Combine(dataFolder, Util.InsecurePermissionsMarkerFile)))
                 try
                 {
-                    if (!probeOnly)
+                    if (mode == AccessMode.ReadWritePermissionSet)
                         SystemIO.IO_OS.DirectorySetPermissionUserRWOnly(dataFolder);
                 }
                 catch (Exception ex)
@@ -142,7 +147,7 @@ public static class DataFolderManager
             Directory.CreateDirectory(dataFolder);
             try
             {
-                if (!probeOnly)
+                if (mode == AccessMode.ReadWritePermissionSet)
                     SystemIO.IO_OS.DirectorySetPermissionUserRWOnly(dataFolder);
             }
             catch (Exception ex)
@@ -151,7 +156,7 @@ public static class DataFolderManager
             }
         }
 
-        if (!probeOnly && !File.Exists(Path.Combine(dataFolder, INSTALL_FILE)))
+        if (mode == AccessMode.ReadWritePermissionSet && !File.Exists(Path.Combine(dataFolder, INSTALL_FILE)))
         {
             // In case there was already a machine id file from 2.0.8.1 or older, copy it to the new location
             if (File.Exists(Path.Combine(dataFolder, "updates", INSTALL_FILE)))
@@ -160,7 +165,7 @@ public static class DataFolderManager
                 File.WriteAllText(Path.Combine(dataFolder, INSTALL_FILE), AutoUpdateSettings.UpdateInstallFileText);
         }
 
-        if (!probeOnly && !File.Exists(Path.Combine(dataFolder, MACHINE_FILE)))
+        if (mode == AccessMode.ReadWritePermissionSet && !File.Exists(Path.Combine(dataFolder, MACHINE_FILE)))
             File.WriteAllText(Path.Combine(dataFolder, MACHINE_FILE), AutoUpdateSettings.UpdateMachineFileText(InstallID));
         
         return dataFolder;
@@ -233,7 +238,7 @@ public static class DataFolderManager
     /// </summary>
     private static readonly Lazy<string> _installID = new(() =>
     {
-        try { return File.ReadAllLines(Path.Combine(GetDataFolder(true), INSTALL_FILE)).FirstOrDefault(x => !string.IsNullOrWhiteSpace(x))?.Trim() ?? ""; }
+        try { return File.ReadAllLines(Path.Combine(GetDataFolder(DataFolderManager.AccessMode.ProbeOnly), INSTALL_FILE)).FirstOrDefault(x => !string.IsNullOrWhiteSpace(x))?.Trim() ?? ""; }
         catch { }
 
         return string.Empty;
@@ -250,7 +255,7 @@ public static class DataFolderManager
     private static readonly Lazy<string> _machineID = new(() =>
     {
         string? machinedId = null;
-        try { machinedId = File.ReadAllLines(Path.Combine(GetDataFolder(true), MACHINE_FILE)).FirstOrDefault(x => !string.IsNullOrWhiteSpace(x))?.Trim() ?? ""; }
+        try { machinedId = File.ReadAllLines(Path.Combine(GetDataFolder(DataFolderManager.AccessMode.ProbeOnly), MACHINE_FILE)).FirstOrDefault(x => !string.IsNullOrWhiteSpace(x))?.Trim() ?? ""; }
         catch { }
 
         return string.IsNullOrWhiteSpace(machinedId)
