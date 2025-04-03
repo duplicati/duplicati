@@ -51,9 +51,19 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("RepairHandler")]
-        public void RepairMissingBlocklistHashes()
+        [TestCase(150 * 1024)]
+        // With 10kib blocksize, we can have 10240/32 = 320 hashes
+        // Test near limits of blocklist to check split blocklist
+        [TestCase(3199 * 1024)]
+        [TestCase(3200 * 1024)]
+        [TestCase(3200 * 1024 + 5)]
+        [TestCase(3200 * 1024 * 2)]
+        [TestCase(3200 * 1024 * 2 + 5)]
+        [TestCase(3200 * 1024 * 3)]
+        [TestCase(3200 * 1024 * 3 + 5)]
+        public void RepairMissingBlocklistHashes(int dataSize)
         {
-            byte[] data = new byte[150 * 1024];
+            byte[] data = new byte[dataSize];
             Random rng = new Random();
             for (int k = 0; k < 2; k++)
             {
