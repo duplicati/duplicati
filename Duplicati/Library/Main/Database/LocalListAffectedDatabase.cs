@@ -19,6 +19,8 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
+#nullable enable
+
 using System;
 using System.Linq;
 using System.Collections.Generic;
@@ -44,19 +46,19 @@ namespace Duplicati.Library.Main.Database
 
         private class ListResultFile : Interface.IListResultFile
         {
-            public string Path { get; set; }
-            public IEnumerable<long> Sizes { get; set; }
+            public required string Path { get; set; }
+            public required IEnumerable<long>? Sizes { get; set; }
         }
 
         private class ListResultRemoteLog : Interface.IListResultRemoteLog
         {
-            public DateTime Timestamp { get; set; }
-            public string Message { get; set; }
+            public required DateTime Timestamp { get; set; }
+            public required string Message { get; set; }
         }
 
         private class ListResultRemoteVolume : Interface.IListResultRemoteVolume
         {
-            public string Name { get; set; }
+            public required string Name { get; set; }
         }
 
         public IEnumerable<Interface.IListResultFileset> GetFilesets(IEnumerable<string> items)
@@ -101,7 +103,8 @@ SELECT ""Path"" FROM ""File"" WHERE ""ID"" IN ( SELECT ""FileID"" FROM ""Fileset
                 while (rd.Read())
                     yield return new ListResultFile()
                     {
-                        Path = Convert.ToString(rd.GetValue(0))
+                        Path = rd.ConvertValueToString(0) ?? throw new InvalidOperationException("Path is null"),
+                        Sizes = null
                     };
         }
 
@@ -144,7 +147,7 @@ SELECT ""Name"" FROM ""Remotevolume"" WHERE ""ID"" IN ( SELECT ""VolumeID"" FROM
                 while (rd.Read())
                     yield return new ListResultRemoteVolume()
                     {
-                        Name = Convert.ToString(rd.GetValue(0))
+                        Name = rd.ConvertValueToString(0) ?? ""
                     };
         }
     }

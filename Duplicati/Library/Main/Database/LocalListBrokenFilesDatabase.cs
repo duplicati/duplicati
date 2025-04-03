@@ -19,6 +19,8 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -87,7 +89,7 @@ WHERE ""BlocksetID"" IS NULL OR ""BlocksetID"" IN
       query += @" GROUP BY ""A"".""FilesetID""";
 
       using (var cmd = Connection.CreateCommand(transaction))
-        foreach (var rd in cmd.SetCommandAndParameters(query).SetParameterValues(clause.Values).ExecuteReaderEnumerable(null))
+        foreach (var rd in cmd.SetCommandAndParameters(query).SetParameterValues(clause.Values).ExecuteReaderEnumerable())
           if (!rd.IsDBNull(0))
             yield return new Tuple<DateTime, long, long>(ParseFromEpochSeconds(rd.ConvertValueToInt64(0, 0)), rd.ConvertValueToInt64(1, -1), rd.ConvertValueToInt64(2, 0));
     }
@@ -97,7 +99,7 @@ WHERE ""BlocksetID"" IS NULL OR ""BlocksetID"" IN
       using (var cmd = Connection.CreateCommand(transaction, BROKEN_FILE_NAMES).SetParameterValue("@FilesetId", filesetid))
         foreach (var rd in cmd.ExecuteReaderEnumerable())
           if (!rd.IsDBNull(0))
-            yield return new Tuple<string, long>(rd.ConvertValueToString(0), rd.ConvertValueToInt64(1));
+            yield return new Tuple<string, long>(rd.ConvertValueToString(0) ?? throw new Exception("Filename was null"), rd.ConvertValueToInt64(1));
     }
 
     public void InsertBrokenFileIDsIntoTable(long filesetid, string tablename, string IDfieldname, IDbTransaction transaction)

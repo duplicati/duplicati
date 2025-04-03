@@ -19,6 +19,8 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
+#nullable enable
+
 using System;
 using System.Data;
 using System.Collections.Generic;
@@ -208,7 +210,7 @@ namespace Duplicati.Library.Main.Database
                 cmd.ExecuteNonQuery();
             }
 
-            private static IEnumerable<string> ReaderToStringList(IDataReader rd)
+            private static IEnumerable<string?> ReaderToStringList(IDataReader rd)
             {
                 using (rd)
                     while (rd.Read())
@@ -312,7 +314,7 @@ namespace Duplicati.Library.Main.Database
                         cmd.SetCommandAndParameters(sql);
                         foreach (var type in elTypes)
                             foreach (var s in ReaderToStringList(cmd.SetParameterValue("@Type", (int)type).ExecuteReader()))
-                                yield return new Tuple<Interface.ListChangesChangeType, Interface.ListChangesElementType, string>(changeType, type, s);
+                                yield return new Tuple<Interface.ListChangesChangeType, Interface.ListChangesElementType, string>(changeType, type, s ?? "");
                     }
 
                     foreach (var r in BuildResult(cmd, sqls.Added, Interface.ListChangesChangeType.Added))
@@ -330,14 +332,14 @@ namespace Duplicati.Library.Main.Database
                 {
                     try { m_insertPreviousElementCommand.Dispose(); }
                     catch { }
-                    finally { m_insertPreviousElementCommand = null; }
+                    finally { m_insertPreviousElementCommand = null!; }
                 }
 
                 if (m_insertCurrentElementCommand != null)
                 {
                     try { m_insertCurrentElementCommand.Dispose(); }
                     catch { }
-                    finally { m_insertCurrentElementCommand = null; }
+                    finally { m_insertCurrentElementCommand = null!; }
                 }
 
                 if (m_transaction != null)
@@ -346,9 +348,9 @@ namespace Duplicati.Library.Main.Database
                     catch { }
                     finally
                     {
-                        m_previousTable = null;
-                        m_currentTable = null;
-                        m_transaction = null;
+                        m_previousTable = null!;
+                        m_currentTable = null!;
+                        m_transaction = null!;
                     }
                 }
             }

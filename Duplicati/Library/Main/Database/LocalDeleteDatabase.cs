@@ -19,6 +19,8 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -39,23 +41,20 @@ namespace Duplicati.Library.Main.Database
         /// </summary>
         private const string TEMPORARY = "TEMPORARY";
 
+        private const string REGISTER_COMMAND = @"INSERT OR IGNORE INTO ""DuplicateBlock"" (""BlockID"", ""VolumeID"") SELECT ""ID"", @VolumeId FROM ""Block"" WHERE ""Hash"" = @Hash AND ""Size"" = @Size ";
+
         private IDbCommand m_registerDuplicateBlockCommand;
 
         public LocalDeleteDatabase(string path, string operation)
             : base(path, operation, true)
         {
-            InitializeCommands();
+            m_registerDuplicateBlockCommand = m_connection.CreateCommand(REGISTER_COMMAND);
         }
 
         public LocalDeleteDatabase(LocalDatabase db)
             : base(db)
         {
-            InitializeCommands();
-        }
-
-        private void InitializeCommands()
-        {
-            m_registerDuplicateBlockCommand = m_connection.CreateCommand(@"INSERT OR IGNORE INTO ""DuplicateBlock"" (""BlockID"", ""VolumeID"") SELECT ""ID"", @VolumeId FROM ""Block"" WHERE ""Hash"" = @Hash AND ""Size"" = @Size ");
+            m_registerDuplicateBlockCommand = m_connection.CreateCommand(REGISTER_COMMAND);
         }
 
         /// <summary>
@@ -190,7 +189,7 @@ namespace Duplicati.Library.Main.Database
 
                     using (var rd = cmd.ExecuteReader(FormatInvariant($@"SELECT ""A"".""Name"", ""B"".""ActiveSize"", ""B"".""InactiveSize"", ""A"".""Size"" FROM ""Remotevolume"" A, ""{tmptablename}"" B WHERE ""A"".""ID"" = ""B"".""VolumeID"" ORDER BY ""B"".""Sorttime"" ASC ")))
                         while (rd.Read())
-                            yield return new VolumeUsage(rd.GetValue(0).ToString(), rd.ConvertValueToInt64(1, 0) + rd.ConvertValueToInt64(2, 0), rd.ConvertValueToInt64(2, 0), rd.ConvertValueToInt64(3, 0));
+                            yield return new VolumeUsage(rd.ConvertValueToString(0) ?? "", rd.ConvertValueToInt64(1, 0) + rd.ConvertValueToInt64(2, 0), rd.ConvertValueToInt64(2, 0), rd.ConvertValueToInt64(3, 0));
                 }
                 finally
                 {
@@ -331,7 +330,7 @@ namespace Duplicati.Library.Main.Database
             {
                 if (m_command != null)
                     try { m_command.Dispose(); }
-                    finally { m_command = null; }
+                    finally { m_command = null!; }
             }
         }
 
@@ -433,7 +432,7 @@ namespace Duplicati.Library.Main.Database
                 using (var rd = cmd.ExecuteReader(@"SELECT ""C"".""Name"", ""B"".""Name"", ""B"".""Hash"", ""B"".""Size"" FROM ""IndexBlockLink"" A, ""RemoteVolume"" B, ""RemoteVolume"" C WHERE ""A"".""IndexVolumeID"" = ""B"".""ID"" AND ""A"".""BlockVolumeID"" = ""C"".""ID"" AND ""B"".""Hash"" IS NOT NULL AND ""B"".""Size"" IS NOT NULL "))
                     while (rd.Read())
                     {
-                        var name = rd.GetValue(0).ToString();
+                        var name = rd.ConvertValueToString(0) ?? "";
                         if (!lookupBlock.TryGetValue(name, out var indexfileList))
                         {
                             indexfileList = new List<IRemoteVolume>();
