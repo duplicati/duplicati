@@ -568,6 +568,9 @@ namespace Duplicati.Library.Main.Operation
             // update fileset using filesetData
             restoredb.UpdateFullBackupStateInFileset(filesetid, filesetData.IsFullBackup, transaction);
 
+            // clear any existing fileset entries
+            restoredb.ClearFilesetEntries(filesetid, transaction);
+
             using (var filelistreader = new FilesetVolumeReader(compressor, options))
                 foreach (var fe in filelistreader.Files.Where(x => Library.Utility.FilterExpression.Matches(filter, x.Path)))
                 {

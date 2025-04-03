@@ -1554,6 +1554,19 @@ AND oldVersion.FilesetID = (SELECT ID FROM Fileset WHERE ID != @FilesetId ORDER 
         }
 
         /// <summary>
+        /// Removes all entries in the fileset entry table for a given fileset ID
+        /// </summary>
+        /// <param name="filesetId">The fileset ID to clear</param>
+        /// <param name="transaction">The transaction to use</param>
+        public void ClearFilesetEntries(long filesetId, IDbTransaction transaction)
+        {
+            using (var cmd = m_connection.CreateCommand(transaction))
+                cmd.SetCommandAndParameters(@"DELETE FROM ""FilesetEntry"" WHERE ""FilesetID"" = @FilesetId")
+                    .SetParameterValue("@FilesetId", filesetId)
+                    .ExecuteNonQuery();
+        }
+
+        /// <summary>
         /// Gets the last previous fileset that was incomplete
         /// </summary>
         /// <param name="transaction">The transaction to use</param>
