@@ -415,7 +415,9 @@ END ");
                     else if (OperatingSystem.IsWindows() && dirsep == "/")
                     {
                         // For Linux -> Win, we use the temporary folder's drive as the root path
-                        cmd.ExecuteNonQuery(FormatInvariant($@"UPDATE ""{m_tempfiletable}"" SET ""Targetpath"" = CASE WHEN SUBSTR(""Path"", 1, 1) == '/' THEN ? || SUBSTR(""Path"", 2) ELSE ""Path"" END"), Util.AppendDirSeparator(System.IO.Path.GetPathRoot(Library.Utility.TempFolder.SystemTempPath)).Replace("\\", "/"));
+                        cmd.SetCommandAndParameters(FormatInvariant($@"UPDATE ""{m_tempfiletable}"" SET ""Targetpath"" = CASE WHEN SUBSTR(""Path"", 1, 1) == '/' THEN @Path || SUBSTR(""Path"", 2) ELSE ""Path"" END"))
+                            .SetParameterValue("@Path", Util.AppendDirSeparator(System.IO.Path.GetPathRoot(Library.Utility.TempFolder.SystemTempPath)).Replace("\\", "/"))
+                            .ExecuteNonQuery();
                     }
                     else
                     {
