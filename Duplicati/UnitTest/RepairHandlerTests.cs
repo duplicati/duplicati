@@ -421,16 +421,16 @@ namespace Duplicati.UnitTest
             // Check database block link
             using (LocalDatabase db = new LocalDatabase(DBFILE, "Test", true))
             {
-                long indexVolumeId = db.GetRemoteVolumeID(Path.GetFileName(origFile));
-                long duplicateVolumeId = db.GetRemoteVolumeID(Path.GetFileName(dupFile));
+                var indexVolumeId = db.GetRemoteVolumeID(Path.GetFileName(origFile));
+                var duplicateVolumeId = db.GetRemoteVolumeID(Path.GetFileName(dupFile));
                 Assert.AreNotEqual(-1, indexVolumeId);
                 Assert.AreNotEqual(-1, duplicateVolumeId);
 
                 using (var cmd = db.Connection.CreateCommand())
                 {
-                    string sql = @"SELECT ""BlockVolumeID"" FROM ""IndexBlockLink"" WHERE ""IndexVolumeID"" = ?";
-                    long linkedIndexId = cmd.ExecuteScalarInt64(sql, -1, indexVolumeId);
-                    long linkedDuplicateId = cmd.ExecuteScalarInt64(sql, -1, duplicateVolumeId);
+                    var sql = @"SELECT ""BlockVolumeID"" FROM ""IndexBlockLink"" WHERE ""IndexVolumeID"" = @VolumeId";
+                    var linkedIndexId = cmd.SetCommandAndParameters(sql).SetParameterValue("@VolumeId", indexVolumeId).ExecuteScalarInt64(-1);
+                    var linkedDuplicateId = cmd.SetCommandAndParameters(sql).SetParameterValue("@VolumeId", duplicateVolumeId).ExecuteScalarInt64(-1);
                     Assert.AreEqual(linkedIndexId, linkedDuplicateId);
                 }
             }
@@ -481,8 +481,8 @@ namespace Duplicati.UnitTest
             if (deleteRemoteFile)
                 File.Delete(dlistFile);
             using (var con = SQLiteLoader.LoadConnection(options["dbpath"]))
-            using (var cmd = con.CreateCommand())
-                Assert.AreEqual(1, cmd.ExecuteNonQuery("DELETE FROM RemoteVolume WHERE Name = ?", Path.GetFileName(dlistFile)));
+            using (var cmd = con.CreateCommand("DELETE FROM RemoteVolume WHERE Name = @Name"))
+                Assert.AreEqual(1, cmd.SetParameterValue("@Name", Path.GetFileName(dlistFile)).ExecuteNonQuery());
 
             // Should catch this in validation
             using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
@@ -498,8 +498,8 @@ namespace Duplicati.UnitTest
 
             // Check that the entry was recreated
             using (var con = SQLiteLoader.LoadConnection(options["dbpath"]))
-            using (var cmd = con.CreateCommand())
-                Assert.AreEqual(2, cmd.ExecuteScalarInt64("SELECT COUNT(*) FROM RemoteVolume WHERE Name LIKE '%.dlist.%' AND State != ?", -1, RemoteVolumeState.Deleted.ToString()));
+            using (var cmd = con.CreateCommand("SELECT COUNT(*) FROM RemoteVolume WHERE Name LIKE '%.dlist.%' AND State != @State"))
+                Assert.AreEqual(2, cmd.SetParameterValue("@State", RemoteVolumeState.Deleted.ToString()).ExecuteScalarInt64(-1));
 
             // Delete the database and check that the result is correct
             File.Delete(options["dbpath"]);
@@ -538,8 +538,8 @@ namespace Duplicati.UnitTest
             using (var cmd = con.CreateCommand())
             {
                 var filesetId = cmd.ExecuteScalarInt64("SELECT Id FROM Fileset ORDER BY Id DESC LIMIT 1");
-                Assert.AreEqual(1, cmd.ExecuteNonQuery("DELETE FROM Fileset WHERE Id = ?", filesetId));
-                cmd.ExecuteNonQuery("DELETE FROM FilesetEntry WHERE FilesetId = ?", filesetId);
+                Assert.AreEqual(1, cmd.SetCommandAndParameters("DELETE FROM Fileset WHERE Id = @FilesetId").SetParameterValue("@FilesetId", filesetId).ExecuteNonQuery());
+                cmd.SetCommandAndParameters("DELETE FROM FilesetEntry WHERE FilesetId = @FilesetId").SetParameterValue("@FilesetId", filesetId);
             }
 
             // Should catch this in validation
@@ -588,7 +588,7 @@ namespace Duplicati.UnitTest
                 filesetEntries = cmd.ExecuteScalarInt64("SELECT COUNT(*) FROM FilesetEntry");
                 fileLookupEntries = cmd.ExecuteScalarInt64("SELECT COUNT(*) FROM FileLookup");
                 var fileId = cmd.ExecuteScalarInt64("SELECT FileId FROM FilesetEntry INNER JOIN FileLookup ON FilesetEntry.FileID = FileLookup.Id WHERE FileLookup.BlocksetID != -100 ORDER BY FilesetId DESC LIMIT 1");
-                Assert.AreEqual(1, cmd.ExecuteNonQuery("DELETE FROM FileLookup WHERE Id = ?", fileId));
+                Assert.AreEqual(1, cmd.SetCommandAndParameters("DELETE FROM FileLookup WHERE Id = @FileId").SetParameterValue("@FileId", fileId).ExecuteNonQuery());
             }
 
             // Should catch this in validation
