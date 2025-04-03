@@ -379,7 +379,7 @@ namespace Duplicati.Server.Database
                         cmd.Parameters.Add(p);
                     }
 
-                    cmd.CommandText = @"SELECT ""ID"" FROM ""Backup"" WHERE " + sb;
+                    cmd.SetCommandAndParameters(@"SELECT ""ID"" FROM ""Backup"" WHERE " + sb);
 
                     return Read(cmd, (rd) => ConvertToInt64(rd, 0)).ToArray();
                 }
@@ -484,7 +484,7 @@ namespace Duplicati.Server.Database
                         cmd.Parameters.Add(p);
                     }
 
-                    cmd.CommandText = @"SELECT ""ID"" FROM ""Schedule"" WHERE " + sb;
+                    cmd.SetCommandAndParameters(@"SELECT ""ID"" FROM ""Schedule"" WHERE " + sb);
 
                     return Read(cmd, (rd) => ConvertToInt64(rd, 0)).ToArray();
                 }
@@ -674,8 +674,7 @@ namespace Duplicati.Server.Database
                         using (var cmd = m_connection.CreateCommand())
                         {
                             cmd.Transaction = tr;
-                            cmd.CommandText = @"SELECT last_insert_rowid();";
-                            item.ID = ExecuteScalarInt64(cmd).ToString();
+                            item.ID = cmd.ExecuteScalarInt64(@"SELECT last_insert_rowid();").ToString();
                         }
 
                     var id = long.Parse(item.ID ?? "-1");
@@ -770,12 +769,8 @@ namespace Duplicati.Server.Database
                     });
 
                 if (!update)
-                    using (var cmd = m_connection.CreateCommand())
-                    {
-                        cmd.Transaction = tr;
-                        cmd.CommandText = @"SELECT last_insert_rowid();";
-                        item.ID = ExecuteScalarInt64(cmd);
-                    }
+                    using (var cmd = m_connection.CreateCommand(tr))
+                        item.ID = cmd.ExecuteScalarInt64(@"SELECT last_insert_rowid();");
             }
         }
 
@@ -1319,10 +1314,9 @@ namespace Duplicati.Server.Database
                 });
 
             if (!updateExisting && values.Count() == 1 && idfield != null)
-                using (var cmd = m_connection.CreateCommand())
+                using (var cmd = m_connection.CreateCommand(transaction))
                 {
-                    cmd.Transaction = transaction;
-                    cmd.CommandText = @"SELECT last_insert_rowid();";
+                    cmd.SetCommandAndParameters(@"SELECT last_insert_rowid();");
                     if (idfield.PropertyType == typeof(string))
                         idfield.SetValue(values.First(), ExecuteScalarString(cmd), null);
                     else

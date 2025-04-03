@@ -844,9 +844,8 @@ SELECT ""BlocklistHash"".""BlocksetID"" FROM ""BlocklistHash"" WHERE ""Blocklist
 
         public string? GetFirstPath()
         {
-            using (var cmd = m_connection.CreateCommand())
+            using (var cmd = m_connection.CreateCommand(@"SELECT ""Path"" FROM ""File"" ORDER BY LENGTH(""Path"") DESC LIMIT 1"))
             {
-                cmd.CommandText = @"SELECT ""Path"" FROM ""File"" ORDER BY LENGTH(""Path"") DESC LIMIT 1";
                 var v0 = cmd.ExecuteScalar();
                 if (v0 == null || v0 == DBNull.Value)
                     return null;

@@ -124,7 +124,7 @@ WHERE ""BlocksetID"" IS NULL OR ""BlocksetID"" IN
         deletecmd.ExecuteNonQuery(FormatInvariant($@"CREATE TEMP TABLE ""{volidstable}"" (""ID"" INTEGER PRIMARY KEY)"));
 
         using (var tmptable = new TemporaryDbValueList(m_connection, transaction, names))
-          deletecmd.SetCommandAndParameters(FormatInvariant($@"INSERT OR IGNORE INTO ""{volidstable}"" (""ID"") VALUES SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""Name"" IN (@Names)"))
+          deletecmd.SetCommandAndParameters(FormatInvariant($@"INSERT OR IGNORE INTO ""{volidstable}"" (""ID"") SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""Name"" IN (@Names)"))
             .ExpandInClauseParameter("@Names", tmptable)
             .ExecuteNonQuery();
 

@@ -155,16 +155,14 @@ namespace Duplicati.Library.Main.Database
                             .ExecuteNonQuery();
 
                     // Then we recursively find the largest prefix
-                    cmd.CommandText = FormatInvariant($@"SELECT ""Path"" FROM ""{tmpnames.Tablename}"" ORDER BY LENGTH(""Path"") DESC LIMIT 1");
-                    var v0 = cmd.ExecuteScalar();
+                    var v0 = cmd.ExecuteScalar(FormatInvariant($@"SELECT ""Path"" FROM ""{tmpnames.Tablename}"" ORDER BY LENGTH(""Path"") DESC LIMIT 1"));
                     var maxpath = "";
                     if (v0 != null)
                         maxpath = v0.ToString() ?? "";
 
                     var dirsep = Util.GuessDirSeparator(maxpath);
 
-                    cmd.CommandText = FormatInvariant($@"SELECT COUNT(*) FROM ""{tmpnames.Tablename}""");
-                    var filecount = cmd.ExecuteScalarInt64(0);
+                    var filecount = cmd.ExecuteScalarInt64(FormatInvariant($@"SELECT COUNT(*) FROM ""{tmpnames.Tablename}"""), 0);
                     var foundfiles = -1L;
 
                     //TODO: Handle FS case-sensitive?

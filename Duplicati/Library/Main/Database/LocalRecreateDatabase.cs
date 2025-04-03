@@ -523,7 +523,7 @@ BE.BlocksetID IS NULL ");
                 {
                     // On the first pass, we select all the volumes we know we need,
                     // which may be an empty list
-                    cmd.CommandText = selectCommand + FormatInvariant($@" WHERE ""ID"" IN ({missingBlocklistVolumes})");
+                    cmd.SetCommandAndParameters(selectCommand + FormatInvariant($@" WHERE ""ID"" IN ({missingBlocklistVolumes})"));
 
                     // Reset the list
                     m_proccessedVolumes.Clear();
@@ -690,8 +690,7 @@ DELETE FROM ""RemoteVolume"" WHERE ""Type"" = '{RemoteVolumeType.Blocks}' AND ""
                 if (m_tempblocklist != null)
                     try
                     {
-                        cmd.CommandText = FormatInvariant(@$"DROP TABLE IF EXISTS ""{m_tempblocklist}""");
-                        cmd.ExecuteNonQuery();
+                        cmd.ExecuteNonQuery(FormatInvariant(@$"DROP TABLE IF EXISTS ""{m_tempblocklist}"""));
                     }
                     catch (Exception ex)
                     {
@@ -705,8 +704,7 @@ DELETE FROM ""RemoteVolume"" WHERE ""Type"" = '{RemoteVolumeType.Blocks}' AND ""
                 if (m_tempsmalllist != null)
                     try
                     {
-                        cmd.CommandText = FormatInvariant(@$"DROP TABLE IF EXISTS ""{m_tempsmalllist}""");
-                        cmd.ExecuteNonQuery();
+                        cmd.ExecuteNonQuery(FormatInvariant(@$"DROP TABLE IF EXISTS ""{m_tempsmalllist}"""));
                     }
                     catch (Exception ex)
                     {

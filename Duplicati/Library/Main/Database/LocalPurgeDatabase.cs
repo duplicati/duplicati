@@ -122,7 +122,7 @@ namespace Duplicati.Library.Main.Database
                     using (var cmd = m_connection.CreateCommand(m_transaction))
                     {
                         cmd.ExecuteNonQuery(FormatInvariant($@"CREATE TEMPORARY TABLE ""{filenamestable}"" (""Path"" TEXT NOT NULL) "));
-                        cmd.CommandText = FormatInvariant($@"INSERT INTO ""{filenamestable}"" (""Path"") VALUES (@Path)");
+                        cmd.SetCommandAndParameters(FormatInvariant($@"INSERT INTO ""{filenamestable}"" (""Path"") VALUES (@Path)"));
                         foreach (var s in p)
                             cmd.SetParameterValue("@Path", s)
                                 .ExecuteNonQuery();

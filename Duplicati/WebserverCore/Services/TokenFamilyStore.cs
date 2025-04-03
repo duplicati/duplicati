@@ -117,10 +117,8 @@ public class TokenFamilyStore(Connection connection) : ITokenFamilyStore
     public Task InvalidateAllTokens(CancellationToken ct)
     {
         connection.ExecuteWithCommand(cmd =>
-        {
-            cmd.CommandText = @"DELETE FROM ""TokenFamily""";
-            cmd.ExecuteNonQuery();
-        });
+            cmd.ExecuteNonQuery(@"DELETE FROM ""TokenFamily""")
+        );
 
         return Task.CompletedTask;
     }

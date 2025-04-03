@@ -343,8 +343,7 @@ namespace Duplicati.Library.Main.Database
                     cmd.ExecuteNonQuery(FormatInvariant($@"UPDATE ""FileLookup"" SET ""MetadataID"" = (SELECT ""MetadataID"" FROM ""{tablename}"" A WHERE ""A"".""ID"" = ""FileLookup"".""ID"") "));
                     cmd.ExecuteNonQuery(FormatInvariant($@"DROP TABLE ""{tablename}"" "));
 
-                    cmd.CommandText = sql_count;
-                    x = cmd.ExecuteScalarInt64(0);
+                    x = cmd.ExecuteScalarInt64(sql_count, 0);
                     if (x > 1)
                         throw new Interface.UserInformationException("Repair failed, there are still duplicate metadatahashes!", "DuplicateHashesRepairFailed");
 
@@ -384,8 +383,7 @@ namespace Duplicati.Library.Main.Database
                                 .ExecuteNonQuery();
                     }
 
-                    cmd.CommandText = sql_count;
-                    x = cmd.ExecuteScalarInt64(0);
+                    x = cmd.ExecuteScalarInt64(sql_count, 0);
                     if (x > 1)
                         throw new Interface.UserInformationException("Repair failed, there are still duplicate file entries!", "DuplicateFilesRepairFailed");
 
@@ -420,7 +418,7 @@ namespace Duplicati.Library.Main.Database
                     using (var c6 = m_connection.CreateCommand(tr))
                     {
                         c3.SetCommandAndParameters(@"INSERT INTO ""BlocklistHash"" (""BlocksetID"", ""Index"", ""Hash"") VALUES (@BlocksetId, @Index, @Hash) ");
-                        c4.SetCommandAndParameters(@"SELECT ""ID"" FROM ""Block"" WHERE ""Hash"" = @Hash AND ""Size"" = @Size LIMIT 1");
+                        c4.SetCommandAndParameters(@"SELECT ""ID"" FROM ""Block"" WHERE ""Hash"" = @Hash AND ""Size"" = @Size");
                         c5.SetCommandAndParameters(@"SELECT ""ID"" FROM ""DeletedBlock"" WHERE ""Hash"" = @Hash AND ""Size"" = @Size AND ""VolumeID"" IN (SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""Type"" = @Type AND (""State"" IN (@State1, @State2)))");
                         c6.SetCommandAndParameters(@"INSERT INTO ""Block"" (""Hash"", ""Size"", ""VolumeID"") SELECT ""Hash"", ""Size"", ""VolumeID"" FROM ""DeletedBlock"" WHERE ""ID"" = @DeletedBlockId LIMIT 1; DELETE FROM ""DeletedBlock"" WHERE ""ID"" = @DeletedBlockId;");
 
@@ -445,24 +443,24 @@ namespace Duplicati.Library.Main.Database
                                     var blkey = Convert.ToBase64String(blockhasher.ComputeHash(blocklistbuffer, 0, blocklistoffset));
 
                                     // Check if the block exists in "blocks"
-                                    var blockId = c4.SetParameterValue("@Hash", blkey)
+                                    var existingBlockId = c4.SetParameterValue("@Hash", blkey)
                                         .SetParameterValue("@Size", blocklistoffset)
                                         .ExecuteScalarInt64(-1);
 
-                                    if (blockId != 1)
+                                    if (existingBlockId <= 0)
                                     {
-                                        var c = c5.SetParameterValue("@Hash", blkey)
+                                        var deletedBlockId = c5.SetParameterValue("@Hash", blkey)
                                             .SetParameterValue("@Size", blocklistoffset)
                                             .SetParameterValue("@Type", RemoteVolumeType.Blocks.ToString())
                                             .SetParameterValue("@State1", RemoteVolumeState.Uploaded.ToString())
                                             .SetParameterValue("@State2", RemoteVolumeState.Verified.ToString())
                                             .ExecuteScalarInt64(-1);
 
-                                        if (c <= 0)
+                                        if (deletedBlockId <= 0)
                                             throw new Exception($"Missing block for blocklisthash: {blkey}");
                                         else
                                         {
-                                            var rc = c6.SetParameterValue("@DeletedBlockId", c)
+                                            var rc = c6.SetParameterValue("@DeletedBlockId", deletedBlockId)
                                                 .ExecuteNonQuery();
 
                                             if (rc != 2)
@@ -490,23 +488,25 @@ namespace Duplicati.Library.Main.Database
                                 var blkeyfinal = Convert.ToBase64String(blockhasher.ComputeHash(blocklistbuffer, 0, blocklistoffset));
 
                                 // Ensure that the block exists in "blocks"
-                                if (c4.SetParameterValue("@Hash", blkeyfinal)
+                                var existingBlockId = c4.SetParameterValue("@Hash", blkeyfinal)
                                         .SetParameterValue("@Size", blocklistoffset)
-                                        .ExecuteScalarInt64(-1) != 1)
+                                        .ExecuteScalarInt64(-1);
+
+                                if (existingBlockId <= 0)
                                 {
-                                    var c = c5.SetParameterValue("@Hash", blkeyfinal)
+                                    var deletedBlockId = c5.SetParameterValue("@Hash", blkeyfinal)
                                             .SetParameterValue("@Size", blocklistoffset)
                                             .SetParameterValue("@Type", RemoteVolumeType.Blocks.ToString())
                                             .SetParameterValue("@State1", RemoteVolumeState.Uploaded.ToString())
                                             .SetParameterValue("@State2", RemoteVolumeState.Verified.ToString())
                                             .ExecuteScalarInt64(-1);
 
-                                    if (c == 0)
+                                    if (deletedBlockId == 0)
                                         throw new Exception($"Missing block for blocklisthash: {blkeyfinal}");
                                     else
                                     {
-                                        var rc = c6.SetParameterValue("@DeletedBlockId", c)
-                                                .ExecuteNonQuery(); ;
+                                        var rc = c6.SetParameterValue("@DeletedBlockId", deletedBlockId)
+                                                .ExecuteNonQuery();
                                         if (rc != 2)
                                             throw new Exception($"Unexpected update count: {rc}");
                                     }
@@ -565,8 +565,7 @@ namespace Duplicati.Library.Main.Database
                         }
                     }
 
-                    cmd.CommandText = sql_count;
-                    x = cmd.ExecuteScalarInt64();
+                    x = cmd.ExecuteScalarInt64(sql_count);
                     if (x > 1)
                         throw new Exception("Repair failed, there are still duplicate file entries!");
 
@@ -598,7 +597,7 @@ namespace Duplicati.Library.Main.Database
                 var tablename = "ProbeBlocks-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
 
                 cmd.ExecuteNonQuery(FormatInvariant($@"CREATE TEMPORARY TABLE ""{tablename}"" (""Hash"" TEXT NOT NULL, ""Size"" INTEGER NOT NULL)"));
-                cmd.CommandText = FormatInvariant($@"INSERT INTO ""{tablename}"" (""Hash"", ""Size"") VALUES (@Hash, @Size)");
+                cmd.SetCommandAndParameters(FormatInvariant($@"INSERT INTO ""{tablename}"" (""Hash"", ""Size"") VALUES (@Hash, @Size)"));
 
                 foreach (var kp in blocks)
                 {
