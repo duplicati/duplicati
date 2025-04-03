@@ -24,6 +24,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Globalization;
 using System.Threading.Tasks;
+using Duplicati.Library.AutoUpdater;
 
 namespace Duplicati.Library.Main.Operation
 {
@@ -37,7 +38,7 @@ namespace Duplicati.Library.Main.Operation
             yield return string.Format("Duplicati: {0} ({1})", Library.Utility.Utility.getEntryAssembly().FullName, System.Reflection.Assembly.GetExecutingAssembly().FullName);
 
             yield return string.Format("Autoupdate urls: {0}", string.Join(";", AutoUpdater.AutoUpdateSettings.URLs));
-            yield return string.Format("Default data folder: {0}", AutoUpdater.DataFolderManager.DATAFOLDER);
+            yield return string.Format("Default data folder: {0}", AutoUpdater.DataFolderManager.GetDataFolder(DataFolderManager.AccessMode.ProbeOnly));
             yield return string.Format("Install folder: {0}", AutoUpdater.UpdaterManager.INSTALLATIONDIR);
             yield return string.Format("Version name: \"{0}\" ({1})", AutoUpdater.UpdaterManager.SelfVersion.Displayname, System.Reflection.Assembly.GetExecutingAssembly().GetName().Version);
             yield return string.Format("Current Version folder {0}", System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location));

@@ -109,7 +109,7 @@ public static class PreloadSettingsLoader
 
         // User-context path for preload settings,
         // the same default path as where other data is stored
-        Path.Combine(DataFolderManager.DATAFOLDER, FILE_NAME),
+        Path.Combine(DataFolderManager.GetDataFolder(DataFolderManager.AccessMode.ProbeOnly), FILE_NAME),
     }
     .Concat(PortablePreloadPaths)
     .Where(x => !string.IsNullOrEmpty(x))
