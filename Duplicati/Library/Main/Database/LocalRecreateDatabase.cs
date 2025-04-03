@@ -18,6 +18,9 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
+
+#nullable enable
+
 using System;
 using System.Data;
 using System.Collections.Generic;
@@ -68,7 +71,7 @@ namespace Duplicati.Library.Main.Database
         /// <summary>
         /// A lookup table that prevents multiple downloads of the same volume
         /// </summary>
-        private Dictionary<long, long> m_proccessedVolumes;
+        private readonly Dictionary<long, long> m_proccessedVolumes = new Dictionary<long, long>();
 
         // SQL that finds index and block size for all blocklist hashes, based on the temporary hash list
         // with vars Used:
@@ -494,7 +497,7 @@ BE.BlocksetID IS NULL ");
                 cmd.SetParameterValue("@VolumeId", volumeid);
                 using (var rd = cmd.ExecuteReader())
                     while (rd.Read())
-                        yield return rd.GetValue(0).ToString();
+                        yield return rd.ConvertValueToString(0) ?? "";
             }
         }
 
@@ -523,7 +526,7 @@ BE.BlocksetID IS NULL ");
                     cmd.CommandText = selectCommand + FormatInvariant($@" WHERE ""ID"" IN ({missingBlocklistVolumes})");
 
                     // Reset the list
-                    m_proccessedVolumes = new Dictionary<long, long>();
+                    m_proccessedVolumes.Clear();
                 }
                 else
                 {
@@ -556,7 +559,7 @@ BE.BlocksetID IS NULL ");
                 {
                     while (rd.Read())
                     {
-                        var volumeID = rd.GetInt64(3);
+                        var volumeID = rd.ConvertValueToInt64(3);
 
                         // Guard against multiple downloads of the same file
                         if (!m_proccessedVolumes.ContainsKey(volumeID))
@@ -564,7 +567,7 @@ BE.BlocksetID IS NULL ");
                             m_proccessedVolumes.Add(volumeID, volumeID);
 
                             yield return new RemoteVolume(
-                                rd.GetString(0),
+                                rd.ConvertValueToString(0),
                                 rd.ConvertValueToString(1),
                                 rd.ConvertValueToInt64(2, -1)
                             );
@@ -696,7 +699,7 @@ DELETE FROM ""RemoteVolume"" WHERE ""Type"" = '{RemoteVolumeType.Blocks}' AND ""
                     }
                     finally
                     {
-                        m_tempblocklist = null;
+                        m_tempblocklist = null!;
                     }
 
                 if (m_tempsmalllist != null)
@@ -711,7 +714,7 @@ DELETE FROM ""RemoteVolume"" WHERE ""Type"" = '{RemoteVolumeType.Blocks}' AND ""
                     }
                     finally
                     {
-                        m_tempsmalllist = null;
+                        m_tempsmalllist = null!;
                     }
 
             }

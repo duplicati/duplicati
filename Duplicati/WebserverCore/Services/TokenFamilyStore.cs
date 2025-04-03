@@ -58,7 +58,12 @@ public class TokenFamilyStore(Connection connection) : ITokenFamilyStore
             if (!reader.Read())
                 return;
 
-            family = new ITokenFamilyStore.TokenFamily(reader.GetString(0), reader.GetString(1), reader.GetInt32(2), new DateTime(reader.GetInt64(3)));
+            family = new ITokenFamilyStore.TokenFamily(
+                reader.ConvertValueToString(0) ?? throw new Exception("Token family ID is null"),
+                reader.ConvertValueToString(1) ?? throw new Exception("Token family user ID is null"),
+                reader.GetInt32(2),
+                new DateTime(reader.ConvertValueToInt64(3))
+            );
         });
         return Task.FromResult(family ?? throw new Exceptions.UnauthorizedException("Token family not found"));
     }

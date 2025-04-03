@@ -19,6 +19,8 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
+#nullable enable
+
 using System;
 using System.Data;
 using System.Collections.Generic;
@@ -66,8 +68,8 @@ namespace Duplicati.Library.Main.Database
                 while (rd.Read())
                 {
                     yield return new KeyValuePair<long, DateTime>(
-                        rd.GetInt64(0),
-                        ParseFromEpochSeconds(rd.GetInt64(1)).ToLocalTime()
+                        rd.ConvertValueToInt64(0),
+                        ParseFromEpochSeconds(rd.ConvertValueToInt64(1)).ToLocalTime()
                     );
                 }
         }
@@ -78,7 +80,7 @@ namespace Duplicati.Library.Main.Database
         /// <param name="filesetid">The fileset ID</param>
         /// <param name="transaction">An optional transaction</param>
         /// <returns>The number of deleted entries</returns>
-        public int DeleteFilesetEntries(long filesetid, IDbTransaction transaction = null)
+        public int DeleteFilesetEntries(long filesetid, IDbTransaction? transaction = null)
         {
             using (var cmd = m_connection.CreateCommand(transaction))
                 return cmd.SetCommandAndParameters(@"DELETE FROM ""FilesetEntry"" WHERE ""FilesetID"" = @FilesetId")
@@ -116,7 +118,7 @@ namespace Duplicati.Library.Main.Database
             public bool Done { get; private set; }
 
             public BlockWithSources(IDataReader rd)
-                : base(rd.GetString(0), rd.GetInt64(1))
+                : base(rd.ConvertValueToString(0) ?? throw new Exception("Hash value was null"), rd.ConvertValueToInt64(1))
             {
                 m_rd = rd;
                 Done = !m_rd.Read();
@@ -129,7 +131,7 @@ namespace Duplicati.Library.Main.Database
                     if (Done)
                         yield break;
 
-                    var cur = new BlockSource(m_rd.GetString(2), m_rd.GetInt64(3));
+                    var cur = new BlockSource(m_rd.ConvertValueToString(2) ?? "", m_rd.ConvertValueToInt64(3));
                     var file = cur.File;
 
                     while (!Done && cur.File == file)
@@ -137,7 +139,7 @@ namespace Duplicati.Library.Main.Database
                         yield return cur;
                         Done = m_rd.Read();
                         if (!Done)
-                            cur = new BlockSource(m_rd.GetString(2), m_rd.GetInt64(3));
+                            cur = new BlockSource(m_rd.ConvertValueToString(2) ?? "", m_rd.ConvertValueToInt64(3));
                     }
                 }
             }
@@ -163,7 +165,7 @@ namespace Duplicati.Library.Main.Database
                 .SetParameterValue("@Name", name);
 
             foreach (var rd in cmd.ExecuteReaderEnumerable())
-                yield return new RemoteVolume(rd.GetString(0), rd.ConvertValueToString(1), rd.ConvertValueToInt64(2));
+                yield return new RemoteVolume(rd.ConvertValueToString(0) ?? "", rd.ConvertValueToString(1) ?? "", rd.ConvertValueToInt64(2));
         }
 
         public interface IMissingBlockList : IDisposable
@@ -183,7 +185,7 @@ namespace Duplicati.Library.Main.Database
             private string m_tablename;
             private readonly string m_volumename;
 
-            public MissingBlockList(string volumename, IDbConnection connection, IDbTransaction transaction)
+            public MissingBlockList(string volumename, IDbConnection connection, IDbTransaction? transaction)
             {
                 m_connection = connection;
                 m_transaction = new TemporaryTransactionWrapper(m_connection, transaction);
@@ -235,7 +237,7 @@ namespace Duplicati.Library.Main.Database
                     .SetParameterValue("@Restored", 0);
 
                 foreach (var rd in cmd.ExecuteReaderEnumerable())
-                    yield return new KeyValuePair<string, long>(rd.ConvertValueToString(0), rd.ConvertValueToInt64(1));
+                    yield return new KeyValuePair<string, long>(rd.ConvertValueToString(0) ?? "", rd.ConvertValueToInt64(1));
             }
 
             public IEnumerable<IRemoteVolume> GetFilesetsUsingMissingBlocks()
@@ -248,7 +250,7 @@ namespace Duplicati.Library.Main.Database
                     .SetParameterValue("@Type", RemoteVolumeType.Files.ToString());
 
                 foreach (var rd in cmd.ExecuteReaderEnumerable())
-                    yield return new RemoteVolume(rd.GetString(0), rd.ConvertValueToString(1), rd.ConvertValueToInt64(2));
+                    yield return new RemoteVolume(rd.ConvertValueToString(0) ?? "", rd.ConvertValueToString(1) ?? "", rd.ConvertValueToInt64(2));
             }
 
             public IEnumerable<IRemoteVolume> GetMissingBlockSources()
@@ -257,7 +259,7 @@ namespace Duplicati.Library.Main.Database
                     .SetParameterValue("@Name", m_volumename);
 
                 foreach (var rd in cmd.ExecuteReaderEnumerable())
-                    yield return new RemoteVolume(rd.GetString(0), rd.ConvertValueToString(1), rd.ConvertValueToInt64(2));
+                    yield return new RemoteVolume(rd.ConvertValueToString(0) ?? "", rd.ConvertValueToString(1) ?? "", rd.ConvertValueToInt64(2));
             }
 
             public void Dispose()
@@ -270,17 +272,17 @@ namespace Duplicati.Library.Main.Database
                             cmd.SetTransaction(m_transaction.Parent).ExecuteNonQuery(FormatInvariant($@"DROP TABLE IF EXISTS ""{m_tablename}"" "));
                     }
                     catch { }
-                    finally { m_tablename = null; }
+                    finally { m_tablename = null!; }
                 }
 
                 if (m_insertCommand != null)
                     try { m_insertCommand.Dispose(); }
                     catch { }
-                    finally { m_insertCommand = null; }
+                    finally { m_insertCommand = null!; }
             }
         }
 
-        public IMissingBlockList CreateBlockList(string volumename, IDbTransaction transaction = null)
+        public IMissingBlockList CreateBlockList(string volumename, IDbTransaction? transaction = null)
         {
             return new MissingBlockList(volumename, m_connection, transaction);
         }
@@ -437,7 +439,7 @@ namespace Duplicati.Library.Main.Database
 
                             foreach (var h in c2.ExecuteReaderEnumerable())
                             {
-                                var tmp = Convert.FromBase64String(h.GetString(0));
+                                var tmp = Convert.FromBase64String(h.ConvertValueToString(0) ?? throw new Exception("Hash value was null"));
                                 if (blocklistbuffer.Length - blocklistoffset < tmp.Length)
                                 {
                                     var blkey = Convert.ToBase64String(blockhasher.ComputeHash(blocklistbuffer, 0, blocklistoffset));
@@ -667,7 +669,7 @@ ORDER BY
                     {
                         if (!en.MoveNext())
                             throw new Exception($"Too few entries in source blocklist with hash {hash}");
-                        if (en.Current != r.GetString(0))
+                        if (en.Current != r.ConvertValueToString(0))
                             throw new Exception($"Mismatch in blocklist with hash {hash}");
                     }
 
@@ -684,7 +686,7 @@ ORDER BY
                 .ExpandInClauseParameter("@States", [RemoteVolumeState.Deleting.ToString(), RemoteVolumeState.Deleted.ToString()]);
 
             foreach (var rd in cmd.ExecuteReaderEnumerable())
-                yield return rd.ConvertValueToString(0);
+                yield return rd.ConvertValueToString(0) ?? "";
         }
 
         public IEnumerable<(long FilesetID, DateTime Timestamp, bool IsFull)> MissingRemoteFilesets()
@@ -704,7 +706,7 @@ ORDER BY
                 .ExpandInClauseParameter("@States", [RemoteVolumeState.Uploaded.ToString(), RemoteVolumeState.Verified.ToString()]);
 
             foreach (var rd in cmd.ExecuteReaderEnumerable())
-                yield return new RemoteVolume(rd.ConvertValueToString(0), rd.ConvertValueToString(1), rd.ConvertValueToInt64(2));
+                yield return new RemoteVolume(rd.ConvertValueToString(0) ?? "", rd.ConvertValueToString(1) ?? "", rd.ConvertValueToInt64(2));
         }
     }
 }

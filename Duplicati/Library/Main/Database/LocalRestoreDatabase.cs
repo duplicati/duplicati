@@ -18,6 +18,9 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
+
+#nullable enable
+
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -42,13 +45,13 @@ namespace Duplicati.Library.Main.Database
         /// <summary>
         /// The name of the temporary table in the database, which is used to store the list of files to restore.
         /// </summary>
-        protected string m_tempfiletable;
-        protected string m_tempblocktable;
+        protected string? m_tempfiletable;
+        protected string? m_tempblocktable;
         protected ConcurrentBag<IDbConnection> m_connection_pool = [];
-        protected string m_latestblocktable;
-        protected string m_fileprogtable;
-        protected string m_totalprogtable;
-        protected string m_filesnewlydonetable;
+        protected string? m_latestblocktable;
+        protected string? m_fileprogtable;
+        protected string? m_totalprogtable;
+        protected string? m_filesnewlydonetable;
 
         protected DateTime m_restoreTime;
 
@@ -270,7 +273,7 @@ END ");
 
                                 using (var rd = cmd.ExecuteReader(FormatInvariant($@"SELECT ""Path"" FROM ""{m_filenamestable}"" WHERE ""Path"" NOT IN (SELECT ""Path"" FROM ""{m_tempfiletable}"")")))
                                     while (rd.Read())
-                                        sb.AppendLine(rd.GetValue(0).ToString());
+                                        sb.AppendLine(rd.ConvertValueToString(0));
 
                                 var actualrestoretime = ParseFromEpochSeconds(
                                     cmd.SetCommandAndParameters(@"SELECT ""Timestamp"" FROM ""Fileset"" WHERE ""ID"" = @FilesetId")
@@ -339,7 +342,7 @@ END ");
             return new Tuple<long, long>(0, 0);
         }
 
-        public string GetFirstPath()
+        public string? GetFirstPath()
         {
             using (var cmd = m_connection.CreateCommand())
             {
@@ -360,7 +363,7 @@ END ");
                 var v0 = cmd.ExecuteScalar();
                 var maxpath = "";
                 if (v0 != null && v0 != DBNull.Value)
-                    maxpath = v0.ToString();
+                    maxpath = v0.ToString()!;
 
                 var dirsep = Util.GuessDirSeparator(maxpath);
 
@@ -564,8 +567,8 @@ END ");
 
             public ExistingFile(IDataReader rd) { m_reader = rd; HasMore = true; }
 
-            public string TargetPath { get { return m_reader.ConvertValueToString(0); } }
-            public string TargetHash { get { return m_reader.ConvertValueToString(1); } }
+            public string TargetPath { get { return m_reader.ConvertValueToString(0) ?? ""; } }
+            public string TargetHash { get { return m_reader.ConvertValueToString(1) ?? ""; } }
             public long TargetFileID { get { return m_reader.ConvertValueToInt64(2); } }
             public long Length { get { return m_reader.ConvertValueToInt64(3); } }
 
@@ -577,7 +580,7 @@ END ");
 
                 public ExistingFileBlock(IDataReader rd) { m_reader = rd; }
 
-                public string Hash { get { return m_reader.ConvertValueToString(4); } }
+                public string Hash { get { return m_reader.ConvertValueToString(4) ?? ""; } }
                 public long Index { get { return m_reader.ConvertValueToInt64(5); } }
                 public long Size { get { return m_reader.ConvertValueToInt64(6); } }
             }
@@ -618,6 +621,8 @@ END ");
 
         public IEnumerable<IExistingFile> GetExistingFilesWithBlocks()
         {
+            if (string.IsNullOrWhiteSpace(m_tempfiletable) || string.IsNullOrWhiteSpace(m_tempblocktable))
+                throw new InvalidOperationException("No temporary file table set up for this restore.");
             return ExistingFile.GetExistingFilesWithBlocks(m_connection, m_tempfiletable);
         }
 
@@ -630,7 +635,7 @@ END ");
                     private readonly IDataReader m_reader;
                     public BlockSource(IDataReader rd) { m_reader = rd; }
 
-                    public string Path { get { return m_reader.ConvertValueToString(6); } }
+                    public string Path { get { return m_reader.ConvertValueToString(6) ?? ""; } }
                     public long Offset { get { return m_reader.ConvertValueToInt64(7); } }
                     public bool IsMetadata { get { return false; } }
                 }
@@ -638,9 +643,9 @@ END ");
                 private readonly IDataReader m_reader;
                 public BlockDescriptor(IDataReader rd) { m_reader = rd; HasMore = true; }
 
-                private string TargetPath { get { return m_reader.ConvertValueToString(0); } }
+                private string TargetPath { get { return m_reader.ConvertValueToString(0) ?? ""; } }
 
-                public string Hash { get { return m_reader.ConvertValueToString(2); } }
+                public string Hash { get { return m_reader.ConvertValueToString(2) ?? ""; } }
                 public long Offset { get { return m_reader.ConvertValueToInt64(3); } }
                 public long Index { get { return m_reader.ConvertValueToInt64(4); } }
                 public long Size { get { return m_reader.ConvertValueToInt64(5); } }
@@ -668,7 +673,7 @@ END ");
             private readonly IDataReader m_reader;
             public LocalBlockSource(IDataReader rd) { m_reader = rd; HasMore = true; }
 
-            public string TargetPath { get { return m_reader.ConvertValueToString(0); } }
+            public string TargetPath { get { return m_reader.ConvertValueToString(0) ?? ""; } }
             public long TargetFileID { get { return m_reader.ConvertValueToInt64(1); } }
 
             public bool HasMore { get; private set; }
@@ -719,6 +724,8 @@ END ");
 
         public IEnumerable<ILocalBlockSource> GetFilesAndSourceBlocks(bool skipMetadata, long blocksize)
         {
+            if (string.IsNullOrWhiteSpace(m_tempfiletable) || string.IsNullOrWhiteSpace(m_tempblocktable))
+                throw new InvalidOperationException("No temporary file table set up for this restore.");
             return LocalBlockSource.GetFilesAndSourceBlocks(m_connection, m_tempfiletable, m_tempblocktable, blocksize, skipMetadata);
         }
 
@@ -819,13 +826,13 @@ ORDER BY ""BB"".""MaxIndex"" ");
 
                     public long Offset { get { return m_reader.ConvertValueToInt64(2); } }
                     public long Size { get { return m_reader.ConvertValueToInt64(3); } }
-                    public string Key { get { return m_reader.ConvertValueToString(4); } }
+                    public string Key { get { return m_reader.ConvertValueToString(4) ?? ""; } }
                 }
 
                 private readonly IDataReader m_reader;
                 public VolumePatch(IDataReader rd) { m_reader = rd; HasMore = true; }
 
-                public string Path { get { return m_reader.ConvertValueToString(0); } }
+                public string Path { get { return m_reader.ConvertValueToString(0) ?? ""; } }
                 public long FileID { get { return m_reader.ConvertValueToInt64(1); } }
                 public bool HasMore { get; private set; }
 
@@ -912,6 +919,8 @@ ORDER BY ""A"".""TargetPath"", ""BB"".""Index""");
 
         public IFilesAndMetadata GetMissingBlockData(BlockVolumeReader curvolume, long blocksize)
         {
+            if (string.IsNullOrWhiteSpace(m_tempfiletable) || string.IsNullOrWhiteSpace(m_tempblocktable))
+                throw new InvalidOperationException("No temporary file table set up for this restore.");
             return new FilesAndMetadata(m_connection, m_tempfiletable, m_tempblocktable, blocksize, curvolume);
         }
 
@@ -958,7 +967,8 @@ ORDER BY ""A"".""TargetPath"", ""BB"".""Index""");
 
             using (var rd = cmd.ExecuteReader())
                 while (rd.Read())
-                    yield return new FileToRestore(rd.ConvertValueToInt64(0), rd.ConvertValueToString(1), rd.ConvertValueToString(2), rd.ConvertValueToInt64(3));
+                    yield return new FileToRestore(
+                        rd.ConvertValueToInt64(0), rd.ConvertValueToString(1) ?? "", rd.ConvertValueToString(2) ?? "", rd.ConvertValueToInt64(3));
         }
 
         /// <summary>
@@ -1081,7 +1091,7 @@ ORDER BY ""A"".""TargetPath"", ""BB"".""Index""");
                 .SetParameterValue("@VolumeID", VolumeID);
             using var reader = cmd.ExecuteReader();
             while (reader.Read())
-                yield return (reader.ConvertValueToString(0), reader.ConvertValueToInt64(1), reader.ConvertValueToString(2));
+                yield return (reader.ConvertValueToString(0) ?? "", reader.ConvertValueToInt64(1), reader.ConvertValueToString(2) ?? "");
         }
 
         public void DropRestoreTable()
@@ -1262,11 +1272,11 @@ WHERE ""FileID"" = @TargetFileId AND ""Index"" = @Index AND ""Hash"" = @Hash AND
             public void Commit()
             {
                 m_insertblockCommand.Dispose();
-                m_insertblockCommand = null;
+                m_insertblockCommand = null!;
                 using (new Logging.Timer(LOGTAG, "CommitBlockMarker", "CommitBlockMarker"))
                     m_transaction.Commit();
                 m_transaction.Dispose();
-                m_transaction = null;
+                m_transaction = null!;
             }
 
             public void Dispose()
@@ -1282,6 +1292,10 @@ WHERE ""FileID"" = @TargetFileId AND ""Index"" = @Index AND ""Hash"" = @Hash AND
 
         public IBlockMarker CreateBlockMarker()
         {
+            if (string.IsNullOrWhiteSpace(m_tempfiletable) || string.IsNullOrWhiteSpace(m_tempblocktable))
+                throw new InvalidOperationException("No temporary file table set up for this restore.");
+            if (string.IsNullOrWhiteSpace(m_totalprogtable))
+                throw new InvalidOperationException("No progress table set up for this restore.");
             return new DirectBlockMarker(m_connection, m_tempblocktable, m_tempfiletable, m_totalprogtable);
         }
 
@@ -1303,7 +1317,7 @@ WHERE ""FileID"" = @TargetFileId AND ""Index"" = @Index AND ""Hash"" = @Hash AND
                 .SetParameterValue("@BlocksetID", FOLDER_BLOCKSET_ID);
             using (var rd = cmd.ExecuteReader())
                 while (rd.Read())
-                    yield return rd.ConvertValueToString(0);
+                    yield return rd.ConvertValueToString(0) ?? "";
         }
 
         public interface IFastSource
@@ -1332,16 +1346,16 @@ WHERE ""FileID"" = @TargetFileId AND ""Index"" = @Index AND ""Hash"" = @Hash AND
                 public long Offset { get { return m_rd.ConvertValueToInt64(3) * m_blocksize; } }
                 public long Index { get { return m_rd.ConvertValueToInt64(3); } }
                 public long Size { get { return m_rd.ConvertValueToInt64(5); } }
-                public string Hash { get { return m_rd.ConvertValueToString(4); } }
+                public string Hash { get { return m_rd.ConvertValueToString(4) ?? ""; } }
             }
 
             private readonly IDataReader m_rd;
             private readonly long m_blocksize;
             public FastSource(IDataReader rd, long blocksize) { m_rd = rd; m_blocksize = blocksize; MoreData = true; }
             public bool MoreData { get; private set; }
-            public string TargetPath { get { return m_rd.ConvertValueToString(0); } }
+            public string TargetPath { get { return m_rd.ConvertValueToString(0) ?? ""; } }
             public long TargetFileID { get { return m_rd.ConvertValueToInt64(2); } }
-            public string SourcePath { get { return m_rd.ConvertValueToString(1); } }
+            public string SourcePath { get { return m_rd.ConvertValueToString(1) ?? ""; } }
 
             public IEnumerable<IBlockEntry> Blocks
             {
@@ -1369,7 +1383,7 @@ WHERE ""FileID"" = @TargetFileId AND ""Index"" = @Index AND ""Hash"" = @Hash AND
                 {
                     while (rd.Read())
                     {
-                        var sourcepath = rd.GetValue(0).ToString();
+                        var sourcepath = rd.ConvertValueToString(0);
                         if (SystemIO.IO_OS.FileExists(sourcepath))
                         {
                             cmd.SetParameterValue("@Path", sourcepath);

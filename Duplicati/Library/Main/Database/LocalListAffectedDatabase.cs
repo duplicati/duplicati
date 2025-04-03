@@ -78,7 +78,7 @@ SELECT ""ID"" FROM ""Fileset"" WHERE ""VolumeID"" IN ( SELECT ""ID"" FROM ""Remo
             using (var rd = cmd.ExecuteReader())
                 while (rd.Read())
                 {
-                    var v = dict[rd.GetInt64(0)];
+                    var v = dict[rd.ConvertValueToInt64(0)];
                     yield return new ListResultFileset()
                     {
                         Version = v,
@@ -128,8 +128,8 @@ SELECT ""Timestamp"", ""Data"" FROM ""RemoteOperation"" WHERE ""Path"" IN (@Path
                     while (rd.Read())
                         yield return new ListResultRemoteLog()
                         {
-                            Timestamp = ParseFromEpochSeconds(rd.GetInt64(0)),
-                            Message = rd.GetString(1)
+                            Timestamp = ParseFromEpochSeconds(rd.ConvertValueToInt64(0)),
+                            Message = rd.ConvertValueToString(1) ?? ""
                         };
             }
         }

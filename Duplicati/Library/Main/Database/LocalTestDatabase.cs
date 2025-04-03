@@ -19,6 +19,8 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
+#nullable enable
+
 using System;
 using System.Data;
 using System.Linq;
@@ -46,20 +48,20 @@ namespace Duplicati.Library.Main.Database
                     .ExecuteNonQuery();
         }
 
-        private class RemoteVolume : IRemoteVolume
+        private record RemoteVolume : IRemoteVolume
         {
-            public long ID { get; private set; }
-            public string Name { get; private set; }
-            public long Size { get; private set; }
-            public string Hash { get; private set; }
-            public long VerificationCount { get; private set; }
+            public long ID { get; init; }
+            public string Name { get; init; }
+            public long Size { get; init; }
+            public string Hash { get; init; }
+            public long VerificationCount { get; init; }
 
             public RemoteVolume(IDataReader rd)
             {
-                ID = rd.GetInt64(0);
-                Name = rd.GetString(1);
+                ID = rd.ConvertValueToInt64(0);
+                Name = rd.ConvertValueToString(1) ?? "";
                 Size = rd.ConvertValueToInt64(2);
-                Hash = rd.ConvertValueToString(3);
+                Hash = rd.ConvertValueToString(3) ?? throw new ArgumentNullException("Hash cannot be null");
                 VerificationCount = rd.ConvertValueToInt64(4);
             }
         }
@@ -220,7 +222,7 @@ namespace Duplicati.Library.Main.Database
                             cmd.ExecuteNonQuery(FormatInvariant($@"DROP TABLE IF EXISTS ""{m_tablename}"""));
                     }
                     catch { }
-                    finally { m_tablename = null; }
+                    finally { m_tablename = null!; }
 
                 m_insertCommand?.Dispose();
                 m_transaction?.Rollback();
@@ -278,7 +280,7 @@ namespace Duplicati.Library.Main.Database
 
                         using (var rd = cmd.ExecuteReader())
                             while (rd.Read())
-                                yield return new KeyValuePair<Interface.TestEntryStatus, string>((Interface.TestEntryStatus)rd.GetInt64(0), rd.GetString(1));
+                                yield return new KeyValuePair<Interface.TestEntryStatus, string>((Interface.TestEntryStatus)rd.ConvertValueToInt64(0), rd.ConvertValueToString(1) ?? "");
 
                     }
                     finally
@@ -339,7 +341,7 @@ namespace Duplicati.Library.Main.Database
 
                         using (var rd = cmd.ExecuteReader())
                             while (rd.Read())
-                                yield return new KeyValuePair<Interface.TestEntryStatus, string>((Interface.TestEntryStatus)rd.GetInt64(0), rd.GetString(1));
+                                yield return new KeyValuePair<Interface.TestEntryStatus, string>((Interface.TestEntryStatus)rd.ConvertValueToInt64(0), rd.ConvertValueToString(1) ?? "");
 
                     }
                     finally
@@ -400,7 +402,7 @@ namespace Duplicati.Library.Main.Database
                             .SetParameterValue("@TypeModified", (int)Library.Interface.TestEntryStatus.Modified);
                         using (var rd = cmd.ExecuteReader())
                             while (rd.Read())
-                                yield return new KeyValuePair<Duplicati.Library.Interface.TestEntryStatus, string>((Duplicati.Library.Interface.TestEntryStatus)rd.GetInt64(0), rd.GetString(1));
+                                yield return new KeyValuePair<Duplicati.Library.Interface.TestEntryStatus, string>((Duplicati.Library.Interface.TestEntryStatus)rd.ConvertValueToInt64(0), rd.ConvertValueToString(1) ?? "");
 
                     }
                     finally

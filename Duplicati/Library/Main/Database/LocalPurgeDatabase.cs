@@ -19,6 +19,8 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
+#nullable enable
+
 using System;
 using System.Data;
 using System.Collections.Generic;
@@ -52,7 +54,7 @@ namespace Duplicati.Library.Main.Database
                 if (!rd.Read())
                     throw new Exception($"No remote volume found for fileset with id {id}");
                 else
-                    return rd.ConvertValueToString(0);
+                    return rd.ConvertValueToString(0) ?? throw new Exception($"Remote volume name for fileset with id {id} is null");
         }
 
         internal long CountOrphanFiles(IDbTransaction transaction)
@@ -189,7 +191,7 @@ namespace Duplicati.Library.Main.Database
                 using (var cmd = m_connection.CreateCommand(m_transaction))
                 using (var rd = cmd.ExecuteReader(FormatInvariant($@"SELECT ""B"".""Path"", ""C"".""Length"" FROM ""{m_tablename}"" A, ""File"" B, ""Blockset"" C WHERE ""A"".""FileID"" = ""B"".""ID"" AND ""B"".""BlocksetID"" = ""C"".""ID"" ")))
                     while (rd.Read())
-                        yield return new KeyValuePair<string, long>(rd.ConvertValueToString(0), rd.ConvertValueToInt64(1));
+                        yield return new KeyValuePair<string, long>(rd.ConvertValueToString(0) ?? "", rd.ConvertValueToInt64(1));
             }
 
             public void Dispose()

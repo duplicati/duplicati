@@ -474,9 +474,9 @@ SELECT ""BlocklistHash"".""BlocksetID"" FROM ""BlocklistHash"" WHERE ""Blocklist
                 if (rd.Read())
                 {
                     oldModified = new DateTime(rd.ConvertValueToInt64(1), DateTimeKind.Utc);
-                    lastFileSize = rd.GetInt64(2);
-                    oldMetahash = rd.GetString(3);
-                    oldMetasize = rd.GetInt64(4);
+                    lastFileSize = rd.ConvertValueToInt64(2);
+                    oldMetahash = rd.ConvertValueToString(3);
+                    oldMetasize = rd.ConvertValueToInt64(4);
                     return rd.ConvertValueToInt64(0);
                 }
                 else

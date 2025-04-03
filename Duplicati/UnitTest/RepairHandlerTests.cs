@@ -86,7 +86,7 @@ namespace Duplicati.UnitTest
                         {
                             expectedBlocksetIDs.Add(reader.GetInt32(0));
                             expectedIndexes.Add(reader.GetInt32(1));
-                            expectedHashes.Add(reader.GetString(2));
+                            expectedHashes.Add(reader.ConvertValueToString(2));
                         }
                     }
                 }
@@ -121,7 +121,7 @@ namespace Duplicati.UnitTest
                         {
                             repairedBlocksetIDs.Add(reader.GetInt32(0));
                             repairedIndexes.Add(reader.GetInt32(1));
-                            repairedHashes.Add(reader.GetString(2));
+                            repairedHashes.Add(reader.ConvertValueToString(2));
                         }
                     }
                 }

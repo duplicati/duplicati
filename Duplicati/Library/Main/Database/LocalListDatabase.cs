@@ -19,6 +19,8 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
+#nullable enable
+
 using System;
 using System.Data;
 using System.Linq;
@@ -38,7 +40,7 @@ namespace Duplicati.Library.Main.Database
 
         public interface IFileversion
         {
-            string Path { get; }
+            string? Path { get; }
             IEnumerable<long> Sizes { get; }
         }
 
@@ -104,13 +106,13 @@ namespace Duplicati.Library.Main.Database
             private class Fileversion : IFileversion
             {
                 private readonly IDataReader m_reader;
-                public string Path { get; private set; }
+                public string? Path { get; private set; }
                 public bool More { get; private set; }
 
                 public Fileversion(IDataReader reader)
                 {
                     m_reader = reader;
-                    Path = reader.GetValue(0).ToString();
+                    Path = reader.ConvertValueToString(0);
                     More = true;
                 }
 
@@ -118,7 +120,7 @@ namespace Duplicati.Library.Main.Database
                 {
                     get
                     {
-                        while (More && Path == m_reader.GetValue(0).ToString())
+                        while (More && Path == m_reader.ConvertValueToString(0))
                         {
                             yield return m_reader.ConvertValueToInt64(1, -1);
                             More = m_reader.Read();
@@ -129,7 +131,7 @@ namespace Duplicati.Library.Main.Database
 
             private class FileversionFixed : IFileversion
             {
-                public string Path { get; internal set; }
+                public string? Path { get; internal set; }
                 public IEnumerable<long> Sizes { get { return new long[0]; } }
             }
 
@@ -138,7 +140,7 @@ namespace Duplicati.Library.Main.Database
                 return GetLargestPrefix(filter, null);
             }
 
-            private IEnumerable<IFileversion> GetLargestPrefix(IFilter filter, string prefixrule)
+            private IEnumerable<IFileversion> GetLargestPrefix(IFilter filter, string? prefixrule)
             {
                 using (var tmpnames = new FilteredFilenameTable(m_connection, filter, null))
                 using (var cmd = m_connection.CreateCommand())
@@ -157,7 +159,7 @@ namespace Duplicati.Library.Main.Database
                     var v0 = cmd.ExecuteScalar();
                     var maxpath = "";
                     if (v0 != null)
-                        maxpath = v0.ToString();
+                        maxpath = v0.ToString() ?? "";
 
                     var dirsep = Util.GuessDirSeparator(maxpath);
 
@@ -189,7 +191,7 @@ namespace Duplicati.Library.Main.Database
                     // Special handling for Windows and multi-drive/UNC backups as they do not have a single common root
                     if (string.IsNullOrWhiteSpace(maxpath) && string.IsNullOrWhiteSpace(prefixrule))
                     {
-                        var paths = cmd.ExecuteReaderEnumerable(FormatInvariant($@"SELECT Path FROM ""{tmpnames.Tablename}""")).Select(x => x.ConvertValueToString(0)).ToArray();
+                        var paths = cmd.ExecuteReaderEnumerable(FormatInvariant($@"SELECT Path FROM ""{tmpnames.Tablename}""")).Select(x => x.ConvertValueToString(0) ?? "").ToArray();
                         var roots = paths.Select(x => x.Substring(0, 1)).Distinct().Where(x => x != "\\").ToArray();
 
                         //unc path like \\server.domain\
@@ -212,7 +214,7 @@ namespace Duplicati.Library.Main.Database
                 using (var rd = cmd.ExecuteReader(FormatInvariant($@"SELECT DISTINCT ""Path"" FROM ""{table}"" ")))
                     while (rd.Read())
                     {
-                        var s = rd.GetString(0);
+                        var s = rd.ConvertValueToString(0) ?? "";
                         if (!s.StartsWith(prefix, StringComparison.Ordinal))
                             continue;
 
@@ -357,7 +359,7 @@ namespace Duplicati.Library.Main.Database
                     using (var rd = cmd.ExecuteReader(@"SELECT DISTINCT ""ID"", ""IsFullBackup"" FROM ""Fileset"" ORDER BY ""Timestamp"" DESC "))
                         while (rd.Read())
                         {
-                            var id = rd.GetInt64(0);
+                            var id = rd.ConvertValueToInt64(0);
                             var backupType = rd.GetInt32(1);
                             var e = dict[id];
                             yield return new Fileset(e, backupType, m_filesets[e].Value, -1L, -1L);
@@ -382,7 +384,7 @@ namespace Duplicati.Library.Main.Database
                     )
                         while (rd.Read())
                         {
-                            var id = rd.GetInt64(0);
+                            var id = rd.ConvertValueToInt64(0);
                             var isFullBackup = rd.GetInt32(1);
                             var e = dict[id];
                             var filecount = rd.ConvertValueToInt64(2, -1L);
@@ -403,7 +405,7 @@ namespace Duplicati.Library.Main.Database
                             cmd.ExecuteNonQuery(FormatInvariant(@$"DROP TABLE IF EXISTS ""{m_tablename}"" "));
                     }
                     catch { }
-                    finally { m_tablename = null; }
+                    finally { m_tablename = null!; }
                 }
 
             }

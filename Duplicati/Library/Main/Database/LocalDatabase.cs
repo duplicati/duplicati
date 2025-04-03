@@ -169,8 +169,8 @@ namespace Duplicati.Library.Main.Database
                     if (!rd.Read())
                         throw new Exception("LocalDatabase does not contain a previous operation.");
 
-                    m_operationid = rd.GetInt64(0);
-                    OperationTimestamp = ParseFromEpochSeconds(rd.GetInt64(1));
+                    m_operationid = rd.ConvertValueToInt64(0);
+                    OperationTimestamp = ParseFromEpochSeconds(rd.ConvertValueToInt64(1));
                 }
             }
         }
@@ -253,7 +253,7 @@ namespace Duplicati.Library.Main.Database
                 using (var cmd = m_connection.CreateCommand())
                 using (var rd = cmd.ExecuteReader(@"SELECT ""ID"", ""Timestamp"" FROM ""Fileset"" ORDER BY ""Timestamp"" DESC"))
                     while (rd.Read())
-                        yield return new KeyValuePair<long, DateTime>(rd.GetInt64(0), ParseFromEpochSeconds(rd.GetInt64(1)).ToLocalTime());
+                        yield return new KeyValuePair<long, DateTime>(rd.ConvertValueToInt64(0), ParseFromEpochSeconds(rd.ConvertValueToInt64(1)).ToLocalTime());
             }
         }
 
@@ -326,7 +326,7 @@ namespace Duplicati.Library.Main.Database
 
                 using (var rd = cmd.ExecuteReader())
                     while (rd.Read())
-                        yield return new KeyValuePair<string, long>(rd.GetString(0), rd.GetInt64(1));
+                        yield return new KeyValuePair<string, long>(rd.ConvertValueToString(0) ?? "", rd.ConvertValueToInt64(1));
             }
         }
 
@@ -602,7 +602,7 @@ AND Fileset.ID NOT IN
             {
                 using (var rd = cmd.ExecuteReader($@"SELECT ""ID"" FROM ""Fileset"" {query} ORDER BY ""Timestamp"" DESC", values))
                     while (rd.Read())
-                        res.Add(rd.GetInt64(0));
+                        res.Add(rd.ConvertValueToInt64(0));
 
                 if (res.Count == 0)
                 {
@@ -634,7 +634,7 @@ AND Fileset.ID NOT IN
             using (var cmd = m_connection.CreateCommand())
             using (var rd = cmd.ExecuteReader(@"SELECT ""ID"" FROM ""Fileset"" " + query + @" ORDER BY ""Timestamp"" DESC", args))
                 while (rd.Read())
-                    res.Add(rd.GetInt64(0));
+                    res.Add(rd.ConvertValueToInt64(0));
 
             return res;
         }
@@ -1339,7 +1339,7 @@ AND oldVersion.FilesetID = (SELECT ID FROM Fileset WHERE ID != @FilesetId ORDER 
             public string Tablename { get; private set; }
             private readonly IDbConnection m_connection;
 
-            public FilteredFilenameTable(IDbConnection connection, IFilter filter, IDbTransaction transaction)
+            public FilteredFilenameTable(IDbConnection connection, IFilter filter, IDbTransaction? transaction)
             {
                 m_connection = connection;
                 Tablename = "Filenames-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
@@ -1572,15 +1572,15 @@ AND oldVersion.FilesetID = (SELECT ID FROM Fileset WHERE ID != @FilesetId ORDER 
         /// </summary>
         /// <param name="transaction">An optional transaction</param>
         /// <returns>A list of fileset IDs and timestamps</returns>
-        public IEnumerable<KeyValuePair<long, DateTime>> GetIncompleteFilesets(IDbTransaction transaction)
+        public IEnumerable<KeyValuePair<long, DateTime>> GetIncompleteFilesets(IDbTransaction? transaction)
         {
             using (var cmd = m_connection.CreateCommand(transaction))
             using (var rd = cmd.ExecuteReader(FormatInvariant(@$"SELECT DISTINCT ""Fileset"".""ID"", ""Fileset"".""Timestamp"" FROM ""Fileset"", ""RemoteVolume"" WHERE ""RemoteVolume"".""ID"" = ""Fileset"".""VolumeID"" AND ""Fileset"".""ID"" IN (SELECT ""FilesetID"" FROM ""FilesetEntry"")  AND (""RemoteVolume"".""State"" = '{RemoteVolumeState.Uploading}' OR ""RemoteVolume"".""State"" = '{RemoteVolumeState.Temporary}')")))
                 while (rd.Read())
                 {
                     yield return new KeyValuePair<long, DateTime>(
-                        rd.GetInt64(0),
-                        ParseFromEpochSeconds(rd.GetInt64(1)).ToLocalTime()
+                        rd.ConvertValueToInt64(0),
+                        ParseFromEpochSeconds(rd.ConvertValueToInt64(1)).ToLocalTime()
                     );
                 }
         }

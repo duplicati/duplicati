@@ -106,7 +106,7 @@ namespace Duplicati.Library.Main.Database
 
                 using (var rd = cmd.ExecuteReader())
                     while (rd.Read())
-                        yield return new KeyValuePair<string, long>(rd.GetString(0), rd.ConvertValueToInt64(1));
+                        yield return new KeyValuePair<string, long>(rd.ConvertValueToString(0) ?? "", rd.ConvertValueToInt64(1));
             }
         }
 
@@ -130,7 +130,7 @@ namespace Duplicati.Library.Main.Database
                         int version = 0;
                         while (reader.Read())
                         {
-                            filesets.Add(new ListResultFileset(version++, reader.GetInt32(0), ParseFromEpochSeconds(reader.GetInt64(1)).ToLocalTime(), -1L, -1L));
+                            filesets.Add(new ListResultFileset(version++, reader.GetInt32(0), ParseFromEpochSeconds(reader.ConvertValueToInt64(1)).ToLocalTime(), -1L, -1L));
                         }
                     }
                 }
@@ -439,7 +439,7 @@ namespace Duplicati.Library.Main.Database
                             lookupBlock.Add(name, indexfileList);
                         }
 
-                        var v = new RemoteVolume(rd.GetString(1), rd.GetString(2), rd.GetInt64(3));
+                        var v = new RemoteVolume(rd.ConvertValueToString(1), rd.ConvertValueToString(2), rd.ConvertValueToInt64(3));
                         indexfileList.Add(v);
 
                         if (!lookupIndexfiles.TryGetValue(v.Name, out var blockList))
