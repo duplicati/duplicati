@@ -211,7 +211,7 @@ public static class ExtensionMethods
     /// <param name="self">The command instance to execute on</param>
     /// <param name="transaction">The transaction to use for the command</param>
     /// <returns>The number of rows affected</returns>
-    public static int ExecuteNonQuery(this IDbCommand self, IDbTransaction transaction)
+    public static int ExecuteNonQuery(this IDbCommand self, IDbTransaction? transaction)
     {
         self.Transaction = transaction;
         return self.ExecuteNonQuery();
@@ -274,7 +274,7 @@ public static class ExtensionMethods
     /// <param name="transaction">The transaction to use for the command</param>
     /// <param name="defaultvalue">The default value to return if no value is found</param>
     /// <returns>The scalar int64 value of the first row as a string</returns>
-    public static long ExecuteScalarInt64(this IDbCommand self, IDbTransaction transaction, long defaultvalue = -1)
+    public static long ExecuteScalarInt64(this IDbCommand self, IDbTransaction? transaction, long defaultvalue = -1)
     {
         self.Transaction = transaction;
         return ExecuteScalarInt64(self, true, null, defaultvalue);
@@ -320,7 +320,7 @@ public static class ExtensionMethods
     /// <param name="cmd">The command string to execute</param>
     /// <param name="values">The values to use as parameters. The parameters must already be added.</param>
     /// <returns>A <see cref="IDataReader"/> instance</returns>
-    public static IDataReader ExecuteReader(this IDbCommand self, string cmd, Dictionary<string, object?> values)
+    public static IDataReader ExecuteReader(this IDbCommand self, string cmd, Dictionary<string, object?>? values)
     {
         return ExecuteReader(self, true, cmd, values);
     }
@@ -361,7 +361,7 @@ public static class ExtensionMethods
     /// <param name="cmd">The command string to execute</param>
     /// <param name="values">The values to use as parameters. The parameters must already be added.</param>
     /// <returns>A <see cref="IDataReader"/> instance</returns>
-    public static IDataReader ExecuteReader(this IDbCommand self, bool writeLog, string? cmd, Dictionary<string, object?> values)
+    public static IDataReader ExecuteReader(this IDbCommand self, bool writeLog, string? cmd, Dictionary<string, object?>? values)
     {
         if (cmd != null)
             self.SetCommandAndParameters(cmd);
