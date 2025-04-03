@@ -267,7 +267,7 @@ namespace Duplicati.Library.Main.Database
                     try
                     {
                         using (var cmd = m_connection.CreateCommand(m_transaction.Parent))
-                            cmd.ExecuteNonQuery(FormatInvariant($@"DROP TABLE IF EXISTS ""{m_tablename}"" "), m_transaction);
+                            cmd.SetTransaction(m_transaction.Parent).ExecuteNonQuery(FormatInvariant($@"DROP TABLE IF EXISTS ""{m_tablename}"" "));
                     }
                     catch { }
                     finally { m_tablename = null; }
@@ -488,21 +488,33 @@ namespace Duplicati.Library.Main.Database
                                 var blkeyfinal = Convert.ToBase64String(blockhasher.ComputeHash(blocklistbuffer, 0, blocklistoffset));
 
                                 // Ensure that the block exists in "blocks"
-                                if (c4.ExecuteScalarInt64(null, -1, blkeyfinal, blocklistoffset) != 1)
+                                if (c4.SetParameterValue("@Hash", blkeyfinal)
+                                        .SetParameterValue("@Size", blocklistoffset)
+                                        .ExecuteScalarInt64(-1) != 1)
                                 {
-                                    var c = c5.ExecuteScalarInt64(null, -1, blkeyfinal, blocklistoffset, RemoteVolumeType.Blocks.ToString(), RemoteVolumeState.Uploaded.ToString(), RemoteVolumeState.Verified.ToString());
+                                    var c = c5.SetParameterValue("@Hash", blkeyfinal)
+                                            .SetParameterValue("@Size", blocklistoffset)
+                                            .SetParameterValue("@Type", RemoteVolumeType.Blocks.ToString())
+                                            .SetParameterValue("@State1", RemoteVolumeState.Uploaded.ToString())
+                                            .SetParameterValue("@State2", RemoteVolumeState.Verified.ToString())
+                                            .ExecuteScalarInt64(-1);
+
                                     if (c == 0)
                                         throw new Exception($"Missing block for blocklisthash: {blkeyfinal}");
                                     else
                                     {
-                                        var rc = c6.ExecuteNonQuery(null, c, c);
+                                        var rc = c6.SetParameterValue("@DeletedBlockId", c)
+                                                .ExecuteNonQuery(); ;
                                         if (rc != 2)
                                             throw new Exception($"Unexpected update count: {rc}");
                                     }
                                 }
 
                                 // Add to table
-                                c3.ExecuteNonQuery(null, blocksetid, ix, blkeyfinal);
+                                c3.SetParameterValue("@BlocksetId", blocksetid)
+                                    .SetParameterValue("@Index", ix)
+                                    .SetParameterValue("@Hash", blkeyfinal)
+                                    .ExecuteNonQuery();
                             }
                         }
                     }
@@ -585,7 +597,6 @@ namespace Duplicati.Library.Main.Database
 
                 cmd.ExecuteNonQuery(FormatInvariant($@"CREATE TEMPORARY TABLE ""{tablename}"" (""Hash"" TEXT NOT NULL, ""Size"" INTEGER NOT NULL)"));
                 cmd.CommandText = FormatInvariant($@"INSERT INTO ""{tablename}"" (""Hash"", ""Size"") VALUES (@Hash, @Size)");
-                cmd.AddParameters(2);
 
                 foreach (var kp in blocks)
                 {
