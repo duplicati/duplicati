@@ -226,9 +226,9 @@ namespace Duplicati.Library.Main.Database
             private (string Added, string Deleted, string Modified) GetSqls(bool allTypes)
             {
                 return (
-                    FormatInvariant($@"SELECT ""Path"" FROM ""{m_currentTable}"" WHERE {(allTypes ? "" : FormatInvariant(@$" ""{m_currentTable}"".""Type"" = ? AND "))} ""{m_currentTable}"".""Path"" NOT IN (SELECT ""Path"" FROM ""{m_previousTable}"")"),
-                    FormatInvariant($@"SELECT ""Path"" FROM ""{m_previousTable}"" WHERE {(allTypes ? "" : FormatInvariant(@$" ""{m_previousTable}"".""Type"" = ? AND "))} ""{m_previousTable}"".""Path"" NOT IN (SELECT ""Path"" FROM ""{m_currentTable}"")"),
-                    FormatInvariant($@"SELECT ""{m_currentTable}"".""Path"" FROM ""{m_currentTable}"",""{m_previousTable}"" WHERE {(allTypes ? "" : FormatInvariant($@" ""{m_currentTable}"".""Type"" = ? AND "))} ""{m_currentTable}"".""Path"" = ""{m_previousTable}"".""Path"" AND (""{m_currentTable}"".""FileHash"" != ""{m_previousTable}"".""FileHash"" OR ""{m_currentTable}"".""MetaHash"" != ""{m_previousTable}"".""MetaHash"" OR ""{m_currentTable}"".""Type"" != ""{m_previousTable}"".""Type"") ")
+                    FormatInvariant($@"SELECT ""Path"" FROM ""{m_currentTable}"" WHERE {(allTypes ? "" : FormatInvariant(@$" ""{m_currentTable}"".""Type"" = @Type AND "))} ""{m_currentTable}"".""Path"" NOT IN (SELECT ""Path"" FROM ""{m_previousTable}"")"),
+                    FormatInvariant($@"SELECT ""Path"" FROM ""{m_previousTable}"" WHERE {(allTypes ? "" : FormatInvariant(@$" ""{m_previousTable}"".""Type"" = @Type AND "))} ""{m_previousTable}"".""Path"" NOT IN (SELECT ""Path"" FROM ""{m_currentTable}"")"),
+                    FormatInvariant($@"SELECT ""{m_currentTable}"".""Path"" FROM ""{m_currentTable}"",""{m_previousTable}"" WHERE {(allTypes ? "" : FormatInvariant($@" ""{m_currentTable}"".""Type"" = @Type AND "))} ""{m_currentTable}"".""Path"" = ""{m_previousTable}"".""Path"" AND (""{m_currentTable}"".""FileHash"" != ""{m_previousTable}"".""FileHash"" OR ""{m_currentTable}"".""MetaHash"" != ""{m_previousTable}"".""MetaHash"" OR ""{m_currentTable}"".""Type"" != ""{m_previousTable}"".""Type"") ")
                 );
             }
 
