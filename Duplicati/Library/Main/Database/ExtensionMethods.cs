@@ -195,6 +195,20 @@ public static class ExtensionMethods
     }
 
     /// <summary>
+    /// Sets the transaction for the command.
+    /// </summary>
+    /// <typeparam name="T">The type of the command</typeparam>
+    /// <param name="self">The command to set the transaction for</param>
+    /// <param name="transaction">The transaction to set for the command</param>
+    /// <returns>>The command with the transaction set</returns>
+    public static T SetTransaction<T>(this T self, IDbTransaction? transaction)
+        where T : IDbCommand
+    {
+        self.Transaction = transaction;
+        return self;
+    }
+
+    /// <summary>
     /// Gets the printable command text for the given command.
     /// </summary
     /// <param name="self">The command to get the printable command text for</param>
@@ -330,7 +344,7 @@ public static class ExtensionMethods
     /// <param name="cmd">The command string to execute</param>
     /// <param name="values">The values to use as parameters. The parameters must already be added.</param>
     /// <returns>The scalar value of the first row</returns>
-    public static object? ExecuteScalar(this IDbCommand self, bool writeLog, string cmd, params object[] values)
+    public static object? ExecuteScalar(this IDbCommand self, bool writeLog, string? cmd, params object[] values)
     {
         if (cmd != null)
             self.SetCommandAndParameters(cmd);
@@ -474,7 +488,7 @@ public static class ExtensionMethods
     /// <param name="cmd">The command string to execute</param>
     /// <param name="values">The values to use as parameters. The parameters must already be added.</param>
     /// <returns>A <see cref="IDataReader"/> instance</returns>
-    public static IDataReader ExecuteReader(this IDbCommand self, bool writeLog, string cmd, params object[] values)
+    public static IDataReader ExecuteReader(this IDbCommand self, bool writeLog, string? cmd, params object[] values)
     {
         if (cmd != null)
             self.SetCommandAndParameters(cmd);
@@ -494,7 +508,7 @@ public static class ExtensionMethods
     /// <param name="cmd">The command string to execute</param>
     /// <param name="values">The values to use as parameters. The parameters must already be added.</param>
     /// <returns>A <see cref="IDataReader"/> instance</returns>
-    public static IDataReader ExecuteReader(this IDbCommand self, bool writeLog, string cmd, Dictionary<string, object?> values)
+    public static IDataReader ExecuteReader(this IDbCommand self, bool writeLog, string? cmd, Dictionary<string, object?> values)
     {
         if (cmd != null)
             self.SetCommandAndParameters(cmd);

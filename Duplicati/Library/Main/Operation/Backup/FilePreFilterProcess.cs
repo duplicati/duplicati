@@ -124,8 +124,8 @@ namespace Duplicati.Library.Main.Operation.Backup
                         var tp = await database.GetMetadataHashAndSizeForFileAsync(e.OldId);
                         if (tp != null)
                         {
-                            e.OldMetaSize = tp.Item1;
-                            e.OldMetaHash = tp.Item2;
+                            e.OldMetaSize = tp.Value.Size;
+                            e.OldMetaHash = tp.Value.MetadataHash;
                         }
                     }
 
