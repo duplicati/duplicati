@@ -1243,11 +1243,11 @@ ORDER BY
                     while (rd.Read())
                     {
                         var blocksetID = rd.ConvertValueToInt64(0, -1);
-                        var path = rd.GetValue(2).ToString();
+                        var path = rd.ConvertValueToString(2);
                         var metalength = rd.ConvertValueToInt64(3, -1);
-                        var metahash = rd.GetValue(4).ToString();
-                        var metablockhash = rd.GetValue(6).ToString();
-                        var metablocklisthash = rd.GetValue(7).ToString();
+                        var metahash = rd.ConvertValueToString(4);
+                        var metablockhash = rd.ConvertValueToString(6);
+                        var metablocklisthash = rd.ConvertValueToString(7);
 
                         if (path == lastpath)
                             Logging.Log.WriteWarningMessage(LOGTAG, "DuplicatePathFound", null, "Duplicate path detected: {0}", path);
@@ -1373,7 +1373,7 @@ AND oldVersion.FilesetID = (SELECT ID FROM Fileset WHERE ID != @FilesetId ORDER 
                             using (var rd = c2.ExecuteReader(@"SELECT DISTINCT ""Path"" FROM ""File"" "))
                                 while (rd.Read())
                                 {
-                                    var p = rd.GetValue(0).ToString();
+                                    var p = rd.ConvertValueToString(0);
                                     if (FilterExpression.Matches(filter, p))
                                         cmd.SetParameterValue("@Path", p)
                                             .ExecuteNonQuery();
@@ -1515,7 +1515,7 @@ AND oldVersion.FilesetID = (SELECT ID FROM Fileset WHERE ID != @FilesetId ORDER 
                 using (var rd = cmd.SetCommandAndParameters(sql).SetParameterValue("@VolumeId", volumeid).ExecuteReader())
                     while (rd.Read())
                     {
-                        var blockhash = rd.GetValue(0).ToString();
+                        var blockhash = rd.ConvertValueToString(0);
                         if ((blockhash != curHash && curHash != null) || count + hashsize > buffer.Length)
                         {
                             yield return new Tuple<string, byte[], int>(curHash!, buffer, count);
