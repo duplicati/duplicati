@@ -136,7 +136,7 @@ namespace Duplicati.Library.Main.Database
             }
 
             m_insertFileCommand = m_connection.CreateCommand(@"INSERT INTO ""FileLookup"" (""PrefixID"", ""Path"", ""BlocksetID"", ""MetadataID"") VALUES (@PrefixId,@Path,@BlocksetId,@MetadataId); SELECT last_insert_rowid();");
-            m_insertFilesetEntryCommand = m_connection.CreateCommand(@"INSERT INTO ""FilesetEntry"" (""FilesetID"", ""FileID"", ""Lastmodified"") VALUES (@filesetId,@FileId,@LastModified)");
+            m_insertFilesetEntryCommand = m_connection.CreateCommand(@"INSERT INTO ""FilesetEntry"" (""FilesetID"", ""FileID"", ""Lastmodified"") VALUES (@FilesetId,@FileId,@LastModified)");
             m_insertMetadatasetCommand = m_connection.CreateCommand(@"INSERT INTO ""Metadataset"" (""BlocksetID"") VALUES (@BlocksetId); SELECT last_insert_rowid();");
             m_insertBlocksetCommand = m_connection.CreateCommand(@"INSERT INTO ""Blockset"" (""Length"", ""FullHash"") VALUES (@Length,@FullHash); SELECT last_insert_rowid();");
             m_insertBlocklistHashCommand = m_connection.CreateCommand(@"INSERT INTO ""BlocklistHash"" (""BlocksetID"", ""Index"", ""Hash"") VALUES (@BlocksetId,@Index,@Hash)");
@@ -323,28 +323,28 @@ BE.BlocksetID IS NULL ");
 
         private void AddEntry(long filesetid, long pathprefixid, string path, DateTime time, long blocksetid, long metadataid, IDbTransaction transaction)
         {
-            m_findFilesetCommand.Transaction = transaction;
-            m_findFilesetCommand.SetParameterValue("@PrefixId", pathprefixid);
-            m_findFilesetCommand.SetParameterValue("@Path", path);
-            m_findFilesetCommand.SetParameterValue("@BlocksetId", blocksetid);
-            m_findFilesetCommand.SetParameterValue("@MetadataId", metadataid);
-            var fileid = m_findFilesetCommand.ExecuteScalarInt64(-1);
+            var fileid = m_findFilesetCommand.SetTransaction(transaction)
+                .SetParameterValue("@PrefixId", pathprefixid)
+                .SetParameterValue("@Path", path)
+                .SetParameterValue("@BlocksetId", blocksetid)
+                .SetParameterValue("@MetadataId", metadataid)
+                .ExecuteScalarInt64(-1);
 
             if (fileid < 0)
             {
-                m_insertFileCommand.Transaction = transaction;
-                m_insertFileCommand.SetParameterValue("@PrefixId", pathprefixid);
-                m_insertFileCommand.SetParameterValue("@Path", path);
-                m_insertFileCommand.SetParameterValue("@BlocksetId", blocksetid);
-                m_insertFileCommand.SetParameterValue("@MetadataId", metadataid);
-                fileid = m_insertFileCommand.ExecuteScalarInt64(-1);
+                fileid = m_insertFileCommand.SetTransaction(transaction)
+                    .SetParameterValue("@PrefixId", pathprefixid)
+                    .SetParameterValue("@Path", path)
+                    .SetParameterValue("@BlocksetId", blocksetid)
+                    .SetParameterValue("@MetadataId", metadataid)
+                    .ExecuteScalarInt64(-1);
             }
 
-            m_insertFilesetEntryCommand.Transaction = transaction;
-            m_insertFilesetEntryCommand.SetParameterValue("@FilesetId", filesetid);
-            m_insertFilesetEntryCommand.SetParameterValue("@FileId", fileid);
-            m_insertFilesetEntryCommand.SetParameterValue("@LastModified", time.ToUniversalTime().Ticks);
-            m_insertFilesetEntryCommand.ExecuteNonQuery();
+            m_insertFilesetEntryCommand.SetTransaction(transaction)
+                .SetParameterValue("@FilesetId", filesetid)
+                .SetParameterValue("@FileId", fileid)
+                .SetParameterValue("@LastModified", time.ToUniversalTime().Ticks)
+                .ExecuteNonQuery();
         }
 
         public long AddMetadataset(string metahash, long metahashsize, IEnumerable<string> metablocklisthashes, long expectedmetablocklisthashes, IDbTransaction transaction)
@@ -353,42 +353,40 @@ BE.BlocksetID IS NULL ");
             if (metahash == null)
                 return metadataid;
 
-            m_findMetadatasetCommand.Transaction = transaction;
-            m_findMetadatasetCommand.SetParameterValue("@FullHash", metahash);
-            m_findMetadatasetCommand.SetParameterValue("@Length", metahashsize);
-            metadataid = m_findMetadatasetCommand.ExecuteScalarInt64(-1);
+            metadataid = m_findMetadatasetCommand.SetTransaction(transaction)
+                .SetParameterValue("@FullHash", metahash)
+                .SetParameterValue("@Length", metahashsize)
+                .ExecuteScalarInt64(-1);
             if (metadataid != -1)
                 return metadataid;
 
             var blocksetid = AddBlockset(metahash, metahashsize, metablocklisthashes, expectedmetablocklisthashes, transaction);
 
-            m_insertMetadatasetCommand.Transaction = transaction;
-            m_insertMetadatasetCommand.SetParameterValue("@BlocksetId", blocksetid);
-            metadataid = m_insertMetadatasetCommand.ExecuteScalarInt64(-1);
-
-            return metadataid;
+            return m_insertMetadatasetCommand.SetTransaction(transaction)
+                .SetParameterValue("@BlocksetId", blocksetid)
+                .ExecuteScalarInt64(-1);
         }
 
         public long AddBlockset(string fullhash, long size, IEnumerable<string> blocklisthashes, long expectedblocklisthashes, IDbTransaction transaction)
         {
-            m_findBlocksetCommand.Transaction = transaction;
-            m_findBlocksetCommand.SetParameterValue("@Length", size);
-            m_findBlocksetCommand.SetParameterValue("@FullHash", fullhash);
-            var blocksetid = m_findBlocksetCommand.ExecuteScalarInt64(-1);
+            var blocksetid = m_findBlocksetCommand.SetTransaction(transaction)
+                .SetParameterValue("@Length", size)
+                .SetParameterValue("@FullHash", fullhash)
+                .ExecuteScalarInt64(-1);
             if (blocksetid != -1)
                 return blocksetid;
 
-            m_insertBlocksetCommand.Transaction = transaction;
-            m_insertBlocksetCommand.SetParameterValue("@Length", size);
-            m_insertBlocksetCommand.SetParameterValue("@FullHash", fullhash);
-            blocksetid = m_insertBlocksetCommand.ExecuteScalarInt64(-1);
+            blocksetid = m_insertBlocksetCommand.SetTransaction(transaction)
+                .SetParameterValue("@Length", size)
+                .SetParameterValue("@FullHash", fullhash)
+                .ExecuteScalarInt64(-1);
 
             long c = 0;
             if (blocklisthashes != null)
             {
                 var index = 0L;
-                m_insertBlocklistHashCommand.Transaction = transaction;
-                m_insertBlocklistHashCommand.SetParameterValue("@BlocksetId", blocksetid);
+                m_insertBlocklistHashCommand.SetTransaction(transaction)
+                    .SetParameterValue("@BlocksetId", blocksetid);
 
                 foreach (var hash in blocklisthashes)
                 {
@@ -397,9 +395,9 @@ BE.BlocksetID IS NULL ");
                         c++;
                         if (c <= expectedblocklisthashes)
                         {
-                            m_insertBlocklistHashCommand.SetParameterValue("@Index", index++);
-                            m_insertBlocklistHashCommand.SetParameterValue("@Hash", hash);
-                            m_insertBlocklistHashCommand.ExecuteNonQuery();
+                            m_insertBlocklistHashCommand.SetParameterValue("@Index", index++)
+                                .SetParameterValue("@Hash", hash)
+                                .ExecuteNonQuery();
                         }
                     }
                 }
@@ -413,10 +411,10 @@ BE.BlocksetID IS NULL ");
 
         public bool UpdateBlock(string hash, long size, long volumeID, IDbTransaction transaction, ref bool anyChange)
         {
-            m_findHashBlockCommand.Transaction = transaction;
-            m_findHashBlockCommand.SetParameterValue("@Hash", hash);
-            m_findHashBlockCommand.SetParameterValue("@Size", size);
-            var currentVolumeId = m_findHashBlockCommand.ExecuteScalarInt64(-2);
+            var currentVolumeId = m_findHashBlockCommand.SetTransaction(transaction)
+                .SetParameterValue("@Hash", hash)
+                .SetParameterValue("@Size", size)
+                .ExecuteScalarInt64(-2);
 
             if (currentVolumeId == volumeID)
                 return false;
@@ -426,22 +424,22 @@ BE.BlocksetID IS NULL ");
             if (currentVolumeId == -2)
             {
                 //Insert
-                m_insertBlockCommand.Transaction = transaction;
-                m_insertBlockCommand.SetParameterValue("@Hash", hash);
-                m_insertBlockCommand.SetParameterValue("@Size", size);
-                m_insertBlockCommand.SetParameterValue("@VolumeId", volumeID);
-                m_insertBlockCommand.ExecuteNonQuery();
+                m_insertBlockCommand.SetTransaction(transaction)
+                    .SetParameterValue("@Hash", hash)
+                    .SetParameterValue("@Size", size)
+                    .SetParameterValue("@VolumeId", volumeID)
+                    .ExecuteNonQuery();
 
                 return true;
             }
             else if (currentVolumeId == -1)
             {
                 //Update
-                m_updateBlockVolumeCommand.Transaction = transaction;
-                m_updateBlockVolumeCommand.SetParameterValue("@VolumeId", volumeID);
-                m_updateBlockVolumeCommand.SetParameterValue("@Hash", hash);
-                m_updateBlockVolumeCommand.SetParameterValue("@Size", size);
-                var c = m_updateBlockVolumeCommand.ExecuteNonQuery();
+                var c = m_updateBlockVolumeCommand.SetTransaction(transaction)
+                    .SetParameterValue("@VolumeId", volumeID)
+                    .SetParameterValue("@Hash", hash)
+                    .SetParameterValue("@Size", size)
+                    .ExecuteNonQuery();
                 if (c != 1)
                     throw new Exception($"Failed to update table, found {c} entries for key {hash} with size {size}");
 
@@ -468,22 +466,22 @@ BE.BlocksetID IS NULL ");
 
         public bool AddTempBlockListHash(string hash, IEnumerable<string> blocklisthashes, IDbTransaction transaction)
         {
-            m_findTempBlockListHashCommand.Transaction = transaction;
-            m_findTempBlockListHashCommand.SetParameterValue("@BlocklistHash", hash);
-            var r = m_findTempBlockListHashCommand.ExecuteScalar();
+            var r = m_findTempBlockListHashCommand.SetTransaction(transaction)
+                .SetParameterValue("@BlocklistHash", hash)
+                .ExecuteScalar();
             if (r != null && r != DBNull.Value)
                 return false;
 
-            m_insertTempBlockListHash.Transaction = transaction;
-            m_insertTempBlockListHash.SetParameterValue("@BlocklistHash", hash);
+            m_insertTempBlockListHash.SetTransaction(transaction)
+                .SetParameterValue("@BlocklistHash", hash);
 
             var index = 0L;
 
             foreach (var s in blocklisthashes)
             {
-                m_insertTempBlockListHash.SetParameterValue("@BlockHash", s);
-                m_insertTempBlockListHash.SetParameterValue("@Index", index++);
-                m_insertTempBlockListHash.ExecuteNonQuery();
+                m_insertTempBlockListHash.SetParameterValue("@BlockHash", s)
+                    .SetParameterValue("@Index", index++)
+                    .ExecuteNonQuery();
             }
 
             return true;
