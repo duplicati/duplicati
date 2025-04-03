@@ -37,6 +37,7 @@
     <EmbeddedResource Include="Database\Database schema\11. Add Block indices.sql" />
     <EmbeddedResource Include="Database\Database schema\12. Performance Indexes.sql" />
     <EmbeddedResource Include="Database\Database schema\13. Unique index on DuplicateBlock.sql" />
+    <EmbeddedResource Include="Database\Database schema\14. Create Index on DeletedBlock.sql" />    
   </ItemGroup>
 
   <ItemGroup>

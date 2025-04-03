@@ -34,6 +34,8 @@ namespace Duplicati.Library.Main.Database
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<LocalBackupDatabase>();
 
         private readonly IDbCommand m_findblockCommand;
+        private readonly IDbCommand m_finddeletedblockCommandQuick;
+        private readonly IDbCommand m_finddeletedblockCommand;
         private readonly IDbCommand m_findblocksetCommand;
         private readonly IDbCommand m_findfilesetCommand;
         private readonly IDbCommand m_findmetadatasetCommand;
@@ -43,6 +45,7 @@ namespace Duplicati.Library.Main.Database
         private readonly IDbCommand m_insertfileCommand;
 
         private readonly IDbCommand m_insertblocksetCommand;
+        private readonly IDbCommand m_moveblockfromdeletedCommand;
         private readonly IDbCommand m_insertblocksetentryFastCommand;
         private readonly IDbCommand m_insertblocksetentryCommand;
         private readonly IDbCommand m_insertblocklistHashesCommand;
@@ -76,31 +79,14 @@ namespace Duplicati.Library.Main.Database
         {
             m_logQueries = options.ProfileAllDatabaseQueries;
 
-            m_findblockCommand = m_connection.CreateCommand();
-            m_insertblockCommand = m_connection.CreateCommand();
-            m_insertfileCommand = m_connection.CreateCommand();
-            m_insertblocksetCommand = m_connection.CreateCommand();
-            m_insertmetadatasetCommand = m_connection.CreateCommand();
-            m_findblocksetCommand = m_connection.CreateCommand();
-            m_findmetadatasetCommand = m_connection.CreateCommand();
-            m_findfilesetCommand = m_connection.CreateCommand();
-            m_insertblocksetentryCommand = m_connection.CreateCommand();
-            m_insertblocklistHashesCommand = m_connection.CreateCommand();
-            m_selectblocklistHashesCommand = m_connection.CreateCommand();
-            m_insertfileOperationCommand = m_connection.CreateCommand();
-            m_findfileCommand = m_connection.CreateCommand();
-            m_selectfilelastmodifiedCommand = m_connection.CreateCommand();
-            m_selectfilelastmodifiedWithSizeCommand = m_connection.CreateCommand();
-            m_selectfileHashCommand = m_connection.CreateCommand();
-            m_insertblocksetentryFastCommand = m_connection.CreateCommand();
-            m_selectfilemetadatahashandsizeCommand = m_connection.CreateCommand();
-            m_getfirstfilesetwithblockinblockset = m_connection.CreateCommand();
-
             m_findblockCommand = m_connection.CreateCommand(@"SELECT ""ID"" FROM ""Block"" WHERE ""Hash"" = ? AND ""Size"" = ?");
+            m_finddeletedblockCommandQuick = m_connection.CreateCommand(@$"SELECT ""ID"" FROM ""DeletedBlock"" WHERE ""Hash"" = ? AND ""Size"" = ?");
+            m_finddeletedblockCommand = m_connection.CreateCommand(FormatInvariant(@$"SELECT ""ID"" FROM ""DeletedBlock"" WHERE ""Hash"" = ? AND ""Size"" = ? AND ""VolumeID"" IN (SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""State"" != '{RemoteVolumeState.Deleted}' AND ""State"" != '{RemoteVolumeState.Deleting}')"));
             m_findblocksetCommand = m_connection.CreateCommand(@"SELECT ""ID"" FROM ""Blockset"" WHERE ""Fullhash"" = ? AND ""Length"" = ?");
             m_findmetadatasetCommand = m_connection.CreateCommand(@"SELECT ""A"".""ID"" FROM ""Metadataset"" A, ""BlocksetEntry"" B, ""Block"" C WHERE ""A"".""BlocksetID"" = ""B"".""BlocksetID"" AND ""B"".""BlockID"" = ""C"".""ID"" AND ""C"".""Hash"" = ? AND ""C"".""Size"" = ?");
             m_findfilesetCommand = m_connection.CreateCommand(@"SELECT ""ID"" FROM ""FileLookup"" WHERE ""BlocksetID"" = ? AND ""MetadataID"" = ? AND ""Path"" = ? AND ""PrefixID"" = ?");
             m_insertblockCommand = m_connection.CreateCommand(@"INSERT INTO ""Block"" (""Hash"", ""VolumeID"", ""Size"") VALUES (?, ?, ?); SELECT last_insert_rowid();");
+            m_moveblockfromdeletedCommand = m_connection.CreateCommand(@"INSERT INTO ""Block"" (""Hash"", ""Size"", ""VolumeID"") SELECT ""Hash"", ""Size"", ""VolumeID"" FROM ""DeletedBlock"" WHERE ""ID"" = ? LIMIT 1; DELETE FROM ""DeletedBlock"" WHERE ""ID"" = ?; SELECT last_insert_rowid();");
             m_insertfileOperationCommand = m_connection.CreateCommand(@"INSERT INTO ""FilesetEntry"" (""FilesetID"", ""FileID"", ""Lastmodified"") VALUES (?, ?, ?)");
             m_insertfileCommand = m_connection.CreateCommand(@"INSERT INTO ""FileLookup"" (""PrefixID"", ""Path"",""BlocksetID"", ""MetadataID"") VALUES (?, ?, ? ,?); SELECT last_insert_rowid();");
             m_insertblocksetCommand = m_connection.CreateCommand(@"INSERT INTO ""Blockset"" (""Length"", ""FullHash"") VALUES (?, ?); SELECT last_insert_rowid();");
@@ -232,11 +218,41 @@ SELECT ""BlocklistHash"".""BlocksetID"" FROM ""BlocklistHash"" WHERE ""Blocklist
 
             if (r == -1L)
             {
-                m_insertblockCommand.Transaction = transaction;
-                m_insertblockCommand.SetParameterValue(0, key);
-                m_insertblockCommand.SetParameterValue(1, volumeid);
-                m_insertblockCommand.SetParameterValue(2, size);
-                m_insertblockCommand.ExecuteScalarInt64(m_logQueries);
+                // Try to find block in already uploaded blocks which were previously deleted
+                m_finddeletedblockCommandQuick.Transaction = transaction;
+                m_finddeletedblockCommandQuick.SetParameterValue(0, key);
+                m_finddeletedblockCommandQuick.SetParameterValue(1, size);
+                var deletedId = m_finddeletedblockCommandQuick.ExecuteScalarInt64(m_logQueries, -1);
+
+                // If we find it, ensure it is in a volume that is not deleted
+                if (deletedId != -1L)
+                {
+                    m_finddeletedblockCommand.Transaction = transaction;
+                    m_finddeletedblockCommand.SetParameterValue(0, key);
+                    m_finddeletedblockCommand.SetParameterValue(1, size);
+                    deletedId = m_finddeletedblockCommand.ExecuteScalarInt64(m_logQueries, -1);
+                }
+
+                if (deletedId != -1L)
+                {
+                    // Move block back from deleted volumes
+                    m_moveblockfromdeletedCommand.Transaction = transaction;
+                    m_moveblockfromdeletedCommand.SetParameterValue(0, deletedId);
+                    m_moveblockfromdeletedCommand.SetParameterValue(1, deletedId);
+                    m_moveblockfromdeletedCommand.ExecuteScalarInt64(m_logQueries);
+
+                    // Technically a new block, but it should not be added to the new blockset
+                    return false;
+                }
+                else
+                {
+                    m_insertblockCommand.Transaction = transaction;
+                    m_insertblockCommand.SetParameterValue(0, key);
+                    m_insertblockCommand.SetParameterValue(1, volumeid);
+                    m_insertblockCommand.SetParameterValue(2, size);
+                    m_insertblockCommand.ExecuteScalarInt64(m_logQueries);
+                }
+
                 return true;
             }
             else
