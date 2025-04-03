@@ -548,8 +548,14 @@ namespace Duplicati.UnitTest
             using (var cmd = con.CreateCommand())
             {
                 var filesetId = cmd.ExecuteScalarInt64("SELECT Id FROM Fileset ORDER BY Id DESC LIMIT 1");
-                Assert.AreEqual(1, cmd.SetCommandAndParameters("DELETE FROM Fileset WHERE Id = @FilesetId").SetParameterValue("@FilesetId", filesetId).ExecuteNonQuery());
-                cmd.SetCommandAndParameters("DELETE FROM FilesetEntry WHERE FilesetId = @FilesetId").SetParameterValue("@FilesetId", filesetId);
+                Assert.AreEqual(1, cmd.SetCommandAndParameters("DELETE FROM Fileset WHERE Id = @FilesetId")
+                    .SetParameterValue("@FilesetId", filesetId)
+                    .ExecuteNonQuery());
+
+                // No longer needed because the recreate will wipe the table before restoring
+                // cmd.SetCommandAndParameters("DELETE FROM FilesetEntry WHERE FilesetId = @FilesetId")
+                //     .SetParameterValue("@FilesetId", filesetId)
+                //     .ExecuteNonQuery();
             }
 
             // Should catch this in validation
