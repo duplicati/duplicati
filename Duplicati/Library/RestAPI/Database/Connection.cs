@@ -473,15 +473,12 @@ namespace Duplicati.Server.Database
                 {
                     var sb = new StringBuilder();
 
-                    foreach (var t in tags)
+                    foreach ((var t, var i) in tags.Select((t, i) => (t, i)))
                     {
                         if (sb.Length != 0)
                             sb.Append(" OR ");
-                        sb.Append(@" (',' || ""Tags"" || ',' LIKE '%,' || ? || ',%') ");
-
-                        var p = cmd.CreateParameter();
-                        p.Value = t;
-                        cmd.Parameters.Add(p);
+                        sb.Append(@$" (',' || ""Tags"" || ',' LIKE '%,' || @p{i} || ',%') ");
+                        cmd.AddNamedParameter($"@p{i}", t);
                     }
 
                     cmd.SetCommandAndParameters(@"SELECT ""ID"" FROM ""Schedule"" WHERE " + sb);
@@ -1300,6 +1297,9 @@ namespace Duplicati.Server.Database
                 {
                     foreach (var p in properties)
                     {
+                        if (!updateExisting && p == idfield)
+                            continue;
+
                         var val = p.GetValue(item, null);
                         if (val != null)
                         {
