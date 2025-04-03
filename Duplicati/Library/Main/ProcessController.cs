@@ -118,13 +118,20 @@ namespace Duplicati.Library.Main
 
                     Task.Run(async () =>
                     {
+                        if (!OperatingSystem.IsWindows())
+                            return;
+
                         try
                         {
-                            while (!m_timerCancellation.Token.IsCancellationRequested)
+                            while (true)
                             {
-                                if (OperatingSystem.IsWindows())
-                                    Win32.SetThreadExecutionState(Win32.EXECUTION_STATE.ES_CONTINUOUS | Win32.EXECUTION_STATE.ES_SYSTEM_REQUIRED);
-                                await Task.Delay(TimeSpan.FromSeconds(10), m_timerCancellation.Token);
+                                // Capture the cancellation token, so we don't risk it being set to null
+                                var ct = m_timerCancellation;
+                                if (ct == null || ct.Token.IsCancellationRequested)
+                                    break;
+
+                                Win32.SetThreadExecutionState(Win32.EXECUTION_STATE.ES_CONTINUOUS | Win32.EXECUTION_STATE.ES_SYSTEM_REQUIRED);
+                                await Task.Delay(TimeSpan.FromSeconds(10), ct.Token);
                             }
                         }
                         catch (TaskCanceledException)
@@ -133,7 +140,7 @@ namespace Duplicati.Library.Main
                         }
                         catch (Exception ex)
                         {
-                            Logging.Log.WriteWarningMessage(LOGTAG, "SleepPrevetionError", ex, "Failed to set sleep prevention");
+                            Logging.Log.WriteWarningMessage(LOGTAG, "SleepPreventionError", ex, "Failed to set sleep prevention");
                         }
                     });
 
@@ -141,7 +148,7 @@ namespace Duplicati.Library.Main
                 }
                 catch (Exception ex)
                 {
-                    Logging.Log.WriteWarningMessage(LOGTAG, "SleepPrevetionError", ex, "Failed to set sleep prevention");
+                    Logging.Log.WriteWarningMessage(LOGTAG, "SleepPreventionError", ex, "Failed to set sleep prevention");
                 }
             }
             else if (OperatingSystem.IsMacOS())
@@ -329,7 +336,7 @@ namespace Duplicati.Library.Main
                 }
                 catch (Exception ex)
                 {
-                    Logging.Log.WriteWarningMessage(LOGTAG, "SleepPrevetionError", ex, "Failed to set sleep prevention");
+                    Logging.Log.WriteWarningMessage(LOGTAG, "SleepPreventionError", ex, "Failed to set sleep prevention");
                 }
             }
             else if (OperatingSystem.IsMacOS())
