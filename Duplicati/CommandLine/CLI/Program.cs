@@ -297,7 +297,7 @@ namespace Duplicati.CommandLine
             new CommandLineArgument("quiet-console", CommandLineArgument.ArgumentType.Boolean, Strings.Program.QuietConsoleOptionShort, Strings.Program.QuietConsoleOptionLong, "false"),
             new CommandLineArgument("auto-update", CommandLineArgument.ArgumentType.Boolean, Strings.Program.AutoUpdateOptionShort, Strings.Program.AutoUpdateOptionLong, "false"),
             new CommandLineArgument(DataFolderManager.PORTABLE_MODE_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.Program.PortableModeOptionShort, Strings.Program.PortableModeOptionLong, DataFolderManager.PORTABLE_MODE.ToString().ToLowerInvariant()),
-            new CommandLineArgument(DataFolderManager.SERVER_DATAFOLDER_OPTION, CommandLineArgument.ArgumentType.Path, Strings.Program.DataFolderOptionShort, Strings.Program.DataFolderOptionLong, DataFolderManager.DATAFOLDER),
+            new CommandLineArgument(DataFolderManager.SERVER_DATAFOLDER_OPTION, CommandLineArgument.ArgumentType.Path, Strings.Program.DataFolderOptionShort, Strings.Program.DataFolderOptionLong, DataFolderManager.GetDataFolder(DataFolderManager.AccessMode.ProbeOnly)),
         ];
 
         private static bool ReadOptionsFromFile(TextWriter outwriter, string filename, ref Library.Utility.IFilter filter, List<string> cargs, Dictionary<string, string> options)
