@@ -849,11 +849,10 @@ namespace Duplicati.Server
                 try
                 {
                     var hasEncryptedFields = false;
-                    using (var cmd = con.CreateCommand())
-                    {
-                        cmd.CommandText = @$"SELECT ""Value"" FROM ""Option"" WHERE ""Name"" = '{Database.ServerSettings.CONST.ENCRYPTED_FIELDS}' AND ""BackupID"" = {Connection.SERVER_SETTINGS_ID}";
-                        hasEncryptedFields = Library.Utility.Utility.ParseBool(cmd.ExecuteScalar()?.ToString(), false);
-                    }
+                    using (var cmd = con.CreateCommand(@$"SELECT ""Value"" FROM ""Option"" WHERE ""Name"" = @Name AND ""BackupID"" = @BackupId"))
+                        hasEncryptedFields = Library.Utility.Utility.ParseBool(cmd
+                            .SetParameterValue("@Name", Database.ServerSettings.CONST.ENCRYPTED_FIELDS)
+                            .SetParameterValue("@BackupId", Connection.SERVER_SETTINGS_ID).ExecuteScalar()?.ToString(), false);
 
                     if (hasEncryptedFields)
                     {

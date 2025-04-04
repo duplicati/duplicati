@@ -19,6 +19,8 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
+#nullable enable
+
 using System;
 using System.Data;
 using System.Collections.Generic;
@@ -46,12 +48,13 @@ namespace Duplicati.Library.Main.Database
 
         public string GetRemoteVolumeNameForFileset(long id, IDbTransaction transaction)
         {
-            using (var cmd = m_connection.CreateCommand(transaction))
-            using (var rd = cmd.ExecuteReader(@"SELECT ""B"".""Name"" FROM ""Fileset"" A, ""RemoteVolume"" B WHERE ""A"".""VolumeID"" = ""B"".""ID"" AND ""A"".""ID"" = ? ", id))
+            using var cmd = m_connection.CreateCommand(transaction, @"SELECT ""B"".""Name"" FROM ""Fileset"" A, ""RemoteVolume"" B WHERE ""A"".""VolumeID"" = ""B"".""ID"" AND ""A"".""ID"" = @FilesetId ")
+                .SetParameterValue("@FilesetId", id);
+            using (var rd = cmd.ExecuteReader())
                 if (!rd.Read())
                     throw new Exception($"No remote volume found for fileset with id {id}");
                 else
-                    return rd.ConvertValueToString(0);
+                    return rd.ConvertValueToString(0) ?? throw new Exception($"Remote volume name for fileset with id {id} is null");
         }
 
         internal long CountOrphanFiles(IDbTransaction transaction)
@@ -119,16 +122,14 @@ namespace Duplicati.Library.Main.Database
                     using (var cmd = m_connection.CreateCommand(m_transaction))
                     {
                         cmd.ExecuteNonQuery(FormatInvariant($@"CREATE TEMPORARY TABLE ""{filenamestable}"" (""Path"" TEXT NOT NULL) "));
-                        cmd.CommandText = FormatInvariant($@"INSERT INTO ""{filenamestable}"" (""Path"") VALUES (?)");
-                        cmd.AddParameter();
-
+                        cmd.SetCommandAndParameters(FormatInvariant($@"INSERT INTO ""{filenamestable}"" (""Path"") VALUES (@Path)"));
                         foreach (var s in p)
-                        {
-                            cmd.SetParameterValue(0, s);
-                            cmd.ExecuteNonQuery();
-                        }
+                            cmd.SetParameterValue("@Path", s)
+                                .ExecuteNonQuery();
 
-                        cmd.ExecuteNonQuery(FormatInvariant($@"INSERT INTO ""{m_tablename}"" (""FileID"") SELECT DISTINCT ""A"".""FileID"" FROM ""FilesetEntry"" A, ""File"" B WHERE ""A"".""FilesetID"" = ? AND ""A"".""FileID"" = ""B"".""ID"" AND ""B"".""Path"" IN ""{filenamestable}"""), ParentID);
+                        cmd.SetCommandAndParameters(FormatInvariant($@"INSERT INTO ""{m_tablename}"" (""FileID"") SELECT DISTINCT ""A"".""FileID"" FROM ""FilesetEntry"" A, ""File"" B WHERE ""A"".""FilesetID"" = @FilesetId AND ""A"".""FileID"" = ""B"".""ID"" AND ""B"".""Path"" IN ""{filenamestable}"""))
+                            .SetParameterValue("@FilesetId", ParentID)
+                            .ExecuteNonQuery();
                         cmd.ExecuteNonQuery(FormatInvariant($@"DROP TABLE IF EXISTS ""{filenamestable}"" "));
                     }
                 }
@@ -139,17 +140,17 @@ namespace Duplicati.Library.Main.Database
                     using (var cmd = m_connection.CreateCommand(m_transaction))
                     using (var cmd2 = m_connection.CreateCommand(m_transaction))
                     {
-                        cmd2.CommandText = FormatInvariant($@"INSERT INTO ""{m_tablename}"" (""FileID"") VALUES (?)");
-                        cmd2.AddParameters(1);
-
-                        using (var rd = cmd.ExecuteReader(@"SELECT ""B"".""Path"", ""A"".""FileID"" FROM ""FilesetEntry"" A, ""File"" B WHERE ""A"".""FilesetID"" = ? AND ""A"".""FileID"" = ""B"".""ID"" ", ParentID))
+                        cmd2.SetCommandAndParameters(FormatInvariant($@"INSERT INTO ""{m_tablename}"" (""FileID"") VALUES (@FileId)"));
+                        cmd.SetCommandAndParameters(@"SELECT ""B"".""Path"", ""A"".""FileID"" FROM ""FilesetEntry"" A, ""File"" B WHERE ""A"".""FilesetID"" = @FilesetId AND ""A"".""FileID"" = ""B"".""ID"" ")
+                            .SetParameterValue("@FilesetId", ParentID);
+                        using (var rd = cmd.ExecuteReader())
                             while (rd.Read())
                             {
                                 rd.GetValues(values);
                                 if (values[0] != null && values[0] != DBNull.Value && Library.Utility.FilterExpression.Matches(filter, values[0].ToString()))
                                 {
-                                    cmd2.SetParameterValue(0, values[1]);
-                                    cmd2.ExecuteNonQuery();
+                                    cmd2.SetParameterValue("@FileId", values[1])
+                                        .ExecuteNonQuery();
                                 }
                             }
                     }
@@ -177,7 +178,10 @@ namespace Duplicati.Library.Main.Database
                 m_parentdb.UpdateFullBackupStateInFileset(filesetid, isFullBackup);
 
                 using (var cmd = m_connection.CreateCommand(m_transaction))
-                    cmd.ExecuteNonQuery(FormatInvariant($@"INSERT INTO ""FilesetEntry"" (""FilesetID"", ""FileID"", ""Lastmodified"") SELECT ?, ""FileID"", ""LastModified"" FROM ""FilesetEntry"" WHERE ""FilesetID"" = ? AND ""FileID"" NOT IN ""{m_tablename}"" "), filesetid, ParentID);
+                    cmd.SetCommandAndParameters(FormatInvariant($@"INSERT INTO ""FilesetEntry"" (""FilesetID"", ""FileID"", ""Lastmodified"") SELECT @TargetFilesetId, ""FileID"", ""LastModified"" FROM ""FilesetEntry"" WHERE ""FilesetID"" = @SourceFilesetId AND ""FileID"" NOT IN ""{m_tablename}"" "))
+                    .SetParameterValue("@TargetFilesetId", filesetid)
+                    .SetParameterValue("@SourceFilesetId", ParentID)
+                    .ExecuteNonQuery();
 
                 return new Tuple<long, long>(remotevolid, filesetid);
             }
@@ -187,7 +191,7 @@ namespace Duplicati.Library.Main.Database
                 using (var cmd = m_connection.CreateCommand(m_transaction))
                 using (var rd = cmd.ExecuteReader(FormatInvariant($@"SELECT ""B"".""Path"", ""C"".""Length"" FROM ""{m_tablename}"" A, ""File"" B, ""Blockset"" C WHERE ""A"".""FileID"" = ""B"".""ID"" AND ""B"".""BlocksetID"" = ""C"".""ID"" ")))
                     while (rd.Read())
-                        yield return new KeyValuePair<string, long>(rd.ConvertValueToString(0), rd.ConvertValueToInt64(1));
+                        yield return new KeyValuePair<string, long>(rd.ConvertValueToString(0) ?? "", rd.ConvertValueToInt64(1));
             }
 
             public void Dispose()

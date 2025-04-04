@@ -100,7 +100,7 @@ namespace Duplicati.Library.Main.Operation.Backup
             return RunOnMain(() => m_database.AddSymlinkEntry(filename, metadataid, lastModified, GetTransaction()));
         }
 
-        public Task<Tuple<long, string>> GetMetadataHashAndSizeForFileAsync(long fileid)
+        public Task<(long Size, string MetadataHash)?> GetMetadataHashAndSizeForFileAsync(long fileid)
         {
             return RunOnMain(() => m_database.GetMetadataHashAndSizeForFile(fileid, GetTransaction()));
         }
@@ -154,7 +154,7 @@ namespace Duplicati.Library.Main.Operation.Backup
 
         public Task AddUnmodifiedAsync(long fileid, DateTime lastModified)
         {
-            return RunOnMain(() => m_database.AddUnmodifiedFile(fileid, lastModified, GetTransaction()));
+            return RunOnMain(() => m_database.AddKnownFile(fileid, lastModified, GetTransaction()));
         }
 
 
