@@ -1,4 +1,4 @@
-// Copyright (C) 2025, The Duplicati Team
+﻿// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -22,6 +22,7 @@
 #nullable enable
 
 using System;
+using System.Globalization;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 
@@ -116,7 +117,7 @@ namespace Duplicati.Library.SQLiteHelper
                     Logging.Log.WriteVerboseMessage(LOGTAG, "CustomSQLiteOption", @"Setting custom SQLite option '{0}'.", opt);
                     try
                     {
-                        cmd.CommandText = string.Format("PRAGMA {0}", opt);
+                        cmd.CommandText = string.Format(CultureInfo.InvariantCulture, "PRAGMA {0}", opt);
                         cmd.ExecuteNonQuery();
                     }
                     catch (Exception ex)

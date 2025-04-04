@@ -38,6 +38,9 @@ namespace Duplicati.Library.Interface.Strings
         public static string Size { get { return LC.L(@"Size"); } }
         public static string String { get { return LC.L(@"String"); } }
         public static string Timespan { get { return LC.L(@"Timespan"); } }
+        public static string DateTime { get { return LC.L(@"DateTime"); } }
+        public static string Password { get { return LC.L(@"Password"); } }
+        public static string Decimal { get { return LC.L(@"Decimal"); } }
         public static string Unknown { get { return LC.L(@"Unknown"); } }
     }
     internal static class Common

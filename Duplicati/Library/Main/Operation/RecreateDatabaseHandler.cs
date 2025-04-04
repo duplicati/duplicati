@@ -23,7 +23,6 @@ using System.Collections.Generic;
 using System.Data;
 using System.IO;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main.Database;
@@ -162,6 +161,9 @@ namespace Duplicati.Library.Main.Operation
                             throw new UserInformationException(string.Format("Found {0} parse-able files (of {1} files) with different prefixes: {2}, did you forget to set the backup prefix?", tmp.Length, rawlist.Count(), string.Join(", ", types)), "EmptyRemoteLocationWithPrefix");
                     }
                 }
+
+                if (string.IsNullOrWhiteSpace(m_options.Passphrase) && remotefiles.Any(x => !string.IsNullOrWhiteSpace(x.EncryptionModule)))
+                    throw new UserInformationException("The remote files are encrypted, but no passphrase was provided", "MissingPassphrase");
 
                 //Then we select the filelist we should work with,
                 // and create the filelist table to fit
@@ -567,6 +569,9 @@ namespace Duplicati.Library.Main.Operation
 
             // update fileset using filesetData
             restoredb.UpdateFullBackupStateInFileset(filesetid, filesetData.IsFullBackup, transaction);
+
+            // clear any existing fileset entries
+            restoredb.ClearFilesetEntries(filesetid, transaction);
 
             using (var filelistreader = new FilesetVolumeReader(compressor, options))
                 foreach (var fe in filelistreader.Files.Where(x => Library.Utility.FilterExpression.Matches(filter, x.Path)))

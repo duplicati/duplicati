@@ -425,7 +425,8 @@ namespace Duplicati.Server
                     parsedOptions.AllowedHostnames,
                     parsedOptions.DisableStaticFiles,
                     parsedOptions.SPAPaths,
-                    parsedOptions.CorsOrigins
+                    parsedOptions.CorsOrigins,
+                    parsedOptions.PreAuthTokens
                 );
 
                 var server = DuplicatiWebserver.CreateWebServer(mappedSettings, connection);
@@ -793,7 +794,7 @@ namespace Duplicati.Server
 
         public static Connection GetDatabaseConnection(Dictionary<string, string> commandlineOptions, bool silentConsole)
         {
-            DataFolder = DataFolderManager.DATAFOLDER;
+            DataFolder = DataFolderManager.GetDataFolder(DataFolderManager.AccessMode.ReadWritePermissionSet);
 
             // Emit a warning if the database is stored in the Windows folder
             if (Util.IsPathUnderWindowsFolder(DataFolder))
@@ -848,11 +849,10 @@ namespace Duplicati.Server
                 try
                 {
                     var hasEncryptedFields = false;
-                    using (var cmd = con.CreateCommand())
-                    {
-                        cmd.CommandText = @$"SELECT ""Value"" FROM ""Option"" WHERE ""Name"" = '{Database.ServerSettings.CONST.ENCRYPTED_FIELDS}' AND ""BackupID"" = {Connection.SERVER_SETTINGS_ID}";
-                        hasEncryptedFields = Library.Utility.Utility.ParseBool(cmd.ExecuteScalar()?.ToString(), false);
-                    }
+                    using (var cmd = con.CreateCommand(@$"SELECT ""Value"" FROM ""Option"" WHERE ""Name"" = @Name AND ""BackupID"" = @BackupId"))
+                        hasEncryptedFields = Library.Utility.Utility.ParseBool(cmd
+                            .SetParameterValue("@Name", Database.ServerSettings.CONST.ENCRYPTED_FIELDS)
+                            .SetParameterValue("@BackupId", Connection.SERVER_SETTINGS_ID).ExecuteScalar()?.ToString(), false);
 
                     if (hasEncryptedFields)
                     {
@@ -1012,10 +1012,11 @@ namespace Duplicati.Server
             new CommandLineArgument(WebServerLoader.OPTION_WEBSERVICE_SPAPATHS, CommandLineArgument.ArgumentType.Path, Strings.Program.WebserverSpaPathsDescription, Strings.Program.WebserverSpaPathsDescription, WebServerLoader.DEFAULT_OPTION_SPAPATHS),
             new CommandLineArgument(WebServerLoader.OPTION_WEBSERVICE_TIMEZONE, CommandLineArgument.ArgumentType.String, Strings.Program.WebserverTimezoneDescription, Strings.Program.WebserverTimezoneDescription, TimeZoneHelper.GetLocalTimeZone(), null, TimeZoneHelper.GetTimeZones().Select(x => x.Id).ToArray()),
             new CommandLineArgument(WebServerLoader.OPTION_WEBSERVICE_CORS_ORIGINS, CommandLineArgument.ArgumentType.Path, Strings.Program.WebserverCorsOriginsDescription, Strings.Program.WebserverCorsOriginsDescription, WebServerLoader.DEFAULT_OPTION_SPAPATHS),
+            new CommandLineArgument(WebServerLoader.OPTION_WEBSERVICE_PRE_AUTH_TOKENS, CommandLineArgument.ArgumentType.String, Strings.Program.WebserverPreAuthTokensDescription, Strings.Program.WebserverPreAuthTokensDescription),
             new CommandLineArgument(PING_PONG_KEEPALIVE_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.Program.PingpongkeepaliveShort, Strings.Program.PingpongkeepaliveLong),
             new CommandLineArgument(DISABLE_UPDATE_CHECK_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.Program.DisableupdatecheckShort, Strings.Program.DisableupdatecheckLong),
             new CommandLineArgument(LOG_RETENTION_OPTION, CommandLineArgument.ArgumentType.Timespan, Strings.Program.LogretentionShort, Strings.Program.LogretentionLong, DEFAULT_LOG_RETENTION),
-            new CommandLineArgument(DataFolderManager.SERVER_DATAFOLDER_OPTION, CommandLineArgument.ArgumentType.Path, Strings.Program.ServerdatafolderShort, Strings.Program.ServerdatafolderLong(DataFolderManager.DATAFOLDER_ENV_NAME), DataFolderManager.DATAFOLDER),
+            new CommandLineArgument(DataFolderManager.SERVER_DATAFOLDER_OPTION, CommandLineArgument.ArgumentType.Path, Strings.Program.ServerdatafolderShort, Strings.Program.ServerdatafolderLong(DataFolderManager.GetDataFolder(DataFolderManager.AccessMode.ProbeOnly)), DataFolderManager.GetDataFolder(DataFolderManager.AccessMode.ProbeOnly)),
             new CommandLineArgument(DISABLE_DB_ENCRYPTION_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.Program.DisabledbencryptionShort, Strings.Program.DisabledbencryptionLong),
             new CommandLineArgument(REQUIRE_DB_ENCRYPTION_KEY_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.Program.RequiredbencryptionShort, Strings.Program.RequiredbencryptionLong),
             new CommandLineArgument(SETTINGS_ENCRYPTION_KEY_OPTION, CommandLineArgument.ArgumentType.Password, Strings.Program.SettingsencryptionkeyShort, Strings.Program.SettingsencryptionkeyLong(EncryptedFieldHelper.ENVIROMENT_VARIABLE_NAME)),
