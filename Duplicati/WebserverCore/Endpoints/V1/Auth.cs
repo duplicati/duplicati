@@ -145,7 +145,12 @@ public partial class Auth : IEndpointV1
 
             return new Dto.AccessTokenOutputDto(tokenProvider.CreateForeverToken());
         }).RequireAuthorization();
+        
+        // This will return a AuthValidateDto with valid=true if RequireAuthorization is successful
+        group.MapGet("auth/validate", () => ExecuteAuthValidate(true)).RequireAuthorization();
     }
+    
+    private static Dto.AuthValidateDto ExecuteAuthValidate(bool result) => new(result); 
 
     private static void AddCookie(HttpContext context, string name, string value, DateTimeOffset expires)
         => context.Response.Cookies.Append(name, value, new CookieOptions
