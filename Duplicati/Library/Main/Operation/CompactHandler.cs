@@ -161,12 +161,13 @@ namespace Duplicati.Library.Main.Operation
                                 }
 
                                 downloadedVolumes.Add(new KeyValuePair<string, long>(entry.Name, entry.Size));
+                                var volumeid = db.GetRemoteVolumeID(entry.Name, rtr.Transaction);
                                 var inst = VolumeBase.ParseFilename(entry.Name);
                                 using (var f = new BlockVolumeReader(inst.CompressionModule, tmpfile, m_options))
                                 {
                                     foreach (var e in f.Blocks)
                                     {
-                                        if (q.UseBlock(e.Key, e.Value, rtr.Transaction))
+                                        if (q.UseBlock(e.Key, e.Value, volumeid, rtr.Transaction))
                                         {
                                             //TODO: How do we get the compression hint? Reverse query for filename in db?
                                             var s = f.ReadBlock(e.Key, buffer);

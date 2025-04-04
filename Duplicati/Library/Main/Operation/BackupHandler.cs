@@ -295,6 +295,25 @@ namespace Duplicati.Library.Main.Operation
                 try
                 {
                     database = new LocalBackupDatabase(options.Dbpath, options);
+                    var lastFilestTime = database.FilesetTimes
+                        .Select(x => x.Value)
+                        .Append(DateTime.UnixEpoch)
+                        .Select(Library.Utility.Utility.NormalizeDateTimeToEpochSeconds)
+                        .Max();
+
+                    var currentStamp = Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(database.OperationTimestamp);
+                    if (lastFilestTime > currentStamp)
+                    {
+                        if (lastFilestTime - currentStamp > 5)
+                            throw new UserInformationException(string.Format("The database has a timestamp of {0}, but the last fileset has a timestamp of {1}. Something is wrong with the clock.", database.OperationTimestamp.ToLocalTime(), Library.Utility.Utility.EPOCH.AddSeconds(lastFilestTime).ToLocalTime()), "DatabaseTimestampError");
+
+                        var sleepSeconds = lastFilestTime - currentStamp + 1;
+                        Log.WriteVerboseMessage(LOGTAG, "DatabaseTimestampError", "The database has a timestamp of {0}, but the last fileset has a timestamp of {1}. Sleeping for {2} seconds to allow the clock to catch up.", database.OperationTimestamp.ToLocalTime(), Library.Utility.Utility.EPOCH.AddSeconds(lastFilestTime).ToLocalTime(), sleepSeconds);
+                        Thread.Sleep(TimeSpan.FromSeconds(sleepSeconds));
+                        database.Dispose();
+                        database = new LocalBackupDatabase(options.Dbpath, options);
+                    }
+
                     result.Dryrun = options.Dryrun;
 
                     // Check the database integrity
