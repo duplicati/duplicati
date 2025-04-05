@@ -23,6 +23,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Globalization;
 using System.Linq;
 
 namespace Duplicati.Library.Main.Database
@@ -585,17 +586,20 @@ SELECT ""BlocklistHash"".""BlocksetID"" FROM ""BlocklistHash"" WHERE ""Blocklist
                 var subQueryNonFilesPrevious = subqueryNonFiles + "@LastFilesetId";
                 var subQueryNonFilesCurrent = subqueryNonFiles + "@CurrentFilesetId";
 
-                results.ModifiedFolders = cmd.SetCommandAndParameters(@"SELECT COUNT(*) FROM (" + subQueryNonFilesPrevious + @") A, (" + subQueryNonFilesCurrent + @") B WHERE ""A"".""Path"" = ""B"".""Path"" AND ""A"".""Fullhash"" != ""B"".""Fullhash"" ")
-                    .SetParameterValue("@LastFilesetId", lastFilesetId)
-                    .SetParameterValue("@CurrentFilesetId", m_filesetId)
-                    .SetParameterValue("@BlocksetId", FOLDER_BLOCKSET_ID)
-                    .ExecuteScalarInt64(0);
+                // Note: The following two queries are not using parameters as that tanks the performance on SQLite
+                // Instead the queries are built using string replacement prior to execution
 
-                results.ModifiedSymlinks = cmd.SetCommandAndParameters(@"SELECT COUNT(*) FROM (" + subQueryNonFilesPrevious + @") A, (" + subQueryNonFilesCurrent + @") B WHERE ""A"".""Path"" = ""B"".""Path"" AND ""A"".""Fullhash"" != ""B"".""Fullhash"" ")
-                    .SetParameterValue("@LastFilesetId", lastFilesetId)
-                    .SetParameterValue("@CurrentFilesetId", m_filesetId)
-                    .SetParameterValue("@BlocksetId", SYMLINK_BLOCKSET_ID)
-                    .ExecuteScalarInt64(0);
+                var modifiedFoldersQuery = @"SELECT COUNT(*) FROM (" + subQueryNonFilesPrevious + @") A, (" + subQueryNonFilesCurrent + @") B WHERE ""A"".""Path"" = ""B"".""Path"" AND ""A"".""Fullhash"" != ""B"".""Fullhash"" "
+                    .Replace("@LastFilesetId", lastFilesetId.ToString(CultureInfo.InvariantCulture))
+                    .Replace("@CurrentFilesetId", m_filesetId.ToString(CultureInfo.InvariantCulture))
+                    .Replace("@BlocksetId", FOLDER_BLOCKSET_ID.ToString(CultureInfo.InvariantCulture));
+                var modifiedSymlinksQuery = @"SELECT COUNT(*) FROM (" + subQueryNonFilesPrevious + @") A, (" + subQueryNonFilesCurrent + @") B WHERE ""A"".""Path"" = ""B"".""Path"" AND ""A"".""Fullhash"" != ""B"".""Fullhash"" "
+                    .Replace("@LastFilesetId", lastFilesetId.ToString(CultureInfo.InvariantCulture))
+                    .Replace("@CurrentFilesetId", m_filesetId.ToString(CultureInfo.InvariantCulture))
+                    .Replace("@BlocksetId", SYMLINK_BLOCKSET_ID.ToString(CultureInfo.InvariantCulture));
+
+                results.ModifiedFolders = cmd.ExecuteScalarInt64(modifiedFoldersQuery, 0);
+                results.ModifiedSymlinks = cmd.ExecuteScalarInt64(modifiedSymlinksQuery, 0);
 
                 var tmpName1 = "TmpFileList-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
                 var tmpName2 = "TmpFileList-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
