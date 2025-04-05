@@ -44,7 +44,7 @@ public static class ChangeStatistics
     /// <param name="previousFilesetId">The ID of the previous fileset</param>
     internal static void UpdateChangeStatistics(IDbCommand cmd, BackupResults results, long currentFilesetId, long previousFilesetId)
     {
-        string tmpName = $"TmpFileState_{Guid.NewGuid():N}";
+        var tmpName = $"TmpFileState_{Guid.NewGuid():N}";
 
         try
         {
@@ -55,7 +55,6 @@ public static class ChangeStatistics
         FL.""PrefixID"", 
         FL.""Path"", 
         FL.""BlocksetID"",
-        BS_Data.""Fullhash"" AS ""Filehash"", 
         BS_Meta.""Fullhash"" AS ""Metahash"",
         CASE FE.""FilesetID""
             WHEN @LastFilesetId THEN 0
@@ -86,9 +85,9 @@ public static class ChangeStatistics
             results.DeletedFiles = CountDeleted(cmd, tmpName, null, new[] { LocalDatabase.FOLDER_BLOCKSET_ID, LocalDatabase.SYMLINK_BLOCKSET_ID });
 
             // Modified
-            results.ModifiedFolders = CountModified(cmd, tmpName, LocalDatabase.FOLDER_BLOCKSET_ID, "Metahash");
-            results.ModifiedSymlinks = CountModified(cmd, tmpName, LocalDatabase.SYMLINK_BLOCKSET_ID, "Metahash");
-            results.ModifiedFiles = CountModified(cmd, tmpName, null, "Filehash", "Metahash", new[] { LocalDatabase.FOLDER_BLOCKSET_ID, LocalDatabase.SYMLINK_BLOCKSET_ID });
+            results.ModifiedFolders = CountModified(cmd, tmpName, LocalDatabase.FOLDER_BLOCKSET_ID);
+            results.ModifiedSymlinks = CountModified(cmd, tmpName, LocalDatabase.SYMLINK_BLOCKSET_ID);
+            results.ModifiedFiles = CountModified(cmd, tmpName, null, new[] { LocalDatabase.FOLDER_BLOCKSET_ID, LocalDatabase.SYMLINK_BLOCKSET_ID });
         }
         finally
         {
@@ -112,7 +111,6 @@ public static class ChangeStatistics
         WHERE B.Source = 0 
           AND B.PrefixID = A.PrefixID 
           AND B.Path = A.Path 
-          AND B.BlocksetID = A.BlocksetID
         )");
 
         return CountWithCondition(cmd, tmpName, "A", conditions, blocksetId, excludeBlocksets);
@@ -133,7 +131,6 @@ public static class ChangeStatistics
         WHERE B.Source = 1 
           AND B.PrefixID = A.PrefixID 
           AND B.Path = A.Path 
-          AND B.BlocksetID = A.BlocksetID
         )";
 
         return CountWithCondition(cmd, tmpName, "A", conditions, blocksetId, excludeBlocksets);
@@ -145,29 +142,37 @@ public static class ChangeStatistics
     /// <param name="cmd">The database command to use</param>
     /// <param name="tmpName">The name of the temporary table</param>
     /// <param name="blocksetId">The ID of the blockset to count, or null for all</param>
-    /// <param name="hash1">The first hash column to compare</param>
-    /// <param name="hash2">The second hash column to compare, or null for none</param>
+    /// <param name="hash1">The hash column to compare</param>
     /// <param name="excludeBlocksets">The blocksets to exclude from the count</param>
     /// <returns>The number of modified files or folders</returns>
-    private static long CountModified(IDbCommand cmd, string tmpName, long? blocksetId, string hash1, string? hash2 = null, long[]? excludeBlocksets = null)
+    private static long CountModified(IDbCommand cmd, string tmpName, long? blocksetId, long[]? excludeBlocksets = null)
     {
-        string baseConditions = $@"
-        A.Source = 0 AND B.Source = 1
-        AND A.PrefixID = B.PrefixID AND A.Path = B.Path
-        AND (
-            A.""{hash1}"" IS NOT B.""{hash1}""" +
-                (string.IsNullOrEmpty(hash2) ? "" : $" OR A.\"{hash2}\" IS NOT B.\"{hash2}\"") +
-            ")";
+        string conditions;
+
+        if (blocksetId == LocalDatabase.FOLDER_BLOCKSET_ID || blocksetId == LocalDatabase.SYMLINK_BLOCKSET_ID)
+        {
+            conditions = @"
+            A.Source = 0 AND B.Source = 1
+            AND A.PrefixID = B.PrefixID AND A.Path = B.Path
+            AND A.Metahash IS NOT B.Metahash";
+        }
+        else
+        {
+            conditions = @"
+            A.Source = 0 AND B.Source = 1
+            AND A.PrefixID = B.PrefixID AND A.Path = B.Path
+            AND (A.BlocksetID IS NOT B.BlocksetID OR A.Metahash IS NOT B.Metahash)";
+        }
 
         string blocksetCondition = GetBlocksetCondition("A", blocksetId, excludeBlocksets);
         if (!string.IsNullOrEmpty(blocksetCondition))
-            baseConditions += $" AND {blocksetCondition}";
+            conditions += $" AND {blocksetCondition}";
 
         string sql = $@"
         SELECT COUNT(*)
         FROM ""{tmpName}"" A
         JOIN ""{tmpName}"" B ON A.PrefixID = B.PrefixID AND A.Path = B.Path
-        WHERE {baseConditions}";
+        WHERE {conditions}";
 
         return cmd.SetCommandAndParameters(sql).ExecuteScalarInt64(0);
     }
