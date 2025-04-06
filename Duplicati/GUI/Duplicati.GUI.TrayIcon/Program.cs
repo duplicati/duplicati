@@ -179,7 +179,7 @@ namespace Duplicati.GUI.TrayIcon
             }
             else if (Utility.ParseBoolOption(options, READCONFIGFROMDB_OPTION))
             {
-                if (File.Exists(Path.Combine(DataFolderManager.DATAFOLDER, DataFolderManager.SERVER_DATABASE_FILENAME)))
+                if (File.Exists(Path.Combine(DataFolderManager.GetDataFolder(DataFolderManager.AccessMode.ReadWritePermissionSet), DataFolderManager.SERVER_DATABASE_FILENAME)))
                 {
                     passwordSource = PasswordSource.Database;
                     databaseConnection = Server.Program.GetDatabaseConnection(options, true);

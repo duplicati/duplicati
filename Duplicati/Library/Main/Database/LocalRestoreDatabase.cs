@@ -18,6 +18,9 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
+
+#nullable enable
+
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -42,13 +45,13 @@ namespace Duplicati.Library.Main.Database
         /// <summary>
         /// The name of the temporary table in the database, which is used to store the list of files to restore.
         /// </summary>
-        protected string m_tempfiletable;
-        protected string m_tempblocktable;
+        protected string? m_tempfiletable;
+        protected string? m_tempblocktable;
         protected ConcurrentBag<IDbConnection> m_connection_pool = [];
-        protected string m_latestblocktable;
-        protected string m_fileprogtable;
-        protected string m_totalprogtable;
-        protected string m_filesnewlydonetable;
+        protected string? m_latestblocktable;
+        protected string? m_fileprogtable;
+        protected string? m_totalprogtable;
+        protected string? m_filesnewlydonetable;
 
         protected DateTime m_restoreTime;
 
@@ -270,7 +273,7 @@ END ");
 
                                 using (var rd = cmd.ExecuteReader(FormatInvariant($@"SELECT ""Path"" FROM ""{m_filenamestable}"" WHERE ""Path"" NOT IN (SELECT ""Path"" FROM ""{m_tempfiletable}"")")))
                                     while (rd.Read())
-                                        sb.AppendLine(rd.GetValue(0).ToString());
+                                        sb.AppendLine(rd.ConvertValueToString(0));
 
                                 var actualrestoretime = ParseFromEpochSeconds(
                                     cmd.SetCommandAndParameters(@"SELECT ""Timestamp"" FROM ""Fileset"" WHERE ""ID"" = @FilesetId")
@@ -339,12 +342,11 @@ END ");
             return new Tuple<long, long>(0, 0);
         }
 
-        public string GetFirstPath()
+        public string? GetFirstPath()
         {
             using (var cmd = m_connection.CreateCommand())
             {
-                cmd.CommandText = FormatInvariant($@"SELECT ""Path"" FROM ""{m_tempfiletable}"" ORDER BY LENGTH(""Path"") DESC LIMIT 1");
-                var v0 = cmd.ExecuteScalar();
+                var v0 = cmd.ExecuteScalar(FormatInvariant($@"SELECT ""Path"" FROM ""{m_tempfiletable}"" ORDER BY LENGTH(""Path"") DESC LIMIT 1"));
                 if (v0 == null || v0 == DBNull.Value)
                     return null;
 
@@ -356,16 +358,14 @@ END ");
         {
             using (var cmd = m_connection.CreateCommand())
             {
-                cmd.CommandText = FormatInvariant($@"SELECT ""Path"" FROM ""{m_tempfiletable}"" ORDER BY LENGTH(""Path"") DESC LIMIT 1");
-                var v0 = cmd.ExecuteScalar();
+                var v0 = cmd.ExecuteScalar(FormatInvariant($@"SELECT ""Path"" FROM ""{m_tempfiletable}"" ORDER BY LENGTH(""Path"") DESC LIMIT 1"));
                 var maxpath = "";
                 if (v0 != null && v0 != DBNull.Value)
-                    maxpath = v0.ToString();
+                    maxpath = v0.ToString()!;
 
                 var dirsep = Util.GuessDirSeparator(maxpath);
 
-                cmd.CommandText = FormatInvariant($@"SELECT COUNT(*) FROM ""{m_tempfiletable}""");
-                var filecount = cmd.ExecuteScalarInt64(-1);
+                var filecount = cmd.ExecuteScalarInt64(FormatInvariant($@"SELECT COUNT(*) FROM ""{m_tempfiletable}"""), -1);
                 var foundfiles = -1L;
 
                 //TODO: Handle FS case-sensitive?
@@ -415,7 +415,9 @@ END ");
                     else if (OperatingSystem.IsWindows() && dirsep == "/")
                     {
                         // For Linux -> Win, we use the temporary folder's drive as the root path
-                        cmd.ExecuteNonQuery(FormatInvariant($@"UPDATE ""{m_tempfiletable}"" SET ""Targetpath"" = CASE WHEN SUBSTR(""Path"", 1, 1) == '/' THEN ? || SUBSTR(""Path"", 2) ELSE ""Path"" END"), Util.AppendDirSeparator(System.IO.Path.GetPathRoot(Library.Utility.TempFolder.SystemTempPath)).Replace("\\", "/"));
+                        cmd.SetCommandAndParameters(FormatInvariant($@"UPDATE ""{m_tempfiletable}"" SET ""Targetpath"" = CASE WHEN SUBSTR(""Path"", 1, 1) == '/' THEN @Path || SUBSTR(""Path"", 2) ELSE ""Path"" END"))
+                            .SetParameterValue("@Path", Util.AppendDirSeparator(System.IO.Path.GetPathRoot(Library.Utility.TempFolder.SystemTempPath)).Replace("\\", "/"))
+                            .ExecuteNonQuery();
                     }
                     else
                     {
@@ -562,8 +564,8 @@ END ");
 
             public ExistingFile(IDataReader rd) { m_reader = rd; HasMore = true; }
 
-            public string TargetPath { get { return m_reader.ConvertValueToString(0); } }
-            public string TargetHash { get { return m_reader.ConvertValueToString(1); } }
+            public string TargetPath { get { return m_reader.ConvertValueToString(0) ?? ""; } }
+            public string TargetHash { get { return m_reader.ConvertValueToString(1) ?? ""; } }
             public long TargetFileID { get { return m_reader.ConvertValueToInt64(2); } }
             public long Length { get { return m_reader.ConvertValueToInt64(3); } }
 
@@ -575,7 +577,7 @@ END ");
 
                 public ExistingFileBlock(IDataReader rd) { m_reader = rd; }
 
-                public string Hash { get { return m_reader.ConvertValueToString(4); } }
+                public string Hash { get { return m_reader.ConvertValueToString(4) ?? ""; } }
                 public long Index { get { return m_reader.ConvertValueToInt64(5); } }
                 public long Size { get { return m_reader.ConvertValueToInt64(6); } }
             }
@@ -616,6 +618,8 @@ END ");
 
         public IEnumerable<IExistingFile> GetExistingFilesWithBlocks()
         {
+            if (string.IsNullOrWhiteSpace(m_tempfiletable) || string.IsNullOrWhiteSpace(m_tempblocktable))
+                throw new InvalidOperationException("No temporary file table set up for this restore.");
             return ExistingFile.GetExistingFilesWithBlocks(m_connection, m_tempfiletable);
         }
 
@@ -628,7 +632,7 @@ END ");
                     private readonly IDataReader m_reader;
                     public BlockSource(IDataReader rd) { m_reader = rd; }
 
-                    public string Path { get { return m_reader.ConvertValueToString(6); } }
+                    public string Path { get { return m_reader.ConvertValueToString(6) ?? ""; } }
                     public long Offset { get { return m_reader.ConvertValueToInt64(7); } }
                     public bool IsMetadata { get { return false; } }
                 }
@@ -636,9 +640,9 @@ END ");
                 private readonly IDataReader m_reader;
                 public BlockDescriptor(IDataReader rd) { m_reader = rd; HasMore = true; }
 
-                private string TargetPath { get { return m_reader.ConvertValueToString(0); } }
+                private string TargetPath { get { return m_reader.ConvertValueToString(0) ?? ""; } }
 
-                public string Hash { get { return m_reader.ConvertValueToString(2); } }
+                public string Hash { get { return m_reader.ConvertValueToString(2) ?? ""; } }
                 public long Offset { get { return m_reader.ConvertValueToInt64(3); } }
                 public long Index { get { return m_reader.ConvertValueToInt64(4); } }
                 public long Size { get { return m_reader.ConvertValueToInt64(5); } }
@@ -666,7 +670,7 @@ END ");
             private readonly IDataReader m_reader;
             public LocalBlockSource(IDataReader rd) { m_reader = rd; HasMore = true; }
 
-            public string TargetPath { get { return m_reader.ConvertValueToString(0); } }
+            public string TargetPath { get { return m_reader.ConvertValueToString(0) ?? ""; } }
             public long TargetFileID { get { return m_reader.ConvertValueToInt64(1); } }
 
             public bool HasMore { get; private set; }
@@ -717,6 +721,8 @@ END ");
 
         public IEnumerable<ILocalBlockSource> GetFilesAndSourceBlocks(bool skipMetadata, long blocksize)
         {
+            if (string.IsNullOrWhiteSpace(m_tempfiletable) || string.IsNullOrWhiteSpace(m_tempblocktable))
+                throw new InvalidOperationException("No temporary file table set up for this restore.");
             return LocalBlockSource.GetFilesAndSourceBlocks(m_connection, m_tempfiletable, m_tempblocktable, blocksize, skipMetadata);
         }
 
@@ -734,14 +740,14 @@ END ");
                 // Now it is likely to restore all files from front to back. Large files will always be done last.
                 // One could also use like the average block number in a volume, that needs to be measured.
 
-                cmd.CommandText = FormatInvariant($@"SELECT ""RV"".""Name"", ""RV"".""Hash"", ""RV"".""Size"", ""BB"".""MaxIndex""
+                cmd.SetCommandAndParameters(FormatInvariant($@"SELECT ""RV"".""Name"", ""RV"".""Hash"", ""RV"".""Size"", ""BB"".""MaxIndex""
 FROM ""RemoteVolume"" ""RV"" INNER JOIN
       (SELECT ""TB"".""VolumeID"", MAX(""TB"".""Index"") as ""MaxIndex""
          FROM ""{m_tempblocktable}"" ""TB""
         WHERE ""TB"".""Restored"" = 0
         GROUP BY  ""TB"".""VolumeID""
       ) as ""BB"" ON ""RV"".""ID"" = ""BB"".""VolumeID""
-ORDER BY ""BB"".""MaxIndex"" ");
+ORDER BY ""BB"".""MaxIndex"" "));
 
                 using (var rd = cmd.ExecuteReader())
                 {
@@ -802,10 +808,7 @@ ORDER BY ""BB"".""MaxIndex"" ");
             {
                 if (m_tmptable != null)
                     using (var c = m_connection.CreateCommand())
-                    {
-                        c.CommandText = FormatInvariant($@"DROP TABLE IF EXISTS ""{m_tmptable}""");
-                        c.ExecuteNonQuery();
-                    }
+                        c.ExecuteNonQuery(FormatInvariant($@"DROP TABLE IF EXISTS ""{m_tmptable}"""));
             }
 
             private class VolumePatch : IVolumePatch
@@ -817,13 +820,13 @@ ORDER BY ""BB"".""MaxIndex"" ");
 
                     public long Offset { get { return m_reader.ConvertValueToInt64(2); } }
                     public long Size { get { return m_reader.ConvertValueToInt64(3); } }
-                    public string Key { get { return m_reader.ConvertValueToString(4); } }
+                    public string Key { get { return m_reader.ConvertValueToString(4) ?? ""; } }
                 }
 
                 private readonly IDataReader m_reader;
                 public VolumePatch(IDataReader rd) { m_reader = rd; HasMore = true; }
 
-                public string Path { get { return m_reader.ConvertValueToString(0); } }
+                public string Path { get { return m_reader.ConvertValueToString(0) ?? ""; } }
                 public long FileID { get { return m_reader.ConvertValueToInt64(1); } }
                 public bool HasMore { get; private set; }
 
@@ -848,11 +851,11 @@ ORDER BY ""BB"".""MaxIndex"" ");
                     using (var cmd = m_connection.CreateCommand())
                     {
                         // The IN-clause with subquery enables SQLite to use indexes better. Three way join (A,B,C) is slow here!
-                        cmd.CommandText = FormatInvariant($@"  SELECT DISTINCT ""A"".""TargetPath"", ""BB"".""FileID"", (""BB"".""Index"" * {m_blocksize}), ""BB"".""Size"", ""BB"".""Hash""
+                        cmd.SetCommandAndParameters(FormatInvariant($@"  SELECT DISTINCT ""A"".""TargetPath"", ""BB"".""FileID"", (""BB"".""Index"" * {m_blocksize}), ""BB"".""Size"", ""BB"".""Hash""
 FROM ""{m_filetablename}"" ""A"", ""{m_blocktablename}"" ""BB""
 WHERE ""A"".""ID"" = ""BB"".""FileID"" AND ""BB"".""Restored"" = 0 AND ""BB"".""Metadata"" = {"0"}
 AND ""BB"".""ID"" IN  (SELECT ""B"".""ID"" FROM ""{m_blocktablename}"" ""B"", ""{m_tmptable}"" ""C"" WHERE ""B"".""Hash"" = ""C"".""Hash"" AND ""B"".""Size"" = ""C"".""Size"")
-ORDER BY ""A"".""TargetPath"", ""BB"".""Index""");
+ORDER BY ""A"".""TargetPath"", ""BB"".""Index"""));
                         using (var rd = cmd.ExecuteReader())
                         {
                             if (rd.Read())
@@ -881,11 +884,11 @@ ORDER BY ""A"".""TargetPath"", ""BB"".""Index""");
                     using (var cmd = m_connection.CreateCommand())
                     {
                         // The IN-clause with subquery enables SQLite to use indexes better. Three way join (A,B,C) is slow here!
-                        cmd.CommandText = FormatInvariant($@"  SELECT DISTINCT ""A"".""TargetPath"", ""BB"".""FileID"", (""BB"".""Index"" * {m_blocksize}), ""BB"".""Size"", ""BB"".""Hash""
+                        cmd.SetCommandAndParameters(FormatInvariant($@"  SELECT DISTINCT ""A"".""TargetPath"", ""BB"".""FileID"", (""BB"".""Index"" * {m_blocksize}), ""BB"".""Size"", ""BB"".""Hash""
  FROM ""{m_filetablename}"" ""A"", ""{m_blocktablename}"" ""BB""
 WHERE ""A"".""ID"" = ""BB"".""FileID"" AND ""BB"".""Restored"" = 0 AND ""BB"".""Metadata"" = {"1"}
   AND ""BB"".""ID"" IN  (SELECT ""B"".""ID"" FROM ""{m_blocktablename}"" ""B"", ""{m_tmptable}"" ""C"" WHERE ""B"".""Hash"" = ""C"".""Hash"" AND ""B"".""Size"" = ""C"".""Size"")
-ORDER BY ""A"".""TargetPath"", ""BB"".""Index""");
+ORDER BY ""A"".""TargetPath"", ""BB"".""Index"""));
                         using (var rd = cmd.ExecuteReader())
                         {
                             if (rd.Read())
@@ -910,6 +913,8 @@ ORDER BY ""A"".""TargetPath"", ""BB"".""Index""");
 
         public IFilesAndMetadata GetMissingBlockData(BlockVolumeReader curvolume, long blocksize)
         {
+            if (string.IsNullOrWhiteSpace(m_tempfiletable) || string.IsNullOrWhiteSpace(m_tempblocktable))
+                throw new InvalidOperationException("No temporary file table set up for this restore.");
             return new FilesAndMetadata(m_connection, m_tempfiletable, m_tempblocktable, blocksize, curvolume);
         }
 
@@ -956,7 +961,8 @@ ORDER BY ""A"".""TargetPath"", ""BB"".""Index""");
 
             using (var rd = cmd.ExecuteReader())
                 while (rd.Read())
-                    yield return new FileToRestore(rd.ConvertValueToInt64(0), rd.ConvertValueToString(1), rd.ConvertValueToString(2), rd.ConvertValueToInt64(3));
+                    yield return new FileToRestore(
+                        rd.ConvertValueToInt64(0), rd.ConvertValueToString(1) ?? "", rd.ConvertValueToString(2) ?? "", rd.ConvertValueToInt64(3));
         }
 
         /// <summary>
@@ -1079,7 +1085,7 @@ ORDER BY ""A"".""TargetPath"", ""BB"".""Index""");
                 .SetParameterValue("@VolumeID", VolumeID);
             using var reader = cmd.ExecuteReader();
             while (reader.Read())
-                yield return (reader.ConvertValueToString(0), reader.ConvertValueToInt64(1), reader.ConvertValueToString(2));
+                yield return (reader.ConvertValueToString(0) ?? "", reader.ConvertValueToInt64(1), reader.ConvertValueToString(2) ?? "");
         }
 
         public void DropRestoreTable()
@@ -1089,8 +1095,7 @@ ORDER BY ""A"".""TargetPath"", ""BB"".""Index""");
                 if (m_tempfiletable != null)
                     try
                     {
-                        cmd.CommandText = FormatInvariant($@"DROP TABLE IF EXISTS ""{m_tempfiletable}""");
-                        cmd.ExecuteNonQuery();
+                        cmd.ExecuteNonQuery(FormatInvariant($@"DROP TABLE IF EXISTS ""{m_tempfiletable}"""));
                     }
                     catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, "CleanupError", ex, "Cleanup error: {0}", ex.Message); }
                     finally { m_tempfiletable = null; }
@@ -1098,8 +1103,7 @@ ORDER BY ""A"".""TargetPath"", ""BB"".""Index""");
                 if (m_tempblocktable != null)
                     try
                     {
-                        cmd.CommandText = FormatInvariant($@"DROP TABLE IF EXISTS ""{m_tempblocktable}""");
-                        cmd.ExecuteNonQuery();
+                        cmd.ExecuteNonQuery(FormatInvariant($@"DROP TABLE IF EXISTS ""{m_tempblocktable}"""));
                     }
                     catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, "CleanupError", ex, "Cleanup error: {0}", ex.Message); }
                     finally { m_tempblocktable = null; }
@@ -1107,8 +1111,7 @@ ORDER BY ""A"".""TargetPath"", ""BB"".""Index""");
                 if (m_latestblocktable != null)
                     try
                     {
-                        cmd.CommandText = FormatInvariant($@"DROP TABLE IF EXISTS ""{m_latestblocktable}""");
-                        cmd.ExecuteNonQuery();
+                        cmd.ExecuteNonQuery(FormatInvariant($@"DROP TABLE IF EXISTS ""{m_latestblocktable}"""));
                     }
                     catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, "CleanupError", ex, "Cleanup error: {0}", ex.Message); }
                     finally { m_latestblocktable = null; }
@@ -1116,8 +1119,7 @@ ORDER BY ""A"".""TargetPath"", ""BB"".""Index""");
                 if (m_fileprogtable != null)
                     try
                     {
-                        cmd.CommandText = FormatInvariant($@"DROP TABLE IF EXISTS ""{m_fileprogtable}""");
-                        cmd.ExecuteNonQuery();
+                        cmd.ExecuteNonQuery(FormatInvariant($@"DROP TABLE IF EXISTS ""{m_fileprogtable}"""));
                     }
                     catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, "CleanupError", ex, "Cleanup error: {0}", ex.Message); }
                     finally { m_fileprogtable = null; }
@@ -1125,8 +1127,7 @@ ORDER BY ""A"".""TargetPath"", ""BB"".""Index""");
                 if (m_totalprogtable != null)
                     try
                     {
-                        cmd.CommandText = FormatInvariant($@"DROP TABLE IF EXISTS ""{m_totalprogtable}""");
-                        cmd.ExecuteNonQuery();
+                        cmd.ExecuteNonQuery(FormatInvariant($@"DROP TABLE IF EXISTS ""{m_totalprogtable}"""));
                     }
                     catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, "CleanupError", ex, "Cleanup error: {0}", ex.Message); }
                     finally { m_totalprogtable = null; }
@@ -1134,8 +1135,7 @@ ORDER BY ""A"".""TargetPath"", ""BB"".""Index""");
                 if (m_filesnewlydonetable != null)
                     try
                     {
-                        cmd.CommandText = FormatInvariant($@"DROP TABLE IF EXISTS ""{m_filesnewlydonetable}""");
-                        cmd.ExecuteNonQuery();
+                        cmd.ExecuteNonQuery(FormatInvariant($@"DROP TABLE IF EXISTS ""{m_filesnewlydonetable}"""));
                     }
                     catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, "CleanupError", ex, "Cleanup error: {0}", ex.Message); }
                     finally { m_filesnewlydonetable = null; }
@@ -1260,11 +1260,11 @@ WHERE ""FileID"" = @TargetFileId AND ""Index"" = @Index AND ""Hash"" = @Hash AND
             public void Commit()
             {
                 m_insertblockCommand.Dispose();
-                m_insertblockCommand = null;
+                m_insertblockCommand = null!;
                 using (new Logging.Timer(LOGTAG, "CommitBlockMarker", "CommitBlockMarker"))
                     m_transaction.Commit();
                 m_transaction.Dispose();
-                m_transaction = null;
+                m_transaction = null!;
             }
 
             public void Dispose()
@@ -1280,6 +1280,10 @@ WHERE ""FileID"" = @TargetFileId AND ""Index"" = @Index AND ""Hash"" = @Hash AND
 
         public IBlockMarker CreateBlockMarker()
         {
+            if (string.IsNullOrWhiteSpace(m_tempfiletable) || string.IsNullOrWhiteSpace(m_tempblocktable))
+                throw new InvalidOperationException("No temporary file table set up for this restore.");
+            if (string.IsNullOrWhiteSpace(m_totalprogtable))
+                throw new InvalidOperationException("No progress table set up for this restore.");
             return new DirectBlockMarker(m_connection, m_tempblocktable, m_tempfiletable, m_totalprogtable);
         }
 
@@ -1301,7 +1305,7 @@ WHERE ""FileID"" = @TargetFileId AND ""Index"" = @Index AND ""Hash"" = @Hash AND
                 .SetParameterValue("@BlocksetID", FOLDER_BLOCKSET_ID);
             using (var rd = cmd.ExecuteReader())
                 while (rd.Read())
-                    yield return rd.ConvertValueToString(0);
+                    yield return rd.ConvertValueToString(0) ?? "";
         }
 
         public interface IFastSource
@@ -1330,16 +1334,16 @@ WHERE ""FileID"" = @TargetFileId AND ""Index"" = @Index AND ""Hash"" = @Hash AND
                 public long Offset { get { return m_rd.ConvertValueToInt64(3) * m_blocksize; } }
                 public long Index { get { return m_rd.ConvertValueToInt64(3); } }
                 public long Size { get { return m_rd.ConvertValueToInt64(5); } }
-                public string Hash { get { return m_rd.ConvertValueToString(4); } }
+                public string Hash { get { return m_rd.ConvertValueToString(4) ?? ""; } }
             }
 
             private readonly IDataReader m_rd;
             private readonly long m_blocksize;
             public FastSource(IDataReader rd, long blocksize) { m_rd = rd; m_blocksize = blocksize; MoreData = true; }
             public bool MoreData { get; private set; }
-            public string TargetPath { get { return m_rd.ConvertValueToString(0); } }
+            public string TargetPath { get { return m_rd.ConvertValueToString(0) ?? ""; } }
             public long TargetFileID { get { return m_rd.ConvertValueToInt64(2); } }
-            public string SourcePath { get { return m_rd.ConvertValueToString(1); } }
+            public string SourcePath { get { return m_rd.ConvertValueToString(1) ?? ""; } }
 
             public IEnumerable<IBlockEntry> Blocks
             {
@@ -1367,7 +1371,7 @@ WHERE ""FileID"" = @TargetFileId AND ""Index"" = @Index AND ""Hash"" = @Hash AND
                 {
                     while (rd.Read())
                     {
-                        var sourcepath = rd.GetValue(0).ToString();
+                        var sourcepath = rd.ConvertValueToString(0);
                         if (SystemIO.IO_OS.FileExists(sourcepath))
                         {
                             cmd.SetParameterValue("@Path", sourcepath);

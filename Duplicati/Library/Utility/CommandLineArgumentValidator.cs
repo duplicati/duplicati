@@ -158,6 +158,17 @@ public static class CommandLineArgumentValidator
                 return Strings.CommandLineArgumentValidator.UnsupportedTimeValue(optionname, value);
             }
         }
+        else if (arg.Type == CommandLineArgument.ArgumentType.DateTime)
+        {
+            try
+            {
+                Timeparser.ParseTimeInterval(value, DateTime.Now);
+            }
+            catch
+            {
+                return Strings.CommandLineArgumentValidator.UnsupportedTimeValue(optionname, value);
+            }
+        }
 
         return null;
     }

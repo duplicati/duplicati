@@ -199,12 +199,19 @@ public class SharpCompressZipArchive : IZipArchive
         var q = EntryDict.Values.AsEnumerable();
         if (!string.IsNullOrEmpty(prefix))
             q = q.Where(x =>
-                        x.Key.StartsWith(prefix, Utility.Utility.ClientFilenameStringComparison)
-                        ||
-                        x.Key.Replace('\\', '/').StartsWith(prefix, Utility.Utility.ClientFilenameStringComparison)
-                       );
+            {
+                if (string.IsNullOrWhiteSpace(x.Key))
+                    return false;
 
-        return q.Select(x => new KeyValuePair<string, long>(x.Key, x.Size)).ToArray();
+                return
+                    x.Key.StartsWith(prefix, Utility.Utility.ClientFilenameStringComparison)
+                    ||
+                    x.Key.Replace('\\', '/').StartsWith(prefix, Utility.Utility.ClientFilenameStringComparison);
+            });
+
+        return q.Where(x => !string.IsNullOrWhiteSpace(x.Key))
+            .Select(x => new KeyValuePair<string, long>(x.Key!, x.Size))
+            .ToArray();
     }
 
     /// <summary>
@@ -247,6 +254,19 @@ public class SharpCompressZipArchive : IZipArchive
                 var d = new Dictionary<string, IEntry>(Duplicati.Library.Utility.Utility.ClientFilenameStringComparer);
                 foreach (var en in Archive.Entries)
                 {
+                    if (string.IsNullOrWhiteSpace(en.Key))
+                    {
+                        Logging.Log.WriteMessage(
+                            // Warning in unittest mode to trip tests, verbose otherwise
+                            m_unittestMode ? Logging.LogMessageType.Warning : Logging.LogMessageType.Verbose,
+                            LOGTAG,
+                            "EmptyArchiveEntry",
+                            null,
+                            "Found empty entry in archive");
+
+                        continue;
+                    }
+
                     if (d.ContainsKey(en.Key))
                         Logging.Log.WriteMessage(
                             // Warning in unittest mode to trip tests, verbose otherwise
@@ -277,6 +297,9 @@ public class SharpCompressZipArchive : IZipArchive
                     using (var rd = SharpCompress.Readers.Zip.ZipReader.Open(m_stream, new ReaderOptions() { LookForHeader = false }))
                         while (rd.MoveToNextEntry())
                         {
+                            if (string.IsNullOrWhiteSpace(rd.Entry.Key))
+                                continue;
+
                             d[rd.Entry.Key] = rd.Entry;
 
                             // Some streams require this

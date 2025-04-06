@@ -74,7 +74,7 @@ namespace Duplicati.Library.Backend
         ///
         /// Chosen not to have ftp prefix to be agnostic between aftp and ftp
         /// </summary>
-            protected virtual string CONFIG_KEY_FTP_IGNORE_PUREFTP => "ignore-pureftpd-limit-issue";
+        protected virtual string CONFIG_KEY_FTP_IGNORE_PUREFTP => "ignore-pureftpd-limit-issue";
         /// <summary>
         /// The configuration key for the FTP encryption mode
         /// </summary>
@@ -345,7 +345,7 @@ namespace Duplicati.Library.Backend
             };
 
             _IgnorePureFTPdLimitIssue = CoreUtility.ParseBoolOption(options, CONFIG_KEY_FTP_IGNORE_PUREFTP);
-            
+
             if (_logPrivateInfoToConsole) _ftpConfig.LogHost = _ftpConfig.LogPassword = _ftpConfig.LogUserName = true;
         }
 
@@ -365,15 +365,15 @@ namespace Duplicati.Library.Backend
                 if (client.ServerType == FtpServer.PureFTPd)
                 {
                     // If the list was truncated an exception has to be raised as the listing is incomplete and can lead to misleading backup/restore results
-                    if( client.LastReplies.Any(x =>
+                    if (client.LastReplies.Any(x =>
                            x.Code == "226" &&
                            x.Message.Contains("truncated", StringComparison.InvariantCultureIgnoreCase)))
                         throw new UserInformationException("PureFTPd server effectively truncated the listing due to LimitRecursion parameter - please check documentation for more information", "PureFTPdTruncatedListing");
-                    
+
                     // If no truncation occured and the ignore flag is not set, issue an advisory message
                     if (!_IgnorePureFTPdLimitIssue)
                         Log.WriteWarningMessage(LogTag, "PureFTPdIssue", null, Strings.DescriptionIgnorePureFTPLong);
-                } 
+                }
             }
             catch (Exception e)
             {
@@ -534,7 +534,7 @@ namespace Duplicati.Library.Backend
         /// <inheritdoc />
         public async Task TestAsync(CancellationToken cancellationToken)
         {
-            
+
             // Start with a simple list and pureFTP detection
             try
             {
@@ -543,10 +543,10 @@ namespace Duplicati.Library.Backend
                 {
                     await ListAsync(cancellationToken).AnyAsync(cancellationToken).ConfigureAwait(false);
                 }).ConfigureAwait(false);
-                
+
                 if (client.ServerType == FtpServer.PureFTPd && !_IgnorePureFTPdLimitIssue)
                     throw new UserInformationException(Strings.DescriptionIgnorePureFTPLong, "PureFTPdDetected");
-                
+
             }
             catch (Exception e)
             {
@@ -555,7 +555,7 @@ namespace Duplicati.Library.Backend
 
                 throw;
             }
-            
+
             // Try to set the working directory to trigger a folder-not-found exception
             try
             {

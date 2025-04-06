@@ -156,6 +156,8 @@ public static class CommandLineArgumentMapper
                 yield return new CommandLineArgument(name, argumentType ?? CommandLineArgument.ArgumentType.String, shortDescription, longDescription, defaultValue);
             else if (propType == typeof(TimeSpan))
                 yield return new CommandLineArgument(name, argumentType ?? CommandLineArgument.ArgumentType.Timespan, shortDescription, longDescription, defaultValue);
+            else if (propType == typeof(DateTime))
+                yield return new CommandLineArgument(name, argumentType ?? CommandLineArgument.ArgumentType.DateTime, shortDescription, longDescription, defaultValue);
         }
     }
 
