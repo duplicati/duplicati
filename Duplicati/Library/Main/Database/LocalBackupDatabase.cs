@@ -62,6 +62,23 @@ namespace Duplicati.Library.Main.Database
 
         private HashSet<string> m_blocklistHashes;
 
+        /// <summary>
+        /// The temporary table with deleted blocks that can be re-used; null if not table is used
+        /// </summary>
+        private string? m_tempDeletedBlockTable;
+        /// <summary>
+        /// The in-mmeory lookup for deleted blocks; null if in-memory lookup is not used
+        /// </summary>
+        private Dictionary<string, Dictionary<long, long>>? m_deletedBlockLookup;
+        /// <summary>
+        /// The command used to move deleted blocks to the main block table; null if not used
+        /// </summary>
+        private readonly IDbCommand? m_moveblockfromdeletedCommand;
+        /// <summary>
+        /// The command used to find blocks in the deleted blocks table; null if not used
+        /// </summary>
+        private readonly IDbCommand? m_findindeletedCommand;
+
         private long m_filesetId;
 
         private readonly bool m_logQueries;
@@ -91,6 +108,78 @@ namespace Duplicati.Library.Main.Database
             m_selectfilelastmodifiedCommand = m_connection.CreateCommand(@"SELECT ""A"".""ID"", ""B"".""LastModified"" FROM (SELECT ""ID"" FROM ""FileLookup"" WHERE ""PrefixID"" = @PrefixId AND ""Path"" = @Path) ""A"" CROSS JOIN ""FilesetEntry"" ""B"" WHERE ""A"".""ID"" = ""B"".""FileID"" AND ""B"".""FilesetID"" = @FilesetId");
             m_selectfilelastmodifiedWithSizeCommand = m_connection.CreateCommand(@"SELECT ""C"".""ID"", ""C"".""LastModified"", ""D"".""Length"" FROM (SELECT ""A"".""ID"", ""B"".""LastModified"", ""A"".""BlocksetID"" FROM (SELECT ""ID"", ""BlocksetID"" FROM ""FileLookup"" WHERE ""PrefixID"" = @PrefixId AND ""Path"" = @Path) ""A"" CROSS JOIN ""FilesetEntry"" ""B"" WHERE ""A"".""ID"" = ""B"".""FileID"" AND ""B"".""FilesetID"" = @FilesetId) AS ""C"", ""Blockset"" AS ""D"" WHERE ""C"".""BlocksetID"" == ""D"".""ID"" ");
             m_selectfilemetadatahashandsizeCommand = m_connection.CreateCommand(@"SELECT ""Blockset"".""Length"", ""Blockset"".""FullHash"" FROM ""Blockset"", ""Metadataset"", ""File"" WHERE ""File"".""ID"" = @FileId AND ""Blockset"".""ID"" = ""Metadataset"".""BlocksetID"" AND ""Metadataset"".""ID"" = ""File"".""MetadataID"" ");
+
+            // Experimental toggling of the deleted block cache
+            // If the value is less than zero, the lookup is disabled
+            // meaning that deleted blocks are never reused (same as 2.1.0.5 and earlier)
+            // A value of zero disables the in-memory cache, always using a temporary table
+            // Any other value is the size of the in-memory cache
+            // If the number of deleted blocks exceed the cache size, a temporary table is used
+            var deletedBlockCacheSize = Environment.GetEnvironmentVariable("DUPLICATI_DELETEDBLOCKCACHESIZE");
+            if (!long.TryParse(deletedBlockCacheSize, out var deletedBlockCacheSizeLong))
+                deletedBlockCacheSizeLong = 10000;
+
+            if (deletedBlockCacheSizeLong >= 0)
+            {
+                using (var cmd = m_connection.CreateCommand())
+                {
+                    m_tempDeletedBlockTable = "DeletedBlock-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
+                    cmd.SetCommandAndParameters(FormatInvariant($@"CREATE TEMPORARY TABLE ""{m_tempDeletedBlockTable}"" AS ")
+                        + @$"SELECT MAX(""ID"") AS ""ID"", ""Hash"", ""Size"" FROM ""DeletedBlock"" WHERE ""VolumeID"" IN (SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""State"" NOT IN (@States)) GROUP BY ""Hash"", ""Size""")
+                        .ExpandInClauseParameter("@States", [RemoteVolumeState.Deleted, RemoteVolumeState.Deleting])
+                        .ExecuteNonQuery();
+
+                    var deletedBlocks = cmd.ExecuteScalarInt64(FormatInvariant(@$"SELECT COUNT(*) FROM ""{m_tempDeletedBlockTable}"""), 0);
+
+                    // There are no deleted blocks, so we can drop the table
+                    if (deletedBlocks == 0)
+                    {
+                        cmd.ExecuteNonQuery(FormatInvariant($@"DROP TABLE ""{m_tempDeletedBlockTable}"""));
+                        m_tempDeletedBlockTable = null;
+
+                    }
+                    // The deleted blocks are small enough to fit in memory
+                    else if (deletedBlocks <= deletedBlockCacheSizeLong)
+                    {
+                        m_deletedBlockLookup = new Dictionary<string, Dictionary<long, long>>();
+                        using (var reader = cmd.ExecuteReader(FormatInvariant(@$"SELECT ""ID"", ""Hash"", ""Size"" FROM ""{m_tempDeletedBlockTable}""")))
+                            while (reader.Read())
+                            {
+                                var id = reader.ConvertValueToInt64(0);
+                                var hash = reader.ConvertValueToString(1) ?? throw new Exception("Hash is null");
+                                var size = reader.ConvertValueToInt64(2);
+
+                                if (!m_deletedBlockLookup.TryGetValue(hash, out var sizes))
+                                    m_deletedBlockLookup[hash] = sizes = new Dictionary<long, long>();
+                                sizes[size] = id;
+                            }
+
+                        cmd.ExecuteNonQuery(FormatInvariant($@"DROP TABLE ""{m_tempDeletedBlockTable}"""));
+                        m_tempDeletedBlockTable = null;
+                    }
+                    // The deleted blocks are too large to fit in memory, so we use a temporary table
+                    else
+                    {
+                        cmd.ExecuteNonQuery(FormatInvariant($@"CREATE UNIQUE INDEX ""unique_{m_tempDeletedBlockTable}"" ON ""{m_tempDeletedBlockTable}"" (""Hash"", ""Size"")"));
+                        m_findindeletedCommand = m_connection.CreateCommand(FormatInvariant($@"SELECT ""ID"" FROM ""{m_tempDeletedBlockTable}"" WHERE ""Hash"" = @Hash AND ""Size"" = @Size"));
+                        m_moveblockfromdeletedCommand = m_connection.CreateCommand(string.Join(";",
+                            @"INSERT INTO ""Block"" (""Hash"", ""Size"", ""VolumeID"") SELECT ""Hash"", ""Size"", ""VolumeID"" FROM ""DeletedBlock"" WHERE ""ID"" = @DeletedBlockId LIMIT 1",
+                            @"DELETE FROM ""DeletedBlock"" WHERE ""ID"" = @DeletedBlockId",
+                            FormatInvariant(@$"DELETE FROM {m_tempDeletedBlockTable} WHERE ""ID"" = @DeletedBlockId"),
+                            "SELECT last_insert_rowid()"));
+
+                    }
+
+                    if (deletedBlocks > 0)
+                    {
+                        m_moveblockfromdeletedCommand = m_connection.CreateCommand(string.Join(";",
+                            @"INSERT INTO ""Block"" (""Hash"", ""Size"", ""VolumeID"") SELECT ""Hash"", ""Size"", ""VolumeID"" FROM ""DeletedBlock"" WHERE ""ID"" = @DeletedBlockId LIMIT 1",
+                            @"DELETE FROM ""DeletedBlock"" WHERE ""ID"" = @DeletedBlockId",
+                            "SELECT last_insert_rowid()"));
+                    }
+
+                }
+            }
 
             // Allow users to test on real-world data
             // to get feedback on potential performance
@@ -207,6 +296,46 @@ SELECT ""BlocklistHash"".""BlocksetID"" FROM ""BlocklistHash"" WHERE ""Blocklist
             var r = FindBlockID(key, size, transaction);
             if (r == -1L)
             {
+                if (m_moveblockfromdeletedCommand != null)
+                {
+                    if (m_deletedBlockLookup != null)
+                    {
+                        if (m_deletedBlockLookup.TryGetValue(key, out var sizes))
+                            if (sizes.TryGetValue(size, out var id))
+                            {
+                                m_moveblockfromdeletedCommand.SetTransaction(transaction)
+                                    .SetParameterValue("@DeletedBlockId", id)
+                                    .ExecuteNonQuery(m_logQueries);
+
+                                sizes.Remove(size);
+                                if (sizes.Count == 0)
+                                    m_deletedBlockLookup.Remove(key);
+                                return false;
+                            }
+                    }
+                    else if (m_findindeletedCommand != null)
+                    {
+                        // No transaction on the temporary table
+                        var id = m_findindeletedCommand
+                            .SetParameterValue("@Hash", key)
+                            .SetParameterValue("@Size", size)
+                            .ExecuteScalarInt64(m_logQueries, -1);
+
+                        if (id != -1)
+                        {
+                            var c = m_moveblockfromdeletedCommand.SetTransaction(transaction)
+                                .SetParameterValue("@DeletedBlockId", id)
+                                .ExecuteNonQuery(m_logQueries);
+
+                            if (c != 2)
+                                throw new Exception($"Failed to move block {key} with size {size}, result count: {c}");
+
+                            // We do not clean up the temporary table, as the regular block lookup should now find it
+                            return false;
+                        }
+                    }
+                }
+
                 var ins = m_insertblockCommand.SetTransaction(transaction)
                     .SetParameterValue("@Hash", key)
                     .SetParameterValue("@VolumeId", volumeid)
@@ -214,6 +343,7 @@ SELECT ""BlocklistHash"".""BlocksetID"" FROM ""BlocklistHash"" WHERE ""Blocklist
                     .ExecuteNonQuery(m_logQueries);
                 if (ins != 1)
                     throw new Exception($"Failed to insert block {key} with size {size}, result count: {ins}");
+
                 return true;
             }
             else
@@ -516,6 +646,17 @@ SELECT ""BlocklistHash"".""BlocksetID"" FROM ""BlocklistHash"" WHERE ""Blocklist
 
         public override void Dispose()
         {
+            if (!string.IsNullOrWhiteSpace(m_tempDeletedBlockTable))
+                try
+                {
+                    using (var cmd = m_connection.CreateCommand())
+                        cmd.ExecuteNonQuery(FormatInvariant($@"DROP TABLE ""{m_tempDeletedBlockTable}"""));
+                }
+                catch (Exception ex)
+                {
+                    Logging.Log.WriteWarningMessage(LOGTAG, "DropTempTableFailed", ex, "Failed to drop temporary table {0}: {1}", m_tempDeletedBlockTable, ex.Message);
+                }
+
             base.Dispose();
         }
 
