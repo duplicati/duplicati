@@ -23,6 +23,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Globalization;
 using System.Linq;
 
 namespace Duplicati.Library.Main.Database
@@ -557,78 +558,8 @@ SELECT ""BlocklistHash"".""BlocksetID"" FROM ""BlocklistHash"" WHERE ""Blocklist
         {
             using (var cmd = m_connection.CreateCommand(transaction))
             {
-                // TODO: Optimize these queries to not use the "File" view
-                var lastFilesetId = GetPreviousFilesetID(cmd);
-                results.AddedFolders = cmd.SetCommandAndParameters(@"SELECT COUNT(*) FROM ""File"" INNER JOIN ""FilesetEntry"" ON ""File"".""ID"" = ""FilesetEntry"".""FileID"" WHERE ""FilesetEntry"".""FilesetID"" = @CurrentFilesetId AND ""File"".""BlocksetID"" = @BlocksetId AND NOT ""File"".""Path"" IN (SELECT ""Path"" FROM ""File"" INNER JOIN ""FilesetEntry"" ON ""File"".""ID"" = ""FilesetEntry"".""FileID"" WHERE ""FilesetEntry"".""FilesetID"" = @LastFilsetId)")
-                    .SetParameterValue("@CurrentFilesetId", m_filesetId)
-                    .SetParameterValue("@BlocksetId", FOLDER_BLOCKSET_ID)
-                    .SetParameterValue("@LastFilsetId", lastFilesetId)
-                    .ExecuteScalarInt64(0);
-                results.AddedSymlinks = cmd.SetCommandAndParameters(@"SELECT COUNT(*) FROM ""File"" INNER JOIN ""FilesetEntry"" ON ""File"".""ID"" = ""FilesetEntry"".""FileID"" WHERE ""FilesetEntry"".""FilesetID"" = @CurrentFilesetId AND ""File"".""BlocksetID"" = @BlocksetId AND NOT ""File"".""Path"" IN (SELECT ""Path"" FROM ""File"" INNER JOIN ""FilesetEntry"" ON ""File"".""ID"" = ""FilesetEntry"".""FileID"" WHERE ""FilesetEntry"".""FilesetID"" = @LastFilsetId)")
-                    .SetParameterValue("@CurrentFilesetId", m_filesetId)
-                    .SetParameterValue("@BlocksetId", SYMLINK_BLOCKSET_ID)
-                    .SetParameterValue("@LastFilsetId", lastFilesetId)
-                    .ExecuteScalarInt64(0);
-
-                results.DeletedFolders = cmd.SetCommandAndParameters(@"SELECT COUNT(*) FROM ""File"" INNER JOIN ""FilesetEntry"" ON ""File"".""ID"" = ""FilesetEntry"".""FileID"" WHERE ""FilesetEntry"".""FilesetID"" = @LastFilsetId AND ""File"".""BlocksetID"" = @BlocksetId AND NOT ""File"".""Path"" IN (SELECT ""Path"" FROM ""File"" INNER JOIN ""FilesetEntry"" ON ""File"".""ID"" = ""FilesetEntry"".""FileID"" WHERE ""FilesetEntry"".""FilesetID"" = @CurrentFilesetId)")
-                    .SetParameterValue("@LastFilsetId", lastFilesetId)
-                    .SetParameterValue("@BlocksetId", FOLDER_BLOCKSET_ID)
-                    .SetParameterValue("@CurrentFilesetId", m_filesetId)
-                    .ExecuteScalarInt64(0);
-                results.DeletedSymlinks = cmd.SetCommandAndParameters(@"SELECT COUNT(*) FROM ""File"" INNER JOIN ""FilesetEntry"" ON ""File"".""ID"" = ""FilesetEntry"".""FileID"" WHERE ""FilesetEntry"".""FilesetID"" = @LastFilsetId AND ""File"".""BlocksetID"" = @BlocksetId AND NOT ""File"".""Path"" IN (SELECT ""Path"" FROM ""File"" INNER JOIN ""FilesetEntry"" ON ""File"".""ID"" = ""FilesetEntry"".""FileID"" WHERE ""FilesetEntry"".""FilesetID"" = @CurrentFilesetId)")
-                    .SetParameterValue("@LastFilsetId", lastFilesetId)
-                    .SetParameterValue("@BlocksetId", SYMLINK_BLOCKSET_ID)
-                    .SetParameterValue("@CurrentFilesetId", m_filesetId)
-                    .ExecuteScalarInt64(0);
-
-                var subqueryNonFiles = @"SELECT ""File"".""Path"", ""Blockset"".""Fullhash"" FROM ""File"", ""FilesetEntry"", ""Metadataset"", ""Blockset"" WHERE ""File"".""ID"" = ""FilesetEntry"".""FileID"" AND ""Metadataset"".""ID"" = ""File"".""MetadataID"" AND ""File"".""BlocksetID"" = @BlocksetId AND ""Metadataset"".""BlocksetID"" = ""Blockset"".""ID"" AND ""FilesetEntry"".""FilesetID"" = ";
-                var subQueryNonFilesPrevious = subqueryNonFiles + "@LastFilesetId";
-                var subQueryNonFilesCurrent = subqueryNonFiles + "@CurrentFilesetId";
-
-                results.ModifiedFolders = cmd.SetCommandAndParameters(@"SELECT COUNT(*) FROM (" + subQueryNonFilesPrevious + @") A, (" + subQueryNonFilesCurrent + @") B WHERE ""A"".""Path"" = ""B"".""Path"" AND ""A"".""Fullhash"" != ""B"".""Fullhash"" ")
-                    .SetParameterValue("@LastFilesetId", lastFilesetId)
-                    .SetParameterValue("@CurrentFilesetId", m_filesetId)
-                    .SetParameterValue("@BlocksetId", FOLDER_BLOCKSET_ID)
-                    .ExecuteScalarInt64(0);
-
-                results.ModifiedSymlinks = cmd.SetCommandAndParameters(@"SELECT COUNT(*) FROM (" + subQueryNonFilesPrevious + @") A, (" + subQueryNonFilesCurrent + @") B WHERE ""A"".""Path"" = ""B"".""Path"" AND ""A"".""Fullhash"" != ""B"".""Fullhash"" ")
-                    .SetParameterValue("@LastFilesetId", lastFilesetId)
-                    .SetParameterValue("@CurrentFilesetId", m_filesetId)
-                    .SetParameterValue("@BlocksetId", SYMLINK_BLOCKSET_ID)
-                    .ExecuteScalarInt64(0);
-
-                var tmpName1 = "TmpFileList-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
-                var tmpName2 = "TmpFileList-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
-                try
-                {
-                    var subqueryFiles = @"SELECT ""File"".""Path"" AS ""Path"", ""A"".""Fullhash"" AS ""Filehash"", ""B"".""Fullhash"" AS ""Metahash"" FROM ""File"", ""FilesetEntry"", ""Blockset"" A, ""Blockset"" B, ""Metadataset""  WHERE ""File"".""ID"" = ""FilesetEntry"".""FileID"" AND ""A"".""ID"" = ""File"".""BlocksetID"" AND ""FilesetEntry"".""FilesetID"" = @FilesetId AND ""File"".""MetadataID"" = ""Metadataset"".""ID"" AND ""Metadataset"".""BlocksetID"" = ""B"".""ID"" ";
-
-                    cmd.SetCommandAndParameters(FormatInvariant($@"CREATE TEMPORARY TABLE ""{tmpName1}"" AS {subqueryFiles}"))
-                        .SetParameterValue("@FilesetId", lastFilesetId)
-                        .ExecuteNonQuery();
-                    cmd.SetCommandAndParameters(FormatInvariant($@"CREATE TEMPORARY TABLE ""{tmpName2}"" AS {subqueryFiles}"))
-                        .SetParameterValue("@FilesetId", m_filesetId)
-                        .ExecuteNonQuery();
-                    cmd.ExecuteNonQuery(FormatInvariant($@"CREATE INDEX ""nn_tmpName1"" ON ""{tmpName1}"" (""Path"")"));
-                    cmd.ExecuteNonQuery(FormatInvariant($@"CREATE INDEX ""nn_tmpName2"" ON ""{tmpName2}"" (""Path"")"));
-
-                    results.AddedFiles = cmd.SetCommandAndParameters(FormatInvariant($@"SELECT COUNT(*) FROM ""File"" INNER JOIN ""FilesetEntry"" ON ""File"".""ID"" = ""FilesetEntry"".""FileID"" WHERE ""FilesetEntry"".""FilesetID"" = @FilesetId AND ""File"".""BlocksetID"" != @FolderBlocksetId AND ""File"".""BlocksetID"" != @SymlinkBlocksetId AND NOT ""File"".""Path"" IN (SELECT ""Path"" FROM ""{tmpName1}"")"))
-                        .SetParameterValue("@FilesetId", m_filesetId)
-                        .SetParameterValue("@FolderBlocksetId", FOLDER_BLOCKSET_ID)
-                        .SetParameterValue("@SymlinkBlocksetId", SYMLINK_BLOCKSET_ID)
-                        .ExecuteScalarInt64(0);
-                    results.DeletedFiles = cmd.SetCommandAndParameters(FormatInvariant($@"SELECT COUNT(*) FROM ""{tmpName1}"" WHERE ""{tmpName1}"".""Path"" NOT IN (SELECT ""Path"" FROM ""File"" INNER JOIN ""FilesetEntry"" ON ""File"".""ID"" = ""FilesetEntry"".""FileID"" WHERE ""FilesetEntry"".""FilesetID"" = @FilesetId)"))
-                        .SetParameterValue("@FilesetId", m_filesetId)
-                        .ExecuteScalarInt64(0);
-                    results.ModifiedFiles = cmd.ExecuteScalarInt64(FormatInvariant($@"SELECT COUNT(*) FROM ""{tmpName1}"" A, ""{tmpName2}"" B WHERE ""A"".""Path"" = ""B"".""Path"" AND (""A"".""Filehash"" != ""B"".""Filehash"" OR ""A"".""Metahash"" != ""B"".""Metahash"")"), 0);
-                }
-                finally
-                {
-                    try { cmd.ExecuteNonQuery(FormatInvariant($@"DROP TABLE IF EXISTS ""{tmpName1}"";")); }
-                    catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, "DisposeError", ex, "Dispose temp table error"); }
-                    try { cmd.ExecuteNonQuery(FormatInvariant($@"DROP TABLE IF EXISTS ""{tmpName2}"";")); }
-                    catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, "DisposeError", ex, "Dispose temp table error"); }
-                }
+                var prevFileSetId = GetPreviousFilesetID(cmd);
+                ChangeStatistics.UpdateChangeStatistics(cmd, results, m_filesetId, prevFileSetId);
             }
         }
 
