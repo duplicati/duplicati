@@ -55,6 +55,7 @@ namespace Duplicati.UnitTest
             File.WriteAllBytes(Path.Combine(DATAFOLDER, "b2.bin"), buffer);
 
             // Backup 2
+            System.Threading.Thread.Sleep(1000); // Ensure different timestamp
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
                 TestUtils.AssertResults(c.Backup([DATAFOLDER]));
 
@@ -66,6 +67,7 @@ namespace Duplicati.UnitTest
                 throw new Exception("Hash of A.txt changed");
 
             // Backup 3
+            System.Threading.Thread.Sleep(1000); // Ensure different timestamp
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
                 TestUtils.AssertResults(c.Backup([DATAFOLDER]));
 
@@ -73,6 +75,7 @@ namespace Duplicati.UnitTest
             File.Delete(Path.Combine(DATAFOLDER, "b2.bin"));
 
             // Backup 4
+            System.Threading.Thread.Sleep(1000); // Ensure different timestamp
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
             {
                 var res = c.Backup([DATAFOLDER]);
@@ -109,12 +112,14 @@ namespace Duplicati.UnitTest
             File.WriteAllText(Path.Combine(DATAFOLDER, "C.txt"), "C");
 
             // Backup 2
+            System.Threading.Thread.Sleep(1000); // Ensure different timestamp
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
                 TestUtils.AssertResults(c.Backup([DATAFOLDER]));
 
             File.WriteAllText(Path.Combine(DATAFOLDER, "A.txt"), "A");
 
             // Backup 3
+            System.Threading.Thread.Sleep(1000); // Ensure different timestamp
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
                 TestUtils.AssertResults(c.Backup([DATAFOLDER]));
 
