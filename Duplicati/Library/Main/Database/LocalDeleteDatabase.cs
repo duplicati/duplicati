@@ -305,7 +305,15 @@ namespace Duplicati.Library.Main.Database
 
         public interface IBlockQuery : IDisposable
         {
-            bool UseBlock(string hash, long size, IDbTransaction transaction);
+            /// <summary>
+            /// Checks if a block is in use. If volumeId is not -1, check specific volume
+            /// </summary>
+            /// <param name="hash">The hash of the block</param>
+            /// <param name="size">The size of the block</param>
+            /// <param name="volumeId">The volume ID to check, or -1 to check all volumes</param>
+            /// <param name="transaction">The transaction to execute the command in</param>
+            /// <returns>True if the block is in use</returns>
+            bool UseBlock(string hash, long size, long volumeId, IDbTransaction? transaction);
         }
 
         private class BlockQuery : IBlockQuery
@@ -317,13 +325,26 @@ namespace Duplicati.Library.Main.Database
                 m_command = con.CreateCommand(transaction, @"SELECT ""VolumeID"" FROM ""Block"" WHERE ""Hash"" = @Hash AND ""Size"" = @Size ");
             }
 
-            public bool UseBlock(string hash, long size, IDbTransaction transaction)
+            /// <inheritdoc />
+            public bool UseBlock(string hash, long size, long volumeId, IDbTransaction? transaction)
             {
-                m_command.Transaction = transaction;
-                m_command.SetParameterValue("@Hash", hash);
-                m_command.SetParameterValue("@Size", size);
-                var r = m_command.ExecuteScalar();
-                return r != null && r != DBNull.Value;
+                var r = m_command.SetTransaction(transaction)
+                    .SetParameterValue("@Hash", hash)
+                    .SetParameterValue("@Size", size)
+                    .ExecuteScalarInt64(-1);
+                if (r == -1)
+                {
+                    return false;
+                }
+                else if (volumeId == -1)
+                {
+                    return true;
+                }
+                else
+                {
+                    // Check that the volume id matches
+                    return r == volumeId;
+                }
             }
 
             public void Dispose()
