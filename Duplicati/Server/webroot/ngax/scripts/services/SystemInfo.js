@@ -80,6 +80,7 @@ backupApp.service('SystemInfo', function($rootScope, $timeout, $cookies, AppServ
 				'aliyunoss': null,
                 'pcloud': null,
                 'filen': null,
+                'filejump': null
             }
         };
 

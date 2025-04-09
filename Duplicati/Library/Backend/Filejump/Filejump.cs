@@ -318,7 +318,7 @@ namespace Duplicati.Library.Backend
             if (string.IsNullOrWhiteSpace(folderPath) || folderPath == "/")
                 return null;
 
-            var pathParts = folderPath.Trim('/').Split('/');
+            var pathParts = folderPath.Trim('/').Split('/', StringSplitOptions.RemoveEmptyEntries);
             long? currentParentId = null;
 
             foreach (var part in pathParts)
@@ -475,7 +475,7 @@ namespace Duplicati.Library.Backend
                 throw new InvalidOperationException("Backend not initialized correctly");
 
             long? currentParentId = null;
-            var pathParts = m_path.Trim('/').Split('/');
+            var pathParts = m_path.Trim('/').Split('/', StringSplitOptions.RemoveEmptyEntries);
             var newFolder = false;
 
             foreach (var part in pathParts)
