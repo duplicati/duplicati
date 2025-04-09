@@ -19,24 +19,23 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
-namespace Duplicati.Backend.Tests.Filejump;
+namespace Duplicati.Backend.Tests.Filen;
 
 /// <summary>
 /// Box.com Tests
 /// </summary>
 [TestClass]
-public sealed class FilejumpTests : BaseTest
+public sealed class FilenTests : BaseTest
 {
     [TestMethod]
-    public Task TestFilejump()
+    public Task TestFilen()
     {
-        CheckRequiredEnvironment(["TESTCREDENTIAL_FILEJUMP_FOLDER", "TESTCREDENTIAL_FILEJUMP_TOKEN"]);
+        CheckRequiredEnvironment(["TESTCREDENTIAL_FILEN_FOLDER", "TESTCREDENTIAL_FILEN_USERNAME", "TESTCREDENTIAL_FILEN_PASSWORD"]);
 
         var exitCode = CommandLine.BackendTester.Program.Main(
             new[]
             {
-                $"filejump://{Environment.GetEnvironmentVariable("TESTCREDENTIAL_FILEJUMP_FOLDER")}?api-token={Uri.EscapeDataString(Environment.GetEnvironmentVariable("TESTCREDENTIAL_FILEJUMP_TOKEN")!)}",
-                "--reruns=1" // The API does not like multiple runs
+                $"filen://{Environment.GetEnvironmentVariable("TESTCREDENTIAL_FILEN_FOLDER")}?auth-username={Uri.EscapeDataString(Environment.GetEnvironmentVariable("TESTCREDENTIAL_FILEN_USERNAME")!)}&auth-password={Uri.EscapeDataString(Environment.GetEnvironmentVariable("TESTCREDENTIAL_FILEN_PASSWORD")!)}",
 
             }.Concat(Parameters.GlobalTestParameters).ToArray());
 
