@@ -16,6 +16,7 @@ jobs:
       b2_secrets_available: "${{ steps.check_b2.outputs.available }}"
       box_secrets_available: "${{ steps.check_box.outputs.available }}"
       filen_secrets_available: "${{ steps.check_filen.outputs.available }}"
+      filejump_secrets_available: "${{ steps.check_filejump.outputs.available }}"
     steps:
       - id: check_pcloud
         name: Check pCloud secrets
