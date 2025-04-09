@@ -28,7 +28,6 @@ using System.Linq;
 namespace Duplicati.Library.Utility;
 
 /// <summary>
-/// Adds the specified number of minutes to the given DateTime, taking into account the time zone's daylight saving time rules.
 /// A helper class to get the time zone information
 /// </summary>
 public static class TimeZoneHelper
@@ -89,83 +88,4 @@ public static class TimeZoneHelper
         return TimeZoneInfo.GetSystemTimeZones()
                 .FirstOrDefault(tz => tz.Id.Equals(search, StringComparison.OrdinalIgnoreCase) || tz.DisplayName.Contains(search, StringComparison.OrdinalIgnoreCase));
     }
-
-    /// <summary>
-    /// Corrects the time for daylight saving time, by checking if the offset has changed
-    /// </summary>
-    /// <param name="timeZoneInfo">The timezone to use for the correction</param>
-    /// <param name="before">The time before in UTC</param>
-    /// <param name="after">The time after in UTC</param>
-    /// <returns>The corrected time in UTC</returns>
-    public static DateTime DSTAwareTimeAdjust(this TimeZoneInfo timeZoneInfo, DateTime before, DateTime after)
-    {
-        var beforeLocal = TimeZoneInfo.ConvertTime(new DateTimeOffset(before.Kind is DateTimeKind.Local ? before.ToUniversalTime() : before, TimeSpan.Zero), timeZoneInfo);
-        var afterLocal = TimeZoneInfo.ConvertTime(new DateTimeOffset(after.Kind is DateTimeKind.Local ? after.ToUniversalTime() : after, TimeSpan.Zero), timeZoneInfo);
-
-        if (beforeLocal.Offset == afterLocal.Offset)
-            return after;
-
-        var diff = beforeLocal.Offset - afterLocal.Offset;
-        return after.Add(diff);
-    }
-
-    /// <summary>
-    /// Adds seconds to a time in a specific time zone
-    /// </summary>
-    /// <param name="timeZoneInfo">The time zone to use for the calculation</param>
-    /// <param name="dt">The time to add seconds to</param>
-    /// <param name="seconds">The number of seconds to add</param>
-    /// <returns>The new time</returns>
-    public static DateTime DSTAwareAddSeconds(this TimeZoneInfo timeZoneInfo, DateTime dt, long seconds)
-        => DSTAwareTimeAdjust(timeZoneInfo, dt, dt.AddSeconds(seconds));
-
-    /// <summary>
-    /// Adds the specified number of minutes to the given DateTime, taking into account the time zone's daylight saving time rules.
-    /// </summary>
-    /// <param name="timeZoneInfo">The time zone information.</param>
-    /// <param name="dt">The DateTime to which minutes will be added.</param>
-    /// <param name="minutes">The number of minutes to add.</param>
-    /// <returns>A DateTime that is the result of adding the specified number of minutes to the given DateTime, adjusted for daylight saving time.</returns>
-    public static DateTime DSTAwareAddMinutes(this TimeZoneInfo timeZoneInfo, DateTime dt, int minutes)
-        => DSTAwareTimeAdjust(timeZoneInfo, dt, dt.AddMinutes(minutes));
-
-    /// <summary>
-    /// Adds the specified number of hours to the given DateTime, taking into account the time zone's daylight saving time rules.
-    /// </summary>
-    /// <param name="timeZoneInfo">The time zone information.</param>
-    /// <param name="dt">The DateTime to which hours will be added.</param>
-    /// <param name="hours">The number of hours to add.</param>
-    /// <returns>A DateTime that is the result of adding the specified number of hours to the given DateTime, adjusted for daylight saving time.</returns>
-    public static DateTime DSTAwareAddHours(this TimeZoneInfo timeZoneInfo, DateTime dt, int hours)
-        => DSTAwareTimeAdjust(timeZoneInfo, dt, dt.AddHours(hours));
-
-    /// <summary>
-    /// Adds the specified number of days to the given DateTime, taking into account the time zone's daylight saving time rules.
-    /// </summary>
-    /// <param name="timeZoneInfo">The time zone information.</param>
-    /// <param name="dt">The DateTime to which days will be added.</param>
-    /// <param name="days">The number of days to add.</param>
-    /// <returns>A DateTime that is the result of adding the specified number of days to the given DateTime, adjusted for daylight saving time.</returns>
-    public static DateTime DSTAwareAddDays(this TimeZoneInfo timeZoneInfo, DateTime dt, int days)
-        => DSTAwareTimeAdjust(timeZoneInfo, dt, dt.AddDays(days));
-
-    /// <summary>
-    /// Adds the specified number of months to the given DateTime, taking into account the time zone's daylight saving time rules.
-    /// </summary>
-    /// <param name="timeZoneInfo">The time zone information.</param>
-    /// <param name="dt">The DateTime to which months will be added.</param>
-    /// <param name="months">The number of months to add.</param>
-    /// <returns>A DateTime that is the result of adding the specified number of months to the given DateTime, adjusted for daylight saving time.</returns>
-    public static DateTime DSTAwareAddMonths(this TimeZoneInfo timeZoneInfo, DateTime dt, int months)
-        => DSTAwareTimeAdjust(timeZoneInfo, dt, dt.AddMonths(months));
-
-    /// <summary>
-    /// Adds the specified number of years to the given DateTime, taking into account the time zone's daylight saving time rules.
-    /// </summary>
-    /// <param name="timeZoneInfo">The time zone information.</param>
-    /// <param name="dt">The DateTime to which years will be added.</param>
-    /// <param name="years">The number of years to add.</param>
-    /// <returns>A DateTime that is the result of adding the specified number of years to the given DateTime, adjusted for daylight saving time.</returns>
-    public static DateTime DSTAwareAddYears(this TimeZoneInfo timeZoneInfo, DateTime dt, int years)
-        => DSTAwareTimeAdjust(timeZoneInfo, dt, dt.AddYears(years));
 }

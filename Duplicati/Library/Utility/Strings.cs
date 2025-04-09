@@ -43,6 +43,7 @@ namespace Duplicati.Library.Utility.Strings
         public static string InvalidIntegerError(string segment) { return LC.L(@"Failed to parse the segment: {0}, invalid integer", segment); }
         public static string InvalidSpecifierError(char specifier) { return LC.L(@"Invalid specifier: {0}", specifier); }
         public static string UnparsedDataFragmentError(string data) { return LC.L(@"Unparsed data: {0}", data); }
+        public static string InvalidDateTimeError(string data) { return LC.L(@"The string ""{0}"" could not be parsed into a DateTime", data); }
     }
     internal static class Uri
     {

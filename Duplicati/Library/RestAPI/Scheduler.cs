@@ -190,12 +190,9 @@ namespace Duplicati.Server
             var res = basetime;
             var ts = Timeparser.ParseTimeSpan(repetition);
 
-            // If we move in days or more, we keep the time of day across DST changes
-            var keepTimeOfDay = ts.Hours == 0 && ts.Minutes == 0 && ts.Seconds == 0;
-
             var i = 50000;
             while (res < firstdate && i-- > 0)
-                res = Timeparser.DSTAwareParseTimeInterval(repetition, res, timeZoneInfo, keepTimeOfDay);
+                res = Timeparser.DSTAwareParseTimeInterval(repetition, res, timeZoneInfo);
 
             // If we arrived somewhere after the first allowed date
             if (res >= firstdate)
@@ -215,7 +212,7 @@ namespace Duplicati.Server
                     // we hit a valid day
                     i = 50000;
                     while (!IsDateAllowed(res, allowedDays, timeZoneInfo) && i-- > 0)
-                        res = Timeparser.DSTAwareParseTimeInterval(repetition, res, timeZoneInfo, keepTimeOfDay);
+                        res = Timeparser.DSTAwareParseTimeInterval(repetition, res, timeZoneInfo);
                 }
             }
 
