@@ -19,20 +19,12 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
-#nullable enable
-
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
 using Duplicati.Library.Utility.Options;
-using System;
-using System.Collections.Generic;
-using System.IO;
 using System.Net;
-using System.Net.Http;
 using System.Runtime.CompilerServices;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Duplicati.Library.Backend
 {
@@ -363,20 +355,14 @@ namespace Duplicati.Library.Backend
         }
 
         ///<inheritdoc/>
-        public IList<ICommandLineArgument> SupportedCommands
-        {
-            get
-            {
-                return
-                [
-                    .. AuthOptionsHelper.GetOptions(),
-                    new CommandLineArgument("integrated-authentication", CommandLineArgument.ArgumentType.Boolean, Strings.WEBDAV.DescriptionIntegratedAuthenticationShort, Strings.WEBDAV.DescriptionIntegratedAuthenticationLong),
-                    new CommandLineArgument("force-digest-authentication", CommandLineArgument.ArgumentType.Boolean, Strings.WEBDAV.DescriptionForceDigestShort, Strings.WEBDAV.DescriptionForceDigestLong),
-                    .. SslOptionsHelper.GetOptions(),
-                    .. TimeoutOptionsHelper.GetOptions()
-                ];
-            }
-        }
+        public IList<ICommandLineArgument> SupportedCommands =>
+        [
+            .. AuthOptionsHelper.GetOptions(),
+            new CommandLineArgument("integrated-authentication", CommandLineArgument.ArgumentType.Boolean, Strings.WEBDAV.DescriptionIntegratedAuthenticationShort, Strings.WEBDAV.DescriptionIntegratedAuthenticationLong),
+            new CommandLineArgument("force-digest-authentication", CommandLineArgument.ArgumentType.Boolean, Strings.WEBDAV.DescriptionForceDigestShort, Strings.WEBDAV.DescriptionForceDigestLong),
+            .. SslOptionsHelper.GetOptions(),
+            .. TimeoutOptionsHelper.GetOptions()
+        ];
 
         ///<inheritdoc/>
         public string Description => Strings.WEBDAV.Description;
