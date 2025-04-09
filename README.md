@@ -32,8 +32,7 @@ The latest version of Duplicati is a beta version for the Duplicati 2.0 release.
 
 [Click here to download the latest Duplicati 2.0 beta release.](https://duplicati.com/download)
 
-The beta release will automatically notify you of updates and allows you to upgrade with a single click (or command in the terminal).  
-For even more [bleeding edge access, check the latest releases](https://github.com/duplicati/duplicati/releases) or choose another update channel in the UI or on the commandline.
+The beta release will automatically notify you of updates and allows you to upgrade with a single click (or command in the terminal). For even more [bleeding edge access, check the latest releases](https://github.com/duplicati/duplicati/releases) or choose another update channel in the UI or on the commandline.
 
 All releases are GPG-signed with the public key [3DAC703D](https://keys.openpgp.org/search?q=0xC20E90473DAC703D). The latest signature file and ASCII signature file are available on [the Duplicati download page](https://github.com/duplicati/duplicati/releases).
 
@@ -55,9 +54,9 @@ We also provide a comprehensive [Duplicati manual](https://docs.duplicati.com), 
 - Supports backing up open or locked files using Volume Snapshot Service (VSS) on Windows or Logical Volume Manager (LVM) on Linux.
 - Advanced options for filters, deletion rules, transfer settings, bandwidth limits, and more.
 
-# Why use Duplicati?
+# Why Use Duplicati?
 
-- **Keep your data safe, store it remotely, and back it up regularly!**  Many backup solutions fail to meet these essential requirements, but Duplicati excels at all three.
+Keep your data safe, store it remotely, and back it up regularly! Many backup solutions fail to meet these essential requirements, but Duplicati excels at all three:
 
 - **Keep your data safe:** Duplicati uses strong encryption to ensure your data remains private. With a secure password, your backup files are safer on a public web server than unencrypted files at home.
 - **Store your backup remotely:** Protect your data from local disasters like fires by storing backups on remote servers. Duplicati supports incremental backups, making it efficient to use distant storage destinations.
@@ -67,12 +66,12 @@ We also provide a comprehensive [Duplicati manual](https://docs.duplicati.com), 
 
 ## Reporting Bugs
 
-We use GitHub for bug tracking. Please search existing issues before creating a new one:  
+We use GitHub for bug tracking. Please search existing issues before creating a new one:
 https://github.com/duplicati/duplicati/issues
 
-## Translating Duplicati
+## Contributing Translations
 
-Want to help translate Duplicati? Contributions are welcome on Transifex:  
+Want to help translate Duplicati? Contributions are welcome on Transifex:
 https://www.transifex.com/duplicati/duplicati/dashboard/
 
 ## Contributing Code
@@ -81,17 +80,17 @@ Instructions for setting up your development environment and building Duplicati 
 
 Looking for something to work on? Check out [minor change issues](https://github.com/duplicati/duplicati/issues?q=is%3Aissue+is%3Aopen+label%3A%22minor+change%22) or [UI-related issues](https://github.com/duplicati/duplicati/issues?q=is%3Aissue+is%3Aopen+label%3A%22UI%22).
 
-Thank you to all our contributors:  
+Thank you to all our contributors:
 <a href="https://github.com/duplicati/duplicati/graphs/contributors"><img src="https://opencollective.com/duplicati/contributors.svg?width=890" /></a>
 
 ## Backers
 
-Thank you to all our backers! 🙏  
+Thank you to all our backers! 🙏
 <a href="https://opencollective.com/duplicati#backers" target="_blank"><img src="https://opencollective.com/duplicati/backers.svg?width=890"></a>
 
 ## Sponsors
 
-A special thanks to our sponsors for supporting this open-source project:  
+A special thanks to our sponsors for supporting this open-source project:
 <a href="https://opencollective.com/duplicati/sponsor/0/website" target="_blank"><img src="https://opencollective.com/duplicati/sponsor/0/avatar.svg"></a>
 <a href="https://opencollective.com/duplicati/sponsor/1/website" target="_blank"><img src="https://opencollective.com/duplicati/sponsor/1/avatar.svg"></a>
 <a href="https://opencollective.com/duplicati/sponsor/2/website" target="_blank"><img src="https://opencollective.com/duplicati/sponsor/2/avatar.svg"></a>
