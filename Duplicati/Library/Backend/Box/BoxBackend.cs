@@ -54,10 +54,11 @@ namespace Duplicati.Library.Backend.Box
         {
             private readonly TimeoutOptionsHelper.Timeouts _timeouts;
             public BoxHelper(string authid, TimeoutOptionsHelper.Timeouts timeouts)
-                : base(authid, "box.com", new HttpClient { Timeout = timeouts.ReadWriteTimeout != TimeSpan.Zero ? timeouts.ReadWriteTimeout : Timeout.InfiniteTimeSpan })
+                : base(authid, "box.com")
             {
                 AutoAuthHeader = true;
                 _timeouts = timeouts;
+                _httpClient.Timeout = Timeout.InfiniteTimeSpan;
             }
             public override async Task AttemptParseAndThrowExceptionAsync(Exception ex, HttpResponseMessage responseContext, CancellationToken cancellationToken)
             {
