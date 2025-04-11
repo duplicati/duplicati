@@ -58,8 +58,8 @@ namespace Duplicati.Library.Backend.Box
             {
                 AutoAuthHeader = true;
                 _timeouts = timeouts;
+                _httpClient.Timeout = Timeout.InfiniteTimeSpan;
             }
-
             public override async Task AttemptParseAndThrowExceptionAsync(Exception ex, HttpResponseMessage responseContext, CancellationToken cancellationToken)
             {
                 if (ex is not HttpRequestException || responseContext == null)
