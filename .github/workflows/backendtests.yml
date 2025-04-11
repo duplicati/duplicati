@@ -16,6 +16,7 @@ jobs:
       b2_secrets_available: "${{ steps.check_b2.outputs.available }}"
       box_secrets_available: "${{ steps.check_box.outputs.available }}"
       filen_secrets_available: "${{ steps.check_filen.outputs.available }}"
+      filejump_secrets_available: "${{ steps.check_filejump.outputs.available }}"
     steps:
       - id: check_pcloud
         name: Check pCloud secrets
@@ -151,6 +152,20 @@ jobs:
             echo "available=false" >> $GITHUB_OUTPUT
           fi
           echo "Filen.io check completed"
+      - id: check_filejump
+        name: Check Filejump secrets
+        shell: bash
+        run: |
+          echo "Starting Filen.io secrets check..."
+          if [[ -n "${{ secrets.TESTCREDENTIAL_FILEJUMP_FOLDER }}" ]] && \
+             [[ -n "${{ secrets.TESTCREDENTIAL_FILEJUMP_TOKEN }}" ]]; then
+            echo "All Filejump secrets found"
+            echo "available=true" >> $GITHUB_OUTPUT
+          else
+            echo "Missing some Filejump secrets"
+            echo "available=false" >> $GITHUB_OUTPUT
+          fi
+          echo "Filejump check completed"
       - name: Debug Output
         shell: bash
         run: |
@@ -609,5 +624,41 @@ jobs:
           TESTCREDENTIAL_FILEN_PASSWORD: "${{ secrets.TESTCREDENTIAL_FILEN_PASSWORD }}"
         run: >-
           dotnet test --no-build --filter="ClassName~Filen.FilenTests"
+          --logger:"console;verbosity=detailed"
+          LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.sln
+  test_filejump:
+    needs: check_secrets
+    if: needs.check_secrets.outputs.filejump_secrets_available == 'true'
+    name: Filejump Tests
+    runs-on: "${{ matrix.os }}"
+    strategy:
+      max-parallel: 1
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - windows-latest
+          - macos-latest
+    steps:
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.x
+      - name: Checkout source
+        uses: actions/checkout@v4
+      - name: Restore NuGet dependencies
+        run: >-
+          dotnet restore
+          LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.sln
+      - name: Build project
+        run: >-
+          dotnet build --no-restore
+          LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.sln
+      - name: Run Filejump tests
+        env:
+          TESTCREDENTIAL_FILEJUMP_FOLDER: "${{ secrets.TESTCREDENTIAL_FILEJUMP_FOLDER }}"
+          TESTCREDENTIAL_FILEJUMP_TOKEN: "${{ secrets.TESTCREDENTIAL_FILEJUMP_TOKEN }}"
+        run: >-
+          dotnet test --no-build --filter="ClassName~Filejump.FilejumpTests"
           --logger:"console;verbosity=detailed"
           LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.sln

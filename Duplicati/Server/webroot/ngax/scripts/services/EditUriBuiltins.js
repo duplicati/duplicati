@@ -38,6 +38,7 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
     EditUriBackendConfig.templates['smb']         = 'templates/backends/smb.html';
     EditUriBackendConfig.templates['cifs']        = 'templates/backends/smb.html';
     EditUriBackendConfig.templates['filen']       = 'templates/backends/filen.html';
+    EditUriBackendConfig.templates['filejump']    = 'templates/backends/filejump.html';
 
     EditUriBackendConfig.testers['s3'] = function(scope, callback) {
 
@@ -639,7 +640,6 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
     EditUriBackendConfig.parsers['cifs'] = EditUriBackendConfig.parsers['smb'];
 
     EditUriBackendConfig.parsers['filen'] = function (scope, module, server, path, port, options) {
-        console.log("filen parser", scope, module, server, path, port, options);
         var p1 = server ?? '';
         var p2 = path ?? '';
         var combined = p1;
@@ -647,6 +647,18 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
             combined += '/' + p2;
         scope.Path = combined;
     };
+
+    EditUriBackendConfig.parsers['filejump'] = function (scope, module, server, path, port, options) {
+        console.log("filejump parser", scope, module, server, path, port, options);
+        var p1 = server ?? '';
+        var p2 = path ?? '';
+        var combined = p1;
+        if (p1.length > 0 && p2.length > 0)
+            combined += '/' + p2;
+        scope.Path = combined;
+        scope.ApiToken = options['--api-token'];
+        scope.UsernamePasswordAuth = (scope.ApiToken || '').trim() == '';
+    }
 
     // Builders take the scope and produce the uri output
     EditUriBackendConfig.builders['s3'] = function (scope) {
@@ -1033,6 +1045,33 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
         );
     }
 
+    EditUriBackendConfig.builders['filejump'] = function (scope) {
+        var opts = {};
+        EditUriBackendConfig.merge_in_advanced_options(scope, opts, true);
+        // Remove trailing and leading slashes        
+        if (scope.Path)
+            scope.Path = scope.Path.replace(/^[/\\]+/, '').replace(/[/\\]+$/, '');
+        else 
+            scope.Path = '';        
+
+        if (scope.UsernamePasswordAuth)
+        {
+            delete opts['api-token'];
+        }
+        else
+        {
+            opts['api-token'] = scope.ApiToken;
+            delete opts['auth-username'];
+            delete opts['auth-password'];
+        }
+
+        return AppUtils.format('{0}://{1}{2}',
+            scope.Backend.Key,
+            scope.Path,
+            AppUtils.encodeDictAsUrl(opts)
+        );
+    }    
+
     EditUriBackendConfig.validaters['smb'] = function (scope, continuation) {
         if (EditUriBackendConfig.require_server(scope)
             && EditUriBackendConfig.require_username(scope)
@@ -1045,6 +1084,19 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
     EditUriBackendConfig.validaters['filen'] = function (scope, continuation) {
         if (EditUriBackendConfig.require_username_and_password(scope))
             EditUriBackendConfig.recommend_path(scope, continuation);
+    };
+
+    EditUriBackendConfig.validaters['filejump'] = function (scope, continuation) {
+        if (scope.UsernamePasswordAuth)
+        {
+            if (EditUriBackendConfig.require_username_and_password(scope))
+                EditUriBackendConfig.recommend_path(scope, continuation);
+        }
+        else
+        {
+            if (EditUriBackendConfig.require_field(scope, 'ApiToken', gettextCatalog.getString('API Token')))
+                EditUriBackendConfig.recommend_path(scope, continuation);
+        }
     };
 
     EditUriBackendConfig.validaters['file'] = function (scope, continuation) {

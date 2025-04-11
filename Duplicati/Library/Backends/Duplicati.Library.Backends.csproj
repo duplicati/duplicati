@@ -7,6 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+	<ProjectReference Include="..\Backend\Filejump\Duplicati.Library.Backend.Filejump.csproj" />
 	<ProjectReference Include="..\Backend\Filen\Duplicati.Library.Backend.Filen.csproj" />
 	<ProjectReference Include="..\Backend\AzureBlob\Duplicati.Library.Backend.AzureBlob.csproj" />
 	<ProjectReference Include="..\Backend\Backblaze\Duplicati.Library.Backend.Backblaze.csproj" />
