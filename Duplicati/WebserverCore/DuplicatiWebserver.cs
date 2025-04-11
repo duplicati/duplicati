@@ -19,9 +19,11 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
+using System.Net;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
 using Duplicati.Server.Database;
 using Duplicati.WebserverCore.Abstractions;
@@ -341,6 +343,12 @@ public class DuplicatiWebserver
                         await context.Response.WriteAsync(userReportedHttpException.Message);
                     else
                         await context.Response.WriteAsync(JsonSerializer.Serialize(new { Error = userReportedHttpException.Message, Code = userReportedHttpException.StatusCode }));
+                }
+                else if (thrownException is UserInformationException userInformationException)
+                {
+                    context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
+                    context.Response.ContentType = "application/json";
+                    await context.Response.WriteAsync(JsonSerializer.Serialize(new { Error = userInformationException.Message, Code = (int)HttpStatusCode.BadRequest, HelpId = userInformationException.HelpID }));
                 }
                 else
                 {
