@@ -40,7 +40,7 @@ All releases are GPG-signed with the public key [3DAC703D](https://keys.openpgp.
 
 Duplicati is supported by an [active community and you can reach them via our forum](https://forum.duplicati.com).
 
-We also provide a comprehensive [Duplicati manual](https://docs.duplicati.com), which you can [contribute to](https://github.com/kees-z/DuplicatiDocs).
+We also provide a comprehensive [Duplicati manual](https://docs.duplicati.com), which you can [contribute to](https://github.com/duplicati/documentation).
 
 # Features
 
@@ -67,12 +67,12 @@ Keep your data safe, store it remotely, and back it up regularly! Many backup so
 ## Reporting Bugs
 
 We use GitHub for bug tracking. Please search existing issues before creating a new one:
-https://github.com/duplicati/duplicati/issues
+<https://github.com/duplicati/duplicati/issues>.
 
 ## Contributing Translations
 
 Want to help translate Duplicati? Contributions are welcome on Transifex:
-https://www.transifex.com/duplicati/duplicati/dashboard/
+<https://www.transifex.com/duplicati/duplicati/dashboard/>.
 
 ## Contributing Code
 
