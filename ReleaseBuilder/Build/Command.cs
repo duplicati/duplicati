@@ -313,6 +313,12 @@ public static partial class Command
             getDefaultValue: () => false
         );
 
+        var disableCleanSourceOption = new Option<bool>(
+            name: "--disable-clean-source",
+            description: "Do not clean the source tree before the build",
+            getDefaultValue: () => false
+        );
+
         var command = new System.CommandLine.Command("build", "Builds the packages for a release") {
             gitStashPushOption,
             releaseChannelArgument,
@@ -338,7 +344,8 @@ public static partial class Command
             disableDiscordAnnounceOption,
             useHostedBuildsOption,
             resumeFromUploadOption,
-            propagateReleaseOption
+            propagateReleaseOption,
+            disableCleanSourceOption
         };
 
         command.Handler = CommandHandler.Create<CommandInput>(DoBuild);
@@ -373,6 +380,7 @@ public static partial class Command
     /// <param name="UseHostedBuilds">If hosted builds should be used</param>
     /// <param name="ResumeFromUpload">If the process should resume from the upload step</param>
     /// <param name="PropagateRelease">If the release should be propagated to the next channel</param>
+    /// <param name="DisableCleanSource">If the source tree should not be cleaned</param>
     record CommandInput(
         PackageTarget[] Targets,
         DirectoryInfo BuildPath,
@@ -398,7 +406,8 @@ public static partial class Command
         bool DisableDiscordAnnounce,
         bool UseHostedBuilds,
         bool ResumeFromUpload,
-        bool PropagateRelease
+        bool PropagateRelease,
+        bool DisableCleanSource
     );
 
     static async Task DoBuild(CommandInput input)
@@ -568,7 +577,7 @@ public static partial class Command
             }
         };
 
-        await Compile.BuildProjects(baseDir, input.BuildPath.FullName, sourceBuildMap, windowsOnly, buildTargets, releaseInfo, input.KeepBuilds, rtcfg, input.UseHostedBuilds);
+        await Compile.BuildProjects(baseDir, input.BuildPath.FullName, sourceBuildMap, windowsOnly, buildTargets, releaseInfo, input.KeepBuilds, rtcfg, input.UseHostedBuilds, input.DisableCleanSource);
 
         if (input.BuildOnly)
         {
