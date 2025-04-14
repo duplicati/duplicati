@@ -72,6 +72,7 @@
                 "--disable-github-upload", "true",
                 "--disable-update-server-reload", "true",
                 "--disable-discourse-announce", "true",
+                "--disable-clean-source", "true",
                 "--password", "test1234",
                 "--version", "2.0.8.104"                
             ],
