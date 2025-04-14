@@ -23,7 +23,6 @@ using System.CommandLine;
 using System.CommandLine.Builder;
 using System.CommandLine.NamingConventionBinder;
 using System.CommandLine.Parsing;
-using System.Reactive.Linq;
 using System.Security.Cryptography;
 using Duplicati.Library.AutoUpdater;
 using Duplicati.Library.Encryption;
