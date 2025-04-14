@@ -19,7 +19,6 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 using System.Runtime.CompilerServices;
-using System.Threading.Channels;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
@@ -56,27 +55,6 @@ namespace Duplicati.Library.Backend
             m_dnsHost = servername;
         }
 
-        private static async IAsyncEnumerable<T> ToAsyncEnumerable<T>(
-            IObservable<T> observable,
-            [EnumeratorCancellation] CancellationToken cancellationToken = default)
-        {
-            var channel = Channel.CreateUnbounded<T>(); // Buffered channel for async iteration
-
-            using var subscription = observable.Subscribe(
-                item => channel.Writer.TryWrite(item),
-                ex => channel.Writer.TryComplete(ex),
-                () => channel.Writer.TryComplete()
-            );
-
-            while (await channel.Reader.WaitToReadAsync(cancellationToken))
-            {
-                while (channel.Reader.TryRead(out var item))
-                {
-                    yield return item;
-                }
-            }
-        }
-
         public async IAsyncEnumerable<IFileEntry> ListBucketAsync(string bucketName, string prefix, bool recursive, [EnumeratorCancellation] CancellationToken cancellationToken)
         {
             await ThrowExceptionIfBucketDoesNotExist(bucketName, cancellationToken).ConfigureAwait(false);
@@ -84,11 +62,7 @@ namespace Duplicati.Library.Backend
             if (!string.IsNullOrWhiteSpace(prefix))
                 prefix = Util.AppendDirSeparator(prefix, "/");
 
-            var observable = await Utility.Utility.WithTimeout(m_timeouts.ListTimeout, cancellationToken, ct
-                => m_client.ListObjectsAsync(new ListObjectsArgs().WithBucket(bucketName).WithPrefix(prefix).WithRecursive(recursive), ct)
-            ).ConfigureAwait(false);
-
-            await foreach (var obj in ToAsyncEnumerable(observable, cancellationToken).ConfigureAwait(false))
+            await foreach (var obj in Utility.Utility.WithPerItemTimeout(m_client.ListObjectsEnumAsync(new ListObjectsArgs().WithBucket(bucketName).WithPrefix(prefix).WithRecursive(recursive), cancellationToken), m_timeouts.ListTimeout, cancellationToken))
             {
                 if (obj.Key == prefix || !obj.Key.StartsWith(prefix))
                     continue;
@@ -221,6 +195,11 @@ namespace Duplicati.Library.Backend
         private void ParseAndThrowNotFoundException(MinioException e, string keyName, string bucketName)
         {
             if (e.ServerResponse?.StatusCode == System.Net.HttpStatusCode.NotFound || e.Response?.Code == "NoSuchKey")
+                throw new FileMissingException($"File {keyName} not found in bucket {bucketName}");
+
+            if (e is BucketNotFoundException)
+                throw new FolderMissingException($"Bucket {bucketName} not found");
+            if (e is ObjectNotFoundException)
                 throw new FileMissingException($"File {keyName} not found in bucket {bucketName}");
         }
 
