@@ -93,7 +93,7 @@ public static partial class Command
                 // Make sure there is no cache from previous builds
                 if (!disableCleanSource)
                     await RemoveAllBuildTempFolders(baseDir).ConfigureAwait(false);
-                await Verify.AnalyzeProject(Path.Combine(baseDir, "Duplicati.sln")).ConfigureAwait(false);
+                verifyRootJson = await Verify.AnalyzeProject(Path.Combine(baseDir, "Duplicati.sln")).ConfigureAwait(false);
             }
 
             foreach ((var target, var outputFolder) in buildOutputFolders)
