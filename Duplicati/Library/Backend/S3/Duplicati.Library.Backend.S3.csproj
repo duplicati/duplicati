@@ -14,7 +14,7 @@
     <PackageReference Include="AWSSDK.IdentityManagement" Version="3.7.402.39" />
     <PackageReference Include="AWSSDK.S3" Version="3.7.405.9" />
     <PackageReference Include="System.Reactive" Version="6.0.0" />
-    <PackageReference Include="Minio" Version="3.1.13" />
+    <PackageReference Include="Minio" Version="6.0.2" />
   </ItemGroup>
   
   <ItemGroup>
