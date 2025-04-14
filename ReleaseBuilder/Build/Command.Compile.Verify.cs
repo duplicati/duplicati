@@ -56,8 +56,7 @@ public static partial class Command
                 "SQLiteHelper.dll",
                 "SQLite.Interop.dll",
                 "Microsoft.IdentityModel.Abstractions.dll",
-                "System.Reactive.dll",
-                "System.Reactive.Linq.dll"
+                "System.Reactive.dll"
             };
 
             var missing = probeFiles.Where(x => !rootFiles.Contains(x)).ToArray();
