@@ -40,9 +40,9 @@ namespace Duplicati.Library.Main.Database
         {
         }
 
-        public void UpdateVerificationCount(string name)
+        public void UpdateVerificationCount(string name, IDbTransaction? tr)
         {
-            using (var cmd = m_connection.CreateCommand())
+            using (var cmd = m_connection.CreateCommand(tr))
                 cmd.SetCommandAndParameters(@"UPDATE ""RemoteVolume"" SET ""VerificationCount"" = MAX(1, CASE WHEN ""VerificationCount"" <= 0 THEN (SELECT MAX(""VerificationCount"") FROM ""RemoteVolume"") ELSE ""VerificationCount"" + 1 END) WHERE ""Name"" = @Name")
                     .SetParameterValue("@Name", name)
                     .ExecuteNonQuery();
@@ -118,12 +118,12 @@ namespace Duplicati.Library.Main.Database
             return res;
         }
 
-        public IEnumerable<IRemoteVolume> SelectTestTargets(long samples, Options options)
+        public IEnumerable<IRemoteVolume> SelectTestTargets(long samples, Options options, IDbTransaction? tr)
         {
             var tp = GetFilelistWhereClause(options.Time, options.Version);
 
             samples = Math.Max(1, samples);
-            using (var cmd = m_connection.CreateCommand())
+            using (var cmd = m_connection.CreateCommand(tr))
             {
                 // Select any broken items
                 cmd.SetCommandAndParameters(@"SELECT ""ID"", ""Name"", ""Size"", ""Hash"", ""VerificationCount"" FROM ""Remotevolume"" WHERE (""State"" IN (@States)) AND (""Hash"" = '' OR ""Hash"" IS NULL OR ""Size"" <= 0) ")
@@ -194,14 +194,14 @@ namespace Duplicati.Library.Main.Database
             protected readonly IDbConnection m_connection;
             protected readonly string m_volumename;
             protected string m_tablename;
-            protected IDbTransaction m_transaction;
+            protected IDbTransaction? m_transaction;
             protected IDbCommand m_insertCommand;
 
-            protected Basiclist(IDbConnection connection, string volumename, string tablePrefix, string tableFormat, string insertCommand)
+            protected Basiclist(IDbConnection connection, IDbTransaction? tr, string volumename, string tablePrefix, string tableFormat, string insertCommand)
             {
                 m_connection = connection;
                 m_volumename = volumename;
-                m_transaction = m_connection.BeginTransaction();
+                m_transaction = tr;
                 var tablename = tablePrefix + "-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
 
                 using (var cmd = m_connection.CreateCommand(m_transaction))
@@ -240,8 +240,8 @@ namespace Duplicati.Library.Main.Database
             private const string TABLE_PREFIX = "Filelist";
             private const string TABLE_FORMAT = @"(""Path"" TEXT NOT NULL, ""Size"" INTEGER NOT NULL, ""Hash"" TEXT NULL, ""Metasize"" INTEGER NOT NULL, ""Metahash"" TEXT NOT NULL)";
             private const string INSERT_COMMAND = @"(""Path"", ""Size"", ""Hash"", ""Metasize"", ""Metahash"") VALUES (@Path,@Size,@Hash,@Metasize,@Metahash)";
-            public Filelist(IDbConnection connection, string volumename)
-                : base(connection, volumename, TABLE_PREFIX, TABLE_FORMAT, INSERT_COMMAND)
+            public Filelist(IDbConnection connection, string volumename, IDbTransaction? tr)
+                : base(connection, tr, volumename, TABLE_PREFIX, TABLE_FORMAT, INSERT_COMMAND)
             {
             }
 
@@ -304,8 +304,8 @@ namespace Duplicati.Library.Main.Database
             private const string TABLE_FORMAT = @"(""Name"" TEXT NOT NULL, ""Hash"" TEXT NOT NULL, ""Size"" INTEGER NOT NULL)";
             private const string INSERT_COMMAND = @"(""Name"", ""Hash"", ""Size"") VALUES (@Name,@Hash,@Size)";
 
-            public Indexlist(IDbConnection connection, string volumename)
-                : base(connection, volumename, TABLE_PREFIX, TABLE_FORMAT, INSERT_COMMAND)
+            public Indexlist(IDbConnection connection, string volumename, IDbTransaction? tr)
+                : base(connection, tr, volumename, TABLE_PREFIX, TABLE_FORMAT, INSERT_COMMAND)
             {
             }
 
@@ -365,8 +365,8 @@ namespace Duplicati.Library.Main.Database
             private const string TABLE_FORMAT = @"(""Hash"" TEXT NOT NULL, ""Size"" INTEGER NOT NULL)";
             private const string INSERT_COMMAND = @"(""Hash"", ""Size"") VALUES (@Hash,@Size)";
 
-            public Blocklist(IDbConnection connection, string volumename)
-                : base(connection, volumename, TABLE_PREFIX, TABLE_FORMAT, INSERT_COMMAND)
+            public Blocklist(IDbConnection connection, string volumename, IDbTransaction? tr)
+                : base(connection, tr, volumename, TABLE_PREFIX, TABLE_FORMAT, INSERT_COMMAND)
             { }
 
             public void AddBlock(string hash, long size)
@@ -414,19 +414,19 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
-        public IFilelist CreateFilelist(string name)
+        public IFilelist CreateFilelist(string name, IDbTransaction? tr)
         {
-            return new Filelist(m_connection, name);
+            return new Filelist(m_connection, name, tr);
         }
 
-        public IIndexlist CreateIndexlist(string name)
+        public IIndexlist CreateIndexlist(string name, IDbTransaction? tr)
         {
-            return new Indexlist(m_connection, name);
+            return new Indexlist(m_connection, name, tr);
         }
 
-        public IBlocklist CreateBlocklist(string name)
+        public IBlocklist CreateBlocklist(string name, IDbTransaction? tr)
         {
-            return new Blocklist(m_connection, name);
+            return new Blocklist(m_connection, name, tr);
         }
     }
 }
