@@ -503,8 +503,9 @@ public static class ExtensionMethods
     public static IDbTransaction BeginTransactionSafe(this IDbConnection self)
     {
         var transaction = self.BeginTransaction();
-        using (var cmd = self.CreateCommand(transaction, "BEGIN IMMEDIATE;"))
-            cmd.ExecuteNonQuery();
+        // using (var cmd = self.CreateCommand(transaction, "BEGIN IMMEDIATE;"))
+        //     try { cmd.ExecuteNonQuery(); }
+        //     catch { /* ignore */ }
 
         return transaction;
     }
