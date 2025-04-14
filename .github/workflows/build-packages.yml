@@ -21,7 +21,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Compile releases
-        run: dotnet run ReleaseBuilder/ReleaseBuilder.sln -- build debug --build-only=true --git-stash-push=false --disable-docker-push=true --keep-builds=true --disable-authenticode=true --disable-signcode=true --disable-notarize-signing=true --disable-gpg-signing=true --disable-s3-upload=true --disable-github-upload=true --disable-update-server-reload=true --disable-discourse-announce=true --disable-clean-source=true --password=test1234 --version=2.0.0.99
+        run: dotnet run --project ReleaseBuilder/ReleaseBuilder.csproj -- build debug --build-only=true --git-stash-push=false --disable-docker-push=true --keep-builds=true --disable-authenticode=true --disable-signcode=true --disable-notarize-signing=true --disable-gpg-signing=true --disable-s3-upload=true --disable-github-upload=true --disable-update-server-reload=true --disable-discourse-announce=true --disable-clean-source=true --password=test1234 --version=2.0.0.99
 
   # Disabled, as a new test needs to be written for the new UI
   # selenium:
