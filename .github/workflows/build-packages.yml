@@ -26,6 +26,8 @@ jobs:
 
       - name: Compile releases
         working-directory: ./ReleaseBuilder
+        env:
+          UPDATER_KEYFILE: ./testfile.key1
         run: dotnet run -- build debug --compile-only=true --git-stash-push=false --disable-docker-push=true --keep-builds=true --disable-authenticode=true --disable-signcode=true --disable-notarize-signing=true --disable-gpg-signing=true --disable-s3-upload=true --disable-github-upload=true --disable-update-server-reload=true --disable-discourse-announce=true --disable-clean-source=true --password=test1234 --version=2.0.0.99
 
   # Disabled, as a new test needs to be written for the new UI
