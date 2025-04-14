@@ -148,8 +148,8 @@ public static class EnvHelper
     /// <param name="sourceDir">The directory to copy</param>
     /// <param name="targetPath"></param>
     /// <param name="recursive"></param>
-    /// <exception cref="Exception"></exception>
-    public static void CopyDirectory(string sourceDir, string targetPath, bool recursive)
+    /// <param name="overwriteFunc">A function to determine if the file should be overwritten. First parameter is the existing file, second is the candidate.</param>
+    public static void CopyDirectory(string sourceDir, string targetPath, bool recursive, Func<FileInfo, FileInfo, bool>? overwriteFunc = null)
     {
         if (!Directory.Exists(sourceDir))
             throw new Exception($"Directory is missing: {sourceDir}");
@@ -160,7 +160,11 @@ public static class EnvHelper
         foreach (var f in Directory.EnumerateFileSystemEntries(sourceDir, "*", recursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly))
         {
             if (File.Exists(f))
-                File.Copy(f, Path.Combine(targetPath, Path.GetRelativePath(sourceDir, f)), true);
+            {
+                var targetFile = Path.Combine(targetPath, Path.GetRelativePath(sourceDir, f));
+                if (overwriteFunc == null || !File.Exists(targetFile) || overwriteFunc(new FileInfo(targetFile), new FileInfo(f)))
+                    File.Copy(f, targetFile, true);
+            }
             else if (recursive && Directory.Exists(f))
             {
                 var tg = Path.Combine(Path.Combine(targetPath, Path.GetRelativePath(sourceDir, f)));
