@@ -64,14 +64,14 @@ internal class ReusableTransaction : IDisposable
     /// </summary>
     /// <param name="message">The log message to use</param>
     /// <param name="restart">True if the transaction should be restarted</param>
-    public void Commit(string? message = null, bool restart = true)
+    public void Commit(string? message, bool restart = true)
     {
         if (m_transaction == null)
             throw new InvalidOperationException("Transaction is already disposed");
 
         if (m_transaction != null)
         {
-            using (var timer = string.IsNullOrWhiteSpace(message) ? null : new Logging.Timer(LOGTAG, message, "CommitTransaction"))
+            using (var timer = string.IsNullOrWhiteSpace(message) ? null : new Logging.Timer(LOGTAG, message, $"CommitTransaction: {message}"))
                 m_transaction.Commit();
             m_transaction.Dispose();
             m_transaction = null;

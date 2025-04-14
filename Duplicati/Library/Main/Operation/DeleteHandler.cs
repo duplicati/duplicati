@@ -94,7 +94,7 @@ namespace Duplicati.Library.Main.Operation
                 db.UpdateRemoteVolume(f.Key, RemoteVolumeState.Deleting, f.Value, null, rtr.Transaction);
 
             if (!m_options.Dryrun)
-                rtr.Commit();
+                rtr.Commit("CommitBeforeDelete");
 
             foreach (var f in lst)
             {

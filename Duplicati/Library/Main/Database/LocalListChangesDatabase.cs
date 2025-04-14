@@ -112,7 +112,7 @@ namespace Duplicati.Library.Main.Database
                 m_previousTable = "Previous-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
                 m_currentTable = "Current-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
 
-                m_transaction = m_connection.BeginTransaction();
+                m_transaction = m_connection.BeginTransactionSafe();
 
                 using (var cmd = m_connection.CreateCommand(m_transaction))
                 {

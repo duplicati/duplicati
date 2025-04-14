@@ -649,7 +649,7 @@ namespace Duplicati.Library.Main.Operation
                     using (var rdb = new LocalRecreateDatabase(db, m_options))
                         RecreateDatabaseHandler.RecreateFilesetFromRemoteList(rdb, tr.Transaction, compressor, entry.Key, m_options, new FilterExpression());
 
-                    tr.Commit();
+                    tr.Commit("PostRepairFileset");
                 }
 
             }
