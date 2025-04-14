@@ -41,7 +41,7 @@ public static partial class Command
     /// <summary>
     /// The primary project to build for CLI builds
     /// </summary>
-    private const string PrimaryCLIProject = "Duplicati.CommandLine.csproj";
+    private const string PrimaryCLIProject = "Duplicati.Server.csproj";
 
     /// <summary>
     /// The primary project to build for Agent builds

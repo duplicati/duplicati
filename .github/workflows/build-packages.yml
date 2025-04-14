@@ -1,0 +1,32 @@
+name: Tests
+
+on: [pull_request, workflow_dispatch]
+
+jobs:
+  build_packages:
+    name: Build packages
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: true
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.x
+
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Compile releases
+        run: dotnet run ReleaseBuilder/ReleaseBuilder.sln -- build debug --build-only=true --git-stash-push=false --disable-docker-push=true --keep-builds=true --disable-authenticode=true --disable-signcode=true --disable-notarize-signing=true --disable-gpg-signing=true --disable-s3-upload=true --disable-github-upload=true --disable-update-server-reload=true --disable-discourse-announce=true --disable-clean-source=true --password=test1234 --version=2.0.0.99
+
+  # Disabled, as a new test needs to be written for the new UI
+  # selenium:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - name: Selenium
+  #       run: pipeline/selenium/test.sh
