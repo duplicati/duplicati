@@ -222,6 +222,11 @@ namespace Duplicati.Library.Backend
         {
             if (e.ServerResponse?.StatusCode == System.Net.HttpStatusCode.NotFound || e.Response?.Code == "NoSuchKey")
                 throw new FileMissingException($"File {keyName} not found in bucket {bucketName}");
+
+            if (e is BucketNotFoundException)
+                throw new FolderMissingException($"Bucket {bucketName} not found");
+            if (e is ObjectNotFoundException)
+                throw new FileMissingException($"File {keyName} not found in bucket {bucketName}");
         }
 
         private Task ThrowExceptionIfBucketDoesNotExist(string bucketName, CancellationToken cancelToken)

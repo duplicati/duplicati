@@ -32,7 +32,7 @@ public class KeepAliveAssertion : IDisposable
     /// <summary>
     /// The previous state of the system, on Windows
     /// </summary>
-    private NativeMethods.EXECUTION_STATE _previousState;
+    private NativeMethods.EXECUTION_STATE? _previousState;
     /// <summary>
     /// The process that keeps the system awake, on Linux and MacOS
     /// </summary>
@@ -45,17 +45,23 @@ public class KeepAliveAssertion : IDisposable
     {
         if (OperatingSystem.IsWindows())
         {
-            _previousState = NativeMethods.SetThreadExecutionState(NativeMethods.EXECUTION_STATE.ES_CONTINUOUS | NativeMethods.EXECUTION_STATE.ES_SYSTEM_REQUIRED | NativeMethods.EXECUTION_STATE.ES_AWAYMODE_REQUIRED);
+            try { _previousState = NativeMethods.SetThreadExecutionState(NativeMethods.EXECUTION_STATE.ES_CONTINUOUS | NativeMethods.EXECUTION_STATE.ES_SYSTEM_REQUIRED | NativeMethods.EXECUTION_STATE.ES_AWAYMODE_REQUIRED); }
+            catch { }
         }
         else if (OperatingSystem.IsLinux())
         {
-            _keepAliveProcess = Process.Start("xset", "s off -dpms");
+            try { _keepAliveProcess = Process.Start("xset", "s off -dpms"); }
+            catch { }
         }
         else if (OperatingSystem.IsMacOS())
         {
-            // Keep the display awake until this process exits
-            var selfProcessId = Process.GetCurrentProcess().Id;
-            _keepAliveProcess = Process.Start("caffeinate", ["-d", "-w", selfProcessId.ToString()]);
+            try
+            {
+                // Keep the display awake until this process exits
+                var selfProcessId = Process.GetCurrentProcess().Id;
+                _keepAliveProcess = Process.Start("caffeinate", ["-d", "-w", selfProcessId.ToString()]);
+            }
+            catch { }
         }
     }
 
@@ -82,7 +88,8 @@ public class KeepAliveAssertion : IDisposable
     {
         if (OperatingSystem.IsWindows())
         {
-            NativeMethods.SetThreadExecutionState(_previousState);
+            if (_previousState != null)
+                NativeMethods.SetThreadExecutionState(_previousState.Value);
         }
         else if (OperatingSystem.IsLinux())
         {
