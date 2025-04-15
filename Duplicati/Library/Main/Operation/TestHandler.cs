@@ -54,10 +54,10 @@ namespace Duplicati.Library.Main.Operation
             using (var db = new LocalTestDatabase(m_options.Dbpath))
             using (var rtr = new ReusableTransaction(db))
             {
-                Utility.UpdateOptionsFromDb(db, m_options);
-                Utility.VerifyOptionsAndUpdateDatabase(db, m_options);
-                db.VerifyConsistency(m_options.Blocksize, m_options.BlockhashSize, !m_options.DisableFilelistConsistencyChecks, null);
-                await FilelistProcessor.VerifyRemoteList(backendManager, m_options, db, m_results.BackendWriter, latestVolumesOnly: true, verifyMode: FilelistProcessor.VerifyMode.VerifyOnly, null).ConfigureAwait(false);
+                Utility.UpdateOptionsFromDb(db, m_options, rtr.Transaction);
+                Utility.VerifyOptionsAndUpdateDatabase(db, m_options, rtr.Transaction);
+                db.VerifyConsistency(m_options.Blocksize, m_options.BlockhashSize, !m_options.DisableFilelistConsistencyChecks, rtr.Transaction);
+                await FilelistProcessor.VerifyRemoteList(backendManager, m_options, db, m_results.BackendWriter, latestVolumesOnly: true, verifyMode: FilelistProcessor.VerifyMode.VerifyOnly, rtr.Transaction).ConfigureAwait(false);
                 await DoRunAsync(samples, db, rtr, backendManager).ConfigureAwait(false);
                 rtr.Commit("TestHandlerComplete");
             }
@@ -226,7 +226,7 @@ namespace Duplicati.Library.Main.Operation
                 case RemoteVolumeType.Files:
                     //Compare with db and see if all files are accounted for 
                     // with correct file hashes and blocklist hashes
-                    using (var fl = db.CreateFilelist(vol.Name, rtr.Transaction))
+                    using (var fl = db.CreateFilelist(vol.Name, rtr))
                     {
                         using (var rd = new Volumes.FilesetVolumeReader(parsedInfo.CompressionModule, tf, options))
                             foreach (var f in rd.Files)
@@ -244,7 +244,7 @@ namespace Duplicati.Library.Main.Operation
                         foreach (var v in rd.Volumes)
                         {
                             blocklinks.Add(new Tuple<string, string, long>(v.Filename, v.Hash, v.Length));
-                            using (var bl = db.CreateBlocklist(v.Filename, rtr.Transaction))
+                            using (var bl = db.CreateBlocklist(v.Filename, rtr))
                             {
                                 foreach (var h in v.Blocks)
                                     bl.AddBlock(h.Key, h.Value);
@@ -253,7 +253,7 @@ namespace Duplicati.Library.Main.Operation
                             }
                         }
 
-                    using (var il = db.CreateIndexlist(vol.Name, rtr.Transaction))
+                    using (var il = db.CreateIndexlist(vol.Name, rtr))
                     {
                         foreach (var t in blocklinks)
                             il.AddBlockLink(t.Item1, t.Item2, t.Item3);
@@ -264,7 +264,7 @@ namespace Duplicati.Library.Main.Operation
                     return new KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>(vol.Name, combined.ToList());
                 case RemoteVolumeType.Blocks:
                     using (var blockhasher = HashFactory.CreateHasher(options.BlockHashAlgorithm))
-                    using (var bl = db.CreateBlocklist(vol.Name, rtr.Transaction))
+                    using (var bl = db.CreateBlocklist(vol.Name, rtr))
                     using (var rd = new Volumes.BlockVolumeReader(parsedInfo.CompressionModule, tf, options))
                     {
                         //Verify that all blocks are in the file
