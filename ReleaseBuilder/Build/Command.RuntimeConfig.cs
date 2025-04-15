@@ -212,6 +212,14 @@ public static partial class Command
         }
 
         /// <summary>
+        /// Disables docker builds
+        /// </summary>
+        public void DisableDockerBuilds()
+        {
+            _dockerBuild = false;
+        }
+
+        /// <summary>
         /// Cache value for checking if notarize is enabled
         /// </summary>
         private bool? _useNotarizeSigning;
