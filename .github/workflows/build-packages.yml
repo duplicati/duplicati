@@ -9,7 +9,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [macos-latest, windows-latest]
+        # Super slow on ubuntu-latest
+        # os: [ubuntu-latest, windows-latest, macos-latest]
 
     steps:
       - name: Set up .NET
