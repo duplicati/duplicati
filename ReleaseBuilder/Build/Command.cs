@@ -41,7 +41,7 @@ public static partial class Command
     /// <summary>
     /// The primary project to build for CLI builds
     /// </summary>
-    private const string PrimaryCLIProject = "Duplicati.CommandLine.csproj";
+    private const string PrimaryCLIProject = "Duplicati.Server.csproj";
 
     /// <summary>
     /// The primary project to build for Agent builds
@@ -191,8 +191,8 @@ public static partial class Command
             getDefaultValue: () => false
         );
 
-        var buildOnlyOption = new Option<bool>(
-            name: "--build-only",
+        var compileOnlyOption = new Option<bool>(
+            name: "--compile-only",
             description: "Only build the binaries, do not create packages",
             getDefaultValue: () => false
         );
@@ -319,6 +319,12 @@ public static partial class Command
             getDefaultValue: () => false
         );
 
+        var allowAssemblyMismatchOption = new Option<bool>(
+            name: "--allow-assembly-mismatch",
+            description: "Allow mismatched assembly versions",
+            getDefaultValue: () => false
+        );
+
         var command = new System.CommandLine.Command("build", "Builds the packages for a release") {
             gitStashPushOption,
             releaseChannelArgument,
@@ -326,7 +332,7 @@ public static partial class Command
             buildTargetOption,
             solutionFileOption,
             keepBuildsOption,
-            buildOnlyOption,
+            compileOnlyOption,
             disableAuthenticodeOption,
             disableCodeSignOption,
             passwordOption,
@@ -345,7 +351,8 @@ public static partial class Command
             useHostedBuildsOption,
             resumeFromUploadOption,
             propagateReleaseOption,
-            disableCleanSourceOption
+            disableCleanSourceOption,
+            allowAssemblyMismatchOption
         };
 
         command.Handler = CommandHandler.Create<CommandInput>(DoBuild);
@@ -362,7 +369,7 @@ public static partial class Command
     /// <param name="Channel">The release channel</param>
     /// <param name="Version">The version override to use</param>
     /// <param name="KeepBuilds">If the builds should be kept</param>
-    /// <param name="BuildOnly">If only the build should be performed</param>
+    /// <param name="CompileOnly">If only the build should be performed</param>
     /// <param name="DisableAuthenticode">If authenticode signing should be disabled</param>
     /// <param name="DisableSignCode">If signcode should be disabled</param>
     /// <param name="Password">The password to use for the keyfile</param>
@@ -381,6 +388,7 @@ public static partial class Command
     /// <param name="ResumeFromUpload">If the process should resume from the upload step</param>
     /// <param name="PropagateRelease">If the release should be propagated to the next channel</param>
     /// <param name="DisableCleanSource">If the source tree should not be cleaned</param>
+    /// <param name="AllowAssemblyMismatch">If the assembly mismatch should be allowed</param>
     record CommandInput(
         PackageTarget[] Targets,
         DirectoryInfo BuildPath,
@@ -389,7 +397,7 @@ public static partial class Command
         ReleaseChannel Channel,
         string? Version,
         bool KeepBuilds,
-        bool BuildOnly,
+        bool CompileOnly,
         bool DisableAuthenticode,
         bool DisableSignCode,
         string Password,
@@ -407,7 +415,8 @@ public static partial class Command
         bool UseHostedBuilds,
         bool ResumeFromUpload,
         bool PropagateRelease,
-        bool DisableCleanSource
+        bool DisableCleanSource,
+        bool AllowAssemblyMismatch
     );
 
     static async Task DoBuild(CommandInput input)
@@ -424,7 +433,7 @@ public static partial class Command
             throw new FileNotFoundException($"Solution file not found: {input.SolutionFile.FullName}");
 
         // This could be fixed, so we will throw an exception if the build is not possible
-        if (buildTargets.Any(x => x.Package == PackageType.MSI) && !configuration.IsMSIBuildPossible())
+        if (buildTargets.Any(x => x.Package == PackageType.MSI) && !configuration.IsMSIBuildPossible() && !input.CompileOnly)
             throw new Exception("WiX toolset not configured, cannot build MSI files");
 
         // This will be fixed in the future, but requires a new http-interface for Synology DSM
@@ -432,7 +441,7 @@ public static partial class Command
             throw new Exception("Synology SPK files are currently not supported");
 
         // This will not work, so to make it easier for non-MacOS developers, we will remove the MacOS packages
-        if (buildTargets.Any(x => x.Package == PackageType.MacPkg || x.Package == PackageType.DMG) && !configuration.IsMacPkgBuildPossible())
+        if (buildTargets.Any(x => x.Package == PackageType.MacPkg || x.Package == PackageType.DMG) && !configuration.IsMacPkgBuildPossible() && !input.CompileOnly)
         {
             Console.WriteLine("MacOS packages requested but not running on MacOS, removing from build targets");
             buildTargets = buildTargets.Where(x => x.Package != PackageType.MacPkg && x.Package != PackageType.DMG).ToArray();
@@ -523,13 +532,20 @@ public static partial class Command
         rtcfg.ToggleGithubUpload(rtcfg.ReleaseInfo.Channel);
         rtcfg.ToogleDiscourseAnnounce(rtcfg.ReleaseInfo.Channel);
         rtcfg.ToggleUpdateServerReload();
-        await rtcfg.ToggleDockerBuild();
-
-        if (!rtcfg.UseDockerBuild)
+        if (input.CompileOnly)
         {
-            var unsupportedBuilds = buildTargets.Where(x => x.Package == PackageType.Docker || x.Package == PackageType.Deb || x.Package == PackageType.RPM).ToList();
-            if (unsupportedBuilds.Any())
-                throw new Exception($"The following packages cannot be built without Docker: {string.Join(", ", unsupportedBuilds.Select(x => x.PackageTargetString))}");
+            rtcfg.DisableDockerBuilds();
+        }
+        else
+        {
+            await rtcfg.ToggleDockerBuild();
+
+            if (!rtcfg.UseDockerBuild)
+            {
+                var unsupportedBuilds = buildTargets.Where(x => x.Package == PackageType.Docker || x.Package == PackageType.Deb || x.Package == PackageType.RPM).ToList();
+                if (unsupportedBuilds.Any())
+                    throw new Exception($"The following packages cannot be built without Docker: {string.Join(", ", unsupportedBuilds.Select(x => x.PackageTargetString))}");
+            }
         }
 
         // Prevent the system from going to sleep during the build
@@ -577,9 +593,9 @@ public static partial class Command
             }
         };
 
-        await Compile.BuildProjects(baseDir, input.BuildPath.FullName, sourceBuildMap, windowsOnly, buildTargets, releaseInfo, input.KeepBuilds, rtcfg, input.UseHostedBuilds, input.DisableCleanSource);
+        await Compile.BuildProjects(baseDir, input.BuildPath.FullName, sourceBuildMap, windowsOnly, buildTargets, releaseInfo, input.KeepBuilds, rtcfg, input.UseHostedBuilds, input.DisableCleanSource, input.AllowAssemblyMismatch);
 
-        if (input.BuildOnly)
+        if (input.CompileOnly)
         {
             Console.WriteLine("Build completed, skipping package creation ...");
             return;

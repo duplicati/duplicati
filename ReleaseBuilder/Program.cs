@@ -102,12 +102,20 @@ class Program
     /// <returns></returns>
     static async Task<int> Main(string[] args)
     {
-        var r = await new RootCommand("Build tool for Duplicati")
+        try
         {
-            Build.Command.Create(),
-            CreateKey.Command.Create(),
-        }.InvokeAsync(args);
+            ReturnCode = await new RootCommand("Build tool for Duplicati")
+            {
+                Build.Command.Create(),
+                CreateKey.Command.Create(),
+            }.InvokeAsync(args);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.ToString());
+            ReturnCode = 1;
+        }
 
-        return ReturnCode ?? r;
+        return ReturnCode ?? 2;
     }
 }

@@ -18,6 +18,7 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
+using System.Reflection;
 using System.Text.RegularExpressions;
 
 namespace ReleaseBuilder.Build;
@@ -70,7 +71,7 @@ public static partial class Command
         /// <param name="disableCleanSource">A flag that allows skipping the clean source step</param>
         /// <param name="rtcfg">The runtime configuration</param>
         /// <returns>A task that completes when the build is done</returns>
-        public static async Task BuildProjects(string baseDir, string buildDir, Dictionary<InterfaceType, IEnumerable<string>> sourceProjects, IEnumerable<string> windowsOnlyProjects, IEnumerable<PackageTarget> buildTargets, ReleaseInfo releaseInfo, bool keepBuilds, RuntimeConfig rtcfg, bool useHostedBuilds, bool disableCleanSource)
+        public static async Task BuildProjects(string baseDir, string buildDir, Dictionary<InterfaceType, IEnumerable<string>> sourceProjects, IEnumerable<string> windowsOnlyProjects, IEnumerable<PackageTarget> buildTargets, ReleaseInfo releaseInfo, bool keepBuilds, RuntimeConfig rtcfg, bool useHostedBuilds, bool disableCleanSource, bool allowAssemblyMismatch)
         {
             // For tracing, create a log folder and store all logs there
             var logFolder = Path.Combine(buildDir, "logs");
@@ -93,7 +94,7 @@ public static partial class Command
                 // Make sure there is no cache from previous builds
                 if (!disableCleanSource)
                     await RemoveAllBuildTempFolders(baseDir).ConfigureAwait(false);
-                await Verify.AnalyzeProject(Path.Combine(baseDir, "Duplicati.sln")).ConfigureAwait(false);
+                verifyRootJson = await Verify.AnalyzeProject(Path.Combine(baseDir, "Duplicati.sln")).ConfigureAwait(false);
             }
 
             foreach ((var target, var outputFolder) in buildOutputFolders)
@@ -134,6 +135,8 @@ public static partial class Command
                     var actualBuildProjects = buildProjects
                         .Where(x => target.OS == OSType.Windows || !windowsOnlyProjects.Contains(x))
                         .ToList();
+
+                    var incorrectAssemblyVersions = new Dictionary<string, HashSet<Version>>();
 
                     foreach (var project in actualBuildProjects)
                     {
@@ -177,7 +180,20 @@ public static partial class Command
                         if (Regex.Match(logData, @"[\\/]bin[\\/]Debug[\\/]", RegexOptions.IgnoreCase).Success)
                             throw new InvalidOperationException($"Build for {target.BuildTargetString} failed. Debug build found in log: {stdoutLog}.");
 
-                        EnvHelper.CopyDirectory(buildfolder, tmpfolder, true);
+                        EnvHelper.CopyDirectory(buildfolder, tmpfolder, true, (current, update) =>
+                        {
+                            var c = CompareAssemblyVersions(current.FullName, update.FullName);
+                            if (c != 0)
+                            {
+                                if (!incorrectAssemblyVersions.TryGetValue(Path.GetFileName(current.FullName), out var versions))
+                                    incorrectAssemblyVersions[Path.GetFileName(current.FullName)] = versions = new HashSet<Version>();
+
+                                versions.Add(AssemblyName.GetAssemblyName(current.FullName).Version ?? new Version(0, 0));
+                                versions.Add(AssemblyName.GetAssemblyName(update.FullName).Version ?? new Version(0, 0));
+                            }
+                            return c >= 0;
+                        });
+                        // EnvHelper.CopyDirectory(buildfolder, tmpfolder, true);
                         Directory.Delete(buildfolder, true);
                     }
 
@@ -187,12 +203,80 @@ public static partial class Command
                     await Verify.VerifyExecutables(tmpfolder, actualBuildProjects, target);
                     await Verify.VerifyDuplicatedVersionsAreMaxVersions(tmpfolder, verifyRootJson);
 
+                    if (incorrectAssemblyVersions.Count > 0)
+                    {
+                        Console.WriteLine($"Incorrect assembly versions found in {target.BuildTargetString}:");
+                        foreach (var file in incorrectAssemblyVersions.Keys.Order())
+                            Console.WriteLine($"  {file}: {string.Join(", ", incorrectAssemblyVersions[file].OrderByDescending(x => x))}");
+
+                        throw new InvalidOperationException($"Incorrect assembly versions found in {target.BuildTargetString}");
+                    }
+
                     // Move the final build to the output folder
                     Directory.Move(tmpfolder, outputFolder);
                 }
 
                 Console.WriteLine("Completed!");
             }
+        }
+
+        /// <summary>
+        /// Checks if the file is a PE file
+        /// </summary>
+        /// <param name="path">The path to the file</param>
+        /// <returns>>True if the file is a PE file, false otherwise</returns>
+        private static bool IsPEFile(string path)
+        {
+            if (!File.Exists(path)) return false;
+
+            using var fs = new FileStream(path, FileMode.Open, FileAccess.Read);
+            using var br = new BinaryReader(fs);
+
+            // Check for MZ header
+            if (br.ReadUInt16() != 0x5A4D) // "MZ"
+                return false;
+
+            fs.Seek(0x3C, SeekOrigin.Begin);
+            var peHeaderOffset = br.ReadInt32();
+
+            if (peHeaderOffset <= 0 || peHeaderOffset > fs.Length - 4)
+                return false;
+
+            fs.Seek(peHeaderOffset, SeekOrigin.Begin);
+            var peSignature = br.ReadUInt32();
+
+            return peSignature == 0x00004550; // "PE\0\0"
+        }
+
+        /// <summary>
+        /// Compares the assembly versions of two files
+        /// </summary>
+        /// <param name="p1">Path to the first file</param>
+        /// <param name="p2">Path to the second file</param>
+        /// <returns>0 if the versions are equal, -1 if the first is is largest, 1 if the second is largest</returns>
+        private static int CompareAssemblyVersions(string p1, string p2)
+        {
+            try
+            {
+                if (!IsPEFile(p1))
+                    return 0;
+
+                var version1 = AssemblyName.GetAssemblyName(p1)?.Version;
+                var version2 = AssemblyName.GetAssemblyName(p2)?.Version;
+
+                if (version1 == null || version2 == null)
+                    return 0;
+                if (version1 > version2)
+                    return -1;
+                if (version1 < version2)
+                    return 1;
+            }
+            catch
+            {
+            }
+
+            return 0;
+
         }
     }
 }

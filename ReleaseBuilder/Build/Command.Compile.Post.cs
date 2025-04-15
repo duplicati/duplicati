@@ -242,7 +242,8 @@ public static partial class Command
 
             // Rename the executables, as symlinks are not supported in DMG files
             await PackageSupport.RenameExecutables(binDir);
-            await PackageSupport.SetPermissionFlags(binDir, rtcfg);
+            if (!OperatingSystem.IsWindows())
+                await PackageSupport.SetPermissionFlags(binDir, rtcfg);
 
             // Move the licenses out of the code folder as the signing tool trips on it
             var licenseTarget = Path.Combine(tmpApp, "Contents", "Licenses");
