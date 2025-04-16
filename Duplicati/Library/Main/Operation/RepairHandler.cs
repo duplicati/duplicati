@@ -185,6 +185,7 @@ namespace Duplicati.Library.Main.Operation
                     if (tp.VerificationRequiredVolumes.Any())
                     {
                         using (var testdb = new LocalTestDatabase(db))
+                        using (var rtr = new ReusableTransaction(testdb))
                         {
                             foreach (var n in tp.VerificationRequiredVolumes)
                                 try
@@ -201,7 +202,7 @@ namespace Duplicati.Library.Main.Operation
                                     KeyValuePair<string, IEnumerable<KeyValuePair<Duplicati.Library.Interface.TestEntryStatus, string>>> res;
                                     (var tf, var hash, var size) = await backendManager.GetWithInfoAsync(n.Name, n.Hash, n.Size, cancellationToken).ConfigureAwait(false);
                                     using (tf)
-                                        res = TestHandler.TestVolumeInternals(testdb, n, tf, m_options, 1);
+                                        res = TestHandler.TestVolumeInternals(testdb, rtr, n, tf, m_options, 1);
 
                                     if (res.Value.Any())
                                         throw new Exception(string.Format("Remote verification failure: {0}", res.Value.First()));
@@ -219,6 +220,8 @@ namespace Duplicati.Library.Main.Operation
                                     if (ex.IsAbortException())
                                         throw;
                                 }
+
+                            rtr.Commit("CommitVerificationTransaction", false);
                         }
                     }
 
@@ -649,7 +652,7 @@ namespace Duplicati.Library.Main.Operation
                     using (var rdb = new LocalRecreateDatabase(db, m_options))
                         RecreateDatabaseHandler.RecreateFilesetFromRemoteList(rdb, tr.Transaction, compressor, entry.Key, m_options, new FilterExpression());
 
-                    tr.Commit();
+                    tr.Commit("PostRepairFileset");
                 }
 
             }

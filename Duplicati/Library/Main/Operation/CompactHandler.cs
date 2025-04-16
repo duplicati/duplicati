@@ -203,7 +203,7 @@ namespace Duplicati.Library.Main.Operation
 
                                                 // Commit as we have uploaded a volume
                                                 if (!m_options.Dryrun)
-                                                    rtr.Commit();
+                                                    rtr.Commit("CommitCompact");
                                             }
                                         }
                                     }
@@ -317,7 +317,7 @@ namespace Duplicati.Library.Main.Operation
             await backend.WaitForEmptyAsync(db, rtr.Transaction, cancellationToken).ConfigureAwait(false);
 
             if (!m_options.Dryrun)
-                rtr.Commit();
+                rtr.Commit("CommitDelete");
 
             await foreach (var d in PerformDelete(backend, remoteFilesToRemove, cancellationToken).ConfigureAwait(false))
                 yield return d;

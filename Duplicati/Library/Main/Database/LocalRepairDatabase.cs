@@ -289,7 +289,7 @@ namespace Duplicati.Library.Main.Database
 
         public void FixDuplicateMetahash()
         {
-            using (var tr = m_connection.BeginTransaction())
+            using (var tr = m_connection.BeginTransactionSafe())
             using (var cmd = m_connection.CreateCommand(tr))
             {
                 var sql_count =
@@ -355,7 +355,7 @@ namespace Duplicati.Library.Main.Database
 
         public void FixDuplicateFileentries()
         {
-            using (var tr = m_connection.BeginTransaction())
+            using (var tr = m_connection.BeginTransactionSafe())
             using (var cmd = m_connection.CreateCommand(tr))
             {
                 var sql_count = @"SELECT COUNT(*) FROM (SELECT ""PrefixID"", ""Path"", ""BlocksetID"", ""MetadataID"", COUNT(*) as ""Duplicates"" FROM ""FileLookup"" GROUP BY ""PrefixID"", ""Path"", ""BlocksetID"", ""MetadataID"") WHERE ""Duplicates"" > 1";
@@ -398,7 +398,7 @@ namespace Duplicati.Library.Main.Database
         {
             var blocklistbuffer = new byte[blocksize];
 
-            using (var tr = m_connection.BeginTransaction())
+            using (var tr = m_connection.BeginTransactionSafe())
             using (var cmd = m_connection.CreateCommand(tr))
             using (var blockhasher = HashFactory.CreateHasher(blockhashalgorithm))
             {
@@ -535,7 +535,7 @@ namespace Duplicati.Library.Main.Database
 
         public void FixDuplicateBlocklistHashes(long blocksize, long hashsize)
         {
-            using (var tr = m_connection.BeginTransaction())
+            using (var tr = m_connection.BeginTransactionSafe())
             using (var cmd = m_connection.CreateCommand(tr))
             {
                 var dup_sql = @"SELECT * FROM (SELECT ""BlocksetID"", ""Index"", COUNT(*) AS ""EC"" FROM ""BlocklistHash"" GROUP BY ""BlocksetID"", ""Index"") WHERE ""EC"" > 1";
@@ -591,7 +591,7 @@ namespace Duplicati.Library.Main.Database
 
         public void CheckAllBlocksAreInVolume(string filename, IEnumerable<KeyValuePair<string, long>> blocks)
         {
-            using (var tr = m_connection.BeginTransaction())
+            using (var tr = m_connection.BeginTransactionSafe())
             using (var cmd = m_connection.CreateCommand(tr))
             {
                 var tablename = "ProbeBlocks-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());

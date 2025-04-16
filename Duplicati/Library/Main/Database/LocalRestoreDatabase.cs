@@ -246,7 +246,7 @@ END ");
                         // If we get a list of filenames, the lookup table is faster
                         // unfortunately we cannot do this if the filesystem is case sensitive as
                         // SQLite only supports ASCII compares
-                        using (var tr = m_connection.BeginTransaction())
+                        using (var tr = m_connection.BeginTransactionSafe())
                         {
                             var p = expression.GetSimpleList();
                             var m_filenamestable = "Filenames-" + m_temptabsetguid;
@@ -1173,7 +1173,7 @@ ORDER BY ""A"".""TargetPath"", ""BB"".""Index"""));
 
             public DirectBlockMarker(IDbConnection connection, string blocktablename, string filetablename, string statstablename)
             {
-                m_transaction = connection.BeginTransaction();
+                m_transaction = connection.BeginTransactionSafe();
                 m_blocktablename = blocktablename;
                 m_filetablename = filetablename;
 
@@ -1362,7 +1362,7 @@ WHERE ""FileID"" = @TargetFileId AND ""Index"" = @Index AND ""Hash"" = @Hash AND
 
         public IEnumerable<IFastSource> GetFilesAndSourceBlocksFast(long blocksize)
         {
-            using (var transaction = m_connection.BeginTransaction())
+            using (var transaction = m_connection.BeginTransactionSafe())
             using (var cmdReader = m_connection.CreateCommand())
             using (var cmd = m_connection.CreateCommand(transaction))
             {

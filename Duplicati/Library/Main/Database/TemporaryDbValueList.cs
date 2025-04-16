@@ -146,9 +146,16 @@ public class TemporaryDbValueList : IDisposable
         _cmd.ExecuteNonQuery($@"CREATE TEMPORARY TABLE ""{_tableName}"" (""Value"" {_valuesType})");
         _isTable = true;
         foreach (var slice in _values.Chunk(LocalDatabase.CHUNK_SIZE))
-            _cmd.SetCommandAndParameters($@"INSERT INTO ""{_tableName}"" (""Value"") VALUES (@values)")
-                .ExpandInClauseParameter("@values", slice)
-                .ExecuteNonQuery();
+        {
+            var parameterNames = slice.Select((_, i) => $"@p{i}").ToArray();
+            var sql = $@"INSERT INTO ""{_tableName}"" (""Value"") VALUES {string.Join(", ", parameterNames.Select(p => $"({p})"))}";
+
+            _cmd.CommandText = sql;
+            for (int i = 0; i < slice.Length; i++)
+                _cmd.AddNamedParameter(parameterNames[i], slice[i]);
+
+            _cmd.ExecuteNonQuery();
+        }
     }
 
     /// <summary>

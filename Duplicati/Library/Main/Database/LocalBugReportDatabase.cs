@@ -41,7 +41,7 @@ namespace Duplicati.Library.Main.Database
 
         public void Fix()
         {
-            using (var tr = m_connection.BeginTransaction())
+            using (var tr = m_connection.BeginTransactionSafe())
             using (var cmd = m_connection.CreateCommand())
             {
                 cmd.Transaction = tr;

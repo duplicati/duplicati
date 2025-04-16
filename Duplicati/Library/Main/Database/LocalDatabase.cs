@@ -654,7 +654,7 @@ AND Fileset.ID NOT IN
         // TODO: Remove this
         public IDbTransaction BeginTransaction()
         {
-            return m_connection.BeginTransaction();
+            return m_connection.BeginTransactionSafe();
         }
 
         protected class TemporaryTransactionWrapper : IDisposable
@@ -671,7 +671,7 @@ AND Fileset.ID NOT IN
                 }
                 else
                 {
-                    m_parent = connection.BeginTransaction();
+                    m_parent = connection.BeginTransactionSafe();
                     m_isTemporary = true;
                 }
             }
@@ -1626,7 +1626,7 @@ AND oldVersion.FilesetID = (SELECT ID FROM Fileset WHERE ID != @FilesetId ORDER 
 
         public void PurgeLogData(DateTime threshold)
         {
-            using (var tr = m_connection.BeginTransaction())
+            using (var tr = m_connection.BeginTransactionSafe())
             using (var cmd = m_connection.CreateCommand(tr))
             {
                 var t = Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(threshold);
@@ -1643,7 +1643,7 @@ AND oldVersion.FilesetID = (SELECT ID FROM Fileset WHERE ID != @FilesetId ORDER 
 
         public void PurgeDeletedVolumes(DateTime threshold)
         {
-            using (var tr = m_connection.BeginTransaction())
+            using (var tr = m_connection.BeginTransactionSafe())
             using (var cmd = m_connection.CreateCommand(tr))
             {
                 m_removedeletedremotevolumeCommand.SetParameterValue("@Now", Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(threshold))
@@ -1663,7 +1663,7 @@ AND oldVersion.FilesetID = (SELECT ID FROM Fileset WHERE ID != @FilesetId ORDER 
             {
                 if (m_connection.State == ConnectionState.Open && !m_hasExecutedVacuum)
                 {
-                    using (var transaction = m_connection.BeginTransaction())
+                    using (var transaction = m_connection.BeginTransactionSafe())
                     using (var command = m_connection.CreateCommand(transaction))
                     {
                         // SQLite recommends that PRAGMA optimize is run just before closing each database connection.
