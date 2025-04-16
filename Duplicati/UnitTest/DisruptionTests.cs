@@ -22,6 +22,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Library.Interface;
@@ -677,7 +678,7 @@ namespace Duplicati.UnitTest
                             startedTcs.SetResult(true);
                     };
                 };
-                
+
                 Task backupTask = Task.Run(() => c.Backup([DATAFOLDER]));
 
                 Task completedTask = await Task.WhenAny(startedTcs.Task, Task.Delay(5000));
@@ -699,7 +700,7 @@ namespace Duplicati.UnitTest
                     Assert.Fail("Operation did not reach ready state within timeout.");
                 }
             }
-            
+
             // The next backup should proceed without issues.
             using (Controller c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
@@ -789,7 +790,27 @@ namespace Duplicati.UnitTest
 
             // Verify that all is in order
             using (var c = new Controller("file://" + TARGETFOLDER, testopts.Expand(new { full_remote_verification = true }), null))
-                TestUtils.AssertResults(c.Test(long.MaxValue));
+                try
+                {
+                    TestUtils.AssertResults(c.Test(long.MaxValue));
+                }
+                catch (TestUtils.TestVerificationException e)
+                {
+                    using var db = new LocalDatabase(testopts["dbpath"], "test", true);
+                    using var cmd = db.Connection.CreateCommand();
+
+                    var sb = new StringBuilder();
+                    sb.AppendLine(e.Message);
+                    sb.AppendLine(TestUtils.DumpTable(cmd, "File", null));
+                    sb.AppendLine(TestUtils.DumpTable(cmd, "FilesetEntry", null));
+                    sb.AppendLine(TestUtils.DumpTable(cmd, "Fileset", null));
+
+                    sb.AppendLine("Files in the source folder:");
+                    foreach (var fe in Directory.EnumerateFileSystemEntries(this.DATAFOLDER))
+                        sb.AppendLine($"File: {fe}");
+
+                    Assert.Fail(sb.ToString());
+                }
 
             // Test that we can recreate
             var recreatedDatabaseFile = Path.Combine(BASEFOLDER, "recreated-database.sqlite");

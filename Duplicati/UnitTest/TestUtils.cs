@@ -30,6 +30,9 @@ using System.Threading.Tasks;
 using Duplicati.Library.Common.IO;
 using NUnit.Framework;
 using Duplicati.Library.Interface;
+using System.Data;
+using System.Text;
+using Duplicati.Library.Main.Database;
 
 namespace Duplicati.UnitTest
 {
@@ -280,6 +283,10 @@ namespace Duplicati.UnitTest
             File.WriteAllBytes(path, data);
         }
 
+        public class TestVerificationException(string message) : Exception(message)
+        {
+        }
+
         public static void AssertResults(IBasicResults results)
         {
             string operation = "Result";
@@ -293,7 +300,55 @@ namespace Duplicati.UnitTest
             Assert.AreEqual(0, results.Warnings.Count(), "{0} warnings:\n{1}", operation, string.Join("\n", results.Warnings));
 
             if (results is ITestResults testResults)
-                Assert.IsFalse(testResults.Verifications.Any(p => p.Value.Any()), "{0} verifications:\n{1}", operation, string.Join("\n", testResults.Verifications.Select(p => string.Join("\n", p.Value))));
+            {
+                if (testResults.Verifications.Any(p => p.Value.Any()))
+                {
+                    var sb = new StringBuilder();
+                    sb.AppendLine($"Verification errors - {operation}:");
+                    foreach (var p in testResults.Verifications)
+                    {
+                        sb.Append(p.Key.ToString());
+                        if (p.Value.Count() == 0)
+                        {
+                            sb.AppendLine(" (no errors)");
+                            continue;
+                        }
+
+                        sb.AppendLine(" (errors):");
+                        foreach (var v in p.Value)
+                            sb.AppendLine(v.ToString());
+                    }
+
+                    throw new TestVerificationException(sb.ToString());
+                }
+            }
+        }
+
+        public static string DumpTable(IDbCommand cmd, string table, string where = null)
+        {
+            var sb = new StringBuilder();
+            cmd.CommandText = $"SELECT * FROM {table}";
+            var rowix = 0;
+
+            sb.AppendLine($"{table} table:");
+            foreach (var row in cmd.ExecuteReaderEnumerable())
+            {
+                if (rowix == 0)
+                {
+                    for (var col = 0; col < row.FieldCount; col++)
+                        sb.Append($"{row.GetName(col)}\t");
+
+                    sb.AppendLine();
+                }
+                rowix++;
+
+                for (var col = 0; col < row.FieldCount; col++)
+                    sb.Append($"{row.GetValue(col)}\t");
+                sb.AppendLine();
+            }
+
+            sb.AppendLine();
+            return sb.ToString();
         }
     }
 }
