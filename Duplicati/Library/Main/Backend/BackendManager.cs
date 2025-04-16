@@ -37,15 +37,6 @@ internal partial class BackendManager : IBackendManager
     private readonly Task queueRunner;
 
     /// <summary>
-    /// The last file read size
-    /// </summary>
-    public long LastReadSize { get; private set; }
-    /// <summary>
-    /// The last file write size
-    /// </summary>
-    public long LastWriteSize { get; private set; }
-
-    /// <summary>
     /// The execution context
     /// </summary>
     private readonly ExecuteContext context;
@@ -172,7 +163,6 @@ internal partial class BackendManager : IBackendManager
         };
         await QueueTask(op).ConfigureAwait(false);
         (var file, var _, var downloadSize) = await op.GetResult().ConfigureAwait(false);
-        LastReadSize = downloadSize;
         return file;
     }
 
@@ -193,7 +183,6 @@ internal partial class BackendManager : IBackendManager
         };
         await QueueTask(op).ConfigureAwait(false);
         (var file, var _, var downloadSize) = await op.GetResult().ConfigureAwait(false);
-        LastReadSize = downloadSize;
         return file;
     }
 
@@ -226,7 +215,6 @@ internal partial class BackendManager : IBackendManager
         };
         await QueueTask(op).ConfigureAwait(false);
         (var file, var downloadHash, var downloadSize) = await op.GetResult().ConfigureAwait(false);
-        LastReadSize = downloadSize;
         return (file, downloadHash, downloadSize);
     }
 

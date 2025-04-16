@@ -21,6 +21,7 @@
 
 using System;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Library.Main.Database;
 
@@ -65,6 +66,9 @@ namespace Duplicati.Library.Main.Operation.Common
         {
             return RunOnMain(() => m_db.UpdateRemoteVolume(name, state, size, hash, suppressCleanup, deleteGraceTime, GetTransaction()));
         }
+
+        public Task FlushBackend(IBackendManager backendManager, CancellationToken token)
+            => RunOnMain(() => backendManager.WaitForEmptyAsync(m_db, null, token).ConfigureAwait(false));
 
         public Task CommitTransactionAsync(string message, bool restart = true)
         {
