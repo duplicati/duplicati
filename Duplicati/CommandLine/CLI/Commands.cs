@@ -464,7 +464,7 @@ namespace Duplicati.CommandLine
 
         public static int Delete(TextWriter outwriter, Action<Duplicati.Library.Main.Controller> setup, List<string> args, Dictionary<string, string> options, Library.Utility.IFilter filter)
         {
-            var requiredOptions = new string[] { "keep-time", "keep-versions", "version" };
+            var requiredOptions = new string[] { "keep-time", "keep-versions", "version", "retention-policy" };
 
             if (!options.Keys.Any(x => requiredOptions.Contains(x, StringComparer.OrdinalIgnoreCase)))
             {

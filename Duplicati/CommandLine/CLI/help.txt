@@ -146,15 +146,17 @@ Usage: %CLI_EXE% delete <storage-URL> [<options>]
   Marks old data deleted and removes outdated dlist files. A backup is deleted when it is older than <keep-time> or when there are more newer versions than <keep-versions>. Data is considered old, when it is not required from any existing backup anymore.
 
   --dry-run
-    Performs the operation, but does not write changes to the local database or the remote storage
+    Performs the operation, but does not write changes to the local database or the remote storage.
   --keep-time=<time>
     Marks data outdated that is older than <time>.
   --keep-versions=<int>
     Marks data outdated that is older than <int> versions.
   --version=<int>
     Deletes all files that belong to the specified version(s).
+  --retention-policy=<policy>
+    Deletes all files that are not preserved by the retention policy.
   --allow-full-removal
-    Disables the protection against removing the final fileset
+    Disables the protection against removing the final fileset.
 
 
 
