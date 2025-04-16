@@ -186,7 +186,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.F
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Library.Backend.Filejump", "Duplicati\Library\Backend\Filejump\Duplicati.Library.Backend.Filejump.csproj", "{90E9AD66-E63D-4A22-9218-6E036BD44AF9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.Packages", "Duplicati\Packages\Duplicati.Packages.csproj", "{8DFF553E-9D2B-4E32-BE3A-74F476159580}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Duplicati.PackageRef", "Duplicati\PackageRef\Duplicati.PackageRef.csproj", "{8DFF553E-9D2B-4E32-BE3A-74F476159580}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
