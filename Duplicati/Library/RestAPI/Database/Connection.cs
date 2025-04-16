@@ -218,7 +218,7 @@ namespace Duplicati.Server.Database
         internal void SetMetadata(IDictionary<string, string> values, long id, IDbTransaction? transaction)
         {
             lock (m_lock)
-                using (var tr = transaction == null ? m_connection.BeginTransaction() : null)
+                using (var tr = transaction == null ? m_connection.BeginTransactionSafe() : null)
                 {
                     OverwriteAndUpdateDb(
                         tr,
@@ -254,7 +254,7 @@ namespace Duplicati.Server.Database
         internal void SetFilters(IEnumerable<IFilter> values, long id, IDbTransaction? transaction = null)
         {
             lock (m_lock)
-                using (var tr = transaction == null ? m_connection.BeginTransaction() : null)
+                using (var tr = transaction == null ? m_connection.BeginTransactionSafe() : null)
                 {
                     OverwriteAndUpdateDb(
                         tr,
@@ -292,7 +292,7 @@ namespace Duplicati.Server.Database
         internal void SetSettings(IEnumerable<ISetting> values, long id, IDbTransaction? transaction = null)
         {
             lock (m_lock)
-                using (var tr = transaction == null ? m_connection.BeginTransaction() : null)
+                using (var tr = transaction == null ? m_connection.BeginTransactionSafe() : null)
                 {
                     if (m_encryptSensitiveFields)
                         values = values.Select(x => new Setting
@@ -338,7 +338,7 @@ namespace Duplicati.Server.Database
         internal void SetSources(IEnumerable<string> values, long id, IDbTransaction transaction)
         {
             lock (m_lock)
-                using (var tr = transaction == null ? m_connection.BeginTransaction() : null)
+                using (var tr = transaction == null ? m_connection.BeginTransactionSafe() : null)
                 {
                     OverwriteAndUpdateDb(
                         tr,
@@ -595,7 +595,7 @@ namespace Duplicati.Server.Database
         {
             lock (m_lock)
             {
-                using (var tr = m_connection.BeginTransaction())
+                using (var tr = m_connection.BeginTransactionSafe())
                 {
                     using (var cmd = m_connection.CreateCommand(tr, @"UPDATE ""Backup"" SET ""DBPath""= @Dbpath WHERE ""ID""= @Id"))
                     {
@@ -636,7 +636,7 @@ namespace Duplicati.Server.Database
                         throw new Exception("Unable to generate a unique database file name");
                 }
 
-                using (var tr = m_connection.BeginTransaction())
+                using (var tr = m_connection.BeginTransactionSafe())
                 {
                     OverwriteAndUpdateDb(
                         tr,
@@ -728,7 +728,7 @@ namespace Duplicati.Server.Database
         internal void AddOrUpdateSchedule(ISchedule item)
         {
             lock (m_lock)
-                using (var tr = m_connection.BeginTransaction())
+                using (var tr = m_connection.BeginTransactionSafe())
                 {
                     AddOrUpdateSchedule(item, tr);
                     tr.Commit();
@@ -778,7 +778,7 @@ namespace Duplicati.Server.Database
 
             lock (m_lock)
             {
-                using (var tr = m_connection.BeginTransaction())
+                using (var tr = m_connection.BeginTransactionSafe())
                 {
                     var existing = GetScheduleIDsFromTags(new string[] { "ID=" + ID.ToString() });
                     if (existing.Any())
@@ -958,7 +958,7 @@ namespace Duplicati.Server.Database
         //Workaround to clean up the database after invalid settings update
         public void FixInvalidBackupId()
         {
-            using (var tr = m_connection.BeginTransaction())
+            using (var tr = m_connection.BeginTransactionSafe())
             using (var cmd = m_connection.CreateCommand(tr))
             {
                 cmd.SetCommandAndParameters(@"DELETE FROM ""Option"" WHERE ""BackupID"" = @BackupId")
@@ -1009,7 +1009,7 @@ namespace Duplicati.Server.Database
         public void SetUISettings(string scheme, IDictionary<string, string?> values, IDbTransaction? transaction = null)
         {
             lock (m_lock)
-                using (var tr = transaction == null ? m_connection.BeginTransaction() : null)
+                using (var tr = transaction == null ? m_connection.BeginTransactionSafe() : null)
                 {
                     OverwriteAndUpdateDb(
                         tr,
@@ -1033,7 +1033,7 @@ namespace Duplicati.Server.Database
         public void UpdateUISettings(string scheme, IDictionary<string, string?> values, IDbTransaction? transaction = null)
         {
             lock (m_lock)
-                using (var tr = transaction == null ? m_connection.BeginTransaction() : null)
+                using (var tr = transaction == null ? m_connection.BeginTransactionSafe() : null)
                 {
                     OverwriteAndUpdateDb(
                         tr,
@@ -1086,7 +1086,7 @@ namespace Duplicati.Server.Database
         {
             var t = Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(purgeDate);
 
-            using (var tr = m_connection.BeginTransaction())
+            using (var tr = m_connection.BeginTransactionSafe())
             using (var cmd = m_connection.CreateCommand(tr))
             {
                 cmd.SetCommandAndParameters(@"DELETE FROM ""ErrorLog"" WHERE ""Timestamp"" < @Time")
@@ -1165,7 +1165,7 @@ namespace Duplicati.Server.Database
         {
             if (transaction == null)
             {
-                using (var tr = m_connection.BeginTransaction())
+                using (var tr = m_connection.BeginTransactionSafe())
                 {
                     var r = DeleteFromDb(tablename, id, tr);
                     tr.Commit();

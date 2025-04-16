@@ -532,7 +532,7 @@ namespace Duplicati.Library.Main.Operation
 
                 using (var testdb = new LocalTestDatabase(m_database))
                     await new TestHandler(m_options, (TestResults)m_result.TestResults)
-                        .DoRunAsync(samplesToTest, testdb, backendManager)
+                        .DoRunAsync(samplesToTest, testdb, rtr, backendManager)
                         .ConfigureAwait(false);
             }
         }

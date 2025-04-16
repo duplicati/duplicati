@@ -494,6 +494,24 @@ public static class ExtensionMethods
     }
 
     /// <summary>
+    /// Creates the transaction for the given connection and executes a "BEGIN IMMEDIATE" command to ensure that the transaction can be comitted or rolled back.
+    /// This works around a quirk in SQLite where the transaction is not initialized until the first command is executed.
+    /// This means that if the transaction is rolled back or committed with no commands executed, it will fail with an exception.
+    /// </summary>
+    /// <param name="self">The connection to create the transaction on</param>
+    /// <returns>The transaction</returns>
+    public static IDbTransaction BeginTransactionSafe(this IDbConnection self)
+    {
+        var transaction = self.BeginTransaction();
+        // using (var cmd = self.CreateCommand(transaction, "BEGIN IMMEDIATE;"))
+        //     try { cmd.ExecuteNonQuery(); }
+        //     catch { /* ignore */ }
+
+        return transaction;
+    }
+
+
+    /// <summary>
     /// Creates a command with the given command string, and adds parameters to fit the input
     /// </summary>
     /// <param name="self">The connection to create the command on</param>
