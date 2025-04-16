@@ -709,6 +709,8 @@ namespace Duplicati.Library.Main.Operation
                     using (new Logging.Timer(LOGTAG, "VerifyConsistency", "VerifyConsistency"))
                         await db.VerifyConsistencyAsync(m_options.Blocksize, m_options.BlockhashSize, false);
 
+                    await FlushBackend(m_database, null, m_result, backendManager).ConfigureAwait(false);
+
                     // Send the actual filelist
                     await Backup.UploadRealFilelist.Run(m_result, db, backendManager, m_options, filesetvolume, filesetid, m_result.TaskControl, lastTempVolumeIncomplete);
 
