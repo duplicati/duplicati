@@ -172,6 +172,9 @@ namespace Duplicati.Library.Main.Operation.Backup
                 await database.AddIndexBlockLinkAsync(indexVolumeCopy.VolumeID, target.BlockVolume.VolumeID).ConfigureAwait(false);
             }
 
+            // Make sure we have stored information about pending uploads
+            await database.UpdateRemoteVolumeAsync(target.BlockVolume.RemoteFilename, RemoteVolumeState.Uploading, -1, null).ConfigureAwait(false);
+            await database.CommitTransactionAsync("CommitSpillUpload").ConfigureAwait(false);
             await backendManager.PutAsync(target.BlockVolume, indexVolumeCopy, null, false, taskreader.ProgressToken).ConfigureAwait(false);
         }
     }

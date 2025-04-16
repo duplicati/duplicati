@@ -127,8 +127,6 @@ namespace Duplicati.Library.Main.Operation.Backup
 
                                 blockvolume.Close();
 
-                                await database.CommitTransactionAsync("CommitAddBlockToOutputFlush");
-
                                 IndexVolumeWriter indexVolumeCopy = null;
                                 if (indexvolume != null)
                                 {
@@ -138,6 +136,9 @@ namespace Duplicati.Library.Main.Operation.Backup
                                     // Create link before upload is started, it will be removed later if upload fails
                                     await database.AddIndexBlockLinkAsync(indexVolumeCopy.VolumeID, blockvolume.VolumeID).ConfigureAwait(false);
                                 }
+
+                                // Make sure we have stored information about pending uploads
+                                await database.CommitTransactionAsync("CommitAddBlockToOutputFlush");
 
                                 var blockVolumeCopy = blockvolume;
                                 blockvolume = null;

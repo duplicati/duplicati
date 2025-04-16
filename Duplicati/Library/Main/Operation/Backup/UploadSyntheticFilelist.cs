@@ -114,8 +114,8 @@ namespace Duplicati.Library.Main.Operation.Backup
                 // Because it is registered as "Deleting", it will be removed from remote storage by the cleanup process if it exists
                 if (!string.IsNullOrWhiteSpace(lastTempFilelist.Name) && (lastTempFilelist.State == RemoteVolumeState.Uploading || lastTempFilelist.State == RemoteVolumeState.Temporary))
                     await database.UpdateRemoteVolumeAsync(lastTempFilelist.Name, RemoteVolumeState.Deleting, -1, null);
-                await database.CommitTransactionAsync("CommitUpdateFilelistVolume");
 
+                await database.CommitTransactionAsync("CommitUpdateFilelistVolume");
                 await backendManager.PutAsync(fsw, null, null, false, taskreader.ProgressToken);
             }
             catch
