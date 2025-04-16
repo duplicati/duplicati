@@ -8,6 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\PackageRef\Duplicati.PackageRef.csproj" />
     <ProjectReference Include="..\Localization\Duplicati.Library.Localization.csproj" />
   </ItemGroup>
 
