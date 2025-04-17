@@ -29,6 +29,7 @@ using System.Linq;
 using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
+using System.Runtime.CompilerServices;
 using System.Runtime.Versioning;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
@@ -1763,6 +1764,47 @@ namespace Duplicati.Library.Utility
                 if (cts.IsCancellationRequested)
                     throw new TimeoutException();
                 throw;
+            }
+        }
+
+        /// <summary>
+        /// Wraps an async enumerable in a timeout observing enumerable
+        /// </summary>
+        /// <typeparam name="T">The type of the items in the enumerable</typeparam>
+        /// <param name="source">The source enumerable</param>
+        /// <param name="timeoutPerItem">The timeout to observe for each item</param>
+        /// <param name="outerToken">The cancellation token for the outer operation</param>
+        /// <returns>The wrapped enumerable</returns>
+        public static async IAsyncEnumerable<T> WithPerItemTimeout<T>(
+            IAsyncEnumerable<T> source,
+            TimeSpan timeoutPerItem,
+            [EnumeratorCancellation] CancellationToken outerToken)
+        {
+            using var timeoutPolicy = new CancellationTokenSource();
+            using var linked = CancellationTokenSource.CreateLinkedTokenSource(timeoutPolicy.Token, outerToken);
+
+            await using var enumerator = await WithTimeout(timeoutPerItem, outerToken, _ => source.GetAsyncEnumerator(linked.Token)).ConfigureAwait(false);
+            while (true)
+            {
+                timeoutPolicy.CancelAfter(timeoutPerItem);
+                Task<bool> moveNextTask;
+                try
+                {
+                    moveNextTask = enumerator.MoveNextAsync().AsTask();
+                    var completed = await Task.WhenAny(moveNextTask, Task.Delay(Timeout.Infinite, timeoutPolicy.Token));
+                    if (completed != moveNextTask || timeoutPolicy.IsCancellationRequested)
+                        throw new TimeoutException($"Timeout while waiting for next item ({timeoutPerItem.TotalSeconds}s)");
+
+                    if (!moveNextTask.Result)
+                        break;
+
+                    yield return enumerator.Current;
+                }
+                finally
+                {
+                    timeoutPolicy.Token.ThrowIfCancellationRequested();
+                    timeoutPolicy.CancelAfter(Timeout.Infinite); // Reset for next item
+                }
             }
         }
 
