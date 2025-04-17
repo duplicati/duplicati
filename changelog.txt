@@ -1,3 +1,30 @@
+2025-04-17 - 2.1.0.116_canary_2025-04-17
+==========
+This release is a canary release intended to be used for testing.
+
+This version is mostly the same as 2.1.0.115, so please see release notes from that.
+
+# Major changes in this version
+
+This is primarily a bug-fix release with only minor changes.
+
+# Potentially breaking changes (from 2.1.0.109)
+  - Location of data folder has changed in some cases, refer to previous release for details
+  - Permissions are now applied to the data folder, refer to previous release for details
+  - New user interface, `ngclient` is the default; there is a button to switch between the two
+
+## Detailed list of changes:
+- Upgrade Minio library from 3.13 to 6.0.4
+- Fixed delete command handling retention as well as specific version
+- Fixed an issue with queries that need more than 128 parameters
+- Updated memory caching and logging interface packages
+- Fixed an issue with schedules missing in the UI
+
+## Ngclient changes:
+- Fixed a case where dialogs would be missing the confirmation button
+- Improved the create-folder flow
+- Improved default handling of retention settings
+
 2025-04-14 - 2.1.0.115_canary_2025-04-14
 ==========
 This release is a canary release intended to be used for testing.
