@@ -117,15 +117,4 @@ internal interface IBackendManager : IDisposable
     /// <param name="cancelToken">The cancellation token</param>
     /// <returns>The downloaded files, hash, size, and name</returns>
     IAsyncEnumerable<(TempFile File, string Hash, long Size, string Name)> GetFilesOverlappedAsync(IEnumerable<IRemoteVolume> volumes, CancellationToken cancelToken);
-
-    /// <summary>
-    /// Gets the size of the last read operation
-    /// </summary>
-    long LastReadSize { get; }
-
-    /// <summary>
-    /// Gets the size of the last write operation
-    /// </summary>
-    long LastWriteSize { get; }
-
 }

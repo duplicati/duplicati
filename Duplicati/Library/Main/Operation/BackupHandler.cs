@@ -594,24 +594,6 @@ namespace Duplicati.Library.Main.Operation
                 return new AggregateException(ex.First().Message, ex);
         }
 
-        private static async Task<long> FlushBackend(LocalDatabase database, IDbTransaction transaction, BackupResults result, IBackendManager backendManager)
-        {
-            // Wait for upload completion
-            result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_WaitForUpload);
-
-            try
-            {
-                await backendManager.WaitForEmptyAsync(database, transaction, result.TaskControl.ProgressToken).ConfigureAwait(false);
-                // Grab the size of the last uploaded volume
-                return backendManager.LastWriteSize;
-            }
-            catch (RetiredException)
-            {
-            }
-
-            return -1;
-        }
-
         public async Task RunAsync(string[] sources, IBackendManager backendManager, IFilter filter)
         {
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_Begin);
@@ -709,12 +691,15 @@ namespace Duplicati.Library.Main.Operation
                     using (new Logging.Timer(LOGTAG, "VerifyConsistency", "VerifyConsistency"))
                         await db.VerifyConsistencyAsync(m_options.Blocksize, m_options.BlockhashSize, false);
 
-                    // Send the actual filelist
-                    await Backup.UploadRealFilelist.Run(m_result, db, backendManager, m_options, filesetvolume, filesetid, m_result.TaskControl, lastTempVolumeIncomplete);
-
                     // Wait for upload completion
                     m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_WaitForUpload);
-                    var lastVolumeSize = await FlushBackend(m_database, null, m_result, backendManager).ConfigureAwait(false);
+
+                    // Make sure all file states are comitted before we start uploading the dlist
+                    await db.FlushBackend(backendManager, m_taskReader.ProgressToken).ConfigureAwait(false);
+                    await db.CommitTransactionAsync("CommitAfterUploads").ConfigureAwait(false);
+
+                    // Send the actual filelist (after all files have finished uploading)
+                    await Backup.UploadRealFilelist.Run(m_result, db, backendManager, m_options, filesetvolume, filesetid, m_result.TaskControl, lastTempVolumeIncomplete);
 
                     if (!m_options.Dryrun)
                         database.TerminatedWithActiveUploads = false;
@@ -723,6 +708,8 @@ namespace Duplicati.Library.Main.Operation
 
                     using (var rtr = new ReusableTransaction(m_database))
                     {
+                        var lastVolumeSize = m_database.GetLastWrittenVolumeSize(rtr.Transaction);
+
                         // If this throws, we should roll back the transaction
                         if (await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
                             await CompactIfRequired(backendManager, rtr, lastVolumeSize);

@@ -741,6 +741,9 @@ namespace Duplicati.UnitTest
             using (var c = new Controller("file://" + TARGETFOLDER, testopts, null))
                 TestUtils.AssertResults(c.Backup(new string[] { DATAFOLDER }));
 
+            // Ensure that the target folder only has a single dlist file
+            Assert.AreEqual(1, Directory.EnumerateFiles(TARGETFOLDER, "*.dlist.*").Count(), "There should be only one dlist file in the target folder");
+
             // Make a new backup that fails uploading a dblock file
             ModifySourceFiles();
 
@@ -753,6 +756,7 @@ namespace Duplicati.UnitTest
             var secondUploadCompleted = false;
 
             // Fail the compact after the first dblock put is completed
+            var uploads = new List<string>();
             DeterministicErrorBackend.ErrorGenerator = (DeterministicErrorBackend.BackendAction action, string remotename) =>
             {
                 if (action.IsGetOperation)
@@ -775,6 +779,7 @@ namespace Duplicati.UnitTest
                 if (action == DeterministicErrorBackend.BackendAction.PutAfter)
                     secondUploadCompleted = true;
 
+                uploads.Add($"{action.Code}: {remotename}");
                 return false;
             };
 
@@ -783,6 +788,11 @@ namespace Duplicati.UnitTest
 
             Assert.That(secondUploadStarted, Is.True, "Second upload was not started");
             Assert.That(secondUploadCompleted, Is.True, "Second upload was not started");
+            Assert.That(hasFailed, Is.True, "Failed to fail the upload");
+            Assert.That(!uploads.Any(x => x.Contains("dlist")), Is.True, "Upload of dlist file was not skipped");
+
+            // Ensure that the target folder only has a single dlist file
+            Assert.AreEqual(1, Directory.EnumerateFiles(TARGETFOLDER, "*.dlist.*").Count(), $"There should be only one dlist file in the target folder: {string.Join(", ", uploads)}");
 
             // Create a regular backup
             using (var c = new Controller("file://" + TARGETFOLDER, testopts, null))

@@ -65,9 +65,11 @@ internal static class UploadRealFilelist
                 await taskreader.ProgressRendevouz().ConfigureAwait(false);
 
                 await db.UpdateRemoteVolumeAsync(filesetvolume.RemoteFilename, RemoteVolumeState.Uploading, -1, null).ConfigureAwait(false);
-                await db.CommitTransactionAsync("CommitUpdateRemoteVolume").ConfigureAwait(false);
+                await db.CommitTransactionAsync("CommitAfterUploads").ConfigureAwait(false);
 
+                // Upload the dlist file and flush messages
                 await backendManager.PutAsync(filesetvolume, null, null, false, taskreader.ProgressToken).ConfigureAwait(false);
+                await db.FlushBackend(backendManager, taskreader.ProgressToken).ConfigureAwait(false);
             }
         }
         else
