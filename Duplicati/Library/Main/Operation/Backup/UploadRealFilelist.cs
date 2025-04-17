@@ -66,7 +66,6 @@ internal static class UploadRealFilelist
 
                 await db.UpdateRemoteVolumeAsync(filesetvolume.RemoteFilename, RemoteVolumeState.Uploading, -1, null).ConfigureAwait(false);
                 await db.CommitTransactionAsync("CommitUpdateRemoteVolume").ConfigureAwait(false);
-
                 await backendManager.PutAsync(filesetvolume, null, null, false, taskreader.ProgressToken).ConfigureAwait(false);
             }
         }
