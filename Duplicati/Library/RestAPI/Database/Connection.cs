@@ -472,16 +472,17 @@ namespace Duplicati.Server.Database
                 using (var cmd = m_connection.CreateCommand())
                 {
                     var sb = new StringBuilder();
-
+                    var parameters = new Dictionary<string, object?>();
                     foreach ((var t, var i) in tags.Select((t, i) => (t, i)))
                     {
                         if (sb.Length != 0)
                             sb.Append(" OR ");
                         sb.Append(@$" (',' || ""Tags"" || ',' LIKE '%,' || @p{i} || ',%') ");
-                        cmd.AddNamedParameter($"@p{i}", t);
+                        parameters.Add($"@p{i}", t);
                     }
 
                     cmd.SetCommandAndParameters(@"SELECT ""ID"" FROM ""Schedule"" WHERE " + sb);
+                    cmd.SetParameterValues(parameters);
 
                     return Read(cmd, (rd) => ConvertToInt64(rd, 0)).ToArray();
                 }
