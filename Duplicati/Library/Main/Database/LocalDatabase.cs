@@ -53,6 +53,7 @@ namespace Duplicati.Library.Main.Database
 
         protected readonly IDbConnection m_connection;
         protected readonly long m_operationid = -1;
+        protected readonly long m_pagecachesize;
         private bool m_hasExecutedVacuum;
 
         private readonly IDbCommand m_updateremotevolumeCommand;
@@ -82,13 +83,13 @@ namespace Duplicati.Library.Main.Database
 
         public bool ShouldCloseConnection { get; set; }
 
-        protected static IDbConnection CreateConnection(string path)
+        protected static IDbConnection CreateConnection(string path, long pagecachesize)
         {
             path = Path.GetFullPath(path);
             if (!Directory.Exists(Path.GetDirectoryName(path)))
                 Directory.CreateDirectory(Path.GetDirectoryName(path) ?? throw new DirectoryNotFoundException("Path was a root folder."));
 
-            var c = SQLiteHelper.SQLiteLoader.LoadConnection(path);
+            var c = SQLiteHelper.SQLiteLoader.LoadConnection(path, pagecachesize);
 
             try
             {
@@ -122,10 +123,13 @@ namespace Duplicati.Library.Main.Database
         /// </summary>
         /// <param name="path">The path to the database</param>
         /// <param name="operation">The name of the operation. If null, continues last operation</param>
-        public LocalDatabase(string path, string operation, bool shouldclose)
-            : this(CreateConnection(path), operation)
+        /// <param name="shouldclose">Should the connection be closed when this object is disposed</param>
+        /// <param name="pagecachesize">The page cache size</param>
+        public LocalDatabase(string path, string operation, bool shouldclose, long pagecachesize)
+            : this(CreateConnection(path, pagecachesize), operation)
         {
             ShouldCloseConnection = shouldclose;
+            m_pagecachesize = pagecachesize;
         }
 
         /// <summary>
@@ -137,6 +141,7 @@ namespace Duplicati.Library.Main.Database
             OperationTimestamp = db.OperationTimestamp;
             m_connection = db.m_connection;
             m_operationid = db.m_operationid;
+            m_pagecachesize = db.m_pagecachesize;
         }
 
         /// <summary>

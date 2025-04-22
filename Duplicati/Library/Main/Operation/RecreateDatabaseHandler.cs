@@ -63,7 +63,7 @@ namespace Duplicati.Library.Main.Operation
             if (File.Exists(path))
                 throw new UserInformationException(string.Format("Cannot recreate database because file already exists: {0}", path), "RecreateTargetDatabaseExists");
 
-            using (var db = new LocalDatabase(path, "Recreate", true))
+            using (var db = new LocalDatabase(path, "Recreate", true, m_options.SqlitePageCache))
             {
                 await DoRunAsync(backendManager, db, false, filter, filelistfilter, blockprocessor).ConfigureAwait(false);
 
@@ -83,7 +83,7 @@ namespace Duplicati.Library.Main.Operation
             if (!m_options.RepairOnlyPaths)
                 throw new UserInformationException(string.Format("Can only update with paths, try setting --{0}", "repair-only-paths"), "RepairUpdateRequiresPathsOnly");
 
-            using (var db = new LocalDatabase(m_options.Dbpath, "Recreate", true))
+            using (var db = new LocalDatabase(m_options.Dbpath, "Recreate", true, m_options.SqlitePageCache))
             {
                 if (db.FindMatchingFilesets(m_options.Time, m_options.Version).Any())
                     throw new UserInformationException("The version(s) being updated to, already exists", "UpdateVersionAlreadyExists");

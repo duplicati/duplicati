@@ -29,8 +29,8 @@ namespace Duplicati.Library.Main.Database
 {
     internal class LocalListAffectedDatabase : LocalDatabase
     {
-        public LocalListAffectedDatabase(string path)
-            : base(path, "ListAffected", false)
+        public LocalListAffectedDatabase(string path, long pagecachesize)
+            : base(path, "ListAffected", false, pagecachesize)
         {
             ShouldCloseConnection = true;
         }

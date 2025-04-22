@@ -84,7 +84,7 @@ namespace Duplicati.Library.Main.Database
         private readonly bool m_logQueries;
 
         public LocalBackupDatabase(string path, Options options)
-            : this(new LocalDatabase(path, "Backup", false), options)
+            : this(new LocalDatabase(path, "Backup", false, options.SqlitePageCache), options)
         {
             this.ShouldCloseConnection = true;
         }

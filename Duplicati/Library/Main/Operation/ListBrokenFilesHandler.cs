@@ -50,7 +50,7 @@ namespace Duplicati.Library.Main.Operation
             if (!File.Exists(m_options.Dbpath))
                 throw new UserInformationException(string.Format("Database file does not exist: {0}", m_options.Dbpath), "DatabaseDoesNotExist");
 
-            using (var db = new Database.LocalListBrokenFilesDatabase(m_options.Dbpath))
+            using (var db = new Database.LocalListBrokenFilesDatabase(m_options.Dbpath, m_options.SqlitePageCache))
             using (var tr = db.BeginTransaction())
                 await DoRunAsync(backendManager, db, tr, filter, callbackhandler).ConfigureAwait(false);
         }

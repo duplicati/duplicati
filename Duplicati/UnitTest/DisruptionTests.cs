@@ -796,7 +796,7 @@ namespace Duplicati.UnitTest
                 }
                 catch (TestUtils.TestVerificationException e)
                 {
-                    using var db = new LocalDatabase(testopts["dbpath"], "test", true);
+                    using var db = new LocalDatabase(testopts["dbpath"], "test", true, 0);
                     using var cmd = db.Connection.CreateCommand();
 
                     var sb = new StringBuilder();

@@ -57,8 +57,8 @@ namespace Duplicati.Library.Main.Database
 
         public DateTime RestoreTime { get { return m_restoreTime; } }
 
-        public LocalRestoreDatabase(string path)
-            : this(new LocalDatabase(path, "Restore", false))
+        public LocalRestoreDatabase(string path, long pagecachesize)
+            : this(new LocalDatabase(path, "Restore", false, pagecachesize))
         {
             ShouldCloseConnection = true;
         }
@@ -930,7 +930,7 @@ ORDER BY ""A"".""TargetPath"", ""BB"".""Index"""));
                 connection.ConnectionString = m_connection.ConnectionString + ";Cache=Shared;";
                 connection.Open();
 
-                SQLiteHelper.SQLiteLoader.ApplyCustomPragmas(connection);
+                SQLiteHelper.SQLiteLoader.ApplyCustomPragmas(connection, m_pagecachesize);
 
                 using var cmd = connection.CreateCommand();
                 cmd.ExecuteNonQuery("PRAGMA journal_mode = WAL;");

@@ -33,8 +33,8 @@ namespace Duplicati.Library.Main.Database
         /// </summary>
         private static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(LocalBugReportDatabase));
 
-        public LocalBugReportDatabase(string path)
-            : base(path, "BugReportCreate", false)
+        public LocalBugReportDatabase(string path, long pagecachesize)
+            : base(path, "BugReportCreate", false, pagecachesize)
         {
             ShouldCloseConnection = true;
         }

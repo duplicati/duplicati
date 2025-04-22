@@ -45,8 +45,8 @@ namespace Duplicati.Library.Main.Database
 
         private IDbCommand m_registerDuplicateBlockCommand;
 
-        public LocalDeleteDatabase(string path, string operation)
-            : base(path, operation, true)
+        public LocalDeleteDatabase(string path, string operation, long pagecachesize)
+            : base(path, operation, true, pagecachesize)
         {
             m_registerDuplicateBlockCommand = m_connection.CreateCommand(REGISTER_COMMAND);
         }

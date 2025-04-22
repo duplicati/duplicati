@@ -67,8 +67,8 @@ WHERE ""BlocksetID"" IS NULL OR ""BlocksetID"" IN
 
     private static string INSERT_BROKEN_IDS(string tablename, string IDfieldname) => FormatInvariant($@"INSERT INTO ""{tablename}"" (""{IDfieldname}"") {BROKEN_FILE_IDS} AND ""ID"" IN (SELECT ""FileID"" FROM ""FilesetEntry"" WHERE ""FilesetID"" = @FilesetId)");
 
-    public LocalListBrokenFilesDatabase(string path)
-        : base(path, "ListBrokenFiles", false)
+    public LocalListBrokenFilesDatabase(string path, long pagecachesize)
+        : base(path, "ListBrokenFiles", false, pagecachesize)
     {
       ShouldCloseConnection = true;
     }

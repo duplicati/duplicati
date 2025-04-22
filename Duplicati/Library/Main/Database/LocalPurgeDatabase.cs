@@ -30,8 +30,8 @@ namespace Duplicati.Library.Main.Database
 {
     internal class LocalPurgeDatabase : LocalDeleteDatabase
     {
-        public LocalPurgeDatabase(string path)
-            : base(path, "Purge")
+        public LocalPurgeDatabase(string path, long pagecachesize)
+            : base(path, "Purge", pagecachesize)
         {
             ShouldCloseConnection = true;
         }

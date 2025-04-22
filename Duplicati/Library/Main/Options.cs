@@ -27,6 +27,7 @@ using Duplicati.Library.Utility;
 using System.Globalization;
 using System.Threading;
 using Duplicati.Library.Utility.Options;
+using Duplicati.Library.SQLiteHelper;
 
 namespace Duplicati.Library.Main
 {
@@ -83,17 +84,17 @@ namespace Duplicati.Library.Main
         /// <summary>
         /// The default number of compressor instances
         /// </summary>
-        private readonly int DEFAULT_COMPRESSORS = Math.Max(1, Environment.ProcessorCount / 2);
+        private static readonly int DEFAULT_COMPRESSORS = Math.Max(1, Environment.ProcessorCount / 2);
 
         /// <summary>
         /// The default number of file processors instances
         /// </summary>
-        private readonly int DEFAULT_FILE_PROCESSORS = Math.Max(1, Environment.ProcessorCount / 2);
+        private static readonly int DEFAULT_FILE_PROCESSORS = Math.Max(1, Environment.ProcessorCount / 2);
 
         /// <summary>
         /// The default number of hasher instances
         /// </summary>
-        private readonly int DEFAULT_BLOCK_HASHERS = Math.Max(1, Environment.ProcessorCount / 2);
+        private static readonly int DEFAULT_BLOCK_HASHERS = Math.Max(1, Environment.ProcessorCount / 2);
 
         /// <summary>
         /// The default threshold for warning about coming close to quota
@@ -113,27 +114,32 @@ namespace Duplicati.Library.Main
         /// <summary>
         /// The default value for the number of file processors during restore
         /// </summary>
-        private readonly int DEFAULT_RESTORE_FILE_PROCESSORS = Math.Max(1, Environment.ProcessorCount / 2);
+        private static readonly int DEFAULT_RESTORE_FILE_PROCESSORS = Math.Max(1, Environment.ProcessorCount / 2);
 
         /// <summary>
         /// The default value for the number of volume decryptors during restore
         /// </summary>
-        private readonly int DEFAULT_RESTORE_VOLUME_DECRYPTORS = Math.Max(1, Environment.ProcessorCount / 2);
+        private static readonly int DEFAULT_RESTORE_VOLUME_DECRYPTORS = Math.Max(1, Environment.ProcessorCount / 2);
 
         /// <summary>
         /// The default value for the number of volume decompressors during restore
         /// </summary>
-        private readonly int DEFAULT_RESTORE_VOLUME_DECOMPRESSORS = Math.Max(1, Environment.ProcessorCount / 2);
+        private static readonly int DEFAULT_RESTORE_VOLUME_DECOMPRESSORS = Math.Max(1, Environment.ProcessorCount / 2);
 
         /// <summary>
         /// The default value for the number of volume downloaders during restore
         /// </summary>
-        private readonly int DEFAULT_RESTORE_VOLUME_DOWNLOADERS = Math.Max(1, Environment.ProcessorCount / 2);
+        private static readonly int DEFAULT_RESTORE_VOLUME_DOWNLOADERS = Math.Max(1, Environment.ProcessorCount / 2);
 
         /// <summary>
         /// The default value for the size of the channel buffers during restore
         /// </summary>
-        private readonly int DEFAULT_RESTORE_CHANNEL_BUFFER_SIZE = Environment.ProcessorCount;
+        private static readonly int DEFAULT_RESTORE_CHANNEL_BUFFER_SIZE = Environment.ProcessorCount;
+
+        /// <summary>
+        /// The default value for the size of the SQLite page cache
+        /// </summary>
+        private static readonly string DEFAULT_SQLITE_PAGE_CACHE_SIZE = MemoryInfo.GetTotalMemoryString(0.01, SQLiteLoader.MINIMUM_SQLITE_PAGE_CACHE_SIZE); // 1% of the total memory
 
         /// <summary>
         /// An enumeration that describes the supported strategies for an optimization
@@ -484,6 +490,8 @@ namespace Duplicati.Library.Main
             new CommandLineArgument("restore-volume-downloaders", CommandLineArgument.ArgumentType.Integer, Strings.Options.RestoreVolumeDownloadersShort, Strings.Options.RestoreVolumeDownloadersLong, DEFAULT_RESTORE_VOLUME_DOWNLOADERS.ToString()),
             new CommandLineArgument("restore-channel-buffer-size", CommandLineArgument.ArgumentType.Integer, Strings.Options.RestoreChannelBufferSizeShort, Strings.Options.RestoreChannelBufferSizeLong, DEFAULT_RESTORE_CHANNEL_BUFFER_SIZE.ToString()),
             new CommandLineArgument("internal-profiling", CommandLineArgument.ArgumentType.Boolean, Strings.Options.InternalProfilingShort, Strings.Options.InternalProfilingLong, "false"),
+
+            new CommandLineArgument("sqlite-page-cache", CommandLineArgument.ArgumentType.Size, Strings.Options.SqlitePageCacheShort, Strings.Options.SqlitePageCacheLong(SQLiteLoader.MINIMUM_SQLITE_PAGE_CACHE_SIZE), DEFAULT_SQLITE_PAGE_CACHE_SIZE),
         ];
 
         /// <summary>
@@ -2243,6 +2251,24 @@ namespace Duplicati.Library.Main
         public bool InternalProfiling
         {
             get { return Library.Utility.Utility.ParseBoolOption(m_options, "internal-profiling"); }
+        }
+
+        /// <summary>
+        /// Gets the size of file-blocks
+        /// </summary>
+        public long SqlitePageCache
+        {
+            get
+            {
+                if (!m_options.TryGetValue("sqlite-page-cache", out var tmp))
+                    tmp = DEFAULT_SQLITE_PAGE_CACHE_SIZE;
+
+                var pagesize = Sizeparser.ParseSize(tmp, "kb");
+                if (pagesize <= SQLiteLoader.MINIMUM_SQLITE_PAGE_CACHE_SIZE)
+                    return 0;
+
+                return pagesize;
+            }
         }
 
         /// <summary>

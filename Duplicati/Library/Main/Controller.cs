@@ -205,7 +205,7 @@ namespace Duplicati.Library.Main
             return RunAction(new ListRemoteResults(), async (result, backendManager) =>
             {
                 using (var tf = File.Exists(m_options.Dbpath) ? null : new TempFile())
-                using (var db = new LocalDatabase(((string)tf) ?? m_options.Dbpath, "list-remote", true))
+                using (var db = new LocalDatabase(((string)tf) ?? m_options.Dbpath, "list-remote", true, m_options.SqlitePageCache))
                     result.SetResult(await backendManager.ListAsync(CancellationToken.None).ConfigureAwait(false));
             });
         }
@@ -229,7 +229,7 @@ namespace Duplicati.Library.Main
                     // and uses the same prefix (see issues #2678, #3845, and #4244).
                     if (File.Exists(m_options.Dbpath))
                     {
-                        using (LocalDatabase db = new LocalDatabase(m_options.Dbpath, "list-remote", true))
+                        using (LocalDatabase db = new LocalDatabase(m_options.Dbpath, "list-remote", true, m_options.SqlitePageCache))
                         {
                             var dbRemoteVolumes = db.GetRemoteVolumes();
                             var dbRemoteFiles = dbRemoteVolumes.Select(x => x.Name).ToHashSet();
@@ -463,7 +463,7 @@ namespace Duplicati.Library.Main
                         // instead of relying on the operations to correctly toggle the flag
                         if (LocalDatabase.Exists(m_options.Dbpath))
                         {
-                            using (var db = new LocalDatabase(m_options.Dbpath, result.MainOperation.ToString(), true))
+                            using (var db = new LocalDatabase(m_options.Dbpath, result.MainOperation.ToString(), true, m_options.SqlitePageCache))
                                 backend.StopRunnerAndFlushMessages(db, null).Await();
                         }
                         else
@@ -478,7 +478,7 @@ namespace Duplicati.Library.Main
 
                     if (LocalDatabase.Exists(m_options.Dbpath) && !m_options.Dryrun)
                     {
-                        using (var db = new LocalDatabase(m_options.Dbpath, null, true))
+                        using (var db = new LocalDatabase(m_options.Dbpath, null, true, m_options.SqlitePageCache))
                         {
                             db.WriteResults(result);
                             db.PurgeLogData(m_options.LogRetention);
@@ -522,7 +522,7 @@ namespace Duplicati.Library.Main
                     {
                         // No operation was started in database, so write logs to new operation
                         if (LocalDatabase.Exists(m_options.Dbpath) && !m_options.Dryrun)
-                            using (var db = new LocalDatabase(m_options.Dbpath, result.MainOperation.ToString(), true))
+                            using (var db = new LocalDatabase(m_options.Dbpath, result.MainOperation.ToString(), true, m_options.SqlitePageCache))
                                 db.WriteResults(result);
                     }
                     catch (Exception we)
@@ -547,7 +547,7 @@ namespace Duplicati.Library.Main
                         resultSetter.Fatal = true;
                         // Write logs to previous operation if database exists
                         if (LocalDatabase.Exists(m_options.Dbpath) && !m_options.Dryrun)
-                            using (var db = new LocalDatabase(m_options.Dbpath, null, true))
+                            using (var db = new LocalDatabase(m_options.Dbpath, null, true, m_options.SqlitePageCache))
                                 db.WriteResults(result);
                     }
                     catch (Exception we)

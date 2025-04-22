@@ -35,8 +35,8 @@ namespace Duplicati.Library.Main.Database
         /// </summary>
         private static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(LocalRepairDatabase));
 
-        public LocalRepairDatabase(string path)
-            : base(path, "Repair", true)
+        public LocalRepairDatabase(string path, long pagecachesize)
+            : base(path, "Repair", true, pagecachesize)
         {
 
         }
