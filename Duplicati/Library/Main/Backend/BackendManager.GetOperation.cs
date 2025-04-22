@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
+using Duplicati.StreamUtil;
 using SharpAESCrypt;
 
 namespace Duplicati.Library.Main.Backend;
@@ -120,6 +121,7 @@ partial class BackendManager
                 long retDownloadSize;
                 string retHashcode;
                 dlTarget = new TempFile();
+                Context.ProgressHandler.BeginTransfer(BackendActionType.Get, Size, RemoteFilename);
                 if (backend is IStreamingBackend streamingBackend && !Context.Options.DisableStreamingTransfers)
                 {
                     // extended to use stacked streams
@@ -128,8 +130,8 @@ partial class BackendManager
                     using (var hs = new HashCalculatingStream(fs, hasher))
                     using (var ss = new ShaderStream(hs, true))
                     {
-                        using (var ts = new ThrottledStream(ss, 0, Context.Options.MaxDownloadPrSecond))
-                        using (var pgs = new ProgressReportingStream(ts, pg => Context.HandleProgress(ts, pg, RemoteFilename)))
+                        using (var ts = new ThrottleEnabledStream(ss, Context.UploadThrottleManager, Context.DownloadThrottleManager))
+                        using (var pgs = new ProgressReportingStream(ts, pg => Context.ProgressHandler.HandleProgress(pg, RemoteFilename)))
                         {
                             await streamingBackend.GetAsync(RemoteFilename, pgs, cancelToken).ConfigureAwait(false);
                         }
@@ -153,6 +155,7 @@ partial class BackendManager
             {
                 // Remove temp files on failure
                 dlTarget?.Dispose();
+                Context.ProgressHandler.EndTransfer(RemoteFilename);
             }
         }
 

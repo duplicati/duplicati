@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main.Volumes;
 using Duplicati.Library.Utility;
+using Duplicati.StreamUtil;
 using Newtonsoft.Json;
 
 namespace Duplicati.Library.Main.Backend;
@@ -255,42 +256,49 @@ partial class BackendManager
         /// Performs the actual upload of a file
         /// </summary>
         /// <param name="backend">The backend to upload to</param>
-        /// <param name="Hash">The hash of the file</param>
-        /// <param name="Size">The size of the file</param>
+        /// <param name="hash">The hash of the file</param>
+        /// <param name="size">The size of the file</param>
         /// <param name="cancelToken">The cancellation token</param>
         /// <returns>An awaitable task</returns>
-        private async Task PerformUpload(IBackend backend, string Hash, long Size, CancellationToken cancelToken)
+        private async Task PerformUpload(IBackend backend, string hash, long size, CancellationToken cancelToken)
         {
-            Context.Database.LogRemoteOperation("put", RemoteFilename, JsonConvert.SerializeObject(new { Size = Size, Hash = Hash }));
-            Context.Statwriter.SendEvent(BackendActionType.Put, BackendEventType.Started, RemoteFilename, Size);
+            Context.Database.LogRemoteOperation("put", RemoteFilename, JsonConvert.SerializeObject(new { Size = size, Hash = hash }));
+            Context.Statwriter.SendEvent(BackendActionType.Put, BackendEventType.Started, RemoteFilename, size);
 
             var begin = DateTime.Now;
-
-            if (backend is IStreamingBackend streamingBackend && !Context.Options.DisableStreamingTransfers)
+            try
             {
-                using var fs = System.IO.File.OpenRead(LocalFilename);
-                using var ts = new ThrottledStream(fs, Context.Options.MaxUploadPrSecond, 0);
-                using var pgs = new ProgressReportingStream(ts, pg => Context.HandleProgress(ts, pg, RemoteFilename));
-                await streamingBackend.PutAsync(RemoteFilename, pgs, cancelToken).ConfigureAwait(false);
+                Context.ProgressHandler.BeginTransfer(BackendActionType.Put, size, RemoteFilename);
+                if (backend is IStreamingBackend streamingBackend && !Context.Options.DisableStreamingTransfers)
+                {
+                    using var fs = System.IO.File.OpenRead(LocalFilename);
+                    using var ts = new ThrottleEnabledStream(fs, Context.UploadThrottleManager, Context.DownloadThrottleManager);
+                    using var pgs = new ProgressReportingStream(ts, pg => Context.ProgressHandler.HandleProgress(pg, RemoteFilename));
+                    await streamingBackend.PutAsync(RemoteFilename, pgs, cancelToken).ConfigureAwait(false);
+                }
+                else
+                    await backend.PutAsync(RemoteFilename, LocalFilename, cancelToken).ConfigureAwait(false);
             }
-            else
-                await backend.PutAsync(RemoteFilename, LocalFilename, cancelToken).ConfigureAwait(false);
+            finally
+            {
+                Context.ProgressHandler.EndTransfer(RemoteFilename);
+            }
 
             var duration = DateTime.Now - begin;
-            Logging.Log.WriteProfilingMessage(LOGTAG, "UploadSpeed", "Uploaded {0} in {1}, {2}/s", Library.Utility.Utility.FormatSizeString(Size), duration, Library.Utility.Utility.FormatSizeString((long)(Size / duration.TotalSeconds)));
+            Logging.Log.WriteProfilingMessage(LOGTAG, "UploadSpeed", "Uploaded {0} in {1}, {2}/s", Library.Utility.Utility.FormatSizeString(size), duration, Library.Utility.Utility.FormatSizeString((long)(size / duration.TotalSeconds)));
 
             if (TrackedInDb)
-                Context.Database.LogRemoteVolumeUpdated(RemoteFilename, RemoteVolumeState.Uploaded, Size, Hash);
+                Context.Database.LogRemoteVolumeUpdated(RemoteFilename, RemoteVolumeState.Uploaded, size, hash);
 
-            Context.Statwriter.SendEvent(BackendActionType.Put, BackendEventType.Completed, RemoteFilename, Size);
+            Context.Statwriter.SendEvent(BackendActionType.Put, BackendEventType.Completed, RemoteFilename, size);
 
             if (Context.Options.ListVerifyUploads)
             {
                 var f = await backend.ListAsync(cancelToken).FirstOrDefaultAsync(n => n.Name.Equals(RemoteFilename, StringComparison.OrdinalIgnoreCase)).ConfigureAwait(false);
                 if (f == null)
                     throw new Exception(string.Format($"List verify failed, file was not found after upload: {RemoteFilename}"));
-                else if (f.Size != Size && f.Size >= 0)
-                    throw new Exception(string.Format($"List verify failed for file: {f.Name}, size was {f.Size} but expected to be {Size}"));
+                else if (f.Size != size && f.Size >= 0)
+                    throw new Exception(string.Format($"List verify failed for file: {f.Name}, size was {f.Size} but expected to be {size}"));
             }
 
             DeleteLocalFile();

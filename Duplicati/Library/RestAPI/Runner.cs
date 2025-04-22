@@ -120,8 +120,7 @@ namespace Duplicati.Server
                 if (download_throttle <= 0 || download_throttle == long.MaxValue)
                     download_throttle = 0;
 
-                controller.MaxUploadSpeed = upload_throttle;
-                controller.MaxDownloadSpeed = download_throttle;
+                controller.SetThrottleSpeeds(upload_throttle, download_throttle);
             }
 
             private readonly long m_taskID;
@@ -297,13 +296,7 @@ namespace Duplicati.Server
             {
                 lock (m_lock)
                 {
-                    m_state.m_backendAction = action;
-                    m_state.m_backendPath = path;
-                    if (type == Duplicati.Library.Main.BackendEventType.Started)
-                        m_state.m_backendFileSize = size;
-                    else if (type == Duplicati.Library.Main.BackendEventType.Progress)
-                        m_state.m_backendFileProgress = size;
-                    else
+                    if (path == m_state.m_currentFilename && type != Duplicati.Library.Main.BackendEventType.Started && type != Duplicati.Library.Main.BackendEventType.Progress)
                     {
                         m_state.m_backendFileSize = 0;
                         m_state.m_backendFileProgress = 0;

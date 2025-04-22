@@ -20,15 +20,16 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System;
-using System.Collections.Generic;
-using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+using Duplicati.StreamUtil;
 
 namespace Duplicati.Library.Utility
 {
     /// <summary>
     /// This is a stream wrapper that reports the current progress of reading or writing the stream to the supplied delegate
     /// </summary>
-    public class ProgressReportingStream : OverrideableStream
+    public class ProgressReportingStream : WrappingAsyncStream
     {
         private readonly Action<long> m_progress;
         private long m_streamOffset;
@@ -40,31 +41,26 @@ namespace Duplicati.Library.Utility
             m_progress = progress;
         }
 
-        public override int Read(byte[] buffer, int offset, int count)
-        {
-            ReportProgress();
-            
-            int r = base.Read(buffer, offset, count);
-            m_streamOffset += r;
-
-            ReportProgress();
-            
-            return r;
-        }
-
-        public override void Write(byte[] buffer, int offset, int count)
-        {
-            ReportProgress();
-            
-            base.Write(buffer, offset, count);
-            m_streamOffset += count;
-
-            ReportProgress();
-        }
-
         protected override void Dispose(bool disposing)
         {
             base.Dispose(disposing);
+        }
+
+        protected override async Task<int> ReadImplAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
+        {
+            ReportProgress();
+            var res = await BaseStream.ReadAsync(buffer, offset, count, cancellationToken).ConfigureAwait(false);
+            m_streamOffset += res;
+            ReportProgress();
+            return res;
+        }
+
+        protected override async Task WriteImplAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
+        {
+            ReportProgress();
+            await BaseStream.WriteAsync(buffer, offset, count, cancellationToken);
+            m_streamOffset += count;
+            ReportProgress();
         }
 
         private void ReportProgress()
