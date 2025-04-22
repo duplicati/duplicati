@@ -37,5 +37,6 @@ namespace Duplicati.Library.Backend.Strings
         public static string ForceReauthShort { get { return LC.L(@"Force authentication against remote share"); } }
         public static string DisableLengthVerificationLong { get { return LC.L(@"As an extra precaution the uploaded file length will be checked against the local source length."); } }
         public static string DisableLengthVerificationShort { get { return LC.L(@"Disable length verification"); } }
+        public static string FileNotFoundError(string filename) { return LC.L(@"File not found: {0}", filename); }
     }
 }
