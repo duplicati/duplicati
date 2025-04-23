@@ -143,7 +143,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                                 blockvolume = null;
                                 indexvolume = null;
 
-                                await backendManager.PutAsync(blockVolumeCopy, indexVolumeCopy, null, false, taskreader.ProgressToken);
+                                await backendManager.PutAsync(blockVolumeCopy, indexVolumeCopy, null, false, () => database.FlushBackendMessagesAndCommitAsync(backendManager), taskreader.ProgressToken);
 
                             }
 

@@ -183,7 +183,7 @@ namespace Duplicati.Library.Main.Operation
 
                                             if (newvol.Filesize > (m_options.VolumeSize - m_options.Blocksize))
                                             {
-                                                await FinishVolumeAndUpload(db, backendManager, newvol, newvolindex, uploadedVolumes);
+                                                await FinishVolumeAndUpload(db, backendManager, newvol, newvolindex, uploadedVolumes, rtr);
 
                                                 newvol = new BlockVolumeWriter(m_options);
                                                 newvol.VolumeID = db.RegisterRemoteVolume(newvol.RemoteFilename, RemoteVolumeType.Blocks, RemoteVolumeState.Temporary, rtr.Transaction);
@@ -215,7 +215,7 @@ namespace Duplicati.Library.Main.Operation
 
                         if (blocksInVolume > 0)
                         {
-                            await FinishVolumeAndUpload(db, backendManager, newvol, newvolindex, uploadedVolumes).ConfigureAwait(false);
+                            await FinishVolumeAndUpload(db, backendManager, newvol, newvolindex, uploadedVolumes, rtr).ConfigureAwait(false);
                         }
                         else
                         {
@@ -323,7 +323,7 @@ namespace Duplicati.Library.Main.Operation
                 yield return d;
         }
 
-        private async Task FinishVolumeAndUpload(LocalDeleteDatabase db, IBackendManager backendManager, BlockVolumeWriter newvol, IndexVolumeWriter newvolindex, List<KeyValuePair<string, long>> uploadedVolumes)
+        private async Task FinishVolumeAndUpload(LocalDeleteDatabase db, IBackendManager backendManager, BlockVolumeWriter newvol, IndexVolumeWriter newvolindex, List<KeyValuePair<string, long>> uploadedVolumes, ReusableTransaction rtr)
         {
             Action indexVolumeFinished = () =>
             {
@@ -339,8 +339,16 @@ namespace Duplicati.Library.Main.Operation
             uploadedVolumes.Add(new KeyValuePair<string, long>(newvol.RemoteFilename, newvol.Filesize));
             if (newvolindex != null)
                 uploadedVolumes.Add(new KeyValuePair<string, long>(newvolindex.RemoteFilename, newvolindex.Filesize));
+
+            // TODO: The upload here does not flush the database messages,
+            // and this can leave the database in a state where it does not know of the remote file
+            // To fix it, we need thread-safe access to the daabase and transaction
+            // Once fixed, we can perhaps let he backend manager simply call the database directly
             if (!m_options.Dryrun)
-                await backendManager.PutAsync(newvol, newvolindex, indexVolumeFinished, false, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
+            {
+                rtr.Commit("CommitUpload");
+                await backendManager.PutAsync(newvol, newvolindex, indexVolumeFinished, false, null, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
+            }
             else
                 Logging.Log.WriteDryrunMessage(LOGTAG, "WouldUploadGeneratedBlockset", "Would upload generated blockset of size {0}", Library.Utility.Utility.FormatSizeString(newvol.Filesize));
         }

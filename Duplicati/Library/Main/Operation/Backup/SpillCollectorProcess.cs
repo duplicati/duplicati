@@ -172,7 +172,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                 await database.AddIndexBlockLinkAsync(indexVolumeCopy.VolumeID, target.BlockVolume.VolumeID).ConfigureAwait(false);
             }
 
-            await backendManager.PutAsync(target.BlockVolume, indexVolumeCopy, null, false, taskreader.ProgressToken).ConfigureAwait(false);
+            await backendManager.PutAsync(target.BlockVolume, indexVolumeCopy, null, false, () => database.FlushBackendMessagesAndCommitAsync(backendManager), taskreader.ProgressToken).ConfigureAwait(false);
         }
     }
 }

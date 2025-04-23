@@ -25,9 +25,10 @@ internal interface IBackendManager : IDisposable
     /// <param name="indexVolume">The index volume to upload, if any</param>
     /// <param name="indexVolumeFinished">The action to call when the index volume is finished</param>
     /// <param name="waitForComplete">Whether to wait for the upload to complete</param>
+    /// <param name="onDbUpdate">The action to call when the database should be updated</param>
     /// <param name="cancelToken">The cancellation token</param>
     /// <returns>An awaitable task</returns>
-    Task PutAsync(VolumeWriterBase blockVolume, IndexVolumeWriter? indexVolume, Action? indexVolumeFinished, bool waitForComplete, CancellationToken cancelToken);
+    Task PutAsync(VolumeWriterBase blockVolume, IndexVolumeWriter? indexVolume, Action? indexVolumeFinished, bool waitForComplete, Func<Task>? onDbUpdate, CancellationToken cancelToken);
 
     /// <summary>
     /// Uploads a file to the backend without encryption
@@ -127,5 +128,14 @@ internal interface IBackendManager : IDisposable
     /// Gets the size of the last write operation
     /// </summary>
     long LastWriteSize { get; }
+
+    /// <summary>
+    /// Flushes the database messages to the database
+    /// </summary>
+    /// <param name="database">The database to write to</param>
+    /// <param name="transaction">The transaction to use</param>
+    /// <param name="cancellationToken">The cancellation token</param>
+    /// <returns></returns>
+    Task FlushPendingMessagesAsync(LocalDatabase database, IDbTransaction? transaction, CancellationToken cancellationToken);
 
 }
