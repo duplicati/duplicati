@@ -37,7 +37,7 @@ var target_extensions = new[] {
     // ".css"
 }.ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-File.WriteAllText(Path.Combine(startpath, "LICENSE.txt"), Fragments.GetLicenseTextWithPrefixedLines(string.Empty));
+File.WriteAllText(Path.Combine(startpath, "LICENSE"), Fragments.GetLicenseTextWithPrefixedLines(string.Empty));
 
 var candidates = Directory.EnumerateFiles(startpath, "*", SearchOption.AllDirectories)
     .Where(x => target_extensions.Contains(Path.GetExtension(x) ?? string.Empty));
