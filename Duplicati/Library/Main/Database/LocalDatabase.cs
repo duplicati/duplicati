@@ -1673,7 +1673,7 @@ AND oldVersion.FilesetID = (SELECT ID FROM Fileset WHERE ID != @FilesetId ORDER 
                         {
                             transaction.Commit();
                         }
-                        catch (SQLite.SQLiteException ex)
+                        catch (Exception ex)
                         {
                             Logging.Log.WriteVerboseMessage(LOGTAG, "FailedToCommitTransaction", ex, "Failed to commit transaction after pragma optimize, usually caused by the a no-op transaction");
                         }
