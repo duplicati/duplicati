@@ -375,7 +375,8 @@ namespace Duplicati.Library.Main.Operation
                             throw;
                     }
 
-                    return new PreBackupVerifyResult(database, lastTempFilelist);
+                    // Return the updated version of the fileset, in case it was actually complete
+                    return new PreBackupVerifyResult(database, database.GetLastIncompleteFilesetVolume(null));
                 }
                 catch
                 {
