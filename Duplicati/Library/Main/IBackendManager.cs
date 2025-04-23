@@ -127,16 +127,6 @@ internal interface IBackendManager : IDisposable
     IAsyncEnumerable<(TempFile File, string Hash, long Size, string Name)> GetFilesOverlappedAsync(IEnumerable<IRemoteVolume> volumes, CancellationToken cancelToken);
 
     /// <summary>
-    /// Gets the size of the last read operation
-    /// </summary>
-    long LastReadSize { get; }
-
-    /// <summary>
-    /// Gets the size of the last write operation
-    /// </summary>
-    long LastWriteSize { get; }
-
-    /// <summary>
     /// Flushes the database messages to the database
     /// </summary>
     /// <param name="database">The database to write to</param>
