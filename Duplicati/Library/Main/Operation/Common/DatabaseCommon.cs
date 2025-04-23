@@ -69,11 +69,11 @@ namespace Duplicati.Library.Main.Operation.Common
 
         public async Task FlushBackendMessagesAndCommitAsync(IBackendManager backendManager)
         {
-            await FlushPendingMessagesAsync(backendManager).ConfigureAwait(false);
+            await FlushPendingBackendMessagesAsync(backendManager).ConfigureAwait(false);
             await CommitTransactionAsync("FlushBackendMessagesAndCommitAsync").ConfigureAwait(false);
         }
 
-        public Task FlushPendingMessagesAsync(IBackendManager backendManager)
+        private Task FlushPendingBackendMessagesAsync(IBackendManager backendManager)
             => RunOnMain(() => backendManager.FlushPendingMessagesAsync(m_db, GetTransaction(), CancellationToken.None).ConfigureAwait(false));
 
         public Task CommitTransactionAsync(string message, bool restart = true)

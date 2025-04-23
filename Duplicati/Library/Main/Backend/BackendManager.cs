@@ -311,6 +311,18 @@ internal partial class BackendManager : IBackendManager
     }
 
     /// <summary>
+    /// Waits for the backend queue to be empty
+    /// </summary>
+    /// <param name="cancellationToken">The cancellation token</param>
+    /// <returns>An awaitable task</returns>
+    public async Task WaitForEmptyAsync(CancellationToken cancellationToken)
+    {
+        var op = new WaitForEmptyOperation(context, cancellationToken);
+        await QueueTask(op).ConfigureAwait(false);
+        await op.GetResult().ConfigureAwait(false);
+    }
+
+    /// <summary>
     /// Waits for the backend queue to be empty and flushes the database messages
     /// </summary>
     /// <param name="database">The database to write to</param>
@@ -320,11 +332,7 @@ internal partial class BackendManager : IBackendManager
     public async Task WaitForEmptyAsync(LocalDatabase database, IDbTransaction? transaction, CancellationToken cancellationToken)
     {
         await FlushPendingMessagesAsync(database, transaction, cancellationToken).ConfigureAwait(false);
-
-        var op = new WaitForEmptyOperation(context, cancellationToken);
-        await QueueTask(op).ConfigureAwait(false);
-        await op.GetResult().ConfigureAwait(false);
-
+        await WaitForEmptyAsync(cancellationToken).ConfigureAwait(false);
         await FlushPendingMessagesAsync(database, transaction, cancellationToken).ConfigureAwait(false);
     }
 

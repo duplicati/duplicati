@@ -40,6 +40,13 @@ internal interface IBackendManager : IDisposable
     Task PutVerificationFileAsync(string remotename, TempFile tempFile, CancellationToken cancelToken);
 
     /// <summary>
+    /// Waits for the backend queue to be empty
+    /// </summary>
+    /// <param name="cancellationToken">The cancellation token</param>
+    /// <returns>An awaitable task</returns>
+    Task WaitForEmptyAsync(CancellationToken cancellationToken);
+
+    /// <summary>
     /// Waits for the backend queue to be empty and flushes any pending messages to the database
     /// </summary>
     /// <param name="database">The database to write pending messages to</param>
