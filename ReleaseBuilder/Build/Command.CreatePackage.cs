@@ -819,7 +819,7 @@ public static partial class Command
 
             // Write the license file
             File.Copy(
-                Path.Combine(baseDir, "LICENSE.txt"),
+                Path.Combine(baseDir, "LICENSE"),
                 EnsureFolderForFile(
                     Path.Combine(pkgroot, "usr", "share", "doc", "duplicati", "copyright")
                 )

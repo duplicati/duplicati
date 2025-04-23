@@ -660,6 +660,15 @@ SELECT ""BlocklistHash"".""BlocksetID"" FROM ""BlocklistHash"" WHERE ""Blocklist
             base.Dispose();
         }
 
+        public long GetLastWrittenDBlockVolumeSize(IDbTransaction? transaction)
+        {
+            using (var cmd = m_connection.CreateCommand(transaction))
+                return cmd.SetCommandAndParameters(@"SELECT ""Size"" FROM ""RemoteVolume"" WHERE ""State"" = @State AND ""Type"" = @Type ORDER BY ""ID"" DESC LIMIT 1")
+                    .SetParameterValue("@State", RemoteVolumeState.Uploaded.ToString())
+                    .SetParameterValue("@Type", RemoteVolumeType.Blocks.ToString())
+                    .ExecuteScalarInt64(-1);
+        }
+
         private long GetPreviousFilesetID(IDbCommand cmd)
         {
             return GetPreviousFilesetID(cmd, OperationTimestamp, m_filesetId, cmd.Transaction);
