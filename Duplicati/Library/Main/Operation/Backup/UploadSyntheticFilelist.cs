@@ -115,8 +115,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                 if (!string.IsNullOrWhiteSpace(lastTempFilelist.Name) && (lastTempFilelist.State == RemoteVolumeState.Uploading || lastTempFilelist.State == RemoteVolumeState.Temporary))
                     await database.UpdateRemoteVolumeAsync(lastTempFilelist.Name, RemoteVolumeState.Deleting, -1, null);
                 await database.CommitTransactionAsync("CommitUpdateFilelistVolume");
-
-                await backendManager.PutAsync(fsw, null, null, false, taskreader.ProgressToken);
+                await backendManager.PutAsync(fsw, null, null, true, () => database.FlushBackendMessagesAndCommitAsync(backendManager), taskreader.ProgressToken);
             }
             catch
             {
