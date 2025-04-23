@@ -157,7 +157,7 @@ namespace Duplicati.Library.Main.Operation
 
             if (extraCount > 0)
             {
-                var s = string.Format("Found {0} remote files that are not recorded in local storage, please run repair", extraCount);
+                var s = string.Format("Found {0} remote files that are not recorded in local storage. This can be caused by having two backups sharing a destination folder which is not supported. It can also be caused by restoring an old database. If you are certain that only one backup uses the folder and you have the most updated version of the database, you can use repair to delete the unknown files.", extraCount);
                 if (logErrors)
                     Logging.Log.WriteErrorMessage(LOGTAG, "ExtraRemoteFiles", null, s);
                 throw new RemoteListVerificationException(s, "ExtraRemoteFiles");
