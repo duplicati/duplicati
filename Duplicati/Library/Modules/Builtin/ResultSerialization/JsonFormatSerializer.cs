@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -76,18 +76,20 @@ namespace Duplicati.Library.Modules.Builtin.ResultSerialization
         /// </summary>
         /// <returns>The serialized result string.</returns>
         /// <param name="result">The result to serialize.</param>
+        /// <param name="exception">The exception, if any</param>
         /// <param name="loglines">The log lines to serialize.</param>
         /// <param name="additional">Additional parameters to include</param>
-        public string Serialize(object result, IEnumerable<string> loglines, Dictionary<string, string> additional)
+        public string Serialize(object result, Exception exception, IEnumerable<string> loglines, Dictionary<string, string> additional)
         {
             return JsonConvert.SerializeObject(
                 new
                 {
                     Data = result,
                     Extra = additional,
-                    LogLines = loglines
-                }, 
-                
+                    LogLines = loglines,
+                    Exception = exception?.ToString()
+                },
+
                 new JsonSerializerSettings()
                 {
                     ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
@@ -95,7 +97,8 @@ namespace Duplicati.Library.Modules.Builtin.ResultSerialization
                             nameof(IBasicResults.Warnings),
                             nameof(IBasicResults.Errors),
                             nameof(IBasicResults.Messages),
-                            "TaskReader"
+                            "TaskReader",
+                            "TaskControl"
                     ),
                     Converters = new List<JsonConverter>()
                     {
@@ -114,7 +117,8 @@ namespace Duplicati.Library.Modules.Builtin.ResultSerialization
                     ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
                     ContractResolver = new DynamicContractResolver(
                             nameof(IBackendStatstics),
-                            "TaskReader"
+                            "TaskReader",
+                            "TaskControl"
                     ),
                     Converters = new List<JsonConverter>()
                     {

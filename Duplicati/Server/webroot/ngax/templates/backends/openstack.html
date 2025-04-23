@@ -3,7 +3,7 @@
     <input type="text" name="openstack_path" id="openstack_path" ng-model="$parent.Path" placeholder="{{'bucket/folder/subfolder' | translate}}" />
 </div>
 
-<div class="input text">
+<div class="input select">
     <label for="openstack_server" translate>OpenStack AuthURI</label>
 
     <select name="openstack_server" id="openstack_server" ng-model="$parent.openstack_server" ng-options="v as k + ' (' + v + ')' for (k, v) in openstack_providers | orderBy: k">
@@ -14,7 +14,7 @@
 
 </div>
 
-<div class="input text">
+<div class="input select">
     <label for="openstack_version" translate>Keystone API version</label>
 
     <select name="openstack_version" id="openstack_version" ng-model="$parent.openstack_version" ng-options="v as k + ' (' + v + ')' for (k, v) in openstack_versions | orderBy: k">
@@ -23,7 +23,7 @@
 </div>
 
 <div class="input text">
-    <label for="openstack_domainname" translate>Domain Name</label>
+    <label for="openstack_domainname" translate>Domain name</label>
     <input type="text" name="openstack_domainname" id="openstack_domainname" ng-model="$parent.openstack_domainname" placeholder="{{'User domain name' | translate}}"  />
 </div>
 <div class="input text">
@@ -36,16 +36,16 @@
 </div>
 
 <div class="input text">
-    <label for="openstack_tenantname" translate>Tenant Name</label>
-    <input type="text" name="openstack_tenantname" id="openstack_tenantname" ng-model="$parent.openstack_tenantname" placeholder="optional tenant name" title="{{'If you do not enter an API Key, the tenant name is required' | translate}}"/>
+    <label for="openstack_tenantname" translate>Tenant name</label>
+    <input type="text" name="openstack_tenantname" id="openstack_tenantname" ng-model="$parent.openstack_tenantname" placeholder="{{'Optional tenant name' | translate}}" title="{{'If you do not enter an API Key, the tenant name is required' | translate}}"/>
 </div>
 
 <div class="input text">
-    <label for="openstack_apikey" translate>API Key</label>
-    <input type="text" name="openstack_apikey" id="openstack_apikey" ng-model="$parent.openstack_apikey" placeholder="optional api key" title="{{'Some OpenStack providers allow an API key instead of a password and tenant name' | translate}}" />
+    <label for="openstack_apikey" translate>API key</label>
+    <input type="text" name="openstack_apikey" id="openstack_apikey" ng-model="$parent.openstack_apikey" placeholder="{{'Optional API key' | translate}}" title="{{'Some OpenStack providers allow an API key instead of a password and tenant name' | translate}}" />
 </div>
 
 <div class="input text">
     <label for="openstack_region" translate>Container region</label>
-    <input type="text" name="openstack_region" id="openstack_region" ng-model="$parent.openstack_region" placeholder="optional region" title="{{'The region parameter is only used when creating a bucket' | translate}}"/>
+    <input type="text" name="openstack_region" id="openstack_region" ng-model="$parent.openstack_region" placeholder="{{'Optional region' | translate}}" title="{{'The region parameter is only used when creating a bucket' | translate}}"/>
 </div>

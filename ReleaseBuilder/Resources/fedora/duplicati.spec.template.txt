@@ -1,0 +1,159 @@
+%define _build_id_links none
+
+# Set up some defaults
+%global namer duplicati
+%global debug_package %{nil}
+%global alphatag .git
+%global _builddate %BUILDDATE%
+%global _buildversion %BUILDVERSION%
+%global _buildtag %BUILDTAG%
+
+# All lines starting with #GUI_ONLY# are removed in CLI builds
+
+Name:	%{namer}
+Version:	%{_buildversion}
+Release:	%{_buildtag}
+Icon: duplicati.xpm
+
+# Disable auto dependencies as it picks up .Net 2.0 profile
+#   and does not support supplying them with 4.5
+# Also, all thirdparty libraries are given as "provides" but they
+#   are not installed for use externally
+AutoReqProv: no
+
+Summary:	Backup client for encrypted online backups
+License:	MIT
+URL:	https://duplicati.com
+Source0:	duplicati-%{_buildversion}.tar.bz2
+Source1:	%{namer}-install-recursive.sh
+Source2:	%{namer}-install-binaries.sh
+Source3:	%{namer}%SERVICENAME%.service
+Source4:	%{namer}%SERVICENAME%.default
+#GUI_ONLY#Source5:	%{namer}.png
+#GUI_ONLY#Source6:	%{namer}.desktop
+#AGENT_ONLY#Source5:	%{namer}%SERVICENAME%.preset
+
+#GUI_ONLY#BuildRequires:  desktop-file-utils
+BuildRequires:  systemd
+
+Requires:	bash
+%DEPENDS%
+
+%PROVIDES%
+
+%description 
+Duplicati is a free backup client that securely stores encrypted,
+incremental, compressed backups on cloud storage services and remote file
+servers.  It supports targets like Amazon S3, Windows Live SkyDrive,
+Rackspace Cloud Files or WebDAV, SSH, FTP (and many more).
+ 
+Duplicati has built-in AES-256 encryption and backups be can signed using
+GNU Privacy Guard.  A built-in scheduler makes sure that backups are always
+up-to-date.  Last but not least, Duplicati provides various options and
+tweaks like filters, deletion rules, transfer and bandwidth options to run
+backups for specific purposes.
+
+%prep
+%setup -q -n %{namer}-%{_buildversion}
+
+%build
+
+# Build is expected to be complete
+# so no build action is performed
+
+%install
+
+#GUI_ONLY#install -d %{buildroot}%{_datadir}/pixmaps/
+install -d %{buildroot}%{_exec_prefix}/lib/%{namer}/
+install -d %{buildroot}%{_exec_prefix}/lib/%{namer}/licenses/
+install -d %{buildroot}%{_exec_prefix}/lib/%{namer}/webroot/
+install -d %{buildroot}%{_exec_prefix}/lib/%{namer}/lvm-scripts/
+install -d %{buildroot}%{_exec_prefix}/bin/
+install -d %{buildroot}%{_unitdir}
+install -d %{buildroot}%{_sysconfdir}/sysconfig/
+
+
+# Remove packaging artifacts
+find . -type f -name ._\* | xargs rm -rf
+
+# Install all files, but the list is too long to be in the script itself :/
+/bin/bash %{_topdir}/SOURCES/%{namer}-install-recursive.sh "." "%{buildroot}%{_exec_prefix}/lib/%{namer}/"
+
+# Move the icon in to place
+#GUI_ONLY#install -p  %{_topdir}/SOURCES/%{namer}.png %{buildroot}%{_datadir}/pixmaps/
+
+# Fix executable permissions and install symlinks
+/bin/bash %{_topdir}/SOURCES/%{namer}-install-binaries.sh "%{buildroot}" "%{_exec_prefix}" "%{namer}"
+
+#GUI_ONLY#desktop-file-install %{_topdir}/SOURCES/%{namer}.desktop
+
+# Install the service:
+install -p -D -m 644 %{_topdir}/SOURCES/%{namer}%SERVICENAME%.service %{buildroot}%{_unitdir}
+install -p -D -m 644 %{_topdir}/SOURCES/%{namer}%SERVICENAME%.default %{buildroot}%{_sysconfdir}/sysconfig/%{namer}
+
+%post
+#GUI_ONLY#/bin/touch --no-create %{_datadir}/icons/hicolor || :
+#GUI_ONLY#%{_bindir}/gtk-update-icon-cache \
+#GUI_ONLY#  --quiet %{_datadir}/icons/hicolor 2> /dev/null|| :
+%systemd_post %{namer}%SERVICENAME%.service
+#AGENT_ONLY#%{__install} -Dm644 %{namer}%SERVICENAME%.preset %{buildroot}%{_presetdir}/50-%{namer}%SERVICENAME%.preset
+
+%preun
+%systemd_preun %{namer}%SERVICENAME%.service
+
+%postun
+#GUI_ONLY#/bin/touch --no-create %{_datadir}/icons/hicolor || :
+#GUI_ONLY#%{_bindir}/gtk-update-icon-cache \
+#GUI_ONLY#  --quiet %{_datadir}/icons/hicolor 2> /dev/null|| :
+%systemd_postun_with_restart %{namer}%SERVICENAME%.service
+
+%posttrans
+#GUI_ONLY#/usr/bin/gtk-update-icon-cache %{_datadir}/icons/hicolor &>/dev/null || :
+
+
+%files
+%doc changelog.txt licenses/license.txt
+#GUI_ONLY#%{_datadir}/*/*
+%{_exec_prefix}/lib/*
+%{_exec_prefix}/bin/*
+%{_sysconfdir}/sysconfig/*
+
+
+%changelog
+* Wed May 22 2024 Kenneth Skovhede <kenneth@duplicati.com> - 2.0.0-0.20240522.git
+- Split for CLI and GUI package
+
+* Tue Apr 9 2024 Kenneth Skovhede <kenneth@duplicati.com> - 2.0.0-0.20240409.git
+- Fix package binaries installing and systemd service
+
+* Mon Mar 25 2024 Kenneth Skovhede <kenneth@duplicati.com> - 2.0.0-0.20240325.git
+- Updated to build from arch-specific .Net8 binaries
+
+* Wed Jun 21 2017 Kenneth Skovhede <kenneth@duplicati.com> - 2.0.0-0.20170621.git
+- Added the service file to the install
+
+* Thu Apr 28 2016 Kenneth Skovhede <kenneth@duplicati.com> - 2.0.0-0.20160423.git
+- Made a binary version of the spec file
+
+* Sat Apr 23 2016 Kenneth Skovhede <kenneth@duplicati.com> - 2.0.0-0.20160423.git
+- Updated list of dependencies
+
+* Thu Mar 27 2014 Kenneth Skovhede <kenneth@duplicati.com> - 2.0.0-0.20140326.git
+- Moved to /usr/lib
+- Fixed minor build issues
+
+* Wed Mar 26 2014 Kenneth Skovhede <kenneth@duplicati.com> - 2.0.0-0.20140326.git
+- Updated patch files
+- Fixed minor build issues
+
+* Wed May 29 2013 Ismael Olea <ismael@olea.org> - 2.0.0-0.20130529.git
+- removed MacOSX support and deps
+- first compiler building spec
+
+* Mon May 13 2013 Ismael Olea <ismael@olea.org> - 1.3.4-1
+- removing desktop contents
+
+* Sun May 12 2013 Ismael Olea <ismael@olea.org> - 1.3.4-0
+- first dirty package for upstream compiled binary
+
+

@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Description>A commandline version of Duplicati</Description>
+    <AssemblyName>Duplicati.CommandLine.Implementation</AssemblyName>
+    <ApplicationIcon>TrayWarning.ico</ApplicationIcon>
+    <Copyright>Copyright © 2025 Team Duplicati, MIT license</Copyright>
+  </PropertyGroup>
+  
+  <ItemGroup>
+    <ProjectReference Include="..\..\Library\Utility\Duplicati.Library.Utility.csproj" />
+    <ProjectReference Include="..\..\Library\Common\Duplicati.Library.Common.csproj" />
+    <ProjectReference Include="..\..\Library\DynamicLoader\Duplicati.Library.DynamicLoader.csproj" />
+    <ProjectReference Include="..\..\Library\Logging\Duplicati.Library.Logging.csproj" />
+    <ProjectReference Include="..\..\Library\Main\Duplicati.Library.Main.csproj" />
+    <ProjectReference Include="..\..\License\Duplicati.License.csproj" />
+    <ProjectReference Include="..\BackendTool\Duplicati.CommandLine.BackendTool.csproj" />
+    <ProjectReference Include="..\BackendTester\Duplicati.CommandLine.BackendTester.csproj" />
+    <ProjectReference Include="..\..\Library\AutoUpdater\Duplicati.Library.AutoUpdater.csproj" />
+    <ProjectReference Include="..\..\Library\Localization\Duplicati.Library.Localization.csproj" />
+    <ProjectReference Include="..\RecoveryTool\Duplicati.CommandLine.RecoveryTool.csproj" />
+    <ProjectReference Include="..\..\Library\UsageReporter\Duplicati.Library.UsageReporter.csproj" />
+    <ProjectReference Include="..\..\Tools\Duplicati.Tools.csproj" />
+    <ProjectReference Include="..\..\Library\Crashlog\Duplicati.Library.Crashlog.csproj" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <EmbeddedResource Include="help.txt" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <PackageReference Include="Microsoft.DotNet.Analyzers.Compatibility" Version="0.2.12-alpha">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+</Project>

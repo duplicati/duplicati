@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -26,7 +26,7 @@ using System.Threading.Tasks;
 
 namespace Duplicati.Library
 {
-    public class OAuthHttpMessageHandler : WebRequestHandler
+    public class OAuthHttpMessageHandler : HttpClientHandler
     {
         /// <summary>
         /// Requests which contain a property with this name (in 'request.Properties') will not have the authentication header automatically added.

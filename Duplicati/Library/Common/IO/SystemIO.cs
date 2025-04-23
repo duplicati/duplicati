@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -24,21 +24,22 @@ namespace Duplicati.Library.Common.IO
 {
     public static class SystemIO
     {
-
-        /// <summary>
-        /// A cached lookup for windows methods for dealing with long filenames
-        /// </summary>
-        public static readonly ISystemIO IO_WIN;
-
-        public static readonly ISystemIO IO_SYS;
-
         public static readonly ISystemIO IO_OS;
 
         static SystemIO()
         {
-            IO_WIN = new SystemIOWindows();
-            IO_SYS = new SystemIOLinux();
-            IO_OS = Platform.IsClientWindows ? IO_WIN : IO_SYS;
+            if (OperatingSystem.IsWindows())
+            {
+                IO_OS = new SystemIOWindows();
+            }
+            else if (OperatingSystem.IsMacOS() || OperatingSystem.IsLinux())
+            {
+                IO_OS = new SystemIOLinux();
+            }
+            else
+            {
+                throw new PlatformNotSupportedException("The current platform is not supported");
+            }
         }
     }
 }

@@ -1,4 +1,0 @@
-#!/bin/sh
-
-set -e
-/bin/launchctl load "/Library/LaunchAgents/com.duplicati.app.launchagent.plist"

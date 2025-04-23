@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -33,11 +33,12 @@ namespace Duplicati.Library.Interface
         /// </summary>
         /// <param name="operationname">The full name of the operation</param>
         void OnStart(string operationname, ref string remoteurl, ref string[] localpath);
-        
+
         /// <summary>
         /// Called when the operation finishes
         /// </summary>
         /// <param name="result">The result object, if this derives from an exception, the operation failed</param>
-        void OnFinish(object result);
+        /// <param name="exception">The exception that stopped the backup, or null</param>
+        void OnFinish(IBasicResults result, Exception exception);
     }
 }

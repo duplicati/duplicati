@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -27,6 +27,7 @@ using System.Text.RegularExpressions;
 using System.Linq;
 using Duplicati.Library.SQLiteHelper.DBUpdates;
 using Duplicati.Library.SQLiteHelper.DBSchemaUpgrades;
+using System.Globalization;
 
 namespace Duplicati.Library.SQLiteHelper
 {
@@ -59,7 +60,7 @@ namespace Duplicati.Library.SQLiteHelper
     {
         //This is the "folder" where the embedded resources can be found
         private const string FOLDER_NAME = "Database_schema";
-        
+
         //This is the name of the schema sql
         private const string SCHEMA_NAME = "Schema.sql";
 
@@ -142,23 +143,24 @@ namespace Duplicati.Library.SQLiteHelper
             var asm = eltype.Assembly;
 
             string schema;
-            using (var rd = new System.IO.StreamReader(asm.GetManifestResourceStream(eltype, FOLDER_NAME + "." + SCHEMA_NAME)))
+            using (var rd = new System.IO.StreamReader(asm.GetManifestResourceStream(eltype, $"{FOLDER_NAME}.{SCHEMA_NAME}")))
                 schema = rd.ReadToEnd();
 
             //Get updates, and sort them according to version
             //This enables upgrading through several versions
             //ea, from 1 to 8, by stepping 2->3->4->5->6->7->8
             SortedDictionary<int, string> upgrades = new SortedDictionary<int, string>();
-            string prefix = eltype.Namespace + "." + FOLDER_NAME + ".";
+            string prefix = FOLDER_NAME + ".";
             foreach (string s in asm.GetManifestResourceNames())
             {
-                //The resource name will be "Duplicati.GUI.Database_schema.1.Sample upgrade.sql"
+                //The resource name will be "Duplicati.Library.Main.Database.Database_schema.1.Sample upgrade.sql"
                 //The number indicates the version that will be upgraded to
-                if (s.StartsWith(prefix, StringComparison.Ordinal) && !s.Equals(prefix + SCHEMA_NAME))
+                //Could be ""Duplicati.Server.Database.Database_schema.1. Add Notifications.sql""
+                if ((s.IndexOf(prefix, 0, StringComparison.Ordinal) >= 0) && !s.EndsWith(prefix + SCHEMA_NAME))
                 {
                     try
                     {
-                        string version = s.Substring(prefix.Length, s.IndexOf(".", prefix.Length + 1, StringComparison.Ordinal) - prefix.Length);
+                        string version = s.Substring(s.IndexOf(prefix) + prefix.Length, s.IndexOf(".", s.IndexOf(prefix) + prefix.Length + 1, StringComparison.Ordinal) - s.IndexOf(prefix) - prefix.Length);
                         int fileversion = int.Parse(version);
 
                         string prev;
@@ -202,7 +204,6 @@ namespace Duplicati.Library.SQLiteHelper
                 {
                     //See if the version table is present,
                     cmd.CommandText = "SELECT COUNT(*) FROM SQLITE_MASTER WHERE Name LIKE 'Version'";
-
                     int count = Convert.ToInt32(cmd.ExecuteScalar());
 
                     if (count == 0)
@@ -307,7 +308,7 @@ namespace Duplicati.Library.SQLiteHelper
                         }
 
                         //Update databaseversion, so we don't run the scripts again
-                        cmd.CommandText = "Update version SET Version = " + versions.Count.ToString();
+                        cmd.CommandText = "Update version SET Version = " + versions.Count.ToString(CultureInfo.InvariantCulture);
                         cmd.ExecuteNonQuery();
                     }
                     catch (Exception ex)

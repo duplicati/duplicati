@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -20,6 +20,7 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System;
+using System.Net.Http.Headers;
 using Duplicati.Library.Localization.Short;
 
 namespace Duplicati.Library.Interface
@@ -195,10 +196,66 @@ namespace Duplicati.Library.Interface
     {
         public RemoteListVerificationException(string message, string helpId)
             : base(message, helpId)
-        {}
+        { }
 
         public RemoteListVerificationException(string message, string helpId, Exception innerException)
             : base(message, helpId, innerException)
-        {}
+        { }
+    }
+
+    /// <summary>
+    /// An exception indicating that the current encryption key does not match the key
+    /// used to encrypt the settings.
+    /// </summary>
+    [Serializable]
+    public class SettingsEncryptionKeyMismatchException : UserInformationException
+    {
+        public SettingsEncryptionKeyMismatchException()
+            : base(Strings.Common.SettingsKeyMismatchExceptionError, "SettingsKeyMismatch")
+        { }
+    }
+
+    /// <summary>
+    /// An exception indicating that the current encryption key does not match the key
+    /// used to encrypt the settings.
+    /// </summary>
+    [Serializable]
+    public class SettingsEncryptionKeyMissingException : UserInformationException
+    {
+        public SettingsEncryptionKeyMissingException()
+            : base(Strings.Common.SettingsKeyMissingExceptionError, "SettingsKeyMissing")
+        { }
+    }
+
+    /// <summary>
+    /// An exception for carrying the Retry-After header value on 429 Exceptions
+    /// </summary>
+    [Serializable]
+    public class TooManyRequestException(RetryConditionHeaderValue retryAfter) : Exception
+    {
+        public readonly RetryConditionHeaderValue RetryAfter = retryAfter;
+    }
+
+    /// <summary>
+    /// An exception indicating that the database state is inconsistent
+    /// </summary>
+    [Serializable]
+    public class DatabaseInconsistencyException : UserInformationException
+    {
+        public DatabaseInconsistencyException(string message)
+            : base(message, "DatabaseInconsistency")
+        { }
+
+        public DatabaseInconsistencyException(string message, string helpId)
+            : base(message, helpId)
+        { }
+
+        public DatabaseInconsistencyException(string message, Exception innerException)
+            : base(message, "DatabaseInconsistency", innerException)
+        { }
+
+        public DatabaseInconsistencyException(string message, string helpId, Exception innerException)
+            : base(message, helpId, innerException)
+        { }
     }
 }

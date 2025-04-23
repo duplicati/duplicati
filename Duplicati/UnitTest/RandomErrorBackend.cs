@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -23,6 +23,7 @@ using Duplicati.Library.Interface;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -59,55 +60,51 @@ namespace Duplicati.UnitTest
             var uploadError = random.NextDouble() > 0.9;
 
             using (var f = new Library.Utility.ProgressReportingStream(stream, x => { if (uploadError && stream.Position > stream.Length / 2) throw new Exception("Random upload failure"); }))
-                await m_backend.PutAsync(remotename, f, cancelToken);
+                await m_backend.PutAsync(remotename, f, cancelToken).ConfigureAwait(false);
             ThrowErrorRandom();
         }
-        public void Get(string remotename, Stream stream)
+        public async Task GetAsync(string remotename, Stream stream, CancellationToken cancelToken)
         {
             ThrowErrorRandom();
-            m_backend.Get(remotename, stream);
+            await m_backend.GetAsync(remotename, stream, cancelToken).ConfigureAwait(false);
             ThrowErrorRandom();
         }
         #endregion
 
         #region IBackend implementation
-        public IEnumerable<IFileEntry> List()
+        public IAsyncEnumerable<IFileEntry> ListAsync(CancellationToken cancellationToken)
         {
-            return m_backend.List();
+            return m_backend.ListAsync(cancellationToken);
         }
         public async Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
         {
             ThrowErrorRandom();
-            await m_backend.PutAsync(remotename, filename, cancelToken);
+            await m_backend.PutAsync(remotename, filename, cancelToken).ConfigureAwait(false);
             ThrowErrorRandom();
         }
-        public void Get(string remotename, string filename)
+        public async Task GetAsync(string remotename, string filename, CancellationToken cancelToken)
         {
             ThrowErrorRandom();
-            m_backend.Get(remotename, filename);
+            await m_backend.GetAsync(remotename, filename, cancelToken).ConfigureAwait(false);
             ThrowErrorRandom();
         }
-        public void Delete(string remotename)
+        public async Task DeleteAsync(string remotename, CancellationToken cancelToken)
         {
             ThrowErrorRandom();
-            m_backend.Delete(remotename);
+            await m_backend.DeleteAsync(remotename, cancelToken).ConfigureAwait(false);
             ThrowErrorRandom();
         }
-        public void Test()
+        public Task TestAsync(CancellationToken cancelToken)
         {
-            m_backend.Test();
+            return m_backend.TestAsync(cancelToken);
         }
-        public void CreateFolder()
+        public Task CreateFolderAsync(CancellationToken cancelToken)
         {
-            m_backend.CreateFolder();
+            return m_backend.CreateFolderAsync(cancelToken);
         }
-        public string[] DNSName
-        {
-            get
-            {
-                return m_backend.DNSName;
-            }
-        }
+
+        public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => m_backend.GetDNSNamesAsync(cancelToken);
+
         public string DisplayName
         {
             get
@@ -127,7 +124,7 @@ namespace Duplicati.UnitTest
             get
             {
                 if (m_backend == null)
-                    try { return Duplicati.Library.DynamicLoader.BackendLoader.GetSupportedCommands(WrappedBackend + "://"); }
+                    try { return Duplicati.Library.DynamicLoader.BackendLoader.GetSupportedCommands(WrappedBackend + "://").ToList(); }
                     catch { }
 
                 return m_backend.SupportedCommands;

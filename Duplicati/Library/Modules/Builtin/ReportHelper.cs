@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -24,6 +24,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using Duplicati.Library.AutoUpdater;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Modules.Builtin.ResultSerialization;
 using Duplicati.Library.Utility;
@@ -33,7 +34,7 @@ namespace Duplicati.Library.Modules.Builtin
     /// <summary>
     /// A helper module that contains all shared code used in the various reporting modules
     /// </summary>
-    public abstract class ReportHelper : Interface.IGenericCallbackModule
+    public abstract class ReportHelper : IGenericCallbackModule
     {
         /// <summary>
         /// The tag used for logging
@@ -83,11 +84,15 @@ namespace Duplicati.Library.Modules.Builtin
         /// Name of the option used to the output format
         /// </summary>
         protected abstract string ResultFormatOptionName { get; }
+        /// <summary>
+        /// Name of the option used to specify extra data to include in the report
+        /// </summary>
+        protected abstract string ExtraDataOptionName { get; }
 
         /// <summary>
         /// The default subject or title line
         /// </summary>
-        protected virtual string DEFAULT_SUBJECT { get; }= "Duplicati %OPERATIONNAME% report for %backup-name%";
+        protected virtual string DEFAULT_SUBJECT { get; } = "Duplicati %OPERATIONNAME% report for %backup-name%";
         /// <summary>
         /// The default report level
         /// </summary>
@@ -153,7 +158,7 @@ namespace Duplicati.Library.Modules.Builtin
         /// <summary>
         /// The cached set of options
         /// </summary>
-        protected IDictionary<string, string> m_options;
+        protected IReadOnlyDictionary<string, string> m_options;
         /// <summary>
         /// The parsed result level
         /// </summary>
@@ -184,13 +189,17 @@ namespace Duplicati.Library.Modules.Builtin
         /// </summary>
         private bool m_sendAll;
         /// <summary>
+        /// The extra values to include in the report
+        /// </summary>
+        private Dictionary<string, string> m_extraValues;
+        /// <summary>
         /// The log scope that should be disposed
         /// </summary>
         private IDisposable m_logscope;
         /// <summary>
         /// The log storage
         /// </summary>
-        private Utility.FileBackedStringList m_logstorage;
+        private FileBackedStringList m_logstorage;
         /// <summary>
         /// Serializer to use when serializing the message.
         /// </summary>
@@ -220,13 +229,28 @@ namespace Duplicati.Library.Modules.Builtin
             if (!ConfigureModule(commandlineOptions))
                 return;
 
+            m_options = commandlineOptions.AsReadOnly();
             m_isConfigured = true;
-            commandlineOptions.TryGetValue(SubjectOptionName, out m_subject);
-            commandlineOptions.TryGetValue(BodyOptionName, out m_body);
-            m_options = commandlineOptions;
+            m_options.TryGetValue(SubjectOptionName, out m_subject);
+            m_options.TryGetValue(BodyOptionName, out m_body);
+            m_options.TryGetValue(ExtraDataOptionName, out var extraData);
+            if (!string.IsNullOrWhiteSpace(extraData))
+            {
+                if (extraData.Trim().StartsWith("{") && extraData.Trim().EndsWith("}"))
+                {
+                    m_extraValues = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, string>>(extraData);
+                }
+                else
+                {
+                    var values = Utility.Uri.ParseQueryString(extraData);
+                    m_extraValues = values.AllKeys
+                        .Where(x => !string.IsNullOrWhiteSpace(x))
+                        .ToDictionary(key => key, key => values[key]);
+                }
+            }
 
             string tmp;
-            commandlineOptions.TryGetValue(ActionLevelOptionName, out tmp);
+            m_options.TryGetValue(ActionLevelOptionName, out tmp);
             if (!string.IsNullOrEmpty(tmp))
                 m_levels =
                     tmp
@@ -243,17 +267,17 @@ namespace Duplicati.Library.Modules.Builtin
                     .Select(x => x.Trim())
                     .ToArray();
 
-            m_sendAll = Utility.Utility.ParseBoolOption(commandlineOptions, ActionOnAnyOperationOptionName);
+            m_sendAll = Utility.Utility.ParseBoolOption(m_options, ActionOnAnyOperationOptionName);
 
             ResultExportFormat resultFormat;
-            if (!commandlineOptions.TryGetValue(ResultFormatOptionName, out var tmpResultFormat))
+            if (!m_options.TryGetValue(ResultFormatOptionName, out var tmpResultFormat))
                 resultFormat = DEFAULT_EXPORT_FORMAT;
             else if (!Enum.TryParse(tmpResultFormat, true, out resultFormat))
                 resultFormat = DEFAULT_EXPORT_FORMAT;
 
             m_resultFormatSerializer = ResultFormatSerializerProvider.GetSerializer(resultFormat);
 
-            commandlineOptions.TryGetValue(LogLinesOptionName, out var loglinestr);
+            m_options.TryGetValue(LogLinesOptionName, out var loglinestr);
             if (!int.TryParse(loglinestr, out m_maxmimumLogLines))
                 m_maxmimumLogLines = DEFAULT_LOGLINES;
 
@@ -263,11 +287,12 @@ namespace Duplicati.Library.Modules.Builtin
                 m_body = DEFAULT_BODY;
 
             m_options.TryGetValue(LogFilterOptionName, out var logfilterstring);
-            var filter = Utility.FilterExpression.ParseLogFilter(logfilterstring);
+            var filter = FilterExpression.ParseLogFilter(logfilterstring);
             var logLevel = Utility.Utility.ParseEnumOption(m_options, LogLevelOptionName, DEFAULT_LOG_LEVEL);
 
             m_logstorage = new FileBackedStringList();
-            m_logscope = Logging.Log.StartScope(m => m_logstorage.Add(m.AsString(true)), m => {
+            m_logscope = Logging.Log.StartScope(m => m_logstorage.Add(m.AsString(true)), m =>
+            {
 
                 if (filter.Matches(m.FilterTag, out var result, out var match))
                     return result;
@@ -297,57 +322,175 @@ namespace Duplicati.Library.Modules.Builtin
         /// <returns>The expanded template.</returns>
         /// <param name="input">The input template.</param>
         /// <param name="result">The result object.</param>
+        /// <param name="exception">An optional exception that has stopped the backup</param>
         /// <param name="subjectline">If set to <c>true</c>, the result is intended for a subject or title line.</param>
-        protected virtual string ReplaceTemplate(string input, object result, bool subjectline)
+        protected virtual string ReplaceTemplate(string input, object result, Exception exception, bool subjectline)
+            => ReplaceTemplate(input, result, exception, subjectline, m_resultFormatSerializer);
+
+        /// <summary>
+        /// Helper method to perform template expansion
+        /// </summary>
+        /// <returns>The expanded template.</returns>
+        /// <param name="input">The input template.</param>
+        /// <param name="result">The result object.</param>
+        /// <param name="exception">An optional exception that has stopped the backup</param>
+        /// <param name="subjectline">If set to <c>true</c>, the result is intended for a subject or title line.</param>
+        /// <param name="format">The format to use when serializing the result</param>
+        protected virtual string ReplaceTemplate(string input, object result, Exception exception, bool subjectline, ResultExportFormat format)
+            => ReplaceTemplate(input, result, exception, subjectline, ResultFormatSerializerProvider.GetSerializer(format));
+
+        /// <summary>
+        /// The operation name template key
+        /// </summary>
+        private const string OPERATIONNAME = "OperationName";
+        /// <summary>
+        /// The remote url template key
+        /// </summary>
+        private const string REMOTEURL = "RemoteUrl";
+        /// <summary>
+        /// The local path template key
+        /// </summary>
+        private const string LOCALPATH = "LocalPath";
+        /// <summary>
+        /// The parsed result template key
+        /// </summary>
+        private const string PARSEDRESULT = "ParsedResult";
+        /// <summary>
+        /// The machine id template key
+        /// </summary>
+        private const string MACHINE_ID = "machine-id";
+        /// <summary>
+        /// The backup id template key
+        /// </summary>
+        private const string BACKUP_ID = "backup-id";
+        /// <summary>
+        /// The backup name template key
+        /// </summary>
+        private const string BACKUP_NAME = "backup-name";
+        /// <summary>
+        /// The machine name template key
+        /// </summary>
+        private const string MACHINE_NAME = "machine-name";
+        /// <summary>
+        /// The operating system template key
+        /// </summary>
+        private const string OPERATING_SYSTEM = "operating-system";
+        /// <summary>
+        /// The installation type template key
+        /// </summary>
+        private const string INSTALLATION_TYPE = "installation-type";
+        /// <summary>
+        /// The destination type template key
+        /// </summary>
+        private const string DESTINATION_TYPE = "destination-type";
+        /// <summary>
+        /// The next scheduled run template key
+        /// </summary>
+        private const string NEXT_SCHEDULED_RUN = "next-scheduled-run";
+        /// <summary>
+        /// The destination type template key
+        /// </summary>
+        private const string UPDATE_CHANNEL = "update-channel";
+
+        /// <summary>
+        /// The list of regular template keys
+        /// </summary>
+        private static readonly IReadOnlySet<string> OPERATION_TEMPLATE_KEYS = new HashSet<string>([
+            OPERATIONNAME, REMOTEURL, LOCALPATH, PARSEDRESULT
+        ], StringComparer.OrdinalIgnoreCase);
+
+        /// <summary>
+        /// The list of extra template keys
+        /// </summary>
+        private static readonly IReadOnlySet<string> EXTRA_TEMPLATE_KEYS = new HashSet<string>([
+            MACHINE_ID, BACKUP_ID, BACKUP_NAME, MACHINE_NAME,
+            OPERATING_SYSTEM, INSTALLATION_TYPE, DESTINATION_TYPE, NEXT_SCHEDULED_RUN,
+            UPDATE_CHANNEL
+        ], StringComparer.OrdinalIgnoreCase);
+
+        /// <summary>
+        /// Gets the default value for a template key
+        /// </summary>
+        /// <param name="name">The name of the template key</param>
+        /// <returns>The default value</returns>
+        private string GetDefaultValue(string name)
+        {
+            switch (name)
+            {
+                case OPERATIONNAME:
+                    return m_operationname;
+                case REMOTEURL:
+                    return m_remoteurl;
+                case LOCALPATH:
+                    return m_localpath == null ? "" : string.Join(System.IO.Path.PathSeparator.ToString(), m_localpath);
+                case PARSEDRESULT:
+                    return m_parsedresultlevel;
+                case MACHINE_ID:
+                    return DataFolderManager.MachineID;
+                case BACKUP_ID:
+                    return Utility.Utility.ByteArrayAsHexString(Utility.Utility.RepeatedHashWithSalt(m_remoteurl, SALT));
+                case BACKUP_NAME:
+                    return System.IO.Path.GetFileNameWithoutExtension(Utility.Utility.getEntryAssembly().Location);
+                case MACHINE_NAME:
+                    return DataFolderManager.MachineName;
+                case OPERATING_SYSTEM:
+                    return UpdaterManager.OperatingSystemName;
+                case INSTALLATION_TYPE:
+                    return UpdaterManager.PackageTypeId;
+                case DESTINATION_TYPE:
+                    // Only return the url scheme, as the rest could contain sensitive information
+                    var ix = m_remoteurl?.IndexOf("://", StringComparison.OrdinalIgnoreCase) ?? -1;
+                    return Utility.Utility.GuessScheme(m_remoteurl) ?? "file";
+                case UPDATE_CHANNEL:
+                    return UpdaterManager.CurrentChannel.ToString();
+                default:
+                    return null;
+            }
+        }
+
+        /// <summary>
+        /// Helper method to perform template expansion
+        /// </summary>
+        /// <returns>The expanded template.</returns>
+        /// <param name="input">The input template.</param>
+        /// <param name="result">The result object.</param>
+        /// <param name="exception">An optional exception that has stopped the backup</param>
+        /// <param name="subjectline">If set to <c>true</c>, the result is intended for a subject or title line.</param>
+        /// <param name="resultFormatSerializer">The serializer to use when serializing the result</param>
+        protected virtual string ReplaceTemplate(string input, object result, Exception exception, bool subjectline, IResultFormatSerializer resultFormatSerializer)
         {
             // For JSON, ignore the template and just use the contents
-            if (ExportFormat == ResultExportFormat.Json && !subjectline)
+            if (resultFormatSerializer.Format == ResultExportFormat.Json && !subjectline)
             {
                 var extra = new Dictionary<string, string>();
 
-                if (input.IndexOf("%OPERATIONNAME%", StringComparison.OrdinalIgnoreCase) >= 0)
-                    extra["OperationName"] = m_operationname;
-                if (input.IndexOf("%REMOTEURL%", StringComparison.OrdinalIgnoreCase) >= 0)
-                    extra["RemoteUrl"] = m_remoteurl;
-                if (input.IndexOf("%LOCALPATH%", StringComparison.OrdinalIgnoreCase) >= 0 && m_localpath != null)
-                    extra["LocalPath"] = string.Join(System.IO.Path.PathSeparator.ToString(), m_localpath);
-                if (input.IndexOf("%PARSEDRESULT%", StringComparison.OrdinalIgnoreCase) >= 0)
-                    extra["ParsedResult"] = m_parsedresultlevel;
+                // Add the default values, if found in the template
+                foreach (var key in OPERATION_TEMPLATE_KEYS)
+                    if (input.IndexOf($"%{key}%", StringComparison.OrdinalIgnoreCase) >= 0)
+                        extra[key] = GetDefaultValue(key);
 
-                // If the options contains the key, it is captured by the loop over m_options
-                // so we only patch it in case it is missing
-
-                if (input.IndexOf("%machine-id%", StringComparison.OrdinalIgnoreCase) >= 0)
-                {
-                    if (!m_options.ContainsKey("machine-id"))
-                        extra["machine-id"] = "";
-                }
-
-                if (input.IndexOf("%backup-id%", StringComparison.OrdinalIgnoreCase) >= 0)
-                {
-                    if (!m_options.ContainsKey("backup-id"))
-                        extra["backup-id"] = Library.Utility.Utility.ByteArrayAsHexString(Library.Utility.Utility.RepeatedHashWithSalt(m_remoteurl, SALT));
-                }
-
-                if (input.IndexOf("%backup-name%", StringComparison.OrdinalIgnoreCase) >= 0)
-                {
-                    if (!m_options.ContainsKey("backup-name"))
-                        extra["backup-name"] = System.IO.Path.GetFileNameWithoutExtension(Duplicati.Library.Utility.Utility.getEntryAssembly().Location);
-                }
-
-                foreach (KeyValuePair<string, string> kv in m_options)
-                    if (input.IndexOf($"%{kv.Key}%", StringComparison.OrdinalIgnoreCase) >= 0)
+                // Add any options that are whitelisted or used in the template
+                foreach (var kv in m_options)
+                    if (EXTRA_TEMPLATE_KEYS.Contains(kv.Key) || input.IndexOf($"%{kv.Key}%", StringComparison.OrdinalIgnoreCase) >= 0)
                         extra[kv.Key] = kv.Value;
 
-                return m_resultFormatSerializer.Serialize(result, LogLines, extra);
+                // Add any missing default values
+                foreach (var key in EXTRA_TEMPLATE_KEYS)
+                    if (!extra.ContainsKey(key))
+                        extra[key] = GetDefaultValue(key);
+
+                if (m_extraValues != null)
+                    foreach (var v in m_extraValues)
+                        extra[v.Key] = v.Value;
+
+                return resultFormatSerializer.Serialize(result, exception, LogLines, extra);
             }
             else
             {
 
-                input = Regex.Replace(input, "\\%OPERATIONNAME\\%", m_operationname ?? "", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
-                input = Regex.Replace(input, "\\%REMOTEURL\\%", m_remoteurl ?? "", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
-                input = Regex.Replace(input, "\\%LOCALPATH\\%", m_localpath == null ? "" : string.Join(System.IO.Path.PathSeparator.ToString(), m_localpath), RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
-                input = Regex.Replace(input, "\\%PARSEDRESULT\\%", m_parsedresultlevel ?? "", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+                foreach (var key in OPERATION_TEMPLATE_KEYS)
+                    input = Regex.Replace(input, $"%{key}%", GetDefaultValue(key) ?? "", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+
                 if (subjectline)
                 {
                     input = Regex.Replace(input, "\\%RESULT\\%", m_parsedresultlevel ?? "", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
@@ -355,21 +498,22 @@ namespace Duplicati.Library.Modules.Builtin
                 else
                 {
                     if (input.IndexOf("%RESULT%", StringComparison.OrdinalIgnoreCase) >= 0)
-                        input = Regex.Replace(input, "\\%RESULT\\%", m_resultFormatSerializer.Serialize(result, LogLines, null), RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+                        input = Regex.Replace(input, "\\%RESULT\\%", resultFormatSerializer.Serialize(result, exception, LogLines, null), RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
                 }
 
                 foreach (KeyValuePair<string, string> kv in m_options)
                     input = Regex.Replace(input, "\\%" + kv.Key + "\\%", kv.Value ?? "", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
-                if (!m_options.ContainsKey("backup-name"))
-                    input = Regex.Replace(input, "\\%backup-name\\%", System.IO.Path.GetFileNameWithoutExtension(Duplicati.Library.Utility.Utility.getEntryAssembly().Location) ?? "", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+                foreach (var key in EXTRA_TEMPLATE_KEYS)
+                    if (!m_options.ContainsKey(key))
+                        input = Regex.Replace(input, $"%{key}%", GetDefaultValue(key) ?? "", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
-                if (!m_options.ContainsKey("backup-id"))
-                    input = Regex.Replace(input, "\\%backup-id\\%", Library.Utility.Utility.ByteArrayAsHexString(Library.Utility.Utility.RepeatedHashWithSalt(m_remoteurl, SALT)), RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+                if (m_extraValues != null)
+                    foreach (var v in m_extraValues)
+                        input = Regex.Replace(input, $"%{v.Key}%", v.Value, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
-                if (!m_options.ContainsKey("machine-id"))
-                    input = Regex.Replace(input, "\\%machine-id\\%", "", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
+                // Remove any remaining template keys
                 input = Regex.Replace(input, "\\%[^\\%]+\\%", "");
                 return input;
             }
@@ -394,7 +538,7 @@ namespace Duplicati.Library.Modules.Builtin
             }
         }
 
-        public void OnFinish(object result)
+        public void OnFinish(IBasicResults result, Exception exception)
         {
             // Dispose the current log scope
             if (m_logscope != null)
@@ -412,10 +556,10 @@ namespace Duplicati.Library.Modules.Builtin
                 return;
 
             ParsedResultType level;
-            if (result is Exception)
+            if (exception != null)
                 level = ParsedResultType.Fatal;
-            else if (result != null && result is IBasicResults results)
-                level = results.ParsedResult;
+            else if (result != null)
+                level = result.ParsedResult;
             else
                 level = ParsedResultType.Error;
 
@@ -435,17 +579,27 @@ namespace Duplicati.Library.Modules.Builtin
             {
                 string body = m_body;
                 string subject = m_subject;
-                if (body != DEFAULT_BODY && System.IO.Path.IsPathRooted(body) && System.IO.File.Exists(body))
-                    body = System.IO.File.ReadAllText(body);
+                if (body != DEFAULT_BODY)
+                {
+                    try
+                    {
+                        if (System.IO.File.Exists(body) && System.IO.Path.IsPathRooted(body))
+                            body = System.IO.File.ReadAllText(body);
+                    }
+                    catch (Exception ex)
+                    {
+                        Logging.Log.WriteWarningMessage(LOGTAG, "ReportSubmitError", ex, "Invalid path, or unable to read file given as body");
+                    }
+                }
 
-                body = ReplaceTemplate(body, result, false);
-                subject = ReplaceTemplate(subject, result, true);
+                body = ReplaceTemplate(body, result, exception, false);
+                subject = ReplaceTemplate(subject, result, exception, true);
 
                 SendMessage(subject, body);
             }
             catch (Exception ex)
             {
-                Exception top = ex; 
+                Exception top = ex;
                 var sb = new StringBuilder();
                 while (top != null)
                 {

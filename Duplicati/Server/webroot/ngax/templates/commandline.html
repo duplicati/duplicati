@@ -4,35 +4,32 @@
 
         <div ng-hide="EditUriState">
 
-            <div class="input mixed">
-                <label for="command">Command</label>
-                <select name="command" id="command" ng-model="Command" ng-options="item for item in SupportedCommands">
-                </select>
-                <div style="float: left">{{CommandHelp[Command]}}</div>
+            <div class="input select">
+                <label for="command" translate>Command</label>
+                <select name="command" id="command" ng-model="Command" ng-options="item for item in SupportedCommands"></select>
             </div>
 
-
             <div class="input textarea linklabel">
-                <label for="target"><a href class="target" ng-click="EditUriState = true">Target URL &gt;</a></label>
-                <textarea name="target" id="target" ng-model="TargetURL" placeholder="Enter a url, or click the 'Target URL &gt;' link"></textarea>
+                <label for="target"><a href class="target" ng-click="EditUriState = true" translate>Target URL &gt;</a></label>
+                <textarea name="target" id="target" ng-model="TargetURL" placeholder="{{'Enter a url, or click the &quot;Target URL &gt;&quot; link' | translate}}"></textarea>
             </div>
 
             <div class="input textarea">
-                <label for="arguments">Commandline arguments</label>
-                <textarea id="arguments" ng-model="Arguments" string-array-as-text placeholder="Enter one argument per line without quotes, e.g. *.txt"></textarea>
+                <label for="arguments" translate>Commandline arguments</label>
+                <textarea id="arguments" ng-model="Arguments" string-array-as-text placeholder="{{'Enter one argument per line without quotes, e.g. *.txt' | translate}}"></textarea>
             </div>
 
             <div class="input textarea" ng-show="ShowAdvancedTextArea">
-                <label for="backupOptions">Advanced options</label>
+                <label for="backupOptions" translate>Advanced options</label>
                 <div>
-                    <a href ng-click="ShowAdvancedTextArea = false" class="advanced-toggle"><i class="fa fa-check"></i> Edit as text</a>
-                    <textarea id="backupOptions" ng-model="ExtendedOptions" string-array-as-text placeholder="Enter one option per line in command-line format, eg. --dblock-size=100MB"></textarea>
+                    <a href ng-click="ShowAdvancedTextArea = false" class="advanced-toggle" translate><i class="fa fa-check"></i> Edit as text</a>
+                    <textarea id="backupOptions" ng-model="ExtendedOptions" string-array-as-text placeholder="{{'Enter one option per line in command-line format, e.g. --dblock-size=100MB' | translate}}"></textarea>
                 </div>
             </div>
-            
+
             <div class="input" ng-hide="ShowAdvancedTextArea">
-                <label for="backupOptions">Advanced options</label>
-                <a href ng-click="ShowAdvancedTextArea = true" class="advanced-toggle"><i class="fa"></i> Edit as text</a>
+                <label for="backupOptions" translate>Advanced options</label>
+                <a href ng-click="ShowAdvancedTextArea = true" class="advanced-toggle" translate><i class="fa"></i> Edit as text</a>
                 <advanced-options-editor ng-option-list="ExtendedOptionList" ng-model="ExtendedOptions"></advanced-options-editor>
             </div>
 
@@ -45,17 +42,17 @@
 
     <div ng-show="Mode == 'view'">
         <h2 translate>Running commandline entry</h2>
-        <div ng-show="serverstate.programState == 'Paused' &amp;&amp; Started != true">
-            {{'Server is currently paused,' | translate}} <a style="cursor: pointer" ng-click="ServerStatus.resume()" translate>resume now</a>
+        <div ng-show="serverstate.programState == 'Paused' &amp;&amp; Started != true" translate>
+            Server is currently paused, <a style="cursor: pointer" ng-click="ServerStatus.resume()">resume now</a>
         </div>
         <div ng-show="serverstate.programState != 'Paused' &amp;&amp; Started == null" translate="">
-            Connecting to task ....
+            Connecting to task …
         </div>
         <div ng-show="serverstate.programState != 'Paused' &amp;&amp; Started == false" translate="">
-            Waiting for task to start ....
+            Waiting for task to start …
         </div>
-        <div ng-show="Started == true &amp;&amp; Finished == false">
-            <span translate>Running ....</span> <a href ng-click="Abort()" ng-hide="RawFinished">stop now</a>
+        <div ng-show="Started == true &amp;&amp; Finished == false" translate>
+            Running … <a href ng-click="Abort()" ng-hide="RawFinished">stop now</a>
         </div>
         <div ng-show="Started == true &amp;&amp; Finished == true" translate>
             Finished!

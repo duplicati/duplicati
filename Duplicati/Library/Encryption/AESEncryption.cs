@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -31,21 +31,10 @@ namespace Duplicati.Library.Encryption
     /// </summary>
     public class AESEncryption : EncryptionBase
     {
-
-        /// <summary>
-        /// The commandline option supplied if an explicit thread level should be set (--aes-set-threadlevel)
-        /// </summary>
-        private const string COMMANDLINE_SET_THREADLEVEL = "aes-set-threadlevel";
-
-        /// <summary>
-        /// The default thread level
-        /// </summary>
-        private static readonly string DEFAULT_THREAD_LEVEL = Math.Min(4, Environment.ProcessorCount).ToString();
-
         /// <summary>
         /// The key used to encrypt the data
         /// </summary>
-        private string m_key;
+        private readonly string m_key;
 
         /// <summary>
         /// The cached value for size overhead
@@ -53,9 +42,19 @@ namespace Duplicati.Library.Encryption
         private static long m_cachedsizeoverhead = -1;
 
         /// <summary>
-        /// The thread level to pass to SharpAESCrypt. 0 for default.
+        /// Cached set of options for minimal header
         /// </summary>
-        private static int m_usethreadlevel = 0;
+        private static readonly SharpAESCrypt.EncryptionOptions m_minimalHeaderOptions = new(InsertCreatedByIdentifier: false, InsertTimeStamp: false, InsertPlaceholder: false);
+
+        /// <summary>
+        /// Cached set of options for decryption
+        /// </summary>
+        private static readonly SharpAESCrypt.DecryptionOptions m_decryptionOptions = new(IgnorePaddingBytes: Environment.GetEnvironmentVariable("AES_IGNORE_PADDING_BYTES") == "1");
+
+        /// <summary>
+        /// Options to use for encryption
+        /// </summary>
+        private readonly SharpAESCrypt.EncryptionOptions m_encryptionOptions;
 
         /// <summary>
         /// Default constructor, used to read file extension and supported commands
@@ -67,25 +66,23 @@ namespace Duplicati.Library.Encryption
         /// <summary>
         /// Constructs a new AES encryption/decyption instance
         /// </summary>
-        public AESEncryption(string passphrase, Dictionary<string, string> options)
+        /// <param name="passphrase">The passphrase to use</param>
+        /// <param name="minimalheader">Flag controlling if the encryption is done with a minimal header</param>
+        public AESEncryption(string passphrase, bool minimalheader)
         {
             if (string.IsNullOrEmpty(passphrase))
                 throw new ArgumentException(Strings.AESEncryption.EmptyKeyError, nameof(passphrase));
 
             m_key = passphrase;
+            m_encryptionOptions = minimalheader ? m_minimalHeaderOptions : default;
+        }
 
-            string strTL;
-            options.TryGetValue(COMMANDLINE_SET_THREADLEVEL, out strTL);
-
-            if (string.IsNullOrWhiteSpace(strTL))
-                strTL = DEFAULT_THREAD_LEVEL;
-
-            int useTL;
-            if (int.TryParse(strTL, out useTL))
-            {
-                // finally set thread level in a range of 0 (default) to 4
-                m_usethreadlevel = Math.Max(0, (Math.Min(4, useTL)));
-            }
+        /// <summary>
+        /// Constructs a new AES encryption/decyption instance
+        /// </summary>
+        public AESEncryption(string passphrase, Dictionary<string, string> options)
+            : this(passphrase, false)
+        {
         }
 
         #region IEncryption Members
@@ -109,7 +106,7 @@ namespace Duplicati.Library.Encryption
         /// Dispose the specified disposing.
         /// </summary>
         /// <param name="disposing">If set to <c>true</c> disposing.</param>
-        protected override void Dispose(bool disposing) { m_key = null; }
+        protected override void Dispose(bool disposing) { }
 
         /// <summary>
         /// Returns the size in bytes of the overhead that will be added to a file of the given size when encrypted
@@ -134,11 +131,7 @@ namespace Duplicati.Library.Encryption
         /// <param name="input">The target stream</param>
         /// <returns>An encrypted stream that can be written to</returns>
         public override Stream Encrypt(Stream input)
-        {
-            var cryptoStream = new SharpAESCrypt.SharpAESCrypt(m_key, input, SharpAESCrypt.OperationMode.Encrypt);
-            if (m_usethreadlevel != 0) cryptoStream.MaxCryptoThreads = m_usethreadlevel;
-            return cryptoStream;
-        }
+            => new SharpAESCrypt.EncryptingStream(m_key, input, m_encryptionOptions);
 
         /// <summary>
         /// Decrypts the stream to the output stream
@@ -146,33 +139,25 @@ namespace Duplicati.Library.Encryption
         /// <param name="input">The encrypted stream</param>
         /// <returns>The unencrypted stream</returns>
         public override Stream Decrypt(Stream input)
-        {
-            var cryptoStream = new SharpAESCrypt.SharpAESCrypt(m_key, input, SharpAESCrypt.OperationMode.Decrypt);
-            if (m_usethreadlevel != 0) cryptoStream.MaxCryptoThreads = m_usethreadlevel;
-            return cryptoStream;
-        }
+            => new SharpAESCrypt.DecryptingStream(m_key, input, m_decryptionOptions);
 
         /// <summary>
         /// Gets a list of supported commandline arguments
         /// </summary>
         /// <value>The supported commands.</value>
         public override IList<ICommandLineArgument> SupportedCommands
-        {
-            get
-            {
-                return new List<ICommandLineArgument>(new ICommandLineArgument[] {
-                    new CommandLineArgument(
-                        COMMANDLINE_SET_THREADLEVEL,
-                        CommandLineArgument.ArgumentType.Enumeration,
-                        Strings.AESEncryption.AessetthreadlevelShort,
-                        Strings.AESEncryption.AessetthreadlevelLong,
-                        DEFAULT_THREAD_LEVEL,
-                        null,
-                        new string[] {"0", "1", "2", "3", "4"}
-                        ),
-                });
-            }
-        }
+            => new List<ICommandLineArgument>([
+                new CommandLineArgument(
+                    "aes-set-threadlevel",
+                    CommandLineArgument.ArgumentType.String,
+                    Strings.AESEncryption.AessetthreadlevelShort,
+                    Strings.AESEncryption.AessetthreadlevelLong,
+                    "",
+                    null,
+                    null,
+                    Strings.AESEncryption.AessetthreadlevelDeprecated
+                    ),
+            ]);
 
         #endregion
     }

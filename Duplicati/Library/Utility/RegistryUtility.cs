@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -20,9 +20,11 @@
 // DEALINGS IN THE SOFTWARE.
 
 using Microsoft.Win32;
+using System.Runtime.Versioning;
 
 namespace Duplicati.Library.Utility
 {
+    [SupportedOSPlatform("windows")]
     public static class RegistryUtility
     {
         public static string GetDataByValueName(string parentKeyName, string name)

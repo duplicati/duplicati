@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -18,13 +18,8 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
-using System;
-using System.IO;
 using System.Net;
-using System.Net.Http;
-using System.Net.Http.Headers;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 
 using Duplicati.Library.Utility;
 
@@ -36,11 +31,11 @@ namespace Duplicati.Library.Backend.MicrosoftGraph
     {
         private static readonly Regex authorizationHeaderRemover = new Regex(@"Authorization:\s*Bearer\s+\S+", RegexOptions.IgnoreCase);
 
-        private readonly HttpResponseMessage responseMessage;
-        private readonly HttpWebResponse webResponse;
+        private readonly HttpResponseMessage? responseMessage;
+        private readonly HttpWebResponse? webResponse;
 
         public MicrosoftGraphException(HttpResponseMessage response)
-            : this(string.Format("{0}: {1} error from request {2}", response.StatusCode, response.ReasonPhrase, response.RequestMessage.RequestUri), response)
+            : this(string.Format("{0}: {1} error from request {2}", response.StatusCode, response.ReasonPhrase, response.RequestMessage?.RequestUri), response)
         {
         }
 
@@ -49,7 +44,7 @@ namespace Duplicati.Library.Backend.MicrosoftGraph
         {
         }
 
-        public MicrosoftGraphException(string message, HttpResponseMessage response, Exception innerException)
+        public MicrosoftGraphException(string message, HttpResponseMessage response, Exception? innerException)
             : base(BuildFullMessage(message, response), innerException)
         {
             this.responseMessage = response;
@@ -65,59 +60,40 @@ namespace Duplicati.Library.Backend.MicrosoftGraph
         {
         }
 
-        public MicrosoftGraphException(string message, HttpWebResponse response, Exception innerException)
+        public MicrosoftGraphException(string message, HttpWebResponse response, Exception? innerException)
             : base(BuildFullMessage(message, response), innerException)
         {
             this.webResponse = response;
-        }
-
-        public string RequestUrl
-        {
-            get
-            {
-                if (this.responseMessage != null)
-                {
-                    return this.responseMessage.RequestMessage.RequestUri.ToString();
-                }
-                else
-                {
-                    return this.webResponse.ResponseUri.ToString();
-                }
-            }
         }
 
         public HttpStatusCode StatusCode
         {
             get
             {
-                if (this.responseMessage != null)
-                {
-                    return this.responseMessage.StatusCode;
-                }
-                else
-                {
-                    return this.webResponse.StatusCode;
-                }
+                if (responseMessage != null)
+                    return responseMessage.StatusCode;
+                if (webResponse != null)
+                    return webResponse.StatusCode;
+                return HttpStatusCode.InternalServerError;
             }
         }
 
-        protected static string ResponseToString(HttpResponseMessage response)
+        protected static string? ResponseToString(HttpResponseMessage response)
         {
-            if (response != null)
-            {
-                // Start to read the content
-                using (Task<string> content = response.Content.ReadAsStringAsync())
-                {
-                    // Since the exception message may be saved / sent in logs, we want to prevent the authorization header from being included.
-                    // it wouldn't be as bad as recording the username/password in logs, since the token will expire, but it doesn't hurt to be safe.
-                    // So we replace anything in the request that looks like the auth header with a safe version.
-                    string requestMessage = authorizationHeaderRemover.Replace(response.RequestMessage.ToString(), "Authorization: Bearer ABC...XYZ");
-                    return string.Format("{0}\n{1}\n{2}", requestMessage, response, PrettifyJson(content.Await()));
-                }
-            }
-            else
-            {
+            if (response == null)
                 return null;
+
+            // Start to read the content
+            using (Task<string> content = response.Content.ReadAsStringAsync())
+            {
+                // Since the exception message may be saved / sent in logs, we want to prevent the authorization header from being included.
+                // it wouldn't be as bad as recording the username/password in logs, since the token will expire, but it doesn't hurt to be safe.
+                // So we replace anything in the request that looks like the auth header with a safe version.
+                var requestMessage = response.RequestMessage == null
+                    ? ""
+                    : authorizationHeaderRemover.Replace(response.RequestMessage.ToString(), "Authorization: Bearer ABC...XYZ");
+
+                return string.Format("{0}\n{1}\n{2}", requestMessage, response, PrettifyJson(content.Await()));
             }
         }
 
@@ -133,41 +109,28 @@ namespace Duplicati.Library.Backend.MicrosoftGraph
             }
         }
 
-        protected static string ResponseToString(HttpWebResponse response)
+        protected static string? ResponseToString(HttpWebResponse response)
         {
-            if (response != null)
-            {
-                // Start to read the content
-                using (var responseStream = response.GetResponseStream())
-                using (var textReader = new StreamReader(responseStream))
-                {
-                    return string.Format("{0}\n{1}", response, PrettifyJson(textReader.ReadToEnd()));
-                }
-            }
-            else
-            {
+            if (response == null)
                 return null;
-            }
+
+            // Start to read the content
+            using (var responseStream = response.GetResponseStream())
+            using (var textReader = new StreamReader(responseStream))
+                return string.Format("{0}\n{1}", response, PrettifyJson(textReader.ReadToEnd()));
         }
 
         private static string BuildFullMessage(string message, HttpWebResponse response)
         {
-            if (response != null)
-            {
-                return string.Format("{0}\n{1}", message, ResponseToString(response));
-            }
-            else
-            {
+            if (response == null)
                 return message;
-            }
+            return string.Format("{0}\n{1}", message, ResponseToString(response));
         }
 
         private static string PrettifyJson(string json)
         {
             if (string.IsNullOrWhiteSpace(json))
-            {
                 return json;
-            }
 
             if (json[0] == '<')
             {
@@ -191,12 +154,12 @@ namespace Duplicati.Library.Backend.MicrosoftGraph
     public class DriveItemNotFoundException : MicrosoftGraphException
     {
         public DriveItemNotFoundException(HttpResponseMessage response)
-            : base(string.Format("Item at {0} was not found", response?.RequestMessage?.RequestUri?.ToString() ?? "<unknown>"), response)
+            : base(string.Format("Item at {0} was not found", response.RequestMessage?.RequestUri?.ToString() ?? "<unknown>"), response)
         {
         }
 
         public DriveItemNotFoundException(HttpWebResponse response)
-            : base(string.Format("Item at {0} was not found", response?.ResponseUri?.ToString() ?? "<unknown>"), response)
+            : base(string.Format("Item at {0} was not found", response.ResponseUri?.ToString() ?? "<unknown>"), response)
         {
         }
     }
@@ -209,7 +172,7 @@ namespace Duplicati.Library.Backend.MicrosoftGraph
             int fragmentCount,
             Exception fragmentException)
             : base(
-                  string.Format("Error uploading fragment {0} of {1} for {2}", fragment, fragmentCount, originalResponse?.RequestMessage?.RequestUri?.ToString() ?? "<unknown>"),
+                  string.Format("Error uploading fragment {0} of {1} for {2}", fragment, fragmentCount, originalResponse.RequestMessage?.RequestUri?.ToString() ?? "<unknown>"),
                   originalResponse,
                   fragmentException)
         {
@@ -223,7 +186,7 @@ namespace Duplicati.Library.Backend.MicrosoftGraph
             int fragmentCount,
             Exception fragmentException)
             : base(
-                  string.Format("Error uploading fragment {0} of {1} for {2}", fragment, fragmentCount, originalResponse?.ResponseUri?.ToString() ?? "<unknown>"),
+                  string.Format("Error uploading fragment {0} of {1} for {2}", fragment, fragmentCount, originalResponse.ResponseUri?.ToString() ?? "<unknown>"),
                   originalResponse,
                   fragmentException)
         {

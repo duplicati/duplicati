@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -22,6 +22,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Versioning;
 using System.Xml.Linq;
 using Duplicati.Library.Common;
 
@@ -236,11 +237,11 @@ namespace Duplicati.Library.Utility
         {
             IEnumerable<string> osFilters;
 
-            if (Platform.IsClientOSX)
+            if (OperatingSystem.IsMacOS())
                 osFilters = CreateOSXFilters(group);
-            else if (Platform.IsClientPosix)
+            else if (OperatingSystem.IsLinux())
                 osFilters = CreateLinuxFilters(group);
-            else if (Platform.IsClientWindows)
+            else if (OperatingSystem.IsWindows())
                 osFilters = CreateWindowsFilters(group);
             else
                 throw new ArgumentException("Unknown operating system?");
@@ -252,6 +253,23 @@ namespace Duplicati.Library.Utility
                         .Where(x => !string.IsNullOrWhiteSpace(x))
                     )
                     .Distinct(Utility.ClientFilenameStringComparer);
+        }
+
+        public static Dictionary<string, List<string>> GetFilterStringMap()
+        {
+            // Flag messes with ToString(), so have to do this manually
+            Dictionary<string, List<string>> filterMap = new Dictionary<string, List<string>>()
+            {
+                { nameof(FilterGroup.None), GetFilterStrings(FilterGroup.None).ToList() },
+                { nameof(FilterGroup.SystemFiles), GetFilterStrings(FilterGroup.SystemFiles).ToList() },
+                { nameof(FilterGroup.OperatingSystem), GetFilterStrings(FilterGroup.OperatingSystem).ToList() },
+                { nameof(FilterGroup.CacheFiles), GetFilterStrings(FilterGroup.CacheFiles).ToList() },
+                { nameof(FilterGroup.TemporaryFiles), GetFilterStrings(FilterGroup.TemporaryFiles).ToList() },
+                { nameof(FilterGroup.Applications), GetFilterStrings(FilterGroup.Applications).ToList() },
+                { nameof(FilterGroup.DefaultExcludes), GetFilterStrings(FilterGroup.DefaultExcludes).ToList() },
+                { nameof(FilterGroup.DefaultIncludes), GetFilterStrings(FilterGroup.DefaultIncludes).ToList() }
+            };
+            return filterMap;
         }
 
         /// <summary>
@@ -623,7 +641,7 @@ namespace Duplicati.Library.Utility
         private static IEnumerable<string> GetOSXExcludeFiles()
         {
             var res = new List<string>();
-            if (Platform.IsClientOSX)
+            if (OperatingSystem.IsMacOS())
             {
                 try
                 {
@@ -681,7 +699,7 @@ namespace Duplicati.Library.Utility
         /// <returns>The list of paths to exclude.</returns>
         private static string[] GetWindowsRegistryFilters()
         {
-            if (Platform.IsClientWindows)
+            if (OperatingSystem.IsWindows())
             {
                 // One Windows, filters may also be stored in the registry
                 try
@@ -702,6 +720,7 @@ namespace Duplicati.Library.Utility
         /// </summary>
         /// <returns>The list of paths to exclude.</returns>
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+        [SupportedOSPlatform("windows")]
         private static string[] GetWindowsRegistryFiltersInternal()
         {
             var rk = Microsoft.Win32.RegistryKey.OpenBaseKey(Microsoft.Win32.RegistryHive.LocalMachine, Microsoft.Win32.RegistryView.Default);

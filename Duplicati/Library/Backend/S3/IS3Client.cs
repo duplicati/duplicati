@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -18,28 +18,24 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
 using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.Backend
 {
     public interface IS3Client : IDisposable
     {
-        IEnumerable<IFileEntry> ListBucket(string bucketName, string prefix);
+        IAsyncEnumerable<IFileEntry> ListBucketAsync(string bucketName, string prefix, bool recursive, CancellationToken cancellationToken);
 
-        void AddBucket(string bucketName);
+        Task AddBucketAsync(string bucketName, CancellationToken cancelToken);
 
-        void DeleteObject(string bucketName, string keyName);
+        Task DeleteObjectAsync(string bucketName, string keyName, CancellationToken cancelToken);
 
-        void RenameFile(string bucketName, string source, string target);
+        Task RenameFileAsync(string bucketName, string source, string target, CancellationToken cancelToken);
 
-        void GetFileStream(string bucketName, string keyName, System.IO.Stream target);
+        Task GetFileStreamAsync(string bucketName, string keyName, Stream target, CancellationToken cancelToken);
 
-        string GetDnsHost();
+        string? GetDnsHost();
 
-        Task AddFileStreamAsync(string bucketName, string keyName, System.IO.Stream source, CancellationToken cancelToken);
+        Task AddFileStreamAsync(string bucketName, string keyName, Stream source, CancellationToken cancelToken);
     }
 }

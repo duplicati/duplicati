@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -222,7 +222,7 @@ namespace Duplicati.UnitTest
         {
             string parsedResultFile = Path.Combine(this.RESTOREFOLDER, "result.txt");
             List<string> customCommands = new List<string>();
-            if (Platform.IsClientWindows)
+            if (OperatingSystem.IsWindows())
             {
                 customCommands.Add($"echo %DUPLICATI__PARSED_RESULT%>\"{parsedResultFile}\"");
             }
@@ -335,7 +335,7 @@ namespace Duplicati.UnitTest
         private string CreateScript(int exitcode, string stderr = null, string stdout = null, int sleeptime = 0, List<string> customCommands = null)
         {
             var id = Guid.NewGuid().ToString("N").Substring(0, 6);
-            if (Platform.IsClientWindows)
+            if (OperatingSystem.IsWindows())
             {
                 var commands = customCommands ?? new List<string>();
                 if (!string.IsNullOrWhiteSpace(stdout))

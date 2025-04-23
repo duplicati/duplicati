@@ -1,0 +1,7 @@
+{
+  "name": "Artalk.Xmpp",
+  "description": ".NET assembly for communicating with an XMPP server.",
+  "link": "https://github.com/araditc/Artalk.Xmpp",
+  "license": "MIT",
+  "notes": ""
+}

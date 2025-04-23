@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -32,6 +32,7 @@ namespace Duplicati.Library.Common.IO
         private string m_name;
         private DateTime m_lastAccess;
         private DateTime m_lastModification;
+        private DateTime m_created;
         private long m_size;
         private bool m_isFolder;
 
@@ -60,6 +61,15 @@ namespace Duplicati.Library.Common.IO
         {
             get { return m_lastModification; }
             set { m_lastModification = value; }
+        }
+
+        /// <summary>
+        /// Gets or sets the time the file or folder was created
+        /// </summary>
+        public DateTime Created
+        {
+            get { return m_created; }
+            set { m_created = value; }
         }
 
         /// <summary>

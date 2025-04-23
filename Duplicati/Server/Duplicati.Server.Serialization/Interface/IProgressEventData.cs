@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -18,10 +18,6 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 namespace Duplicati.Server.Serialization.Interface
 {
@@ -29,19 +25,19 @@ namespace Duplicati.Server.Serialization.Interface
     {
         string BackupID { get; }
         long TaskID { get; }
-        
-        string BackendAction  { get; }
+
+        string BackendAction { get; }
         string BackendPath { get; }
         long BackendFileSize { get; }
         long BackendFileProgress { get; }
         long BackendSpeed { get; }
         bool BackendIsBlocking { get; }
-        
+
         string CurrentFilename { get; }
         long CurrentFilesize { get; }
         long CurrentFileoffset { get; }
         bool CurrentFilecomplete { get; }
-        
+
         string Phase { get; }
         float OverallProgress { get; }
         long ProcessedFileCount { get; }

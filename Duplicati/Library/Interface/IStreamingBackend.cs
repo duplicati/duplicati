@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -44,7 +44,8 @@ namespace Duplicati.Library.Interface
         /// </summary>
         /// <param name="remotename">The remote filename, relative to the URL</param>
         /// <param name="stream">The stream to write data to</param>
-        void Get(string remotename, System.IO.Stream stream);
+        /// <param name="cancelToken">Token to cancel the operation.</param>
+        Task GetAsync(string remotename, System.IO.Stream stream, CancellationToken cancelToken);
 
     }
 }

@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -20,6 +20,7 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System;
+using Duplicati.Library.AutoUpdater;
 
 namespace Duplicati.Service
 {
@@ -28,14 +29,12 @@ namespace Duplicati.Service
         [STAThread]
         public static int Main(string[] args)
         {
-            return Duplicati.Library.AutoUpdater.UpdaterManager.RunFromMostRecent(typeof(Program).GetMethod("RealMain"), args, Duplicati.Library.AutoUpdater.AutoUpdateStrategy.Never);
-        }
+            PreloadSettingsLoader.ConfigurePreloadSettings(ref args, PackageHelper.NamedExecutable.Service);
 
-        public static void RealMain(string[] args)
-        {
-            using(var runner = new Runner(args))
+            using (var runner = new Runner(PackageHelper.NamedExecutable.Server, args))
                 runner.Wait();
 
+            return 0;
         }
     }
 }

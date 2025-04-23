@@ -89,7 +89,7 @@ backupApp.service('EditUriBackendConfig', function(AppService, AppUtils, SystemI
 
     this.recommend_field = function (scope, field, label, reason, continuation) {
         if ((scope[field] || '').trim().length == 0)
-            return self.show_warning_dialog(gettextCatalog.getString('You should fill in {{field}}{{reason}}', { field: label || field, reason: reason }), continuation);
+            return self.show_warning_dialog(gettextCatalog.getString('You should fill in {{field}} {{reason}}', { field: label || field, reason: reason }), continuation);
         else
             continuation();
     };
@@ -130,5 +130,13 @@ backupApp.service('EditUriBackendConfig', function(AppService, AppUtils, SystemI
 
         return true;
     };
+
+    this.recommend_username = function(scope, continuation) {
+        if ((scope.Username || '').trim().length == 0)
+            return self.show_warning_dialog(gettextCatalog.getString('Most servers require a username, so you will likely need to enter one.\nAre you sure want to continue without a username?'), continuation);
+        else
+            continuation();
+    };
+
 
 });

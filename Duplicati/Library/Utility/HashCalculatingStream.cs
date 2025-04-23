@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -20,22 +20,9 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Duplicati.Library.Utility
 {
-    /// <summary>
-    /// A special stream that does on-the-fly MD5 calculations
-    /// </summary>
-    public class MD5CalculatingStream : HashCalculatingStream
-    {
-        public MD5CalculatingStream(System.IO.Stream basestream)
-            : base(basestream, "MD5")
-        {
-        }
-    }
-
     /// <summary>
     /// A special stream that does on-the-fly hash calculations
     /// </summary>
@@ -49,11 +36,6 @@ namespace Duplicati.Library.Utility
 
         private byte[] m_hashbuffer = null;
         private int m_hashbufferLength = 0;
-
-        public HashCalculatingStream(System.IO.Stream basestream, string hashalgorithm)
-            : this(basestream, HashAlgorithmHelper.Create(hashalgorithm))
-        {
-        }
 
         public HashCalculatingStream(System.IO.Stream basestream, System.Security.Cryptography.HashAlgorithm algorithm)
             : base(basestream)
@@ -76,11 +58,11 @@ namespace Duplicati.Library.Utility
                 m_hashbufferLength = 0;
             }
         }
-        
+
         public override int Read(byte[] buffer, int offset, int count)
         {
             if (m_hasWritten)
-                throw new InvalidOperationException(Strings.MD5CalculatingStream.IncorrectUsageError);
+                throw new InvalidOperationException(Strings.HashCalculatingStream.IncorrectUsageError);
             m_hasRead = true;
 
             int tmp = base.Read(buffer, offset, count);
@@ -91,7 +73,7 @@ namespace Duplicati.Library.Utility
         public override void Write(byte[] buffer, int offset, int count)
         {
             if (m_hasRead)
-                throw new InvalidOperationException(Strings.MD5CalculatingStream.IncorrectUsageError);
+                throw new InvalidOperationException(Strings.HashCalculatingStream.IncorrectUsageError);
             m_hasWritten = true;
 
             UpdateHash(buffer, offset, count);

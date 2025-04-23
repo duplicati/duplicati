@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -19,12 +19,11 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
-using System;
 using System.Collections.Generic;
 
 namespace Duplicati.Library.Interface
 {
-    public interface IWebModule
+    public interface IWebModule : IDynamicModule
     {
         /// <summary>
         /// The module key, used to activate or deactivate the module on the commandline
@@ -40,19 +39,14 @@ namespace Duplicati.Library.Interface
         /// A localized description of the module
         /// </summary>
         string Description { get; }
-        
-        /// <summary>
-        /// Gets a list of supported commandline arguments
-        /// </summary>
-        IList<ICommandLineArgument> SupportedCommands { get; }
-        
+
         /// <summary>
         /// Execute the specified command with the given options.
         /// </summary>
         /// <param name="options">The options to use</param>
         /// <returns>A list of output values</returns>
         IDictionary<string, string> Execute(IDictionary<string, string> options);
-        
+
     }
 }
 

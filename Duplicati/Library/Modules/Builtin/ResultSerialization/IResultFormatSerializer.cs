@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -18,6 +18,7 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
+using System;
 using System.Collections.Generic;
 
 namespace Duplicati.Library.Modules.Builtin
@@ -32,9 +33,10 @@ namespace Duplicati.Library.Modules.Builtin
         /// </summary>
         /// <returns>The serialized result string.</returns>
         /// <param name="result">The result to serialize.</param>
+        /// <param name="exception">An optional failure exception, or null</param>
         /// <param name="loglines">The log lines to serialize.</param>
         /// <param name="additional">Additional parameters to include</param>
-        string Serialize(object result, IEnumerable<string> loglines, Dictionary<string, string> additional);
+        string Serialize(object result, Exception exception, IEnumerable<string> loglines, Dictionary<string, string> additional);
 
         /// <summary>
         /// Returns the format that the serializer represents

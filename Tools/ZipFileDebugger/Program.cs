@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -22,29 +22,27 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Duplicati.Library.Interface;
 
 namespace ZipFileDebugger
 {
-    class MainClass
+    class Program
     {
-        public static void Main(string[] _args)
+        static void Main(string[] args)
         {
-            var args = new List<string>(_args);
-            var opts = Duplicati.Library.Utility.CommandLineParser.ExtractOptions(args, null);
+            var argslist = new List<string>(args);
+            var opts = Duplicati.Library.Utility.CommandLineParser.ExtractOptions(argslist, null);
 
-            if (args == null || args.Count == 0)
+            if (argslist == null || argslist.Count == 0)
             {
                 Console.WriteLine("Usage:");
                 Console.WriteLine("{0} <filename.zip>", System.Reflection.Assembly.GetEntryAssembly().Location);
                 return;
             }
 
-            Duplicati.Library.Logging.Log.LogLevel = Duplicati.Library.Logging.LogMessageType.Profiling;
-            Duplicati.Library.Logging.Log.CurrentLog = new Duplicati.Library.Logging.StreamLog(Console.OpenStandardOutput());
-
             var filecount = 0;
             var errorcount = 0;
-            foreach (var file in args)
+            foreach (var file in argslist)
             {
                 if (!File.Exists(file))
                 {
@@ -58,40 +56,45 @@ namespace ZipFileDebugger
                     continue;
                 }
 
-                Console.WriteLine("Opening zip file {0}", file);
+                Console.WriteLine("Opening ZIP file {0}", file);
 
                 var errors = false;
 
                 try
                 {
                     filecount++;
-                    using (var zr = new Duplicati.Library.Compression.FileArchiveZip(file, opts))
+                    using (var filestream = System.IO.File.Open(file, FileMode.Open, FileAccess.Read,
+                        FileShare.None))
                     {
-                        var files = zr.ListFilesWithSize(null).ToArray();
-                        Console.WriteLine("Found {0} files in archive, testing read-ability for each", files.Length);
-
-                        for (var i = 0; i < files.Length; i++)
+                        using (var zr = new Duplicati.Library.Compression.FileArchiveZip(filestream, ArchiveMode.Read, opts))
                         {
-                            Console.Write("Opening file #{0} - {1}", i + 1, files[i].Key);
-                            try
+                            var files = zr.ListFilesWithSize(null).ToArray();
+                            Console.WriteLine("Found {0} files in archive, testing read-ability for each",
+                                files.Length);
+
+                            for (var i = 0; i < files.Length; i++)
                             {
-                                using (var ms = new MemoryStream())
-                                using (var sr = zr.OpenRead(files[i].Key))
+                                Console.Write("Opening file #{0} - {1}", i + 1, files[i].Key);
+                                try
                                 {
-                                    sr.CopyTo(ms);
+                                    using (var ms = new MemoryStream())
+                                    using (var sr = zr.OpenRead(files[i].Key))
+                                    {
+                                        sr.CopyTo(ms);
 
-                                    if (ms.Length == files[i].Value)
-                                        Console.WriteLine(" -- success");
-                                    else
-                                        Console.WriteLine(" -- bad length: {0} vs {1}", ms.Length, files[i].Value);
+                                        if (ms.Length == files[i].Value)
+                                            Console.WriteLine(" -- success");
+                                        else
+                                            Console.WriteLine(" -- bad length: {0} vs {1}", ms.Length, files[i].Value);
+                                    }
                                 }
-                            }
-                            catch (Exception ex)
-                            {
-                                errors = true;
-                                Console.WriteLine(" -- failed: {0}", ex);
-                            }
+                                catch (Exception ex)
+                                {
+                                    errors = true;
+                                    Console.WriteLine(" -- failed: {0}", ex);
+                                }
 
+                            }
                         }
                     }
 
@@ -110,7 +113,7 @@ namespace ZipFileDebugger
                 }
             }
 
-            Console.Write("Processed {0} zip files", filecount);
+            Console.Write("Processed {0} ZIP files", filecount);
             if (errorcount == 0)
                 Console.WriteLine(" without errors");
             else

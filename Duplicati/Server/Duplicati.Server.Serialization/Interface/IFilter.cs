@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -19,8 +19,6 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
-using System;
-
 namespace Duplicati.Server.Serialization.Interface
 {
     /// <summary>
@@ -32,12 +30,12 @@ namespace Duplicati.Server.Serialization.Interface
         /// The sort order
         /// </summary>
         long Order { get; set; }
-        
+
         /// <summary>
         /// True if the filter includes the items, false if it excludes
         /// </summary>
         bool Include { get; set; }
-        
+
         /// <summary>
         /// The filter expression.
         /// If the filter is a regular expression, it starts and ends with hard brackets [ ]

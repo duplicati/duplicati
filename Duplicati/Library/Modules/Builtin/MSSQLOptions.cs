@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -22,9 +22,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Versioning;
 using System.Text.RegularExpressions;
-using Duplicati.Library.Common;
 using Duplicati.Library.Snapshots;
+using Duplicati.Library.Snapshots.Windows;
 
 namespace Duplicati.Library.Modules.Builtin
 {
@@ -57,7 +58,7 @@ namespace Duplicati.Library.Modules.Builtin
 
         public bool LoadAsDefault
         {
-            get { return Platform.IsClientWindows; }
+            get { return OperatingSystem.IsWindows(); }
         }
 
         public IList<Interface.ICommandLineArgument> SupportedCommands
@@ -67,7 +68,7 @@ namespace Duplicati.Library.Modules.Builtin
 
         public void Configure(IDictionary<string, string> commandlineOptions)
         {
-            // Do nothing.  Implementation needed for IGenericModule interface.
+            // Do nothing. Implementation needed for IGenericModule interface.
         }
 
         #endregion
@@ -76,7 +77,7 @@ namespace Duplicati.Library.Modules.Builtin
         public Dictionary<string, string> ParseSourcePaths(ref string[] paths, ref string filter, Dictionary<string, string> commandlineOptions)
         {
             // Early exit in case we are non-windows to prevent attempting to load Windows-only components
-            if (!Platform.IsClientWindows)
+            if (!OperatingSystem.IsWindows())
             {
                 Logging.Log.WriteWarningMessage(LOGTAG, "MSSqlWindowsOnly", null, "Microsoft SQL Server databases backup works only on Windows OS");
 
@@ -100,6 +101,7 @@ namespace Duplicati.Library.Modules.Builtin
         // Make sure the JIT does not attempt to inline this call and thus load
         // referenced types from System.Management here
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+        [SupportedOSPlatform("windows")]
         private Dictionary<string, string> RealParseSourcePaths(ref string[] paths, ref string filter, Dictionary<string, string> commandlineOptions)
         {
             var changedOptions = new Dictionary<string, string>();
@@ -142,7 +144,8 @@ namespace Duplicati.Library.Modules.Builtin
             }
 
             Logging.Log.WriteInformationMessage(LOGTAG, "StartingMsSqlQuery", "Starting to gather Microsoft SQL Server information", Logging.LogMessageType.Information);
-            mssqlUtility.QueryDBsInfo();
+            var provider = Utility.Utility.ParseEnumOption(changedOptions.AsReadOnly(), "snapshot-provider", SnapshotProvider.AlphaVSS);
+            mssqlUtility.QueryDBsInfo(provider);
             Logging.Log.WriteInformationMessage(LOGTAG, "MsSqlDatabaseCount", "Found {0} databases on Microsoft SQL Server", mssqlUtility.DBs.Count);
 
             foreach(var db in mssqlUtility.DBs)
@@ -214,7 +217,7 @@ namespace Duplicati.Library.Modules.Builtin
         
         public bool ContainFilesForBackup(string[] paths)
         {
-            if (paths == null || !Platform.IsClientWindows)
+            if (paths == null || !OperatingSystem.IsWindows())
                 return false;
 
             return paths.Where(x => !string.IsNullOrWhiteSpace(x)).Any(x => x.Equals(m_MSSQLPathAllRegExp, StringComparison.OrdinalIgnoreCase) || Regex.IsMatch(x, m_MSSQLPathDBRegExp, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant));

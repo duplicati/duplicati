@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -43,8 +43,5 @@ Command: {1} {2}", message, executable, arguments); }
         public static string JournalIdChanged { get { return LC.L(@"USN journal ID changed"); } }
         public static string NextUsnZero { get { return LC.L(@"Next USN is zero"); } }
         public static string ConfigHashChanged { get { return LC.L(@"Backup configuration changed"); } }
-    }
-    internal static class WinNativeMethod {
-        public static string MissingBackupPrivilegeError { get { return LC.L(@"Calling process does not have the backup privilege"); } }
     }
 }

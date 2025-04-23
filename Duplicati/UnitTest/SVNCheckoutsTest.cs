@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -27,6 +27,7 @@ using Duplicati.Library.Logging;
 using Duplicati.Library.Utility;
 using System.Linq;
 using Duplicati.Library.Common.IO;
+using System.Threading.Tasks;
 
 namespace Duplicati.UnitTest
 {
@@ -47,10 +48,10 @@ namespace Duplicati.UnitTest
         {
             public static long WarningCount = 0;
             public static long ErrorCount = 0;
-            
+
             public LogHelper(string file)
                 : base(file)
-            {}
+            { }
 
             public override void WriteMessage(LogEntry entry)
             {
@@ -61,7 +62,7 @@ namespace Duplicati.UnitTest
                 base.WriteMessage(entry);
             }
         }
-            
+
         /// <summary>
         /// Running the unit test confirms the correctness of duplicati
         /// </summary>
@@ -173,9 +174,9 @@ namespace Duplicati.UnitTest
                             try
                             {
                                 using (var bk = Duplicati.Library.DynamicLoader.BackendLoader.GetBackend(target, options))
-                                    foreach (var f in bk.List())
+                                    foreach (var f in bk.ListAsync(System.Threading.CancellationToken.None).ToBlockingEnumerable())
                                         if (!f.IsFolder)
-                                            bk.Delete(f.Name);
+                                            Utility.Await(bk.DeleteAsync(f.Name, System.Threading.CancellationToken.None));
                             }
                             catch (Duplicati.Library.Interface.FolderMissingException)
                             {
@@ -215,7 +216,7 @@ namespace Duplicati.UnitTest
 
                     Duplicati.Library.Main.Options opts = new Duplicati.Library.Main.Options(options);
                     using (Duplicati.Library.Interface.IBackend bk = Duplicati.Library.DynamicLoader.BackendLoader.GetBackend(target, options))
-                        foreach (Duplicati.Library.Interface.IFileEntry fe in bk.List())
+                        foreach (Duplicati.Library.Interface.IFileEntry fe in bk.ListAsync(System.Threading.CancellationToken.None).ToBlockingEnumerable())
                             if (fe.Size > opts.VolumeSize)
                             {
                                 string msg = string.Format("The file {0} is {1} bytes larger than allowed", fe.Name, fe.Size - opts.VolumeSize);
@@ -353,7 +354,7 @@ namespace Duplicati.UnitTest
                         if (s == options["dbpath"])
                             continue;
                         if (s == logfilename)
-                            continue;                        
+                            continue;
                         if (s.StartsWith(Util.AppendDirSeparator(tf), StringComparison.Ordinal))
                             continue;
 
@@ -406,6 +407,13 @@ namespace Duplicati.UnitTest
                         restoredname = System.IO.Path.Combine(System.IO.Path.Combine(tempfolder, System.IO.Path.GetFileName(rootfolder.Split(System.IO.Path.PathSeparator)[int.Parse(s.Substring(0, six))])), s.Substring(six + 1));
                     }
 
+                    if (!System.IO.File.Exists(sourcename))
+                    {
+                        Log.WriteErrorMessage(LOGTAG, "PartialRestoreMissingFile", null, "Partial restore, missing SOURCE file: {0}", sourcename);
+                        BasicSetupHelper.ProgressWriteLine("Partial restore missing file: " + sourcename);
+                        throw new Exception("Unittest is broken");
+                    }
+
                     if (!System.IO.File.Exists(restoredname))
                     {
                         Log.WriteErrorMessage(LOGTAG, "PartialRestoreMissingFile", null, "Partial restore missing file: {0}", restoredname);
@@ -413,13 +421,6 @@ namespace Duplicati.UnitTest
                     }
                     else
                     {
-                        if (!System.IO.File.Exists(sourcename))
-                        {
-                            Log.WriteErrorMessage(LOGTAG, "PartialRestoreMissingFile", null, "Partial restore missing file: {0}", sourcename);
-                            BasicSetupHelper.ProgressWriteLine("Partial restore missing file: " + sourcename);
-                            throw new Exception("Unittest is broken");
-                        }
-
                         TestUtils.AssertFilesAreEqual(sourcename, restoredname, verifymetadata, $"Partial restore file differs: {s}");
                     }
                 }
@@ -439,7 +440,7 @@ namespace Duplicati.UnitTest
             BasicSetupHelper.ProgressWriteLine("Backing up the copy: " + sourcename);
             using (new Timer(LOGTAG, "BackupRun", "Backup of " + sourcename))
             using (var console = new CommandLine.ConsoleOutput(Console.Out, options))
-            using(var i = new Duplicati.Library.Main.Controller(target, options, console))
+            using (var i = new Duplicati.Library.Main.Controller(target, options, console))
                 Log.WriteInformationMessage(LOGTAG, "BackupOutput", i.Backup(source.Split(System.IO.Path.PathSeparator)).ToString());
         }
 
@@ -449,7 +450,7 @@ namespace Duplicati.UnitTest
             tops["restore-path"] = tempfolder;
             using (new Timer(LOGTAG, "RestoreRun", "Restore of " + source))
             using (var console = new CommandLine.ConsoleOutput(Console.Out, options))
-            using(var i = new Duplicati.Library.Main.Controller(target, tops, console))
+            using (var i = new Duplicati.Library.Main.Controller(target, tops, console))
                 Log.WriteInformationMessage(LOGTAG, "RestoreOutput", i.Restore(null).ToString());
         }
 
@@ -459,7 +460,7 @@ namespace Duplicati.UnitTest
             tops["restore-path"] = tempfolder;
             using (new Timer(LOGTAG, "PartialRestore", "Partial restore of " + source))
             using (var console = new CommandLine.ConsoleOutput(Console.Out, options))
-            using(var i = new Duplicati.Library.Main.Controller(target, tops, console))
+            using (var i = new Duplicati.Library.Main.Controller(target, tops, console))
                 Log.WriteInformationMessage(LOGTAG, "PartialRestoreOutput", i.Restore(files).ToString());
         }
     }

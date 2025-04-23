@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -22,7 +22,8 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Text;
+using System.Linq;
+using Duplicati.Library.Compression;
 using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.DynamicLoader
@@ -50,10 +51,12 @@ namespace Duplicati.Library.DynamicLoader
             /// <summary>
             /// Returns the subfolders searched for compression modules
             /// </summary>
-            protected override string[] Subfolders
-            {
-                get { return new string[] { "compression" }; }
-            }
+            protected override string[] Subfolders => ["compression"];
+
+            /// <summary>
+            /// The built-in modules
+            /// </summary>
+            protected override IEnumerable<ICompression> BuiltInModules => CompressionModules.BuiltInCompressionModules;
 
             /// <summary>
             /// Instanciates a specific compression module, given the file extension and options
@@ -84,7 +87,7 @@ namespace Duplicati.Library.DynamicLoader
             /// </summary>
             /// <param name="key">The key to find commands for</param>
             /// <returns>The supported commands or null if the key was not found</returns>
-            public IList<ICommandLineArgument> GetSupportedCommands(string key)
+            public IReadOnlyList<ICommandLineArgument> GetSupportedCommands(string key)
             {
                 if (string.IsNullOrEmpty(key))
                     throw new ArgumentNullException(nameof(key));
@@ -95,7 +98,7 @@ namespace Duplicati.Library.DynamicLoader
                 {
                     ICompression b;
                     if (m_interfaces.TryGetValue(key, out b) && b != null)
-                        return b.SupportedCommands;
+                        return GetSupportedCommandsCached(b).ToList();
                     else
                         return null;
                 }
@@ -124,7 +127,7 @@ namespace Duplicati.Library.DynamicLoader
         /// </summary>
         /// <param name="key">The compression module to find the commands for</param>
         /// <returns>The supported commands or null if the key is not supported</returns>
-        public static IList<ICommandLineArgument> GetSupportedCommands(string key)
+        public static IReadOnlyList<ICommandLineArgument> GetSupportedCommands(string key)
         {
             return _compressionLoader.GetSupportedCommands(key);
         }

@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -21,6 +21,7 @@
 
 using System;
 using System.Linq;
+using Duplicati.Library.AutoUpdater;
 
 namespace Duplicati.Service
 {
@@ -36,17 +37,19 @@ namespace Duplicati.Service
 
         private readonly object m_writelock = new object();
         private readonly string[] m_cmdargs;
+        private readonly PackageHelper.NamedExecutable m_executable;
 
 
         private readonly int WAIT_POLL_TIME = (int)TimeSpan.FromMinutes(15).TotalMilliseconds;
 
-        public Runner(string[] cmdargs, Action onStartedAction = null, Action onStoppedAction = null, Action<string, bool> logMessage = null)
+        public Runner(PackageHelper.NamedExecutable executable, string[] cmdargs, Action onStartedAction = null, Action onStoppedAction = null, Action<string, bool> logMessage = null)
         {
             m_onStartedAction = onStartedAction;
             m_onStoppedAction = onStoppedAction;
             m_reportMessage = logMessage;
+            m_executable = executable;
             if (m_reportMessage == null)
-                m_reportMessage = (x,y) => Console.WriteLine(x);
+                m_reportMessage = (x, y) => Console.WriteLine(x);
 
             m_cmdargs = cmdargs;
             m_thread = new System.Threading.Thread(Run);
@@ -58,10 +61,11 @@ namespace Duplicati.Service
         private void Run()
         {
             var path = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
-            var exec = System.IO.Path.Combine(path, "Duplicati.Server.exe");
-            var cmdargs = "--ping-pong-keepalive=true";
-            if (m_cmdargs != null && m_cmdargs.Length > 0)
-                cmdargs = Duplicati.Library.Utility.Utility.WrapAsCommandLine(new string[] { cmdargs }.Concat(m_cmdargs));
+            var exec = System.IO.Path.Combine(path, PackageHelper.GetExecutableName(m_executable));
+            // Preserve order, but ensure the ping-pong-keepalive is set
+            var cmdargs = (m_cmdargs ?? [])
+                .Concat(["--ping-pong-keepalive=true"])
+                .ToArray();
 
             var firstRun = true;
             var startAttempts = 0;
@@ -81,7 +85,7 @@ namespace Duplicati.Service
                         if (!firstRun)
                             m_reportMessage(string.Format("Attempting to restart server process: {0}", exec), true);
 
-                        m_reportMessage(string.Format("Starting process {0} with cmd args {1}", exec, cmdargs), false);
+                        m_reportMessage(string.Format("Starting process {0} with cmd args {1}", exec, string.Join(Environment.NewLine, cmdargs)), false);
 
                         var pr = new System.Diagnostics.ProcessStartInfo(exec, cmdargs)
                         {
@@ -113,6 +117,11 @@ namespace Duplicati.Service
                                     PingProcess();
                             }
                         }
+
+                        if (m_process.ExitCode != 0)
+                            m_reportMessage(string.Format("Process has exited with code {0}", m_process.ExitCode), true);
+                        else if (!m_terminate)
+                            m_reportMessage("Process has exited without an error code", true);
                     }
                     catch (Exception ex)
                     {
@@ -127,11 +136,11 @@ namespace Duplicati.Service
                                 m_terminate = true;
                             }
                         }
-
-                        // Throttle restarts
-                        if (!m_terminate)
-                            System.Threading.Thread.Sleep(TimeSpan.FromSeconds(10));
                     }
+
+                    // Throttle restarts
+                    if (!m_terminate)
+                        System.Threading.Thread.Sleep(TimeSpan.FromSeconds(10));
                 }
             }
             finally
@@ -143,9 +152,9 @@ namespace Duplicati.Service
 
         private void PingProcess()
         {
-            for(var n = 0; n < 5; n++)
+            for (var n = 0; n < 5; n++)
             {
-                lock(m_writelock)
+                lock (m_writelock)
                 {
                     m_process.StandardInput.WriteLine("ping");
                     m_process.StandardInput.Flush();

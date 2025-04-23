@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -20,10 +20,7 @@
 // DEALINGS IN THE SOFTWARE.
 using Duplicati.Library.Interface;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Duplicati.Library.Backend.Storj
 {
@@ -36,6 +33,7 @@ namespace Duplicati.Library.Backend.Storj
         public DateTime LastAccess { get; set; }
 
         public DateTime LastModification { get; set; }
+        public DateTime Created { get; set; }
 
         public string Name { get; set; }
 
@@ -43,7 +41,7 @@ namespace Duplicati.Library.Backend.Storj
 
         public StorjFile()
         {
-
+            Name = string.Empty;
         }
 
         public StorjFile(uplink.NET.Models.Object tardigradeObject)

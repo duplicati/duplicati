@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -21,8 +21,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Text;
 
 namespace Duplicati.Library.Interface
 {
@@ -63,20 +61,6 @@ namespace Duplicati.Library.Interface
         Noncompressible
     }
 
-    /// <summary>
-    /// An interface for passing additional hints to the compressor
-    /// about the expected contents of the volume
-    /// </summary>
-    public interface ICompressionHinting : ICompression
-    {
-        /// <summary>
-        /// Gets or sets a value indicating whether this <see cref="Duplicati.Library.Interface.ICompression"/>
-        /// instance is in low overhead mode.
-        /// </summary>
-        /// <value><c>true</c> if low overhead mode; otherwise, <c>false</c>.</value>
-        bool LowOverheadMode { get; set; }
-    }
-
     public interface IArchiveReader
     {
         /// <summary>
@@ -98,6 +82,7 @@ namespace Duplicati.Library.Interface
         /// </summary>
         /// <param name="file">The file to read the data from</param>
         /// <returns>A stream with data from the given file</returns>
+        /// <remarks>This method has slightly strange logic, in that it will return a null value if the file does not exist, instead of throwing an exception</remarks>
         System.IO.Stream OpenRead(string file);
 
         /// <summary>
@@ -143,7 +128,7 @@ namespace Duplicati.Library.Interface
     /// The other constructor is used to do the actual work.
     /// The input file may not exist or have zero length, in which case it should be created.
     /// </summary>
-    public interface ICompression : IDisposable, IArchiveReader, IArchiveWriter
+    public interface ICompression : IDynamicModule, IDisposable, IArchiveReader, IArchiveWriter
     {
         /// <summary>
         /// The total size of the archive.
@@ -164,10 +149,5 @@ namespace Duplicati.Library.Interface
         /// A localized description of the compression module
         /// </summary>
         string Description { get; }
-
-        /// <summary>
-        /// Gets a list of supported commandline arguments
-        /// </summary>
-        IList<ICommandLineArgument> SupportedCommands { get; }
     }
 }

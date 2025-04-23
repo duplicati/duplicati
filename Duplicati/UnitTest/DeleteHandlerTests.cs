@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -29,7 +29,7 @@ using NUnit.Framework;
 
 namespace Duplicati.UnitTest
 {
-    public class DeleteHandlerTests
+    public class DeleteHandlerTests : BasicSetupHelper
     {
         private class Fileset : IListResultFileset, IEquatable<Fileset>
         {
@@ -134,7 +134,7 @@ namespace Duplicati.UnitTest
             DateTime now = DateTime.Now;
             IListResultFileset[] filesets =
             {
-                // Past week.  These should all be retained.
+                // Past week. These should all be retained.
                 new Fileset(0, BackupType.PARTIAL_BACKUP, now),
                 new Fileset(1, BackupType.FULL_BACKUP, now.AddMilliseconds(-1)),
                 new Fileset(2, BackupType.FULL_BACKUP, now.AddSeconds(-1)),
@@ -149,7 +149,7 @@ namespace Duplicati.UnitTest
                 new Fileset(9, BackupType.FULL_BACKUP, now.AddDays(-8).AddHours(2)), // Delete; third in interval
                 new Fileset(10, BackupType.PARTIAL_BACKUP, now.AddMonths(-1)), // Keep; partial
                 new Fileset(11, BackupType.PARTIAL_BACKUP, now.AddMonths(-1).AddHours(1)), // Keep; partial
-                new Fileset(12, BackupType.FULL_BACKUP, now.AddMonths(-1).AddHours(2)), // Keep; first full in interval.  Do not discard full in favor of partial.
+                new Fileset(12, BackupType.FULL_BACKUP, now.AddMonths(-1).AddHours(2)), // Keep; first full in interval. Do not discard full in favor of partial.
                 new Fileset(13, BackupType.FULL_BACKUP, now.AddMonths(-2)), // Keep; first in interval
                 new Fileset(14, BackupType.FULL_BACKUP, now.AddMonths(-2).AddHours(1)), // Delete; second in interval.
                 new Fileset(15, BackupType.FULL_BACKUP, now.AddDays(-89).AddHours(1)), // Keep; first in interval.
@@ -160,7 +160,7 @@ namespace Duplicati.UnitTest
                 new Fileset(18, BackupType.FULL_BACKUP, now.AddDays(-91)), // Delete; second in interval.
                 new Fileset(19, BackupType.PARTIAL_BACKUP, now.AddDays(-(90 + 73))), // Keep; partial
                 new Fileset(20, BackupType.PARTIAL_BACKUP, now.AddDays(-(90 + 72))), // Keep; partial.
-                new Fileset(21, BackupType.PARTIAL_BACKUP, now.AddDays(-(90 + 71))), // Keep; first full in interval.  Do not discard full in favor of partial.
+                new Fileset(21, BackupType.PARTIAL_BACKUP, now.AddDays(-(90 + 71))), // Keep; first full in interval. Do not discard full in favor of partial.
                 new Fileset(22, BackupType.FULL_BACKUP, now.AddDays(-(90 + 142))), // Keep; first in interval.
                 new Fileset(23, BackupType.FULL_BACKUP, now.AddDays(-(90 + 141))), // Delete; second in interval.
 
@@ -168,7 +168,7 @@ namespace Duplicati.UnitTest
                 new Fileset(24, BackupType.FULL_BACKUP, now.AddYears(-1).AddMonths(-1)), // Keep; first in interval.
                 new Fileset(25, BackupType.FULL_BACKUP, now.AddYears(-1).AddMonths(-1).AddDays(1)), // Delete; second in interval.
                 new Fileset(26, BackupType.PARTIAL_BACKUP, new DateTime(1, 1, 1)), // Keep; partial
-                new Fileset(27, BackupType.FULL_BACKUP, new DateTime(1, 1, 30)), // Keep; first full in interval.  Do not discard full in favor of partial.
+                new Fileset(27, BackupType.FULL_BACKUP, new DateTime(1, 1, 30)), // Keep; first full in interval. Do not discard full in favor of partial.
             };
 
             IListResultFileset[] expectedFilesetsToRemove =

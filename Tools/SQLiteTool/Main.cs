@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -23,9 +23,9 @@ using System.IO;
 
 namespace SQLiteTool
 {
-	class MainClass
+	class Program
 	{
-		public static void Main(string[] args)
+		static void Main(string[] args)
 		{
 			if (args.Length != 2)
 			{

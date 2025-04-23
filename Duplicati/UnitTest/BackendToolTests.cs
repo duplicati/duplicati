@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -66,7 +66,7 @@ namespace Duplicati.UnitTest
             {
                 // Absolute path
                 var downloadFileName = Path.Combine(absoluteDownloadFolder, Path.GetFileName(targetFile));
-                var status = CommandLine.BackendTool.Program.RealMain(new[] { "GET", $"{backendURL}", $"{downloadFileName}" });
+                var status = CommandLine.BackendTool.Program.Main(new[] { "GET", $"{backendURL}", $"{downloadFileName}" });
                 Assert.AreEqual(0, status);
                 Assert.IsTrue(File.Exists(downloadFileName));
                 TestUtils.AssertFilesAreEqual(targetFile, downloadFileName, false, downloadFileName);
@@ -83,7 +83,7 @@ namespace Duplicati.UnitTest
                 {
                     // Relative path
                     var downloadFileName = Path.GetFileName(targetFile);
-                    var status = CommandLine.BackendTool.Program.RealMain(new[] { "GET", $"{backendURL}", $"{downloadFileName}" });
+                    var status = CommandLine.BackendTool.Program.Main(new[] { "GET", $"{backendURL}", $"{downloadFileName}" });
                     Assert.AreEqual(0, status);
                     Assert.IsTrue(File.Exists(downloadFileName));
                     TestUtils.AssertFilesAreEqual(targetFile, downloadFileName, false, downloadFileName);

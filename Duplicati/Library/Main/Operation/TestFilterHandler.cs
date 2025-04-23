@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -19,11 +19,12 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
+#nullable enable
+
 using System;
 using System.IO;
-using System.Threading;
-using Duplicati.Library.Snapshots;
 using CoCoL;
+using System.Threading.Tasks;
 
 namespace Duplicati.Library.Main.Operation
 {
@@ -36,45 +37,47 @@ namespace Duplicati.Library.Main.Operation
 
         private readonly Options m_options;
         private readonly TestFilterResults m_result;
-        
+
         public TestFilterHandler(Options options, TestFilterResults results)
         {
             m_options = options;
             m_result = results;
         }
 
-        public void Run(string[] sources, Library.Utility.IFilter filter, CancellationToken token)
+        public async Task RunAsync(string[] sources, Library.Utility.IFilter filter)
         {
-            var sourcefilter = new Library.Utility.FilterExpression(sources, true);
+            var stopToken = m_result.TaskControl.ProgressToken;
 
-            using (var snapshot = BackupHandler.GetSnapshot(sources, m_options))
-            using (new IsolatedChannelScope())
+            using (var provider = await BackupHandler.GetSourceProvider(sources, m_options, stopToken).ConfigureAwait(false))
             {
-                var source = Operation.Backup.FileEnumerationProcess.Run(sources, snapshot, null,
-                    m_options.FileAttributeFilter, sourcefilter, filter, m_options.SymlinkPolicy,
-                    m_options.HardlinkPolicy, m_options.ExcludeEmptyFolders, m_options.IgnoreFilenames, null,
-                    m_result.TaskReader, token);
+                Backup.Channels channels = new();
+                var source = Backup.FileEnumerationProcess.Run(channels, provider, null,
+                    m_options.FileAttributeFilter, filter, m_options.SymlinkPolicy,
+                    m_options.HardlinkPolicy, m_options.ExcludeEmptyFolders, m_options.IgnoreFilenames,
+                    BackupHandler.GetBlacklistedPaths(m_options), null, m_result.TaskControl, null, stopToken);
 
-                var sink = CoCoL.AutomationExtensions.RunTask(
-                    new { source = Operation.Backup.Channels.SourcePaths.ForRead },
+                var sink = CoCoL.AutomationExtensions.RunTask(new
+                {
+                    source = channels.SourcePaths.AsRead()
+                },
                     async self =>
                     {
-                        while (true)
+                        while (await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
                         {
-                            var path = await self.source.ReadAsync();
-                            var fa = FileAttributes.Normal;
-                            try { fa = snapshot.GetAttributes(path); }
-                            catch (Exception ex) { Logging.Log.WriteVerboseMessage(LOGTAG, "FailedAttributeRead", "Failed to read attributes from {0}: {1}", path, ex.Message); }
+                            var entry = await self.source.ReadAsync();
+                            var fa = entry.IsFolder
+                                ? FileAttributes.Directory
+                                : FileAttributes.Normal;
+
+                            try { fa = entry.Attributes; }
+                            catch (Exception ex) { Logging.Log.WriteVerboseMessage(LOGTAG, "FailedAttributeRead", "Failed to read attributes from {0}: {1}", entry.Path, ex.Message); }
 
                             // Analyze symlinks
-                            var isSymlink = snapshot.IsSymlink(path, fa);
-                            string symlinkTarget = null;
+                            string? symlinkTarget = null;
+                            try { symlinkTarget = entry.SymlinkTarget; }
+                            catch (Exception ex) { Logging.Log.WriteExplicitMessage(LOGTAG, "SymlinkTargetReadFailure", ex, "Failed to read symlink target for path: {0}", entry.Path); }
 
-                            if (isSymlink)
-                                try { symlinkTarget = snapshot.GetSymlinkTarget(path); }
-                                catch (Exception ex) { Logging.Log.WriteExplicitMessage(LOGTAG, "SymlinkTargetReadFailure", ex, "Failed to read symlink target for path: {0}", path); }
-
-                            if (isSymlink && m_options.SymlinkPolicy == Options.SymlinkStrategy.Store && !string.IsNullOrWhiteSpace(symlinkTarget))
+                            if (m_options.SymlinkPolicy == Options.SymlinkStrategy.Store && !string.IsNullOrWhiteSpace(symlinkTarget))
                             {
                                 // Skip stored symlinks
                                 continue;
@@ -83,39 +86,50 @@ namespace Duplicati.Library.Main.Operation
                             // Go for the symlink target, as we know we follow symlinks
                             if (!string.IsNullOrWhiteSpace(symlinkTarget))
                             {
-                                path = symlinkTarget;
+                                var targetEntry = await provider.GetEntry(symlinkTarget, false, stopToken).ConfigureAwait(false);
                                 fa = FileAttributes.Normal;
-                                try { fa = snapshot.GetAttributes(path); }
-                                catch (Exception ex) { Logging.Log.WriteVerboseMessage(LOGTAG, "FailedAttributeRead", "Failed to read attributes from {0}: {1}", path, ex.Message); }
+
+                                try { fa = targetEntry!.Attributes; }
+                                catch (Exception ex) { Logging.Log.WriteVerboseMessage(LOGTAG, "FailedAttributeRead", "Failed to read attributes from {0}: {1}", entry.Path, ex.Message); }
+
+                                // If we guessed wrong and the symlink target is a folder, we need to fetch it with the correct flag
+                                if (fa.HasFlag(FileAttributes.Directory))
+                                    targetEntry = await provider.GetEntry(symlinkTarget, true, stopToken).ConfigureAwait(false);
+
+                                // No such target
+                                if (targetEntry == null)
+                                {
+                                    Logging.Log.WriteVerboseMessage(LOGTAG, "SymlinkTargetNotFound", "Symlink target not found: {0}", symlinkTarget);
+                                    continue;
+                                }
                             }
 
                             // Proceed with non-folders
-                            if (!((fa & FileAttributes.Directory) == FileAttributes.Directory))
+                            if (!entry.IsFolder)
                             {
                                 m_result.FileCount++;
                                 var size = -1L;
 
                                 try
                                 {
-                                    size = snapshot.GetFileSize(path);
+                                    size = entry.Size;
                                     m_result.FileSize += size;
                                 }
                                 catch (Exception ex)
                                 {
-                                    Logging.Log.WriteVerboseMessage(LOGTAG, "SizeReadFailed", "Failed to read length of file {0}: {1}", path, ex.Message);
+                                    Logging.Log.WriteVerboseMessage(LOGTAG, "SizeReadFailed", "Failed to read length of file {0}: {1}", entry.Path, ex.Message);
                                 }
 
-
                                 if (m_options.SkipFilesLargerThan == long.MaxValue || m_options.SkipFilesLargerThan == 0 || size < m_options.SkipFilesLargerThan)
-                                    Logging.Log.WriteVerboseMessage(LOGTAG, "IncludeFile", "Including file: {0} ({1})", path, size < 0 ? "unknown" : Duplicati.Library.Utility.Utility.FormatSizeString(size));
+                                    Logging.Log.WriteVerboseMessage(LOGTAG, "IncludeFile", "Including file: {0} ({1})", entry.Path, size < 0 ? "unknown" : Duplicati.Library.Utility.Utility.FormatSizeString(size));
                                 else
-                                    Logging.Log.WriteVerboseMessage(LOGTAG, "ExcludeLargeFile", "Excluding file due to size: {0} ({1})", path, size < 0 ? "unknown" : Duplicati.Library.Utility.Utility.FormatSizeString(size));
+                                    Logging.Log.WriteVerboseMessage(LOGTAG, "ExcludeLargeFile", "Excluding file due to size: {0} ({1})", entry.Path, size < 0 ? "unknown" : Duplicati.Library.Utility.Utility.FormatSizeString(size));
                             }
                         }
                     }
                 );
 
-                System.Threading.Tasks.Task.WhenAll(source, sink).WaitForTaskOrThrow();
+                await Task.WhenAll(source, sink).ConfigureAwait(false);
             }
         }
 

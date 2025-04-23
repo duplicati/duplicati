@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -22,9 +22,11 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Runtime.Versioning;
 
 namespace Duplicati.Library.Utility.Power
 {
+    [SupportedOSPlatform("linux")]
     public class LinuxPowerSupplyState : IPowerSupplyState
     {
         private readonly string sysfsPath = Path.Combine("/", "sys", "class", "power_supply");
@@ -46,8 +48,8 @@ namespace Duplicati.Library.Utility.Power
         private bool IsAC()
         {
             // If any of the power supply devices of type "Mains" are online, then we are on 
-            // AC power.  If none of the power supply devices are of type "Mains", then we 
-            // are also on AC power.  See https://bugzilla.redhat.com/show_bug.cgi?id=644629.
+            // AC power. If none of the power supply devices are of type "Mains", then we 
+            // are also on AC power. See https://bugzilla.redhat.com/show_bug.cgi?id=644629.
             bool reply = false;
             bool haveMains = false;
 

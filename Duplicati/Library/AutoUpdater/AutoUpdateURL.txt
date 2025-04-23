@@ -1,1 +1,1 @@
-http://updates.duplicati.com/preview/latest.manifest;http://alt.updates.duplicati.com/preview/latest.manifest
+http://updates.duplicati.com/debug/latest-v2.manifest;http://alt.updates.duplicati.com/debug/latest-v2.manifest

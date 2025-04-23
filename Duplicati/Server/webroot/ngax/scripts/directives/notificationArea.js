@@ -54,21 +54,20 @@ backupApp.directive('notificationArea', function() {
             $location.path('/');
         };
 
-        $scope.doInstallUpdate = function(id) {
-            AppService.post('/updates/install');
-        };
-
-        $scope.doActivateUpdate = function(id) {
-            AppService.post('/updates/activate').then(function() { $scope.doDismiss(id); }, AppUtils.connectionError('Activate failed: '));
-        };
-
         $scope.doShowUpdate = function(id) {
             $location.path('/updatechangelog'); 
         };
 
         $scope.doDownloadBugreport = function(item) {
             var id = item.Action.substr('bug-report:created:'.length);
-            item.DownloadLink = $scope.DownloadLink = AppService.get_bugreport_url(id);
+            AppService.get_bugreport_url(id).then(
+                function(url) {
+                    item.DownloadLink = $scope.DownloadLink = url;
+                },
+                function(resp) {
+                    DialogService.dialog(gettextCatalog.getString('Error'), gettextCatalog.getString('Failed to get bug report URL: {{message}}', { message: AppService.responseErrorMessage(resp) }));
+                }
+            );
         };
     }
   }

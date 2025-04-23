@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -22,7 +22,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Duplicati.Library.Common;
 
 namespace Duplicati.Library.UsageReporter
 {
@@ -65,23 +64,24 @@ namespace Duplicati.Library.UsageReporter
                     catch { }
             }
 
-            return null;   
+            return null;
         }
+
+        private static string CachedPlatformString = null;
 
         /// <summary>
         /// Gets a single string, identifying the OS of the current platform
-        /// The output should not contain any machine identifiers, only OS info
+        /// The output should not contain any machine identifiers, only OS info.
+        /// The information is cached, so only the first call will invoke an external process.
         /// </summary>
-        /// <value>The platform.</value>
         public static string PlatformString
         {
             get
             {
-                if (!Platform.IsClientPosix)
-                {
-                    return Environment.OSVersion.ToString();
-                }
-                else if (Platform.IsClientOSX)
+                if (CachedPlatformString != null)
+                    return CachedPlatformString;
+
+                if (OperatingSystem.IsMacOS())
                 {
                     var m = RunProgramAndReadOutput("sw_vers", null);
                     if (m != null)
@@ -91,12 +91,11 @@ namespace Duplicati.Library.UsageReporter
                         var version = lines.Where(x => x.Trim().StartsWith("ProductVersion:", StringComparison.Ordinal)).Select(x => x.Trim().Substring("ProductVersion:".Length).Trim()).FirstOrDefault();
                         var build = lines.Where(x => x.Trim().StartsWith("BuildVersion:", StringComparison.Ordinal)).Select(x => x.Trim().Substring("BuildVersion:".Length).Trim()).FirstOrDefault();
                         if (!string.IsNullOrWhiteSpace(product))
-                            return string.Format("{0} {1} {2}", product, version, build);
+                            return CachedPlatformString = string.Format("{0} {1} {2}", product, version, build);
                     }
-                       
-                    return RunProgramAndReadOutput("uname", "-srvmp");
                 }
-                else
+
+                if (OperatingSystem.IsLinux())
                 {
                     // Manual extraction, this grabs the distro identification files directly
                     try
@@ -141,9 +140,9 @@ namespace Duplicati.Library.UsageReporter
                         version = version ?? keys.FirstOrDefault(x => string.Equals(x.Item1, "VERSION_ID", StringComparison.OrdinalIgnoreCase));
 
                         if (name != null && version != null)
-                            return string.Format("{0} {1}", name.Item2, version.Item2);
+                            return CachedPlatformString = string.Format("{0} {1}", name.Item2, version.Item2);
                         if (name != null)
-                            return name.Item2;
+                            return CachedPlatformString = name.Item2;
                     }
                     catch
                     {
@@ -156,15 +155,20 @@ namespace Duplicati.Library.UsageReporter
                         var lines = m.Split(new string[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries);
                         var line = lines.Where(x => x.Trim().StartsWith("Description:", StringComparison.Ordinal)).Select(x => x.Trim().Substring("Description:".Length).Trim()).FirstOrDefault();
                         if (!string.IsNullOrWhiteSpace(line))
-                            return line;
+                            return CachedPlatformString = line;
                     }
-
-                    // This should work on all Linux based systems
-                    return RunProgramAndReadOutput("uname", "-srvmpio");
                 }
 
+                // This should work on all Linux/BSD based systems
+                if (OperatingSystem.IsLinux() || OperatingSystem.IsMacOS())
+                    return CachedPlatformString = RunProgramAndReadOutput("uname", "-srvmp");
+
+                if (OperatingSystem.IsWindows())
+                    return CachedPlatformString = RunProgramAndReadOutput("cmd", "/c ver");
+
+                return CachedPlatformString = "Unknown";
             }
-        }    
+        }
     }
 }
 

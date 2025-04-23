@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -19,19 +19,15 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
-using System;
-using System.Collections.Generic;
 using Duplicati.Library.Interface;
-using System.Linq;
-using System.IO;
 using Duplicati.Library.Utility;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
-using Duplicati.Library.Strings;
 using System.Net;
 using System.Text;
 using Duplicati.Library.Common.IO;
-using System.Threading;
+using System.Runtime.CompilerServices;
+using Duplicati.Library.Utility.Options;
 using System.Threading.Tasks;
 
 namespace Duplicati.Library.Backend.OpenStack
@@ -39,8 +35,6 @@ namespace Duplicati.Library.Backend.OpenStack
     public class OpenStackStorage : IBackend, IStreamingBackend
     {
         private const string DOMAINNAME_OPTION = "openstack-domain-name";
-        private const string USERNAME_OPTION = "auth-username";
-        private const string PASSWORD_OPTION = "auth-password";
         private const string TENANTNAME_OPTION = "openstack-tenant-name";
         private const string AUTHURI_OPTION = "openstack-authuri";
         private const string VERSION_OPTION = "openstack-version";
@@ -53,19 +47,20 @@ namespace Duplicati.Library.Backend.OpenStack
         private readonly string m_container;
         private readonly string m_prefix;
 
-        private readonly string m_domainName;
+        private readonly string? m_domainName;
         private readonly string m_username;
-        private readonly string m_password;
+        private readonly string? m_password;
         private readonly string m_authUri;
-        private readonly string m_version;
-        private readonly string m_tenantName;
-        private readonly string m_apikey;
-        private readonly string m_region;
+        private readonly string? m_version;
+        private readonly string? m_tenantName;
+        private readonly string? m_apikey;
+        private readonly string? m_region;
+        private readonly TimeoutOptionsHelper.Timeouts m_timeouts;
 
-        protected string m_simplestorageendpoint;
+        protected string? m_simplestorageendpoint;
 
         private readonly WebHelper m_helper;
-        private OpenStackAuthResponse.TokenClass m_accessToken;
+        private OpenStackAuthResponse.TokenClass? m_accessToken;
 
         public static readonly KeyValuePair<string, string>[] KNOWN_OPENSTACK_PROVIDERS = {
             new KeyValuePair<string, string>("Rackspace US", "https://identity.api.rackspacecloud.com/v2.0"),
@@ -76,7 +71,9 @@ namespace Duplicati.Library.Backend.OpenStack
             new KeyValuePair<string, string>("Infomaniak Swiss Backup cluster 1", "https://swiss-backup.infomaniak.com/identity/v3"),
             new KeyValuePair<string, string>("Infomaniak Swiss Backup cluster 2", "https://swiss-backup02.infomaniak.com/identity/v3"),
             new KeyValuePair<string, string>("Infomaniak Swiss Backup cluster 3", "https://swiss-backup03.infomaniak.com/identity/v3"),
+            new KeyValuePair<string, string>("Infomaniak Swiss Backup cluster 4", "https://swiss-backup04.infomaniak.com/identity/v3"),
             new KeyValuePair<string, string>("Infomaniak Public Cloud 1", "https://api.pub1.infomaniak.cloud/identity/v3"),
+            new KeyValuePair<string, string>("Infomaniak Public Cloud 2", "https://api.pub2.infomaniak.cloud/identity/v3"),
             new KeyValuePair<string, string>("Catalyst Cloud - nz-hlz-1 (NZ)", "https://api.nz-hlz-1.catalystcloud.io:5000/v3"),
             new KeyValuePair<string, string>("Catalyst Cloud - nz-por-1 (NZ)", "https://api.nz-por-1.catalystcloud.io:5000/v3"),
         };
@@ -91,27 +88,27 @@ namespace Duplicati.Library.Backend.OpenStack
         {
             public class AuthContainer
             {
-                public Identity identity { get; set; }
-                public Scope scope { get; set; }
+                public Identity? identity { get; set; }
+                public Scope? scope { get; set; }
             }
 
             public class Identity
             {
-                [JsonProperty(ItemConverterType=typeof(StringEnumConverter))]
+                [JsonProperty(ItemConverterType = typeof(StringEnumConverter))]
                 public IdentityMethods[] methods { get; set; }
 
                 [JsonProperty("password", NullValueHandling = NullValueHandling.Ignore)]
-                public PasswordBasedRequest PasswordCredentials { get; set; }
+                public PasswordBasedRequest? PasswordCredentials { get; set; }
 
                 public Identity()
                 {
-                    this.methods = new [] { IdentityMethods.password };
+                    this.methods = new[] { IdentityMethods.password };
                 }
             }
 
             public class Scope
             {
-                public Project project;
+                public Project? project;
             }
 
             public enum IdentityMethods
@@ -121,7 +118,7 @@ namespace Duplicati.Library.Backend.OpenStack
 
             public class PasswordBasedRequest
             {
-                public UserCredentials user { get; set; }
+                public UserCredentials? user { get; set; }
             }
 
             public class UserCredentials
@@ -132,6 +129,9 @@ namespace Duplicati.Library.Backend.OpenStack
 
                 public UserCredentials()
                 {
+                    domain = null!;
+                    name = null!;
+                    password = null!;
                 }
                 public UserCredentials(Domain domain, string name, string password)
                 {
@@ -144,15 +144,16 @@ namespace Duplicati.Library.Backend.OpenStack
 
             public class Domain
             {
-                public string name { get; set; }
+                public string? name { get; set; }
 
-                public Domain(string name)
+                public Domain(string? name)
                 {
                     this.name = name;
                 }
             }
 
-            public class Project {
+            public class Project
+            {
                 public Domain domain { get; set; }
                 public string name { get; set; }
 
@@ -165,16 +166,16 @@ namespace Duplicati.Library.Backend.OpenStack
 
             public AuthContainer auth { get; set; }
 
-            public Keystone3AuthRequest(string domain_name, string username, string password, string project_name)
+            public Keystone3AuthRequest(string? domain_name, string username, string? password, string? project_name)
             {
                 Domain domain = new Domain(domain_name);
 
                 this.auth = new AuthContainer();
                 this.auth.identity = new Identity();
                 this.auth.identity.PasswordCredentials = new PasswordBasedRequest();
-                this.auth.identity.PasswordCredentials.user = new UserCredentials(domain,username,password);
+                this.auth.identity.PasswordCredentials.user = new UserCredentials(domain, username, password!);
                 this.auth.scope = new Scope();
-                this.auth.scope.project = new Project(domain, project_name);
+                this.auth.scope.project = new Project(domain, project_name!);
             }
         }
 
@@ -183,41 +184,41 @@ namespace Duplicati.Library.Backend.OpenStack
             public class AuthContainer
             {
                 [JsonProperty("RAX-KSKEY:apiKeyCredentials", NullValueHandling = NullValueHandling.Ignore)]
-                public ApiKeyBasedRequest ApiCredentials { get; set; }
+                public ApiKeyBasedRequest? ApiCredentials { get; set; }
 
                 [JsonProperty("passwordCredentials", NullValueHandling = NullValueHandling.Ignore)]
-                public PasswordBasedRequest PasswordCredentials { get; set; }
+                public PasswordBasedRequest? PasswordCredentials { get; set; }
 
                 [JsonProperty("tenantName", NullValueHandling = NullValueHandling.Ignore)]
-                public string TenantName { get; set; }
+                public string? TenantName { get; set; }
 
                 [JsonProperty("token", NullValueHandling = NullValueHandling.Ignore)]
-                public TokenBasedRequest Token { get; set; }
+                public TokenBasedRequest? Token { get; set; }
 
             }
 
             public class ApiKeyBasedRequest
             {
-                public string username { get; set; }
-                public string apiKey { get; set; }
+                public string? username { get; set; }
+                public string? apiKey { get; set; }
             }
 
             public class PasswordBasedRequest
             {
-                public string username { get; set; }
-                public string password { get; set; }
-                public string tenantName { get; set; }
+                public string? username { get; set; }
+                public string? password { get; set; }
+                public string? tenantName { get; set; }
             }
 
             public class TokenBasedRequest
             {
-                public string id { get; set; }
+                public string? id { get; set; }
             }
 
 
             public AuthContainer auth { get; set; }
 
-            public OpenStackAuthRequest(string tenantname, string username, string password, string apikey)
+            public OpenStackAuthRequest(string? tenantname, string username, string? password, string? apikey)
             {
                 this.auth = new AuthContainer();
                 this.auth.TenantName = tenantname;
@@ -244,70 +245,70 @@ namespace Duplicati.Library.Backend.OpenStack
 
         private class Keystone3AuthResponse
         {
-            public TokenClass token { get; set; }
+            public TokenClass? token { get; set; }
 
             public class EndpointItem
             {
                 // 'interface' is a reserved keyword, so we need this decorator to map it
                 [JsonProperty(PropertyName = "interface")]
-                public string interface_name { get; set; }
-                public string region { get; set; }
-                public string url { get; set; }
+                public string? interface_name { get; set; }
+                public string? region { get; set; }
+                public string? url { get; set; }
             }
 
             public class CatalogItem
             {
-                public EndpointItem[] endpoints { get; set; }
-                public string name { get; set; }
-                public string type { get; set; }
+                public EndpointItem[]? endpoints { get; set; }
+                public string? name { get; set; }
+                public string? type { get; set; }
             }
             public class TokenClass
             {
-                public CatalogItem[] catalog { get; set; }
+                public CatalogItem[]? catalog { get; set; }
                 public DateTime? expires_at { get; set; }
             }
         }
 
         private class OpenStackAuthResponse
         {
-            public AccessClass access { get; set; }
+            public AccessClass? access { get; set; }
 
             public class TokenClass
             {
-                public string id { get; set; }
+                public string? id { get; set; }
                 public DateTime? expires { get; set; }
             }
 
             public class EndpointItem
             {
-                public string region { get; set; }
-                public string tenantId { get; set; }
-                public string publicURL { get; set; }
-                public string internalURL { get; set; }
+                public string? region { get; set; }
+                public string? tenantId { get; set; }
+                public string? publicURL { get; set; }
+                public string? internalURL { get; set; }
             }
 
             public class ServiceItem
             {
-                public string name { get; set; }
-                public string type { get; set; }
-                public EndpointItem[] endpoints { get; set; }
+                public string? name { get; set; }
+                public string? type { get; set; }
+                public EndpointItem[]? endpoints { get; set; }
             }
 
             public class AccessClass
             {
-                public TokenClass token { get; set; }
-                public ServiceItem[] serviceCatalog { get; set; }
+                public TokenClass? token { get; set; }
+                public ServiceItem[]? serviceCatalog { get; set; }
             }
 
         }
 
         private class OpenStackStorageItem
         {
-            public string name { get; set; }
+            public string? name { get; set; }
             public DateTime? last_modified { get; set; }
             public long? bytes { get; set; }
-            public string content_type { get; set; }
-            public string subdir { get; set; }
+            public string? content_type { get; set; }
+            public string? subdir { get; set; }
         }
 
         private class WebHelper : JSONWebHelper
@@ -316,59 +317,73 @@ namespace Duplicati.Library.Backend.OpenStack
 
             public WebHelper(OpenStackStorage parent) { m_parent = parent; }
 
-            public override HttpWebRequest CreateRequest(string url, string method = null)
+            public override HttpWebRequest CreateRequest(string url, string? method = null)
             {
                 var req = base.CreateRequest(url, method);
-                req.Headers["X-Auth-Token"] = m_parent.AccessToken;
+                req.Headers["X-Auth-Token"] = m_parent.GetAccessToken(CancellationToken.None).Await();
                 return req;
             }
         }
 
         public OpenStackStorage()
         {
+            m_container = null!;
+            m_prefix = null!;
+            m_timeouts = null!;
+            m_username = null!;
+            m_authUri = null!;
+            m_helper = null!;
         }
 
-        public OpenStackStorage(string url, Dictionary<string, string> options)
+        public OpenStackStorage(string url, Dictionary<string, string?> options)
         {
             var uri = new Utility.Uri(url);
 
             m_container = uri.Host;
             m_prefix = Util.AppendDirSeparator("/" + uri.Path, "/");
+            m_timeouts = TimeoutOptionsHelper.Parse(options);
 
             // For OpenStack we do not use a leading slash
             if (m_prefix.StartsWith("/", StringComparison.Ordinal))
                 m_prefix = m_prefix.Substring(1);
 
+            var auth = AuthOptionsHelper.Parse(options, uri);
+
             options.TryGetValue(DOMAINNAME_OPTION, out m_domainName);
-            options.TryGetValue(USERNAME_OPTION, out m_username);
-            options.TryGetValue(PASSWORD_OPTION, out m_password);
             options.TryGetValue(TENANTNAME_OPTION, out m_tenantName);
-            options.TryGetValue(AUTHURI_OPTION, out m_authUri);
             options.TryGetValue(VERSION_OPTION, out m_version);
             options.TryGetValue(APIKEY_OPTION, out m_apikey);
             options.TryGetValue(REGION_OPTION, out m_region);
 
-            if (string.IsNullOrWhiteSpace(m_username))
-                throw new UserInformationException(Strings.OpenStack.MissingOptionError(USERNAME_OPTION), "OpenStackMissingUsername");
-            if (string.IsNullOrWhiteSpace(m_authUri))
+            if (!auth.HasUsername)
+                throw new UserInformationException(Strings.OpenStack.MissingOptionError(AuthOptionsHelper.AuthUsernameOption), "OpenStackMissingUsername");
+
+            m_username = auth.Username!;
+            m_password = auth.Password;
+            var authUri = options.GetValueOrDefault(AUTHURI_OPTION);
+            if (string.IsNullOrWhiteSpace(authUri))
                 throw new UserInformationException(Strings.OpenStack.MissingOptionError(AUTHURI_OPTION), "OpenStackMissingAuthUri");
+
+            m_authUri = authUri;
+            if (string.IsNullOrWhiteSpace(m_version) && m_authUri.EndsWith("/v3", StringComparison.OrdinalIgnoreCase))
+                m_version = "v3";
 
             switch (m_version)
             {
                 case "v3":
                     if (string.IsNullOrWhiteSpace(m_password))
-                        throw new UserInformationException(Strings.OpenStack.MissingOptionError(PASSWORD_OPTION), "OpenStackMissingPassword");
+                        throw new UserInformationException(Strings.OpenStack.MissingOptionError(AuthOptionsHelper.AuthPasswordOption), "OpenStackMissingPassword");
                     if (string.IsNullOrWhiteSpace(m_domainName))
                         throw new UserInformationException(Strings.OpenStack.MissingOptionError(DOMAINNAME_OPTION), "OpenStackMissingDomainName");
                     if (string.IsNullOrWhiteSpace(m_tenantName))
-                        throw new UserInformationException(Strings.OpenStack.MissingOptionError(TENANTNAME_OPTION), "OpenStackMissingTenantName");    
+                        throw new UserInformationException(Strings.OpenStack.MissingOptionError(TENANTNAME_OPTION), "OpenStackMissingTenantName");
                     break;
                 case "v2":
                 default:
                     if (string.IsNullOrWhiteSpace(m_apikey))
                     {
                         if (string.IsNullOrWhiteSpace(m_password))
-                            throw new UserInformationException(Strings.OpenStack.MissingOptionError(PASSWORD_OPTION), "OpenStackMissingPassword");
+                            throw new UserInformationException(Strings.OpenStack.MissingOptionError(AuthOptionsHelper.AuthPasswordOption), "OpenStackMissingPassword");
                         if (string.IsNullOrWhiteSpace(m_tenantName))
                             throw new UserInformationException(Strings.OpenStack.MissingOptionError(TENANTNAME_OPTION), "OpenStackMissingTenantName");
                     }
@@ -378,15 +393,12 @@ namespace Duplicati.Library.Backend.OpenStack
             m_helper = new WebHelper(this);
         }
 
-        protected virtual string AccessToken
+        protected async Task<string> GetAccessToken(CancellationToken cancelToken)
         {
-            get
-            {
-                if (m_accessToken == null || (m_accessToken.expires.HasValue && (m_accessToken.expires.Value - DateTime.UtcNow).TotalSeconds < 30))
-                    GetAuthResponse();
-                
-                return m_accessToken.id;                    
-            }
+            if (m_accessToken == null || (m_accessToken.expires.HasValue && (m_accessToken.expires.Value - DateTime.UtcNow).TotalSeconds < 30))
+                await GetAuthResponse(cancelToken).ConfigureAwait(false);
+
+            return m_accessToken!.id!;
         }
 
         private static string JoinUrls(string uri, string fragment)
@@ -399,21 +411,19 @@ namespace Duplicati.Library.Backend.OpenStack
             return JoinUrls(JoinUrls(uri, fragment1), fragment2);
         }
 
-        private void GetAuthResponse()
+        private Task GetAuthResponse(CancellationToken cancellationToken)
         {
             switch (this.m_version)
             {
                 case "v3":
-                    GetKeystone3AuthResponse();
-                    break;
+                    return GetKeystone3AuthResponse(cancellationToken);
                 case "v2":
                 default:
-                    GetOpenstackAuthResponse();
-                    break;
+                    return GetOpenstackAuthResponse(cancellationToken);
             }
         }
 
-        private Keystone3AuthResponse GetKeystone3AuthResponse()
+        private async Task<Keystone3AuthResponse> GetKeystone3AuthResponse(CancellationToken cancellationToken)
         {
             var helper = new JSONWebHelper();
 
@@ -425,39 +435,54 @@ namespace Duplicati.Library.Backend.OpenStack
                 JsonConvert.SerializeObject(
                     new Keystone3AuthRequest(m_domainName, m_username, m_password, m_tenantName)
                 ));
-            
+
             req.ContentLength = data.Length;
             req.ContentType = "application/json; charset=UTF-8";
 
-            using (var rs = req.GetRequestStream())
-                rs.Write(data, 0, data.Length);
-
-            WebResponse http_response = req.GetResponse();
-
-            Keystone3AuthResponse resp;
-            using (var reader = new StreamReader(http_response.GetResponseStream()))
+            await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancellationToken, async ct =>
             {
-                resp = Newtonsoft.Json.JsonConvert.DeserializeObject<Keystone3AuthResponse>(
-                    reader.ReadToEnd());
-            }
+                using (var rs = req.GetRequestStream())
+                    await rs.WriteAsync(data, 0, data.Length, ct);
+            }).ConfigureAwait(false);
 
-            string token = http_response.Headers["X-Subject-Token"];
-            this.m_accessToken = new OpenStackAuthResponse.TokenClass();
-            this.m_accessToken.id = token;
-            this.m_accessToken.expires = resp.token.expires_at;
+
+            var http_response = await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancellationToken, ct => req.GetResponse()).ConfigureAwait(false);
+
+            var resp = await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancellationToken, ct =>
+            {
+                using (var reader = new StreamReader(http_response.GetResponseStream()))
+                    return JsonConvert.DeserializeObject<Keystone3AuthResponse>(reader.ReadToEnd())
+                        ?? throw new Exception("Failed to parse response");
+            }).ConfigureAwait(false);
+
+            if (resp.token == null)
+                throw new Exception("No token received");
+
+            var token = http_response.Headers["X-Subject-Token"];
+            if (string.IsNullOrWhiteSpace(token))
+                throw new Exception("No token received");
+
+            this.m_accessToken = new OpenStackAuthResponse.TokenClass()
+            {
+                id = token,
+                expires = resp.token.expires_at
+            };
 
             // Grab the endpoint now that we have received it anyway
-            var fileservice = resp.token.catalog.FirstOrDefault(x => string.Equals(x.type, "object-store", StringComparison.OrdinalIgnoreCase));
+            var fileservice = (resp.token.catalog ?? []).FirstOrDefault(x => string.Equals(x.type, "object-store", StringComparison.OrdinalIgnoreCase));
             if (fileservice == null)
                 throw new Exception("No object-store service found, is this service supported by the provider?");
-            
+
+            if (fileservice.endpoints == null || fileservice.endpoints.Length == 0)
+                throw new Exception("No endpoints found for object-store service");
+
             var endpoint = fileservice.endpoints.FirstOrDefault(x => (string.Equals(m_region, x.region) && string.Equals(x.interface_name, "public", StringComparison.OrdinalIgnoreCase))) ?? fileservice.endpoints.First();
             m_simplestorageendpoint = endpoint.url;
 
             return resp;
         }
 
-        private OpenStackAuthResponse GetOpenstackAuthResponse()
+        private async Task<OpenStackAuthResponse> GetOpenstackAuthResponse(CancellationToken cancellationToken)
         {
             var helper = new JSONWebHelper();
 
@@ -465,55 +490,62 @@ namespace Duplicati.Library.Backend.OpenStack
             req.Accept = "application/json";
             req.Method = "POST";
 
-            var resp = helper.ReadJSONResponse<OpenStackAuthResponse>(
+            var resp = await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancellationToken, ct => helper.ReadJSONResponse<OpenStackAuthResponse>(
                 req,
                 new OpenStackAuthRequest(m_tenantName, m_username, m_password, m_apikey)
-            );
+            )).ConfigureAwait(false);
+
+            if (resp.access?.token == null)
+                throw new Exception("No token received");
 
             m_accessToken = resp.access.token;
 
             // Grab the endpoint now that we have received it anyway
-            var fileservice = resp.access.serviceCatalog.FirstOrDefault(x => string.Equals(x.type, "object-store", StringComparison.OrdinalIgnoreCase));
+            var fileservice = (resp.access.serviceCatalog ?? []).FirstOrDefault(x => string.Equals(x.type, "object-store", StringComparison.OrdinalIgnoreCase));
             if (fileservice == null)
                 throw new Exception("No object-store service found, is this service supported by the provider?");
 
-            var endpoint = fileservice.endpoints.FirstOrDefault(x => string.Equals(m_region, x.region)) ?? fileservice.endpoints.First();
+            var fileserviceendpoints = fileservice.endpoints ?? [];
+            var endpoint = fileserviceendpoints.FirstOrDefault(x => string.Equals(m_region, x.region))
+                ?? fileserviceendpoints.FirstOrDefault();
+
+            if (endpoint == null)
+                throw new Exception("No endpoint found for object-store service");
 
             m_simplestorageendpoint = endpoint.publicURL;
 
             return resp;
         }
 
-        protected virtual string SimpleStorageEndPoint
+        protected async Task<string> GetSimpleStorageEndPoint(CancellationToken cancelToken)
         {
-            get
-            {
-                if (m_simplestorageendpoint == null)
-                    GetAuthResponse();
+            if (m_simplestorageendpoint == null)
+                await GetAuthResponse(cancelToken);
 
-                return m_simplestorageendpoint;
-            }
+            return m_simplestorageendpoint!;
         }
 
         #region IStreamingBackend implementation
         public async Task PutAsync(string remotename, Stream stream, CancellationToken cancelToken)
         {
-            var url = JoinUrls(SimpleStorageEndPoint, m_container, Utility.Uri.UrlPathEncode(m_prefix + remotename));
-            using(await m_helper.GetResponseAsync(url, cancelToken, stream, "PUT"))
+            var url = JoinUrls(await GetSimpleStorageEndPoint(cancelToken).ConfigureAwait(false), m_container, Utility.Uri.UrlPathEncode(m_prefix + remotename));
+            using (var ts = stream.ObserveReadTimeout(m_timeouts.ShortTimeout, false))
+            using (await m_helper.GetResponseAsync(url, cancelToken, ts, "PUT").ConfigureAwait(false))
             { }
         }
 
-        public void Get(string remotename, Stream stream)
+        public async Task GetAsync(string remotename, Stream stream, CancellationToken cancelToken)
         {
-            var url = JoinUrls(SimpleStorageEndPoint, m_container, Utility.Uri.UrlPathEncode(m_prefix + remotename));
+            var url = JoinUrls(await GetSimpleStorageEndPoint(cancelToken).ConfigureAwait(false), m_container, Utility.Uri.UrlPathEncode(m_prefix + remotename));
 
             try
             {
-                using(var resp = m_helper.GetResponse(url))
-                using(var rs = AsyncHttpRequest.TrySetTimeout(resp.GetResponseStream()))
-                    Library.Utility.Utility.CopyStream(rs, stream);
+                using (var resp = await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, ct => m_helper.GetResponse(url)).ConfigureAwait(false))
+                using (var rs = AsyncHttpRequest.TrySetTimeout(await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, ct => resp.GetResponseStream()).ConfigureAwait(false)))
+                using (var ts = rs.ObserveReadTimeout(m_timeouts.ShortTimeout))
+                    await Utility.Utility.CopyStreamAsync(ts, stream, cancelToken).ConfigureAwait(false);
             }
-            catch(WebException wex)
+            catch (WebException wex)
             {
                 if (wex.Response is HttpWebResponse response && response.StatusCode == HttpStatusCode.NotFound)
                     throw new FileMissingException();
@@ -525,11 +557,11 @@ namespace Duplicati.Library.Backend.OpenStack
         #endregion
         #region IBackend implementation
 
-        private T HandleListExceptions<T>(Func<T> func)
+        private async Task<T> HandleListExceptions<T>(Func<Task<T>> func)
         {
             try
             {
-                return func();
+                return await func().ConfigureAwait(false);
             }
             catch (WebException wex)
             {
@@ -540,11 +572,12 @@ namespace Duplicati.Library.Backend.OpenStack
             }
         }
 
-        public IEnumerable<IFileEntry> List()
+        /// <inheritdoc />
+        public async IAsyncEnumerable<IFileEntry> ListAsync([EnumeratorCancellation] CancellationToken cancelToken)
         {
-            var plainurl = JoinUrls(SimpleStorageEndPoint, m_container) + string.Format("?format=json&delimiter=/&limit={0}", PAGE_LIMIT);
+            var plainurl = JoinUrls(await GetSimpleStorageEndPoint(cancelToken).ConfigureAwait(false), m_container) + string.Format("?format=json&delimiter=/&limit={0}", PAGE_LIMIT);
             if (!string.IsNullOrEmpty(m_prefix))
-                plainurl += "&prefix=" + Library.Utility.Uri.UrlEncode(m_prefix);
+                plainurl += "&prefix=" + Utility.Uri.UrlEncode(m_prefix);
 
             var url = plainurl;
 
@@ -553,10 +586,13 @@ namespace Duplicati.Library.Backend.OpenStack
                 var req = m_helper.CreateRequest(url);
                 req.Accept = "application/json";
 
-                var items = HandleListExceptions(() => m_helper.ReadJSONResponse<OpenStackStorageItem[]>(req));
+                var items = await HandleListExceptions(async () => await Utility.Utility.WithTimeout(m_timeouts.ListTimeout, cancelToken, ct => m_helper.ReadJSONResponseAsync<OpenStackStorageItem[]>(req, ct))).ConfigureAwait(false);
                 foreach (var n in items)
                 {
                     var name = n.name;
+                    if (string.IsNullOrWhiteSpace(name))
+                        continue;
+
                     if (name.StartsWith(m_prefix, StringComparison.Ordinal))
                         name = name.Substring(m_prefix.Length);
 
@@ -582,78 +618,56 @@ namespace Duplicati.Library.Backend.OpenStack
                 await PutAsync(remotename, fs, cancelToken);
         }
 
-        public void Get(string remotename, string filename)
+        public async Task GetAsync(string remotename, string filename, CancellationToken cancelToken)
         {
             using (FileStream fs = File.Create(filename))
-                Get(remotename, fs);
+                await GetAsync(remotename, fs, cancelToken).ConfigureAwait(false);
         }
-        public void Delete(string remotename)
+        public async Task DeleteAsync(string remotename, CancellationToken cancelToken)
         {
-            var url = JoinUrls(SimpleStorageEndPoint, m_container, Library.Utility.Uri.UrlPathEncode(m_prefix + remotename));
-            m_helper.ReadJSONResponse<object>(url, null, "DELETE");
+            var url = JoinUrls(await GetSimpleStorageEndPoint(cancelToken).ConfigureAwait(false), m_container, Library.Utility.Uri.UrlPathEncode(m_prefix + remotename));
+            await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, ct => m_helper.ReadJSONResponseAsync<object>(url, ct, null, "DELETE")).ConfigureAwait(false);
         }
-        public void Test()
+        public Task TestAsync(CancellationToken cancelToken)
+            => this.TestListAsync(cancelToken);
+
+        public async Task CreateFolderAsync(CancellationToken cancelToken)
         {
-            this.TestList();
-        }
-        public void CreateFolder()
-        {
-            var url = JoinUrls(SimpleStorageEndPoint, m_container);
-            using(m_helper.GetResponse(url, null, "PUT"))
+            var url = JoinUrls(await GetSimpleStorageEndPoint(cancelToken).ConfigureAwait(false), m_container);
+            using (await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, ct => m_helper.GetResponseAsync(url, cancelToken, null, "PUT")).ConfigureAwait(false))
             { }
         }
-        public string DisplayName
-        {
-            get
-            {
-                return Strings.OpenStack.DisplayName;
-            }
-        }
-        public string ProtocolKey
-        {
-            get
-            {
-                return "openstack";
-            }
-        }
+        public string DisplayName => Strings.OpenStack.DisplayName;
+        public string ProtocolKey => "openstack";
         public IList<ICommandLineArgument> SupportedCommands
         {
             get
             {
                 var authuris = new StringBuilder();
-                foreach(var s in KNOWN_OPENSTACK_PROVIDERS)
+                foreach (var s in KNOWN_OPENSTACK_PROVIDERS)
                     authuris.AppendLine(string.Format("{0}: {1}", s.Key, s.Value));
 
-                return new List<ICommandLineArgument>(new [] {
+                return [
                     new CommandLineArgument(DOMAINNAME_OPTION, CommandLineArgument.ArgumentType.String, Strings.OpenStack.DomainnameOptionShort, Strings.OpenStack.DomainnameOptionLong),
-                    new CommandLineArgument(USERNAME_OPTION, CommandLineArgument.ArgumentType.String, Strings.OpenStack.UsernameOptionShort, Strings.OpenStack.UsernameOptionLong),
-                    new CommandLineArgument(PASSWORD_OPTION, CommandLineArgument.ArgumentType.Password, Strings.OpenStack.PasswordOptionShort, Strings.OpenStack.PasswordOptionLong(TENANTNAME_OPTION)),
+                    new CommandLineArgument(AuthOptionsHelper.AuthUsernameOption, CommandLineArgument.ArgumentType.String, Strings.OpenStack.UsernameOptionShort, Strings.OpenStack.UsernameOptionLong),
+                    new CommandLineArgument(AuthOptionsHelper.AuthPasswordOption, CommandLineArgument.ArgumentType.Password, Strings.OpenStack.PasswordOptionShort, Strings.OpenStack.PasswordOptionLong(TENANTNAME_OPTION)),
                     new CommandLineArgument(TENANTNAME_OPTION, CommandLineArgument.ArgumentType.String, Strings.OpenStack.TenantnameOptionShort, Strings.OpenStack.TenantnameOptionLong),
                     new CommandLineArgument(APIKEY_OPTION, CommandLineArgument.ArgumentType.Password, Strings.OpenStack.ApikeyOptionShort, Strings.OpenStack.ApikeyOptionLong),
                     new CommandLineArgument(AUTHURI_OPTION, CommandLineArgument.ArgumentType.String, Strings.OpenStack.AuthuriOptionShort, Strings.OpenStack.AuthuriOptionLong(authuris.ToString())),
                     new CommandLineArgument(VERSION_OPTION, CommandLineArgument.ArgumentType.String, Strings.OpenStack.VersionOptionShort, Strings.OpenStack.VersionOptionLong),
                     new CommandLineArgument(REGION_OPTION, CommandLineArgument.ArgumentType.String, Strings.OpenStack.RegionOptionShort, Strings.OpenStack.RegionOptionLong),
-                });
+                    .. TimeoutOptionsHelper.GetOptions(),
+                ];
             }
         }
-        public string Description
-        {
-            get
-            {
-                return Strings.OpenStack.Description;
-            }
-        }
+        public string Description => Strings.OpenStack.Description;
 
-        public virtual string[] DNSName
-        {
-            get 
-            { 
-                return new string[] { 
-                    new System.Uri(m_authUri).Host, 
-                    string.IsNullOrWhiteSpace(m_simplestorageendpoint) ? null : new System.Uri(m_simplestorageendpoint).Host 
-                }; 
-            }
+        public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(new[] {
+            new System.Uri(m_authUri).Host,
+            string.IsNullOrWhiteSpace(m_simplestorageendpoint) ? null : new System.Uri(m_simplestorageendpoint).Host
         }
+        .WhereNotNullOrWhiteSpace()
+        .ToArray());
 
         #endregion
         #region IDisposable implementation

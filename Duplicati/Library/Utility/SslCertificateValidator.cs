@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -19,71 +19,68 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
+#nullable enable
+
 using System;
-using System.Security.Cryptography.X509Certificates;
+using System.Linq;
 using System.Net.Security;
-using Duplicati.Library.Common;
+using System.Security.Cryptography.X509Certificates;
 
-namespace Duplicati.Library.Utility
+namespace Duplicati.Library.Utility;
+
+public class SslCertificateValidator(bool acceptAll, string[]? validHashes)
 {
-    public class SslCertificateValidator
+    [Serializable]
+    public class InvalidCertificateException(string certificate, SslPolicyErrors error)
+        : Exception(Strings.SslCertificateValidator.VerifyCertificateException(error, certificate))
     {
-        [Serializable]
-        public class InvalidCertificateException : Exception
+        private readonly string _mCertificate = certificate;
+        private readonly SslPolicyErrors _mErrors = error;
+
+        public string Certificate => _mCertificate;
+        public SslPolicyErrors SslError => _mErrors;
+    }
+
+    public bool ValidateServerCertificate(object sender, X509Certificate? cert, X509Chain? chain, SslPolicyErrors sslPolicyErrors)
+    {
+        if (acceptAll)
+            return true;
+
+        try
         {
-            private readonly string m_certificate = null;
-            private readonly SslPolicyErrors m_errors = SslPolicyErrors.None;
+            DateTime now = DateTime.Now;
 
-            public string Certificate { get { return m_certificate; } }
-            public SslPolicyErrors SslError { get { return m_errors; } }
+            using var certificate = cert as X509Certificate2 ?? new X509Certificate2(cert ?? throw new ArgumentNullException(nameof(cert)));
 
-            public InvalidCertificateException(string certificate, SslPolicyErrors error)
-                : base(Strings.SslCertificateValidator.VerifyCertificateException(error, certificate) + (Platform.IsClientPosix ? Strings.SslCertificateValidator.MonoHelpSSL : ""))
+            if (!IsDateValid(certificate, now))
+                return false;
+
+            if (validHashes != null)
             {
-                m_certificate = certificate;
-                m_errors = error;
+                // Check main certificate hash
+                if (IsTrustedHash(Utility.ByteArrayAsHexString(certificate.GetCertHash())))
+                    return true;
+
+                // Check chain certificate from root for the hash (this allows custom CA certificates hashes to be added)
+                if (chain?.ChainElements != null)
+                    if (chain.ChainElements.Any(element => IsTrustedHash(Utility.ByteArrayAsHexString(element.Certificate.GetCertHash())) && IsDateValid(element.Certificate, now)))
+                        return true;
             }
+
+            // If no hash is found, perform the standard validations
+            return sslPolicyErrors == SslPolicyErrors.None && certificate.Verify();
         }
-
-        public SslCertificateValidator(bool acceptAll, string[] validHashes)
+        catch (Exception ex)
         {
-            m_acceptAll = acceptAll;
-            m_validHashes = validHashes;
-        }
-
-        private readonly bool m_acceptAll = false;
-        private readonly string[] m_validHashes = null;
-
-        public bool ValidateServerCertficate(object sender, X509Certificate cert, X509Chain chain, SslPolicyErrors sslPolicyErrors)
-        {
-            if (sslPolicyErrors == SslPolicyErrors.None)
-                return true;
-
-            if (m_acceptAll)
-                return true;
-
-            string certHash = null;
-
-            try
-            {
-                certHash = Utility.ByteArrayAsHexString(cert.GetCertHash());
-                if (certHash != null && m_validHashes != null)
-                {
-                    foreach (var hash in m_validHashes)
-                    {
-                        if (!string.IsNullOrEmpty(hash) && certHash.Equals(hash, StringComparison.OrdinalIgnoreCase))
-                        {
-                            return true;
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                throw new Exception(Strings.SslCertificateValidator.VerifyCertificateHashError(ex, sslPolicyErrors), ex);
-            }
-
-            return false;
+            throw new Exception(Strings.SslCertificateValidator.VerifyCertificateHashError(ex, sslPolicyErrors), ex);
         }
     }
+
+    private bool IsTrustedHash(string hash) =>
+        !string.IsNullOrWhiteSpace(hash) &&
+        validHashes != null &&
+        validHashes.Any(validHash => !string.IsNullOrEmpty(validHash) &&
+                                     hash.Equals(validHash, StringComparison.OrdinalIgnoreCase));
+    private bool IsDateValid(X509Certificate2 cert, DateTime now) => now <= cert.NotAfter && now >= cert.NotBefore;
+
 }

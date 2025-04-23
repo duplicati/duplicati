@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -21,9 +21,11 @@
 
 using System;
 using System.Linq;
+using System.Runtime.Versioning;
 
 namespace Duplicati.Library.Utility.Power
 {
+    [SupportedOSPlatform("macOS")]
     public class MacOSPowerSupplyState : IPowerSupplyState
     {
         public PowerSupply.Source GetSource()

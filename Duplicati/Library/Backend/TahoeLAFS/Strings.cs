@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -19,13 +19,15 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 using Duplicati.Library.Localization.Short;
-namespace Duplicati.Library.Backend.Strings {
-    internal static class TahoeBackend {
-        public static string Description { get { return LC.L(@"This backend can read and write data to a Tahoe-LAFS based backend. Allowed format is ""tahoe://hostname:port/uri/$DIRCAP""."); } }
-        public static string DescriptionUseSSLLong { get { return LC.L(@"Use this flag to communicate using Secure Socket Layer (SSL) over http (https)."); } }
-        public static string DescriptionUseSSLShort { get { return LC.L(@"Instructs Duplicati to use an SSL (https) connection"); } }
-        public static string Displayname { get { return LC.L(@"Tahoe-LAFS"); } }
+namespace Duplicati.Library.Backend.Strings
+{
+    internal static class TahoeBackend
+    {
+        public static string Description => LC.L(@"This backend can read and write data to a Tahoe-LAFS based backend. Allowed format is ""tahoe://hostname:port/uri/$DIRCAP"".");
+        public static string Displayname => LC.L(@"Tahoe-LAFS");
+        public static string DescriptionUseSSLLong => LC.L(@"Use this option to communicate using Secure Socket Layer (SSL) over http (https).");
+        public static string DescriptionUseSSLShort => LC.L(@"Instruct Duplicati to use an SSL (https) connection");
         public static string MissingFolderError(string foldername, string message) { return LC.L(@"The folder {0} was not found, message: {1}", foldername, message); }
-        public static string UnrecognizedUriError { get { return LC.L(@"Unsupported URL format, must start with ""uri/URI:DIR2:"""); } }
+        public static string UnrecognizedUriError => LC.L(@"Unsupported URL format, must start with ""uri/URI:DIR2:""");
     }
 }

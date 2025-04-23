@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -22,39 +22,37 @@
 using System;
 using System.Net;
 using Duplicati.Library.Utility;
-using System.Collections.Generic;
-using System.Web;
 namespace Duplicati.Library
 {
-	/// <summary>
-	/// Class for providing call-context access to http settings
-	/// </summary>
-	public static class OAuthContextSettings
-	{
-		/// <summary>
-		/// The struct wrapping the OAuth settings
-		/// </summary>
-		private struct OAuthSettings
-		{
-			/// <summary>
-			/// The server url
-			/// </summary>
-			public string ServerURL;
-		}
+    /// <summary>
+    /// Class for providing call-context access to http settings
+    /// </summary>
+    public static class OAuthContextSettings
+    {
+        /// <summary>
+        /// The struct wrapping the OAuth settings
+        /// </summary>
+        private struct OAuthSettings
+        {
+            /// <summary>
+            /// The server url
+            /// </summary>
+            public string ServerURL;
+        }
 
-		/// <summary>
-		/// Starts the session.
-		/// </summary>
-		/// <returns>The session.</returns>
-		/// <param name="serverurl">The url to use for the server.</param>
-		public static IDisposable StartSession(string serverurl)
-		{
+        /// <summary>
+        /// Starts the session.
+        /// </summary>
+        /// <returns>The session.</returns>
+        /// <param name="serverurl">The url to use for the server.</param>
+        public static IDisposable StartSession(string serverurl)
+        {
             return CallContextSettings<OAuthSettings>.StartContext(new OAuthSettings { ServerURL = serverurl });
-		}
+        }
 
-		/// <summary>
-		/// Gets the server URL to use for OAuth.
-		/// </summary>
+        /// <summary>
+        /// Gets the server URL to use for OAuth.
+        /// </summary>
         public static string ServerURL
         {
             get
@@ -63,7 +61,7 @@ namespace Duplicati.Library
                 return string.IsNullOrWhiteSpace(r) ? OAuthHelper.DUPLICATI_OAUTH_SERVICE : r;
             }
         }
-	}
+    }
 
     public class OAuthHelper : JSONWebHelper
     {
@@ -73,11 +71,11 @@ namespace Duplicati.Library
 
         public const string DUPLICATI_OAUTH_SERVICE = "https://duplicati-oauth-handler.appspot.com/refresh";
 
-        public static string OAUTH_LOGIN_URL(string modulename) 
+        public static string OAUTH_LOGIN_URL(string modulename)
         {
             var u = new Library.Utility.Uri(OAuthContextSettings.ServerURL);
             var addr = u.SetPath("").SetQuery((u.Query ?? "") + (string.IsNullOrWhiteSpace(u.Query) ? "" : "&") + "type={0}");
-            return string.Format(addr.ToString(), modulename); 
+            return string.Format(addr.ToString(), modulename);
         }
 
         /// <summary>
@@ -106,7 +104,7 @@ namespace Duplicati.Library
             OAuthLoginUrl = OAUTH_LOGIN_URL(servicename);
 
             if (string.IsNullOrEmpty(authid))
-                throw new Duplicati.Library.Interface.UserInformationException(Strings.OAuthHelper.MissingAuthID(OAuthLoginUrl), "MissingAuthID");
+                throw new Interface.UserInformationException(Strings.OAuthHelper.MissingAuthID(OAuthLoginUrl), "MissingAuthID");
         }
 
         public T GetTokenResponse<T>()
@@ -129,7 +127,7 @@ namespace Duplicati.Library
             if (!noAuthorization && AutoAuthHeader && !string.Equals(OAuthContextSettings.ServerURL, url))
                 r.Headers["Authorization"] = string.Format("Bearer {0}", AccessToken);
             return r;
-        } 
+        }
 
         public string AccessToken
         {
@@ -142,7 +140,7 @@ namespace Duplicati.Library
                 {
                     var retries = 0;
 
-                    while(true)
+                    while (true)
                     {
                         try
                         {

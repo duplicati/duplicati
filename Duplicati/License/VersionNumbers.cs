@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -19,17 +19,25 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
-using System;
-using System.Collections.Generic;
-using System.Text;
-
 namespace Duplicati.License
 {
+    /// <summary>
+    /// The version numbers for the application, read from the assembly
+    /// </summary>
     public static class VersionNumbers
     {
+        /// <summary>
+        /// The Version Tag read from the embedded resource VersionTag.txt
+        /// </summary>
         public static readonly string TAG;
+        /// <summary>
+        /// The version number of the assembly
+        /// </summary>
         public static readonly string VERSION_NAME;
-        
+
+        /// <summary>
+        /// Static constructor to read the version numbers from the assembly
+        /// </summary>
         static VersionNumbers()
         {
             string tag = "";
@@ -41,13 +49,13 @@ namespace Duplicati.License
             catch
             {
             }
-            
+
             if (string.IsNullOrWhiteSpace(tag))
                 tag = "";
-            
+
             TAG = tag.Trim();
 
-            var v = VersionNumber;
+            var v = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString();
             if (!string.IsNullOrWhiteSpace(TAG))
                 v = " - " + TAG;
 #if DEBUG
@@ -55,22 +63,6 @@ namespace Duplicati.License
 #endif
             VERSION_NAME = v;
 
-        }
-        
-        public static string Version
-        {
-            get
-            {
-                return VERSION_NAME;
-            }
-        }
-
-        private static string VersionNumber
-        {
-            get
-            {
-                return System.Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString();
-            }
         }
     }
 }

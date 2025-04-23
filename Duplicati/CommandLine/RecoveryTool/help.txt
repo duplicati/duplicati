@@ -2,7 +2,7 @@
 =======================
 
 This tool performs a recovery of as much data as possible in small steps that must be performed in order.
-We recommend that you use Duplicati.CommandLine.exe to do the restore, and rely only on this tool if all else fails.
+We recommend that you use %CLI_EXE% to do the restore, and rely only on this tool if all else fails.
 
 
 The steps to perform are:
@@ -25,7 +25,7 @@ Optionally you can also run:
   Shows what files are available and tests filters
 
 5: Recompress
-  Ability to change compression type of files on remote backend eg. from 7z to zip
+  Ability to change compression type of files on remote backend e.g. from 7z to ZIP
 
 
 
@@ -38,17 +38,17 @@ Download
 --------
 
 Usage:
-Duplicati.RecoveryTool.exe download <remoteurl> <localfolder> [options]
+%RECOVERY_EXE% download <remoteurl> <localfolder> [options]
 
 Downloads all files matching the Duplicati filenames from <remoteurl> to <localfolder>, and decrypts them in the process.
 The remote url must be one supported by Duplicati.
-Use `Duplicati.CommandLine.exe help backends` to see backends and options.
+Use `%CLI_EXE% help backends` to see backends and options.
 
 
 
 Index
 -----
-Duplicati.RecoveryTool.exe index <localfolder> [options]
+%RECOVERY_EXE% index <localfolder> [options]
 
 Examines all files found in localfolder and produces an index.txt file, which is a list of all block hashes found in the files.
 The index file can be rather large. It defaults to being stored in <localfolder> but can be specified with --indexfile.
@@ -58,17 +58,25 @@ Some files are created in the system temporary folder, use --tempdir to set an a
 
 Restore
 -------
-Duplicati.RecoveryTool.exe restore <localfolder> [version] [options]
+%RECOVERY_EXE% restore <localfolder> [version] [options]
 
 Restores all files to their respective destinations. Use --targetpath to choose another folder where the files are restored into.
 Use the filters, --exclude, to perform a partial restore.
 Version can be either a number, a filename or a date. If omitted the most recent backup is used.
 
+The restore process requires a fast lookup, which is optimal if all the hashes can be kept in memory.
+Use the option to --reduce-memory-use=true to toggle a slower low-memory restore.
+If the process is interrupted for any reason, note the file counter and use --offset=1 to start the restore after the first file.
 
+Advanced performance options are:
+  --reduce-memory-use: Disables keeping all hashes in memory; use if memory is limited on the restoring machine
+  --disable-file-verify: Disables the initial hashing of the restored file
+  --disable-wrapped-zip: Disable using the faster .NET native ZIP archive in favor of the more resilient one in Duplicati
+  --max-open-archives: Sets the number of archives to keep open for faster access (uses some memory pr. archive); default 200
 
 List
 ----
-Duplicati.RecoveryTool.exe list <localfolder> [version] [options]
+%RECOVERY_EXE% list <localfolder> [version] [options]
 
 Lists contents of <localfolder> backups.
 Version can be either a number, a filename or a date. 
@@ -79,7 +87,7 @@ Use the filters, --exclude, to show a subset of files.
 
 Recompress
 ----
-Duplicati.RecoveryTool.exe recompress <targetcompression> <remoteurl> <localfolder> --reupload --reencrypt [options]
+%RECOVERY_EXE% recompress <targetcompression> <remoteurl> <localfolder> --reupload --reencrypt [options]
 
 1) Downloads whole remote storage to <localfolder>.
 2) Recompress from existing compression type to <targetcompression>
@@ -96,7 +104,7 @@ Supported Options
 -----------------
 The backend modules support all their normal options.
 To see what options a specific backend supports, type:
-  Duplicati.CommandLine.exe help <backend>
+  %CLI_EXE% help <backend>
 
 The environment variables AUTH_USERNAME and AUTH_PASSWORD are supported.
 The options --parameters-file and --tempdir are supported.

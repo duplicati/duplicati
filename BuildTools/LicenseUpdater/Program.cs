@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -30,13 +30,14 @@ if (!Directory.Exists(startpath))
     throw new Exception($"Start path not found: {startpath}");
 
 var target_extensions = new[] {
-    ".cs"
+    ".cs",
+    ".csproj"
     // ".html",
     // ".js",
     // ".css"
 }.ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-File.WriteAllText(Path.Combine(startpath, "LICENSE.txt"), Fragments.GetLicenseTextWithPrefixedLines(string.Empty));
+File.WriteAllText(Path.Combine(startpath, "LICENSE"), Fragments.GetLicenseTextWithPrefixedLines(string.Empty));
 
 var candidates = Directory.EnumerateFiles(startpath, "*", SearchOption.AllDirectories)
     .Where(x => target_extensions.Contains(Path.GetExtension(x) ?? string.Empty));
@@ -71,6 +72,15 @@ foreach (var file in candidates)
         // Console.WriteLine($"{file} updated!");
         continue;
     }
+
+    if (string.Equals(Path.GetExtension(file), ".csproj", StringComparison.OrdinalIgnoreCase))
+    {
+        data = Fragments.CSPROJ_COPYRIGHT_MATCH.Replace(data, $"<Copyright>{Fragments.CopyrightText}</Copyright>");
+        File.WriteAllText(file, data);
+        // Console.WriteLine($"{file} updated!");
+        continue;
+    }
+
 
     Console.WriteLine($"{file} skipped, no match");
 }

@@ -1,4 +1,4 @@
-backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, DialogService, gettextCatalog) {
+backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, AppService, DialogService, gettextCatalog) {
 
     var apputils = this;
 
@@ -60,6 +60,12 @@ backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, DialogSer
             res = gettextCatalog.getString('Desktop');
         else if (cls == 'x-tree-icon-home')
             res = gettextCatalog.getString('Home');
+        else if (cls == 'x-tree-icon-mymovies')
+            res = gettextCatalog.getString('My Movies');
+        else if (cls == 'x-tree-icon-mydownloads')
+            res = gettextCatalog.getString('My Downloads');
+        else if (cls == 'x-tree-icon-mypublic')
+            res = gettextCatalog.getString('Public');
         else if (cls == 'x-tree-icon-hypervmachine')
             res = gettextCatalog.getString('Hyper-V Machine');
         else if (cls == 'x-tree-icon-hyperv')
@@ -119,7 +125,7 @@ backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, DialogSer
         ];
 
 
-        apputils.exampleOptionString = gettextCatalog.getString('Enter one option per line in command-line format, eg. {0}');
+        apputils.exampleOptionString = gettextCatalog.getString('Enter one option per line in command-line format, e.g. {0}');
 
         apputils.filterClasses = [{
             name: gettextCatalog.getString('Exclude directories whose names contain'),
@@ -214,6 +220,17 @@ backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, DialogSer
         $rootScope.$broadcast('apputillookupschanged');
     };
 
+    apputils.filterGroupMap = null;
+    apputils.loadFilterGroups = function (reload) {
+        if (reload || apputils.filterGroupMap === null) {
+            AppService.get('/systeminfo/filtergroups').then(function (data) {
+                apputils.filterGroupMap = angular.copy(data.data.FilterGroups);
+
+                $rootScope.$broadcast('apputillookupschanged');
+            }, apputils.connectionError);
+        }
+    }
+
     reloadTexts();
     $rootScope.$on('gettextLanguageChanged', reloadTexts);
 
@@ -228,14 +245,27 @@ backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, DialogSer
     };
 
 
-    this.splitSizeString = function(val) {
+    this.splitSizeString = function (val) {
         var m = (/(\d*)(\w*)/mg).exec(val);
         var mul = null;
         if (!m)
             return [parseInt(val), null];
         else
             return [parseInt(m[1]), m[2]];
-    }
+    };
+
+    this.parseSizeString = function (val) {
+        if (val == null) {
+            return null;
+        }
+        var split = this.splitSizeString(val);
+        var formatSizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+        var idx = formatSizes.indexOf((split[1]||'').toUpperCase());
+        if (idx == -1) {
+            idx = 0;
+        }
+        return split[0] * Math.pow(1024, idx);
+    };
 
 
     this.toDisplayDateAndTime = function(dt) {
@@ -284,8 +314,6 @@ backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, DialogSer
                 if (eqpos > 0) {
                     key = line.substr(0, eqpos).trim();
                     value = line.substr(eqpos + 1).trim();
-                    if (value == '')
-                        value = true;
                 }
 
                 if (validateCallback)
@@ -479,21 +507,32 @@ backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, DialogSer
 
     var URL_REGEXP_FIELDS = ['source_uri', 'backend-type', '--auth-username', '--auth-password', 'server-name', 'server-port', 'server-path', 'querystring'];
     var URL_REGEXP = /([^:]+)\:\/\/(?:(?:([^\:]+)(?:\:?:([^@]*))?\@))?(?:([^\/\?\:]*)(?:\:(\d+))?)(?:\/([^\?]*))?(?:\?(.+))?/;
+    // Same as URL_REGEXP, but also accepts :\\ as a separator between drive letter (server for legacy reasons) and path
+    var FILE_REGEXP = /(file)\:\/\/(?:(?:([^\:]+)(?:\:?:([^@]*))?\@))?(?:([^\/\?\:]*)(?:\:(\d+))?)(?:(?:\/|\:\\)([^\?]*))?(?:\?(.+))?/;
     var QUERY_REGEXP = /(?:^|&)([^&=]*)=?([^&]*)/g;
 
     this.decode_uri = function(uri, backendlist) {
 
-        var i = URL_REGEXP_FIELDS.length + 1;
+        var i = 0;
         var res = {};
 
-        var m = URL_REGEXP.exec(uri);
+        // File URLs contain backslashes on Win which breaks the other regexp
+        // This is not standard, but for compatibility it is allowed for now
+        var fileMatch = FILE_REGEXP.exec(uri);
+        if (fileMatch) {
+            for (i = 0; i < URL_REGEXP_FIELDS.length; ++i) {
+                res[URL_REGEXP_FIELDS[i]] = fileMatch[i] || "";
+            }
+        } else {
+            var m = URL_REGEXP.exec(uri);
 
-        // Invalid URI
-        if (!m)
-            return res;
+            // Invalid URI
+            if (!m)
+                return res;
 
-        while (i--) {
-            res[URL_REGEXP_FIELDS[i]] = m[i] || "";
+            for (i = 0; i < URL_REGEXP_FIELDS.length; ++i) {
+                res[URL_REGEXP_FIELDS[i]] = m[i] || "";
+            }
         }
 
         res.querystring.replace(QUERY_REGEXP, function(str, key, val) {
@@ -502,7 +541,7 @@ backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, DialogSer
         });
 
         var backends = {};
-        for(var i in backendlist)
+        for(i in backendlist)
             backends[backendlist[i].Key] = true;
 
         var scheme = res['backend-type'];
@@ -570,7 +609,7 @@ backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, DialogSer
             var pre = apputils.replace_all(n.prefix || '', '!', dirsep);
             var suf = apputils.replace_all(n.suffix || '', '!', dirsep);
 
-            if (txt.indexOf(pre) != 0 || txt.lastIndexOf(suf) != txt.length - suf.length)
+            if (txt.indexOf(pre) != 0 || txt.lastIndexOf(suf) != txt.length - suf.length || txt.lastIndexOf(suf) < 0)
                 return null;
 
             var type = n.key;
@@ -631,6 +670,34 @@ backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, DialogSer
         return pre + body + suf;
     };
 
+    this.filterToRegexpStr = function (filter) {
+        var firstChar = filter.substr(0, 1);
+        var lastChar = filter.substr(filter.length - 1, 1);
+        var isFilterGroup = firstChar == '{' && lastChar == '}';
+        if (isFilterGroup && this.filterGroupMap !== null) {
+            // Replace filter groups with filter strings
+            var filterGroups = filter.substr(1,filter.length - 2).split(',');
+            var filterStrings = [];
+            for (var i = 0; i < filterGroups.length; ++i) {
+                filterStrings = filterStrings.concat(this.filterGroupMap[filterGroups[i].trim()] || []);
+            }
+
+            filter = filterStrings.map(function (s) {
+                return '(?:' + apputils.filterToRegexpStr(s) + ')'
+            }).join('|');
+
+        } else {
+            var rx = firstChar == '[' && lastChar == ']';
+            if (rx)
+                filter = filter.substr(1, filter.length - 2);
+            else {
+                filter = this.globToRegexp(filter);
+            }
+        }
+
+        return filter;
+    };
+
     this.filterListToRegexps = function(filters, caseSensitive) {
         var res = [];
 
@@ -642,14 +709,10 @@ backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, DialogSer
 
             var flag = f.substr(0, 1);
             var filter = f.substr(1);
-            var rx = filter.substr(0, 1) == '[' && filter.substr(filter.length - 1, 1) == ']';
-            if (rx)
-                filter = filter.substr(1, filter.length - 2);
-            else
-                filter = this.globToRegexp(filter);
 
             try {
-                res.push([flag == '+', new RegExp(filter, caseSensitive ? 'g' : 'gi')]);
+                var regexp = this.filterToRegexpStr(filter);
+                res.push([flag == '+', new RegExp(regexp, caseSensitive ? 'g' : 'gi')]);
             } catch (e) {
             }
         }

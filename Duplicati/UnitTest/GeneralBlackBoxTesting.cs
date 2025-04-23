@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -22,10 +22,7 @@
 using NUnit.Framework;
 using System.Linq;
 using System.IO;
-using System;
 using System.Collections.Generic;
-using System.Net;
-using System.Reflection;
 using Duplicati.Library.Utility;
 
 namespace Duplicati.UnitTest
@@ -41,10 +38,10 @@ namespace Duplicati.UnitTest
             get
             {
                 var rx = new System.Text.RegularExpressions.Regex("r(?<number>\\d+)");
-                return 
+                return
                     from n in Directory.EnumerateDirectories(SOURCE_FOLDERS)
                     let m = rx.Match(n)
-                        where m.Success
+                    where m.Success
                     orderby int.Parse(m.Groups["number"].Value)
                     select n;
             }
@@ -58,7 +55,7 @@ namespace Duplicati.UnitTest
             }
         }
 
-        protected string TestTarget 
+        protected string TestTarget
         {
             get
             {
@@ -67,74 +64,42 @@ namespace Duplicati.UnitTest
             }
         }
 
-        public override void OneTimeSetUp()
+
+        [OneTimeSetUp]
+        public void OneTimeSetUp()
         {
-            base.OneTimeSetUp();
-            var url = $"https://testfiles.duplicati.com/{this.zipFilename}";
-            var destinationFilePath = this.zipFilepath;
-            var webRequest = (HttpWebRequest)WebRequest.Create(url);
-
-            using (var wr = (HttpWebResponse)webRequest.GetResponse())
-            using (WebClient client = new WebClient())
-            {
-                Console.WriteLine("downloading test file to: {0}, length: {1}", destinationFilePath, wr.ContentLength);
-                var maxAttempts = 5;
-                while (maxAttempts-- > 0) {
-                    try {
-                        DateTime beginTime = DateTime.Now;
-                        client.DownloadFile(url, destinationFilePath);
-                        long length = new System.IO.FileInfo(destinationFilePath).Length;
-                        Console.WriteLine("downloaded test file: {0}: length {1}, duration {2}", destinationFilePath, length, (DateTime.Now - beginTime).TotalSeconds);
-                        if (length == wr.ContentLength) {
-                            maxAttempts = -1;
-                        } else {
-                            Console.WriteLine("invalid downloaded length {0}, should be {1}...", length, wr.ContentLength);
-                            System.Threading.Thread.Sleep(120000);
-                        }
-                    }
-                    catch (WebException ex)
-                    {
-                        if (ex.Response == null){
-                            Console.WriteLine("ex.Response is null !");
-                        } else {
-                            Console.WriteLine("exception {0}", ex);
-                            throw;
-                        }
-                    }
-                }
-
-                if (maxAttempts == 0) {
-                    throw new Exception(string.Format("Unable to download test file from {0}", url));
-                }
-            }
-            
+            this.OneTimeTearDown();
+            CommandLineOperationsTests.DownloadS3FileIfNewerAsync(this.zipFilepath, $"{CommandLineOperationsTests.S3_URL}{this.zipFilename}").Await();
             System.IO.Compression.ZipFile.ExtractToDirectory(this.zipFilepath, BASEFOLDER);
         }
 
-        public override void OneTimeTearDown()
+        [OneTimeTearDown]
+        public void OneTimeTearDown()
         {
             if (Directory.Exists(SOURCE_FOLDERS))
             {
                 Directory.Delete(SOURCE_FOLDERS, true);
             }
-            if (File.Exists(this.zipFilepath))
-            {
-                File.Delete(this.zipFilepath);
-            }
         }
 
         [Test]
         [Category("SVNData")]
-        public void TestWithSVNShort()
+        [TestCase("zip")]
+        public void TestWithSVNShort(string compression)
         {
-            SVNCheckoutTest.RunTest(TestFolders.Take(5).ToArray(), TestOptions, TestTarget);
+            var opts = TestOptions;
+            opts["compression-module"] = compression;
+            SVNCheckoutTest.RunTest(TestFolders.Take(5).ToArray(), opts, TestTarget);
         }
-        
+
         [Test]
         [Category("SVNDataLong")]
-        public void TestWithSVNLong()
+        [TestCase("zip")]
+        public void TestWithSVNLong(string compression)
         {
-            SVNCheckoutTest.RunTest(TestFolders.ToArray(), TestOptions, TestTarget);
+            var opts = TestOptions;
+            opts["compression-module"] = compression;
+            SVNCheckoutTest.RunTest(TestFolders.ToArray(), opts, TestTarget);
         }
 
         [Test]
@@ -144,6 +109,7 @@ namespace Duplicati.UnitTest
             var u = new Library.Utility.Uri(TestUtils.GetDefaultTarget());
             RandomErrorBackend.WrappedBackend = u.Scheme;
             var target = u.SetScheme(new RandomErrorBackend().ProtocolKey).ToString();
+            Library.DynamicLoader.BackendLoader.AddBackend(new RandomErrorBackend());
 
             SVNCheckoutTest.RunTest(TestFolders.Take(5).ToArray(), TestOptions, target);
         }
@@ -155,6 +121,7 @@ namespace Duplicati.UnitTest
             var u = new Library.Utility.Uri(TestUtils.GetDefaultTarget());
             SizeOmittingBackend.WrappedBackend = u.Scheme;
             var target = u.SetScheme(new SizeOmittingBackend().ProtocolKey).ToString();
+            Library.DynamicLoader.BackendLoader.AddBackend(new SizeOmittingBackend());
 
             SVNCheckoutTest.RunTest(TestFolders.Take(5).ToArray(), TestOptions, target);
         }

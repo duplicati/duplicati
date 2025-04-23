@@ -1,4 +1,4 @@
-// Copyright (C) 2024, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -28,6 +28,7 @@ using Duplicati.Library.Utility;
 using System.Linq;
 using Duplicati.Library.Interface;
 using System.IO;
+using System.Security.Cryptography;
 
 namespace Duplicati.Library.Main.Operation.Backup
 {
@@ -36,41 +37,33 @@ namespace Duplicati.Library.Main.Operation.Backup
         /// <summary>
         /// The tag used for log messages
         /// </summary>
-        private static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(StreamBlockSplitter)) ;
+        private static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(StreamBlockSplitter));
         private static readonly string FILELOGTAG = LOGTAG + ".FileEntry";
 
-        public static Task Run(Options options, BackupDatabase database, ITaskReader taskreader)
+        public static Task Run(Channels channels, Options options, BackupDatabase database, ITaskReader taskreader)
         {
             return AutomationExtensions.RunTask(
             new
             {
-                Input = Channels.StreamBlock.ForRead,
-                ProgressChannel = Channels.ProgressEvents.ForWrite,
-                BlockOutput = Channels.OutputBlocks.ForWrite
+                Input = channels.StreamBlock.AsRead(),
+                ProgressChannel = channels.ProgressEvents.AsWrite(),
+                BlockOutput = channels.OutputBlocks.AsWrite()
             },
 
             async self =>
             {
                 var blocksize = options.Blocksize;
-                var filehasher = Duplicati.Library.Utility.HashAlgorithmHelper.Create(options.FileHashAlgorithm);
-                var blockhasher = Duplicati.Library.Utility.HashAlgorithmHelper.Create(options.BlockHashAlgorithm);
                 var emptymetadata = Utility.WrapMetadata(new Dictionary<string, string>(), options);
-                var maxmetadatasize = (options.Blocksize / (long) options.BlockhashSize) * options.Blocksize;
+                var maxmetadatasize = (options.Blocksize / (long)options.BlockhashSize) * options.Blocksize;
 
-                if (blockhasher == null)
-                    throw new UserInformationException(Strings.Common.InvalidHashAlgorithm(options.BlockHashAlgorithm), "BlockHashAlgorithmNotSupported");
-                if (filehasher == null)
-                    throw new UserInformationException(Strings.Common.InvalidHashAlgorithm(options.FileHashAlgorithm), "FileHashAlgorithmNotSupported");
-
-                if (!blockhasher.CanReuseTransform)
-                    throw new UserInformationException(Strings.Common.InvalidCryptoSystem(options.BlockHashAlgorithm), "BlockHashAlgorithmNotSupported");
-                if (!filehasher.CanReuseTransform)
-                    throw new UserInformationException(Strings.Common.InvalidCryptoSystem(options.FileHashAlgorithm), "FileHashAlgorithmNotSupported");
-
+                using (var filehasher = HashFactory.CreateHasher(options.FileHashAlgorithm))
+                using (var blockhasher = HashFactory.CreateHasher(options.BlockHashAlgorithm))
                 using (var empty_metadata_stream = new MemoryStream(emptymetadata.Blob))
                 {
-                    while (await taskreader.ProgressAsync)
+                    while (true)
                     {
+                        // We ignore the stop signal, but not the pause and terminate
+                        await taskreader.ProgressRendevouz().ConfigureAwait(false);
                         var send_close = false;
                         var filesize = 0L;
 
@@ -114,7 +107,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                                 // Don't send progress reports for metadata
                                 if (!e.IsMetadata)
                                 {
-                                    await self.ProgressChannel.WriteAsync(new ProgressEvent() {Filepath = e.Path, Length = fslen, Type = EventType.FileStarted});
+                                    await self.ProgressChannel.WriteAsync(new ProgressEvent() { Filepath = e.Path, Length = fslen, Type = EventType.FileStarted });
                                     send_close = true;
                                 }
 
@@ -135,7 +128,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                                     // If we have too many hashes, flush the blocklist
                                     if (blocklistbuffer.Length - blocklistoffset < hashdata.Length)
                                     {
-                                        var blkey = Convert.ToBase64String(blockhasher.ComputeHash(blocklistbuffer, 0, (int) blocklistoffset));
+                                        var blkey = Convert.ToBase64String(blockhasher.ComputeHash(blocklistbuffer, 0, (int)blocklistoffset));
                                         blocklisthashes.Add(blkey);
                                         await DataBlock.AddBlockToOutputAsync(self.BlockOutput, blkey, blocklistbuffer, 0, blocklistoffset, CompressionHint.Noncompressible, true);
                                         blocklistoffset = 0;
@@ -151,7 +144,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                                     // Don't spam updates
                                     if (send_close && (DateTime.Now - lastupdate).TotalSeconds > 5)
                                     {
-                                        await self.ProgressChannel.WriteAsync(new ProgressEvent() {Filepath = e.Path, Length = filesize, Type = EventType.FileProgressUpdate});
+                                        await self.ProgressChannel.WriteAsync(new ProgressEvent() { Filepath = e.Path, Length = filesize, Type = EventType.FileProgressUpdate });
                                         lastupdate = DateTime.Now;
                                     }
 
@@ -164,7 +157,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                                 // If we have more than a single block of data, output the (trailing) blocklist
                                 if (hashcollector.Count > 1)
                                 {
-                                    var blkey = Convert.ToBase64String(blockhasher.ComputeHash(blocklistbuffer, 0, (int) blocklistoffset));
+                                    var blkey = Convert.ToBase64String(blockhasher.ComputeHash(blocklistbuffer, 0, (int)blocklistoffset));
                                     blocklisthashes.Add(blkey);
                                     await DataBlock.AddBlockToOutputAsync(self.BlockOutput, blkey, blocklistbuffer, 0, blocklistoffset, CompressionHint.Noncompressible, true);
                                 }
@@ -172,7 +165,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                                 filehasher.TransformFinalBlock(new byte[0], 0, 0);
                                 var filehash = Convert.ToBase64String(filehasher.Hash);
                                 var blocksetid = await database.AddBlocksetAsync(filehash, filesize, blocksize, hashcollector, blocklisthashes);
-                                cur.SetResult(new StreamProcessResult() {Streamlength = filesize, Streamhash = filehash, Blocksetid = blocksetid});
+                                cur.SetResult(new StreamProcessResult() { Streamlength = filesize, Streamhash = filehash, Blocksetid = blocksetid });
                                 cur = null;
                             }
                         }
@@ -207,7 +200,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                             }
 
                             if (send_close)
-                                await self.ProgressChannel.WriteAsync(new ProgressEvent() {Filepath = e.Path, Length = filesize, Type = EventType.FileClosed});
+                                await self.ProgressChannel.WriteAsync(new ProgressEvent() { Filepath = e.Path, Length = filesize, Type = EventType.FileClosed });
                             send_close = false;
                         }
                     }
