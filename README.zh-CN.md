@@ -2,38 +2,23 @@
 
 [English](./README.md) | **中文** | [日本語](./README.ja-JP.md)
 
-[中文官网](https://duplicati.cn)
+[中文官网](https://duplicati.com)
 
 在云存储服务上安全地存储加密备份！
 
-<!---
-以下功能目前不可用...
-[![问题统计](http://www.issuestats.com/github/duplicati/duplicati/badge/pr)](http://www.issuestats.com/github/duplicati/duplicati/)
-[![问题统计](http://www.issuestats.com/github/duplicati/duplicati/badge/issue)](http://www.issuestats.com/github/duplicati/duplicati/)
--->
-
-<!--
-已移除 Gitter
-[![在 https://gitter.im/duplicati/Lobby 聊天](https://badges.gitter.im/duplicati/Lobby.svg)](https://gitter.im/duplicati/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
--->
-
 [![Open Collective 上的支持者](https://opencollective.com/duplicati/backers/badge.svg)](#backers) [![Open Collective 上的赞助商](https://opencollective.com/duplicati/sponsors/badge.svg)](#sponsors) [![Travis-CI 上的构建状态](https://travis-ci.org/duplicati/duplicati.svg?branch=master)](https://travis-ci.org/duplicati/duplicati)
-[![AppVeyor 上的构建状态](https://ci.appveyor.com/api/projects/status/h8s5nau9mn311hq0/branch/master?svg=true)](https://ci.appveyor.com/project/kenkendk/duplicati/branch/master)
-[![Bountysource](https://www.bountysource.com/badge/tracker?tracker_id=4870652)](https://www.bountysource.com/teams/duplicati?tracker_ids=4870652&utm_medium=shield&utm_campaign=TRACKER_BADGE)
 [![覆盖率状态](https://coveralls.io/repos/github/duplicati/duplicati/badge.svg?branch=HEAD)](https://coveralls.io/github/duplicati/duplicati?branch=HEAD)
-[![许可](https://img.shields.io/github/license/duplicati/duplicati.svg)](https://github.com/duplicati/duplicati/blob/master/LICENSE.txt)
+[![许可](https://img.shields.io/github/license/duplicati/duplicati.svg)](https://github.com/duplicati/duplicati/blob/master/LICENSE)
 
 Duplicati 是一个免费、开源的备份客户端，可以安全地将加密、增量、压缩的备份存储在云存储服务和远程文件服务器上。它与以下服务兼容：
 
-&nbsp;&nbsp; _亚马逊 S3、[IDrive e2](https://www.idrive.com/e2/duplicati "使用 Duplicati 与 IDrive e2")、[Backblaze (B2)](https://www.backblaze.com/blog/duplicati-backups-cloud-storage/ "Duplicati 与 Backblaze B2 云存储")、Box、Dropbox、FTP、Google Cloud 和 Drive、MEGA、Microsoft Azure 和 OneDrive、Rackspace Cloud Files、OpenStack Storage (Swift)、Sia、Storj DCS、SSH (SFTP)、WebDAV、阿里云对象存储(OSS)、百度网盘、阿里云盘、腾讯云对象存储 (COS)、[以及更多！](https://docs.duplicati.com/backup-destinations/destination-overview)_
+&nbsp;&nbsp; _亚马逊 S3、[IDrive e2](https://www.idrive.com/e2/duplicati "使用 Duplicati 与 IDrive e2")、[Backblaze (B2)](https://www.backblaze.com/blog/duplicati-backups-cloud-storage/ "Duplicati 与 Backblaze B2 云存储")、Box、Dropbox、FTP、Google Cloud 和 Drive、MEGA、Microsoft Azure 和 OneDrive、Rackspace Cloud Files、OpenStack Storage (Swift)、Sia、Storj DCS、SSH (SFTP)、WebDAV、阿里云对象存储(OSS)、腾讯云对象存储 (COS)、[以及更多！](https://docs.duplicati.com/backup-destinations/destination-overview)_
 
-Duplicati 根据 LGPL 许可证授权，并可用于 Windows、OSX 和 Linux (.NET 4.7.1+ 或 Mono 5.10.0+ 需要)。
+Duplicati 根据 MIT 许可证授权，并可用于 Windows、macOS 和 Linux。
 
 # 下载
 
-Duplicati 的最新版本是 Duplicati 2.0 发布的测试版。
-
-[点击此处下载最新的 Duplicati 2.0 测试版。](https://duplicati.com/download)
+[点击此处下载最新的 Duplicati 测试版。](https://duplicati.com/download)
 
 测试版将自动通知您更新，并允许您通过单击（或在终端中的命令）升级。
 要获取更多[前沿版本，查看最新发布](https://github.com/duplicati/duplicati/releases)或在 UI 或命令行中选择另一个更新渠道。
@@ -44,7 +29,7 @@ Duplicati 的最新版本是 Duplicati 2.0 发布的测试版。
 
 Duplicati 由一个[活跃的社区支持，您可以通过我们的论坛与他们联系](https://forum.duplicati.com)。
 
-我们有一个很棒的 [Duplicati 手册](https://docs.duplicati.com)，您也可以[为其做出贡献](https://github.com/kees-z/DuplicatiDocs)。
+我们有一个很棒的 [Duplicati 手册](https://docs.duplicati.com)，您也可以[为其做出贡献](https://github.com/duplicati/documentation)。
 
 # 功能
 

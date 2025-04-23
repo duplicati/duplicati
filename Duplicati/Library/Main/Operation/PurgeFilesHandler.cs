@@ -213,7 +213,11 @@ namespace Duplicati.Library.Main.Operation
                                         db.UpdateRemoteVolume(f.Key, RemoteVolumeState.Deleting, f.Value, null, tr);
 
                                     tr.Commit();
-                                    await backendManager.PutAsync(vol, null, null, true, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
+
+                                    await backendManager.PutAsync(vol, null, null, true, async () =>
+                                    {
+                                        await backendManager.FlushPendingMessagesAsync(db, null, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
+                                    }, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
                                     await backendManager.DeleteAsync(prevfilename, -1, true, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
                                     await backendManager.WaitForEmptyAsync(db, null, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
                                 }
