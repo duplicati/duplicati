@@ -37,15 +37,6 @@ internal partial class BackendManager : IBackendManager
     private readonly Task queueRunner;
 
     /// <summary>
-    /// The last file read size
-    /// </summary>
-    public long LastReadSize { get; private set; }
-    /// <summary>
-    /// The last file write size
-    /// </summary>
-    public long LastWriteSize { get; private set; }
-
-    /// <summary>
     /// The execution context
     /// </summary>
     private readonly ExecuteContext context;
@@ -171,8 +162,7 @@ internal partial class BackendManager : IBackendManager
             Decrypt = true
         };
         await QueueTask(op).ConfigureAwait(false);
-        (var file, var _, var downloadSize) = await op.GetResult().ConfigureAwait(false);
-        LastReadSize = downloadSize;
+        (var file, var _, var _) = await op.GetResult().ConfigureAwait(false);
         return file;
     }
 
@@ -192,8 +182,7 @@ internal partial class BackendManager : IBackendManager
             Decrypt = false
         };
         await QueueTask(op).ConfigureAwait(false);
-        (var file, var _, var downloadSize) = await op.GetResult().ConfigureAwait(false);
-        LastReadSize = downloadSize;
+        (var file, var _, var _) = await op.GetResult().ConfigureAwait(false);
         return file;
     }
 
@@ -226,7 +215,6 @@ internal partial class BackendManager : IBackendManager
         };
         await QueueTask(op).ConfigureAwait(false);
         (var file, var downloadHash, var downloadSize) = await op.GetResult().ConfigureAwait(false);
-        LastReadSize = downloadSize;
         return (file, downloadHash, downloadSize);
     }
 
@@ -249,9 +237,10 @@ internal partial class BackendManager : IBackendManager
     /// <param name="indexVolume">The index volume to upload, if any</param>
     /// <param name="indexVolumeFinished">The callback to call when the index volume is finished</param>
     /// <param name="waitForComplete">True if the operation should wait for the file to actually be uploaded. If this argument is false, the task will complete once the operation is queued</param>
+    /// <param name="onDbUpdate">The callback to call when the database is updated</param>
     /// <param name="cancelToken">The cancellation token</param>
     /// <returns>An awaitable task</returns>
-    public async Task PutAsync(VolumeWriterBase volume, IndexVolumeWriter? indexVolume, Action? indexVolumeFinished, bool waitForComplete, CancellationToken cancelToken)
+    public async Task PutAsync(VolumeWriterBase volume, IndexVolumeWriter? indexVolume, Action? indexVolumeFinished, bool waitForComplete, Func<Task>? onDbUpdate, CancellationToken cancelToken)
     {
         volume.Close();
 
@@ -261,7 +250,8 @@ internal partial class BackendManager : IBackendManager
             OriginalIndexFile = indexVolume,
             Unencrypted = false,
             TrackedInDb = true,
-            IndexVolumeFinishedCallback = indexVolumeFinished
+            IndexVolumeFinishedCallback = indexVolumeFinished,
+            OnDbUpdate = onDbUpdate ?? PutOperation.OnDbUpdateDefault,
         };
 
         // Prepare encryption
@@ -285,7 +275,8 @@ internal partial class BackendManager : IBackendManager
             Unencrypted = true, // Avoid encrypting
             TrackedInDb = false, // Not tracked
             OriginalIndexFile = null,
-            IndexVolumeFinishedCallback = null
+            IndexVolumeFinishedCallback = null,
+            OnDbUpdate = PutOperation.OnDbUpdateDefault,
         };
 
         // Sets the task as already completed
@@ -295,19 +286,42 @@ internal partial class BackendManager : IBackendManager
     }
 
     /// <summary>
+    /// Flushes the database messages to the database
+    /// </summary>
+    /// <param name="database">The database to write to</param>
+    /// <param name="transaction">The transaction to use</param>
+    /// <param name="cancellationToken">The cancellation token</param>
+    /// <returns></returns>
+    public Task FlushPendingMessagesAsync(LocalDatabase database, IDbTransaction? transaction, CancellationToken cancellationToken)
+    {
+        context.Database.FlushPendingMessages(database, transaction);
+        return Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// Waits for the backend queue to be empty
+    /// </summary>
+    /// <param name="cancellationToken">The cancellation token</param>
+    /// <returns>An awaitable task</returns>
+    public async Task WaitForEmptyAsync(CancellationToken cancellationToken)
+    {
+        var op = new WaitForEmptyOperation(context, cancellationToken);
+        await QueueTask(op).ConfigureAwait(false);
+        await op.GetResult().ConfigureAwait(false);
+    }
+
+    /// <summary>
     /// Waits for the backend queue to be empty and flushes the database messages
     /// </summary>
+    /// <param name="database">The database to write to</param>
+    /// <param name="transaction">The transaction to use</param>
     /// <param name="cancellationToken">The cancellation token</param>
     /// <returns>An awaitable task</returns>
     public async Task WaitForEmptyAsync(LocalDatabase database, IDbTransaction? transaction, CancellationToken cancellationToken)
     {
-        context.Database.FlushPendingMessages(database, transaction);
-
-        var op = new WaitForEmptyOperation(context, cancellationToken);
-        await QueueTask(op).ConfigureAwait(false);
-        await op.GetResult().ConfigureAwait(false);
-
-        context.Database.FlushPendingMessages(database, transaction);
+        await FlushPendingMessagesAsync(database, transaction, cancellationToken).ConfigureAwait(false);
+        await WaitForEmptyAsync(cancellationToken).ConfigureAwait(false);
+        await FlushPendingMessagesAsync(database, transaction, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -318,7 +332,8 @@ internal partial class BackendManager : IBackendManager
     public async Task StopRunnerAndFlushMessages(LocalDatabase database, IDbTransaction? transaction)
     {
         await requestChannel.RetireAsync().ConfigureAwait(false);
-        context.Database.FlushPendingMessages(database, transaction);
+        await FlushPendingMessagesAsync(database, transaction, CancellationToken.None).ConfigureAwait(false);
+
         if (queueRunner.IsFaulted)
             Logging.Log.WriteWarningMessage(LOGTAG, "BackendManagerShutdown", queueRunner.Exception, "Backend manager queue runner crashed");
     }
@@ -388,7 +403,9 @@ internal partial class BackendManager : IBackendManager
                 Logging.Log.WriteWarningMessage(LOGTAG, "BackendManagerShutdown", null, "Backend manager queue runner did not stop");
             if (queueRunner.IsFaulted)
                 Logging.Log.WriteWarningMessage(LOGTAG, "BackendManagerShutdown", queueRunner.Exception, "Backend manager queue runner crashed");
-
         }
+
+        if (queueRunner.IsCompleted)
+            queueRunner.Dispose();
     }
 }

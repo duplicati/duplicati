@@ -23,7 +23,6 @@ using System.Collections.Generic;
 using System.Data;
 using System.IO;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main.Database;
@@ -66,9 +65,10 @@ namespace Duplicati.Library.Main.Operation
 
             using (var db = new LocalDatabase(path, "Recreate", true))
             {
-                m_result.SetDatabase(db);
                 await DoRunAsync(backendManager, db, false, filter, filelistfilter, blockprocessor).ConfigureAwait(false);
-                db.WriteResults();
+
+                // Ensure database is consistent after the recreate
+                db.VerifyConsistency(m_options.Blocksize, m_options.BlockhashSize, true, null);
             }
         }
 
@@ -85,8 +85,6 @@ namespace Duplicati.Library.Main.Operation
 
             using (var db = new LocalDatabase(m_options.Dbpath, "Recreate", true))
             {
-                m_result.SetDatabase(db);
-
                 if (db.FindMatchingFilesets(m_options.Time, m_options.Version).Any())
                     throw new UserInformationException("The version(s) being updated to, already exists", "UpdateVersionAlreadyExists");
 
@@ -101,7 +99,6 @@ namespace Duplicati.Library.Main.Operation
                     Utility.VerifyOptionsAndUpdateDatabase(db, m_options, null);
 
                 await DoRunAsync(backendManager, db, true, filter, filelistfilter, blockprocessor).ConfigureAwait(false);
-                db.WriteResults();
             }
         }
 
@@ -164,6 +161,9 @@ namespace Duplicati.Library.Main.Operation
                             throw new UserInformationException(string.Format("Found {0} parse-able files (of {1} files) with different prefixes: {2}, did you forget to set the backup prefix?", tmp.Length, rawlist.Count(), string.Join(", ", types)), "EmptyRemoteLocationWithPrefix");
                     }
                 }
+
+                if (string.IsNullOrWhiteSpace(m_options.Passphrase) && remotefiles.Any(x => !string.IsNullOrWhiteSpace(x.EncryptionModule)))
+                    throw new UserInformationException("The remote files are encrypted, but no passphrase was provided", "MissingPassphrase");
 
                 //Then we select the filelist we should work with,
                 // and create the filelist table to fit
@@ -257,7 +257,7 @@ namespace Duplicati.Library.Main.Operation
                         catch (Exception ex)
                         {
                             Logging.Log.WriteWarningMessage(LOGTAG, "FileProcessingFailed", ex, "Failed to process file: {0}", entry.Name);
-                            if (ex is System.Threading.ThreadAbortException)
+                            if (ex.IsAbortException())
                             {
                                 m_result.EndTime = DateTime.UtcNow;
                                 throw;
@@ -386,7 +386,7 @@ namespace Duplicati.Library.Main.Operation
                             {
                                 //Not fatal
                                 Logging.Log.WriteErrorMessage(LOGTAG, "IndexFileProcessingFailed", ex, "Failed to process index file: {0}", name);
-                                if (ex is System.Threading.ThreadAbortException)
+                                if (ex.IsAbortException())
                                 {
                                     m_result.EndTime = DateTime.UtcNow;
                                     throw;
@@ -569,6 +569,9 @@ namespace Duplicati.Library.Main.Operation
 
             // update fileset using filesetData
             restoredb.UpdateFullBackupStateInFileset(filesetid, filesetData.IsFullBackup, transaction);
+
+            // clear any existing fileset entries
+            restoredb.ClearFilesetEntries(filesetid, transaction);
 
             using (var filelistreader = new FilesetVolumeReader(compressor, options))
                 foreach (var fe in filelistreader.Files.Where(x => Library.Utility.FilterExpression.Matches(filter, x.Path)))

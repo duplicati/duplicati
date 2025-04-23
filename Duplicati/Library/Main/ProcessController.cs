@@ -21,7 +21,8 @@
 
 using System;
 using System.Linq;
-using Duplicati.Library.Common;
+using System.Threading;
+using System.Threading.Tasks;
 using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Main
@@ -79,6 +80,11 @@ namespace Duplicati.Library.Main
         private bool m_hasStartedBackgroundMode = false;
 
         /// <summary>
+        /// A timer used to prevent sleep
+        /// </summary>
+        private CancellationTokenSource m_timerCancellation;
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="T:Duplicati.Library.Main.ProcessController"/> class.
         /// </summary>
         /// <param name="options">The options to use.</param>
@@ -86,7 +92,7 @@ namespace Duplicati.Library.Main
         {
             if (options == null)
                 return;
-            
+
             try
             {
                 Start(options);
@@ -96,7 +102,6 @@ namespace Duplicati.Library.Main
             {
                 Logging.Log.WriteWarningMessage(LOGTAG, "ProcessControllerStartError", ex, "Failed to start the process controller: {0}", ex.Message);
             }
-
         }
 
         /// <summary>
@@ -108,12 +113,42 @@ namespace Duplicati.Library.Main
             {
                 try
                 {
-                    Win32.SetThreadExecutionState(Win32.EXECUTION_STATE.ES_CONTINUOUS | Win32.EXECUTION_STATE.ES_SYSTEM_REQUIRED);
+                    m_timerCancellation?.Cancel();
+                    m_timerCancellation = new CancellationTokenSource();
+
+                    Task.Run(async () =>
+                    {
+                        if (!OperatingSystem.IsWindows())
+                            return;
+
+                        try
+                        {
+                            while (true)
+                            {
+                                // Capture the cancellation token, so we don't risk it being set to null
+                                var ct = m_timerCancellation;
+                                if (ct == null || ct.Token.IsCancellationRequested)
+                                    break;
+
+                                Win32.SetThreadExecutionState(Win32.EXECUTION_STATE.ES_CONTINUOUS | Win32.EXECUTION_STATE.ES_SYSTEM_REQUIRED);
+                                await Task.Delay(TimeSpan.FromSeconds(10), ct.Token);
+                            }
+                        }
+                        catch (TaskCanceledException)
+                        {
+                            // Ignore
+                        }
+                        catch (Exception ex)
+                        {
+                            Logging.Log.WriteWarningMessage(LOGTAG, "SleepPreventionError", ex, "Failed to set sleep prevention");
+                        }
+                    });
+
                     m_runningSleepPrevention = true;
                 }
                 catch (Exception ex)
                 {
-                    Logging.Log.WriteWarningMessage(LOGTAG, "SleepPrevetionError", ex, "Failed to set sleep prevention");
+                    Logging.Log.WriteWarningMessage(LOGTAG, "SleepPreventionError", ex, "Failed to set sleep prevention");
                 }
             }
             else if (OperatingSystem.IsMacOS())
@@ -220,7 +255,7 @@ namespace Duplicati.Library.Main
                     {
                         m_originalNiceClass = 0;
                         // Only allowed for "best-effort" and "realtime"
-                        m_originalNiceLevel = -1; 
+                        m_originalNiceLevel = -1;
                     }
                     else if (string.Equals(ioclass, "best-effort", StringComparison.OrdinalIgnoreCase))
                     {
@@ -293,12 +328,15 @@ namespace Duplicati.Library.Main
                     if (m_runningSleepPrevention)
                     {
                         m_runningSleepPrevention = false;
+                        m_timerCancellation?.Dispose();
+                        m_timerCancellation = null;
+
                         Win32.SetThreadExecutionState(Win32.EXECUTION_STATE.ES_CONTINUOUS);
                     }
                 }
                 catch (Exception ex)
                 {
-                    Logging.Log.WriteWarningMessage(LOGTAG, "SleepPrevetionError", ex, "Failed to set sleep prevention");
+                    Logging.Log.WriteWarningMessage(LOGTAG, "SleepPreventionError", ex, "Failed to set sleep prevention");
                 }
             }
             else if (OperatingSystem.IsMacOS())
@@ -463,7 +501,7 @@ namespace Duplicati.Library.Main
                 {
                     Stop();
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     Logging.Log.WriteWarningMessage(LOGTAG, "ProcessControllerStopError", ex, "Failed to stop the process controller: {0}", ex.Message);
                 }

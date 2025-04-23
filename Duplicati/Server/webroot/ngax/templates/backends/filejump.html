@@ -1,0 +1,34 @@
+<div class="input text">
+    <label for="generic_path" translate>Path on server</label>
+    <input type="text" name="generic_path" id="generic_path" ng-model="$parent.Path" placeholder="{{'Destination path' | translate}}" />
+</div>
+
+<div ng-show="!$parent.UsernamePasswordAuth" class="input text">
+    <label for="filejump_api_token">
+        <a href="https://drive.filejump.com/account-settings" target="_blank" translate>Filejump API token</a>
+    </label>
+    <input type="password" name="filejump_api_token" id="filejump_api_token" ng-model="$parent.ApiToken"  placeholder="{{'Click the Filejump API token link to set up an API token' | translate}}" />
+</div>
+
+<div ng-show="$parent.UsernamePasswordAuth" class="input buttons" style="padding-top: 0px;">
+    <span class="warning" style="float:left" translate>
+        Username and password authentication is not recommended and does not work with MFA/2FA enabled accounts.
+        Use the API token if possible.
+    </span>
+</div>
+
+<div ng-show="$parent.UsernamePasswordAuth" class="input text">
+    <label for="generic_username" translate>Username</label>
+    <input type="text" name="generic_username" id="generic_username" ng-model="$parent.Username" placeholder="{{'Authentication username' | translate}}"  />
+</div>
+<div ng-show="$parent.UsernamePasswordAuth" class="input password">
+    <label for="generic_password" translate>Password</label>
+    <input autocomplete="new-password" type="password" name="generic_password" id="generic_password" ng-model="$parent.Password" placeholder="{{'Authentication password' | translate}}"  />
+</div>
+
+<div class="input buttons">
+    <button ng-click="$parent.UsernamePasswordAuth = !$parent.UsernamePasswordAuth" class="button" translate>
+        <span ng-show="!$parent.UsernamePasswordAuth" translate="">Use username and password authentication</span>
+        <span ng-show="$parent.UsernamePasswordAuth" translate>Use API token authentication (recommended)</span>
+    </button>
+</div>

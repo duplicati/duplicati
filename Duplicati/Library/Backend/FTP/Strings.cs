@@ -31,10 +31,6 @@ namespace Duplicati.Library.Backend
         public static string DescriptionAlternate { get { return LC.L(@"This backend can read and write data to an FTP based backend. Allowed formats are ""aftp://hostname/folder"" and ""aftp://username:password@hostname/folder""."); } }
         public static string DisplayName { get { return LC.L(@"FTP"); } }
         public static string DisplayNameAlternate { get { return LC.L(@"Alternative FTP"); } }
-        public static string DescriptionAuthPasswordLong { get { return LC.L(@"The password used to connect to the server. This may also be supplied as the environment variable ""AUTH_PASSWORD""."); } }
-        public static string DescriptionAuthPasswordShort { get { return LC.L(@"Supply the password used to connect to the server"); } }
-        public static string DescriptionAuthUsernameLong { get { return LC.L(@"The username used to connect to the server. This may also be supplied as the environment variable ""AUTH_USERNAME""."); } }
-        public static string DescriptionAuthUsernameShort { get { return LC.L(@"Supply the username used to connect to the server"); } }
         public static string DescriptionLogToConsoleLong { get { return LC.L(@"Use this option to log FTP dialog to terminal console for debugging purposes."); } }
         public static string DescriptionLogToConsoleShort { get { return LC.L(@"Log FTP dialog to terminal console"); } }
         public static string DescriptionLogPrivateInfoToConsoleLong { get { return LC.L(@"Use this option to log FTP PRIVATE info (username, password) to console for debugging purposes (DO NOT POST THIS TO THE INTERNET!)"); } }
@@ -73,6 +69,9 @@ namespace Duplicati.Library.Backend
         public static string DescriptionRelativePathLong { get { return LC.L(@"Use this option to interpret the url path as a path that is relative to the initial login folder. This option only has an effect if the initial starting folder in the FTP server is not the (virtual) root folder. If not set, the path in the url is treated as absolute, ignoring the initial login folder."); } }
         public static string DescriptionUseCwdNamesShort { get { return LC.L(@"Use CWD instead of absolute paths"); } }
         public static string DescriptionUseCwdNamesLong { get { return LC.L(@"Use this option to start the connection with a CWD command instead of an absolute path. This can be useful if the FTP server does not support absolute paths."); } }
-        public static string ErrorCreateFolder(string targetFolderName, string resultingFolder) { return LC.L(@"Error creating folder {0}, gave folder: {1}", targetFolderName, resultingFolder); }
+        public static string ErrorCreateFolder(string targetFolderName, string? resultingFolder) { return LC.L(@"Error creating folder {0}, gave folder: {1}", targetFolderName, resultingFolder); }
+        public static string DescriptionIgnorePureFTPShort => LC.L(@"Ignore PureFTPd limit warnings");
+        public static string DescriptionIgnorePureFTPLong => LC.L(@"PureFTPd is known to truncate file listings. If server has been configured to a higher limit or do not expect to store more than 10000 files you can suppress errors and warnings with {0}", "--ignore-pureftpd-limit-issue");
+
     }
 }

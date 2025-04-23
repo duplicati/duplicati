@@ -54,17 +54,13 @@ namespace Duplicati.Library.Main.Operation
             using (var db = new LocalDeleteDatabase(m_options.Dbpath, "Delete"))
             using (var tr = new ReusableTransaction(db))
             {
-                m_result.SetDatabase(db);
                 Utility.UpdateOptionsFromDb(db, m_options);
                 Utility.VerifyOptionsAndUpdateDatabase(db, m_options);
 
                 await DoRunAsync(db, tr, false, false, backendManager).ConfigureAwait(false);
 
                 if (!m_options.Dryrun)
-                {
                     tr.Commit("ComitDelete", restart: false);
-                    db.WriteResults();
-                }
             }
         }
 
@@ -73,7 +69,7 @@ namespace Duplicati.Library.Main.Operation
             if (!hasVerifiedBackend)
                 await FilelistProcessor.VerifyRemoteList(backendManager, m_options, db, m_result.BackendWriter, latestVolumesOnly: true, verifyMode: FilelistProcessor.VerifyMode.VerifyStrict, rtr.Transaction).ConfigureAwait(false);
 
-            IListResultFileset[] filesets = db.FilesetsWithBackupVersion.ToArray();
+            var filesets = db.FilesetsWithBackupVersion.ToArray();
             List<IListResultFileset> versionsToDelete =
             [
                 .. new SpecificVersionsRemover(m_options).GetFilesetsToDelete(filesets),
@@ -83,6 +79,9 @@ namespace Duplicati.Library.Main.Operation
 
             // When determining the number of full versions to keep, we need to ignore the versions already marked for removal.
             versionsToDelete.AddRange(new KeepVersionsRemover(m_options).GetFilesetsToDelete(filesets.Except(versionsToDelete)));
+
+            // In case multiple options are supplied, only consider distinct versions to delete.
+            versionsToDelete = versionsToDelete.DistinctBy(x => x.Version).ToList();
 
             if (!m_options.AllowFullRemoval && filesets.Length == versionsToDelete.Count)
             {
@@ -98,7 +97,7 @@ namespace Duplicati.Library.Main.Operation
                 db.UpdateRemoteVolume(f.Key, RemoteVolumeState.Deleting, f.Value, null, rtr.Transaction);
 
             if (!m_options.Dryrun)
-                rtr.Commit();
+                rtr.Commit("CommitBeforeDelete");
 
             foreach (var f in lst)
             {

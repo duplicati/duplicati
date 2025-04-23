@@ -67,7 +67,10 @@ public static class BackendModules
         new Backend.TencentCOS.COS(),
         new Backend.WEBDAV(),
         new Backend.pCloudBackend(),
-        new Backend.CIFSBackend()
+        new Backend.SMBBackend(),
+        new Backend.CIFSBackend(),
+        new Backend.Filen.FilenBackend(),
+        new Backend.Filejump()
     }
     .Where(x => x != null)
     .ToList();

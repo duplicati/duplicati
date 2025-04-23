@@ -7,10 +7,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+	<ProjectReference Include="..\Backend\Filejump\Duplicati.Library.Backend.Filejump.csproj" />
+	<ProjectReference Include="..\Backend\Filen\Duplicati.Library.Backend.Filen.csproj" />
 	<ProjectReference Include="..\Backend\AzureBlob\Duplicati.Library.Backend.AzureBlob.csproj" />
 	<ProjectReference Include="..\Backend\Backblaze\Duplicati.Library.Backend.Backblaze.csproj" />
 	<ProjectReference Include="..\Backend\Box\Duplicati.Library.Backend.Box.csproj" />
-	<ProjectReference Include="..\Backend\CIFS\Duplicati.Library.Backend.CIFS.csproj" />
+	<ProjectReference Include="..\Backend\SMB\Duplicati.Library.Backend.SMB.csproj" />
 	<ProjectReference Include="..\Backend\CloudFiles\Duplicati.Library.Backend.CloudFiles.csproj" />
 	<ProjectReference Include="..\Backend\Dropbox\Duplicati.Library.Backend.Dropbox.csproj" />
 	<ProjectReference Include="..\Backend\File\Duplicati.Library.Backend.File.csproj" />

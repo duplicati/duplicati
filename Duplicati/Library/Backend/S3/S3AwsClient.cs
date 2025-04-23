@@ -25,12 +25,8 @@ using Amazon.S3.Model;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
-using System;
-using System.Collections.Generic;
-using System.Linq;
+using Duplicati.Library.Utility.Options;
 using System.Runtime.CompilerServices;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Duplicati.Library.Backend
 {
@@ -52,15 +48,15 @@ namespace Duplicati.Library.Backend
         /// <summary>
         /// The location constraint for the bucket
         /// </summary>
-        private readonly string m_locationConstraint;
+        private readonly string? m_locationConstraint;
         /// <summary>
         /// The storage class for the bucket
         /// </summary>
-        private readonly string m_storageClass;
+        private readonly string? m_storageClass;
         /// <summary>
         /// The S3 client
         /// </summary>
-        private AmazonS3Client m_client;
+        private readonly AmazonS3Client m_client;
         /// <summary>
         /// The option to specify if chunk encoding should be used
         /// </summary>
@@ -69,11 +65,15 @@ namespace Duplicati.Library.Backend
         /// <summary>
         /// The DNS host of the S3 server
         /// </summary>
-        private readonly string m_dnsHost;
+        private readonly string? m_dnsHost;
         /// <summary>
         /// The option to specify if the V2 list API should be used
         /// </summary>
         private readonly bool m_useV2ListApi;
+        /// <summary>
+        /// The timeouts to use
+        /// </summary>
+        private readonly TimeoutOptionsHelper.Timeouts m_timeouts;
 
         /// <summary>
         /// The archive classes that are considered archive classes
@@ -92,10 +92,10 @@ namespace Duplicati.Library.Backend
             S3StorageClass.DeepArchive, S3StorageClass.Glacier, S3StorageClass.GlacierInstantRetrieval, S3StorageClass.Snow
         ]);
 
-        public S3AwsClient(string awsID, string awsKey, string locationConstraint, string servername,
-            string storageClass, bool useSSL, bool disableChunkEncoding, Dictionary<string, string> options)
+        public S3AwsClient(string awsID, string awsKey, string? locationConstraint, string servername,
+            string? storageClass, bool useSSL, bool disableChunkEncoding, TimeoutOptionsHelper.Timeouts timeouts, Dictionary<string, string?> options)
         {
-            var cfg = S3AwsClient.GetDefaultAmazonS3Config();
+            var cfg = GetDefaultAmazonS3Config();
             cfg.UseHttp = !useSSL;
             cfg.ServiceURL = (useSSL ? "https://" : "http://") + servername;
 
@@ -103,6 +103,7 @@ namespace Duplicati.Library.Backend
 
             m_client = new AmazonS3Client(awsID, awsKey, cfg);
 
+            m_timeouts = timeouts;
             m_useV2ListApi = string.Equals(options.GetValueOrDefault("list-api-version", "v1"), "v2", StringComparison.OrdinalIgnoreCase);
             m_locationConstraint = locationConstraint;
             m_storageClass = storageClass;
@@ -116,7 +117,7 @@ namespace Duplicati.Library.Backend
         /// </summary>
         /// <param name="storageClass">The storage class string</param>
         /// <returns>The storage classes</returns>
-        private static IReadOnlySet<S3StorageClass> ParseStorageClasses(string storageClass)
+        private static IReadOnlySet<S3StorageClass> ParseStorageClasses(string? storageClass)
         {
             if (string.IsNullOrWhiteSpace(storageClass))
                 return DEFAULT_ARCHIVE_CLASSES;
@@ -124,6 +125,7 @@ namespace Duplicati.Library.Backend
             return new HashSet<S3StorageClass>(storageClass.Split([','], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Select(x => new S3StorageClass(x)));
         }
 
+        /// <inheritdoc/>
         public Task AddBucketAsync(string bucketName, CancellationToken cancelToken)
         {
             var request = new PutBucketRequest
@@ -134,9 +136,13 @@ namespace Duplicati.Library.Backend
             if (!string.IsNullOrEmpty(m_locationConstraint))
                 request.BucketRegionName = m_locationConstraint;
 
-            return m_client.PutBucketAsync(request, cancelToken);
+            return Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, ct => m_client.PutBucketAsync(request, ct));
         }
 
+        /// <summary>
+        /// Gets the default Amazon S3 configuration
+        /// </summary>
+        /// <returns>>The default Amazon S3 configuration</returns>
         public static AmazonS3Config GetDefaultAmazonS3Config()
         {
             return new AmazonS3Config()
@@ -151,6 +157,9 @@ namespace Duplicati.Library.Backend
             };
         }
 
+        /// <summary>
+        /// Extended options that are not included as reported options
+        /// </summary>
         private static readonly HashSet<string> EXCLUDED_EXTENDED_OPTIONS = new HashSet<string>([
             nameof(AmazonS3Config.USEast1RegionalEndpointValue)
         ]);
@@ -177,7 +186,7 @@ namespace Duplicati.Library.Backend
                     return x;
                 });
 
-        public virtual async Task GetFileStreamAsync(string bucketName, string keyName, System.IO.Stream target, CancellationToken cancelToken)
+        public virtual async Task GetFileStreamAsync(string bucketName, string keyName, Stream target, CancellationToken cancelToken)
         {
             try
             {
@@ -187,15 +196,10 @@ namespace Duplicati.Library.Backend
                     Key = keyName
                 };
 
-                using (var objectGetResponse = await m_client.GetObjectAsync(objectGetRequest).ConfigureAwait(false))
+                using (var objectGetResponse = await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, ct => m_client.GetObjectAsync(objectGetRequest, ct)).ConfigureAwait(false))
                 using (var s = objectGetResponse.ResponseStream)
-                {
-                    // TODO: This does not work and throws InvalidOperationException()
-                    try { s.ReadTimeout = (int)TimeSpan.FromMinutes(1).TotalMilliseconds; }
-                    catch { }
-
-                    await Utility.Utility.CopyStreamAsync(s, target, cancelToken).ConfigureAwait(false);
-                }
+                using (var t = s.ObserveReadTimeout(m_timeouts.ReadWriteTimeout))
+                    await Utility.Utility.CopyStreamAsync(t, target, cancelToken).ConfigureAwait(false);
             }
             catch (AmazonS3Exception s3Ex)
             {
@@ -205,19 +209,20 @@ namespace Duplicati.Library.Backend
 
         }
 
-        public string GetDnsHost()
+        public string? GetDnsHost()
         {
             return m_dnsHost;
         }
 
-        public virtual async Task AddFileStreamAsync(string bucketName, string keyName, System.IO.Stream source,
+        public virtual async Task AddFileStreamAsync(string bucketName, string keyName, Stream source,
             CancellationToken cancelToken)
         {
+            using var ts = source.ObserveReadTimeout(m_timeouts.ReadWriteTimeout, false);
             var objectAddRequest = new PutObjectRequest
             {
                 BucketName = bucketName,
                 Key = keyName,
-                InputStream = source,
+                InputStream = ts,
                 UseChunkEncoding = m_useChunkEncoding
             };
             if (!string.IsNullOrWhiteSpace(m_storageClass))
@@ -246,7 +251,7 @@ namespace Duplicati.Library.Backend
                 Key = keyName
             };
 
-            return m_client.DeleteObjectAsync(objectDeleteRequest, cancellationToken);
+            return Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancellationToken, ct => m_client.DeleteObjectAsync(objectDeleteRequest, ct));
         }
 
         /// <summary>
@@ -260,7 +265,7 @@ namespace Duplicati.Library.Backend
         public async IAsyncEnumerable<IFileEntry> ListBucketAsync(string bucketName, string prefix, bool recursive, [EnumeratorCancellation] CancellationToken cancellationToken)
         {
             var isTruncated = true;
-            string filename = null;
+            string? filename = null;
             var delimiter = recursive ? "" : "/";
             if (!string.IsNullOrWhiteSpace(prefix))
                 prefix = Util.AppendDirSeparator(prefix, "/");
@@ -286,7 +291,7 @@ namespace Duplicati.Library.Backend
                             MaxKeys = ITEM_LIST_LIMIT,
                             Delimiter = delimiter
                         };
-                        listResponse = await m_client.ListObjectsV2Async(listRequest, cancellationToken).ConfigureAwait(false);
+                        listResponse = await Utility.Utility.WithTimeout(m_timeouts.ListTimeout, cancellationToken, ct => m_client.ListObjectsV2Async(listRequest, ct)).ConfigureAwait(false);
                     }
                     else
                     {
@@ -299,7 +304,7 @@ namespace Duplicati.Library.Backend
                             MaxKeys = ITEM_LIST_LIMIT,
                             Delimiter = delimiter
                         };
-                        var listResponsev1 = await m_client.ListObjectsAsync(listRequest, cancellationToken).ConfigureAwait(false);
+                        var listResponsev1 = await Utility.Utility.WithTimeout(m_timeouts.ListTimeout, cancellationToken, ct => m_client.ListObjectsAsync(listRequest, ct)).ConfigureAwait(false);
 
                         // Map the V1 response to the V2 response
                         listResponse = new ListObjectsV2Response
@@ -371,7 +376,7 @@ namespace Duplicati.Library.Backend
                 DestinationKey = target
             };
 
-            await m_client.CopyObjectAsync(copyObjectRequest, cancelToken).ConfigureAwait(false);
+            await Utility.Utility.WithTimeout(m_timeouts.ListTimeout, cancelToken, ct => m_client.CopyObjectAsync(copyObjectRequest, ct)).ConfigureAwait(false);
             await DeleteObjectAsync(bucketName, source, cancelToken).ConfigureAwait(false);
         }
 
@@ -381,7 +386,6 @@ namespace Duplicati.Library.Backend
         {
             if (m_client != null)
                 m_client.Dispose();
-            m_client = null;
         }
 
         #endregion

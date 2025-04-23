@@ -295,7 +295,25 @@ namespace Duplicati.Library.Main.Operation
                 try
                 {
                     database = new LocalBackupDatabase(options.Dbpath, options);
-                    result.SetDatabase(database);
+                    var lastFilestTime = database.FilesetTimes
+                        .Select(x => x.Value)
+                        .Append(DateTime.UnixEpoch)
+                        .Select(Library.Utility.Utility.NormalizeDateTimeToEpochSeconds)
+                        .Max();
+
+                    var currentStamp = Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(database.OperationTimestamp);
+                    if (lastFilestTime > currentStamp)
+                    {
+                        if (lastFilestTime - currentStamp > 5)
+                            throw new UserInformationException(string.Format("The database has a timestamp of {0}, but the last fileset has a timestamp of {1}. Something is wrong with the clock.", database.OperationTimestamp.ToLocalTime(), Library.Utility.Utility.EPOCH.AddSeconds(lastFilestTime).ToLocalTime()), "DatabaseTimestampError");
+
+                        var sleepSeconds = lastFilestTime - currentStamp + 1;
+                        Log.WriteVerboseMessage(LOGTAG, "DatabaseTimestampError", "The database has a timestamp of {0}, but the last fileset has a timestamp of {1}. Sleeping for {2} seconds to allow the clock to catch up.", database.OperationTimestamp.ToLocalTime(), Library.Utility.Utility.EPOCH.AddSeconds(lastFilestTime).ToLocalTime(), sleepSeconds);
+                        Thread.Sleep(TimeSpan.FromSeconds(sleepSeconds));
+                        database.Dispose();
+                        database = new LocalBackupDatabase(options.Dbpath, options);
+                    }
+
                     result.Dryrun = options.Dryrun;
 
                     // Check the database integrity
@@ -343,14 +361,12 @@ namespace Duplicati.Library.Main.Operation
                             database.Dispose();
 
                             database = null;
-                            result.SetDatabase(null);
                             await new RepairHandler(options, (RepairResults)result.RepairResults)
                                 .RunAsync(backendManager, null)
                                 .ConfigureAwait(false);
 
                             // Re-open the database and backend manager
                             database = new LocalBackupDatabase(options.Dbpath, options);
-                            result.SetDatabase(database);
 
                             Log.WriteInformationMessage(LOGTAG, "BackendCleanupFinished", "Backend cleanup finished, retrying verification");
                             await FilelistProcessor.VerifyRemoteList(backendManager, options, database, result.BackendWriter, [lastTempFilelist.Name], [], logErrors: true, verifyMode: FilelistProcessor.VerifyMode.VerifyStrict).ConfigureAwait(false);
@@ -359,7 +375,8 @@ namespace Duplicati.Library.Main.Operation
                             throw;
                     }
 
-                    return new PreBackupVerifyResult(database, lastTempFilelist);
+                    // Return the updated version of the fileset, in case it was actually complete
+                    return new PreBackupVerifyResult(database, database.GetLastIncompleteFilesetVolume(null));
                 }
                 catch
                 {
@@ -516,7 +533,7 @@ namespace Duplicati.Library.Main.Operation
 
                 using (var testdb = new LocalTestDatabase(m_database))
                     await new TestHandler(m_options, (TestResults)m_result.TestResults)
-                        .DoRunAsync(samplesToTest, testdb, backendManager)
+                        .DoRunAsync(samplesToTest, testdb, rtr, backendManager)
                         .ConfigureAwait(false);
             }
         }
@@ -578,22 +595,20 @@ namespace Duplicati.Library.Main.Operation
                 return new AggregateException(ex.First().Message, ex);
         }
 
-        private static async Task<long> FlushBackend(LocalDatabase database, IDbTransaction transaction, BackupResults result, IBackendManager backendManager)
+        private static async Task FlushBackend(Backup.BackupDatabase database, BackupResults result, IBackendManager backendManager)
         {
             // Wait for upload completion
             result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_WaitForUpload);
 
             try
             {
-                await backendManager.WaitForEmptyAsync(database, transaction, result.TaskControl.ProgressToken).ConfigureAwait(false);
-                // Grab the size of the last uploaded volume
-                return backendManager.LastWriteSize;
+                await database.FlushBackendMessagesAndCommitAsync(backendManager).ConfigureAwait(false);
+                await backendManager.WaitForEmptyAsync(result.TaskControl.ProgressToken).ConfigureAwait(false);
+                await database.FlushBackendMessagesAndCommitAsync(backendManager).ConfigureAwait(false);
             }
             catch (RetiredException)
             {
             }
-
-            return -1;
         }
 
         public async Task RunAsync(string[] sources, IBackendManager backendManager, IFilter filter)
@@ -693,12 +708,14 @@ namespace Duplicati.Library.Main.Operation
                     using (new Logging.Timer(LOGTAG, "VerifyConsistency", "VerifyConsistency"))
                         await db.VerifyConsistencyAsync(m_options.Blocksize, m_options.BlockhashSize, false);
 
+                    await FlushBackend(db, m_result, backendManager).ConfigureAwait(false);
+
                     // Send the actual filelist
                     await Backup.UploadRealFilelist.Run(m_result, db, backendManager, m_options, filesetvolume, filesetid, m_result.TaskControl, lastTempVolumeIncomplete);
 
                     // Wait for upload completion
                     m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_WaitForUpload);
-                    var lastVolumeSize = await FlushBackend(m_database, null, m_result, backendManager).ConfigureAwait(false);
+                    await FlushBackend(db, m_result, backendManager).ConfigureAwait(false);
 
                     if (!m_options.Dryrun)
                         database.TerminatedWithActiveUploads = false;
@@ -709,7 +726,10 @@ namespace Duplicati.Library.Main.Operation
                     {
                         // If this throws, we should roll back the transaction
                         if (await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
+                        {
+                            var lastVolumeSize = m_database.GetLastWrittenDBlockVolumeSize(rtr.Transaction);
                             await CompactIfRequired(backendManager, rtr, lastVolumeSize);
+                        }
 
                         if (m_options.UploadVerificationFile && await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
                         {
@@ -731,17 +751,6 @@ namespace Duplicati.Library.Main.Operation
                         }
                     }
 
-
-                    m_database.WriteResults();
-                    m_database.PurgeLogData(m_options.LogRetention);
-                    m_database.PurgeDeletedVolumes(DateTime.UtcNow);
-
-                    if (m_options.AutoVacuum)
-                    {
-                        m_result.VacuumResults = new VacuumResults(m_result);
-                        await new VacuumHandler(m_options, (VacuumResults)m_result.VacuumResults)
-                            .RunAsync();
-                    }
                     m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_Complete);
                     return;
                 }

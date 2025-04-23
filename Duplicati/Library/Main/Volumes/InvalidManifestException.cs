@@ -19,22 +19,28 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.Main.Volumes
 {
     [Serializable]
-    public class InvalidManifestException : Exception
+    public class InvalidManifestException : UserInformationException
     {
+        private static string GetMessage(string fieldname, string value, string expected)
+        {
+            // Make a custom message if this is a version mismatch
+            if (string.Equals(fieldname, "version", StringComparison.OrdinalIgnoreCase) || string.Equals(fieldname, "encoding", StringComparison.OrdinalIgnoreCase))
+                return $"Invalid manifest detected, the field {fieldname} has value {value} but the value {expected} was expected.\nThe most likely cause for this issue is that you are attempting to read a backup created with a newer version of Duplicati.\nPlease upgrade your Duplicati installation to the latest version to resolve this issue.";
+
+            return $"Invalid manifest detected, the field {fieldname} has value {value} but the value {expected} was expected. This could be a configuration issue, or be caused by mixing files from different backups.";
+        }
         public InvalidManifestException(string fieldname, string value, string expected)
-            : base(string.Format("Invalid manifest detected, the field {0} has value {1} but the value {2} was expected", fieldname, value, expected))
+            : base(GetMessage(fieldname, value, expected), "InvalidManifest")
         {
         }
 
         public InvalidManifestException(string message)
-            : base(message)
+            : base(message, "InvalidManifest")
         {
         }
     }

@@ -80,7 +80,7 @@ public class SharpCompressZipArchive : IZipArchive
     /// <summary>
     /// Flag indicating if we are using Zip64 extensions
     /// </summary>
-    private readonly bool m_usingZip64;
+    private const bool USE_ZIP64 = true;
     /// <summary>
     /// The default compression level to use
     /// </summary>
@@ -108,7 +108,6 @@ public class SharpCompressZipArchive : IZipArchive
         m_stream = stream;
         m_mode = mode;
 
-        m_usingZip64 = options.UseZip64;
         m_defaultCompressionLevel = options.DeflateCompressionLevel;
         m_compressionType = options.CompressionType;
         m_mode = mode;
@@ -119,7 +118,8 @@ public class SharpCompressZipArchive : IZipArchive
             var compression = new ZipWriterOptions(CompressionType.Deflate)
             {
                 CompressionType = m_compressionType,
-                DeflateCompressionLevel = m_defaultCompressionLevel
+                DeflateCompressionLevel = m_defaultCompressionLevel,
+                UseZip64 = USE_ZIP64
             };
 
             m_writer = WriterFactory.Open(m_stream, ArchiveType.Zip, compression);
@@ -199,12 +199,19 @@ public class SharpCompressZipArchive : IZipArchive
         var q = EntryDict.Values.AsEnumerable();
         if (!string.IsNullOrEmpty(prefix))
             q = q.Where(x =>
-                        x.Key.StartsWith(prefix, Utility.Utility.ClientFilenameStringComparison)
-                        ||
-                        x.Key.Replace('\\', '/').StartsWith(prefix, Utility.Utility.ClientFilenameStringComparison)
-                       );
+            {
+                if (string.IsNullOrWhiteSpace(x.Key))
+                    return false;
 
-        return q.Select(x => new KeyValuePair<string, long>(x.Key, x.Size)).ToArray();
+                return
+                    x.Key.StartsWith(prefix, Utility.Utility.ClientFilenameStringComparison)
+                    ||
+                    x.Key.Replace('\\', '/').StartsWith(prefix, Utility.Utility.ClientFilenameStringComparison);
+            });
+
+        return q.Where(x => !string.IsNullOrWhiteSpace(x.Key))
+            .Select(x => new KeyValuePair<string, long>(x.Key!, x.Size))
+            .ToArray();
     }
 
     /// <summary>
@@ -247,6 +254,19 @@ public class SharpCompressZipArchive : IZipArchive
                 var d = new Dictionary<string, IEntry>(Duplicati.Library.Utility.Utility.ClientFilenameStringComparer);
                 foreach (var en in Archive.Entries)
                 {
+                    if (string.IsNullOrWhiteSpace(en.Key))
+                    {
+                        Logging.Log.WriteMessage(
+                            // Warning in unittest mode to trip tests, verbose otherwise
+                            m_unittestMode ? Logging.LogMessageType.Warning : Logging.LogMessageType.Verbose,
+                            LOGTAG,
+                            "EmptyArchiveEntry",
+                            null,
+                            "Found empty entry in archive");
+
+                        continue;
+                    }
+
                     if (d.ContainsKey(en.Key))
                         Logging.Log.WriteMessage(
                             // Warning in unittest mode to trip tests, verbose otherwise
@@ -277,6 +297,9 @@ public class SharpCompressZipArchive : IZipArchive
                     using (var rd = SharpCompress.Readers.Zip.ZipReader.Open(m_stream, new ReaderOptions() { LookForHeader = false }))
                         while (rd.MoveToNextEntry())
                         {
+                            if (string.IsNullOrWhiteSpace(rd.Entry.Key))
+                                continue;
+
                             d[rd.Entry.Key] = rd.Entry;
 
                             // Some streams require this
@@ -334,7 +357,7 @@ public class SharpCompressZipArchive : IZipArchive
             throw new InvalidOperationException(Constants.CannotWriteWhileReading);
 
         m_flushBufferSize += Constants.CENTRAL_HEADER_ENTRY_SIZE + System.Text.Encoding.UTF8.GetByteCount(file);
-        if (m_usingZip64)
+        if (USE_ZIP64)
             m_flushBufferSize += Constants.CENTRAL_HEADER_ENTRY_SIZE_ZIP64_EXTRA;
 
         return ((ZipWriter)m_writer!).WriteToStream(file, new ZipWriterEntryOptions()

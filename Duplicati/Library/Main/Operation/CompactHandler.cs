@@ -55,7 +55,6 @@ namespace Duplicati.Library.Main.Operation
             using (var db = new LocalDeleteDatabase(m_options.Dbpath, "Compact"))
             using (var tr = new ReusableTransaction(db))
             {
-                m_result.SetDatabase(db);
                 Utility.UpdateOptionsFromDb(db, m_options);
                 Utility.VerifyOptionsAndUpdateDatabase(db, m_options);
 
@@ -69,7 +68,7 @@ namespace Duplicati.Library.Main.Operation
                     tr.Commit("CommitCompact", restart: false);
                     if (changed)
                     {
-                        db.WriteResults();
+                        db.WriteResults(m_result);
                         if (m_options.AutoVacuum)
                         {
                             m_result.VacuumResults = new VacuumResults(m_result);
@@ -162,12 +161,13 @@ namespace Duplicati.Library.Main.Operation
                                 }
 
                                 downloadedVolumes.Add(new KeyValuePair<string, long>(entry.Name, entry.Size));
+                                var volumeid = db.GetRemoteVolumeID(entry.Name, rtr.Transaction);
                                 var inst = VolumeBase.ParseFilename(entry.Name);
                                 using (var f = new BlockVolumeReader(inst.CompressionModule, tmpfile, m_options))
                                 {
                                     foreach (var e in f.Blocks)
                                     {
-                                        if (q.UseBlock(e.Key, e.Value, rtr.Transaction))
+                                        if (q.UseBlock(e.Key, e.Value, volumeid, rtr.Transaction))
                                         {
                                             //TODO: How do we get the compression hint? Reverse query for filename in db?
                                             var s = f.ReadBlock(e.Key, buffer);
@@ -183,7 +183,7 @@ namespace Duplicati.Library.Main.Operation
 
                                             if (newvol.Filesize > (m_options.VolumeSize - m_options.Blocksize))
                                             {
-                                                await FinishVolumeAndUpload(db, backendManager, newvol, newvolindex, uploadedVolumes);
+                                                await FinishVolumeAndUpload(db, backendManager, newvol, newvolindex, uploadedVolumes, rtr);
 
                                                 newvol = new BlockVolumeWriter(m_options);
                                                 newvol.VolumeID = db.RegisterRemoteVolume(newvol.RemoteFilename, RemoteVolumeType.Blocks, RemoteVolumeState.Temporary, rtr.Transaction);
@@ -203,7 +203,7 @@ namespace Duplicati.Library.Main.Operation
 
                                                 // Commit as we have uploaded a volume
                                                 if (!m_options.Dryrun)
-                                                    rtr.Commit();
+                                                    rtr.Commit("CommitCompact");
                                             }
                                         }
                                     }
@@ -215,7 +215,7 @@ namespace Duplicati.Library.Main.Operation
 
                         if (blocksInVolume > 0)
                         {
-                            await FinishVolumeAndUpload(db, backendManager, newvol, newvolindex, uploadedVolumes).ConfigureAwait(false);
+                            await FinishVolumeAndUpload(db, backendManager, newvol, newvolindex, uploadedVolumes, rtr).ConfigureAwait(false);
                         }
                         else
                         {
@@ -317,13 +317,13 @@ namespace Duplicati.Library.Main.Operation
             await backend.WaitForEmptyAsync(db, rtr.Transaction, cancellationToken).ConfigureAwait(false);
 
             if (!m_options.Dryrun)
-                rtr.Commit();
+                rtr.Commit("CommitDelete");
 
             await foreach (var d in PerformDelete(backend, remoteFilesToRemove, cancellationToken).ConfigureAwait(false))
                 yield return d;
         }
 
-        private async Task FinishVolumeAndUpload(LocalDeleteDatabase db, IBackendManager backendManager, BlockVolumeWriter newvol, IndexVolumeWriter newvolindex, List<KeyValuePair<string, long>> uploadedVolumes)
+        private async Task FinishVolumeAndUpload(LocalDeleteDatabase db, IBackendManager backendManager, BlockVolumeWriter newvol, IndexVolumeWriter newvolindex, List<KeyValuePair<string, long>> uploadedVolumes, ReusableTransaction rtr)
         {
             Action indexVolumeFinished = () =>
             {
@@ -339,8 +339,16 @@ namespace Duplicati.Library.Main.Operation
             uploadedVolumes.Add(new KeyValuePair<string, long>(newvol.RemoteFilename, newvol.Filesize));
             if (newvolindex != null)
                 uploadedVolumes.Add(new KeyValuePair<string, long>(newvolindex.RemoteFilename, newvolindex.Filesize));
+
+            // TODO: The upload here does not flush the database messages,
+            // and this can leave the database in a state where it does not know of the remote file
+            // To fix it, we need thread-safe access to the daabase and transaction
+            // Once fixed, we can perhaps let he backend manager simply call the database directly
             if (!m_options.Dryrun)
-                await backendManager.PutAsync(newvol, newvolindex, indexVolumeFinished, false, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
+            {
+                rtr.Commit("CommitUpload");
+                await backendManager.PutAsync(newvol, newvolindex, indexVolumeFinished, false, null, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
+            }
             else
                 Logging.Log.WriteDryrunMessage(LOGTAG, "WouldUploadGeneratedBlockset", "Would upload generated blockset of size {0}", Library.Utility.Utility.FormatSizeString(newvol.Filesize));
         }

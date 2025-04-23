@@ -23,13 +23,11 @@ using Duplicati.Library.Localization.Short;
 
 namespace Duplicati.Library.Backend.Strings
 {
-    internal static class GoogleCloudStorage {
+    internal static class GoogleCloudStorage
+    {
         public static string Description { get { return LC.L(@"This backend can read and write data to Google Cloud Storage. Allowed format is ""gcs://bucket/folder""."); } }
         public static string DisplayName { get { return LC.L(@"Google Cloud Storage"); } }
-        public static string MissingAuthID(string url) { return LC.L(@"You need an AuthID. You can get it from: {0}", url); }
         public static string ProjectIDMissingError(string projectoption) { return LC.L(@"You must supply a project ID with --{0} for creating a bucket.", projectoption); }
-        public static string AuthidLong(string url) { return LC.L(@"The authorization token retrieved from {0}", url); }
-        public static string AuthidShort { get { return LC.L(@"The authorization code"); } }
         public static string LocationDescriptionLong(string regions) { return LC.L(@"This option is only used when creating new buckets. Use this option to change what region the data is stored in. Charges vary with bucket location. Known bucket locations:
 {0}", regions); }
         public static string LocationDescriptionShort { get { return LC.L(@"Specify location option for creating a bucket"); } }
@@ -40,13 +38,21 @@ namespace Duplicati.Library.Backend.Strings
         public static string ProjectDescriptionShort { get { return LC.L(@"Specify project for creating a bucket"); } }
     }
 
-    internal static class GoogleDrive {
+    internal static class GoogleDrive
+    {
         public static string Description { get { return LC.L(@"This backend can read and write data to Google Drive. Allowed format is ""googledrive://folder/subfolder""."); } }
         public static string DisplayName { get { return LC.L(@"Google Drive"); } }
         public static string MultipleEntries(string folder, string parent) { return LC.L(@"There is more than one item named ""{0}"" in the folder ""{1}"".", folder, parent); }
-        public static string AuthidLong(string url) { return LC.L(@"The authorization token retrieved from {0}", url); }
-        public static string AuthidShort { get { return LC.L(@"The authorization code"); } }
+        public static string FilenotFound(string name) { return LC.L(@"File not found: {0}", name); }
         public static string TeamDriveIdLong { get { return LC.L("This option sets the team drive to use. Leaving it empty uses the personal drive."); } }
         public static string TeamDriveIdShort { get { return LC.L("Team drive ID"); } }
+    }
+
+    internal static class GCSConfig
+    {
+        public static string DisplayName => LC.L("Google Cloud Storage configuration module");
+        public static string Description => LC.L("Expose Google Cloud Storage configuration as a web module");
+        public static string ConfigTypeShort => LC.L("The config to get");
+        public static string ConfigTypeLong => LC.L("Provide different config values");
     }
 }

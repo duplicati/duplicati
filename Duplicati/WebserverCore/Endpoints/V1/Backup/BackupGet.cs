@@ -214,14 +214,24 @@ public class BackupGet : IEndpointV1
         if (fromRemoteOnly)
             extra["no-local-db"] = "true";
 
-        var r = Runner.Run(Runner.CreateTask(DuplicatiOperation.List, bk, extra), false) as IListResults;
-        if (r == null)
-            throw new ServerErrorException("No result from list operation");
+        // Retries will hang the http request
+        extra["number-of-retries"] = "0";
 
-        if (r.EncryptedFiles && bk.Settings.Any(x => string.Equals("--no-encryption", x.Name, StringComparison.OrdinalIgnoreCase)))
-            throw new ServerErrorException("encrypted-storage");
+        try
+        {
+            var r = Runner.Run(Runner.CreateTask(DuplicatiOperation.List, bk, extra), false) as IListResults;
+            if (r == null)
+                throw new ServerErrorException("No result from list operation");
 
-        return r.Filesets;
+            if (r.EncryptedFiles && bk.Settings.Any(x => string.Equals("--no-encryption", x.Name, StringComparison.OrdinalIgnoreCase)))
+                throw new ServerErrorException("encrypted-storage");
+
+            return r.Filesets;
+        }
+        catch (FolderMissingException)
+        {
+            throw new ServerErrorException("folder-missing");
+        }
     }
 
     public static void RemovePasswords(IBackup backup)

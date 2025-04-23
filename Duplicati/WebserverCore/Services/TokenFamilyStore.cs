@@ -34,12 +34,12 @@ public class TokenFamilyStore(Connection connection) : ITokenFamilyStore
         var lastUpdated = DateTime.UtcNow;
         connection.ExecuteWithCommand(cmd =>
         {
-            cmd.CommandText = @"INSERT INTO TokenFamily (""Id"", ""UserId"", ""Counter"", ""LastUpdated"") VALUES (?, ?, ?, ?)";
-            cmd.AddParameter(familyId);
-            cmd.AddParameter(userId);
-            cmd.AddParameter(counter);
-            cmd.AddParameter(lastUpdated.Ticks);
-            cmd.ExecuteNonQuery();
+            cmd.SetCommandAndParameters(@"INSERT INTO TokenFamily (""Id"", ""UserId"", ""Counter"", ""LastUpdated"") VALUES (@Id, @UserId, @Counter, @LastUpdated)")
+                .SetParameterValue("@Id", familyId)
+                .SetParameterValue("@UserId", userId)
+                .SetParameterValue("@Counter", counter)
+                .SetParameterValue("@LastUpdated", lastUpdated.Ticks)
+                .ExecuteNonQuery();
         });
 
         return Task.FromResult(new ITokenFamilyStore.TokenFamily(familyId, userId, counter, lastUpdated));
@@ -50,14 +50,20 @@ public class TokenFamilyStore(Connection connection) : ITokenFamilyStore
         ITokenFamilyStore.TokenFamily? family = null;
         connection.ExecuteWithCommand(cmd =>
         {
-            cmd.CommandText = @"SELECT ""Id"", ""UserId"", ""Counter"", ""LastUpdated"" FROM ""TokenFamily"" WHERE ""Id"" = ? AND ""UserId"" = ?";
-            cmd.AddParameter(familyId);
-            cmd.AddParameter(userId);
+            cmd.SetCommandAndParameters(@"SELECT ""Id"", ""UserId"", ""Counter"", ""LastUpdated"" FROM ""TokenFamily"" WHERE ""Id"" = @Id AND ""UserId"" = @UserId")
+                .SetParameterValue("@Id", familyId)
+                .SetParameterValue("@UserId", userId);
+
             using var reader = cmd.ExecuteReader();
             if (!reader.Read())
                 return;
 
-            family = new ITokenFamilyStore.TokenFamily(reader.GetString(0), reader.GetString(1), reader.GetInt32(2), new DateTime(reader.GetInt64(3)));
+            family = new ITokenFamilyStore.TokenFamily(
+                reader.ConvertValueToString(0) ?? throw new Exception("Token family ID is null"),
+                reader.ConvertValueToString(1) ?? throw new Exception("Token family user ID is null"),
+                reader.GetInt32(2),
+                new DateTime(reader.ConvertValueToInt64(3))
+            );
         });
         return Task.FromResult(family ?? throw new Exceptions.UnauthorizedException("Token family not found"));
     }
@@ -68,12 +74,12 @@ public class TokenFamilyStore(Connection connection) : ITokenFamilyStore
         var lastUpdated = DateTime.UtcNow;
         connection.ExecuteWithCommand(cmd =>
         {
-            cmd.CommandText = @"UPDATE ""TokenFamily"" SET ""Counter"" = ?, ""LastUpdated"" = ? WHERE ""Id"" = ? AND ""UserId"" = ? AND ""Counter"" = ?";
-            cmd.AddParameter(nextCounter);
-            cmd.AddParameter(lastUpdated.Ticks);
-            cmd.AddParameter(tokenFamily.Id);
-            cmd.AddParameter(tokenFamily.UserId);
-            cmd.AddParameter(tokenFamily.Counter);
+            cmd.SetCommandAndParameters(@"UPDATE ""TokenFamily"" SET ""Counter"" = @NextCounter, ""LastUpdated"" = @LastUpdated WHERE ""Id"" = @Id AND ""UserId"" = @UserId AND ""Counter"" = @PrevCounter")
+                .SetParameterValue("@NextCounter", nextCounter)
+                .SetParameterValue("@LastUpdated", lastUpdated.Ticks)
+                .SetParameterValue("@Id", tokenFamily.Id)
+                .SetParameterValue("@UserId", tokenFamily.UserId)
+                .SetParameterValue("@PrevCounter", tokenFamily.Counter);
             if (cmd.ExecuteNonQuery() != 1)
                 throw new Exceptions.ConflictException("Token family counter mismatch or not found");
         });
@@ -85,9 +91,10 @@ public class TokenFamilyStore(Connection connection) : ITokenFamilyStore
     {
         connection.ExecuteWithCommand(cmd =>
         {
-            cmd.CommandText = @"DELETE FROM ""TokenFamily"" WHERE ""Id"" = ? AND ""UserId"" = ?";
-            cmd.AddParameter(familyId);
-            cmd.AddParameter(userId);
+            cmd.SetCommandAndParameters(@"DELETE FROM ""TokenFamily"" WHERE ""Id"" = @Id AND ""UserId"" = @UserId")
+                .SetParameterValue("@Id", familyId)
+                .SetParameterValue("@UserId", userId);
+
             if (cmd.ExecuteNonQuery() != 1)
                 throw new Exceptions.NotFoundException("Token family not found");
         });
@@ -99,9 +106,9 @@ public class TokenFamilyStore(Connection connection) : ITokenFamilyStore
     {
         connection.ExecuteWithCommand(cmd =>
         {
-            cmd.CommandText = @"DELETE FROM ""TokenFamily"" WHERE ""UserId"" = ?";
-            cmd.AddParameter(userId);
-            cmd.ExecuteNonQuery();
+            cmd.SetCommandAndParameters(@"DELETE FROM ""TokenFamily"" WHERE ""UserId"" = @UserId")
+                .SetParameterValue("@UserId", userId)
+                .ExecuteNonQuery();
         });
 
         return Task.CompletedTask;
@@ -110,10 +117,8 @@ public class TokenFamilyStore(Connection connection) : ITokenFamilyStore
     public Task InvalidateAllTokens(CancellationToken ct)
     {
         connection.ExecuteWithCommand(cmd =>
-        {
-            cmd.CommandText = @"DELETE FROM ""TokenFamily""";
-            cmd.ExecuteNonQuery();
-        });
+            cmd.ExecuteNonQuery(@"DELETE FROM ""TokenFamily""")
+        );
 
         return Task.CompletedTask;
     }

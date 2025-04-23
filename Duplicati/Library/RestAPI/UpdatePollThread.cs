@@ -131,16 +131,15 @@ namespace Duplicati.Server
                     ThreadState = UpdatePollerStates.Checking;
                     eventPollNotify.SignalNewEvent();
 
-                    Library.AutoUpdater.ReleaseType rt;
-                    if (!Enum.TryParse<Library.AutoUpdater.ReleaseType>(connection.ApplicationSettings.UpdateChannel, true, out rt))
-                        rt = Duplicati.Library.AutoUpdater.ReleaseType.Unknown;
+                    if (!Enum.TryParse<ReleaseType>(connection.ApplicationSettings.UpdateChannel, true, out var rt))
+                        rt = ReleaseType.Unknown;
 
                     // Choose the default channel in case we have unknown
-                    rt = rt == Duplicati.Library.AutoUpdater.ReleaseType.Unknown ? Duplicati.Library.AutoUpdater.AutoUpdateSettings.DefaultUpdateChannel : rt;
+                    rt = rt == ReleaseType.Unknown ? AutoUpdateSettings.DefaultUpdateChannel : rt;
 
                     try
                     {
-                        var update = Duplicati.Library.AutoUpdater.UpdaterManager.CheckForUpdate(rt);
+                        var update = UpdaterManager.CheckForUpdate(rt);
                         if (update != null)
                             connection.ApplicationSettings.UpdatedVersion = update;
                     }

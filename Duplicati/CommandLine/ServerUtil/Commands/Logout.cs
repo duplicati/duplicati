@@ -18,6 +18,7 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
+
 using System.CommandLine;
 using System.CommandLine.NamingConventionBinder;
 
@@ -27,7 +28,12 @@ public static class Logout
 {
     public static Command Create()
         => new Command("logout", "Logs out of the server")
-        .WithHandler(CommandHandler.Create<Settings>(async (settings) =>
-                await (await settings.GetConnection()).Logout(settings))
+        .WithHandler(CommandHandler.Create<Settings, OutputInterceptor>(async (settings, output) =>
+            {
+                output.AppendConsoleMessage("Logging out of the server...");
+                await (await settings.GetConnection(output)).Logout(settings, output);
+                // If no exception we presume success
+                output.SetResult(true);
+            })
         );
 }

@@ -29,6 +29,7 @@ using System.Linq;
 using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
+using System.Runtime.CompilerServices;
 using System.Runtime.Versioning;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
@@ -37,6 +38,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Library.Common.IO;
+using Duplicati.StreamUtil;
 
 namespace Duplicati.Library.Utility
 {
@@ -296,11 +298,7 @@ namespace Duplicati.Library.Utility
                     var attr = attributeReader?.Invoke(rootpath) ?? FileAttributes.Directory;
                     lst.Push(rootpath);
                 }
-                catch (System.Threading.ThreadAbortException)
-                {
-                    throw;
-                }
-                catch (Exception ex)
+                catch (Exception ex) when (!ex.IsAbortException())
                 {
                     errorCallback?.Invoke(rootpath, rootpath, ex);
                 }
@@ -321,21 +319,13 @@ namespace Duplicati.Library.Utility
                                 var attr = attributeReader?.Invoke(sf) ?? FileAttributes.Directory;
                                 lst.Push(sf);
                             }
-                            catch (System.Threading.ThreadAbortException)
-                            {
-                                throw;
-                            }
-                            catch (Exception ex)
+                            catch (Exception ex) when (!ex.IsAbortException())
                             {
                                 errorCallback?.Invoke(rootpath, sf, ex);
                             }
                         }
                     }
-                    catch (System.Threading.ThreadAbortException)
-                    {
-                        throw;
-                    }
-                    catch (Exception ex)
+                    catch (Exception ex) when (!ex.IsAbortException())
                     {
                         errorCallback?.Invoke(rootpath, f, ex);
                     }
@@ -347,11 +337,7 @@ namespace Duplicati.Library.Utility
                         {
                             files = fileList(f);
                         }
-                        catch (System.Threading.ThreadAbortException)
-                        {
-                            throw;
-                        }
-                        catch (Exception ex)
+                        catch (Exception ex) when (!ex.IsAbortException())
                         {
                             errorCallback?.Invoke(rootpath, f, ex);
                         }
@@ -1652,6 +1638,26 @@ namespace Duplicati.Library.Utility
         }
 
         /// <summary>
+        /// Checks if an exception is a stop, cancel or timeout exception
+        /// </summary>
+        /// <param name="ex">The operation to check</param>
+        /// <returns><c>true</c> if the exception is a stop or cancel exception, <c>false</c> otherwise</returns>
+        public static bool IsAbortOrCancelException(this Exception ex)
+        {
+            return ex is OperationCanceledException || ex is ThreadAbortException || ex is TaskCanceledException || ex is TimeoutException;
+        }
+
+        /// <summary>
+        /// Checks if an exception is a stop exception
+        /// </summary>
+        /// <param name="ex">The operation to check</param>
+        /// <returns><c>true</c> if the exception is a stop exception, <c>false</c> otherwise</returns>
+        public static bool IsAbortException(this Exception ex)
+        {
+            return ex is OperationCanceledException || ex is ThreadAbortException;
+        }
+
+        /// <summary>
         /// Formats the string using the invariant culture
         /// </summary>
         /// <param name="format">The format string</param>
@@ -1667,5 +1673,179 @@ namespace Duplicati.Library.Utility
         /// <returns>The formatted string</returns>
         public static string FormatInvariant(this FormattableString formattable)
             => formattable.ToString(CultureInfo.InvariantCulture);
+
+        /// <summary>
+        /// Performs the function with an additional timeout
+        /// </summary>
+        /// <param name="timeout">The timeout to observe</param>
+        /// <param name="token">The cancellation token</param>
+        /// <param name="func">The function to invoke</param>
+        /// <returns>The task</returns>
+        public static async Task WithTimeout(TimeSpan timeout, CancellationToken token, Action<CancellationToken> func)
+        {
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(token);
+            cts.CancelAfter(timeout);
+            try
+            {
+                await Task.Run(() => func(cts.Token), cts.Token).ConfigureAwait(false);
+            }
+            catch (TaskCanceledException)
+            {
+                if (cts.IsCancellationRequested)
+                    throw new TimeoutException();
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Performs the function with an additional timeout
+        /// </summary>
+        /// <param name="timeout">The timeout to observe</param>
+        /// <param name="token">The cancellation token</param>
+        /// <param name="func">The function to invoke</param>
+        /// <returns>The task</returns>
+        public static async Task<T> WithTimeout<T>(TimeSpan timeout, CancellationToken token, Func<CancellationToken, T> func)
+        {
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(token);
+            cts.CancelAfter(timeout);
+            try
+            {
+                return await Task.Run(() => func(cts.Token), cts.Token).ConfigureAwait(false);
+            }
+            catch (TaskCanceledException)
+            {
+                if (cts.IsCancellationRequested)
+                    throw new TimeoutException();
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Performs the function with an additional timeout
+        /// </summary>
+        /// <param name="timeout">The timeout to observe</param>
+        /// <param name="token">The cancellation token</param>
+        /// <param name="func">The function to invoke</param>
+        /// <returns>The task</returns>
+        public static async Task WithTimeout(TimeSpan timeout, CancellationToken token, Func<CancellationToken, Task> func)
+        {
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(token);
+            cts.CancelAfter(timeout);
+            try
+            {
+                await func(cts.Token);
+            }
+            catch (TaskCanceledException)
+            {
+                if (cts.IsCancellationRequested)
+                    throw new TimeoutException();
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Performs the function with an additional timeout
+        /// </summary>
+        /// <typeparam name="T">The return type</typeparam>
+        /// <param name="timeout">The timeout to observe</param>
+        /// <param name="token">The cancellation token</param>
+        /// <param name="func">The function to invoke</param>
+        /// <returns>The task</returns>
+        public static async Task<T> WithTimeout<T>(TimeSpan timeout, CancellationToken token, Func<CancellationToken, Task<T>> func)
+        {
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(token);
+            cts.CancelAfter(timeout);
+            try
+            {
+                return await func(cts.Token);
+            }
+            catch (TaskCanceledException)
+            {
+                if (cts.IsCancellationRequested)
+                    throw new TimeoutException();
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Wraps an async enumerable in a timeout observing enumerable
+        /// </summary>
+        /// <typeparam name="T">The type of the items in the enumerable</typeparam>
+        /// <param name="source">The source enumerable</param>
+        /// <param name="timeoutPerItem">The timeout to observe for each item</param>
+        /// <param name="outerToken">The cancellation token for the outer operation</param>
+        /// <returns>The wrapped enumerable</returns>
+        public static async IAsyncEnumerable<T> WithPerItemTimeout<T>(
+            IAsyncEnumerable<T> source,
+            TimeSpan timeoutPerItem,
+            [EnumeratorCancellation] CancellationToken outerToken)
+        {
+            using var timeoutPolicy = new CancellationTokenSource();
+            using var linked = CancellationTokenSource.CreateLinkedTokenSource(timeoutPolicy.Token, outerToken);
+
+            await using var enumerator = await WithTimeout(timeoutPerItem, outerToken, _ => source.GetAsyncEnumerator(linked.Token)).ConfigureAwait(false);
+            while (true)
+            {
+                timeoutPolicy.CancelAfter(timeoutPerItem);
+                Task<bool> moveNextTask;
+                try
+                {
+                    moveNextTask = enumerator.MoveNextAsync().AsTask();
+                    var completed = await Task.WhenAny(moveNextTask, Task.Delay(Timeout.Infinite, timeoutPolicy.Token));
+                    if (completed != moveNextTask || timeoutPolicy.IsCancellationRequested)
+                        throw new TimeoutException($"Timeout while waiting for next item ({timeoutPerItem.TotalSeconds}s)");
+
+                    if (!moveNextTask.Result)
+                        break;
+
+                    yield return enumerator.Current;
+                }
+                finally
+                {
+                    timeoutPolicy.Token.ThrowIfCancellationRequested();
+                    timeoutPolicy.CancelAfter(Timeout.Infinite); // Reset for next item
+                }
+            }
+        }
+
+        /// <summary>
+        /// Wraps the stream in a timeout observing stream
+        /// </summary>
+        /// <param name="stream">The stream to wrap</param>
+        /// <param name="timeout">The timeout to observe</param>
+        /// <param name="disposeBaseStream">A flag indicating if the base stream should be disposed</param>
+        /// <returns>The wrapped stream</returns>
+        public static Stream ObserveReadTimeout(this Stream stream, TimeSpan timeout, bool disposeBaseStream = true)
+        {
+            if (stream == null)
+                throw new ArgumentNullException(nameof(stream));
+
+            return new TimeoutObservingStream(stream, disposeBaseStream)
+            {
+                ReadTimeout = timeout.Ticks > 0 && timeout != Timeout.InfiniteTimeSpan
+                    ? (int)timeout.TotalMilliseconds
+                    : Timeout.Infinite
+            };
+        }
+
+        /// <summary>
+        /// Wraps the stream in a timeout observing stream
+        /// </summary>
+        /// <param name="stream">The stream to wrap</param>
+        /// <param name="timeout">The timeout to observe</param>
+        /// <param name="disposeBaseStream">A flag indicating if the base stream should be disposed</param>
+        /// <returns>The wrapped stream</returns>
+        public static Stream ObserveWriteTimeout(this Stream stream, TimeSpan timeout, bool disposeBaseStream = true)
+        {
+            if (stream == null)
+                throw new ArgumentNullException(nameof(stream));
+
+            return new TimeoutObservingStream(stream, disposeBaseStream)
+            {
+                WriteTimeout = timeout.Ticks > 0 && timeout != Timeout.InfiniteTimeSpan
+                    ? (int)timeout.TotalMilliseconds
+                    : Timeout.Infinite
+            };
+        }
     }
 }

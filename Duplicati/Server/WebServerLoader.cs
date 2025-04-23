@@ -106,6 +106,10 @@ public static class WebServerLoader
     /// Option for setting the webservice timezone
     /// </summary>
     public const string OPTION_WEBSERVICE_TIMEZONE = "webservice-timezone";
+    /// <summary>
+    /// Option for setting the pre-auth tokens
+    /// </summary>
+    public const string OPTION_WEBSERVICE_PRE_AUTH_TOKENS = "webservice-pre-auth-tokens";
 
     /// <summary>
     /// The default path to the web root
@@ -168,7 +172,8 @@ public static class WebServerLoader
         IEnumerable<string> AllowedHostnames,
         bool DisableStaticFiles,
         IEnumerable<string> SPAPaths,
-        IEnumerable<string> CorsOrigins
+        IEnumerable<string> CorsOrigins,
+        IReadOnlySet<string> PreAuthTokens
     );
 
 
@@ -245,6 +250,11 @@ public static class WebServerLoader
 #endif
         }
 
+        var preAuthTokens = new HashSet<string>(StringComparer.Ordinal);
+        if (options.TryGetValue(OPTION_WEBSERVICE_PRE_AUTH_TOKENS, out var preAuthTokensString) && !string.IsNullOrWhiteSpace(preAuthTokensString))
+            preAuthTokens.UnionWith(preAuthTokensString.Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Where(x => x.Length >= 10 && x.All(y => char.IsAsciiLetterOrDigit(y) || y == '-' || y == '_')));
+
         options.TryGetValue(OPTION_WEBSERVICE_SPAPATHS, out var spaPathsString);
         if (string.IsNullOrWhiteSpace(spaPathsString))
             spaPathsString = DEFAULT_OPTION_SPAPATHS;
@@ -256,9 +266,10 @@ public static class WebServerLoader
             connection.ApplicationSettings.UseHTTPS ? connection.ApplicationSettings.ServerSSLCertificate : null,
             string.Format("{0} v{1}", Library.AutoUpdater.AutoUpdateSettings.AppName, Library.AutoUpdater.UpdaterManager.SelfVersion.Version),
             (connection.ApplicationSettings.AllowedHostnames ?? string.Empty).Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries),
-            Duplicati.Library.Utility.Utility.ParseBoolOption(options, OPTION_WEBSERVICE_API_ONLY),
+            Utility.ParseBoolOption(options, OPTION_WEBSERVICE_API_ONLY),
             spaPathsString.Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries),
-            options.GetValueOrDefault(OPTION_WEBSERVICE_CORS_ORIGINS)?.Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries) ?? Enumerable.Empty<string>()
+            options.GetValueOrDefault(OPTION_WEBSERVICE_CORS_ORIGINS)?.Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries) ?? Enumerable.Empty<string>(),
+            preAuthTokens
         );
 
         // Materialize the list of ports, and move the last-used port to the front, so we try the last-known port first

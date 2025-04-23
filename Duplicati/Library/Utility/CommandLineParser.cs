@@ -21,7 +21,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace Duplicati.Library.Utility
 {
@@ -39,7 +38,7 @@ namespace Duplicati.Library.Utility
         /// <param name='args'>The commandline arguments</param>
         public static Dictionary<string, string> ExtractOptions(List<string> args, Func<string, string, bool> parserCallback = null)
         {
-            Dictionary<string, string> options = new Dictionary<string, string>();
+            var options = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
             for (int i = 0; i < args.Count; i++)
             {

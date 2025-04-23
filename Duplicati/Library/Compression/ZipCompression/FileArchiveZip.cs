@@ -75,10 +75,6 @@ namespace Duplicati.Library.Compression.ZipCompression
         /// </summary>
         private const string COMPRESSION_METHOD_OPTION = "zip-compression-method";
         /// <summary>
-        /// The commandline option for toggling the ZIP64 support
-        /// </summary>
-        private const string COMPRESSION_ZIP64_OPTION = "zip-compression-zip64";
-        /// <summary>
         /// The commandline option for toggling the compression library
         /// </summary>
         private const string COMPRESSION_LIBRARY_OPTION = "zip-compression-library";
@@ -92,11 +88,6 @@ namespace Duplicati.Library.Compression.ZipCompression
         /// The default compression method
         /// </summary>
         private const CompressionType DEFAULT_COMPRESSION_METHOD = CompressionType.Deflate;
-
-        /// <summary>
-        /// The default setting for the ZIP64 support
-        /// </summary>
-        private const bool DEFAULT_ZIP64 = false;
 
         /// <summary>
         /// The archive to use
@@ -132,10 +123,6 @@ namespace Duplicati.Library.Compression.ZipCompression
             var compressionType = DEFAULT_COMPRESSION_METHOD;
             var compressionLevel = DEFAULT_COMPRESSION_LEVEL;
 
-            var usingZip64 = options.ContainsKey(COMPRESSION_ZIP64_OPTION)
-                ? Utility.Utility.ParseBoolOption(options.AsReadOnly(), COMPRESSION_ZIP64_OPTION)
-                : DEFAULT_ZIP64;
-
             CompressionType tmptype;
             if (options.TryGetValue(COMPRESSION_METHOD_OPTION, out var cpmethod) && Enum.TryParse<SharpCompress.Common.CompressionType>(cpmethod, true, out tmptype))
                 compressionType = tmptype;
@@ -150,12 +137,12 @@ namespace Duplicati.Library.Compression.ZipCompression
                 compressionLibrary = tmpcplib;
 
             var unittestMode = Utility.Utility.ParseBoolOption(options.AsReadOnly(), "unittest-mode");
-            var parsedOptions = new ParsedZipOptions(compressionLevel, compressionType, usingZip64, unittestMode);
+            var parsedOptions = new ParsedZipOptions(compressionLevel, compressionType, unittestMode);
 
             var userCompressionLibrary = compressionLibrary;
             if (compressionLibrary == CompressionLibrary.Auto)
             {
-                if (compressionType != CompressionType.Deflate || usingZip64)
+                if (compressionType != CompressionType.Deflate)
                     compressionLibrary = CompressionLibrary.SharpCompress;
                 else
                     compressionLibrary = CompressionLibrary.BuiltIn;
@@ -217,7 +204,7 @@ namespace Duplicati.Library.Compression.ZipCompression
                     new CommandLineArgument(COMPRESSION_LEVEL_OPTION, CommandLineArgument.ArgumentType.Enumeration, Strings.FileArchiveZip.CompressionlevelShort, Strings.FileArchiveZip.CompressionlevelLong, DEFAULT_COMPRESSION_LEVEL.ToString(), null, new string[] {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"}),
                     new CommandLineArgument(COMPRESSION_LEVEL_OPTION_ALIAS, CommandLineArgument.ArgumentType.Enumeration, Strings.FileArchiveZip.CompressionlevelShort, Strings.FileArchiveZip.CompressionlevelLong, DEFAULT_COMPRESSION_LEVEL.ToString(), null, new string[] {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"}, Strings.FileArchiveZip.CompressionlevelDeprecated(COMPRESSION_LEVEL_OPTION)),
                     new CommandLineArgument(COMPRESSION_METHOD_OPTION, CommandLineArgument.ArgumentType.Enumeration, Strings.FileArchiveZip.CompressionmethodShort, Strings.FileArchiveZip.CompressionmethodLong(COMPRESSION_LEVEL_OPTION), DEFAULT_COMPRESSION_METHOD.ToString(), null, methods),
-                    new CommandLineArgument(COMPRESSION_ZIP64_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.FileArchiveZip.Compressionzip64Short, Strings.FileArchiveZip.Compressionzip64Long, DEFAULT_ZIP64.ToString()),
+                    new CommandLineArgument("zip-compression-zip64", CommandLineArgument.ArgumentType.Boolean, Strings.FileArchiveZip.Compressionzip64Short, Strings.FileArchiveZip.Compressionzip64Long, "true", null, null, Strings.FileArchiveZip.Compressionzip64Deprecated),
                     new CommandLineArgument(COMPRESSION_LIBRARY_OPTION, CommandLineArgument.ArgumentType.Enumeration, Strings.FileArchiveZip.CompressionlibraryShort, Strings.FileArchiveZip.CompressionlibraryLong, CompressionLibrary.Auto.ToString(), null, Enum.GetNames(typeof(CompressionLibrary)))
                 ]);
             }

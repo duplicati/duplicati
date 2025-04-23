@@ -46,6 +46,11 @@ namespace Duplicati.Library.Interface
         bool Interrupted { get; }
     }
 
+    public interface IResultsWithVacuum
+    {
+        IVacuumResults VacuumResults { get; set; }
+    }
+
     public interface IBackendStatstics
     {
         long RemoteCalls { get; }
@@ -125,7 +130,7 @@ namespace Duplicati.Library.Interface
         bool Dryrun { get; }
     }
 
-    public interface IBackupResults : IBasicResults, IBackendStatsticsReporter
+    public interface IBackupResults : IBasicResults, IBackendStatsticsReporter, IResultsWithVacuum
     {
         long DeletedFiles { get; }
         long DeletedFolders { get; }
@@ -149,7 +154,6 @@ namespace Duplicati.Library.Interface
         bool Dryrun { get; }
 
         ICompactResults CompactResults { get; }
-        IVacuumResults VacuumResults { get; }
         IDeleteResults DeleteResults { get; }
         IRepairResults RepairResults { get; }
     }
@@ -177,7 +181,7 @@ namespace Duplicati.Library.Interface
         IEnumerable<IFileEntry> Files { get; }
     }
 
-    public interface ICompactResults : IBasicResults
+    public interface ICompactResults : IBasicResults, IResultsWithVacuum
     {
         long DeletedFileCount { get; }
         long DownloadedFileCount { get; }
@@ -186,8 +190,6 @@ namespace Duplicati.Library.Interface
         long DownloadedFileSize { get; }
         long UploadedFileSize { get; }
         bool Dryrun { get; }
-
-        IVacuumResults VacuumResults { get; }
     }
 
     public interface ICreateLogDatabaseResults : IBasicResults

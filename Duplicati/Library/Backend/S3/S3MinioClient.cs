@@ -18,18 +18,13 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Reactive.Linq;
 using System.Runtime.CompilerServices;
-using System.Threading;
-using System.Threading.Channels;
-using System.Threading.Tasks;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
+using Duplicati.Library.Utility.Options;
 using Minio;
+using Minio.DataModel.Args;
 using Minio.Exceptions;
 
 namespace Duplicati.Library.Backend
@@ -38,59 +33,36 @@ namespace Duplicati.Library.Backend
     {
         private static readonly string Logtag = Logging.Log.LogTagFromType<S3MinioClient>();
 
-        private MinioClient m_client;
-        private readonly string m_locationConstraint;
+        private readonly IMinioClient m_client;
+        private readonly string? m_locationConstraint;
         private readonly string m_dnsHost;
+        private readonly TimeoutOptionsHelper.Timeouts m_timeouts;
 
-        public S3MinioClient(string awsID, string awsKey, string locationConstraint,
-            string servername, string storageClass, bool useSSL, Dictionary<string, string> options)
+        public S3MinioClient(string awsID, string awsKey, string? locationConstraint,
+            string servername, string? storageClass, bool useSSL, TimeoutOptionsHelper.Timeouts timeouts, Dictionary<string, string?> options)
         {
+            m_timeouts = timeouts;
             m_locationConstraint = locationConstraint;
-            m_client = new MinioClient(
-                servername,
-                awsID,
-                awsKey,
-                locationConstraint
-            );
-
-            if (useSSL)
-            {
-                m_client = m_client.WithSSL();
-            }
+            m_client = new MinioClient()
+                .WithEndpoint(servername)
+                .WithCredentials(
+                    awsID,
+                    awsKey
+                )
+                .WithSSL(useSSL)
+                .Build();
 
             m_dnsHost = servername;
         }
 
-        private static async IAsyncEnumerable<T> ToAsyncEnumerable<T>(
-            IObservable<T> observable,
-            [EnumeratorCancellation] CancellationToken cancellationToken = default)
-        {
-            var channel = Channel.CreateUnbounded<T>(); // Buffered channel for async iteration
-
-            using var subscription = observable.Subscribe(
-                item => channel.Writer.TryWrite(item),
-                ex => channel.Writer.TryComplete(ex),
-                () => channel.Writer.TryComplete()
-            );
-
-            while (await channel.Reader.WaitToReadAsync(cancellationToken))
-            {
-                while (channel.Reader.TryRead(out var item))
-                {
-                    yield return item;
-                }
-            }
-        }
-
         public async IAsyncEnumerable<IFileEntry> ListBucketAsync(string bucketName, string prefix, bool recursive, [EnumeratorCancellation] CancellationToken cancellationToken)
         {
-            ThrowExceptionIfBucketDoesNotExist(bucketName);
+            await ThrowExceptionIfBucketDoesNotExist(bucketName, cancellationToken).ConfigureAwait(false);
 
             if (!string.IsNullOrWhiteSpace(prefix))
                 prefix = Util.AppendDirSeparator(prefix, "/");
 
-            var observable = m_client.ListObjectsAsync(bucketName, prefix, recursive, cancellationToken);
-            await foreach (var obj in ToAsyncEnumerable(observable, cancellationToken).ConfigureAwait(false))
+            await foreach (var obj in Utility.Utility.WithPerItemTimeout(m_client.ListObjectsEnumAsync(new ListObjectsArgs().WithBucket(bucketName).WithPrefix(prefix).WithRecursive(recursive), cancellationToken), m_timeouts.ListTimeout, cancellationToken))
             {
                 if (obj.Key == prefix || !obj.Key.StartsWith(prefix))
                     continue;
@@ -109,7 +81,9 @@ namespace Duplicati.Library.Backend
         {
             try
             {
-                await m_client.MakeBucketAsync(bucketName, m_locationConstraint, cancelToken).ConfigureAwait(false);
+                await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, ct
+                    => m_client.MakeBucketAsync(new MakeBucketArgs().WithBucket(bucketName).WithLocation(m_locationConstraint), cancelToken)
+                ).ConfigureAwait(false);
             }
             catch (MinioException e)
             {
@@ -123,7 +97,9 @@ namespace Duplicati.Library.Backend
         {
             try
             {
-                await m_client.RemoveObjectAsync(bucketName, keyName, cancelToken).ConfigureAwait(false);
+                await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, ct
+                    => m_client.RemoveObjectAsync(new RemoveObjectArgs().WithBucket(bucketName).WithObject(keyName), ct)
+                ).ConfigureAwait(false);
             }
             catch (MinioException e)
             {
@@ -140,8 +116,9 @@ namespace Duplicati.Library.Backend
         {
             try
             {
-                await m_client.CopyObjectAsync(bucketName, source,
-                    bucketName, target, cancellationToken: cancelToken).ConfigureAwait(false);
+                await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, ct
+                    => m_client.CopyObjectAsync(new CopyObjectArgs().WithBucket(bucketName).WithObject(target).WithCopyObjectSource(new CopySourceObjectArgs().WithBucket(bucketName).WithObject(source)), cancellationToken: ct)
+                ).ConfigureAwait(false);
             }
             catch (MinioException e)
             {
@@ -163,11 +140,17 @@ namespace Duplicati.Library.Backend
                 // If the object is not found, statObject() throws an exception,
                 // else it means that the object exists.
                 // Execution is successful.
-                await m_client.StatObjectAsync(bucketName, keyName, cancellationToken: cancelToken).ConfigureAwait(false);
+                await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, ct
+                    => m_client.StatObjectAsync(new StatObjectArgs().WithBucket(bucketName).WithObject(keyName), cancellationToken: cancelToken)
+                ).ConfigureAwait(false);
 
                 // Get input stream to have content of 'my-objectname' from 'my-bucketname'
-                await m_client.GetObjectAsync(bucketName, keyName,
-                    (stream) => { Utility.Utility.CopyStream(stream, target); }).ConfigureAwait(false);
+                await m_client.GetObjectAsync(new GetObjectArgs().WithBucket(bucketName).WithObject(keyName).WithCallbackStream(
+                    (stream) =>
+                    {
+                        using var t = stream.ObserveReadTimeout(m_timeouts.ReadWriteTimeout);
+                        Utility.Utility.CopyStream(t, target);
+                    })).ConfigureAwait(false);
             }
             catch (MinioException e)
             {
@@ -180,7 +163,7 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public string GetDnsHost()
+        public string? GetDnsHost()
         {
             return m_dnsHost;
         }
@@ -188,15 +171,18 @@ namespace Duplicati.Library.Backend
         public virtual async Task AddFileStreamAsync(string bucketName, string keyName, Stream source,
             CancellationToken cancelToken)
         {
-            ThrowExceptionIfBucketDoesNotExist(bucketName);
+            await ThrowExceptionIfBucketDoesNotExist(bucketName, cancelToken).ConfigureAwait(false);
 
             try
             {
-                await m_client.PutObjectAsync(bucketName,
-                    keyName,
-                    source,
-                    source.Length,
-                    "application/octet-stream", cancellationToken: cancelToken);
+                using var t = source.ObserveReadTimeout(m_timeouts.ReadWriteTimeout, false);
+                await m_client.PutObjectAsync(new PutObjectArgs()
+                    .WithBucket(bucketName)
+                    .WithObject(keyName)
+                    .WithStreamData(t)
+                    .WithObjectSize(t.Length)
+                    .WithContentType("application/octet-stream"),
+                    cancellationToken: cancelToken);
             }
             catch (MinioException e)
             {
@@ -210,20 +196,24 @@ namespace Duplicati.Library.Backend
         {
             if (e.ServerResponse?.StatusCode == System.Net.HttpStatusCode.NotFound || e.Response?.Code == "NoSuchKey")
                 throw new FileMissingException($"File {keyName} not found in bucket {bucketName}");
+
+            if (e is BucketNotFoundException)
+                throw new FolderMissingException($"Bucket {bucketName} not found");
+            if (e is ObjectNotFoundException)
+                throw new FileMissingException($"File {keyName} not found in bucket {bucketName}");
         }
 
-        private void ThrowExceptionIfBucketDoesNotExist(string bucketName)
-        {
-            if (!m_client.BucketExistsAsync(bucketName).Await())
-                throw new FolderMissingException($"Bucket {bucketName} does not exist.");
-        }
-
+        private Task ThrowExceptionIfBucketDoesNotExist(string bucketName, CancellationToken cancelToken)
+            => Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, async ct =>
+            {
+                if (!await m_client.BucketExistsAsync(new BucketExistsArgs().WithBucket(bucketName), ct))
+                    throw new FolderMissingException($"Bucket {bucketName} does not exist.");
+            });
 
         #region IDisposable Members
 
         public void Dispose()
         {
-            m_client = null;
         }
 
         #endregion

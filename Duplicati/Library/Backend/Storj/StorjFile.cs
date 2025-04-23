@@ -43,7 +43,7 @@ namespace Duplicati.Library.Backend.Storj
 
         public StorjFile()
         {
-
+            Name = string.Empty;
         }
 
         public StorjFile(uplink.NET.Models.Object tardigradeObject)

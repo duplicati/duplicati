@@ -19,7 +19,6 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
-using System;
 using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.Backend.pCloud;
@@ -52,7 +51,7 @@ internal class pCloudFileEntry : IFileEntry
     /// <summary>
     /// Filename or folder name
     /// </summary>
-    public string Name { get; set; }
+    public string? Name { get; set; }
 
     /// <summary>
     /// Size of the object in bytes

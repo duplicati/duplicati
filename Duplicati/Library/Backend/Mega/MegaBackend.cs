@@ -22,11 +22,8 @@
 using CG.Web.MegaApiClient;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
+using Duplicati.Library.Utility;
+using Duplicati.Library.Utility.Options;
 using OtpNet;
 using System.Runtime.CompilerServices;
 
@@ -36,68 +33,67 @@ namespace Duplicati.Library.Backend.Mega
     // This class is instantiated dynamically in the BackendLoader.
     public class MegaBackend : IBackend, IStreamingBackend
     {
-        private readonly string m_username = null;
-        private readonly string m_password = null;
-        private readonly string m_twoFactorKey = null;
-        private Dictionary<string, List<INode>> m_filecache;
-        private INode m_currentFolder = null;
-        private readonly string m_prefix = null;
+        private readonly string m_username;
+        private readonly string m_password;
+        private readonly string? m_twoFactorKey;
+        private Dictionary<string, List<INode>>? m_filecache;
+        private INode? m_currentFolder = null;
+        private readonly string m_prefix;
+        private readonly TimeoutOptionsHelper.Timeouts m_timeouts;
 
-        private MegaApiClient m_client;
+        private MegaApiClient? m_client;
 
         public MegaBackend()
         {
+            m_username = null!;
+            m_password = null!;
+            m_twoFactorKey = null;
+            m_prefix = null!;
+            m_timeouts = null!;
         }
 
-        private MegaApiClient Client
+        private async Task<MegaApiClient> GetClient(CancellationToken cancelToken)
         {
-            get
-            {
-                if (m_client == null)
+            if (m_client == null)
+                m_client = await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, async ct =>
                 {
                     var cl = new MegaApiClient();
                     if (m_twoFactorKey == null)
-                        cl.Login(m_username, m_password);
+                        await cl.LoginAsync(m_username, m_password).ConfigureAwait(false);
                     else
                     {
                         var totp = new Totp(Base32Encoding.ToBytes(m_twoFactorKey)).ComputeTotp();
-                        cl.Login(m_username, m_password, totp);
+                        await cl.LoginAsync(m_username, m_password, totp).ConfigureAwait(false);
                     }
-                    m_client = cl;
-                }
+                    return cl;
+                }).ConfigureAwait(false);
 
-                return m_client;
-            }
+            return m_client;
         }
 
-        public MegaBackend(string url, Dictionary<string, string> options)
+        public MegaBackend(string url, Dictionary<string, string?> options)
         {
             var uri = new Utility.Uri(url);
 
-            if (options.ContainsKey("auth-username"))
-                m_username = options["auth-username"];
-            if (options.ContainsKey("auth-password"))
-                m_password = options["auth-password"];
+            var auth = AuthOptionsHelper.Parse(options, uri);
             if (options.ContainsKey("auth-two-factor-key"))
                 m_twoFactorKey = options["auth-two-factor-key"];
 
-            if (!string.IsNullOrEmpty(uri.Username))
-                m_username = uri.Username;
-            if (!string.IsNullOrEmpty(uri.Password))
-                m_password = uri.Password;
-
-            if (string.IsNullOrEmpty(m_username))
+            if (string.IsNullOrWhiteSpace(auth.Username))
                 throw new UserInformationException(Strings.MegaBackend.NoUsernameError, "MegaNoUsername");
-            if (string.IsNullOrEmpty(m_password))
+            if (string.IsNullOrWhiteSpace(auth.Password))
                 throw new UserInformationException(Strings.MegaBackend.NoPasswordError, "MegaNoPassword");
 
+            (m_username, m_password) = auth.GetCredentials();
             m_prefix = uri.HostAndPath ?? "";
+            m_timeouts = TimeoutOptionsHelper.Parse(options);
         }
 
-        private async Task FetchCurrentFolderAsync(bool autocreate, CancellationToken cancelToken)
+        private async Task<INode> FetchCurrentFolderAsync(bool autocreate, CancellationToken cancelToken)
         {
+            var client = await GetClient(cancelToken).ConfigureAwait(false);
             var parts = m_prefix.Split(new string[] { "/" }, StringSplitOptions.RemoveEmptyEntries);
-            var nodes = Client.GetNodes();
+            var nodes = await Utility.Utility.WithTimeout(m_timeouts.ListTimeout, cancelToken, _ => client.GetNodes()).ConfigureAwait(false);
             INode parent = nodes.First(x => x.Type == NodeType.Root);
 
             foreach (var n in parts)
@@ -108,7 +104,7 @@ namespace Duplicati.Library.Backend.Mega
                     if (!autocreate)
                         throw new FolderMissingException();
 
-                    item = await Client.CreateFolderAsync(n, parent).ConfigureAwait(false);
+                    item = await client.CreateFolderAsync(n, parent).ConfigureAwait(false);
                 }
 
                 parent = item;
@@ -117,14 +113,17 @@ namespace Duplicati.Library.Backend.Mega
             m_currentFolder = parent;
 
             await ResetFileCacheAsync(nodes, cancelToken).ConfigureAwait(false);
+
+            return m_currentFolder;
         }
 
         private async Task<INode> GetCurrentFolderAsync(CancellationToken cancelToken)
         {
-            if (m_currentFolder == null)
-                await FetchCurrentFolderAsync(false, cancelToken).ConfigureAwait(false);
+            var folder = m_currentFolder;
+            if (folder == null)
+                folder = await FetchCurrentFolderAsync(false, cancelToken).ConfigureAwait(false);
 
-            return m_currentFolder;
+            return folder;
         }
 
         private async Task<INode> GetFileNodeAsync(string name, CancellationToken cancelToken)
@@ -140,17 +139,23 @@ namespace Duplicati.Library.Backend.Mega
             throw new FileMissingException();
         }
 
-        private async Task ResetFileCacheAsync(IEnumerable<INode> list, CancellationToken cancelToken)
+        private async Task<Dictionary<string, List<INode>>> ResetFileCacheAsync(IEnumerable<INode>? list, CancellationToken cancelToken)
         {
             if (m_currentFolder == null)
             {
                 await FetchCurrentFolderAsync(false, cancelToken).ConfigureAwait(false);
+                // We build it as part of the fetch step
+                return m_filecache!;
             }
             else
             {
+                var client = await GetClient(cancelToken).ConfigureAwait(false);
+
                 var currentFolder = await GetCurrentFolderAsync(cancelToken).ConfigureAwait(false);
-                m_filecache =
-                    (list ?? Client.GetNodes()).Where(x => x.Type == NodeType.File && x.ParentId == currentFolder.Id)
+                if (list == null)
+                    list = await Utility.Utility.WithTimeout(m_timeouts.ListTimeout, cancelToken, _ => client.GetNodes()).ConfigureAwait(false);
+                return m_filecache =
+                    list.Where(x => x.Type == NodeType.File && x.ParentId == currentFolder.Id)
                         .GroupBy(x => x.Name, x => x, (k, g) => new KeyValuePair<string, List<INode>>(k, g.ToList()))
                         .ToDictionary(x => x.Key, x => x.Value);
             }
@@ -158,19 +163,22 @@ namespace Duplicati.Library.Backend.Mega
 
         #region IStreamingBackend implementation
 
-        public async Task PutAsync(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
+        public async Task PutAsync(string remotename, Stream stream, CancellationToken cancelToken)
         {
             try
             {
-                if (m_filecache == null)
-                    await ResetFileCacheAsync(null, cancelToken).ConfigureAwait(false);
+                var filecache = m_filecache;
+                if (filecache == null)
+                    filecache = await ResetFileCacheAsync(null, cancelToken).ConfigureAwait(false);
 
+                var client = await GetClient(cancelToken).ConfigureAwait(false);
                 var currentFolder = await GetCurrentFolderAsync(cancelToken).ConfigureAwait(false);
-                var el = await Client.UploadAsync(stream, remotename, currentFolder, new Progress(), null, cancelToken).ConfigureAwait(false);
-                if (m_filecache.ContainsKey(remotename))
+                using var ts = stream.ObserveReadTimeout(m_timeouts.ReadWriteTimeout, false);
+                var el = await client.UploadAsync(ts, remotename, currentFolder, new Progress(), null, cancelToken).ConfigureAwait(false);
+                if (filecache.ContainsKey(remotename))
                     await DeleteAsync(remotename, cancelToken).ConfigureAwait(false);
 
-                m_filecache[remotename] = [el];
+                filecache[remotename] = [el];
             }
             catch
             {
@@ -181,9 +189,11 @@ namespace Duplicati.Library.Backend.Mega
 
         public async Task GetAsync(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
         {
+            var client = await GetClient(cancelToken).ConfigureAwait(false);
             var node = await GetFileNodeAsync(remotename, cancelToken).ConfigureAwait(false);
-            using (var s = Client.Download(node))
-                await Library.Utility.Utility.CopyStreamAsync(s, stream, cancelToken).ConfigureAwait(false);
+            using (var s = await Utility.Utility.WithTimeout(m_timeouts.ListTimeout, cancelToken, _ => client.Download(node)).ConfigureAwait(false))
+            using (var t = s.ObserveReadTimeout(m_timeouts.ReadWriteTimeout))
+                await Utility.Utility.CopyStreamAsync(t, stream, cancelToken).ConfigureAwait(false);
         }
 
         #endregion
@@ -193,10 +203,11 @@ namespace Duplicati.Library.Backend.Mega
         /// <inheritdoc />
         public async IAsyncEnumerable<IFileEntry> ListAsync([EnumeratorCancellation] CancellationToken cancelToken)
         {
-            if (m_filecache == null)
-                await ResetFileCacheAsync(null, cancelToken).ConfigureAwait(false);
+            var filecache = m_filecache;
+            if (filecache == null)
+                filecache = await ResetFileCacheAsync(null, cancelToken).ConfigureAwait(false);
 
-            foreach (var n in m_filecache.Values)
+            foreach (var n in filecache.Values)
             {
                 var item = n.OrderByDescending(x => x.ModificationDate).First();
                 yield return new FileEntry(item.Name, item.Size, item.ModificationDate ?? new DateTime(0), item.ModificationDate ?? new DateTime(0));
@@ -219,16 +230,18 @@ namespace Duplicati.Library.Backend.Mega
         {
             try
             {
-                if (m_filecache == null || !m_filecache.ContainsKey(remotename))
-                    await ResetFileCacheAsync(null, cancelToken).ConfigureAwait(false);
+                var filecache = m_filecache;
+                if (filecache == null || !filecache.ContainsKey(remotename))
+                    filecache = await ResetFileCacheAsync(null, cancelToken).ConfigureAwait(false);
 
-                if (!m_filecache.ContainsKey(remotename))
+                if (!filecache.ContainsKey(remotename))
                     throw new FileMissingException();
 
-                foreach (var n in m_filecache[remotename])
-                    await Client.DeleteAsync(n, false).ConfigureAwait(false);
+                var client = await GetClient(cancelToken).ConfigureAwait(false);
+                foreach (var n in filecache[remotename])
+                    await Utility.Utility.WithTimeout(m_timeouts.ListTimeout, cancelToken, _ => client.DeleteAsync(n, false)).ConfigureAwait(false);
 
-                m_filecache.Remove(remotename);
+                filecache.Remove(remotename);
             }
             catch
             {
@@ -245,41 +258,17 @@ namespace Duplicati.Library.Backend.Mega
             return FetchCurrentFolderAsync(true, cancelToken);
         }
 
-        public string DisplayName
-        {
-            get
-            {
-                return Strings.MegaBackend.DisplayName;
-            }
-        }
+        public string DisplayName => Strings.MegaBackend.DisplayName;
 
-        public string ProtocolKey
-        {
-            get
-            {
-                return "mega";
-            }
-        }
+        public string ProtocolKey => "mega";
 
-        public IList<ICommandLineArgument> SupportedCommands
-        {
-            get
-            {
-                return new List<ICommandLineArgument>(new ICommandLineArgument[] {
-                    new CommandLineArgument("auth-password", CommandLineArgument.ArgumentType.Password, Strings.MegaBackend.AuthPasswordDescriptionShort, Strings.MegaBackend.AuthPasswordDescriptionLong),
-                    new CommandLineArgument("auth-username", CommandLineArgument.ArgumentType.String, Strings.MegaBackend.AuthUsernameDescriptionShort, Strings.MegaBackend.AuthUsernameDescriptionLong),
-                    new CommandLineArgument("auth-two-factor-key", CommandLineArgument.ArgumentType.Password, Strings.MegaBackend.AuthTwoFactorKeyDescriptionShort, Strings.MegaBackend.AuthTwoFactorKeyDescriptionLong),
-                });
-            }
-        }
+        public IList<ICommandLineArgument> SupportedCommands => [
+            .. AuthOptionsHelper.GetOptions(),
+            new CommandLineArgument("auth-two-factor-key", CommandLineArgument.ArgumentType.Password, Strings.MegaBackend.AuthTwoFactorKeyDescriptionShort, Strings.MegaBackend.AuthTwoFactorKeyDescriptionLong),
+            .. TimeoutOptionsHelper.GetOptions()
+        ];
 
-        public string Description
-        {
-            get
-            {
-                return Strings.MegaBackend.Description;
-            }
-        }
+        public string Description => Strings.MegaBackend.Description;
 
         public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(Array.Empty<string>());
 

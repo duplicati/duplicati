@@ -116,7 +116,6 @@ namespace Duplicati.Library.Main.Operation
                 if (!m_options.NoLocalDb && SystemIO.IO_OS.FileExists(m_options.Dbpath))
                 {
                     db = new LocalRestoreDatabase(m_options.Dbpath);
-                    db.SetResult(m_result);
                 }
                 else
                 {
@@ -143,8 +142,6 @@ namespace Duplicati.Library.Main.Operation
                     await DoRunAsync(backendManager, db, filter, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
                 else
                     await DoRunNewAsync(backendManager, db, filter, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
-
-                db.WriteResults();
             }
             finally
             {
@@ -328,7 +325,6 @@ namespace Duplicati.Library.Main.Operation
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_CreateTargetFolders);
             using (new Logging.Timer(LOGTAG, "CreateDirectory", "CreateDirectory"))
                 await CreateDirectoryStructure(database, m_options, m_result).ConfigureAwait(false);
-            database.SetResult(m_result);
 
             using var setup_log_timer = new Logging.Timer(LOGTAG, "RestoreNetworkSetup", "RestoreNetworkSetup");
             // Create the channels between BlockManager and FileProcessor
@@ -339,6 +335,7 @@ namespace Duplicati.Library.Main.Operation
             // Create the process network
             Restore.Channels channels = new();
             var filelister = Restore.FileLister.Run(channels, database, m_options, m_result);
+            Restore.FileProcessor.file_processors_restoring_files = m_options.RestoreFileProcessors;
             var fileprocessors = Enumerable.Range(0, m_options.RestoreFileProcessors).Select(i => Restore.FileProcessor.Run(channels, database, fileprocessor_requests[i], fileprocessor_responses[i], m_options, m_result)).ToArray();
             var blockmanager = Restore.BlockManager.Run(channels, database, m_options, fileprocessor_requests, fileprocessor_responses);
             var volumecache = Restore.VolumeManager.Run(channels, m_options);
@@ -424,7 +421,6 @@ namespace Duplicati.Library.Main.Operation
             //using (var database = new LocalRestoreDatabase(dbparent))
             using (var metadatastorage = new RestoreHandlerMetadataStorage())
             {
-                database.SetResult(m_result);
                 Utility.UpdateOptionsFromDb(database, m_options);
                 Utility.VerifyOptionsAndUpdateDatabase(database, m_options);
                 m_blockbuffer = new byte[m_options.Blocksize];
@@ -516,7 +512,7 @@ namespace Duplicati.Library.Main.Operation
                         {
                             brokenFiles.Add(name);
                             Logging.Log.WriteErrorMessage(LOGTAG, "PatchingFailed", ex, "Failed to patch with remote file: \"{0}\", message: {1}", name, ex.Message);
-                            if (ex is System.Threading.ThreadAbortException)
+                            if (ex.IsAbortException())
                                 throw;
                         }
                     }
@@ -540,7 +536,7 @@ namespace Duplicati.Library.Main.Operation
                     {
                         fileErrors++;
                         Logging.Log.WriteErrorMessage(LOGTAG, "RestoreFileFailed", ex, "Failed to restore empty file: \"{0}\". Error message was: {1}", file.Path, ex.Message);
-                        if (ex is System.Threading.ThreadAbortException)
+                        if (ex.IsAbortException())
                             throw;
                     }
                 }
@@ -592,7 +588,7 @@ namespace Duplicati.Library.Main.Operation
                             {
                                 fileErrors++;
                                 Logging.Log.WriteErrorMessage(LOGTAG, "RestoreFileFailed", ex, "Failed to restore file: \"{0}\". Error message was: {1}", file.Path, ex.Message);
-                                if (ex is System.Threading.ThreadAbortException)
+                                if (ex.IsAbortException())
                                     throw;
                             }
                         }
@@ -747,7 +743,7 @@ namespace Duplicati.Library.Main.Operation
                                 catch (Exception ex)
                                 {
                                     Logging.Log.WriteWarningMessage(LOGTAG, "PatchingFileLocalFailed", ex, "Failed to patch file: \"{0}\" with data from local file \"{1}\", message: {2}", targetpath, sourcepath, ex.Message);
-                                    if (ex is System.Threading.ThreadAbortException)
+                                    if (ex.IsAbortException())
                                         throw;
                                 }
                             }
@@ -768,7 +764,7 @@ namespace Duplicati.Library.Main.Operation
                     catch (Exception ex)
                     {
                         Logging.Log.WriteWarningMessage(LOGTAG, "PatchingFileLocalFailed", ex, "Failed to patch file: \"{0}\" with local data, message: {1}", targetpath, ex.Message);
-                        if (ex is System.Threading.ThreadAbortException)
+                        if (ex.IsAbortException())
                             throw;
                         if (options.UnittestMode)
                             throw;
@@ -864,7 +860,7 @@ namespace Duplicati.Library.Main.Operation
                                     catch (Exception ex)
                                     {
                                         Logging.Log.WriteWarningMessage(LOGTAG, "PatchingFileLocalFailed", ex, "Failed to patch file: \"{0}\" with data from local file \"{1}\", message: {2}", targetpath, source.Path, ex.Message);
-                                        if (ex is System.Threading.ThreadAbortException)
+                                        if (ex.IsAbortException())
                                             throw;
                                     }
                                 }
@@ -1113,7 +1109,7 @@ namespace Duplicati.Library.Main.Operation
                         catch (Exception ex)
                         {
                             Logging.Log.WriteWarningMessage(LOGTAG, "TargetFileReadError", ex, "Failed to read target file: \"{0}\", message: {1}", targetpath, ex.Message);
-                            if (ex is System.Threading.ThreadAbortException)
+                            if (ex.IsAbortException())
                                 throw;
                             if (options.UnittestMode)
                                 throw;

@@ -19,6 +19,8 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
+#nullable enable
+
 using System;
 using System.Linq;
 using System.Net.Security;
@@ -26,7 +28,7 @@ using System.Security.Cryptography.X509Certificates;
 
 namespace Duplicati.Library.Utility;
 
-public class SslCertificateValidator(bool acceptAll, string[] validHashes)
+public class SslCertificateValidator(bool acceptAll, string[]? validHashes)
 {
     [Serializable]
     public class InvalidCertificateException(string certificate, SslPolicyErrors error)
@@ -39,26 +41,26 @@ public class SslCertificateValidator(bool acceptAll, string[] validHashes)
         public SslPolicyErrors SslError => _mErrors;
     }
 
-    public bool ValidateServerCertificate(object sender, X509Certificate cert, X509Chain chain, SslPolicyErrors sslPolicyErrors)
+    public bool ValidateServerCertificate(object sender, X509Certificate? cert, X509Chain? chain, SslPolicyErrors sslPolicyErrors)
     {
         if (acceptAll)
             return true;
-        
+
         try
         {
             DateTime now = DateTime.Now;
-        
-            using var certificate = cert as X509Certificate2 ?? new X509Certificate2(cert);
-            
+
+            using var certificate = cert as X509Certificate2 ?? new X509Certificate2(cert ?? throw new ArgumentNullException(nameof(cert)));
+
             if (!IsDateValid(certificate, now))
                 return false;
-            
+
             if (validHashes != null)
             {
                 // Check main certificate hash
                 if (IsTrustedHash(Utility.ByteArrayAsHexString(certificate.GetCertHash())))
                     return true;
-            
+
                 // Check chain certificate from root for the hash (this allows custom CA certificates hashes to be added)
                 if (chain?.ChainElements != null)
                     if (chain.ChainElements.Any(element => IsTrustedHash(Utility.ByteArrayAsHexString(element.Certificate.GetCertHash())) && IsDateValid(element.Certificate, now)))
@@ -73,11 +75,12 @@ public class SslCertificateValidator(bool acceptAll, string[] validHashes)
             throw new Exception(Strings.SslCertificateValidator.VerifyCertificateHashError(ex, sslPolicyErrors), ex);
         }
     }
-    
+
     private bool IsTrustedHash(string hash) =>
-        !string.IsNullOrWhiteSpace(hash) && 
-        validHashes.Any(validHash => !string.IsNullOrEmpty(validHash) && 
+        !string.IsNullOrWhiteSpace(hash) &&
+        validHashes != null &&
+        validHashes.Any(validHash => !string.IsNullOrEmpty(validHash) &&
                                      hash.Equals(validHash, StringComparison.OrdinalIgnoreCase));
     private bool IsDateValid(X509Certificate2 cert, DateTime now) => now <= cert.NotAfter && now >= cert.NotBefore;
-    
+
 }

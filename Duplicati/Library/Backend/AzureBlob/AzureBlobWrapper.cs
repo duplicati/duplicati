@@ -25,6 +25,8 @@ using System.Runtime.CompilerServices;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 using Uri = System.Uri;
+using Duplicati.Library.Utility.Options;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Backend.AzureBlob
 {
@@ -34,6 +36,7 @@ namespace Duplicati.Library.Backend.AzureBlob
     public class AzureBlobWrapper
     {
         private readonly BlobContainerClient _container;
+        private readonly TimeoutOptionsHelper.Timeouts _timeouts;
 
         /// <summary>
         /// Gets an array of DNS names associated with the blob container.
@@ -56,7 +59,8 @@ namespace Duplicati.Library.Backend.AzureBlob
         /// <param name="accessKey">The access key for the storage account.</param>
         /// <param name="sasToken">The Shared Access Signature (SAS) token for authentication.</param>
         /// <param name="containerName">The name of the blob container.</param>
-        public AzureBlobWrapper(string accountName, string accessKey, string sasToken, string containerName)
+        /// <param name="timeouts">The timeout options.</param>
+        public AzureBlobWrapper(string accountName, string? accessKey, string? sasToken, string containerName, TimeoutOptionsHelper.Timeouts timeouts)
         {
             BlobServiceClient blobServiceClient;
             if (sasToken != null)
@@ -71,6 +75,7 @@ namespace Duplicati.Library.Backend.AzureBlob
             }
 
             _container = blobServiceClient.GetBlobContainerClient(containerName);
+            _timeouts = timeouts;
         }
 
         /// <summary>
@@ -80,8 +85,10 @@ namespace Duplicati.Library.Backend.AzureBlob
         /// <returns>A task that represents the asynchronous operation.</returns>
         public async Task AddContainerAsync(CancellationToken cancellationToken)
         {
-            // Even though PublicAccessType.None is by default, we set it explicitly to highlight it.
-            await _container.CreateAsync(PublicAccessType.None, cancellationToken: cancellationToken).ConfigureAwait(false);
+            await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancellationToken, async ct =>
+                // Even though PublicAccessType.None is by default, we set it explicitly to highlight it.
+                await _container.CreateAsync(PublicAccessType.None, cancellationToken: ct).ConfigureAwait(false)
+            ).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -94,6 +101,7 @@ namespace Duplicati.Library.Backend.AzureBlob
         public async Task GetFileStreamAsync(string keyName, Stream target, CancellationToken cancellationToken)
         {
             var blobClient = _container.GetBlobClient(keyName);
+            using var timeoutStream = target.ObserveWriteTimeout(_timeouts.ReadWriteTimeout, false);
             await blobClient.DownloadToAsync(target, cancellationToken).ConfigureAwait(false);
         }
 
@@ -107,7 +115,8 @@ namespace Duplicati.Library.Backend.AzureBlob
         public async Task AddFileStream(string keyName, Stream source, CancellationToken cancelToken)
         {
             var blobClient = _container.GetBlobClient(keyName);
-            await blobClient.UploadAsync(source, true, cancelToken).ConfigureAwait(false);
+            using var timeoutStream = source.ObserveReadTimeout(_timeouts.ReadWriteTimeout, false);
+            await blobClient.UploadAsync(timeoutStream, true, cancelToken).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -118,9 +127,11 @@ namespace Duplicati.Library.Backend.AzureBlob
         public async Task DeleteObjectAsync(string keyName, CancellationToken cancelToken)
         {
             var blobClient = _container.GetBlobClient(keyName);
-            await blobClient.DeleteIfExistsAsync(cancellationToken: cancelToken).ConfigureAwait(false);
+            await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancelToken, async ct =>
+                await blobClient.DeleteIfExistsAsync(cancellationToken: ct).ConfigureAwait(false)
+            ).ConfigureAwait(false);
         }
-        
+
         /// <summary>
         /// List container files.
         /// </summary>
@@ -130,29 +141,31 @@ namespace Duplicati.Library.Backend.AzureBlob
         public virtual async IAsyncEnumerable<IFileEntry> ListContainerEntriesAsync([EnumeratorCancellation] CancellationToken cancelToken)
         {
             await using var blobEnumerator = _container.GetBlobsAsync().GetAsyncEnumerator(cancelToken);
-    
+
             while (true)
             {
                 bool hasNext;
-        
+
                 try
                 {
-                    hasNext = await blobEnumerator.MoveNextAsync().ConfigureAwait(false);
+                    hasNext = await Utility.Utility.WithTimeout(_timeouts.ListTimeout, cancelToken, async ct
+                        => await blobEnumerator.MoveNextAsync().ConfigureAwait(false)
+                    ).ConfigureAwait(false);
                 }
                 catch (Azure.RequestFailedException ex) when (ex.Status == 404)
                 {
                     throw new FolderMissingException(ex);
                 }
-        
+
                 if (!hasNext) break;
-        
+
                 cancelToken.ThrowIfCancellationRequested();
-        
+
                 if (blobEnumerator.Current is { } blob)
                 {
                     var blobName = Uri.UnescapeDataString(blob.Name.Replace("+", "%2B"));
                     var lastModified = blob.Properties.LastModified?.UtcDateTime ?? DateTime.UtcNow;
-            
+
                     yield return new FileEntry(
                         blobName,
                         blob.Properties.ContentLength ?? 0,

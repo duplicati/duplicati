@@ -1,9 +1,9 @@
-# This file is the help for the Duplicati Command Line Client. It shows what 
+# This file is the help for the Duplicati Command Line Client. It shows what
 # commands the CLI understands and what the outputs are. Sometimes we used
 # placeholders for options. In that case descriptions are taken directly from
-# the modules. Sometimes we described options here. The reason for that is, 
-# that we found the new description much better but did not want to create a 
-# need for translation as many options are described in the UI as well and 
+# the modules. Sometimes we described options here. The reason for that is,
+# that we found the new description much better but did not want to create a
+# need for translation as many options are described in the UI as well and
 # they are translated there.
 # =============================================================================
 > duplicati.commandline.exe
@@ -29,8 +29,8 @@ https://duplicati.com/                 Version: %VERSION%
 
 Show the last changes to Duplicati
 ==================================
-  Duplicati updates automatically when a newer version is available. The following command will show a list of versions and changes. 
-  
+  Duplicati updates automatically when a newer version is available. The following command will show a list of versions and changes.
+
   "%APP_PATH%" changelog
 
 # =============================================================================
@@ -39,8 +39,8 @@ Show the last changes to Duplicati
 
 Show system information as seen by Duplicati
 ============================================
-  Issue the following command to see a variety of system information relevant to Duplicati. 
-  
+  Issue the following command to see a variety of system information relevant to Duplicati.
+
   "%APP_PATH%" system-info
 
 # =============================================================================
@@ -49,30 +49,30 @@ Show system information as seen by Duplicati
 
 Make an encrypted backup
 ========================
-  The following command will make an encrypted backup and store it on an FTP server. As no passphrase is specified, the user is prompted for a password. The upload speed is throttled to 500kB/s. Backups older than one month are considered old. Old backups are deleted automatically. The maximum file size is limited to 50MB (default). 
-  
+  The following command will make an encrypted backup and store it on an FTP server. As no passphrase is specified, the user is prompted for a password. The upload speed is throttled to 500kB/s. Backups older than one month are considered old. Old backups are deleted automatically. The maximum file size is limited to 50MB (default).
+
   "%APP_PATH%" backup ftp://me:example.com@ftp.example.com/target "%EXAMPLE_SOURCE_PATH%" --throttle=500kB
-  
+
 Search for files in a backup
 ============================
-  The backup can be searched for specific files. The following command returns all files "%EXAMPLE_SOURCE_FILE%" of the last backup. File names can also contain the wildcards * and ?. 
-  
+  The backup can be searched for specific files. The following command returns all files "%EXAMPLE_SOURCE_FILE%" of the last backup. File names can also contain the wildcards * and ?.
+
   "%APP_PATH%" find ftp://me:example.com@ftp.example.com/target "%EXAMPLE_SOURCE_FILE%"
 
 Restore a specific file
 =======================
   The following command will restore "%EXAMPLE_SOURCE_FILE%" from the backup in the latest version to its original destination and overwrite an existing file.
-  
+
   "%APP_PATH%" restore ftp://me:example.com@ftp.example.com/target "%EXAMPLE_SOURCE_FILE%" --overwrite
-    
+
 
 # =============================================================================
 > duplicati.commandline.exe help backup
-  
+
 Usage: %CLI_EXE% backup <storage-URL> "<source-path>" [<options>]
 
-  Makes a backup of <source-path> and stores it in <storage-URL>. The format for <storage-URL> is 
-    protocol://username:password@hostname:port/path?backend_option1=value1&backend_option2=value2. 
+  Makes a backup of <source-path> and stores it in <storage-URL>. The format for <storage-URL> is
+    protocol://username:password@hostname:port/path?backend_option1=value1&backend_option2=value2.
   Multiple source paths can be specified if they are separated by a space.
 %IF_WINDOWS%
   On Windows clients, there are two special ways to specify the drive for files to back up. These two methods may help to back up sources on removable drives, whose drive letters may not be reliable.
@@ -107,9 +107,9 @@ Usage: %CLI_EXE% find <storage-URL> ["<filename>"] [<options>]
   --version=<int>
     Shows what the files looked like in a specific backup. If no version is specified the latest backup (version=0) will be used. If nothing is found, older backups will be searched automatically.
   --include=<string>
-    Reduces the list of files in a backup to those that match the provided string. This is applied before the search is executed. 
+    Reduces the list of files in a backup to those that match the provided string. This is applied before the search is executed.
   --exclude=<string>
-    Removes matching files from the list of files in a backup. This is applied before the search is executed. 
+    Removes matching files from the list of files in a backup. This is applied before the search is executed.
   --all-versions=<boolean>
     Searches in all backup sets, instead of just searching the latest
 
@@ -118,57 +118,65 @@ Usage: %CLI_EXE% find <storage-URL> ["<filename>"] [<options>]
 > duplicati.commandline.exe help restore
 
 Usage: %CLI_EXE% restore <storage-URL> ["<filename>"] [<options>]
-  
-  Restores <filename> to its original destination. If <filename> exists already, <filename> is changed to <filename-timestamp.extension>. To restore all files use "*" or leave empty.
+
+  Restores <filename> to its original destination. If <filename> exists already and --overwrite=false is set, then <filename> is changed to <filename-timestamp.extension>. To restore all files use "*" or leave empty.
 
   --overwrite=<boolean>
     Overwrites existing files.
+  --restore-legacy=<bool>
+    Use this option to use the legacy restore method. The legacy restore method is slower than the new method, but may be more reliable in some cases. The default is false, which means that the new restore method is used.
   --restore-path=<string>
     Restores files to <restore-path> instead of their original destination. Top folders are removed if possible.
+  --restore-permissions=<bool>
+    By default permissions are not restored as they might prevent you from accessing your files. Use this option to restore the permissions as well.
+  --skip-metadata=<bool>
+    Use this option to skip the metadata restore. The default is false, which means that metadata is restored.
   --time=<time>
     Restore files that are older than the specified time.
   --version=<int>
     Restore files from a specific backup.
 
 
-    
+
 # =============================================================================
 > duplicati.commandline.exe help delete
 
 Usage: %CLI_EXE% delete <storage-URL> [<options>]
-  
+
   Marks old data deleted and removes outdated dlist files. A backup is deleted when it is older than <keep-time> or when there are more newer versions than <keep-versions>. Data is considered old, when it is not required from any existing backup anymore.
-  
+
   --dry-run
-    Performs the operation, but does not write changes to the local database or the remote storage
+    Performs the operation, but does not write changes to the local database or the remote storage.
   --keep-time=<time>
     Marks data outdated that is older than <time>.
   --keep-versions=<int>
     Marks data outdated that is older than <int> versions.
   --version=<int>
     Deletes all files that belong to the specified version(s).
+  --retention-policy=<policy>
+    Deletes all files that are not preserved by the retention policy.
   --allow-full-removal
-    Disables the protection against removing the final fileset
-  
-  
-  
+    Disables the protection against removing the final fileset.
+
+
+
 # =============================================================================
 > duplicati.commandline.exe help compact
 
 Usage: %CLI_EXE% compact <storage-URL> [<options>]
-  
+
   Old data is not deleted immediately as in most cases only small parts of a dblock file are old data. When the amount of old data in a dblock file grows it might be worth to replace it. This is especially the case when the number of dblock files and thus the required storage space can be reduced. When backups are frequently made and only few files have changed, the uploaded dblock files are small. At some point it might make sense to replace a large number of small files with one large file. This is what compacting does.
-  
+
   --small-file-max-count=<int>
     The maximum allowed number of small files.
   --small-file-size=<int>
-    Files smaller than this size are considered to be small and will be compacted with other small files as soon as there are <small-file-max-count> of them. --small-file-size=20 means 20% of <dblock-size>. 
-  --threshold=<percent_value> 
+    Files smaller than this size are considered to be small and will be compacted with other small files as soon as there are <small-file-max-count> of them. --small-file-size=20 means 20% of <dblock-size>.
+  --threshold=<percent_value>
     The amount of old data that a dblock file can contain before it is considered to be replaced.
-    
-    
 
-  
+
+
+
 # =============================================================================
 > duplicati.commandline.exe help compare
 
@@ -199,7 +207,7 @@ Usage: %CLI_EXE% create-report <storage-URL> <output-file> [<options>]
 > duplicati.commandline.exe help repair
 
 Usage: %CLI_EXE% repair <storage-URL> [<options>]
-  
+
   Tries to repair the backup. If no local db is found or the db is empty, the db is re-created with data from the storage. If the db is in place but the remote storage is corrupt, the remote storage gets repaired with local data (if available).
 
 
@@ -208,7 +216,7 @@ Usage: %CLI_EXE% repair <storage-URL> [<options>]
 > duplicati.commandline.exe help purge
 
 Usage: %CLI_EXE% purge <storage-URL> <filenames> [<options>]
-  
+
   Purges (removes) files from remote backup data. This command can either take a list of filenames or use the filters to choose which files to purge. The purge process creates new filesets on the remote destination with the purged files removed, and will start the compacting process after a purge. By default, the matching files are purged in all versions, but this can be limited by choosing one or more versions. To test what will happen, use the --dry-run flag.
 
   --dry-run
@@ -230,7 +238,7 @@ Usage: %CLI_EXE% purge <storage-URL> <filenames> [<options>]
 > duplicati.commandline.exe help purge-broken-files
 
 Usage: %CLI_EXE% list-broken-files <storage-URL> [<options>]
-  
+
   Checks the database for missing data that cause files not not be restoreable. Files can become unrestoreable if remote data files are defect or missing. Use the list-broken-files command to see what the purge-broken-files command will remove.
 
 Usage: %CLI_EXE% purge-broken-files <storage-URL> [<options>]
@@ -239,39 +247,39 @@ Usage: %CLI_EXE% purge-broken-files <storage-URL> [<options>]
 
   --dry-run
     Performs the operation, but does not write changes to the local database or the remote storage
-    
+
 
 # =============================================================================
 > duplicati.commandline.exe help test
 > duplicati.commandline.exe help verify
 
 Usage: %CLI_EXE% test <storage-URL> <samples> [<options>]
-  
+
   Verifies integrity of a backup. A random sample of dlist, dindex, dblock files is downloaded, decrypted and the content is checked against recorded size values and data hashes. <samples> specifies the number of samples to be tested. If "all” is specified, all files in the backup will be tested. This is a rolling check, i.e. when executed another time different samples are verified than in the first run. A sample consists of 1 dlist, 1 dindex, 1 dblock.
-  
+
   --time=<time>
     Checks samples from a specific time.
   --version=<int>
     Checks samples from specific versions. Delimiters are , -
   --full-remote-verification
     Checks the internal structure of each file instead of just verifying the file hash
-  
 
 
-  
+
+
 # =============================================================================
 > duplicati.commandline.exe help test-filters
 > duplicati.commandline.exe help test-filter
 
 Usage: %CLI_EXE% test-filters <source-path> [<options>]
-  
+
   Scans the source files and tests against the filters specified, the console output shows which files and folders are examined and the result.
-    
+
 # =============================================================================
 > duplicati.commandline.exe help affected
 
 Usage: %CLI_EXE% affected <storage-URL> <remote-filename> [<remote-filenames>] [<options>]
-  
+
   Returns a report explaining what backup sets and files are affected by a remote file. You can use this option to see what source files are affected if one or more remote files are damaged or deleted. Notes that this command requires a local database to be present, if the database is not found automatically, you can set --dbpath to point to the database to use.
 
 # =============================================================================
@@ -279,8 +287,8 @@ Usage: %CLI_EXE% affected <storage-URL> <remote-filename> [<remote-filenames>] [
 
 Usage: %CLI_EXE% vacuum <storage-URL> [<options>]
 
-  Rebuilds the local database, repacking it into a minimal amount of disk space. 
-  
+  Rebuilds the local database, repacking it into a minimal amount of disk space.
+
 # =============================================================================
 > duplicati.commandline.exe help debug
 > duplicati.commandline.exe help logging
@@ -293,12 +301,12 @@ Duplicati provides information for debugging and logging purposes. By default, a
     If something needs to be retried (e.g. upload failed) this will cause an entry in the log file.
   --log-file = <path>
     The path to the log file e.g. "D:\duplicati\log.txt".
-  --log-file-log-level = Profiling | Verbose | Information | Warning | Error 
+  --log-file-log-level = Profiling | Verbose | Information | Warning | Error
     Specifies the log level to use for the log file.
-  --console-log-level = Profiling | Verbose | Information | Warning | Error 
+  --console-log-level = Profiling | Verbose | Information | Warning | Error
     Specifies the log level to use for the console log.
 
-    
+
 # =============================================================================
 > duplicati.commandline.exe help encryption
 > duplicati.commandline.exe help compression
@@ -355,7 +363,7 @@ Options:
 
 Duplicati can use FTP servers to store backups. The following target URL formats can be used:
   ftp://hostname/folder
-  
+
 Options:
 %MODULEOPTIONS%
 
@@ -365,7 +373,7 @@ Options:
 
 Duplicati can use SSH servers to store backups. The following target URL formats can be used:
   ssh://hostname/folder
- 
+
 Options:
 %MODULEOPTIONS%
 
@@ -375,7 +383,7 @@ Options:
 
 Duplicati can use WebDAV servers to store backups. The following target URL formats can be used:
   webdav://hostname/folder"
-  
+
 Options:
 %MODULEOPTIONS%
 
@@ -416,11 +424,11 @@ Options:
 Duplicati supports absolute and relative dates and times:
 
   now --> The current time
-  
+
   1234567890 --> A timestamp, seconds since 1970.
-  
+
   "2009-03-26T08:30:00+01:00" --> An absolute date and time. You can also use the local date and time format of your system like e.g. "01-14-2000" or "01 jan. 2004".
-  
+
   Y, M, D, W, h, m, s --> Relative date and time: year, month, day, week, hour, minute, second. Example: 2M10D5h is now + 2 months + 10 days + 5 hours.
 
 # =============================================================================
@@ -432,7 +440,7 @@ Whenever a size is required, you can use any of the following suffixes:
   kB - Kilobytes
   MB - Megabytes
   GB - Gigabytes
-  
+
 For speed limits, use the same format. If you enter 1MB this will be 1MB/sec.
 
 # =============================================================================
@@ -448,7 +456,7 @@ For entering decimal values you must use the English notation, with a period as 
 > duplicati.commandline.exe help filter
 > duplicati.commandline.exe help filters
 
-Duplicati can apply globbing and regex filter rules to backup and restore specific files only. Globbing filters can be used in file names. To specify a regex filter put the filter in [brackets]. 
+Duplicati can apply globbing and regex filter rules to backup and restore specific files only. Globbing filters can be used in file names. To specify a regex filter put the filter in [brackets].
   Globbing: *.txt
   Regex: [.*test\.txt]
 
@@ -478,12 +486,12 @@ Duplicati has several built-in groups of filters, which include commonly exclude
 > duplicati.commandline.exe help send-mail
 
 Duplicati can send email notifications after each operation. Use the send-mail command to test this:
-  
+
   "%APP_PATH%" send-mail --send-mail-to=<email-address>
 
 
   --send-mail-to=<email-address>
-    Send an email to <email-address> after a backup. Valid formats are "Name <test@example.com>, Other <test2@example.com>, test3@example.com". Multiple addresses must be separated with a comma. 
+    Send an email to <email-address> after a backup. Valid formats are "Name <test@example.com>, Other <test2@example.com>, test3@example.com". Multiple addresses must be separated with a comma.
   --send-mail-from=<email-address>
     This is the sender address of the email that is sent.
   --send-mail-subject=<subject>
@@ -500,12 +508,12 @@ Duplicati can send email notifications after each operation. Use the send-mail c
     When email messages are sent: "Success", "Warning", "Error", "Fatal", "All" are possible.
   --send-mail-any-operation=true
     Also send emails after other operations like restore etc.
-    
+
   Allowed placeholders are:
     %PARSEDRESULT%
       The parsed result op the operation: Success, Warning, Error
     %RESULT%
-      When used in the body, this is the result/log of the backup, 
+      When used in the body, this is the result/log of the backup,
       When used in the subject line, this is the same as %PARSEDRESULT%
     %OPERATIONNAME%
       The name of the operation, usually "backup", but could also be "restore" etc.
@@ -523,7 +531,7 @@ Duplicati can send email notifications after each operation. Use the send-mail c
       The name of the machine, can be overridden with --machine-name
 
 
-      
+
 # =============================================================================
 > duplicati.commandline.exe help advanced
 > duplicati.commandline.exe help option
@@ -573,7 +581,7 @@ To support more robust parsing, it is also possible to change the pattern from t
 
 This would extract keys inside that pattern, such as extracting "key name" from "!secret{key name}".
 
-For providers that return a set of secrets, the key lookup is default case insensitive. 
+For providers that return a set of secrets, the key lookup is default case insensitive.
 For providers that require a request per secret, the lookup is case-sensitive.
 
 The following secret providers are supported:

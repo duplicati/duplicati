@@ -461,7 +461,7 @@ namespace Duplicati.Library.Main
                         // This would also allow us to control the unclean shutdown flag,
                         // by toggling this on start and completion of transfers in the manager,
                         // instead of relying on the operations to correctly toggle the flag
-                        if (File.Exists(m_options.Dbpath))
+                        if (LocalDatabase.Exists(m_options.Dbpath))
                         {
                             using (var db = new LocalDatabase(m_options.Dbpath, result.MainOperation.ToString(), true))
                                 backend.StopRunnerAndFlushMessages(db, null).Await();
@@ -474,10 +474,33 @@ namespace Duplicati.Library.Main
 
                     if (resultSetter.EndTime.Ticks == 0)
                         resultSetter.EndTime = DateTime.UtcNow;
-                    result.SetDatabase(null);
-                    if (result is BasicResults r)
+                    resultSetter.Interrupted = false;
+
+                    if (LocalDatabase.Exists(m_options.Dbpath) && !m_options.Dryrun)
                     {
-                        r.Interrupted = false;
+                        using (var db = new LocalDatabase(m_options.Dbpath, null, true))
+                        {
+                            db.WriteResults(result);
+                            db.PurgeLogData(m_options.LogRetention);
+                            db.PurgeDeletedVolumes(DateTime.UtcNow);
+
+                            // Vacuum is done AFTER the results are written to the database
+                            // This means that the information about the vacuum is not stored in the database,
+                            // but will be reported in the log output and messages sent with any of the reporting modules
+                            if (m_options.AutoVacuum && result is IResultsWithVacuum vacuumResults && result is BasicResults basicResults)
+                            {
+                                try
+                                {
+                                    vacuumResults.VacuumResults = new VacuumResults(basicResults);
+                                    new Operation.VacuumHandler(m_options, (VacuumResults)vacuumResults.VacuumResults)
+                                        .RunAsync().Await();
+                                }
+                                catch (Exception ex)
+                                {
+                                    Logging.Log.WriteVerboseMessage(LOGTAG, "FailedToVacuum", ex, "Failed to vacuum database");
+                                }
+                            }
+                        }
                     }
 
                     OperationComplete(result, null);
@@ -486,76 +509,56 @@ namespace Duplicati.Library.Main
 
                     return result;
                 }
-                catch (Exception ex)
+                // Handle custom abort exception from run-script
+                catch (OperationAbortException oae)
                 {
                     resultSetter.EndTime = DateTime.UtcNow;
+                    // Log this as a normal operation, as the script raising the exception,
+                    // has already populated either warning or log messages as required
+                    Logging.Log.WriteInformationMessage(LOGTAG, "AbortOperation", "Aborting operation by request, requested result: {0}", oae.AbortReason);
 
-                    if (ex is OperationAbortException oae)
+                    resultSetter.Interrupted = true;
+                    try
                     {
-                        // Log this as a normal operation, as the script raising the exception,
-                        // has already populated either warning or log messages as required
-                        Logging.Log.WriteInformationMessage(LOGTAG, "AbortOperation", "Aborting operation by request, requested result: {0}", oae.AbortReason);
-
-                        if (result is BasicResults basicResults)
-                        {
-                            basicResults.Interrupted = true;
-                            try
-                            {
-                                // No operation was started in database, so write logs to new operation
-                                using (var db = new LocalDatabase(m_options.Dbpath, result.MainOperation.ToString(), true))
-                                {
-                                    basicResults.SetDatabase(db);
-                                    db.WriteResults();
-                                }
-
-                                // Do not propagate the cancel exception
-                                OperationComplete(result, null);
-                            }
-                            catch { }
-                        }
-                        else
-                        {
-                            // Perform the module shutdown
-                            OperationComplete(result, ex);
-                        }
-
-                        return result;
+                        // No operation was started in database, so write logs to new operation
+                        if (LocalDatabase.Exists(m_options.Dbpath) && !m_options.Dryrun)
+                            using (var db = new LocalDatabase(m_options.Dbpath, result.MainOperation.ToString(), true))
+                                db.WriteResults(result);
                     }
-                    else
+                    catch (Exception we)
                     {
-                        Logging.Log.WriteErrorMessage(LOGTAG, "FailedOperation", ex, Strings.Controller.FailedOperationMessage(m_options.MainAction, ex.Message));
-
-                        if (result is BasicResults basicResults)
-                        {
-                            try
-                            {
-                                basicResults.OperationProgressUpdater.UpdatePhase(OperationPhase.Error);
-                                basicResults.Fatal = true;
-                                // Write logs to previous operation if database exists
-                                if (LocalDatabase.Exists(m_options.Dbpath))
-                                {
-                                    using (var db = new LocalDatabase(m_options.Dbpath, null, true))
-                                    {
-                                        basicResults.SetDatabase(db);
-                                        db.WriteResults();
-                                    }
-                                }
-
-                                // Report the result, and the failure
-                                OperationComplete(result, ex);
-
-                            }
-                            catch { }
-                        }
-                        else
-                        {
-                            // Perform the module shutdown
-                            OperationComplete(result, ex);
-                        }
-
-                        throw;
+                        Logging.Log.WriteWarningMessage(LOGTAG, "FailedWriteOperation", we, we.Message);
                     }
 
+                    // Do not propagate the cancel exception
+                    OperationComplete(result, null);
+
+                    return result;
+                }
+                catch (Exception ex)
+                {
+                    Logging.Log.WriteErrorMessage(LOGTAG, "FailedOperation", ex, Strings.Controller.FailedOperationMessage(m_options.MainAction, ex.Message));
+
+                    try
+                    {
+                        if (result is BasicResults basicResults)
+                            basicResults.OperationProgressUpdater.UpdatePhase(OperationPhase.Error);
+
+                        resultSetter.Fatal = true;
+                        // Write logs to previous operation if database exists
+                        if (LocalDatabase.Exists(m_options.Dbpath) && !m_options.Dryrun)
+                            using (var db = new LocalDatabase(m_options.Dbpath, null, true))
+                                db.WriteResults(result);
+                    }
+                    catch (Exception we)
+                    {
+                        Logging.Log.WriteWarningMessage(LOGTAG, "FailedWriteOperation", we, we.Message);
+                    }
+
+                    // Report the result, and the failure
+                    OperationComplete(result, ex);
+
+                    throw;
                 }
                 finally
                 {
@@ -815,7 +818,7 @@ namespace Duplicati.Library.Main
                 if (l != null)
                     foreach (ICommandLineArgument a in l)
                     {
-                        if (supportedOptions.ContainsKey(a.Name) && !Options.KnownDuplicates.Contains(a.Name, StringComparer.OrdinalIgnoreCase))
+                        if (supportedOptions.ContainsKey(a.Name) && !Options.KnownDuplicates.Contains(a.Name))
                             Logging.Log.WriteWarningMessage(LOGTAG, "DuplicateOption", null, Strings.Controller.DuplicateOptionNameWarning(a.Name));
 
                         supportedOptions[a.Name] = a;
@@ -823,7 +826,7 @@ namespace Duplicati.Library.Main
                         if (a.Aliases != null)
                             foreach (string s in a.Aliases)
                             {
-                                if (supportedOptions.ContainsKey(s) && !Options.KnownDuplicates.Contains(s, StringComparer.OrdinalIgnoreCase))
+                                if (supportedOptions.ContainsKey(s) && !Options.KnownDuplicates.Contains(s))
                                     Logging.Log.WriteWarningMessage(LOGTAG, "DuplicateOption", null, Strings.Controller.DuplicateOptionNameWarning(s));
 
                                 supportedOptions[s] = a;
@@ -863,8 +866,8 @@ namespace Duplicati.Library.Main
             {
                 if (supportedOptions.TryGetValue(s, out var arg) && arg != null)
                 {
-                    string validationMessage = ValidateOptionValue(arg, s, ropts[s]);
-                    if (validationMessage != null)
+                    var validationMessage = CommandLineArgumentValidator.ValidateOptionValue(arg, s, ropts[s]);
+                    if (!string.IsNullOrWhiteSpace(validationMessage))
                         Logging.Log.WriteWarningMessage(LOGTAG, "OptionValidationError", null, validationMessage);
                 }
             }
@@ -1040,7 +1043,7 @@ namespace Duplicati.Library.Main
                             if (excludes)
                             {
                                 Logging.Log.WriteVerboseMessage(LOGTAG, "RemovingSubfolderSource", "Removing source \"{0}\" because it is a subfolder of \"{1}\", and using it as an include filter", sources[i], sources[j]);
-                                filter = Library.Utility.JoinedFilterExpression.Join(new FilterExpression(sources[i]), filter);
+                                filter = JoinedFilterExpression.Join(new FilterExpression(sources[i]), filter);
                             }
                             else
                                 Logging.Log.WriteVerboseMessage(LOGTAG, "RemovingSubfolderSource", "Removing source \"{0}\" because it is a subfolder or subfile of \"{1}\"", sources[i], sources[j]);
@@ -1054,96 +1057,6 @@ namespace Duplicati.Library.Main
                     }
 
             return sources.ToArray();
-        }
-
-        /// <summary>
-        /// Checks if the value passed to an option is actually valid.
-        /// </summary>
-        /// <param name="arg">The argument being validated</param>
-        /// <param name="optionname">The name of the option to validate</param>
-        /// <param name="value">The value to check</param>
-        /// <returns>Null if no errors are found, an error message otherwise</returns>
-        private static string ValidateOptionValue(ICommandLineArgument arg, string optionname, string value)
-        {
-            if (arg.Type == CommandLineArgument.ArgumentType.Enumeration)
-            {
-                bool found = false;
-                foreach (string v in arg.ValidValues ?? new string[0])
-                    if (string.Equals(v, value, StringComparison.OrdinalIgnoreCase))
-                    {
-                        found = true;
-                        break;
-                    }
-
-                if (!found)
-                    return Strings.Controller.UnsupportedEnumerationValue(optionname, value, arg.ValidValues ?? new string[0]);
-
-            }
-            else if (arg.Type == CommandLineArgument.ArgumentType.Flags)
-            {
-                bool validatedAllFlags = false;
-                var flags = (value ?? string.Empty).ToLowerInvariant().Split(new[] { "," }, StringSplitOptions.None).Select(flag => flag.Trim()).Distinct();
-                var validFlags = arg.ValidValues ?? new string[0];
-
-                foreach (var flag in flags)
-                {
-                    if (!validFlags.Any(validFlag => string.Equals(validFlag, flag, StringComparison.OrdinalIgnoreCase)))
-                    {
-                        validatedAllFlags = false;
-                        break;
-                    }
-
-                    validatedAllFlags = true;
-                }
-
-                if (!validatedAllFlags)
-                {
-                    return Strings.Controller.UnsupportedFlagsValue(optionname, value, validFlags);
-                }
-            }
-            else if (arg.Type == CommandLineArgument.ArgumentType.Boolean)
-            {
-                if (!string.IsNullOrEmpty(value) && Library.Utility.Utility.ParseBool(value, true) != Library.Utility.Utility.ParseBool(value, false))
-                    return Strings.Controller.UnsupportedBooleanValue(optionname, value);
-            }
-            else if (arg.Type == CommandLineArgument.ArgumentType.Integer)
-            {
-                if (!long.TryParse(value, out _))
-                    return Strings.Controller.UnsupportedIntegerValue(optionname, value);
-            }
-            else if (arg.Type == CommandLineArgument.ArgumentType.Path)
-            {
-                foreach (string p in value.Split(Path.DirectorySeparatorChar))
-                    if (p.IndexOfAny(Path.GetInvalidPathChars()) >= 0)
-                        return Strings.Controller.UnsupportedPathValue(optionname, p);
-            }
-            else if (arg.Type == CommandLineArgument.ArgumentType.Size)
-            {
-                try
-                {
-                    Library.Utility.Sizeparser.ParseSize(value);
-                }
-                catch
-                {
-                    return Strings.Controller.UnsupportedSizeValue(optionname, value);
-                }
-
-                if (!string.IsNullOrWhiteSpace(value) && char.IsDigit(value.Last()))
-                    return Strings.Controller.NonQualifiedSizeValue(optionname, value);
-            }
-            else if (arg.Type == CommandLineArgument.ArgumentType.Timespan)
-            {
-                try
-                {
-                    Library.Utility.Timeparser.ParseTimeSpan(value);
-                }
-                catch
-                {
-                    return Strings.Controller.UnsupportedTimeValue(optionname, value);
-                }
-            }
-
-            return null;
         }
 
         public void Pause(bool alsoTransfers)

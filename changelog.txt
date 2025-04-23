@@ -1,3 +1,291 @@
+2025-04-17 - 2.1.0.116_canary_2025-04-17
+==========
+This release is a canary release intended to be used for testing.
+
+This version is mostly the same as 2.1.0.115, so please see release notes from that.
+
+# Major changes in this version
+
+This is primarily a bug-fix release with only minor changes.
+
+# Potentially breaking changes (from 2.1.0.109)
+  - Location of data folder has changed in some cases, refer to previous release for details
+  - Permissions are now applied to the data folder, refer to previous release for details
+  - New user interface, `ngclient` is the default; there is a button to switch between the two
+
+## Detailed list of changes:
+- Upgrade Minio library from 3.13 to 6.0.4
+- Fixed delete command handling retention as well as specific version
+- Fixed an issue with queries that need more than 128 parameters
+- Updated memory caching and logging interface packages
+- Fixed an issue with schedules missing in the UI
+
+## Ngclient changes:
+- Fixed a case where dialogs would be missing the confirmation button
+- Improved the create-folder flow
+- Improved default handling of retention settings
+
+2025-04-14 - 2.1.0.115_canary_2025-04-14
+==========
+This release is a canary release intended to be used for testing.
+
+This version is the same as 2.1.0.113 and 2.1.0.114 but rebuilt to fix a build-time issue.
+
+# Major changes in this version
+
+The ServerUtil tool can now ouput JSON instead of regular text.
+
+Support for Zip64 is now always enabled, so manual data extraction requires a Zip64 enabled tool.
+
+Added support for creating pre-authenticated headers to better support proxy setups.
+
+Improved handling of duplicated blocks, both on compact and on backup.
+
+Added support for Filen and Filejump storage destinations.
+
+# Potentially breaking changes (from 2.1.0.109)
+  - Location of data folder has changed in some cases, refer to previous release for details
+  - Permissions are now applied to the data folder, refer to previous release for details
+  - New user interface, `ngclient` is the default; there is a button to switch between the two
+
+## Detailed list of changes:
+- Improved build process and added checks for missing and outdated libraries
+- Improved anti-sleep on Windows
+- Added option to emit machine-readable JSON from `ServerUtil` / `duplicati-server-util`
+- Fixed issue with Mega backend not authenticating
+- Added back missing options to MSGraph based backends
+- Improved Zip64 support (always on)
+- Prevent crashes when unable to set permissions on data folder or database
+- Added `Filen.io` backend
+- Fixed some delivery failures to Telegram
+- Prevent setting permissions on data folder from ServerUtil
+- Added support for pre-authenticated headers in selfhosted (proxy) setups
+- Stop early if restoring a backup and no passphrase is supplied
+- Removed a warning show when using relative restore version time
+- Removed positional arguments from SQL queries
+- Improved number of blocks that can be discarded during compact
+- Improved storage re-use if files are added/removed/added
+- Fixed a case where connections were not closed after use
+- Updated Wasabi S3 endpoints
+- Fixed locale-sensitive parsing bug for fr-CA
+- Added `rclone` to Docker images, thanks @wjansenw
+- Added Filejump backend
+- Fixed some error flows during restore with missing data
+
+## Ngclient changes:
+- Fixed external links opening in new window
+- Show error messages when testing connection
+- Fixed bug with not setting server interface
+- Added a tab to show crash log data
+- Added sorting to list of backups
+- Added Filen backend support
+- Fixed removing backup when deleting
+- Fixed dropping config file for restore
+- Error messages can be dismissed
+- Added support for date-time options
+- Added live-logs and improved logs area
+- Added controls for entering timespans
+- Improved status bar and loading messages
+- Fixed cases of white start screen
+- Fixed issues with settings page not updating
+- Fixed issue with loading exported config with path-encoded url
+- Fixed File browser starting in broken state if path is missing
+- Added support for Filejump backend
+- Fixed issues with parsing dblock-size
+- Added support for retention settings
+- Fixed issues with timespans on edits
+
+2025-04-14 - 2.1.0.114_canary_2025-04-14
+==========
+This release is a canary release intended to be used for testing.
+
+This version is the same as 2.1.0.113 but rebuilt to fix a build-time issue.
+
+# Major changes in this version
+
+The ServerUtil tool can now ouput JSON instead of regular text.
+
+Support for Zip64 is now always enabled, so manual data extraction requires a Zip64 enabled tool.
+
+Added support for creating pre-authenticated headers to better support proxy setups.
+
+Improved handling of duplicated blocks, both on compact and on backup.
+
+Added support for Filen and Filejump storage destinations.
+
+# Potentially breaking changes (from 2.1.0.109)
+  - Location of data folder has changed in some cases, refer to previous release for details
+  - Permissions are now applied to the data folder, refer to previous release for details
+  - New user interface, `ngclient` is the default; there is a button to switch between the two
+
+## Detailed list of changes:
+- Improved build process and added checks for missing and outdated libraries
+- Improved anti-sleep on Windows
+- Added option to emit machine-readable JSON from `ServerUtil` / `duplicati-server-util`
+- Fixed issue with Mega backend not authenticating
+- Added back missing options to MSGraph based backends
+- Improved Zip64 support (always on)
+- Prevent crashes when unable to set permissions on data folder or database
+- Added `Filen.io` backend
+- Fixed some delivery failures to Telegram
+- Prevent setting permissions on data folder from ServerUtil
+- Added support for pre-authenticated headers in selfhosted (proxy) setups
+- Stop early if restoring a backup and no passphrase is supplied
+- Removed a warning show when using relative restore version time
+- Removed positional arguments from SQL queries
+- Improved number of blocks that can be discarded during compact
+- Improved storage re-use if files are added/removed/added
+- Fixed a case where connections were not closed after use
+- Updated Wasabi S3 endpoints
+- Fixed locale-sensitive parsing bug for fr-CA
+- Added `rclone` to Docker images, thanks @wjansenw
+- Added Filejump backend
+- Fixed some error flows during restore with missing data
+
+## Ngclient changes:
+- Fixed external links opening in new window
+- Show error messages when testing connection
+- Fixed bug with not setting server interface
+- Added a tab to show crash log data
+- Added sorting to list of backups
+- Added Filen backend support
+- Fixed removing backup when deleting
+- Fixed dropping config file for restore
+- Error messages can be dismissed
+- Added support for date-time options
+- Added live-logs and improved logs area
+- Added controls for entering timespans
+- Improved status bar and loading messages
+- Fixed cases of white start screen
+- Fixed issues with settings page not updating
+- Fixed issue with loading exported config with path-encoded url
+- Fixed File browser starting in broken state if path is missing
+- Added support for Filejump backend
+- Fixed issues with parsing dblock-size
+- Added support for retention settings
+- Fixed issues with timespans on edits
+
+2025-04-11 - 2.1.0.113_canary_2025-04-11
+==========
+This release is a canary release intended to be used for testing.
+
+# Major changes in this version
+
+The ServerUtil tool can now ouput JSON instead of regular text.
+
+Support for Zip64 is now always enabled, so manual data extraction requires a Zip64 enabled tool.
+
+Added support for creating pre-authenticated headers to better support proxy setups.
+
+Improved handling of duplicated blocks, both on compact and on backup.
+
+Added support for Filen and Filejump storage destinations.
+
+# Potentially breaking changes (from 2.1.0.109)
+  - Location of data folder has changed in some cases, refer to previous release for details
+  - Permissions are now applied to the data folder, refer to previous release for details
+  - New user interface, `ngclient` is the default; there is a button to switch between the two
+
+## Detailed list of changes:
+- Improved build process and added checks for missing and outdated libraries
+- Improved anti-sleep on Windows
+- Added option to emit machine-readable JSON from `ServerUtil` / `duplicati-server-util`
+- Fixed issue with Mega backend not authenticating
+- Added back missing options to MSGraph based backends
+- Improved Zip64 support (always on)
+- Prevent crashes when unable to set permissions on data folder or database
+- Added `Filen.io` backend
+- Fixed some delivery failures to Telegram
+- Prevent setting permissions on data folder from ServerUtil
+- Added support for pre-authenticated headers in selfhosted (proxy) setups
+- Stop early if restoring a backup and no passphrase is supplied
+- Removed a warning show when using relative restore version time
+- Removed positional arguments from SQL queries
+- Improved number of blocks that can be discarded during compact
+- Improved storage re-use if files are added/removed/added
+- Fixed a case where connections were not closed after use
+- Updated Wasabi S3 endpoints
+- Fixed locale-sensitive parsing bug for fr-CA
+- Added `rclone` to Docker images, thanks @wjansenw
+- Added Filejump backend
+- Fixed some error flows during restore with missing data
+
+## Ngclient changes:
+- Fixed external links opening in new window
+- Show error messages when testing connection
+- Fixed bug with not setting server interface
+- Added a tab to show crash log data
+- Added sorting to list of backups
+- Added Filen backend support
+- Fixed removing backup when deleting
+- Fixed dropping config file for restore
+- Error messages can be dismissed
+- Added support for date-time options
+- Added live-logs and improved logs area
+- Added controls for entering timespans
+- Improved status bar and loading messages
+- Fixed cases of white start screen
+- Fixed issues with settings page not updating
+- Fixed issue with loading exported config with path-encoded url
+- Fixed File browser starting in broken state if path is missing
+- Added support for Filejump backend
+- Fixed issues with parsing dblock-size
+- Added support for retention settings
+- Fixed issues with timespans on edits
+
+2025-03-26 - 2.1.0.112_canary_2025-03-26
+==========
+This release is a canary release intended to be used for testing.
+
+# Major changes in this version
+
+- Updated backends
+The major change in this version is the addition of timeouts to every backend.
+This has the potential to affect each backend individually.
+
+- Improved validation
+Further increased the checks made to validate that the database is consistent, and added new features to the repair operation to assist in recovering.
+Certain problems are now checked before and after a backup, in an attempt to better close in on the conditions that create these situations.
+
+- Updates to ngclient
+Updates to reconnect logic and locale support.
+
+# Potentially breaking changes (from 2.1.0.109)
+  - Location of data folder has changed in some cases, refer to previous release for details
+  - Permissions are now applied to the data folder, refer to previous release for details
+  - New user interface, `ngclient` is the default; there is a button to switch between the two
+
+## Detailed list of changes:
+- Added retries for sending HTTP-based reports
+- Added warning icon back to TrayIcon
+- Fixed a check that prevented repairs in timezones that are have a negative UTC offset
+- Rewrote a number of SQL queries to avoid localization of SQL strings
+- Added guards against faulty startup delays
+- Updated all backends to use same parsing logic for authentication options
+- Updated all backends to support timeouts
+- Fixed a bug where databases would be created with strict permissions, even if opting out
+- Updated SQLite loading to always set custom pragmas
+- Updated SQLite loading to support custom `SQLITE_TMPDIR` environment variable
+- Removed unwanted data in report JSON output
+- Added support for deleting empty index files on repair
+- Improved handling of stop "errors"
+- Updated `box.com` backend to use HttpClient
+- Added option to inject custom parameters into reports
+- Improved error message on manifest version mismatches
+- Removed a warning when attempting to pick a restore date with a negative prefix
+- Support for large form-encoded HTTP reports
+- Fixed an issue where the URL parser would return different results for similar inputs (for the `file://` input)
+- Handling backspace on console password input
+- Added guard against fileset errors in the database
+- Added support for rebuilding filesets from remote data on repair
+- TrayIcon can now start in a disconnected state, and keep probing for a connection
+- Added current update channel to reports
+- Added automatic zip64 usage for large bugreports
+- Added support for showing the crashlog in the UI
+- Fixed an issue with some dates causing problems in the timezone aware calculations
+- Added support for sorting the list of backups in the UI
+- Fixed an issue with restoring timestamps and metadata on folders
+
 2025-03-15 - 2.1.0.111_canary_2025-03-15
 ==========
 This release is a canary release intended to be used for testing.

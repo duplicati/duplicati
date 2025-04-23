@@ -52,7 +52,10 @@ namespace Duplicati.Library.Main.Operation
                 throw new UserInformationException(string.Format("Database file does not exist: {0}", m_options.Dbpath), "DatabaseDoesNotExist");
 
             using (var db = new Database.LocalPurgeDatabase(m_options.Dbpath))
+            {
                 await DoRunAsync(backendManager, db, filter, null, 0, 1).ConfigureAwait(false);
+                db.VerifyConsistency(m_options.Blocksize, m_options.BlockhashSize, true, null);
+            }
         }
 
         public Task RunAsync(IBackendManager backendManager, Database.LocalPurgeDatabase db, float pgoffset, float pgspan, Action<System.Data.IDbCommand, long, string> filtercommand)
@@ -210,7 +213,11 @@ namespace Duplicati.Library.Main.Operation
                                         db.UpdateRemoteVolume(f.Key, RemoteVolumeState.Deleting, f.Value, null, tr);
 
                                     tr.Commit();
-                                    await backendManager.PutAsync(vol, null, null, true, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
+
+                                    await backendManager.PutAsync(vol, null, null, true, async () =>
+                                    {
+                                        await backendManager.FlushPendingMessagesAsync(db, null, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
+                                    }, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
                                     await backendManager.DeleteAsync(prevfilename, -1, true, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
                                     await backendManager.WaitForEmptyAsync(db, null, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
                                 }
@@ -244,8 +251,7 @@ namespace Duplicati.Library.Main.Operation
                             .DoCompactAsync(cdb, true, ctr, backendManager)
                             .ConfigureAwait(false);
 
-                        ctr.Commit(restart: false);
-                        cdb.WriteResults();
+                        ctr.Commit("PostCompact", restart: false);
                     }
                 }
 

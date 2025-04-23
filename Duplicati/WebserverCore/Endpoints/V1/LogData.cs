@@ -18,9 +18,11 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
+using Duplicati.Library.Crashlog;
 using Duplicati.Library.RestAPI;
 using Duplicati.Server.Database;
 using Duplicati.WebserverCore.Abstractions;
+using Duplicati.WebserverCore.Dto;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Duplicati.WebserverCore.Endpoints.V1;
@@ -36,9 +38,13 @@ public class LogData : IEndpointV1
         group.MapGet("/logdata/log", ([FromServices] Connection connection, [FromQuery] long? offset, [FromQuery] int? pagesize)
             => ExecuteGetLog(connection, offset, pagesize ?? 100))
             .RequireAuthorization();
+
+        group.MapGet("/logdata/crashlog", ()
+            => ExecuteGetCrashLog())
+            .RequireAuthorization();
     }
 
-    private static Dto.LogEntry[] ExecuteLogPoll(Library.Logging.LogMessageType level, long id, long offset, int pagesize)
+    private static LogEntry[] ExecuteLogPoll(Library.Logging.LogMessageType level, long id, long offset, int pagesize)
     {
         pagesize = Math.Max(1, Math.Min(500, pagesize));
         return FIXMEGlobal.LogHandler.AfterID(id, level, pagesize).Select(x => Dto.LogEntry.FromInternalEntry(x)).ToArray();
@@ -55,25 +61,28 @@ public class LogData : IEndpointV1
         return res;
     }
 
+    private static CrashLogOutputDto ExecuteGetCrashLog()
+        => new CrashLogOutputDto(CrashlogHelper.GetLastCrashLog());
+
     public static List<Dictionary<string, object>> DumpTable(System.Data.IDbCommand cmd, string tablename, string pagingfield, long? offset, long pagesize)
     {
         var result = new List<Dictionary<string, object>>();
 
         pagesize = Math.Max(10, Math.Min(500, pagesize));
 
-        cmd.CommandText = "SELECT * FROM \"" + tablename + "\"";
+        cmd.CommandText = $"SELECT * FROM \"{tablename}\"";
         if (!string.IsNullOrEmpty(pagingfield) && offset != null)
         {
             var p = cmd.CreateParameter();
             p.Value = offset.Value;
             cmd.Parameters.Add(p);
 
-            cmd.CommandText += " WHERE \"" + pagingfield + "\" < ?";
+            cmd.CommandText += $" WHERE \"{pagingfield}\" < ?";
         }
 
         if (!string.IsNullOrEmpty(pagingfield))
-            cmd.CommandText += " ORDER BY \"" + pagingfield + "\" DESC";
-        cmd.CommandText += " LIMIT " + pagesize.ToString();
+            cmd.CommandText += $" ORDER BY \"{pagingfield}\" DESC";
+        cmd.CommandText += $" LIMIT {pagesize}";
 
         using (var rd = cmd.ExecuteReader())
         {

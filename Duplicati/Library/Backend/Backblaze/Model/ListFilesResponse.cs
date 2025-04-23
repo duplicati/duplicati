@@ -34,19 +34,19 @@ internal class ListFilesResponse
     /// This value should be used in the next request to continue listing files.
     /// </summary>
     [JsonProperty("nextFileName")]
-    public string NextFileName { get; set; }
+    public string? NextFileName { get; set; }
 
     /// <summary>
     /// Gets or sets the ID of the next file to use for pagination.
     /// This value should be used in conjunction with NextFileName for subsequent requests.
     /// </summary>
     [JsonProperty("nextFileId")]
-    public string NextFileID { get; set; }
+    public string? NextFileID { get; set; }
 
     /// <summary>
     /// Gets or sets the array of file entities returned by this request.
     /// Each element contains information about a single file in the bucket.
     /// </summary>
     [JsonProperty("files")]
-    public FileEntity[] Files { get; set; }
+    public FileEntity[]? Files { get; set; }
 }

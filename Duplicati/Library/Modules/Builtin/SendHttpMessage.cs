@@ -211,36 +211,31 @@ namespace Duplicati.Library.Modules.Builtin
         /// <summary>
         /// Gets a list of supported commandline arguments
         /// </summary>
-        public override IList<ICommandLineArgument> SupportedCommands
-        {
-            get
-            {
-                return new List<ICommandLineArgument>(new ICommandLineArgument[] {
-                    new CommandLineArgument(OPTION_URL, CommandLineArgument.ArgumentType.String, Strings.SendHttpMessage.SendhttpurlShort, Strings.SendHttpMessage.SendhttpurlLong),
-                    new CommandLineArgument(OPTION_MESSAGE, CommandLineArgument.ArgumentType.String, Strings.SendHttpMessage.SendhttpmessageShort, Strings.SendHttpMessage.SendhttpmessageLong, DEFAULT_BODY),
-                    new CommandLineArgument(OPTION_MESSAGE_PARAMETER_NAME, CommandLineArgument.ArgumentType.String, Strings.SendHttpMessage.SendhttpmessageparameternameShort, Strings.SendHttpMessage.SendhttpmessageparameternameLong, DEFAULT_MESSAGE_PARAMETER_NAME),
-                    new CommandLineArgument(OPTION_EXTRA_PARAMETERS, CommandLineArgument.ArgumentType.String, Strings.SendHttpMessage.SendhttpextraparametersShort, Strings.SendHttpMessage.SendhttpextraparametersLong),
-                    new CommandLineArgument(OPTION_SENDLEVEL, CommandLineArgument.ArgumentType.String, Strings.SendHttpMessage.SendhttplevelShort, Strings.SendHttpMessage.SendhttplevelLong(ParsedResultType.Success.ToString(), ParsedResultType.Warning.ToString(), ParsedResultType.Error.ToString(), ParsedResultType.Fatal.ToString(), "All"), DEFAULT_LEVEL, null, Enum.GetNames(typeof(ParsedResultType)).Union(new string[] { "All" } ).ToArray()),
-                    new CommandLineArgument(OPTION_SENDALL, CommandLineArgument.ArgumentType.Boolean, Strings.SendHttpMessage.SendhttpanyoperationShort, Strings.SendHttpMessage.SendhttpanyoperationLong),
+        public override IList<ICommandLineArgument> SupportedCommands =>
+        [
+            new CommandLineArgument(OPTION_URL, CommandLineArgument.ArgumentType.String, Strings.SendHttpMessage.SendhttpurlShort, Strings.SendHttpMessage.SendhttpurlLong),
+            new CommandLineArgument(OPTION_MESSAGE, CommandLineArgument.ArgumentType.String, Strings.SendHttpMessage.SendhttpmessageShort, Strings.SendHttpMessage.SendhttpmessageLong, DEFAULT_BODY),
+            new CommandLineArgument(OPTION_MESSAGE_PARAMETER_NAME, CommandLineArgument.ArgumentType.String, Strings.SendHttpMessage.SendhttpmessageparameternameShort, Strings.SendHttpMessage.SendhttpmessageparameternameLong, DEFAULT_MESSAGE_PARAMETER_NAME),
+            new CommandLineArgument(OPTION_EXTRA_PARAMETERS, CommandLineArgument.ArgumentType.String, Strings.SendHttpMessage.SendhttpextraparametersShort, Strings.SendHttpMessage.SendhttpextraparametersLong),
+            new CommandLineArgument(OPTION_SENDLEVEL, CommandLineArgument.ArgumentType.String, Strings.SendHttpMessage.SendhttplevelShort, Strings.SendHttpMessage.SendhttplevelLong(ParsedResultType.Success.ToString(), ParsedResultType.Warning.ToString(), ParsedResultType.Error.ToString(), ParsedResultType.Fatal.ToString(), "All"), DEFAULT_LEVEL, null, Enum.GetNames(typeof(ParsedResultType)).Union(new string[] { "All" } ).ToArray()),
+            new CommandLineArgument(OPTION_SENDALL, CommandLineArgument.ArgumentType.Boolean, Strings.SendHttpMessage.SendhttpanyoperationShort, Strings.SendHttpMessage.SendhttpanyoperationLong),
 
-                    new CommandLineArgument(OPTION_VERB, CommandLineArgument.ArgumentType.String, Strings.SendHttpMessage.HttpverbShort, Strings.SendHttpMessage.HttpverbLong, "POST"),
-                    new CommandLineArgument(OPTION_LOG_LEVEL, CommandLineArgument.ArgumentType.Enumeration, Strings.ReportHelper.OptionLoglevelShort, Strings.ReportHelper.OptionLoglevelLong, DEFAULT_LOG_LEVEL.ToString(), null, Enum.GetNames(typeof(Logging.LogMessageType))),
-                    new CommandLineArgument(OPTION_LOG_FILTER, CommandLineArgument.ArgumentType.String, Strings.ReportHelper.OptionLogfilterShort, Strings.ReportHelper.OptionLogfilterLong),
-                    new CommandLineArgument(OPTION_MAX_LOG_LINES, CommandLineArgument.ArgumentType.Integer, Strings.ReportHelper.OptionmaxloglinesShort, Strings.ReportHelper.OptionmaxloglinesLong, DEFAULT_LOGLINES.ToString()),
+            new CommandLineArgument(OPTION_VERB, CommandLineArgument.ArgumentType.String, Strings.SendHttpMessage.HttpverbShort, Strings.SendHttpMessage.HttpverbLong, "POST"),
+            new CommandLineArgument(OPTION_LOG_LEVEL, CommandLineArgument.ArgumentType.Enumeration, Strings.ReportHelper.OptionLoglevelShort, Strings.ReportHelper.OptionLoglevelLong, DEFAULT_LOG_LEVEL.ToString(), null, Enum.GetNames(typeof(Logging.LogMessageType))),
+            new CommandLineArgument(OPTION_LOG_FILTER, CommandLineArgument.ArgumentType.String, Strings.ReportHelper.OptionLogfilterShort, Strings.ReportHelper.OptionLogfilterLong),
+            new CommandLineArgument(OPTION_MAX_LOG_LINES, CommandLineArgument.ArgumentType.Integer, Strings.ReportHelper.OptionmaxloglinesShort, Strings.ReportHelper.OptionmaxloglinesLong, DEFAULT_LOGLINES.ToString()),
 
-                    new CommandLineArgument(OPTION_RESULT_FORMAT, CommandLineArgument.ArgumentType.Enumeration, Strings.ReportHelper.ResultFormatShort, Strings.ReportHelper.ResultFormatLong(Enum.GetNames(typeof(ResultExportFormat))), DEFAULT_EXPORT_FORMAT.ToString(), null, Enum.GetNames(typeof(ResultExportFormat))),
+            new CommandLineArgument(OPTION_RESULT_FORMAT, CommandLineArgument.ArgumentType.Enumeration, Strings.ReportHelper.ResultFormatShort, Strings.ReportHelper.ResultFormatLong(Enum.GetNames(typeof(ResultExportFormat))), DEFAULT_EXPORT_FORMAT.ToString(), null, Enum.GetNames(typeof(ResultExportFormat))),
 
-                    new CommandLineArgument(OPTION_URL_FORM, CommandLineArgument.ArgumentType.String, Strings.SendHttpMessage.SendhttpurlsformShort, Strings.SendHttpMessage.SendhttpurlsformLong),
-                    new CommandLineArgument(OPTION_URL_JSON, CommandLineArgument.ArgumentType.String, Strings.SendHttpMessage.SendhttpurlsjsonShort, Strings.SendHttpMessage.SendhttpurlsjsonLong),
+            new CommandLineArgument(OPTION_URL_FORM, CommandLineArgument.ArgumentType.String, Strings.SendHttpMessage.SendhttpurlsformShort, Strings.SendHttpMessage.SendhttpurlsformLong),
+            new CommandLineArgument(OPTION_URL_JSON, CommandLineArgument.ArgumentType.String, Strings.SendHttpMessage.SendhttpurlsjsonShort, Strings.SendHttpMessage.SendhttpurlsjsonLong),
 
-                    new CommandLineArgument(OPTION_ACCEPT_ANY_CERTIFICATE, CommandLineArgument.ArgumentType.Boolean, Strings.SendHttpMessage.AcceptAnyCertificateShort, Strings.SendHttpMessage.AcceptAnyCertificateLong),
-                    new CommandLineArgument(OPTION_ACCEPT_SPECIFIED_CERTIFICATE, CommandLineArgument.ArgumentType.String, Strings.SendHttpMessage.AcceptSpecifiedCertificateShort, Strings.SendHttpMessage.AcceptSpecifiedCertificateLong),
+            new CommandLineArgument(OPTION_ACCEPT_ANY_CERTIFICATE, CommandLineArgument.ArgumentType.Boolean, Strings.SendHttpMessage.AcceptAnyCertificateShort, Strings.SendHttpMessage.AcceptAnyCertificateLong),
+            new CommandLineArgument(OPTION_ACCEPT_SPECIFIED_CERTIFICATE, CommandLineArgument.ArgumentType.String, Strings.SendHttpMessage.AcceptSpecifiedCertificateShort, Strings.SendHttpMessage.AcceptSpecifiedCertificateLong),
 
-                    new CommandLineArgument(OPTION_SEND_HTTP_RETRIES, CommandLineArgument.ArgumentType.Integer, Strings.SendHttpMessage.SendHttpRetriesShort, Strings.SendHttpMessage.SendHttpRetriesLong, DEFAULT_RETRIES.ToString()),
-                    new CommandLineArgument(OPTION_SEND_HTTP_RETRY_DELAY, CommandLineArgument.ArgumentType.Integer, Strings.SendHttpMessage.SendHttpRetryDelayShort, Strings.SendHttpMessage.SendHttpRetryDelayLong, DEFAULT_RETRY_DELAY),
-                });
-            }
-        }
+            new CommandLineArgument(OPTION_SEND_HTTP_RETRIES, CommandLineArgument.ArgumentType.Integer, Strings.SendHttpMessage.SendHttpRetriesShort, Strings.SendHttpMessage.SendHttpRetriesLong, DEFAULT_RETRIES.ToString()),
+            new CommandLineArgument(OPTION_SEND_HTTP_RETRY_DELAY, CommandLineArgument.ArgumentType.Integer, Strings.SendHttpMessage.SendHttpRetryDelayShort, Strings.SendHttpMessage.SendHttpRetryDelayLong, DEFAULT_RETRY_DELAY),
+        ];
 
         protected override string SubjectOptionName => OPTION_MESSAGE;
         protected override string BodyOptionName => OPTION_MESSAGE;
@@ -250,6 +245,7 @@ namespace Duplicati.Library.Modules.Builtin
         protected override string LogFilterOptionName => OPTION_LOG_FILTER;
         protected override string LogLinesOptionName => OPTION_MAX_LOG_LINES;
         protected override string ResultFormatOptionName => OPTION_RESULT_FORMAT;
+        protected override string ExtraDataOptionName => OPTION_EXTRA_PARAMETERS;
 
         /// <summary>
         /// This method is the interception where the module can interact with the execution environment and modify the settings.
@@ -319,11 +315,17 @@ namespace Duplicati.Library.Modules.Builtin
             }
             else
             {
+                const int chuncksize = 2048;
                 contenttype = new MediaTypeHeaderValue("application/x-www-form-urlencoded");
-                var postData = $"{m_messageParameterName}={System.Uri.EscapeDataString(body)}";
+                var sb = new StringBuilder();
+                sb.Append(m_messageParameterName).Append("=");
+                for (int i = 0; i < body.Length; i += chuncksize)
+                    sb.Append(System.Uri.EscapeDataString(body.Substring(i, Math.Min(chuncksize, body.Length - i))));
+
                 if (!string.IsNullOrEmpty(m_extraParameters))
-                    postData += $"&{m_extraParameters}";
-                data = Encoding.UTF8.GetBytes(postData);
+                    sb.Append("&").Append(m_extraParameters);
+
+                data = Encoding.UTF8.GetBytes(sb.ToString());
             }
 
             var request = new HttpRequestMessage

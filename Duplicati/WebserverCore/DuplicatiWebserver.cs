@@ -19,9 +19,11 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
+using System.Net;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
 using Duplicati.Server.Database;
 using Duplicati.WebserverCore.Abstractions;
@@ -29,6 +31,7 @@ using Duplicati.WebserverCore.Exceptions;
 using Duplicati.WebserverCore.Extensions;
 using Duplicati.WebserverCore.Middlewares;
 using Duplicati.WebserverCore.Services;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http.Json;
@@ -109,6 +112,7 @@ public class DuplicatiWebserver
     /// <param name="DisableStaticFiles">If static files should be disabled</param>
     /// <param name="SPAPaths">The paths to serve as SPAs</param>
     /// <param name="CorsOrigins">The origins to allow for CORS</param>
+    /// <param name="PreAuthTokens">The pre-authenticated tokens</param>
     public record InitSettings(
         string WebRoot,
         int Port,
@@ -118,7 +122,8 @@ public class DuplicatiWebserver
         IEnumerable<string> AllowedHostnames,
         bool DisableStaticFiles,
         IEnumerable<string> SPAPaths,
-        IEnumerable<string> CorsOrigins
+        IEnumerable<string> CorsOrigins,
+        IReadOnlySet<string> PreAuthTokens
     );
 
     /// <summary>
@@ -218,9 +223,27 @@ public class DuplicatiWebserver
             .AddHttpContextAccessor()
             .AddSingleton<IHostnameValidator>(new HostnameValidator(settings.AllowedHostnames))
             .AddSingleton(jwtConfig)
+            .AddSingleton(new PreAuthTokenConfig(settings.PreAuthTokens))
             .AddAuthorization()
-            .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-            .AddJwtBearer(options =>
+            .AddAuthentication(options => { options.DefaultScheme = "CombinedScheme"; })
+            .AddScheme<AuthenticationSchemeOptions, PreAuthTokenHandler>(PreAuthTokenHandler.SchemeName, null)
+            .AddPolicyScheme("CombinedScheme", $"JWT or {PreAuthTokenHandler.SchemeName}", options =>
+            {
+                options.ForwardDefaultSelector = context =>
+                {
+                    var authHeader = context.Request.Headers["Authorization"].ToString();
+                    if (authHeader?.StartsWith(PreAuthTokenHandler.SchemePrefix) == true)
+                        return "PreAuth";
+
+                    // Support for websocket authentication (should be fixed with messages)
+                    var queryToken = context.Request.Query["token"].ToString();
+                    if (string.IsNullOrWhiteSpace(authHeader) && !string.IsNullOrEmpty(queryToken) && settings.PreAuthTokens.Contains(queryToken))
+                        return "PreAuth";
+
+                    return "Jwt";
+                };
+            })
+            .AddJwtBearer("Jwt", options =>
             {
                 options.Authority = jwtConfig.Authority;
                 options.Audience = jwtConfig.Audience;
@@ -230,7 +253,7 @@ public class DuplicatiWebserver
 
                 options.Events = new JwtBearerEvents
                 {
-                    OnMessageReceived = context =>
+                    OnMessageReceived = (context) =>
                     {
                         var accessToken = context.Request.Query["token"];
 
@@ -320,6 +343,12 @@ public class DuplicatiWebserver
                         await context.Response.WriteAsync(userReportedHttpException.Message);
                     else
                         await context.Response.WriteAsync(JsonSerializer.Serialize(new { Error = userReportedHttpException.Message, Code = userReportedHttpException.StatusCode }));
+                }
+                else if (thrownException is UserInformationException userInformationException)
+                {
+                    context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
+                    context.Response.ContentType = "application/json";
+                    await context.Response.WriteAsync(JsonSerializer.Serialize(new { Error = userInformationException.Message, Code = (int)HttpStatusCode.BadRequest, HelpId = userInformationException.HelpID }));
                 }
                 else
                 {

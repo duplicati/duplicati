@@ -52,21 +52,20 @@ namespace Duplicati.Library.Main.Operation
                 throw new UserInformationException(string.Format("Database file does not exist: {0}", m_options.Dbpath), "DatabaseDoesNotExist");
 
             using (var db = new LocalTestDatabase(m_options.Dbpath))
+            using (var rtr = new ReusableTransaction(db))
             {
-                db.SetResult(m_results);
-                Utility.UpdateOptionsFromDb(db, m_options);
-                Utility.VerifyOptionsAndUpdateDatabase(db, m_options);
-                db.VerifyConsistency(m_options.Blocksize, m_options.BlockhashSize, !m_options.DisableFilelistConsistencyChecks, null);
-                await FilelistProcessor.VerifyRemoteList(backendManager, m_options, db, m_results.BackendWriter, latestVolumesOnly: true, verifyMode: FilelistProcessor.VerifyMode.VerifyOnly, null).ConfigureAwait(false);
-
-                await DoRunAsync(samples, db, backendManager).ConfigureAwait(false);
-                db.WriteResults();
+                Utility.UpdateOptionsFromDb(db, m_options, rtr.Transaction);
+                Utility.VerifyOptionsAndUpdateDatabase(db, m_options, rtr.Transaction);
+                db.VerifyConsistency(m_options.Blocksize, m_options.BlockhashSize, !m_options.DisableFilelistConsistencyChecks, rtr.Transaction);
+                await FilelistProcessor.VerifyRemoteList(backendManager, m_options, db, m_results.BackendWriter, latestVolumesOnly: true, verifyMode: FilelistProcessor.VerifyMode.VerifyOnly, rtr.Transaction).ConfigureAwait(false);
+                await DoRunAsync(samples, db, rtr, backendManager).ConfigureAwait(false);
+                rtr.Commit("TestHandlerComplete");
             }
         }
 
-        public async Task DoRunAsync(long samples, LocalTestDatabase db, IBackendManager backend)
+        public async Task DoRunAsync(long samples, LocalTestDatabase db, ReusableTransaction rtr, IBackendManager backend)
         {
-            var files = db.SelectTestTargets(samples, m_options).ToList();
+            var files = db.SelectTestTargets(samples, m_options, rtr.Transaction).ToList();
 
             m_results.OperationProgressUpdater.UpdatePhase(OperationPhase.Verify_Running);
             m_results.OperationProgressUpdater.UpdateProgress(0);
@@ -81,7 +80,7 @@ namespace Duplicati.Library.Main.Operation
                     {
                         if (!await m_results.TaskControl.ProgressRendevouz().ConfigureAwait(false))
                         {
-                            await backend.WaitForEmptyAsync(db, null, m_results.TaskControl.ProgressToken).ConfigureAwait(false);
+                            await backend.WaitForEmptyAsync(db, rtr.Transaction, m_results.TaskControl.ProgressToken).ConfigureAwait(false);
                             m_results.EndTime = DateTime.UtcNow;
                             return;
                         }
@@ -91,14 +90,14 @@ namespace Duplicati.Library.Main.Operation
 
                         KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>> res;
                         using (tf)
-                            res = TestVolumeInternals(db, vol, tf, m_options, m_options.FullBlockVerification ? 1.0 : 0.2);
+                            res = TestVolumeInternals(db, rtr, vol, tf, m_options, m_options.FullBlockVerification ? 1.0 : 0.2);
                         m_results.AddResult(res.Key, res.Value);
 
                         if (!string.IsNullOrWhiteSpace(vol.Hash) && vol.Size > 0)
                         {
                             if (res.Value == null || !res.Value.Any())
                             {
-                                var rv = db.GetRemoteVolume(vol.Name, null);
+                                var rv = db.GetRemoteVolume(vol.Name, rtr.Transaction);
 
                                 if (rv.ID < 0)
                                 {
@@ -111,20 +110,20 @@ namespace Duplicati.Library.Main.Operation
                                         else
                                         {
                                             Logging.Log.WriteInformationMessage(LOGTAG, "CaptureHashAndSize", "Successfully captured hash and size for {0}, updating database", vol.Name);
-                                            db.UpdateRemoteVolume(vol.Name, RemoteVolumeState.Verified, vol.Size, vol.Hash);
+                                            db.UpdateRemoteVolume(vol.Name, RemoteVolumeState.Verified, vol.Size, vol.Hash, rtr.Transaction);
                                         }
                                     }
                                 }
                             }
                         }
 
-                        db.UpdateVerificationCount(vol.Name);
+                        db.UpdateVerificationCount(vol.Name, rtr.Transaction);
                     }
                     catch (Exception ex)
                     {
                         m_results.AddResult(vol.Name, new KeyValuePair<Duplicati.Library.Interface.TestEntryStatus, string>[] { new KeyValuePair<Duplicati.Library.Interface.TestEntryStatus, string>(Duplicati.Library.Interface.TestEntryStatus.Error, ex.Message) });
                         Logging.Log.WriteErrorMessage(LOGTAG, "RemoteFileProcessingFailed", ex, "Failed to process file {0}", vol.Name);
-                        if (ex is System.Threading.ThreadAbortException)
+                        if (ex.IsAbortException())
                         {
                             m_results.EndTime = DateTime.UtcNow;
                             throw;
@@ -155,7 +154,7 @@ namespace Duplicati.Library.Main.Operation
                             (var tf, var hash, var size) = await backend.GetWithInfoAsync(f.Name, f.Hash, f.Size, m_results.TaskControl.ProgressToken).ConfigureAwait(false);
 
                             using (tf)
-                                res = TestVolumeInternals(db, f, tf, m_options, 1);
+                                res = TestVolumeInternals(db, rtr, f, tf, m_options, 1);
                             m_results.AddResult(res.Key, res.Value);
 
                             if (!string.IsNullOrWhiteSpace(hash) && size > 0)
@@ -169,7 +168,7 @@ namespace Duplicati.Library.Main.Operation
                                     else
                                     {
                                         Logging.Log.WriteInformationMessage(LOGTAG, "CapturedHashAndSize", "Successfully captured hash and size for {0}, updating database", f.Name);
-                                        db.UpdateRemoteVolume(f.Name, RemoteVolumeState.Verified, size, hash);
+                                        db.UpdateRemoteVolume(f.Name, RemoteVolumeState.Verified, size, hash, rtr.Transaction);
                                     }
                                 }
                             }
@@ -180,14 +179,14 @@ namespace Duplicati.Library.Main.Operation
                             { }
                         }
 
-                        db.UpdateVerificationCount(f.Name);
+                        db.UpdateVerificationCount(f.Name, rtr.Transaction);
                         m_results.AddResult(f.Name, []);
                     }
                     catch (Exception ex)
                     {
                         m_results.AddResult(f.Name, [new KeyValuePair<TestEntryStatus, string>(TestEntryStatus.Error, ex.Message)]);
                         Logging.Log.WriteErrorMessage(LOGTAG, "FailedToProcessFile", ex, "Failed to process file {0}", f.Name);
-                        if (ex is ThreadAbortException || ex is TaskCanceledException)
+                        if (ex.IsAbortOrCancelException())
                         {
                             m_results.EndTime = DateTime.UtcNow;
                             throw;
@@ -216,7 +215,7 @@ namespace Duplicati.Library.Main.Operation
         /// <param name="vol">The remote volume being examined</param>
         /// <param name="tf">The path to the downloaded copy of the file</param>
         /// <param name="sample_percent">A value between 0 and 1 that indicates how many blocks are tested in a dblock file</param>
-        public static KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>> TestVolumeInternals(LocalTestDatabase db, IRemoteVolume vol, string tf, Options options, double sample_percent)
+        public static KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>> TestVolumeInternals(LocalTestDatabase db, ReusableTransaction rtr, IRemoteVolume vol, string tf, Options options, double sample_percent)
         {
             var hashsize = HashFactory.HashSizeBytes(options.BlockHashAlgorithm);
             var parsedInfo = Volumes.VolumeBase.ParseFilename(vol.Name);
@@ -227,7 +226,7 @@ namespace Duplicati.Library.Main.Operation
                 case RemoteVolumeType.Files:
                     //Compare with db and see if all files are accounted for 
                     // with correct file hashes and blocklist hashes
-                    using (var fl = db.CreateFilelist(vol.Name))
+                    using (var fl = db.CreateFilelist(vol.Name, rtr))
                     {
                         using (var rd = new Volumes.FilesetVolumeReader(parsedInfo.CompressionModule, tf, options))
                             foreach (var f in rd.Files)
@@ -245,7 +244,7 @@ namespace Duplicati.Library.Main.Operation
                         foreach (var v in rd.Volumes)
                         {
                             blocklinks.Add(new Tuple<string, string, long>(v.Filename, v.Hash, v.Length));
-                            using (var bl = db.CreateBlocklist(v.Filename))
+                            using (var bl = db.CreateBlocklist(v.Filename, rtr))
                             {
                                 foreach (var h in v.Blocks)
                                     bl.AddBlock(h.Key, h.Value);
@@ -254,7 +253,7 @@ namespace Duplicati.Library.Main.Operation
                             }
                         }
 
-                    using (var il = db.CreateIndexlist(vol.Name))
+                    using (var il = db.CreateIndexlist(vol.Name, rtr))
                     {
                         foreach (var t in blocklinks)
                             il.AddBlockLink(t.Item1, t.Item2, t.Item3);
@@ -265,7 +264,7 @@ namespace Duplicati.Library.Main.Operation
                     return new KeyValuePair<string, IEnumerable<KeyValuePair<TestEntryStatus, string>>>(vol.Name, combined.ToList());
                 case RemoteVolumeType.Blocks:
                     using (var blockhasher = HashFactory.CreateHasher(options.BlockHashAlgorithm))
-                    using (var bl = db.CreateBlocklist(vol.Name))
+                    using (var bl = db.CreateBlocklist(vol.Name, rtr))
                     using (var rd = new Volumes.BlockVolumeReader(parsedInfo.CompressionModule, tf, options))
                     {
                         //Verify that all blocks are in the file

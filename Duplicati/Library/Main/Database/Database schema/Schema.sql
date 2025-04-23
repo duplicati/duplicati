@@ -209,6 +209,9 @@ CREATE TABLE "DeletedBlock" (
 	"VolumeID" INTEGER NOT NULL
 );
 
+CREATE INDEX "DeletedBlockHashSize" ON "DeletedBlock" ("Hash", "Size");
+CREATE UNIQUE INDEX "DeletedBlockHashVolumeID" ON "DeletedBlock" ("Hash", "Size", "VolumeID");
+
 /*
 If extra copies of blocks are detected, 
 they are recorded here
@@ -291,4 +294,4 @@ CREATE TABLE "ChangeJournalData" (
     "ConfigHash" TEXT NOT NULL  
 );
 
-INSERT INTO "Version" ("Version") VALUES (14);
+INSERT INTO "Version" ("Version") VALUES (15);

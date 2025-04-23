@@ -88,8 +88,8 @@ namespace Duplicati.Library.Modules.Builtin.ResultSerialization
                     Extra = additional,
                     LogLines = loglines,
                     Exception = exception?.ToString()
-                }, 
-                
+                },
+
                 new JsonSerializerSettings()
                 {
                     ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
@@ -97,7 +97,8 @@ namespace Duplicati.Library.Modules.Builtin.ResultSerialization
                             nameof(IBasicResults.Warnings),
                             nameof(IBasicResults.Errors),
                             nameof(IBasicResults.Messages),
-                            "TaskReader"
+                            "TaskReader",
+                            "TaskControl"
                     ),
                     Converters = new List<JsonConverter>()
                     {
@@ -116,7 +117,8 @@ namespace Duplicati.Library.Modules.Builtin.ResultSerialization
                     ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
                     ContractResolver = new DynamicContractResolver(
                             nameof(IBackendStatstics),
-                            "TaskReader"
+                            "TaskReader",
+                            "TaskControl"
                     ),
                     Converters = new List<JsonConverter>()
                     {

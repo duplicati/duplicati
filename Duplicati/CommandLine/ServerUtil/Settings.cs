@@ -18,6 +18,7 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
+
 using System.Text.Json;
 using Duplicati.Library.AutoUpdater;
 using Duplicati.Library.DynamicLoader;
@@ -25,7 +26,8 @@ using Duplicati.Library.Encryption;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main;
 using Duplicati.Library.Utility;
-using Utility = Duplicati.Library.Main.Utility;
+using Uri = System.Uri;
+using Utility = Duplicati.Library.Utility.Utility;
 
 namespace Duplicati.CommandLine.ServerUtil;
 
@@ -44,7 +46,7 @@ namespace Duplicati.CommandLine.ServerUtil;
 public sealed record Settings(
     string? Password,
     string? RefreshToken,
-    System.Uri HostUrl,
+    Uri HostUrl,
     string SettingsFile,
     bool Insecure,
     EncryptedFieldHelper.KeyInstance? Key,
@@ -61,7 +63,7 @@ public sealed record Settings(
     /// <param name="ServerDatafolder">The server datafolder, if any</param>
     private sealed record PersistedSettings(
         string? RefreshToken,
-        System.Uri HostUrl,
+        Uri HostUrl,
         string? ServerDatafolder
     );
 
@@ -71,8 +73,8 @@ public sealed record Settings(
     /// <param name="filename">The filename to use</param>
     /// <returns>The default storage folder</returns>
     private static string GetDefaultStorageFolder(string filename)
-        // Ideally, this should use DataFolderManager.DATAFOLDER, but we cannot due to backwards compatibility
-        => DataFolderLocator.GetDefaultStorageFolder(filename, true);
+        // Ideally, this should use DataFolderManager.GetDataFolder(), but we cannot due to backwards compatibility
+        => DataFolderLocator.GetDefaultStorageFolder(filename, true, true);
 
     /// <summary>
     /// Loads the settings from the settings file
@@ -87,9 +89,9 @@ public sealed record Settings(
     /// <param name="secretProviderPattern">The secret provider pattern to use</param>
     /// <param name="acceptedHostCertificate">The SHA1 hash of the host certificate to accept</param>
     /// <returns>The loaded settings</returns>
-    public static Settings Load(string? password, System.Uri? hostUrl, string settingsFile, bool insecure, string? settingsPassphrase, string? secretProvider, SecretProviderHelper.CachingLevel secretProviderCache, string secretProviderPattern, string? acceptedHostCertificate)
+    public static Settings Load(string? password, Uri? hostUrl, string settingsFile, bool insecure, string? settingsPassphrase, string? secretProvider, SecretProviderHelper.CachingLevel secretProviderCache, string secretProviderPattern, string? acceptedHostCertificate)
     {
-        hostUrl ??= new System.Uri($"http://{Library.Utility.Utility.IpVersionCompatibleLoopback}:8200");
+        hostUrl ??= new Uri($"http://{Utility.IpVersionCompatibleLoopback}:8200");
 
         ISecretProvider? secretInstance = null;
         if (!string.IsNullOrWhiteSpace(secretProvider))
@@ -107,7 +109,7 @@ public sealed record Settings(
             };
 
             var args = new[] { hostUrl };
-            secretInstance = SecretProviderHelper.ApplySecretProviderAsync(args, [], opts, Library.Utility.TempFolder.SystemTempPath, null, CancellationToken.None).Await();
+            secretInstance = SecretProviderHelper.ApplySecretProviderAsync(args, [], opts, TempFolder.SystemTempPath, null, CancellationToken.None).Await();
 
             // Read back transformed values
             hostUrl = args[0];
@@ -152,18 +154,24 @@ public sealed record Settings(
     /// <summary>
     /// Saves the settings to the settings file
     /// </summary>
-    public void Save()
+    public void Save(OutputInterceptor? output = null)
     {
         var thisKey = Key;
         if (!string.IsNullOrWhiteSpace(RefreshToken))
         {
             if (Key == null)
             {
-                Console.WriteLine("Warning: The encryption key is missing, saving login token without encryption");
+                if (output != null)
+                    output.AppendConsoleMessage("Warning: The encryption key is missing, saving login token without encryption");
+                else
+                    Console.WriteLine("Warning: The encryption key is missing, saving login token without encryption");
             }
             else if (Key?.IsBlacklisted ?? false)
             {
-                Console.WriteLine("Warning: The current encryption key is blacklisted and cannot be used, saving login token without encryption");
+                if (output != null)
+                    output.AppendConsoleMessage("Warning: The current encryption key is blacklisted and cannot be used, saving login token without encryption");
+                else
+                    Console.WriteLine("Warning: The current encryption key is blacklisted and cannot be used, saving login token without encryption");
                 thisKey = null;
             }
 
@@ -171,7 +179,7 @@ public sealed record Settings(
 
         File.WriteAllText(SettingsFile, JsonSerializer.Serialize(LoadSettings(SettingsFile, thisKey)
             .Where(x => x.HostUrl != HostUrl)
-            .Append(new PersistedSettings(RefreshToken, HostUrl, DataFolderManager.DATAFOLDER))
+            .Append(new PersistedSettings(RefreshToken, HostUrl, DataFolderManager.GetDataFolder(DataFolderManager.AccessMode.ReadWritePermissionSet)))
             .Select(x => x with
             {
                 RefreshToken = string.IsNullOrWhiteSpace(x.RefreshToken) || thisKey == null
@@ -188,6 +196,15 @@ public sealed record Settings(
     public Task<Connection> GetConnection()
     {
         return Connection.Connect(this);
+    }
+    
+    /// <summary>
+    /// Gets a connection to the server
+    /// </summary>
+    /// <returns>The connection</returns>
+    public Task<Connection> GetConnection(OutputInterceptor output)
+    {
+        return Connection.Connect(this, false, output);
     }
 
     /// <summary>

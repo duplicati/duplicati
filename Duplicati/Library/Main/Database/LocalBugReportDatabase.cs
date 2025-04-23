@@ -19,8 +19,9 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
+#nullable enable
+
 using System;
-using Duplicati.Library.Common;
 using Duplicati.Library.Common.IO;
 
 namespace Duplicati.Library.Main.Database
@@ -40,7 +41,7 @@ namespace Duplicati.Library.Main.Database
 
         public void Fix()
         {
-            using (var tr = m_connection.BeginTransaction())
+            using (var tr = m_connection.BeginTransactionSafe())
             using (var cmd = m_connection.CreateCommand())
             {
                 cmd.Transaction = tr;
@@ -54,13 +55,20 @@ namespace Duplicati.Library.Main.Database
                     upcmd.Transaction = tr;
                     upcmd.ExecuteNonQuery(FormatInvariant($@"CREATE TEMPORARY TABLE ""{tablename}"" (""ID"" INTEGER PRIMARY KEY, ""RealPath"" TEXT NOT NULL, ""Obfuscated"" TEXT NULL)"));
                     upcmd.ExecuteNonQuery(FormatInvariant($@"INSERT INTO ""{tablename}"" (""RealPath"") SELECT DISTINCT ""Path"" FROM ""File"" ORDER BY ""Path"" "));
-                    upcmd.ExecuteNonQuery(FormatInvariant($@"UPDATE ""{tablename}"" SET ""Obfuscated"" = ? || length(""RealPath"") || ? || ""ID"" || (CASE WHEN substr(""RealPath"", length(""RealPath"")) = ? THEN ? ELSE ? END) "), !OperatingSystem.IsWindows() ? "/" : "X:\\", Util.DirectorySeparatorString, Util.DirectorySeparatorString, Util.DirectorySeparatorString, ".bin");
+                    upcmd.SetCommandAndParameters(FormatInvariant($@"UPDATE ""{tablename}"" SET ""Obfuscated"" = @StartPath || length(""RealPath"") || @DirSep || ""ID"" || (CASE WHEN substr(""RealPath"", length(""RealPath"")) = @DirSep THEN @DirSep ELSE @FileExt END) "))
+                        .SetParameterValue("@StartPath", !OperatingSystem.IsWindows() ? "/" : "X:\\")
+                        .SetParameterValue("@DirSep", Util.DirectorySeparatorString)
+                        .SetParameterValue("@FileExt", ".bin")
+                        .ExecuteNonQuery();
 
                     /*long id = 1;
                     using(var rd = cmd.ExecuteReader(string.Format(@"SELECT ""RealPath"", ""Obfuscated"" FROM ""{0}"" ", tablename)))
                         while(rd.Read())
                         {
-                            upcmd.ExecuteNonQuery(@"UPDATE ""LogData"" SET ""Message"" = replace(""Message"", ?, ?), ""Exception"" = replace(""Exception"", ?, ?)", rd.GetValue(0), rd.GetValue(1), rd.GetValue(0), rd.GetValue(1) );
+                            upcmd.SetCommandAndParameters(@"UPDATE ""LogData"" SET ""Message"" = replace(""Message"", @RealPath, @Obfuscated), ""Exception"" = replace(""Exception"", @RealPath, @Obfuscated)")
+                                .SetParameterValue("@RealPath", rd.GetValue(0))
+                                .SetParameterValue("@Obfuscated", rd.GetValue(1))
+                                .ExecuteNonQuery();
                             id++;
                         }
                         */
