@@ -201,17 +201,17 @@ namespace Duplicati.Library.Main.Database
             return Library.Utility.Utility.EPOCH.AddSeconds(seconds);
         }
 
-        public void UpdateRemoteVolume(string name, RemoteVolumeState state, long size, string hash, IDbTransaction? transaction = null)
+        public void UpdateRemoteVolume(string name, RemoteVolumeState state, long size, string? hash, IDbTransaction? transaction = null)
         {
             UpdateRemoteVolume(name, state, size, hash, false, transaction);
         }
 
-        public void UpdateRemoteVolume(string name, RemoteVolumeState state, long size, string hash, bool suppressCleanup, IDbTransaction? transaction = null)
+        public void UpdateRemoteVolume(string name, RemoteVolumeState state, long size, string? hash, bool suppressCleanup, IDbTransaction? transaction = null)
         {
             UpdateRemoteVolume(name, state, size, hash, suppressCleanup, new TimeSpan(0), transaction);
         }
 
-        public void UpdateRemoteVolume(string name, RemoteVolumeState state, long size, string hash, bool suppressCleanup, TimeSpan deleteGraceTime, IDbTransaction? transaction = null)
+        public void UpdateRemoteVolume(string name, RemoteVolumeState state, long size, string? hash, bool suppressCleanup, TimeSpan deleteGraceTime, IDbTransaction? transaction = null)
         {
             m_updateremotevolumeCommand.Transaction = transaction;
             var c = m_updateremotevolumeCommand.SetParameterValue("@OperationID", m_operationid)
@@ -386,7 +386,7 @@ namespace Duplicati.Library.Main.Database
         /// <param name="operation">The operation performed</param>
         /// <param name="path">The path involved</param>
         /// <param name="data">Any data relating to the operation</param>
-        public void LogRemoteOperation(string operation, string path, string data, IDbTransaction transaction)
+        public void LogRemoteOperation(string operation, string path, string? data, IDbTransaction? transaction)
         {
             m_insertremotelogCommand
                 .SetParameterValue("@OperationID", m_operationid)
@@ -1429,7 +1429,7 @@ AND oldVersion.FilesetID = (SELECT ID FROM Fileset WHERE ID != @FilesetId ORDER 
             }
         }
 
-        public void RenameRemoteFile(string oldname, string newname, IDbTransaction transaction)
+        public void RenameRemoteFile(string oldname, string newname, IDbTransaction? transaction)
         {
             using (var tr = new TemporaryTransactionWrapper(m_connection, transaction))
             using (var cmd = m_connection.CreateCommand(tr.Parent))
