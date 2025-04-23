@@ -4,20 +4,9 @@
 
 暗号化したバックアップを、クラウドストレージサービスで安全に保管しましょう！
 
-<!---
-以下は現在機能していません…
-[![Issue Stats](http://www.issuestats.com/github/duplicati/duplicati/badge/pr)](http://www.issuestats.com/github/duplicati/duplicati/)
-[![Issue Stats](http://www.issuestats.com/github/duplicati/duplicati/badge/issue)](http://www.issuestats.com/github/duplicati/duplicati/)
--->
-
-<!--
-Gitterは削除済
-[![Join the chat at https://gitter.im/duplicati/Lobby](https://badges.gitter.im/duplicati/Lobby.svg)](https://gitter.im/duplicati/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
--->
-
 [![Open Collectiveでのサポーター](https://opencollective.com/duplicati/backers/badge.svg)](#backers) [![Open Collectiveでのスポンサー](https://opencollective.com/duplicati/sponsors/badge.svg)](#sponsors) [![Travis-CIでのビルドの状況](https://travis-ci.org/duplicati/duplicati.svg?branch=master)](https://travis-ci.org/duplicati/duplicati)
 [![カバレッジの状況](https://coveralls.io/repos/github/duplicati/duplicati/badge.svg?branch=HEAD)](https://coveralls.io/github/duplicati/duplicati?branch=HEAD)
-[![ライセンス](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/duplicati/duplicati/blob/master/LICENSE.txt)
+[![ライセンス](https://img.shields.io/github/license/duplicati/duplicati.svg)](https://github.com/duplicati/duplicati/blob/master/LICENSE)
 
 Duplicati は、フリー（自由）でオープンソースのバックアップ用クライアントです。圧縮し、暗号化した増分バックアップを、クラウドストレージサービスや遠隔のファイルサーバー上に安全に保存できます。Duplicati は、主に以下のサービスやソフトウェアで使うことができます。
 
@@ -27,9 +16,7 @@ Duplicati は MIT ライセンスで公開されており、Windows、OSX、Linu
 
 # ダウンロード
 
-Duplicati 2.0 のベータ版が Duplicati の最新バージョンとなります。
-
-[ここをクリックすると、Duplicati 2.0 のベータ版をダウンロードできます。](https://duplicati.com/download)
+[ここをクリックすると、Duplicati のベータ版をダウンロードできます。](https://duplicati.com/download)
 
 ベータ版では、アップデートがある場合に自動的に通知を行い、1 クリック（またはターミナルでのコマンド入力）でアップグレードできます。
 より新しい[テスト版に関しては、最新のリリースを確認](https://github.com/duplicati/duplicati/releases)するか、ソフトウェア上の画面またはコマンドラインで、別のアップデートチャンネルを選択してください。
@@ -40,7 +27,7 @@ Duplicati 2.0 のベータ版が Duplicati の最新バージョンとなりま�
 
 Duplicati は、活発なコミュニティーによってサポートが行われています。コミュニティーには[フォーラム](https://forum.duplicati.com)からご参加ください。
 
-[Duplicati のマニュアル](https://docs.duplicati.com)もあります。マニュアルの作成や維持にぜひ[ご参加](https://github.com/kees-z/DuplicatiDocs)ください。
+[Duplicati のマニュアル](https://docs.duplicati.com)もあります。マニュアルの作成や維持にぜひ[ご参加](https://github.com/duplicati/documentation)ください。
 
 # 機能
 
