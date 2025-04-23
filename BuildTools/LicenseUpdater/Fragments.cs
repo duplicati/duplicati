@@ -25,9 +25,7 @@ namespace LicenseUpdater;
 
 public static class Fragments
 {
-    public static string NEW_LICENSE = @"SPDX-License-Identifier: MIT
-
-MIT License
+    public static string NEW_LICENSE = @"MIT License
 
 Copyright (c) YYYY Duplicati contributors
 
