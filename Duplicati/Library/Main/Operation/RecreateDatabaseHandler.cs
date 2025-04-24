@@ -86,7 +86,15 @@ namespace Duplicati.Library.Main.Operation
             using (var db = new LocalDatabase(m_options.Dbpath, "Recreate", true))
             {
                 if (db.FindMatchingFilesets(m_options.Time, m_options.Version).Any())
+                {
+                    if (m_options.IgnoreUpdateIfVersionExists)
+                    {
+                        Logging.Log.WriteInformationMessage(LOGTAG, "UpdateVersionAlreadyExists", "The version(s) being updated to already exists, ignoring update request");
+                        return;
+                    }
+
                     throw new UserInformationException("The version(s) being updated to, already exists", "UpdateVersionAlreadyExists");
+                }
 
                 // Mark as incomplete
                 db.PartiallyRecreated = true;
