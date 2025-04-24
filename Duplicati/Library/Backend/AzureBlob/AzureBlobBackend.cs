@@ -92,7 +92,10 @@ namespace Duplicati.Library.Backend.AzureBlob
 
             var archiveClasses = ParseStorageClasses(options.GetValueOrDefault(AZURE_ARCHIVE_CLASSES_OPTION));
             var accessTierValue = options.GetValueOrDefault(AZURE_ACCESS_TIER_OPTION);
-            var accessTier = string.IsNullOrWhiteSpace(accessTierValue) ? null : new AccessTier(accessTierValue);
+            var accessTier = string.IsNullOrWhiteSpace(accessTierValue)
+                ? null
+                // Warning: The cast here is required to avoid implicit casting null to AccessTier
+                : (AccessTier?)new AccessTier(accessTierValue);
             _azureBlob = new AzureBlobWrapper(auth.Username!, auth.Password, sasToken, containerName, accessTier, archiveClasses, timeouts);
         }
 
