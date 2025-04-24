@@ -319,10 +319,10 @@ namespace Duplicati.Library.Main.Operation
                 var archived = remoteFound && r.File.IsArchived;
                 if (archived && r.File.Size == 0)
                     correctSize = true;
-                if (archived && i.ArchiveTime == default)
-                    database.UpdateRemoteVolume(i.Name, i.State, i.Size, i.Hash, true, TimeSpan.Zero, true);
-                else if (!archived && i.ArchiveTime.Ticks != 0)
-                    database.UpdateRemoteVolume(i.Name, i.State, i.Size, i.Hash, true, TimeSpan.Zero, false);
+                if (archived && i.ArchiveTime <= DateTime.UnixEpoch)
+                    database.UpdateRemoteVolume(i.Name, i.State, i.Size, i.Hash, true, TimeSpan.Zero, true, transaction);
+                else if (!archived && i.ArchiveTime > DateTime.UnixEpoch)
+                    database.UpdateRemoteVolume(i.Name, i.State, i.Size, i.Hash, true, TimeSpan.Zero, false, transaction);
 
                 lookup.Remove(i.Name);
 
