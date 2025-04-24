@@ -37,6 +37,8 @@ namespace Duplicati.Library.Backend.AzureBlob
     {
         private readonly BlobContainerClient _container;
         private readonly TimeoutOptionsHelper.Timeouts _timeouts;
+        private readonly IReadOnlySet<AccessTier> _archiveClasses;
+        private readonly AccessTier? _accessTier;
 
         /// <summary>
         /// Gets an array of DNS names associated with the blob container.
@@ -59,8 +61,10 @@ namespace Duplicati.Library.Backend.AzureBlob
         /// <param name="accessKey">The access key for the storage account.</param>
         /// <param name="sasToken">The Shared Access Signature (SAS) token for authentication.</param>
         /// <param name="containerName">The name of the blob container.</param>
+        /// <param name="accessTier">The access tier assigned to blobs on upload.</param>
+        /// <param name="archiveClasses">The storage classes that are considered archive classes.</param>
         /// <param name="timeouts">The timeout options.</param>
-        public AzureBlobWrapper(string accountName, string? accessKey, string? sasToken, string containerName, TimeoutOptionsHelper.Timeouts timeouts)
+        public AzureBlobWrapper(string accountName, string? accessKey, string? sasToken, string containerName, AccessTier? accessTier, IReadOnlySet<AccessTier> archiveClasses, TimeoutOptionsHelper.Timeouts timeouts)
         {
             BlobServiceClient blobServiceClient;
             if (sasToken != null)
@@ -74,6 +78,8 @@ namespace Duplicati.Library.Backend.AzureBlob
                 blobServiceClient = new BlobServiceClient(connectionString);
             }
 
+            _accessTier = accessTier;
+            _archiveClasses = archiveClasses;
             _container = blobServiceClient.GetBlobContainerClient(containerName);
             _timeouts = timeouts;
         }
@@ -116,7 +122,13 @@ namespace Duplicati.Library.Backend.AzureBlob
         {
             var blobClient = _container.GetBlobClient(keyName);
             using var timeoutStream = source.ObserveReadTimeout(_timeouts.ReadWriteTimeout, false);
-            await blobClient.UploadAsync(timeoutStream, true, cancelToken).ConfigureAwait(false);
+            var options = new BlobUploadOptions()
+            {
+                Conditions = null, // Overwrite any existing blob
+                AccessTier = _accessTier
+            };
+
+            await blobClient.UploadAsync(timeoutStream, options, cancelToken).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -165,13 +177,18 @@ namespace Duplicati.Library.Backend.AzureBlob
                 {
                     var blobName = Uri.UnescapeDataString(blob.Name.Replace("+", "%2B"));
                     var lastModified = blob.Properties.LastModified?.UtcDateTime ?? DateTime.UtcNow;
+                    var isArchive = blob.Properties.AccessTier.HasValue && _archiveClasses.Contains(blob.Properties.AccessTier.Value);
 
                     yield return new FileEntry(
                         blobName,
                         blob.Properties.ContentLength ?? 0,
                         lastModified,
                         lastModified
-                    );
+                    )
+                    {
+                        IsArchived = isArchive,
+                        IsFolder = false,
+                    };
                 }
             }
         }
