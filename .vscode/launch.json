@@ -121,6 +121,14 @@
       "preLaunchTask": "build",
       "program": "${workspaceFolder}/Executables/net8/Duplicati.CommandLine.SourceTool/bin/Debug/net8.0/Duplicati.CommandLine.SourceTool",
       "args": []
+    },
+    {
+      "name": "Launch DatabaseTool executable",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build",
+      "program": "${workspaceFolder}/Executables/net8/Duplicati.CommandLine.DatabaseTool/bin/Debug/net8.0/Duplicati.CommandLine.DatabaseTool",
+      "args": []
     }
   ]
 }

@@ -7,8 +7,6 @@
 
   <ItemGroup>
     <EmbeddedResource Include="Database\Database schema\**" />
-    <Compile Remove="Database\Database schema\DatabaseConnectionSchemaMarker.cs" />
-    <EmbeddedResource Include="Database\DatabaseConnectionSchemaMarker.cs" />
     <EmbeddedResource Include="newbackup.json" />
   </ItemGroup>
 

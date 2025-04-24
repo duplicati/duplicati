@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>Duplicati.CommandLine.DatabaseTool.Implementation</AssemblyName>
+    <Copyright>Copyright © 2025 Team Duplicati, MIT license</Copyright>
+    <RootNamespace>Duplicati.CommandLine.DatabaseTool</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
+    <PackageReference Include="System.CommandLine.NamingConventionBinder" Version="2.0.0-beta4.22272.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Scripts/Local/*.sql" />
+    <EmbeddedResource Include="Scripts/Server/*.sql" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../Library/DynamicLoader/Duplicati.Library.DynamicLoader.csproj" />
+    <ProjectReference Include="../../Library/Main/Duplicati.Library.Main.csproj" />
+    <ProjectReference Include="../../Library/SourceProvider/Builtin/Duplicati.Library.SourceProvider.Builtin.csproj" />
+    <ProjectReference Include="../../Library/SourceProviders/Duplicati.Library.SourceProviders.csproj" />
+    <ProjectReference Include="../../Library/Utility/Duplicati.Library.Utility.csproj" />
+  </ItemGroup>
+
+</Project>
+

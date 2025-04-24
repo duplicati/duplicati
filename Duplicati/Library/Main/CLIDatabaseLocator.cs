@@ -80,6 +80,22 @@ namespace Duplicati.Library.Main
         private const string CONFIG_FILE = "dbconfig.json";
 
         /// <summary>
+        /// Returns all database paths from the JSON configuration file.
+        /// </summary>
+        /// <returns>An array of database paths</returns>
+        public static string[] GetAllDatabasePaths()
+        {
+            // Ideally, this should use DataFolderManager.GetDataFolder(), but we cannot due to backwards compatibility
+            var folder = AutoUpdater.DataFolderLocator.GetDefaultStorageFolder(CONFIG_FILE, true);
+            var file = System.IO.Path.Combine(folder, CONFIG_FILE);
+            if (!System.IO.File.Exists(file))
+                return [];
+
+            var configs = Newtonsoft.Json.JsonConvert.DeserializeObject<List<BackendEntry>>(System.IO.File.ReadAllText(file, System.Text.Encoding.UTF8)) ?? new List<BackendEntry>();
+            return configs.Select(x => x.Databasepath).ToArray();
+        }
+
+        /// <summary>
         /// Gets the database path for a given backend url, using the JSON configuration file lookup.
         /// If <paramref name="autoCreate"/> is <c>true</c>, a new database is created if none is found.
         /// Otherwise, <c>null</c> is returned if no database is found.

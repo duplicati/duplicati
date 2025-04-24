@@ -18,13 +18,25 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
+using System.CommandLine;
+using System.CommandLine.Invocation;
 
-namespace Duplicati.Library.RestAPI.Database
+namespace Duplicati.CommandLine.DatabaseTool;
+
+/// <summary>
+/// Extensions for <see cref="Command"/>.
+/// </summary>
+public static class CommandExtensions
 {
     /// <summary>
-    /// This is a marker class for locating the assembly with the database schema.
+    /// Adds the missing WithHandler method to <see cref="Command"/>.
     /// </summary>
-    public static class DatabaseConnectionSchemaMarker
+    /// <param name="command">The command to add the handler to.</param>
+    /// <param name="handler">The handler to add.</param>
+    /// <returns>The command with the handler added.</returns>
+    public static Command WithHandler(this Command command, ICommandHandler handler)
     {
+        command.Handler = handler;
+        return command;
     }
 }

@@ -18,13 +18,14 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
+using Duplicati.Library.Crashlog;
 
-namespace Duplicati.Library.RestAPI.Database
+namespace Duplicati.CommandLine.DatabaseTool.Net8
 {
-    /// <summary>
-    /// This is a marker class for locating the assembly with the database schema.
-    /// </summary>
-    public static class DatabaseConnectionSchemaMarker
+    // Wrapper class to keep code independent
+    public static class Program
     {
+        public static int Main(string[] args)
+            => CrashlogHelper.WrapWithCrashLog(() => DatabaseTool.Program.Main(args).ConfigureAwait(false).GetAwaiter().GetResult());
     }
 }
