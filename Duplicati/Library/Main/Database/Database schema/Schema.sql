@@ -34,7 +34,7 @@ CREATE TABLE "Remotevolume" (
 	"State" TEXT NOT NULL,
 	"VerificationCount" INTEGER NOT NULL,
 	"DeleteGraceTime" INTEGER NOT NULL,
-	"ArchiveTime" INTEGER NULL
+	"ArchiveTime" INTEGER NOT NULL
 );
 
 /* Index for detecting broken states */

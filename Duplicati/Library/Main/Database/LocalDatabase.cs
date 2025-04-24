@@ -187,7 +187,7 @@ namespace Duplicati.Library.Main.Database
             m_removeremotevolumeCommand = connection.CreateCommand(@"DELETE FROM ""Remotevolume"" WHERE ""Name"" = @Name AND (""DeleteGraceTime"" < @Now OR ""State"" != @State)");
             m_removedeletedremotevolumeCommand = connection.CreateCommand(FormatInvariant($@"DELETE FROM ""Remotevolume"" WHERE ""State"" == '{RemoteVolumeState.Deleted.ToString()}' AND (""DeleteGraceTime"" < @Now OR LENGTH(""DeleteGraceTime"") > 12) ")); // >12 is to handle removal of old records that were in ticks
             m_selectremotevolumeIdCommand = connection.CreateCommand(@"SELECT ""ID"" FROM ""Remotevolume"" WHERE ""Name"" = @Name");
-            m_createremotevolumeCommand = connection.CreateCommand(@"INSERT INTO ""Remotevolume"" (""OperationID"", ""Name"", ""Type"", ""State"", ""Size"", ""VerificationCount"", ""DeleteGraceTime"") VALUES (@OperationID, @Name, @Type, @State, @Size, @VerificationCount, @DeleteGraceTime); SELECT last_insert_rowid();");
+            m_createremotevolumeCommand = connection.CreateCommand(@"INSERT INTO ""Remotevolume"" (""OperationID"", ""Name"", ""Type"", ""State"", ""Size"", ""VerificationCount"", ""DeleteGraceTime"", ""ArchiveTime"") VALUES (@OperationID, @Name, @Type, @State, @Size, @VerificationCount, @DeleteGraceTime, @ArchiveTime); SELECT last_insert_rowid();");
             m_insertIndexBlockLink = connection.CreateCommand(@"INSERT INTO ""IndexBlockLink"" (""IndexVolumeID"", ""BlockVolumeID"") VALUES (@IndexVolumeId, @BlockVolumeId)");
             m_findpathprefixCommand = connection.CreateCommand(@"SELECT ""ID"" FROM ""PathPrefix"" WHERE ""Prefix"" = @Prefix");
             m_insertpathprefixCommand = connection.CreateCommand(@"INSERT INTO ""PathPrefix"" (""Prefix"") VALUES (@Prefix); SELECT last_insert_rowid(); ");
@@ -600,6 +600,7 @@ AND Fileset.ID NOT IN
                     .SetParameterValue("@Size", size)
                     .SetParameterValue("@VerificationCount", 0)
                     .SetParameterValue("@DeleteGraceTime", deleteGraceTime.Ticks <= 0 ? 0 : (DateTime.UtcNow + deleteGraceTime).Ticks)
+                    .SetParameterValue("@ArchiveTime", 0)
                     .ExecuteScalarInt64(tr.Parent);
 
                 tr.Commit();
