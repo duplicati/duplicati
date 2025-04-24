@@ -25,7 +25,6 @@ using System.Linq;
 using System.Collections.Generic;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace Duplicati.Library.Main.Operation

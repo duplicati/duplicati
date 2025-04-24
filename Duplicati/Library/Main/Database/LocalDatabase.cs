@@ -364,9 +364,9 @@ namespace Duplicati.Library.Main.Database
             return RemoteVolumeEntry.Empty;
         }
 
-        public IEnumerable<KeyValuePair<string, RemoteVolumeState>> DuplicateRemoteVolumes()
+        public IEnumerable<KeyValuePair<string, RemoteVolumeState>> DuplicateRemoteVolumes(IDbTransaction? transaction)
         {
-            foreach (var rd in m_selectduplicateRemoteVolumesCommand.ExecuteReaderEnumerable())
+            foreach (var rd in m_selectduplicateRemoteVolumesCommand.SetTransaction(transaction).ExecuteReaderEnumerable())
             {
                 yield return new KeyValuePair<string, RemoteVolumeState>(
                     rd.ConvertValueToString(0) ?? throw new Exception("Name was null"),
