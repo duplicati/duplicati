@@ -245,7 +245,7 @@ namespace Duplicati.Library.Main.Database
                 using (var cmd = m_connection.CreateCommand(transaction))
                 {
                     c = cmd.SetCommandAndParameters(@"UPDATE ""RemoteVolume"" SET ""ArchiveTime"" = @ArchiveTime WHERE ""Name"" = @Name ")
-                        .SetParameterValue("@ArchiveTime", setArchived.Value ? Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(DateTime.UtcNow) : null)
+                        .SetParameterValue("@ArchiveTime", setArchived.Value ? Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(DateTime.UtcNow) : 0)
                         .SetParameterValue("@Name", name)
                         .ExecuteNonQuery();
 

@@ -126,7 +126,7 @@ namespace Duplicati.Library.Main.Database
             using (var cmd = m_connection.CreateCommand(tr))
             {
                 // Select any broken items
-                cmd.SetCommandAndParameters(@"SELECT ""ID"", ""Name"", ""Size"", ""Hash"", ""VerificationCount"" FROM ""Remotevolume"" WHERE (""State"" IN (@States)) AND (""Hash"" = '' OR ""Hash"" IS NULL OR ""Size"" <= 0) AND (""ArchiveTime"" IS NULL OR ""ArchiveTime"" = 0)")
+                cmd.SetCommandAndParameters(@"SELECT ""ID"", ""Name"", ""Size"", ""Hash"", ""VerificationCount"" FROM ""Remotevolume"" WHERE (""State"" IN (@States)) AND (""Hash"" = '' OR ""Hash"" IS NULL OR ""Size"" <= 0) AND (""ArchiveTime"" = 0)")
                     .ExpandInClauseParameter("@States", [RemoteVolumeState.Verified.ToString(), RemoteVolumeState.Uploaded.ToString()]);
 
                 using (var rd = cmd.ExecuteReader())
@@ -139,7 +139,7 @@ namespace Duplicati.Library.Main.Database
                 //First we select some filesets
                 var files = new List<RemoteVolume>();
                 var whereClause = string.IsNullOrEmpty(tp.Item1) ? " WHERE " : (" " + tp.Item1 + " AND ");
-                using (var rd = cmd.SetCommandAndParameters(@"SELECT ""A"".""VolumeID"", ""A"".""Name"", ""A"".""Size"", ""A"".""Hash"", ""A"".""VerificationCount"" FROM (SELECT ""ID"" AS ""VolumeID"", ""Name"", ""Size"", ""Hash"", ""VerificationCount"" FROM ""Remotevolume"" WHERE (""ArchiveTime"" IS NULL OR ""ArchiveTime"" = 0) AND ""State"" IN (@State1, @State2)) A, ""Fileset"" " + whereClause + @" ""A"".""VolumeID"" = ""Fileset"".""VolumeID"" ORDER BY ""Fileset"".""Timestamp"" ")
+                using (var rd = cmd.SetCommandAndParameters(@"SELECT ""A"".""VolumeID"", ""A"".""Name"", ""A"".""Size"", ""A"".""Hash"", ""A"".""VerificationCount"" FROM (SELECT ""ID"" AS ""VolumeID"", ""Name"", ""Size"", ""Hash"", ""VerificationCount"" FROM ""Remotevolume"" WHERE ""ArchiveTime"" = 0 AND ""State"" IN (@State1, @State2)) A, ""Fileset"" " + whereClause + @" ""A"".""VolumeID"" = ""Fileset"".""VolumeID"" ORDER BY ""Fileset"".""Timestamp"" ")
                     .SetParameterValue("@State1", RemoteVolumeState.Uploaded.ToString())
                     .SetParameterValue("@State2", RemoteVolumeState.Verified.ToString())
                     .SetParameterValues(tp.Item2)
@@ -159,7 +159,7 @@ namespace Duplicati.Library.Main.Database
                 //Then we select some index files
                 files.Clear();
 
-                cmd.SetCommandAndParameters(@"SELECT ""ID"", ""Name"", ""Size"", ""Hash"", ""VerificationCount"" FROM ""Remotevolume"" WHERE ""Type"" = @Type AND ""State"" IN (@States) AND (""ArchiveTime"" IS NULL OR ""ArchiveTime"" = 0)")
+                cmd.SetCommandAndParameters(@"SELECT ""ID"", ""Name"", ""Size"", ""Hash"", ""VerificationCount"" FROM ""Remotevolume"" WHERE ""Type"" = @Type AND ""State"" IN (@States) AND ""ArchiveTime"" = 0")
                     .SetParameterValue("@Type", RemoteVolumeType.Index.ToString())
                     .ExpandInClauseParameter("@States", [RemoteVolumeState.Uploaded.ToString(), RemoteVolumeState.Verified.ToString()]);
 
@@ -176,7 +176,7 @@ namespace Duplicati.Library.Main.Database
                 //And finally some block files
                 files.Clear();
 
-                cmd.SetCommandAndParameters(@"SELECT ""ID"", ""Name"", ""Size"", ""Hash"", ""VerificationCount"" FROM ""Remotevolume"" WHERE ""Type"" = @Type AND ""State"" IN (@States) AND (""ArchiveTime"" IS NULL OR ""ArchiveTime"" = 0)")
+                cmd.SetCommandAndParameters(@"SELECT ""ID"", ""Name"", ""Size"", ""Hash"", ""VerificationCount"" FROM ""Remotevolume"" WHERE ""Type"" = @Type AND ""State"" IN (@States) AND ""ArchiveTime"" = 0")
                     .SetParameterValue("@Type", RemoteVolumeType.Blocks.ToString())
                     .ExpandInClauseParameter("@States", [RemoteVolumeState.Uploaded.ToString(), RemoteVolumeState.Verified.ToString()]);
 
