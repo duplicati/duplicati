@@ -345,6 +345,8 @@ namespace Duplicati.Library.Main.Strings
         public static string RestoreChannelBufferSizeLong { get { return LC.L("Use this option to set the size of the buffers of the channels used during restore. The buffers are used to allow for better asynchronous communication between the processes in the restore flow. Increasing the buffer size may improve restore performance."); } }
         public static string InternalProfilingShort { get { return LC.L("Enable internal profiling"); } }
         public static string InternalProfilingLong { get { return LC.L("Use this option to enable internal profiling. Profiling is used to measure the performance of the internal code. The profiling data is written to the log file and can be used to identify performance bottlenecks."); } }
+        public static string IgnoreUpdateIfVersionExistsShort { get { return LC.L("Ignore update if version exists"); } }
+        public static string IgnoreUpdateIfVersionExistsLong { get { return LC.L("Use this option to ignore the update if the version already exists. This can be used to avoid errors if asking to update the database with a version that already exists."); } }
     }
 
     internal static class Common

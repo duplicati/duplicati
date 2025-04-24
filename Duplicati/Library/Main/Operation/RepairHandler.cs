@@ -350,7 +350,8 @@ namespace Duplicati.Library.Main.Operation
 
                         fsw.VolumeID = db.RegisterRemoteVolume(fsw.RemoteFilename, RemoteVolumeType.Files, -1, RemoteVolumeState.Temporary);
                         db.LinkFilesetToVolume(filesetId, fsw.VolumeID, null);
-                        await backendManager.PutAsync(fsw, null, null, false, cancellationToken).ConfigureAwait(false);
+                        // TODO: Rewrite to use transactions and flush db messages as needed
+                        await backendManager.PutAsync(fsw, null, null, false, null, cancellationToken).ConfigureAwait(false);
                     }
 
                     if (anyDlistUploads)
@@ -415,7 +416,8 @@ namespace Duplicati.Library.Main.Operation
                                 else
                                 {
                                     db.UpdateRemoteVolume(volumeWriter.RemoteFilename, RemoteVolumeState.Uploading, -1, null, null);
-                                    await backendManager.PutAsync(volumeWriter, null, null, false, cancellationToken).ConfigureAwait(false);
+                                    // TODO: Rewrite to use transactions and flush db messages as needed
+                                    await backendManager.PutAsync(volumeWriter, null, null, false, null, cancellationToken).ConfigureAwait(false);
                                 }
                             }
                             else if (n.Type == RemoteVolumeType.Index)
@@ -456,7 +458,8 @@ namespace Duplicati.Library.Main.Operation
                                 else
                                 {
                                     db.UpdateRemoteVolume(w.RemoteFilename, RemoteVolumeState.Uploading, -1, null, null);
-                                    await backendManager.PutAsync(w, null, null, false, cancellationToken).ConfigureAwait(false);
+                                    // TODO: Rewrite to use transactions and flush db messages as needed
+                                    await backendManager.PutAsync(w, null, null, false, null, cancellationToken).ConfigureAwait(false);
                                 }
                             }
                             else if (n.Type == RemoteVolumeType.Blocks)
@@ -552,7 +555,8 @@ namespace Duplicati.Library.Main.Operation
                                         else
                                         {
                                             db.UpdateRemoteVolume(w.RemoteFilename, RemoteVolumeState.Uploading, -1, null, null);
-                                            await backendManager.PutAsync(w, null, null, false, cancellationToken).ConfigureAwait(false);
+                                            // TODO: Rewrite to use transactions and flush db messages as needed
+                                            await backendManager.PutAsync(w, null, null, false, null, cancellationToken).ConfigureAwait(false);
                                         }
                                     }
                                 }

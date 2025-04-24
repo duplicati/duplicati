@@ -741,6 +741,9 @@ namespace Duplicati.UnitTest
             using (var c = new Controller("file://" + TARGETFOLDER, testopts, null))
                 TestUtils.AssertResults(c.Backup(new string[] { DATAFOLDER }));
 
+            // Ensure that the target folder only has a single dlist file
+            Assert.AreEqual(1, Directory.EnumerateFiles(TARGETFOLDER, "*.dlist.*").Count(), "There should be only one dlist file in the target folder");
+
             // Make a new backup that fails uploading a dblock file
             ModifySourceFiles();
 
@@ -753,6 +756,7 @@ namespace Duplicati.UnitTest
             var secondUploadCompleted = false;
 
             // Fail the compact after the first dblock put is completed
+            var uploads = new List<string>();
             DeterministicErrorBackend.ErrorGenerator = (DeterministicErrorBackend.BackendAction action, string remotename) =>
             {
                 if (action.IsGetOperation)
@@ -783,6 +787,11 @@ namespace Duplicati.UnitTest
 
             Assert.That(secondUploadStarted, Is.True, "Second upload was not started");
             Assert.That(secondUploadCompleted, Is.True, "Second upload was not started");
+            Assert.That(hasFailed, Is.True, "Failed to fail the upload");
+            Assert.That(!uploads.Any(x => x.Contains("dlist")), Is.True, "Upload of dlist file was not skipped");
+
+            // Ensure that the target folder only has a single dlist file
+            Assert.AreEqual(1, Directory.EnumerateFiles(TARGETFOLDER, "*.dlist.*").Count(), $"There should be only one dlist file in the target folder: {string.Join(", ", uploads)}");
 
             // Create a regular backup
             using (var c = new Controller("file://" + TARGETFOLDER, testopts, null))
@@ -898,12 +907,15 @@ namespace Duplicati.UnitTest
             using (var c = new Controller("file://" + TARGETFOLDER, testopts.Expand(new { full_remote_verification = true }), null))
                 TestUtils.AssertResults(c.Test(long.MaxValue));
 
+            // If we fail on the dlist after the upload, it is promoted to a regular backup
+            var expectedFilesets = before || failOnLastDblock ? 2 : 1;
+
             // Make a new backup, should continue as normal
             using (var c = new Controller("file://" + TARGETFOLDER, testopts, null))
             {
                 var backupResults = c.Backup(new string[] { DATAFOLDER });
                 TestUtils.AssertResults(backupResults);
-                Assert.AreEqual(2, c.List().Filesets.Count());
+                Assert.AreEqual(expectedFilesets, c.List().Filesets.Count());
             }
 
             // Test that we can recreate
@@ -916,12 +928,12 @@ namespace Duplicati.UnitTest
             using (var c = new Controller("file://" + TARGETFOLDER, testopts, null))
                 TestUtils.AssertResults(c.Repair());
 
-            // Check that we have 2 versions
+            // Check that we have the correct versions
             using (var c = new Controller("file://" + TARGETFOLDER, testopts, null))
             {
                 var listResults = c.List();
                 TestUtils.AssertResults(listResults);
-                Assert.AreEqual(2, listResults.Filesets.Count());
+                Assert.AreEqual(expectedFilesets, listResults.Filesets.Count());
             }
         }
 
@@ -984,12 +996,15 @@ namespace Duplicati.UnitTest
             // Make spacing for the next backup
             Thread.Sleep(3000);
 
+            // If we fail on the dlist after the upload, it is promoted to a regular backup
+            var expectedFilesets = before || failOnLastDblock ? 2 : 1;
+
             // Make a new backup, should continue as normal
             using (var c = new Controller("file://" + TARGETFOLDER, testopts, null))
             {
                 IBackupResults backupResults = c.Backup(new string[] { DATAFOLDER });
                 TestUtils.AssertResults(backupResults);
-                Assert.AreEqual(2, c.List().Filesets.Count());
+                Assert.AreEqual(expectedFilesets, c.List().Filesets.Count());
             }
 
             // Verify that all is in order
@@ -1011,7 +1026,7 @@ namespace Duplicati.UnitTest
             {
                 var listResults = c.List();
                 TestUtils.AssertResults(listResults);
-                Assert.AreEqual(2, listResults.Filesets.Count());
+                Assert.AreEqual(expectedFilesets, listResults.Filesets.Count());
             }
         }
 
@@ -1066,12 +1081,39 @@ namespace Duplicati.UnitTest
         [TestCase(false, true, 3, false)]
         [TestCase(true, true, 3, true)]
         [TestCase(false, true, 3, true)]
+        [TestCase(false, false, 3, true)]
+        [TestCase(true, false, 3, true)]
         public void TestMultiExceptionOnDlist(bool before, bool modifyInBetween, int runs, bool withBase)
         {
             var testopts = TestOptions;
             testopts["number-of-retries"] = "0";
             testopts["dblock-size"] = "10mb";
-            var expectedFilesets = withBase ? 3 : 2;
+            // We always have at least 1 backup at the end
+            var expectedFilesets = 1;
+            // If the files are modified, this will create multiple versions
+            if (modifyInBetween)
+            {
+                // If we prevent the file from being uploaded,
+                // it will be a temporary file, and a new synthetic file
+                // will be attempted, but that fails as well
+                // If it is after, then the upload completes, 
+                // and it will be promoted to a regular uploaded backup
+                expectedFilesets += before ? 1 : runs;
+
+                // If we modify with a base, then that creates a version as well
+                if (withBase)
+                    expectedFilesets += 1;
+            }
+            else if (before && !withBase)
+            {
+                // Because an incomplete fileset is treated as a partial fileset,
+                // the final non-interrupted backup will see the syntheticly
+                // created fileset as a partial fileset, and create a new non-partial
+                // fileset, even though there are no changes between the two
+                // This does not happen with a base, because it simply does not
+                // attempt to upload the failing filesets
+                expectedFilesets += 1;
+            }
 
             if (withBase)
             {

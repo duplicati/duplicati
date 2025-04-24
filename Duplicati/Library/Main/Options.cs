@@ -484,6 +484,7 @@ namespace Duplicati.Library.Main
             new CommandLineArgument("restore-volume-downloaders", CommandLineArgument.ArgumentType.Integer, Strings.Options.RestoreVolumeDownloadersShort, Strings.Options.RestoreVolumeDownloadersLong, DEFAULT_RESTORE_VOLUME_DOWNLOADERS.ToString()),
             new CommandLineArgument("restore-channel-buffer-size", CommandLineArgument.ArgumentType.Integer, Strings.Options.RestoreChannelBufferSizeShort, Strings.Options.RestoreChannelBufferSizeLong, DEFAULT_RESTORE_CHANNEL_BUFFER_SIZE.ToString()),
             new CommandLineArgument("internal-profiling", CommandLineArgument.ArgumentType.Boolean, Strings.Options.InternalProfilingShort, Strings.Options.InternalProfilingLong, "false"),
+            new CommandLineArgument("ignore-update-if-version-exists", CommandLineArgument.ArgumentType.Boolean, Strings.Options.IgnoreUpdateIfVersionExistsShort, Strings.Options.IgnoreUpdateIfVersionExistsLong, "false"),
         ];
 
         /// <summary>
@@ -2244,6 +2245,12 @@ namespace Duplicati.Library.Main
         {
             get { return Library.Utility.Utility.ParseBoolOption(m_options, "internal-profiling"); }
         }
+
+        /// <summary>
+        /// Ignores the update if the version already exists in the database.
+        /// </summary>
+        public bool IgnoreUpdateIfVersionExists
+            => Library.Utility.Utility.ParseBoolOption(m_options, "ignore-update-if-version-exists");
 
         /// <summary>
         /// Class for handling a single RetentionPolicy timeframe-interval-pair

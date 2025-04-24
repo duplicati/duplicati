@@ -76,6 +76,10 @@ partial class BackendManager
         /// </summary>
         public required bool TrackedInDb { get; init; }
         /// <summary>
+        /// A callback that is invoked when the database needs to be updated
+        /// </summary>
+        public required Func<Task> OnDbUpdate { get; init; }
+        /// <summary>
         /// The encryption and hashing task, the return value indicates if the hash and size was updated
         /// </summary>
         private Task<(string Hash, long Size)>? encryptionAndHashingTask;
@@ -95,6 +99,10 @@ partial class BackendManager
         /// A callback that is invoked when the index volume is finished
         /// </summary>
         public required Action? IndexVolumeFinishedCallback { get; init; }
+        /// <summary>
+        /// The default callback for database updates (no-op)
+        /// </summary>
+        public static Func<Task> OnDbUpdateDefault = () => Task.CompletedTask;
 
         /// <summary>
         /// Creates a new put operation 
@@ -202,12 +210,16 @@ partial class BackendManager
 
             // On first upload attempt, calculate the hash and size
             if (operationState == OperationState.None && TrackedInDb)
+            {
                 Context.Database.LogRemoteVolumeUpdated(RemoteFilename, RemoteVolumeState.Uploading, size, hash);
+                await OnDbUpdate().ConfigureAwait(false);
+            }
 
             // First attempt here, finish the index file now that all information is known
             if (OriginalIndexFile != null && indexOperation == null)
             {
                 Context.Database.LogRemoteVolumeUpdated(OriginalIndexFile.RemoteFilename, RemoteVolumeState.Uploading, -1, null);
+                await OnDbUpdate().ConfigureAwait(false);
 
                 // Prepare an upload operation for the index file
                 var req2 = new PutOperation(OriginalIndexFile.RemoteFilename, Context, false, cancelToken)
@@ -216,8 +228,10 @@ partial class BackendManager
                     TrackedInDb = TrackedInDb,
                     Unencrypted = Unencrypted,
                     IndexVolumeFinishedCallback = null,
-                    OriginalIndexFile = null
+                    OriginalIndexFile = null,
+                    OnDbUpdate = OnDbUpdate
                 };
+
 
                 OriginalIndexFile.FinishVolume(hash, size);
                 IndexVolumeFinishedCallback?.Invoke();
@@ -227,8 +241,11 @@ partial class BackendManager
             }
 
             // If we have previously attempted to upload, we need to rename the file
-            if (operationState == OperationState.Uploading)
+            if (operationState == OperationState.Uploading && TrackedInDb)
+            {
                 RenameFileAfterError(size);
+                await OnDbUpdate().ConfigureAwait(false);
+            }
 
             // Flag for next attempt, if any
             operationState = OperationState.Uploading;
@@ -264,6 +281,8 @@ partial class BackendManager
         {
             Context.Database.LogRemoteOperation("put", RemoteFilename, JsonConvert.SerializeObject(new { Size = size, Hash = hash }));
             Context.Statwriter.SendEvent(BackendActionType.Put, BackendEventType.Started, RemoteFilename, size);
+            if (TrackedInDb)
+                await OnDbUpdate().ConfigureAwait(false);
 
             var begin = DateTime.Now;
             try
@@ -288,7 +307,10 @@ partial class BackendManager
             Logging.Log.WriteProfilingMessage(LOGTAG, "UploadSpeed", "Uploaded {0} in {1}, {2}/s", Library.Utility.Utility.FormatSizeString(size), duration, Library.Utility.Utility.FormatSizeString((long)(size / duration.TotalSeconds)));
 
             if (TrackedInDb)
+            {
                 Context.Database.LogRemoteVolumeUpdated(RemoteFilename, RemoteVolumeState.Uploaded, size, hash);
+                await OnDbUpdate().ConfigureAwait(false);
+            }
 
             Context.Statwriter.SendEvent(BackendActionType.Put, BackendEventType.Completed, RemoteFilename, size);
 

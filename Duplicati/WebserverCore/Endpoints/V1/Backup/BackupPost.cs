@@ -155,9 +155,15 @@ public class BackupPost : IEndpointV1
             if (input.only_paths.HasValue)
                 extra["repair-only-paths"] = input.only_paths.Value.ToString();
             if (!string.IsNullOrWhiteSpace(input.time))
+            {
                 extra["time"] = input.time;
+                extra["ignore-update-if-version-exists"] = "true";
+            }
             if (!string.IsNullOrWhiteSpace(input.version))
+            {
                 extra["version"] = input.version;
+                extra["ignore-update-if-version-exists"] = "true";
+            }
         }
 
         var filters = input?.paths ?? [];
