@@ -22,6 +22,7 @@
 using Azure;
 using Azure.Storage.Blobs.Models;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Utility;
 using Duplicati.Library.Utility.Options;
 
 namespace Duplicati.Library.Backend.AzureBlob
@@ -63,6 +64,15 @@ namespace Duplicati.Library.Backend.AzureBlob
             AccessTier.Cool, AccessTier.Cold, AccessTier.Archive
         ]);
 
+        /// <summary>
+        /// List of access tiers
+        /// </summary>
+        private static readonly IEnumerable<AccessTier> ACCESS_TIERS =
+            typeof(AccessTier).GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static)
+                .Where(x => x.PropertyType == typeof(AccessTier))
+                .Select(x => x.GetValue(null) as AccessTier?)
+                .WhereNotNull()
+                .ToArray();
 
         // ReSharper disable once UnusedMember.Global
         // This constructor is needed by the BackendLoader.
@@ -176,17 +186,14 @@ namespace Duplicati.Library.Backend.AzureBlob
                         Strings.AzureBlobBackend.ArchiveClassesDescriptionLong,
                         string.Join(",", DEFAULT_ARCHIVE_CLASSES.Select(x => x.ToString())),
                         null,
-                        DEFAULT_ARCHIVE_CLASSES.Select(x => x.ToString()).ToArray()),
+                        ACCESS_TIERS.Select(x => x.ToString()).ToArray()),
                     new CommandLineArgument(AZURE_ACCESS_TIER_OPTION,
                         CommandLineArgument.ArgumentType.String,
                         Strings.AzureBlobBackend.AccessTierDescriptionShort,
                         Strings.AzureBlobBackend.AccessTierDescriptionLong,
                         "",
                         null,
-                        typeof(AccessTier).GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static)
-                            .Where(x => x.PropertyType == typeof(AccessTier))
-                            .Select(x => x.Name)
-                            .ToArray()),
+                        ACCESS_TIERS.Select(x => x.ToString()).ToArray()),
                     .. TimeoutOptionsHelper.GetOptions()
                 ];
             }
