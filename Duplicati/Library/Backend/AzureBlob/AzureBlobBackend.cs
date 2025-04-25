@@ -61,7 +61,7 @@ namespace Duplicati.Library.Backend.AzureBlob
         /// The default storage classes that are considered archive classes
         /// </summary>
         private static readonly IReadOnlySet<AccessTier> DEFAULT_ARCHIVE_CLASSES = new HashSet<AccessTier>([
-            AccessTier.Cool, AccessTier.Cold, AccessTier.Archive
+            AccessTier.Cold, AccessTier.Archive
         ]);
 
         /// <summary>
