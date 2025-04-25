@@ -93,7 +93,7 @@ public class BackupPutDelete : IEndpointV1
                     Include = x.Include,
                     Expression = x.Expression
                 }).ToArray(),
-                Metadata = input.Backup.Metadata ?? new Dictionary<string, string>()
+                Metadata = input.Backup.Metadata
             };
 
             var schedule = input.Schedule == null ? null : new Schedule()

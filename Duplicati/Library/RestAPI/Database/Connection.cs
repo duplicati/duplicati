@@ -682,7 +682,9 @@ namespace Duplicati.Server.Database
                     SetSources(item.Sources, id, tr);
                     SetSettings(item.Settings, id, tr);
                     SetFilters(item.Filters, id, tr);
-                    SetMetadata(item.Metadata, id, tr);
+                    // Don't update the metadata if no new content is given
+                    if (item.Metadata != null)
+                        SetMetadata(item.Metadata, id, tr);
 
                     if (updateSchedule)
                     {
