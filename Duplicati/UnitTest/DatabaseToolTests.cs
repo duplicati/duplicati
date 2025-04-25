@@ -34,7 +34,7 @@ namespace Duplicati.UnitTest
         public async Task TestLocalDbMethods()
         {
             using var dbfile = new TempFile();
-            using var db = SQLiteLoader.LoadConnection(dbfile);
+            using var db = SQLiteLoader.LoadConnection(dbfile, 0);
             using var cmd = db.CreateCommand();
             cmd.CommandText = LocalSchemaV12;
             cmd.ExecuteNonQuery();
@@ -54,7 +54,7 @@ namespace Duplicati.UnitTest
         public async Task TestServerDbMethods()
         {
             using var dbfile = new TempFile();
-            using var db = SQLiteLoader.LoadConnection(dbfile);
+            using var db = SQLiteLoader.LoadConnection(dbfile, 0);
             using var cmd = db.CreateCommand();
             cmd.CommandText = ServerSchemaV6;
             cmd.ExecuteNonQuery();

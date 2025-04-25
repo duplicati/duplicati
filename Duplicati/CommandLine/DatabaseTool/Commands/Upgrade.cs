@@ -170,7 +170,7 @@ public static class Upgrade
             if (!nobackups)
                 Helper.CreateFileBackup(db);
 
-            using var con = SQLiteLoader.LoadConnection(db);
+            using var con = SQLiteLoader.LoadConnection(db, 0);
             using var tr = con.BeginTransaction();
             using var cmd = con.CreateCommand(tr);
             foreach (var script in upgradeScripts)
