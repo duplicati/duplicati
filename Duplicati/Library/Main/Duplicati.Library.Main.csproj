@@ -23,21 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="Database\Database schema\Schema.sql" />
-    <EmbeddedResource Include="Database\Database schema\1. Add index.sql" />
-    <EmbeddedResource Include="Database\Database schema\2. Use Lastmodified.sql" />
-    <EmbeddedResource Include="Database\Database schema\3. Add grace delete period.sql" />
-    <EmbeddedResource Include="Database\Database schema\4. Add index.sql" />
-    <EmbeddedResource Include="Database\Database schema\5. Optimize BlockSet-Tables.sql" />
-    <EmbeddedResource Include="Database\Database schema\6. Optimize FileSetEntry-Table.sql" />
-    <EmbeddedResource Include="Database\Database schema\7. Add index.sql" />
-    <EmbeddedResource Include="Database\Database schema\8. Add volume USN.sql" />
-    <EmbeddedResource Include="Database\Database schema\9. Refactor Paths.sql" />
-    <EmbeddedResource Include="Database\Database schema\10. Add IsFullBackup to Fileset table.sql" />
-    <EmbeddedResource Include="Database\Database schema\11. Add Block indices.sql" />
-    <EmbeddedResource Include="Database\Database schema\12. Performance Indexes.sql" />
-    <EmbeddedResource Include="Database\Database schema\13. Unique index on DuplicateBlock.sql" />
-    <EmbeddedResource Include="Database\Database schema\14. Create Index on DeletedBlock.sql" />    
+    <EmbeddedResource Include="Database\Database schema\*.sql" />
   </ItemGroup>
 
   <ItemGroup>

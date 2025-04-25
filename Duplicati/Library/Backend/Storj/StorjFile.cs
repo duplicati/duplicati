@@ -39,6 +39,8 @@ namespace Duplicati.Library.Backend.Storj
 
         public long Size { get; set; }
 
+        public bool IsArchived => false;
+
         public StorjFile()
         {
             Name = string.Empty;

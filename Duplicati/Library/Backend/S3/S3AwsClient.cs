@@ -35,18 +35,62 @@ namespace Duplicati.Library.Backend
     /// </summary>
     public class S3AwsClient : IS3Client
     {
+        /// <summary>
+        /// The maximum number of items to list in a single request
+        /// </summary>
         private const int ITEM_LIST_LIMIT = 1000;
 
+        /// <summary>
+        /// The prefix for extended options
+        /// </summary>
         private const string EXT_OPTION_PREFIX = "s3-ext-";
 
+        /// <summary>
+        /// The location constraint for the bucket
+        /// </summary>
         private readonly string? m_locationConstraint;
+        /// <summary>
+        /// The storage class for the bucket
+        /// </summary>
         private readonly string? m_storageClass;
+        /// <summary>
+        /// The S3 client
+        /// </summary>
         private readonly AmazonS3Client m_client;
+        /// <summary>
+        /// The option to specify if chunk encoding should be used
+        /// </summary>
         private readonly bool m_useChunkEncoding;
 
+        /// <summary>
+        /// The DNS host of the S3 server
+        /// </summary>
         private readonly string? m_dnsHost;
+        /// <summary>
+        /// The option to specify if the V2 list API should be used
+        /// </summary>
         private readonly bool m_useV2ListApi;
+        /// <summary>
+        /// The timeouts to use
+        /// </summary>
         private readonly TimeoutOptionsHelper.Timeouts m_timeouts;
+
+        /// <summary>
+        /// The archive classes that are considered archive classes
+        /// </summary>
+        private readonly IReadOnlySet<S3StorageClass> m_archiveClasses;
+
+        /// <summary>
+        /// The option to specify the archive classes
+        /// </summary>
+        public const string S3_ARCHIVE_CLASSES_OPTION = "s3-archive-classes";
+
+        /// <summary>
+        /// The default storage classes that are considered archive classes
+        /// </summary>
+        public static readonly IReadOnlySet<S3StorageClass> DEFAULT_ARCHIVE_CLASSES = new HashSet<S3StorageClass>([
+            S3StorageClass.DeepArchive, S3StorageClass.Glacier, S3StorageClass.GlacierInstantRetrieval, S3StorageClass.Snow
+        ]);
 
         public S3AwsClient(string awsID, string awsKey, string? locationConstraint, string servername,
             string? storageClass, bool useSSL, bool disableChunkEncoding, TimeoutOptionsHelper.Timeouts timeouts, Dictionary<string, string?> options)
@@ -65,8 +109,23 @@ namespace Duplicati.Library.Backend
             m_storageClass = storageClass;
             m_dnsHost = string.IsNullOrWhiteSpace(cfg.ServiceURL) ? null : new System.Uri(cfg.ServiceURL).Host;
             m_useChunkEncoding = !disableChunkEncoding;
+            m_archiveClasses = ParseStorageClasses(options.GetValueOrDefault(S3_ARCHIVE_CLASSES_OPTION));
         }
 
+        /// <summary>
+        /// Parses the storage classes from the string
+        /// </summary>
+        /// <param name="storageClass">The storage class string</param>
+        /// <returns>The storage classes</returns>
+        private static IReadOnlySet<S3StorageClass> ParseStorageClasses(string? storageClass)
+        {
+            if (string.IsNullOrWhiteSpace(storageClass))
+                return DEFAULT_ARCHIVE_CLASSES;
+
+            return new HashSet<S3StorageClass>(storageClass.Split([','], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Select(x => new S3StorageClass(x)));
+        }
+
+        /// <inheritdoc/>
         public Task AddBucketAsync(string bucketName, CancellationToken cancelToken)
         {
             var request = new PutBucketRequest
@@ -80,6 +139,10 @@ namespace Duplicati.Library.Backend
             return Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, ct => m_client.PutBucketAsync(request, ct));
         }
 
+        /// <summary>
+        /// Gets the default Amazon S3 configuration
+        /// </summary>
+        /// <returns>>The default Amazon S3 configuration</returns>
         public static AmazonS3Config GetDefaultAmazonS3Config()
         {
             return new AmazonS3Config()
@@ -94,6 +157,9 @@ namespace Duplicati.Library.Backend
             };
         }
 
+        /// <summary>
+        /// Extended options that are not included as reported options
+        /// </summary>
         private static readonly HashSet<string> EXCLUDED_EXTENDED_OPTIONS = new HashSet<string>([
             nameof(AmazonS3Config.USEast1RegionalEndpointValue)
         ]);
@@ -292,7 +358,10 @@ namespace Duplicati.Library.Backend
                         obj.LastModified,
                         obj.LastModified
                     )
-                    { IsFolder = obj.Key.EndsWith("/") };
+                    {
+                        IsFolder = obj.Key.EndsWith("/"),
+                        IsArchived = m_archiveClasses.Contains(obj.StorageClass)
+                    };
                 }
             }
         }

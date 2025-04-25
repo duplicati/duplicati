@@ -49,6 +49,8 @@ namespace Duplicati.Library.Backend.Strings
         public static string DescriptionDisableChunkEncodingShort { get { return LC.L(@"Disable chunk encoding (aws client only)"); } }
         public static string S3StorageclassDescriptionLong { get { return LC.L(@"Use this option to specify a storage class. If this option is not used, the server will choose a default storage class."); } }
         public static string S3StorageclassDescriptionShort { get { return LC.L(@"Specify storage class"); } }
+        public static string S3ArchiveClassesDescriptionShort { get { return LC.L(@"Specify archive storage class"); } }
+        public static string S3ArchiveClassesDescriptionLong { get { return LC.L(@"Use this option to specify what storage classes are considered archive storage classes. With this option it is possible to allow lifecycle policies to move data to cheaper storage classes and prevent Duplicati from accessing archived data. This option is only supported for the AWS client."); } }
         public static string DescriptionListApiVersionShort { get { return LC.L(@"Specify the S3 list API version to use"); } }
         public static string DescriptionListApiVersionLong { get { return LC.L(@"Use this option to specify the S3 list API version to use. This can be used to work around issues with some S3 providers."); } }
         public static string DescriptionRecursiveListShort { get { return LC.L(@"Use this option to list all files in the bucket"); } }
