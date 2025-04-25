@@ -43,8 +43,8 @@ public static class Downgrade
                 Arity = ArgumentArity.ZeroOrMore
             },
             new Option<DirectoryInfo>("--server-datafolder", description: "The folder with databases", getDefaultValue: () => new DirectoryInfo(DataFolderLocator.GetDefaultStorageFolder(DataFolderManager.SERVER_DATABASE_FILENAME, false, true))),
-            new Option<int>("--server-version", description: "The version to downgrade the server database to", getDefaultValue: () => 6),
-            new Option<int>("--local-version", description: "The version to downgrade local databases to", getDefaultValue: () => 12),
+            new Option<int>("--server-version", description: "The version to downgrade the server database to", getDefaultValue: () => 8),
+            new Option<int>("--local-version", description: "The version to downgrade local databases to", getDefaultValue: () => 14),
             new Option<bool>("--no-backups", description: "Do not create backups before downgrade", getDefaultValue: () => false),
             new Option<bool>("--include-untracked-databases", description: "Include untracked databases in the downgrade process", getDefaultValue: () => false)
         }
