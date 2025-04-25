@@ -22,6 +22,7 @@
 using Azure;
 using Azure.Storage.Blobs.Models;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Utility;
 using Duplicati.Library.Utility.Options;
 
 namespace Duplicati.Library.Backend.AzureBlob
@@ -30,7 +31,48 @@ namespace Duplicati.Library.Backend.AzureBlob
     // This class is instantiated dynamically in the BackendLoader.
     public class AzureBlobBackend : IStreamingBackend
     {
+        /// <summary>
+        /// The access to Azure blob storage
+        /// </summary>
         private readonly AzureBlobWrapper _azureBlob;
+
+        /// <summary>
+        /// The option to specify the Azure storage account name
+        /// </summary>
+        private const string AZURE_ACCOUNT_NAME_OPTION = "azure-account-name";
+        /// <summary>
+        /// The option to specify the Azure access key
+        /// </summary>
+        private const string AZURE_ACCESS_KEY_OPTION = "azure-access-key";
+        /// <summary>
+        /// The option to specify the Azure access SAS token
+        /// </summary>
+        private const string AZURE_ACCESS_SAS_TOKEN_OPTION = "azure-access-sas-token";
+        /// <summary>
+        /// The option to specify the archive classes
+        /// </summary>
+        private const string AZURE_ARCHIVE_CLASSES_OPTION = "azure-archive-classes";
+        /// <summary>
+        /// The option to specify the Azure access tier
+        /// </summary>
+        private const string AZURE_ACCESS_TIER_OPTION = "azure-access-tier";
+
+        /// <summary>
+        /// The default storage classes that are considered archive classes
+        /// </summary>
+        private static readonly IReadOnlySet<AccessTier> DEFAULT_ARCHIVE_CLASSES = new HashSet<AccessTier>([
+            AccessTier.Cold, AccessTier.Archive
+        ]);
+
+        /// <summary>
+        /// List of access tiers
+        /// </summary>
+        private static readonly IEnumerable<AccessTier> ACCESS_TIERS =
+            typeof(AccessTier).GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static)
+                .Where(x => x.PropertyType == typeof(AccessTier))
+                .Select(x => x.GetValue(null) as AccessTier?)
+                .WhereNotNull()
+                .ToArray();
 
         // ReSharper disable once UnusedMember.Global
         // This constructor is needed by the BackendLoader.
@@ -48,17 +90,36 @@ namespace Duplicati.Library.Backend.AzureBlob
 
             var containerName = uri.Host.ToLowerInvariant();
 
-            var auth = AuthOptionsHelper.ParseWithAlias(options, uri, "azure-account-name", "azure-access-key");
+            var auth = AuthOptionsHelper.ParseWithAlias(options, uri, AZURE_ACCOUNT_NAME_OPTION, AZURE_ACCESS_KEY_OPTION);
             var timeouts = TimeoutOptionsHelper.Parse(options);
 
-            var sasToken = options.GetValueOrDefault("azure-access-sas-token");
+            var sasToken = options.GetValueOrDefault(AZURE_ACCESS_SAS_TOKEN_OPTION);
             if (!auth.HasUsername)
                 throw new UserInformationException(Strings.AzureBlobBackend.NoStorageAccountName, "AzureNoAccountName");
 
             if (!auth.HasPassword && string.IsNullOrWhiteSpace(sasToken))
                 throw new UserInformationException(Strings.AzureBlobBackend.NoAccessKeyOrSasToken, "AzureNoAccessKeyOrSasToken");
 
-            _azureBlob = new AzureBlobWrapper(auth.Username!, auth.Password, sasToken, containerName, timeouts);
+            var archiveClasses = ParseStorageClasses(options.GetValueOrDefault(AZURE_ARCHIVE_CLASSES_OPTION));
+            var accessTierValue = options.GetValueOrDefault(AZURE_ACCESS_TIER_OPTION);
+            var accessTier = string.IsNullOrWhiteSpace(accessTierValue)
+                ? null
+                // Warning: The cast here is required to avoid implicit casting null to AccessTier
+                : (AccessTier?)new AccessTier(accessTierValue);
+            _azureBlob = new AzureBlobWrapper(auth.Username!, auth.Password, sasToken, containerName, accessTier, archiveClasses, timeouts);
+        }
+
+        /// <summary>
+        /// Parses the storage classes from the string
+        /// </summary>
+        /// <param name="storageClass">The storage class string</param>
+        /// <returns>The storage classes</returns>
+        private static IReadOnlySet<AccessTier> ParseStorageClasses(string? storageClass)
+        {
+            if (string.IsNullOrWhiteSpace(storageClass))
+                return DEFAULT_ARCHIVE_CLASSES;
+
+            return new HashSet<AccessTier>(storageClass.Split([','], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Select(x => new AccessTier(x)));
         }
 
         public string DisplayName => Strings.AzureBlobBackend.DisplayName;
@@ -103,22 +164,36 @@ namespace Duplicati.Library.Backend.AzureBlob
             get
             {
                 return [
-                    new CommandLineArgument("azure-account-name",
+                    new CommandLineArgument(AZURE_ACCOUNT_NAME_OPTION,
                         CommandLineArgument.ArgumentType.String,
                         Strings.AzureBlobBackend.StorageAccountNameDescriptionShort,
                         Strings.AzureBlobBackend.StorageAccountNameDescriptionLong,
                         null,
                         [AuthOptionsHelper.AuthUsernameOption]),
-                    new CommandLineArgument("azure-access-key",
+                    new CommandLineArgument(AZURE_ACCESS_KEY_OPTION,
                         CommandLineArgument.ArgumentType.Password,
                         Strings.AzureBlobBackend.AccessKeyDescriptionShort,
                         Strings.AzureBlobBackend.AccessKeyDescriptionLong,
                         null,
                         [AuthOptionsHelper.AuthPasswordOption]),
-                    new CommandLineArgument("azure-access-sas-token",
+                    new CommandLineArgument(AZURE_ACCESS_SAS_TOKEN_OPTION,
                         CommandLineArgument.ArgumentType.Password,
                         Strings.AzureBlobBackend.SasTokenDescriptionShort,
                         Strings.AzureBlobBackend.SasTokenDescriptionLong),
+                    new CommandLineArgument(AZURE_ARCHIVE_CLASSES_OPTION,
+                        CommandLineArgument.ArgumentType.Flags,
+                        Strings.AzureBlobBackend.ArchiveClassesDescriptionShort,
+                        Strings.AzureBlobBackend.ArchiveClassesDescriptionLong,
+                        string.Join(",", DEFAULT_ARCHIVE_CLASSES.Select(x => x.ToString())),
+                        null,
+                        ACCESS_TIERS.Select(x => x.ToString()).ToArray()),
+                    new CommandLineArgument(AZURE_ACCESS_TIER_OPTION,
+                        CommandLineArgument.ArgumentType.String,
+                        Strings.AzureBlobBackend.AccessTierDescriptionShort,
+                        Strings.AzureBlobBackend.AccessTierDescriptionLong,
+                        "",
+                        null,
+                        ACCESS_TIERS.Select(x => x.ToString()).ToArray()),
                     .. TimeoutOptionsHelper.GetOptions()
                 ];
             }

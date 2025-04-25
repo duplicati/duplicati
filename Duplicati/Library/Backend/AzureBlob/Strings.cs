@@ -37,4 +37,8 @@ internal static class AzureBlobBackend
     public static string SasTokenDescriptionLong => LC.L(@"The Azure shared access signature (SAS) token which can be obtained by selecting the ""Shared access signature"" blade on the storage account dashboard, or inside a container blade.");
     public static string SasTokenDescriptionShort => LC.L(@"The SAS token");
     public static string NoAccessKeyOrSasToken => LC.L(@"No Azure access key or SAS token given");
+    public static string AccessTierDescriptionShort => LC.L(@"Specify the access tier");
+    public static string AccessTierDescriptionLong => LC.L(@"Use this option to specify the access tier. If this option is not used, the server will choose a default access tier.");
+    public static string ArchiveClassesDescriptionShort => LC.L(@"The storage classes that are considered archive classes");
+    public static string ArchiveClassesDescriptionLong => LC.L(@"Use this option to specify what storage classes are considered archive storage classes. With this option it is possible to allow lifecycle policies to move data to cheaper storage classes and prevent Duplicati from accessing archived data.");
 }
