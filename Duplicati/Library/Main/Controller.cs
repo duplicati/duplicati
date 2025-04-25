@@ -56,10 +56,17 @@ namespace Duplicati.Library.Main
         /// </summary>
         private IMessageSink m_messageSink;
 
+        // TODO: The m_current* approach here prevents us from having multiple concurrent operations
+
         /// <summary>
         /// The current executing task
         /// </summary>
         private ITaskControl m_currentTaskControl = null;
+
+        /// <summary>
+        /// The current backend manager
+        /// </summary>
+        private IBackendManager m_currentBackendManager = null;
 
         /// <summary>
         /// If not null, active locale change that needs to be reset
@@ -450,7 +457,15 @@ namespace Duplicati.Library.Main
                     using (m_options.ConcurrencyMaxThreads <= 0 ? null : new CoCoL.CappedThreadedThreadPool(m_options.ConcurrencyMaxThreads))
                     using (var backend = new Backend.BackendManager(m_backendUrl, m_options, result.BackendWriter, result.TaskControl))
                     {
-                        method(result, backend).Await();
+                        try
+                        {
+                            m_currentBackendManager = backend;
+                            method(result, backend).Await();
+                        }
+                        finally
+                        {
+                            m_currentBackendManager = null;
+                        }
 
                         // TODO: Should also have a single shared database connection for all operations
                         // The transactions should be managed inside the connection, and not passed around
@@ -1088,16 +1103,12 @@ namespace Duplicati.Library.Main
             m_currentTaskControl?.Terminate();
         }
 
-        public long MaxUploadSpeed
+        public void SetThrottleSpeeds(long maxUploadPrSecond, long maxDownloadPrSecond)
         {
-            get { return m_options.MaxUploadPrSecond; }
-            set { m_options.MaxUploadPrSecond = value; }
-        }
-
-        public long MaxDownloadSpeed
-        {
-            get { return m_options.MaxDownloadPrSecond; }
-            set { m_options.MaxDownloadPrSecond = value; }
+            // Set these values in the options, in case the backend is not up yet
+            m_options.MaxUploadPrSecond = maxUploadPrSecond;
+            m_options.MaxDownloadPrSecond = maxDownloadPrSecond;
+            m_currentBackendManager?.UpdateThrottleValues(maxUploadPrSecond, maxDownloadPrSecond);
         }
 
         /// <summary>

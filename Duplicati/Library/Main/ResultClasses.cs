@@ -293,11 +293,15 @@ namespace Duplicati.Library.Main
                     try
                     {
                         m_is_reporting = true;
-                        if (type == BackendEventType.Started && updateProgress)
-                            this.BackendProgressUpdater.StartAction(action, path, size);
+
+                        // Because the backend manager keeps track of the current transfer, we don't need to do it here.
+                        // if (type == BackendEventType.Started && updateProgress)
+                        //     this.BackendProgressUpdater.StartAction(action, path, size);
 
                         Logging.Log.WriteInformationMessage(LOGTAG, "BackendEvent", "Backend event: {0} - {1}: {2} ({3})", action, type, path, size <= 0 ? "" : Library.Utility.Utility.FormatSizeString(size));
 
+                        // This is a bit hard to use, but there might be multiple in-flight transfers
+                        // The message sink(s) get all messages for all transfers
                         if (MessageSink != null)
                             MessageSink.BackendEvent(action, type, path, size);
                     }

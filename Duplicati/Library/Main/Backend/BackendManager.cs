@@ -11,6 +11,7 @@ using Duplicati.Library.Main.Database;
 using Duplicati.Library.Main.Operation.Common;
 using Duplicati.Library.Main.Volumes;
 using Duplicati.Library.Utility;
+using Duplicati.StreamUtil;
 
 namespace Duplicati.Library.Main.Backend;
 
@@ -60,9 +61,11 @@ internal partial class BackendManager : IBackendManager
 
         // To avoid excessive parameter passing, the context is captured here
         context = new ExecuteContext(
-            new ProgressHandler(options, backendWriter, taskReader).HandleProgress,
+            new ProgressHandler(backendWriter, taskReader),
             backendWriter ?? throw new ArgumentNullException(nameof(backendWriter)),
             new DatabaseCollector(),
+            new ThrottleManager() { Limit = options.MaxUploadPrSecond },
+            new ThrottleManager() { Limit = options.MaxDownloadPrSecond },
             taskReader ?? throw new ArgumentNullException(nameof(taskReader)),
             options ?? throw new ArgumentNullException(nameof(options))
         );
@@ -381,6 +384,17 @@ internal partial class BackendManager : IBackendManager
         // Return the last result
         yield return (prevResult.File, prevResult.Hash, prevResult.Size, prevVolume.Name);
         prevResult.File.Dispose();
+    }
+
+    /// <summary>
+    /// Updates the throttle values for upload and download
+    /// </summary>
+    /// <param name="maxUploadPrSecond">The maximum upload speed in bytes per second</param>
+    /// <param name="maxDownloadPrSecond">The maximum download speed in bytes per second</param>
+    public void UpdateThrottleValues(long maxUploadPrSecond, long maxDownloadPrSecond)
+    {
+        context.UploadThrottleManager.Limit = maxUploadPrSecond;
+        context.DownloadThrottleManager.Limit = maxDownloadPrSecond;
     }
 
     /// <summary>

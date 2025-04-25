@@ -1,9 +1,10 @@
 using System;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main.Operation.Common;
-using Duplicati.Library.Utility;
+using Duplicati.StreamUtil;
 
 namespace Duplicati.Library.Main.Backend;
 
@@ -14,15 +15,19 @@ partial class BackendManager
     /// <summary>
     /// Execution context for the backend manager
     /// </summary>
-    /// <param name="HandleProgress">A progress handler</param>
+    /// <param name="ProgressHandler">The progress handler</param>
     /// <param name="Statwriter">The stat writer</param>
     /// <param name="Database">The database collector</param>
+    /// <param name="UploadThrottleManager">The upload throttle manager</param>
+    /// <param name="DownloadThrottleManager">The download throttle manager</param>
     /// <param name="TaskReader">The task reader</param>
     /// <param name="Options">The options</param>
     private sealed record ExecuteContext(
-        Action<ThrottledStream, long, string> HandleProgress,
+        ProgressHandler ProgressHandler,
         IBackendWriter Statwriter,
         DatabaseCollector Database,
+        ThrottleManager UploadThrottleManager,
+        ThrottleManager DownloadThrottleManager,
         ITaskReader TaskReader,
         Options Options);
 

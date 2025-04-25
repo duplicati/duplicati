@@ -398,6 +398,7 @@ namespace Duplicati.CommandLine.BackendTester
                             Console.Write($"{LogTimeStamp}Downloading file {i} ... ");
 
                             var sw = Stopwatch.StartNew();
+                            var throttleManager = new ThrottleManager() { Limit = throttleDownload };
 
                             try
                             {
@@ -405,7 +406,7 @@ namespace Duplicati.CommandLine.BackendTester
                                 {
                                     using (var fs = new System.IO.FileStream(cf, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.None))
                                     using (var timeoutStream = new TimeoutObservingStream(fs) { WriteTimeout = readWriteTimeout })
-                                    using (var ts = new Library.Utility.ThrottledStream(timeoutStream, throttleDownload, throttleDownload))
+                                    using (var ts = new ThrottleEnabledStream(timeoutStream, throttleManager))
                                     using (var nss = new NonSeekableStream(ts))
                                         streamingBackend.GetAsync(files[i].remotefilename, nss, timeoutStream.TimeoutToken).Await();
                                 }
@@ -419,13 +420,15 @@ namespace Duplicati.CommandLine.BackendTester
                                 e = ex;
                             }
 
+                            sw.Stop();
+
                             if (e != null)
                             {
                                 failAfterFinished = true;
                                 Console.WriteLine($"{LogTimeStamp}failed\n*** Error: {e} after {sw.ElapsedMilliseconds} ms");
                             }
                             else
-                                Console.WriteLine($" done in {sw.ElapsedMilliseconds} ms");
+                                Console.WriteLine($" done in {sw.ElapsedMilliseconds} ms (~{Utility.FormatSizeString(files[i].length / sw.Elapsed.TotalSeconds)}/s)");
 
                             Console.Write($"{LogTimeStamp}Checking hash ... ");
 
@@ -564,10 +567,12 @@ namespace Duplicati.CommandLine.BackendTester
 
         private static void Uploadfile(string localfilename, int i, string remotefilename, IBackend backend, bool disableStreaming, long throttle, int readWriteTimeout)
         {
-            Console.Write($"{LogTimeStamp}Uploading file {i}, {Duplicati.Library.Utility.Utility.FormatSizeString(new System.IO.FileInfo(localfilename).Length)} ... ");
+            var filesize = new System.IO.FileInfo(localfilename).Length;
+            Console.Write($"{LogTimeStamp}Uploading file {i}, {Utility.FormatSizeString(filesize)} ... ");
             Exception e = null;
 
             var sw = Stopwatch.StartNew();
+            var throttleManager = new ThrottleManager() { Limit = throttle };
 
             try
             {
@@ -575,7 +580,7 @@ namespace Duplicati.CommandLine.BackendTester
                 {
                     using (var fs = new System.IO.FileStream(localfilename, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.Read))
                     using (var timeoutStream = new TimeoutObservingStream(fs) { ReadTimeout = readWriteTimeout })
-                    using (var ts = new Library.Utility.ThrottledStream(timeoutStream, throttle, throttle))
+                    using (var ts = new ThrottleEnabledStream(timeoutStream, throttleManager))
                     using (var nss = new NonSeekableStream(ts))
                         streamingBackend.PutAsync(remotefilename, nss, timeoutStream.TimeoutToken).Await();
                 }
@@ -588,6 +593,7 @@ namespace Duplicati.CommandLine.BackendTester
             {
                 e = ex;
             }
+            sw.Stop();
 
             if (e != null)
             {
@@ -600,7 +606,7 @@ namespace Duplicati.CommandLine.BackendTester
             }
             else
             {
-                Console.WriteLine($" done! in {sw.ElapsedMilliseconds} ms");
+                Console.WriteLine($" done! in {sw.ElapsedMilliseconds} ms (~{Utility.FormatSizeString(filesize / sw.Elapsed.TotalSeconds)}/s)");
             }
         }
 

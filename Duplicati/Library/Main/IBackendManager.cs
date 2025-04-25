@@ -135,4 +135,11 @@ internal interface IBackendManager : IDisposable
     /// <returns></returns>
     Task FlushPendingMessagesAsync(LocalDatabase database, IDbTransaction? transaction, CancellationToken cancellationToken);
 
+    /// <summary>
+    /// Updates the throttle values for upload and download
+    /// </summary>
+    /// <param name="maxUploadPrSecond">The maximum upload speed in bytes per second</param>
+    /// <param name="maxDownloadPrSecond">The maximum download speed in bytes per second</param>
+    void UpdateThrottleValues(long maxUploadPrSecond, long maxDownloadPrSecond);
+
 }

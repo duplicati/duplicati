@@ -29,6 +29,7 @@ using System.Globalization;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using Duplicati.StreamUtil;
 
 namespace Duplicati.UnitTest
 {
@@ -440,21 +441,21 @@ namespace Duplicati.UnitTest
         [Category("Utility")]
         public static void ThrottledStreamRead()
         {
-            byte[] sourceBuffer = { 0x10, 0x20, 0x30, 0x40, 0x50 };
-            byte[] destinationBuffer = new byte[sourceBuffer.Length + 1];
+            byte[] sourceBuffer = [0x10, 0x20, 0x30, 0x40, 0x50];
+            var destinationBuffer = new byte[sourceBuffer.Length + 1];
             const int offset = 1;
             const int bytesToRead = 3;
 
-            using (MemoryStream baseStream = new MemoryStream(sourceBuffer))
+            using (var baseStream = new MemoryStream(sourceBuffer))
             {
                 const int readSpeed = 1;
                 const int writeSpeed = 1;
 
-                ThrottledStream throttledStream = new ThrottledStream(baseStream, readSpeed, writeSpeed);
-                int bytesRead = throttledStream.Read(destinationBuffer, offset, bytesToRead);
+                var throttledStream = new ThrottleEnabledStream(baseStream, readSpeed, writeSpeed);
+                var bytesRead = throttledStream.Read(destinationBuffer, offset, bytesToRead);
                 Assert.AreEqual(bytesToRead, bytesRead);
 
-                for (int k = 0; k < destinationBuffer.Length; k++)
+                for (var k = 0; k < destinationBuffer.Length; k++)
                 {
                     if (offset <= k && k < offset + bytesToRead)
                     {
@@ -472,17 +473,17 @@ namespace Duplicati.UnitTest
         [Category("Utility")]
         public static void ThrottledStreamWrite()
         {
-            byte[] initialBuffer = { 0x10, 0x20, 0x30, 0x40, 0x50 };
-            byte[] source = { 0x60, 0x70, 0x80, 0x90 };
+            byte[] initialBuffer = [0x10, 0x20, 0x30, 0x40, 0x50];
+            byte[] source = [0x60, 0x70, 0x80, 0x90];
             const int offset = 1;
             const int bytesToWrite = 3;
 
-            using (MemoryStream baseStream = new MemoryStream(initialBuffer))
+            using (var baseStream = new MemoryStream(initialBuffer))
             {
                 const int readSpeed = 1;
                 const int writeSpeed = 1;
 
-                ThrottledStream throttledStream = new ThrottledStream(baseStream, readSpeed, writeSpeed);
+                var throttledStream = new ThrottleEnabledStream(baseStream, readSpeed, writeSpeed);
                 throttledStream.Write(source, offset, bytesToWrite);
 
                 byte[] result = baseStream.ToArray();
