@@ -60,7 +60,7 @@ public static class Helper
         {
             try
             {
-                using var con = SQLiteLoader.LoadConnection(serverdb);
+                using var con = SQLiteLoader.LoadConnection(serverdb, 0);
                 using var cmd = con.CreateCommand();
                 foreach (var rd in cmd.ExecuteReaderEnumerable(@"SELECT ""DBPath"" FROM ""Backup"""))
                     dbpaths.Add(rd.ConvertValueToString(0) ?? "");
@@ -89,7 +89,7 @@ public static class Helper
     /// <returns>A tuple containing the version and whether it is a server database</returns>
     public static (int Version, bool isserver) ExamineDatabase(string db)
     {
-        using (var con = SQLiteLoader.LoadConnection(db))
+        using (var con = SQLiteLoader.LoadConnection(db, 0))
         {
             using var cmd = con.CreateCommand();
             var isserverdb = cmd.ExecuteScalarInt64("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='Backup' OR name='Schedule'") == 2;

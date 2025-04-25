@@ -54,7 +54,7 @@ public static class List
                     return;
                 }
 
-                using var con = SQLiteLoader.LoadConnection(database);
+                using var con = SQLiteLoader.LoadConnection(database, 0);
                 using var cmd = con.CreateCommand();
 
                 if (tables == null || tables.Length == 0)
