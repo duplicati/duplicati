@@ -1,5 +1,9 @@
 using System.Data;
 using System.Text.Json;
+using Duplicati.Library.AutoUpdater;
+using Duplicati.Library.Main;
+using Duplicati.Library.Main.Database;
+using Duplicati.Library.SQLiteHelper;
 
 namespace Duplicati.CommandLine.DatabaseTool;
 
@@ -29,6 +33,53 @@ public static class Helper
         }
 
         File.Copy(path, backup);
+    }
+
+    /// <summary>
+    /// Find all databases in the data folder
+    /// </summary>
+    /// <param name="databases">The input databases</param>
+    /// <param name="datafolder">The folder to scan</param>
+    /// <param name="scanExtra">Whether to scan for extra databases</param>
+    /// <returns>The list of databases</returns>
+    public static string[] FindAllDatabases(string[]? databases, string datafolder, bool scanExtra)
+    {
+        databases ??= [];
+        if (databases.Length != 0)
+            return databases;
+
+        // No explicit paths given, so we find all databases in the folder
+        var serverdb = Path.Combine(datafolder, DataFolderManager.SERVER_DATABASE_FILENAME);
+        var dbpaths =
+            CLIDatabaseLocator.GetAllDatabasePaths()
+            .Prepend(serverdb)
+            .ToList();
+
+        // Append any database paths from the server database
+        if (File.Exists(serverdb))
+        {
+            try
+            {
+                using var con = SQLiteLoader.LoadConnection(serverdb);
+                using var cmd = con.CreateCommand();
+                foreach (var rd in cmd.ExecuteReaderEnumerable(@"SELECT ""DBPath"" FROM ""Backup"""))
+                    dbpaths.Add(rd.ConvertValueToString(0) ?? "");
+            }
+            catch
+            {
+            }
+        }
+
+        if (scanExtra)
+            dbpaths.AddRange(
+                Directory.EnumerateFiles(datafolder, "*.sqlite", SearchOption.AllDirectories)
+                .Where(x => CLIDatabaseLocator.IsRandomlyGeneratedName(x))
+                .Select(x => Path.GetFullPath(x)));
+
+        return dbpaths
+            .Where(x => File.Exists(x))
+            .Distinct()
+            .ToArray();
     }
 
     /// <summary>

@@ -22,7 +22,6 @@ using System.CommandLine;
 using System.CommandLine.NamingConventionBinder;
 using Duplicati.Library.AutoUpdater;
 using Duplicati.Library.Interface;
-using Duplicati.Library.Main;
 using Duplicati.Library.Main.Database;
 using Duplicati.Library.SQLiteHelper;
 
@@ -47,40 +46,11 @@ public static class Downgrade
             new Option<int>("--server-version", description: "The version to downgrade the server database to", getDefaultValue: () => 6),
             new Option<int>("--local-version", description: "The version to downgrade local databases to", getDefaultValue: () => 12),
             new Option<bool>("--no-backups", description: "Do not create backups before downgrade", getDefaultValue: () => false),
+            new Option<bool>("--include-untracked-databases", description: "Include untracked databases in the downgrade process", getDefaultValue: () => false)
         }
-        .WithHandler(CommandHandler.Create<string[], DirectoryInfo, int, int, bool>((databases, serverdatafolder, serverversion, localversion, nobackups) =>
+        .WithHandler(CommandHandler.Create<string[], DirectoryInfo, int, int, bool, bool>((databases, serverdatafolder, serverversion, localversion, nobackups, includeuntrackeddatabases) =>
             {
-                databases ??= [];
-                if (databases.Length == 0)
-                {
-                    // No explicit paths given, so we find all databases in the folder
-                    var serverdb = Path.Combine(serverdatafolder.FullName, DataFolderManager.SERVER_DATABASE_FILENAME);
-                    var dbpaths =
-                        CLIDatabaseLocator.GetAllDatabasePaths()
-                        .Prepend(serverdb)
-                        .ToList();
-
-                    // Append any database paths from the server database
-                    if (File.Exists(serverdb))
-                    {
-                        try
-                        {
-                            using var con = SQLiteLoader.LoadConnection(serverdb);
-                            using var cmd = con.CreateCommand();
-                            foreach (var rd in cmd.ExecuteReaderEnumerable(@"SELECT ""DBPath"" FROM ""Backup"""))
-                                dbpaths.Add(rd.ConvertValueToString(0) ?? "");
-                        }
-                        catch
-                        {
-                        }
-                    }
-
-                    databases = dbpaths
-                        .Where(x => File.Exists(x))
-                        .Distinct()
-                        .ToArray();
-                }
-
+                databases = Helper.FindAllDatabases(databases, serverdatafolder.FullName, includeuntrackeddatabases);
                 if (databases.Length == 0)
                 {
                     Console.WriteLine("No databases found to downgrade");

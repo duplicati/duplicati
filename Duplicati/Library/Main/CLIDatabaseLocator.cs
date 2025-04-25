@@ -23,6 +23,7 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using Duplicati.Library.Common.IO;
+using System.Text.RegularExpressions;
 
 #nullable enable
 
@@ -250,6 +251,21 @@ namespace Duplicati.Library.Main
                 backupName.Append((char)rnd.Next('A', 'Z' + 1));
 
             return backupName.ToString();
+        }
+
+        /// <summary>
+        /// Returns a value indicating if the given file matches a randomly generated name.
+        /// </summary>
+        /// <param name="path">The path to check</param>
+        /// <returns><c>true</c> if the path is a randomly generated name, <c>false</c> otherwise</returns>
+        public static bool IsRandomlyGeneratedName(string path)
+        {
+            var filename = System.IO.Path.GetFileNameWithoutExtension(path);
+            if (string.IsNullOrEmpty(filename))
+                return false;
+
+            // Check if the filename is 10 characters long and contains only uppercase letters
+            return Regex.IsMatch(filename, @"^[A-Z]{10}$");
         }
 
         /// <summary>
