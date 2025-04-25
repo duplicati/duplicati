@@ -1,13 +1,15 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
     <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Description>DatabaseTool for Duplicati</Description>
     <Copyright>Copyright © 2025 Team Duplicati, MIT license</Copyright>
   </PropertyGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\..\Duplicati\Library\SQLiteHelper\Duplicati.Library.SQLiteHelper.csproj" />
+  
+  <ItemGroup>	
+    <ProjectReference Include="..\..\..\Duplicati\Library\Crashlog\Duplicati.Library.Crashlog.csproj" />	
+    <ProjectReference Include="..\..\..\Duplicati\CommandLine\DatabaseTool\Duplicati.CommandLine.DatabaseTool.csproj" />
   </ItemGroup>
 
   <ItemGroup>

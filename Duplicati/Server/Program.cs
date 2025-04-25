@@ -822,7 +822,7 @@ namespace Duplicati.Server
                 // Attempt to open the database, removing any encryption present
                 Library.SQLiteHelper.SQLiteLoader.OpenDatabase(con, DatabasePath, Library.SQLiteHelper.SQLiteRC4Decrypter.GetEncryptionPassword(commandlineOptions));
 
-                Library.SQLiteHelper.DatabaseUpgrader.UpgradeDatabase(con, DatabasePath, typeof(Library.RestAPI.Database.DatabaseConnectionSchemaMarker));
+                Library.SQLiteHelper.DatabaseUpgrader.UpgradeDatabase(con, DatabasePath, typeof(Library.RestAPI.Database.DatabaseSchemaMarker));
             }
             catch (Exception ex)
             {
