@@ -67,7 +67,7 @@ namespace Duplicati.Library.Main.Operation
 
                 Logging.Log.WriteInformationMessage(LOGTAG, "NoBrokenFilesetsInDatabase", "No broken filesets found in database, checking for missing remote files");
 
-                var remotestate = await FilelistProcessor.RemoteListAnalysis(backendManager, options, db, result.BackendWriter, null, null, FilelistProcessor.VerifyMode.VerifyOnly).ConfigureAwait(false);
+                var remotestate = await FilelistProcessor.RemoteListAnalysis(backendManager, options, db, transaction, result.BackendWriter, null, null, FilelistProcessor.VerifyMode.VerifyOnly).ConfigureAwait(false);
                 if (!remotestate.ParsedVolumes.Any())
                     throw new UserInformationException("No remote volumes were found, refusing purge", "CannotPurgeWithNoRemoteVolumes");
 

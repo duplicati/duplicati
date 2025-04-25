@@ -344,12 +344,12 @@ namespace Duplicati.Library.Main.Operation
                     {
                         if (options.NoBackendverification)
                         {
-                            await FilelistProcessor.VerifyLocalList(backendManager, database, result.TaskControl.ProgressToken).ConfigureAwait(false);
+                            await FilelistProcessor.VerifyLocalList(backendManager, database, null, result.TaskControl.ProgressToken).ConfigureAwait(false);
                             await UpdateStorageStatsFromDatabase(result, database, options, backendManager, result.TaskControl.ProgressToken).ConfigureAwait(false);
                         }
                         else
                         {
-                            await FilelistProcessor.VerifyRemoteList(backendManager, options, database, result.BackendWriter, [lastTempFilelist.Name], [], logErrors: false, verifyMode: FilelistProcessor.VerifyMode.VerifyAndClean).ConfigureAwait(false);
+                            await FilelistProcessor.VerifyRemoteList(backendManager, options, database, null, result.BackendWriter, [lastTempFilelist.Name], [], logErrors: false, verifyMode: FilelistProcessor.VerifyMode.VerifyAndClean).ConfigureAwait(false);
                         }
                     }
                     catch (RemoteListVerificationException ex)
@@ -369,7 +369,7 @@ namespace Duplicati.Library.Main.Operation
                             database = new LocalBackupDatabase(options.Dbpath, options);
 
                             Log.WriteInformationMessage(LOGTAG, "BackendCleanupFinished", "Backend cleanup finished, retrying verification");
-                            await FilelistProcessor.VerifyRemoteList(backendManager, options, database, result.BackendWriter, [lastTempFilelist.Name], [], logErrors: true, verifyMode: FilelistProcessor.VerifyMode.VerifyStrict).ConfigureAwait(false);
+                            await FilelistProcessor.VerifyRemoteList(backendManager, options, database, null, result.BackendWriter, [lastTempFilelist.Name], [], logErrors: true, verifyMode: FilelistProcessor.VerifyMode.VerifyStrict).ConfigureAwait(false);
                         }
                         else
                             throw;
@@ -515,7 +515,7 @@ namespace Duplicati.Library.Main.Operation
         {
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_PostBackupVerify);
             using (new Logging.Timer(LOGTAG, "AfterBackupVerify", "AfterBackupVerify"))
-                await FilelistProcessor.VerifyRemoteList(backendManager, m_options, m_database, m_result.BackendWriter, [currentFilelistVolume], [previousTemporaryFilelist], logErrors: true, verifyMode: FilelistProcessor.VerifyMode.VerifyStrict).ConfigureAwait(false);
+                await FilelistProcessor.VerifyRemoteList(backendManager, m_options, m_database, rtr.Transaction, m_result.BackendWriter, [currentFilelistVolume], [previousTemporaryFilelist], logErrors: true, verifyMode: FilelistProcessor.VerifyMode.VerifyStrict).ConfigureAwait(false);
             await backendManager.WaitForEmptyAsync(m_database, rtr.Transaction, m_taskReader.ProgressToken);
 
             // Calculate the number of samples to test, using the largest number of file of a given type

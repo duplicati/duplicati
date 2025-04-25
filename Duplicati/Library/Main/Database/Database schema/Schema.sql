@@ -33,7 +33,8 @@ CREATE TABLE "Remotevolume" (
 	"Hash" TEXT NULL,
 	"State" TEXT NOT NULL,
 	"VerificationCount" INTEGER NOT NULL,
-	"DeleteGraceTime" INTEGER NOT NULL
+	"DeleteGraceTime" INTEGER NOT NULL,
+	"ArchiveTime" INTEGER NOT NULL
 );
 
 /* Index for detecting broken states */
@@ -293,4 +294,4 @@ CREATE TABLE "ChangeJournalData" (
     "ConfigHash" TEXT NOT NULL  
 );
 
-INSERT INTO "Version" ("Version") VALUES (14);
+INSERT INTO "Version" ("Version") VALUES (15);

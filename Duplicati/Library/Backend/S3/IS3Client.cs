@@ -24,18 +24,67 @@ namespace Duplicati.Library.Backend
 {
     public interface IS3Client : IDisposable
     {
+        /// <summary>
+        /// List all objects in a bucket
+        /// </summary>
+        /// <param name="bucketName">The bucket name</param>
+        /// <param name="prefix">The prefix to filter the objects</param>
+        /// <param name="recursive">Whether to list recursively</param>
+        /// <param name="cancellationToken">The cancellation token</param>
+        /// <returns>The list of objects</returns>
         IAsyncEnumerable<IFileEntry> ListBucketAsync(string bucketName, string prefix, bool recursive, CancellationToken cancellationToken);
 
+        /// <summary>
+        /// Add a new bucket
+        /// </summary>
+        /// <param name="bucketName">The name of the bucket to create</param>
+        /// <param name="cancelToken">The cancellation token</param>
+        /// <returns>A task representing the asynchronous operation</returns>
         Task AddBucketAsync(string bucketName, CancellationToken cancelToken);
 
+        /// <summary>
+        /// Delete an object from a bucket
+        /// </summary>
+        /// <param name="bucketName">The name of the bucket</param>
+        /// <param name="keyName">The name of the object to delete</param>
+        /// <param name="cancelToken">The cancellation token</param>
+        /// <returns>>A task representing the asynchronous operation</returns>
         Task DeleteObjectAsync(string bucketName, string keyName, CancellationToken cancelToken);
 
+        /// <summary>
+        /// Rename an object in a bucket
+        /// </summary>
+        /// <param name="bucketName">The name of the bucket</param>
+        /// <param name="source">The source object name</param>
+        /// <param name="target">The target object name</param>
+        /// <param name="cancelToken">The cancellation token</param>
+        /// <returns>>A task representing the asynchronous operation</returns>
         Task RenameFileAsync(string bucketName, string source, string target, CancellationToken cancelToken);
 
+        /// <summary>
+        /// Copies the object contents into the target stream
+        /// </summary>
+        /// <param name="bucketName">The name of the bucket</param>
+        /// <param name="keyName">The name of the object to copy</param>
+        /// <param name="target">The target stream to copy the object contents into</param>
+        /// <param name="cancelToken">The cancellation token</param>
+        /// <returns>>A task representing the asynchronous operation</returns>
         Task GetFileStreamAsync(string bucketName, string keyName, Stream target, CancellationToken cancelToken);
 
+        /// <summary>
+        /// Gets the DNS hostnames used for the S3 client
+        /// </summary>
+        /// <returns>The DNS hostnames used for the S3 client</returns>
         string? GetDnsHost();
 
+        /// <summary>
+        /// Adds a file stream to the bucket
+        /// </summary>
+        /// <param name="bucketName">The name of the bucket</param>
+        /// <param name="keyName">The name of the object to create</param>
+        /// <param name="source">The source stream to upload</param>
+        /// <param name="cancelToken">The cancellation token</param>
+        /// <returns>>A task representing the asynchronous operation</returns>
         Task AddFileStreamAsync(string bucketName, string keyName, Stream source, CancellationToken cancelToken);
     }
 }

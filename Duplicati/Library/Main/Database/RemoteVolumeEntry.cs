@@ -31,10 +31,11 @@ namespace Duplicati.Library.Main.Database
         public RemoteVolumeType Type { get; private set; }
         public RemoteVolumeState State { get; private set; }
         public DateTime DeleteGracePeriod { get; private set; }
+        public DateTime ArchiveTime { get; private set; }
 
-        public static readonly RemoteVolumeEntry Empty = new RemoteVolumeEntry(-1, null, null, -1, (RemoteVolumeType)(-1), (RemoteVolumeState)(-1), default(DateTime));
+        public static readonly RemoteVolumeEntry Empty = new RemoteVolumeEntry(-1, null, null, -1, (RemoteVolumeType)(-1), (RemoteVolumeState)(-1), default(DateTime), default(DateTime));
 
-        public RemoteVolumeEntry(long id, string name, string hash, long size, RemoteVolumeType type, RemoteVolumeState state, DateTime deleteGracePeriod)
+        public RemoteVolumeEntry(long id, string name, string hash, long size, RemoteVolumeType type, RemoteVolumeState state, DateTime deleteGracePeriod, DateTime archiveTime)
         {
             ID = id;
             Name = name;
@@ -43,6 +44,7 @@ namespace Duplicati.Library.Main.Database
             State = state;
             Hash = hash;
             DeleteGracePeriod = deleteGracePeriod;
+            ArchiveTime = archiveTime;
         }
     }
 }
