@@ -1,3 +1,49 @@
+2025-04-25 - 2.1.0.117_canary_2025-04-25
+==========
+This release is a canary release intended to be used for testing.
+
+# Major changes in this version
+This update adresses a few edge cases where a crash or other problem could cause the database to become out-of-sync.
+
+Support for "archived" files makes Duplicati more compatible with life-cycle rules, that moves files into longer-term storage.
+The support is currently added for S3 and Azure Blob Storage, and works by not attempting to test files that are archived.
+Compacting still needs to be turned off if using life-cycle rules where files are inacessible.
+
+The version of the local database is updated to v15 to support the archive timestamp.
+
+A new tool is added `Duplicati.CommandLine.DatabaseTool.exe` / `duplicati-database-tool` which can downgrade databases.
+The tool can be used prior to installing an older version, and will downgrade the database to the previous version (14 in this case).
+
+The tool can target individual databases, but will default to take all databases in the storage folder.
+
+Throttle options were broken with a recent update. The fixed version now shares the throttle between all transfers.
+Previously, setting a 10kb/s limit would cause each individual stream to be capped to 10 kb/s, but now the setting will throttle the combined upload speed (each stream gets a fraction of the limit).
+
+## Detailed list of changes:
+- Added additional libICU compatibility versions
+- Fixed an issue where dlist files would be uploaded ahead of time, causing failures on crashes
+- Fixed an issue where compacting would sometimes kick off incorrectly
+- File backend now throws the correct exceptions
+- Ignore errors when closing and attempting pragma optimize
+- Support reloading the page when restoring
+- Added support for storage with archival options, like Glacier and Azure Cold storage
+- Updated warning for cases where new files are found
+- Added a database downgrade tool
+- Added option to set SQLite cache size
+- Fixed throttle not working, and made it a shared throttle
+- Fixed an issue where the backup metadata could be cleared on save
+
+## Ngclient changes:
+- Continue button now works on editing backup
+- Overlapping display on scrolling fixed
+- Fixed Repeated background requests on some pages
+- Database screen now shows the database state
+- Improved support for resetting restore flow
+- Settings page is more reactive to changes
+- Server error messages are now shown
+- Numerous fixes and updates to the source picker page
+- Sort order and time display is now persisted in the browser
+
 2025-04-17 - 2.1.0.116_canary_2025-04-17
 ==========
 This release is a canary release intended to be used for testing.
