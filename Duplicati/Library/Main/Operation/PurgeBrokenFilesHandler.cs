@@ -51,7 +51,7 @@ namespace Duplicati.Library.Main.Operation
             if (filter != null && !filter.Empty)
                 throw new UserInformationException("Filters are not supported for this operation", "FiltersNotAllowedOnPurgeBrokenFiles");
 
-            using (var db = new LocalListBrokenFilesDatabase(m_options.Dbpath))
+            using (var db = new LocalListBrokenFilesDatabase(m_options.Dbpath, m_options.SqlitePageCache))
             using (var tr = db.BeginTransaction())
             {
                 if (db.PartiallyRecreated)

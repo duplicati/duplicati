@@ -31,6 +31,11 @@ namespace Duplicati.Library.SQLiteHelper
     public static class SQLiteLoader
     {
         /// <summary>
+        /// The minimum value for the SQLite page cache size
+        /// </summary>
+        public const long MINIMUM_SQLITE_PAGE_CACHE_SIZE = 2048000L;
+
+        /// <summary>
         /// The tag used for logging
         /// </summary>
         private static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(SQLiteLoader));
@@ -104,10 +109,14 @@ namespace Duplicati.Library.SQLiteHelper
         /// Applies user-supplied custom pragmas to the SQLite connection
         /// </summary>
         /// <param name="con">The connection to apply the pragmas to.</param>
+        /// <param name="pagecachesize"> The page cache size to set.</param>
         /// <returns>The connection with the pragmas applied.</returns>
-        public static System.Data.IDbConnection ApplyCustomPragmas(System.Data.IDbConnection con)
+        public static System.Data.IDbConnection ApplyCustomPragmas(System.Data.IDbConnection con, long pagecachesize)
         {
-            var opts = Environment.GetEnvironmentVariable("CUSTOMSQLITEOPTIONS_DUPLICATI");
+            var opts = Environment.GetEnvironmentVariable("CUSTOMSQLITEOPTIONS_DUPLICATI") ?? "";
+            if (pagecachesize > MINIMUM_SQLITE_PAGE_CACHE_SIZE)
+                opts = string.Format(CultureInfo.InvariantCulture, "cache_size=-{0};{1}", pagecachesize / 1024L, opts);
+
             if (string.IsNullOrWhiteSpace(opts))
                 return con;
 
@@ -133,7 +142,8 @@ namespace Duplicati.Library.SQLiteHelper
         /// </summary>
         /// <returns>The SQLite connection instance.</returns>
         /// <param name="targetpath">The optional path to the database.</param>
-        public static System.Data.IDbConnection LoadConnection(string targetpath)
+        /// <param name="pagecachesize"> The page cache size to set.</param>
+        public static System.Data.IDbConnection LoadConnection(string targetpath, long pagecachesize)
         {
             if (string.IsNullOrWhiteSpace(targetpath))
                 throw new ArgumentNullException(nameof(targetpath));
@@ -153,7 +163,7 @@ namespace Duplicati.Library.SQLiteHelper
             }
 
             // set custom Sqlite options
-            return ApplyCustomPragmas(con);
+            return ApplyCustomPragmas(con, pagecachesize);
         }
 
         /// <summary>

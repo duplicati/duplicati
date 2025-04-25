@@ -68,7 +68,7 @@ namespace Duplicati.Library.Main.Operation
             using (var tmp = new TempFile())
             {
                 File.Copy(m_options.Dbpath, tmp, true);
-                using (var db = new LocalBugReportDatabase(tmp))
+                using (var db = new LocalBugReportDatabase(tmp, m_options.SqlitePageCache))
                 {
                     db.Fix();
                     if (m_options.AutoVacuum)

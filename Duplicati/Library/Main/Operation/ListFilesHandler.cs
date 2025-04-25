@@ -54,7 +54,7 @@ namespace Duplicati.Library.Main.Operation
 
             //Use a speedy local query
             if (!m_options.NoLocalDb && System.IO.File.Exists(m_options.Dbpath))
-                using (var db = new Database.LocalListDatabase(m_options.Dbpath))
+                using (var db = new Database.LocalListDatabase(m_options.Dbpath, m_options.SqlitePageCache))
                 {
                     using (var filesets = db.SelectFileSets(m_options.Time, m_options.Version))
                     {
@@ -119,7 +119,7 @@ namespace Duplicati.Library.Main.Operation
 
             // Otherwise, grab info from remote location
             using (var tmpdb = new TempFile())
-            using (var db = new LocalDatabase(tmpdb, "List", true))
+            using (var db = new LocalDatabase(tmpdb, "List", true, m_options.SqlitePageCache))
             {
                 var filteredList = ParseAndFilterFilesets(await backendManager.ListAsync(cancellationToken).ConfigureAwait(false), m_options);
                 if (filteredList.Count == 0)

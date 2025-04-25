@@ -46,7 +46,7 @@ namespace Duplicati.Library.Main.Operation
                 Directory.CreateDirectory(m_options.Restorepath);
 
             using (var tmpdb = new TempFile())
-            using (var db = new Database.LocalDatabase(File.Exists(m_options.Dbpath) ? m_options.Dbpath : (string)tmpdb, "RestoreControlFiles", true))
+            using (var db = new Database.LocalDatabase(File.Exists(m_options.Dbpath) ? m_options.Dbpath : (string)tmpdb, "RestoreControlFiles", true, m_options.SqlitePageCache))
             {
                 var filter = JoinedFilterExpression.Join(new FilterExpression(filterstrings), compositefilter);
 

@@ -40,7 +40,7 @@ namespace Duplicati.Library.Main.Operation
         public virtual Task RunAsync()
             => Task.Run(() =>
             {
-                using (var db = new Database.LocalDatabase(m_options.Dbpath, "Vacuum", false))
+                using (var db = new Database.LocalDatabase(m_options.Dbpath, "Vacuum", false, m_options.SqlitePageCache))
                 {
                     m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Vacuum_Running);
                     db.Vacuum();

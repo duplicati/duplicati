@@ -51,7 +51,7 @@ namespace Duplicati.Library.Main.Operation
             if (!System.IO.File.Exists(m_options.Dbpath))
                 throw new UserInformationException(string.Format("Database file does not exist: {0}", m_options.Dbpath), "DatabaseDoesNotExist");
 
-            using (var db = new Database.LocalPurgeDatabase(m_options.Dbpath))
+            using (var db = new Database.LocalPurgeDatabase(m_options.Dbpath, m_options.SqlitePageCache))
             {
                 await DoRunAsync(backendManager, db, filter, null, 0, 1).ConfigureAwait(false);
                 db.VerifyConsistency(m_options.Blocksize, m_options.BlockhashSize, true, null);

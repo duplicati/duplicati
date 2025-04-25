@@ -80,7 +80,7 @@ namespace Duplicati.Library.Main.Operation
             DateTime compareVersionTime;
 
             using (var tmpdb = useLocalDb ? null : new TempFile())
-            using (var db = new Database.LocalListChangesDatabase(useLocalDb ? m_options.Dbpath : (string)tmpdb))
+            using (var db = new Database.LocalListChangesDatabase(useLocalDb ? m_options.Dbpath : (string)tmpdb, m_options.SqlitePageCache))
             using (var storageKeeper = db.CreateStorageHelper())
             {
                 if (useLocalDb)

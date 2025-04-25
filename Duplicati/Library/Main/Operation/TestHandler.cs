@@ -50,7 +50,7 @@ namespace Duplicati.Library.Main.Operation
             if (!System.IO.File.Exists(m_options.Dbpath))
                 throw new UserInformationException(string.Format("Database file does not exist: {0}", m_options.Dbpath), "DatabaseDoesNotExist");
 
-            using (var db = new LocalTestDatabase(m_options.Dbpath))
+            using (var db = new LocalTestDatabase(m_options.Dbpath, m_options.SqlitePageCache))
             using (var rtr = new ReusableTransaction(db))
             {
                 Utility.UpdateOptionsFromDb(db, m_options, rtr.Transaction);

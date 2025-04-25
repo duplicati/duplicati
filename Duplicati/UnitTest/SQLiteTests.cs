@@ -32,7 +32,7 @@ namespace Duplicati.UnitTest
     {
         private static IDbConnection CreateDummyDatabase(string path)
         {
-            var connection = SQLiteLoader.LoadConnection(path);
+            var connection = SQLiteLoader.LoadConnection(path, 0);
 
             using (var command = connection.CreateCommand())
             {

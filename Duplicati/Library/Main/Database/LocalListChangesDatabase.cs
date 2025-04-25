@@ -30,8 +30,8 @@ namespace Duplicati.Library.Main.Database
 {
     internal class LocalListChangesDatabase : LocalDatabase
     {
-        public LocalListChangesDatabase(string path)
-            : base(path, "ListChanges", false)
+        public LocalListChangesDatabase(string path, long pagecachesize)
+            : base(path, "ListChanges", false, pagecachesize)
         {
             ShouldCloseConnection = true;
         }

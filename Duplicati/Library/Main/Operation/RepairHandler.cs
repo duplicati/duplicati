@@ -62,7 +62,7 @@ namespace Duplicati.Library.Main.Operation
             long knownRemotes = -1;
             try
             {
-                using (var db = new LocalRepairDatabase(m_options.Dbpath))
+                using (var db = new LocalRepairDatabase(m_options.Dbpath, m_options.SqlitePageCache))
                     knownRemotes = db.GetRemoteVolumes().Count();
             }
             catch (Exception ex)
@@ -125,7 +125,7 @@ namespace Duplicati.Library.Main.Operation
 
             m_result.OperationProgressUpdater.UpdateProgress(0);
 
-            using (var db = new LocalRepairDatabase(m_options.Dbpath))
+            using (var db = new LocalRepairDatabase(m_options.Dbpath, m_options.SqlitePageCache))
             {
                 Utility.UpdateOptionsFromDb(db, m_options);
                 Utility.VerifyOptionsAndUpdateDatabase(db, m_options);
@@ -630,7 +630,7 @@ namespace Duplicati.Library.Main.Operation
             if (!File.Exists(m_options.Dbpath))
                 throw new UserInformationException(string.Format("Database file does not exist: {0}", m_options.Dbpath), "DatabaseDoesNotExist");
 
-            using (var db = new LocalRepairDatabase(m_options.Dbpath))
+            using (var db = new LocalRepairDatabase(m_options.Dbpath, m_options.SqlitePageCache))
             using (var tr = new ReusableTransaction(db))
             {
                 var sets = db.GetFilesetsWithMissingFiles(null).ToList();
@@ -669,7 +669,7 @@ namespace Duplicati.Library.Main.Operation
 
             m_result.OperationProgressUpdater.UpdateProgress(0);
 
-            using (var db = new LocalRepairDatabase(m_options.Dbpath))
+            using (var db = new LocalRepairDatabase(m_options.Dbpath, m_options.SqlitePageCache))
             {
                 Utility.UpdateOptionsFromDb(db, m_options);
 

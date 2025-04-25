@@ -30,8 +30,8 @@ namespace Duplicati.Library.Main.Database
 {
     internal class LocalTestDatabase : LocalDatabase
     {
-        public LocalTestDatabase(string path)
-            : base(path, "Test", true)
+        public LocalTestDatabase(string path, long pagecachesize)
+            : base(path, "Test", true, pagecachesize)
         {
         }
 

@@ -156,7 +156,7 @@ namespace Duplicati.UnitTest
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
                 TestUtils.AssertResults(c.Backup([DATAFOLDER]));
 
-            using (var db = SQLiteLoader.LoadConnection(DBFILE))
+            using (var db = SQLiteLoader.LoadConnection(DBFILE, 0))
             using (var cmd = db.CreateCommand())
             {
                 var deletedBlocks = cmd.ExecuteScalarInt64(@"SELECT COUNT(*) FROM ""DeletedBlock""");
@@ -172,14 +172,14 @@ namespace Duplicati.UnitTest
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
                 TestUtils.AssertResults(c.Backup([DATAFOLDER]));
 
-            using (var db = SQLiteLoader.LoadConnection(DBFILE))
+            using (var db = SQLiteLoader.LoadConnection(DBFILE, 0))
             using (var cmd = db.CreateCommand())
             {
                 var deletedBlocks = cmd.ExecuteScalarInt64(@"SELECT COUNT(*) FROM ""DeletedBlock""");
                 Assert.That(deletedBlocks, Is.GreaterThan(0), "DeletedBlock table is empty");
             }
 
-            using (var db = SQLiteLoader.LoadConnection(DBFILE))
+            using (var db = SQLiteLoader.LoadConnection(DBFILE, 0))
             using (var cmd = db.CreateCommand())
             {
                 var deletedBlocks = cmd.ExecuteScalarInt64(@"SELECT COUNT(*) FROM ""DeletedBlock""");
@@ -193,7 +193,7 @@ namespace Duplicati.UnitTest
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
                 TestUtils.AssertResults(c.Backup([DATAFOLDER]));
 
-            using (var db = SQLiteLoader.LoadConnection(DBFILE))
+            using (var db = SQLiteLoader.LoadConnection(DBFILE, 0))
             using (var cmd = db.CreateCommand())
             {
                 var alldeletedBlocks = cmd.ExecuteScalarInt64(@"SELECT COUNT(*) FROM ""DeletedBlock""");
