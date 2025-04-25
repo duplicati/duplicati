@@ -155,15 +155,9 @@ namespace Duplicati.Library.Backend
 
         #region IBackendInterface Members
 
-        public string DisplayName
-        {
-            get { return Strings.FileBackend.DisplayName; }
-        }
+        public string DisplayName => Strings.FileBackend.DisplayName;
 
-        public string ProtocolKey
-        {
-            get { return "file"; }
-        }
+        public string ProtocolKey => "file";
 
         /// <inheritdoc />
         public async IAsyncEnumerable<IFileEntry> ListAsync([EnumeratorCancellation] CancellationToken cancelToken)
@@ -185,63 +179,107 @@ namespace Duplicati.Library.Backend
         private static Random random = new Random();
         public async Task Put(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
         {
-            using(System.IO.FileStream writestream = systemIO.FileCreate(GetRemoteName(remotename)))
+            try
             {
-                if (random.NextDouble() > 0.6666)
-                    throw new Exception("Random upload failure");
-                await Utility.Utility.CopyStreamAsync(stream, writestream, cancelToken).ConfigureAwait(false);
+                using(System.IO.FileStream writestream = systemIO.FileCreate(GetRemoteName(remotename)))
+                {
+                    if (random.NextDouble() > 0.6666)
+                        throw new Exception("Random upload failure");
+                    await Utility.Utility.CopyStreamAsync(stream, writestream, cancelToken).ConfigureAwait(false);
+                }
             }
+            catch (Exception ex)
+            {
+                MapException(ex);
+                throw;
+            }
+
         }
 #else
         public async Task PutAsync(string targetFilename, Stream sourceStream, CancellationToken cancelToken)
         {
-            string targetFilePath = GetRemoteName(targetFilename);
-            long copiedBytes = 0;
-            using (var targetStream = systemIO.FileCreate(targetFilePath))
-            using (var timeoutStream = targetStream.ObserveWriteTimeout(m_timeouts.ReadWriteTimeout))
-                copiedBytes = await Utility.Utility.CopyStreamAsync(sourceStream, timeoutStream, true, cancelToken).ConfigureAwait(false);
+            try
+            {
+                string targetFilePath = GetRemoteName(targetFilename);
+                long copiedBytes = 0;
+                using (var targetStream = systemIO.FileCreate(targetFilePath))
+                using (var timeoutStream = targetStream.ObserveWriteTimeout(m_timeouts.ReadWriteTimeout))
+                    copiedBytes = await Utility.Utility.CopyStreamAsync(sourceStream, timeoutStream, true, cancelToken).ConfigureAwait(false);
 
-            VerifyMatchingSize(targetFilePath, sourceStream, copiedBytes);
+                VerifyMatchingSize(targetFilePath, sourceStream, copiedBytes);
+            }
+            catch (Exception ex)
+            {
+                MapException(ex);
+                throw;
+            }
+
         }
 #endif
 
         public async Task GetAsync(string remotename, Stream stream, CancellationToken cancelToken)
         {
-            // FileOpenRead has flags System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.Read
-            using (var readstream = systemIO.FileOpenRead(GetRemoteName(remotename)))
-            using (var timeoutStream = readstream.ObserveReadTimeout(m_timeouts.ReadWriteTimeout))
-                await Utility.Utility.CopyStreamAsync(timeoutStream, stream, true, cancelToken).ConfigureAwait(false);
+            try
+            {
+                // FileOpenRead has flags System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.Read
+                using (var readstream = systemIO.FileOpenRead(GetRemoteName(remotename)))
+                using (var timeoutStream = readstream.ObserveReadTimeout(m_timeouts.ReadWriteTimeout))
+                    await Utility.Utility.CopyStreamAsync(timeoutStream, stream, true, cancelToken).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                MapException(ex);
+                throw;
+            }
+
         }
 
         public Task PutAsync(string targetFilename, string sourceFilePath, CancellationToken cancelToken)
         {
-            string targetFilePath = GetRemoteName(targetFilename);
-            if (m_moveFile)
+            try
             {
-                if (systemIO.FileExists(targetFilePath))
-                    systemIO.FileDelete(targetFilePath);
+                string targetFilePath = GetRemoteName(targetFilename);
+                if (m_moveFile)
+                {
+                    if (systemIO.FileExists(targetFilePath))
+                        systemIO.FileDelete(targetFilePath);
 
-                var sourceFileInfo = new FileInfo(sourceFilePath);
-                var sourceFileLength = sourceFileInfo.Exists ? (long?)sourceFileInfo.Length : null;
+                    var sourceFileInfo = new FileInfo(sourceFilePath);
+                    var sourceFileLength = sourceFileInfo.Exists ? (long?)sourceFileInfo.Length : null;
 
-                systemIO.FileMove(sourceFilePath, targetFilePath);
-                if (m_verifyDestinationLength)
-                    VerifyMatchingSize(targetFilePath, null, sourceFileLength);
+                    systemIO.FileMove(sourceFilePath, targetFilePath);
+                    if (m_verifyDestinationLength)
+                        VerifyMatchingSize(targetFilePath, null, sourceFileLength);
+                }
+                else
+                {
+                    systemIO.FileCopy(sourceFilePath, targetFilePath, true);
+                    if (m_verifyDestinationLength)
+                        VerifyMatchingSize(targetFilePath, sourceFilePath);
+                }
+
+                return Task.CompletedTask;
             }
-            else
+            catch (Exception ex)
             {
-                systemIO.FileCopy(sourceFilePath, targetFilePath, true);
-                if (m_verifyDestinationLength)
-                    VerifyMatchingSize(targetFilePath, sourceFilePath);
+                MapException(ex);
+                throw;
             }
 
-            return Task.CompletedTask;
         }
 
         public Task GetAsync(string remotename, string filename, CancellationToken cancelToken)
         {
-            systemIO.FileCopy(GetRemoteName(remotename), filename, true);
-            return Task.CompletedTask;
+            try
+            {
+                systemIO.FileCopy(GetRemoteName(remotename), filename, true);
+                return Task.CompletedTask;
+            }
+            catch (Exception ex)
+            {
+                MapException(ex);
+                throw;
+            }
         }
 
         public async Task DeleteAsync(string remotename, CancellationToken cancelToken)
@@ -274,13 +312,7 @@ namespace Duplicati.Library.Backend
             }
         }
 
-        public string Description
-        {
-            get
-            {
-                return Strings.FileBackend.Description;
-            }
-        }
+        public string Description => Strings.FileBackend.Description;
 
         public Task TestAsync(CancellationToken cancelToken)
             => this.TestListAsync(cancelToken);
@@ -306,6 +338,14 @@ namespace Duplicati.Library.Backend
         }
 
         #endregion
+
+        private static void MapException(Exception ex)
+        {
+            if (ex is DirectoryNotFoundException)
+                throw new FolderMissingException(Strings.FileBackend.FolderMissingError(ex.Message), ex);
+            if (ex is FileNotFoundException)
+                throw new FileMissingException(Strings.FileBackend.FileNotFoundError(ex.Message), ex);
+        }
 
         private DriveInfo? GetDrive()
         {

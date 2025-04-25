@@ -52,5 +52,9 @@ namespace Duplicati.Library.Interface
         /// The size of the file or folder
         /// </summary>
         long Size { get; }
+        /// <summary>
+        /// True if the file or folder is archived (not readable), false otherwise
+        /// </summary>
+        bool IsArchived { get; }
     }
 }

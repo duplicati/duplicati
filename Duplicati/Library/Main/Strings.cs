@@ -347,6 +347,8 @@ namespace Duplicati.Library.Main.Strings
         public static string InternalProfilingLong { get { return LC.L("Use this option to enable internal profiling. Profiling is used to measure the performance of the internal code. The profiling data is written to the log file and can be used to identify performance bottlenecks."); } }
         public static string SqlitePageCacheShort { get { return LC.L("Size of the SQLite page cache"); } }
         public static string SqlitePageCacheLong(long minimumvalue) { return LC.L("Use this option to set the size of the SQLite page cache. The page cache is used to store the pages of the database in memory. Increasing the page cache size may improve performance, but will also increase memory usage. If the supplied value is the same or less than {0} bytes, the default SQLite cache value is used.", minimumvalue); }
+        public static string IgnoreUpdateIfVersionExistsShort { get { return LC.L("Ignore update if version exists"); } }
+        public static string IgnoreUpdateIfVersionExistsLong { get { return LC.L("Use this option to ignore the update if the version already exists. This can be used to avoid errors if asking to update the database with a version that already exists."); } }
     }
 
     internal static class Common

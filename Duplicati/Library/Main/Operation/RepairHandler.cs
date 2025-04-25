@@ -141,7 +141,7 @@ namespace Duplicati.Library.Main.Operation
 
                 // If the last backup failed, guard the incomplete fileset, so we can create a synthetic filelist
                 var lastTempFilelist = db.GetLastIncompleteFilesetVolume(null);
-                var tp = await FilelistProcessor.RemoteListAnalysis(backendManager, m_options, db, m_result.BackendWriter, [lastTempFilelist.Name], null, FilelistProcessor.VerifyMode.VerifyAndCleanForced).ConfigureAwait(false);
+                var tp = await FilelistProcessor.RemoteListAnalysis(backendManager, m_options, db, null, m_result.BackendWriter, [lastTempFilelist.Name], null, FilelistProcessor.VerifyMode.VerifyAndCleanForced).ConfigureAwait(false);
 
                 var buffer = new byte[m_options.Blocksize];
                 var hashsize = HashFactory.HashSizeBytes(m_options.BlockHashAlgorithm);

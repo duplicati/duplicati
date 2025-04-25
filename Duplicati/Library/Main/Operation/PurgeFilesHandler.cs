@@ -90,9 +90,9 @@ namespace Duplicati.Library.Main.Operation
                 db.VerifyConsistency(m_options.Blocksize, m_options.BlockhashSize, false, null);
 
                 if (m_options.NoBackendverification)
-                    await FilelistProcessor.VerifyLocalList(backendManager, db, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
+                    await FilelistProcessor.VerifyLocalList(backendManager, db, null, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
                 else
-                    await FilelistProcessor.VerifyRemoteList(backendManager, m_options, db, m_result.BackendWriter, null, null, logErrors: true, verifyMode: FilelistProcessor.VerifyMode.VerifyStrict).ConfigureAwait(false);
+                    await FilelistProcessor.VerifyRemoteList(backendManager, m_options, db, null, m_result.BackendWriter, null, null, logErrors: true, verifyMode: FilelistProcessor.VerifyMode.VerifyStrict).ConfigureAwait(false);
             }
 
             var filesets = db.FilesetTimes.OrderByDescending(x => x.Value).ToArray();
