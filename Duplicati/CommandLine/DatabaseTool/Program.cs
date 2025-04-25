@@ -43,6 +43,7 @@ public static class Program
         var rootCmd = new RootCommand("Database CLI tool for Duplicati")
             {
                 Commands.Downgrade.Create(),
+                Commands.Upgrade.Create(),
                 Commands.List.Create(),
                 Commands.Execute.Create(),
             };

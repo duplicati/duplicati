@@ -22,6 +22,7 @@
   <ItemGroup>
     <ProjectReference Include="../../Library/DynamicLoader/Duplicati.Library.DynamicLoader.csproj" />
     <ProjectReference Include="../../Library/Main/Duplicati.Library.Main.csproj" />
+    <ProjectReference Include="../../Library/RestAPI/Duplicati.Library.RestAPI.csproj" />
     <ProjectReference Include="../../Library/SourceProvider/Builtin/Duplicati.Library.SourceProvider.Builtin.csproj" />
     <ProjectReference Include="../../Library/SourceProviders/Duplicati.Library.SourceProviders.csproj" />
     <ProjectReference Include="../../Library/Utility/Duplicati.Library.Utility.csproj" />

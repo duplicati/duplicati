@@ -83,6 +83,22 @@ public static class Helper
     }
 
     /// <summary>
+    /// Examines the database and returns the version and whether it is a server database
+    /// </summary>
+    /// <param name="db">The path to the database</param>
+    /// <returns>A tuple containing the version and whether it is a server database</returns>
+    public static (int Version, bool isserver) ExamineDatabase(string db)
+    {
+        using (var con = SQLiteLoader.LoadConnection(db))
+        {
+            using var cmd = con.CreateCommand();
+            var isserverdb = cmd.ExecuteScalarInt64("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='Backup' OR name='Schedule'") == 2;
+            var version = (int)cmd.ExecuteScalarInt64("SELECT MAX(Version) FROM Version");
+            return (version, isserverdb);
+        }
+    }
+
+    /// <summary>
     /// Prints the data reader to the console
     /// </summary>
     /// <param name="reader">The data reader to print</param>

@@ -92,7 +92,7 @@ namespace Duplicati.Library.Main.Database
 
             try
             {
-                SQLiteHelper.DatabaseUpgrader.UpgradeDatabase(c, path, typeof(LocalDatabase));
+                SQLiteHelper.DatabaseUpgrader.UpgradeDatabase(c, path, typeof(DatabaseSchemaMarker));
             }
             catch
             {

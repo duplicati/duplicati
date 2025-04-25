@@ -143,7 +143,7 @@ namespace Duplicati.UnitTest
 
             var con = SQLiteLoader.LoadConnection();
             SQLiteLoader.OpenDatabase(con, dbpath, null);
-            DatabaseUpgrader.UpgradeDatabase(con, dbpath, typeof(Duplicati.Library.RestAPI.Database.DatabaseConnectionSchemaMarker));
+            DatabaseUpgrader.UpgradeDatabase(con, dbpath, typeof(Library.RestAPI.Database.DatabaseSchemaMarker));
 
             using (var connection = new Connection(con, true, null))
             {
