@@ -468,7 +468,7 @@ namespace Duplicati.Library.Main
             new CommandLineArgument("disable-on-battery", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisableOnBatteryShort, Strings.Options.DisableOnBatteryLong, "false"),
 
             new CommandLineArgument("exclude-empty-folders", CommandLineArgument.ArgumentType.Boolean, Strings.Options.ExcludeemptyfoldersShort, Strings.Options.ExcludeemptyfoldersLong, "false"),
-            new CommandLineArgument("ignore-filenames", CommandLineArgument.ArgumentType.Path, Strings.Options.IgnorefilenamesShort, Strings.Options.IgnorefilenamesLong),
+            new CommandLineArgument("ignore-filenames", CommandLineArgument.ArgumentType.Path, Strings.Options.IgnorefilenamesShort, Strings.Options.IgnorefilenamesLong, "CACHEDIR.TAG"),
             new CommandLineArgument("restore-symlink-metadata", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RestoresymlinkmetadataShort, Strings.Options.RestoresymlinkmetadataLong, "false"),
             new CommandLineArgument("rebuild-missing-dblock-files", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RebuildmissingdblockfilesShort, Strings.Options.RebuildmissingdblockfilesLong, "false"),
 
@@ -1600,7 +1600,8 @@ namespace Duplicati.Library.Main
             get
             {
                 string v;
-                m_options.TryGetValue("ignore-filenames", out v);
+                if (!m_options.TryGetValue("ignore-filenames", out v))
+                    v = "CACHEDIR.TAG";
                 if (string.IsNullOrEmpty(v))
                     return null;
 
