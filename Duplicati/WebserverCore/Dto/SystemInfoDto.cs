@@ -210,6 +210,16 @@ public sealed record SystemInfoDto
     public required IEnumerable<TimeZoneDto> TimeZones { get; init; }
 
     /// <summary>
+    /// The API extensions available on the system
+    /// </summary>
+    public required IEnumerable<string> APIExtensions { get; init; }
+
+    /// <summary>
+    /// The API scopes available on the system
+    /// </summary>
+    public required IEnumerable<string> APIScopes { get; init; }
+
+    /// <summary>
     /// Represents a timezone.
     /// </summary>
     public class TimeZoneDto

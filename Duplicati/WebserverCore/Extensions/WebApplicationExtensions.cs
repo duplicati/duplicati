@@ -28,7 +28,8 @@ public static class WebApplicationExtensions
 {
     public static WebApplication AddEndpoints(this WebApplication application, bool useCors)
     {
-        return AddV1(application, useCors);
+        AddV1(application, useCors);
+        return AddV2(application, useCors);
     }
 
     private static WebApplication AddV1(WebApplication application, bool useCors)
@@ -52,6 +53,33 @@ public static class WebApplicationExtensions
         foreach (var endpoint in endpoints)
         {
             var methodMap = endpoint.GetMethod(nameof(IEndpointV1.Map), BindingFlags.Static | BindingFlags.Public);
+            methodMap!.Invoke(null, [group]);
+        }
+
+        return application;
+    }
+
+    private static WebApplication AddV2(WebApplication application, bool useCors)
+    {
+        var mapperInterfaceType = typeof(IEndpointV2);
+        var endpoints =
+            typeof(WebApplicationExtensions).Assembly.DefinedTypes
+                .Where(t => t.ImplementedInterfaces.Contains(mapperInterfaceType))
+                .ToArray();
+
+        var group = application.MapGroup("/api/v2")
+            .AddEndpointFilter<LanguageFilter>()
+            .AddEndpointFilter<HostnameFilter>();
+
+        if (!string.IsNullOrWhiteSpace(PreSharedKeyFilter.PreSharedKey))
+            group = group.AddEndpointFilter<PreSharedKeyFilter>();
+
+        if (useCors)
+            group.RequireCors(DuplicatiWebserver.CorsPolicyName);
+
+        foreach (var endpoint in endpoints)
+        {
+            var methodMap = endpoint.GetMethod(nameof(IEndpointV2.Map), BindingFlags.Static | BindingFlags.Public);
             methodMap!.Invoke(null, [group]);
         }
 

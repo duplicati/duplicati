@@ -35,6 +35,15 @@ namespace Duplicati.WebserverCore.Services;
 public class SystemInfoProvider : ISystemInfoProvider
 {
     /// <summary>
+    /// The API extensions that are available
+    /// </summary>
+    private static readonly string[] APIExtensions = ["v2:backup:list-filesets", "v2:backup:list-folder", "v2:backup:list-versions", "v2:backup:search"];
+    /// <summary>
+    /// The API scopes that are available
+    /// </summary>
+    private static readonly string[] APIScopes = ["*"];
+
+    /// <summary>
     /// System information that does not change during runtime.
     /// </summary>
     private sealed record StaticSystemInformation
@@ -324,6 +333,8 @@ public class SystemInfoProvider : ISystemInfoProvider
             UsingAlternateUpdateURLs = systeminfo.UsingAlternateUpdateURLs,
             LogLevels = systeminfo.LogLevels,
             SpecialFolders = systeminfo.SpecialFolders,
+            APIExtensions = APIExtensions,
+            APIScopes = APIScopes,
             BrowserLocale = new SystemInfoDto.LocaleDto()
             {
                 Code = browserlanguage.Name,
