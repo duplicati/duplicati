@@ -772,6 +772,8 @@ ORDER BY
             using var cmd = m_connection.CreateCommand();
 
             var countWhere = "WHERE fl.\"Path\" IN (@Paths)";
+            if (filesetIds != null && filesetIds.Length > 0)
+                countWhere += " AND fe.\"FilesetID\" IN (@FilesetIds)";
 
             cmd.SetCommandAndParameters(@"SELECT ""ID"" FROM ""Fileset"" ORDER BY ""Timestamp"" DESC");
 
@@ -840,8 +842,6 @@ ORDER BY
                     FROM ""FilesetEntry"" fe
                     INNER JOIN ""FileLookup"" fl ON fe.""FileID"" = fl.""ID""
                 ";
-                if (filesetIds != null && filesetIds.Length > 0)
-                    countWhere += " AND fe.\"FilesetID\" IN (@FilesetIds)";
 
                 cmd.SetCommandAndParameters(countSql + "\n" + countWhere)
                    .ExpandInClauseParameter("@Paths", paths);
