@@ -181,6 +181,52 @@ namespace Duplicati.Library.Main
             );
         }
 
+        /// <summary>
+        /// Lists all filesets in the remote store or local database
+        /// </summary>
+        /// <returns>The fileset results</returns>
+        public IListFilesetResults ListFilesets()
+            => RunAction(new ListFilesetResults(), (result, backendManager) =>
+                Operation.ListFilesetsHandler.RunAsync(m_options, result, backendManager)
+            );
+
+        /// <summary>
+        /// List the contents of one or more folders in a backup fileset
+        /// </summary>
+        /// <param name="folders">The folders to list</param>
+        /// <param name="offset">The offset to start listing from</param>
+        /// <param name="limit">The maximum number of entries to list</param>
+        /// <returns>>The folder contents</returns>
+        public IListFolderResults ListFolder(string[] folders, long offset, long limit)
+            => RunAction(new ListFolderResults(), (result, _) =>
+                Operation.ListFolderHandler.RunAsync(m_options, result, folders, offset, limit)
+            );
+
+        /// <summary>
+        /// Lists all versions of a file or folder in the backup fileset
+        /// </summary>
+        /// <param name="files">The paths to list versions for</param>
+        /// <param name="offset">The offset to start listing from</param>
+        /// <param name="limit">The maximum number of results to return</param>
+        /// <returns>>The file versions</returns>
+        public IListFileVersionsResults ListFileVersions(string[] files, long offset, long limit)
+            => RunAction(new ListFileVersionsResults(), (result, backendManager) =>
+                Operation.ListFileVersionsHandler.RunAsync(m_options, result, files, offset, limit)
+            );
+
+        /// <summary>
+        /// Searches for entries in the backup fileset
+        /// </summary>
+        /// <param name="pathprefixes">The paths to search in</param>
+        /// <param name="filter">The filter to use for searching</param>
+        /// <param name="offset">The offset to start searching from</param>
+        /// <param name="limit">The maximum number of results to return</param>
+        /// <returns>>The search results</returns>
+        public ISearchFilesResults SearchEntries(string[] pathprefixes, IFilter filter, long offset, long limit)
+            => RunAction(new SearchFilesResults(), ref filter, (result, backendManager) =>
+                Operation.SearchEntriesHandler.RunAsync(m_options, result, pathprefixes, filter, offset, limit)
+            );
+
         public IListResults List()
         {
             return List(null, null);

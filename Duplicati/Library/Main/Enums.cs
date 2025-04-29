@@ -67,6 +67,10 @@ namespace Duplicati.Library.Main
         PurgeFiles,
         SendMail,
         Vacuum,
+        ListFilesets,
+        ListFolder,
+        ListFileVersions,
+        SearchFiles,
     }
 
     /// <summary>

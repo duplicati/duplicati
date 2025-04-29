@@ -1,3 +1,4 @@
+
 # This file is the help for the Duplicati Command Line Client. It shows what
 # commands the CLI understands and what the outputs are. Sometimes we used
 # placeholders for options. In that case descriptions are taken directly from
@@ -12,6 +13,7 @@
 See %CLI_EXE% help <topic> for more information.
   General: example, changelog
   Commands: backup, find, restore, delete, compact, test, compare, purge, vacuum
+  Searching: list-filesets, list-folder-contents, list-file-versions, search-files
   Repair: repair, affected, list-broken-files, purge-broken-files
   Debug: debug, logging, create-report, test-filters, system-info, send-mail
   Targets: %BACKENDS%
@@ -112,6 +114,70 @@ Usage: %CLI_EXE% find <storage-URL> ["<filename>"] [<options>]
     Removes matching files from the list of files in a backup. This is applied before the search is executed.
   --all-versions=<boolean>
     Searches in all backup sets, instead of just searching the latest
+
+# =============================================================================
+> duplicati.commandline.exe help list-filesets
+
+Usage: %CLI_EXE% list-filesets <storage-URL> [<options>]
+
+  Lists all filesets found and some basic metadata 
+
+  --no-local-db=<boolean>
+    Ignores a local database if one exists, and lists the remote folder contents
+
+
+# =============================================================================
+> duplicati.commandline.exe help list-folder-content
+> duplicati.commandline.exe help list-folder-contents
+
+Usage: %CLI_EXE% list-folder-content <storage-URL> ["folder"] [<options>]
+
+  Lists all entries in the given folders for the chosen fileset.
+  Only a single fileset can be selected.
+  If no fileset is specified, the latest fileset is picked.
+  If no folder is given, the root folders are returned.
+
+  --time=<time>
+    Choose the fileset that matches the timestamp given
+  --version=<int>
+    Choose the fileset that matches the version given
+
+# =============================================================================
+> duplicati.commandline.exe help list-file-versions
+
+Usage: %CLI_EXE% list-file-versions <storage-URL> ["path"] [<options>]
+
+  List all versions of the given paths in the versions.
+  Paths are case-sensitive.
+
+  --time=<time>
+    Looks at all versions older than the given time.
+  --version=<int>
+    Looks at only the versions given.
+  --all-versions=<boolean>
+    Searches in all backup sets (this is the default)
+
+# =============================================================================
+> duplicati.commandline.exe help search-files
+> duplicati.commandline.exe help search-entries
+> duplicati.commandline.exe help search
+
+Usage: %CLI_EXE% search <storage-URL> ["folder"] [<options>]
+
+  Finds paths that matches the expression.
+  If folders are supplied, only those folders and subfolders are searched.
+  Folder paths are case-sensitive, filters are case-insensitive.
+
+  --include=<string>
+    Supplies a filter that the items must match.
+  --exclude=<string>
+    Supplies a filter that will exclude items if they match.
+  --time=<time>
+    Looks at all versions older than the given time. Absolute and relative times can be specified.
+  --version=<int>
+    Looks at only the versions given. If no version is specified the latest backup (version=0) will be used.
+  --all-versions=<boolean>
+    Searches in all backup sets (this is the default)
 
 
 # =============================================================================

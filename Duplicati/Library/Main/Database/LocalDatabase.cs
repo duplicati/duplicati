@@ -613,12 +613,12 @@ AND Fileset.ID NOT IN
             }
         }
 
-        public IEnumerable<long> GetFilesetIDs(DateTime restoretime, long[] versions)
+        public IEnumerable<long> GetFilesetIDs(DateTime restoretime, long[] versions, bool singleTimeMatch = false)
         {
             if (restoretime.Kind == DateTimeKind.Unspecified)
                 throw new Exception("Invalid DateTime given, must be either local or UTC");
 
-            (var query, var values) = GetFilelistWhereClause(restoretime, versions);
+            (var query, var values) = GetFilelistWhereClause(restoretime, versions, singleTimeMatch: singleTimeMatch);
             var res = new List<long>();
             using (var cmd = m_connection.CreateCommand())
             {
