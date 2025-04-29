@@ -157,7 +157,7 @@ jobs:
         name: Check Filejump secrets
         shell: bash
         run: |
-          echo "Starting Filenjump secrets check..."
+          echo "Starting Filejump secrets check..."
           if [[ -n "${{ secrets.TESTCREDENTIAL_FILEJUMP_FOLDER }}" ]] && \
              [[ -n "${{ secrets.TESTCREDENTIAL_FILEJUMP_TOKEN }}" ]]; then
             echo "All Filejump secrets found"
