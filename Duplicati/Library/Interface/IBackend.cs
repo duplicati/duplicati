@@ -1,22 +1,24 @@
-#region Disclaimer / License
-// Copyright (C) 2015, The Duplicati Team
-// http://www.duplicati.com, info@duplicati.com
+// Copyright (C) 2025, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
 // 
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 2.1 of the License, or (at your option) any later version.
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
 // 
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
 // 
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-// 
-#endregion
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
+
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -34,49 +36,47 @@ namespace Duplicati.Library.Interface
     /// The other constructor is used to do the actual work.
     /// An instance is never reused.
     /// </summary>
-    public interface IBackend : IDisposable
+    public interface IBackend : IDynamicModule, IDisposable
     {
         /// <summary>
         /// The localized name to display for this backend
         /// </summary>
-        string DisplayName { get;}
+        string DisplayName { get; }
 
         /// <summary>
-        /// The protocol key, eg. ftp, http or ssh
+        /// The protocol key, e.g. ftp, http or ssh
         /// </summary>
         string ProtocolKey { get; }
 
         /// <summary>
         /// Enumerates a list of files found on the remote location
         /// </summary>
+        /// <param name="cancellationToken">Token to cancel the operation.</param>
         /// <returns>The list of files</returns>
-        IEnumerable<IFileEntry> List();
+        IAsyncEnumerable<IFileEntry> ListAsync(CancellationToken cancellationToken);
 
         /// <summary>
         /// Puts the content of the file to the url passed
         /// </summary>
         /// <param name="remotename">The remote filename, relative to the URL</param>
         /// <param name="filename">The local filename</param>
-        /// <param name="cancelToken">Token to cancel the operation.</param>
-        Task PutAsync(string remotename, string filename, CancellationToken cancelToken);
+        /// <param name="cancellationToken">Token to cancel the operation.</param>
+        Task PutAsync(string remotename, string filename, CancellationToken cancellationToken);
 
         /// <summary>
         /// Downloads a file with the remote data
         /// </summary>
         /// <param name="remotename">The remote filename, relative to the URL</param>
         /// <param name="filename">The local filename</param>
-        void Get(string remotename, string filename);
+        /// <param name="cancellationToken">Token to cancel the operation.</param>
+        Task GetAsync(string remotename, string filename, CancellationToken cancellationToken);
 
         /// <summary>
         /// Deletes the specified file
         /// </summary>
         /// <param name="remotename">The remote filename, relative to the URL</param>
-        void Delete(string remotename);
-
-        /// <summary>
-        /// Gets a list of supported commandline arguments
-        /// </summary>
-        IList<ICommandLineArgument> SupportedCommands { get; }
+        /// <param name="cancellationToken">Token to cancel the operation.</param>
+        Task DeleteAsync(string remotename, CancellationToken cancellationToken);
 
         /// <summary>
         /// A localized description of the backend, for display in the usage information
@@ -86,7 +86,9 @@ namespace Duplicati.Library.Interface
         /// <summary>
         /// The DNS names used to resolve the IP addresses for this backend
         /// </summary>
-        string[] DNSName { get; }
+        /// <param name="cancelToken">Token to cancel the operation.</param>
+        /// <returns>The DNS names</returns>
+        Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken);
 
         /// <summary>
         /// The purpose of this method is to test the connection to the remote backend.
@@ -94,7 +96,8 @@ namespace Duplicati.Library.Interface
         /// If the encountered problem is a missing target &quot;folder&quot;,
         /// this method should throw a <see cref="FolderMissingException"/>.
         /// </summary>
-        void Test();
+        /// <param name="cancellationToken">Token to cancel the operation.</param>
+        Task TestAsync(CancellationToken cancellationToken);
 
         /// <summary>
         /// The purpose of this method is to create the underlying &quot;folder&quot;.
@@ -104,6 +107,6 @@ namespace Duplicati.Library.Interface
         /// a <see cref="FolderMissingException"/> during <see cref="Test"/>, 
         /// and this method should throw a <see cref="MissingMethodException"/>.
         /// </summary>
-        void CreateFolder();
+        Task CreateFolderAsync(CancellationToken cancellationToken);
     }
 }

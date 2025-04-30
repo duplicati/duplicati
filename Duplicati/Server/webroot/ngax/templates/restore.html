@@ -9,41 +9,41 @@
         <div class="step step2 not-clickable">
             <span>2</span>
         </div>
-        <div class="step step3" ng-class="{active: restore_step == 0}" ng-click="trySetStep(0)">
+        <button class="step step3" ng-class="{active: restore_step == 0}" ng-click="trySetStep(0)" aria-labelledby="steps-legend__3">
             <span>3</span>
-        </div>
-        <div class="step step4" ng-class="{active: restore_step == 1}" ng-click="onClickNext()">
+        </button>
+        <button class="step step4" ng-class="{active: restore_step == 1}" ng-click="onClickNext()" aria-labelledby="steps-legend__4">
             <span>4</span>
-        </div>
+        </button>
     </div>
 
     <ol class="steps-legend" ng-show="IsBackupTemporary &amp;&amp; restore_step &lt; 2">
         <li class="step1 not-clickable" translate>Backup location</li>
         <li class="step2 not-clickable" translate>Encryption</li>
-        <li ng-class="{active: restore_step == 0}" class="step3" ng-click="trySetStep(0)" translate>Select files</li>
-        <li ng-class="{active: restore_step == 1}" class="step4" ng-click="onClickNext()" translate>Restore options</li>
+        <li id="steps-legend__3" ng-class="{active: restore_step == 0}" class="step3" ng-click="trySetStep(0)" translate>Select files</li>
+        <li id="steps-legend__4" ng-class="{active: restore_step == 1}" class="step4" ng-click="onClickNext()" translate>Restore options</li>
     </ol>
 
 
     <div class="steps" ng-hide="IsBackupTemporary || restore_step &gt; 1">
-        <div class="step step1" ng-class="{active: restore_step == 0}" ng-click="trySetStep(0)">
+        <button class="step step1" ng-class="{active: restore_step == 0}" ng-click="trySetStep(0)" aria-labelledby="steps-legend__1">
             <span>1</span>
-        </div>
-        <div class="step step2" ng-class="{active: restore_step == 1}" ng-click="onClickNext()">
+        </button>
+        <button class="step step2" ng-class="{active: restore_step == 1}" ng-click="onClickNext()" aria-labelledby="steps-legend__2">
             <span>2</span>
-        </div>
+        </button>
     </div>
 
     <ol class="steps-legend" ng-hide="IsBackupTemporary || restore_step &gt; 1">
-        <li ng-class="{active: restore_step == 0}" class="step1" ng-click="trySetStep(0)" translate>Select files</li>
-        <li ng-class="{active: restore_step == 1}" class="step2" ng-click="onClickNext()" translate>Restore options</li>
+        <li id="steps-legend__1" ng-class="{active: restore_step == 0}" class="step1" ng-click="trySetStep(0)" translate>Select files</li>
+        <li id="steps-legend__2" ng-class="{active: restore_step == 1}" class="step2" ng-click="onClickNext()" translate>Restore options</li>
     </ol>
 
     <form id="restore" class="styled">
 
         <div ng-show="restore_step == 0 &amp;&amp; connecting == false">
             <h1 ng-show="IsBackupTemporary" translate>Restore files</h1>
-            <h1 ng-hide="IsBackupTemporary" translate translate-params-backupname="Backup.Backup.Name">Restore files from {{backupname}}</h1>
+            <h1 ng-hide="IsBackupTemporary"><span translate>Restore files from:</span> {{Backup.Backup.Name}}</h1>
             <div class="input timestamp">
                 <label for="restoreversion" translate>Restore from</label>
 
@@ -56,7 +56,7 @@
                 <label for="searchfilter" translate>Search for files</label>
                 <input type="search" id="searchfilter" name="searchfilter" ng-model="SearchFilter" placeholder="{{'Type to highlight files' | translate}}" ng-on-enter-press="doSearch()" ng-on-escape-press="clearSearch()" />
                 <a href id="searchfiltersubmit" class="button" ng-click="doSearch()" ng-cancelsearch="clearSearch()" ng-enabled="!Searching">
-                    <span ng-show="Searching" translate>Busy ...</span>
+                    <span ng-show="Searching" translate>Busy …</span>
                     <span ng-hide="Searching" translate>Search</span>
                 </a>
             </div>
@@ -95,8 +95,8 @@
 
                 <div class="input" style="padding-bottom: 0px">
                     <a href ng-click="ShowHiddenFolders = !ShowHiddenFolders" style="float: right; margin-right: 10px;">
-                        <span ng-show="ShowHiddenFolders" translate>Hide hidden folders</span>
-                        <span ng-hide="ShowHiddenFolders" translate>Show hidden folders</span>
+                        <span ng-show="ShowHiddenFolders" translate>Hide hidden items</span>
+                        <span ng-hide="ShowHiddenFolders" translate>Show hidden items</span>
                     </a>
 
                     <a href ng-click="HideFolderBrowser = true" style="float: right; margin-right: 10px;" translate>Manually type path</a>
@@ -128,12 +128,7 @@
 
             <div  class="input password" ng-show="showInputPassphrase()">
                 <h2 translate>Passphrase</h2>
-                <p translate>
-                    Backup is encrypted but no passphrase is available.
-                    Type a passphrase below to use for restoring your files,
-                    or, in case of GPG encryption, leave blank to let gpg retrieve the passphrase by
-                    invoking your system's keychain.
-                </p>
+                <p translate>Backup is encrypted but no passphrase is available. Type a passphrase below to use for restoring your files, or, in case of GPG encryption, leave blank to let gpg retrieve the passphrase by invoking your system's keychain.</p>
                 <input autocomplete="new-password" type="password" name="restore_path" id="passphrase" ng-model="passphrase"
                 placeholder="{{'Type passphrase here.' | translate}}" />
             </div>
@@ -147,10 +142,6 @@
         <div ng-show="restore_step == 3 &amp;&amp; connecting == false">
             <h3>
                 <div class="hint-text" translate>Your files and folders have been restored successfully.</div>
-                <div ng-hide="SystemInfo.SuppressDonationMessages">
-                    <div id="restore-hint-donate" class="hint-text" translate translate-params-smallamount="'10€'" translate-params-largeamount="'100€'">Did we help save your files? If so, please consider supporting Duplicati with a donation. We suggest {{smallamount}} for private use and {{largeamount}} for commercial use.</div>
-                    <div id="restore-hint-donate" class="hint-text"><a href="https://www.duplicati.com/donate" target="blank" translate>We accept donations via different services, such as OpenCollective, PayPal, BountySource and various crypto currencies.</a></div>
-                </div>
             </h3>
             <div class="buttons">
                 <a href class="submit" ng-click="onClickComplete()" translate>OK</a>

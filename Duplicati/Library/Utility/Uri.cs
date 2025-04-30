@@ -1,20 +1,24 @@
-//  Copyright (C) 2015, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
 
-//  http://www.duplicati.com, info@duplicati.com
-//
-//  This library is free software; you can redistribute it and/or modify
-//  it under the terms of the GNU Lesser General Public License as
-//  published by the Free Software Foundation; either version 2.1 of the
-//  License, or (at your option) any later version.
-//
-//  This library is distributed in the hope that it will be useful, but
-//  WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-//  Lesser General Public License for more details.
-//
-//  You should have received a copy of the GNU Lesser General Public
-//  License along with this library; if not, write to the Free Software
-//  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 using System;
 using System.Collections.Specialized;
 using System.Linq;
@@ -22,6 +26,14 @@ using System.Text;
 
 namespace Duplicati.Library.Utility
 {
+    // TODO: This class should be deleted.
+
+    // It was introduced to make it simpler to give the backend url on the commandline,
+    // and because the Mono implementation of System.Uri had some issues.
+    // Since Mono is no longer used, the only problem is the commandline,
+    // but it does not make sense to support "invalid" urls as that increases the complexity
+    // of the code and potentially introduces ambiguity for the user.
+
     /// <summary>
     /// Represents a relaxed parsing of a URL.
     /// The goal is to cover as many types of url's as possible,
@@ -34,7 +46,7 @@ namespace Duplicati.Library.Utility
         /// <summary>
         /// A very lax version of a URL parser
         /// </summary>
-        private static readonly System.Text.RegularExpressions.Regex URL_PARSER = new System.Text.RegularExpressions.Regex(@"(?<scheme>[^:]+)://(((?<username>[^\:\?/]+)(\:(?<password>[^@\:\?/]*))?\@))?((?<hostname>[^/\?\:]+)(\:(?<port>\d+))?)?((?<path>[^\?]*))?(\?(?<query>.+))?");
+        private static readonly System.Text.RegularExpressions.Regex URL_PARSER = new System.Text.RegularExpressions.Regex(@"(?<scheme>[^:]+)://(((?<username>[^\:\?/]+)(\:(?<password>[^@\:\?/]*))?\@))?((?<hostname>(?:[^\[/\?\:][^/\?\:]*)|(?:\[[^\]]+\]))(\:(?<port>\d+))?)?((?<path>[^\?]*))?(\?(?<query>.+))?");
 
         /// <summary>
         /// The URL scheme, e.g. http
@@ -45,7 +57,8 @@ namespace Duplicati.Library.Utility
         /// </summary>
         public readonly string Host;
         /// <summary>
-        /// The server path, e.g. index.html
+        /// The server path, e.g. index.html.
+        /// Note that the path does NOT have a leading /.
         /// </summary>
         public readonly string Path;
         /// <summary>
@@ -172,8 +185,11 @@ namespace Duplicati.Library.Utility
             // file://c:\test support
             if (h.Length == 1 && p.StartsWith(":", StringComparison.Ordinal))
             {
-                h = h + p;
-                p = "";
+                p = h + p;
+                if (p.IndexOfAny(System.IO.Path.GetInvalidPathChars()) >= 0)
+                    throw new ArgumentException(Strings.Uri.UriParseError(url), nameof(url));
+                p = System.IO.Path.GetFullPath(p);
+                h = null;
             }
 
             this.Host = h;
@@ -261,7 +277,7 @@ namespace Duplicati.Library.Utility
 
             if (!string.IsNullOrEmpty(path))
             {
-                if (!string.IsNullOrEmpty(host) && !path.StartsWith("/", StringComparison.Ordinal))
+                if (!string.IsNullOrEmpty(host))
                     s += "/";
                 s += path;
             }
@@ -445,7 +461,7 @@ namespace Duplicati.Library.Utility
         /// <param name="query">The query to parse</param>
         public static NameValueCollection ParseQueryString(string query)
         {
-            return Library.Utility.Uri.ParseQueryString(query, true);
+            return ParseQueryString(query, true);
         }
 
         /// <summary>
@@ -525,7 +541,7 @@ namespace Duplicati.Library.Utility
         {
             var builder = new UriBuilder(url)
             {
-                Path = (new UrlPath(ExtractPath(url)).Append(path)).ToString(),
+                Path = new UrlPath(ExtractPath(url)).Append(path).ToString(),
                 Query = query != null ? BuildUriQuery(query) : null
             };
             return builder.Uri.AbsoluteUri;
@@ -539,7 +555,7 @@ namespace Duplicati.Library.Utility
         /// <param name="url">URL.</param>
         public static string ExtractPath(string url)
         {
-            return (new Uri(url)).Path;
+            return new Uri(url).Path;
         }
 
         /// <summary>

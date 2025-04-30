@@ -1,26 +1,27 @@
-#region Disclaimer / License
-// Copyright (C) 2015, The Duplicati Team
-// http://www.duplicati.com, info@duplicati.com
+// Copyright (C) 2025, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
 // 
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 2.1 of the License, or (at your option) any later version.
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
 // 
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
 // 
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-// 
-#endregion
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
+
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.IO;
+using System.Threading.Tasks;
 
 namespace Duplicati.Library.Utility
 {
@@ -31,79 +32,78 @@ namespace Duplicati.Library.Utility
     /// </summary>
     public class OverrideableStream : Stream
     {
-        protected System.IO.Stream m_basestream;
+        /// <summary>
+        /// The base stream that is wrapped
+        /// </summary>
+        protected Stream m_basestream;
 
+        /// <summary>
+        /// Creates a new <see cref="OverrideableStream"/> instance
+        /// </summary>
+        /// <param name="basestream">The stream to wrap</param>
+        /// <exception cref="ArgumentNullException"></exception>
         public OverrideableStream(Stream basestream)
         {
-            if (basestream == null)
-                throw new ArgumentNullException(nameof(basestream));
-            m_basestream = basestream;
+            m_basestream = basestream ?? throw new ArgumentNullException(nameof(basestream));
         }
 
-        public override bool CanRead
-        {
-            get { return m_basestream.CanRead; }
-        }
+        /// <inheritdoc/>
+        public override bool CanRead => m_basestream.CanRead;
 
-        public override bool CanSeek
-        {
-            get { return m_basestream.CanSeek; }
-        }
+        /// <inheritdoc/>
+        public override bool CanSeek => m_basestream.CanSeek;
 
-        public override bool CanWrite
-        {
-            get { return m_basestream.CanWrite; }
-        }
+        /// <inheritdoc/>
+        public override bool CanWrite => m_basestream.CanWrite;
 
-        public override void Flush()
-        {
-            m_basestream.Flush();
-        }
+        /// <inheritdoc/>
+        public override void Flush() => m_basestream.Flush();
 
-        public override long Length
-        {
-            get { return m_basestream.Length; }
-        }
+        /// <inheritdoc/>
+        public override long Length => m_basestream.Length;
 
+        /// <inheritdoc/>
         public override long Position
         {
-            get
-            {
-                return m_basestream.Position;
-            }
-            set
-            {
-                m_basestream.Position = value;
-            }
+            get => m_basestream.Position;
+            set => m_basestream.Position = value;
         }
 
+        /// <inheritdoc/>
         public override int Read(byte[] buffer, int offset, int count)
-        {
-            return m_basestream.Read(buffer, offset, count);
-        }
+            => m_basestream.Read(buffer, offset, count);
 
+        /// <inheritdoc/>
         public override long Seek(long offset, System.IO.SeekOrigin origin)
-        {
-            return m_basestream.Seek(offset, origin);
-        }
+            => m_basestream.Seek(offset, origin);
 
+        /// <inheritdoc/>
         public override void SetLength(long value)
-        {
-            m_basestream.SetLength(value);
-        }
+            => m_basestream.SetLength(value);
 
+        /// <inheritdoc/>
         public override void Write(byte[] buffer, int offset, int count)
-        {
-            m_basestream.Write(buffer, offset, count);
-        }
+            => m_basestream.Write(buffer, offset, count);
 
+        /// <inheritdoc/>
+        public override Task<int> ReadAsync(byte[] buffer, int offset, int count, System.Threading.CancellationToken cancellationToken)
+            => m_basestream.ReadAsync(buffer, offset, count, cancellationToken);
+
+        /// <inheritdoc/>
+        public override Task WriteAsync(byte[] buffer, int offset, int count, System.Threading.CancellationToken cancellationToken)
+            => m_basestream.WriteAsync(buffer, offset, count, cancellationToken);
+
+        /// <inheritdoc/>
+        public override Task FlushAsync(System.Threading.CancellationToken cancellationToken)
+            => m_basestream.FlushAsync(cancellationToken);
+
+        /// <inheritdoc/>
         protected override void Dispose(bool disposing)
         {
-            if (m_basestream != null)
-                m_basestream.Dispose();
+            m_basestream?.Dispose();
             m_basestream = null;
             base.Dispose(disposing);
         }
-        
+
     }
 }

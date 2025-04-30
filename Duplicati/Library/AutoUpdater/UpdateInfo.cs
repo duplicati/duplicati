@@ -1,66 +1,174 @@
-﻿//  Copyright (C) 2015, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
 
-//  http://www.duplicati.com, info@duplicati.com
-//
-//  This library is free software; you can redistribute it and/or modify
-//  it under the terms of the GNU Lesser General Public License as
-//  published by the Free Software Foundation; either version 2.1 of the
-//  License, or (at your option) any later version.
-//
-//  This library is distributed in the hope that it will be useful, but
-//  WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-//  Lesser General Public License for more details.
-//
-//  You should have received a copy of the GNU Lesser General Public
-//  License along with this library; if not, write to the Free Software
-//  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+#nullable enable
+
 using System;
+using System.Linq;
 
-namespace Duplicati.Library.AutoUpdater
+namespace Duplicati.Library.AutoUpdater;
+
+/// <summary>
+/// The different kinds of releases supported
+/// </summary>
+public enum ReleaseType
 {
     /// <summary>
-    /// The different kinds of releases supported
+    /// Placeholder for unknown release types
     /// </summary>
-    public enum ReleaseType
+    Unknown,
+    /// <summary>
+    /// A stable release
+    /// </summary>
+    Stable,
+    /// <summary>
+    /// A beta release
+    /// </summary>
+    Beta,
+    /// <summary>
+    /// An experimental release
+    /// </summary>
+    Experimental,
+    /// <summary>
+    /// A canary release
+    /// </summary>
+    Canary,
+    /// <summary>
+    /// A nightly release
+    /// </summary>
+    Nightly,
+    /// <summary>
+    /// A debug release
+    /// </summary>
+    Debug
+}
+
+/// <summary>
+/// The severity of an update
+/// </summary>
+public enum UpdateSeverity
+{
+    /// <summary>
+    /// No severity specified
+    /// </summary>
+    None,
+    /// <summary>
+    /// A low severity update
+    /// </summary>
+    Low,
+    /// <summary>
+    /// A normal severity update
+    /// </summary>
+    Normal,
+    /// <summary>
+    /// A high severity update
+    /// </summary>
+    High,
+    /// <summary>
+    /// A critical severity update
+    /// </summary>
+    Critical
+}
+
+/// <summary>
+/// Information about an update package
+/// </summary>
+/// <param name="MinimumCompatibleVersion">The minimum version required to read this update</param>
+/// <param name="IncompatibleUpdateUrl">The URL to present to the user for updating, if this client is too old</param>
+/// <param name="Displayname">Name of the update package</param>
+/// <param name="Version">Version of the update package</param>
+/// <param name="ReleaseTime">The timestamp when the update was released</param>
+/// <param name="ReleaseType">The release update type</param>
+/// <param name="UpdateSeverity">The severity of the update</param>
+/// <param name="ChangeInfo">The changelog text for this entry</param>
+/// <param name="PackageUpdaterVersion">The version of the package structure</param>
+/// <param name="Packages">List of installer packages</param>
+/// <param name="GenericUpdatePageUrl">Link to a generic download page</param>
+public record UpdateInfo(
+    int MinimumCompatibleVersion,
+    string? IncompatibleUpdateUrl,
+    string? Displayname,
+    string? Version,
+    DateTime ReleaseTime,
+    string? ReleaseType,
+    string? UpdateSeverity,
+    string? ChangeInfo,
+    int PackageUpdaterVersion,
+    PackageEntry[]? Packages,
+    string GenericUpdatePageUrl
+)
+{
+    /// <summary>
+    /// Finds a package that matches the <paramref name="packageTypeId"/>
+    /// </summary>
+    /// <param name="packageTypeId">The package type id; <c>null</c> uses the currently installed package type id</param>
+    /// <returns>The matching package or <c>null</c></returns>
+    public PackageEntry? FindPackage(string? packageTypeId = null)
     {
-        Unknown,
-        Stable,
-        Beta,
-        Experimental,
-        Canary,
-        Nightly,
-        Debug
+        if (MinimumCompatibleVersion > UpdaterManager.SUPPORTED_PACKAGE_UPDATER_VERSION)
+            return null;
+
+        packageTypeId ??= UpdaterManager.PackageTypeId;
+        if (string.IsNullOrWhiteSpace(packageTypeId) || Packages == null)
+            return null;
+
+        return Packages.FirstOrDefault(x => string.Equals(x.PackageTypeId, packageTypeId, StringComparison.OrdinalIgnoreCase));
     }
 
-    public enum UpdateSeverity
+    /// <summary>
+    /// Gets the generic update page url for the <paramref name="packageTypeId"/>
+    /// </summary>
+    /// <param name="packageTypeId">The package type id; <c>null</c> uses the currently installed package type id</param>
+    /// <returns>The generic update page url</returns>
+    public string GetGenericUpdatePageUrl(string? packageTypeId = null)
     {
-        None,
-        Low,
-        Normal,
-        High,
-        Critical
+        var baseurl = GenericUpdatePageUrl ?? string.Empty;
+        if (MinimumCompatibleVersion > UpdaterManager.SUPPORTED_PACKAGE_UPDATER_VERSION && !string.IsNullOrWhiteSpace(IncompatibleUpdateUrl))
+            baseurl = IncompatibleUpdateUrl;
+
+        packageTypeId ??= UpdaterManager.PackageTypeId;
+        if (string.IsNullOrWhiteSpace(packageTypeId))
+            return baseurl;
+
+        return baseurl + $"{(baseurl.IndexOf('?') > 0 ? "&" : "?")}packagetypeid={Uri.EscapeDataString(packageTypeId ?? "")}";
     }
 
-    public class UpdateInfo
+    /// <summary>
+    /// Gets the updated package urls for the <paramref name="packageTypeId"/>
+    /// </summary>
+    /// <param name="packageTypeId">The package type id; <c>null</c> uses the currently installed package type id</param>
+    /// <returns>The matching update urls</returns>
+    public string[] GetUpdateUrls(string? packageTypeId = null)
     {
-        public string Displayname;
-        public string Version;
-        public DateTime ReleaseTime;
-        public string ReleaseType;
-        public string UpdateSeverity;
-        public string ChangeInfo;
-        public long CompressedSize;
-        public long UncompressedSize;
-        public string SHA256;
-        public string MD5;
-        public string[] RemoteURLS;
-        public FileEntry[] Files;
+        packageTypeId ??= UpdaterManager.PackageTypeId;
+        var package = FindPackage(packageTypeId);
+        if (package != null)
+            return package.RemoteUrls;
 
-        public UpdateInfo Clone()
-        {
-            return (UpdateInfo)this.MemberwiseClone();
-        }
+        var generic = GetGenericUpdatePageUrl(packageTypeId);
+        if (!string.IsNullOrWhiteSpace(generic))
+            return [generic];
+
+        return [];
     }
 }
+
 

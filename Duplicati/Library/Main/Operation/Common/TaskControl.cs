@@ -1,20 +1,26 @@
-﻿//  Copyright (C) 2015, The Duplicati Team
-//  http://www.duplicati.com, info@duplicati.com
-//
-//  This library is free software; you can redistribute it and/or modify
-//  it under the terms of the GNU Lesser General Public License as
-//  published by the Free Software Foundation; either version 2.1 of the
-//  License, or (at your option) any later version.
-//
-//  This library is distributed in the hope that it will be useful, but
-//  WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-//  Lesser General Public License for more details.
-//
-//  You should have received a copy of the GNU Lesser General Public
-//  License along with this library; if not, write to the Free Software
-//  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+// Copyright (C) 2025, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
+
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Duplicati.Library.Main.Operation.Common
@@ -25,16 +31,35 @@ namespace Duplicati.Library.Main.Operation.Common
     public interface ITaskReader
     {
         /// <summary>
-        /// Processing tasks can regularly await this,
-        /// which will pause the task or stop it if required.
-        /// The return value is <c>true</c> if the program should continue and <c>false</c> if a stop is requested
+        /// A cancellation token that can be used to monitor progress abort
         /// </summary>
-        Task<bool> ProgressAsync { get; }
+        CancellationToken ProgressToken { get; }
+
         /// <summary>
-        /// Gets the transfer progress async control.
-        /// The transfer handler should await this instead of the <see cref="ProgressAsync"/> event.
+        /// Gets the progress state, waiting if the state is paused, throws if terminated
         /// </summary>
-        Task<bool> TransferProgressAsync { get; }
+        /// <returns><c>true</c> if the progress should continue, <c>false</c> if it should stop</returns>
+        Task<bool> ProgressRendevouz();
+
+        /// <summary>
+        /// A cancellation token that can be used to monitor transfer abort
+        /// </summary>
+        CancellationToken TransferToken { get; }
+
+        /// <summary>
+        /// Gets the transfer state, waiting if the state is paused, throws if terminated
+        /// </summary>
+        /// <returns><c>true</c> if the transfer should continue, <c>false</c> if it should stop</returns>
+        Task<bool> TransferRendevouz();
+
+#if DEBUG
+        /// <summary>
+        /// Callback for testing the task control
+        /// </summary>
+        /// <param name="path">The path being processed</param>
+        Action<string> TestMethodCallback { get; set; }
+#endif
+
     }
 
     /// <summary>
@@ -45,18 +70,17 @@ namespace Duplicati.Library.Main.Operation.Common
         /// <summary>
         /// Requests that progress should be paused
         /// </summary>
-        /// <param name="alsoTransfers">If set to <c>true</c> transfer are also suspended.</param>
-        void Pause(bool alsoTransfers = false);
+        /// <param name="alsoTransfer">If <c>true</c>, the transfer should also be paused</param>
+        void Pause(bool alsoTransfer);
         /// <summary>
         /// Resumes running a paused process
         /// </summary>
         void Resume();
         /// <summary>
-        /// Requests that the progress should be stopped in an orderly manner,
-        /// which allows current transfers to be completed.
+        /// Requests that the progress should be stopped in a controlled way.
+        /// This will finalize the current file and transfer.
         /// </summary>
-        /// <param name="alsoTransfers">If set to <c>true</c> active transfer are also stopped.</param>
-        void Stop(bool alsoTransfers = false);
+        void Stop();
         /// <summary>
         /// Terminates the progress without allowing a flush
         /// </summary>
@@ -64,12 +88,19 @@ namespace Duplicati.Library.Main.Operation.Common
     }
 
     /// <summary>
+    /// Interface for the task control
+    /// </summary>
+    public interface ITaskControl : ITaskReader, ITaskCommander
+    {
+    }
+
+    /// <summary>
     /// Implementation of the task control
     /// </summary>
-    public class TaskControl : ITaskReader, ITaskCommander, IDisposable
+    public class TaskControl : ITaskControl, IDisposable
     {
         /// <summary>
-        /// Internal state tracking to avoid invalid requests
+        /// State tracking to avoid invalid requests
         /// </summary>
         private enum State
         {
@@ -94,11 +125,22 @@ namespace Duplicati.Library.Main.Operation.Common
         /// <summary>
         /// Internal control state for progress event
         /// </summary>
-        private TaskCompletionSource<bool> m_progress;
+        private TaskCompletionSource<bool> m_progress = new();
+
         /// <summary>
-        /// Internal control state for the transfer event
+        /// Internal control state for transfer event
         /// </summary>
-        private TaskCompletionSource<bool> m_transfer;
+        private TaskCompletionSource<bool> m_transfer = new();
+
+        /// <summary>
+        /// The progress task completion source, cancelled if the operation is terminated
+        /// </summary>
+        private readonly CancellationTokenSource m_progressTcs = new();
+
+        /// <summary>
+        /// The transfer task completion source, cancelled if the operation is terminated
+        /// </summary>
+        private readonly CancellationTokenSource m_transferTcs = new();
 
         /// <summary>
         /// The control lock instance
@@ -109,31 +151,52 @@ namespace Duplicati.Library.Main.Operation.Common
         /// The current progress state
         /// </summary>
         private State m_progressstate = State.Paused;
+
         /// <summary>
         /// The current transfer state
         /// </summary>
         private State m_transferstate = State.Paused;
 
         /// <summary>
-        /// Processing tasks can regularly await this,
-        /// which will pause the task or stop it if required.
-        /// The return value is <c>true</c> if the program should continue and <c>false</c> if a stop is requested
+        /// A cancellation token that is cancelled if the operation is aborted
         /// </summary>
-        public Task<bool> ProgressAsync { get { return m_progress.Task; } }
+        public CancellationToken ProgressToken => m_progressTcs.Token;
+
         /// <summary>
-        /// Gets the transfer progress async control.
-        /// The transfer handler should await this instead of the <see cref="ProgressAsync"/> event.
+        /// A cancellation token that is cancelled if the transfers are aborted
         /// </summary>
-        public Task<bool> TransferProgressAsync { get { return m_transfer.Task; } }
+        public CancellationToken TransferToken => m_transferTcs.Token;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Duplicati.Library.Main.Operation.Common.TaskControl"/> class.
         /// </summary>
         public TaskControl()
         {
-            m_progress = new TaskCompletionSource<bool>();
-            m_transfer = new TaskCompletionSource<bool>();
             Resume();
+        }
+
+        /// <summary>
+        /// Gets the progress state, waiting if the state is paused
+        /// </summary>
+        /// <returns><c>true</c> if the progress should continue, <c>false</c> if it should stop</returns>
+        public async Task<bool> ProgressRendevouz()
+        {
+            var res = await m_progress.Task.ConfigureAwait(false);
+            lock (m_lock)
+                m_progressTcs.Token.ThrowIfCancellationRequested();
+            return res;
+        }
+
+        /// <summary>
+        /// Gets the transfer state, waiting if the state is paused
+        /// </summary>
+        /// <returns><c>true</c> if the transfer should continue, <c>false</c> if it should stop</returns>
+        public async Task<bool> TransferRendevouz()
+        {
+            var res = await m_transfer.Task.ConfigureAwait(false);
+            lock (m_lock)
+                m_transferTcs.Token.ThrowIfCancellationRequested();
+            return res;
         }
 
         /// <summary>
@@ -141,13 +204,14 @@ namespace Duplicati.Library.Main.Operation.Common
         /// </summary>
         public void Resume()
         {
-            lock(m_lock)
+            lock (m_lock)
             {
                 if (m_progressstate == State.Paused)
                 {
                     m_progress.SetResult(true);
                     m_progressstate = State.Active;
                 }
+
                 if (m_transferstate == State.Paused)
                 {
                     m_transfer.SetResult(true);
@@ -159,10 +223,9 @@ namespace Duplicati.Library.Main.Operation.Common
         /// <summary>
         /// Requests that progress should be paused
         /// </summary>
-        /// <param name="alsoTransfers">If set to <c>true</c> also transfers.</param>
-        public void Pause(bool alsoTransfers = false)
+        public void Pause(bool alsoTransfer)
         {
-            lock(m_lock)
+            lock (m_lock)
             {
                 if (m_progressstate == State.Active)
                 {
@@ -170,7 +233,7 @@ namespace Duplicati.Library.Main.Operation.Common
                     m_progressstate = State.Paused;
                 }
 
-                if (alsoTransfers && m_transferstate == State.Active)
+                if (alsoTransfer && m_transferstate == State.Active)
                 {
                     m_transfer = new TaskCompletionSource<bool>();
                     m_transferstate = State.Paused;
@@ -182,25 +245,27 @@ namespace Duplicati.Library.Main.Operation.Common
         /// Requests that the progress should be stopped in an orderly manner,
         /// which allows current transfers to be completed.
         /// </summary>
-        /// <param name="alsoTransfers">If set to <c>true</c> also transfers.</param>
-        public void Stop(bool alsoTransfers = false)
+        public void Stop()
         {
-            lock(m_lock)
+            lock (m_lock)
             {
                 if (m_progressstate == State.Active || m_progressstate == State.Paused)
                 {
                     if (m_progressstate != State.Paused)
                         m_progress = new TaskCompletionSource<bool>();
-                    
+
                     m_progress.SetResult(false);
                     m_progressstate = State.Stopped;
                 }
 
-                if (alsoTransfers && (m_transferstate == State.Active || m_transferstate == State.Paused))
+                // For symmetry, we also mark the transfer as stopped
+                // but the transfer logic does not stop transfers
+                // unless they are aborted
+                if (m_transferstate == State.Active || m_transferstate == State.Paused)
                 {
                     if (m_transferstate != State.Paused)
                         m_transfer = new TaskCompletionSource<bool>();
-                    
+
                     m_transfer.SetResult(false);
                     m_transferstate = State.Stopped;
                 }
@@ -212,40 +277,40 @@ namespace Duplicati.Library.Main.Operation.Common
         /// </summary>
         public void Terminate()
         {
-            lock(m_lock)
+            lock (m_lock)
             {
                 if (m_progressstate != State.Terminated)
                 {
                     if (m_progressstate != State.Paused)
                         m_progress = new TaskCompletionSource<bool>();
-                    
+
                     m_progress.SetCanceled();
                     m_progressstate = State.Terminated;
+                    m_progressTcs.Cancel();
                 }
+
                 if (m_transferstate != State.Terminated)
                 {
                     if (m_transferstate != State.Paused)
                         m_transfer = new TaskCompletionSource<bool>();
-                    
+
                     m_transfer.SetCanceled();
                     m_transferstate = State.Terminated;
+                    m_transferTcs.Cancel();
                 }
             }
         }
 
-        /// <summary>
-        /// Releases all resource used by the <see cref="Duplicati.Library.Main.Operation.Common.TaskControl"/> object.
-        /// </summary>
-        /// <remarks>Call <see cref="Dispose"/> when you are finished using the
-        /// <see cref="Duplicati.Library.Main.Operation.Common.TaskControl"/>. The <see cref="Dispose"/> method leaves
-        /// the <see cref="Duplicati.Library.Main.Operation.Common.TaskControl"/> in an unusable state. After calling
-        /// <see cref="Dispose"/>, you must release all references to the
-        /// <see cref="Duplicati.Library.Main.Operation.Common.TaskControl"/> so the garbage collector can reclaim the
-        /// memory that the <see cref="Duplicati.Library.Main.Operation.Common.TaskControl"/> was occupying.</remarks>
+        /// <inheritdoc />
         public void Dispose()
         {
             Terminate();
         }
+
+#if DEBUG
+        /// <inheritdoc />
+        public Action<string> TestMethodCallback { get; set; }
+#endif
     }
 }
 

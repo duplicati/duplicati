@@ -1,23 +1,29 @@
-﻿//  Copyright (C) 2015, The Duplicati Team
-//  http://www.duplicati.com, info@duplicati.com
-//
-//  This library is free software; you can redistribute it and/or modify
-//  it under the terms of the GNU Lesser General Public License as
-//  published by the Free Software Foundation; either version 2.1 of the
-//  License, or (at your option) any later version.
-//
-//  This library is distributed in the hope that it will be useful, but
-//  WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-//  Lesser General Public License for more details.
-//
-//  You should have received a copy of the GNU Lesser General Public
-//  License along with this library; if not, write to the Free Software
-//  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+// Copyright (C) 2025, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
+
 using Duplicati.Library.Interface;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -54,55 +60,51 @@ namespace Duplicati.UnitTest
             var uploadError = random.NextDouble() > 0.9;
 
             using (var f = new Library.Utility.ProgressReportingStream(stream, x => { if (uploadError && stream.Position > stream.Length / 2) throw new Exception("Random upload failure"); }))
-                await m_backend.PutAsync(remotename, f, cancelToken);
+                await m_backend.PutAsync(remotename, f, cancelToken).ConfigureAwait(false);
             ThrowErrorRandom();
         }
-        public void Get(string remotename, Stream stream)
+        public async Task GetAsync(string remotename, Stream stream, CancellationToken cancelToken)
         {
             ThrowErrorRandom();
-            m_backend.Get(remotename, stream);
+            await m_backend.GetAsync(remotename, stream, cancelToken).ConfigureAwait(false);
             ThrowErrorRandom();
         }
         #endregion
 
         #region IBackend implementation
-        public IEnumerable<IFileEntry> List()
+        public IAsyncEnumerable<IFileEntry> ListAsync(CancellationToken cancellationToken)
         {
-            return m_backend.List();
+            return m_backend.ListAsync(cancellationToken);
         }
         public async Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
         {
             ThrowErrorRandom();
-            await m_backend.PutAsync(remotename, filename, cancelToken);
+            await m_backend.PutAsync(remotename, filename, cancelToken).ConfigureAwait(false);
             ThrowErrorRandom();
         }
-        public void Get(string remotename, string filename)
+        public async Task GetAsync(string remotename, string filename, CancellationToken cancelToken)
         {
             ThrowErrorRandom();
-            m_backend.Get(remotename, filename);
+            await m_backend.GetAsync(remotename, filename, cancelToken).ConfigureAwait(false);
             ThrowErrorRandom();
         }
-        public void Delete(string remotename)
+        public async Task DeleteAsync(string remotename, CancellationToken cancelToken)
         {
             ThrowErrorRandom();
-            m_backend.Delete(remotename);
+            await m_backend.DeleteAsync(remotename, cancelToken).ConfigureAwait(false);
             ThrowErrorRandom();
         }
-        public void Test()
+        public Task TestAsync(CancellationToken cancelToken)
         {
-            m_backend.Test();
+            return m_backend.TestAsync(cancelToken);
         }
-        public void CreateFolder()
+        public Task CreateFolderAsync(CancellationToken cancelToken)
         {
-            m_backend.CreateFolder();
+            return m_backend.CreateFolderAsync(cancelToken);
         }
-        public string[] DNSName
-        {
-            get
-            {
-                return m_backend.DNSName;
-            }
-        }
+
+        public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => m_backend.GetDNSNamesAsync(cancelToken);
+
         public string DisplayName
         {
             get
@@ -122,7 +124,7 @@ namespace Duplicati.UnitTest
             get
             {
                 if (m_backend == null)
-                    try { return Duplicati.Library.DynamicLoader.BackendLoader.GetSupportedCommands(WrappedBackend + "://"); }
+                    try { return Duplicati.Library.DynamicLoader.BackendLoader.GetSupportedCommands(WrappedBackend + "://").ToList(); }
                     catch { }
 
                 return m_backend.SupportedCommands;

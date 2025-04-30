@@ -2,30 +2,30 @@
 
 <div class="add" ng-controller="EditBackupController">
     <div class="steps">
-        <div class="step step1" ng-class="{active: CurrentStep == 0}" ng-click="CurrentStep = 0">
+        <button class="step step1" ng-class="{active: CurrentStep == 0}" ng-click="CurrentStep = 0" aria-labelledby="steps-legend__1">
             <span>1</span>
-        </div>
-        <div class="step step2" ng-class="{active: CurrentStep == 1}"  ng-click="CurrentStep = 1">
+        </button>
+        <button class="step step2" ng-class="{active: CurrentStep == 1}" ng-click="CurrentStep = 1" aria-labelledby="steps-legend__2">
             <span>2</span>
-        </div>
-        <div class="step step3" ng-class="{active: CurrentStep == 2}"  ng-click="CurrentStep = 2">
+        </button>
+        <button class="step step3" ng-class="{active: CurrentStep == 2}" ng-click="CurrentStep = 2" aria-labelledby="steps-legend__3">
             <span>3</span>
-        </div>
-        <div class="step step4" ng-class="{active: CurrentStep == 3}" ng-click="CurrentStep = 3">
+        </button>
+        <button class="step step4" ng-class="{active: CurrentStep == 3}" ng-click="CurrentStep = 3" aria-labelledby="steps-legend__4">
             <span>4</span>
-        </div>
-        <div class="step step5" ng-class="{active: CurrentStep == 4}" ng-click="CurrentStep = 4">
+        </button>
+        <button class="step step5" ng-class="{active: CurrentStep == 4}" ng-click="CurrentStep = 4" aria-labelledby="steps-legend__5">
             <span>5</span>
-        </div>
+        </button>
     </div>
     <!-- .steps -->
 
     <ol class="steps-legend">
-        <li ng-class="{active: CurrentStep == 0}" class="step1" ng-click="CurrentStep = 0" translate>General</li>
-        <li ng-class="{active: CurrentStep == 1}" class="step2" ng-click="CurrentStep = 1" translate>Destination</li>
-        <li ng-class="{active: CurrentStep == 2}" class="step3" ng-click="CurrentStep = 2" translate>Source Data</li>
-        <li ng-class="{active: CurrentStep == 3}" class="step4" ng-click="CurrentStep = 3" translate>Schedule</li>
-        <li ng-class="{active: CurrentStep == 4}" class="step5" ng-click="CurrentStep = 4" translate>Options</li>
+        <li id="steps-legend__1" ng-class="{active: CurrentStep == 0}" class="step1" ng-click="CurrentStep = 0" translate>General</li>
+        <li id="steps-legend__2" ng-class="{active: CurrentStep == 1}" class="step2" ng-click="CurrentStep = 1" translate>Destination</li>
+        <li id="steps-legend__3" ng-class="{active: CurrentStep == 2}" class="step3" ng-click="CurrentStep = 2" translate>Source Data</li>
+        <li id="steps-legend__4" ng-class="{active: CurrentStep == 3}" class="step4" ng-click="CurrentStep = 3" translate>Schedule</li>
+        <li id="steps-legend__5" ng-class="{active: CurrentStep == 4}" class="step5" ng-click="CurrentStep = 4" translate>Options</li>
     </ol>
     <!-- .steps-legend -->
 
@@ -140,10 +140,10 @@
                     </div>
 
                     <div class="input checklinks">
-                        <a href class="{{EditSourceAdvanced ? 'inactive' : ''}}" ng-click="showhiddenfolders = !showhiddenfolders"><i class="fa {{showhiddenfolders ? 'fa-check' : ''}}"></i> {{'Show hidden folders' | translate}}</a>
+                        <a href class="{{EditSourceAdvanced ? 'inactive' : ''}}" ng-click="showhiddenfolders = !showhiddenfolders"><i class="fa {{showhiddenfolders ? 'fa-check' : ''}}"></i> {{'Show hidden items' | translate}}</a>
                     </div>
                     <div class="resizable filepicker" ng-hide="EditSourceAdvanced">
-                        <source-folder-picker ng-sources="Backup.Sources" ng-filters="Backup.Filters" ng-show-hidden="showhiddenfolders"></source-folder-picker>
+                        <source-folder-picker ng-sources="Backup.Sources" ng-filters="Backup.Filters" ng-show-hidden="showhiddenfolders" ng-exclude-attributes="ExcludeAttributes" ng-exclude-size="ExcludeFileSize"></source-folder-picker>
                     </div>
                     <div class="input textarea" ng-show="EditSourceAdvanced">
                         <label for="SourcePathList" translate>Source folders</label>
@@ -237,7 +237,7 @@
                             <label for="exclude-large-files" translate>Files larger than:</label>
 
                             <input type="number" parse-size-number="uppercase" ng-model="Options['--skip-files-larger-than']" id="exclude-larger-than-number" ng-disabled="!ExcludeLargeFiles" value="1" />
-                            <select parse-size-multiplier="uppercase" id="exclude-larger-than-multiplier" ng-model="Options['--skip-files-larger-than']" ng-disabled="!ExcludeLargeFiles" ng-options="item.value as item.name for item in AppUtils.fileSizeMultipliers">
+                            <select parse-size-multiplier="uppercase" id="exclude-larger-than-multiplier" ng-model="Options['--skip-files-larger-than']" ng-disabled="!ExcludeLargeFiles" ng-options="item.value.toUpperCase() as item.name for item in AppUtils.fileSizeMultipliers">
                             </select>
                         </div>
                     </div>
@@ -255,7 +255,7 @@
                 <h2 translate>Schedule</h2>
                 <div class="input checkbox multiple">
                     <input type="checkbox" id="useScheduleRun" ng-checked="Schedule != null" ng-click="toggleSchedule()" />
-                    <label for="useScheduleRun" translate>Automatically run backups.</label>
+                    <label for="useScheduleRun" translate>Automatically run backups</label>
                 </div>
                 <div ng-hide="Schedule == null">
                     <div translate>If a date was missed, the job will run as soon as possible.</div>
@@ -310,11 +310,11 @@
                     </select>
 
                     <div class="hint" translate>
-			The backups will be split up into multiple files called volumes. Here
-			you can set the maximum size of the individual volume files.
-                        <external-link link="'https://www.duplicati.com/articles/Choosing-Sizes/#remote-volume-size'">See this page for more information.</external-link>
+                        <p ng-show="(parseSizeString(Options['dblock-size']) &gt; 1024 * 1024 * 1024 * 2) || (parseSizeString(Options['dblock-size']) &lt; 1024 * 1024 * 5)" class="warning" translate>
+                            The chosen size is outside the recommended range. This may cause performance issues, excessively large temporary files or other problems.
+                        </p>
+                        The backups will be split up into multiple files called volumes. Here you can set the maximum size of the individual volume files. <external-link link="'https://forum.duplicati.com/t/choosing-sizes-in-duplicati/17683'">See this page for more information.</external-link>
                     </div>
-
                 </div>
 
                 <div class="input multiple text select keepBackups">

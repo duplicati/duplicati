@@ -1,4 +1,24 @@
-﻿using System;
+// Copyright (C) 2025, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -109,7 +129,7 @@ namespace Duplicati.Library.Utility
                 // Prevent in-memory buffering causing out-of-memory issues
                 webRequest.AllowReadStreamBuffering = HttpContextSettings.BufferRequests;
             }
-		}
+        }
 
         /// <summary>
         /// Gets the request that is wrapped
@@ -175,12 +195,14 @@ namespace Duplicati.Library.Utility
 
         public static Stream TrySetTimeout(Stream str, int timeoutmilliseconds = 30000)
         {
+            // TODO: Looks like this is no longer supported by (most) .NET streams
+            // And it throws InvalidOperationException() when trying to set it
             try { str.ReadTimeout = timeoutmilliseconds; }
             catch { }
 
             return str;
         }
-            
+
         /// <summary>
         /// Wrapper class for getting request and response objects in a async manner
         /// </summary>
@@ -205,8 +227,8 @@ namespace Duplicati.Library.Utility
                 else
                     m_async = m_owner.m_request.BeginGetResponse(new AsyncCallback(this.OnAsync), null);
 
-                if ( m_owner.m_timeout != System.Threading.Timeout.Infinite)
-                    ThreadPool.RegisterWaitForSingleObject(m_async.AsyncWaitHandle, new WaitOrTimerCallback(this.OnTimeout), null, TimeSpan.FromMilliseconds( m_owner.m_timeout), true);
+                if (m_owner.m_timeout != System.Threading.Timeout.Infinite)
+                    ThreadPool.RegisterWaitForSingleObject(m_async.AsyncWaitHandle, new WaitOrTimerCallback(this.OnTimeout), null, TimeSpan.FromMilliseconds(m_owner.m_timeout), true);
             }
 
             private void OnAsync(IAsyncResult r)
@@ -231,7 +253,7 @@ namespace Duplicati.Library.Utility
                             WebResponse resp = null;
 
                             try { resp = r.GetType().GetProperty("Response", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)?.GetValue(r) as WebResponse; }
-                            catch {}
+                            catch { }
 
                             if (resp == null)
                                 try { resp = m_owner.m_request.GetType().GetField("webResponse", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)?.GetValue(m_owner.m_request) as WebResponse; }
@@ -273,7 +295,7 @@ namespace Duplicati.Library.Utility
                 catch (ThreadAbortException)
                 {
                     m_owner.m_request.Abort();
-                    
+
                     //Grant a little time for cleanups
                     m_event.WaitOne((int)TimeSpan.FromSeconds(5).TotalMilliseconds, false);
 

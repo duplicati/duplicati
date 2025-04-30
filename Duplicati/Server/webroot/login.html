@@ -1,33 +1,50 @@
-<!doctype html>
+<!DOCTYPE html>
 <html>
-<head>
-    <meta charset="utf-8">
-      <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-    
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+
     <title>Duplicati Login</title>
-    
+
     <script type="text/javascript" src="login/jquery-2.0.3.min.js"></script>
-    <script type="text/javascript" src="login/cryptojs.js"></script>
     <script type="text/javascript" src="login/login.js?v=2.0.0.7"></script>
     <link rel="stylesheet" type="text/css" href="login/login.css?v=2.0.0.7" />
 
-    <script type="text/javascript" src="oem/root/login/oem.js?v=2.0.0.7" ></script>
-    <link rel="stylesheet" type="text/css" href="oem/root/login/oem.css?v=2.0.0.7" />
-</head>
+    <script
+      type="text/javascript"
+      src="oem/root/login/oem.js?v=2.0.0.7"
+    ></script>
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="oem/root/login/oem.css?v=2.0.0.7"
+    />
+  </head>
 
-<body>
+  <body>
     <div id="login">
-        <h2>Duplicati</h2>
-        <form method="POST">
-            <fieldset>
+      <h2>Duplicati</h2>
+      <form id="login-form" method="POST">
+        <fieldset>
+          <p><label for="login-password">Password</label></p>
+          <p>
+            <input
+              type="password"
+              id="login-password"
+              placeholder="password"
+              autofocus
+            />
+          </p>
 
-                <p><label for="login-password">Password</label></p>
-                <p><input type="password" id="login-password" value="password" onBlur="if(this.value=='')this.value='password'" onFocus="if(this.value=='password')this.value=''" autofocus></p> <!-- JS because of IE support; better: placeholder="password" -->
-
-                <p><input type="submit" id="login-button" value="Sign In"></p>
-
-            </fieldset>
-        </form>
+          <p><input type="submit" id="login-button" value="Sign In" /></p>
+        </fieldset>
+      </form>
+      <a
+        href="https://docs.duplicati.com/detailed-descriptions/duplicati-access-password"
+        target="_blank"
+        class="helplink"
+        >Password missing or lost?</a
+      >
     </div>
-</body>    
+  </body>
 </html>

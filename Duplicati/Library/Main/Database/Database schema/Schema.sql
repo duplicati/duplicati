@@ -33,7 +33,8 @@ CREATE TABLE "Remotevolume" (
 	"Hash" TEXT NULL,
 	"State" TEXT NOT NULL,
 	"VerificationCount" INTEGER NOT NULL,
-	"DeleteGraceTime" INTEGER NOT NULL
+	"DeleteGraceTime" INTEGER NOT NULL,
+	"ArchiveTime" INTEGER NOT NULL
 );
 
 /* Index for detecting broken states */
@@ -208,6 +209,9 @@ CREATE TABLE "DeletedBlock" (
 	"VolumeID" INTEGER NOT NULL
 );
 
+CREATE INDEX "DeletedBlockHashSize" ON "DeletedBlock" ("Hash", "Size");
+CREATE UNIQUE INDEX "DeletedBlockHashVolumeID" ON "DeletedBlock" ("Hash", "Size", "VolumeID");
+
 /*
 If extra copies of blocks are detected, 
 they are recorded here
@@ -216,6 +220,9 @@ CREATE TABLE "DuplicateBlock" (
     "BlockID" INTEGER NOT NULL,
     "VolumeID" INTEGER NOT NULL
 );
+
+CREATE UNIQUE INDEX "UniqueBlockVolumeDuplicateBlock"
+ON "DuplicateBlock" ("BlockID", "VolumeID");
 
 /*
 A metadata set, essentially a placeholder
@@ -287,4 +294,4 @@ CREATE TABLE "ChangeJournalData" (
     "ConfigHash" TEXT NOT NULL  
 );
 
-INSERT INTO "Version" ("Version") VALUES (12);
+INSERT INTO "Version" ("Version") VALUES (15);

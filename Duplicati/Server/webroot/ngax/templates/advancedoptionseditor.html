@@ -8,6 +8,7 @@
             <input ng-if="getInputType(item) == 'bool'" type="checkbox" ng-model="$parent.ngModel[$parent.ngModel.indexOf(item)]" parse-advanced-option-bool ></input>
             <input ng-if="getInputType(item) == 'password'" type="password" ng-model="$parent.ngModel[$parent.ngModel.indexOf(item)]" parse-advanced-option ></input>
             <input ng-if="getInputType(item) == 'text'" type="text" ng-model="$parent.ngModel[$parent.ngModel.indexOf(item)]" parse-advanced-option ></input>
+            <input ng-if="getInputType(item) == 'decimal'" type="text" ng-model="$parent.ngModel[$parent.ngModel.indexOf(item)]" parse-advanced-option ></input>
             <input ng-if="getInputType(item) == 'int'" type="number" ng-model="$parent.ngModel[$parent.ngModel.indexOf(item)]" parse-advanced-option-integer ></input>
 
             <div ng-if="getInputType(item) == 'size'" class="input type multiple">
@@ -37,10 +38,10 @@
             </div>
         </div>
 
-        <a href ng-click="deleteItem(item)" title="{{'Remove option' | translate}}">x</a>
+        <a class="delete-item" href ng-click="deleteItem(item)" title="{{'Remove option' | translate}}">x</a>
 
-        <div ng-if="getDeprecationMessage(item)" class="longdescription">DEPRECATED: {{getDeprecationMessage(item)}}</div>
-        <div class="longdescription">{{getLongDescription(item)}}<br>Default value: "{{getDefaultValue(item)}}"</div>
+        <div ng-if="getDeprecationMessage(item)" class="longdescription" translate>DEPRECATED: {{getDeprecationMessage(item)}}</div>
+        <div class="longdescription"><p class="longdescription__item">{{getLongDescription(item)}}</p><p class="longdescription__default" translate>Default value: "{{getDefaultValue(item)}}"</p></div>
     </li>
 
     <li>

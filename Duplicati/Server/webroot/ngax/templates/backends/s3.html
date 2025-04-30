@@ -26,7 +26,7 @@
 
 <div class="input select">
 
-    <label for="s3_region" translate>Bucket create region</label>
+    <label for="s3_region" translate>Bucket region</label>
 
     <select name="s3_region" id="s3_region" ng-model="$parent.s3_region"
             ng-options="v as k + ' (' + v + ')' for (k, v) in s3_regions | orderBy: k"
@@ -47,13 +47,12 @@
     <select name="s3_storageclass" id="s3_storageclass" ng-model="$parent.s3_storageclass"
             ng-options="v as k + ' (' + v + ')' for (k, v) in s3_storageclasses | orderBy: k"
             title="{{'The storage class affects the availability and price for a stored file' | translate}}">
-        <option value="" translate translate-params-class="s3_storageclass_custom || ''">Custom storage class
-            ({{class}})
+        <option value="" translate translate-params-class="s3_storageclass_custom || ''">Custom storage class ({{class}})
         </option>
     </select>
 
     <input ng-hide="contains_value(s3_storageclasses, s3_storageclass)" type="text" id="s3_storageclass_custom"
-           ng-model="$parent.s3_storageclass_custom" placeholder="Custom bucket storage class"/>
+           ng-model="$parent.s3_storageclass_custom" placeholder="{{'Custom bucket storage class' | translate}}"/>
 
 </div>
 
@@ -86,6 +85,5 @@
 </div>
 
 <div class="buttons">
-    <a href ng-click="s3_createIAMPolicy()" ng-show="$parent.s3_server == 's3.amazonaws.com'" translate>Generate IAM
-        access policy</a>
+    <a href ng-click="s3_createIAMPolicy()" ng-show="$parent.s3_server == 's3.amazonaws.com'" translate>Generate IAM access policy</a>
 </div>

@@ -1,34 +1,38 @@
-//  Copyright (C) 2015, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
 
-//  http://www.duplicati.com, info@duplicati.com
-//
-//  This library is free software; you can redistribute it and/or modify
-//  it under the terms of the GNU Lesser General Public License as
-//  published by the Free Software Foundation; either version 2.1 of the
-//  License, or (at your option) any later version.
-//
-//  This library is distributed in the hope that it will be useful, but
-//  WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-//  Lesser General Public License for more details.
-//
-//  You should have received a copy of the GNU Lesser General Public
-//  License along with this library; if not, write to the Free Software
-//  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 using System;
-using System.Diagnostics;
 using System.IO;
-using System.Text;
 using System.Collections.Generic;
 using Duplicati.Library.Utility;
 using Duplicati.Library.Interface;
-using System.Linq;
 using Duplicati.Library.Modules.Builtin.ResultSerialization;
 using System.Threading.Tasks;
+using System.Text.RegularExpressions;
+using System.Linq;
+using Duplicati.Library.Logging;
 
 namespace Duplicati.Library.Modules.Builtin
 {
-    public class RunScript : Duplicati.Library.Interface.IGenericCallbackModule
+    public class RunScript : IGenericCallbackModule
     {
         /// <summary>
         /// The tag used for logging
@@ -39,10 +43,20 @@ namespace Duplicati.Library.Modules.Builtin
         /// </summary>
         private const Logging.LogMessageType DEFAULT_LOG_LEVEL = Logging.LogMessageType.Warning;
 
+        /// <summary>
+        /// The regex used to parse arguments
+        /// </summary>
+        private static readonly Regex ARGREGEX = new Regex(
+            @"(?<arg>(?<=\s|^)(""(?<value>[^""\\]*(?:\\.[^""\\]*)*)""|'(?<value>[^'\\]*(?:\\.[^'\\]*)*)'|(?<value>[^\s]+))\s?)",
+            RegexOptions.Compiled | RegexOptions.ExplicitCapture
+        );
+
+
         private const string STARTUP_OPTION = "run-script-before";
         private const string FINISH_OPTION = "run-script-after";
         private const string REQUIRED_OPTION = "run-script-before-required";
         private const string TIMEOUT_OPTION = "run-script-timeout";
+        private const string ENABLE_ARGUMENTS_OPTION = "run-script-with-arguments";
         /// <summary>
         /// Option used to set the log level for mail reports
         /// </summary>
@@ -60,6 +74,7 @@ namespace Duplicati.Library.Modules.Builtin
         private string m_startScript = null;
         private string m_finishScript = null;
         private int m_timeout = 0;
+        private bool m_enableArguments = false;
 
         private string m_operationName;
         private string m_remoteurl;
@@ -74,7 +89,7 @@ namespace Duplicati.Library.Modules.Builtin
         /// <summary>
         /// The log storage
         /// </summary>
-        private Utility.FileBackedStringList m_logstorage;
+        private FileBackedStringList m_logstorage;
 
 
         #region IGenericModule implementation
@@ -83,20 +98,21 @@ namespace Duplicati.Library.Modules.Builtin
             commandlineOptions.TryGetValue(STARTUP_OPTION, out m_startScript);
             commandlineOptions.TryGetValue(REQUIRED_OPTION, out m_requiredScript);
             commandlineOptions.TryGetValue(FINISH_OPTION, out m_finishScript);
+            m_enableArguments = Utility.Utility.ParseBoolOption(commandlineOptions.AsReadOnly(), ENABLE_ARGUMENTS_OPTION);
 
-            string tmpResultFormat;
             ResultExportFormat resultFormat;
-            if (!commandlineOptions.TryGetValue(RESULT_FORMAT_OPTION, out tmpResultFormat)) {
+            if (!commandlineOptions.TryGetValue(RESULT_FORMAT_OPTION, out var tmpResultFormat))
+            {
                 resultFormat = ResultExportFormat.Duplicati;
             }
-            else if (!Enum.TryParse(tmpResultFormat, true, out resultFormat)) {
+            else if (!Enum.TryParse(tmpResultFormat, true, out resultFormat))
+            {
                 resultFormat = ResultExportFormat.Duplicati;
             }
 
             resultFormatSerializer = ResultFormatSerializerProvider.GetSerializer(resultFormat);
 
-            string t;
-            if (!commandlineOptions.TryGetValue(TIMEOUT_OPTION, out t))
+            if (!commandlineOptions.TryGetValue(TIMEOUT_OPTION, out var t))
                 t = DEFAULT_TIMEOUT;
 
             m_timeout = (int)Utility.Timeparser.ParseTimeSpan(t).TotalMilliseconds;
@@ -104,11 +120,12 @@ namespace Duplicati.Library.Modules.Builtin
             m_options = commandlineOptions;
 
             m_options.TryGetValue(OPTION_LOG_FILTER, out var logfilterstring);
-            var filter = Utility.FilterExpression.ParseLogFilter(logfilterstring);
-            var logLevel = Utility.Utility.ParseEnumOption(m_options, OPTION_LOG_LEVEL, DEFAULT_LOG_LEVEL);
+            var filter = FilterExpression.ParseLogFilter(logfilterstring);
+            var logLevel = Utility.Utility.ParseEnumOption(m_options.AsReadOnly(), OPTION_LOG_LEVEL, DEFAULT_LOG_LEVEL);
 
             m_logstorage = new FileBackedStringList();
-            m_logscope = Logging.Log.StartScope(m => m_logstorage.Add(m.AsString(true)), m => {
+            m_logscope = Logging.Log.StartScope(m => m_logstorage.Add(m.AsString(true)), m =>
+            {
 
                 if (filter.Matches(m.FilterTag, out var result, out var match))
                     return result;
@@ -122,17 +139,18 @@ namespace Duplicati.Library.Modules.Builtin
         public string Key { get { return "runscript"; } }
         public string DisplayName { get { return Strings.RunScript.DisplayName; } }
         public string Description { get { return Strings.RunScript.Description; } }
-        public bool LoadAsDefault  { get { return true; } }
+        public bool LoadAsDefault { get { return true; } }
 
-        public IList<Duplicati.Library.Interface.ICommandLineArgument> SupportedCommands
+        public IList<ICommandLineArgument> SupportedCommands
         {
             get
             {
-                string[] resultOutputFormatOptions = new string[] { ResultExportFormat.Duplicati.ToString(), ResultExportFormat.Json.ToString() };
-                return new List<Duplicati.Library.Interface.ICommandLineArgument>(new Duplicati.Library.Interface.ICommandLineArgument[] {
-                    new Duplicati.Library.Interface.CommandLineArgument(STARTUP_OPTION, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Path, Strings.RunScript.StartupoptionShort, Strings.RunScript.StartupoptionLong),
-                    new Duplicati.Library.Interface.CommandLineArgument(FINISH_OPTION, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Path, Strings.RunScript.FinishoptionShort, Strings.RunScript.FinishoptionLong),
-                    new Duplicati.Library.Interface.CommandLineArgument(REQUIRED_OPTION, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Path, Strings.RunScript.RequiredoptionShort, Strings.RunScript.RequiredoptionLong),
+                string[] resultOutputFormatOptions = [ResultExportFormat.Duplicati.ToString(), ResultExportFormat.Json.ToString()];
+                return new List<ICommandLineArgument>([
+                    new CommandLineArgument(STARTUP_OPTION, CommandLineArgument.ArgumentType.Path, Strings.RunScript.StartupoptionShort, Strings.RunScript.StartupoptionLong),
+                    new CommandLineArgument(FINISH_OPTION, CommandLineArgument.ArgumentType.Path, Strings.RunScript.FinishoptionShort, Strings.RunScript.FinishoptionLong),
+                    new CommandLineArgument(REQUIRED_OPTION, CommandLineArgument.ArgumentType.Path, Strings.RunScript.RequiredoptionShort, Strings.RunScript.RequiredoptionLong),
+                    new CommandLineArgument(ENABLE_ARGUMENTS_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.RunScript.EnableArgumentsShort, Strings.RunScript.EnableArgumentsLong),
                     new CommandLineArgument(RESULT_FORMAT_OPTION,
                         CommandLineArgument.ArgumentType.Enumeration,
                         Strings.RunScript.ResultFormatShort,
@@ -140,11 +158,11 @@ namespace Duplicati.Library.Modules.Builtin
                         ResultExportFormat.Duplicati.ToString(),
                         null,
                         resultOutputFormatOptions),
-                    new Duplicati.Library.Interface.CommandLineArgument(TIMEOUT_OPTION, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Timespan, Strings.RunScript.TimeoutoptionShort, Strings.RunScript.TimeoutoptionLong, DEFAULT_TIMEOUT),
+                    new CommandLineArgument(TIMEOUT_OPTION, CommandLineArgument.ArgumentType.Timespan, Strings.RunScript.TimeoutoptionShort, Strings.RunScript.TimeoutoptionLong, DEFAULT_TIMEOUT),
 
-                    new CommandLineArgument(OPTION_LOG_LEVEL, CommandLineArgument.ArgumentType.Enumeration, Strings.ReportHelper.OptionLoglevellShort, Strings.ReportHelper.OptionLoglevelLong, DEFAULT_LOG_LEVEL.ToString(), null, Enum.GetNames(typeof(Logging.LogMessageType))),
+                    new CommandLineArgument(OPTION_LOG_LEVEL, CommandLineArgument.ArgumentType.Enumeration, Strings.ReportHelper.OptionLoglevelShort, Strings.ReportHelper.OptionLoglevelLong, DEFAULT_LOG_LEVEL.ToString(), null, Enum.GetNames(typeof(Logging.LogMessageType))),
                     new CommandLineArgument(OPTION_LOG_FILTER, CommandLineArgument.ArgumentType.String, Strings.ReportHelper.OptionLogfilterShort, Strings.ReportHelper.OptionLogfilterLong),
-                });
+                ]);
             }
         }
         #endregion
@@ -154,10 +172,10 @@ namespace Duplicati.Library.Modules.Builtin
         public void OnStart(string operationname, ref string remoteurl, ref string[] localpath)
         {
             if (!string.IsNullOrEmpty(m_requiredScript))
-                Execute(m_requiredScript, "BEFORE", operationname, ref remoteurl, ref localpath, m_timeout, true, m_options, null, null);
+                Execute(m_requiredScript, "BEFORE", operationname, ref remoteurl, ref localpath, m_timeout, true, m_enableArguments, m_options, null, null);
 
             if (!string.IsNullOrEmpty(m_startScript))
-                Execute(m_startScript, "BEFORE", operationname, ref remoteurl, ref localpath, m_timeout, false, m_options, null, null);
+                Execute(m_startScript, "BEFORE", operationname, ref remoteurl, ref localpath, m_timeout, false, m_enableArguments, m_options, null, null);
 
             // Save options that might be set by a --run-script-before script so that the OnFinish method
             // references the same values.
@@ -166,7 +184,7 @@ namespace Duplicati.Library.Modules.Builtin
             m_localpath = localpath;
         }
 
-        public void OnFinish (object result)
+        public void OnFinish(IBasicResults result, Exception exception)
         {
             // Dispose the current log scope
             if (m_logscope != null)
@@ -180,7 +198,8 @@ namespace Duplicati.Library.Modules.Builtin
                 return;
 
             ParsedResultType level;
-            if (result is OperationAbortException oae)
+            OperationAbortException oae = exception as OperationAbortException;
+            if (oae != null)
             {
                 switch (oae.AbortReason)
                 {
@@ -198,28 +217,40 @@ namespace Duplicati.Library.Modules.Builtin
                         break;
                 }
             }
-            else if (result is Exception)
+            else if (exception != null)
                 level = ParsedResultType.Fatal;
-            else if (result != null && result is IBasicResults results)
-                level = results.ParsedResult;
+            else if (result != null)
+                level = result.ParsedResult;
             else
                 level = ParsedResultType.Error;
 
             using (TempFile tmpfile = new TempFile())
             {
                 using (var streamWriter = new StreamWriter(tmpfile))
-                    streamWriter.Write(resultFormatSerializer.Serialize(result, m_logstorage, null));
+                    streamWriter.Write(resultFormatSerializer.Serialize(result, exception, m_logstorage, null));
 
-                Execute(m_finishScript, "AFTER", m_operationName, ref m_remoteurl, ref m_localpath, m_timeout, false, m_options, tmpfile, level);
+                Execute(m_finishScript, "AFTER", m_operationName, ref m_remoteurl, ref m_localpath, m_timeout, false, m_enableArguments, m_options, tmpfile, level);
             }
         }
         #endregion
 
-        private static void Execute(string scriptpath, string eventname, string operationname, ref string remoteurl, ref string[] localpath, int timeout, bool requiredScript, IDictionary<string, string> options, string datafile, ParsedResultType? level)
+        private static void Execute(string scriptpath, string eventname, string operationname, ref string remoteurl, ref string[] localpath, int timeout, bool requiredScript, bool enableArguments, IDictionary<string, string> options, string datafile, ParsedResultType? level)
         {
             try
             {
-                System.Diagnostics.ProcessStartInfo psi = new System.Diagnostics.ProcessStartInfo(scriptpath)
+                var arguments = new List<string>();
+                if (enableArguments)
+                {
+                    var args = ARGREGEX.Matches(scriptpath);
+                    if (args.Any())
+                    {
+                        arguments = args.AsEnumerable().Select(m => m.Groups["value"].Value).ToList();
+                        scriptpath = arguments[0];
+                        arguments.RemoveAt(0);
+                    }
+                }
+
+                var psi = new System.Diagnostics.ProcessStartInfo(scriptpath, arguments)
                 {
                     WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden,
                     CreateNoWindow = true,
@@ -262,9 +293,9 @@ namespace Duplicati.Library.Modules.Builtin
                     if (requiredScript)
                     {
                         if (!p.HasExited)
-                            throw new Duplicati.Library.Interface.UserInformationException(Strings.RunScript.ScriptTimeoutError(scriptpath), "RunScriptTimeout");
+                            throw new UserInformationException(Strings.RunScript.ScriptTimeoutError(scriptpath), "RunScriptTimeout");
                         else if (p.ExitCode != 0)
-                            throw new Duplicati.Library.Interface.UserInformationException(Strings.RunScript.InvalidExitCodeError(scriptpath, p.ExitCode), "RunScriptInvalidExitCode");
+                            throw new UserInformationException(Strings.RunScript.InvalidExitCodeError(scriptpath, p.ExitCode), "RunScriptInvalidExitCode");
                     }
 
                     if (p.HasExited)
@@ -273,6 +304,9 @@ namespace Duplicati.Library.Modules.Builtin
 
                         stderr = cs.StandardError;
                         stdout = cs.StandardOutput;
+
+                        SendStdOutToLogs(stdout);
+
                         if (p.ExitCode != 0)
                         {
                             if (!requiredScript)
@@ -419,6 +453,35 @@ namespace Duplicati.Library.Modules.Builtin
                 // If we wait a little here, we eventually get the data.
                 // If the streams have completed we do not wait.
                 m_task.Wait(TimeSpan.FromSeconds(5));
+            }
+        }
+
+        /// <summary>
+        /// Define the log actions for the different prefixes
+        /// </summary>
+        private static readonly Dictionary<string, Action<string>> LogActions = new()
+        {
+            ["LOG:WARN"] = msg => Log.WriteWarningMessage(LOGTAG, "ScriptOutput", null, msg),
+            ["LOG:ERROR"] = msg => Log.WriteErrorMessage(LOGTAG, "ScriptOutput", null, msg),
+            ["LOG:INFO"] = msg => Log.WriteInformationMessage(LOGTAG, "ScriptOutput", msg)
+        };
+
+        /// <summary>
+        /// Parses the STDOUT of the script and sends it to the logs according to the prefix
+        /// </summary>
+        /// <param name="stdout">Captured stdout stream from the process</param>
+        private static void SendStdOutToLogs(string stdout)
+        {
+            if (String.IsNullOrWhiteSpace(stdout))
+                return;
+            // Explicit CR/LF types for all OSes instead of Environment.NewLine in case stdout producer
+            // script explicitly uses a different line ending from the OS the process is ran on.
+            foreach (var line in stdout.Split(["\r\n", "\r", "\n"], StringSplitOptions.RemoveEmptyEntries))
+            {
+                var prefix = LogActions.Keys.FirstOrDefault(p => line.StartsWith(p));
+                if (prefix == null) continue;
+                var message = line.Substring(prefix.Length).Trim();
+                LogActions[prefix](message);
             }
         }
     }

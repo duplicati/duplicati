@@ -1,82 +1,133 @@
-﻿//  Copyright (C) 2015, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
 
-//  http://www.duplicati.com, info@duplicati.com
-//
-//  This library is free software; you can redistribute it and/or modify
-//  it under the terms of the GNU Lesser General Public License as
-//  published by the Free Software Foundation; either version 2.1 of the
-//  License, or (at your option) any later version.
-//
-//  This library is distributed in the hope that it will be useful, but
-//  WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-//  Lesser General Public License for more details.
-//
-//  You should have received a copy of the GNU Lesser General Public
-//  License along with this library; if not, write to the Free Software
-//  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 
 namespace Duplicati.Library.AutoUpdater
 {
+    /// <summary>
+    /// Contains settings for the auto-updater
+    /// </summary>
     public static class AutoUpdateSettings
     {
-        private static readonly Dictionary<string, string> _cache = new Dictionary<string, string>();
+        /// <summary>
+        /// The appname file resource name
+        /// </summary>
         private const string APP_NAME = "AutoUpdateAppName.txt";
+        /// <summary>
+        /// The update URL file resource name
+        /// </summary>
         private const string UPDATE_URL = "AutoUpdateURL.txt";
-        private const string UPDATE_KEY = "AutoUpdateSignKey.txt";
+        /// <summary>
+        /// The update key file resource name
+        /// </summary>
+        private const string UPDATE_KEY = "AutoUpdateSignKeys.txt";
+        /// <summary>
+        /// The update channel file resource name
+        /// </summary>
         private const string UPDATE_CHANNEL = "AutoUpdateBuildChannel.txt";
-        private const string UPDATE_README = "AutoUpdateFolderReadme.txt";
+        /// <summary>
+        /// The update install file template resource name
+        /// </summary>
         private const string UPDATE_INSTALL_FILE = "AutoUpdateInstallIDTemplate.txt";
+        /// <summary>
+        /// The update machine file template resource name
+        /// </summary>
+        private const string UPDATE_MACHINE_FILE = "AutoUpdateMachineIDTemplate.txt";
 
+        /// <summary>
+        /// The OEM file name
+        /// </summary>
         private const string OEM_APP_NAME = "oem-app-name.txt";
+        /// <summary>
+        /// The OEM update URL file name
+        /// </summary>
         private const string OEM_UPDATE_URL = "oem-update-url.txt";
+        /// <summary>
+        /// The OEM update key file name
+        /// </summary>
         private const string OEM_UPDATE_KEY = "oem-update-key.txt";
-        private const string OEM_UPDATE_README = "oem-update-readme.txt";
+        /// <summary>
+        /// The OEM update install template file name
+        /// </summary>
         private const string OEM_UPDATE_INSTALL_FILE = "oem-update-installid.txt";
 
-        internal const string UPDATEURL_ENVNAME_TEMPLATE = "AUTOUPDATER_{0}_URLS";
-        internal const string UPDATECHANNEL_ENVNAME_TEMPLATE = "AUTOUPDATER_{0}_CHANNEL";
+        /// <summary>
+        /// The update URL environment variable name template
+        /// </summary>
+        public const string UPDATEURL_ENVNAME_TEMPLATE = "AUTOUPDATER_{0}_URLS";
+        /// <summary>
+        /// The update channel environment variable name template
+        /// </summary>
+        public const string UPDATECHANNEL_ENVNAME_TEMPLATE = "AUTOUPDATER_{0}_CHANNEL";
 
+        /// <summary>
+        /// The package prefix group name in the <see cref="MATCH_AUTOUPDATE_URL"/> regex
+        /// </summary>
         internal const string MATCH_UPDATE_URL_PREFIX_GROUP = "prefix";
+        /// <summary>
+        /// The channel group name in the <see cref="MATCH_AUTOUPDATE_URL"/> regex
+        /// </summary>
         internal const string MATCH_UPDATE_URL_CHANNEL_GROUP = "channel";
+        /// <summary>
+        /// The filename group name in the <see cref="MATCH_AUTOUPDATE_URL"/> regex
+        /// </summary>
         internal const string MATCH_UPDATE_URL_FILENAME_GROUP = "filename";
 
-        internal static readonly Regex MATCH_AUTOUPDATE_URL = 
+        /// <summary>
+        /// The regex to match the auto-update URL and replace the channel
+        /// </summary>
+        internal static readonly Regex MATCH_AUTOUPDATE_URL =
             new Regex(string.Format(
-                "(?<{0}>.+)(?<{1}>{3})(?<{2}>/([^/]+).manifest)", 
+                "(?<{0}>.+)(?<{1}>{3})(?<{2}>/([^/]+).manifest)",
                 MATCH_UPDATE_URL_PREFIX_GROUP,
                 MATCH_UPDATE_URL_CHANNEL_GROUP,
                 MATCH_UPDATE_URL_FILENAME_GROUP,
-                string.Join("|", Enum.GetNames(typeof(ReleaseType)).Union(new [] { "preview", "rene" }) )), RegexOptions.Compiled | RegexOptions.IgnoreCase);
+                string.Join("|", Enum.GetNames(typeof(ReleaseType)).Union(new[] { "preview" }))), RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
-
-        static AutoUpdateSettings()
+        /// <summary>
+        /// Reads a resource text from the assembly, with an optional OEM filename override
+        /// </summary>
+        /// <param name="name">The embedded resource name</param>
+        /// <param name="oemname">The OEM filename override</param>
+        /// <returns>The text of the resource</returns>
+        private static string ReadResourceText(string name, string? oemname)
         {
-            ReadResourceText(APP_NAME, OEM_APP_NAME);
-            ReadResourceText(UPDATE_URL, OEM_UPDATE_URL);
-            ReadResourceText(UPDATE_KEY, OEM_UPDATE_KEY);
-            ReadResourceText(UPDATE_README, OEM_UPDATE_README);
-            ReadResourceText(UPDATE_INSTALL_FILE, OEM_UPDATE_INSTALL_FILE);
-            ReadResourceText(UPDATE_CHANNEL, null);
-        }
-
-        private static string ReadResourceText(string name, string oemname)
-        {
-            // First try to read from _cache
-            if (_cache.TryGetValue(name, out string result))
-                return result;
-
+            string? result = null;
             try
             {
-                using (var rd = new System.IO.StreamReader(System.Reflection.Assembly.GetExecutingAssembly().GetManifestResourceStream(typeof(AutoUpdateSettings), name)))
-                    result = rd.ReadToEnd();
+                using (var rs = System.Reflection.Assembly.GetExecutingAssembly().GetManifestResourceStream(typeof(AutoUpdateSettings), name))
+                    if (rs != null)
+                        using (var rd = new System.IO.StreamReader(rs))
+                            result = rd.ReadToEnd();
             }
-            catch
+            catch (Exception ex)
             {
+                Logging.Log.WriteWarningMessage(nameof(AutoUpdateSettings), "ReadResourceStreamError", ex, "Failed to read resource {0}: {1}", name, ex.Message);
             }
 
             try
@@ -94,106 +145,154 @@ namespace Duplicati.Library.AutoUpdater
             else
                 result = result.Trim();
 
-            _cache[name] = result;
             return result;
         }
 
-        public static string[] URLs
-        {
-            get 
-            { 
-                if (UsesAlternateURLs)
-                    return Environment.GetEnvironmentVariable(string.Format(UPDATEURL_ENVNAME_TEMPLATE, AppName)).Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
-                else
-                    return ReadResourceText(UPDATE_URL, OEM_UPDATE_URL).Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
-            }
-        }
+        /// <summary>
+        /// The URLs to check for updates
+        /// </summary>
+        public static string[] URLs => _URLs.Value;
 
-        public static bool UsesAlternateURLs
+        /// <summary>
+        /// The alternate URLs to check for updates, lazy evaluated
+        /// </summary>
+        private static readonly Lazy<string?> _alternateURLs = new Lazy<string?>(() =>
         {
-            get 
+            return Environment.GetEnvironmentVariable(string.Format(UPDATEURL_ENVNAME_TEMPLATE, AppName));
+        });
+
+        /// <summary>
+        /// The URLs to check for updates, lazy evaluated
+        /// </summary>
+        private static readonly Lazy<string[]> _URLs = new Lazy<string[]>(() =>
+        {
+            if (!string.IsNullOrWhiteSpace(_alternateURLs.Value))
+                return _alternateURLs.Value.Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
+            else
+                return ReadResourceText(UPDATE_URL, OEM_UPDATE_URL).Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
+        });
+
+        /// <summary>
+        /// Indicates if alternate URLs are in use
+        /// </summary>
+        public static bool UsesAlternateURLs => !string.IsNullOrWhiteSpace(_alternateURLs.Value);
+
+        /// <summary>
+        /// The default update channel
+        /// </summary>
+        public static ReleaseType DefaultUpdateChannel => _defaultUpdateChannel.Value;
+
+        /// <summary>
+        /// The default update channel, lazy evaluated
+        /// </summary>
+        private static readonly Lazy<ReleaseType> _defaultUpdateChannel = new Lazy<ReleaseType>(() =>
+        {
+            var channelstring = Environment.GetEnvironmentVariable(string.Format(UPDATECHANNEL_ENVNAME_TEMPLATE, AppName));
+
+            if (UsesAlternateURLs && string.IsNullOrWhiteSpace(channelstring))
             {
-                return !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(string.Format(UPDATEURL_ENVNAME_TEMPLATE, AppName)));
-            }
-        }
-
-        public static ReleaseType DefaultUpdateChannel
-        {
-            get
-            {
-                var channelstring = Environment.GetEnvironmentVariable(string.Format(UPDATECHANNEL_ENVNAME_TEMPLATE, AppName));
-
-                if (UsesAlternateURLs && string.IsNullOrWhiteSpace(channelstring))
+                foreach (var url in URLs)
                 {
-                    foreach(var url in URLs)
+                    var match = AutoUpdateSettings.MATCH_AUTOUPDATE_URL.Match(url);
+                    if (match.Success)
                     {
-                        var match = AutoUpdateSettings.MATCH_AUTOUPDATE_URL.Match(url);
-                        if (match.Success)
-                        {
-                            channelstring = match.Groups[AutoUpdateSettings.MATCH_UPDATE_URL_CHANNEL_GROUP].Value;
-                            break;
-                        }   
+                        channelstring = match.Groups[AutoUpdateSettings.MATCH_UPDATE_URL_CHANNEL_GROUP].Value;
+                        break;
                     }
                 }
-
-                if (string.IsNullOrWhiteSpace(channelstring))
-                    channelstring = BuildUpdateChannel;
-
-                if (string.IsNullOrWhiteSpace(channelstring))
-                    channelstring = UpdaterManager.BaseVersion.ReleaseType;
-
-
-                // Update from older builds
-                if (string.Equals(channelstring, "preview", StringComparison.OrdinalIgnoreCase))
-                    channelstring = ReleaseType.Experimental.ToString();
-                if (string.Equals(channelstring, "rene", StringComparison.OrdinalIgnoreCase))
-                    channelstring = ReleaseType.Canary.ToString();
-                
-                ReleaseType rt;
-                if (!Enum.TryParse<ReleaseType>(channelstring, true, out rt))
-                    rt = ReleaseType.Stable;
-
-                return rt;
             }
-        }
 
-        public static string AppName
-        {
-            get { return ReadResourceText(APP_NAME, OEM_APP_NAME); }
-        }
+            if (string.IsNullOrWhiteSpace(channelstring))
+                channelstring = BuildUpdateChannel;
 
-        public static string BuildUpdateChannel
-        {
-            get { return ReadResourceText(UPDATE_CHANNEL, null); }
-        }
+            // Update from older builds
+            if (string.Equals(channelstring, "preview", StringComparison.OrdinalIgnoreCase))
+                channelstring = ReleaseType.Experimental.ToString();
+            if (string.Equals(channelstring, "rene", StringComparison.OrdinalIgnoreCase))
+                channelstring = ReleaseType.Canary.ToString();
 
-        public static string UpdateFolderReadme
-        {
-            get { return ReadResourceText(UPDATE_README, OEM_UPDATE_README); }
-        }
+            ReleaseType rt;
+            if (!Enum.TryParse<ReleaseType>(channelstring, true, out rt))
+                rt = ReleaseType.Stable;
 
-        public static string UpdateInstallFileText
-        {
-            get { return string.Format(ReadResourceText(UPDATE_INSTALL_FILE, OEM_UPDATE_INSTALL_FILE), Guid.NewGuid().ToString("N")); }
-        }
+            return rt;
+        });
 
-        public static System.Security.Cryptography.RSACryptoServiceProvider SignKey
+        /// <summary>
+        /// The application name
+        /// </summary>
+        public static string AppName => _appName.Value;
+
+        /// <summary>
+        /// The application name, lazy evaluated
+        /// </summary>
+        private static readonly Lazy<string> _appName = new Lazy<string>(() => ReadResourceText(APP_NAME, OEM_APP_NAME));
+
+        /// <summary>
+        /// The build update channel
+        /// </summary>
+        public static string BuildUpdateChannel => _buildUpdateChannel.Value;
+
+        /// <summary>
+        /// The build update channel, lazy evaluated
+        /// </summary>
+        private static readonly Lazy<string> _buildUpdateChannel = new Lazy<string>(() => ReadResourceText(UPDATE_CHANNEL, null));
+
+        /// <summary>
+        /// The text for the update install file
+        /// </summary>
+        public static string UpdateInstallFileText => string.Format(ReadResourceText(UPDATE_INSTALL_FILE, OEM_UPDATE_INSTALL_FILE), Guid.NewGuid().ToString("N"));
+
+        /// <summary>
+        /// Updates the machine file text with the machine ID
+        /// </summary>
+        /// <param name="machineid">The machine ID to use</param>
+        /// <returns>The updated text</returns>
+        public static string UpdateMachineFileText(string machineid)
+            => string.Format(ReadResourceText(UPDATE_MACHINE_FILE, "{0}"), string.IsNullOrWhiteSpace(machineid) ? Guid.NewGuid().ToString("N") : machineid);
+
+        /// <summary>
+        /// The keys to use for signing
+        /// </summary>
+        public static RSACryptoServiceProvider[] SignKeys => _signKeys.Value;
+
+        /// <summary>
+        /// The keys to use for signing, lazy evaluated
+        /// </summary>
+        private static readonly Lazy<RSACryptoServiceProvider[]> _signKeys = new Lazy<RSACryptoServiceProvider[]>(() =>
         {
-            get
-            { 
-                try
+            var keys = new List<RSACryptoServiceProvider>();
+
+            try
+            {
+                var src = ReadResourceText(UPDATE_KEY, OEM_UPDATE_KEY);
+
+                // Allow multiple keys, one per line
+                // For fallback, read the whole string as a key, in case there are old ones with line breaks
+                var keystrings = src.Split(new char[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries)
+                    .Select(x => x.Trim())
+                    .Prepend(src.Trim())
+                    .Where(x => !string.IsNullOrWhiteSpace(x))
+                    .Distinct();
+
+                foreach (var str in keystrings)
                 {
-                    var key = System.Security.Cryptography.RSA.Create();
-                    key.FromXmlString(ReadResourceText(UPDATE_KEY, OEM_UPDATE_KEY)); 
-                    return (System.Security.Cryptography.RSACryptoServiceProvider)key;
+                    try
+                    {
+                        var key = new RSACryptoServiceProvider();
+                        key.FromXmlString(str);
+                        keys.Add(key);
+                    }
+                    catch
+                    { }
                 }
-                catch
-                {
-                }
-
-                return null;
             }
-        }
+            catch
+            {
+            }
+
+            return keys.ToArray();
+        });
     }
 }
 

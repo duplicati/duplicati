@@ -1,19 +1,24 @@
-﻿//  Copyright (C) 2015, The Duplicati Team
-//  http://www.duplicati.com, info@duplicati.com
-//
-//  This library is free software; you can redistribute it and/or modify
-//  it under the terms of the GNU Lesser General Public License as
-//  published by the Free Software Foundation; either version 2.1 of the
-//  License, or (at your option) any later version.
-//
-//  This library is distributed in the hope that it will be useful, but
-//  WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-//  Lesser General Public License for more details.
-//
-//  You should have received a copy of the GNU Lesser General Public
-//  License along with this library; if not, write to the Free Software
-//  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+// Copyright (C) 2025, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
+
 using Duplicati.Library.Utility;
 using Newtonsoft.Json;
 using System;
@@ -109,7 +114,7 @@ namespace Duplicati.Library
 
             using (var rs = areq.GetRequestStream())
             {
-                foreach(var p in headers)
+                foreach (var p in headers)
                 {
                     rs.Write(p.Header, 0, p.Header.Length);
                     Utility.Utility.CopyStream(p.Part.ContentData, rs);
@@ -143,7 +148,7 @@ namespace Duplicati.Library
                 foreach (var p in headers)
                 {
                     await rs.WriteAsync(p.Header, 0, p.Header.Length, cancelToken).ConfigureAwait(false);
-                    await Utility.Utility.CopyStreamAsync(p.Part.ContentData, rs, tryRewindSource: true, cancelToken:cancelToken, buf: buffer).ConfigureAwait(false);
+                    await Utility.Utility.CopyStreamAsync(p.Part.ContentData, rs, tryRewindSource: true, cancelToken: cancelToken, buf: buffer).ConfigureAwait(false);
                     await rs.WriteAsync(crlf, 0, crlf.Length, cancelToken).ConfigureAwait(false);
                 }
 
@@ -238,6 +243,36 @@ namespace Duplicati.Library
         /// <param name="item">The data to json-serialize and POST in the request</param>
         /// <param name="method">Alternate HTTP method to use</param>
         /// <typeparam name="T">The type of data to return.</typeparam>
+        public virtual Task<T> PostAndGetJSONDataAsync<T>(string url, CancellationToken cancelToken, object item, string method = null)
+        {
+            var data = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(item));
+
+            return GetJSONDataAsync<T>(
+                url,
+                cancelToken,
+                req =>
+                {
+                    req.Method = method ?? "POST";
+                    req.ContentType = "application/json; charset=utf-8";
+                    req.ContentLength = data.Length;
+                },
+
+                async (req, ct) =>
+                {
+                    using (var rs = req.GetRequestStream())
+                        await rs.WriteAsync(data, 0, data.Length, ct).ConfigureAwait(false);
+                }
+            );
+        }
+
+        /// <summary>
+        /// Executes a web request by POST'ing the supplied object and json-deserializes the results as the specified type
+        /// </summary>
+        /// <returns>The deserialized JSON data.</returns>
+        /// <param name="url">The remote URL</param>
+        /// <param name="item">The data to json-serialize and POST in the request</param>
+        /// <param name="method">Alternate HTTP method to use</param>
+        /// <typeparam name="T">The type of data to return.</typeparam>
         public virtual T PostAndGetJSONData<T>(string url, object item, string method = null)
         {
             var data = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(item));
@@ -253,7 +288,7 @@ namespace Duplicati.Library
 
                 req =>
                 {
-                    using(var rs = req.GetRequestStream())
+                    using (var rs = req.GetRequestStream())
                         rs.Write(data, 0, data.Length);
                 }
             );
@@ -263,22 +298,38 @@ namespace Duplicati.Library
         {
             if (requestdata is string)
                 throw new ArgumentException("Cannot send string object as data");
-            
+
             if (method == null && requestdata != null)
                 method = "POST";
-                
+
             return ReadJSONResponse<T>(CreateRequest(url, method), requestdata);
         }
 
         public virtual T ReadJSONResponse<T>(HttpWebRequest req, object requestdata = null)
         {
-            return ReadJSONResponse<T>(new AsyncHttpRequest(req), requestdata);   
+            return ReadJSONResponse<T>(new AsyncHttpRequest(req), requestdata);
         }
 
         public virtual T ReadJSONResponse<T>(AsyncHttpRequest req, object requestdata = null)
         {
-            using(var resp = GetResponse(req, requestdata))
+            using (var resp = GetResponse(req, requestdata))
                 return ReadJSONResponse<T>(resp);
+        }
+
+        public virtual Task<T> ReadJSONResponseAsync<T>(string url, CancellationToken cancelToken, object requestdata = null, string method = null)
+        {
+            if (requestdata is string)
+                throw new ArgumentException("Cannot send string object as data");
+
+            if (method == null && requestdata != null)
+                method = "POST";
+
+            return ReadJSONResponseAsync<T>(CreateRequest(url, method), cancelToken, requestdata);
+        }
+
+        public virtual Task<T> ReadJSONResponseAsync<T>(HttpWebRequest req, CancellationToken cancelToken, object requestdata = null)
+        {
+            return ReadJSONResponseAsync<T>(new AsyncHttpRequest(req), cancelToken, requestdata);
         }
 
         public virtual async Task<T> ReadJSONResponseAsync<T>(AsyncHttpRequest req, CancellationToken cancelToken, object requestdata = null)
@@ -290,7 +341,7 @@ namespace Duplicati.Library
         public virtual T ReadJSONResponse<T>(HttpWebResponse resp)
         {
             using (var rs = Duplicati.Library.Utility.AsyncHttpRequest.TrySetTimeout(resp.GetResponseStream()))
-            using(var ps = new StreamPeekReader(rs))
+            using (var ps = new StreamPeekReader(rs))
             {
                 try
                 {
@@ -362,7 +413,7 @@ namespace Duplicati.Library
 
                 return (HttpWebResponse)req.GetResponse();
             }
-            catch(WebException wex)
+            catch (WebException wex)
             {
                 if (wex.Response is HttpWebResponse response)
                     return response;
@@ -479,7 +530,7 @@ namespace Duplicati.Library
         {
             if (requestdata is string)
                 throw new ArgumentException("Cannot send string object as data");
-            
+
             if (method == null && requestdata != null)
                 method = "POST";
 

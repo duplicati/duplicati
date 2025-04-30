@@ -1,20 +1,24 @@
-//  Copyright (C) 2015, The Duplicati Team
+// Copyright (C) 2025, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
 
-//  http://www.duplicati.com, info@duplicati.com
-//
-//  This library is free software; you can redistribute it and/or modify
-//  it under the terms of the GNU Lesser General Public License as
-//  published by the Free Software Foundation; either version 2.1 of the
-//  License, or (at your option) any later version.
-//
-//  This library is distributed in the hope that it will be useful, but
-//  WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-//  Lesser General Public License for more details.
-//
-//  You should have received a copy of the GNU Lesser General Public
-//  License along with this library; if not, write to the Free Software
-//  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 using System;
 using System.IO;
 using System.Collections.Generic;
@@ -28,6 +32,7 @@ namespace Duplicati.Library.Common.IO
     public interface ISystemIO
     {
         IFileEntry DirectoryEntry(string path);
+        IFileEntry DirectoryEntry(DirectoryInfo dirInfo);
         void DirectoryCreate(string path);
         void DirectoryDelete(string path, bool recursive);
         bool DirectoryExists(string path);
@@ -36,6 +41,7 @@ namespace Duplicati.Library.Common.IO
         void DirectorySetCreationTimeUtc(string path, DateTime time);
 
         IFileEntry FileEntry(string path);
+        IFileEntry FileEntry(FileInfo fileInfo);
         void FileMove(string source, string target);
         void FileDelete(string path);
         void FileCopy(string source, string target, bool overwrite);
@@ -46,6 +52,7 @@ namespace Duplicati.Library.Common.IO
         bool FileExists(string path);
         long FileLength(string path);
         FileStream FileOpenRead(string path);
+        FileStream FileOpenReadWrite(string path);
         FileStream FileOpenWrite(string path);
         FileStream FileCreate(string path);
         FileAttributes GetFileAttributes(string path);
@@ -69,8 +76,22 @@ namespace Duplicati.Library.Common.IO
         IEnumerable<string> EnumerateFiles(string path, string searchPattern, SearchOption searchOption);
         IEnumerable<string> EnumerateDirectories(string path);
 
+        // Enumerate FileEntries of files and directories
+        // This is more efficient than enumerating file names when metadata is needed
+        IEnumerable<IFileEntry> EnumerateFileEntries(string path);
+
         void SetMetadata(string path, Dictionary<string, string> metdata, bool restorePermissions);
         Dictionary<string, string> GetMetadata(string path, bool isSymlink, bool followSymlink);
+        /// <summary>
+        /// Sets the permission to read-write only for the current user.
+        /// </summary>
+        /// <param name="path">The file to set permissions on.</param>
+        void FileSetPermissionUserRWOnly(string path);
+        /// <summary>
+        /// Sets the permission to read-write only for the current user.
+        /// </summary>
+        /// <param name="path">The directory to set permissions on.</param>
+        void DirectorySetPermissionUserRWOnly(string path);
     }
 
 }

@@ -1,7 +1,0 @@
-{
-    "name": "Signer",
-    "description": "A tool for signing assemblies",
-    "link": "https://github.com/mtrojnar/osslsigncode/",
-    "license": "LGPL",
-    "notes": "Not distributed, only used to sign assemblies"
-}

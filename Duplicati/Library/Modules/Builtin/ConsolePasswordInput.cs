@@ -1,22 +1,24 @@
-﻿#region Disclaimer / License
-// Copyright (C) 2015, The Duplicati Team
-// http://www.duplicati.com, info@duplicati.com
+// Copyright (C) 2025, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
 // 
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 2.1 of the License, or (at your option) any later version.
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
 // 
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
 // 
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-// 
-#endregion
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
+
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -60,7 +62,7 @@ namespace Duplicati.Library.Modules.Builtin
                     return;
 
             //See if a password is already present or encryption is disabled
-            if (!commandlineOptions.ContainsKey("passphrase") && !Duplicati.Library.Utility.Utility.ParseBoolOption(commandlineOptions, "no-encryption"))
+            if (!commandlineOptions.ContainsKey("passphrase") && !Duplicati.Library.Utility.Utility.ParseBoolOption(commandlineOptions.AsReadOnly(), "no-encryption"))
             {
                 // Print a banner
                 Console.Write("\n" + Strings.ConsolePasswordInput.EnterPassphrasePrompt + ": ");
@@ -69,7 +71,7 @@ namespace Duplicati.Library.Modules.Builtin
                 var confirm = string.Equals(commandlineOptions["main-action"], "backup", StringComparison.OrdinalIgnoreCase);
 
                 // Bypass the TTY input if requested
-                if (Library.Utility.Utility.ParseBoolOption(commandlineOptions, FORCE_PASSPHRASE_FROM_STDIN_OPTION))
+                if (Library.Utility.Utility.ParseBoolOption(commandlineOptions.AsReadOnly(), FORCE_PASSPHRASE_FROM_STDIN_OPTION))
                 {
                     commandlineOptions["passphrase"] = ReadPassphraseFromStdin(confirm);
                 }
@@ -83,7 +85,7 @@ namespace Duplicati.Library.Modules.Builtin
                     catch (InvalidOperationException)
                     {
                         // Handle redirect issues on Windows only
-                        if (!Platform.IsClientWindows)
+                        if (!OperatingSystem.IsWindows())
                             throw;
 
                         commandlineOptions["passphrase"] = ReadPassphraseFromStdin(confirm);
@@ -113,56 +115,61 @@ namespace Duplicati.Library.Modules.Builtin
             return passphrase;
         }
 
-        private static string ReadPassphraseFromConsole(bool confirm)
+        /// <summary>
+        /// Reads a passphrase from the console, masking the input
+        /// </summary>
+        /// <returns>The entered passphrase</returns>
+        private static string ReadPassphraseLine()
         {
-            StringBuilder passphrase = new StringBuilder();
-
+            var passphrase = new StringBuilder();
             while (true)
             {
-                ConsoleKeyInfo k = Console.ReadKey(true);
+                var k = Console.ReadKey(true);
                 if (k.Key == ConsoleKey.Enter)
-                    break;
+                    return passphrase.ToString();
 
                 if (k.Key == ConsoleKey.Escape)
-                    throw new Library.Interface.CancelException("");
+                    throw new Interface.CancelException("");
 
-                if (k.KeyChar != '\0') passphrase.Append(k.KeyChar);
+                if (k.Key == ConsoleKey.Backspace)
+                {
+                    if (passphrase.Length > 0)
+                    {
+                        passphrase.Length -= 1;
 
-                //Unix/Linux user know that there is no feedback, Win user gets scared :)
-                if (System.Environment.OSVersion.Platform != PlatformID.Unix)
-                    Console.Write("*");
+                        // Move the cursor back, overwrite the '*' with space, and move back again
+                        Console.Write("\b \b");
+                    }
+
+                    continue;
+                }
+
+                if (k.KeyChar != '\0' && !char.IsControl(k.KeyChar))
+                    passphrase.Append(k.KeyChar);
+
+                // Provide feedback to the user
+                Console.Write("*");
             }
+        }
 
+        private static string ReadPassphraseFromConsole(bool confirm)
+        {
+            var passphrase = ReadPassphraseLine();
             Console.WriteLine();
 
             if (confirm)
             {
-                Console.Write("\n" + Strings.ConsolePasswordInput.ConfirmPassphrasePrompt + ": ");
-                StringBuilder password2 = new StringBuilder();
+                Console.Write(Strings.ConsolePasswordInput.ConfirmPassphrasePrompt + ": ");
 
-                while (true)
-                {
-                    ConsoleKeyInfo k = Console.ReadKey(true);
-                    if (k.Key == ConsoleKey.Enter)
-                        break;
-
-                    if (k.Key == ConsoleKey.Escape)
-                        return null;
-
-                    password2.Append(k.KeyChar);
-
-                    //Unix/Linux user know that there is no feedback, Win user gets scared :)
-                    if (System.Environment.OSVersion.Platform != PlatformID.Unix)
-                        Console.Write("*");
-                }
+                var password2 = ReadPassphraseLine();
                 Console.WriteLine();
 
                 if (passphrase.ToString() != password2.ToString())
-                    throw new Duplicati.Library.Interface.UserInformationException(Strings.ConsolePasswordInput.PassphraseMismatchError, "PassphraseMismatch");
+                    throw new Interface.UserInformationException(Strings.ConsolePasswordInput.PassphraseMismatchError, "PassphraseMismatch");
             }
 
             if (string.IsNullOrWhiteSpace(passphrase.ToString()))
-                throw new Duplicati.Library.Interface.UserInformationException(Strings.ConsolePasswordInput.EmptyPassphraseError, "EmptyPassphrase");
+                throw new Interface.UserInformationException(Strings.ConsolePasswordInput.EmptyPassphraseError, "EmptyPassphrase");
 
             return passphrase.ToString();
         }

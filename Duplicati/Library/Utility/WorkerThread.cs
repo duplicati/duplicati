@@ -1,26 +1,32 @@
-#region Disclaimer / License
-// Copyright (C) 2015, The Duplicati Team
-// http://www.duplicati.com, info@duplicati.com
+// Copyright (C) 2025, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
 // 
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 2.1 of the License, or (at your option) any later version.
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
 // 
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
 // 
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-// 
-#endregion
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
+
 using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading;
+
+
+// TODO: Delete this class.
+// It is essentially a queue that is processed by a worker thread, and can be implemented using a BlockingCollection or similar.
 
 namespace Duplicati.Library.Utility
 {
@@ -132,7 +138,7 @@ namespace Duplicati.Library.Utility
         {
             get
             {
-                lock(m_lock)
+                lock (m_lock)
                     return new List<Tx>(m_tasks);
             }
 
@@ -172,7 +178,8 @@ namespace Duplicati.Library.Utility
         /// <param name="skipQueue">If set to <c>true</c> skip queue.</param>
         public void AddTask(Tx task, bool skipQueue)
         {
-            if (!skipQueue) {
+            if (!skipQueue)
+            {
                 // Fall back to default AddTask method
                 AddTask(task);
                 return;
@@ -232,7 +239,7 @@ namespace Duplicati.Library.Utility
             {
                 try
                 {
-                    m_thread.Abort();
+                    m_thread.Interrupt();
                     m_thread.Join(500);
                 }
                 catch
@@ -278,7 +285,7 @@ namespace Duplicati.Library.Utility
             {
                 m_currentTask = null;
 
-                lock(m_lock)
+                lock (m_lock)
                     if (m_state == WorkerThread<Tx>.RunState.Run && m_tasks.Count > 0)
                         m_currentTask = m_tasks.Dequeue();
 
@@ -309,7 +316,7 @@ namespace Duplicati.Library.Utility
                     return;
 
                 if (m_currentTask == null && m_state == WorkerThread<Tx>.RunState.Run)
-                    lock(m_lock)
+                    lock (m_lock)
                         if (m_tasks.Count > 0)
                             m_currentTask = m_tasks.Dequeue();
 
@@ -326,18 +333,17 @@ namespace Duplicati.Library.Utility
                 }
                 catch (Exception ex)
                 {
-                    try { System.Threading.Thread.ResetAbort(); }
-                    catch { }
-
+                    //TODO: Here where Thread.ResetAbort() was called we shall integrate the CancelationToken pattern.
                     if (OnError != null)
                         try { OnError(this, m_currentTask, ex); }
-                        catch { }
+                        catch
+                        {
+                            // ignored
+                        }
                 }
                 finally
                 {
-                    try { System.Threading.Thread.ResetAbort(); }
-                    catch { }
-
+                    //TODO: Here where Thread.ResetAbort() was called we shall integrate the CancelationToken pattern.
                     m_active = false;
                 }
 
@@ -346,10 +352,13 @@ namespace Duplicati.Library.Utility
 
                 if (CompletedWork != null)
                     try { CompletedWork(this, task); }
-                    catch (Exception ex) 
+                    catch (Exception ex)
                     {
                         try { OnError(this, task, ex); }
-                        catch { }
+                        catch
+                        {
+                            // ignored
+                        }
                     }
             }
         }

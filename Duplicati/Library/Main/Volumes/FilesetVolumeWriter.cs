@@ -1,8 +1,32 @@
-﻿using System;
+// Copyright (C) 2025, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
+using System;
 using System.Collections.Generic;
 using System.IO;
 using Newtonsoft.Json;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Main.Database;
+using Duplicati.Library.Main.Operation.Common;
+using System.Threading.Tasks;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Main.Volumes
 {
@@ -126,7 +150,7 @@ namespace Duplicati.Library.Main.Volumes
             m_writer.WriteValue(name);
             if (metahash != null)
                 WriteMetaProperties(metahash, metasize, metablockhash, metablocklisthashes);
-            
+
             m_writer.WriteEndObject();
         }
 
@@ -201,6 +225,60 @@ namespace Duplicati.Library.Main.Volumes
             {
                 sr.Write(FilesetData.GetFilesetInstance(isFullBackup));
             }
+        }
+
+        /// <summary>
+        /// Probes for an unused filename, using the current time as a starting point
+        /// </summary>
+        /// <param name="database">The database to check for clashes</param>
+        /// <param name="options">The options to use for the filename</param>
+        /// <param name="start">The starting time to probe from</param>
+        /// <param name="increment">The time to increment by each probe</param>
+        /// <param name="maxTries">The maximum number of tries to probe</param>
+        /// <returns>The first unused filename</returns>
+        internal static Task<DateTime> ProbeUnusedFilenameName(DatabaseCommon database, Options options, DateTime start, TimeSpan increment = default, int maxTries = 60)
+            => ProbeUnusedFilenameName(name => database.GetRemoteVolumeIDAsync(name), options, start, increment, maxTries);
+
+        /// <summary>
+        /// Probes for an unused filename, using the current time as a starting point
+        /// </summary>
+        /// <param name="database">The database to check for clashes</param>
+        /// <param name="options">The options to use for the filename</param>
+        /// <param name="start">The starting time to probe from</param>
+        /// <param name="increment">The time to increment by each probe</param>
+        /// <param name="maxTries">The maximum number of tries to probe</param>
+        /// <returns>The first unused filename</returns>
+        internal static DateTime ProbeUnusedFilenameName(LocalDatabase database, Options options, DateTime start, TimeSpan increment = default, int maxTries = 60)
+            => ProbeUnusedFilenameName((name) => Task.FromResult(database.GetRemoteVolumeID(name)), options, start, increment, maxTries).Await();
+
+        /// <summary>
+        /// Probes for an unused filename, using the current time as a starting point
+        /// </summary>
+        /// <param name="ProbeForId">The function to use to probe for the ID</param>
+        /// <param name="options">The options to use for the filename</param>
+        /// <param name="start">The starting time to probe from</param>
+        /// <param name="increment">The time to increment by each probe</param>
+        /// <param name="maxTries">The maximum number of tries to probe</param>
+        /// <returns>The first unused filename</returns>
+        private static async Task<DateTime> ProbeUnusedFilenameName(Func<string, Task<long>> ProbeForId, Options options, DateTime start, TimeSpan increment = default, int maxTries = 60)
+        {
+            if (increment == default)
+                increment = TimeSpan.FromSeconds(1);
+
+            var s = 1;
+            var time = start;
+
+            while (s < maxTries)
+            {
+                var id = await ProbeForId(GenerateFilename(RemoteVolumeType.Files, options, null, time)).ConfigureAwait(false);
+                if (id < 0)
+                    return time;
+
+                time += increment;
+            }
+
+            throw new UserInformationException($"Failed to find an unused filename, tried {increment} * {maxTries} from {start}", "FailedToFindUnusedFilename");
+
         }
     }
 }

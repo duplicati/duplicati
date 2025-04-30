@@ -1,22 +1,24 @@
-#region Disclaimer / License
-// Copyright (C) 2015, The Duplicati Team
-// http://www.duplicati.com, info@duplicati.com
+// Copyright (C) 2025, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
 // 
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 2.1 of the License, or (at your option) any later version.
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
 // 
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
 // 
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-// 
-#endregion
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
+
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -34,49 +36,36 @@ namespace Duplicati.Library.Modules.Builtin
         private const string OPTION_SSL_VERSIONS = "allowed-ssl-versions";
 
         private const string OPTION_BUFFER_REQUESTS = "http-enable-buffering";
-		private const string OPTION_OPERATION_TIMEOUT = "http-operation-timeout";
-		private const string OPTION_READWRITE_TIMEOUT = "http-readwrite-timeout";
+        private const string OPTION_OPERATION_TIMEOUT = "http-operation-timeout";
+        private const string OPTION_READWRITE_TIMEOUT = "http-readwrite-timeout";
 
 
         private bool m_useNagle;
         private bool m_useExpect;
         private System.Net.SecurityProtocolType m_securityProtocol;
 
-		private bool m_dispose;
+        private bool m_dispose;
 
         private bool m_resetNagle;
         private bool m_resetExpect;
         private bool m_resetSecurity;
 
-		/// <summary>
-		/// The handle to the call-context http settings
-		/// </summary>
-		private IDisposable m_httpsettings;
+        /// <summary>
+        /// The handle to the call-context http settings
+        /// </summary>
+        private IDisposable m_httpsettings;
 
         /// <summary>
         /// The handle to the call-context oauth settings
         /// </summary>
 		private IDisposable m_oauthsettings;
 
-		// Copied from system reference
-		[Flags]
-        private enum CopySecurityProtocolType
-        {
-            Ssl3 = 48,
-            Tls = 192,
-            Tls11 = 768,
-            Tls12 = 3072,
-        }
-
         private static Dictionary<string, int> SecurityProtocols
         {
             get
             {
                 var res = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-                foreach (var val in Enum.GetNames(typeof(CopySecurityProtocolType)).Zip(Enum.GetValues(typeof(CopySecurityProtocolType)).Cast<int>(), (x,y) => new KeyValuePair<string, int>(x, y)))
-                    res[val.Key] = val.Value;
-
-                foreach (var val in Enum.GetNames(typeof(System.Net.SecurityProtocolType)).Zip(Enum.GetValues(typeof(System.Net.SecurityProtocolType)).Cast<int>(), (x,y) => new KeyValuePair<string, int>(x, y)))
+                foreach (var val in Enum.GetNames(typeof(System.Net.SecurityProtocolType)).Zip(Enum.GetValues(typeof(System.Net.SecurityProtocolType)).Cast<int>(), (x, y) => new KeyValuePair<string, int>(x, y)))
                     res[val.Key] = val.Value;
 
                 return res;
@@ -87,7 +76,7 @@ namespace Duplicati.Library.Modules.Builtin
         {
             var ptr = SecurityProtocols;
             var res = 0;
-            foreach (var s in names.Split(new char[] {','}, StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim()))
+            foreach (var s in names.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim()))
                 if (ptr.ContainsKey(s))
                     res = res | ptr[s];
 
@@ -118,11 +107,12 @@ namespace Duplicati.Library.Modules.Builtin
 
         public IList<Duplicati.Library.Interface.ICommandLineArgument> SupportedCommands
         {
-            get { 
+            get
+            {
                 var sslnames = SecurityProtocols.Select(x => x.Key).ToArray();
-                var defaultssl = string.Join(",", Enum.GetValues(typeof(System.Net.SecurityProtocolType)).Cast<Enum>().Where(x => System.Net.ServicePointManager.SecurityProtocol.HasFlag(x)));
+                var defaultssl = System.Net.SecurityProtocolType.SystemDefault.ToString();
 
-                return new List<Duplicati.Library.Interface.ICommandLineArgument>( new Duplicati.Library.Interface.ICommandLineArgument[] {
+                return new List<Duplicati.Library.Interface.ICommandLineArgument>(new Duplicati.Library.Interface.ICommandLineArgument[] {
                     new Duplicati.Library.Interface.CommandLineArgument(OPTION_DISABLE_EXPECT100, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean, Strings.HttpOptions.DisableExpect100Short, Strings.HttpOptions.DisableExpect100Long, "false"),
                     new Duplicati.Library.Interface.CommandLineArgument(OPTION_DISABLE_NAGLING, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean, Strings.HttpOptions.DisableNagleShort, Strings.HttpOptions.DisableNagleLong, "false"),
                     new Duplicati.Library.Interface.CommandLineArgument(OPTION_ACCEPT_SPECIFIED_CERTIFICATE, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.String, Strings.HttpOptions.DescriptionAcceptHashShort, Strings.HttpOptions.DescriptionAcceptHashLong2),
@@ -133,7 +123,7 @@ namespace Duplicati.Library.Modules.Builtin
                     new Duplicati.Library.Interface.CommandLineArgument(OPTION_OPERATION_TIMEOUT, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Timespan, Strings.HttpOptions.OperationtimeoutShort, Strings.HttpOptions.OperationtimeoutLong),
                     new Duplicati.Library.Interface.CommandLineArgument(OPTION_READWRITE_TIMEOUT, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Timespan, Strings.HttpOptions.ReadwritetimeoutShort, Strings.HttpOptions.ReadwritetimeoutLong),
                     new Duplicati.Library.Interface.CommandLineArgument(OPTION_BUFFER_REQUESTS, Duplicati.Library.Interface.CommandLineArgument.ArgumentType.Boolean, Strings.HttpOptions.BufferrequestsShort, Strings.HttpOptions.BufferrequestsLong, "false"),
-                }); 
+                });
             }
         }
 
@@ -149,24 +139,24 @@ namespace Duplicati.Library.Modules.Builtin
                 operationTimeout = Utility.Timeparser.ParseTimeSpan(timetmp);
 
             commandlineOptions.TryGetValue(OPTION_READWRITE_TIMEOUT, out timetmp);
-			if (!string.IsNullOrWhiteSpace(timetmp))
+            if (!string.IsNullOrWhiteSpace(timetmp))
                 readwriteTimeout = Utility.Timeparser.ParseTimeSpan(timetmp);
 
-			bool accepAllCertificates = Utility.Utility.ParseBoolOption(commandlineOptions, OPTION_ACCEPT_ANY_CERTIFICATE);
+            bool accepAllCertificates = Utility.Utility.ParseBoolOption(commandlineOptions.AsReadOnly(), OPTION_ACCEPT_ANY_CERTIFICATE);
 
-			string certHash;
-			commandlineOptions.TryGetValue(OPTION_ACCEPT_SPECIFIED_CERTIFICATE, out certHash);
+            string certHash;
+            commandlineOptions.TryGetValue(OPTION_ACCEPT_SPECIFIED_CERTIFICATE, out certHash);
 
             m_httpsettings = Duplicati.Library.Utility.HttpContextSettings.StartSession(
                 operationTimeout,
                 readwriteTimeout,
-                Utility.Utility.ParseBoolOption(commandlineOptions, OPTION_BUFFER_REQUESTS),
+                Utility.Utility.ParseBoolOption(commandlineOptions.AsReadOnly(), OPTION_BUFFER_REQUESTS),
                 accepAllCertificates,
                 certHash == null ? null : certHash.Split(new string[] { ",", ";" }, StringSplitOptions.RemoveEmptyEntries)
             );
 
-            bool disableNagle = Utility.Utility.ParseBoolOption(commandlineOptions, OPTION_DISABLE_NAGLING);
-            bool disableExpect100 = Utility.Utility.ParseBoolOption(commandlineOptions, OPTION_DISABLE_EXPECT100);
+            bool disableNagle = Utility.Utility.ParseBoolOption(commandlineOptions.AsReadOnly(), OPTION_DISABLE_NAGLING);
+            bool disableExpect100 = Utility.Utility.ParseBoolOption(commandlineOptions.AsReadOnly(), OPTION_DISABLE_EXPECT100);
 
             // TODO: This is done to avoid conflicting settings,
             // but ideally, we should run each operation in a separate

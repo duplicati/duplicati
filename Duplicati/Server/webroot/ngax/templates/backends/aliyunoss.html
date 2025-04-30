@@ -1,0 +1,35 @@
+<div class="input text">
+    <label for="oss_endpoint" translate>OSS Endpoint</label>
+    <input type="text" name="oss_endpoint" id="oss_endpoint" ng-model="$parent.oss_endpoint"
+           placeholder="{{'Aliyun OSS Endpoint' | translate}}"/>
+</div>
+
+<div class="input text">
+    <label for="oss_access_key_id" translate>OSS Access Key ID</label>
+    <input type="text" name="oss_access_key_id" id="oss_access_key_id" ng-model="$parent.oss_access_key_id"
+           placeholder="{{'OSS Access Key ID' | translate}}"/>
+</div>
+
+<div class="input password">
+    <label for="oss_access_key_secret" translate>OSS Access Key Secret</label>
+    <input autocomplete="new-password" type="password" name="oss_access_key_secret" id="oss_access_key_secret" ng-model="$parent.oss_access_key_secret"
+           placeholder="{{'OSS Access Key Secret' | translate}}"/>
+</div>
+
+<div class="input text">
+    <label for="oss_region" translate>OSS Region</label>
+    <input type="text" name="oss_region" id="oss_region" ng-model="$parent.oss_region" placeholder="{{'OSS Bucket Region' | translate}}" />
+</div>
+
+<div class="input text">
+    <label for="oss_bucket_name" translate>OSS Bucket name</label>
+    <input type="text" name="oss_bucket_name" id="oss_bucket_name" ng-model="$parent.oss_bucket_name" placeholder="{{'OSS Bucket name' | translate}}"/>
+</div>
+
+<div class="input text">
+    <label for="oss_path" translate>Folder path</label>
+    <input type="text" name="oss_path" id="oss_path" ng-model="$parent.Path"
+           placeholder="{{'OSS Path or subfolder in the bucket' | translate}}"/>
+</div>
+
+<div><a target="_blank" href="https://www.alibabacloud.com/zh/product/object-storage-service" translate>Aliyun OSS documents and resources</a></div>

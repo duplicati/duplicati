@@ -1,7 +1,26 @@
+// Copyright (C) 2025, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.IO;
 using Newtonsoft.Json;
 using Duplicati.Library.Interface;
@@ -225,7 +244,7 @@ namespace Duplicati.Library.Main.Volumes
                             var n = new BlockEnumerable(m_compression, m_filename);
                             if (m_blocks == null)
                                 m_blocks = n;
-                                
+
                             return n;
                         }
                     }
@@ -286,11 +305,14 @@ namespace Duplicati.Library.Main.Volumes
         {
             private readonly ICompression m_compression;
             private readonly long m_hashsize;
+            private readonly string m_blockHashAlgorithm;
 
-            public IndexBlocklistEnumerable(ICompression compression, long hashsize)
+
+            public IndexBlocklistEnumerable(ICompression compression, long hashsize, string blockHashAlgorithm)
             {
                 m_compression = compression;
                 m_hashsize = hashsize;
+                m_blockHashAlgorithm = blockHashAlgorithm;
             }
 
             private class IndexBlocklistEnumerator : IEnumerator<IIndexBlocklist>
@@ -299,15 +321,17 @@ namespace Duplicati.Library.Main.Volumes
                 {
                     private readonly ICompression m_compression;
                     private readonly string m_filename;
+                    private readonly string m_blockHashAlgorithm;
                     private readonly long m_size;
                     private readonly long m_hashsize;
 
-                    public IndexBlocklist(ICompression compression, string filename, long size, long hashsize)
+                    public IndexBlocklist(ICompression compression, string filename, long size, long hashsize, string blockHashAlgorithm)
                     {
                         m_compression = compression;
                         m_filename = filename;
                         m_size = size;
                         m_hashsize = hashsize;
+                        m_blockHashAlgorithm = blockHashAlgorithm;
                     }
 
                     public string Hash
@@ -321,16 +345,14 @@ namespace Duplicati.Library.Main.Volumes
                     {
                         get { return m_size; }
                     }
-                    
+
                     public Stream Data
                     {
                         get { return m_compression.OpenRead(m_filename); }
                     }
 
                     public IEnumerable<string> Blocklist
-                    {
-                        get { return VolumeReaderBase.ReadBlocklist(m_compression, m_filename, m_hashsize); }
-                    }
+                        => ReadBlocklistVerified(m_compression, m_filename, m_hashsize, Hash, m_blockHashAlgorithm);
                 }
 
                 private readonly ICompression m_compression;
@@ -338,11 +360,13 @@ namespace Duplicati.Library.Main.Volumes
                 private KeyValuePair<string, long>[] m_files;
                 private IndexBlocklist m_current;
                 private readonly long m_hashsize;
+                private readonly string m_blockHashAlgorithm;
 
-                public IndexBlocklistEnumerator(ICompression compression, long hashsize)
+                public IndexBlocklistEnumerator(ICompression compression, long hashsize, string blockHashAlgorithm)
                 {
                     m_compression = compression;
                     m_hashsize = hashsize;
+                    m_blockHashAlgorithm = blockHashAlgorithm;
                     this.Reset();
                 }
 
@@ -369,7 +393,7 @@ namespace Duplicati.Library.Main.Volumes
                     while (m_index < m_files.Length && IsValidBase64Hash(m_files[m_index].Key, m_hashsize))
                         m_index++;
 
-                    m_current = new IndexBlocklist(m_compression, m_files[m_index].Key, m_files[m_index].Value, m_hashsize);
+                    m_current = new IndexBlocklist(m_compression, m_files[m_index].Key, m_files[m_index].Value, m_hashsize, m_blockHashAlgorithm);
 
                     return true;
                 }
@@ -382,7 +406,7 @@ namespace Duplicati.Library.Main.Volumes
                 }
             }
 
-            public IEnumerator<IIndexBlocklist> GetEnumerator() { return new IndexBlocklistEnumerator(m_compression, m_hashsize); }
+            public IEnumerator<IIndexBlocklist> GetEnumerator() { return new IndexBlocklistEnumerator(m_compression, m_hashsize, m_blockHashAlgorithm); }
             System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() { return this.GetEnumerator(); }
         }
 
@@ -401,6 +425,6 @@ namespace Duplicati.Library.Main.Volumes
         }
 
         public IEnumerable<IIndexBlockVolume> Volumes { get { return new IndexBlockVolumeEnumerable(m_compression); } }
-        public IEnumerable<IIndexBlocklist> BlockLists { get { return new IndexBlocklistEnumerable(m_compression, m_hashsize); } }
+        public IEnumerable<IIndexBlocklist> BlockLists { get { return new IndexBlocklistEnumerable(m_compression, m_hashsize, m_blockhash); } }
     }
 }
