@@ -37,7 +37,14 @@ public class SystemInfoProvider : ISystemInfoProvider
     /// <summary>
     /// The API extensions that are available
     /// </summary>
-    private static readonly string[] APIExtensions = ["v2:backup:list-filesets", "v2:backup:list-folder", "v2:backup:list-versions", "v2:backup:search"];
+    private static readonly string[] APIExtensions = [
+        "v2:backup:list-filesets",
+        "v2:backup:list-folder",
+        "v2:backup:list-versions",
+        "v2:backup:search",
+        "v2:destination:test"
+    ];
+
     /// <summary>
     /// The API scopes that are available
     /// </summary>
