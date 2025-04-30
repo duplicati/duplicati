@@ -1091,7 +1091,7 @@ namespace Duplicati.CommandLine
                     {
                         previd = id;
                         outputcount = 0;
-                        con.MessageEvent(string.Format("{0}\t: {1}\t({2} match(es))", id, time.ToLocalTime(), count));
+                        con.MessageEvent(string.Format("Fileset {0}\t: {1}\t({2} match(es))", id, time.ToLocalTime(), count));
                     }
 
                     con.MessageEvent(string.Format("\t{0} ({1})", path, Library.Utility.Utility.FormatSizeString(size)));
