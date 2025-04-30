@@ -192,12 +192,12 @@ namespace Duplicati.Server
                 filters);
         }
 
-        public static IRunnerData CreateListFilesetsTask(Duplicati.Server.Serialization.Interface.IBackup backup)
+        public static IRunnerData CreateListFilesetsTask(Duplicati.Server.Serialization.Interface.IBackup backup, Dictionary<string, string> extraOptions = null)
         {
             return CreateTask(
                 DuplicatiOperation.ListFilesets,
                 backup,
-                new Dictionary<string, string>());
+                extraOptions ?? new Dictionary<string, string>());
         }
 
         public static IRunnerData CreateListFolderContents(Duplicati.Server.Serialization.Interface.IBackup backup, string[] folders, DateTime time, int pageSize, int pageOffset)
