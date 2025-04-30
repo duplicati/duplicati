@@ -85,24 +85,31 @@ public class BackupListing : IEndpointV2
         // Retries will hang the http request
         extra["number-of-retries"] = "0";
 
-        var r = Runner.Run(Runner.CreateListFilesetsTask(bk), false) as IListFilesetResults;
-        if (r == null)
-            throw new ServerErrorException("No result from list operation");
+        try
+        {
+            var r = Runner.Run(Runner.CreateListFilesetsTask(bk, extra), false) as IListFilesetResults;
+            if (r == null)
+                throw new ServerErrorException("No result from list operation");
 
-        if (r.EncryptedFiles.HasValue && r.EncryptedFiles.Value && bk.Settings.Any(x => string.Equals("--no-encryption", x.Name, StringComparison.OrdinalIgnoreCase)))
-            throw new ServerErrorException("encrypted-storage");
+            if (r.EncryptedFiles.HasValue && r.EncryptedFiles.Value && bk.Settings.Any(x => string.Equals("--no-encryption", x.Name, StringComparison.OrdinalIgnoreCase)))
+                throw new UserInformationException("The remote storage is encrypted, but no passphrase is given", "EncryptedStorageNoPassphrase");
 
-        return Dto.V2.ListFilesetsResponseDto.Create(
-            r.Filesets
-                .Select(x => new Dto.V2.ListFilesetsResponseItem()
-                {
-                    Version = x.Version,
-                    Time = x.Time,
-                    IsFullBackup = x.IsFullBackup,
-                    FileCount = x.FileCount,
-                    FileSizes = x.FileSizes
-                })
-        );
+            return Dto.V2.ListFilesetsResponseDto.Create(
+                r.Filesets
+                    .Select(x => new Dto.V2.ListFilesetsResponseItem()
+                    {
+                        Version = x.Version,
+                        Time = x.Time,
+                        IsFullBackup = x.IsFullBackup,
+                        FileCount = x.FileCount,
+                        FileSizes = x.FileSizes
+                    })
+            );
+        }
+        catch (FolderMissingException fex)
+        {
+            throw new UserInformationException("Remote folder is missing", "FolderMissing", fex);
+        }
     }
 
     private static Dto.V2.ListFileVersionsOutputDto ExecuteListVersions(IBackup bk, Dto.V2.ListFileVersionsRequestDto input)
