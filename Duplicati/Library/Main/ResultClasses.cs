@@ -578,6 +578,41 @@ namespace Duplicati.Library.Main
         }
     }
 
+    internal sealed record ListFilesetResultFileset(long Version, DateTime Time, bool? IsFullBackup, long? FileCount, long? FileSizes) : IListFilesetResultFileset;
+
+
+    internal class ListFilesetResults : BasicResults, IListFilesetResults
+    {
+        public override OperationMode MainOperation => OperationMode.ListFilesets;
+        public IEnumerable<IListFilesetResultFileset> Filesets { get; set; }
+        public bool? EncryptedFiles { get; set; }
+    }
+
+    internal sealed record PaginatedResults<T>(int Page, int PageSize, int TotalPages, long TotalCount, IEnumerable<T> Items) : IPaginatedResults<T>;
+
+    internal class ListFolderResults : BasicResults, IListFolderResults
+    {
+        public override OperationMode MainOperation => OperationMode.ListFolder;
+        public IPaginatedResults<IListFolderEntry> Entries { get; set; }
+    }
+
+    internal sealed record ListFileVersion(long Version, DateTime Time, string Path, long Size, bool IsDirectory, bool IsSymlink, DateTime LastModified) : IListFileVersion;
+
+    internal class ListFileVersionsResults : BasicResults, IListFileVersionsResults
+    {
+        public override OperationMode MainOperation => OperationMode.ListFileVersions;
+        public IPaginatedResults<IListFileVersion> FileVersions { get; set; }
+    }
+
+    internal sealed record SearchFileVersion(long Version, DateTime Time, string Path, long Size, bool IsDirectory, bool IsSymlink, DateTime LastModified, Range MatchedPathRange) : ISearchFileVersion;
+
+    internal class SearchFilesResults : BasicResults, ISearchFilesResults
+    {
+        public override OperationMode MainOperation => OperationMode.SearchFiles;
+        public IPaginatedResults<ISearchFileVersion> FileVersions { get; set; }
+    }
+
+
     internal class ListResults : BasicResults, IListResults
     {
         private IEnumerable<IListResultFileset> m_filesets;

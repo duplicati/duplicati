@@ -115,6 +115,183 @@ namespace Duplicati.Library.Interface
         bool EncryptedFiles { get; }
     }
 
+    /// <summary>
+    /// The result of a list fileset operation
+    /// </summary>
+    public interface IListFilesetResultFileset
+    {
+        /// <summary>
+        /// The version of the fileset
+        /// </summary>
+        long Version { get; }
+        /// <summary>
+        /// Flag indicating if this is a full backup; not set if listing remote
+        /// </summary>
+        bool? IsFullBackup { get; }
+        /// <summary>
+        /// The timestamp of the fileset
+        /// </summary>
+        DateTime Time { get; }
+        /// <summary>
+        /// The number of files in the fileset; not set if listing remote
+        /// </summary>
+        long? FileCount { get; }
+        /// <summary>
+        /// The size of the files in the fileset; not set if listing remote
+        /// </summary>
+        long? FileSizes { get; }
+    }
+
+    /// <summary>
+    /// The result of a list fileset operation
+    /// </summary>
+    public interface IListFilesetResults : IBasicResults
+    {
+        /// <summary>
+        /// The filesets in the result
+        /// </summary>
+        IEnumerable<IListFilesetResultFileset> Filesets { get; }
+
+        /// <summary>
+        /// A flag indicating if the backup contains encrypted files
+        /// /// </summary>
+        bool? EncryptedFiles { get; }
+    }
+
+    /// <summary>
+    /// Wrapper for the paginated results
+    /// </summary>
+    /// <typeparam name="T">The type of the items in the result</typeparam>
+    public interface IPaginatedResults<T>
+    {
+        /// <summary>
+        /// The page number of the result
+        /// </summary>
+        int Page { get; }
+        /// <summary>
+        /// The page size of the result
+        /// </summary>
+        int PageSize { get; }
+        /// <summary>
+        /// The total number of pages in the result
+        /// </summary>
+        int TotalPages { get; }
+        /// <summary>
+        /// The total number of items in the result
+        /// </summary>
+        long TotalCount { get; }
+        /// <summary>
+        /// The items in the result
+        /// </summary>
+        IEnumerable<T> Items { get; }
+    }
+
+    /// <summary>
+    /// Results of a list folder operation
+    /// </summary>
+    public interface IListFolderResults : IBasicResults
+    {
+        /// <summary>
+        /// The files in the folder
+        /// </summary>
+        IPaginatedResults<IListFolderEntry> Entries { get; }
+    }
+
+    /// <summary>
+    /// The interface for an entry in a list folder operation
+    /// </summary>
+    public interface IListFolderEntry
+    {
+        /// <summary>
+        /// The path of the entry
+        /// </summary>
+        string Path { get; }
+        /// <summary>
+        /// The size of the entry
+        /// </summary>
+        long Size { get; }
+        /// <summary>
+        /// True if the entry is a directory, false otherwise
+        /// </summary>
+        bool IsDirectory { get; }
+        /// <summary>
+        /// True if the entry is a symlink, false otherwise
+        /// </summary>
+        bool IsSymlink { get; }
+        /// <summary>
+        /// The last modified time of the entry
+        /// </summary>
+        DateTime LastModified { get; }
+    }
+
+    /// <summary>
+    /// Results of a list file versions operation
+    /// </summary>
+    public interface IListFileVersionsResults : IBasicResults
+    {
+        /// <summary>
+        /// The file versions in the result
+        /// </summary>
+        IPaginatedResults<IListFileVersion> FileVersions { get; }
+    }
+
+    /// <summary>
+    /// The interface for a file version in a list file versions operation
+    /// </summary>
+    public interface IListFileVersion
+    {
+        /// <summary>
+        /// The path of the file version
+        /// </summary>
+        string Path { get; }
+        /// <summary>
+        /// The version of the backup
+        /// </summary>
+        long Version { get; }
+        /// <summary>
+        /// The time of the backup
+        /// </summary>
+        DateTime Time { get; }
+        /// <summary>
+        /// The size of the file version
+        /// </summary>
+        long Size { get; }
+        /// <summary>
+        /// Flag indicating if the file version is a directory
+        /// </summary>
+        bool IsDirectory { get; }
+        /// <summary>
+        /// Flag indicating if the file version is a symlink
+        /// </summary>
+        bool IsSymlink { get; }
+        /// <summary>
+        /// The last modified time of the file version
+        /// </summary>
+        DateTime LastModified { get; }
+    }
+
+    /// <summary>
+    /// Results of a search files operation
+    /// </summary>
+    public interface ISearchFilesResults : IBasicResults
+    {
+        /// <summary>
+        /// The file versions in the result
+        /// </summary>
+        IPaginatedResults<ISearchFileVersion> FileVersions { get; }
+    }
+
+    /// <summary>
+    /// The interface for a file version in a search files operation
+    /// </summary>
+    public interface ISearchFileVersion : IListFileVersion
+    {
+        /// <summary>
+        /// The matched path of the file version
+        /// </summary>
+        Range MatchedPathRange { get; }
+    }
+
     public interface IListAffectedResults : IBasicResults
     {
         IEnumerable<IListResultFileset> Filesets { get; }

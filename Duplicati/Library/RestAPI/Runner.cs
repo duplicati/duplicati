@@ -25,6 +25,7 @@ using System.Collections.Generic;
 using Duplicati.Library.Interface;
 using Duplicati.Server.Serialization;
 using Duplicati.Library.RestAPI;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.Server
 {
@@ -35,6 +36,9 @@ namespace Duplicati.Server
             Duplicati.Server.Serialization.Interface.IBackup Backup { get; }
             IDictionary<string, string> ExtraOptions { get; }
             string[] FilterStrings { get; }
+            string[] ExtraArguments { get; }
+            int PageSize { get; }
+            int PageOffset { get; }
             void Stop();
             void Abort();
             void Pause(bool alsoTransfers);
@@ -54,6 +58,10 @@ namespace Duplicati.Server
 
             public string BackupID { get { return Backup.ID; } }
             public long TaskID { get { return m_taskID; } }
+
+            public string[] ExtraArguments { get; internal set; }
+            public int PageSize { get; internal set; } = 0;
+            public int PageOffset { get; internal set; } = 0;
 
             internal Duplicati.Library.Main.Controller Controller { get; set; }
 
@@ -151,14 +159,17 @@ namespace Duplicati.Server
             return new CustomRunnerTask(runner);
         }
 
-        public static IRunnerData CreateTask(Duplicati.Server.Serialization.DuplicatiOperation operation, Duplicati.Server.Serialization.Interface.IBackup backup, IDictionary<string, string> extraOptions = null, string[] filterStrings = null)
+        public static IRunnerData CreateTask(Duplicati.Server.Serialization.DuplicatiOperation operation, Duplicati.Server.Serialization.Interface.IBackup backup, IDictionary<string, string> extraOptions = null, string[] filterStrings = null, string[] extraArguments = null, int pageSize = 0, int pageOffset = 0)
         {
             return new RunnerData()
             {
                 Operation = operation,
                 Backup = backup,
                 ExtraOptions = extraOptions,
-                FilterStrings = filterStrings
+                FilterStrings = filterStrings,
+                ExtraArguments = extraArguments,
+                PageSize = pageSize,
+                PageOffset = pageOffset
             };
         }
 
@@ -180,6 +191,58 @@ namespace Duplicati.Server
                 dict,
                 filters);
         }
+
+        public static IRunnerData CreateListFilesetsTask(Duplicati.Server.Serialization.Interface.IBackup backup)
+        {
+            return CreateTask(
+                DuplicatiOperation.ListFilesets,
+                backup,
+                new Dictionary<string, string>());
+        }
+
+        public static IRunnerData CreateListFolderContents(Duplicati.Server.Serialization.Interface.IBackup backup, string[] folders, DateTime time, int pageSize, int pageOffset)
+        {
+            var dict = new Dictionary<string, string>();
+            if (time.Ticks > 0)
+                dict["time"] = Duplicati.Library.Utility.Utility.SerializeDateTime(time.ToUniversalTime());
+
+            return CreateTask(
+                DuplicatiOperation.ListFolderContents,
+                backup,
+                dict,
+                extraArguments: folders,
+                pageSize: pageSize,
+                pageOffset: pageOffset);
+        }
+
+        public static IRunnerData ListFileVersionsTask(Duplicati.Server.Serialization.Interface.IBackup backup, string[] filepaths, int pageSize, int pageOffset)
+        {
+            var dict = new Dictionary<string, string>();
+            return CreateTask(
+                DuplicatiOperation.ListFileVersions,
+                backup,
+                dict,
+                extraArguments: filepaths,
+                pageSize: pageSize,
+                pageOffset: pageOffset);
+        }
+
+        public static IRunnerData CreateSearchEntriesTask(Duplicati.Server.Serialization.Interface.IBackup backup, string[] filters, string[] folders, DateTime time, int pageSize, int pageOffset)
+        {
+            var dict = new Dictionary<string, string>();
+            if (time.Ticks > 0)
+                dict["time"] = Duplicati.Library.Utility.Utility.SerializeDateTime(time.ToUniversalTime());
+
+            return CreateTask(
+                DuplicatiOperation.SearchEntries,
+                backup,
+                dict,
+                filters,
+                extraArguments: folders,
+                pageSize: pageSize,
+                pageOffset: pageOffset);
+        }
+
 
         public static IRunnerData CreateRestoreTask(Duplicati.Server.Serialization.Interface.IBackup backup, string[] filters,
                                                     DateTime time, string restoreTarget, bool overwrite, bool restore_permissions,
@@ -603,6 +666,27 @@ namespace Duplicati.Server
                                 var r = controller.Vacuum();
                                 UpdateMetadata(backup, r);
                                 return r;
+                            }
+
+                        case DuplicatiOperation.ListFilesets:
+                            {
+                                var r = controller.ListFilesets();
+                                UpdateMetadata(backup, r);
+                                return r;
+                            }
+                        case DuplicatiOperation.ListFolderContents:
+                            {
+                                return controller.ListFolder(data.ExtraArguments, data.PageOffset * data.PageSize, data.PageSize);
+                            }
+
+                        case DuplicatiOperation.ListFileVersions:
+                            {
+                                return controller.ListFileVersions(data.ExtraArguments, data.PageOffset * data.PageSize, data.PageSize);
+                            }
+                        case DuplicatiOperation.SearchEntries:
+                            {
+                                var parsedfilter = new FilterExpression(data.FilterStrings);
+                                return controller.SearchEntries(data.ExtraArguments, parsedfilter, data.PageOffset * data.PageSize, data.PageSize);
                             }
                         default:
                             //TODO: Log this

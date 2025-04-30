@@ -44,6 +44,10 @@ namespace Duplicati.Server.Serialization
         Delete,
         Vacuum,
         CustomRunner,
+        ListFilesets,
+        ListFolderContents,
+        ListFileVersions,
+        SearchEntries,
     }
 
     public enum SuggestedStatusIcon

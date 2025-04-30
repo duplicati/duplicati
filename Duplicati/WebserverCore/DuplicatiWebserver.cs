@@ -27,6 +27,7 @@ using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
 using Duplicati.Server.Database;
 using Duplicati.WebserverCore.Abstractions;
+using Duplicati.WebserverCore.Dto.V2;
 using Duplicati.WebserverCore.Exceptions;
 using Duplicati.WebserverCore.Extensions;
 using Duplicati.WebserverCore.Middlewares;
@@ -335,7 +336,23 @@ public class DuplicatiWebserver
             app.Run(async context =>
             {
                 var thrownException = context.Features.Get<IExceptionHandlerPathFeature>()?.Error;
-                if (thrownException is UserReportedHttpException userReportedHttpException)
+                var userReportedHttpException = thrownException as UserReportedHttpException;
+                var userInformationException = thrownException as UserInformationException;
+                var isV2Request = (context.Request.Path.Value ?? "").StartsWith("/api/v2/");
+
+                if (isV2Request && userReportedHttpException != null)
+                {
+                    context.Response.StatusCode = (int)HttpStatusCode.OK;
+                    context.Response.ContentType = "application/json";
+                    await context.Response.WriteAsync(JsonSerializer.Serialize(ResponseEnvelope.Failure(userReportedHttpException.Message, $"HTTP-{userReportedHttpException.StatusCode}")));
+                }
+                else if (isV2Request && userInformationException != null)
+                {
+                    context.Response.StatusCode = (int)HttpStatusCode.OK;
+                    context.Response.ContentType = "application/json";
+                    await context.Response.WriteAsync(JsonSerializer.Serialize(ResponseEnvelope.Failure(userInformationException.Message, userInformationException.HelpID)));
+                }
+                else if (userReportedHttpException != null)
                 {
                     context.Response.StatusCode = userReportedHttpException.StatusCode;
                     context.Response.ContentType = userReportedHttpException.ContentType;
@@ -344,7 +361,7 @@ public class DuplicatiWebserver
                     else
                         await context.Response.WriteAsync(JsonSerializer.Serialize(new { Error = userReportedHttpException.Message, Code = userReportedHttpException.StatusCode }));
                 }
-                else if (thrownException is UserInformationException userInformationException)
+                else if (userInformationException != null)
                 {
                     context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
                     context.Response.ContentType = "application/json";

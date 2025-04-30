@@ -23,11 +23,9 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using System.IO;
-using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Library.Common.IO;
-using Duplicati.Library.Utility;
 
 namespace Duplicati.CommandLine
 {
@@ -319,6 +317,177 @@ namespace Duplicati.CommandLine
         /// </summary>
         public static bool ContainsWildcards(string s) => s.IndexOfAny(wildcardCharacters) >= 0;
 
+        private static void HandleDbAccessWithoutPassphrase(string backend, Dictionary<string, string> options)
+        {
+            // Support for not adding the --auth-username if possible
+            string dbpath;
+            options.TryGetValue("dbpath", out dbpath);
+            if (string.IsNullOrEmpty(dbpath))
+            {
+                dbpath = Library.Main.CLIDatabaseLocator.GetDatabasePathForCLI(backend, new Duplicati.Library.Main.Options(options), false, true);
+                if (dbpath != null)
+                    options["dbpath"] = dbpath;
+            }
+
+            // Don't ask for passphrase if we have a local db
+            if (!string.IsNullOrEmpty(dbpath) && System.IO.File.Exists(dbpath) && !options.ContainsKey("no-encryption") && !Duplicati.Library.Utility.Utility.ParseBoolOption(options, "no-local-db"))
+            {
+                string passphrase;
+                options.TryGetValue("passphrase", out passphrase);
+                if (string.IsNullOrEmpty(passphrase))
+                {
+                    string existing;
+                    options.TryGetValue("disable-module", out existing);
+                    if (string.IsNullOrWhiteSpace(existing))
+                        options["disable-module"] = "console-password-input";
+                    else
+                        options["disable-module"] = string.Join(",", new string[] { existing, "console-password-input" });
+                }
+            }
+        }
+
+        public static int ListFilesets(TextWriter outwriter, Action<Duplicati.Library.Main.Controller> setup, List<string> args, Dictionary<string, string> options, Library.Utility.IFilter _)
+        {
+            using (var console = new ConsoleOutput(outwriter, options))
+            using (var i = new Library.Main.Controller(args[0], options, console))
+            {
+                setup(i);
+                var backend = args[0];
+                args.RemoveAt(0);
+
+                HandleDbAccessWithoutPassphrase(backend, options);
+
+                if (args.Count != 0)
+                {
+                    outwriter.WriteLine("You cannot specify any arguments for the list-filesets command");
+                    return 200;
+                }
+
+                if (options.ContainsKey("version"))
+                {
+                    outwriter.WriteLine("You cannot specify a version for the list-filesets command");
+                    return 200;
+                }
+
+                if (options.ContainsKey("time"))
+                {
+                    outwriter.WriteLine("You cannot specify a time for the list-filesets command");
+                    return 200;
+                }
+
+                var res = i.ListFilesets();
+                outwriter.WriteLine("Listing filesets:");
+                foreach (var e in res.Filesets)
+                {
+                    if (e.FileCount != null && e.FileSizes != null && e.IsFullBackup != null)
+                        outwriter.WriteLine($"{e.Version}\t: {e.Time} ({e.FileCount.Value} files, {Library.Utility.Utility.FormatSizeString(e.FileSizes.Value)}){(e.IsFullBackup.Value ? "" : ", partial")}");
+                    else
+                        outwriter.WriteLine($"{e.Version}\t: {e.Time}");
+                }
+            }
+
+            return 0;
+        }
+
+        public static int ListFolderContent(TextWriter outwriter, Action<Duplicati.Library.Main.Controller> setup, List<string> args, Dictionary<string, string> options, Library.Utility.IFilter _)
+        {
+            using (var console = new ConsoleOutput(outwriter, options))
+            using (var i = new Library.Main.Controller(args[0], options, console))
+            {
+                setup(i);
+                var backend = args[0];
+                args.RemoveAt(0);
+
+                HandleDbAccessWithoutPassphrase(backend, options);
+
+                if (options.ContainsKey("all-versions"))
+                {
+                    outwriter.WriteLine("You cannot specify all-versions for the list-folder command");
+                    return 200;
+                }
+
+                var res = i.ListFolder(args.ToArray(), 0, 0);
+                outwriter.WriteLine("Folder contents:");
+                foreach (var e in res.Entries.Items)
+                {
+                    if (e.IsDirectory)
+                        outwriter.WriteLine($"{e.Path}: (directory)");
+                    else if (e.IsSymlink)
+                        outwriter.WriteLine($"{e.Path}: (symlink)");
+                    else
+                        outwriter.WriteLine($"{e.Path}: ({Library.Utility.Utility.FormatSizeString(e.Size)})");
+                }
+            }
+
+            return 0;
+        }
+
+        public static int ListFileVersions(TextWriter outwriter, Action<Duplicati.Library.Main.Controller> setup, List<string> args, Dictionary<string, string> options, Library.Utility.IFilter _)
+        {
+            using (var console = new ConsoleOutput(outwriter, options))
+            using (var i = new Library.Main.Controller(args[0], options, console))
+            {
+                setup(i);
+                var backend = args[0];
+                args.RemoveAt(0);
+
+                HandleDbAccessWithoutPassphrase(backend, options);
+
+                var res = i.ListFileVersions(args.ToArray(), 0, 0);
+                outwriter.WriteLine("File versions:");
+                var prevFile = string.Empty;
+                foreach (var e in res.FileVersions.Items)
+                {
+                    if (e.Path != prevFile)
+                    {
+                        outwriter.WriteLine($"{e.Path}:");
+                        prevFile = e.Path;
+                    }
+                    if (e.IsDirectory)
+                        outwriter.WriteLine($"  [{e.Version}] {e.Time}: (directory)");
+                    else if (e.IsSymlink)
+                        outwriter.WriteLine($"  [{e.Version}] {e.Time}: (symlink)");
+                    else
+                        outwriter.WriteLine($"  [{e.Version}] {e.Time}: ({Library.Utility.Utility.FormatSizeString(e.Size)})");
+                }
+            }
+
+            return 0;
+        }
+
+        public static int SearchEntries(TextWriter outwriter, Action<Duplicati.Library.Main.Controller> setup, List<string> args, Dictionary<string, string> options, Library.Utility.IFilter filter)
+        {
+            using (var console = new ConsoleOutput(outwriter, options))
+            using (var i = new Library.Main.Controller(args[0], options, console))
+            {
+                setup(i);
+                var backend = args[0];
+                args.RemoveAt(0);
+
+                HandleDbAccessWithoutPassphrase(backend, options);
+
+                var res = i.SearchEntries(args.ToArray(), filter, 0, 0);
+                outwriter.WriteLine("File versions:");
+                var prevFile = string.Empty;
+                foreach (var e in res.FileVersions.Items)
+                {
+                    if (e.Path != prevFile)
+                    {
+                        outwriter.WriteLine($"{e.Path}:");
+                        prevFile = e.Path;
+                    }
+                    if (e.IsDirectory)
+                        outwriter.WriteLine($"  [{e.Version}] {e.Time}: (directory)");
+                    else if (e.IsSymlink)
+                        outwriter.WriteLine($"  [{e.Version}] {e.Time}: (symlink)");
+                    else
+                        outwriter.WriteLine($"  [{e.Version}] {e.Time}: ({Library.Utility.Utility.FormatSizeString(e.Size)})");
+                }
+            }
+
+            return 0;
+        }
+
         public static int List(TextWriter outwriter, Action<Duplicati.Library.Main.Controller> setup, List<string> args, Dictionary<string, string> options, Library.Utility.IFilter filter)
         {
             filter = filter ?? new Duplicati.Library.Utility.FilterExpression();
@@ -361,32 +530,7 @@ namespace Duplicati.CommandLine
 
                 args = PrefixArgsWithAsterisk(args).ToList();
 
-                // Support for not adding the --auth-username if possible
-                string dbpath;
-                options.TryGetValue("dbpath", out dbpath);
-                if (string.IsNullOrEmpty(dbpath))
-                {
-                    dbpath = Library.Main.CLIDatabaseLocator.GetDatabasePathForCLI(backend, new Duplicati.Library.Main.Options(options), false, true);
-                    if (dbpath != null)
-                        options["dbpath"] = dbpath;
-                }
-
-                // Don't ask for passphrase if we have a local db
-                if (!string.IsNullOrEmpty(dbpath) && System.IO.File.Exists(dbpath) && !options.ContainsKey("no-encryption") && !Duplicati.Library.Utility.Utility.ParseBoolOption(options, "no-local-db"))
-                {
-                    string passphrase;
-                    options.TryGetValue("passphrase", out passphrase);
-                    if (string.IsNullOrEmpty(passphrase))
-                    {
-                        string existing;
-                        options.TryGetValue("disable-module", out existing);
-                        if (string.IsNullOrWhiteSpace(existing))
-                            options["disable-module"] = "console-password-input";
-                        else
-                            options["disable-module"] = string.Join(",", new string[] { existing, "console-password-input" });
-                    }
-                }
-
+                HandleDbAccessWithoutPassphrase(backend, options);
 
                 bool controlFiles = Library.Utility.Utility.ParseBoolOption(options, "control-files");
                 options.Remove("control-files");

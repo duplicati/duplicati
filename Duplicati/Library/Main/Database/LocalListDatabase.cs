@@ -27,6 +27,7 @@ using System.Linq;
 using System.Collections.Generic;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Utility;
+using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.Main.Database
 {
@@ -414,6 +415,679 @@ namespace Duplicati.Library.Main.Database
             return new FileSets(this, time, versions);
         }
 
+        /// <summary>
+        /// Represents a fileset entry in the list fileset results.
+        /// </summary>
+        /// <param name="Version">The fileset version
+        /// <param name="IsFullBackup">Flag indicating if the backup is a full backup or synthetic backup</param>
+        /// <param name="Time">The timestamp of the fileset</param>
+        /// <param name="FileCount">The number of files in the fileset</param>
+        /// <param name="FileSizes">>The total size of files in the fileset</param>
+        private sealed record FilesetEntry(long Version, bool? IsFullBackup, DateTime Time, long? FileCount, long? FileSizes) : IListFilesetResultFileset;
+
+        /// <summary>
+        /// Lists all filesets with summary data
+        /// </summary>
+        /// <returns>A collection of fileset entries</returns>
+        public IEnumerable<IListFilesetResultFileset> ListFilesetsExtended()
+        {
+            const string query = @"
+SELECT 
+    f.""ID"" AS ""FilesetID"",
+    f.""Timestamp"",
+    f.""IsFullBackup"",
+    COUNT(fe.""FileID"") AS ""NumberOfFiles"",
+    COALESCE(SUM(b.""Length""), 0) AS ""TotalFileSize""
+FROM 
+    ""Fileset"" f
+LEFT JOIN 
+    ""FilesetEntry"" fe ON f.""ID"" = fe.""FilesetID""
+LEFT JOIN 
+    ""FileLookup"" fl ON fe.""FileID"" = fl.""ID""
+LEFT JOIN 
+    ""Blockset"" b ON fl.""BlocksetID"" = b.""ID""
+GROUP BY 
+    f.""ID""
+ORDER BY 
+    f.""Timestamp"" DESC;
+";
+
+            using (var cmd = m_connection.CreateCommand(query))
+                foreach (var rd in cmd.ExecuteReaderEnumerable())
+                {
+                    var id = rd.ConvertValueToInt64(0);
+                    var time = ParseFromEpochSeconds(rd.ConvertValueToInt64(1));
+                    var isFullBackup = rd.GetInt32(2) == BackupType.FULL_BACKUP;
+                    var filecount = rd.ConvertValueToInt64(3, -1L);
+                    var filesizes = rd.ConvertValueToInt64(4, -1L);
+                    yield return new FilesetEntry(id, isFullBackup, time, filecount, filesizes);
+                }
+        }
+
+        /// <summary>
+        /// Represents a folder entry in the list folder results.
+        /// </summary>
+        /// <param name="Path">The path of the folder entry.</param>
+        /// <param name="Size">The size of the folder entry.</param>
+        /// <param name="IsDirectory">Indicates if the entry is a directory.</param>
+        /// <param name="IsSymlink">Indicates if the entry is a symbolic link.</param>
+        /// <param name="LastModified">The last modified date of the folder entry.</param>
+        private sealed record FolderEntry(string Path, long Size, bool IsDirectory, bool IsSymlink, DateTime LastModified) : IListFolderEntry;
+
+        /// <summary>
+        /// Lists the folder entries for a given fileset and prefix IDs.
+        /// </summary>
+        /// <param name="prefixIds">The prefix IDs to filter the folder entries.</param>
+        /// <param name="filesetid">The fileset ID to filter the folder entries.</param>
+        /// <param name="offset">The offset for pagination.</param>
+        /// <param name="limit">>The limit for pagination.</param>
+        /// <returns>A paginated result set of folder entries.</returns>
+        public IPaginatedResults<IListFolderEntry> ListFolder(IEnumerable<long> prefixIds, long filesetid, long offset, long limit)
+        {
+            if (offset != 0 && limit <= 0)
+                throw new ArgumentException("Cannot use offset without limit specified.", nameof(offset));
+            if (limit <= 0)
+                limit = long.MaxValue;
+
+            using var cmd = m_connection.CreateCommand();
+
+            if (prefixIds.Count() == 0)
+                return new PaginatedResults<IListFolderEntry>(0, (int)limit, 0, 0, Enumerable.Empty<IListFolderEntry>());
+
+            // Then query the matching files
+            cmd.SetCommandAndParameters($@"
+        SELECT 
+            pp.""Prefix"" || fl.""Path"" AS ""FullPath"",
+            b.""Length"",
+            (CASE WHEN fl.""BlocksetID"" = @FolderBlocksetId THEN 1 ELSE 0 END) AS ""IsDirectory"",
+            (CASE WHEN fl.""BlocksetID"" = @SymlinkBlocksetId THEN 1 ELSE 0 END) AS ""IsSymlink"",
+            fe.""Lastmodified""
+        FROM ""FilesetEntry"" fe
+        INNER JOIN ""FileLookup"" fl ON fe.""FileID"" = fl.""ID""
+        INNER JOIN ""PathPrefix"" pp ON fl.""PrefixID"" = pp.""ID""
+        LEFT JOIN ""Blockset"" b ON fl.""BlocksetID"" = b.""ID""
+        WHERE fe.""FilesetID"" = @filesetid AND fl.""PrefixID"" IN (@PrefixIds)
+        ORDER BY pp.""Prefix"" ASC, fl.""Path"" ASC
+        LIMIT @limit OFFSET @offset
+    ")
+                .SetParameterValue("@FolderBlocksetId", FOLDER_BLOCKSET_ID)
+                .SetParameterValue("@SymlinkBlocksetId", SYMLINK_BLOCKSET_ID)
+                .ExpandInClauseParameter("@PrefixIds", prefixIds)
+                .SetParameterValue("@filesetid", filesetid)
+                .SetParameterValue("@limit", limit)
+                .SetParameterValue("@offset", offset);
+
+            var results = new List<IListFolderEntry>();
+            foreach (var rd in cmd.ExecuteReaderEnumerable())
+            {
+                var path = rd.ConvertValueToString(0) ?? string.Empty;
+                var size = rd.ConvertValueToInt64(-1);
+                var isDir = rd.GetInt32(2) != 0;
+                var isSymlink = rd.GetInt32(3) != 0;
+                var lastModified = new DateTime(rd.ConvertValueToInt64(4, 0), DateTimeKind.Utc);
+
+                results.Add(new FolderEntry(path, size, isDir, isSymlink, lastModified));
+            }
+
+            long totalCount;
+            if (offset != 0)
+            {
+                // Only calculate the total for the first query
+                totalCount = -1;
+            }
+            else if (results.Count <= limit)
+            {
+                // If we have all results, we already know the total
+                totalCount = results.Count;
+            }
+            else
+            {
+                // Get the total count of files for the given fileset and prefix IDs
+                totalCount = cmd.SetCommandAndParameters($@"
+                    SELECT COUNT(*)
+                    FROM FilesetEntry fe
+                    INNER JOIN FileLookup fl ON fe.FileID = fl.ID
+                    WHERE fe.FilesetID = @filesetid
+                    AND fl.PrefixID IN (@PrefixIds)
+                ")
+                .ExpandInClauseParameter("@PrefixIds", prefixIds)
+                .SetParameterValue("@filesetid", filesetid)
+                .ExecuteScalarInt64(0);
+            }
+
+            // Return paginated results
+            var intLimit = limit > int.MaxValue ? int.MaxValue : (int)limit;
+            return new PaginatedResults<IListFolderEntry>((int)(offset / limit), (int)intLimit, (int)((totalCount + limit - 1) / limit), totalCount, results);
+        }
+
+        /// <summary>
+        /// Lists the folder entries for a given fileset and prefix IDs.
+        /// </summary>
+        /// <param name="prefixIds">The prefix IDs to return entries for.</param>
+        /// <param name="offset">The offset for pagination.</param>
+        /// <param name="limit">>The limit for pagination.</param>
+        /// <returns>A paginated result set of folder entries.</returns>
+        public IPaginatedResults<IListFolderEntry> ListFilesetEntries(IEnumerable<long> prefixIds, long filesetid, long offset, long limit)
+        {
+            if (offset != 0 && limit <= 0)
+                throw new ArgumentException("Cannot use offset without limit specified.", nameof(offset));
+            if (limit <= 0)
+                limit = long.MaxValue;
+
+            using var cmd = m_connection.CreateCommand();
+
+            if (!prefixIds.Any())
+                return new PaginatedResults<IListFolderEntry>(0, (int)limit, 0, 0, Enumerable.Empty<IListFolderEntry>());
+
+            // Fetch entries
+            cmd.SetCommandAndParameters(@"
+        SELECT 
+            pp.""Prefix"" || fl.""Path"" AS ""FullPath"",
+            b.""Length"",
+            CASE WHEN fl.""BlocksetID"" = @FolderBlocksetId THEN 1 ELSE 0 END AS ""IsDirectory"",
+            CASE WHEN fl.""BlocksetID"" = @SymlinkBlocksetId THEN 1 ELSE 0 END AS ""IsSymlink"",
+            fe.""Lastmodified""
+        FROM ""FilesetEntry"" fe
+        INNER JOIN ""FileLookup"" fl ON fe.""FileID"" = fl.""ID""
+        INNER JOIN ""PathPrefix"" pp ON fl.""PrefixID"" = pp.""ID""
+        LEFT JOIN ""Blockset"" b ON fl.""BlocksetID"" = b.""ID""
+        WHERE fe.""FilesetId"" = @FilesetId
+          AND fl.""PrefixId"" IN (@PrefixIds)
+        ORDER BY pp.""Prefix"" ASC, fl.""Path"" ASC
+        LIMIT @limit OFFSET @offset
+    ")
+            .SetParameterValue("@FolderBlocksetId", FOLDER_BLOCKSET_ID)
+            .SetParameterValue("@SymlinkBlocksetId", SYMLINK_BLOCKSET_ID)
+            .SetParameterValue("@FilesetId", filesetid)
+            .ExpandInClauseParameter("@PrefixIds", prefixIds)
+            .SetParameterValue("@limit", limit)
+            .SetParameterValue("@offset", offset);
+
+            var results = new List<IListFolderEntry>();
+            foreach (var rd in cmd.ExecuteReaderEnumerable())
+            {
+                var path = rd.ConvertValueToString(0) ?? string.Empty;
+                var size = rd.ConvertValueToInt64(-1);
+                var isDir = rd.GetInt32(2) != 0;
+                var isSymlink = rd.GetInt32(3) != 0;
+                var lastModified = new DateTime(rd.ConvertValueToInt64(4, 0), DateTimeKind.Utc);
+
+                results.Add(new FolderEntry(path, size, isDir, isSymlink, lastModified));
+            }
+
+            long totalCount;
+            if (offset != 0)
+            {
+                // Only calculate the total for the first query
+                totalCount = -1;
+            }
+            else if (results.Count <= limit)
+            {
+                // If we have all results, we already know the total
+                totalCount = results.Count;
+            }
+            else
+            {
+                totalCount = cmd.SetCommandAndParameters(@"
+                    SELECT COUNT(*)
+                    FROM ""FilesetEntry"" fe
+                    INNER JOIN ""FileLookup"" fl ON fe.""FileID"" = fl.""ID""
+                    WHERE fe.""FilesetId"" = @FilesetId
+                    AND fl.""PrefixId"" IN (@PrefixIds)
+                ")
+                .SetParameterValue("@FilesetId", filesetid)
+                .ExpandInClauseParameter("@PrefixIds", prefixIds)
+                .ExecuteScalarInt64(0);
+            }
+
+            var intLimit = limit > int.MaxValue ? int.MaxValue : (int)limit;
+            return new PaginatedResults<IListFolderEntry>((int)(offset / limit), intLimit, (int)((totalCount + limit - 1) / limit), totalCount, results);
+        }
+
+        /// <summary>
+        /// Gets the prefix IDs for a given set of folder-prefixes.
+        /// </summary>
+        /// <param name="prefixes">The prefixes to get the IDs for.</param>
+        /// <returns>>A list of prefix IDs.</returns>
+        public IEnumerable<long> GetPrefixIds(IEnumerable<string> prefixes)
+        {
+            using var cmd = m_connection.CreateCommand();
+
+            // Map folders to prefix IDs
+            cmd.SetCommandAndParameters($@"SELECT ""ID"" FROM ""PathPrefix"" WHERE ""Prefix"" IN (@Prefixes)")
+                .ExpandInClauseParameter("@Prefixes", prefixes);
+
+            return cmd.ExecuteReaderEnumerable()
+                .Select(x => x.ConvertValueToInt64(0))
+                .ToList();
+        }
+
+        /// <summary>
+        /// Gathers root prefixes from the fileset entries.
+        /// </summary>
+        /// <param name="filesetid">The filesetId to get the prefixes for</param>
+        /// <returns>A list of root prefixes</returns>
+        public IEnumerable<long> GetRootPrefixes(long filesetid)
+        {
+            using var cmd = m_connection.CreateCommand();
+
+            cmd.SetCommandAndParameters(@"
+        WITH Prefixes AS (
+            SELECT DISTINCT fl.""PrefixID"", pp.""Prefix""
+            FROM ""FilesetEntry"" fe
+            INNER JOIN ""FileLookup"" fl ON fe.""FileID"" = fl.""ID""
+            INNER JOIN ""PathPrefix"" pp ON fl.""PrefixID"" = pp.""ID""
+            WHERE fe.""FilesetID"" = @filesetid
+        )
+        SELECT p1.""PrefixID""
+        FROM Prefixes p1
+        WHERE NOT EXISTS (
+            SELECT 1
+            FROM Prefixes p2
+            WHERE p2.""PrefixID"" != p1.""PrefixID""
+            AND p1.""Prefix"" LIKE p2.""Prefix"" || '%'
+            AND LENGTH(p1.""Prefix"") > LENGTH(p2.""Prefix"")
+        )
+        ORDER BY p1.""Prefix"" ASC
+    ")
+            .SetParameterValue("@filesetid", filesetid);
+
+            return cmd.ExecuteReaderEnumerable()
+                .Select(x => x.ConvertValueToInt64(0, -1))
+                .Where(x => x != -1)
+                .ToList();
+        }
+
+        /// <summary>
+        /// Gathers all prefixes and their parent prefix IDs from the fileset entries.
+        /// </summary>
+        /// <param name="filesetid">The filesetId to get the prefixes for</param>
+        /// <returns>A list of (PrefixID, ParentPrefixID) pairs</returns>
+        public IEnumerable<(long PrefixId, long ParentPrefixId)> GetRootPrefixesWithParents(long filesetid)
+        {
+            using var cmd = m_connection.CreateCommand();
+
+            var dirSeparator = Util.GuessDirSeparator(cmd.SetCommandAndParameters(@"SELECT ""Prefix"" FROM ""PathPrefix"" LIMIT 1")
+                .ExecuteScalar()?.ToString());
+
+            cmd.SetCommandAndParameters(@"
+        WITH Prefixes AS (
+            SELECT DISTINCT fl.""PrefixID"", pp.""Prefix""
+            FROM ""FilesetEntry"" fe
+            INNER JOIN ""FileLookup"" fl ON fe.""FileID"" = fl.""ID""
+            INNER JOIN ""PathPrefix"" pp ON fl.""PrefixID"" = pp.""ID""
+            WHERE fe.""FilesetID"" = @filesetid
+        ),
+        PrefixParents AS (
+            SELECT
+                child.""PrefixID"" AS ChildPrefixID,
+                parent.""PrefixID"" AS ParentPrefixID,
+                LENGTH(parent.""Prefix"") AS ParentLength
+            FROM Prefixes child
+            JOIN Prefixes parent
+              ON LENGTH(child.""Prefix"") > LENGTH(parent.""Prefix"")
+             AND SUBSTR(child.""Prefix"", 1, LENGTH(parent.""Prefix"")) = parent.""Prefix""
+             AND (SUBSTR(child.""Prefix"", LENGTH(parent.""Prefix"") + 1, 1) = @dirSeparator)
+        )
+        SELECT
+            child.""PrefixID"",
+            (
+                SELECT ParentPrefixID
+                FROM PrefixParents pp
+                WHERE pp.ChildPrefixID = child.""PrefixID""
+                ORDER BY pp.ParentLength DESC
+                LIMIT 1
+            ) AS ParentPrefixID
+        FROM Prefixes child
+        ORDER BY child.""Prefix"" ASC
+    ")
+            .SetParameterValue("@dirSeparator", dirSeparator)
+            .SetParameterValue("@filesetid", filesetid);
+
+            return cmd.ExecuteReaderEnumerable()
+                .Select(x => (
+                    PrefixId: x.ConvertValueToInt64(0, -1),
+                    ParentPrefixId: x.ConvertValueToInt64(1, -1)
+                ));
+        }
+
+        /// <summary>
+        /// Lists all versions of specific file paths, optionally filtered by fileset IDs.
+        /// </summary>
+        /// <param name="paths">Paths to match exactly.</param>
+        /// <param name="filesetIds">Optional fileset IDs to restrict the search to.</param>
+        /// <param name="offset">Pagination offset.</param>
+        /// <param name="limit">Pagination limit.</param>
+        /// <returns>All matching file versions ordered by path and then version time.</returns>
+        public IPaginatedResults<IListFileVersion> ListFileVersions(IEnumerable<string> paths, long[]? filesetIds, long offset, long limit)
+        {
+            if (paths == null || !paths.Any())
+                return new PaginatedResults<IListFileVersion>(0, (int)(limit > 0 ? limit : long.MaxValue), 0, 0, Enumerable.Empty<IListFileVersion>());
+
+            if (offset != 0 && limit <= 0)
+                throw new ArgumentException("Cannot use offset without limit specified.", nameof(offset));
+            if (limit <= 0)
+                limit = long.MaxValue;
+
+            using var cmd = m_connection.CreateCommand();
+
+            var countWhere = "WHERE fl.\"Path\" IN (@Paths)";
+            if (filesetIds != null && filesetIds.Length > 0)
+                countWhere += " AND fe.\"FilesetID\" IN (@FilesetIds)";
+
+            cmd.SetCommandAndParameters(@"SELECT ""ID"" FROM ""Fileset"" ORDER BY ""Timestamp"" DESC");
+
+            var versionMap = cmd.ExecuteReaderEnumerable()
+                .Select((x, i) => (Version: i, FilesetId: x.ConvertValueToInt64(0)))
+                .ToDictionary(x => x.FilesetId, x => x.Version);
+
+            // Then fetch the actual data
+            var fetchSql = @"
+        SELECT 
+            fe.""FilesetID"",
+            f.""Timestamp"",
+            fl.""Path"",
+            COALESCE(b.""Length"", 0) AS ""Size"",
+            CASE WHEN fl.""BlocksetID"" = @FolderBlocksetId THEN 1 ELSE 0 END AS ""IsDirectory"",
+            CASE WHEN fl.""BlocksetID"" = @SymlinkBlocksetId THEN 1 ELSE 0 END AS ""IsSymlink"",
+            fe.""Lastmodified""
+        FROM ""FilesetEntry"" fe
+        INNER JOIN ""FileLookup"" fl ON fe.""FileID"" = fl.""ID""
+        INNER JOIN ""Fileset"" f ON fe.""FilesetID"" = f.""ID""
+        LEFT JOIN ""Blockset"" b ON fl.""BlocksetID"" = b.""ID""
+    " + countWhere + @"
+        ORDER BY fl.""Path"" ASC, f.""Timestamp"" ASC
+        LIMIT @limit OFFSET @offset";
+
+            cmd.SetCommandAndParameters(fetchSql)
+               .ExpandInClauseParameter("@Paths", paths)
+               .SetParameterValue("@FolderBlocksetId", FOLDER_BLOCKSET_ID)
+               .SetParameterValue("@SymlinkBlocksetId", SYMLINK_BLOCKSET_ID)
+               .SetParameterValue("@limit", limit)
+               .SetParameterValue("@offset", offset);
+
+            if (filesetIds != null && filesetIds.Length > 0)
+                cmd.ExpandInClauseParameter("@FilesetIds", filesetIds);
+
+            var results = new List<IListFileVersion>();
+            foreach (var rd in cmd.ExecuteReaderEnumerable())
+            {
+                var version = versionMap[rd.ConvertValueToInt64(0, -1)];
+                var time = new DateTime(rd.ConvertValueToInt64(1, 0), DateTimeKind.Utc);
+                var path = rd.ConvertValueToString(2) ?? string.Empty;
+                var size = rd.ConvertValueToInt64(3, 0);
+                var isDirectory = rd.GetInt32(4) != 0;
+                var isSymlink = rd.GetInt32(5) != 0;
+                var lastModified = new DateTime(rd.ConvertValueToInt64(6, 0), DateTimeKind.Utc);
+
+                results.Add(new ListFileVersion(version, time, path, size, isDirectory, isSymlink, lastModified));
+            }
+
+            long totalCount;
+            if (offset != 0)
+            {
+                // Only calculate the total for the first query
+                totalCount = -1;
+            }
+            else if (results.Count <= limit)
+            {
+                // If we have all results, we already know the total
+                totalCount = results.Count;
+            }
+            else
+            {
+                // Get total count
+                var countSql = @"
+                    SELECT COUNT(*)
+                    FROM ""FilesetEntry"" fe
+                    INNER JOIN ""FileLookup"" fl ON fe.""FileID"" = fl.""ID""
+                ";
+
+                cmd.SetCommandAndParameters(countSql + "\n" + countWhere)
+                   .ExpandInClauseParameter("@Paths", paths);
+
+                if (filesetIds != null && filesetIds.Length > 0)
+                    cmd.ExpandInClauseParameter("@FilesetIds", filesetIds);
+
+                totalCount = cmd.ExecuteScalarInt64(0);
+            }
+
+            var intLimit = limit > int.MaxValue ? int.MaxValue : (int)limit;
+            var totalPages = (int)((totalCount + limit - 1) / limit);
+
+            return new PaginatedResults<IListFileVersion>(
+                (int)(offset / limit),
+                intLimit,
+                totalPages,
+                totalCount,
+                results
+            );
+        }
+
+        /// <summary>
+        /// Searches for file versions matching a filter in the specified path prefixes.
+        /// </summary>
+        /// <param name="pathprefixes">The path prefixes to search in, or search in all if empty.</param>
+        /// <param name="filter">The filter to match against file paths.</param>
+        /// <param name="filesetIds">Optional fileset IDs to restrict the search to.</param>
+        /// <param name="offset">The offset for pagination.</param>
+        /// <param name="limit">The limit for pagination.</param>
+        /// <returns>All matching file versions ordered by path and then version time.</returns>
+        public IPaginatedResults<ISearchFileVersion> SearchEntries(IEnumerable<string>? pathprefixes, IFilter filter, long[]? filesetIds, long offset, long limit)
+        {
+            if (offset != 0 && limit <= 0)
+                throw new ArgumentException("Cannot use offset without limit specified.", nameof(offset));
+            if (limit <= 0)
+                limit = long.MaxValue;
+
+            using var cmd = m_connection.CreateCommand();
+
+            // Analyze the filter to determine the default behavior
+            FilterExpression.AnalyzeFilters(filter, out var includes, out var excludes);
+            var defaultExclude = includes && !excludes; // true = exclude unmatched, false = include unmatched
+            var defaultBehavior = defaultExclude ? 1 : 0;
+            var caseSensitive = false; //TODO: Should we expose this? Or use: Library.Utility.Utility.IsFSCaseSensitive?
+
+            var filterProps = new Dictionary<string, object?>();
+            var caseWhenParts = new List<string>();
+
+            var filterExpressions = new List<FilterExpression>();
+            if (filter is FilterExpression fe)
+            {
+                filterExpressions.Add(fe);
+            }
+            else if (filter is JoinedFilterExpression jfe)
+            {
+                var work = new Queue<IFilter>([jfe.First, jfe.Second]);
+                while (work.Count > 0)
+                {
+                    var current = work.Dequeue();
+                    if (current is FilterExpression fe1)
+                    {
+                        filterExpressions.Add(fe1);
+                    }
+                    else if (current is JoinedFilterExpression jfe1)
+                    {
+                        work.Enqueue(jfe1.First);
+                        work.Enqueue(jfe1.Second);
+                    }
+                    else
+                    {
+                        throw new UserInformationException($"Filter type {current.GetType()} is not supported.", "FilterTypeNotSupported");
+                    }
+                }
+            }
+
+            foreach (var filterExpression in filterExpressions)
+            {
+                if (filterExpression.Type == FilterType.Empty)
+                {
+                    // No additional CASE needed
+                }
+                else if (filterExpression.Type == FilterType.Simple)
+                {
+                    var parts = filterExpression.GetSimpleList();
+                    foreach (var part in parts)
+                    {
+                        var propName = $"@Part{filterProps.Count}";
+                        filterProps[propName] = part;
+                        if (caseSensitive)
+                            caseWhenParts.Add($@"WHEN instr(LOWER(pp.""Prefix"" || fl.""Path""), LOWER({propName})) > 0 THEN {(filterExpression.Result ? 0 : 1)}");
+                        else
+                            caseWhenParts.Add($@"WHEN instr(pp.""Prefix"" || fl.""Path"", {propName}) > 0 THEN {(filterExpression.Result ? 0 : 1)}");
+                    }
+                }
+                else if (filterExpression.Type == FilterType.Wildcard)
+                {
+                    var parts = filterExpression.GetSimpleList();
+                    foreach (var part in parts)
+                    {
+                        var propName = $"@Part{filterProps.Count}";
+                        filterProps[propName] = part;
+                        if (caseSensitive)
+                            caseWhenParts.Add($@"WHEN LOWER(pp.""Prefix"" || fl.""Path"") GLOB LOWER({propName}) THEN {(filterExpression.Result ? 0 : 1)}");
+                        else
+                            caseWhenParts.Add($@"WHEN pp.""Prefix"" || fl.""Path"" GLOB {propName} THEN {(filterExpression.Result ? 0 : 1)}");
+                    }
+                }
+                else
+                {
+                    throw new UserInformationException($"Filter type {filterExpression.Type} is not supported.", "FilterTypeNotSupported");
+                }
+            }
+
+            // Build WHERE clauses
+            var whereClauses = new List<string>();
+
+            if (pathprefixes != null && pathprefixes.Any())
+                whereClauses.Add(@"pp.""Prefix"" IN (@PathPrefixes)");
+            if (filesetIds != null && filesetIds.Length > 0)
+                whereClauses.Add(@"fe.""FilesetID"" IN (@FilesetIds)");
+
+            if (caseWhenParts.Any())
+            {
+                whereClauses.Add($@"COALESCE(
+            CASE
+                {string.Join("\n                ", caseWhenParts)}
+                ELSE NULL
+            END,
+            @DefaultBehavior
+        ) = 0");
+            }
+            else
+            {
+                // No CASE parts, fallback to default behavior directly
+                if (defaultBehavior == 1)
+                {
+                    // Default is EXCLUDE -> exclude everything
+                    whereClauses.Add("0 = 1");
+                }
+            }
+
+            var whereClause = string.Join("\n  AND ", whereClauses);
+
+            cmd.SetCommandAndParameters(@"SELECT ""ID"" FROM ""Fileset"" ORDER BY ""Timestamp"" DESC");
+
+            var versionMap = cmd.ExecuteReaderEnumerable()
+                .Select((x, i) => (Version: i, FilesetId: x.ConvertValueToInt64(0)))
+                .ToDictionary(x => x.FilesetId, x => x.Version);
+
+            // Fetch results
+            var fetchSql = $@"
+        SELECT 
+            fe.""FilesetID"",
+            f.""Timestamp"",
+            pp.""Prefix"" || fl.""Path"" AS ""FullPath"",
+            COALESCE(b.""Length"", 0) AS ""Size"",
+            CASE WHEN fl.""BlocksetID"" = @FolderBlocksetId THEN 1 ELSE 0 END AS ""IsDirectory"",
+            CASE WHEN fl.""BlocksetID"" = @SymlinkBlocksetId THEN 1 ELSE 0 END AS ""IsSymlink"",
+            fe.""Lastmodified""
+        FROM ""FilesetEntry"" fe
+        INNER JOIN ""FileLookup"" fl ON fe.""FileID"" = fl.""ID""
+        INNER JOIN ""Fileset"" f ON fe.""FilesetID"" = f.""ID""
+        LEFT JOIN ""Blockset"" b ON fl.""BlocksetID"" = b.""ID""
+        INNER JOIN ""PathPrefix"" pp ON fl.""PrefixID"" = pp.""ID""
+        WHERE {whereClause}
+        ORDER BY pp.""Prefix"" ASC, fl.""Path"" ASC, f.""Timestamp"" ASC
+        LIMIT @limit OFFSET @offset
+    ";
+
+            cmd.SetCommandAndParameters(fetchSql)
+               .SetParameterValues(filterProps)
+               .SetParameterValue("@DefaultBehavior", defaultBehavior)
+               .SetParameterValue("@FolderBlocksetId", FOLDER_BLOCKSET_ID)
+               .SetParameterValue("@SymlinkBlocksetId", SYMLINK_BLOCKSET_ID)
+               .SetParameterValue("@limit", limit)
+               .SetParameterValue("@offset", offset);
+
+            if (pathprefixes != null && pathprefixes.Any())
+                cmd.ExpandInClauseParameter("@PathPrefixes", pathprefixes);
+
+            if (filesetIds != null && filesetIds.Length > 0)
+                cmd.ExpandInClauseParameter("@FilesetIds", filesetIds);
+
+            var results = new List<ISearchFileVersion>();
+            foreach (var rd in cmd.ExecuteReaderEnumerable())
+            {
+                var version = versionMap[rd.ConvertValueToInt64(0, -1)];
+                var time = new DateTime(rd.ConvertValueToInt64(1, 0), DateTimeKind.Utc);
+                var path = rd.ConvertValueToString(2) ?? string.Empty;
+                var size = rd.ConvertValueToInt64(3, 0);
+                var isDirectory = rd.GetInt32(4) != 0;
+                var isSymlink = rd.GetInt32(5) != 0;
+                var lastModified = new DateTime(rd.ConvertValueToInt64(6, 0), DateTimeKind.Utc);
+
+                // We cannot know exactly where the match occurred here
+                // (unless we do another pass), so just use Range(0,0) for now
+                results.Add(new SearchFileVersion(version, time, path, size, isDirectory, isSymlink, lastModified, new Range(0, 0)));
+            }
+
+            long totalCount;
+            if (offset != 0)
+            {
+                // Only calculate the total for the first query
+                totalCount = -1;
+            }
+            else if (results.Count <= limit)
+            {
+                // If we have all results, we already know the total
+                totalCount = results.Count;
+            }
+            else
+            {
+                // Calculate the total
+                var countSql = $@"
+                    SELECT COUNT(*)
+                    FROM ""FilesetEntry"" fe
+                    INNER JOIN ""FileLookup"" fl ON fe.""FileID"" = fl.""ID""
+                    INNER JOIN ""PathPrefix"" pp ON fl.""PrefixID"" = pp.""ID""
+                    WHERE {whereClause}
+                ";
+
+                cmd.SetCommandAndParameters(countSql)
+                   .SetParameterValues(filterProps)
+                   .SetParameterValue("@DefaultBehavior", defaultBehavior);
+
+                if (pathprefixes != null && pathprefixes.Any())
+                    cmd.ExpandInClauseParameter("@PathPrefixes", pathprefixes);
+
+                if (filesetIds != null && filesetIds.Length > 0)
+                    cmd.ExpandInClauseParameter("@FilesetIds", filesetIds);
+
+                totalCount = cmd.ExecuteScalarInt64(0);
+            }
+
+            var intLimit = limit > int.MaxValue ? int.MaxValue : (int)limit;
+            var totalPages = (int)((totalCount + limit - 1) / limit);
+
+            return new PaginatedResults<ISearchFileVersion>(
+                (int)(offset / limit),
+                intLimit,
+                totalPages,
+                totalCount,
+                results
+            );
+        }
     }
 }
 

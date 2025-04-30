@@ -22,7 +22,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Duplicati.Library.Localization.Short;
 using System.IO;
 using Duplicati.Library.Interface;
 using Duplicati.Library.AutoUpdater;
@@ -33,7 +32,7 @@ namespace Duplicati.CommandLine
 {
     public class Program
     {
-        
+
         private static readonly string LOGTAG = Library.Logging.Log.LogTagFromType<Program>();
 
         public static bool FROM_COMMANDLINE = false;
@@ -75,6 +74,13 @@ namespace Duplicati.CommandLine
                         ["examples"] = Commands.Examples,
                         ["find"] = Commands.List,
                         ["list"] = Commands.List,
+                        ["list-filesets"] = Commands.ListFilesets,
+                        ["list-folder-content"] = Commands.ListFolderContent,
+                        ["list-folder-contents"] = Commands.ListFolderContent,
+                        ["list-file-versions"] = Commands.ListFileVersions,
+                        ["search-entries"] = Commands.SearchEntries,
+                        ["search-files"] = Commands.SearchEntries,
+                        ["search"] = Commands.SearchEntries,
                         ["delete"] = Commands.Delete,
                         ["backup"] = Commands.Backup,
                         ["restore"] = Commands.Restore,
