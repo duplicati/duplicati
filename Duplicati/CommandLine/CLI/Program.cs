@@ -376,7 +376,7 @@ namespace Duplicati.CommandLine
                     if (cargs.Count <= 1)
                         cargs.Add(newtarget);
                     else
-                        cargs[1] = newtarget;
+                        cargs.Insert(1, newtarget);
                 }
 
                 if (cargs.Count >= 1 && cargs[0].Equals("backup", StringComparison.OrdinalIgnoreCase))
