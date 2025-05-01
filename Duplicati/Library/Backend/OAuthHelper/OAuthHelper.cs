@@ -61,6 +61,11 @@ namespace Duplicati.Library
                 return string.IsNullOrWhiteSpace(r) ? OAuthHelper.DUPLICATI_OAUTH_SERVICE : r;
             }
         }
+
+        /// <summary>
+        /// Gets the server URL to use for OAuth, without applying a default.
+        /// </summary>
+        public static string? ServerURLRaw => CallContextSettings<OAuthSettings>.Settings.ServerURL;
     }
 
     public class OAuthHelper : JSONWebHelper
@@ -69,11 +74,38 @@ namespace Duplicati.Library
         private string m_authid;
         private DateTime m_tokenExpires = DateTime.UtcNow;
 
+        /// <summary>
+        /// The URL to use for the OAuth login hosted on GAE.
+        /// </summary>
         public const string DUPLICATI_OAUTH_SERVICE = "https://duplicati-oauth-handler.appspot.com/refresh";
+        /// <summary>
+        /// The URL to use for the new hosted OAuth login server.
+        /// </summary>
+        public const string DUPLICATI_OAUTH_SERVICE_NEW = "https://oauth-service.duplicati.com/refresh";
 
+        /// <summary>
+        /// Returns the URL to use for obtaining an OAuth token for the given module.
+        /// </summary>
+        /// <param name="modulename">The name of the module to use.</param>
+        /// <returns>The URL to use for obtaining an OAuth token.</returns>
         public static string OAUTH_LOGIN_URL(string modulename)
         {
             var u = new Library.Utility.Uri(OAuthContextSettings.ServerURL);
+            var addr = u.SetPath("").SetQuery((u.Query ?? "") + (string.IsNullOrWhiteSpace(u.Query) ? "" : "&") + "type={0}");
+            return string.Format(addr.ToString(), modulename);
+        }
+
+        /// <summary>
+        /// Returns the URL to use for obtaining an OAuth token for the given module, defaulting to the new server.
+        /// </summary>
+        /// <param name="modulename">The name of the module to use.</param>
+        public static string OAUTH_LOGIN_URL_NEW(string modulename)
+        {
+            var baseUrl = OAuthContextSettings.ServerURLRaw;
+            if (string.IsNullOrWhiteSpace(baseUrl))
+                baseUrl = DUPLICATI_OAUTH_SERVICE_NEW;
+
+            var u = new Library.Utility.Uri(baseUrl);
             var addr = u.SetPath("").SetQuery((u.Query ?? "") + (string.IsNullOrWhiteSpace(u.Query) ? "" : "&") + "type={0}");
             return string.Format(addr.ToString(), modulename);
         }
