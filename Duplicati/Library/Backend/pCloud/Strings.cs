@@ -25,7 +25,7 @@ namespace Duplicati.Library.Backend.Strings
 {
     internal static class pCloudBackend
     {
-        public static string Description => LC.L(@"This backend can read and write data to pCloud with native API. Allowed format is ""pcloud://api.pcloud.com"".");
+        public static string Description => LC.L(@"This backend can read and write data to pCloud with native API. Allowed format is ""pcloud://api.pcloud.com/folder"".");
         public static string DisplayName => LC.L(@"pCloud (Native API)");
         public static string AuthPasswordDescriptionLong(string tokenurl) => LC.L(@"The oAuth token used to connect to the server. This may also be supplied as the environment variable ""AUTHID"". Visit {0} to get a new one", tokenurl);
         public static string AuthPasswordDescriptionShort => LC.L(@"Supply the oAuth token used to connect to the server");
