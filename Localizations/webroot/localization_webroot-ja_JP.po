@@ -59,14 +59,6 @@ msgstr "<i class=\"fa fa-check\"></i> テキストで編集"
 msgid "<i class=\"fa\"></i> Edit as text"
 msgstr "<i class=\"fa\"></i> テキストで編集"
 
-#: templates/addoredit.html:312
-msgid ""
-"<p ng-show=\"(parseSizeString(Options['dblock-size']) &gt; 1024 * 1024 * 1024 * 2) || (parseSizeString(Options['dblock-size']) &lt; 1024 * 1024 * 5)\" class=\"warning\" translate>\n"
-"                            The chosen size is outside the recommended range. This may cause performance issues, excessively large temporary files or other problems.\n"
-"                        </p>\n"
-"                        The backups will be split up into multiple files called volumes. Here you can set the maximum size of the individual volume files. <external-link link=\"'https://forum.duplicati.com/t/choosing-sizes-in-duplicati/17683'\">See this page for more information.</external-link>"
-msgstr ""
-
 #: index.html:298
 msgid ""
 "<p>Connection to server was rejected due to invalid authentication.</p>\n"
@@ -74,16 +66,6 @@ msgid ""
 msgstr ""
 "<p>不正認証のためサーバーへの接続は拒否されました。</p>\n"
 "                <p>再度ログインするか、トレイのアイコンからページを再度開いてください（該当する場合）。</p>"
-
-#: templates/backends/filejump.html:30
-msgid ""
-"<span ng-show=\"!$parent.UsernamePasswordAuth\" translate>Use username and password authentication</span>\n"
-"        <span ng-show=\"$parent.UsernamePasswordAuth\" translate>Use API token authentication (recommended)</span>"
-msgstr ""
-
-#: scripts/services/EditUriBuiltins.js:1097
-msgid "API Token"
-msgstr ""
 
 #: scripts/services/EditUriBuiltins.js:1368
 #: templates/backends/openstack.html:44 templates/backends/storj.html:21
@@ -226,10 +208,6 @@ msgstr "リモートアクセスを許可（要再起動）"
 msgid "Allowed days"
 msgstr "実行を許可する日"
 
-#: templates/pause.html:52
-msgid "Also pause transfers"
-msgstr ""
-
 #: scripts/controllers/LocalDatabaseController.js:103
 msgid "An existing file was found at the new location"
 msgstr "既存のファイルが新しい場所で見つかりました"
@@ -261,10 +239,6 @@ msgstr "使用状況に関する匿名の報告"
 msgid "Applications"
 msgstr "アプリケーション"
 
-#: scripts/controllers/SystemSettingsController.js:194
-msgid "Are you sure you want to delete the remote control registration?"
-msgstr ""
-
 #: templates/export.html:8
 msgid "As Command-line"
 msgstr "コマンドライン"
@@ -279,10 +253,6 @@ msgstr "コマンドライン"
 #: templates/backends/sharepoint.html:9
 msgid "AuthID"
 msgstr "認証ID"
-
-#: templates/backends/smb.html:34
-msgid "Authentication Domain"
-msgstr ""
 
 #: scripts/services/EditUriBuiltins.js:1359 templates/backends/storj.html:2
 msgid "Authentication method"
@@ -512,10 +482,6 @@ msgstr "実験的（カナリア）"
 msgid "Cancel"
 msgstr "キャンセル"
 
-#: templates/settings.html:56
-msgid "Cancel registration"
-msgstr ""
-
 #: scripts/directives/sourceFolderPicker.js:415
 msgid "Cannot include \"{{text}}\""
 msgstr "「{{text}}」を含めることはできません"
@@ -571,10 +537,6 @@ msgstr "初めにストレージの種類を選択してください"
 #: templates/backends/pcloud.html:24 templates/backends/sharepoint.html:11
 msgid "Click the AuthID link to create an AuthID"
 msgstr "認証IDのリンクをクリックして作成してください"
-
-#: templates/backends/filejump.html:10
-msgid "Click the Filejump API token link to set up an API token"
-msgstr ""
 
 #: index.html:148 index.html:199
 msgid "Click to set throttle options"
@@ -757,14 +719,6 @@ msgstr "計測中（{{files}}個のファイルが見つかりました。サイ
 msgid "Crashes only"
 msgstr "クラッシュのみ"
 
-#: templates/home.html:11
-msgid "Create Order"
-msgstr ""
-
-#: templates/home.html:21
-msgid "Create Order (descending)"
-msgstr ""
-
 #: templates/home.html:75
 msgid "Create bug report …"
 msgstr "バグレポートを作成…"
@@ -905,10 +859,6 @@ msgstr "古いバックアップから削除"
 msgid "Delete local database"
 msgstr "ローカルデータベースを削除"
 
-#: templates/settings.html:68
-msgid "Delete remote control setup"
-msgstr ""
-
 #: templates/delete.html:38 templates/delete.html:47
 msgid "Delete remote files"
 msgstr "リモートファイルを削除"
@@ -961,14 +911,6 @@ msgstr "デスクトップ"
 msgid "Destination"
 msgstr "バックアップ先"
 
-#: templates/home.html:12
-msgid "Destination Type"
-msgstr ""
-
-#: templates/home.html:22
-msgid "Destination Type (descending)"
-msgstr ""
-
 #: templates/backends/file.html:7 templates/backends/filejump.html:3
 #: templates/backends/filen.html:3 templates/backends/generic.html:14
 #: templates/backends/jottacloud.html:3 templates/backends/msgroup.html:8
@@ -977,18 +919,6 @@ msgstr ""
 msgid "Destination path"
 msgstr "バックアップ先のパス"
 
-#: templates/home.html:18
-msgid "Destination size"
-msgstr ""
-
-#: templates/home.html:28
-msgid "Destination size (descending)"
-msgstr ""
-
-#: templates/backends/smb.html:8
-msgid "Direct TCP"
-msgstr ""
-
 #: templates/restorewizard.html:9
 msgid "Direct restore from backup files …"
 msgstr "バックアップファイルから直接復元…"
@@ -996,10 +926,6 @@ msgstr "バックアップファイルから直接復元…"
 #: templates/backends/idrive.html:3
 msgid "Directory path"
 msgstr "ディレクトリーのパス"
-
-#: templates/settings.html:60
-msgid "Disable remote control"
-msgstr ""
 
 #: templates/log.html:32
 msgid "Disabled"
@@ -1025,10 +951,6 @@ msgstr "バックアップ \"{{name}}\" を削除してよろしいですか？"
 #: scripts/controllers/LocalDatabaseController.js:28
 msgid "Do you really want to delete the local database for: {{name}}"
 msgstr "{{name}} のデータベースを削除してよろしいですか？"
-
-#: templates/backends/smb.html:33
-msgid "Domain"
-msgstr ""
 
 #: templates/backends/openstack.html:26
 msgid "Domain name"
@@ -1095,10 +1017,6 @@ msgstr ""
 msgid "Duration"
 msgstr "経過"
 
-#: templates/home.html:29
-msgid "Duration (descending)"
-msgstr ""
-
 #: templates/delete.html:15
 msgid ""
 "Each backup has a local database associated with it, which stores information about the remote backup on the local machine.\n"
@@ -1135,10 +1053,6 @@ msgstr "編集..."
 #: templates/backends/msgroup.html:3
 msgid "Email address of the Office 365 group"
 msgstr "Office 365グループのメールアドレス"
-
-#: templates/settings.html:64
-msgid "Enable remote control"
-msgstr ""
 
 #: templates/export.html:22
 msgid "Encrypt file"
@@ -1430,10 +1344,6 @@ msgstr "パスの情報を取得しています…"
 msgid "File"
 msgstr "ファイル"
 
-#: templates/backends/filejump.html:8
-msgid "Filejump API token"
-msgstr ""
-
 #: templates/addoredit.html:237
 msgid "Files larger than:"
 msgstr "閾値より大きなファイル："
@@ -1521,18 +1431,6 @@ msgstr "ファイルのバージョンを取得しています…"
 msgid "Group email"
 msgstr "グループの電子メール"
 
-#: templates/home.html:16
-msgid "Has Scheduled"
-msgstr ""
-
-#: templates/home.html:26
-msgid "Has Scheduled (descending)"
-msgstr ""
-
-#: index.html:311
-msgid "Help"
-msgstr ""
-
 #: scripts/controllers/EditBackupController.js:20
 msgid "Hidden files"
 msgstr "隠しファイル"
@@ -1540,10 +1438,6 @@ msgstr "隠しファイル"
 #: templates/addoredit.html:68
 msgid "Hide"
 msgstr "隠す"
-
-#: templates/backends/file.html:15 templates/restore.html:98
-msgid "Hide hidden items"
-msgstr ""
 
 #: index.html:208 scripts/services/AppUtils.js:62
 msgid "Home"
@@ -1639,11 +1533,6 @@ msgstr ""
 #: templates/backends/openstack.html:40
 msgid "If you do not enter an API Key, the tenant name is required"
 msgstr "APIを入力しない場合、テナント名が必要です"
-
-#: templates/pause.html:53
-msgid ""
-"If you pause transfers they could time out and cause retries or failures."
-msgstr ""
 
 #: templates/delete.html:32
 msgid ""
@@ -1746,14 +1635,6 @@ msgstr "Keystone APIのバージョン"
 #: templates/settings.html:98
 msgid "Language in user interface"
 msgstr "言語設定"
-
-#: templates/home.html:13
-msgid "Last Run"
-msgstr ""
-
-#: templates/home.html:23
-msgid "Last Run (descending)"
-msgstr ""
 
 #: scripts/controllers/RestoreController.js:38
 msgid "Last month"
@@ -1869,10 +1750,6 @@ msgstr "メガバイト"
 msgid "MByte/s"
 msgstr "メガバイト秒"
 
-#: templates/settings.html:51
-msgid "Machine is now registered, open this link to add it to your account:"
-msgstr ""
-
 #: templates/localdatabase.html:8
 msgid "Maintenance"
 msgstr "メンテナンス"
@@ -1954,12 +1831,6 @@ msgstr "月曜日"
 msgid "Months"
 msgstr "月"
 
-#: scripts/services/EditUriBackendConfig.js:136
-msgid ""
-"Most servers require a username, so you will likely need to enter one.\n"
-"Are you sure want to continue without a username?"
-msgstr ""
-
 #: templates/localdatabase.html:31
 msgid "Move existing database"
 msgstr "既存のデータベースを移動"
@@ -1971,14 +1842,6 @@ msgstr "移動できませんでした："
 #: scripts/services/AppUtils.js:54
 msgid "My Documents"
 msgstr "マイドキュメント"
-
-#: scripts/services/AppUtils.js:66
-msgid "My Downloads"
-msgstr ""
-
-#: scripts/services/AppUtils.js:64
-msgid "My Movies"
-msgstr ""
 
 #: scripts/services/AppUtils.js:56
 msgid "My Music"
@@ -1995,14 +1858,6 @@ msgstr "マイピクチャ"
 #: templates/addoredit.html:39 templates/home.html:15
 msgid "Name"
 msgstr "名前"
-
-#: templates/home.html:25
-msgid "Name (descending)"
-msgstr ""
-
-#: templates/backends/smb.html:11
-msgid "Netbios over TCP"
-msgstr ""
 
 #: templates/home.html:87
 msgid "Never"
@@ -2031,14 +1886,6 @@ msgstr ""
 #: templates/restorewizard.html:36
 msgid "Next"
 msgstr "次へ"
-
-#: templates/home.html:14
-msgid "Next Scheduled Run"
-msgstr ""
-
-#: templates/home.html:24
-msgid "Next Scheduled Run (descending)"
-msgstr ""
 
 #: templates/home.html:91
 msgid "Next scheduled run:"
@@ -2244,10 +2091,6 @@ msgid ""
 " individual backup."
 msgstr "ここで追加したオプションは全てのバックアップに適用されますが、それぞれのバックアップの設定で上書きすることができます。"
 
-#: templates/home.html:7
-msgid "Order by"
-msgstr ""
-
 #: templates/restore.html:81
 msgid "Original location"
 msgstr "元の場所"
@@ -2365,10 +2208,6 @@ msgstr "トレイアイコンの自動ログインを行わない"
 msgid "Previous"
 msgstr "前へ"
 
-#: scripts/services/ServerStatus.js:40
-msgid "Processing files to backup …"
-msgstr ""
-
 #: templates/home.html:107
 msgid "Progress:"
 msgstr "進行度："
@@ -2380,10 +2219,6 @@ msgstr "バケットが存在する場合、ProjectIDはオプションです"
 #: scripts/services/SystemInfo.js:90
 msgid "Proprietary"
 msgstr "独自プロトコル"
-
-#: scripts/services/AppUtils.js:68
-msgid "Public"
-msgstr ""
 
 #: templates/backup-result/phases/purge.html:3
 msgid "Purge Phase"
@@ -2417,29 +2252,9 @@ msgstr "データベースを改めて作成しています…"
 msgid "Region"
 msgstr "リージョン"
 
-#: templates/settings.html:47
-msgid "Register for remote control"
-msgstr ""
-
-#: scripts/controllers/SystemSettingsController.js:213
-msgid "Registered, waiting for accept"
-msgstr ""
-
-#: scripts/controllers/SystemSettingsController.js:209
-msgid "Registering machine..."
-msgstr ""
-
 #: scripts/controllers/RestoreDirectController.js:40
 msgid "Registering temporary backup …"
 msgstr "一時的なバックアップを登録しています…"
-
-#: templates/settings.html:42
-msgid "Registration URL"
-msgstr ""
-
-#: scripts/controllers/SystemSettingsController.js:211
-msgid "Registration failed"
-msgstr ""
 
 #: scripts/controllers/EditBackupController.js:142
 msgid "Relative paths not allowed"
@@ -2460,26 +2275,6 @@ msgstr "リモートのパス"
 #: scripts/services/EditUriBuiltins.js:1391
 msgid "Remote Repository"
 msgstr "リモートのリポジトリー"
-
-#: templates/settings.html:34
-msgid "Remote access control"
-msgstr ""
-
-#: scripts/controllers/SystemSettingsController.js:215
-msgid "Remote control is configured but not enabled"
-msgstr ""
-
-#: scripts/controllers/SystemSettingsController.js:207
-msgid "Remote control is connected"
-msgstr ""
-
-#: scripts/controllers/SystemSettingsController.js:205
-msgid "Remote control is enabled but not connected"
-msgstr ""
-
-#: scripts/controllers/SystemSettingsController.js:219
-msgid "Remote control is not set up"
-msgstr ""
 
 #: templates/backends/rclone.html:10
 msgid "Remote path"
@@ -2623,10 +2418,6 @@ msgstr "実行しています … <a href ng-click=\"Abort()\" ng-hide=\"RawFini
 msgid "S3 Compatible"
 msgstr "S3互換"
 
-#: scripts/services/SystemInfo.js:53
-msgid "SMB / CIFS"
-msgstr ""
-
 #: templates/settings.html:130
 msgid "Same as the base install version: {{channelname}}"
 msgstr "基本インストールのバージョンと同じです：{{channelname}}"
@@ -2730,21 +2521,9 @@ msgstr "サーバーを一時停止しました"
 msgid "Server state properties"
 msgstr "サーバーの状態に関するプロパティー"
 
-#: templates/settings.html:121
-msgid "Set timezone to default"
-msgstr ""
-
 #: index.html:220 templates/settings.html:2
 msgid "Settings"
 msgstr "設定"
-
-#: templates/backends/smb.html:23
-msgid "Share Name"
-msgstr ""
-
-#: scripts/services/EditUriBuiltins.js:1078 templates/backends/smb.html:24
-msgid "Share name"
-msgstr ""
 
 #: templates/addoredit.html:69 templates/notificationarea.html:12
 #: templates/notificationarea.html:31 templates/notificationarea.html:41
@@ -2754,15 +2533,6 @@ msgstr "表示"
 #: templates/addoredit.html:132
 msgid "Show advanced editor"
 msgstr "拡張エディターを表示"
-
-#: templates/notificationarea.html:18 templates/notificationarea.html:19
-msgid "Show help"
-msgstr ""
-
-#: templates/addoredit.html:143 templates/backends/file.html:16
-#: templates/restore.html:99
-msgid "Show hidden items"
-msgstr ""
 
 #: templates/about.html:8
 msgid "Show log"
@@ -2811,14 +2581,6 @@ msgstr "バックアップ元"
 msgid "Source folders"
 msgstr "バックアップ元のフォルダー"
 
-#: templates/home.html:17
-msgid "Source size"
-msgstr ""
-
-#: templates/home.html:27
-msgid "Source size (descending)"
-msgstr ""
-
 #: templates/home.html:96
 msgid "Source:"
 msgstr "バックアップ元："
@@ -2857,10 +2619,6 @@ msgstr "復元を開始しています…"
 #: scripts/controllers/RestoreController.js:403
 msgid "Starting the restore process …"
 msgstr "復元プロセスを開始しています…"
-
-#: templates/settings.html:36
-msgid "Status: {{getRemoteControlStatusText()}}"
-msgstr ""
 
 #: scripts/controllers/StateController.js:108
 #: scripts/controllers/StateController.js:117
@@ -2976,11 +2734,6 @@ msgstr "Tencent CloudアカウントのAPPID"
 msgid "Tencent Cloud COS documents and resources"
 msgstr "Tencent Cloud COSのドキュメントと参考資料"
 
-#: scripts/controllers/StateController.js:108
-#: scripts/controllers/StateController.js:117
-msgid "Terminate"
-msgstr ""
-
 #: templates/backup-result/phases/test.html:3
 msgid "Test Phase"
 msgstr "テストの段階"
@@ -3023,12 +2776,6 @@ msgstr "バックアップは一時的で既に存在しないため、ログデ
 #: scripts/services/EditUriBuiltins.js:1269
 msgid "The bucket name should be all lower-case, convert automatically?"
 msgstr "バケット名には小文字のみが使用できます。自動的に変換しますか？"
-
-#: templates/addoredit.html:313
-msgid ""
-"The chosen size is outside the recommended range. This may cause performance"
-" issues, excessively large temporary files or other problems."
-msgstr ""
 
 #: scripts/controllers/ExportController.js:13
 msgid ""
@@ -3163,20 +2910,9 @@ msgstr "木曜日"
 msgid "Time"
 msgstr "時間"
 
-#: templates/settings.html:117
-msgid "Time zone"
-msgstr ""
-
 #: templates/export.html:14
 msgid "To File"
 msgstr "ファイルへ"
-
-#: templates/confirmdelete.html:3
-msgid ""
-"To confirm you want to delete all remote files for\n"
-"      <span class=\"backupname\">\"{{selection.backupname}}\"</span>, please enter\n"
-"      this phrase:"
-msgstr ""
 
 #: scripts/controllers/ExportController.js:67
 msgid "To export without a passphrase, uncheck the \"Encrypt file\" box"
@@ -3203,10 +2939,6 @@ msgstr ""
 msgid "Today"
 msgstr "今日"
 
-#: templates/backends/smb.html:3
-msgid "Transport"
-msgstr ""
-
 #: scripts/directives/backupEditUri.js:172
 msgid "Trust host certificate?"
 msgstr "ホストの証明書を信用しますか？"
@@ -3214,12 +2946,6 @@ msgstr "ホストの証明書を信用しますか？"
 #: scripts/directives/backupEditUri.js:86
 msgid "Trust server certificate?"
 msgstr "サーバーの証明書を信用しますか？"
-
-#: templates/settings.html:141
-msgid ""
-"Try out the new features that we are working on. Test Backup &amp; Restore "
-"before using this in production environments."
-msgstr ""
 
 #: scripts/services/AppUtils.js:111
 msgid "Tue"
@@ -3289,10 +3015,6 @@ msgstr "使用状況に関する統計"
 msgid "Usage statistics, warnings, errors, and crashes"
 msgstr "使用状況に関する統計、警告、エラー、クラッシュ"
 
-#: templates/backends/filejump.html:32
-msgid "Use API token authentication (recommended)"
-msgstr ""
-
 #: templates/backends/generic.html:2 templates/backends/s3.html:2
 msgid "Use SSL"
 msgstr "SSLを使用"
@@ -3300,14 +3022,6 @@ msgstr "SSLを使用"
 #: scripts/controllers/EditBackupController.js:454
 msgid "Use existing database?"
 msgstr "既存のデータベースを使用しますか？"
-
-#: index.html:263
-msgid "Use new UI"
-msgstr ""
-
-#: templates/backends/filejump.html:31
-msgid "Use username and password authentication"
-msgstr ""
 
 #: scripts/controllers/EditBackupController.js:348
 msgid "Use weak passphrase"
@@ -3343,12 +3057,6 @@ msgstr "インターフェースの設定"
 #: templates/backends/smb.html:38
 msgid "Username"
 msgstr "ユーザー名"
-
-#: templates/backends/filejump.html:14
-msgid ""
-"Username and password authentication is not recommended and does not work with MFA/2FA enabled accounts.\n"
-"        Use the API token if possible."
-msgstr ""
 
 #: scripts/services/ServerStatus.js:60
 msgid "Vacuuming database …"
@@ -3512,20 +3220,6 @@ msgstr ""
 msgid "You are currently running {{appname}} {{version}}"
 msgstr "あなたは現在 {{appname}} {{version}}を使用しています。"
 
-#: scripts/controllers/StateController.js:107
-msgid ""
-"You can stop the backup after any file uploads currently in progress have "
-"finished. If you terminate the backup, the next run will need to recover "
-"from a failed backup."
-msgstr ""
-
-#: scripts/controllers/StateController.js:116
-msgid ""
-"You can stop the task immediately, or allow the process to continue its "
-"current file and then stop. If you terminate the task, the backup could be "
-"left in an inconsistent state."
-msgstr ""
-
 #: scripts/controllers/EditBackupController.js:406
 msgid ""
 "You have changed the encryption mode. This may break stuff. You are "
@@ -3686,10 +3380,6 @@ msgstr "ユーザー定義"
 msgid "failed"
 msgstr "失敗しました"
 
-#: templates/backends/rclone.html:3
-msgid "local repository, leave empty for local"
-msgstr ""
-
 #: scripts/services/EditUriBuiltins.js:1413
 msgid "oss_access_key_id"
 msgstr "OSSのアクセスキーのID"
@@ -3709,14 +3399,6 @@ msgstr "OSSのエンドポイント"
 #: scripts/services/EditUriBuiltins.js:1415
 msgid "oss_region"
 msgstr "OSSのリージョン"
-
-#: templates/backends/pcloud.html:10
-msgid "pCloud EU (eapi.pcloud.com)"
-msgstr ""
-
-#: templates/backends/pcloud.html:7
-msgid "pCloud Global (api.pcloud.com)"
-msgstr ""
 
 #: templates/backends/rclone.html:11
 msgid "remote path, e.g. backup"

@@ -65,14 +65,6 @@ msgstr "<i class=\"fa fa-check\"></i> Bewerk als tekst"
 msgid "<i class=\"fa\"></i> Edit as text"
 msgstr "<i class=\"fa\"></i> Bewerk als tekst"
 
-#: templates/addoredit.html:312
-msgid ""
-"<p ng-show=\"(parseSizeString(Options['dblock-size']) &gt; 1024 * 1024 * 1024 * 2) || (parseSizeString(Options['dblock-size']) &lt; 1024 * 1024 * 5)\" class=\"warning\" translate>\n"
-"                            The chosen size is outside the recommended range. This may cause performance issues, excessively large temporary files or other problems.\n"
-"                        </p>\n"
-"                        The backups will be split up into multiple files called volumes. Here you can set the maximum size of the individual volume files. <external-link link=\"'https://forum.duplicati.com/t/choosing-sizes-in-duplicati/17683'\">See this page for more information.</external-link>"
-msgstr ""
-
 #: index.html:298
 msgid ""
 "<p>Connection to server was rejected due to invalid authentication.</p>\n"
@@ -80,16 +72,6 @@ msgid ""
 msgstr ""
 "<p>Verbinding met server is afgewezen vanwege ongeldige authenticatie.</p>\n"
 "                <p>Meld u opnieuw aan of open de pagina opnieuw vanuit het Systeemvak (indien van toepassing)</p>"
-
-#: templates/backends/filejump.html:30
-msgid ""
-"<span ng-show=\"!$parent.UsernamePasswordAuth\" translate>Use username and password authentication</span>\n"
-"        <span ng-show=\"$parent.UsernamePasswordAuth\" translate>Use API token authentication (recommended)</span>"
-msgstr ""
-
-#: scripts/services/EditUriBuiltins.js:1097
-msgid "API Token"
-msgstr ""
 
 #: scripts/services/EditUriBuiltins.js:1368
 #: templates/backends/openstack.html:44 templates/backends/storj.html:21
@@ -292,10 +274,6 @@ msgstr "Als Opdrachtregel"
 #: templates/backends/sharepoint.html:9
 msgid "AuthID"
 msgstr "AuthID"
-
-#: templates/backends/smb.html:34
-msgid "Authentication Domain"
-msgstr ""
 
 #: scripts/services/EditUriBuiltins.js:1359 templates/backends/storj.html:2
 msgid "Authentication method"
@@ -600,10 +578,6 @@ msgstr "Kies een opslagtype om aan de slag te gaan"
 msgid "Click the AuthID link to create an AuthID"
 msgstr "Klik op de AuthID link om een AuthID aan te maken"
 
-#: templates/backends/filejump.html:10
-msgid "Click the Filejump API token link to set up an API token"
-msgstr ""
-
 #: index.html:148 index.html:199
 msgid "Click to set throttle options"
 msgstr "Klik om bandbreedte-opties in te stellen"
@@ -784,14 +758,6 @@ msgstr "Tellen ({{files}} bestanden gevonden, {{size}})"
 #: templates/settings.html:170
 msgid "Crashes only"
 msgstr "Alleen crashes"
-
-#: templates/home.html:11
-msgid "Create Order"
-msgstr ""
-
-#: templates/home.html:21
-msgid "Create Order (descending)"
-msgstr ""
 
 #: templates/home.html:75
 msgid "Create bug report …"
@@ -990,14 +956,6 @@ msgstr "Desktop"
 msgid "Destination"
 msgstr "Doel"
 
-#: templates/home.html:12
-msgid "Destination Type"
-msgstr ""
-
-#: templates/home.html:22
-msgid "Destination Type (descending)"
-msgstr ""
-
 #: templates/backends/file.html:7 templates/backends/filejump.html:3
 #: templates/backends/filen.html:3 templates/backends/generic.html:14
 #: templates/backends/jottacloud.html:3 templates/backends/msgroup.html:8
@@ -1005,18 +963,6 @@ msgstr ""
 #: templates/backends/sharepoint.html:2 templates/backends/smb.html:29
 msgid "Destination path"
 msgstr "Doelpad"
-
-#: templates/home.html:18
-msgid "Destination size"
-msgstr ""
-
-#: templates/home.html:28
-msgid "Destination size (descending)"
-msgstr ""
-
-#: templates/backends/smb.html:8
-msgid "Direct TCP"
-msgstr ""
 
 #: templates/restorewizard.html:9
 msgid "Direct restore from backup files …"
@@ -1054,10 +1000,6 @@ msgstr "Wilt u de back-up \"{{name}}\" echt verwijderen?"
 #: scripts/controllers/LocalDatabaseController.js:28
 msgid "Do you really want to delete the local database for: {{name}}"
 msgstr "Wilt u de lokale database voor: {{name}} echt verwijderen?"
-
-#: templates/backends/smb.html:33
-msgid "Domain"
-msgstr ""
 
 #: templates/backends/openstack.html:26
 msgid "Domain name"
@@ -1125,10 +1067,6 @@ msgstr ""
 #: templates/backup-result/top-left-box.html:11 templates/home.html:19
 msgid "Duration"
 msgstr "Tijdsduur"
-
-#: templates/home.html:29
-msgid "Duration (descending)"
-msgstr ""
 
 #: templates/delete.html:15
 msgid ""
@@ -1469,10 +1407,6 @@ msgstr "Ophalen pad-informatie ..."
 msgid "File"
 msgstr "Bestand"
 
-#: templates/backends/filejump.html:8
-msgid "Filejump API token"
-msgstr ""
-
 #: templates/addoredit.html:237
 msgid "Files larger than:"
 msgstr "Bestanden groter dan:"
@@ -1560,18 +1494,6 @@ msgstr "Bestandsversies ophalen ..."
 msgid "Group email"
 msgstr "Groep e-mail"
 
-#: templates/home.html:16
-msgid "Has Scheduled"
-msgstr ""
-
-#: templates/home.html:26
-msgid "Has Scheduled (descending)"
-msgstr ""
-
-#: index.html:311
-msgid "Help"
-msgstr ""
-
 #: scripts/controllers/EditBackupController.js:20
 msgid "Hidden files"
 msgstr "Verborgen bestanden"
@@ -1579,10 +1501,6 @@ msgstr "Verborgen bestanden"
 #: templates/addoredit.html:68
 msgid "Hide"
 msgstr "Verberg"
-
-#: templates/backends/file.html:15 templates/restore.html:98
-msgid "Hide hidden items"
-msgstr ""
 
 #: index.html:208 scripts/services/AppUtils.js:62
 msgid "Home"
@@ -1801,14 +1719,6 @@ msgstr "Keystone API versie"
 msgid "Language in user interface"
 msgstr "Taal in gebruikersomgeving"
 
-#: templates/home.html:13
-msgid "Last Run"
-msgstr ""
-
-#: templates/home.html:23
-msgid "Last Run (descending)"
-msgstr ""
-
 #: scripts/controllers/RestoreController.js:38
 msgid "Last month"
 msgstr "Vorige maand"
@@ -2015,12 +1925,6 @@ msgstr "Maandag"
 msgid "Months"
 msgstr "Maanden"
 
-#: scripts/services/EditUriBackendConfig.js:136
-msgid ""
-"Most servers require a username, so you will likely need to enter one.\n"
-"Are you sure want to continue without a username?"
-msgstr ""
-
 #: templates/localdatabase.html:31
 msgid "Move existing database"
 msgstr "Verplaats bestaande database"
@@ -2032,14 +1936,6 @@ msgstr "Verplaatsen mislukt:"
 #: scripts/services/AppUtils.js:54
 msgid "My Documents"
 msgstr "Mijn Documenten"
-
-#: scripts/services/AppUtils.js:66
-msgid "My Downloads"
-msgstr ""
-
-#: scripts/services/AppUtils.js:64
-msgid "My Movies"
-msgstr ""
 
 #: scripts/services/AppUtils.js:56
 msgid "My Music"
@@ -2056,14 +1952,6 @@ msgstr "Mijn Afbeeldingen"
 #: templates/addoredit.html:39 templates/home.html:15
 msgid "Name"
 msgstr "Naam"
-
-#: templates/home.html:25
-msgid "Name (descending)"
-msgstr ""
-
-#: templates/backends/smb.html:11
-msgid "Netbios over TCP"
-msgstr ""
 
 #: templates/home.html:87
 msgid "Never"
@@ -2093,14 +1981,6 @@ msgstr ""
 #: templates/restorewizard.html:36
 msgid "Next"
 msgstr "Volgende"
-
-#: templates/home.html:14
-msgid "Next Scheduled Run"
-msgstr ""
-
-#: templates/home.html:24
-msgid "Next Scheduled Run (descending)"
-msgstr ""
 
 #: templates/home.html:91
 msgid "Next scheduled run:"
@@ -2317,10 +2197,6 @@ msgstr ""
 "Opties die hier worden toegevoegd, worden toegepast op alle back-ups, maar "
 "kunnen worden overschreven in iedere afzonderlijke back-up."
 
-#: templates/home.html:7
-msgid "Order by"
-msgstr ""
-
 #: templates/restore.html:81
 msgid "Original location"
 msgstr "Originele locatie"
@@ -2456,10 +2332,6 @@ msgstr "ProjectID is optioneel als de bucket bestaat"
 #: scripts/services/SystemInfo.js:90
 msgid "Proprietary"
 msgstr "Fabrikantgebonden"
-
-#: scripts/services/AppUtils.js:68
-msgid "Public"
-msgstr ""
 
 #: templates/backup-result/phases/purge.html:3
 msgid "Purge Phase"
@@ -2701,10 +2573,6 @@ msgstr ""
 msgid "S3 Compatible"
 msgstr "S3 Compatible"
 
-#: scripts/services/SystemInfo.js:53
-msgid "SMB / CIFS"
-msgstr ""
-
 #: templates/settings.html:130
 msgid "Same as the base install version: {{channelname}}"
 msgstr "Zelfde als de basis installatie versie: {{channelname}}"
@@ -2816,14 +2684,6 @@ msgstr "Stel tijdzone in op standaardwaarde"
 msgid "Settings"
 msgstr "Instellingen"
 
-#: templates/backends/smb.html:23
-msgid "Share Name"
-msgstr ""
-
-#: scripts/services/EditUriBuiltins.js:1078 templates/backends/smb.html:24
-msgid "Share name"
-msgstr ""
-
 #: templates/addoredit.html:69 templates/notificationarea.html:12
 #: templates/notificationarea.html:31 templates/notificationarea.html:41
 msgid "Show"
@@ -2832,15 +2692,6 @@ msgstr "Tonen"
 #: templates/addoredit.html:132
 msgid "Show advanced editor"
 msgstr "Toon geavanceerde editor"
-
-#: templates/notificationarea.html:18 templates/notificationarea.html:19
-msgid "Show help"
-msgstr ""
-
-#: templates/addoredit.html:143 templates/backends/file.html:16
-#: templates/restore.html:99
-msgid "Show hidden items"
-msgstr ""
 
 #: templates/about.html:8
 msgid "Show log"
@@ -2892,14 +2743,6 @@ msgstr "Brongegevens"
 #: templates/addoredit.html:149
 msgid "Source folders"
 msgstr "Bronmappen"
-
-#: templates/home.html:17
-msgid "Source size"
-msgstr ""
-
-#: templates/home.html:27
-msgid "Source size (descending)"
-msgstr ""
 
 #: templates/home.html:96
 msgid "Source:"
@@ -3112,12 +2955,6 @@ msgid "The bucket name should be all lower-case, convert automatically?"
 msgstr ""
 "De bucket-naam hoort in kleine letters te zijn, automatisch converteren?"
 
-#: templates/addoredit.html:313
-msgid ""
-"The chosen size is outside the recommended range. This may cause performance"
-" issues, excessively large temporary files or other problems."
-msgstr ""
-
 #: scripts/controllers/ExportController.js:13
 msgid ""
 "The configuration should be kept safe. Are you sure you want to save an "
@@ -3276,13 +3113,6 @@ msgstr "Tijdzone"
 msgid "To File"
 msgstr "Naar Bestand"
 
-#: templates/confirmdelete.html:3
-msgid ""
-"To confirm you want to delete all remote files for\n"
-"      <span class=\"backupname\">\"{{selection.backupname}}\"</span>, please enter\n"
-"      this phrase:"
-msgstr ""
-
 #: scripts/controllers/ExportController.js:67
 msgid "To export without a passphrase, uncheck the \"Encrypt file\" box"
 msgstr ""
@@ -3319,10 +3149,6 @@ msgstr ""
 msgid "Today"
 msgstr "Vandaag"
 
-#: templates/backends/smb.html:3
-msgid "Transport"
-msgstr ""
-
 #: scripts/directives/backupEditUri.js:172
 msgid "Trust host certificate?"
 msgstr "Vertrouw host certificaat?"
@@ -3330,12 +3156,6 @@ msgstr "Vertrouw host certificaat?"
 #: scripts/directives/backupEditUri.js:86
 msgid "Trust server certificate?"
 msgstr "Vertrouw server certificaat?"
-
-#: templates/settings.html:141
-msgid ""
-"Try out the new features that we are working on. Test Backup &amp; Restore "
-"before using this in production environments."
-msgstr ""
 
 #: scripts/services/AppUtils.js:111
 msgid "Tue"
@@ -3406,10 +3226,6 @@ msgstr "Gebruikstatistieken"
 msgid "Usage statistics, warnings, errors, and crashes"
 msgstr "Gebruikstatistieken, waarschuwingen, fouten en crashes"
 
-#: templates/backends/filejump.html:32
-msgid "Use API token authentication (recommended)"
-msgstr ""
-
 #: templates/backends/generic.html:2 templates/backends/s3.html:2
 msgid "Use SSL"
 msgstr "Gebruik SSL"
@@ -3417,14 +3233,6 @@ msgstr "Gebruik SSL"
 #: scripts/controllers/EditBackupController.js:454
 msgid "Use existing database?"
 msgstr "Gebruik bestaande database?"
-
-#: index.html:263
-msgid "Use new UI"
-msgstr ""
-
-#: templates/backends/filejump.html:31
-msgid "Use username and password authentication"
-msgstr ""
 
 #: scripts/controllers/EditBackupController.js:348
 msgid "Use weak passphrase"
@@ -3460,12 +3268,6 @@ msgstr "Gebruikersomgeving-instellingen"
 #: templates/backends/smb.html:38
 msgid "Username"
 msgstr "Gebruikersnaam"
-
-#: templates/backends/filejump.html:14
-msgid ""
-"Username and password authentication is not recommended and does not work with MFA/2FA enabled accounts.\n"
-"        Use the API token if possible."
-msgstr ""
 
 #: scripts/services/ServerStatus.js:60
 msgid "Vacuuming database …"

@@ -16,31 +16,6 @@ msgstr ""
 "Language: cs\n"
 "Plural-Forms: nplurals=4; plural=(n == 1 && n % 1 == 0) ? 0 : (n >= 2 && n <= 4 && n % 1 == 0) ? 1: (n % 1 != 0 ) ? 2 : 3;\n"
 
-#: templates/backup-result/entryline.html:5
-msgid "(1 error{{item.Result.Interrupted? (', interrupted'|translate) : ''}})"
-msgid_plural ""
-"({{$count}} errors{{item.Result.Interrupted? (', interrupted'|translate) : "
-"''}})"
-msgstr[0] ""
-msgstr[1] ""
-msgstr[2] ""
-msgstr[3] ""
-
-#: templates/backup-result/entryline.html:10
-msgid ""
-"(1 warning{{item.Result.Interrupted? (', interrupted'|translate) : ''}})"
-msgid_plural ""
-"({{$count}} warnings{{item.Result.Interrupted? (', interrupted'|translate) :"
-" ''}})"
-msgstr[0] ""
-msgstr[1] ""
-msgstr[2] ""
-msgstr[3] ""
-
-#: templates/backup-result/entryline.html:15
-msgid "(interrupted)"
-msgstr ""
-
 #: templates/advancedoptionseditor.html:50
 msgid "- pick an option -"
 msgstr "- vyberte jednu z možností -"
@@ -48,44 +23,6 @@ msgstr "- vyberte jednu z možností -"
 #: scripts/controllers/SystemSettingsController.js:217 templates/delete.html:7
 msgid "...loading..."
 msgstr "…načítání…"
-
-#: templates/backends/sia.html:19
-msgid ""
-"<b>Note:</b> Sia will still boost redundancy later as long as you're "
-"connected to your hosts."
-msgstr ""
-
-#: templates/commandline.html:25
-msgid "<i class=\"fa fa-check\"></i> Edit as text"
-msgstr ""
-
-#: templates/commandline.html:32
-msgid "<i class=\"fa\"></i> Edit as text"
-msgstr ""
-
-#: templates/addoredit.html:312
-msgid ""
-"<p ng-show=\"(parseSizeString(Options['dblock-size']) &gt; 1024 * 1024 * 1024 * 2) || (parseSizeString(Options['dblock-size']) &lt; 1024 * 1024 * 5)\" class=\"warning\" translate>\n"
-"                            The chosen size is outside the recommended range. This may cause performance issues, excessively large temporary files or other problems.\n"
-"                        </p>\n"
-"                        The backups will be split up into multiple files called volumes. Here you can set the maximum size of the individual volume files. <external-link link=\"'https://forum.duplicati.com/t/choosing-sizes-in-duplicati/17683'\">See this page for more information.</external-link>"
-msgstr ""
-
-#: index.html:298
-msgid ""
-"<p>Connection to server was rejected due to invalid authentication.</p>\n"
-"                <p>Log in again, or re-open the page from the TrayIcon (if applicable)</p>"
-msgstr ""
-
-#: templates/backends/filejump.html:30
-msgid ""
-"<span ng-show=\"!$parent.UsernamePasswordAuth\" translate>Use username and password authentication</span>\n"
-"        <span ng-show=\"$parent.UsernamePasswordAuth\" translate>Use API token authentication (recommended)</span>"
-msgstr ""
-
-#: scripts/services/EditUriBuiltins.js:1097
-msgid "API Token"
-msgstr ""
 
 #: scripts/services/EditUriBuiltins.js:1368
 #: templates/backends/openstack.html:44 templates/backends/storj.html:21
@@ -119,14 +56,6 @@ msgstr "O aplikaci {{appname}}"
 msgid "Access Key"
 msgstr "Přístupový klíč"
 
-#: templates/backends/e2.html:2
-msgid "Access Key ID"
-msgstr ""
-
-#: templates/backends/e2.html:6
-msgid "Access Key Secret"
-msgstr ""
-
 #: scripts/services/AppUtils.js:76
 msgid "Access denied"
 msgstr "Přístup odepřen"
@@ -134,10 +63,6 @@ msgstr "Přístup odepřen"
 #: templates/backends/storj.html:33 templates/backends/storj.html:34
 msgid "Access grant"
 msgstr "Udělení přístupu"
-
-#: templates/backends/azure.html:11 templates/backends/azure.html:12
-msgid "Access key"
-msgstr ""
 
 #: templates/settings.html:5
 msgid "Access to user interface"
@@ -194,14 +119,6 @@ msgstr "Pokročilé volby"
 msgid "Advanced:"
 msgstr "Pokročilé:"
 
-#: templates/backends/aliyunoss.html:4
-msgid "Aliyun OSS Endpoint"
-msgstr ""
-
-#: templates/backends/aliyunoss.html:35
-msgid "Aliyun OSS documents and resources"
-msgstr ""
-
 #: scripts/directives/sourceFolderPicker.js:581
 msgid "All Hyper-V Machines"
 msgstr "Všechny Hyper-V stroje"
@@ -228,10 +145,6 @@ msgstr "Umožnit přístup na dálku (vyžaduje restart)"
 #: templates/addoredit.html:278
 msgid "Allowed days"
 msgstr "Dny, ve které je přístup umožněn"
-
-#: templates/pause.html:52
-msgid "Also pause transfers"
-msgstr ""
 
 #: scripts/controllers/LocalDatabaseController.js:103
 msgid "An existing file was found at the new location"
@@ -265,10 +178,6 @@ msgstr "Anonymní hlášení o použití"
 msgid "Applications"
 msgstr "Aplikace"
 
-#: scripts/controllers/SystemSettingsController.js:194
-msgid "Are you sure you want to delete the remote control registration?"
-msgstr ""
-
 #: templates/export.html:8
 msgid "As Command-line"
 msgstr "Jako příkazový řádek"
@@ -283,10 +192,6 @@ msgstr "Jako příkazový řádek"
 #: templates/backends/sharepoint.html:9
 msgid "AuthID"
 msgstr "AuthID"
-
-#: templates/backends/smb.html:34
-msgid "Authentication Domain"
-msgstr ""
 
 #: scripts/services/EditUriBuiltins.js:1359 templates/backends/storj.html:2
 msgid "Authentication method"
@@ -312,10 +217,6 @@ msgstr "Ověřovací uživatelské jméno"
 msgid "Autogenerated passphrase"
 msgstr "Automaticky vytvořená heslová fráze"
 
-#: templates/addoredit.html:258
-msgid "Automatically run backups"
-msgstr ""
-
 #: templates/backends/b2.html:12
 msgid "B2 Application ID"
 msgstr "B2 Aplikační ID"
@@ -340,12 +241,6 @@ msgstr "Aplikační klíč ke cloudovému úložišti B2"
 msgid "Back"
 msgstr "Zpět"
 
-#: templates/about.html:66
-msgid ""
-"Backend modules: <p style=\"display: inline\" ng-repeat=\"item in "
-"sysinfo.BackendModules\">{{item.Key}} </p>"
-msgstr ""
-
 #: scripts/services/ServerStatus.js:47
 msgid "Backup complete!"
 msgstr "Záloha dokončena!"
@@ -353,13 +248,6 @@ msgstr "Záloha dokončena!"
 #: templates/addoredit.html:92
 msgid "Backup destination"
 msgstr "Cíl zálohy"
-
-#: templates/restore.html:131
-msgid ""
-"Backup is encrypted but no passphrase is available. Type a passphrase below "
-"to use for restoring your files, or, in case of GPG encryption, leave blank "
-"to let gpg retrieve the passphrase by invoking your system's keychain."
-msgstr ""
 
 #: templates/restore.html:21 templates/restoredirect.html:21
 #: templates/restoredirect.html:31
@@ -410,27 +298,9 @@ msgstr "Umístění ve kterém „nádobu“ (bucket) vytvořit"
 msgid "Bucket name"
 msgstr "Název „nádoby“ (bucket)"
 
-#: scripts/services/EditUriBuiltins.js:1382
-msgid ""
-"Bucket name can only be between 3 and 63 characters long and contain only "
-"lower-case characters, numbers, periods and dashes"
-msgstr ""
-
-#: templates/backends/s3.html:29
-msgid "Bucket region"
-msgstr ""
-
-#: templates/backends/cos.html:21
-msgid "Bucket region ap-guangzhou"
-msgstr ""
-
 #: templates/backends/gcs.html:26
 msgid "Bucket storage class"
 msgstr "Třída úložiště nesoucí „nádobu“ (bucket)"
-
-#: templates/backends/cos.html:26
-msgid "Bucket, format: BucketName-APPID"
-msgstr ""
 
 #: scripts/services/ServerStatus.js:51
 msgid "Building list of files to restore …"
@@ -439,10 +309,6 @@ msgstr "Vytváření seznamu souborů k obnovení…"
 #: scripts/controllers/RestoreController.js:373
 msgid "Building partial temporary database …"
 msgstr "Vytváření částečné dočasné databáze…"
-
-#: templates/restore.html:59
-msgid "Busy …"
-msgstr ""
 
 #: templates/settings.html:21
 msgid ""
@@ -467,22 +333,6 @@ msgstr ""
 "rozhraní z ikony v oznamovací oblasti, zatímco po ostatních bude vyžadovat "
 "zadání hesla. Pokud upřednostňujete zadávání hesla i při přístupu k "
 "uživatelskému rozhraní z ikony v oznamovací oblasti, zapněte tuto volbu."
-
-#: templates/backends/cos.html:2
-msgid "COS App ID"
-msgstr ""
-
-#: templates/backends/cos.html:32
-msgid "COS Path or subfolder in the bucket"
-msgstr ""
-
-#: templates/backends/cos.html:8
-msgid "COS Secret ID"
-msgstr ""
-
-#: templates/backends/cos.html:14
-msgid "COS Secret Key"
-msgstr ""
 
 #: scripts/services/AppUtils.js:206
 msgid "Cache Files"
@@ -518,29 +368,9 @@ msgstr "Kanárek"
 msgid "Cancel"
 msgstr "Storno"
 
-#: templates/settings.html:56
-msgid "Cancel registration"
-msgstr ""
-
-#: scripts/directives/sourceFolderPicker.js:415
-msgid "Cannot include \"{{text}}\""
-msgstr ""
-
 #: scripts/controllers/LocalDatabaseController.js:103
 msgid "Cannot move to existing file"
 msgstr "Nelze přesunout do existujícího souboru"
-
-#: scripts/services/AppUtils.js:348
-msgid "Cannot specify filter include or excludes in extra options"
-msgstr ""
-
-#: templates/settings.html:8
-msgid "Change server passphrase"
-msgstr ""
-
-#: scripts/controllers/AppController.js:198
-msgid "Change server password"
-msgstr ""
 
 #: templates/about.html:5
 msgid "Changelog"
@@ -562,12 +392,6 @@ msgstr "Zjistit dostupnost případných aktualizací nyní"
 msgid "Checking for updates …"
 msgstr "Zjišťování dostupnosti případných aktualizací…"
 
-#: templates/backends/sia.html:18
-msgid ""
-"Choose 1.0 for fast backup, 1.5 for decent reliability, 2.0 for safer upload"
-" but slow backup."
-msgstr ""
-
 #: templates/edituri.html:16
 msgid "Chose a storage type to get started"
 msgstr "Pro začátek vyberte typ úložiště"
@@ -578,10 +402,6 @@ msgstr "Pro začátek vyberte typ úložiště"
 msgid "Click the AuthID link to create an AuthID"
 msgstr "AuthID vytvoříte kliknutím na odkaz AuthID"
 
-#: templates/backends/filejump.html:10
-msgid "Click the Filejump API token link to set up an API token"
-msgstr ""
-
 #: index.html:148 index.html:199
 msgid "Click to set throttle options"
 msgstr "Kliknutím nastavte předvolby přiškrcování"
@@ -589,22 +409,6 @@ msgstr "Kliknutím nastavte předvolby přiškrcování"
 #: templates/backends/s3.html:78
 msgid "Client library to use"
 msgstr "Používaná klientská knihovna"
-
-#: templates/backends/cos.html:10
-msgid "Cloud API Secret ID"
-msgstr ""
-
-#: templates/backends/cos.html:16
-msgid "Cloud API Secret Key"
-msgstr ""
-
-#: templates/commandline.html:8
-msgid "Command"
-msgstr ""
-
-#: templates/commandline.html:18
-msgid "Commandline arguments"
-msgstr ""
 
 #: templates/home.html:69
 msgid "Commandline …"
@@ -634,12 +438,6 @@ msgstr "Dokončování zálohy…"
 msgid "Completing previous backup …"
 msgstr "Dokončování předchozí zálohy…"
 
-#: templates/about.html:67
-msgid ""
-"Compression modules: <p style=\"display: inline\" ng-repeat=\"item in "
-"sysinfo.CompressionModules\">{{item.Key}} </p>"
-msgstr ""
-
 #: scripts/directives/sourceFolderPicker.js:539
 msgid "Computer"
 msgstr "Počítač"
@@ -666,10 +464,6 @@ msgstr "Potvrzení smazání"
 msgid "Confirm encryption passphrase"
 msgstr "Potvrzení zadání šifrovací heslové fráze"
 
-#: templates/changepassword.html:14 templates/settings.html:15
-msgid "Confirm new password"
-msgstr ""
-
 #: templates/export.html:29
 msgid "Confirm passphrase"
 msgstr "Zopakování zadání heslové fráze"
@@ -689,14 +483,6 @@ msgstr "Připojit nyní"
 #: index.html:305
 msgid "Connecting to server …"
 msgstr "Připojování k serveru…"
-
-#: templates/commandline.html:48
-msgid "Connecting to task …"
-msgstr ""
-
-#: index.html:313
-msgid "Connecting …"
-msgstr ""
 
 #: index.html:297
 msgid "Connection lost"
@@ -736,18 +522,9 @@ msgstr "Kopírovat"
 msgid "Copy Destination URL to Clipboard"
 msgstr "Zkopírovat URL adresu cíle do schránky"
 
-#: scripts/controllers/EditBackupController.js:107
-#: scripts/controllers/RestoreDirectController.js:33
-msgid "Copy URL"
-msgstr ""
-
 #: scripts/controllers/DialogController.js:20
 msgid "Copy failed. Please manually copy the URL"
 msgstr "Kopie se nezdařila. Zkopírujte URL adresu ručně"
-
-#: templates/backup-result/box.html:41
-msgid "Copy log"
-msgstr ""
 
 #: scripts/services/AppUtils.js:741
 msgid "Core options"
@@ -760,14 +537,6 @@ msgstr "Počítání ({{files}} souborů nalezeno, {{size}})"
 #: templates/settings.html:170
 msgid "Crashes only"
 msgstr "Pouze pády"
-
-#: templates/home.html:11
-msgid "Create Order"
-msgstr ""
-
-#: templates/home.html:21
-msgid "Create Order (descending)"
-msgstr ""
 
 #: templates/home.html:75
 msgid "Create bug report …"
@@ -796,10 +565,6 @@ msgstr "Vytváření cílových složek…"
 #: scripts/controllers/RestoreController.js:368
 msgid "Creating temporary backup …"
 msgstr "Vytváření dočasné zálohy…"
-
-#: scripts/services/EditUriBuiltins.js:127
-msgid "Creating user …"
-msgstr ""
 
 #: templates/home.html:105
 msgid "Current action:"
@@ -833,10 +598,6 @@ msgstr "Vlastní ověřovací URL adresa"
 msgid "Custom backup retention"
 msgstr "Uživatelem určená doba uchovávání záloh"
 
-#: templates/backends/s3.html:55
-msgid "Custom bucket storage class"
-msgstr ""
-
 #: templates/backends/gcs.html:18
 msgid "Custom location ({{server}})"
 msgstr "Vlastní umístění ({{server}})"
@@ -856,10 +617,6 @@ msgstr "Vlastní URL adresa serveru ({{server}})"
 #: templates/backends/gcs.html:29 templates/backends/s3.html:50
 msgid "Custom storage class ({{class}})"
 msgstr "Vlastní třída úložiště ({{class}})"
-
-#: templates/advancedoptionseditor.html:43
-msgid "DEPRECATED: {{getDeprecationMessage(item)}}"
-msgstr ""
 
 #: templates/home.html:66
 msgid "Database …"
@@ -885,10 +642,6 @@ msgstr "Ve výchozím stavu vynecháno"
 msgid "Default options"
 msgstr "Výchozí volby"
 
-#: templates/advancedoptionseditor.html:44
-msgid "Default value: \"{{getDefaultValue(item)}}\""
-msgstr ""
-
 #: scripts/controllers/DeleteController.js:67 templates/localdatabase.html:16
 msgid "Delete"
 msgstr "Smazat"
@@ -908,10 +661,6 @@ msgstr "Smazat zálohy starší než"
 #: templates/delete.html:13
 msgid "Delete local database"
 msgstr "Smazat místní databázi"
-
-#: templates/settings.html:68
-msgid "Delete remote control setup"
-msgstr ""
 
 #: templates/delete.html:38 templates/delete.html:47
 msgid "Delete remote files"
@@ -965,14 +714,6 @@ msgstr "Osobní počítač"
 msgid "Destination"
 msgstr "Cíl"
 
-#: templates/home.html:12
-msgid "Destination Type"
-msgstr ""
-
-#: templates/home.html:22
-msgid "Destination Type (descending)"
-msgstr ""
-
 #: templates/backends/file.html:7 templates/backends/filejump.html:3
 #: templates/backends/filen.html:3 templates/backends/generic.html:14
 #: templates/backends/jottacloud.html:3 templates/backends/msgroup.html:8
@@ -980,30 +721,6 @@ msgstr ""
 #: templates/backends/sharepoint.html:2 templates/backends/smb.html:29
 msgid "Destination path"
 msgstr "Cílové umístění"
-
-#: templates/home.html:18
-msgid "Destination size"
-msgstr ""
-
-#: templates/home.html:28
-msgid "Destination size (descending)"
-msgstr ""
-
-#: templates/backends/smb.html:8
-msgid "Direct TCP"
-msgstr ""
-
-#: templates/restorewizard.html:9
-msgid "Direct restore from backup files …"
-msgstr ""
-
-#: templates/backends/idrive.html:3
-msgid "Directory path"
-msgstr ""
-
-#: templates/settings.html:60
-msgid "Disable remote control"
-msgstr ""
 
 #: templates/log.html:32
 msgid "Disabled"
@@ -1029,14 +746,6 @@ msgstr "Opravdu chcete smazat zálohu: „{{name}}“?"
 #: scripts/controllers/LocalDatabaseController.js:28
 msgid "Do you really want to delete the local database for: {{name}}"
 msgstr "Opravdu chcete smazat místní databázi pro: {{name}}"
-
-#: templates/backends/smb.html:33
-msgid "Domain"
-msgstr ""
-
-#: templates/backends/openstack.html:26
-msgid "Domain name"
-msgstr ""
 
 #: templates/export.html:53
 msgid "Done"
@@ -1071,13 +780,6 @@ msgstr "Webové stránky projektu Duplicati"
 msgid "Duplicati forum"
 msgstr "Diskuzní fórum o Duplicati"
 
-#: scripts/controllers/AppController.js:188
-msgid ""
-"Duplicati needs to be secured with a passphrase and a random passphrase has been generated for you.\n"
-"If you open Duplicati from the tray icon, you do not need a passphrase, but if you plan to open it from another location you need to set a passphrase you know.\n"
-"Do you want to set a passphrase now?"
-msgstr ""
-
 #: templates/settings.html:93
 msgid ""
 "Duplicati will run when started, but will remain in a paused state for the "
@@ -1098,10 +800,6 @@ msgstr ""
 msgid "Duration"
 msgstr "Doba trvání"
 
-#: templates/home.html:29
-msgid "Duration (descending)"
-msgstr ""
-
 #: templates/delete.html:15
 msgid ""
 "Each backup has a local database associated with it, which stores information about the remote backup on the local machine.\n"
@@ -1111,14 +809,6 @@ msgstr ""
 "Ke každé záloze je přiřazena místní databáze, která uchovává informace o vzdálené záloze na místním stroji.\n"
 "            Při mazání zálohy je také možné smazat lokální databázi aniž by tím byla postižena schopnost obnovovat vzdálené soubory.\n"
 "            Pokud používáte místní databáze pro zálohy z příkazového řádku, měli byste databázi ponechat."
-
-#: templates/localdatabase.html:5
-msgid ""
-"Each backup has a local database associated with it, which stores "
-"information about the remote backup on the local machine. This makes it "
-"faster to perform many operations, and reduces the amount of data that needs"
-" to be downloaded for each operation."
-msgstr ""
 
 #: templates/addoredit.html:174 templates/addoredit.html:389
 #: templates/edituri.html:39 templates/settings.html:194
@@ -1134,14 +824,6 @@ msgstr "Upravit jako text"
 msgid "Edit …"
 msgstr "Upravit…"
 
-#: templates/backends/msgroup.html:3
-msgid "Email address of the Office 365 group"
-msgstr ""
-
-#: templates/settings.html:64
-msgid "Enable remote control"
-msgstr ""
-
 #: templates/export.html:22
 msgid "Encrypt file"
 msgstr "Zašifrovat soubor"
@@ -1155,20 +837,10 @@ msgstr "Šifrování"
 msgid "Encryption changed"
 msgstr "Šifrování změněno"
 
-#: templates/about.html:68
-msgid ""
-"Encryption modules: <p style=\"display: inline\" ng-repeat=\"item in "
-"sysinfo.EncryptionModules\">{{item.Key}} </p>"
-msgstr ""
-
 #: scripts/services/EditUriBuiltins.js:1369 templates/backends/storj.html:25
 #: templates/backends/storj.html:26
 msgid "Encryption passphrase"
 msgstr "Šifrovací heslová fráze"
-
-#: templates/backends/storj.html:30
-msgid "Encryption passphrase (for verification)"
-msgstr ""
 
 #: templates/backup-result/phases/compact.html:12
 #: templates/backup-result/phases/delete.html:12
@@ -1185,11 +857,6 @@ msgstr "Konec"
 msgid "Enter URL"
 msgstr "Zadejte URL adresu"
 
-#: scripts/controllers/EditBackupController.js:99
-#: scripts/controllers/RestoreDirectController.js:24
-msgid "Enter a backup destination URL:"
-msgstr ""
-
 #: templates/addoredit.html:341
 msgid ""
 "Enter a retention strategy manually. Placeholders are D/W/Y for "
@@ -1203,10 +870,6 @@ msgstr ""
 "ponechána jedna záloha z každého dne po dobu příštích 7 dnů, jedna z každého"
 " týdne po dobu příštích 4 týdnů a jedna z každého měsíce po dobu příštích 36"
 " měsíců. Je možné zapsat také jako 1W:1D,1M:1W,3Y:1M."
-
-#: templates/commandline.html:14
-msgid "Enter a url, or click the &quot;Target URL &gt;&quot; link"
-msgstr ""
 
 #: templates/restoredirect.html:61
 msgid "Enter backup passphrase, if any"
@@ -1223,19 +886,6 @@ msgstr "Zadejte šifrovací heslovou frázi"
 #: templates/addoredit.html:196
 msgid "Enter expression here"
 msgstr "Sem zadejte výraz"
-
-#: templates/commandline.html:19
-msgid "Enter one argument per line without quotes, e.g. *.txt"
-msgstr ""
-
-#: templates/commandline.html:26
-msgid ""
-"Enter one option per line in command-line format, e.g. --dblock-size=100MB"
-msgstr ""
-
-#: scripts/services/AppUtils.js:128
-msgid "Enter one option per line in command-line format, e.g. {0}"
-msgstr ""
 
 #: templates/restore.html:90
 msgid "Enter the destination path"
@@ -1396,22 +1046,9 @@ msgstr "Nepodařilo se stáhnout informaci o popisu umístění: {{message}}"
 msgid "Failed to find backup:"
 msgstr "Zálohu se nepodařilo nalézt:"
 
-#: scripts/directives/notificationArea.js:68
-msgid "Failed to get bug report URL: {{message}}"
-msgstr ""
-
-#: scripts/controllers/ImportController.js:39
-#: scripts/controllers/ImportController.js:43
-msgid "Failed to import: {{message}}"
-msgstr ""
-
 #: scripts/controllers/EditBackupController.js:710
 msgid "Failed to read backup defaults:"
 msgstr "Nepodařilo se načíst výchozí parametry zálohy:"
-
-#: scripts/controllers/ImportController.js:49
-msgid "Failed to read file: {{message}}"
-msgstr ""
 
 #: scripts/controllers/RestoreController.js:423
 msgid "Failed to restore files: {{message}}"
@@ -1421,10 +1058,6 @@ msgstr "Nepodařilo se obnovit soubory: {{message}}"
 msgid "Failed to save:"
 msgstr "Nepodařilo se uložit:"
 
-#: templates/backup-result/top-right-box.html:6
-msgid "Fatal error, no statistics collected"
-msgstr ""
-
 #: scripts/controllers/RestoreController.js:120
 #: scripts/controllers/RestoreController.js:159
 msgid "Fetching path information …"
@@ -1433,10 +1066,6 @@ msgstr "Získávání informací o popisu umístění…"
 #: scripts/services/AppUtils.js:80
 msgid "File"
 msgstr "Soubor"
-
-#: templates/backends/filejump.html:8
-msgid "Filejump API token"
-msgstr ""
 
 #: templates/addoredit.html:237
 msgid "Files larger than:"
@@ -1458,10 +1087,6 @@ msgstr "Úvodní nastavení při prvním spuštění"
 msgid "Folder"
 msgstr "Složka"
 
-#: templates/backends/storj.html:42
-msgid "Folder in the bucket"
-msgstr ""
-
 #: templates/backends/aliyunoss.html:30 templates/backends/b2.html:7
 #: templates/backends/cos.html:30 templates/backends/e2.html:16
 #: templates/backends/file.html:22 templates/backends/file.html:6
@@ -1472,17 +1097,9 @@ msgstr ""
 msgid "Folder path"
 msgstr "Popis umístění složky"
 
-#: templates/backends/mega.html:3
-msgid "Folder path name"
-msgstr ""
-
 #: scripts/services/AppUtils.js:114
 msgid "Fri"
 msgstr "Pá"
-
-#: templates/backends/sharepoint.html:3
-msgid "Full destination path, including the server name, but without https"
-msgstr ""
 
 #: scripts/services/AppUtils.js:90
 msgid "GByte"
@@ -1525,18 +1142,6 @@ msgstr "Získávání verzí souboru…"
 msgid "Group email"
 msgstr "E-mail skupiny"
 
-#: templates/home.html:16
-msgid "Has Scheduled"
-msgstr ""
-
-#: templates/home.html:26
-msgid "Has Scheduled (descending)"
-msgstr ""
-
-#: index.html:311
-msgid "Help"
-msgstr ""
-
 #: scripts/controllers/EditBackupController.js:20
 msgid "Hidden files"
 msgstr "Skryté soubory"
@@ -1544,10 +1149,6 @@ msgstr "Skryté soubory"
 #: templates/addoredit.html:68
 msgid "Hide"
 msgstr "Skrýt"
-
-#: templates/backends/file.html:15 templates/restore.html:98
-msgid "Hide hidden items"
-msgstr ""
 
 #: index.html:208 scripts/services/AppUtils.js:62
 msgid "Home"
@@ -1584,18 +1185,6 @@ msgstr "Hyper-V stroje"
 msgid "ID:"
 msgstr "Identifikátor:"
 
-#: templates/backends/idrive.html:2
-msgid "IDrive Sync directory path"
-msgstr ""
-
-#: scripts/services/EditUriBuiltins.js:1424 templates/backends/e2.html:3
-msgid "IDrive e2 Access Key ID"
-msgstr ""
-
-#: scripts/services/EditUriBuiltins.js:1425 templates/backends/e2.html:7
-msgid "IDrive e2 Access Key Secret"
-msgstr ""
-
 #: templates/addoredit.html:261
 msgid "If a date was missed, the job will run as soon as possible."
 msgstr "Pokud chybělo datum, úloha bude spuštěna co možná nejdříve."
@@ -1607,27 +1196,6 @@ msgid ""
 msgstr ""
 "Pokud je nalezena alespoň jedna novější záloha, všechny zálohy starší než "
 "tento datum budou smazány."
-
-#: templates/localdatabase.html:10
-msgid ""
-"If the backup and the remote storage is out of sync, Duplicati will require "
-"that you perform a repair operation to synchronize the database. If the "
-"repair is unsuccessful, you can delete the local database and re-generate."
-msgstr ""
-
-#: templates/export.html:49
-msgid ""
-"If the backup file was not downloaded automatically, <a "
-"href=\"{{DownloadURL}}\" target=\"_blank\">right click and choose &quot;Save"
-" as …&quot;</a>."
-msgstr ""
-
-#: templates/notificationarea.html:7
-msgid ""
-"If the backup file was not downloaded automatically, <a "
-"href=\"{{item.DownloadLink}}\" target=\"_blank\">right click and choose "
-"&quot;Save as …&quot;</a>."
-msgstr ""
 
 #: scripts/services/EditUriBackendConfig.js:113
 msgid ""
@@ -1641,17 +1209,6 @@ msgstr ""
 msgid "If you do not enter an API Key, the tenant name is required"
 msgstr "Pokud nezadáte klíč k API, je vyžadováno jméno nájemníka (tenant)"
 
-#: templates/pause.html:53
-msgid ""
-"If you pause transfers they could time out and cause retries or failures."
-msgstr ""
-
-#: templates/delete.html:32
-msgid ""
-"If you want to use the backup later, you can export the configuration before"
-" deleting it."
-msgstr ""
-
 #: templates/import.html:29
 msgid "Import"
 msgstr "Import"
@@ -1659,11 +1216,6 @@ msgstr "Import"
 #: templates/addoredit.html:100 templates/restoredirect.html:39
 msgid "Import Destination URL"
 msgstr "Importovat URL adresu cíle"
-
-#: scripts/controllers/EditBackupController.js:99
-#: scripts/controllers/RestoreDirectController.js:24
-msgid "Import URL"
-msgstr ""
 
 #: templates/import.html:3
 msgid "Import backup configuration"
@@ -1703,10 +1255,6 @@ msgstr ""
 #: scripts/services/DialogService.js:27
 msgid "Information"
 msgstr "Informace"
-
-#: templates/backup-result/top-right-box.html:3
-msgid "Interrupted, no statistics collected"
-msgstr ""
 
 #: scripts/services/EditUriBuiltins.js:1345
 msgid "Invalid characters in path"
@@ -1749,14 +1297,6 @@ msgstr "Verze aplikačního program. rozhraní stavebního bloku"
 #: templates/settings.html:98
 msgid "Language in user interface"
 msgstr "Jazyk textů v uživatelském rozhraní"
-
-#: templates/home.html:13
-msgid "Last Run"
-msgstr ""
-
-#: templates/home.html:23
-msgid "Last Run (descending)"
-msgstr ""
 
 #: scripts/controllers/RestoreController.js:38
 msgid "Last month"
@@ -1807,10 +1347,6 @@ msgstr "Načíst cíl z exportované úlohy nebo poskytovatele úložiště"
 msgid "Load older data"
 msgstr "Načíst starší data"
 
-#: templates/delete.html:40
-msgid "Loading remote storage usage …"
-msgstr ""
-
 #: templates/about.html:43 templates/about.html:49 templates/about.html:55
 #: templates/backuplog.html:12 templates/backuplog.html:22
 #: templates/backuplog.html:29 templates/backuplog.html:40
@@ -1818,13 +1354,6 @@ msgstr ""
 #: templates/updatechangelog.html:7
 msgid "Loading …"
 msgstr "Načítání…"
-
-#: templates/localdatabase.html:2
-msgid ""
-"Local database for <b ng-"
-"show=\"Backup.Backup.Name\">{{Backup.Backup.Name}}</b><b ng-"
-"hide=\"Backup.Backup.Name\">…loading…</b>"
-msgstr ""
 
 #: templates/localdatabase.html:23
 msgid "Local database path:"
@@ -1854,10 +1383,6 @@ msgstr "Zaznamenávat (log) údaje pro <b>{{Backup.Backup.Name}}</b>"
 msgid "Log data from the server"
 msgstr "Zaznamenávat data ze serveru"
 
-#: index.html:310
-msgid "Log in"
-msgstr ""
-
 #: index.html:226
 msgid "Log out"
 msgstr "Odhlásit se"
@@ -1870,27 +1395,9 @@ msgstr "MB"
 msgid "MByte/s"
 msgstr "MB/s"
 
-#: templates/settings.html:51
-msgid "Machine is now registered, open this link to add it to your account:"
-msgstr ""
-
 #: templates/localdatabase.html:8
 msgid "Maintenance"
 msgstr "Údržba"
-
-#: templates/backends/rclone.html:13
-msgid ""
-"Make sure that rclone is in your path, or add the location to rclone via the"
-" advanced options."
-msgstr ""
-
-#: index.html:259
-msgid "Manual"
-msgstr ""
-
-#: templates/notificationarea.html:37
-msgid "Manual update found:"
-msgstr ""
 
 #: templates/backends/file.html:19 templates/restore.html:102
 msgid "Manually type path"
@@ -1955,12 +1462,6 @@ msgstr "Po"
 msgid "Months"
 msgstr "Měsíců"
 
-#: scripts/services/EditUriBackendConfig.js:136
-msgid ""
-"Most servers require a username, so you will likely need to enter one.\n"
-"Are you sure want to continue without a username?"
-msgstr ""
-
 #: templates/localdatabase.html:31
 msgid "Move existing database"
 msgstr "Přesunout existující databázi"
@@ -1972,14 +1473,6 @@ msgstr "Přesun se nezdařil:"
 #: scripts/services/AppUtils.js:54
 msgid "My Documents"
 msgstr "Moje dokumenty"
-
-#: scripts/services/AppUtils.js:66
-msgid "My Downloads"
-msgstr ""
-
-#: scripts/services/AppUtils.js:64
-msgid "My Movies"
-msgstr ""
 
 #: scripts/services/AppUtils.js:56
 msgid "My Music"
@@ -1997,25 +1490,9 @@ msgstr "Obrázky"
 msgid "Name"
 msgstr "Název"
 
-#: templates/home.html:25
-msgid "Name (descending)"
-msgstr ""
-
-#: templates/backends/smb.html:11
-msgid "Netbios over TCP"
-msgstr ""
-
 #: templates/home.html:87
 msgid "Never"
 msgstr "Nikdy"
-
-#: templates/changepassword.html:5 templates/settings.html:11
-msgid "New Password"
-msgstr ""
-
-#: templates/notificationarea.html:24
-msgid "New update found: <a href=\"{{state.updateDownloadLink}}\">{{message}}</a>"
-msgstr ""
 
 #: scripts/services/EditUriBuiltins.js:141
 msgid ""
@@ -2031,14 +1508,6 @@ msgstr ""
 #: templates/restorewizard.html:36
 msgid "Next"
 msgstr "Další"
-
-#: templates/home.html:14
-msgid "Next Scheduled Run"
-msgstr ""
-
-#: templates/home.html:24
-msgid "Next Scheduled Run (descending)"
-msgstr ""
 
 #: templates/home.html:91
 msgid "Next scheduled run:"
@@ -2121,13 +1590,6 @@ msgstr "Žádné / vypnuté"
 msgid "Not using encryption"
 msgstr "Nepoužívá šifrování"
 
-#: templates/throttle.html:22
-msgid ""
-"Note that speeds are entered in bytes, and line speeds are typically "
-"reported in bits. Use a factor of 8 to convert, such that an 8 mbit/s line "
-"is equivalent to 1 MByte/s."
-msgstr ""
-
 #: templates/addoredit.html:330
 msgid "Nothing will be deleted. The backup size will grow with each change."
 msgstr "Nic nebude smazáno. Velikost zálohy naroste při každé změně."
@@ -2145,38 +1607,6 @@ msgstr "Nic nebude smazáno. Velikost zálohy naroste při každé změně."
 #: templates/settings.html:206
 msgid "OK"
 msgstr "OK"
-
-#: templates/backends/aliyunoss.html:10 templates/backends/aliyunoss.html:8
-msgid "OSS Access Key ID"
-msgstr ""
-
-#: templates/backends/aliyunoss.html:14 templates/backends/aliyunoss.html:16
-msgid "OSS Access Key Secret"
-msgstr ""
-
-#: templates/backends/aliyunoss.html:21
-msgid "OSS Bucket Region"
-msgstr ""
-
-#: templates/backends/aliyunoss.html:25 templates/backends/aliyunoss.html:26
-msgid "OSS Bucket name"
-msgstr ""
-
-#: templates/backends/aliyunoss.html:2
-msgid "OSS Endpoint"
-msgstr ""
-
-#: templates/backends/aliyunoss.html:32
-msgid "OSS Path or subfolder in the bucket"
-msgstr ""
-
-#: templates/backends/aliyunoss.html:20
-msgid "OSS Region"
-msgstr ""
-
-#: templates/settings.html:136
-msgid "Official releases"
-msgstr ""
 
 #: templates/addoredit.html:348
 msgid ""
@@ -2197,10 +1627,6 @@ msgstr "Objektové úložiště OpenStack (Swift)"
 msgid "Opened"
 msgstr "Otevřeno"
 
-#: scripts/services/EditUriBuiltins.js:1217
-msgid "Openstack API key are not supported in v3 keystone API"
-msgstr ""
-
 #: scripts/services/AppUtils.js:203
 msgid "Operating System"
 msgstr "Operační systém"
@@ -2213,10 +1639,6 @@ msgstr "Operace"
 msgid "Operations:"
 msgstr "Operace:"
 
-#: templates/backends/openstack.html:45
-msgid "Optional API key"
-msgstr ""
-
 #: templates/backends/file.html:34
 msgid "Optional authentication password"
 msgstr "Volitelné ověřovací heslo"
@@ -2225,28 +1647,10 @@ msgstr "Volitelné ověřovací heslo"
 msgid "Optional authentication username"
 msgstr "Volitelné uživatelské jméno pro ověření"
 
-#: templates/backends/openstack.html:50
-msgid "Optional region"
-msgstr ""
-
-#: templates/backends/openstack.html:40
-msgid "Optional tenant name"
-msgstr ""
-
 #: templates/addoredit.html:28 templates/edituri.html:51
 #: templates/settings.html:193 templates/settings.html:199
 msgid "Options"
 msgstr "Předvolby"
-
-#: templates/settings.html:191
-msgid ""
-"Options added here are applied to all backups, but can be overridden in each"
-" individual backup."
-msgstr ""
-
-#: templates/home.html:7
-msgid "Order by"
-msgstr ""
 
 #: templates/restore.html:81
 msgid "Original location"
@@ -2346,10 +1750,6 @@ msgstr "Přístupová práva"
 msgid "Pick location"
 msgstr "Vyberte umístění"
 
-#: scripts/controllers/ImportController.js:17
-msgid "Please select a file to import"
-msgstr ""
-
 #: templates/restorewizard.html:10
 msgid "Point to your backup files and restore from there"
 msgstr "Nasměrujte na soubory se zálohou a obnovte odsud"
@@ -2368,10 +1768,6 @@ msgstr "Zabránit automatickému přihlašování ikony v oznamovací oblasti"
 msgid "Previous"
 msgstr "Předchozí"
 
-#: scripts/services/ServerStatus.js:40
-msgid "Processing files to backup …"
-msgstr ""
-
 #: templates/home.html:107
 msgid "Progress:"
 msgstr "Postup:"
@@ -2385,10 +1781,6 @@ msgstr ""
 #: scripts/services/SystemInfo.js:90
 msgid "Proprietary"
 msgstr "Proprietární"
-
-#: scripts/services/AppUtils.js:68
-msgid "Public"
-msgstr ""
 
 #: templates/backup-result/phases/purge.html:3
 msgid "Purge Phase"
@@ -2418,33 +1810,9 @@ msgstr "Fáze znovuvytváření databáze"
 msgid "Recreating database …"
 msgstr "Znovuvytváření databáze…"
 
-#: templates/backends/cos.html:20
-msgid "Region"
-msgstr ""
-
-#: templates/settings.html:47
-msgid "Register for remote control"
-msgstr ""
-
-#: scripts/controllers/SystemSettingsController.js:213
-msgid "Registered, waiting for accept"
-msgstr ""
-
-#: scripts/controllers/SystemSettingsController.js:209
-msgid "Registering machine..."
-msgstr ""
-
 #: scripts/controllers/RestoreDirectController.js:40
 msgid "Registering temporary backup …"
 msgstr "Registrace dočasné zálohy…"
-
-#: templates/settings.html:42
-msgid "Registration URL"
-msgstr ""
-
-#: scripts/controllers/SystemSettingsController.js:211
-msgid "Registration failed"
-msgstr ""
 
 #: scripts/controllers/EditBackupController.js:142
 msgid "Relative paths not allowed"
@@ -2465,26 +1833,6 @@ msgstr "Vzdálené umístění"
 #: scripts/services/EditUriBuiltins.js:1391
 msgid "Remote Repository"
 msgstr "Vzdálený repozitář"
-
-#: templates/settings.html:34
-msgid "Remote access control"
-msgstr ""
-
-#: scripts/controllers/SystemSettingsController.js:215
-msgid "Remote control is configured but not enabled"
-msgstr ""
-
-#: scripts/controllers/SystemSettingsController.js:207
-msgid "Remote control is connected"
-msgstr ""
-
-#: scripts/controllers/SystemSettingsController.js:205
-msgid "Remote control is enabled but not connected"
-msgstr ""
-
-#: scripts/controllers/SystemSettingsController.js:219
-msgid "Remote control is not set up"
-msgstr ""
 
 #: templates/backends/rclone.html:10
 msgid "Remote path"
@@ -2546,10 +1894,6 @@ msgstr "Obnovení dokončeno!"
 msgid "Restore files"
 msgstr "Obnovit soubory"
 
-#: templates/restore.html:46
-msgid "Restore files from:"
-msgstr ""
-
 #: templates/home.html:53
 msgid "Restore files …"
 msgstr "Obnovit soubory…"
@@ -2561,10 +1905,6 @@ msgstr "Obnovit z"
 #: templates/import.html:4
 msgid "Restore from backup configuration"
 msgstr "Obnovit nastavení ze zálohy"
-
-#: templates/restorewizard.html:15
-msgid "Restore from configuration …"
-msgstr ""
 
 #: templates/restore.html:24 templates/restore.html:39
 #: templates/restore.html:76 templates/restoredirect.html:24
@@ -2620,17 +1960,9 @@ msgstr "Spuštěná úloha:"
 msgid "Running …"
 msgstr "Spuštěné…"
 
-#: templates/commandline.html:54
-msgid "Running … <a href ng-click=\"Abort()\" ng-hide=\"RawFinished\">stop now</a>"
-msgstr ""
-
 #: scripts/services/SystemInfo.js:51
 msgid "S3 Compatible"
 msgstr "Kompatibilní s S3"
-
-#: scripts/services/SystemInfo.js:53
-msgid "SMB / CIFS"
-msgstr ""
 
 #: templates/settings.html:130
 msgid "Same as the base install version: {{channelname}}"
@@ -2712,12 +2044,6 @@ msgstr "Název nebo IP adresa serveru"
 msgid "Server is currently paused,"
 msgstr "Server je nyní pozastavený,"
 
-#: templates/commandline.html:45
-msgid ""
-"Server is currently paused, <a style=\"cursor: pointer\" ng-"
-"click=\"ServerStatus.resume()\">resume now</a>"
-msgstr ""
-
 #: scripts/controllers/HomeController.js:22
 msgid "Server is currently paused, do you want to resume now?"
 msgstr "Server je nyní pozastavený, chcete ho nyní znovu spustit?"
@@ -2734,21 +2060,9 @@ msgstr "Server pozastaven"
 msgid "Server state properties"
 msgstr "Vlastnosti stavu serveru"
 
-#: templates/settings.html:121
-msgid "Set timezone to default"
-msgstr ""
-
 #: index.html:220 templates/settings.html:2
 msgid "Settings"
 msgstr "Nastavení"
-
-#: templates/backends/smb.html:23
-msgid "Share Name"
-msgstr ""
-
-#: scripts/services/EditUriBuiltins.js:1078 templates/backends/smb.html:24
-msgid "Share name"
-msgstr ""
 
 #: templates/addoredit.html:69 templates/notificationarea.html:12
 #: templates/notificationarea.html:31 templates/notificationarea.html:41
@@ -2758,15 +2072,6 @@ msgstr "Zobrazit"
 #: templates/addoredit.html:132
 msgid "Show advanced editor"
 msgstr "Zobrazit pokročilý editor"
-
-#: templates/notificationarea.html:18 templates/notificationarea.html:19
-msgid "Show help"
-msgstr ""
-
-#: templates/addoredit.html:143 templates/backends/file.html:16
-#: templates/restore.html:99
-msgid "Show hidden items"
-msgstr ""
 
 #: templates/about.html:8
 msgid "Show log"
@@ -2819,14 +2124,6 @@ msgstr "Zdrojová data"
 msgid "Source folders"
 msgstr "Zdrojové složky"
 
-#: templates/home.html:17
-msgid "Source size"
-msgstr ""
-
-#: templates/home.html:27
-msgid "Source size (descending)"
-msgstr ""
-
 #: templates/home.html:96
 msgid "Source:"
 msgstr "Zdroj:"
@@ -2836,10 +2133,6 @@ msgid "Specific builds for developers only. Not for use with important data."
 msgstr ""
 "Konkrétní sestavení určená pouze pro vývojáře. Nepoužívejte pro důležitá "
 "data."
-
-#: templates/settings.html:135
-msgid "Stable"
-msgstr ""
 
 #: scripts/services/SystemInfo.js:89
 msgid "Standard protocols"
@@ -2867,10 +2160,6 @@ msgstr "Spouštění obnovení…"
 #: scripts/controllers/RestoreController.js:403
 msgid "Starting the restore process …"
 msgstr "Spouštění procesu obnovení…"
-
-#: templates/settings.html:36
-msgid "Status: {{getRemoteControlStatusText()}}"
-msgstr ""
 
 #: scripts/controllers/StateController.js:108
 #: scripts/controllers/StateController.js:117
@@ -2954,14 +2243,6 @@ msgstr "TB"
 msgid "TByte/s"
 msgstr "TB/s"
 
-#: templates/commandline.html:13
-msgid "Target URL &gt;"
-msgstr ""
-
-#: templates/backends/sia.html:7
-msgid "Target path. Example: /backup"
-msgstr ""
-
 #: templates/waitarea.html:5
 msgid "Task is running"
 msgstr "Úloha je spuštěná"
@@ -2974,23 +2255,6 @@ msgstr "Dočasné soubory"
 msgid "Temporary files"
 msgstr "Dočasné soubory"
 
-#: templates/backends/openstack.html:39
-msgid "Tenant name"
-msgstr ""
-
-#: templates/backends/cos.html:4
-msgid "Tencent Cloud Account APPID"
-msgstr ""
-
-#: templates/backends/cos.html:35
-msgid "Tencent Cloud COS documents and resources"
-msgstr ""
-
-#: scripts/controllers/StateController.js:108
-#: scripts/controllers/StateController.js:117
-msgid "Terminate"
-msgstr ""
-
 #: templates/backup-result/phases/test.html:3
 msgid "Test Phase"
 msgstr "Fáze zkoušení"
@@ -2998,10 +2262,6 @@ msgstr "Fáze zkoušení"
 #: templates/edituri.html:21
 msgid "Test connection"
 msgstr "Vyzkoušet spojení"
-
-#: scripts/directives/backupEditUri.js:43
-msgid "Testing connection …"
-msgstr ""
 
 #: scripts/services/EditUriBuiltins.js:53
 msgid "Testing permissions …"
@@ -3037,12 +2297,6 @@ msgstr ""
 msgid "The bucket name should be all lower-case, convert automatically?"
 msgstr "Název nádoby by měl být malými písmeny, převést automaticky?"
 
-#: templates/addoredit.html:313
-msgid ""
-"The chosen size is outside the recommended range. This may cause performance"
-" issues, excessively large temporary files or other problems."
-msgstr ""
-
 #: scripts/controllers/ExportController.js:13
 msgid ""
 "The configuration should be kept safe. Are you sure you want to save an "
@@ -3051,10 +2305,6 @@ msgstr ""
 "Nastavení by měla být uchovávána bezpečně. Opravdu chcete uložit nešifrovaný"
 " soubor obsahující vaše hesla?"
 
-#: index.html:302
-msgid "The connection to the server is lost, attempting again in {{time}} …"
-msgstr ""
-
 #: templates/settings.html:112
 msgid "The dark theme (by Michal)"
 msgstr "Tmavé téma vzhledu (od Michala)"
@@ -3062,16 +2312,6 @@ msgstr "Tmavé téma vzhledu (od Michala)"
 #: templates/settings.html:111
 msgid "The default blue on white theme (by Alex)"
 msgstr "Výchozí téma vzhledu modrá na bílé (od Alexe)"
-
-#: scripts/services/EditUriBuiltins.js:1378
-msgid "The encryption passphrases do not match"
-msgstr ""
-
-#: scripts/directives/sourceFolderPicker.js:416
-msgid ""
-"The file size is {{size}}, larger than the maximum specified size. If the "
-"file size decreases, it will be included in future backups."
-msgstr ""
 
 #: scripts/directives/backupEditUri.js:130
 msgid ""
@@ -3183,30 +2423,13 @@ msgstr "Čt"
 msgid "Time"
 msgstr "Čas"
 
-#: templates/settings.html:117
-msgid "Time zone"
-msgstr ""
-
 #: templates/export.html:14
 msgid "To File"
 msgstr "Do souboru"
 
-#: templates/confirmdelete.html:3
-msgid ""
-"To confirm you want to delete all remote files for\n"
-"      <span class=\"backupname\">\"{{selection.backupname}}\"</span>, please enter\n"
-"      this phrase:"
-msgstr ""
-
 #: scripts/controllers/ExportController.js:67
 msgid "To export without a passphrase, uncheck the \"Encrypt file\" box"
 msgstr "Pro exportování bez heslové fráze odškrtněte „Šifrovat soubor“"
-
-#: scripts/services/EditUriBuiltins.js:1253
-msgid ""
-"To prevent bucket naming conflicts, it is recommended to prepend your "
-"account ID to the bucket name. Prepend automatically?"
-msgstr ""
 
 #: templates/settings.html:26
 msgid ""
@@ -3229,10 +2452,6 @@ msgstr ""
 msgid "Today"
 msgstr "Út"
 
-#: templates/backends/smb.html:3
-msgid "Transport"
-msgstr ""
-
 #: scripts/directives/backupEditUri.js:172
 msgid "Trust host certificate?"
 msgstr "Důvěřovat certifikátu stroje?"
@@ -3240,12 +2459,6 @@ msgstr "Důvěřovat certifikátu stroje?"
 #: scripts/directives/backupEditUri.js:86
 msgid "Trust server certificate?"
 msgstr "Důvěřovat certifikátu serveru?"
-
-#: templates/settings.html:141
-msgid ""
-"Try out the new features that we are working on. Test Backup &amp; Restore "
-"before using this in production environments."
-msgstr ""
 
 #: scripts/services/AppUtils.js:111
 msgid "Tue"
@@ -3267,13 +2480,6 @@ msgstr "Neznámá velikost a verze databáze"
 msgid "Until resumed"
 msgstr "Dokud není pokračováno"
 
-#: templates/about.html:30
-msgid ""
-"Update <a href ng-"
-"click=\"doShowUpdateChangelog()\">{{state.updatedVersion}}</a> is available."
-" <a href=\"{{state.updateDownloadLink}}\">Download now</a>"
-msgstr ""
-
 #: templates/settings.html:126
 msgid "Update channel"
 msgstr "Aktualizační kanál"
@@ -3294,13 +2500,6 @@ msgstr "Nahrané soubory"
 msgid "Uploading verification file …"
 msgstr "Nahrávání ověřovacího souboru…"
 
-#: templates/settings.html:173
-msgid ""
-"Usage reports help us improve the user experience and evaluate impact of new"
-" features. We use them to generate <external-link link=\"'https://usage-"
-"reporter.duplicati.com/'\">public usage statistics</external-link>."
-msgstr ""
-
 #: templates/settings.html:161
 msgid "Usage statistics"
 msgstr "Statistiky využití"
@@ -3309,10 +2508,6 @@ msgstr "Statistiky využití"
 msgid "Usage statistics, warnings, errors, and crashes"
 msgstr "Statistiky využití, varování, chyby a pády"
 
-#: templates/backends/filejump.html:32
-msgid "Use API token authentication (recommended)"
-msgstr ""
-
 #: templates/backends/generic.html:2 templates/backends/s3.html:2
 msgid "Use SSL"
 msgstr "Použít SSL"
@@ -3320,14 +2515,6 @@ msgstr "Použít SSL"
 #: scripts/controllers/EditBackupController.js:454
 msgid "Use existing database?"
 msgstr "Použít existující databázi?"
-
-#: index.html:263
-msgid "Use new UI"
-msgstr ""
-
-#: templates/backends/filejump.html:31
-msgid "Use username and password authentication"
-msgstr ""
 
 #: scripts/controllers/EditBackupController.js:348
 msgid "Use weak passphrase"
@@ -3364,12 +2551,6 @@ msgstr "Nastavení uživatelského rozhraní"
 msgid "Username"
 msgstr "Uživatelské jméno"
 
-#: templates/backends/filejump.html:14
-msgid ""
-"Username and password authentication is not recommended and does not work with MFA/2FA enabled accounts.\n"
-"        Use the API token if possible."
-msgstr ""
-
 #: scripts/services/ServerStatus.js:60
 msgid "Vacuuming database …"
 msgstr "Úklid v databázi…"
@@ -3382,10 +2563,6 @@ msgstr "Ověřování…"
 #: templates/backup-result/test-items.html:2
 msgid "Verifications"
 msgstr "Ověřování"
-
-#: templates/backends/storj.html:29
-msgid "Verify encryption passphrase"
-msgstr ""
 
 #: templates/home.html:67
 msgid "Verify files"
@@ -3423,12 +2600,6 @@ msgstr "Velmi slabé"
 msgid "Visit us on"
 msgstr "Navštivte nás na"
 
-#: templates/delete.html:21
-msgid ""
-"WARNING: The remote database is found to be in use by the commandline "
-"library."
-msgstr ""
-
 #: templates/delete.html:44
 msgid "WARNING: This will prevent you from restoring the data in the future."
 msgstr "VAROVÁNÍ: toto zabrání v budoucnu obnovovat data!"
@@ -3436,10 +2607,6 @@ msgstr "VAROVÁNÍ: toto zabrání v budoucnu obnovovat data!"
 #: templates/waitarea.html:2
 msgid "Waiting for task to begin"
 msgstr "Čekání na zahájení úlohy"
-
-#: templates/commandline.html:51
-msgid "Waiting for task to start …"
-msgstr ""
 
 #: scripts/services/ServerStatus.js:42
 msgid "Waiting for upload to finish …"
@@ -3533,20 +2700,6 @@ msgstr ""
 msgid "You are currently running {{appname}} {{version}}"
 msgstr "Nyní provozujete {{appname}} {{version}}"
 
-#: scripts/controllers/StateController.js:107
-msgid ""
-"You can stop the backup after any file uploads currently in progress have "
-"finished. If you terminate the backup, the next run will need to recover "
-"from a failed backup."
-msgstr ""
-
-#: scripts/controllers/StateController.js:116
-msgid ""
-"You can stop the task immediately, or allow the process to continue its "
-"current file and then stop. If you terminate the task, the backup could be "
-"left in an inconsistent state."
-msgstr ""
-
 #: scripts/controllers/EditBackupController.js:406
 msgid ""
 "You have changed the encryption mode. This may break stuff. You are "
@@ -3618,10 +2771,6 @@ msgstr ""
 "Aby bylo možné použít verzi 3 aplikačního programového rozhraní, je třeba "
 "zadat název projektu (tenant)"
 
-#: scripts/services/EditUriBuiltins.js:1228
-msgid "You must enter a tenant name if you do not provide an API key"
-msgstr ""
-
 #: scripts/controllers/EditBackupController.js:292
 msgid "You must enter a valid duration for the time to keep backups"
 msgstr "Je třeba zadat platnou dobu po kterou ponechávat zálohy"
@@ -3629,14 +2778,6 @@ msgstr "Je třeba zadat platnou dobu po kterou ponechávat zálohy"
 #: scripts/controllers/EditBackupController.js:309
 msgid "You must enter a valid retention policy string"
 msgstr "Je třeba zadat platný řetězec zásady doby uchovávání záloh"
-
-#: scripts/services/EditUriBuiltins.js:1225
-msgid "You must enter either a password or an API key"
-msgstr ""
-
-#: scripts/services/EditUriBuiltins.js:1232
-msgid "You must enter either a password or an API key, not both"
-msgstr ""
 
 #: scripts/services/EditUriBackendConfig.js:122
 msgid "You must fill in the password"
@@ -3667,10 +2808,6 @@ msgstr "Je třeba vybrat nebo vyplnit server"
 msgid "You must specify a path"
 msgstr "Je třeba zadat popis umístění"
 
-#: scripts/services/EditUriBackendConfig.js:92
-msgid "You should fill in {{field}} {{reason}}"
-msgstr ""
-
 #: templates/restore.html:144
 msgid "Your files and folders have been restored successfully."
 msgstr "Soubory a složky byly úspěšně obnoveny."
@@ -3691,83 +2828,15 @@ msgstr "B"
 msgid "byte/s"
 msgstr "B/s"
 
-#: scripts/services/EditUriBuiltins.js:1400
-msgid "cos_app_id"
-msgstr ""
-
-#: scripts/services/EditUriBuiltins.js:1404
-msgid "cos_bucket"
-msgstr ""
-
-#: scripts/services/EditUriBuiltins.js:1403
-msgid "cos_region"
-msgstr ""
-
-#: scripts/services/EditUriBuiltins.js:1401
-msgid "cos_secret_id"
-msgstr ""
-
-#: scripts/services/EditUriBuiltins.js:1402
-msgid "cos_secret_key"
-msgstr ""
-
 #: templates/addoredit.html:272 templates/addoredit.html:357
 #: templates/advancedoptionseditor.html:29
 #: templates/advancedoptionseditor.html:36
 msgid "custom"
 msgstr "vlastní"
 
-#: templates/backup-result/entryline.html:4
-msgid "failed"
-msgstr ""
-
-#: templates/backends/rclone.html:3
-msgid "local repository, leave empty for local"
-msgstr ""
-
-#: scripts/services/EditUriBuiltins.js:1413
-msgid "oss_access_key_id"
-msgstr ""
-
-#: scripts/services/EditUriBuiltins.js:1414
-msgid "oss_access_key_secret"
-msgstr ""
-
-#: scripts/services/EditUriBuiltins.js:1416
-msgid "oss_bucket_name"
-msgstr ""
-
-#: scripts/services/EditUriBuiltins.js:1412
-msgid "oss_endpoint"
-msgstr ""
-
-#: scripts/services/EditUriBuiltins.js:1415
-msgid "oss_region"
-msgstr ""
-
-#: templates/backends/pcloud.html:10
-msgid "pCloud EU (eapi.pcloud.com)"
-msgstr ""
-
-#: templates/backends/pcloud.html:7
-msgid "pCloud Global (api.pcloud.com)"
-msgstr ""
-
-#: templates/backends/rclone.html:11
-msgid "remote path, e.g. backup"
-msgstr ""
-
-#: templates/backends/rclone.html:7
-msgid "remote repository, e.g. remote"
-msgstr ""
-
 #: templates/restoredirect.html:95 templates/waitarea.html:15
 msgid "resume now"
 msgstr "pokračovat nyní"
-
-#: scripts/services/EditUriBuiltins.js:1363
-msgid "storj_shared_access"
-msgstr ""
 
 #: scripts/services/EditUriBuiltins.js:1181
 msgid "unless you are explicitly specifying --group-id"
@@ -3784,11 +2853,6 @@ msgstr ""
 "href=\"{{mail2}}\">{{dev2}}</a>. {{appname}} je možné si stáhnout z <a "
 "href=\"{{websitelink}}\">{{websitename}}</a>. {{appname}} je šířeno pod "
 "licencí <a href=\"{{licenselink}}\">{{licensename}}</a>."
-
-#: templates/about.html:53
-msgid ""
-"{{brandingService.appName}} is using the following third party libraries:"
-msgstr ""
 
 #: scripts/controllers/StateController.js:53
 msgid "{{files}} files ({{size}}) to go {{speed_txt}}"

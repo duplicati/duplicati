@@ -5,8 +5,8 @@
 # 
 # Translators:
 # Hese <heikki.nikula@iki.fi>, 2024
-# Kari Koskinen <kakoskin@gmail.com>, 2024
 # Marko Kohtala <marko.kohtala@gmail.com>, 2025
+# Kari Koskinen <kakoskin@gmail.com>, 2025
 # 
 #, fuzzy
 msgid ""
@@ -15,7 +15,7 @@ msgstr ""
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2025-04-30 18:10+0200\n"
 "PO-Revision-Date: 2016-10-04 18:53+0000\n"
-"Last-Translator: Marko Kohtala <marko.kohtala@gmail.com>, 2025\n"
+"Last-Translator: Kari Koskinen <kakoskin@gmail.com>, 2025\n"
 "Language-Team: Finnish (https://app.transifex.com/duplicati/teams/67655/fi/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -39,36 +39,10 @@ msgstr "Sisäänrakennettu AES-256 salaus"
 msgid "Empty passphrase not allowed"
 msgstr "Tyhjä salauslauseke ei ole sallittu"
 
-#: Library/Encryption/Strings.cs:31
-msgid ""
-"Use this option to set the thread level allowed for AES crypt operations."
-msgstr ""
-
-#: Library/Encryption/Strings.cs:32
-msgid "Set thread level utilized for crypting"
-msgstr ""
-
-#: Library/Encryption/Strings.cs:33 Library/Main/Strings.cs:182
-#: Library/Main/Strings.cs:231
-#, csharp-format
-msgid "The option --{0} is no longer used and has been deprecated."
-msgstr ""
-
 #: Library/Encryption/Strings.cs:37
 #, csharp-format
 msgid "Failed to decrypt data (invalid passphrase?): {0}"
 msgstr "Salauksen purku epäonnistui (väärä salauslauseke?): {0}"
-
-#: Library/Encryption/Strings.cs:41
-#, csharp-format
-msgid ""
-"The GPG encryption module uses the GNU Privacy Guard program to encrypt and "
-"decrypt files. It requires that the gpg executable is available on the "
-"system. On Windows it is assumed that this is in the default installation "
-"folder under program files, under Linux and OSX it is assumed that the "
-"program is available via the PATH environment variable. It is possible to "
-"supply the path to GPG using the option --{0}."
-msgstr ""
 
 #: Library/Encryption/Strings.cs:42
 msgid "GNU Privacy Guard, external"
@@ -100,17 +74,6 @@ msgstr ""
 msgid "Extra GPG commandline options for encryption"
 msgstr "Valitsimet GPG-ohjelmalle salausta varten"
 
-#: Library/Encryption/Strings.cs:47
-#, csharp-format
-msgid "Failed to execute GPG with \"{0} {1}\": {2}"
-msgstr ""
-
-#: Library/Encryption/Strings.cs:48
-msgid ""
-"The path to the GNU Privacy Guard program. If not supplied, Duplicati will "
-"search for \"gpg2\" and \"gpg\" on the system."
-msgstr ""
-
 #: Library/Encryption/Strings.cs:49
 msgid "The path to GnuPG"
 msgstr "Ohjelman GnuPG sijainti"
@@ -127,20 +90,9 @@ msgstr ""
 msgid "Use GPG Armor"
 msgstr "Käytä GPG-ohjelman valitsinta --armor"
 
-#: Library/Encryption/Strings.cs:52
-msgid "Override the GPG command supplied for decryption."
-msgstr ""
-
 #: Library/Encryption/Strings.cs:53
 msgid "The GPG decryption command"
 msgstr "GPG:n purkukomento"
-
-#: Library/Encryption/Strings.cs:54
-#, csharp-format
-msgid ""
-"Override the default GPG encryption command \"{0}\". Normal usage is to "
-"request asymetric encryption with the setting {1}."
-msgstr ""
 
 #: Library/Encryption/Strings.cs:55
 msgid "The GPG encryption command"
@@ -158,18 +110,6 @@ msgstr "Virhe kutsuttaessa ohjelmaa GnuPG. Ohjelma ei tulosta."
 #: Library/Encryption/Strings.cs:61
 msgid "Failure while invoking GnuPG, program won't terminate"
 msgstr "Virhe kutsuttaessa ohjelmaa GnuPG. Ohjelma ei lopeta."
-
-#: Library/Encryption/Strings.cs:65
-msgid "Key must be at least 8 characters long"
-msgstr ""
-
-#: Library/Encryption/Strings.cs:66
-msgid "Key must not be empty"
-msgstr ""
-
-#: Library/Encryption/Strings.cs:67
-msgid "Refusing to encrypt with blacklisted key"
-msgstr ""
 
 #: Library/Interface/Strings.cs:26
 msgid "aliases"
@@ -219,17 +159,9 @@ msgstr "Merkkijono"
 msgid "Timespan"
 msgstr "Aikaväli"
 
-#: Library/Interface/Strings.cs:41
-msgid "DateTime"
-msgstr ""
-
 #: Library/Interface/Strings.cs:42
 msgid "Password"
-msgstr ""
-
-#: Library/Interface/Strings.cs:43
-msgid "Decimal"
-msgstr ""
+msgstr "Salasana"
 
 #: Library/Interface/Strings.cs:44
 msgid "Unknown"
@@ -246,15 +178,6 @@ msgstr "Pyydetty kansio ei ole olemassa"
 #: Library/Interface/Strings.cs:50
 msgid "Cancelled"
 msgstr "Toimenpide keskeytettiin"
-
-#: Library/Interface/Strings.cs:51
-msgid ""
-"Encryption key used to encrypt target settings does not match current key."
-msgstr ""
-
-#: Library/Interface/Strings.cs:52
-msgid "Encryption key is missing."
-msgstr ""
 
 #: Library/Interface/CustomExceptions.cs:85
 #: Library/Interface/CustomExceptions.cs:93
@@ -314,14 +237,6 @@ msgid ""
 msgstr ""
 "Skriptin suoritus onnistui, mutta tulosteesta puuttui parametri {0}: {1}"
 
-#: Library/Snapshots/Strings.cs:35
-msgid "Unable to determine full file path for USN entry"
-msgstr ""
-
-#: Library/Snapshots/Strings.cs:36
-msgid "USN journal entries were purged since last scan"
-msgstr ""
-
 #: Library/Snapshots/Strings.cs:37
 msgid "Unexpected empty response while enumerating"
 msgstr "Odottamaton tyhjä vastaus listattaessa"
@@ -338,36 +253,6 @@ msgstr ""
 "USN ei antanut yhtään tiedostoa. Tämä on todennäköisesti virhe. USN on "
 "poistettu käytöstä tämän välttämiseksi."
 
-#: Library/Snapshots/Strings.cs:40
-msgid "Unexpected path format encountered"
-msgstr ""
-
-#: Library/Snapshots/Strings.cs:41
-msgid "Unsupported USN journal version."
-msgstr ""
-
-#: Library/Snapshots/Strings.cs:42
-msgid "Previous backup did not record USN journal info"
-msgstr ""
-
-#: Library/Snapshots/Strings.cs:43
-msgid "USN journal ID changed"
-msgstr ""
-
-#: Library/Snapshots/Strings.cs:44
-msgid "Next USN is zero"
-msgstr ""
-
-#: Library/Snapshots/Strings.cs:45
-msgid "Backup configuration changed"
-msgstr ""
-
-#: Library/Backend/OpenStack/Strings.cs:28
-msgid ""
-"This backend can read and write data to Swift (OpenStack Object Storage). "
-"Allowed format is \"openstack://container/folder\"."
-msgstr ""
-
 #: Library/Backend/OpenStack/Strings.cs:29
 msgid "OpenStack Simple Storage"
 msgstr "OpenStack Simple Storage"
@@ -377,27 +262,6 @@ msgstr "OpenStack Simple Storage"
 msgid "Missing required option: {0}"
 msgstr "Pakollinen valitsin {0} puuttuu"
 
-#: Library/Backend/OpenStack/Strings.cs:31
-#, csharp-format
-msgid ""
-"The password used to connect to the server. This may also be supplied as the"
-" environment variable \"AUTH_PASSWORD\". If the password is supplied, --{0} "
-"must also be set."
-msgstr ""
-
-#: Library/Backend/OpenStack/Strings.cs:32 Library/Backend/S3/Strings.cs:33
-#: Library/Backend/Mega/Strings.cs:27 Library/Utility/Strings.cs:94
-msgid "Supply the password used to connect to the server"
-msgstr ""
-
-#: Library/Backend/OpenStack/Strings.cs:33
-msgid "The domain name of the user used to connect to the server."
-msgstr ""
-
-#: Library/Backend/OpenStack/Strings.cs:34 Library/Backend/SMB/Strings.cs:30
-msgid "Supply the domain used to connect to the server"
-msgstr ""
-
 #: Library/Backend/OpenStack/Strings.cs:35 Library/Backend/S3/Strings.cs:34
 #: Library/Backend/Mega/Strings.cs:28 Library/Utility/Strings.cs:95
 msgid ""
@@ -406,11 +270,6 @@ msgid ""
 msgstr ""
 "Käyttäjätunnus palvelimelle. Tämä voidaan asettaa myös ympäristömuuttujassa "
 "\"AUTH_USERNAME\"."
-
-#: Library/Backend/OpenStack/Strings.cs:36 Library/Backend/S3/Strings.cs:35
-#: Library/Backend/Mega/Strings.cs:29 Library/Utility/Strings.cs:96
-msgid "Supply the username used to connect to the server"
-msgstr ""
 
 #: Library/Backend/OpenStack/Strings.cs:37
 msgid ""
@@ -422,10 +281,6 @@ msgstr ""
 "tunnistaudutaan salasanan ja käyttäjätunnuksen avulla. Sitä ei tarvita, jos "
 "käytetään API-avainta."
 
-#: Library/Backend/OpenStack/Strings.cs:38
-msgid "Supply the Tenant Name used to connect to the server"
-msgstr ""
-
 #: Library/Backend/OpenStack/Strings.cs:39
 msgid ""
 "The API key can be used to connect without supplying a password and tenant "
@@ -433,75 +288,6 @@ msgid ""
 msgstr ""
 "API-avainta voidaan käyttää joissakin palveluissa käyttäjätunnuksen ja "
 "salasanan sijaan."
-
-#: Library/Backend/OpenStack/Strings.cs:40
-msgid "Supply the API key used to connect to the server"
-msgstr ""
-
-#: Library/Backend/OpenStack/Strings.cs:41
-#, csharp-format
-msgid ""
-"The authentication URL is used to authenticate the user and find the storage"
-" service. The URL commonly ends with \"/v2.0\" for v2 and \"/v3\" for v3. "
-"Known providers are: {0}{1}"
-msgstr ""
-
-#: Library/Backend/OpenStack/Strings.cs:42
-msgid "Supply the authentication URL"
-msgstr ""
-
-#: Library/Backend/OpenStack/Strings.cs:43
-msgid "The keystone API version to use. Valid values are 'v2' and 'v3'."
-msgstr ""
-
-#: Library/Backend/OpenStack/Strings.cs:44
-msgid "The keystone API version to use"
-msgstr ""
-
-#: Library/Backend/OpenStack/Strings.cs:45
-msgid ""
-"By default, the first reported endpoint will be used for file transfers. To "
-"select a specific region, provide the region name. If no such region is "
-"supported, the default (first reported) endpoint is used."
-msgstr ""
-
-#: Library/Backend/OpenStack/Strings.cs:46
-msgid "Supply the prefered region for endpoints"
-msgstr ""
-
-#: Library/Backend/OpenStack/Strings.cs:51
-msgid "Expose OpenStack configuration as a web module"
-msgstr ""
-
-#: Library/Backend/OpenStack/Strings.cs:52
-msgid "OpenStack configuration module"
-msgstr ""
-
-#: Library/Backend/OpenStack/Strings.cs:53
-#: Library/Backend/GoogleServices/Strings.cs:56
-#: Library/Backend/S3/Strings.cs:66 Library/Backend/Storj/StorjConfig.cs:48
-msgid "Provide different config values"
-msgstr ""
-
-#: Library/Backend/OpenStack/Strings.cs:54
-#: Library/Backend/GoogleServices/Strings.cs:55
-#: Library/Backend/S3/Strings.cs:65 Library/Backend/Storj/StorjConfig.cs:48
-msgid "The config to get"
-msgstr ""
-
-#: Library/Backend/FTP/Strings.cs:30
-msgid ""
-"This backend can read and write data to an FTP based backend. Allowed "
-"formats are \"ftp://hostname/folder\" and "
-"\"ftp://username:password@hostname/folder\"."
-msgstr ""
-
-#: Library/Backend/FTP/Strings.cs:31
-msgid ""
-"This backend can read and write data to an FTP based backend. Allowed "
-"formats are \"aftp://hostname/folder\" and "
-"\"aftp://username:password@hostname/folder\"."
-msgstr ""
 
 #: Library/Backend/FTP/Strings.cs:32
 msgid "FTP"
@@ -511,47 +297,10 @@ msgstr "FTP"
 msgid "Alternative FTP"
 msgstr "Vaihtoehtoinen FTP-asiakaskohjelma"
 
-#: Library/Backend/FTP/Strings.cs:34
-msgid ""
-"Use this option to log FTP dialog to terminal console for debugging "
-"purposes."
-msgstr ""
-
-#: Library/Backend/FTP/Strings.cs:35
-msgid "Log FTP dialog to terminal console"
-msgstr ""
-
-#: Library/Backend/FTP/Strings.cs:36
-msgid ""
-"Use this option to log FTP PRIVATE info (username, password) to console for "
-"debugging purposes (DO NOT POST THIS TO THE INTERNET!)"
-msgstr ""
-
-#: Library/Backend/FTP/Strings.cs:37
-msgid "Log FTP PRIVATE info to console"
-msgstr ""
-
-#: Library/Backend/FTP/Strings.cs:38
-msgid "Log diagnostics information"
-msgstr ""
-
-#: Library/Backend/FTP/Strings.cs:39
-msgid ""
-"Use this option to log diagnostics information to the log output. This can "
-"be useful for debugging purposes."
-msgstr ""
-
 #: Library/Backend/FTP/Strings.cs:40
 #, csharp-format
 msgid "The folder {0} was not found. Message: {1}"
 msgstr "Hakemistoa {0} ei löytynyt. Viesti oli: {1}"
-
-#: Library/Backend/FTP/Strings.cs:41
-#, csharp-format
-msgid ""
-"The file {0} was uploaded but not found afterwards. The file listing "
-"returned {1}"
-msgstr ""
 
 #: Library/Backend/FTP/Strings.cs:42
 #, csharp-format
@@ -605,145 +354,9 @@ msgstr ""
 msgid "Configure the SSL policy to use when encryption is enabled"
 msgstr "Aseta SSL-politiikka salattuja yhteyksiä varten."
 
-#: Library/Backend/FTP/Strings.cs:51
-msgid ""
-"Some FTP servers need a small delay before reporting the correct file size. "
-"The required delay depends on network topology. If you experience errors "
-"related to the upload size not matching, try adding a few seconds delay."
-msgstr ""
-
-#: Library/Backend/FTP/Strings.cs:52
-msgid "Add a delay after uploading a file"
-msgstr ""
-
-#: Library/Backend/FTP/Strings.cs:53
-#, csharp-format
-msgid "Error on deleting file: {0}, error: {1}"
-msgstr ""
-
-#: Library/Backend/FTP/Strings.cs:54
-#, csharp-format
-msgid "Error reading file: {0}, error: {1}"
-msgstr ""
-
-#: Library/Backend/FTP/Strings.cs:55
-#, csharp-format
-msgid "Error writing file: {0}, error: {1}"
-msgstr ""
-
-#: Library/Backend/FTP/Strings.cs:56
-msgid ""
-"Use this option to communicate using Secure Socket Layer (SSL) over ftp "
-"(ftps)."
-msgstr ""
-
-#: Library/Backend/FTP/Strings.cs:57
-msgid "Instruct Duplicati to use an SSL (ftps) connection"
-msgstr ""
-
-#: Library/Backend/FTP/Strings.cs:58
-#, csharp-format
-msgid ""
-"Activate this option to make the FTP connection in active mode. Even if the "
-"option --{0} is also set, the connection will be made in active mode."
-msgstr ""
-
-#: Library/Backend/FTP/Strings.cs:59 Library/Backend/FTP/Strings.cs:61
-msgid "Toggle the FTP connections method"
-msgstr ""
-
-#: Library/Backend/FTP/Strings.cs:60
-#, csharp-format
-msgid ""
-"Activate this option to make the FTP connection in passive mode, which works"
-" better with some firewalls. If the option --{0} is set, this option is "
-"ignored."
-msgstr ""
-
-#: Library/Backend/FTP/Strings.cs:62
-msgid ""
-"The option ftp-passive is deprecated, use ftp-data-connection-type instead."
-msgstr ""
-
-#: Library/Backend/FTP/Strings.cs:63
-msgid "ftp-regular is deprecated, use ftp-data-connection-type instead."
-msgstr ""
-
-#: Library/Backend/FTP/Strings.cs:64
-msgid "use-ssl is deprecated, use ftp-ssl-protocols instead."
-msgstr ""
-
-#: Library/Backend/FTP/Strings.cs:65
-#, csharp-format
-msgid "The file {0} was not found. Message: {1}"
-msgstr ""
-
-#: Library/Backend/FTP/Strings.cs:66
-msgid "Treat the url path as absolute"
-msgstr ""
-
-#: Library/Backend/FTP/Strings.cs:67
-msgid ""
-"Use this option to interpret the url path as an absolute path. This option "
-"only has an effect if the initial starting folder in the FTP server is not "
-"the (virtual) root folder. If not set, the path in the url is treated as "
-"relative to the initial login folder."
-msgstr ""
-
-#: Library/Backend/FTP/Strings.cs:68
-msgid "Treat the url path as relative"
-msgstr ""
-
-#: Library/Backend/FTP/Strings.cs:69
-msgid ""
-"Use this option to interpret the url path as a path that is relative to the "
-"initial login folder. This option only has an effect if the initial starting"
-" folder in the FTP server is not the (virtual) root folder. If not set, the "
-"path in the url is treated as absolute, ignoring the initial login folder."
-msgstr ""
-
-#: Library/Backend/FTP/Strings.cs:70
-msgid "Use CWD instead of absolute paths"
-msgstr ""
-
-#: Library/Backend/FTP/Strings.cs:71
-msgid ""
-"Use this option to start the connection with a CWD command instead of an "
-"absolute path. This can be useful if the FTP server does not support "
-"absolute paths."
-msgstr ""
-
-#: Library/Backend/FTP/Strings.cs:72
-#, csharp-format
-msgid "Error creating folder {0}, gave folder: {1}"
-msgstr ""
-
-#: Library/Backend/FTP/Strings.cs:73
-msgid "Ignore PureFTPd limit warnings"
-msgstr ""
-
-#: Library/Backend/FTP/Strings.cs:74
-#, csharp-format
-msgid ""
-"PureFTPd is known to truncate file listings. If server has been configured "
-"to a higher limit or do not expect to store more than 10000 files you can "
-"suppress errors and warnings with {0}"
-msgstr ""
-
-#: Library/Backend/GoogleServices/Strings.cs:28
-msgid ""
-"This backend can read and write data to Google Cloud Storage. Allowed format"
-" is \"gcs://bucket/folder\"."
-msgstr ""
-
 #: Library/Backend/GoogleServices/Strings.cs:29
 msgid "Google Cloud Storage"
 msgstr "Google Cloud Storage"
-
-#: Library/Backend/GoogleServices/Strings.cs:30
-#, csharp-format
-msgid "You must supply a project ID with --{0} for creating a bucket."
-msgstr ""
 
 #: Library/Backend/GoogleServices/Strings.cs:31
 #, csharp-format
@@ -753,10 +366,6 @@ msgid ""
 msgstr ""
 "Tätä valitsinta käytetään vain luotaessa uusia ämpäreitä. Käytä tätä valitsinta muuttaaksesi aluetta, johon tiedot tallennetaan. Hinnat vaihtelevat alueen mukaan. Tunnetut alueet ovat:\n"
 "{0}"
-
-#: Library/Backend/GoogleServices/Strings.cs:33
-msgid "Specify location option for creating a bucket"
-msgstr ""
 
 #: Library/Backend/GoogleServices/Strings.cs:34
 #, csharp-format
@@ -768,35 +377,9 @@ msgstr ""
 "valitsinta muuttaaksesi luotavan säilön tallennusluokkaa. Hinnat ja "
 "toiminnallisuus vaihtelevat luokan mukaan. Tunnetut luokat ovat: {0}"
 
-#: Library/Backend/GoogleServices/Strings.cs:36
-msgid "Specify storage class for creating a bucket"
-msgstr ""
-
-#: Library/Backend/GoogleServices/Strings.cs:37
-msgid ""
-"This option is only used when creating new buckets. Use this option to "
-"supply the project ID that the bucket is attached to. The project determines"
-" where usage charges are applied."
-msgstr ""
-
-#: Library/Backend/GoogleServices/Strings.cs:38
-msgid "Specify project for creating a bucket"
-msgstr ""
-
-#: Library/Backend/GoogleServices/Strings.cs:43
-msgid ""
-"This backend can read and write data to Google Drive. Allowed format is "
-"\"googledrive://folder/subfolder\"."
-msgstr ""
-
 #: Library/Backend/GoogleServices/Strings.cs:44
 msgid "Google Drive"
 msgstr "Google Drive"
-
-#: Library/Backend/GoogleServices/Strings.cs:45
-#, csharp-format
-msgid "There is more than one item named \"{0}\" in the folder \"{1}\"."
-msgstr ""
 
 #: Library/Backend/GoogleServices/Strings.cs:46
 #: Library/Backend/File/Strings.cs:40 Library/Compression/Strings.cs:38
@@ -804,73 +387,17 @@ msgstr ""
 msgid "File not found: {0}"
 msgstr "Tiedostoa ei löydy: {0}"
 
-#: Library/Backend/GoogleServices/Strings.cs:47
-msgid ""
-"This option sets the team drive to use. Leaving it empty uses the personal "
-"drive."
-msgstr ""
-
-#: Library/Backend/GoogleServices/Strings.cs:48
-msgid "Team drive ID"
-msgstr ""
-
-#: Library/Backend/GoogleServices/Strings.cs:53
-msgid "Google Cloud Storage configuration module"
-msgstr ""
-
-#: Library/Backend/GoogleServices/Strings.cs:54
-msgid "Expose Google Cloud Storage configuration as a web module"
-msgstr ""
-
-#: Library/Backend/CloudFiles/Strings.cs:26
-msgid ""
-"This backend can read and write data to CloudFiles. Allowed format is "
-"\"cloudfiles://container/folder\"."
-msgstr ""
-
 #: Library/Backend/CloudFiles/Strings.cs:27
 msgid "Rackspace CloudFiles"
 msgstr "Rackspace CloudFiles"
-
-#: Library/Backend/CloudFiles/Strings.cs:28
-#, csharp-format
-msgid ""
-"CloudFiles use different servers for authentication based on where the "
-"account resides. Use this option to set an alternate authentication URL. "
-"This option overrides --{0}."
-msgstr ""
 
 #: Library/Backend/CloudFiles/Strings.cs:29
 msgid "Provide another authentication URL"
 msgstr "Anna toinen tunnistautumispalvelimen osoite."
 
-#: Library/Backend/CloudFiles/Strings.cs:30
-msgid "The API Access Key used to authenticate with CloudFiles."
-msgstr ""
-
-#: Library/Backend/CloudFiles/Strings.cs:31
-msgid "Supply the access key used to connect to the server"
-msgstr ""
-
-#: Library/Backend/CloudFiles/Strings.cs:32
-#, csharp-format
-msgid ""
-"Duplicati will assume that the credentials given are for a US account. Use "
-"this option if the account is a UK based account. Note that this is "
-"equivalent to setting --{0}={1}."
-msgstr ""
-
 #: Library/Backend/CloudFiles/Strings.cs:33
 msgid "Use a UK account"
 msgstr "Käytä Britanniassa sijaitsevaa tiliä."
-
-#: Library/Backend/CloudFiles/Strings.cs:34
-msgid "The username used to authenticate with CloudFiles."
-msgstr ""
-
-#: Library/Backend/CloudFiles/Strings.cs:35
-msgid "Supply the username used to authenticate with CloudFiles"
-msgstr ""
 
 #: Library/Backend/CloudFiles/Strings.cs:36
 msgid "MD5 Hash (ETag) verification failed"
@@ -893,48 +420,6 @@ msgstr "Et antanut tunnistetta \"CloudFiles Api Access Key\""
 msgid "No CloudFiles userID given"
 msgstr "Et antanut tunnistetta \"CloudFiles userID\""
 
-#: Library/Backend/CloudFiles/Strings.cs:41
-msgid "Unexpected CloudFiles response. Perhaps the API has changed?"
-msgstr ""
-
-#: Library/Backend/CloudFiles/Strings.cs:42
-msgid ""
-"The URL is using the marker hostname {hostname} which is no longer "
-"supported. Please use the new format "
-msgstr ""
-
-#: Library/Backend/S3/Strings.cs:26
-msgid ""
-"This backend can read and write data to an S3 compatible server. Allowed "
-"format is \"s3://bucketname/prefix\"."
-msgstr ""
-
-#: Library/Backend/S3/Strings.cs:27
-msgid "S3 compatible"
-msgstr ""
-
-#: Library/Backend/S3/Strings.cs:28
-#, csharp-format
-msgid ""
-"AWS Secret Access Key can be obtained after logging into your AWS account. "
-"This can also be supplied through the option --{0}."
-msgstr ""
-
-#: Library/Backend/S3/Strings.cs:29
-msgid "AWS Secret Access Key"
-msgstr ""
-
-#: Library/Backend/S3/Strings.cs:30
-#, csharp-format
-msgid ""
-"AWS Access Key ID can be obtained after logging into your AWS account. This "
-"can also be supplied through the option --{0}."
-msgstr ""
-
-#: Library/Backend/S3/Strings.cs:31
-msgid "AWS Access Key ID"
-msgstr ""
-
 #: Library/Backend/S3/Strings.cs:32 Library/Backend/Mega/Strings.cs:26
 #: Library/Utility/Strings.cs:93
 msgid ""
@@ -943,14 +428,6 @@ msgid ""
 msgstr ""
 "Salasana palvelimelle. Tämä voidaan asettaa myös ympäristömuuttujassa "
 "\"AUTH_PASSWORD\""
-
-#: Library/Backend/S3/Strings.cs:36
-msgid "No S3 secret key given"
-msgstr ""
-
-#: Library/Backend/S3/Strings.cs:37
-msgid "No S3 userID given"
-msgstr ""
 
 #: Library/Backend/S3/Strings.cs:38
 #, csharp-format
@@ -961,10 +438,6 @@ msgstr ""
 "Tätä valitsinta käytetään vain luotaessa uusia ämpäreitä. Käytä tätä valitsinta muuttaaksesi aluetta, johon tiedot tallennetaan. Amazon laskuttaa hieman enemmän USA:n ulkopuolelle tallennetuista ämpäreistä. Tunnetut alueet ovat:\n"
 "{0}"
 
-#: Library/Backend/S3/Strings.cs:40
-msgid "Specify S3 location constraints"
-msgstr ""
-
 #: Library/Backend/S3/Strings.cs:41
 #, csharp-format
 msgid ""
@@ -973,42 +446,6 @@ msgid ""
 msgstr ""
 "Muutkin yritykset kuin Amazon tukevat S3 API:a. Siten tämä moduuli voi tallentaa tiedostoja näihinkin palveluihin. Aseta palvelimen nimi tällä valitsimella. Tunnetut palveluntarjoajat ovat:\n"
 "{0}"
-
-#: Library/Backend/S3/Strings.cs:43
-msgid "Specify an alternate S3 server name"
-msgstr ""
-
-#: Library/Backend/S3/Strings.cs:44
-msgid ""
-"Set either to aws or minio. Then either the AWS SDK or Minio SDK will be "
-"used to communicate with S3 services."
-msgstr ""
-
-#: Library/Backend/S3/Strings.cs:45
-msgid "Specify the S3 client library to use"
-msgstr ""
-
-#: Library/Backend/S3/Strings.cs:46
-msgid ""
-"Use this option to communicate using Secure Socket Layer (SSL) over http "
-"(https). Note that bucket names containing a period has problems with SSL "
-"connections."
-msgstr ""
-
-#: Library/Backend/S3/Strings.cs:47 Library/Backend/TahoeLAFS/Strings.cs:29
-#: Library/Utility/Strings.cs:88
-msgid "Instruct Duplicati to use an SSL (https) connection"
-msgstr ""
-
-#: Library/Backend/S3/Strings.cs:48
-msgid ""
-"This disables chunk encoding for the aws client, which is not supported by "
-"all S3 providers."
-msgstr ""
-
-#: Library/Backend/S3/Strings.cs:49
-msgid "Disable chunk encoding (aws client only)"
-msgstr ""
 
 #: Library/Backend/S3/Strings.cs:50
 msgid ""
@@ -1022,83 +459,6 @@ msgstr ""
 msgid "Specify storage class"
 msgstr "Valitse tallennusluokka"
 
-#: Library/Backend/S3/Strings.cs:52
-msgid "Specify archive storage class"
-msgstr ""
-
-#: Library/Backend/S3/Strings.cs:53
-msgid ""
-"Use this option to specify what storage classes are considered archive "
-"storage classes. With this option it is possible to allow lifecycle policies"
-" to move data to cheaper storage classes and prevent Duplicati from "
-"accessing archived data. This option is only supported for the AWS client."
-msgstr ""
-
-#: Library/Backend/S3/Strings.cs:54
-msgid "Specify the S3 list API version to use"
-msgstr ""
-
-#: Library/Backend/S3/Strings.cs:55
-msgid ""
-"Use this option to specify the S3 list API version to use. This can be used "
-"to work around issues with some S3 providers."
-msgstr ""
-
-#: Library/Backend/S3/Strings.cs:56
-msgid "Use this option to list all files in the bucket"
-msgstr ""
-
-#: Library/Backend/S3/Strings.cs:57
-msgid ""
-"To reduce the number of objects listed, the default is to only list the "
-"first level of objects. Use this option to list all objects in the bucket."
-msgstr ""
-
-#: Library/Backend/S3/Strings.cs:58
-#, csharp-format
-msgid "Unknown S3 client: {0}"
-msgstr ""
-
-#: Library/Backend/S3/Strings.cs:63
-msgid "S3 configuration module"
-msgstr ""
-
-#: Library/Backend/S3/Strings.cs:64
-msgid "Expose S3 configuration as a web module"
-msgstr ""
-
-#: Library/Backend/S3/Strings.cs:71
-msgid "S3 IAM support module"
-msgstr ""
-
-#: Library/Backend/S3/Strings.cs:72
-msgid "Expose S3 IAM manipulation as a web module"
-msgstr ""
-
-#: Library/Backend/S3/Strings.cs:73
-msgid "The operation to perform"
-msgstr ""
-
-#: Library/Backend/S3/Strings.cs:74
-msgid "Select the operation to perform"
-msgstr ""
-
-#: Library/Backend/S3/Strings.cs:75
-msgid "The username to use"
-msgstr ""
-
-#: Library/Backend/S3/Strings.cs:76
-msgid "The Amazon Access Key ID"
-msgstr ""
-
-#: Library/Backend/S3/Strings.cs:77
-msgid "The password to use"
-msgstr ""
-
-#: Library/Backend/S3/Strings.cs:78
-msgid "The Amazon Secret Key"
-msgstr ""
-
 #: Library/Backend/SSHv2/Strings.cs:26
 msgid "Module for generating SSH private/public keys"
 msgstr "Moduuli yksityisten SSH-avainten luomista varten."
@@ -1107,25 +467,13 @@ msgstr "Moduuli yksityisten SSH-avainten luomista varten."
 msgid "SSH Key Generator"
 msgstr "SSH avainten luominen"
 
-#: Library/Backend/SSHv2/Strings.cs:28
-msgid "A username to append to the public key."
-msgstr ""
-
 #: Library/Backend/SSHv2/Strings.cs:29
 msgid "Public key username"
 msgstr "Julkisen avaimen käyttäjätunnus"
 
-#: Library/Backend/SSHv2/Strings.cs:30
-msgid "Determines the type of key to generate."
-msgstr ""
-
 #: Library/Backend/SSHv2/Strings.cs:31
 msgid "The key type"
 msgstr "Avaimen tyyppi"
-
-#: Library/Backend/SSHv2/Strings.cs:32
-msgid "The length of the key in bits."
-msgstr ""
 
 #: Library/Backend/SSHv2/Strings.cs:33
 msgid "The key length"
@@ -1139,52 +487,17 @@ msgstr "Moduuli julkisten ssh-avaimien latausta varten"
 msgid "SSH Key Uploader"
 msgstr "SSH avaimen lataus palvelimelle"
 
-#: Library/Backend/SSHv2/Strings.cs:39
-msgid "The SSH connection URL used to establish the connection."
-msgstr ""
-
 #: Library/Backend/SSHv2/Strings.cs:40
 msgid "The SSH connection URL"
 msgstr "Osoite SSH-yhteyttä varten"
-
-#: Library/Backend/SSHv2/Strings.cs:41
-msgid ""
-"The SSH public key must be a valid SSH string, which is appended to the "
-".ssh/authorized_keys file."
-msgstr ""
 
 #: Library/Backend/SSHv2/Strings.cs:42
 msgid "The SSH public key to append"
 msgstr "Lisättävä julkinen SSH-avain"
 
-#: Library/Backend/SSHv2/Strings.cs:46
-msgid ""
-"This backend can read and write data to an SSH based backend, using SFTP. "
-"Allowed formats are \"ssh://hostname/folder\" and "
-"\"ssh://username:password@hostname/folder\"."
-msgstr ""
-
 #: Library/Backend/SSHv2/Strings.cs:47
 msgid "SFTP (SSH)"
 msgstr "SFTP (SSH)"
-
-#: Library/Backend/SSHv2/Strings.cs:48
-msgid "A username is required"
-msgstr ""
-
-#: Library/Backend/SSHv2/Strings.cs:49
-msgid "A password is required if not using a keyfile"
-msgstr ""
-
-#: Library/Backend/SSHv2/Strings.cs:50
-msgid ""
-"The server fingerprint used for validation of server identity. Format is "
-"e.g. \"ssh-rsa 4096 11:22:33:44:55:66:77:88:99:00:11:22:33:44:55:66\"."
-msgstr ""
-
-#: Library/Backend/SSHv2/Strings.cs:51
-msgid "Supply server fingerprint used for validation of server identity"
-msgstr ""
 
 #: Library/Backend/SSHv2/Strings.cs:52
 msgid ""
@@ -1196,61 +509,6 @@ msgstr ""
 "palvelimeen. Tämä suojaa \"mies välissä\" -hyökkäyksiltä. Tämä valitsin "
 "poistaa sormenjäljen tarkastamisen käytöstä. Tätä valitsina pitäisi käyttää "
 "vain asetuksia testattaessa."
-
-#: Library/Backend/SSHv2/Strings.cs:53
-msgid "Disable fingerprint validation"
-msgstr ""
-
-#: Library/Backend/SSHv2/Strings.cs:54
-msgid ""
-"Point to a valid OpenSSH keyfile. If the file is encrypted, the password "
-"supplied is used to decrypt it. If the keyfile is specified, the password is"
-" not used to authenticate."
-msgstr ""
-
-#: Library/Backend/SSHv2/Strings.cs:55 Library/Backend/SSHv2/Strings.cs:57
-msgid "Use a SSH private key to authenticate"
-msgstr ""
-
-#: Library/Backend/SSHv2/Strings.cs:56
-#, csharp-format
-msgid ""
-"An url-encoded SSH private key. The private key must be prefixed with {0}. "
-"If the key is encrypted, the password supplied is used to decrypt it. If the"
-" private key is specified, the password is not used to authenticate."
-msgstr ""
-
-#: Library/Backend/SSHv2/Strings.cs:58
-msgid ""
-"Use this option to manage the internal timeout for SSH operations. If the "
-"value is set to zero, the operations will not time out."
-msgstr ""
-
-#: Library/Backend/SSHv2/Strings.cs:59
-msgid "Set the operation timeout value"
-msgstr ""
-
-#: Library/Backend/SSHv2/Strings.cs:60
-msgid ""
-"Use this option to enable the keep-alive interval for the SSH connection. If"
-" the connection is idle, aggressive firewalls might close the connection. "
-"Using keep-alive will keep the connection open in this scenario. If this "
-"value is set to zero, the keep-alive is disabled."
-msgstr ""
-
-#: Library/Backend/SSHv2/Strings.cs:61
-msgid "Set a keepalive value"
-msgstr ""
-
-#: Library/Backend/SSHv2/Strings.cs:62
-msgid "Treat source path as relative to the initial path"
-msgstr ""
-
-#: Library/Backend/SSHv2/Strings.cs:63
-msgid ""
-"Use this option to treat the source path as relative to the initial path. "
-"This is useful when the full path of the system is not known."
-msgstr ""
 
 #: Library/Backend/SSHv2/Strings.cs:64
 #, csharp-format
@@ -1276,18 +534,6 @@ msgstr ""
 "Lisää valitsin --{1}=\"{0}\" luottaaksesi tähän palvelimeen. Voit käyttää "
 "myös EI -TURVALLISTA valitsinta --{2} testaukseen."
 
-#: Library/Backend/SSHv2/Strings.cs:67
-#, csharp-format
-msgid ""
-"The option {0} is deprecated. Please use --{1}, --{2} or --{3} instead."
-msgstr ""
-
-#: Library/Backend/Box/Strings.cs:26
-msgid ""
-"This backend can read and write data to Box.com. Allowed format is "
-"\"box://folder/subfolder\"."
-msgstr ""
-
 #: Library/Backend/Box/Strings.cs:27
 msgid "Box.com"
 msgstr "Box.com"
@@ -1306,103 +552,22 @@ msgstr ""
 msgid "Force delete files"
 msgstr "Pakota tiedostojen poisto"
 
-#: Library/Backend/Rclone/Strings.cs:26
-msgid "This backend can read and write data to Rclone."
-msgstr ""
-
 #: Library/Backend/Rclone/Strings.cs:27
 msgid "Rclone"
 msgstr "Rclone"
 
-#: Library/Backend/Rclone/Strings.cs:28
-msgid ""
-"Local repository for Rclone. Make sure it is configured as a local drive, as"
-" it needs access to the files generated by Duplicati."
-msgstr ""
-
-#: Library/Backend/Rclone/Strings.cs:29
-msgid "Local repository"
-msgstr ""
-
-#: Library/Backend/Rclone/Strings.cs:30
-msgid ""
-"Remote repository for Rclone. This can be any of the backends provided by "
-"Rclone. More info available on https://rclone.org/."
-msgstr ""
-
-#: Library/Backend/Rclone/Strings.cs:31
-msgid "Remote repository"
-msgstr ""
-
-#: Library/Backend/Rclone/Strings.cs:32
-msgid "Path on the Remote repository."
-msgstr ""
-
 #: Library/Backend/Rclone/Strings.cs:33
 msgid "Remote path"
 msgstr "Kohteen polku"
-
-#: Library/Backend/Rclone/Strings.cs:34
-msgid "Options will be transferred to rclone."
-msgstr ""
-
-#: Library/Backend/Rclone/Strings.cs:35
-msgid "Rclone options"
-msgstr ""
-
-#: Library/Backend/Rclone/Strings.cs:36
-msgid ""
-"Full path to the rclone executable. Only needed if it's not in your path."
-msgstr ""
-
-#: Library/Backend/Rclone/Strings.cs:37
-msgid "Rclone executable"
-msgstr ""
-
-#: Library/Backend/File/Strings.cs:26
-msgid ""
-"This backend can read and write data to an file based backend. Allowed "
-"formats are \"file://hostname/folder\" and "
-"\"file://username:password@hostname/folder\". You may supply UNC paths "
-"(e.g.: \"file://\\\\server\\folder\") or local paths (e.g.: (win) "
-"\"file://c:\\folder\", (linux) \"file:///usr/pub/files\")"
-msgstr ""
 
 #: Library/Backend/File/Strings.cs:27
 #: Library/SourceProvider/Builtin/Strings.cs:27
 msgid "Local folder or drive"
 msgstr "Paikallinen kansio tai levy"
 
-#: Library/Backend/File/Strings.cs:28
-#, csharp-format
-msgid ""
-"This option only works when the option --{0} is also specified. If there are"
-" alternate paths specified, this option indicates the name of a marker file "
-"that must be present in the folder. This can be used to handle situations "
-"where an external drive changes drive letter or mount point. By ensuring "
-"that a certain file exists, it is possible to prevent writing data to an "
-"unwanted external drive. The contents of the file are never examined, only "
-"file existence."
-msgstr ""
-
 #: Library/Backend/File/Strings.cs:29
 msgid "Look for a file in the destination folder"
 msgstr "Tarkista tiedoston olemassaolo kohdekansiossa."
-
-#: Library/Backend/File/Strings.cs:30
-#, csharp-format
-msgid ""
-"This option allows multiple targets to be specified. The primary target path"
-" is placed before the list of paths supplied with this option. Before "
-"starting the backup, each folder in the list is checked for existence and "
-"optionally the presence of the marker file supplied by --{0}. The first "
-"existing path that optionally contains the marker file is then used as the "
-"destination. Multiple destinations are separated with a \"{1}\". On Windows,"
-" the path may be a UNC path, and the drive letter may be substituted with an"
-" asterisk (*), e.g: \"*:\\backup\", which will examine all drive letters. If"
-" a username and password is supplied, the same credentials are used for all "
-"destinations."
-msgstr ""
 
 #: Library/Backend/File/Strings.cs:31
 msgid "A list of secondary target paths"
@@ -1421,654 +586,100 @@ msgid ""
 msgstr ""
 "Lipputiedostoa \"{0}\" ei löytynyt mistään etsityistä kohdekansioista: {1}"
 
-#: Library/Backend/File/Strings.cs:34
-#, csharp-format
-msgid ""
-"When storing the file, the standard operation is to copy the file and delete"
-" the original. This sequence ensures that the operation can be retried if "
-"something goes wrong. Activating this option may cause the retry operation "
-"to fail. This option has no effect unless the option --{0} is activated."
-msgstr ""
-
 #: Library/Backend/File/Strings.cs:35
 msgid "Move the file instead of copying it"
 msgstr "Siirrä tiedostot kopioimisen sijaan"
-
-#: Library/Backend/File/Strings.cs:36
-msgid ""
-"If this option is set, any existing authentication against the remote share "
-"is dropped before attempting to authenticate."
-msgstr ""
 
 #: Library/Backend/File/Strings.cs:37
 msgid "Force authentication against remote share"
 msgstr "Pakota tunnistautumaan verkkojakoa käytettäessä"
 
-#: Library/Backend/File/Strings.cs:38
-msgid ""
-"As an extra precaution the uploaded file length will be checked against the "
-"local source length."
-msgstr ""
-
-#: Library/Backend/File/Strings.cs:39
-msgid "Disable length verification"
-msgstr ""
-
-#: Library/Backend/Backblaze/Strings.cs:27
-msgid ""
-"This backend can read and write data to the Backblaze B2 Cloud Storage. "
-"Allowed format is \"b2://bucketname/prefix\"."
-msgstr ""
-
 #: Library/Backend/Backblaze/Strings.cs:28
 msgid "B2 Cloud Storage"
 msgstr "B2 Cloud Storage"
-
-#: Library/Backend/Backblaze/Strings.cs:29
-#, csharp-format
-msgid ""
-"B2 Cloud Storage Application Key can be obtained after logging into your "
-"Backblaze account. This can also be supplied through the option --{0}."
-msgstr ""
 
 #: Library/Backend/Backblaze/Strings.cs:30
 msgid "B2 Cloud Storage Application Key"
 msgstr "B2 Cloud Storage Application Key"
 
-#: Library/Backend/Backblaze/Strings.cs:31
-#, csharp-format
-msgid ""
-"B2 Cloud Storage Account ID can be obtained after logging into your "
-"Backblaze account. This can also be supplied through the option --{0}."
-msgstr ""
-
 #: Library/Backend/Backblaze/Strings.cs:32
 msgid "B2 Cloud Storage Account ID"
 msgstr "Tunnus B2 Cloud Storage Account ID"
-
-#: Library/Backend/Backblaze/Strings.cs:33
-msgid "No B2 Cloud Storage Application Key given"
-msgstr ""
-
-#: Library/Backend/Backblaze/Strings.cs:34
-msgid "No B2 Cloud Storage Account ID given"
-msgstr ""
-
-#: Library/Backend/Backblaze/Strings.cs:35
-msgid ""
-"By default, a private bucket is created. Use this option to set the bucket "
-"type. Refer to the B2 documentation for allowed types."
-msgstr ""
 
 #: Library/Backend/Backblaze/Strings.cs:36
 msgid "The bucket type used when creating a bucket"
 msgstr "Luotavan säilön tyyppi"
 
-#: Library/Backend/Backblaze/Strings.cs:37
-msgid ""
-"Use this option to set the page size for listing contents of B2 buckets. A "
-"lower number means less data, but can increase the number of Class C "
-"transaction on B2. Suggested values are between 100 and 1000."
-msgstr ""
-
-#: Library/Backend/Backblaze/Strings.cs:38
-msgid "The size of file-listing pages"
-msgstr ""
-
-#: Library/Backend/Backblaze/Strings.cs:39
-msgid ""
-"Change this if you want to use your custom domain to download files, and "
-"uploading will not be affected. The default download URL depends on your "
-"account and looks like \"https://f00X.backblazeb2.com\"."
-msgstr ""
-
-#: Library/Backend/Backblaze/Strings.cs:40
-msgid "The base URL to use for downloading files"
-msgstr ""
-
-#: Library/Backend/Backblaze/Strings.cs:41
-#, csharp-format
-msgid ""
-"The setting \"{0}\" is invalid for \"{1}\". It must be an integer larger "
-"than zero."
-msgstr ""
-
-#: Library/Backend/Sia/Strings.cs:26
-msgid "This backend can read and write data to Sia."
-msgstr ""
-
-#: Library/Backend/Sia/Strings.cs:27
-msgid "Sia Decentralized Cloud"
-msgstr ""
-
-#: Library/Backend/Sia/Strings.cs:28
-msgid "Set the target path. Example: /backup"
-msgstr ""
-
 #: Library/Backend/Sia/Strings.cs:29
 msgid "Backup path"
 msgstr "Varmuuskopion polku"
-
-#: Library/Backend/Sia/Strings.cs:30
-msgid "Supply a password for Sia server."
-msgstr ""
-
-#: Library/Backend/Sia/Strings.cs:31
-msgid "Sia password"
-msgstr ""
-
-#: Library/Backend/Sia/Strings.cs:32
-msgid "The minimum value for redundancy is 1.0."
-msgstr ""
-
-#: Library/Backend/Sia/Strings.cs:33
-msgid "Set the minimum redundancy"
-msgstr ""
-
-#: Library/Backend/OneDrive/Strings.cs:26
-msgid ""
-"Size of individual fragments which are uploaded separately for large files. "
-"It is recommended to be between 5-10 MiB (though a smaller value may work "
-"better on a slower or less reliable connection), and to be a multiple of 320"
-" KiB."
-msgstr ""
-
-#: Library/Backend/OneDrive/Strings.cs:27
-msgid "Fragment size for large uploads"
-msgstr ""
-
-#: Library/Backend/OneDrive/Strings.cs:28
-msgid ""
-"Number of retry attempts made for each fragment before failing the overall "
-"file upload."
-msgstr ""
-
-#: Library/Backend/OneDrive/Strings.cs:29
-msgid "Number of retries for each fragment"
-msgstr ""
-
-#: Library/Backend/OneDrive/Strings.cs:30
-msgid ""
-"Amount of time (in milliseconds) to wait between failures when uploading "
-"fragments."
-msgstr ""
-
-#: Library/Backend/OneDrive/Strings.cs:31
-msgid "Millisecond delay between fragment errors"
-msgstr ""
-
-#: Library/Backend/OneDrive/Strings.cs:32
-msgid "Use this option to set HttpClient class to perform HTTP requests."
-msgstr ""
-
-#: Library/Backend/OneDrive/Strings.cs:33
-msgid "Whether the HttpClient class should be used"
-msgstr ""
-
-#: Library/Backend/OneDrive/Strings.cs:34
-msgid "The option --use-http-client is deprecated and has no effect."
-msgstr ""
-
-#: Library/Backend/OneDrive/Strings.cs:39
-#, csharp-format
-msgid ""
-"Store files in Microsoft OneDrive or Microsoft OneDrive for Business via the"
-" Microsoft Graph API. Usage of this backend requires that you agree to the "
-"terms in {0} ({1}) and {2} ({3})."
-msgstr ""
 
 #: Library/Backend/OneDrive/Strings.cs:40
 msgid "Microsoft OneDrive"
 msgstr "Microsoft OneDrive"
 
-#: Library/Backend/OneDrive/Strings.cs:41
-#, csharp-format
-msgid ""
-"ID of the drive to store data in. If no drive is specified, the default "
-"OneDrive or OneDrive for Business drive will be used via '{0}'."
-msgstr ""
-
-#: Library/Backend/OneDrive/Strings.cs:42
-msgid "Optional ID of the drive"
-msgstr ""
-
-#: Library/Backend/OneDrive/Strings.cs:47
-#, csharp-format
-msgid ""
-"Store files in a Microsoft SharePoint site via the Microsoft Graph API. "
-"Usage of this backend requires that you agree to the terms in {0} ({1}) and "
-"{2} ({3})."
-msgstr ""
-
 #: Library/Backend/OneDrive/Strings.cs:48
 msgid "Microsoft SharePoint v2"
 msgstr "Microsoft SharePoint v2"
-
-#: Library/Backend/OneDrive/Strings.cs:49
-msgid "ID of the site to store data in."
-msgstr ""
 
 #: Library/Backend/OneDrive/Strings.cs:50
 msgid "ID of the site"
 msgstr "sivuston tunniste"
 
-#: Library/Backend/OneDrive/Strings.cs:51
-msgid "No site ID was provided"
-msgstr ""
-
-#: Library/Backend/OneDrive/Strings.cs:52
-msgid "No drive information was returned"
-msgstr ""
-
-#: Library/Backend/OneDrive/Strings.cs:57
-#, csharp-format
-msgid ""
-"Store files in a Microsoft Office 365 Group via the Microsoft Graph API. "
-"Allowed formats are "
-"\"sharepoint://tenant.sharepoint.com/{{PathToWeb}}//{{Documents}}/subfolder\""
-" (with \"//\" being optionally used to indicate the root document folder) "
-"and \"sharepoint://subfolder\" (in which case you must also explicitly "
-"specify the SharePoint site's ID via --{0}). Usage of this backend requires "
-"that you agree to the terms in {1} ({2}) and {3} ({4})."
-msgstr ""
-
 #: Library/Backend/OneDrive/Strings.cs:58
 msgid "Microsoft Office 365 Group"
 msgstr "Microsoft Office 365 -ryhmä"
-
-#: Library/Backend/OneDrive/Strings.cs:59
-msgid "ID of the group to store data in."
-msgstr ""
 
 #: Library/Backend/OneDrive/Strings.cs:60
 msgid "ID of the group"
 msgstr "Ryhmän tunniste"
 
-#: Library/Backend/OneDrive/Strings.cs:61
-msgid "Email address of the group to store data in."
-msgstr ""
-
 #: Library/Backend/OneDrive/Strings.cs:62
 msgid "Email address of the group"
 msgstr "Ryhmän sähköpostiosoite"
-
-#: Library/Backend/OneDrive/Strings.cs:63
-msgid "No group ID or group email address was provided."
-msgstr ""
-
-#: Library/Backend/OneDrive/Strings.cs:64
-#, csharp-format
-msgid "No groups were found with the given email address: {0}"
-msgstr ""
-
-#: Library/Backend/OneDrive/Strings.cs:65
-#, csharp-format
-msgid "Multiple groups were found with the given email address: {0}"
-msgstr ""
-
-#: Library/Backend/OneDrive/Strings.cs:66
-#, csharp-format
-msgid "Conflicting group IDs used: given {0} but found {1}"
-msgstr ""
-
-#: Library/Backend/AliyunOSS/Strings.cs:27
-msgid "This backend can read and write data to Aliyun OSS."
-msgstr ""
-
-#: Library/Backend/AliyunOSS/Strings.cs:28
-msgid "Aliyun OSS (Object Storage Service)"
-msgstr ""
-
-#: Library/Backend/AliyunOSS/Strings.cs:29
-msgid "Access Key ID is used to identify the user."
-msgstr ""
 
 #: Library/Backend/AliyunOSS/Strings.cs:30
 #: Library/Backend/Idrivee2/Strings.cs:31
 msgid "Access Key ID"
 msgstr "Pääsyavaimen tunnus"
 
-#: Library/Backend/AliyunOSS/Strings.cs:31
-msgid ""
-"Access Key Secret is the key used by the user to encrypt signature strings "
-"and by OSS to verify these signature strings."
-msgstr ""
-
 #: Library/Backend/AliyunOSS/Strings.cs:32
 #: Library/Backend/Idrivee2/Strings.cs:29
 msgid "Access Key Secret"
 msgstr "Pääsyavainsalaisuus"
-
-#: Library/Backend/AliyunOSS/Strings.cs:33
-msgid ""
-"A storage space is a container used to store objects (Object), and all "
-"objects must belong to a specific storage space."
-msgstr ""
 
 #: Library/Backend/AliyunOSS/Strings.cs:34
 #: Library/Backend/TencentCOS/Strings.cs:36
 msgid "Bucket name"
 msgstr "Säilön nimi"
 
-#: Library/Backend/AliyunOSS/Strings.cs:35
-msgid "Region indicates the physical location of the OSS data center."
-msgstr ""
-
-#: Library/Backend/AliyunOSS/Strings.cs:36
-msgid "Region"
-msgstr ""
-
-#: Library/Backend/AliyunOSS/Strings.cs:37
-msgid ""
-"Endpoint refers to the domain name through which OSS provides external "
-"services."
-msgstr ""
-
-#: Library/Backend/AliyunOSS/Strings.cs:38
-msgid "Endpoint"
-msgstr ""
-
-#: Library/Backend/Filejump/Strings.cs:27
-msgid ""
-"This backend can read and write data to filejump. Allowed formats are "
-"\"filejump://hostname/folder\" and "
-"\"filejump://username:password@hostname/folder\"."
-msgstr ""
-
-#: Library/Backend/Filejump/Strings.cs:28
-msgid "Filejump"
-msgstr ""
-
-#: Library/Backend/Filejump/Strings.cs:29
-msgid "The filejump API token"
-msgstr ""
-
-#: Library/Backend/Filejump/Strings.cs:30
-msgid ""
-"Supply the filejump API token instead of the username and password. Can be "
-"obtained from: \"https://drive.filejump.com/account-settings\""
-msgstr ""
-
-#: Library/Backend/Filejump/Strings.cs:31
-msgid "The filejump API URL"
-msgstr ""
-
-#: Library/Backend/Filejump/Strings.cs:32
-msgid "Set the filejump API URL if using a non-standard url."
-msgstr ""
-
-#: Library/Backend/Filejump/Strings.cs:33
-msgid "The filejump page size"
-msgstr ""
-
-#: Library/Backend/Filejump/Strings.cs:34
-msgid "Adjusts the filejump API page size."
-msgstr ""
-
-#: Library/Backend/Filejump/Strings.cs:35
-msgid "Use soft delete"
-msgstr ""
-
-#: Library/Backend/Filejump/Strings.cs:36
-msgid "Use soft delete instead of hard delete."
-msgstr ""
-
-#: Library/Backend/AzureBlob/Strings.cs:28
-msgid ""
-"This backend can read and write data to Azure blob storage. Allowed format "
-"is \"azure://bucketname\"."
-msgstr ""
-
 #: Library/Backend/AzureBlob/Strings.cs:29
 msgid "Azure blob"
 msgstr "Azure blob"
-
-#: Library/Backend/AzureBlob/Strings.cs:30
-msgid "All files will be written to the container specified."
-msgstr ""
-
-#: Library/Backend/AzureBlob/Strings.cs:31
-msgid "The name of the storage container"
-msgstr ""
 
 #: Library/Backend/AzureBlob/Strings.cs:32
 msgid "No Azure storage account name given"
 msgstr "Et antanut Azure-tilin nimeä"
 
-#: Library/Backend/AzureBlob/Strings.cs:33
-msgid ""
-"The Azure storage account name which can be obtained by clicking the "
-"\"Manage Access Keys\" button on the storage account dashboard."
-msgstr ""
-
 #: Library/Backend/AzureBlob/Strings.cs:34
 msgid "The storage account name"
 msgstr "Tilin nimi tallennuspalvelussa"
-
-#: Library/Backend/AzureBlob/Strings.cs:35
-msgid ""
-"The Azure access key which can be obtained by clicking the \"Manage Access "
-"Keys\" button on the storage account dashboard."
-msgstr ""
 
 #: Library/Backend/AzureBlob/Strings.cs:36
 msgid "The access key"
 msgstr "Pääsyavain"
 
-#: Library/Backend/AzureBlob/Strings.cs:37
-msgid ""
-"The Azure shared access signature (SAS) token which can be obtained by "
-"selecting the \"Shared access signature\" blade on the storage account "
-"dashboard, or inside a container blade."
-msgstr ""
-
-#: Library/Backend/AzureBlob/Strings.cs:38
-msgid "The SAS token"
-msgstr ""
-
-#: Library/Backend/AzureBlob/Strings.cs:39
-msgid "No Azure access key or SAS token given"
-msgstr ""
-
-#: Library/Backend/AzureBlob/Strings.cs:40
-msgid "Specify the access tier"
-msgstr ""
-
-#: Library/Backend/AzureBlob/Strings.cs:41
-msgid ""
-"Use this option to specify the access tier. If this option is not used, the "
-"server will choose a default access tier."
-msgstr ""
-
-#: Library/Backend/AzureBlob/Strings.cs:42
-msgid "The storage classes that are considered archive classes"
-msgstr ""
-
-#: Library/Backend/AzureBlob/Strings.cs:43
-msgid ""
-"Use this option to specify what storage classes are considered archive "
-"storage classes. With this option it is possible to allow lifecycle policies"
-" to move data to cheaper storage classes and prevent Duplicati from "
-"accessing archived data."
-msgstr ""
-
-#: Library/Backend/Filen/Strings.cs:26
-msgid ""
-"This backend can read and write data to Filen.io using its REST protocol. "
-"Supported format is \"filen://folder/subfolder\"."
-msgstr ""
-
-#: Library/Backend/Filen/Strings.cs:27
-msgid "Filen.io"
-msgstr ""
-
-#: Library/Backend/Filen/Strings.cs:28
-msgid "Optional 2-factor code"
-msgstr ""
-
-#: Library/Backend/Filen/Strings.cs:29
-msgid ""
-"The 2-factor code to use for authentication, leave empty if the account is "
-"not MFA protected. Not that a new code must be provided by the user for each"
-" authentication attempt."
-msgstr ""
-
-#: Library/Backend/Filen/Strings.cs:30
-msgid "Move to trash"
-msgstr ""
-
-#: Library/Backend/Filen/Strings.cs:31
-msgid ""
-"If set, files will be moved to the trash instead of being deleted "
-"permanently."
-msgstr ""
-
-#: Library/Backend/TencentCOS/Strings.cs:27
-msgid "This backend can read and write data to the Tencent COS."
-msgstr ""
-
-#: Library/Backend/TencentCOS/Strings.cs:28
-msgid "Tencent COS (Cloud Object Storage)"
-msgstr ""
-
-#: Library/Backend/TencentCOS/Strings.cs:29
-msgid "Account ID of Tencent Cloud Account."
-msgstr ""
-
-#: Library/Backend/TencentCOS/Strings.cs:30
-msgid "Account ID"
-msgstr ""
-
-#: Library/Backend/TencentCOS/Strings.cs:31
-msgid "Cloud API Secret ID."
-msgstr ""
-
-#: Library/Backend/TencentCOS/Strings.cs:32
-msgid "Secret ID"
-msgstr ""
-
-#: Library/Backend/TencentCOS/Strings.cs:33
-msgid "Cloud API Secret Key."
-msgstr ""
-
-#: Library/Backend/TencentCOS/Strings.cs:34
-msgid "Secret Key"
-msgstr ""
-
-#: Library/Backend/TencentCOS/Strings.cs:35
-msgid "Bucket name, format: BucketName-APPID"
-msgstr ""
-
-#: Library/Backend/TencentCOS/Strings.cs:37
-msgid ""
-"Region is the distribution area of ​​the Tencent cloud hosting machine room."
-" The object storage COS data is stored in the storage buckets of these "
-"regions. https://intl.cloud.tencent.com/document/product/436/6224."
-msgstr ""
-
-#: Library/Backend/TencentCOS/Strings.cs:38
-msgid "Specify COS location constraints"
-msgstr ""
-
-#: Library/Backend/TencentCOS/Strings.cs:39
-msgid ""
-"Storage class of the object; check enumerated values at "
-"https://intl.cloud.tencent.com/document/product/436/30925."
-msgstr ""
-
-#: Library/Backend/TencentCOS/Strings.cs:40
-msgid "Storage class of the object"
-msgstr ""
-
-#: Library/Backend/Jottacloud/Strings.cs:26
-msgid ""
-"This backend can read and write data to Jottacloud using its REST protocol. "
-"Allowed format is \"jottacloud://folder/subfolder\"."
-msgstr ""
-
 #: Library/Backend/Jottacloud/Strings.cs:27
 msgid "Jottacloud"
 msgstr "Jottacloud"
-
-#: Library/Backend/Jottacloud/Strings.cs:28
-msgid "No username found"
-msgstr ""
-
-#: Library/Backend/Jottacloud/Strings.cs:29
-msgid "No path given. Files cannot be uploaded to the root folder"
-msgstr ""
 
 #: Library/Backend/Jottacloud/Strings.cs:30
 msgid "Illegal mount point given."
 msgstr "Virheellinen liitospiste."
 
-#: Library/Backend/Jottacloud/Strings.cs:32
-#, csharp-format
-msgid ""
-"The backup device to use. Will be created if not already exists. You can "
-"manage your devices from the backup panel in the Jottacloud web interface. "
-"When you specify a custom device you should also specify the mount point to "
-"use on this device with the \"{0}\" option."
-msgstr ""
-
-#: Library/Backend/Jottacloud/Strings.cs:33
-msgid "Supply the backup device to use"
-msgstr ""
-
-#: Library/Backend/Jottacloud/Strings.cs:34
-#, csharp-format
-msgid ""
-"The mount point to use on the server. The default is \"Archive\" for using "
-"the built-in archive mount point. Set this option to \"Sync\" to use the "
-"built-in synchronization mount point instead, or if you have specified a "
-"custom device with option \"{0}\" you are free to name the mount point as "
-"you like."
-msgstr ""
-
-#: Library/Backend/Jottacloud/Strings.cs:35
-msgid "Supply the mount point to use on the server"
-msgstr ""
-
-#: Library/Backend/Jottacloud/Strings.cs:36
-msgid ""
-"Number of threads for restore operations. In some cases the download rate is"
-" limited to 18.5 Mbps per stream. Use multiple threads to increase "
-"throughput."
-msgstr ""
-
-#: Library/Backend/Jottacloud/Strings.cs:37
-msgid "Number of threads for restore operations"
-msgstr ""
-
-#: Library/Backend/Jottacloud/Strings.cs:38
-msgid ""
-"The chunk size for simultaneous downloading. These chunks will be held in "
-"memory, so keep it as low as possible."
-msgstr ""
-
-#: Library/Backend/Jottacloud/Strings.cs:39
-msgid "The chunk size for simultaneous downloading"
-msgstr ""
-
-#: Library/Backend/Mega/Strings.cs:24
-msgid ""
-"This backend can read and write data to Mega.co.nz. Allowed format is "
-"\"mega://folder/subfolder\"."
-msgstr ""
-
 #: Library/Backend/Mega/Strings.cs:25
 msgid "mega.nz"
 msgstr "mega.nz"
-
-#: Library/Backend/Mega/Strings.cs:30
-msgid ""
-"For accounts with two-factor authentication enabled, set the shared secret "
-"used to generate the two-factor TOTP codes."
-msgstr ""
-
-#: Library/Backend/Mega/Strings.cs:31
-msgid "The shared secret used to generate two-factor TOTP codes"
-msgstr ""
 
 #: Library/Backend/Mega/Strings.cs:32
 msgid "No password given"
@@ -2077,58 +688,6 @@ msgstr "Et antanut salasanaa"
 #: Library/Backend/Mega/Strings.cs:33
 msgid "No username given"
 msgstr "Et antanut käyttäjätunnusta"
-
-#: Library/Backend/Idrivee2/Strings.cs:26
-msgid ""
-"This backend can read and write data to IDrive e2. Allowed format is "
-"\"e2://bucket/folder\"."
-msgstr ""
-
-#: Library/Backend/Idrivee2/Strings.cs:27
-msgid "IDrive e2"
-msgstr ""
-
-#: Library/Backend/Idrivee2/Strings.cs:28
-#, csharp-format
-msgid ""
-"Access Key Secret can be obtained after logging into your IDrive e2 account."
-" This can also be supplied through the option --{0}."
-msgstr ""
-
-#: Library/Backend/Idrivee2/Strings.cs:30
-#, csharp-format
-msgid ""
-"Access Key ID can be obtained after logging into your IDrive e2 account. "
-"This can also be supplied through the option --{0}."
-msgstr ""
-
-#: Library/Backend/Idrivee2/Strings.cs:33
-msgid ""
-"The \"Bucket Name or Complete Path\" is name of target bucket or complete of"
-" a folder inside the bucket."
-msgstr ""
-
-#: Library/Backend/Idrivee2/Strings.cs:34
-msgid "The \"Bucket Name or Complete Path\""
-msgstr ""
-
-#: Library/Backend/Idrivee2/Strings.cs:36
-msgid "No Access Key Secret given"
-msgstr ""
-
-#: Library/Backend/Idrivee2/Strings.cs:37
-msgid "No Access Key ID given"
-msgstr ""
-
-#: Library/Backend/SharePoint/Strings.cs:26
-msgid ""
-"This backend can read and write data to a SharePoint server (including "
-"OneDrive for Business). Allowed formats are "
-"\"mssp://tennant.sharepoint.com/PathToWeb//BaseDocLibrary/subfolder\" and "
-"\"mssp://username:password@tennant.sharepoint.com/PathToWeb//BaseDocLibrary/subfolder\"."
-" Use a double slash '//' in the path to denote the web from the documents "
-"library."
-msgstr ""
 
 #: Library/Backend/SharePoint/Strings.cs:27
 msgid "Microsoft SharePoint"
@@ -2164,18 +723,6 @@ msgstr ""
 msgid "Move deleted files to the recycle bin"
 msgstr "Siirrä poistetut tiedostot roskakoriin."
 
-#: Library/Backend/SharePoint/Strings.cs:33
-msgid ""
-"Use this option to upload files to SharePoint as a whole with BinaryDirect "
-"mode. This is the most efficient way of uploading, but can cause non-"
-"recoverable timeouts under certain conditions. Use this option only with "
-"very fast and stable internet connections."
-msgstr ""
-
-#: Library/Backend/SharePoint/Strings.cs:34
-msgid "Upload files using binary direct mode"
-msgstr ""
-
 #: Library/Backend/SharePoint/Strings.cs:36
 msgid ""
 "Use this option to specify a custom value for timeouts of web operation when"
@@ -2184,10 +731,6 @@ msgstr ""
 "Käytä tätä valitsinta asettaaksesi verkko-operaatioiden aikakatkaisun "
 "SharePoint-palvelimelle. Suositeltava arvo on 180s."
 
-#: Library/Backend/SharePoint/Strings.cs:37
-msgid "Set timeout for SharePoint web operations"
-msgstr ""
-
 #: Library/Backend/SharePoint/Strings.cs:39
 msgid ""
 "Use this option to specify the size of each chunk when uploading to "
@@ -2195,10 +738,6 @@ msgid ""
 msgstr ""
 "Käytä tätä valitsinta asettaaksesi lohkokoko ladattaessa tiedostoja "
 "SharePoint-palvelimelle. Suositeltava arvo on 4MB."
-
-#: Library/Backend/SharePoint/Strings.cs:40
-msgid "Set block size for chunked uploads to SharePoint"
-msgstr ""
 
 #: Library/Backend/SharePoint/Strings.cs:42
 #, csharp-format
@@ -2223,141 +762,9 @@ msgstr ""
 "Kaikki näytti olevan kunnossa, mutta sivuston otsikkoa ei voitu lukea. Jokin"
 " on vialla."
 
-#: Library/Backend/SharePoint/Strings.cs:49
-msgid ""
-"This backend can read and write data to Microsoft OneDrive for Business. "
-"Allowed formats are "
-"\"od4b://tennant.sharepoint.com/personal/username_domain/Documents/subfolder\""
-" and "
-"\"od4b://username:password@tennant.sharepoint.com/personal/username_domain/Documents/folder\"."
-" You can use a double slash '//' in the path to denote the base path from "
-"the documents folder."
-msgstr ""
-
 #: Library/Backend/SharePoint/Strings.cs:50
 msgid "Microsoft OneDrive for Business"
 msgstr "Microsoft OneDrive for Business"
-
-#: Library/Backend/SMB/SMBShareConnection.cs:101
-msgid "Failed to connect to server"
-msgstr ""
-
-#: Library/Backend/SMB/SMBShareConnection.cs:108
-msgid "Failed to authenticate to server"
-msgstr ""
-
-#: Library/Backend/SMB/SMBShareConnection.cs:118
-msgid "Failed to connect to share"
-msgstr ""
-
-#: Library/Backend/SMB/SMBShareConnection.cs:155
-msgid "Failed to delete file on DeleteAsync"
-msgstr ""
-
-#: Library/Backend/SMB/SMBShareConnection.cs:158
-msgid "Failed to close file on DeleteAsync"
-msgstr ""
-
-#: Library/Backend/SMB/SMBShareConnection.cs:207
-msgid "Failed to create directory"
-msgstr ""
-
-#: Library/Backend/SMB/SMBShareConnection.cs:216
-msgid "Failed to close file handle on CreateFolderAsync"
-msgstr ""
-
-#: Library/Backend/SMB/SMBShareConnection.cs:260
-msgid "Failed to open directory"
-msgstr ""
-
-#: Library/Backend/SMB/SMBShareConnection.cs:270
-msgid "Failed to query directory contents"
-msgstr ""
-
-#: Library/Backend/SMB/SMBShareConnection.cs:297
-msgid "Failed to close directory handle on ListAsync"
-msgstr ""
-
-#: Library/Backend/SMB/SMBShareConnection.cs:342
-msgid "Failed to read file on GetAsync"
-msgstr ""
-
-#: Library/Backend/SMB/SMBShareConnection.cs:357
-msgid "Failed to close file handle on GetAsync"
-msgstr ""
-
-#: Library/Backend/SMB/SMBShareConnection.cs:366
-msgid "Failed to open file with error"
-msgstr ""
-
-#: Library/Backend/SMB/SMBShareConnection.cs:416
-msgid ""
-"Failed to write to file, difference between bytes read and bytes written"
-msgstr ""
-
-#: Library/Backend/SMB/SMBShareConnection.cs:418
-msgid "Failed to write file on Putasync"
-msgstr ""
-
-#: Library/Backend/SMB/SMBShareConnection.cs:424
-msgid "Failed to close file handle on PutAsync"
-msgstr ""
-
-#: Library/Backend/SMB/SMBShareConnection.cs:429
-msgid "Failed to create file for writing"
-msgstr ""
-
-#: Library/Backend/SMB/Strings.cs:29
-msgid ""
-"The domain used to connect to the server. This may also be supplied as the "
-"environment variable \"AUTH_DOMAIN\"."
-msgstr ""
-
-#: Library/Backend/SMB/Strings.cs:31
-msgid ""
-"This backend can read and write data to CIFS/SMB destinations. Allowed "
-"format is \"cifs://server/share\"."
-msgstr ""
-
-#: Library/Backend/SMB/Strings.cs:32
-msgid "CIFS/SMB"
-msgstr ""
-
-#: Library/Backend/SMB/Strings.cs:39
-msgid "Defines the transport to be used in CIFS connection"
-msgstr ""
-
-#: Library/Backend/SMB/Strings.cs:42
-msgid ""
-"Defines the transport to be used in CIFS connection. Can be DirectTCP or "
-"NetBios"
-msgstr ""
-
-#: Library/Backend/SMB/Strings.cs:43
-msgid "Read buffer size for SMB operations."
-msgstr ""
-
-#: Library/Backend/SMB/Strings.cs:44
-msgid ""
-"Read buffer size for SMB operations (Will be capped automatically by SMB "
-"negotiated values, values bellow 10000 bytes will be ignored)"
-msgstr ""
-
-#: Library/Backend/SMB/Strings.cs:45
-msgid "Write buffer size for SMB operations."
-msgstr ""
-
-#: Library/Backend/SMB/Strings.cs:46
-msgid ""
-"Write buffer size for SMB operations (Will be capped automatically by SMB "
-"negotiated values, values bellow 10000 bytes will be ignored)"
-msgstr ""
-
-#: Library/Backend/Dropbox/Strings.cs:27
-msgid ""
-"This backend can read and write data to Dropbox. Allowed format is "
-"\"dropbox://folder/subfolder\"."
-msgstr ""
 
 #: Library/Backend/Dropbox/Strings.cs:28
 msgid "Dropbox"
@@ -2374,42 +781,13 @@ msgstr "Kirjautimustunniste, joka on ladattu osoitteesta {0}"
 msgid "The authorization code"
 msgstr "Kirjautumiskoodi"
 
-#: Library/Backend/Dropbox/Strings.cs:31
-#, csharp-format
-msgid "The Dropbox account is over quota: {0}"
-msgstr ""
-
-#: Library/Backend/WEBDAV/Strings.cs:26
-msgid ""
-"This backend can read and write data to a WEBDAV enabled web server, using "
-"the HTTP protocol. Allowed formats are \"webdav://hostname/folder\" and "
-"\"webdav://username:password@hostname/folder\"."
-msgstr ""
-
 #: Library/Backend/WEBDAV/Strings.cs:27
 msgid "WebDAV"
 msgstr "WebDAV"
 
-#: Library/Backend/WEBDAV/Strings.cs:28
-msgid ""
-"Using the HTTP Digest authentication method allows the user to authenticate "
-"with the server, without sending the password in clear. However, a man-in-"
-"the-middle attack is easy, because the HTTP protocol specifies a fallback to"
-" Basic authentication, which will make the client send the password to the "
-"attacker. Using this option, the client does not accept this, and always "
-"uses Digest authentication or fails to connect."
-msgstr ""
-
 #: Library/Backend/WEBDAV/Strings.cs:29
 msgid "Force the use of the HTTP Digest authentication method"
 msgstr "Pakota käyttämään tunnistautumismenetelmää HTTP digest authentication"
-
-#: Library/Backend/WEBDAV/Strings.cs:32
-#, csharp-format
-msgid ""
-"The server returned the error code {0} ({1}), indicating that the server "
-"does not support WebDAV connections"
-msgstr ""
 
 #: Library/Backend/WEBDAV/Strings.cs:33
 #: Library/Backend/TahoeLAFS/Strings.cs:30
@@ -2428,57 +806,9 @@ msgstr ""
 "Tämä voi johtua siitä, että tiedosto on poistettu. On mahdollista, että palvelin on lukinnut tyypin {2} tiedostot. IIS lukitsee tuntemattomat tiedostotyypit oletuksena.\n"
 "Virheilmoitus: {3}"
 
-#: Library/Backend/WEBDAV/Strings.cs:37
-msgid ""
-"To aid in debugging issues, it is possible to set a path to a file that will"
-" be overwritten with the PROPFIND response."
-msgstr ""
-
 #: Library/Backend/WEBDAV/Strings.cs:38
 msgid "Dump the PROPFIND response"
 msgstr "Tallenna PROPFIND-vastaus"
-
-#: Library/Backend/WEBDAV/Strings.cs:39
-msgid "Digest authentication requires a username to be set"
-msgstr ""
-
-#: Library/Backend/pCloud/Strings.cs:28
-msgid ""
-"This backend can read and write data to pCloud with native API. Allowed "
-"format is \"pcloud://api.pcloud.com\"."
-msgstr ""
-
-#: Library/Backend/pCloud/Strings.cs:29
-msgid "pCloud (Native API)"
-msgstr ""
-
-#: Library/Backend/pCloud/Strings.cs:30
-#, csharp-format
-msgid ""
-"The oAuth token used to connect to the server. This may also be supplied as "
-"the environment variable \"AUTHID\". Visit {0} to get a new one"
-msgstr ""
-
-#: Library/Backend/pCloud/Strings.cs:31
-msgid "Supply the oAuth token used to connect to the server"
-msgstr ""
-
-#: Library/Backend/pCloud/Strings.cs:32
-msgid ""
-"No server specified, must be either api.pcloud.com or eapi.pcloud.com for "
-"European hosting"
-msgstr ""
-
-#: Library/Backend/pCloud/Strings.cs:33
-msgid ""
-"Invalid server specified, must be either api.pcloud.com or eapi.pcloud.com "
-"for European hosting"
-msgstr ""
-
-#: Library/Backend/pCloud/Strings.cs:34
-#, csharp-format
-msgid "Operation {0} failed with unexpected result code: {1}"
-msgstr ""
 
 #: Library/Backend/TahoeLAFS/Strings.cs:26
 msgid ""
@@ -2492,106 +822,21 @@ msgstr ""
 msgid "Tahoe-LAFS"
 msgstr "Tahoe-LAFS"
 
-#: Library/Backend/TahoeLAFS/Strings.cs:28 Library/Utility/Strings.cs:87
-msgid ""
-"Use this option to communicate using Secure Socket Layer (SSL) over http "
-"(https)."
-msgstr ""
-
-#: Library/Backend/TahoeLAFS/Strings.cs:31
-msgid "Unsupported URL format, must start with \"uri/URI:DIR2:\""
-msgstr ""
-
-#: Library/Backend/Storj/Strings.cs:27
-msgid "This backend can read and write data to the Storj DCS."
-msgstr ""
-
-#: Library/Backend/Storj/Strings.cs:28
-msgid "Storj DCS (Decentralized Cloud Storage)"
-msgstr ""
-
-#: Library/Backend/Storj/Strings.cs:29
-msgid ""
-"Specify the authentication method which describes which way to use to "
-"connect to the network - either via API key or via an access grant."
-msgstr ""
-
 #: Library/Backend/Storj/Strings.cs:30
 msgid "Authentication method"
 msgstr "Tunnistautumistapa"
-
-#: Library/Backend/Storj/Strings.cs:31
-msgid ""
-"Specify the satellite that keeps track of all metadata. Use a Storj DCS "
-"server for high-performance SLA-backed connectivity or use a community "
-"server. Or even host your own."
-msgstr ""
-
-#: Library/Backend/Storj/Strings.cs:32
-msgid "Satellite"
-msgstr ""
-
-#: Library/Backend/Storj/Strings.cs:33
-msgid ""
-"Supply the API key which grants access to a specific project on your chosen "
-"satellite. Head over to the dashboard of your satellite to create one if you"
-" do not already have an API key."
-msgstr ""
 
 #: Library/Backend/Storj/Strings.cs:34
 msgid "API key"
 msgstr "API-avain"
 
-#: Library/Backend/Storj/Strings.cs:35
-msgid ""
-"Supply the encryption passphrase used to encrypt your data before sending it"
-" to the Storj network. This passphrase can be the only secret to provide - "
-"for Storj you do not necessary need any additional encryption (from "
-"Duplicati) in place."
-msgstr ""
-
 #: Library/Backend/Storj/Strings.cs:36
 msgid "Encryption passphrase"
 msgstr "Salauslauseke"
 
-#: Library/Backend/Storj/Strings.cs:37
-msgid ""
-"Supply the access grant which contains all information in one encrypted "
-"string. You may use it instead of a satellite, API key and secret."
-msgstr ""
-
-#: Library/Backend/Storj/Strings.cs:38
-msgid "Access grant"
-msgstr ""
-
-#: Library/Backend/Storj/Strings.cs:39
-msgid "Specify the bucket for storing the backup."
-msgstr ""
-
-#: Library/Backend/Storj/Strings.cs:40
-msgid "Bucket"
-msgstr ""
-
-#: Library/Backend/Storj/Strings.cs:41
-msgid "Specify the folder in the bucket for storing the backup."
-msgstr ""
-
 #: Library/Backend/Storj/Strings.cs:42
 msgid "Folder"
 msgstr "Kansio"
-
-#: Library/Backend/Storj/Strings.cs:47
-msgid "Storj DCS configuration module"
-msgstr ""
-
-#: Library/Backend/Storj/Strings.cs:48
-msgid "Expose Storj DCS configuration as a web module"
-msgstr ""
-
-#: Library/Backend/OAuthHelper/Strings.cs:26
-#, csharp-format
-msgid "You need an AuthID. You can get it from: {0}"
-msgstr ""
 
 #: Library/Backend/OAuthHelper/Strings.cs:27
 #, csharp-format
@@ -2607,286 +852,6 @@ msgstr ""
 msgid "Unexpected error code: {0} - {1}"
 msgstr "Odottamaton virhe: {0}-{1}"
 
-#: Library/Backend/OAuthHelper/Strings.cs:31
-msgid "The OAuth service is currently over quota. Try again in a few hours"
-msgstr ""
-
-#: Library/SecretProvider/Strings.cs:27
-msgid "Secrets from environment variables"
-msgstr ""
-
-#: Library/SecretProvider/Strings.cs:29
-msgid ""
-"Secret provider that reads secrets from environment variables.\n"
-"Example use:\n"
-"    env:\n"
-"\n"
-"For environment variables, the lookup is case-insensitive.\n"
-msgstr ""
-
-#: Library/SecretProvider/Strings.cs:39
-msgid "Secrets from a file"
-msgstr ""
-
-#: Library/SecretProvider/Strings.cs:41
-msgid ""
-"Secret provider that reads secrets from a file\n"
-"Example use:\n"
-"    file://path/to/file?passphrase=secret\n"
-"\n"
-"The file should be a JSON-encoded object with the secrets as key-value pairs.\n"
-"If the file is not encrypted with a passphrase, the passphrase parameter can be omitted.\n"
-"The file must be encrypted with AESCrypt if encryption is desired.\n"
-"For file-based secrets, the lookup is case-insensitive.\n"
-msgstr ""
-
-#: Library/SecretProvider/Strings.cs:51
-msgid "The decryption passphrase"
-msgstr ""
-
-#: Library/SecretProvider/Strings.cs:52
-msgid "The passphrase to use for decrypting the file with secrets"
-msgstr ""
-
-#: Library/SecretProvider/Strings.cs:57
-msgid "Secrets from AWS Secrets Manager"
-msgstr ""
-
-#: Library/SecretProvider/Strings.cs:59
-msgid ""
-"Secret provider that reads secrets from AWS Secrets Manager\n"
-"Example use:\n"
-"    aws://?access-key=...&secret-key=...&region-endpoint=us-east-1&secrets=secret1,secret2\n"
-"\n"
-"Either the region endpoint or the service URL must be provided.\n"
-"Each secret is retrieved in the order specified until all requested keys are found.\n"
-"Each secret must be a key-value pair type secret.\n"
-msgstr ""
-
-#: Library/SecretProvider/Strings.cs:67
-msgid "The AWS access key"
-msgstr ""
-
-#: Library/SecretProvider/Strings.cs:68
-msgid ""
-"The access key to use for authentication with AWS. Can also be supplied via "
-"the environment variable {envname}"
-msgstr ""
-
-#: Library/SecretProvider/Strings.cs:69
-msgid "The AWS secret key"
-msgstr ""
-
-#: Library/SecretProvider/Strings.cs:70
-msgid ""
-"The secret key to use for authentication with AWS. Can also be supplied via "
-"the environment variable {envname}"
-msgstr ""
-
-#: Library/SecretProvider/Strings.cs:71
-msgid "The AWS region endpoint"
-msgstr ""
-
-#: Library/SecretProvider/Strings.cs:72
-msgid ""
-"The region endpoint to use for communication with AWS. Can also be supplied "
-"via the environment variable {envname}"
-msgstr ""
-
-#: Library/SecretProvider/Strings.cs:73
-msgid "The AWS service URL"
-msgstr ""
-
-#: Library/SecretProvider/Strings.cs:74
-msgid ""
-"The service URL to use for communication with AWS. Can also be supplied via "
-"the environment variable {envname}"
-msgstr ""
-
-#: Library/SecretProvider/Strings.cs:75
-msgid "The secret names to retrieve"
-msgstr ""
-
-#: Library/SecretProvider/Strings.cs:76
-msgid ""
-"The names of the secrets to retrieve from AWS Secrets Manager, separated by "
-"semicolons or commas. Secrets are retrieved in the order specified until all"
-" requested keys are found."
-msgstr ""
-
-#: Library/SecretProvider/Strings.cs:77 Library/SecretProvider/Strings.cs:104
-#: Library/SecretProvider/Strings.cs:198
-msgid "Case sensitivity"
-msgstr ""
-
-#: Library/SecretProvider/Strings.cs:78 Library/SecretProvider/Strings.cs:105
-#: Library/SecretProvider/Strings.cs:199
-msgid "Whether to use case-sensitive matching for secret names"
-msgstr ""
-
-#: Library/SecretProvider/Strings.cs:83
-msgid "Secrets from HashiCorp Vault"
-msgstr ""
-
-#: Library/SecretProvider/Strings.cs:85
-msgid ""
-"Secret provider that reads secrets from HashiCorp Vault\n"
-"Example use:\n"
-"    hcv://localhost:1234?token=...&mount=secret&secrets=secret1,secret2\n"
-"\n"
-"The secrets parameter should be a comma- or semicolon-separated list of secret names to retrieve from the Vault.\n"
-"Each vault secret is retrieved in the order specified until all requested keys are found.\n"
-msgstr ""
-
-#: Library/SecretProvider/Strings.cs:92
-msgid "The Vault token"
-msgstr ""
-
-#: Library/SecretProvider/Strings.cs:93
-msgid "The token to use for authentication with HashiCorp Vault"
-msgstr ""
-
-#: Library/SecretProvider/Strings.cs:94
-msgid "The vault server protocol"
-msgstr ""
-
-#: Library/SecretProvider/Strings.cs:95
-msgid "The protocol to use for communication with the Vault server"
-msgstr ""
-
-#: Library/SecretProvider/Strings.cs:96
-msgid "Secret entries"
-msgstr ""
-
-#: Library/SecretProvider/Strings.cs:97
-msgid ""
-"The names of the secrets (aka Vault Apps) to retrieve from the Vault, "
-"separated by semicolons or commas. Secrets are retrieved in the order "
-"specified until all requested keys are found."
-msgstr ""
-
-#: Library/SecretProvider/Strings.cs:98
-msgid "The client ID"
-msgstr ""
-
-#: Library/SecretProvider/Strings.cs:99
-msgid ""
-"The client ID to use for authentication with HashiCorp Vault. Can also be "
-"supplied via the environment variable {envname}"
-msgstr ""
-
-#: Library/SecretProvider/Strings.cs:100
-msgid "The client secret"
-msgstr ""
-
-#: Library/SecretProvider/Strings.cs:101
-msgid ""
-"The client secret to use for authentication with HashiCorp Vault. Can also "
-"be supplied via the environment variable {envname}"
-msgstr ""
-
-#: Library/SecretProvider/Strings.cs:102
-msgid "The mount point"
-msgstr ""
-
-#: Library/SecretProvider/Strings.cs:103
-msgid "The mount point for the secrets in the Vault"
-msgstr ""
-
-#: Library/SecretProvider/Strings.cs:110
-msgid "Secrets from Google Cloud Storage Secret Manager"
-msgstr ""
-
-#: Library/SecretProvider/Strings.cs:112
-msgid ""
-"Secret provider that reads secrets from Google Cloud Storage Secret Manager\n"
-"Example use:\n"
-"    gcs://?project-id=...&version=latest\n"
-"\n"
-"If the access token is not supplied, the default GCS credentials from the machine will be used.\n"
-"Use the accesstoken property to specify a custom access token.\n"
-"\n"
-msgstr ""
-
-#: Library/SecretProvider/Strings.cs:120
-msgid "The API type to use"
-msgstr ""
-
-#: Library/SecretProvider/Strings.cs:121
-msgid "The type of API to use for communication with Google Cloud Storage"
-msgstr ""
-
-#: Library/SecretProvider/Strings.cs:122
-msgid "The GCP project ID"
-msgstr ""
-
-#: Library/SecretProvider/Strings.cs:123
-msgid "The ID of the Google Cloud Platform project to use for authentication"
-msgstr ""
-
-#: Library/SecretProvider/Strings.cs:124
-msgid "The access token"
-msgstr ""
-
-#: Library/SecretProvider/Strings.cs:125
-msgid ""
-"The access token to use for authentication with Google Cloud Storage. If not"
-" supplied, the default GCS credentials from the machine will be used."
-msgstr ""
-
-#: Library/SecretProvider/Strings.cs:126
-msgid "The secret version to get (or alias)"
-msgstr ""
-
-#: Library/SecretProvider/Strings.cs:127
-msgid ""
-"The version of the secret to retrieve from Google Cloud Storage. If not "
-"supplied, the latest version will be used."
-msgstr ""
-
-#: Library/SecretProvider/Strings.cs:132
-msgid "Secrets from Azure Key Vault"
-msgstr ""
-
-#: Library/SecretProvider/Strings.cs:134
-msgid ""
-"Secret provider that reads secrets from Azure Key Vault\n"
-"Example use:\n"
-"    az://?keyvault-name=...&auth-type=ManagedIdentity\n"
-"\n"
-"If a client ID and secret are provided, use the auth type ClientSecret:\n"
-"    az://?keyvault-name=...&auth-type=ClientSecret&tenant-id=...&client-id=...&client-secret=...\n"
-"\n"
-"If a username and password are provided, use the auth type UsernamePassword:\n"
-"    az://?keyvault-name=...&auth-type=UsernamePassword&tenant-id=...&clientid=...&username=...&password=...\n"
-"\n"
-"If the vault-uri parameter is not provided, the keyvault-name parameter will be used to construct the URI.\n"
-msgstr ""
-
-#: Library/SecretProvider/Strings.cs:146
-msgid "The name of the Azure Key Vault"
-msgstr ""
-
-#: Library/SecretProvider/Strings.cs:147
-msgid "The name of the Azure Key Vault to use for retrieving secrets"
-msgstr ""
-
-#: Library/SecretProvider/Strings.cs:148
-msgid "The connection type to use"
-msgstr ""
-
-#: Library/SecretProvider/Strings.cs:149
-msgid "The type of connection to use for communication with Azure Key Vault"
-msgstr ""
-
-#: Library/SecretProvider/Strings.cs:150
-msgid "The URI of the Azure Key Vault"
-msgstr ""
-
-#: Library/SecretProvider/Strings.cs:151
-msgid "The URI of the Azure Key Vault to use for retrieving secrets"
-msgstr ""
-
 #: Library/SecretProvider/Strings.cs:152
 msgid "The Azure tenant ID"
 msgstr "Azure Entra vuokralaisen tunniste"
@@ -2894,123 +859,6 @@ msgstr "Azure Entra vuokralaisen tunniste"
 #: Library/SecretProvider/Strings.cs:153
 msgid "The ID of the Azure tenant to use for authentication"
 msgstr "Todennuksessa käytettävä Azure Entra vuokralaisen tunniste"
-
-#: Library/SecretProvider/Strings.cs:154
-msgid "The Azure client ID"
-msgstr ""
-
-#: Library/SecretProvider/Strings.cs:155
-msgid "The ID of the Azure client to use for authentication"
-msgstr ""
-
-#: Library/SecretProvider/Strings.cs:156
-msgid "The Azure client secret"
-msgstr ""
-
-#: Library/SecretProvider/Strings.cs:157
-msgid "The secret to use for authentication with Azure"
-msgstr ""
-
-#: Library/SecretProvider/Strings.cs:158
-msgid "The Azure username"
-msgstr ""
-
-#: Library/SecretProvider/Strings.cs:159
-msgid "The username to use for authentication with Azure"
-msgstr ""
-
-#: Library/SecretProvider/Strings.cs:160
-msgid "The Azure password"
-msgstr ""
-
-#: Library/SecretProvider/Strings.cs:161
-msgid "The password to use for authentication with Azure"
-msgstr ""
-
-#: Library/SecretProvider/Strings.cs:162
-msgid "The authentication type to use"
-msgstr ""
-
-#: Library/SecretProvider/Strings.cs:163
-msgid ""
-"The type of authentication to use for communication with Azure Key Vault"
-msgstr ""
-
-#: Library/SecretProvider/Strings.cs:168
-msgid "Secrets from macOS Keychain"
-msgstr ""
-
-#: Library/SecretProvider/Strings.cs:169
-msgid "Secret provider that reads secrets from the macOS Keychain"
-msgstr ""
-
-#: Library/SecretProvider/Strings.cs:170
-msgid "The service name"
-msgstr ""
-
-#: Library/SecretProvider/Strings.cs:171
-msgid "The service name to use for retrieving secrets from the macOS Keychain"
-msgstr ""
-
-#: Library/SecretProvider/Strings.cs:172
-msgid "The account name"
-msgstr ""
-
-#: Library/SecretProvider/Strings.cs:173
-msgid "The account name to use for retrieving secrets from the macOS Keychain"
-msgstr ""
-
-#: Library/SecretProvider/Strings.cs:174
-msgid "The type of password to get"
-msgstr ""
-
-#: Library/SecretProvider/Strings.cs:175
-msgid "The type of password to get from the macOS Keychain"
-msgstr ""
-
-#: Library/SecretProvider/Strings.cs:180
-msgid "Secrets from Unix pass"
-msgstr ""
-
-#: Library/SecretProvider/Strings.cs:181
-msgid "Secret provider that reads secrets from the Unix pass password manager"
-msgstr ""
-
-#: Library/SecretProvider/Strings.cs:182
-msgid "The pass command"
-msgstr ""
-
-#: Library/SecretProvider/Strings.cs:183
-msgid ""
-"The command to use for retrieving secrets from the Unix pass password "
-"manager"
-msgstr ""
-
-#: Library/SecretProvider/Strings.cs:188
-msgid "Secrets from Windows Credential Manager"
-msgstr ""
-
-#: Library/SecretProvider/Strings.cs:189
-msgid "Secret provider that reads secrets from the Windows Credential Manager"
-msgstr ""
-
-#: Library/SecretProvider/Strings.cs:194
-msgid "Secrets from libsecret"
-msgstr ""
-
-#: Library/SecretProvider/Strings.cs:195
-msgid "Secret provider that reads secrets from the libsecret password manager"
-msgstr ""
-
-#: Library/SecretProvider/Strings.cs:196
-msgid "The collection name"
-msgstr ""
-
-#: Library/SecretProvider/Strings.cs:197
-msgid ""
-"The collection name to use for retrieving secrets from the libsecret "
-"password manager"
-msgstr ""
 
 #: Library/RestAPI/Strings.cs:29
 msgid "Another instance is running, and was notified"
@@ -3025,10 +873,6 @@ msgstr ""
 "Tietokannan luominen, lukeminen tai päivitys epäonnistui.\n"
 "Virheilmoitus: {0}"
 
-#: Library/RestAPI/Strings.cs:32
-msgid "Display this help"
-msgstr ""
-
 #: Library/RestAPI/Strings.cs:33
 msgid ""
 "Supported commandline arguments:\n"
@@ -3041,21 +885,6 @@ msgstr ""
 #, csharp-format
 msgid "--{0}: {1}"
 msgstr "--{0}: {1}"
-
-#: Library/RestAPI/Strings.cs:37
-#, csharp-format
-msgid ""
-"Use this option to store some or all of the options given to the commandline"
-" client. The file must be a plain text file, and UTF-8 encoding is "
-"preferred. Each line in the file should be of the format --option=value. Use"
-" the special options --{0} and --{1} to override the localpath and the "
-"remote destination uri, respectively. The options in this file take "
-"precedence over the options provided on the commandline. You cannot specify "
-"filters in both the file and on the commandline. Instead, you can use the "
-"special --{2}, --{3}, or --{4} options to specify filters inside the "
-"parameter file. Each filter must be prefixed with either a + or a -, and "
-"multiple filters must be joined with {5} "
-msgstr ""
 
 #: Library/RestAPI/Strings.cs:38 CommandLine/CLI/Strings.cs:45
 msgid "Path to a file with parameters"
@@ -3080,55 +909,15 @@ msgstr ""
 msgid "Unable to read the parameters file \"{0}\", reason: {1}"
 msgstr "Asetustiedostoa \"{0}\" ei voitu lukea, koska: {1}"
 
-#: Library/RestAPI/Strings.cs:42
-msgid "Output log information to the file given"
-msgstr ""
-
-#: Library/RestAPI/Strings.cs:43
-msgid "Determine the amount of information written in the log file"
-msgstr ""
-
-#: Library/RestAPI/Strings.cs:44
-msgid "Output log information to the console"
-msgstr ""
-
-#: Library/RestAPI/Strings.cs:45
-msgid ""
-"Activate portable mode where the database is placed below the program "
-"executable"
-msgstr ""
-
 #: Library/RestAPI/Strings.cs:46
 #, csharp-format
 msgid "A serious error occurred in Duplicati: {0}"
 msgstr "Kohdattiin vakava virhe Duplicatissa: {0}"
 
-#: Library/RestAPI/Strings.cs:47
-#, csharp-format
-msgid "An error occurred on server tear down: {0}"
-msgstr ""
-
-#: Library/RestAPI/Strings.cs:48
-#, csharp-format
-msgid ""
-"Unable to start up. Perhaps another process is already running?\n"
-"Error message: {0}"
-msgstr ""
-
-#: Library/RestAPI/Strings.cs:50 Library/RestAPI/Strings.cs:83
-msgid "Disable database encryption"
-msgstr ""
-
 #: Library/RestAPI/Strings.cs:51
 #, csharp-format
 msgid "Unsupported version of SQLite detected ({0}), must be {1} or higher"
 msgstr "Ei-tuettu versio SQLite:sta: {0}. Täytyy olla {1} tai korkeampi."
-
-#: Library/RestAPI/Strings.cs:52
-msgid ""
-"The path to the folder where the static files for the webserver is present. "
-"The folder must be located beneath the installation folder."
-msgstr ""
 
 #: Library/RestAPI/Strings.cs:53
 msgid ""
@@ -3138,27 +927,11 @@ msgstr ""
 "Portti, jota www-palvelin kuuntelee. Voit antaa useita arvoja pilkulla "
 "erotettuna."
 
-#: Library/RestAPI/Strings.cs:54
-msgid ""
-"Deactivates the use of HTTPS even if a certificate is stored in the database"
-" or provided on the commandline."
-msgstr ""
-
-#: Library/RestAPI/Strings.cs:55
-msgid ""
-"Removes any existing certificate from the database. This option also "
-"disables HTTPS."
-msgstr ""
-
 #: Library/RestAPI/Strings.cs:56
 msgid ""
 "The certificate and key file in PKCS #12 format the webserver use for SSL."
 msgstr ""
 "WWW-palvelimen SSL-seritfikaatti ja PKCS #12 -muotoinen avaintiedosto."
-
-#: Library/RestAPI/Strings.cs:57
-msgid "The password for decryption of the provided certificate PKCS #12 file."
-msgstr ""
 
 #: Library/RestAPI/Strings.cs:58
 msgid ""
@@ -3180,34 +953,6 @@ msgstr ""
 "antaa joka kerta. Tämän asettaminen tyhjäksi merkkijonoksi poistaa salasanan"
 " käytöstä."
 
-#: Library/RestAPI/Strings.cs:60
-msgid ""
-"The hostnames that are accepted, separated with semicolons. If any of the "
-"hostnames are \"*\", all hostnames are allowed and the hostname checking is "
-"disabled."
-msgstr ""
-
-#: Library/RestAPI/Strings.cs:61
-msgid ""
-"When running as a server, the service daemon must verify that the process is"
-" responding. If this option is enabled, the server reads stdin and writes a "
-"reply to each line read."
-msgstr ""
-
-#: Library/RestAPI/Strings.cs:62
-msgid "Enable the ping-pong responder"
-msgstr ""
-
-#: Library/RestAPI/Strings.cs:63
-msgid "Disable the automatic update check"
-msgstr ""
-
-#: Library/RestAPI/Strings.cs:64
-msgid ""
-"Use this option to disable the automatic update check. Manual update checks "
-"can still be performed."
-msgstr ""
-
 #: Library/RestAPI/Strings.cs:65 Library/Main/Strings.cs:251
 msgid "Set the time after which log data will be purged from the database."
 msgstr "Aseta lokitietojen säilytysaika"
@@ -3227,10 +972,6 @@ msgstr ""
 "asetustietokannan siajinnin. Tämä asetus voidaan antaa myös "
 "ympäristömuuttujassa {0}."
 
-#: Library/RestAPI/Strings.cs:68
-msgid "Set the folder where settings are stored"
-msgstr ""
-
 #: Library/RestAPI/Strings.cs:69
 #, csharp-format
 msgid ""
@@ -3241,191 +982,14 @@ msgstr ""
 "Tämä asetus asettaa tietokannan salausavaimen. Tämä asetus voidaan antaa "
 "myös ympäristömuuttujassa {0}. Valitsin --{1} poistaa salauksen käytöstä."
 
-#: Library/RestAPI/Strings.cs:70
-msgid "Set the database encryption key"
-msgstr ""
-
-#: Library/RestAPI/Strings.cs:71 Library/Main/Strings.cs:88
-msgid ""
-"Use this option to supply an alternative folder for temporary storage. By "
-"default the system default temporary folder is used. Note that also SQLite "
-"will put temporary files in this temporary folder."
-msgstr ""
-
 #: Library/RestAPI/Strings.cs:72 Library/Main/Strings.cs:89
 msgid "Temporary storage folder"
 msgstr "Kansio tilapäistiedotoille"
-
-#: Library/RestAPI/Strings.cs:73
-msgid "Reset the JWT configuration, invalidating any issued login tokens"
-msgstr ""
-
-#: Library/RestAPI/Strings.cs:74
-msgid "Enable the use of long-lived access tokens"
-msgstr ""
-
-#: Library/RestAPI/Strings.cs:75
-msgid "Disable the visual captcha"
-msgstr ""
-
-#: Library/RestAPI/Strings.cs:76
-msgid "Disable the web interface and only allow API access"
-msgstr ""
-
-#: Library/RestAPI/Strings.cs:77
-msgid "Disable the use of signin tokens"
-msgstr ""
-
-#: Library/RestAPI/Strings.cs:78
-msgid ""
-"The relative paths that should be served as single page applications, "
-"separated with semicolons."
-msgstr ""
-
-#: Library/RestAPI/Strings.cs:79
-msgid ""
-"A list of CORS origins to allow, separated with semicolons. Each origin must"
-" be a valid URL."
-msgstr ""
-
-#: Library/RestAPI/Strings.cs:80
-msgid ""
-"The timezone to use for the webserver. The timezone must be a valid timezone"
-" identifier, such as \"America/New_York\" or \"UTC\". Common three-letter "
-"abbreviations like \"CET\" are supported, but ambiguous in some cases."
-msgstr ""
-
-#: Library/RestAPI/Strings.cs:81
-msgid ""
-"A list of pre-authenticated tokens, separated with semicolons. These can be "
-"used in cases where the authentication is provided by a proxy. Each token "
-"must be at least 10 characters and not contain extended characters. The "
-"token must be provided by setting the header on each request to contain: "
-"Authentication: PreAuth <token>"
-msgstr ""
-
-#: Library/RestAPI/Strings.cs:82
-msgid "Use this option to disable database encryption of sensitive fields"
-msgstr ""
-
-#: Library/RestAPI/Strings.cs:84
-msgid ""
-"Use this option to log to the Windows event log. The provided name is in the"
-" format Log:Source. If no log name is provided, Duplicati is used."
-msgstr ""
-
-#: Library/RestAPI/Strings.cs:85
-msgid "Log to the Windows event log"
-msgstr ""
-
-#: Library/RestAPI/Strings.cs:86
-msgid "Use this option to set the log level for the Windows event log."
-msgstr ""
-
-#: Library/RestAPI/Strings.cs:87
-msgid "Set the log level for the Windows event log"
-msgstr ""
-
-#: Library/RestAPI/Strings.cs:88
-#, csharp-format
-msgid "The Windows event log source {0} was not found. Attempting to create."
-msgstr ""
-
-#: Library/RestAPI/Strings.cs:89
-#, csharp-format
-msgid ""
-"The Windows Event Log was not created for: {0}, not logging to eventlog."
-msgstr ""
-
-#: Library/RestAPI/Strings.cs:90
-msgid "The Windows event log is not supported on this platform"
-msgstr ""
 
 #: Library/RestAPI/Strings.cs:91 Library/RestAPI/Strings.cs:113
 #, csharp-format
 msgid "Server has started and is listening on {0}, port {1}"
 msgstr "Palvelin käynnistyi ja kuntelee verkkorajapintaa {0} ja porttia {1}"
-
-#: Library/RestAPI/Strings.cs:92
-#, csharp-format
-msgid "Use the following link to sign in: {0}"
-msgstr ""
-
-#: Library/RestAPI/Strings.cs:93
-#, csharp-format
-msgid "The server crashed: {0}"
-msgstr ""
-
-#: Library/RestAPI/Strings.cs:94
-msgid "Server is stopping, tearing down handlers"
-msgstr ""
-
-#: Library/RestAPI/Strings.cs:95
-msgid "Server has stopped"
-msgstr ""
-
-#: Library/RestAPI/Strings.cs:96
-msgid ""
-"Use this option to require a custom provided key for database encryption of "
-"sensitive fields and not rely on the serial number."
-msgstr ""
-
-#: Library/RestAPI/Strings.cs:97
-msgid "Require database encryption"
-msgstr ""
-
-#: Library/RestAPI/Strings.cs:98
-#, csharp-format
-msgid ""
-"Database encryption key is required. Supply an encryption key via the "
-"environment variable {0} or disable database encryption with the option "
-"--{1}"
-msgstr ""
-
-#: Library/RestAPI/Strings.cs:99
-#, csharp-format
-msgid ""
-"The database encryption key is blacklisted and cannot be used. The database "
-"has been decrypted. Supply a new encryption key via the environment variable"
-" {0} or disable database encryption with the option --{1}"
-msgstr ""
-
-#: Library/RestAPI/Strings.cs:100
-#, csharp-format
-msgid ""
-"No database encryption key was found. The database will be stored "
-"unencrypted. Supply an encryption key via the environment variable {0} or "
-"disable database encryption with the option --{1}"
-msgstr ""
-
-#: Library/RestAPI/Strings.cs:101
-#, csharp-format
-msgid ""
-"The database appears to be encrypted, but no key was specified. Opening the "
-"database will likely fail. Use the environment variable {0} to specify the "
-"key."
-msgstr ""
-
-#: Library/RestAPI/Strings.cs:102
-#, csharp-format
-msgid "The timezone {0} is not valid"
-msgstr ""
-
-#: Library/RestAPI/Strings.cs:103
-msgid "Set the encryption key for the settings database"
-msgstr ""
-
-#: Library/RestAPI/Strings.cs:104
-#, csharp-format
-msgid ""
-"Use this option to set the encryption key for the settings database. This "
-"option can also be set with the environment variable {0}."
-msgstr ""
-
-#: Library/RestAPI/Strings.cs:105
-#, csharp-format
-msgid "Invalid pause/resume state: {0}"
-msgstr ""
 
 #: Library/RestAPI/Strings.cs:109
 #, csharp-format
@@ -3435,12 +999,6 @@ msgid ""
 msgstr ""
 "Aloituspäivällä {0}, varmuuskopioiden välillä {1} ja sallituilla päivillä "
 "{2} ei löydy sopivaa päivää."
-
-#: Library/RestAPI/Strings.cs:114
-msgid ""
-"SSL certificate password option has no meaning when provided without SSL "
-"certificate file option!"
-msgstr ""
 
 #: Library/RestAPI/Strings.cs:115
 #, csharp-format
@@ -3460,31 +1018,6 @@ msgstr ""
 "Prosessin tyypin {0} lataus kirjastosta {1} epäonnistui. Virheilmoitus oli: "
 "{2}"
 
-#: Library/SourceProvider/Builtin/Strings.cs:26
-msgid ""
-"This backend can read and write data to an file based backend. Allowed "
-"formats are \"file://hostname/folder\" and "
-"\"file://username:password@hostname/folder\". You may supply UNC paths "
-"(e.g.: \"file://\\\\server\\folder\") or local paths (e.g.: (win) "
-"\"file://c:\\folder\", (linux) \"file:///usr/pub/files\"). Use the prefix "
-"\"vss://\" or \"lvm://\" to create snapshot based folders."
-msgstr ""
-
-#: Library/Compression/Strings.cs:26
-msgid ""
-"This module provides the industry standard ZIP compression. Files created "
-"with this module can be read by any standard-compliant ZIP application."
-msgstr ""
-
-#: Library/Compression/Strings.cs:27
-msgid "ZIP compression"
-msgstr ""
-
-#: Library/Compression/Strings.cs:28 Library/Main/Strings.cs:203
-#, csharp-format
-msgid "Use the option --{0} instead."
-msgstr ""
-
 #: Library/Compression/Strings.cs:29
 msgid ""
 "This option controls the compression level used. A setting of zero gives no "
@@ -3492,50 +1025,6 @@ msgid ""
 msgstr ""
 "Tämä valitsin asettaa pakkaustason. Taso 0 ei pakkaa dataa ollenkaan ja taso"
 " 9 on paras mahdollinen pakkaus."
-
-#: Library/Compression/Strings.cs:30
-msgid "Set the ZIP compression level"
-msgstr ""
-
-#: Library/Compression/Strings.cs:31
-#, csharp-format
-msgid ""
-"Use this option to set an alternative compressor method, such as LZMA. Note "
-"that using another value than Deflate will cause the option --{0} to be "
-"ignored."
-msgstr ""
-
-#: Library/Compression/Strings.cs:32
-msgid "Set the ZIP compression method"
-msgstr ""
-
-#: Library/Compression/Strings.cs:33
-msgid ""
-"The ZIP64 format is required for files larger than 4GiB. Use this option to "
-"toggle it."
-msgstr ""
-
-#: Library/Compression/Strings.cs:34
-msgid "Toggle ZIP64 support"
-msgstr ""
-
-#: Library/Compression/Strings.cs:35
-msgid ""
-"ZIP64 support is now always enabled. This option is deprecated and will be "
-"removed in a future version."
-msgstr ""
-
-#: Library/Compression/Strings.cs:36
-msgid ""
-"This option changes the compression library used to read and write files. "
-"The SharpCompress library has more features and is more resilient where the "
-"built-in library is faster. When Auto is chosen, the built-in library will "
-"be used unless an option is added that requires SharpCompress."
-msgstr ""
-
-#: Library/Compression/Strings.cs:37
-msgid "Toggles the zip library to use"
-msgstr ""
 
 #: Library/SQLiteHelper/Strings.cs:24
 msgid "backup"
@@ -3592,33 +1081,9 @@ msgstr ""
 "Tiedosto {0} ladattiin palvelimelta, mutta koko oli {1}. Odotettu koko oli "
 "{2}."
 
-#: Library/Main/Strings.cs:30
-#, csharp-format
-msgid "The option --{0} has been deprecated: {1}"
-msgstr ""
-
-#: Library/Main/Strings.cs:31
-#, csharp-format
-msgid ""
-"The option --{0} exists more than once. Please report this to the developers"
-msgstr ""
-
 #: Library/Main/Strings.cs:32
 msgid "No source folders specified for backup"
 msgstr "Et määrittänyt varmuuskopioitavia tiedostoja"
-
-#: Library/Main/Strings.cs:33
-#, csharp-format
-msgid ""
-"Backup aborted since the source path {0} does not exist. Please verify that "
-"the source path exists, or remove the source path from the backup "
-"configuration, or set the allow-missing-source option."
-msgstr ""
-
-#: Library/Main/Strings.cs:34
-#, csharp-format
-msgid "Unauthorized to access source folder {0}, aborting backup"
-msgstr ""
 
 #: Library/Main/Strings.cs:35
 #, csharp-format
@@ -3661,57 +1126,13 @@ msgstr ""
 "Asetusta 'force-locale' ei voitu asettaa. Päivitä Windowsin komponentti "
 "'.NET-Framework ja yritä uudelleen. Poikkeus oli  \"{0}\" "
 
-#: Library/Main/Strings.cs:42
-#, csharp-format
-msgid "The source {0} uses an invalid volume name, aborting backup"
-msgstr ""
-
-#: Library/Main/Strings.cs:43
-#, csharp-format
-msgid ""
-"The source {0} is on volume {1}, which could not be found, aborting backup"
-msgstr ""
-
-#: Library/Main/Strings.cs:48
-msgid ""
-"If a backup is interrupted there will likely be partial files present on the"
-" backend. Using this option, Duplicati will automatically remove such files "
-"when encountered."
-msgstr ""
-
-#: Library/Main/Strings.cs:49
-msgid "Remove unused files"
-msgstr ""
-
-#: Library/Main/Strings.cs:50
-msgid ""
-"A string used to prefix the filenames of the remote volumes, can be used to "
-"store multiple backups in the same remote folder. The prefix cannot contain "
-"a hyphen (-), but can contain all other characters allowed by the remote "
-"storage."
-msgstr ""
-
 #: Library/Main/Strings.cs:51
 msgid "Remote filename prefix"
 msgstr "Tiedostonimien etuliite etäpalvelimella"
 
-#: Library/Main/Strings.cs:52
-msgid ""
-"The operating system keeps track of the last time a file was written. Using "
-"this information, Duplicati can quickly determine if the file has been "
-"modified. If some application deliberately modifies this information, "
-"Duplicati won't work correctly unless this option is set."
-msgstr ""
-
 #: Library/Main/Strings.cs:53
 msgid "Disable checks based on file time"
 msgstr "Poista käytöstä muokkausajan tarkistus"
-
-#: Library/Main/Strings.cs:54
-msgid ""
-"By default, files will be restored in the source folders. Use this option to"
-" restore to another folder."
-msgstr ""
 
 #: Library/Main/Strings.cs:55
 msgid "Restore to another folder"
@@ -3724,10 +1145,6 @@ msgid ""
 msgstr ""
 "Sallii järjestelmän mennä lepotilaan varmuuskopioinnin ja tiedostojen "
 "palauttamisen aikana. (vain Windows ja OS X)"
-
-#: Library/Main/Strings.cs:57
-msgid "Toggle system sleep mode"
-msgstr ""
 
 #: Library/Main/Strings.cs:58
 msgid ""
@@ -3796,23 +1213,9 @@ msgstr ""
 msgid "Passphrase used to encrypt backups"
 msgstr "Salauslauseke, jota käytetään varmuuskopioita salattaessa"
 
-#: Library/Main/Strings.cs:68
-msgid ""
-"By default, Duplicati will list and restore files from the most recent "
-"backup. Use this option to select another item. You may use relative times, "
-"like \"-2M\" for a backup from two months ago."
-msgstr ""
-
 #: Library/Main/Strings.cs:69
 msgid "The time to list/restore files"
 msgstr "Valitse aika, jonka haluat listata tai palauttaa."
-
-#: Library/Main/Strings.cs:70
-msgid ""
-"By default, Duplicati will list and restore files from the most recent "
-"backup. Use this option to select another item. You may enter multiple "
-"values separated with comma, and ranges using -, e.g. \"0,2-4,7\" ."
-msgstr ""
 
 #: Library/Main/Strings.cs:71
 msgid "The version to list/restore files"
@@ -3868,17 +1271,6 @@ msgstr ""
 msgid "Time to wait between retries"
 msgstr "Odotusaika uudelleenyritysten välillä."
 
-#: Library/Main/Strings.cs:80
-msgid ""
-"After a failed transmission, Duplicati will wait a short period before "
-"attempting again. This period is controlled by the retry-delay option. Use "
-"this option to double that period after each consecutive failure."
-msgstr ""
-
-#: Library/Main/Strings.cs:81
-msgid "Exponential backoff for backend errors"
-msgstr ""
-
 #: Library/Main/Strings.cs:82
 msgid "Use this option to attach extra files to the newly uploaded filelists."
 msgstr ""
@@ -3887,16 +1279,6 @@ msgstr ""
 #: Library/Main/Strings.cs:83
 msgid "Set control files"
 msgstr "Valitse ohjaustiedostot"
-
-#: Library/Main/Strings.cs:84
-msgid ""
-"If the hash for the volume does not match, Duplicati will refuse to use the "
-"backup. Activate this option to allow Duplicati to proceed anyway."
-msgstr ""
-
-#: Library/Main/Strings.cs:85
-msgid "Skip hash checks"
-msgstr ""
 
 #: Library/Main/Strings.cs:86
 msgid ""
@@ -3910,205 +1292,33 @@ msgstr ""
 msgid "Limit the size of files being backed up"
 msgstr "Varmuuskopioitavien tiedotojen kokoraja"
 
-#: Library/Main/Strings.cs:90
-msgid ""
-"The option --thread-priority has no effect, use the operating system "
-"controls to set the process priority"
-msgstr ""
-
-#: Library/Main/Strings.cs:91
-msgid ""
-"Select another thread priority for the process. Use this to set Duplicati to"
-" be more or less CPU intensive."
-msgstr ""
-
 #: Library/Main/Strings.cs:92
 msgid "Thread priority"
 msgstr "Säikeiden prioriteetti"
-
-#: Library/Main/Strings.cs:93
-msgid ""
-"This option can change the maximum size of dblock files. Changing the size "
-"can be useful if the backend has a limit on the size of each individual "
-"file."
-msgstr ""
 
 #: Library/Main/Strings.cs:94
 msgid "Limit the size of the volumes"
 msgstr "Rajoita datatiedostojen kokoa"
 
-#: Library/Main/Strings.cs:95
-msgid ""
-"Use this option to disallow usage of the streaming interface, which means "
-"that transfer progress bars will not show, and bandwidth throttle settings "
-"will be ignored."
-msgstr ""
-
-#: Library/Main/Strings.cs:96
-msgid "Disable use of the streaming transfer method"
-msgstr ""
-
-#: Library/Main/Strings.cs:97
-msgid "Set the read/write timeout for the connection"
-msgstr ""
-
-#: Library/Main/Strings.cs:98
-msgid ""
-"The read/write timeout is the maximum amount of time to wait for any "
-"activity during a transfer. If no activity is detected for this period, the "
-"connection is considered broken and the transfer is aborted. Set to 0s to "
-"disabled"
-msgstr ""
-
-#: Library/Main/Strings.cs:99
-msgid ""
-"Use this option to make sure the contents of the manifest file are not read."
-" This also implies that file hashes are not checked either. Use only for "
-"disaster recovery."
-msgstr ""
-
-#: Library/Main/Strings.cs:100
-msgid "Disable manifests verification"
-msgstr ""
-
-#: Library/Main/Strings.cs:101
-msgid ""
-"Duplicati supports pluggable compression modules. Use this option to select "
-"a module to use for compression. This is only applied when creating new "
-"volumes, when reading an existing file, the filename is used to select the "
-"compression module."
-msgstr ""
-
 #: Library/Main/Strings.cs:102
 msgid "Select what module to use for compression"
 msgstr "Valitse pakkausmoduuli"
-
-#: Library/Main/Strings.cs:103
-msgid ""
-"Duplicati supports pluggable encryption modules. Use this option to select a"
-" module to use for encryption. This is only applied when creating new "
-"volumes, when reading an existing file, the filename is used to select the "
-"encryption module."
-msgstr ""
 
 #: Library/Main/Strings.cs:104
 msgid "Select what module to use for encryption"
 msgstr "Valitse salausmoduuli"
 
-#: Library/Main/Strings.cs:105
-msgid "Supply one or more module names, separated by commas to unload them."
-msgstr ""
-
-#: Library/Main/Strings.cs:106
-msgid "Disable one or more modules"
-msgstr ""
-
-#: Library/Main/Strings.cs:107
-msgid "Supply one or more module names, separated by commas to load them."
-msgstr ""
-
-#: Library/Main/Strings.cs:108
-msgid "Enable one or more modules"
-msgstr ""
-
-#: Library/Main/Strings.cs:109
-msgid ""
-"This setting controls the usage of snapshots, which allows Duplicati to "
-"backup files that are locked by other programs. If this is set to \"off\", "
-"Duplicati will not attempt to create a disk snapshot. Setting this to "
-"\"auto\" makes Duplicati attempt to create a snapshot, and fail silently if "
-"that was not allowed or supported (note that the OS may still log system "
-"warnings). A setting of \"on\" will also make Duplicati attempt to create a "
-"snapshot, but will produce a warning message in the log if it fails. Setting"
-" it to \"required\" will make Duplicati abort the backup if the snapshot "
-"creation fails. On windows this uses the Volume Shadow Copy Services (VSS) "
-"and requires administrative privileges. On Linux this uses Logical Volume "
-"Management (LVM) and requires root privileges."
-msgstr ""
-
-#: Library/Main/Strings.cs:110
-msgid "Control the use of disk snapshots"
-msgstr ""
-
-#: Library/Main/Strings.cs:111
-msgid ""
-"The snapshot provider implementation for Windows. The AlphaVSS is the most "
-"feature complete, but is not supported on Arm64. The WMIC based snapshot has"
-" less features, but is more portable. On Linux, only LVM is supported"
-msgstr ""
-
-#: Library/Main/Strings.cs:112
-msgid "The snapshot provider implementation to use"
-msgstr ""
-
-#: Library/Main/Strings.cs:113
-msgid ""
-"The pre-generated volumes will be placed into the temporary folder by "
-"default. This option can set a different folder for placing the temporary "
-"volumes. Despite the name, this also works for synchronous runs."
-msgstr ""
-
 #: Library/Main/Strings.cs:114
 msgid "The path where ready volumes are placed until uploaded"
 msgstr "Tilapäiskansio siirtoa odottaville datatiedostoille"
-
-#: Library/Main/Strings.cs:115
-msgid ""
-"When performing asynchronous uploads, Duplicati will create volumes that can"
-" be uploaded. To prevent Duplicati from generating too many volumes, this "
-"option limits the number of pending uploads. Set to zero to disable the "
-"limit.  The volume(s) that are being created are not counted in this limit. "
-"Use the option --concurrency-compressors=1 to limit the number of volumes "
-"being created."
-msgstr ""
 
 #: Library/Main/Strings.cs:116
 msgid "The number of volumes to create ahead of time"
 msgstr "Siirtoa odottavien datatiedostojen enimmäismäärä"
 
-#: Library/Main/Strings.cs:117
-msgid ""
-"When performing asynchronous uploads, the maximum number of concurrent "
-"uploads allowed. Set to zero to disable the limit."
-msgstr ""
-
-#: Library/Main/Strings.cs:118
-msgid "The number of concurrent uploads allowed"
-msgstr ""
-
-#: Library/Main/Strings.cs:119
-msgid ""
-"Activate this option to make some error messages more verbose, which may "
-"help you track down a particular issue."
-msgstr ""
-
-#: Library/Main/Strings.cs:120
-msgid "Enable debugging output"
-msgstr ""
-
-#: Library/Main/Strings.cs:121
-msgid "Log information to the file specified."
-msgstr ""
-
-#: Library/Main/Strings.cs:122
-msgid "Log internal information to a file"
-msgstr ""
-
-#: Library/Main/Strings.cs:123 Library/Main/Strings.cs:288
-#, csharp-format
-msgid ""
-"Specify the amount of log information to write into the file specified by "
-"the option --{0}."
-msgstr ""
-
 #: Library/Main/Strings.cs:124
 msgid "Log information level"
 msgstr "Lokiin tallennettavat tiedot"
-
-#: Library/Main/Strings.cs:125 Library/Main/Strings.cs:218
-#, csharp-format
-msgid "Use the options --{0} and --{1} instead."
-msgstr ""
 
 #: Library/Main/Strings.cs:126
 msgid ""
@@ -4117,10 +1327,6 @@ msgid ""
 msgstr ""
 "Jos kohdekansio etäpalvelimella puuttuu, Duplicati luo sen automaattisesti. "
 "Tämä estää poistaa automaattisen kansion luomisen."
-
-#: Library/Main/Strings.cs:127
-msgid "Disable automatic folder creation"
-msgstr ""
 
 #: Library/Main/Strings.cs:128
 msgid ""
@@ -4142,78 +1348,13 @@ msgid ""
 msgstr ""
 "Puolipistein erotettu lista VSS-kirjoittajista (vain Windows-järjestelmillä)"
 
-#: Library/Main/Strings.cs:130
-msgid ""
-"This setting controls the usage of NTFS USN numbers, which allows Duplicati "
-"to obtain a list of files and folders much faster. If this is set to "
-"\"off\", Duplicati will not attempt to use USN. Setting this to \"auto\" "
-"makes Duplicati attempt to use USN, and fail silently if that was not "
-"allowed or supported. A setting of \"on\" will also make Duplicati attempt "
-"to use USN, but will produce a warning message in the log if it fails. "
-"Setting it to \"required\" will make Duplicati abort the backup if the USN "
-"usage fails. This feature is only supported on Windows and requires "
-"administrative privileges."
-msgstr ""
-
-#: Library/Main/Strings.cs:131
-msgid "Control the use of NTFS Update Sequence Numbers"
-msgstr ""
-
-#: Library/Main/Strings.cs:132
-msgid "Ignore advisory locking"
-msgstr ""
-
-#: Library/Main/Strings.cs:133
-msgid ""
-"When reading files Duplicati can skip files that are marked locked by "
-"another application to ensure consistency. This flag can disable the check "
-"and perform optimistic reads of locked files."
-msgstr ""
-
-#: Library/Main/Strings.cs:134
-#, csharp-format
-msgid ""
-"When matching timestamps, Duplicati will adjust the times by a small "
-"fraction to ensure that minor time differences do not cause unexpected "
-"updates. If the option --{0} is set to keep a week of backups, and the "
-"backup is made the same time each week, it is possible that the clock drifts"
-" slightly, such that full week has just passed, causing Duplicati to delete "
-"the older backup earlier than expected. To avoid this, Duplicati inserts a "
-"1% tolerance (max 1 hour). Use this option to disable the tolerance, and use"
-" strict time checking."
-msgstr ""
-
-#: Library/Main/Strings.cs:135
-msgid "Deactivate tolerance when comparing times"
-msgstr ""
-
-#: Library/Main/Strings.cs:136
-msgid "Use this option to verify uploads by listing contents."
-msgstr ""
-
 #: Library/Main/Strings.cs:137
 msgid "Verify uploads by listing contents"
 msgstr "Tarkista siirtojen onnistuminen listaamalla etäpalvelimen tiedostot"
 
-#: Library/Main/Strings.cs:138
-msgid ""
-"Disables uploading multiple files concurrently to preserve bandwith. This "
-"will have the same effect as setting --asynchronous-upload-limit=1 but "
-"additionally wait for related uploads. The volume that is being created is "
-"not counted in the upload limit."
-msgstr ""
-
 #: Library/Main/Strings.cs:139
 msgid "Upload files synchronously"
 msgstr "Lataa tiedostot varmuuskopioinnin aikana"
-
-#: Library/Main/Strings.cs:140
-msgid ""
-"Duplicati will attempt to perform multiple operations on a single "
-"connection, as this avoids repeated login attempts, and thus speeds up the "
-"process. Use this option to ensure that each operation is performed on a "
-"seperate connection."
-msgstr ""
 
 #: Library/Main/Strings.cs:141
 msgid "Do not re-use connections"
@@ -4233,89 +1374,17 @@ msgstr ""
 msgid "Show error messages when a retry is performed"
 msgstr "Näytä virheilmoitus uudelleenyrityksen jälkeen"
 
-#: Library/Main/Strings.cs:144
-msgid ""
-"If no files have changed, Duplicati will not upload a backup set. If the "
-"backup data is used to verify that a backup was executed, this option will "
-"make Duplicati upload a backupset even if it is empty."
-msgstr ""
-
 #: Library/Main/Strings.cs:145
 msgid "Upload empty backup files"
 msgstr "Lataa tyhjätkin varmuuskopiot"
-
-#: Library/Main/Strings.cs:146
-msgid ""
-"Set a limit to the amount of storage used on the backend (by this backup). "
-"This is in addition to the full backend quota, if available. Note: Backups "
-"will continue past the quota. This only creates warnings and error messages."
-msgstr ""
-
-#: Library/Main/Strings.cs:147
-msgid "Limit storage use"
-msgstr ""
-
-#: Library/Main/Strings.cs:148
-msgid ""
-"Set a threshold for when to warn about the backend quota being nearly "
-"exceeded. It is given as a percentage, and a warning is generated if the "
-"amount of available quota is less than this percentage of the total backup "
-"size. If the backend does not report the quota information, this value will "
-"be ignored."
-msgstr ""
-
-#: Library/Main/Strings.cs:149
-msgid "Threshold for warning about low quota"
-msgstr ""
-
-#: Library/Main/Strings.cs:150
-#, csharp-format
-msgid ""
-"Disable the quota reported by the backend. The option --{0} can still be "
-"used to set a manual quota"
-msgstr ""
-
-#: Library/Main/Strings.cs:151
-msgid "Disable backend quota"
-msgstr ""
-
-#: Library/Main/Strings.cs:152
-#, csharp-format
-msgid ""
-"Use this option to handle symlinks differently. The \"{0}\" option will "
-"simply record a symlink with its name and destination, and a restore will "
-"recreate the symlink as a link. Use the option \"{1}\" to ignore all "
-"symlinks and not store any information about them. The option \"{2}\" will "
-"cause the symlinked target to be backed up and restored as a normal file "
-"with the symlink name. Early versions of Duplicati did not support this "
-"option and behaved as if \"{2}\" was specified."
-msgstr ""
 
 #: Library/Main/Strings.cs:153
 msgid "Symlink handling"
 msgstr "Symbolisten linkkien tallentaminen"
 
-#: Library/Main/Strings.cs:154
-#, csharp-format
-msgid ""
-"Use this option to handle hardlinks (only works on Linux/OSX). The \"{0}\" "
-"option will record a hardlink ID for each hardlink to avoid storing "
-"hardlinked paths multiple times. The option \"{1}\" will ignore hardlink "
-"information, and treat each hardlink as a unique path. The option \"{2}\" "
-"will ignore all hardlinks with more than one link."
-msgstr ""
-
 #: Library/Main/Strings.cs:155
 msgid "Hardlink handling"
 msgstr "Kovien linkkien käsittely"
-
-#: Library/Main/Strings.cs:156
-#, csharp-format
-msgid ""
-"Use this option to exclude files with certain attributes. Use a comma "
-"separated list of attribute names to specify more than one. Possible values "
-"are: {0}."
-msgstr ""
 
 #: Library/Main/Strings.cs:157
 msgid "Exclude files by attribute"
@@ -4337,68 +1406,9 @@ msgstr ""
 msgid "Map snapshots to a drive (Windows only)"
 msgstr "Liitä vedokset levynä (vain Windowsilla)"
 
-#: Library/Main/Strings.cs:160
-msgid ""
-"A display name that is attached to this backup. This can be used to identify"
-" the backup when sending mail or running scripts."
-msgstr ""
-
 #: Library/Main/Strings.cs:161
 msgid "Name of the backup"
 msgstr "Varmuuskopion nimi"
-
-#: Library/Main/Strings.cs:162
-msgid ""
-"A unique identification for this backup. This can be used to identify the "
-"backup when sending mail or running scripts."
-msgstr ""
-
-#: Library/Main/Strings.cs:163
-msgid "Backup ID"
-msgstr ""
-
-#: Library/Main/Strings.cs:164
-msgid ""
-"A unique identification of the machine running the backup. This can be used "
-"to identify the machine when sending mail or running scripts."
-msgstr ""
-
-#: Library/Main/Strings.cs:165
-msgid "Machine ID"
-msgstr ""
-
-#: Library/Main/Strings.cs:166
-msgid ""
-"The name of the machine running the backup. This can be used to identify the"
-" machine when sending mail or running scripts."
-msgstr ""
-
-#: Library/Main/Strings.cs:167
-msgid "Machine name"
-msgstr ""
-
-#: Library/Main/Strings.cs:168
-msgid "The time of the next scheduled run"
-msgstr ""
-
-#: Library/Main/Strings.cs:169
-msgid ""
-"This property is a reporting option and does not affect the actual scheduled"
-" time. Use this option to inform a reporting destination about the next "
-"expected time the backup will run."
-msgstr ""
-
-#: Library/Main/Strings.cs:170
-#, csharp-format
-msgid ""
-"Use this option to point to a text file where each line contains a file "
-"extension that indicates a non-compressible file. Files that have an "
-"extension found in the file will not be compressed, but simply stored in the"
-" archive. The file format ignores any lines that do not start with a period,"
-" and considers a space to indicate the end of the extension. A default file "
-"is supplied, that also serves as an example. The default file is placed in "
-"{0}."
-msgstr ""
 
 #: Library/Main/Strings.cs:171
 msgid "Manage non-compressible file extensions"
@@ -4420,54 +1430,22 @@ msgstr ""
 msgid "Block size used in hashing"
 msgstr "Tiivisteen laskennassa käytettävä lohkon koko"
 
-#: Library/Main/Strings.cs:174
-msgid ""
-"Use this option to limit the scan to only files that are known to have "
-"changed. This is usually only activated in combination with a filesystem "
-"watcher that keeps track of file changes."
-msgstr ""
-
 #: Library/Main/Strings.cs:175
 msgid "List of files to examine for changes"
 msgstr "Lista mahdollisesti muuttuneista tiedostoista"
-
-#: Library/Main/Strings.cs:176
-msgid ""
-"Path to the file containing the local cache of the remote file database."
-msgstr ""
 
 #: Library/Main/Strings.cs:177
 msgid "Path to the local state database"
 msgstr "Polku paikallisen tilan sisältävään tietokantaan"
 
-#: Library/Main/Strings.cs:178
-#, csharp-format
-msgid ""
-"Use this option to supply a list of deleted files. This option will be "
-"ignored unless the option --{0} is also set."
-msgstr ""
-
 #: Library/Main/Strings.cs:179
 msgid "List of deleted files"
 msgstr "Lista poistetuista tiedostoista"
-
-#: Library/Main/Strings.cs:180
-msgid ""
-"Use this option to reduce the memory footprint by not keeping paths and "
-"modification timestamps in memory."
-msgstr ""
 
 #: Library/Main/Strings.cs:181
 msgid "Reduce memory footprint by disabling in-memory lookups"
 msgstr ""
 "Pienennä muistinkäyttöä poistamalla muistissa tapahtuva vertailu käytöstä"
-
-#: Library/Main/Strings.cs:183
-msgid ""
-"If this option is set, the local database is not compared to the remote "
-"filelist on startup. The intended usage for this option is to work correctly"
-" in cases where the filelisting is broken or unavailable."
-msgstr ""
 
 #: Library/Main/Strings.cs:184
 msgid "Do not query backend at startup"
@@ -4487,10 +1465,6 @@ msgstr ""
 "hakemistotiedostot vievät etäpalvelimella enemmän tilaa, jota ei välttämättä"
 " koskaan tarvita."
 
-#: Library/Main/Strings.cs:186
-msgid "Determine usage of index files"
-msgstr ""
-
 #: Library/Main/Strings.cs:187
 msgid ""
 "As files are changed, some data stored at the remote destination may not be "
@@ -4508,33 +1482,9 @@ msgstr ""
 msgid "The maximum wasted space in percent"
 msgstr "Tarpeettoman datan osuus prosentteina"
 
-#: Library/Main/Strings.cs:189
-msgid ""
-"Use this option to experiment with different settings and observe the "
-"outcome without changing actual files."
-msgstr ""
-
-#: Library/Main/Strings.cs:190
-msgid "Do not perform any modifications"
-msgstr ""
-
-#: Library/Main/Strings.cs:191
-msgid ""
-"This is a very advanced option! Use this option to select a block hash "
-"algorithm with smaller or larger hash size, for performance or storage space"
-" reasons."
-msgstr ""
-
 #: Library/Main/Strings.cs:192
 msgid "The hash algorithm used on blocks"
 msgstr "Lohkojen tarkastussummien laskemiseen käytettävä algoritmi"
-
-#: Library/Main/Strings.cs:193
-msgid ""
-"This is a very advanced option! Use this option to select a file hash "
-"algorithm with smaller or larger hash size, for performance or storage space"
-" reasons."
-msgstr ""
 
 #: Library/Main/Strings.cs:194
 msgid "The hash algorithm used on files"
@@ -4599,23 +1549,6 @@ msgstr ""
 msgid "Use local file data when restoring"
 msgstr "Käytä paikallisia tiedostoja apuna palautettaessa"
 
-#: Library/Main/Strings.cs:204
-msgid ""
-"When listing contents or when restoring files, the local database can be "
-"skipped. This is usually slower, but can be used to verify the actual "
-"contents of the remote store."
-msgstr ""
-
-#: Library/Main/Strings.cs:205
-msgid "Disable the local database"
-msgstr ""
-
-#: Library/Main/Strings.cs:206
-msgid ""
-"Use this option to set number of versions to keep. Supply -1 to keep all "
-"versions."
-msgstr ""
-
 #: Library/Main/Strings.cs:207
 msgid "Keep a number of versions"
 msgstr "Säilytettävien versioiden lukumäärä"
@@ -4628,22 +1561,6 @@ msgstr "Aseta ajanjakso, jolta varmuuskopiot säilytetään."
 msgid "Keep all versions within a timespan"
 msgstr "Säilytä varmuuskopiot tältä ajanjaksolta"
 
-#: Library/Main/Strings.cs:210
-msgid ""
-"Use this option to reduce the number of versions that are kept with "
-"increasing version age by deleting most of the old backups. The expected "
-"format is a comma separated list of colon separated time frame and interval "
-"pairs. For example the value \"7D:0s,3M:1D,10Y:2M\" means \"For 7 day keep "
-"all backups, for 3 months keep one backup every day, for 10 years one backup"
-" every 2nd month and delete every backup older than this.\". This option "
-"also supports using the specifier \"U\" to indicate an unlimited time "
-"interval."
-msgstr ""
-
-#: Library/Main/Strings.cs:211
-msgid "Reduce number of versions by deleting old intermediate backups"
-msgstr ""
-
 #: Library/Main/Strings.cs:212
 msgid "Use this option to continue even if some source entries are missing."
 msgstr ""
@@ -4653,12 +1570,6 @@ msgstr ""
 #: Library/Main/Strings.cs:213
 msgid "Ignore missing source elements"
 msgstr "Ohita puuttuvat lähteet"
-
-#: Library/Main/Strings.cs:214
-msgid ""
-"Use this option to overwrite target files when restoring. If this option is "
-"not set, the files will be restored with a timestamp and a number appended."
-msgstr ""
 
 #: Library/Main/Strings.cs:215
 msgid "Overwrite files when restoring"
@@ -4676,16 +1587,6 @@ msgstr ""
 msgid "Output more progress information"
 msgstr "Tulosta enmmän tilatietoja"
 
-#: Library/Main/Strings.cs:219
-msgid ""
-"Use this option to increase the amount of output generated as the result of "
-"the operation, including all filenames."
-msgstr ""
-
-#: Library/Main/Strings.cs:220
-msgid "Output full results"
-msgstr ""
-
 #: Library/Main/Strings.cs:221
 msgid ""
 "Use this option to upload a verification file after changing the remote "
@@ -4702,50 +1603,9 @@ msgstr ""
 msgid "Determine if verification files are uploaded"
 msgstr "Lataa varmistustiedostot etäpalvelimelle"
 
-#: Library/Main/Strings.cs:223
-#, csharp-format
-msgid ""
-"After a backup is completed, some (dblock, dindex, dlist) files from the "
-"remote backend are selected for verification. Use this option to change how "
-"many. If the option --{0} is also provided, the number of samples tested is "
-"the maximum implied by the two options. If this value is set to 0 or the "
-"option --{1} is set, no remote files are verified."
-msgstr ""
-
 #: Library/Main/Strings.cs:224
 msgid "The number of samples to test after a backup"
 msgstr "Varmuuskopion jälkeen tarkastettavien tiedostojen lukumäärä"
-
-#: Library/Main/Strings.cs:225
-#, csharp-format
-msgid ""
-"After a backup is completed, some samples (one sample is 1 dblock, 1 dindex,"
-" and 1 dlist) files from the remote backend are selected for verification. "
-"Use this option to specify the percentage (between 0 and 100) of samples to "
-"test. If the option --{0} is also provided, the number of samples tested is "
-"the maximum implied by the two options. If the option --{1} is provided, no "
-"remote files are verified."
-msgstr ""
-
-#: Library/Main/Strings.cs:226
-msgid "The percentage of samples to test after a backup"
-msgstr ""
-
-#: Library/Main/Strings.cs:227
-#, csharp-format
-msgid ""
-"After a backup is completed, some (dblock, dindex, dlist) files from the "
-"remote backend are selected for verification. Use this option to turn on "
-"full verification, which will decrypt the files and examine the insides of "
-"each volume, instead of simply verifying the external hash. If the option "
-"--{0} is set, no remote files are verified. This option is automatically set"
-" when then verification is performed directly. ListAndIndexes is like True "
-"but only dlist and index volumes are handled."
-msgstr ""
-
-#: Library/Main/Strings.cs:228
-msgid "Activate in-depth verification of files"
-msgstr ""
 
 #: Library/Main/Strings.cs:229
 msgid ""
@@ -4759,21 +1619,9 @@ msgstr ""
 msgid "Size of the file read buffer"
 msgstr "Lukupuskurin koko"
 
-#: Library/Main/Strings.cs:232
-msgid ""
-"Use this option to allow the passphrase to change. Note that this option is "
-"not permitted for a backup or repair operation."
-msgstr ""
-
 #: Library/Main/Strings.cs:233
 msgid "Allow the passphrase to change"
 msgstr "Salli salauslausekkeen vaihtaminen"
-
-#: Library/Main/Strings.cs:234
-msgid ""
-"Use this option to only list filesets and avoid traversing file names and "
-"other metadata which slows down the process."
-msgstr ""
 
 #: Library/Main/Strings.cs:235
 msgid "List only filesets"
@@ -4789,10 +1637,6 @@ msgstr ""
 "luontiaikojen tallentamisen. Metadatan tallennuksen poistaminen käytöstä "
 "nopeuttaa varmuuskopiointia ja tiedostojen palauttamista, mutta ei vaikuta "
 "varmuuskopioiden kokoon merkittävästi."
-
-#: Library/Main/Strings.cs:238
-msgid "Do not store metadata"
-msgstr ""
 
 #: Library/Main/Strings.cs:239
 msgid ""
@@ -4837,23 +1681,6 @@ msgstr ""
 msgid "Do not use local data"
 msgstr "Älä käytä paikallista dataa"
 
-#: Library/Main/Strings.cs:245
-#, csharp-format
-msgid ""
-"The default is now to not use local blocks for restore. To opt-in for using "
-"local blocks, set the option --{0}."
-msgstr ""
-
-#: Library/Main/Strings.cs:246
-msgid ""
-"Use this option to allow Duplicati to use blocks found on disk when "
-"performing restores, instead of only using files in remote storage."
-msgstr ""
-
-#: Library/Main/Strings.cs:247
-msgid "Use existing data for restore"
-msgstr ""
-
 #: Library/Main/Strings.cs:249
 msgid ""
 "Use this option to increase verification by checking the hash of blocks read"
@@ -4882,508 +1709,17 @@ msgstr ""
 msgid "Repair database with paths"
 msgstr "Korjaa tietokanta poluista"
 
-#: Library/Main/Strings.cs:255
-msgid ""
-"Use this option to ignore that the remote destination contains newer "
-"contents than the database. This should only be used when the database is "
-"known to be correct, but the remote destination is not, as data can be lost "
-"otherwise."
-msgstr ""
-
-#: Library/Main/Strings.cs:256
-msgid "Ignore outdated database files"
-msgstr ""
-
-#: Library/Main/Strings.cs:257
-msgid ""
-"By default, your system locale and culture settings will be used. In some "
-"cases you may prefer to run with another locale, for example to get messages"
-" in another language. Use this option to set the locale. Supply a blank "
-"string to choose the \"Invariant Culture\"."
-msgstr ""
-
 #: Library/Main/Strings.cs:258
 msgid "Force the locale setting"
 msgstr "Pakota Duplicati käyttämään tiettyjä lokaaliasetuksia"
-
-#: Library/Main/Strings.cs:259
-msgid ""
-"By default, dates are displayed in the calendar format, meaning \"Today\" or"
-" \"Last Thursday\". By setting this option, only the actual dates are "
-"displayed, \"Nov 12, 2018, 8:01 AM\" for example."
-msgstr ""
-
-#: Library/Main/Strings.cs:260
-msgid "Force the display of the actual date instead of calendar date"
-msgstr ""
-
-#: Library/Main/Strings.cs:261
-msgid ""
-"Use this option to disable multithreaded handling of up- and downloads. That"
-" can significantly speed up backend operations depending on the hardware "
-"you're running on and the transfer rate of your backend."
-msgstr ""
 
 #: Library/Main/Strings.cs:262
 msgid "Handle file communication with backend using threaded pipes"
 msgstr "Kommunikoi taustamoduulin kanssa käyttäen säieturvallisia putkia"
 
-#: Library/Main/Strings.cs:263
-msgid ""
-"Use this option to set the maximum number of threads used. Setting this "
-"value to zero or less will dynamically balance the number of active threads "
-"to fit the hardware."
-msgstr ""
-
-#: Library/Main/Strings.cs:264
-msgid "Limit number of concurrent threads"
-msgstr ""
-
-#: Library/Main/Strings.cs:265
-msgid ""
-"Use this option to set the number of processes that perform hashing of data."
-msgstr ""
-
-#: Library/Main/Strings.cs:266
-msgid "Specify the number of concurrent hashing processes"
-msgstr ""
-
-#: Library/Main/Strings.cs:267
-msgid ""
-"Use this option to set the number of processes that perform compression of "
-"output data."
-msgstr ""
-
-#: Library/Main/Strings.cs:268
-msgid "Specify the number of concurrent compression processes"
-msgstr ""
-
-#: Library/Main/Strings.cs:269
-msgid "[EXPERIMENTAL]Specify the number of concurrent files to open"
-msgstr ""
-
-#: Library/Main/Strings.cs:270
-msgid ""
-"Use this option to set the number of concurrent files to open. This could "
-"accelerate big backups involving lot of files, such as an initial backup"
-msgstr ""
-
-#: Library/Main/Strings.cs:271
-msgid ""
-"If Duplicati detects that the previous backup did not complete, it will "
-"generate a filelist that is a merge of the last completed backup and the "
-"contents that were uploaded in the incomplete backup session."
-msgstr ""
-
-#: Library/Main/Strings.cs:272
-msgid "Disable synthetic filelist"
-msgstr ""
-
-#: Library/Main/Strings.cs:273
-msgid ""
-"This option instructs Duplicati to not look at metadata or filesize when "
-"deciding to scan a file for changes. Use this option if you have a large "
-"number of files and notice that the scanning takes a long time with "
-"unmodified files."
-msgstr ""
-
-#: Library/Main/Strings.cs:274
-msgid "Check only file lastmodified"
-msgstr ""
-
-#: Library/Main/Strings.cs:275
-msgid ""
-"When restore a subset of a backup into a new folder, the shortest possible "
-"path is used to avoid generating deep paths with empty folders. Use this "
-"option to skip this compression, such that the entire original folder "
-"structure is preserved, including upper level empty folders."
-msgstr ""
-
-#: Library/Main/Strings.cs:276
-msgid "Disable path compression on restore"
-msgstr ""
-
-#: Library/Main/Strings.cs:277
-msgid ""
-"By default, the last fileset cannot be removed. This is a safeguard to make "
-"sure that all remote data is not deleted by a configuration mistake. Use "
-"this option to disable that protection, such that all filesets can be "
-"deleted."
-msgstr ""
-
 #: Library/Main/Strings.cs:278
 msgid "Allow removing all filesets"
 msgstr "Salli kaikkien tiedostojen poisto"
-
-#: Library/Main/Strings.cs:279
-msgid ""
-"Some operations that manipulate the local database leave unused entries "
-"behind. These entries are not deleted from a hard drive until a VACUUM "
-"operation is run. This operation saves disk space in the long run but needs "
-"to temporarily create a copy of all valid entries in the database. Setting "
-"this to true will allow Duplicati to perform VACUUM operations at its "
-"discretion."
-msgstr ""
-
-#: Library/Main/Strings.cs:280
-msgid "Allow automatic rebuilding of local database to save space"
-msgstr ""
-
-#: Library/Main/Strings.cs:281
-msgid ""
-"When this flag is enabled, the scanner that computes the size of source "
-"files is disabled, and instead the reported size is read from the database. "
-"Using this option can speed up the backup by reducing disk access, but will "
-"give a less accurate progress indicator."
-msgstr ""
-
-#: Library/Main/Strings.cs:282
-msgid "Disable the read-ahead scanner"
-msgstr ""
-
-#: Library/Main/Strings.cs:283
-msgid ""
-"In backups with a large number of filesets, the verification can take up a "
-"large part of the backup time. If you disable the checks, make sure you run "
-"regular check commands to ensure that everything is working as expected."
-msgstr ""
-
-#: Library/Main/Strings.cs:284
-msgid "Disable filelist consistency checks"
-msgstr ""
-
-#: Library/Main/Strings.cs:285
-msgid ""
-"Use this option to disable a scheduled backup if the system is detected to "
-"be running on battery power (manual or command line backups will still be "
-"run). If the detected power source is mains (e.g., AC) or unknown, then "
-"scheduled backups will proceed as normal."
-msgstr ""
-
-#: Library/Main/Strings.cs:286
-msgid "Disable the backup when on battery power"
-msgstr ""
-
-#: Library/Main/Strings.cs:289
-msgid "Log file information level"
-msgstr ""
-
-#: Library/Main/Strings.cs:290
-#, csharp-format
-msgid ""
-"This option accepts filters that removes or includes messages regardless of "
-"their log level. Multiple filters are supported by separating with {0}. "
-"Filters are matched against the log tag and assumed to be including, unless "
-"they start with '-'. Regular expressions are supported within hard braces. "
-"Example: \"+Path*{0}+*Mail*{0}-[.*DNS]\" "
-msgstr ""
-
-#: Library/Main/Strings.cs:291
-msgid "Apply filters to the file log data"
-msgstr ""
-
-#: Library/Main/Strings.cs:292
-msgid "Specify the amount of log information to output to the console."
-msgstr ""
-
-#: Library/Main/Strings.cs:293
-msgid "Console information level"
-msgstr ""
-
-#: Library/Main/Strings.cs:295
-msgid "Apply filters to the console log data"
-msgstr ""
-
-#: Library/Main/Strings.cs:297
-msgid ""
-"This option instructs the operating system to set the current process to use"
-" the lowest IO priority level, which can make operations run slower but will"
-" interfere less with other operations running at the same time."
-msgstr ""
-
-#: Library/Main/Strings.cs:298
-msgid "Set the process to use low IO priority"
-msgstr ""
-
-#: Library/Main/Strings.cs:300
-msgid "Use this option to remove all empty folders from a backup."
-msgstr ""
-
-#: Library/Main/Strings.cs:301
-msgid "Exclude empty folders"
-msgstr ""
-
-#: Library/Main/Strings.cs:302
-msgid ""
-"Use this option to set a filename, or list of filenames, that indicate "
-"exclusion of a folder which contains it. A common use would be to have a "
-"file named something like \".nobackup\" and place this file into folders "
-"that should not be backed up."
-msgstr ""
-
-#: Library/Main/Strings.cs:303
-msgid "List of filenames that exclude folders"
-msgstr ""
-
-#: Library/Main/Strings.cs:304
-msgid ""
-"If symlink metadata is applied, it will usually mean changing the symlink "
-"target, instead of the symlink itself. For this reason, metadata is not "
-"applied to symlinks, but this option can be used to override this, such that"
-" metadata is applied to symlinks as well."
-msgstr ""
-
-#: Library/Main/Strings.cs:305
-msgid "Apply metadata to symlinks"
-msgstr ""
-
-#: Library/Main/Strings.cs:306
-msgid ""
-"When running in unittest mode, no automatic fixes are applied, which assumes"
-" that the input data is always in perfect shape. This option is not intended"
-" for use in daily backups, but required for testing purposes to reveal "
-"potential problems."
-msgstr ""
-
-#: Library/Main/Strings.cs:307
-msgid "Activate unittest mode"
-msgstr ""
-
-#: Library/Main/Strings.cs:309
-#, csharp-format
-msgid ""
-"To improve performance of the backups, frequent database queries are not "
-"logged by default. Enable this option to log all database queries, and "
-"remember to set either --{0}={2} or --{1}={2} to report the additional log "
-"data"
-msgstr ""
-
-#: Library/Main/Strings.cs:310
-msgid "Activate logging of all database queries"
-msgstr ""
-
-#: Library/Main/Strings.cs:311
-msgid ""
-"If dblock files are missing from the destination, you can attempt to rebuild"
-" them using local source data. However, since the local data may have "
-"changed, it may not be possible to retrieve all the required data and the "
-"process may be slow. Use this option to attempt to rebuild missing dblock "
-"files."
-msgstr ""
-
-#: Library/Main/Strings.cs:312
-msgid "Rebuild dblock files when missing"
-msgstr ""
-
-#: Library/Main/Strings.cs:314
-msgid ""
-"The minimum amount of time that must elapse after the last compaction before"
-" another will be automatically triggered at the end of a backup job. "
-"Automatic compaction can be a long-running process and may not be desirable "
-"to run after every single backup."
-msgstr ""
-
-#: Library/Main/Strings.cs:315
-msgid "Minimum time between auto compactions"
-msgstr ""
-
-#: Library/Main/Strings.cs:316
-msgid ""
-"The minimum amount of time that must elapse after the last vacuum before "
-"another will be automatically triggered at the end of a backup job. "
-"Automatic vacuum can be a long-running process and may not be desirable to "
-"run after every single backup."
-msgstr ""
-
-#: Library/Main/Strings.cs:317
-msgid "Minimum time between auto vacuums"
-msgstr ""
-
-#: Library/Main/Strings.cs:318
-msgid "Secret provider to use for reading credentials"
-msgstr ""
-
-#: Library/Main/Strings.cs:319
-#, csharp-format
-msgid ""
-"Configures a secret provider to use for reading credentials. Use the "
-"commandline tool {0} to test the provider and see supported options. This "
-"value is interpreted as an environment variable if it starts with '$' or "
-"begins and ends with '%'."
-msgstr ""
-
-#: Library/Main/Strings.cs:320
-msgid "Pattern for secrets"
-msgstr ""
-
-#: Library/Main/Strings.cs:321
-msgid ""
-"Use this option to specify a pattern for secret provider options. The "
-"pattern is used to find values that are intended to be translated by the "
-"secret provider. Patterns are treated as a prefix, with support for braces."
-msgstr ""
-
-#: Library/Main/Strings.cs:322
-msgid "Cache rules for the secret provider"
-msgstr ""
-
-#: Library/Main/Strings.cs:323
-msgid ""
-"Use this option to set the allowed caching of credentials from the secret "
-"provider. Setting a cache level may reduce the security but allow the "
-"backups to continue despite provider outages."
-msgstr ""
-
-#: Library/Main/Strings.cs:325
-msgid "CPU intensity level"
-msgstr ""
-
-#: Library/Main/Strings.cs:326
-msgid ""
-"Set the CPU intensity level to limit CPU resource utilization. A higher "
-"number translates into a higher utilization budget. E.g. 10 would mean no "
-"restrictions. Must be an integer between 1-10."
-msgstr ""
-
-#: Library/Main/Strings.cs:328
-msgid "Maximum cache size for restoring files"
-msgstr ""
-
-#: Library/Main/Strings.cs:329
-msgid ""
-"Use this option to set the maximum size of the cache used for restoring "
-"files. The cache is used to store the data blocks that are downloaded from "
-"the remote storage. It assumes that the value is divisable by the block "
-"size, except for when it is 0, which disables the block cache."
-msgstr ""
-
-#: Library/Main/Strings.cs:330
-msgid "Eviction ratio of the data block cache during restore"
-msgstr ""
-
-#: Library/Main/Strings.cs:331
-msgid ""
-"Use this option to set the eviction ratio of the data block cache during "
-"restore. The eviction ratio is the percentage of the cache that is evicted "
-"when the cache is full. The default value is 50, which means that 50% of the"
-" cache is evicted when the cache is full."
-msgstr ""
-
-#: Library/Main/Strings.cs:332
-msgid "Number of concurrent FileProcessors processes used during restore"
-msgstr ""
-
-#: Library/Main/Strings.cs:333
-msgid ""
-"Use this option to set the number of concurrent FileProcessors processes "
-"used during restore. A FileProcessor processes one file at a time, and "
-"increasing the number of FileProcessors may improve restore performance."
-msgstr ""
-
-#: Library/Main/Strings.cs:334
-msgid "Use legacy restore method"
-msgstr ""
-
-#: Library/Main/Strings.cs:335
-msgid ""
-"Use this option to use the legacy restore method. The legacy restore method "
-"is slower than the new method, but may be more reliable in some cases."
-msgstr ""
-
-#: Library/Main/Strings.cs:336
-msgid "Preallocate size of restored files"
-msgstr ""
-
-#: Library/Main/Strings.cs:337
-msgid ""
-"Use this option to toggle whether to set the size of the restored files "
-"before they are written to disk. This can help to reduce fragmentation and "
-"improve performance on some filesystems."
-msgstr ""
-
-#: Library/Main/Strings.cs:338
-msgid "Number of concurrent FileDecompressor processes used during restore"
-msgstr ""
-
-#: Library/Main/Strings.cs:339
-msgid ""
-"Use this option to set the number of concurrent FileDecompressor processes "
-"used during restore. A FileDecompressor processes one volume at a time, and "
-"increasing the number of FileDecompressors may improve restore performance "
-"if the bottleneck is decompression."
-msgstr ""
-
-#: Library/Main/Strings.cs:340
-msgid "Number of concurrent FileDecryptor processes used during restore"
-msgstr ""
-
-#: Library/Main/Strings.cs:341
-msgid ""
-"Use this option to set the number of concurrent FileDecryptor processes used"
-" during restore. A FileDecryptor processes one volume at a time, and "
-"increasing the number of FileDecryptors may improve restore performance if "
-"the bottleneck is decryption."
-msgstr ""
-
-#: Library/Main/Strings.cs:342
-msgid "Number of concurrent FileDownloader processes used during restore"
-msgstr ""
-
-#: Library/Main/Strings.cs:343
-msgid ""
-"Use this option to set the number of concurrent FileDownloader processes "
-"used during restore. A FileDownloader processes one volume at a time, and "
-"increasing the number of FileDownloaders may improve restore performance if "
-"the bottleneck is downloading."
-msgstr ""
-
-#: Library/Main/Strings.cs:344
-msgid "Size of buffers of the channels used during restore"
-msgstr ""
-
-#: Library/Main/Strings.cs:345
-msgid ""
-"Use this option to set the size of the buffers of the channels used during "
-"restore. The buffers are used to allow for better asynchronous communication"
-" between the processes in the restore flow. Increasing the buffer size may "
-"improve restore performance."
-msgstr ""
-
-#: Library/Main/Strings.cs:346
-msgid "Enable internal profiling"
-msgstr ""
-
-#: Library/Main/Strings.cs:347
-msgid ""
-"Use this option to enable internal profiling. Profiling is used to measure "
-"the performance of the internal code. The profiling data is written to the "
-"log file and can be used to identify performance bottlenecks."
-msgstr ""
-
-#: Library/Main/Strings.cs:348
-msgid "Size of the SQLite page cache"
-msgstr ""
-
-#: Library/Main/Strings.cs:349
-#, csharp-format
-msgid ""
-"Use this option to set the size of the SQLite page cache. The page cache is "
-"used to store the pages of the database in memory. Increasing the page cache"
-" size may improve performance, but will also increase memory usage. If the "
-"supplied value is the same or less than {0} bytes, the default SQLite cache "
-"value is used."
-msgstr ""
-
-#: Library/Main/Strings.cs:350
-msgid "Ignore update if version exists"
-msgstr ""
-
-#: Library/Main/Strings.cs:351
-msgid ""
-"Use this option to ignore the update if the version already exists. This can"
-" be used to avoid errors if asking to update the database with a version "
-"that already exists."
-msgstr ""
 
 #: Library/Main/Strings.cs:356
 #, csharp-format
@@ -5406,11 +1742,6 @@ msgstr "Olemassaolevan varmuuskopion salauslauseketta ei voi vaihtaa"
 #, csharp-format
 msgid "Failed to create a snapshot: {0}"
 msgstr "Vedoksen luominen epäonnistui: {0}"
-
-#: Library/Main/Strings.cs:364
-#, csharp-format
-msgid "The encryption module {0} was not found"
-msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:29
 msgid ""
@@ -5441,15 +1772,6 @@ msgstr "Anna salauslauseke"
 msgid "The passphrases do not match"
 msgstr "Salauslausekkeet eivät ole samat"
 
-#: Library/Modules/Builtin/Strings.cs:35
-msgid ""
-"By default, the passphrase is attempted read from the TTY device directly, "
-"increasing the security by not copying the passphrase into a stream. In some"
-" setups, such as when running detached from a console, this does not work. "
-"Set this flag to prevent trying a TTY read and only read the passphrase from"
-" STDIN."
-msgstr ""
-
 #: Library/Modules/Builtin/Strings.cs:36
 msgid "Read passphrase from STDIN"
 msgstr "Lue salauslauseke STDIN:stä"
@@ -5464,60 +1786,23 @@ msgstr "Tämä moduuli mahdollistaa http-yhteyden asetusten muuttamisen"
 msgid "Configure http requests"
 msgstr "Säädä http-pyyntöjä"
 
-#: Library/Modules/Builtin/Strings.cs:42
-#: Library/Modules/Builtin/Strings.cs:236 Library/Utility/Strings.cs:83
-#, csharp-format
-msgid ""
-"Use this option to accept any server certificate, regardless of what errors "
-"it may have. Please use --{0} instead, whenever possible."
-msgstr ""
-
 #: Library/Modules/Builtin/Strings.cs:43
 #: Library/Modules/Builtin/Strings.cs:237 Library/Utility/Strings.cs:84
 msgid "Accept any server certificate"
 msgstr "Hyväksy kaiki ssl-sertifikaatit"
-
-#: Library/Modules/Builtin/Strings.cs:44
-#: Library/Modules/Builtin/Strings.cs:238 Library/Utility/Strings.cs:85
-msgid ""
-"If your server certificate is reported as invalid (e.g. with self-signed "
-"certificates), you can supply the certificate hash (SHA1) to approve it "
-"anyway. The hash value must be entered in hex format without spaces or "
-"colons. You can enter multiple hashes separated by commas."
-msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:45
 #: Library/Modules/Builtin/Strings.cs:239 Library/Utility/Strings.cs:86
 msgid "Optionally accept a known SSL certificate"
 msgstr "Hyväksy tietty SSL-sertifikaatti"
 
-#: Library/Modules/Builtin/Strings.cs:46
-msgid ""
-"The default HTTP request has the header \"Expect: 100-Continue\" attached, "
-"which allows some optimizations when authenticating, but also breaks some "
-"web servers, causing them to report \"417 - Expectation failed\"."
-msgstr ""
-
 #: Library/Modules/Builtin/Strings.cs:47
 msgid "Disable the expect header"
 msgstr "Poista käytöstä expect-otsake"
 
-#: Library/Modules/Builtin/Strings.cs:48
-msgid ""
-"By default the http requests use the RFC 896 nagling algorithm to support "
-"transfer of small packages more efficiently."
-msgstr ""
-
 #: Library/Modules/Builtin/Strings.cs:49
 msgid "Disable nagling"
 msgstr "Poista http-neuvottelu käytöstä"
-
-#: Library/Modules/Builtin/Strings.cs:50
-msgid ""
-"Duplicati uses an external server to support the OAuth authentication flow. "
-"If you have set up your own Duplicati OAuth server, you can supply the "
-"refresh URL."
-msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:51
 msgid "Alternate OAuth URL"
@@ -5533,42 +1818,6 @@ msgstr ""
 "asiantuntija-asetus. Käytä tätä vain, jos haluat parantaa turvallisuutta tai"
 " sinulla on ongelmia tietyn palvelimen kanssa."
 
-#: Library/Modules/Builtin/Strings.cs:53
-msgid "Set allowed SSL versions"
-msgstr ""
-
-#: Library/Modules/Builtin/Strings.cs:54
-msgid ""
-"This option changes the default timeout for any HTTP request, the time "
-"covers the entire operation from initial packet to shutdown."
-msgstr ""
-
-#: Library/Modules/Builtin/Strings.cs:55
-msgid "Set the default operation timeout"
-msgstr ""
-
-#: Library/Modules/Builtin/Strings.cs:56
-msgid ""
-"This option changes the default read-write timeout. Read-write timeouts are "
-"used to detect a stalled requests, and this option configures the maximum "
-"time between activity on a connection."
-msgstr ""
-
-#: Library/Modules/Builtin/Strings.cs:57
-msgid "Set readwrite"
-msgstr ""
-
-#: Library/Modules/Builtin/Strings.cs:58
-#, csharp-format
-msgid ""
-"This option sets the HTTP buffering. Setting this to \"{0}\" can cause "
-"memory leaks, but can also improve performance in some cases."
-msgstr ""
-
-#: Library/Modules/Builtin/Strings.cs:59
-msgid "Set HTTP buffering"
-msgstr ""
-
 #: Library/Modules/Builtin/Strings.cs:63
 msgid ""
 "This module works internaly to parse source parameters to backup Hyper-V "
@@ -5580,18 +1829,6 @@ msgstr ""
 #: Library/Modules/Builtin/Strings.cs:64
 msgid "Configure Hyper-V module"
 msgstr "Hyper-V-moduuin asetukset"
-
-#: Library/Modules/Builtin/Strings.cs:65
-msgid "Ignore consistency warning"
-msgstr ""
-
-#: Library/Modules/Builtin/Strings.cs:66
-msgid ""
-"This option will suppress the consistency warning that is normally issued "
-"when running on a client version of Windows. Enable this option if you are "
-"running on a client version of Windows and you are sure that crash-level "
-"consistency is acceptable for your use."
-msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:70
 msgid ""
@@ -5605,19 +1842,9 @@ msgstr ""
 msgid "Configure Microsoft SQL Server module"
 msgstr "Microsoft SQL-palvelinmoduulin asetukset"
 
-#: Library/Modules/Builtin/Strings.cs:75
-msgid "Execute a script before starting an operation, and again on completion"
-msgstr ""
-
 #: Library/Modules/Builtin/Strings.cs:76
 msgid "Run script"
 msgstr "Suorita skripti"
-
-#: Library/Modules/Builtin/Strings.cs:77
-msgid ""
-"Execute a script after performing an operation. The script will receive the "
-"operation results written to stdout."
-msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:78
 msgid "Run a script on exit"
@@ -5628,34 +1855,9 @@ msgstr "Suorita skripti lopetettaessa"
 msgid "The script \"{0}\" returned with exit code {1}"
 msgstr "Skriptin \"{0}\" paluuarvo oli {1}"
 
-#: Library/Modules/Builtin/Strings.cs:80
-#, csharp-format
-msgid "The script \"{0}\" returned with exit code {1}{2}"
-msgstr ""
-
-#: Library/Modules/Builtin/Strings.cs:81
-msgid ""
-"Execute a script before performing an operation. The operation will block "
-"until the script has completed or timed out. If the script returns a non-"
-"zero error code or times out, the operation will be aborted."
-msgstr ""
-
 #: Library/Modules/Builtin/Strings.cs:82
 msgid "Run a required script on startup"
 msgstr "Suorita pakollinen skripti ennen toimenpidettä"
-
-#: Library/Modules/Builtin/Strings.cs:83
-#: Library/Modules/Builtin/Strings.cs:255
-#, csharp-format
-msgid ""
-"Use this option to select the output format for results. Available formats: "
-"{0}"
-msgstr ""
-
-#: Library/Modules/Builtin/Strings.cs:84
-#: Library/Modules/Builtin/Strings.cs:256
-msgid "Select the output format for results"
-msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:85
 #, csharp-format
@@ -5667,12 +1869,6 @@ msgstr "Virhe suoritettaessa skriptiä \"{0}\": {1}"
 msgid "Execution of the script \"{0}\" timed out"
 msgstr "Skripti \"{0}\" aikakatkaistiin"
 
-#: Library/Modules/Builtin/Strings.cs:87
-msgid ""
-"Execute a script before performing an operation. The operation will block "
-"until the script has completed or timed out."
-msgstr ""
-
 #: Library/Modules/Builtin/Strings.cs:88
 msgid "Run a script on startup"
 msgstr "Suorita skripti ennen toimenpidettä"
@@ -5682,28 +1878,6 @@ msgstr "Suorita skripti ennen toimenpidettä"
 msgid "The script \"{0}\" reported error messages: {1}"
 msgstr "Skripti \"{0}\" antoi virheilmoituksen: {1}"
 
-#: Library/Modules/Builtin/Strings.cs:90
-msgid ""
-"Set the maximum time a script is allowed to execute. If the script has not "
-"completed within this time, it will continue to execute but the operation "
-"will continue too, and no script output will be processed."
-msgstr ""
-
-#: Library/Modules/Builtin/Strings.cs:91
-msgid "Set the script timeout"
-msgstr ""
-
-#: Library/Modules/Builtin/Strings.cs:92
-msgid ""
-"This option enables the use of script arguments. If this option is set, the "
-"script arguments are treated as commandline strings. Use single or double "
-"quotes to separate arguments."
-msgstr ""
-
-#: Library/Modules/Builtin/Strings.cs:93
-msgid "Enable script arguments"
-msgstr ""
-
 #: Library/Modules/Builtin/Strings.cs:97
 msgid "This module can send email after an operation completes"
 msgstr "Tämä moduuli lähettää sähköpostin operaation jälkeen."
@@ -5712,72 +1886,21 @@ msgstr "Tämä moduuli lähettää sähköpostin operaation jälkeen."
 msgid "Send mail"
 msgstr "Lähetä sähköposti"
 
-#: Library/Modules/Builtin/Strings.cs:99
-#, csharp-format
-msgid ""
-"Unable to find the destination mail server through MX lookup. Please use the"
-" option --{0} to specify what SMTP server to use."
-msgstr ""
-
-#: Library/Modules/Builtin/Strings.cs:100
-msgid ""
-"This value can be a filename. If the file exists, the file contents will be used as the message body.\n"
-"\n"
-"In the message body, certain tokens are replaced:\n"
-"%OPERATIONNAME% - The name of the operation, normally \"Backup\"\n"
-"%REMOTEURL% - Remote server URL\n"
-"%LOCALPATH% - The path to the local files or folders involved in the operation (if any)\n"
-"%PARSEDRESULT% - The parsed result, if the operation is a backup. Possible values are: Error, Warning, Success\n"
-"\n"
-"All command line options are also reported within %value%, e.g. %volsize%. Any unknown/unset value is removed."
-msgstr ""
-
 #: Library/Modules/Builtin/Strings.cs:109
 msgid "The message body"
 msgstr "Viestin runko"
-
-#: Library/Modules/Builtin/Strings.cs:110
-msgid ""
-"Use this option to set the password used to authenticate with the SMTP "
-"server if required."
-msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:111
 msgid "SMTP Password"
 msgstr "SMTP-palvelimen salasana"
 
-#: Library/Modules/Builtin/Strings.cs:112
-msgid ""
-"This setting is required if mail should be sent, all other settings have default values. You can supply multiple email addresses separated with commas, and you can use the normal address format as specified by RFC2822 section 3.4.\n"
-"Example with 3 recipients: \n"
-"\n"
-"Peter Sample <peter@example.com>, John Sample <john@example.com>, admin@example.com"
-msgstr ""
-
 #: Library/Modules/Builtin/Strings.cs:116
 msgid "Email recipient(s)"
 msgstr "Sähköpostin vastaanottajat"
 
-#: Library/Modules/Builtin/Strings.cs:117
-msgid ""
-"Use this option to set an address of the email sender. If no host is supplied, the hostname of the first recipient is used. Examples of allowed formats:\n"
-"\n"
-"sender\n"
-"sender@example.com\n"
-"Mail Sender <sender>\n"
-"Mail Sender <sender@example.com>"
-msgstr ""
-
 #: Library/Modules/Builtin/Strings.cs:123
 msgid "Email sender"
 msgstr "Sähköpostin lähettäjä"
-
-#: Library/Modules/Builtin/Strings.cs:124
-#, csharp-format
-msgid ""
-"You can specify one of \"{0}\", \"{1}\", \"{2}\", \"{3}\".\n"
-"You can supply multiple options with a comma separator, e.g. \"{0},{1}\". The special value \"{4}\" is a shorthand for \"{0},{1},{2},{3}\" and will cause all backup operations to send an email."
-msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:126
 #: Library/Modules/Builtin/Strings.cs:164
@@ -5785,14 +1908,6 @@ msgstr ""
 #: Library/Modules/Builtin/Strings.cs:227
 msgid "The messages to send"
 msgstr "Lähetettävä viesti"
-
-#: Library/Modules/Builtin/Strings.cs:127
-msgid ""
-"Use this option to set a URL for the SMTP server, e.g. smtp://example.com:25. Multiple servers can be supplied in a prioritized list, separated with semicolon. If a server fails, the next server in the list is tried, until the message has been sent.\n"
-"If no server is supplied, a DNS lookup is performed to find the first recipient's MX record, and all SMTP servers are tried in their priority order until the message is sent.\n"
-"\n"
-"To enable SMTP over SSL, use the format smtps://example.com. To enable SMTP STARTTLS, use the format smtp://example.com:25/?starttls=when-available or smtp://example.com:25/?starttls=always. If no port is specified, port 25 is used for non-ssl, and 465 for SSL connections. To force not to use STARTTLS use smtp://example.com:25/?starttls=never."
-msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:131
 msgid "SMTP Url"
@@ -5810,12 +1925,6 @@ msgstr ""
 #: Library/Modules/Builtin/Strings.cs:133
 msgid "The email subject"
 msgstr "Sähköpostin otsake"
-
-#: Library/Modules/Builtin/Strings.cs:134
-msgid ""
-"Use this option to set the username used to authenticate with the SMTP "
-"server if required."
-msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:135
 msgid "SMTP Username"
@@ -5838,23 +1947,6 @@ msgstr ""
 msgid "Email sent successfully using server: {0}"
 msgstr "Sähköposti lähetettiin onnistuneesti käyttäen palvelinta {0}"
 
-#: Library/Modules/Builtin/Strings.cs:139
-#: Library/Modules/Builtin/Strings.cs:168
-#: Library/Modules/Builtin/Strings.cs:201
-#: Library/Modules/Builtin/Strings.cs:223
-msgid ""
-"Use this option to set extra parameters for the message body. This parameter"
-" can either be a querystring (e.g. 'parameter1=value1&parameter2=value2') or"
-" a JSON key/value object."
-msgstr ""
-
-#: Library/Modules/Builtin/Strings.cs:140
-#: Library/Modules/Builtin/Strings.cs:169
-#: Library/Modules/Builtin/Strings.cs:202
-#: Library/Modules/Builtin/Strings.cs:224
-msgid "Extra parameters for the message sent"
-msgstr ""
-
 #: Library/Modules/Builtin/Strings.cs:144
 msgid ""
 "This module provides support for sending status reports via XMPP messages"
@@ -5865,30 +1957,9 @@ msgstr ""
 msgid "XMPP report module"
 msgstr "Moduuli raporttien lähettämiseksi XMPP-palvelun kautta"
 
-#: Library/Modules/Builtin/Strings.cs:146
-msgid ""
-"Use this option to set the users who should have the messages sent. You can "
-"specify multiple users separated with commas."
-msgstr ""
-
 #: Library/Modules/Builtin/Strings.cs:147
 msgid "XMPP recipient email"
 msgstr "XMPP-vastaanottajan osoite"
-
-#: Library/Modules/Builtin/Strings.cs:148
-#: Library/Modules/Builtin/Strings.cs:179
-#: Library/Modules/Builtin/Strings.cs:211
-msgid ""
-"This value can be a filename. If the file exists, the file contents will be used as the message.\n"
-"\n"
-"In the message, certain tokens are replaced:\n"
-"%OPERATIONNAME% - The name of the operation, normally \"Backup\"\n"
-"%REMOTEURL% - Remote server URL\n"
-"%LOCALPATH% - The path to the local files or folders involved in the operation (if any)\n"
-"%PARSEDRESULT% - The parsed result, if the operation is a backup. Possible values are: Error, Warning, Success\n"
-"\n"
-"All command line options are also reported within %value%, e.g. %volsize%. Any unknown/unset value is removed."
-msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:157
 #: Library/Modules/Builtin/Strings.cs:189
@@ -5896,21 +1967,9 @@ msgstr ""
 msgid "The message template"
 msgstr "Viestin malli"
 
-#: Library/Modules/Builtin/Strings.cs:158
-msgid ""
-"Use this option to set a username for the account that will send the "
-"message, including the hostname, e.g. \"account@jabber.org/Home\""
-msgstr ""
-
 #: Library/Modules/Builtin/Strings.cs:159
 msgid "The XMPP username"
 msgstr "XMPP-käyttäjätunus"
-
-#: Library/Modules/Builtin/Strings.cs:160
-msgid ""
-"Use this option to set a password for the account that will send the "
-"message."
-msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:161
 msgid "The XMPP password"
@@ -5929,14 +1988,6 @@ msgstr ""
 "\"{0},{1}\". Erityinen arvo \"{4}\" on sama kuin \"{0},{1},{2},{3}\", ja sen"
 " valitsemalla jokaisesta varmuuskopiontioperaatiosta lähetetään viesti."
 
-#: Library/Modules/Builtin/Strings.cs:165
-#: Library/Modules/Builtin/Strings.cs:199
-#: Library/Modules/Builtin/Strings.cs:228
-msgid ""
-"By default, messages will only be sent after a backup operation. Use this "
-"option to send messages for all operations."
-msgstr ""
-
 #: Library/Modules/Builtin/Strings.cs:166
 #: Library/Modules/Builtin/Strings.cs:200
 #: Library/Modules/Builtin/Strings.cs:229
@@ -5946,52 +1997,6 @@ msgstr "Lähetä viesti kaikkien toimenpiteiden jälkeen"
 #: Library/Modules/Builtin/Strings.cs:167
 msgid "Timeout occurred while logging in to jabber server"
 msgstr "kirjautuminen Jabber-palvelimelle aikakatkaistiin "
-
-#: Library/Modules/Builtin/Strings.cs:174
-msgid ""
-"This module provides support for sending status reports via Telegram "
-"messages"
-msgstr ""
-
-#: Library/Modules/Builtin/Strings.cs:175
-msgid "Telegram report module"
-msgstr ""
-
-#: Library/Modules/Builtin/Strings.cs:176
-msgid "Use this option to set the channel ID."
-msgstr ""
-
-#: Library/Modules/Builtin/Strings.cs:177
-msgid "Telegram channel ID"
-msgstr ""
-
-#: Library/Modules/Builtin/Strings.cs:190
-msgid ""
-"Use this option to set a bot ID for the bot that will send the message."
-msgstr ""
-
-#: Library/Modules/Builtin/Strings.cs:191
-msgid "The Telegram bot ID"
-msgstr ""
-
-#: Library/Modules/Builtin/Strings.cs:192
-msgid ""
-"Use this option to set a API key for the bot that will send the message."
-msgstr ""
-
-#: Library/Modules/Builtin/Strings.cs:193
-msgid "The Telegram API key"
-msgstr ""
-
-#: Library/Modules/Builtin/Strings.cs:194
-msgid "The Telegram topic ID"
-msgstr ""
-
-#: Library/Modules/Builtin/Strings.cs:195
-msgid ""
-"Topic ID for the Topic in the telegram group. For more information on "
-"Telegram setup, refer to documentation."
-msgstr ""
 
 #: Library/Modules/Builtin/Strings.cs:207
 msgid ""
@@ -6003,110 +2008,10 @@ msgstr ""
 msgid "HTTP report module"
 msgstr "HTTP -raportointimodulli"
 
-#: Library/Modules/Builtin/Strings.cs:209
-msgid "Use this option to set a HTTP report URL."
-msgstr ""
-
-#: Library/Modules/Builtin/Strings.cs:210
-msgid "HTTP report URL"
-msgstr ""
-
-#: Library/Modules/Builtin/Strings.cs:221
-msgid "Use this option to set a name of the parameter to send the message as."
-msgstr ""
-
-#: Library/Modules/Builtin/Strings.cs:222
-msgid "The name of the parameter to send the message as"
-msgstr ""
-
-#: Library/Modules/Builtin/Strings.cs:230
-msgid ""
-"Use this option to change the default HTTP verb used to submit a report."
-msgstr ""
-
-#: Library/Modules/Builtin/Strings.cs:231
-msgid "Set the HTTP verb to use"
-msgstr ""
-
-#: Library/Modules/Builtin/Strings.cs:232
-msgid ""
-"Use this option to set HTTP report URLs for sending form-encoded data. This "
-"option accepts multiple URLs, seperated by a semi-colon. All URLs will "
-"receive the same data. Note that this option ignores the format and verb "
-"settings."
-msgstr ""
-
-#: Library/Modules/Builtin/Strings.cs:233
-msgid "HTTP report URLs for sending form data"
-msgstr ""
-
-#: Library/Modules/Builtin/Strings.cs:234
-msgid ""
-"Use this option to set HTTP report URLs for sending JSON data. This option "
-"accepts multiple URLs, seperated by a semi-colon. All URLs will receive the "
-"same data. Note that this option ignores the format and verb settings."
-msgstr ""
-
-#: Library/Modules/Builtin/Strings.cs:235
-msgid "HTTP report URLs for sending JSON data"
-msgstr ""
-
-#: Library/Modules/Builtin/Strings.cs:240
-msgid ""
-"Use this option to set the number of retries to attempt if the HTTP request "
-"fails."
-msgstr ""
-
-#: Library/Modules/Builtin/Strings.cs:241
-msgid "Set the number of retries"
-msgstr ""
-
-#: Library/Modules/Builtin/Strings.cs:242
-msgid "Use this option to set the delay between retries."
-msgstr ""
-
-#: Library/Modules/Builtin/Strings.cs:243
-msgid "Set the retry delay"
-msgstr ""
-
 #: Library/Modules/Builtin/Strings.cs:248
 #, csharp-format
 msgid "Failed to send message: {0}"
 msgstr "Viestin lähetys epäonnistui: {0}"
-
-#: Library/Modules/Builtin/Strings.cs:249
-msgid ""
-"Use this option to set the log level for messages to include in the report."
-msgstr ""
-
-#: Library/Modules/Builtin/Strings.cs:250
-msgid "Define a log level for messages"
-msgstr ""
-
-#: Library/Modules/Builtin/Strings.cs:251
-msgid ""
-"Use this option to set a filter expression that defines what options are "
-"included in the report."
-msgstr ""
-
-#: Library/Modules/Builtin/Strings.cs:252
-msgid "Log message filter"
-msgstr ""
-
-#: Library/Modules/Builtin/Strings.cs:253
-msgid ""
-"Use this option to set the maximum number of log lines to include in the "
-"report. Zero or negative values means unlimited."
-msgstr ""
-
-#: Library/Modules/Builtin/Strings.cs:254
-msgid "Limit log lines"
-msgstr ""
-
-#: Library/Modules/Builtin/ResultSerialization/ResultFormatSerializerProvider.cs:39
-#, csharp-format
-msgid "The format is not supported: {0}"
-msgstr ""
 
 #: Library/Utility/Strings.cs:29
 #, csharp-format
@@ -6116,15 +2021,6 @@ msgstr "Epäkelpo koko: {0}"
 #: Library/Utility/Strings.cs:33
 msgid "The SSL certificate validator was called in an incorrect order"
 msgstr "SSL sertifikaatin validaattoria kutsuttiin väärässä järjestyksessä"
-
-#: Library/Utility/Strings.cs:34
-#, csharp-format
-msgid ""
-"The server certificate had the error {0} and the hash {1}{2}If you trust "
-"this certificate, use the commandline option --{3}={1} to accept the server "
-"certificate anyway.{2}You can also attempt to import the server certificate "
-"into your operating systems trust pool."
-msgstr ""
 
 #: Library/Utility/Strings.cs:35
 #, csharp-format
@@ -6155,11 +2051,6 @@ msgstr "Epäkelpo tunniste: {0}"
 msgid "Unparsed data: {0}"
 msgstr "Jäsentämätön data: {0}"
 
-#: Library/Utility/Strings.cs:46
-#, csharp-format
-msgid "The string \"{0}\" could not be parsed into a DateTime"
-msgstr ""
-
 #: Library/Utility/Strings.cs:50
 #, csharp-format
 msgid "The Uri is invalid: {0}"
@@ -6175,26 +2066,6 @@ msgstr "Palvelimen nimi puuttuu: {0}"
 msgid "{0} bytes"
 msgstr "{0} tavua"
 
-#: Library/Utility/Strings.cs:56
-#, csharp-format
-msgid "{0:N} GiB"
-msgstr ""
-
-#: Library/Utility/Strings.cs:57
-#, csharp-format
-msgid "{0:N} KiB"
-msgstr ""
-
-#: Library/Utility/Strings.cs:58
-#, csharp-format
-msgid "{0:N} MiB"
-msgstr ""
-
-#: Library/Utility/Strings.cs:59
-#, csharp-format
-msgid "{0:N} TiB"
-msgstr ""
-
 #: Library/Utility/Strings.cs:60
 #, csharp-format
 msgid "The string \"{0}\" could not be parsed into a date"
@@ -6203,70 +2074,6 @@ msgstr "Merkkijonoa \"{0}\" ei voitu lukea päivämääränä"
 #: Library/Utility/Strings.cs:64
 msgid "Cannot read and write on the same stream"
 msgstr "Ei voida lukea ja kirjoittaa samaan tiedosto-osoittimeen"
-
-#: Library/Utility/Strings.cs:68
-#, csharp-format
-msgid ""
-"The string {0} does not represent a known filter group name. Valid values "
-"are: {1}"
-msgstr ""
-
-#: Library/Utility/Strings.cs:73
-msgid ""
-"The timeout in seconds for short operations like delete and create folder"
-msgstr ""
-
-#: Library/Utility/Strings.cs:74
-msgid "Short operation timeout"
-msgstr ""
-
-#: Library/Utility/Strings.cs:75
-msgid "The timeout in seconds for listing files and folders"
-msgstr ""
-
-#: Library/Utility/Strings.cs:76
-msgid "List operation timeout"
-msgstr ""
-
-#: Library/Utility/Strings.cs:77
-msgid ""
-"The timeout in seconds for read and write operations. If no activity is "
-"detected in this interval, a timeout error is raised"
-msgstr ""
-
-#: Library/Utility/Strings.cs:78
-msgid "Read/write operation timeout"
-msgstr ""
-
-#: Library/Utility/Strings.cs:97
-msgid "Authentication requires both a username and a password"
-msgstr ""
-
-#: Library/Utility/Strings.cs:104
-#, csharp-format
-msgid "You need an AuthID to use this destination. You can get it from: {0}"
-msgstr ""
-
-#: Library/Utility/Strings.cs:110
-#, csharp-format
-msgid ""
-"The value \"{1}\" supplied to --{0} does not parse into a valid boolean. "
-"This will be treated as if it was set to \"true\""
-msgstr ""
-
-#: Library/Utility/Strings.cs:111
-#, csharp-format
-msgid ""
-"The option --{0} does not support the value \"{1}\". Supported values are: "
-"{2}"
-msgstr ""
-
-#: Library/Utility/Strings.cs:112
-#, csharp-format
-msgid ""
-"The option --{0} does not support the value \"{1}\". Supported flag values "
-"are: {2}"
-msgstr ""
 
 #: Library/Utility/Strings.cs:113
 #, csharp-format
@@ -6295,66 +2102,6 @@ msgid "The value \"{1}\" supplied to --{0} does not represent a valid time"
 msgstr ""
 "Valitsimelle --{0} annettu argumentti \"{1}\" ei ole kelvollinen aikamääre"
 
-#: Library/Utility/Strings.cs:117
-#, csharp-format
-msgid ""
-"The size \"{1}\" supplied to --{0} does not have a multiplier (b, kb, mb, "
-"etc). A multiplier is recommended to avoid unexpected changes if the program"
-" is updated."
-msgstr ""
-
-#: Library/Utility/FilterGroups.cs:191
-#, csharp-format
-msgid "{0}: Selects no filters."
-msgstr ""
-
-#: Library/Utility/FilterGroups.cs:192
-#, csharp-format
-msgid "{0}: A set of default exclude filters, currently evaluates to: {1}."
-msgstr ""
-
-#: Library/Utility/FilterGroups.cs:193
-#, csharp-format
-msgid "{0}: A set of default include filters, currently evaluates to: {1}."
-msgstr ""
-
-#: Library/Utility/FilterGroups.cs:204
-#, csharp-format
-msgid " Aliases: {0}"
-msgstr ""
-
-#: Library/Utility/FilterGroups.cs:217
-#, csharp-format
-msgid ""
-"{0}: Files that are owned by the system or not suited to be backed up. This "
-"includes any operating system reported protected files. Most users should at"
-" least apply these filters."
-msgstr ""
-
-#: Library/Utility/FilterGroups.cs:219
-#, csharp-format
-msgid ""
-"{0}: Files that belong to the operating system. These files are restored "
-"when the operating system is re-installed."
-msgstr ""
-
-#: Library/Utility/FilterGroups.cs:221
-#, csharp-format
-msgid "{0}: Files and folders that are known to be storage of temporary data."
-msgstr ""
-
-#: Library/Utility/FilterGroups.cs:223
-#, csharp-format
-msgid ""
-"{0}: Files and folders that are known cache locations for the operating "
-"system and various applications"
-msgstr ""
-
-#: Library/Utility/FilterGroups.cs:225
-#, csharp-format
-msgid "{0}: Installed programs and their libraries, but not their settings."
-msgstr ""
-
 #: CommandLine/CLI/Strings.cs:27
 #, csharp-format
 msgid "The command {0} needs at least one of the following options set: {1}"
@@ -6373,10 +2120,6 @@ msgstr ""
 #, csharp-format
 msgid "Command not supported: {0}"
 msgstr "Tuntematon komento: {0}"
-
-#: CommandLine/CLI/Strings.cs:31
-msgid "No filesets matched the criteria."
-msgstr ""
 
 #: CommandLine/CLI/Strings.cs:32
 msgid "The following filesets would be deleted:"
@@ -6402,50 +2145,9 @@ msgstr "Tuetut salausmoduulit"
 msgid "Supported options:"
 msgstr "Tuetut valitsimet:"
 
-#: CommandLine/CLI/Strings.cs:38
-#, csharp-format
-msgid "Module is loaded automatically. Use --{0} to prevent this."
-msgstr ""
-
-#: CommandLine/CLI/Strings.cs:39
-#, csharp-format
-msgid "Module is not loaded automatically Use --{0} to load it."
-msgstr ""
-
 #: CommandLine/CLI/Strings.cs:40
 msgid "Supported generic modules:"
 msgstr "Tuetut geneeriset moduulit:"
-
-#: CommandLine/CLI/Strings.cs:42
-#, csharp-format
-msgid ""
-"Filters cannot be specified on the commandline if filters are also present "
-"in the parameter file. Use the special --{0}, --{1}, or --{2} options to "
-"specify filters inside the parameter file. Each filter must be prefixed with"
-" either a + or a -, and multiple filters must be joined with {3}."
-msgstr ""
-
-#: CommandLine/CLI/Strings.cs:43
-#, csharp-format
-msgid ""
-"The option --{0} was supplied, but it is reserved for internal use and may "
-"not be set on the commandline."
-msgstr ""
-
-#: CommandLine/CLI/Strings.cs:44
-#, csharp-format
-msgid ""
-"Use this option to store some or all of the options given to the commandline"
-" client. The file must be a plain text file, and UTF-8 encoding is "
-"preferred. Each line in the file should be of the format --option=value. Use"
-" the special options --{0} and --{1} to override the localpath and the "
-"remote destination uri, respectively. The options in this file take "
-"precedence over the options provided on the commandline. You cannot specify "
-"filters in both the file and on the commandline. Instead, you can use the "
-"special --{2}, --{3}, or --{4} options to specify filters inside the "
-"parameter file. Each filter must be prefixed with either a + or a -, and "
-"multiple filters must be joined with {5}."
-msgstr ""
 
 #: CommandLine/CLI/Strings.cs:46
 #, csharp-format
@@ -6457,31 +2159,9 @@ msgstr "Tapahtui virhe: {0}"
 msgid "The inner error message is: {0}"
 msgstr "Sisäinen virheilmoitus on: {0}"
 
-#: CommandLine/CLI/Strings.cs:48
-msgid ""
-"Include files that match this filter. The special character * means any "
-"number of character, and the special character ? means any single character."
-" Use *.txt to include all files with a txt extension. Regular expressions "
-"are also supported and can be supplied by using hard braces, e.g. "
-"[.*\\.txt]. Filter groups (which encapsulate a built-in set of well-known "
-"files and folders) can be specified by using curly braces, e.g. "
-"{{Applications}}."
-msgstr ""
-
 #: CommandLine/CLI/Strings.cs:49
 msgid "Include files"
 msgstr "Sisällytä tiedostot"
-
-#: CommandLine/CLI/Strings.cs:50
-msgid ""
-"Exclude files that match this filter. The special character * means any "
-"number of character, and the special character ? means any single character."
-" Use *.txt to exclude all files with a txt extension. Regular expressions "
-"are also supported and can be supplied by using hard braces, e.g. "
-"[.*\\.txt]. Filter groups (which encapsulate a built-in set of well-known "
-"files and folders) can be specified by using curly braces, e.g. "
-"{{TemporaryFiles}}."
-msgstr ""
 
 #: CommandLine/CLI/Strings.cs:51
 msgid "Exclude files"
@@ -6524,29 +2204,3 @@ msgid ""
 msgstr ""
 "Käytä tätä valitsinta, jos haluat komentoriviversion päivittyvän "
 "automaattisesti."
-
-#: CommandLine/CLI/Strings.cs:59
-msgid "Use portable mode"
-msgstr ""
-
-#: CommandLine/CLI/Strings.cs:60
-msgid ""
-"If this option is set, the configuration files will be stored in a data "
-"subfolder of the Duplicati installation folder. This is useful for running "
-"from a USB stick or other portable media."
-msgstr ""
-
-#: CommandLine/CLI/Strings.cs:61
-msgid "Data folder"
-msgstr ""
-
-#: CommandLine/CLI/Strings.cs:62
-msgid ""
-"The folder where data is stored. This is the folder where the database and "
-"other files are stored."
-msgstr ""
-
-#: CommandLine/CLI/Strings.cs:69
-#, csharp-format
-msgid "This link may provide additional information: {0}"
-msgstr ""
