@@ -59,14 +59,6 @@ msgstr "<i class=\"fa fa-check\"></i> 以文本编辑"
 msgid "<i class=\"fa\"></i> Edit as text"
 msgstr "<i class=\"fa\"></i> 以文本编辑"
 
-#: templates/addoredit.html:312
-msgid ""
-"<p ng-show=\"(parseSizeString(Options['dblock-size']) &gt; 1024 * 1024 * 1024 * 2) || (parseSizeString(Options['dblock-size']) &lt; 1024 * 1024 * 5)\" class=\"warning\" translate>\n"
-"                            The chosen size is outside the recommended range. This may cause performance issues, excessively large temporary files or other problems.\n"
-"                        </p>\n"
-"                        The backups will be split up into multiple files called volumes. Here you can set the maximum size of the individual volume files. <external-link link=\"'https://forum.duplicati.com/t/choosing-sizes-in-duplicati/17683'\">See this page for more information.</external-link>"
-msgstr ""
-
 #: index.html:298
 msgid ""
 "<p>Connection to server was rejected due to invalid authentication.</p>\n"
@@ -74,16 +66,6 @@ msgid ""
 msgstr ""
 "<p>由于无效的身份验证，连接服务器被拒绝。</p>\n"
 "                <p>重新登录，或者从托盘图标重新打开页面（如果适用）。</p>"
-
-#: templates/backends/filejump.html:30
-msgid ""
-"<span ng-show=\"!$parent.UsernamePasswordAuth\" translate>Use username and password authentication</span>\n"
-"        <span ng-show=\"$parent.UsernamePasswordAuth\" translate>Use API token authentication (recommended)</span>"
-msgstr ""
-
-#: scripts/services/EditUriBuiltins.js:1097
-msgid "API Token"
-msgstr ""
 
 #: scripts/services/EditUriBuiltins.js:1368
 #: templates/backends/openstack.html:44 templates/backends/storj.html:21
@@ -280,10 +262,6 @@ msgstr "导出为命令行"
 #: templates/backends/sharepoint.html:9
 msgid "AuthID"
 msgstr "授权 ID"
-
-#: templates/backends/smb.html:34
-msgid "Authentication Domain"
-msgstr ""
 
 #: scripts/services/EditUriBuiltins.js:1359 templates/backends/storj.html:2
 msgid "Authentication method"
@@ -571,10 +549,6 @@ msgstr "选择存储类型以开始"
 msgid "Click the AuthID link to create an AuthID"
 msgstr "点击\"授权 ID\"链接来创建一个授权 ID"
 
-#: templates/backends/filejump.html:10
-msgid "Click the Filejump API token link to set up an API token"
-msgstr ""
-
 #: index.html:148 index.html:199
 msgid "Click to set throttle options"
 msgstr "点击配置限流"
@@ -755,14 +729,6 @@ msgstr "正在计算 (已找到 {{files}} 个文件，{{size}})"
 #: templates/settings.html:170
 msgid "Crashes only"
 msgstr "仅崩溃"
-
-#: templates/home.html:11
-msgid "Create Order"
-msgstr ""
-
-#: templates/home.html:21
-msgid "Create Order (descending)"
-msgstr ""
 
 #: templates/home.html:75
 msgid "Create bug report …"
@@ -960,14 +926,6 @@ msgstr "桌面"
 msgid "Destination"
 msgstr "目标位置"
 
-#: templates/home.html:12
-msgid "Destination Type"
-msgstr ""
-
-#: templates/home.html:22
-msgid "Destination Type (descending)"
-msgstr ""
-
 #: templates/backends/file.html:7 templates/backends/filejump.html:3
 #: templates/backends/filen.html:3 templates/backends/generic.html:14
 #: templates/backends/jottacloud.html:3 templates/backends/msgroup.html:8
@@ -975,18 +933,6 @@ msgstr ""
 #: templates/backends/sharepoint.html:2 templates/backends/smb.html:29
 msgid "Destination path"
 msgstr "目标路径"
-
-#: templates/home.html:18
-msgid "Destination size"
-msgstr ""
-
-#: templates/home.html:28
-msgid "Destination size (descending)"
-msgstr ""
-
-#: templates/backends/smb.html:8
-msgid "Direct TCP"
-msgstr ""
 
 #: templates/restorewizard.html:9
 msgid "Direct restore from backup files …"
@@ -1024,10 +970,6 @@ msgstr "您确定要删除备份：\"{{name}}\"吗 ？"
 #: scripts/controllers/LocalDatabaseController.js:28
 msgid "Do you really want to delete the local database for: {{name}}"
 msgstr "您确定要删除 \"{{name}}\" 的本地数据库吗 ？"
-
-#: templates/backends/smb.html:33
-msgid "Domain"
-msgstr ""
 
 #: templates/backends/openstack.html:26
 msgid "Domain name"
@@ -1092,10 +1034,6 @@ msgstr "Duplicati 将在启动后运行，但会保持在暂停状态。Duplicat
 #: templates/backup-result/top-left-box.html:11 templates/home.html:19
 msgid "Duration"
 msgstr "时间"
-
-#: templates/home.html:29
-msgid "Duration (descending)"
-msgstr ""
 
 #: templates/delete.html:15
 msgid ""
@@ -1430,10 +1368,6 @@ msgstr "获取路径信息…"
 msgid "File"
 msgstr "文件"
 
-#: templates/backends/filejump.html:8
-msgid "Filejump API token"
-msgstr ""
-
 #: templates/addoredit.html:237
 msgid "Files larger than:"
 msgstr "文件大于"
@@ -1521,18 +1455,6 @@ msgstr "正在获取文件版本..."
 msgid "Group email"
 msgstr "群组邮箱"
 
-#: templates/home.html:16
-msgid "Has Scheduled"
-msgstr ""
-
-#: templates/home.html:26
-msgid "Has Scheduled (descending)"
-msgstr ""
-
-#: index.html:311
-msgid "Help"
-msgstr ""
-
 #: scripts/controllers/EditBackupController.js:20
 msgid "Hidden files"
 msgstr "隐藏文件"
@@ -1540,10 +1462,6 @@ msgstr "隐藏文件"
 #: templates/addoredit.html:68
 msgid "Hide"
 msgstr "隐藏"
-
-#: templates/backends/file.html:15 templates/restore.html:98
-msgid "Hide hidden items"
-msgstr ""
 
 #: index.html:208 scripts/services/AppUtils.js:62
 msgid "Home"
@@ -1746,14 +1664,6 @@ msgstr "Keystone API 版本"
 msgid "Language in user interface"
 msgstr "界面语言"
 
-#: templates/home.html:13
-msgid "Last Run"
-msgstr ""
-
-#: templates/home.html:23
-msgid "Last Run (descending)"
-msgstr ""
-
 #: scripts/controllers/RestoreController.js:38
 msgid "Last month"
 msgstr "上月"
@@ -1953,12 +1863,6 @@ msgstr "周一"
 msgid "Months"
 msgstr "月"
 
-#: scripts/services/EditUriBackendConfig.js:136
-msgid ""
-"Most servers require a username, so you will likely need to enter one.\n"
-"Are you sure want to continue without a username?"
-msgstr ""
-
 #: templates/localdatabase.html:31
 msgid "Move existing database"
 msgstr "移动已有数据库"
@@ -1970,14 +1874,6 @@ msgstr "移动失败："
 #: scripts/services/AppUtils.js:54
 msgid "My Documents"
 msgstr "我的文档"
-
-#: scripts/services/AppUtils.js:66
-msgid "My Downloads"
-msgstr ""
-
-#: scripts/services/AppUtils.js:64
-msgid "My Movies"
-msgstr ""
 
 #: scripts/services/AppUtils.js:56
 msgid "My Music"
@@ -1994,14 +1890,6 @@ msgstr "我的图片"
 #: templates/addoredit.html:39 templates/home.html:15
 msgid "Name"
 msgstr "名称"
-
-#: templates/home.html:25
-msgid "Name (descending)"
-msgstr ""
-
-#: templates/backends/smb.html:11
-msgid "Netbios over TCP"
-msgstr ""
 
 #: templates/home.html:87
 msgid "Never"
@@ -2029,14 +1917,6 @@ msgstr ""
 #: templates/restorewizard.html:36
 msgid "Next"
 msgstr "下一步"
-
-#: templates/home.html:14
-msgid "Next Scheduled Run"
-msgstr ""
-
-#: templates/home.html:24
-msgid "Next Scheduled Run (descending)"
-msgstr ""
 
 #: templates/home.html:91
 msgid "Next scheduled run:"
@@ -2243,10 +2123,6 @@ msgid ""
 " individual backup."
 msgstr "在此添加的选项适用于所有备份，但每个备份中可以单独设置来覆盖此选项"
 
-#: templates/home.html:7
-msgid "Order by"
-msgstr ""
-
 #: templates/restore.html:81
 msgid "Original location"
 msgstr "原位置"
@@ -2378,10 +2254,6 @@ msgstr "若 Bucket 存在， 则项目ID 可选"
 #: scripts/services/SystemInfo.js:90
 msgid "Proprietary"
 msgstr "专有"
-
-#: scripts/services/AppUtils.js:68
-msgid "Public"
-msgstr ""
 
 #: templates/backup-result/phases/purge.html:3
 msgid "Purge Phase"
@@ -2621,10 +2493,6 @@ msgstr "正在运行… <a href ng-click=\"Abort()\" ng-hide=\"RawFinished\">立
 msgid "S3 Compatible"
 msgstr "S3 兼容"
 
-#: scripts/services/SystemInfo.js:53
-msgid "SMB / CIFS"
-msgstr ""
-
 #: templates/settings.html:130
 msgid "Same as the base install version: {{channelname}}"
 msgstr "与当前安装版本一致：{{channelname}}"
@@ -2736,14 +2604,6 @@ msgstr "将时区设置为默认时区"
 msgid "Settings"
 msgstr "设置"
 
-#: templates/backends/smb.html:23
-msgid "Share Name"
-msgstr ""
-
-#: scripts/services/EditUriBuiltins.js:1078 templates/backends/smb.html:24
-msgid "Share name"
-msgstr ""
-
 #: templates/addoredit.html:69 templates/notificationarea.html:12
 #: templates/notificationarea.html:31 templates/notificationarea.html:41
 msgid "Show"
@@ -2752,15 +2612,6 @@ msgstr "查看"
 #: templates/addoredit.html:132
 msgid "Show advanced editor"
 msgstr "显示高级编辑器"
-
-#: templates/notificationarea.html:18 templates/notificationarea.html:19
-msgid "Show help"
-msgstr ""
-
-#: templates/addoredit.html:143 templates/backends/file.html:16
-#: templates/restore.html:99
-msgid "Show hidden items"
-msgstr ""
 
 #: templates/about.html:8
 msgid "Show log"
@@ -2808,14 +2659,6 @@ msgstr "源数据"
 #: templates/addoredit.html:149
 msgid "Source folders"
 msgstr "源文件夹"
-
-#: templates/home.html:17
-msgid "Source size"
-msgstr ""
-
-#: templates/home.html:27
-msgid "Source size (descending)"
-msgstr ""
 
 #: templates/home.html:96
 msgid "Source:"
@@ -3021,12 +2864,6 @@ msgstr "这是已经不存在的临时备份，因此没有日志数据"
 msgid "The bucket name should be all lower-case, convert automatically?"
 msgstr "Bucket 名称应当是全小写，需要自动转换吗？"
 
-#: templates/addoredit.html:313
-msgid ""
-"The chosen size is outside the recommended range. This may cause performance"
-" issues, excessively large temporary files or other problems."
-msgstr ""
-
 #: scripts/controllers/ExportController.js:13
 msgid ""
 "The configuration should be kept safe. Are you sure you want to save an "
@@ -3165,13 +3002,6 @@ msgstr "时区"
 msgid "To File"
 msgstr "导出为文件"
 
-#: templates/confirmdelete.html:3
-msgid ""
-"To confirm you want to delete all remote files for\n"
-"      <span class=\"backupname\">\"{{selection.backupname}}\"</span>, please enter\n"
-"      this phrase:"
-msgstr ""
-
 #: scripts/controllers/ExportController.js:67
 msgid "To export without a passphrase, uncheck the \"Encrypt file\" box"
 msgstr "如果不想使用密码加密导出的文件，请去除勾选\"加密文件\""
@@ -3198,10 +3028,6 @@ msgstr ""
 msgid "Today"
 msgstr "今天"
 
-#: templates/backends/smb.html:3
-msgid "Transport"
-msgstr ""
-
 #: scripts/directives/backupEditUri.js:172
 msgid "Trust host certificate?"
 msgstr "信任主机证书？"
@@ -3209,12 +3035,6 @@ msgstr "信任主机证书？"
 #: scripts/directives/backupEditUri.js:86
 msgid "Trust server certificate?"
 msgstr "信任服务器证书？"
-
-#: templates/settings.html:141
-msgid ""
-"Try out the new features that we are working on. Test Backup &amp; Restore "
-"before using this in production environments."
-msgstr ""
 
 #: scripts/services/AppUtils.js:111
 msgid "Tue"
@@ -3282,10 +3102,6 @@ msgstr "使用情况统计"
 msgid "Usage statistics, warnings, errors, and crashes"
 msgstr "使用情况统计、警告、错误和崩溃"
 
-#: templates/backends/filejump.html:32
-msgid "Use API token authentication (recommended)"
-msgstr ""
-
 #: templates/backends/generic.html:2 templates/backends/s3.html:2
 msgid "Use SSL"
 msgstr "启用 SSL"
@@ -3293,14 +3109,6 @@ msgstr "启用 SSL"
 #: scripts/controllers/EditBackupController.js:454
 msgid "Use existing database?"
 msgstr "使用已存在的数据库？"
-
-#: index.html:263
-msgid "Use new UI"
-msgstr ""
-
-#: templates/backends/filejump.html:31
-msgid "Use username and password authentication"
-msgstr ""
 
 #: scripts/controllers/EditBackupController.js:348
 msgid "Use weak passphrase"
@@ -3336,12 +3144,6 @@ msgstr "界面设置"
 #: templates/backends/smb.html:38
 msgid "Username"
 msgstr "用户名"
-
-#: templates/backends/filejump.html:14
-msgid ""
-"Username and password authentication is not recommended and does not work with MFA/2FA enabled accounts.\n"
-"        Use the API token if possible."
-msgstr ""
 
 #: scripts/services/ServerStatus.js:60
 msgid "Vacuuming database …"
