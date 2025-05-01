@@ -71,8 +71,11 @@ namespace Duplicati.Library.Backend.Box
                 await using var stream = await responseContext.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
                 using var reader = new StreamReader(stream);
                 var rawData = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancellationToken, ct => reader.ReadToEndAsync(ct)).ConfigureAwait(false);
-                var errorResponse = JsonConvert.DeserializeObject<ErrorResponse>(rawData)
-                    ?? new ErrorResponse { Status = (int)responseContext.StatusCode, Code = "Unknown", Message = rawData };
+                ErrorResponse? errorResponse = null;
+                try { errorResponse = JsonConvert.DeserializeObject<ErrorResponse>(rawData); }
+                catch { }
+
+                errorResponse ??= new ErrorResponse { Status = (int)responseContext.StatusCode, Code = "Unknown", Message = rawData };
                 throw new UserInformationException($"Box.com ErrorResponse: {errorResponse.Status} - {errorResponse.Code}: {errorResponse.Message}", "box.com");
             }
         }
