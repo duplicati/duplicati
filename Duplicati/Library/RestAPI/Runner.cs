@@ -45,6 +45,8 @@ namespace Duplicati.Server
             void Resume();
             void UpdateThrottleSpeed(string uploadSpeed, string downloadSpeed);
             void SetController(Duplicati.Library.Main.Controller controller);
+            DateTime? TaskStarted { get; set; }
+            DateTime? TaskFinished { get; set; }
         }
 
         private class RunnerData : IRunnerData
@@ -62,6 +64,9 @@ namespace Duplicati.Server
             public string[] ExtraArguments { get; internal set; }
             public int PageSize { get; internal set; } = 0;
             public int PageOffset { get; internal set; } = 0;
+
+            public DateTime? TaskStarted { get; set; }
+            public DateTime? TaskFinished { get; set; }
 
             internal Duplicati.Library.Main.Controller Controller { get; set; }
 
@@ -471,6 +476,7 @@ namespace Duplicati.Server
 
         public static Duplicati.Library.Interface.IBasicResults Run(IRunnerData data, bool fromQueue)
         {
+            data.TaskStarted = DateTime.Now;
             if (data is CustomRunnerTask task)
             {
                 try
@@ -484,6 +490,10 @@ namespace Duplicati.Server
                 catch (Exception ex)
                 {
                     FIXMEGlobal.DataConnection.LogError(string.Empty, "Failed while executing custom task", ex);
+                }
+                finally
+                {
+                    data.TaskFinished = DateTime.Now;
                 }
 
                 return null;
@@ -707,7 +717,8 @@ namespace Duplicati.Server
             }
             finally
             {
-                ((RunnerData)data).Controller = null;
+                data.SetController(null);
+                data.TaskFinished = DateTime.Now;
             }
         }
 

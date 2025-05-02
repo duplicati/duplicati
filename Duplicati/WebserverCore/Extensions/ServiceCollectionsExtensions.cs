@@ -68,7 +68,8 @@ public static class ServiceCollectionsExtensions
             .AddSingleton<IRemoteController, RemoteControllerService>()
             .AddSingleton<IRemoteControllerHandler, RemoteControllerHandler>()
             .AddSingleton<IRemoteControllerRegistration, RemoteControllerRegistrationService>()
-            .AddSingleton<ISystemInfoProvider, SystemInfoProvider>();
+            .AddSingleton<ISystemInfoProvider, SystemInfoProvider>()
+            .AddSingleton<ITaskCacheService, TaskCacheService>();
 
         return services;
     }

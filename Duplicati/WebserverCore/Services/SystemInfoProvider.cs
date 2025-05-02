@@ -42,7 +42,9 @@ public class SystemInfoProvider : ISystemInfoProvider
         "v2:backup:list-folder",
         "v2:backup:list-versions",
         "v2:backup:search",
-        "v2:destination:test"
+        "v2:destination:test",
+        "v1:gettask:taskstarted",
+        "v1:gettask:taskfinished",
     ];
 
     /// <summary>

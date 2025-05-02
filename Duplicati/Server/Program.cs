@@ -100,24 +100,9 @@ namespace Duplicati.Server
         public static Database.Connection DataConnection { get => FIXMEGlobal.DataConnection; set => FIXMEGlobal.DataConnection = value; }
 
         /// <summary>
-        /// This is the lock to be used before manipulating the shared resources
-        /// </summary>
-        public static object MainLock { get => FIXMEGlobal.MainLock; }
-
-        /// <summary>
         /// This is the scheduling thread
         /// </summary>
         public static IScheduler Scheduler { get => FIXMEGlobal.Scheduler; }
-
-        /// <summary>
-        /// List of completed task results
-        /// </summary>
-        public static List<KeyValuePair<long, Exception>> TaskResultCache { get => FIXMEGlobal.TaskResultCache; }
-
-        /// <summary>
-        /// The maximum number of completed task results to keep in memory
-        /// </summary>
-        private static readonly int MAX_TASK_RESULT_CACHE_SIZE = 100;
 
         /// <summary>
         /// The thread running the ping-pong handler
@@ -450,13 +435,22 @@ namespace Duplicati.Server
         private static void SetWorkerThread()
         {
             FIXMEGlobal.WorkerThreadsManager.Spawn(x => { Runner.Run(x, true); });
-            FIXMEGlobal.WorkThread.StartingWork += (worker, task) => { SignalNewEvent(null, null); };
-            FIXMEGlobal.WorkThread.CompletedWork += (worker, task) => { SignalNewEvent(null, null); };
+            FIXMEGlobal.WorkThread.StartingWork += (worker, task) =>
+            {
+                SignalNewEvent(null, null);
+                task.TaskStarted = DateTime.Now;
+            };
+            FIXMEGlobal.WorkThread.CompletedWork += (worker, task) =>
+            {
+                SignalNewEvent(null, null);
+                FIXMEGlobal.Provider.GetRequiredService<ITaskCacheService>()?.AddTaskResult(new CachedTaskResult(task.TaskID, task.BackupID, task.TaskStarted, task.TaskFinished ?? DateTime.Now, null));
+            };
             FIXMEGlobal.WorkThread.WorkQueueChanged += (worker) => { SignalNewEvent(null, null); };
             FIXMEGlobal.Scheduler.SubScribeToNewSchedule(() => SignalNewEvent(null, null));
             FIXMEGlobal.WorkThread.OnError += (worker, task, exception) =>
             {
                 DataConnection.LogError(task?.BackupID, "Error in worker", exception);
+                FIXMEGlobal.Provider.GetRequiredService<ITaskCacheService>()?.AddTaskResult(new CachedTaskResult(task.TaskID, task.BackupID, task.TaskStarted, task.TaskFinished ?? DateTime.Now, exception));
             };
 
             var lastScheduleId = FIXMEGlobal.NotificationUpdateService.LastDataUpdateId;
@@ -466,28 +460,6 @@ namespace Duplicati.Server
                 lastScheduleId = FIXMEGlobal.NotificationUpdateService.LastDataUpdateId;
                 Scheduler.Reschedule();
             };
-
-            void RegisterTaskResult(long id, Exception ex)
-            {
-                lock (MainLock)
-                {
-                    // If the new results says it crashed, we store that instead of success
-                    if (TaskResultCache.Count > 0 && TaskResultCache.Last().Key == id)
-                    {
-                        if (ex != null && TaskResultCache.Last().Value == null)
-                            TaskResultCache.RemoveAt(TaskResultCache.Count - 1);
-                        else
-                            return;
-                    }
-
-                    TaskResultCache.Add(new KeyValuePair<long, Exception>(id, ex));
-                    while (TaskResultCache.Count > MAX_TASK_RESULT_CACHE_SIZE)
-                        TaskResultCache.RemoveAt(0);
-                }
-            }
-
-            FIXMEGlobal.WorkThread.CompletedWork += (worker, task) => { RegisterTaskResult(task.TaskID, null); };
-            FIXMEGlobal.WorkThread.OnError += (worker, task, exception) => { RegisterTaskResult(task.TaskID, exception); };
         }
 
         private static void SetPurgeTempFilesTimer(Dictionary<string, string> commandlineOptions)

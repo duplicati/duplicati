@@ -21,7 +21,6 @@
 
 using Duplicati.Server;
 using System;
-using System.Collections.Generic;
 using Duplicati.Library.RestAPI.Abstractions;
 using Duplicati.Library.Utility;
 using Duplicati.WebserverCore.Abstractions;
@@ -109,18 +108,6 @@ namespace Duplicati.Library.RestAPI
         /// The application exit event
         /// </summary>
         public static System.Threading.ManualResetEvent ApplicationExitEvent;
-
-
-        /// <summary>
-        /// List of completed task results
-        /// </summary>
-        public static readonly List<KeyValuePair<long, Exception>> TaskResultCache = new List<KeyValuePair<long, Exception>>();
-
-
-        /// <summary>
-        /// This is the lock to be used before manipulating the shared resources
-        /// </summary>
-        public static readonly object MainLock = new object();
 
         /// <summary>
         /// The shared secret provider from the server invocation
