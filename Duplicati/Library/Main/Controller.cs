@@ -74,11 +74,6 @@ namespace Duplicati.Library.Main
         private LocaleChange m_localeChange = null;
 
         /// <summary>
-        /// The multi-controller log target
-        /// </summary>
-        private ControllerMultiLogTarget m_logTarget;
-
-        /// <summary>
         /// Callback method invoked when an operation is started
         /// </summary>
         public Action<IBasicResults> OnOperationStarted { get; set; }
@@ -483,10 +478,10 @@ namespace Duplicati.Library.Main
         {
             OnOperationStarted?.Invoke(result);
             var resultSetter = result as ISetCommonOptions;
-            m_logTarget = new ControllerMultiLogTarget(result, Logging.LogMessageType.Information, null);
-            using (Logging.Log.StartScope(m_logTarget, null))
+            using (var logTarget = new ControllerMultiLogTarget(result, Logging.LogMessageType.Information, null))
+            using (Logging.Log.StartScope(logTarget, null))
             {
-                m_logTarget.AddTarget(m_messageSink, m_options.ConsoleLoglevel, m_options.ConsoleLogFilter);
+                logTarget.AddTarget(m_messageSink, m_options.ConsoleLoglevel, m_options.ConsoleLogFilter);
                 result.MessageSink = m_messageSink;
 
                 try
@@ -494,7 +489,7 @@ namespace Duplicati.Library.Main
                     m_currentTaskControl = result.TaskControl;
                     m_options.MainAction = result.MainOperation;
                     ApplySecretProvider(CancellationToken.None).Await();
-                    SetupCommonOptions(result, ref paths, ref filter);
+                    SetupCommonOptions(result, ref paths, ref filter, logTarget);
                     Logging.Log.WriteInformationMessage(LOGTAG, "StartingOperation", Strings.Controller.StartingOperationMessage(m_options.MainAction));
 
                     using (new ProcessController(m_options))
@@ -651,16 +646,10 @@ namespace Duplicati.Library.Main
                 m_localeChange = null;
             }
 
-            if (m_logTarget != null)
-            {
-                m_logTarget.Dispose();
-                m_logTarget = null;
-            }
-
             OnOperationCompleted?.Invoke(result, exception);
         }
 
-        private void SetupCommonOptions(ISetCommonOptions result, ref string[] paths, ref IFilter filter)
+        private void SetupCommonOptions(ISetCommonOptions result, ref string[] paths, ref IFilter filter, ControllerMultiLogTarget logTarget)
         {
             m_options.MainAction = result.MainOperation;
 
@@ -740,14 +729,12 @@ namespace Duplicati.Library.Main
                 if (!Directory.Exists(path))
                     Directory.CreateDirectory(path);
 
-                m_logTarget.AddTarget(
+                logTarget.AddTarget(
                     new Library.Logging.StreamLogDestination(m_options.Logfile),
                     m_options.LogFileLoglevel,
                     m_options.LogFileLogFilter
                 );
             }
-
-
 
             if (m_options.HasTempDir)
             {
