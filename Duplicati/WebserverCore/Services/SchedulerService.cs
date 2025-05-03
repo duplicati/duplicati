@@ -19,30 +19,31 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
-using Duplicati.Library.Utility;
+using Duplicati.Library.RestAPI;
 using Duplicati.Server;
 using Duplicati.Server.Serialization.Interface;
 using Duplicati.WebserverCore.Abstractions;
 
 namespace WebserverCore.Services;
 
-public class SchedulerService : IScheduler
+public class SchedulerService : ISchedulerService
 {
-    private readonly Duplicati.Server.Scheduler scheduler;
-    public SchedulerService(Duplicati.Server.Scheduler scheduler)
+    private readonly Scheduler scheduler;
+    public SchedulerService(EventPollNotify eventPollNotify, INotificationUpdateService notificationUpdateService, IQueueRunnerService queueRunnerService)
     {
-        this.scheduler = scheduler;
+        this.scheduler = new Scheduler(queueRunnerService);
+        var lastScheduleId = notificationUpdateService.LastDataUpdateId;
+        eventPollNotify.NewEvent += (sender, e) =>
+        {
+            if (lastScheduleId != notificationUpdateService.LastDataUpdateId)
+            {
+                lastScheduleId = notificationUpdateService.LastDataUpdateId;
+                Reschedule();
+            }
+        };
     }
 
     public List<KeyValuePair<DateTime, ISchedule>> Schedule => scheduler.Schedule;
-
-    public List<Runner.IRunnerData> WorkerQueue => scheduler.WorkerQueue;
-
-    public void SubScribeToNewSchedule(Action handler)
-        => scheduler.NewSchedule += (_, _) => handler();
-
-    public IList<Tuple<long, string>> GetSchedulerQueueIds()
-        => scheduler.GetSchedulerQueueIds();
 
     public IList<Tuple<string, DateTime>> GetProposedSchedule()
         => scheduler.GetProposedSchedule();
@@ -52,7 +53,4 @@ public class SchedulerService : IScheduler
 
     public void Terminate(bool wait)
         => scheduler.Terminate(wait);
-
-    public void Init(WorkerThread<Runner.IRunnerData> worker)
-        => scheduler.Init(worker);
 }

@@ -1397,7 +1397,7 @@ namespace Duplicati.Library.Utility
         /// <returns>The wrapped commandline element.</returns>
         /// <param name="arg">The argument to wrap.</param>
         /// <param name="allowEnvExpansion">A flag indicating if environment variables are allowed to be expanded</param>
-        public static string WrapCommandLineElement(string arg, bool allowEnvExpansion)
+        public static string WrapCommandLineElement(string? arg, bool allowEnvExpansion)
         {
             if (string.IsNullOrWhiteSpace(arg))
                 return arg;

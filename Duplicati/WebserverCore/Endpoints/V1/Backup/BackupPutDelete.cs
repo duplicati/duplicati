@@ -18,8 +18,6 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
-using System.Text.Json;
-using Duplicati.Library.RestAPI.Abstractions;
 using Duplicati.Server;
 using Duplicati.Server.Database;
 using Duplicati.Server.Serialization;
@@ -38,9 +36,9 @@ public class BackupPutDelete : IEndpointV1
             => ExecutePut(GetBackup(connection, id), connection, input))
             .RequireAuthorization();
 
-        group.MapDelete("/backup/{id}", ([FromServices] Connection connection, [FromServices] IWorkerThreadsManager workerThreadsManager, [FromServices] LiveControls liveControls, [FromServices] IHttpContextAccessor httpContextAccessor, [FromRoute] string id, [FromQuery(Name = "delete-remote-files")] bool? delete_remote_files, [FromQuery(Name = "delete-local-db")] bool? delete_local_db, [FromQuery] bool? force) =>
+        group.MapDelete("/backup/{id}", ([FromServices] Connection connection, [FromServices] IQueueRunnerService queueRunnerService, [FromServices] LiveControls liveControls, [FromServices] IHttpContextAccessor httpContextAccessor, [FromRoute] string id, [FromQuery(Name = "delete-remote-files")] bool? delete_remote_files, [FromQuery(Name = "delete-local-db")] bool? delete_local_db, [FromQuery] bool? force) =>
         {
-            var res = ExecuteDelete(GetBackup(connection, id), workerThreadsManager, liveControls, delete_remote_files ?? false, delete_local_db, force ?? false);
+            var res = ExecuteDelete(GetBackup(connection, id), queueRunnerService, liveControls, delete_remote_files ?? false, delete_local_db, force ?? false);
             if (res.Status != "OK" && httpContextAccessor.HttpContext != null)
                 httpContextAccessor.HttpContext.Response.StatusCode = 500;
             return res;
@@ -132,67 +130,56 @@ public class BackupPutDelete : IEndpointV1
         }
     }
 
-    private static Dto.DeleteBackupOutputDto ExecuteDelete(IBackup backup, IWorkerThreadsManager workerThreadsManager, LiveControls liveControls, bool delete_remote_files, bool? delete_local_db, bool force)
+    private static Dto.DeleteBackupOutputDto ExecuteDelete(IBackup backup, IQueueRunnerService queueRunnerService, LiveControls liveControls, bool delete_remote_files, bool? delete_local_db, bool force)
     {
-        if (workerThreadsManager.WorkerThread!.Active)
+        try
         {
-            try
+            var nt = queueRunnerService.GetCurrentTask();
+            if (backup.ID == nt?.BackupID)
             {
-                //TODO: It's not safe to access the values like this, 
-                //because the runner thread might interfere
-                var nt = workerThreadsManager.WorkerThread.CurrentTask;
-                if (backup.Equals(nt?.Backup))
+                if (!force)
+                    return new Dto.DeleteBackupOutputDto("failed", "backup-in-progress", nt?.TaskID);
+
+
+                bool hasPaused = liveControls.State != LiveControls.LiveControlState.Paused;
+                if (hasPaused)
+                    liveControls.Pause(true);
+                nt.Abort();
+
+                for (int i = 0; i < 10; i++)
                 {
-                    if (!force)
-                        return new Dto.DeleteBackupOutputDto("failed", "backup-in-progress", nt?.TaskID);
+                    var tt = queueRunnerService.GetCurrentTask();
+                    if (backup.ID == tt?.BackupID)
+                        Thread.Sleep(1000);
+                    else
+                        break;
+                }
 
-
-                    bool hasPaused = liveControls.State != LiveControls.LiveControlState.Paused;
-                    if (hasPaused)
-                        liveControls.Pause(true);
-                    nt.Abort();
-
-                    for (int i = 0; i < 10; i++)
-                        if (workerThreadsManager.WorkerThread.Active)
-                        {
-                            var t = workerThreadsManager.WorkerThread.CurrentTask;
-                            if (backup.Equals(t == null ? null : t.Backup))
-                                Thread.Sleep(1000);
-                            else
-                                break;
-                        }
-                        else
-                            break;
-
-                    if (workerThreadsManager.WorkerThread.Active)
-                    {
-                        var t = workerThreadsManager.WorkerThread.CurrentTask;
-                        if (backup.Equals(t == null ? null : t.Backup))
-                        {
-                            if (hasPaused)
-                                liveControls.Resume();
-
-                            return new Dto.DeleteBackupOutputDto("failed", "backup-unstoppable", t?.TaskID);
-                        }
-                    }
-
+                var t = queueRunnerService.GetCurrentTask();
+                if (backup.ID == t?.BackupID)
+                {
                     if (hasPaused)
                         liveControls.Resume();
+
+                    return new Dto.DeleteBackupOutputDto("failed", "backup-unstoppable", t?.TaskID);
                 }
-            }
-            catch (Exception ex)
-            {
-                return new Dto.DeleteBackupOutputDto("error", ex.Message, null);
+
+                if (hasPaused)
+                    liveControls.Resume();
             }
         }
+        catch (Exception ex)
+        {
+            return new Dto.DeleteBackupOutputDto("error", ex.Message, null);
+        }
 
-        var extra = new Dictionary<string, string>();
+        var extra = new Dictionary<string, string?>();
         if (delete_local_db.HasValue)
             extra["delete-local-db"] = delete_local_db.Value.ToString();
         if (delete_remote_files)
             extra["delete-remote-files"] = "true";
 
-        return new Dto.DeleteBackupOutputDto("OK", null, workerThreadsManager.AddTask(Runner.CreateTask(DuplicatiOperation.Delete, backup, extra)));
+        return new Dto.DeleteBackupOutputDto("OK", null, queueRunnerService.AddTask(Runner.CreateTask(DuplicatiOperation.Delete, backup, extra)));
     }
 
 }

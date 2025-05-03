@@ -34,35 +34,35 @@ public class Tasks : IEndpointV1
     }
     public static void Map(RouteGroupBuilder group)
     {
-        group.MapGet("/tasks", Execute).RequireAuthorization();
-        group.MapGet("/task/{taskid}", ([FromRoute] long taskId, [FromServices] ITaskCacheService taskCacheService) => ExecuteGet(taskCacheService, taskId)).RequireAuthorization();
-        group.MapPost("/task/{taskid}/stop", ([FromRoute] long taskId) => ExecutePost(taskId, TaskStopState.Stop)).RequireAuthorization();
-        group.MapPost("/task/{taskid}/abort", ([FromRoute] long taskId) => ExecutePost(taskId, TaskStopState.Abort)).RequireAuthorization();
+        group.MapGet("/tasks", ([FromServices] IQueueRunnerService queueRunnerService) => Execute(queueRunnerService)).RequireAuthorization();
+        group.MapGet("/task/{taskid}", ([FromRoute] long taskId, [FromServices] IQueueRunnerService queueRunnerService) => ExecuteGet(queueRunnerService, taskId)).RequireAuthorization();
+        group.MapPost("/task/{taskid}/stop", ([FromRoute] long taskId, [FromServices] IQueueRunnerService queueRunnerService) => ExecutePost(queueRunnerService, taskId, TaskStopState.Stop)).RequireAuthorization();
+        group.MapPost("/task/{taskid}/abort", ([FromRoute] long taskId, [FromServices] IQueueRunnerService queueRunnerService) => ExecutePost(queueRunnerService, taskId, TaskStopState.Abort)).RequireAuthorization();
 
     }
 
-    private static IEnumerable<Server.Runner.IRunnerData> Execute()
+    private static IEnumerable<Server.Runner.IRunnerData> Execute(IQueueRunnerService queueRunnerService)
     {
-        var cur = FIXMEGlobal.WorkThread.CurrentTask;
-        var n = FIXMEGlobal.WorkThread.CurrentTasks;
+        var cur = queueRunnerService.GetCurrentTask();
+        var n = queueRunnerService.GetCurrentTasks();
 
         if (cur != null)
             n.Insert(0, cur);
 
-        return n;
+        return n.OfType<Server.Runner.IRunnerData>();
     }
 
-    private static Dto.GetTaskStateDto ExecuteGet(ITaskCacheService taskCacheService, long taskid)
+    private static Dto.GetTaskStateDto ExecuteGet(IQueueRunnerService queueRunnerService, long taskid)
     {
-        var task = FIXMEGlobal.WorkThread.CurrentTask;
-        var tasks = FIXMEGlobal.WorkThread.CurrentTasks;
+        var task = queueRunnerService.GetCurrentTask();
+        var tasks = queueRunnerService.GetCurrentTasks();
 
         if (task != null && task.TaskID == taskid)
             return new Dto.GetTaskStateDto("Running", taskid, task.TaskStarted, task.TaskFinished);
 
         if (tasks.FirstOrDefault(x => x.TaskID == taskid) == null)
         {
-            var res = taskCacheService.GetCachedTaskResults(taskid);
+            var res = queueRunnerService.GetCachedTaskResults(taskid);
             if (res == null)
                 throw new NotFoundException("No such task found");
 
@@ -79,10 +79,10 @@ public class Tasks : IEndpointV1
         return new Dto.GetTaskStateDto("Waiting", taskid, null, null);
     }
 
-    private static void ExecutePost(long taskid, TaskStopState stopState)
+    private static void ExecutePost(IQueueRunnerService queueRunnerService, long taskid, TaskStopState stopState)
     {
-        var task = FIXMEGlobal.WorkThread.CurrentTask;
-        var tasks = FIXMEGlobal.WorkThread.CurrentTasks;
+        var task = queueRunnerService.GetCurrentTask();
+        var tasks = queueRunnerService.GetCurrentTasks();
 
         if (task != null)
             tasks.Insert(0, task);

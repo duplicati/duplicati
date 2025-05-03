@@ -20,13 +20,12 @@
 // DEALINGS IN THE SOFTWARE.
 using System.Text;
 using Duplicati.Library.RestAPI;
-using Duplicati.Library.RestAPI.Abstractions;
 using Duplicati.Server;
 using Duplicati.WebserverCore.Abstractions;
 
 namespace Duplicati.WebserverCore.Services;
 
-public class CommandlineRunService(IWorkerThreadsManager workerThreadsManager) : ICommandlineRunService
+public class CommandlineRunService(IQueueRunnerService queueRunnerService) : ICommandlineRunService
 {
     private static readonly string LOGTAG = Library.Logging.Log.LogTagFromType<CommandlineRunService>();
 
@@ -180,7 +179,7 @@ public class CommandlineRunService(IWorkerThreadsManager workerThreadsManager) :
             }
         });
 
-        workerThreadsManager.AddTask(k.Task);
+        queueRunnerService.AddTask(k.Task);
         return k.ID;
     }
 

@@ -21,8 +21,6 @@
 
 using Duplicati.Server;
 using System;
-using Duplicati.Library.RestAPI.Abstractions;
-using Duplicati.Library.Utility;
 using Duplicati.WebserverCore.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
 using Duplicati.Library.Interface;
@@ -66,15 +64,6 @@ namespace Duplicati.Library.RestAPI
         /// </summary>
         public static bool IsServerStarted => Provider != null;
 
-        /// <summary>
-        /// This is the working thread
-        /// </summary>
-        public static WorkerThread<Runner.IRunnerData> WorkThread =>
-            Provider.GetRequiredService<IWorkerThreadsManager>().WorkerThread;
-
-        public static IWorkerThreadsManager WorkerThreadsManager =>
-            Provider.GetRequiredService<IWorkerThreadsManager>();
-
         public static Action StartOrStopUsageReporter;
 
         /// <summary>
@@ -85,7 +74,7 @@ namespace Duplicati.Library.RestAPI
         /// <summary>
         /// This is the scheduling thread
         /// </summary>
-        public static IScheduler Scheduler => Provider.GetRequiredService<IScheduler>();
+        public static ISchedulerService Scheduler => Provider.GetRequiredService<ISchedulerService>();
 
         /// <summary>
         /// The log redirect handler

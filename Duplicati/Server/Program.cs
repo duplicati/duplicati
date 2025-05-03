@@ -102,7 +102,7 @@ namespace Duplicati.Server
         /// <summary>
         /// This is the scheduling thread
         /// </summary>
-        public static IScheduler Scheduler { get => FIXMEGlobal.Scheduler; }
+        public static ISchedulerService Scheduler { get => FIXMEGlobal.Scheduler; }
 
         /// <summary>
         /// The thread running the ping-pong handler
@@ -243,6 +243,7 @@ namespace Duplicati.Server
 
             var crashed = false;
             var terminated = false;
+            IQueueRunnerService queueRunner = null;
             try
             {
                 DataConnection = GetDatabaseConnection(commandlineOptions, silentConsole);
@@ -266,13 +267,14 @@ namespace Duplicati.Server
 
                 DuplicatiWebserver = StartWebServer(commandlineOptions, DataConnection).Await();
 
+                queueRunner = DuplicatiWebserver.Provider.GetRequiredService<IQueueRunnerService>();
+                DataConnection.SetServiceProvider(DuplicatiWebserver.Provider);
+
                 UpdatePoller.Init(Library.Utility.Utility.ParseBoolOption(commandlineOptions, DISABLE_UPDATE_CHECK_OPTION));
 
                 SetPurgeTempFilesTimer(commandlineOptions);
 
-                LiveControl.StateChanged = LiveControl_StateChanged;
-
-                SetWorkerThread();
+                LiveControl.StateChanged = (e) => { LiveControl_StateChanged(queueRunner, DataConnection, StatusEventNotifyer, e); };
 
                 if (Library.Utility.Utility.ParseBoolOption(commandlineOptions, PING_PONG_KEEPALIVE_OPTION))
                 {
@@ -363,7 +365,7 @@ namespace Duplicati.Server
                     () => { if (ShutdownModernWebserver != null) ShutdownModernWebserver(); },
                     () => UpdatePoller?.Terminate(),
                     () => Scheduler?.Terminate(true),
-                    () => FIXMEGlobal.WorkThread?.Terminate(true),
+                    () => queueRunner?.Terminate(true),
                     () => ApplicationInstance?.Dispose(),
                     () => PurgeTempFilesTimer?.Dispose(),
                     () => Library.UsageReporter.Reporter.ShutDown(),
@@ -430,36 +432,6 @@ namespace Duplicati.Server
             DataConnection.ApplicationSettings.LastWebserverPort = server.Port;
 
             return server;
-        }
-
-        private static void SetWorkerThread()
-        {
-            FIXMEGlobal.WorkerThreadsManager.Spawn(x => { Runner.Run(x, true); });
-            FIXMEGlobal.WorkThread.StartingWork += (worker, task) =>
-            {
-                SignalNewEvent(null, null);
-                task.TaskStarted = DateTime.Now;
-            };
-            FIXMEGlobal.WorkThread.CompletedWork += (worker, task) =>
-            {
-                SignalNewEvent(null, null);
-                FIXMEGlobal.Provider.GetRequiredService<ITaskCacheService>()?.AddTaskResult(new CachedTaskResult(task.TaskID, task.BackupID, task.TaskStarted, task.TaskFinished ?? DateTime.Now, null));
-            };
-            FIXMEGlobal.WorkThread.WorkQueueChanged += (worker) => { SignalNewEvent(null, null); };
-            FIXMEGlobal.Scheduler.SubScribeToNewSchedule(() => SignalNewEvent(null, null));
-            FIXMEGlobal.WorkThread.OnError += (worker, task, exception) =>
-            {
-                DataConnection.LogError(task?.BackupID, "Error in worker", exception);
-                FIXMEGlobal.Provider.GetRequiredService<ITaskCacheService>()?.AddTaskResult(new CachedTaskResult(task.TaskID, task.BackupID, task.TaskStarted, task.TaskFinished ?? DateTime.Now, exception));
-            };
-
-            var lastScheduleId = FIXMEGlobal.NotificationUpdateService.LastDataUpdateId;
-            StatusEventNotifyer.NewEvent += (sender, e) =>
-            {
-                if (lastScheduleId == FIXMEGlobal.NotificationUpdateService.LastDataUpdateId) return;
-                lastScheduleId = FIXMEGlobal.NotificationUpdateService.LastDataUpdateId;
-                Scheduler.Reschedule();
-            };
         }
 
         private static void SetPurgeTempFilesTimer(Dictionary<string, string> commandlineOptions)
@@ -881,23 +853,22 @@ namespace Duplicati.Server
         /// This event handler updates the trayicon menu with the current state of the runner.
         /// </summary>
         /// <exception cref="ArgumentOutOfRangeException"></exception>
-        private static void LiveControl_StateChanged(LiveControls.LiveControlEvent e)
+        private static void LiveControl_StateChanged(IQueueRunnerService queueRunnerService, Connection connection, EventPollNotify eventPollNotify, LiveControls.LiveControlEvent e)
         {
-            var worker = FIXMEGlobal.WorkThread;
-            var appSettings = FIXMEGlobal.DataConnection.ApplicationSettings;
+            var appSettings = connection.ApplicationSettings;
             switch (e.State)
             {
                 case LiveControls.LiveControlState.Paused:
                     {
-                        worker.Pause();
-                        worker.CurrentTask?.Pause(e.TransfersPaused);
+                        queueRunnerService.Pause();
+                        queueRunnerService.GetCurrentTask()?.Pause(e.TransfersPaused);
                         appSettings.PausedUntil = e.WaitTimeExpiration;
                         break;
                     }
                 case LiveControls.LiveControlState.Running:
                     {
-                        worker.Resume();
-                        worker.CurrentTask?.Resume();
+                        queueRunnerService.Resume();
+                        queueRunnerService.GetCurrentTask()?.Resume();
                         appSettings.PausedUntil = null;
                         break;
                     }
@@ -906,7 +877,7 @@ namespace Duplicati.Server
                     break;
             }
 
-            StatusEventNotifyer.SignalNewEvent();
+            eventPollNotify.SignalNewEvent();
 
         }
 

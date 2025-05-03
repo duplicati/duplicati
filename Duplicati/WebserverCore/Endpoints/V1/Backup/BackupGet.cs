@@ -21,7 +21,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Duplicati.Library.Interface;
-using Duplicati.Library.RestAPI.Abstractions;
 using Duplicati.Server;
 using Duplicati.Server.Database;
 using Duplicati.Server.Serialization;
@@ -86,8 +85,8 @@ public class BackupGet : IEndpointV1
             => ExecuteGetIsdbUsedElsewhere(GetBackup(connection, id)))
             .RequireAuthorization();
 
-        group.MapGet("/backup/{id}/isactive", ([FromServices] Connection connection, [FromServices] IWorkerThreadsManager workerThreadsManager, [FromRoute] string id)
-            => ExecuteGetIsActive(workerThreadsManager, GetBackup(connection, id)))
+        group.MapGet("/backup/{id}/isactive", ([FromServices] Connection connection, [FromServices] IQueueRunnerService queueRunnerService, [FromRoute] string id)
+            => ExecuteGetIsActive(queueRunnerService, GetBackup(connection, id)))
             .RequireAuthorization();
     }
 
@@ -152,7 +151,7 @@ public class BackupGet : IEndpointV1
         if (!allVersions)
             time = Library.Utility.Timeparser.ParseTimeInterval(timestring, DateTime.Now);
 
-        var r = Runner.Run(Runner.CreateListTask(backup, [filter], prefixOnly, allVersions, folderContents, time), false) as Duplicati.Library.Interface.IListResults;
+        var r = Runner.Run(Runner.CreateListTask(backup, filter == null ? null : [filter], prefixOnly, allVersions, folderContents, time), false) as Duplicati.Library.Interface.IListResults;
         if (r == null)
             throw new ServerErrorException("No result from list operation");
 
@@ -205,7 +204,7 @@ public class BackupGet : IEndpointV1
 
     private static IEnumerable<IListResultFileset> ExecuteGetFilesets(IBackup bk, bool includeMetadata, bool fromRemoteOnly)
     {
-        var extra = new Dictionary<string, string>
+        var extra = new Dictionary<string, string?>
         {
             ["list-sets-only"] = "true"
         };
@@ -304,17 +303,14 @@ public class BackupGet : IEndpointV1
     private static Dto.IsDbUsedElsewhereDto ExecuteGetIsdbUsedElsewhere(IBackup bk)
         => new Dto.IsDbUsedElsewhereDto(Library.Main.CLIDatabaseLocator.IsDatabasePathInUse(bk.DBPath));
 
-    private static Dto.IsBackupActiveDto ExecuteGetIsActive(IWorkerThreadsManager workerThreadsManager, IBackup bk)
+    private static Dto.IsBackupActiveDto ExecuteGetIsActive(IQueueRunnerService queueRunnerService, IBackup bk)
     {
-        if (workerThreadsManager.WorkerThread == null)
-            throw new InvalidOperationException("Worker thread not available");
-
-        var t = workerThreadsManager.WorkerThread.CurrentTask;
-        var bt = t?.Backup;
-        if (bt != null && bk.ID == bt.ID)
+        var t = queueRunnerService.GetCurrentTask();
+        var bt = t?.BackupID;
+        if (bt != null && bk.ID == bt)
             return new Dto.IsBackupActiveDto("OK", true);
 
-        if (workerThreadsManager.WorkerThread.CurrentTasks.Any(x => x?.Backup == null || x.Backup.ID == bk.ID))
+        if (queueRunnerService.GetCurrentTasks().Any(x => x?.BackupID == null || x.BackupID == bk.ID))
             return new Dto.IsBackupActiveDto("OK", true);
 
         return new Dto.IsBackupActiveDto("OK", false);

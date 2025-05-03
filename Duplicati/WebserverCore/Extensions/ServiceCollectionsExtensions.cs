@@ -20,7 +20,6 @@
 // DEALINGS IN THE SOFTWARE.
 using Duplicati.Library.IO;
 using Duplicati.Library.RestAPI;
-using Duplicati.Library.RestAPI.Abstractions;
 using Duplicati.Server;
 using Duplicati.Server.Database;
 using Duplicati.Server.Serialization;
@@ -44,7 +43,6 @@ public static class ServiceCollectionsExtensions
             .AddSingleton(Serializer.JsonSettings)
             .AddSingleton<UpdatePollThread>()
             .AddSingleton<EventPollNotify>()
-            .AddSingleton<Scheduler>()
             .AddSingleton(connection);
 
 
@@ -57,8 +55,7 @@ public static class ServiceCollectionsExtensions
             .AddTransient<IStatusService, StatusService>()
             .AddTransient<IUpdateService, UpdateService>()
             .AddSingleton<INotificationUpdateService, NotificationUpdateService>()
-            .AddSingleton<IWorkerThreadsManager, WorkerThreadsManager>()
-            .AddSingleton<IScheduler, SchedulerService>()
+            .AddSingleton<ISchedulerService, SchedulerService>()
             .AddSingleton<IWebsocketAccessor, WebsocketAccessor>()
             .AddTransient<ILanguageService, LanguageService>()
             .AddSingleton<ICommandlineRunService, CommandlineRunService>()
@@ -69,7 +66,7 @@ public static class ServiceCollectionsExtensions
             .AddSingleton<IRemoteControllerHandler, RemoteControllerHandler>()
             .AddSingleton<IRemoteControllerRegistration, RemoteControllerRegistrationService>()
             .AddSingleton<ISystemInfoProvider, SystemInfoProvider>()
-            .AddSingleton<ITaskCacheService, TaskCacheService>();
+            .AddSingleton<IQueueRunnerService, QueueRunnerService>();
 
         return services;
     }

@@ -18,7 +18,6 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
-using Duplicati.Library.RestAPI.Abstractions;
 using Duplicati.Server;
 using Duplicati.Server.Database;
 using Duplicati.Server.Serialization;
@@ -45,44 +44,44 @@ public class BackupPost : IEndpointV1
             => UpdateDatabasePath(connection, GetBackup(connection, id), input.path, false))
             .RequireAuthorization();
 
-        group.MapPost("/backup/{id}/restore", ([FromServices] Connection connection, [FromServices] IWorkerThreadsManager workerThreadsManager, [FromRoute] string id, [FromBody] Dto.RestoreInputDto input)
-            => ExecuteRestore(GetBackup(connection, id), workerThreadsManager, input))
+        group.MapPost("/backup/{id}/restore", ([FromServices] Connection connection, [FromServices] IQueueRunnerService queueRunnerService, [FromRoute] string id, [FromBody] Dto.RestoreInputDto input)
+            => ExecuteRestore(GetBackup(connection, id), queueRunnerService, input))
             .RequireAuthorization();
 
-        group.MapPost("/backup/{id}/createreport", ([FromServices] Connection connection, [FromServices] IWorkerThreadsManager workerThreadsManager, [FromRoute] string id)
-            => ExecuteCreateReport(GetBackup(connection, id), workerThreadsManager))
+        group.MapPost("/backup/{id}/createreport", ([FromServices] Connection connection, [FromServices] IQueueRunnerService queueRunnerService, [FromRoute] string id)
+            => ExecuteCreateReport(GetBackup(connection, id), queueRunnerService))
             .RequireAuthorization();
 
-        group.MapPost("/backup/{id}/repair", ([FromServices] Connection connection, [FromServices] IWorkerThreadsManager workerThreadsManager, [FromRoute] string id, Dto.RepairInputDto? input)
-            => ExecuteRepair(GetBackup(connection, id), workerThreadsManager, input))
+        group.MapPost("/backup/{id}/repair", ([FromServices] Connection connection, [FromServices] IQueueRunnerService queueRunnerService, [FromRoute] string id, Dto.RepairInputDto? input)
+            => ExecuteRepair(GetBackup(connection, id), queueRunnerService, input))
             .RequireAuthorization();
 
-        group.MapPost("/backup/{id}/repairupdate", ([FromServices] Connection connection, [FromServices] IWorkerThreadsManager workerThreadsManager, [FromRoute] string id, Dto.RepairInputDto? input)
-            => ExecuteRepairUpdate(GetBackup(connection, id), workerThreadsManager, input))
+        group.MapPost("/backup/{id}/repairupdate", ([FromServices] Connection connection, [FromServices] IQueueRunnerService queueRunnerService, [FromRoute] string id, Dto.RepairInputDto? input)
+            => ExecuteRepairUpdate(GetBackup(connection, id), queueRunnerService, input))
             .RequireAuthorization();
 
-        group.MapPost("/backup/{id}/vacuum", ([FromServices] Connection connection, [FromServices] IWorkerThreadsManager workerThreadsManager, [FromRoute] string id)
-            => ExecuteVacuum(GetBackup(connection, id), workerThreadsManager))
+        group.MapPost("/backup/{id}/vacuum", ([FromServices] Connection connection, [FromServices] IQueueRunnerService queueRunnerService, [FromRoute] string id)
+            => ExecuteVacuum(GetBackup(connection, id), queueRunnerService))
             .RequireAuthorization();
 
-        group.MapPost("/backup/{id}/verify", ([FromServices] Connection connection, [FromServices] IWorkerThreadsManager workerThreadsManager, [FromRoute] string id)
-            => ExecuteVerify(GetBackup(connection, id), workerThreadsManager))
+        group.MapPost("/backup/{id}/verify", ([FromServices] Connection connection, [FromServices] IQueueRunnerService queueRunnerService, [FromRoute] string id)
+            => ExecuteVerify(GetBackup(connection, id), queueRunnerService))
             .RequireAuthorization();
 
-        group.MapPost("/backup/{id}/compact", ([FromServices] Connection connection, [FromServices] IWorkerThreadsManager workerThreadsManager, [FromRoute] string id)
-            => ExecuteCompact(GetBackup(connection, id), workerThreadsManager))
+        group.MapPost("/backup/{id}/compact", ([FromServices] Connection connection, [FromServices] IQueueRunnerService queueRunnerService, [FromRoute] string id)
+            => ExecuteCompact(GetBackup(connection, id), queueRunnerService))
             .RequireAuthorization();
 
-        group.MapPost("/backup/{id}/start", ([FromServices] Connection connection, [FromServices] IWorkerThreadsManager workerThreadsManager, [FromRoute] string id)
-            => ExecuteRunBackup(GetBackup(connection, id), workerThreadsManager))
+        group.MapPost("/backup/{id}/start", ([FromServices] Connection connection, [FromServices] IQueueRunnerService queueRunnerService, [FromRoute] string id)
+            => ExecuteRunBackup(GetBackup(connection, id), queueRunnerService))
             .RequireAuthorization();
 
-        group.MapPost("/backup/{id}/run", ([FromServices] Connection connection, [FromServices] IWorkerThreadsManager workerThreadsManager, [FromRoute] string id)
-            => ExecuteRunBackup(GetBackup(connection, id), workerThreadsManager))
+        group.MapPost("/backup/{id}/run", ([FromServices] Connection connection, [FromServices] IQueueRunnerService queueRunnerService, [FromRoute] string id)
+            => ExecuteRunBackup(GetBackup(connection, id), queueRunnerService))
             .RequireAuthorization();
 
-        group.MapPost("/backup/{id}/report-remote-size", ([FromServices] Connection connection, [FromServices] IWorkerThreadsManager workerThreadsManager, [FromRoute] string id)
-            => ExecuteReportRemoteSize(GetBackup(connection, id), workerThreadsManager))
+        group.MapPost("/backup/{id}/report-remote-size", ([FromServices] Connection connection, [FromServices] IQueueRunnerService queueRunnerService, [FromRoute] string id)
+            => ExecuteReportRemoteSize(GetBackup(connection, id), queueRunnerService))
             .RequireAuthorization();
 
         group.MapPost("/backup/{id}/copytotemp", ([FromServices] Connection connection, [FromRoute] string id)
@@ -114,8 +113,8 @@ public class BackupPost : IEndpointV1
 
 
 
-    private static Dto.TaskStartedDto ExecuteRestore(IBackup backup, IWorkerThreadsManager workerThreadsManager, Dto.RestoreInputDto input)
-        => new Dto.TaskStartedDto("OK", workerThreadsManager.AddTask(Runner.CreateRestoreTask(
+    private static Dto.TaskStartedDto ExecuteRestore(IBackup backup, IQueueRunnerService queueRunnerService, Dto.RestoreInputDto input)
+        => new Dto.TaskStartedDto("OK", queueRunnerService.AddTask(Runner.CreateRestoreTask(
             backup,
             input.paths ?? [],
             Library.Utility.Timeparser.ParseTimeInterval(input.time, DateTime.Now),
@@ -125,31 +124,31 @@ public class BackupPost : IEndpointV1
             input.skip_metadata ?? false,
             string.IsNullOrWhiteSpace(input.passphrase) ? null : input.passphrase)));
 
-    private static Dto.TaskStartedDto ExecuteCreateReport(IBackup backup, IWorkerThreadsManager workerThreadsManager)
-        => new Dto.TaskStartedDto("OK", workerThreadsManager.AddTask(Runner.CreateTask(DuplicatiOperation.CreateReport, backup)));
+    private static Dto.TaskStartedDto ExecuteCreateReport(IBackup backup, IQueueRunnerService queueRunnerService)
+        => new Dto.TaskStartedDto("OK", queueRunnerService.AddTask(Runner.CreateTask(DuplicatiOperation.CreateReport, backup)));
 
-    private static Dto.TaskStartedDto ExecuteReportRemoteSize(IBackup backup, IWorkerThreadsManager workerThreadsManager)
-        => new Dto.TaskStartedDto("OK", workerThreadsManager.AddTask(Runner.CreateTask(DuplicatiOperation.ListRemote, backup)));
+    private static Dto.TaskStartedDto ExecuteReportRemoteSize(IBackup backup, IQueueRunnerService queueRunnerService)
+        => new Dto.TaskStartedDto("OK", queueRunnerService.AddTask(Runner.CreateTask(DuplicatiOperation.ListRemote, backup)));
 
-    private static Dto.TaskStartedDto ExecuteRepair(IBackup backup, IWorkerThreadsManager workerThreadsManager, Dto.RepairInputDto? input)
-        => DoRepair(backup, false, workerThreadsManager, input);
+    private static Dto.TaskStartedDto ExecuteRepair(IBackup backup, IQueueRunnerService queueRunnerService, Dto.RepairInputDto? input)
+        => DoRepair(backup, false, queueRunnerService, input);
 
-    private static Dto.TaskStartedDto ExecuteRepairUpdate(IBackup backup, IWorkerThreadsManager workerThreadsManager, Dto.RepairInputDto? input)
-        => DoRepair(backup, true, workerThreadsManager, input);
+    private static Dto.TaskStartedDto ExecuteRepairUpdate(IBackup backup, IQueueRunnerService queueRunnerService, Dto.RepairInputDto? input)
+        => DoRepair(backup, true, queueRunnerService, input);
 
-    private static Dto.TaskStartedDto ExecuteVacuum(IBackup backup, IWorkerThreadsManager workerThreadsManager)
-        => new Dto.TaskStartedDto("OK", workerThreadsManager.AddTask(Runner.CreateTask(DuplicatiOperation.Vacuum, backup)));
+    private static Dto.TaskStartedDto ExecuteVacuum(IBackup backup, IQueueRunnerService queueRunnerService)
+        => new Dto.TaskStartedDto("OK", queueRunnerService.AddTask(Runner.CreateTask(DuplicatiOperation.Vacuum, backup)));
 
-    private static Dto.TaskStartedDto ExecuteVerify(IBackup backup, IWorkerThreadsManager workerThreadsManager)
-        => new Dto.TaskStartedDto("OK", workerThreadsManager.AddTask(Runner.CreateTask(DuplicatiOperation.Verify, backup)));
+    private static Dto.TaskStartedDto ExecuteVerify(IBackup backup, IQueueRunnerService queueRunnerService)
+        => new Dto.TaskStartedDto("OK", queueRunnerService.AddTask(Runner.CreateTask(DuplicatiOperation.Verify, backup)));
 
-    private static Dto.TaskStartedDto ExecuteCompact(IBackup backup, IWorkerThreadsManager workerThreadsManager)
-        => new Dto.TaskStartedDto("OK", workerThreadsManager.AddTask(Runner.CreateTask(DuplicatiOperation.Compact, backup)));
+    private static Dto.TaskStartedDto ExecuteCompact(IBackup backup, IQueueRunnerService queueRunnerService)
+        => new Dto.TaskStartedDto("OK", queueRunnerService.AddTask(Runner.CreateTask(DuplicatiOperation.Compact, backup)));
 
-    private static Dto.TaskStartedDto DoRepair(IBackup backup, bool repairUpdate, IWorkerThreadsManager workerThreadsManager, Dto.RepairInputDto? input)
+    private static Dto.TaskStartedDto DoRepair(IBackup backup, bool repairUpdate, IQueueRunnerService queueRunnerService, Dto.RepairInputDto? input)
     {
         // These are all props on the input object
-        var extra = new Dictionary<string, string>();
+        var extra = new Dictionary<string, string?>();
         if (input != null)
         {
             if (input.only_paths.HasValue)
@@ -168,23 +167,23 @@ public class BackupPost : IEndpointV1
 
         var filters = input?.paths ?? [];
 
-        return new Dto.TaskStartedDto("OK", workerThreadsManager.AddTask(Runner.CreateTask(repairUpdate ? DuplicatiOperation.RepairUpdate : DuplicatiOperation.Repair, backup, extra, filters)));
+        return new Dto.TaskStartedDto("OK", queueRunnerService.AddTask(Runner.CreateTask(repairUpdate ? DuplicatiOperation.RepairUpdate : DuplicatiOperation.Repair, backup, extra, filters)));
     }
 
-    private static Dto.TaskStartedDto ExecuteRunBackup(IBackup backup, IWorkerThreadsManager workerThreadsManager)
+    private static Dto.TaskStartedDto ExecuteRunBackup(IBackup backup, IQueueRunnerService queueRunnerService)
     {
-        var t = workerThreadsManager.WorkerThread?.CurrentTask;
-        var bt = t?.Backup;
+        var t = queueRunnerService.GetCurrentTask();
+        var bt = t?.BackupID;
 
         // Already running
-        if (bt != null && backup.ID == bt.ID)
+        if (bt != null && backup.ID == bt)
             return new Dto.TaskStartedDto("OK", t!.TaskID);
 
-        t = workerThreadsManager.WorkerThread?.CurrentTasks.FirstOrDefault(x => x?.Backup != null && x.Backup.ID == backup.ID);
+        t = queueRunnerService.GetCurrentTasks().FirstOrDefault(x => x.BackupID == backup.ID);
         if (t != null)
             return new Dto.TaskStartedDto("OK", t.TaskID);
 
-        return new Dto.TaskStartedDto("OK", workerThreadsManager.AddTask(Runner.CreateTask(DuplicatiOperation.Backup, backup), true));
+        return new Dto.TaskStartedDto("OK", queueRunnerService.AddTask(Runner.CreateTask(DuplicatiOperation.Backup, backup), true));
     }
 
     private class WrappedBackup : Server.Database.Backup

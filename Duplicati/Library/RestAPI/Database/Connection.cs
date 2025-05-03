@@ -32,6 +32,7 @@ using Duplicati.Library.AutoUpdater;
 using System.Data;
 using Duplicati.Library.Main.Database;
 using System.Globalization;
+using Microsoft.Extensions.DependencyInjection;
 
 #nullable enable
 
@@ -47,6 +48,10 @@ namespace Duplicati.Server.Database
         private readonly Dictionary<string, Backup> m_temporaryBackups = new Dictionary<string, Backup>();
         private readonly bool m_encryptSensitiveFields;
         private readonly EncryptedFieldHelper.KeyInstance? m_key;
+        private IServiceProvider? m_serviceProvider;
+        private INotificationUpdateService? m_notificationUpdateService;
+        private EventPollNotify? m_eventPollNotifyer;
+
         private static readonly HashSet<string> _encryptedFields =
             BackendLoader.Backends.SelectMany(x => x.SupportedCommands ?? [])
                 .Concat(EncryptionLoader.Modules.SelectMany(x => x.SupportedCommands ?? []))
@@ -74,6 +79,22 @@ namespace Duplicati.Server.Database
             m_errorcmd = m_connection.CreateCommand(@"INSERT INTO ""ErrorLog"" (""BackupID"", ""Message"", ""Exception"", ""Timestamp"") VALUES (@BackupId,@Message,@Exception,@Timestamp)");
 
             this.ApplicationSettings = new ServerSettings(this);
+        }
+
+        /// <summary>
+        /// The service provider is used to resolve dependencies
+        /// </summary>
+        internal IServiceProvider? ServiceProvider => m_serviceProvider;
+
+        /// <summary>
+        /// Set the service provider to be used for resolving dependencies
+        /// </summary>
+        /// <param name="sp">The service provider</param>
+        public void SetServiceProvider(IServiceProvider sp)
+        {
+            m_serviceProvider = sp;
+            m_notificationUpdateService = sp?.GetRequiredService<INotificationUpdateService>();
+            m_eventPollNotifyer = sp?.GetRequiredService<EventPollNotify>();
         }
 
         public bool IsEncryptingFields => m_encryptSensitiveFields;
@@ -125,7 +146,7 @@ namespace Duplicati.Server.Database
             this.ApplicationSettings.PreloadSettingsHash = settingsHash;
         }
 
-        public void LogError(string backupid, string message, Exception ex)
+        public void LogError(string? backupid, string message, Exception ex)
         {
             lock (m_lock)
             {
@@ -608,8 +629,8 @@ namespace Duplicati.Server.Database
                 }
             }
 
-            FIXMEGlobal.NotificationUpdateService.IncrementLastDataUpdateId();
-            FIXMEGlobal.StatusEventNotifyer.SignalNewEvent();
+            m_notificationUpdateService?.IncrementLastDataUpdateId();
+            m_eventPollNotifyer?.SignalNewEvent();
         }
 
         private void AddOrUpdateBackup(IBackup item, bool updateSchedule, ISchedule? schedule)
@@ -722,8 +743,8 @@ namespace Duplicati.Server.Database
                     }
 
                     tr.Commit();
-                    FIXMEGlobal.NotificationUpdateService.IncrementLastDataUpdateId();
-                    FIXMEGlobal.StatusEventNotifyer.SignalNewEvent();
+                    m_notificationUpdateService?.IncrementLastDataUpdateId();
+                    m_eventPollNotifyer?.SignalNewEvent();
                 }
             }
         }
@@ -735,8 +756,8 @@ namespace Duplicati.Server.Database
                 {
                     AddOrUpdateSchedule(item, tr);
                     tr.Commit();
-                    FIXMEGlobal.NotificationUpdateService.IncrementLastDataUpdateId();
-                    FIXMEGlobal.StatusEventNotifyer.SignalNewEvent();
+                    m_notificationUpdateService?.IncrementLastDataUpdateId();
+                    m_eventPollNotifyer?.SignalNewEvent();
                 }
         }
 
@@ -800,8 +821,8 @@ namespace Duplicati.Server.Database
                 }
             }
 
-            FIXMEGlobal.NotificationUpdateService.IncrementLastDataUpdateId();
-            FIXMEGlobal.StatusEventNotifyer.SignalNewEvent();
+            m_notificationUpdateService?.IncrementLastDataUpdateId();
+            m_eventPollNotifyer?.SignalNewEvent();
         }
 
         public void DeleteBackup(IBackup backup)
@@ -820,8 +841,8 @@ namespace Duplicati.Server.Database
             lock (m_lock)
                 DeleteFromDb("Schedule", ID);
 
-            FIXMEGlobal.NotificationUpdateService.IncrementLastDataUpdateId();
-            FIXMEGlobal.StatusEventNotifyer.SignalNewEvent();
+            m_notificationUpdateService?.IncrementLastDataUpdateId();
+            m_eventPollNotifyer?.SignalNewEvent();
         }
 
         public void DeleteSchedule(ISchedule schedule)
@@ -906,21 +927,27 @@ namespace Duplicati.Server.Database
                     return false;
 
                 DeleteFromDb(typeof(Notification).Name, id);
-                FIXMEGlobal.DataConnection.ApplicationSettings.UnackedError = notifications.Any(x => x.ID != id && x.Type == Duplicati.Server.Serialization.NotificationType.Error);
-                FIXMEGlobal.DataConnection.ApplicationSettings.UnackedWarning = notifications.Any(x => x.ID != id && x.Type == Duplicati.Server.Serialization.NotificationType.Warning);
+                this.ApplicationSettings.UnackedError = notifications.Any(x => x.ID != id && x.Type == Duplicati.Server.Serialization.NotificationType.Error);
+                this.ApplicationSettings.UnackedWarning = notifications.Any(x => x.ID != id && x.Type == Duplicati.Server.Serialization.NotificationType.Warning);
             }
 
-            // Guard against dismissing notifications before the provider is initialized
-            if (FIXMEGlobal.Provider != null)
-            {
-                FIXMEGlobal.NotificationUpdateService.IncrementLastNotificationUpdateId();
-                FIXMEGlobal.StatusEventNotifyer.SignalNewEvent();
-            }
+            m_notificationUpdateService?.IncrementLastNotificationUpdateId();
+            m_eventPollNotifyer?.SignalNewEvent();
 
             return true;
         }
 
-        public void RegisterNotification(Serialization.NotificationType type, string title, string message, Exception ex, string backupid, string action, string logid, string messageid, string logtag, Func<INotification, INotification[], INotification> conflicthandler)
+        public void RegisterNotification(
+            Serialization.NotificationType type,
+            string title,
+            string message,
+            Exception? ex,
+            string? backupid,
+            string action,
+            string? logid,
+            string? messageid,
+            string? logtag,
+            Func<INotification, INotification[], INotification> conflicthandler)
         {
             lock (m_lock)
             {
@@ -949,13 +976,13 @@ namespace Duplicati.Server.Database
                 OverwriteAndUpdateDb(null, null, [notification], false);
 
                 if (type == Serialization.NotificationType.Error)
-                    FIXMEGlobal.DataConnection.ApplicationSettings.UnackedError = true;
+                    ApplicationSettings.UnackedError = true;
                 else if (type == Serialization.NotificationType.Warning)
-                    FIXMEGlobal.DataConnection.ApplicationSettings.UnackedWarning = true;
+                    ApplicationSettings.UnackedWarning = true;
             }
 
-            FIXMEGlobal.NotificationUpdateService.IncrementLastNotificationUpdateId();
-            FIXMEGlobal.StatusEventNotifyer.SignalNewEvent();
+            m_notificationUpdateService?.IncrementLastNotificationUpdateId();
+            m_eventPollNotifyer?.SignalNewEvent();
         }
 
         //Workaround to clean up the database after invalid settings update
