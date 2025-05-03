@@ -29,9 +29,9 @@ using System.Text;
 using System.Linq;
 using System.Threading;
 using Duplicati.Library.Utility;
-using Duplicati.Library.RestAPI;
 using System.Threading.Tasks;
 using Duplicati.WebserverCore.Abstractions;
+using Duplicati.Server.Database;
 
 // TODO: Rewrite this class.
 // It should just signal what new backups to run, and not mix with the worker thread.
@@ -69,6 +69,10 @@ namespace Duplicati.Server
         /// The queue runner service
         /// </summary>
         private readonly IQueueRunnerService m_queueRunnerService;
+        /// <summary>
+        /// The data connection
+        /// </summary>
+        private readonly Connection m_dataConnection;
 
         /// <summary>
         /// The currently scheduled items
@@ -83,8 +87,11 @@ namespace Duplicati.Server
         /// <summary>
         /// Constructs a new scheduler
         /// </summary>
-        public Scheduler(IQueueRunnerService queueRunnerService)
+        /// <param name="connection">The data connection</param>
+        /// <param name="queueRunnerService">The queue runner service</param>
+        public Scheduler(Connection connection, IQueueRunnerService queueRunnerService)
         {
+            m_dataConnection = connection;
             m_queueRunnerService = queueRunnerService;
             m_thread = new Thread(new ThreadStart(Runner));
             m_schedule = [];
@@ -99,7 +106,7 @@ namespace Duplicati.Server
         public IList<Tuple<string, DateTime>> GetProposedSchedule()
         {
             return (
-                from n in FIXMEGlobal.Scheduler.Schedule
+                from n in this.Schedule
                 let backupid = (from t in n.Value.Tags
                                 where t != null && t.StartsWith("ID=", StringComparison.Ordinal)
                                 select t.Substring("ID=".Length)).FirstOrDefault()
@@ -220,7 +227,7 @@ namespace Duplicati.Server
             {
                 t.Item1.Time = t.Item2;
                 t.Item1.LastRun = t.Item3;
-                FIXMEGlobal.DataConnection.AddOrUpdateSchedule(t.Item1);
+                m_dataConnection.AddOrUpdateSchedule(t.Item1);
             }
 
             return Task.CompletedTask;
@@ -256,8 +263,8 @@ namespace Duplicati.Server
                 // to avoid frequent db lookups
 
                 //Determine schedule list
-                var timeZoneInfo = FIXMEGlobal.DataConnection.ApplicationSettings.Timezone;
-                var lst = FIXMEGlobal.DataConnection.Schedules;
+                var timeZoneInfo = m_dataConnection.ApplicationSettings.Timezone;
+                var lst = m_dataConnection.Schedules;
                 foreach (var sc in lst)
                 {
                     if (!string.IsNullOrEmpty(sc.Repeat))
@@ -291,7 +298,7 @@ namespace Duplicati.Server
                         }
                         catch (Exception ex)
                         {
-                            FIXMEGlobal.DataConnection.LogError(sc.ID.ToString(), "Scheduler failed to find next date",
+                            m_dataConnection.LogError(sc.ID.ToString(), "Scheduler failed to find next date",
                                 ex);
                         }
 
@@ -300,7 +307,7 @@ namespace Duplicati.Server
                         {
                             var jobsToRun = new List<Server.Runner.IRunnerData>();
                             //TODO: Cache this to avoid frequent lookups
-                            foreach (var id in FIXMEGlobal.DataConnection.GetBackupIDsForTags(sc.Tags).Distinct()
+                            foreach (var id in m_dataConnection.GetBackupIDsForTags(sc.Tags).Distinct()
                                          .Select(x => x.ToString()))
                             {
                                 //See if it is already queued
@@ -315,11 +322,11 @@ namespace Duplicati.Server
                                 //If it is not already in queue, put it there
                                 if (!tmplst.Any(x => x == id))
                                 {
-                                    var entry = FIXMEGlobal.DataConnection.GetBackup(id);
+                                    var entry = m_dataConnection.GetBackup(id);
                                     if (entry != null)
                                     {
-                                        var options = Server.Runner.GetCommonOptions();
-                                        Server.Runner.ApplyOptions(entry, options);
+                                        var options = Server.Runner.GetCommonOptions(m_dataConnection);
+                                        Server.Runner.ApplyOptions(m_dataConnection, entry, options);
                                         if (new Library.Main.Options(options).DisableOnBattery &&
                                             (Library.Utility.Power.PowerSupply.GetSource() ==
                                              Library.Utility.Power.PowerSupply.Source.Battery))
@@ -364,7 +371,7 @@ namespace Duplicati.Server
                             }
                             catch (Exception ex)
                             {
-                                FIXMEGlobal.DataConnection.LogError(sc.ID.ToString(),
+                                m_dataConnection.LogError(sc.ID.ToString(),
                                     "Scheduler failed to find next date", ex);
                                 continue;
                             }

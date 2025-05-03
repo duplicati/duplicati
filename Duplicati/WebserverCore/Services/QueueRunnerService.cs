@@ -136,7 +136,7 @@ public class QueueRunnerService(Connection connection, EventPollNotify eventPoll
             if (task.OnStarting != null)
                 await task.OnStarting().ConfigureAwait(false);
 
-            await task.Execute();
+            Runner.Run(connection, eventPollNotify, task, false);
 
             // If the task is completed, don't call OnFinished again
             completed = true;

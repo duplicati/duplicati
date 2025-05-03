@@ -36,7 +36,7 @@ public class DestinationVerify : IEndpointV2
     public static void Map(RouteGroupBuilder group)
     {
         group.MapPost("/destination/test", ([FromServices] Connection connection, [FromBody] Dto.V2.DestinationTestRequestDto input, CancellationToken cancelToken)
-            => ExecuteTest(input, cancelToken))
+            => ExecuteTest(connection, input, cancelToken))
             .RequireAuthorization();
     }
 
@@ -51,11 +51,11 @@ public class DestinationVerify : IEndpointV2
         }
     }
 
-    private static Dictionary<string, string?> ParseUrlOptions(Library.Utility.Uri uri)
+    private static Dictionary<string, string?> ParseUrlOptions(Connection connection, Library.Utility.Uri uri)
     {
         var qp = uri.QueryParameters;
 
-        var opts = Runner.GetCommonOptions();
+        var opts = Runner.GetCommonOptions(connection);
         foreach (var k in qp.Keys.Cast<string>())
             opts[k] = qp[k];
 
@@ -75,10 +75,10 @@ public class DestinationVerify : IEndpointV2
         return modules;
     }
 
-    private static async Task<TupleDisposeWrapper> GetBackend(string url, CancellationToken cancelToken)
+    private static async Task<TupleDisposeWrapper> GetBackend(Connection connection, string url, CancellationToken cancelToken)
     {
         var uri = new Library.Utility.Uri(url);
-        var opts = ParseUrlOptions(uri);
+        var opts = ParseUrlOptions(connection, uri);
 
         var tmp = new[] { uri };
         await SecretProviderHelper.ApplySecretProviderAsync([], tmp, opts, Library.Utility.TempFolder.SystemTempPath, FIXMEGlobal.SecretProvider, cancelToken);
@@ -90,13 +90,13 @@ public class DestinationVerify : IEndpointV2
     }
 
 
-    private static async Task<DestinationTestResponseDto> ExecuteTest(DestinationTestRequestDto input, CancellationToken cancelToken)
+    private static async Task<DestinationTestResponseDto> ExecuteTest(Connection connection, DestinationTestRequestDto input, CancellationToken cancelToken)
     {
         TupleDisposeWrapper? wrapper = null;
 
         try
         {
-            wrapper = await GetBackend(input.DestinationUrl, cancelToken);
+            wrapper = await GetBackend(connection, input.DestinationUrl, cancelToken);
 
             using (var b = wrapper.Backend)
             {

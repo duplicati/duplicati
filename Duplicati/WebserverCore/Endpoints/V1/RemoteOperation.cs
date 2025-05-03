@@ -22,6 +22,7 @@ using Duplicati.Library.Interface;
 using Duplicati.Library.Main;
 using Duplicati.Library.RestAPI;
 using Duplicati.Server;
+using Duplicati.Server.Database;
 using Duplicati.WebserverCore.Abstractions;
 using Duplicati.WebserverCore.Exceptions;
 using Microsoft.AspNetCore.Mvc;
@@ -38,8 +39,8 @@ namespace Duplicati.WebserverCore.Endpoints.V1
                 => ExecuteDbPath(input.path))
                 .RequireAuthorization();
 
-            group.MapPost("/remoteoperation/test", ([FromQuery] bool? autocreate, [FromBody] RemoteOperationInput input, CancellationToken cancelToken)
-                => ExecuteTest(input.path, autocreate ?? false, cancelToken))
+            group.MapPost("/remoteoperation/test", ([FromServices] Connection connection, [FromQuery] bool? autocreate, [FromBody] RemoteOperationInput input, CancellationToken cancelToken)
+                => ExecuteTest(connection, input.path, autocreate ?? false, cancelToken))
                 .RequireAuthorization();
 
             group.MapPost("/remoteoperation/create", ([FromBody] RemoteOperationInput input, CancellationToken cancelToken)
@@ -53,11 +54,11 @@ namespace Duplicati.WebserverCore.Endpoints.V1
             return new Dto.GetDbPathDto(!string.IsNullOrWhiteSpace(path), path);
         }
 
-        private static Dictionary<string, string?> ParseUrlOptions(Library.Utility.Uri uri)
+        private static Dictionary<string, string?> ParseUrlOptions(Connection connection, Library.Utility.Uri uri)
         {
             var qp = uri.QueryParameters;
 
-            var opts = Runner.GetCommonOptions();
+            var opts = Runner.GetCommonOptions(connection);
             foreach (var k in qp.Keys.Cast<string>())
                 opts[k] = qp[k];
 
@@ -87,10 +88,10 @@ namespace Duplicati.WebserverCore.Endpoints.V1
             }
         }
 
-        private static async Task<TupleDisposeWrapper> GetBackend(string url, CancellationToken cancelToken)
+        private static async Task<TupleDisposeWrapper> GetBackend(Connection connection, string url, CancellationToken cancelToken)
         {
             var uri = new Library.Utility.Uri(url);
-            var opts = ParseUrlOptions(uri);
+            var opts = ParseUrlOptions(connection, uri);
 
             var tmp = new[] { uri };
             await SecretProviderHelper.ApplySecretProviderAsync([], tmp, opts, Library.Utility.TempFolder.SystemTempPath, FIXMEGlobal.SecretProvider, cancelToken);
@@ -101,13 +102,13 @@ namespace Duplicati.WebserverCore.Endpoints.V1
             return new TupleDisposeWrapper(backend, modules);
         }
 
-        private static async Task ExecuteTest(string url, bool autoCreate, CancellationToken cancelToken)
+        private static async Task ExecuteTest(Connection connection, string url, bool autoCreate, CancellationToken cancelToken)
         {
             TupleDisposeWrapper? wrapper = null;
 
             try
             {
-                wrapper = await GetBackend(url, cancelToken);
+                wrapper = await GetBackend(connection, url, cancelToken);
 
                 using (var b = wrapper.Backend)
                 {

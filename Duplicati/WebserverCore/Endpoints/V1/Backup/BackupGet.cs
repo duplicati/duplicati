@@ -41,8 +41,8 @@ public class BackupGet : IEndpointV1
             => ExecuteGet(connection, GetBackup(connection, id)))
             .RequireAuthorization();
 
-        group.MapGet("/backup/{id}/files", ([FromServices] Connection connection, [FromRoute] string id, [FromQuery] string? filter, [FromQuery] string? time, [FromQuery(Name = "all-versions")] bool? allVersions, [FromQuery(Name = "prefix-only")] bool? prefixOnly, [FromQuery(Name = "folder-contents")] bool? folderContents)
-            => ExecuteGetFiles(GetBackup(connection, id), filter, time, allVersions ?? false, prefixOnly ?? false, folderContents ?? false, new Dictionary<string, string>()))
+        group.MapGet("/backup/{id}/files", ([FromServices] Connection connection, [FromServices] EventPollNotify eventPollNotify, [FromRoute] string id, [FromQuery] string? filter, [FromQuery] string? time, [FromQuery(Name = "all-versions")] bool? allVersions, [FromQuery(Name = "prefix-only")] bool? prefixOnly, [FromQuery(Name = "folder-contents")] bool? folderContents)
+            => ExecuteGetFiles(connection, eventPollNotify, GetBackup(connection, id), filter, time, allVersions ?? false, prefixOnly ?? false, folderContents ?? false, new Dictionary<string, string>()))
             .RequireAuthorization();
 
         group.MapGet("/backup/{id}/log", ([FromServices] Connection connection, [FromRoute] string id, [FromQuery] long? offset, [FromQuery] long? pagesize)
@@ -53,16 +53,16 @@ public class BackupGet : IEndpointV1
             => ExecuteGetRemotelog(connection, GetBackup(connection, id), offset, pagesize ?? 100))
             .RequireAuthorization();
 
-        group.MapGet("/backup/{id}/filesets", ([FromServices] Connection connection, [FromRoute] string id, [FromQuery(Name = "include-metadata")] bool? includeMetadata, [FromQuery(Name = "from-remote-only")] bool? fromRemoteOnly)
-            => ExecuteGetFilesets(GetBackup(connection, id), includeMetadata ?? false, fromRemoteOnly ?? false))
+        group.MapGet("/backup/{id}/filesets", ([FromServices] Connection connection, [FromServices] EventPollNotify eventPollNotify, [FromRoute] string id, [FromQuery(Name = "include-metadata")] bool? includeMetadata, [FromQuery(Name = "from-remote-only")] bool? fromRemoteOnly)
+            => ExecuteGetFilesets(connection, eventPollNotify, GetBackup(connection, id), includeMetadata ?? false, fromRemoteOnly ?? false))
             .RequireAuthorization();
 
         group.MapGet("/backup/{id}/export-argsonly", ([FromServices] Connection connection, [FromRoute] string id, [FromQuery(Name = "export-passwords")] bool? exportPasswords, [FromQuery] string? passphrase)
-            => ExecuteGetExportArgsOnly(GetBackup(connection, id), exportPasswords ?? false))
+            => ExecuteGetExportArgsOnly(connection, GetBackup(connection, id), exportPasswords ?? false))
             .RequireAuthorization();
 
         group.MapGet("/backup/{id}/export-cmdline", ([FromServices] Connection connection, [FromRoute] string id, [FromQuery(Name = "export-passwords")] bool? exportPasswords, [FromQuery] string? passphrase)
-            => ExecuteGetExportCmdline(GetBackup(connection, id), exportPasswords ?? false))
+            => ExecuteGetExportCmdline(connection, GetBackup(connection, id), exportPasswords ?? false))
             .RequireAuthorization();
 
         group.MapGet("/backup/{id}/export", ([FromServices] Connection connection, [FromServices] IHttpContextAccessor httpContextAccessor, [FromServices] IJWTTokenProvider jWTTokenProvider, [FromRoute] string id, [FromQuery(Name = "export-passwords")] bool? exportPasswords, [FromQuery] string? passphrase, [FromQuery] string token, CancellationToken ct) =>
@@ -142,7 +142,7 @@ public class BackupGet : IEndpointV1
         );
     }
 
-    private static Dictionary<string, object> SearchFiles(IBackup backup, string? filter, string? timestring, bool allVersions, bool prefixOnly, bool folderContents, Dictionary<string, string> extraValues)
+    private static Dictionary<string, object> SearchFiles(Connection connection, EventPollNotify eventPollNotify, IBackup backup, string? filter, string? timestring, bool allVersions, bool prefixOnly, bool folderContents, Dictionary<string, string> extraValues)
     {
         if (string.IsNullOrWhiteSpace(timestring) && !allVersions)
             throw new BadRequestException("Invalid or missing time");
@@ -151,7 +151,7 @@ public class BackupGet : IEndpointV1
         if (!allVersions)
             time = Library.Utility.Timeparser.ParseTimeInterval(timestring, DateTime.Now);
 
-        var r = Runner.Run(Runner.CreateListTask(backup, filter == null ? null : [filter], prefixOnly, allVersions, folderContents, time), false) as Duplicati.Library.Interface.IListResults;
+        var r = Runner.Run(connection, eventPollNotify, Runner.CreateListTask(backup, filter == null ? null : [filter], prefixOnly, allVersions, folderContents, time), false) as IListResults;
         if (r == null)
             throw new ServerErrorException("No result from list operation");
 
@@ -170,8 +170,8 @@ public class BackupGet : IEndpointV1
         return result;
     }
 
-    private static Dictionary<string, object> ExecuteGetFiles(IBackup bk, string? filter, string? timestring, bool allVersions, bool prefixOnly, bool folderContents, Dictionary<string, string> extraValues)
-        => SearchFiles(bk, filter, timestring, allVersions, prefixOnly, folderContents, extraValues);
+    private static Dictionary<string, object> ExecuteGetFiles(Connection connection, EventPollNotify eventPollNotify, IBackup bk, string? filter, string? timestring, bool allVersions, bool prefixOnly, bool folderContents, Dictionary<string, string> extraValues)
+        => SearchFiles(connection, eventPollNotify, bk, filter, timestring, allVersions, prefixOnly, folderContents, extraValues);
 
     private static List<Dictionary<string, object>> ExecuteGetLog(Connection connection, IBackup bk, long? offset, long pagesize)
     {
@@ -202,7 +202,7 @@ public class BackupGet : IEndpointV1
         }
     }
 
-    private static IEnumerable<IListResultFileset> ExecuteGetFilesets(IBackup bk, bool includeMetadata, bool fromRemoteOnly)
+    private static IEnumerable<IListResultFileset> ExecuteGetFilesets(Connection connection, EventPollNotify eventPollNotify, IBackup bk, bool includeMetadata, bool fromRemoteOnly)
     {
         var extra = new Dictionary<string, string?>
         {
@@ -218,7 +218,7 @@ public class BackupGet : IEndpointV1
 
         try
         {
-            var r = Runner.Run(Runner.CreateTask(DuplicatiOperation.List, bk, extra), false) as IListResults;
+            var r = Runner.Run(connection, eventPollNotify, Runner.CreateTask(DuplicatiOperation.List, bk, extra), false) as IListResults;
             if (r == null)
                 throw new ServerErrorException("No result from list operation");
 
@@ -239,20 +239,20 @@ public class BackupGet : IEndpointV1
         backup.SanitizeTargetUrl();
     }
 
-    private static Dto.ExportCommandlineDto ExecuteGetExportCmdline(IBackup backup, bool exportPasswords)
+    private static Dto.ExportCommandlineDto ExecuteGetExportCmdline(Connection connection, IBackup backup, bool exportPasswords)
     {
         if (!exportPasswords)
             RemovePasswords(backup);
 
-        return new Dto.ExportCommandlineDto(Runner.GetCommandLine(Runner.CreateTask(DuplicatiOperation.Backup, backup)));
+        return new Dto.ExportCommandlineDto(Runner.GetCommandLine(connection, Runner.CreateTask(DuplicatiOperation.Backup, backup)));
     }
 
-    private static Dto.ExportArgsOnlyDto ExecuteGetExportArgsOnly(IBackup backup, bool exportPasswords)
+    private static Dto.ExportArgsOnlyDto ExecuteGetExportArgsOnly(Connection connection, IBackup backup, bool exportPasswords)
     {
         if (!exportPasswords)
             RemovePasswords(backup);
 
-        var parts = Runner.GetCommandLineParts(Runner.CreateTask(DuplicatiOperation.Backup, backup));
+        var parts = Runner.GetCommandLineParts(connection, Runner.CreateTask(DuplicatiOperation.Backup, backup));
         return new Dto.ExportArgsOnlyDto(
             parts.First(),
             parts.Skip(1).Where(x => !x.StartsWith("--", StringComparison.Ordinal)),

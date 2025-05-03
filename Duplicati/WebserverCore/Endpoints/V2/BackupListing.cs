@@ -33,33 +33,33 @@ public class BackupListing : IEndpointV2
 {
     public static void Map(RouteGroupBuilder group)
     {
-        group.MapPost("/backup/list-filesets", ([FromServices] Connection connection, [FromBody] Dto.V2.ListFilesetsRequestDto input)
-            => ExecuteGetFilesets(GetBackup(connection, input.BackupId)))
+        group.MapPost("/backup/list-filesets", ([FromServices] Connection connection, [FromServices] EventPollNotify eventPollNotify, [FromBody] Dto.V2.ListFilesetsRequestDto input)
+            => ExecuteGetFilesets(connection, eventPollNotify, GetBackup(connection, input.BackupId)))
             .RequireAuthorization();
 
-        group.MapPost("/backup/list-folder", ([FromServices] Connection connection, [FromBody] Dto.V2.ListFolderContentRequestDto input)
-            => ExecuteListFolder(GetBackup(connection, input.BackupId), input))
+        group.MapPost("/backup/list-folder", ([FromServices] Connection connection, [FromServices] EventPollNotify eventPollNotify, [FromBody] Dto.V2.ListFolderContentRequestDto input)
+            => ExecuteListFolder(connection, eventPollNotify, GetBackup(connection, input.BackupId), input))
             .RequireAuthorization();
 
-        group.MapPost("/backup/list-versions", ([FromServices] Connection connection, [FromBody] Dto.V2.ListFileVersionsRequestDto input)
-            => ExecuteListVersions(GetBackup(connection, input.BackupId), input))
+        group.MapPost("/backup/list-versions", ([FromServices] Connection connection, [FromServices] EventPollNotify eventPollNotify, [FromBody] Dto.V2.ListFileVersionsRequestDto input)
+            => ExecuteListVersions(connection, eventPollNotify, GetBackup(connection, input.BackupId), input))
             .RequireAuthorization();
 
-        group.MapPost("/backup/search", ([FromServices] Connection connection, [FromBody] Dto.V2.SearchEntriesRequestDto input)
-            => ExecuteSearch(GetBackup(connection, input.BackupId), input))
+        group.MapPost("/backup/search", ([FromServices] Connection connection, [FromServices] EventPollNotify eventPollNotify, [FromBody] Dto.V2.SearchEntriesRequestDto input)
+            => ExecuteSearch(connection, eventPollNotify, GetBackup(connection, input.BackupId), input))
             .RequireAuthorization();
     }
 
     private static IBackup GetBackup(Connection connection, string id)
         => connection.GetBackup(id) ?? throw new NotFoundException("Backup not found");
 
-    private static Dto.V2.ListFolderContentResponseDto ExecuteListFolder(IBackup bk, Dto.V2.ListFolderContentRequestDto input)
+    private static Dto.V2.ListFolderContentResponseDto ExecuteListFolder(Connection connection, EventPollNotify eventPollNotify, IBackup bk, Dto.V2.ListFolderContentRequestDto input)
     {
         var time = string.IsNullOrWhiteSpace(input.Time)
             ? new DateTime(0)
             : Library.Utility.Timeparser.ParseTimeInterval(input.Time, DateTime.Now);
 
-        var r = Runner.Run(Runner.CreateListFolderContents(bk, input.Paths, time, input.PageSize ?? 1000, input.Page ?? 0), false) as IListFolderResults;
+        var r = Runner.Run(connection, eventPollNotify, Runner.CreateListFolderContents(bk, input.Paths, time, input.PageSize ?? 1000, input.Page ?? 0), false) as IListFolderResults;
         if (r == null)
             throw new ServerErrorException("No result from list operation");
 
@@ -78,16 +78,16 @@ public class BackupListing : IEndpointV2
                 r.Entries.TotalCount);
     }
 
-    private static Dto.V2.ListFilesetsResponseDto ExecuteGetFilesets(IBackup bk)
+    private static Dto.V2.ListFilesetsResponseDto ExecuteGetFilesets(Connection connection, EventPollNotify eventPollNotify, IBackup bk)
     {
-        var extra = new Dictionary<string, string>();
+        var extra = new Dictionary<string, string?>();
 
         // Retries will hang the http request
         extra["number-of-retries"] = "0";
 
         try
         {
-            var r = Runner.Run(Runner.CreateListFilesetsTask(bk, extra), false) as IListFilesetResults;
+            var r = Runner.Run(connection, eventPollNotify, Runner.CreateListFilesetsTask(bk, extra), false) as IListFilesetResults;
             if (r == null)
                 throw new ServerErrorException("No result from list operation");
 
@@ -112,9 +112,9 @@ public class BackupListing : IEndpointV2
         }
     }
 
-    private static Dto.V2.ListFileVersionsOutputDto ExecuteListVersions(IBackup bk, Dto.V2.ListFileVersionsRequestDto input)
+    private static Dto.V2.ListFileVersionsOutputDto ExecuteListVersions(Connection connection, EventPollNotify eventPollNotify, IBackup bk, Dto.V2.ListFileVersionsRequestDto input)
     {
-        var r = Runner.Run(Runner.ListFileVersionsTask(bk, input.Paths, input.PageSize ?? 1000, input.Page ?? 0), false) as IListFileVersionsResults;
+        var r = Runner.Run(connection, eventPollNotify, Runner.ListFileVersionsTask(bk, input.Paths, input.PageSize ?? 1000, input.Page ?? 0), false) as IListFileVersionsResults;
         if (r == null)
             throw new ServerErrorException("No result from list operation");
 
@@ -135,13 +135,13 @@ public class BackupListing : IEndpointV2
                 r.FileVersions.TotalCount);
     }
 
-    private static Dto.V2.SearchEntriesResponseDto ExecuteSearch(IBackup bk, Dto.V2.SearchEntriesRequestDto input)
+    private static Dto.V2.SearchEntriesResponseDto ExecuteSearch(Connection connection, EventPollNotify eventPollNotify, IBackup bk, Dto.V2.SearchEntriesRequestDto input)
     {
         var time = string.IsNullOrWhiteSpace(input.Time)
             ? new DateTime(0)
             : Library.Utility.Timeparser.ParseTimeInterval(input.Time, DateTime.Now);
 
-        var r = Runner.Run(Runner.CreateSearchEntriesTask(bk, input.Filters, input.Paths, time, input.PageSize ?? 1000, input.Page ?? 0), false) as ISearchFilesResults;
+        var r = Runner.Run(connection, eventPollNotify, Runner.CreateSearchEntriesTask(bk, input.Filters, input.Paths, time, input.PageSize ?? 1000, input.Page ?? 0), false) as ISearchFilesResults;
         if (r == null)
             throw new ServerErrorException("No result from list operation");
 

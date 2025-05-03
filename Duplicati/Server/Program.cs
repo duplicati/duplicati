@@ -100,11 +100,6 @@ namespace Duplicati.Server
         public static Database.Connection DataConnection { get => FIXMEGlobal.DataConnection; set => FIXMEGlobal.DataConnection = value; }
 
         /// <summary>
-        /// This is the scheduling thread
-        /// </summary>
-        public static ISchedulerService Scheduler { get => FIXMEGlobal.Scheduler; }
-
-        /// <summary>
         /// The thread running the ping-pong handler
         /// </summary>
         private static System.Threading.Thread PingPongThread;
@@ -138,19 +133,9 @@ namespace Duplicati.Server
         }
 
         /// <summary>
-        /// The update poll thread.
-        /// </summary>
-        public static UpdatePollThread UpdatePoller => FIXMEGlobal.UpdatePoller;
-
-        /// <summary>
         /// An event that is set once the server is ready to respond to requests
         /// </summary>
-        public static readonly System.Threading.ManualResetEvent ServerStartedEvent = new System.Threading.ManualResetEvent(false);
-
-        /// <summary>
-        /// The status event signaler, used to control long polling of status updates
-        /// </summary>
-        public static EventPollNotify StatusEventNotifyer => FIXMEGlobal.Provider.GetRequiredService<EventPollNotify>();
+        public static readonly ManualResetEvent ServerStartedEvent = new ManualResetEvent(false);
 
         /// <summary>
         /// A delegate method for creating a copy of the current progress state
@@ -244,6 +229,9 @@ namespace Duplicati.Server
             var crashed = false;
             var terminated = false;
             IQueueRunnerService queueRunner = null;
+            UpdatePollThread updatePollThread = null;
+            EventPollNotify eventPollNotify = null;
+            ISchedulerService scheduler = null;
             try
             {
                 DataConnection = GetDatabaseConnection(commandlineOptions, silentConsole);
@@ -267,14 +255,17 @@ namespace Duplicati.Server
 
                 DuplicatiWebserver = StartWebServer(commandlineOptions, DataConnection).Await();
 
-                queueRunner = DuplicatiWebserver.Provider.GetRequiredService<IQueueRunnerService>();
                 DataConnection.SetServiceProvider(DuplicatiWebserver.Provider);
+                queueRunner = DuplicatiWebserver.Provider.GetRequiredService<IQueueRunnerService>();
+                updatePollThread = DuplicatiWebserver.Provider.GetRequiredService<UpdatePollThread>();
+                eventPollNotify = DuplicatiWebserver.Provider.GetRequiredService<EventPollNotify>();
+                scheduler = DuplicatiWebserver.Provider.GetRequiredService<ISchedulerService>();
 
-                UpdatePoller.Init(Library.Utility.Utility.ParseBoolOption(commandlineOptions, DISABLE_UPDATE_CHECK_OPTION));
+                updatePollThread.Init(Library.Utility.Utility.ParseBoolOption(commandlineOptions, DISABLE_UPDATE_CHECK_OPTION));
 
                 SetPurgeTempFilesTimer(commandlineOptions);
 
-                LiveControl.StateChanged = (e) => { LiveControl_StateChanged(queueRunner, DataConnection, StatusEventNotifyer, e); };
+                LiveControl.StateChanged = (e) => { LiveControl_StateChanged(queueRunner, DataConnection, eventPollNotify, e); };
 
                 if (Library.Utility.Utility.ParseBoolOption(commandlineOptions, PING_PONG_KEEPALIVE_OPTION))
                 {
@@ -361,10 +352,10 @@ namespace Duplicati.Server
                 Log.WriteInformationMessage(LOGTAG, "ServerStopping", Strings.Program.ServerStopping);
 
                 var steps = new Action[] {
-                    () => StatusEventNotifyer.SignalNewEvent(),
-                    () => { if (ShutdownModernWebserver != null) ShutdownModernWebserver(); },
-                    () => UpdatePoller?.Terminate(),
-                    () => Scheduler?.Terminate(true),
+                    () => eventPollNotify?.SignalNewEvent(),
+                    () => ShutdownModernWebserver(),
+                    () => updatePollThread?.Terminate(),
+                    () => scheduler?.Terminate(true),
                     () => queueRunner?.Terminate(true),
                     () => ApplicationInstance?.Dispose(),
                     () => PurgeTempFilesTimer?.Dispose(),
@@ -842,11 +833,6 @@ namespace Duplicati.Server
                 Library.UsageReporter.Reporter.SetReportLevel(null, disableUsageReporter);
             else
                 Library.UsageReporter.Reporter.SetReportLevel(reportLevel, disableUsageReporter);
-        }
-
-        private static void SignalNewEvent(object sender, EventArgs e)
-        {
-            StatusEventNotifyer.SignalNewEvent();
         }
 
         /// <summary>

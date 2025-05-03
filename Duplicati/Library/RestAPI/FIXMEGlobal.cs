@@ -48,12 +48,7 @@ namespace Duplicati.Library.RestAPI
         /// <summary>
         /// A delegate method for creating a copy of the current progress state
         /// </summary>
-        public static Func<Duplicati.Server.Serialization.Interface.IProgressEventData> GenerateProgressState;
-
-        /// <summary>
-        /// The status event signaler, used to control long polling of status updates
-        /// </summary>
-        public static EventPollNotify StatusEventNotifyer => Provider.GetRequiredService<EventPollNotify>();
+        public static Func<Server.Serialization.Interface.IProgressEventData> GenerateProgressState;
 
         /// <summary>
         /// For keeping and incrementing last last events Ids of db save and last notification
@@ -72,26 +67,14 @@ namespace Duplicati.Library.RestAPI
         public static string DataFolder;
 
         /// <summary>
-        /// This is the scheduling thread
-        /// </summary>
-        public static ISchedulerService Scheduler => Provider.GetRequiredService<ISchedulerService>();
-
-        /// <summary>
         /// The log redirect handler
         /// </summary>
         public static readonly LogWriteHandler LogHandler = new LogWriteHandler();
 
         /// <summary>
-        /// The update poll thread.
-        /// </summary>
-        public static UpdatePollThread UpdatePoller => Provider.GetRequiredService<UpdatePollThread>();
-
-
-        /// <summary>
         /// Used to check the origin of the web server (e.g. Tray icon or a stand alone Server)
         /// </summary>
         public static string Origin = "Server";
-
 
         /// <summary>
         /// The application exit event
