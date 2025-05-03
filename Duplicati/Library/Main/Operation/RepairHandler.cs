@@ -535,12 +535,10 @@ namespace Duplicati.Library.Main.Operation
                                         foreach (var f in mbl.GetFilesetsUsingMissingBlocks())
                                             Logging.Log.WriteInformationMessage(LOGTAG, "AffectedFilesetName", f.Name);
 
-                                        var recoverymsg = string.Format("If you want to continue working with the database, you can use the \"{0}\" and \"{1}\" commands to purge the missing data from the database and the remote storage.", "list-broken-files", "purge-broken-files");
+                                        var recoverymsg = string.Format("If you want to continue working with the database, you can use the \"{0}\" and \"{1}\" commands to purge the missing data from the database and the remote storage. This can also be fixed by deleting the filesets and running repair again.", "list-broken-files", "purge-broken-files");
 
                                         if (!m_options.Dryrun)
                                         {
-                                            Logging.Log.WriteInformationMessage(LOGTAG, "RecoverySuggestion", "This may be fixed by deleting the filesets and running repair again");
-
                                             throw new UserInformationException(string.Format("Repair not possible, missing {0} blocks.\n" + recoverymsg, missingBlocks), "RepairIsNotPossible");
                                         }
                                         else
