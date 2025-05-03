@@ -66,7 +66,8 @@ public static class ServiceCollectionsExtensions
             .AddSingleton<IRemoteControllerHandler, RemoteControllerHandler>()
             .AddSingleton<IRemoteControllerRegistration, RemoteControllerRegistrationService>()
             .AddSingleton<ISystemInfoProvider, SystemInfoProvider>()
-            .AddSingleton<IQueueRunnerService, QueueRunnerService>();
+            .AddSingleton<IQueueRunnerService, QueueRunnerService>()
+            .AddSingleton<IProgressStateProviderService, ProgressStateProviderService>();
 
         return services;
     }

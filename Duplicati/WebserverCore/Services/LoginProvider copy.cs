@@ -18,26 +18,18 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
+using Duplicati.Server.Serialization.Interface;
 using Duplicati.WebserverCore.Abstractions;
-using Duplicati.WebserverCore.Exceptions;
-using Microsoft.AspNetCore.Mvc;
 
-namespace Duplicati.WebserverCore.Endpoints.V1;
+namespace Duplicati.WebserverCore.Services;
 
-public class ProgressState : IEndpointV1
+/// <summary>
+/// Provides a way to generate progress state.
+/// </summary>
+public class ProgressStateProviderService : IProgressStateProviderService
 {
-    public static void Map(RouteGroupBuilder group)
-    {
-        group.MapGet("/progressstate", ([FromServices] IProgressStateProviderService progressStateProviderService) => Execute(progressStateProviderService))
-        .RequireAuthorization();
-    }
-
-    private static Server.Serialization.Interface.IProgressEventData Execute(IProgressStateProviderService progressStateProviderService)
-    {
-        var pgState = progressStateProviderService.GenerateProgressState;
-        if (pgState == null)
-            throw new NotFoundException("No active backup");
-
-        return pgState();
-    }
+    /// <summary>
+    /// The current progress state generator function.
+    /// </summary>
+    public Func<IProgressEventData>? GenerateProgressState { get; set; }
 }

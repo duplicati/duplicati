@@ -21,8 +21,6 @@
 
 using Duplicati.Server;
 using System;
-using Duplicati.WebserverCore.Abstractions;
-using Microsoft.Extensions.DependencyInjection;
 using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.RestAPI
@@ -44,11 +42,6 @@ namespace Duplicati.Library.RestAPI
         /// This is the only access to the database
         /// </summary>
         public static Server.Database.Connection DataConnection;
-
-        /// <summary>
-        /// A delegate method for creating a copy of the current progress state
-        /// </summary>
-        public static Func<Server.Serialization.Interface.IProgressEventData> GenerateProgressState;
 
         /// <summary>
         /// Checks if the server has started and is listening for events

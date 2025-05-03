@@ -31,6 +31,7 @@ using Duplicati.Library.Utility;
 using System.Threading.Tasks;
 using Duplicati.Server.Database;
 using Duplicati.Server.Serialization.Interface;
+using Duplicati.WebserverCore.Abstractions;
 
 namespace Duplicati.Server
 {
@@ -496,15 +497,15 @@ namespace Duplicati.Server
             return parts.ToArray();
         }
 
-        public static IBasicResults? Run(Connection databaseConnection, EventPollNotify eventPollNotify, INotificationUpdateService notificationUpdateService, IQueuedTask data, bool fromQueue)
+        public static IBasicResults? Run(Connection databaseConnection, EventPollNotify eventPollNotify, INotificationUpdateService notificationUpdateService, IProgressStateProviderService progressStateProviderService, IQueuedTask data, bool fromQueue)
         {
             if (data is IRunnerData runnerData)
-                return Run(databaseConnection, eventPollNotify, notificationUpdateService, runnerData, fromQueue);
+                return RunInternal(databaseConnection, eventPollNotify, notificationUpdateService, progressStateProviderService, runnerData, fromQueue);
 
             throw new ArgumentException("Invalid task type", nameof(data));
         }
 
-        private static IBasicResults? Run(Connection databaseConnection, EventPollNotify eventPollNotify, INotificationUpdateService notificationUpdateService, IRunnerData data, bool fromQueue)
+        private static IBasicResults? RunInternal(Connection databaseConnection, EventPollNotify eventPollNotify, INotificationUpdateService notificationUpdateService, IProgressStateProviderService progressStateProviderService, IRunnerData data, bool fromQueue)
         {
             data.TaskStarted = DateTime.Now;
             if (data is CustomRunnerTask task)
@@ -512,7 +513,7 @@ namespace Duplicati.Server
                 try
                 {
                     var sink = new MessageSink(task.TaskID, null);
-                    FIXMEGlobal.GenerateProgressState = sink.Copy;
+                    progressStateProviderService.GenerateProgressState = sink.Copy;
                     eventPollNotify.SignalNewEvent();
 
                     task.Run(sink);
@@ -541,7 +542,7 @@ namespace Duplicati.Server
                 var sink = new MessageSink(data.TaskID, backup.ID);
                 if (fromQueue)
                 {
-                    FIXMEGlobal.GenerateProgressState = () => sink.Copy();
+                    progressStateProviderService.GenerateProgressState = () => sink.Copy();
                     eventPollNotify.SignalNewEvent();
                 }
 

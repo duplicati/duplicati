@@ -19,6 +19,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
+using Duplicati.Library.Interface;
 using Duplicati.Library.RestAPI;
 using Duplicati.Library.Utility;
 using Duplicati.Server;
@@ -31,7 +32,11 @@ namespace Duplicati.WebserverCore.Services;
 /// <summary>
 /// Simple queue that will run the given task
 /// </summary>
-public class QueueRunnerService(Connection connection, EventPollNotify eventPollNotify, INotificationUpdateService notificationUpdateService) : IQueueRunnerService
+public class QueueRunnerService(
+    Connection connection,
+    EventPollNotify eventPollNotify,
+    INotificationUpdateService notificationUpdateService,
+    IProgressStateProviderService progressStateProviderService) : IQueueRunnerService
 {
     private readonly object _lock = new();
     /// <summary>
@@ -137,7 +142,7 @@ public class QueueRunnerService(Connection connection, EventPollNotify eventPoll
             if (task.OnStarting != null)
                 await task.OnStarting().ConfigureAwait(false);
 
-            Runner.Run(connection, eventPollNotify, notificationUpdateService, task, false);
+            Runner.Run(connection, eventPollNotify, notificationUpdateService, progressStateProviderService, task, true);
 
             // If the task is completed, don't call OnFinished again
             completed = true;
@@ -205,5 +210,11 @@ public class QueueRunnerService(Connection connection, EventPollNotify eventPoll
                 _taskCache.Remove(oldestTaskID);
             }
         }
+    }
+
+    /// <inheritdoc/>
+    public IBasicResults? RunImmediately(IQueuedTask task)
+    {
+        return Runner.Run(connection, eventPollNotify, notificationUpdateService, progressStateProviderService, task, false);
     }
 }

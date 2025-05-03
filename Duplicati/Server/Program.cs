@@ -138,11 +138,6 @@ namespace Duplicati.Server
         public static readonly ManualResetEvent ServerStartedEvent = new ManualResetEvent(false);
 
         /// <summary>
-        /// A delegate method for creating a copy of the current progress state
-        /// </summary>
-        public static Func<Duplicati.Server.Serialization.Interface.IProgressEventData> GenerateProgressState { get => FIXMEGlobal.GenerateProgressState; set => FIXMEGlobal.GenerateProgressState = value; }
-
-        /// <summary>
         /// The log redirect handler
         /// </summary>
         public static LogWriteHandler LogHandler { get => FIXMEGlobal.LogHandler; }

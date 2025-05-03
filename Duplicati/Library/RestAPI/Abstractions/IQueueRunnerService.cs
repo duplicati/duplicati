@@ -23,6 +23,7 @@
 
 using System;
 using System.Collections.Generic;
+using Duplicati.Library.Interface;
 using Duplicati.Server.Serialization.Interface;
 
 namespace Duplicati.WebserverCore.Abstractions;
@@ -96,4 +97,11 @@ public interface IQueueRunnerService
     /// </summary>
     /// <returns>A list of tuples containing the task ID and backup ID</returns>
     IList<Tuple<long, string?>> GetQueueWithIds();
+
+    /// <summary>
+    /// Runs a task immediately, bypassing the queue.
+    /// Note that the task will run concurrently with the queue tasks and may cause database lock issues.
+    /// </summary>
+    /// <param name="task">The task to run</param>
+    IBasicResults? RunImmediately(IQueuedTask task);
 }
