@@ -51,10 +51,6 @@ namespace Duplicati.Library.RestAPI
         public static Func<Server.Serialization.Interface.IProgressEventData> GenerateProgressState;
 
         /// <summary>
-        /// For keeping and incrementing last last events Ids of db save and last notification
-        /// </summary>
-        public static INotificationUpdateService NotificationUpdateService => Provider.GetRequiredService<INotificationUpdateService>();
-        /// <summary>
         /// Checks if the server has started and is listening for events
         /// </summary>
         public static bool IsServerStarted => Provider != null;

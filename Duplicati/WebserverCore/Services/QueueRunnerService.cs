@@ -19,6 +19,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
+using Duplicati.Library.RestAPI;
 using Duplicati.Library.Utility;
 using Duplicati.Server;
 using Duplicati.Server.Database;
@@ -30,7 +31,7 @@ namespace Duplicati.WebserverCore.Services;
 /// <summary>
 /// Simple queue that will run the given task
 /// </summary>
-public class QueueRunnerService(Connection connection, EventPollNotify eventPollNotify) : IQueueRunnerService
+public class QueueRunnerService(Connection connection, EventPollNotify eventPollNotify, INotificationUpdateService notificationUpdateService) : IQueueRunnerService
 {
     private readonly object _lock = new();
     /// <summary>
@@ -136,7 +137,7 @@ public class QueueRunnerService(Connection connection, EventPollNotify eventPoll
             if (task.OnStarting != null)
                 await task.OnStarting().ConfigureAwait(false);
 
-            Runner.Run(connection, eventPollNotify, task, false);
+            Runner.Run(connection, eventPollNotify, notificationUpdateService, task, false);
 
             // If the task is completed, don't call OnFinished again
             completed = true;

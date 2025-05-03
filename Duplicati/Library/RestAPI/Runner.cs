@@ -496,15 +496,15 @@ namespace Duplicati.Server
             return parts.ToArray();
         }
 
-        public static IBasicResults? Run(Connection databaseConnection, EventPollNotify eventPollNotify, IQueuedTask data, bool fromQueue)
+        public static IBasicResults? Run(Connection databaseConnection, EventPollNotify eventPollNotify, INotificationUpdateService notificationUpdateService, IQueuedTask data, bool fromQueue)
         {
             if (data is IRunnerData runnerData)
-                return Run(databaseConnection, eventPollNotify, runnerData, fromQueue);
+                return Run(databaseConnection, eventPollNotify, notificationUpdateService, runnerData, fromQueue);
 
             throw new ArgumentException("Invalid task type", nameof(data));
         }
 
-        private static IBasicResults? Run(Connection databaseConnection, EventPollNotify eventPollNotify, IRunnerData data, bool fromQueue)
+        private static IBasicResults? Run(Connection databaseConnection, EventPollNotify eventPollNotify, INotificationUpdateService notificationUpdateService, IRunnerData data, bool fromQueue)
         {
             data.TaskStarted = DateTime.Now;
             if (data is CustomRunnerTask task)
@@ -605,49 +605,49 @@ namespace Duplicati.Server
                                      select p).ToArray();
 
                                 var r = controller.Backup(sources, filter);
-                                UpdateMetadataBase(databaseConnection, eventPollNotify, backup, r);
+                                UpdateMetadataBase(databaseConnection, eventPollNotify, notificationUpdateService, backup, r);
                                 return r;
                             }
                         case DuplicatiOperation.List:
                             {
                                 var r = controller.List(data.FilterStrings, null);
-                                UpdateMetadataBase(databaseConnection, eventPollNotify, backup, r);
+                                UpdateMetadataBase(databaseConnection, eventPollNotify, notificationUpdateService, backup, r);
                                 return r;
                             }
                         case DuplicatiOperation.Repair:
                             {
                                 var r = controller.Repair(data.FilterStrings == null ? null : new Library.Utility.FilterExpression(data.FilterStrings));
-                                UpdateMetadataBase(databaseConnection, eventPollNotify, backup, r);
+                                UpdateMetadataBase(databaseConnection, eventPollNotify, notificationUpdateService, backup, r);
                                 return r;
                             }
                         case DuplicatiOperation.RepairUpdate:
                             {
                                 var r = controller.UpdateDatabaseWithVersions();
-                                UpdateMetadataBase(databaseConnection, eventPollNotify, backup, r);
+                                UpdateMetadataBase(databaseConnection, eventPollNotify, notificationUpdateService, backup, r);
                                 return r;
                             }
                         case DuplicatiOperation.Remove:
                             {
                                 var r = controller.Delete();
-                                UpdateMetadataBase(databaseConnection, eventPollNotify, backup, r);
+                                UpdateMetadataBase(databaseConnection, eventPollNotify, notificationUpdateService, backup, r);
                                 return r;
                             }
                         case DuplicatiOperation.Restore:
                             {
                                 var r = controller.Restore(data.FilterStrings);
-                                UpdateMetadataBase(databaseConnection, eventPollNotify, backup, r);
+                                UpdateMetadataBase(databaseConnection, eventPollNotify, notificationUpdateService, backup, r);
                                 return r;
                             }
                         case DuplicatiOperation.Verify:
                             {
                                 var r = controller.Test();
-                                UpdateMetadataBase(databaseConnection, eventPollNotify, backup, r);
+                                UpdateMetadataBase(databaseConnection, eventPollNotify, notificationUpdateService, backup, r);
                                 return r;
                             }
                         case DuplicatiOperation.Compact:
                             {
                                 var r = controller.Compact();
-                                UpdateMetadataBase(databaseConnection, eventPollNotify, backup, r);
+                                UpdateMetadataBase(databaseConnection, eventPollNotify, notificationUpdateService, backup, r);
                                 return r;
                             }
                         case DuplicatiOperation.CreateReport:
@@ -680,7 +680,7 @@ namespace Duplicati.Server
                         case DuplicatiOperation.ListRemote:
                             {
                                 var r = controller.ListRemote();
-                                UpdateMetadataBase(databaseConnection, eventPollNotify, backup, r);
+                                UpdateMetadataBase(databaseConnection, eventPollNotify, notificationUpdateService, backup, r);
                                 return r;
                             }
 
@@ -706,14 +706,14 @@ namespace Duplicati.Server
                         case DuplicatiOperation.Vacuum:
                             {
                                 var r = controller.Vacuum();
-                                UpdateMetadataBase(databaseConnection, eventPollNotify, backup, r);
+                                UpdateMetadataBase(databaseConnection, eventPollNotify, notificationUpdateService, backup, r);
                                 return r;
                             }
 
                         case DuplicatiOperation.ListFilesets:
                             {
                                 var r = controller.ListFilesets();
-                                UpdateMetadataBase(databaseConnection, eventPollNotify, backup, r);
+                                UpdateMetadataBase(databaseConnection, eventPollNotify, notificationUpdateService, backup, r);
                                 return r;
                             }
                         case DuplicatiOperation.ListFolderContents:
@@ -740,7 +740,7 @@ namespace Duplicati.Server
             {
                 databaseConnection.LogError(data.Backup?.ID, string.Format("Failed while executing {0} \"{1}\" (id: {2})", data.Operation, data.Backup?.Name, data.Backup?.ID), ex);
                 if (data.Backup != null)
-                    UpdateMetadataError(databaseConnection, data.Backup, ex);
+                    UpdateMetadataError(databaseConnection, notificationUpdateService, data.Backup, ex);
                 Library.UsageReporter.Reporter.Report(ex);
 
                 if (!fromQueue)
@@ -797,7 +797,7 @@ namespace Duplicati.Server
             return tempfolder;
         }
 
-        private static void UpdateMetadataError(Connection databaseConnection, Serialization.Interface.IBackup backup, Exception ex)
+        private static void UpdateMetadataError(Connection databaseConnection, INotificationUpdateService notificationUpdateService, IBackup backup, Exception ex)
         {
             backup.Metadata["LastErrorDate"] = Utility.SerializeDateTime(DateTime.UtcNow);
             backup.Metadata["LastErrorMessage"] = ex.Message;
@@ -809,7 +809,7 @@ namespace Duplicati.Server
             if (ex is UserInformationException exception)
                 messageid = exception.HelpID;
 
-            FIXMEGlobal.NotificationUpdateService.IncrementLastDataUpdateId();
+            notificationUpdateService.IncrementLastDataUpdateId();
             databaseConnection.RegisterNotification(
                 NotificationType.Error,
                 backup.IsTemporary ?
@@ -865,7 +865,7 @@ namespace Duplicati.Server
             }
         }
 
-        private static void UpdateMetadataBase(Connection databaseConnection, EventPollNotify eventPollNotify, Serialization.Interface.IBackup backup, IBasicResults result)
+        private static void UpdateMetadataBase(Connection databaseConnection, EventPollNotify eventPollNotify, INotificationUpdateService notificationUpdateService, IBackup backup, IBasicResults result)
         {
             if (result is IRestoreResults r1)
             {
@@ -999,7 +999,7 @@ namespace Duplicati.Server
             if (!backup.IsTemporary)
                 databaseConnection.SetMetadata(backup.Metadata, long.Parse(backup.ID), null);
 
-            FIXMEGlobal.NotificationUpdateService.IncrementLastDataUpdateId();
+            notificationUpdateService.IncrementLastDataUpdateId();
             eventPollNotify.SignalNewEvent();
         }
 
