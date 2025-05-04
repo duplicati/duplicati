@@ -43,11 +43,6 @@ namespace Duplicati.Library.RestAPI
         /// </summary>
         public static Server.Database.Connection DataConnection;
 
-        /// <summary>
-        /// Checks if the server has started and is listening for events
-        /// </summary>
-        public static bool IsServerStarted => Provider != null;
-
         public static Action StartOrStopUsageReporter;
 
         /// <summary>
