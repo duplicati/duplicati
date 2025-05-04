@@ -320,13 +320,13 @@ public static class Program
     }
 
     private static Task<Dictionary<string, string?>> OnConnect(Dictionary<string, string?> metadata)
-        => FIXMEGlobal.Provider.GetRequiredService<IRemoteControllerHandler>().OnConnect(metadata);
+        => Server.Program.DuplicatiWebserver.Provider.GetRequiredService<IRemoteControllerHandler>().OnConnect(metadata);
 
     private static Task OnControl(KeepRemoteConnection.ControlMessage message)
-        => FIXMEGlobal.Provider.GetRequiredService<IRemoteControllerHandler>().OnControl(message);
+        => Server.Program.DuplicatiWebserver.Provider.GetRequiredService<IRemoteControllerHandler>().OnControl(message);
 
     private static Task OnMessage(KeepRemoteConnection.CommandMessage message)
-        => FIXMEGlobal.Provider.GetRequiredService<IRemoteControllerHandler>().OnMessage(message);
+        => Server.Program.DuplicatiWebserver.Provider.GetRequiredService<IRemoteControllerHandler>().OnMessage(message);
 
 
     private static Task ReKey(ClaimedClientData keydata, CommandLineArguments agentConfig)

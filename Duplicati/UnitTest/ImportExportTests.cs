@@ -131,10 +131,6 @@ namespace Duplicati.UnitTest
             var advancedOptions = new Dictionary<string, string> { { "server-datafolder", this.serverDatafolder } };
 
             // Mock the setup enough to get the import/export working
-            var serviceCollection = new ServiceCollection();
-            serviceCollection.AddSingleton<INotificationUpdateService, NotificationUpdateService>();
-            serviceCollection.AddSingleton(new EventPollNotify());
-            FIXMEGlobal.Provider = new DefaultServiceProviderFactory().CreateServiceProvider(serviceCollection);
             FIXMEGlobal.DataFolder = this.serverDatafolder;
 
             var dbpath = Path.Combine(this.serverDatafolder, Library.AutoUpdater.DataFolderManager.SERVER_DATABASE_FILENAME);

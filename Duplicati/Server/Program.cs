@@ -413,7 +413,6 @@ namespace Duplicati.Server
                 return server;
             }).ConfigureAwait(false);
 
-            FIXMEGlobal.Provider = server.Provider;
             ServerPortChanged |= server.Port != DataConnection.ApplicationSettings.LastWebserverPort;
             DataConnection.ApplicationSettings.LastWebserverPort = server.Port;
 

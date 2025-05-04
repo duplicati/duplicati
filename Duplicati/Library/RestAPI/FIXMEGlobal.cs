@@ -36,8 +36,6 @@ namespace Duplicati.Library.RestAPI
         /// </summary>
         public const string PASSWORD_PLACEHOLDER = "**********";
 
-        public static IServiceProvider Provider { get; set; }
-
         public static Action StartOrStopUsageReporter;
 
         /// <summary>
