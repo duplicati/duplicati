@@ -38,11 +38,6 @@ namespace Duplicati.Library.RestAPI
 
         public static IServiceProvider Provider { get; set; }
 
-        /// <summary>
-        /// This is the only access to the database
-        /// </summary>
-        public static Server.Database.Connection DataConnection;
-
         public static Action StartOrStopUsageReporter;
 
         /// <summary>

@@ -86,10 +86,10 @@ public class RemoteControllerHandler(Connection connection, IHttpClientFactory h
         try
         {
             if (string.Equals(message.ControlRequestMessage.Command, ControlRequestMessage.ConfigureReportUrlSet, StringComparison.OrdinalIgnoreCase))
-                FIXMEGlobal.DataConnection.ApplicationSettings.AdditionalReportUrl = message.ControlRequestMessage.Parameters.GetValueOrDefault(ControlRequestMessage.ConfigureReportUrlParameter);
+                connection.ApplicationSettings.AdditionalReportUrl = message.ControlRequestMessage.Parameters.GetValueOrDefault(ControlRequestMessage.ConfigureReportUrlParameter);
 
             if (string.Equals(message.ControlRequestMessage.Command, ControlRequestMessage.ConfigureReportUrlGet, StringComparison.OrdinalIgnoreCase))
-                result = new Dictionary<string, string?> { { ControlRequestMessage.ConfigureReportUrlParameter, FIXMEGlobal.DataConnection.ApplicationSettings.AdditionalReportUrl } };
+                result = new Dictionary<string, string?> { { ControlRequestMessage.ConfigureReportUrlParameter, connection.ApplicationSettings.AdditionalReportUrl } };
         }
         catch (Exception ex)
         {

@@ -97,7 +97,7 @@ namespace Duplicati.Server
         /// <summary>
         /// This is the only access to the database
         /// </summary>
-        public static Database.Connection DataConnection { get => FIXMEGlobal.DataConnection; set => FIXMEGlobal.DataConnection = value; }
+        public static Database.Connection DataConnection { get; set; }
 
         /// <summary>
         /// The thread running the ping-pong handler
