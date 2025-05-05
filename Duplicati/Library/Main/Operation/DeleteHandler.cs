@@ -89,50 +89,56 @@ namespace Duplicati.Library.Main.Operation
                 versionsToDelete = versionsToDelete.OrderBy(x => x.Version).Skip(1).ToList();
             }
 
-            if (versionsToDelete.Count > 0)
-                Logging.Log.WriteInformationMessage(LOGTAG, "DeleteRemoteFileset", "Deleting {0} remote fileset(s) ...", versionsToDelete.Count);
-
-            var lst = db.DropFilesetsFromTable(versionsToDelete.Select(x => x.Time).ToArray(), rtr.Transaction).ToArray();
-            foreach (var f in lst)
-                db.UpdateRemoteVolume(f.Key, RemoteVolumeState.Deleting, f.Value, null, rtr.Transaction);
-
-            if (!m_options.Dryrun)
-                rtr.Commit("CommitBeforeDelete");
-
-            foreach (var f in lst)
+            if (versionsToDelete.Count == 0)
             {
-                if (!await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
-                {
-                    await backendManager.WaitForEmptyAsync(db, rtr.Transaction, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
-                    return;
-                }
-
-                if (!m_options.Dryrun)
-                    await backendManager.DeleteAsync(f.Key, f.Value, false, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
-                else
-                    Logging.Log.WriteDryrunMessage(LOGTAG, "WouldDeleteRemoteFileset", "Would delete remote fileset: {0}", f.Key);
-            }
-
-            await backendManager.WaitForEmptyAsync(db, rtr.Transaction, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
-
-            var count = lst.Length;
-            if (!m_options.Dryrun)
-            {
-                if (count == 0)
-                    Logging.Log.WriteInformationMessage(LOGTAG, "DeleteResults", "No remote filesets were deleted");
-                else
-                    Logging.Log.WriteInformationMessage(LOGTAG, "DeleteResults", "Deleted {0} remote fileset(s)", count);
+                Logging.Log.WriteInformationMessage(LOGTAG, "NoFilesetsToDelete", "No remote filesets should be deleted");
             }
             else
             {
+                Logging.Log.WriteInformationMessage(LOGTAG, "DeleteRemoteFileset", "Deleting {0} remote fileset(s) ...", versionsToDelete.Count);
 
-                if (count == 0)
-                    Logging.Log.WriteDryrunMessage(LOGTAG, "WouldDeleteResults", "No remote filesets would be deleted");
+                var lst = db.DropFilesetsFromTable(versionsToDelete.Select(x => x.Time).ToArray(), rtr.Transaction).ToArray();
+                foreach (var f in lst)
+                    db.UpdateRemoteVolume(f.Key, RemoteVolumeState.Deleting, f.Value, null, rtr.Transaction);
+
+                if (!m_options.Dryrun)
+                    rtr.Commit("CommitBeforeDelete");
+
+                foreach (var f in lst)
+                {
+                    if (!await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
+                    {
+                        await backendManager.WaitForEmptyAsync(db, rtr.Transaction, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
+                        return;
+                    }
+
+                    if (!m_options.Dryrun)
+                        await backendManager.DeleteAsync(f.Key, f.Value, false, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
+                    else
+                        Logging.Log.WriteDryrunMessage(LOGTAG, "WouldDeleteRemoteFileset", "Would delete remote fileset: {0}", f.Key);
+                }
+
+                await backendManager.WaitForEmptyAsync(db, rtr.Transaction, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
+
+                var count = lst.Length;
+                if (!m_options.Dryrun)
+                {
+                    if (count == 0)
+                        Logging.Log.WriteInformationMessage(LOGTAG, "DeleteResults", "No remote filesets were deleted");
+                    else
+                        Logging.Log.WriteInformationMessage(LOGTAG, "DeleteResults", "Deleted {0} remote fileset(s)", count);
+                }
                 else
-                    Logging.Log.WriteDryrunMessage(LOGTAG, "WouldDeleteResults", "{0} remote fileset(s) would be deleted", count);
+                {
 
-                if (count > 0 && m_options.Dryrun)
-                    Logging.Log.WriteDryrunMessage(LOGTAG, "WouldDeleteHelp", "Remove --dry-run to actually delete files");
+                    if (count == 0)
+                        Logging.Log.WriteDryrunMessage(LOGTAG, "WouldDeleteResults", "No remote filesets would be deleted");
+                    else
+                        Logging.Log.WriteDryrunMessage(LOGTAG, "WouldDeleteResults", "{0} remote fileset(s) would be deleted", count);
+
+                    if (count > 0 && m_options.Dryrun)
+                        Logging.Log.WriteDryrunMessage(LOGTAG, "WouldDeleteHelp", "Remove --dry-run to actually delete files");
+                }
             }
 
             if (!m_options.NoAutoCompact && (forceCompact || versionsToDelete.Count > 0))
