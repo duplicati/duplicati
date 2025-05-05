@@ -137,11 +137,6 @@ namespace Duplicati.Server
         /// </summary>
         public static readonly ManualResetEvent ServerStartedEvent = new ManualResetEvent(false);
 
-        /// <summary>
-        /// The log redirect handler
-        /// </summary>
-        public static LogWriteHandler LogHandler { get => FIXMEGlobal.LogHandler; }
-
         private static System.Threading.Timer PurgeTempFilesTimer = null;
 
         public static int ServerPort
@@ -216,7 +211,8 @@ namespace Duplicati.Server
                     return 100;
             }
 
-            ConfigureLogging(commandlineOptions);
+            var logHandler = new LogWriteHandler();
+            using var logScope = ConfigureLogging(logHandler, commandlineOptions);
 
             // Validate after logging is configured
             CommandLineArgumentValidator.ValidateArguments(SupportedCommands, commandlineOptions, KnownDuplicateOptions, ValidationIgnoredOptions);
@@ -248,7 +244,7 @@ namespace Duplicati.Server
                     DataConnection.LogError(null, "Error in updater", obj);
                 };
 
-                DuplicatiWebserver = StartWebServer(commandlineOptions, DataConnection).Await();
+                DuplicatiWebserver = StartWebServer(commandlineOptions, DataConnection, logHandler).Await();
 
                 DataConnection.SetServiceProvider(DuplicatiWebserver.Provider);
                 queueRunner = DuplicatiWebserver.Provider.GetRequiredService<IQueueRunnerService>();
@@ -358,8 +354,8 @@ namespace Duplicati.Server
                     () => PingPongThread?.Interrupt(),
                     () =>
                     {
-                        Library.Logging.Log.WriteInformationMessage(LOGTAG, "ServerStopped", Strings.Program.ServerStopped);
-                        LogHandler?.Dispose();
+                        Log.WriteInformationMessage(LOGTAG, "ServerStopped", Strings.Program.ServerStopped);
+                        logHandler?.Dispose();
                     }
                 };
 
@@ -385,7 +381,7 @@ namespace Duplicati.Server
             return 0;
         }
 
-        private static async Task<DuplicatiWebserver> StartWebServer(IReadOnlyDictionary<string, string> options, Connection connection)
+        private static async Task<DuplicatiWebserver> StartWebServer(IReadOnlyDictionary<string, string> options, Connection connection, ILogWriteHandler logWriteHandler)
         {
             var server = await WebServerLoader.TryRunServer(options, connection, async parsedOptions =>
             {
@@ -402,7 +398,7 @@ namespace Duplicati.Server
                     parsedOptions.PreAuthTokens
                 );
 
-                var server = DuplicatiWebserver.CreateWebServer(mappedSettings, connection);
+                var server = DuplicatiWebserver.CreateWebServer(mappedSettings, connection, logWriteHandler);
 
                 // Start the server, but catch any configuration issues
                 var task = server.Start();
@@ -639,8 +635,9 @@ namespace Duplicati.Server
             }
         }
 
-        private static void ConfigureLogging(Dictionary<string, string> commandlineOptions)
+        private static IDisposable ConfigureLogging(ILogWriteHandler logWriteHandler, Dictionary<string, string> commandlineOptions)
         {
+            IDisposable logScope;
             //Log various information in the logfile
             if (DEBUG_MODE && !commandlineOptions.ContainsKey(LOG_FILE_OPTION))
             {
@@ -651,7 +648,7 @@ namespace Duplicati.Server
                     System.IO.File.Delete(commandlineOptions[LOG_FILE_OPTION]);
             }
 
-            Log.StartScope(LogHandler, null);
+            logScope = Log.StartScope(logWriteHandler, null);
 
             if (commandlineOptions.ContainsKey(LOG_FILE_OPTION))
             {
@@ -659,7 +656,7 @@ namespace Duplicati.Server
                 if (commandlineOptions.ContainsKey(LOG_LEVEL_OPTION))
                     Enum.TryParse(commandlineOptions[LOG_LEVEL_OPTION], true, out loglevel);
 
-                LogHandler.SetServerFile(commandlineOptions[LOG_FILE_OPTION], loglevel);
+                logWriteHandler.SetServerFile(commandlineOptions[LOG_FILE_OPTION], loglevel);
             }
 
             if (Library.Utility.Utility.ParseBoolOption(commandlineOptions, LOG_CONSOLE_OPTION))
@@ -668,7 +665,7 @@ namespace Duplicati.Server
                 if (commandlineOptions.ContainsKey(LOG_LEVEL_OPTION))
                     Enum.TryParse(commandlineOptions[LOG_LEVEL_OPTION], true, out loglevel);
 
-                LogHandler.AppendLogDestination(new ConsoleLogDestination(loglevel), loglevel);
+                logWriteHandler.AppendLogDestination(new ConsoleLogDestination(loglevel), loglevel);
             }
 
             if (commandlineOptions.TryGetValue(WINDOWS_EVENTLOG_OPTION, out var source) && !string.IsNullOrEmpty(source))
@@ -694,16 +691,17 @@ namespace Duplicati.Server
 
                     if (WindowsEventLogSource.SourceExists(source))
                     {
-                        var loglevel = Library.Logging.LogMessageType.Information;
+                        var loglevel = LogMessageType.Information;
                         if (commandlineOptions.ContainsKey(WINDOWS_EVENTLOG_LEVEL_OPTION))
                             Enum.TryParse(commandlineOptions[WINDOWS_EVENTLOG_LEVEL_OPTION], true, out loglevel);
 
-                        LogHandler.AppendLogDestination(new WindowsEventLogSource(source), loglevel);
+                        logWriteHandler.AppendLogDestination(new WindowsEventLogSource(source), loglevel);
                     }
                 }
             }
 
-            CrashlogHelper.OnUnobservedTaskException += (ex) => LogHandler.WriteMessage(new Library.Logging.LogEntry(ex.Message, null, Library.Logging.LogMessageType.Error, LOGTAG, "UnobservedTaskException", ex));
+            CrashlogHelper.OnUnobservedTaskException += (ex) => logWriteHandler.WriteMessage(new LogEntry(ex.Message, null, Library.Logging.LogMessageType.Error, LOGTAG, "UnobservedTaskException", ex));
+            return logScope;
         }
 
         private static int ShowHelp(bool writeToConsoleOnExceptionw)

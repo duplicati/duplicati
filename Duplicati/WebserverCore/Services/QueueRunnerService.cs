@@ -50,8 +50,7 @@ public class QueueRunnerService(
     private static readonly int MAX_TASK_RESULT_CACHE_SIZE = 100;
 
     private readonly List<IQueuedTask> _tasks = new();
-    private Task? _currentTask;
-    private IQueuedTask? _activeTask;
+    private (Task? Task, IQueuedTask? QueuedTask) _current;
     private bool _isPaused;
     private bool _isTerminated;
 
@@ -72,10 +71,10 @@ public class QueueRunnerService(
     }
 
     public bool GetIsActive()
-        => _activeTask != null;
+        => _current.Task != null;
 
     public IQueuedTask? GetCurrentTask()
-        => _activeTask;
+        => _current.QueuedTask;
 
     public List<IQueuedTask> GetCurrentTasks()
     {
@@ -102,7 +101,7 @@ public class QueueRunnerService(
         _isTerminated = true;
         if (wait)
         {
-            var task = _currentTask;
+            var task = _current.Task;
             if (task != null)
                 task.Await();
         }
@@ -112,23 +111,19 @@ public class QueueRunnerService(
     {
         lock (_lock)
         {
-            if (_isTerminated || _isPaused || (_currentTask != null && !_currentTask.IsCompleted))
+            if (_isTerminated || _isPaused || (_current.Task != null && !_current.Task.IsCompleted))
                 return;
 
             // Clean up completed tasks
-            if (_currentTask != null && _currentTask.IsCompleted)
-            {
-                _currentTask = null;
-                _activeTask = null;
-            }
+            if (_current.Task != null && _current.Task.IsCompleted)
+                _current = (null, null);
 
             if (_tasks.Count == 0)
                 return;
 
-            _activeTask = _tasks[0];
+            var nextTask = _tasks[0];
             _tasks.RemoveAt(0);
-            var task = _activeTask;
-            _currentTask = Task.Run(() => RunTask(task), CancellationToken.None);
+            _current = (Task.Run(() => RunTask(nextTask), CancellationToken.None), nextTask);
         }
     }
 
@@ -163,8 +158,8 @@ public class QueueRunnerService(
         finally
         {
             task.TaskFinished = DateTime.UtcNow;
-            _currentTask = null;
-            _activeTask = null;
+            lock (_lock)
+                _current = (null, null);
             eventPollNotify.SignalNewEvent();
             StartNextTask();
         }

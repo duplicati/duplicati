@@ -44,11 +44,6 @@ namespace Duplicati.Library.RestAPI
         public static string DataFolder;
 
         /// <summary>
-        /// The log redirect handler
-        /// </summary>
-        public static readonly LogWriteHandler LogHandler = new LogWriteHandler();
-
-        /// <summary>
         /// Used to check the origin of the web server (e.g. Tray icon or a stand alone Server)
         /// </summary>
         public static string Origin = "Server";

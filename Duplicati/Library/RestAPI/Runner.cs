@@ -560,8 +560,8 @@ namespace Duplicati.Server
                 // Attach a log scope that tags all messages to relay the TaskID and BackupID
                 using (Library.Logging.Log.StartScope(log =>
                 {
-                    log[LogWriteHandler.LOG_EXTRA_TASKID] = data.TaskID.ToString();
-                    log[LogWriteHandler.LOG_EXTRA_BACKUPID] = data.BackupID;
+                    log[ILogWriteHandler.LiveLogEntry.LOG_EXTRA_TASKID] = data.TaskID.ToString();
+                    log[ILogWriteHandler.LiveLogEntry.LOG_EXTRA_BACKUPID] = data.BackupID;
                 }))
 
                 using (tempfolder)

@@ -132,8 +132,9 @@ public class DuplicatiWebserver
     /// </summary>
     /// <param name="settings">The settings for the server</param>
     /// <param name="connection">The connection to the database</param>
+    /// <param name="logWriteHandler">The log write handler</param>
     /// <returns>The new webserver instance</returns>
-    public static DuplicatiWebserver CreateWebServer(InitSettings settings, Connection connection)
+    public static DuplicatiWebserver CreateWebServer(InitSettings settings, Connection connection, ILogWriteHandler logWriteHandler)
     {
         var builder = WebApplication.CreateBuilder(new WebApplicationOptions()
         {
@@ -279,7 +280,7 @@ public class DuplicatiWebserver
         builder.Services.AddHealthChecks()
             .AddCheck("Basic", () => HealthCheckResult.Healthy("Service is running"));
 
-        builder.Services.AddDuplicati(connection);
+        builder.Services.AddDuplicati(connection, logWriteHandler);
 
         // Prevent logs from spamming the console, but allow enabling for debugging
         if (Environment.GetEnvironmentVariable("DUPLICATI_WEBSERVER_LOGGING") != "1")
@@ -387,9 +388,9 @@ public class DuplicatiWebserver
         var _ = Task.Run(() => app.Services.GetRequiredService<ISystemInfoProvider>().GetSystemInfo(null));
 
         // Get a string description of the listen interface used
-        var listenInterface = settings.Interface == System.Net.IPAddress.Any
+        var listenInterface = settings.Interface == IPAddress.Any
             ? "*"
-            : settings.Interface == System.Net.IPAddress.Loopback
+            : settings.Interface == IPAddress.Loopback
                 ? "localhost"
                 : settings.Interface.ToString();
 

@@ -35,7 +35,7 @@ namespace Duplicati.WebserverCore.Extensions;
 
 public static class ServiceCollectionsExtensions
 {
-    public static IServiceCollection AddDuplicati(this IServiceCollection services, Connection connection)
+    public static IServiceCollection AddDuplicati(this IServiceCollection services, Connection connection, ILogWriteHandler logWriteHandler)
     {
         //old part
         services
@@ -67,7 +67,8 @@ public static class ServiceCollectionsExtensions
             .AddSingleton<IRemoteControllerRegistration, RemoteControllerRegistrationService>()
             .AddSingleton<ISystemInfoProvider, SystemInfoProvider>()
             .AddSingleton<IQueueRunnerService, QueueRunnerService>()
-            .AddSingleton<IProgressStateProviderService, ProgressStateProviderService>();
+            .AddSingleton<IProgressStateProviderService, ProgressStateProviderService>()
+            .AddSingleton(logWriteHandler);
 
         return services;
     }
