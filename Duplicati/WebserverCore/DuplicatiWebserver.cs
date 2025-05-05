@@ -108,7 +108,6 @@ public class DuplicatiWebserver
     /// <param name="Port">The listining port</param>
     /// <param name="Interface">The listening interface</param>
     /// <param name="Certificate">The certificate, if using SSL</param>
-    /// <param name="Servername">The servername to report</param>
     /// <param name="AllowedHostnames">The allowed hostnames</param>
     /// <param name="DisableStaticFiles">If static files should be disabled</param>
     /// <param name="SPAPaths">The paths to serve as SPAs</param>
@@ -119,7 +118,6 @@ public class DuplicatiWebserver
         int Port,
         System.Net.IPAddress Interface,
         X509Certificate2Collection? Certificate,
-        string Servername,
         IEnumerable<string> AllowedHostnames,
         bool DisableStaticFiles,
         IEnumerable<string> SPAPaths,

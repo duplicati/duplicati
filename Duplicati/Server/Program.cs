@@ -390,7 +390,6 @@ namespace Duplicati.Server
                     parsedOptions.Port,
                     parsedOptions.Interface,
                     parsedOptions.Certificate,
-                    parsedOptions.Servername,
                     parsedOptions.AllowedHostnames,
                     parsedOptions.DisableStaticFiles,
                     parsedOptions.SPAPaths,
