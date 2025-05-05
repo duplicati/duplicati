@@ -22,7 +22,6 @@
 using System.Net.Http.Headers;
 using Duplicati.Library.Logging;
 using Duplicati.Library.RemoteControl;
-using Duplicati.Library.RestAPI;
 using Duplicati.Server.Database;
 using Duplicati.WebserverCore.Abstractions;
 using Newtonsoft.Json;
@@ -35,7 +34,7 @@ namespace Duplicati.WebserverCore.Services;
 /// <param name="connection">The connection to the database</param>
 /// <param name="httpClientFactory">The HTTP client factory</param>
 /// <param name="jwtTokenProvider">The JWT token provider</param>
-public class RemoteControllerHandler(Connection connection, IHttpClientFactory httpClientFactory, IJWTTokenProvider jwtTokenProvider) : IRemoteControllerHandler
+public class RemoteControllerHandler(Connection connection, IHttpClientFactory httpClientFactory, IJWTTokenProvider jwtTokenProvider, IApplicationSettings applicationSettings) : IRemoteControllerHandler
 {
     /// <summary>
     /// The log tag for this class.
@@ -64,7 +63,7 @@ public class RemoteControllerHandler(Connection connection, IHttpClientFactory h
             CertificateUrl = data.CertificateUrl
         });
 
-        if (!FIXMEGlobal.SettingsEncryptionKeyProvidedExternally)
+        if (!applicationSettings.SettingsEncryptionKeyProvidedExternally)
         {
             // TODO: Implement changing the encryption key
             // if (!string.IsNullOrWhiteSpace(data.LocalEncryptionKey) && data.LocalEncryptionKey != connection.ApplicationSettings.SettingsEncryptionKey)

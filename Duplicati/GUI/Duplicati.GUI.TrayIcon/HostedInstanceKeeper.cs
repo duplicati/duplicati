@@ -21,6 +21,7 @@
 
 using System;
 using System.Linq;
+using Duplicati.WebserverCore.Abstractions;
 
 namespace Duplicati.GUI.TrayIcon
 {
@@ -32,9 +33,11 @@ namespace Duplicati.GUI.TrayIcon
         private readonly System.Threading.Thread m_runner;
         private Exception m_runnerException = null;
         public Action InstanceShutdown;
+        private readonly IApplicationSettings applicationSettings;
 
-        public HostedInstanceKeeper(string[] args)
+        public HostedInstanceKeeper(IApplicationSettings applicationSettings, string[] args)
         {
+            this.applicationSettings = applicationSettings;
             m_runner = new System.Threading.Thread(_ =>
             {
                 try
@@ -44,13 +47,13 @@ namespace Duplicati.GUI.TrayIcon
                     if (args == null || !args.Any(x => x.Trim().StartsWith("--" + Server.WebServerLoader.OPTION_PORT + "=", StringComparison.OrdinalIgnoreCase)))
                         args = (args ?? new string[0]).Union(new string[] { "--" + Server.WebServerLoader.OPTION_PORT + "=8200,8300,8400,8500,8600,8700,8800,8900,8989" }).ToArray();
 
-                    Server.Program.Main(args);
+                    Server.Program.Main(applicationSettings, args);
                 }
                 catch (Exception ex)
                 {
                     m_runnerException = ex;
                     Server.Program.ServerStartedEvent?.Set();
-                    Server.Program.ApplicationExitEvent?.Set();
+                    applicationSettings.ApplicationExitEvent?.Set();
                 }
                 finally
                 {
@@ -85,7 +88,7 @@ namespace Duplicati.GUI.TrayIcon
         {
             try
             {
-                Server.Program.ApplicationExitEvent.Set();
+                applicationSettings.ApplicationExitEvent.Set();
                 if (!m_runner.Join(TimeSpan.FromSeconds(10)))
                 {
                     m_runner.Interrupt();

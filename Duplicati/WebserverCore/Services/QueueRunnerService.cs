@@ -37,7 +37,7 @@ public class QueueRunnerService(
     EventPollNotify eventPollNotify,
     INotificationUpdateService notificationUpdateService,
     IProgressStateProviderService progressStateProviderService,
-    ILogWriteHandler logWriteHandler) : IQueueRunnerService
+    IApplicationSettings applicationSettings) : IQueueRunnerService
 {
     private readonly object _lock = new();
     /// <summary>
@@ -138,7 +138,7 @@ public class QueueRunnerService(
             if (task.OnStarting != null)
                 await task.OnStarting().ConfigureAwait(false);
 
-            Runner.Run(connection, eventPollNotify, notificationUpdateService, progressStateProviderService, task, true);
+            Runner.Run(connection, eventPollNotify, notificationUpdateService, progressStateProviderService, applicationSettings, task, true);
 
             // If the task is completed, don't call OnFinished again
             completed = true;
@@ -211,6 +211,6 @@ public class QueueRunnerService(
     /// <inheritdoc/>
     public IBasicResults? RunImmediately(IQueuedTask task)
     {
-        return Runner.Run(connection, eventPollNotify, notificationUpdateService, progressStateProviderService, task, false);
+        return Runner.Run(connection, eventPollNotify, notificationUpdateService, progressStateProviderService, applicationSettings, task, false);
     }
 }

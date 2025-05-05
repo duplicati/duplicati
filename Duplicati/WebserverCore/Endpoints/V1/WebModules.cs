@@ -20,7 +20,6 @@
 // DEALINGS IN THE SOFTWARE.
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main;
-using Duplicati.Library.RestAPI;
 using Duplicati.Server;
 using Duplicati.Server.Database;
 using Duplicati.WebserverCore.Abstractions;
@@ -34,15 +33,15 @@ public record WebModules : IEndpointV1
     public static void Map(RouteGroupBuilder group)
     {
         group.MapGet("/webmodules", ExecuteGet).RequireAuthorization();
-        group.MapPost("/webmodule/{modulekey}", ([FromServices] Connection connection, [FromRoute] string modulekey, [FromBody] Dictionary<string, string> options, CancellationToken cancellationToken)
-            => ExecutePost(connection, modulekey, options, cancellationToken))
+        group.MapPost("/webmodule/{modulekey}", ([FromServices] Connection connection, [FromServices] IApplicationSettings applicationSettings, [FromRoute] string modulekey, [FromBody] Dictionary<string, string> options, CancellationToken cancellationToken)
+            => ExecutePost(connection, applicationSettings, modulekey, options, cancellationToken))
             .RequireAuthorization();
     }
 
     private static IEnumerable<IWebModule> ExecuteGet()
         => Library.DynamicLoader.WebLoader.Modules;
 
-    private static async Task<Dto.WebModuleOutputDto> ExecutePost(Connection connection, string modulekey, Dictionary<string, string> inputOptions, CancellationToken cancellationToken)
+    private static async Task<Dto.WebModuleOutputDto> ExecutePost(Connection connection, IApplicationSettings applicationSettings, string modulekey, Dictionary<string, string> inputOptions, CancellationToken cancellationToken)
     {
         var m = Library.DynamicLoader.WebLoader.Modules.FirstOrDefault(x => x.Key.Equals(modulekey, StringComparison.OrdinalIgnoreCase))
             ?? throw new NotFoundException("No such module found");
@@ -51,7 +50,7 @@ public record WebModules : IEndpointV1
         foreach (var k in inputOptions.Keys)
             options[k] = inputOptions[k];
 
-        await SecretProviderHelper.ApplySecretProviderAsync([], [], options, Library.Utility.TempFolder.SystemTempPath, FIXMEGlobal.SecretProvider, cancellationToken);
+        await SecretProviderHelper.ApplySecretProviderAsync([], [], options, Library.Utility.TempFolder.SystemTempPath, applicationSettings.SecretProvider, cancellationToken);
 
         return new Dto.WebModuleOutputDto(
             Status: "OK",

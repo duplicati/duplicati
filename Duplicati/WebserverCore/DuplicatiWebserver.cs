@@ -131,8 +131,9 @@ public class DuplicatiWebserver
     /// <param name="settings">The settings for the server</param>
     /// <param name="connection">The connection to the database</param>
     /// <param name="logWriteHandler">The log write handler</param>
+    /// <param name="applicationSettings">The application settings</param>
     /// <returns>The new webserver instance</returns>
-    public static DuplicatiWebserver CreateWebServer(InitSettings settings, Connection connection, ILogWriteHandler logWriteHandler)
+    public static DuplicatiWebserver CreateWebServer(InitSettings settings, Connection connection, ILogWriteHandler logWriteHandler, IApplicationSettings applicationSettings)
     {
         var builder = WebApplication.CreateBuilder(new WebApplicationOptions()
         {
@@ -278,7 +279,7 @@ public class DuplicatiWebserver
         builder.Services.AddHealthChecks()
             .AddCheck("Basic", () => HealthCheckResult.Healthy("Service is running"));
 
-        builder.Services.AddDuplicati(connection, logWriteHandler);
+        builder.Services.AddDuplicati(connection, logWriteHandler, applicationSettings);
 
         // Prevent logs from spamming the console, but allow enabling for debugging
         if (Environment.GetEnvironmentVariable("DUPLICATI_WEBSERVER_LOGGING") != "1")

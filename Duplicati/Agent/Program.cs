@@ -30,9 +30,9 @@ using Duplicati.Library.Interface;
 using Duplicati.Library.Logging;
 using Duplicati.Library.Main;
 using Duplicati.Library.RemoteControl;
-using Duplicati.Library.RestAPI;
 using Duplicati.Library.Utility;
 using Duplicati.Server;
+using Duplicati.WebserverCore.Abstractions;
 using Duplicati.WebserverCore.Services;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -225,6 +225,9 @@ public static class Program
         if (string.IsNullOrWhiteSpace(agentConfig.SettingsEncryptionKey))
             agentConfig = agentConfig with { SettingsEncryptionKey = Environment.GetEnvironmentVariable(EncryptedFieldHelper.ENVIROMENT_VARIABLE_NAME) };
 
+        // Prepare the application settings for the server
+        var applicationSettings = new ApplicationSettings();
+
         // Apply the secret provider, if present
         if (!string.IsNullOrWhiteSpace(agentConfig.SecretProvider))
         {
@@ -245,7 +248,7 @@ public static class Program
             options["secret-provider-cache"] = agentConfig.SecretProviderCache.ToString();
             options["secret-provider-pattern"] = agentConfig.SecretProviderPattern;
 
-            FIXMEGlobal.SecretProvider = await SecretProviderHelper.ApplySecretProviderAsync([], [], options, TempFolder.SystemTempPath, null, CancellationToken.None);
+            applicationSettings.SecretProvider = await SecretProviderHelper.ApplySecretProviderAsync([], [], options, TempFolder.SystemTempPath, null, CancellationToken.None);
 
             // Apply the secret provider to the agent configuration
             foreach (var prop in agentProps)
@@ -299,7 +302,7 @@ public static class Program
             }
 
             var t = await Task.WhenAny(
-                Task.Run(() => StartLocalServer(agentConfig, settings, cts.Token)),
+                Task.Run(() => StartLocalServer(agentConfig, applicationSettings, settings, cts.Token)),
                 KeepRemoteConnection.Start(
                     settings.ServerUrl,
                     settings.JWT,
@@ -307,7 +310,7 @@ public static class Program
                     settings.ServerCertificates,
                     cts.Token,
                     OnConnect,
-                    m => ReKey(m, agentConfig),
+                    m => ReKey(applicationSettings, m, agentConfig),
                     OnControl,
                     OnMessage
                 )
@@ -329,7 +332,7 @@ public static class Program
         => Server.Program.DuplicatiWebserver.Provider.GetRequiredService<IRemoteControllerHandler>().OnMessage(message);
 
 
-    private static Task ReKey(ClaimedClientData keydata, CommandLineArguments agentConfig)
+    private static Task ReKey(IApplicationSettings applicationSettings, ClaimedClientData keydata, CommandLineArguments agentConfig)
     {
         // ReKey is handled here because we store the config outside of the database
         Log.WriteMessage(LogMessageType.Verbose, LogTag, "ReKey", "Rekeying the settings");
@@ -340,7 +343,7 @@ public static class Program
             settings = settings with { ServerCertificates = keydata.ServerCertificates };
 
         // Only allow re-keying if the settings encryption key is not set
-        if (!FIXMEGlobal.SettingsEncryptionKeyProvidedExternally)
+        if (!applicationSettings.SettingsEncryptionKeyProvidedExternally)
         {
             if (!string.IsNullOrWhiteSpace(keydata.LocalEncryptionKey) && settings.SettingsEncryptionKey != keydata.LocalEncryptionKey)
             {
@@ -358,14 +361,15 @@ public static class Program
     /// <summary>
     /// Runs the server, restarting on crashes
     /// </summary>
+    /// <param name="applicationSettings">The application settings for the server</param>
     /// <param name="args">The commandline arguments passed to the server</param>
     /// <param name="cancellationToken">The cancellation token to use for the process</param>
     /// <returns>An awaitable task</returns>
-    private static async Task RunServer(string[] args, CancellationToken cancellationToken)
+    private static async Task RunServer(IApplicationSettings applicationSettings, string[] args, CancellationToken cancellationToken)
     {
         cancellationToken.Register(() =>
         {
-            Server.Program.ApplicationExitEvent.Set();
+            applicationSettings.ApplicationExitEvent.Set();
         });
 
         var lastRestart = DateTime.Now;
@@ -374,7 +378,7 @@ public static class Program
             try
             {
                 lastRestart = DateTime.Now;
-                Server.Program.Main(args);
+                Server.Program.Main(applicationSettings, args);
             }
             catch (Exception ex)
             {
@@ -445,10 +449,11 @@ public static class Program
     /// Starts the local webserver in locked down mode, restarting on crashes
     /// </summary>
     /// <param name="agentConfig">The agent configuration</param>
+    /// <param name="applicationSettings">The application settings for the server</param>
     /// <param name="settings">The settings for the agent</param>
     /// <param name="cancellationToken">The cancellation token that stops the server</param>
     /// <returns>An awaitable task</returns>
-    private static async Task StartLocalServer(CommandLineArguments agentConfig, Settings settings, CancellationToken cancellationToken)
+    private static async Task StartLocalServer(CommandLineArguments agentConfig, IApplicationSettings applicationSettings, Settings settings, CancellationToken cancellationToken)
     {
         // TODO: Look into pipes for Kestrel to prevent network access
 
@@ -487,10 +492,10 @@ public static class Program
             .ToArray();
 
         // Set the global origin
-        FIXMEGlobal.Origin = "Agent";
+        applicationSettings.Origin = "Agent";
 
         // Start the server
-        await RunServer(args, cancellationToken);
+        await RunServer(applicationSettings, args, cancellationToken);
     }
 }
 

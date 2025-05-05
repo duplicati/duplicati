@@ -18,7 +18,6 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
-using Duplicati.Library.RestAPI;
 using Duplicati.WebserverCore.Abstractions;
 using Duplicati.WebserverCore.Exceptions;
 using Microsoft.AspNetCore.Mvc;
@@ -32,9 +31,12 @@ public class RemoteControl : IEndpointV1
         group.MapGet("/remotecontrol/status", ([FromServices] IRemoteControllerRegistration registration, [FromServices] IRemoteController remoteController)
             => GetStatus(registration, remoteController))
             .RequireAuthorization();
+    }
 
+    public static void MapConditional(RouteGroupBuilder group, string origin)
+    {
         // Don't allow these in agent-mode
-        if (FIXMEGlobal.Origin == "Agent")
+        if (origin == "Agent")
             return;
 
         group.MapPost("/remotecontrol/enable", ([FromServices] IRemoteControllerRegistration registration, [FromServices] IRemoteController remoteController)

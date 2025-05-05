@@ -497,15 +497,15 @@ namespace Duplicati.Server
             return parts.ToArray();
         }
 
-        public static IBasicResults? Run(Connection databaseConnection, EventPollNotify eventPollNotify, INotificationUpdateService notificationUpdateService, IProgressStateProviderService progressStateProviderService, IQueuedTask data, bool fromQueue)
+        public static IBasicResults? Run(Connection databaseConnection, EventPollNotify eventPollNotify, INotificationUpdateService notificationUpdateService, IProgressStateProviderService progressStateProviderService, IApplicationSettings applicationSettings, IQueuedTask data, bool fromQueue)
         {
             if (data is IRunnerData runnerData)
-                return RunInternal(databaseConnection, eventPollNotify, notificationUpdateService, progressStateProviderService, runnerData, fromQueue);
+                return RunInternal(databaseConnection, eventPollNotify, notificationUpdateService, progressStateProviderService, applicationSettings, runnerData, fromQueue);
 
             throw new ArgumentException("Invalid task type", nameof(data));
         }
 
-        private static IBasicResults? RunInternal(Connection databaseConnection, EventPollNotify eventPollNotify, INotificationUpdateService notificationUpdateService, IProgressStateProviderService progressStateProviderService, IRunnerData data, bool fromQueue)
+        private static IBasicResults? RunInternal(Connection databaseConnection, EventPollNotify eventPollNotify, INotificationUpdateService notificationUpdateService, IProgressStateProviderService progressStateProviderService, IApplicationSettings applicationSettings, IRunnerData data, bool fromQueue)
         {
             data.TaskStarted = DateTime.Now;
             if (data is CustomRunnerTask task)
@@ -586,7 +586,7 @@ namespace Duplicati.Server
                     data.UpdateThrottleSpeeds(appSettings.UploadSpeedLimit, appSettings.DownloadSpeedLimit);
 
                     // Pass on the provider, will be replaced if configured in the backup
-                    controller.SetSecretProvider(FIXMEGlobal.SecretProvider);
+                    controller.SetSecretProvider(applicationSettings.SecretProvider);
 
                     if (backup.Metadata.ContainsKey("LastCompactFinished"))
                         controller.LastCompact = Utility.DeserializeDateTime(backup.Metadata["LastCompactFinished"]);
