@@ -133,8 +133,6 @@ public class QueueRunnerService(
         var completed = false;
         try
         {
-            using var log = Library.Logging.Log.StartScope(logWriteHandler);
-
             eventPollNotify.SignalNewEvent();
             task.TaskStarted = DateTime.UtcNow;
             if (task.OnStarting != null)

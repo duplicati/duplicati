@@ -330,6 +330,13 @@ public class DuplicatiWebserver
         if (!settings.DisableStaticFiles)
             app.UseDefaultStaticFiles(settings.WebRoot, settings.SPAPaths);
 
+        app.Use(async (context, next) =>
+        {
+            // Set up the log scope to capture any log messages for the livelog / server log
+            using (var scope = Library.Logging.Log.StartScope(logWriteHandler))
+                await next();
+        });
+
         app.UseExceptionHandler(app =>
         {
             app.Run(async context =>
