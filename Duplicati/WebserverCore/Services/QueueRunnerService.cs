@@ -36,7 +36,8 @@ public class QueueRunnerService(
     Connection connection,
     EventPollNotify eventPollNotify,
     INotificationUpdateService notificationUpdateService,
-    IProgressStateProviderService progressStateProviderService) : IQueueRunnerService
+    IProgressStateProviderService progressStateProviderService,
+    ILogWriteHandler logWriteHandler) : IQueueRunnerService
 {
     private readonly object _lock = new();
     /// <summary>
@@ -132,6 +133,8 @@ public class QueueRunnerService(
         var completed = false;
         try
         {
+            using var log = Library.Logging.Log.StartScope(logWriteHandler);
+
             eventPollNotify.SignalNewEvent();
             task.TaskStarted = DateTime.UtcNow;
             if (task.OnStarting != null)
