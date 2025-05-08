@@ -21,6 +21,7 @@
 
 using Duplicati.Library.RestAPI;
 using Duplicati.Server;
+using Duplicati.Server.Database;
 using Duplicati.Server.Serialization.Interface;
 using Duplicati.WebserverCore.Abstractions;
 
@@ -29,9 +30,9 @@ namespace WebserverCore.Services;
 public class SchedulerService : ISchedulerService
 {
     private readonly Scheduler scheduler;
-    public SchedulerService(EventPollNotify eventPollNotify, INotificationUpdateService notificationUpdateService, IQueueRunnerService queueRunnerService)
+    public SchedulerService(Connection connection, EventPollNotify eventPollNotify, INotificationUpdateService notificationUpdateService, IQueueRunnerService queueRunnerService)
     {
-        this.scheduler = new Scheduler(queueRunnerService);
+        this.scheduler = new Scheduler(connection, queueRunnerService);
         var lastScheduleId = notificationUpdateService.LastDataUpdateId;
         eventPollNotify.NewEvent += (sender, e) =>
         {

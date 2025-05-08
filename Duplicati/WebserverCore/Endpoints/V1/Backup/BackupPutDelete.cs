@@ -36,9 +36,9 @@ public class BackupPutDelete : IEndpointV1
             => ExecutePut(GetBackup(connection, id), connection, input))
             .RequireAuthorization();
 
-        group.MapDelete("/backup/{id}", ([FromServices] Connection connection, [FromServices] IQueueRunnerService queueRunnerService, [FromServices] LiveControls liveControls, [FromServices] IHttpContextAccessor httpContextAccessor, [FromRoute] string id, [FromQuery(Name = "delete-remote-files")] bool? delete_remote_files, [FromQuery(Name = "delete-local-db")] bool? delete_local_db, [FromQuery] bool? force) =>
+        group.MapDelete("/backup/{id}", ([FromServices] Connection connection, [FromServices] ISchedulerService schedulerService, [FromServices] IQueueRunnerService queueRunnerService, [FromServices] LiveControls liveControls, [FromServices] IHttpContextAccessor httpContextAccessor, [FromRoute] string id, [FromQuery(Name = "delete-remote-files")] bool? delete_remote_files, [FromQuery(Name = "delete-local-db")] bool? delete_local_db, [FromQuery] bool? force) =>
         {
-            var res = ExecuteDelete(GetBackup(connection, id), queueRunnerService, liveControls, delete_remote_files ?? false, delete_local_db, force ?? false);
+            var res = ExecuteDelete(GetBackup(connection, id), schedulerService, queueRunnerService, liveControls, delete_remote_files ?? false, delete_local_db, force ?? false);
             if (res.Status != "OK" && httpContextAccessor.HttpContext != null)
                 httpContextAccessor.HttpContext.Response.StatusCode = 500;
             return res;
@@ -130,7 +130,7 @@ public class BackupPutDelete : IEndpointV1
         }
     }
 
-    private static Dto.DeleteBackupOutputDto ExecuteDelete(IBackup backup, IQueueRunnerService queueRunnerService, LiveControls liveControls, bool delete_remote_files, bool? delete_local_db, bool force)
+    private static Dto.DeleteBackupOutputDto ExecuteDelete(IBackup backup, ISchedulerService schedulerService, IQueueRunnerService queueRunnerService, LiveControls liveControls, bool delete_remote_files, bool? delete_local_db, bool force)
     {
         try
         {
@@ -179,7 +179,7 @@ public class BackupPutDelete : IEndpointV1
         if (delete_remote_files)
             extra["delete-remote-files"] = "true";
 
-        return new Dto.DeleteBackupOutputDto("OK", null, queueRunnerService.AddTask(Runner.CreateTask(DuplicatiOperation.Delete, backup, extra)));
+        return new Dto.DeleteBackupOutputDto("OK", null, queueRunnerService.AddTask(Runner.CreateDeleteTask(backup, extra, (_) => schedulerService.Reschedule())));
     }
 
 }

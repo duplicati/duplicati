@@ -18,21 +18,47 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
-using Duplicati.Server;
-using Duplicati.WebserverCore.Abstractions;
-using Microsoft.AspNetCore.Mvc;
+#nullable enable
 
-namespace Duplicati.WebserverCore.Endpoints.V1;
+using System;
+using System.Threading;
+using Duplicati.Library.Interface;
 
-public class Updates : IEndpointV1
+namespace Duplicati.WebserverCore.Abstractions;
+
+/// <summary>
+/// Interface for application-wide settings for the server.
+/// </summary>
+public interface IApplicationSettings
 {
-    public static void Map(RouteGroupBuilder group)
-    {
-        group.MapPost("/updates/check",
-            ([FromServices] UpdatePollThread updatePollThread) => Execute(updatePollThread))
-            .RequireAuthorization();
-    }
+    /// <summary>
+    /// Action to start or stop the usage reporter
+    /// </summary>
+    Action? StartOrStopUsageReporter { get; set; }
 
-    private static void Execute(UpdatePollThread updatePollThread)
-        => updatePollThread.CheckNow();
+    /// <summary>
+    /// Gets the folder where Duplicati data is stored
+    /// </summary>
+    string DataFolder { get; }
+
+    /// <summary>
+    /// Used to check the origin of the web server (e.g. Tray icon or a stand alone Server)
+    /// </summary>
+    string Origin { get; set; }
+
+    /// <summary>
+    /// The application exit event
+    /// </summary>
+    ManualResetEvent ApplicationExitEvent { get; }
+
+    /// <summary>
+    /// The shared secret provider from the server invocation
+    /// </summary>
+    ISecretProvider? SecretProvider { get; set; }
+
+    /// <summary>
+    /// Flag to indicate if the settings encryption key was provided externally
+    /// </summary>
+    bool SettingsEncryptionKeyProvidedExternally { get; set; }
 }
+

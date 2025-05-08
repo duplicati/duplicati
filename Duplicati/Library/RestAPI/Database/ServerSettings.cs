@@ -80,10 +80,12 @@ namespace Duplicati.Server.Database
 
         private readonly Dictionary<string, string?> settings;
         private readonly Connection databaseConnection;
-        private UpdateInfo? m_latestUpdate;
+        private UpdateInfo? latestUpdate;
+        private readonly Action? startOrStopUsageReporter;
 
-        internal ServerSettings(Connection con)
+        internal ServerSettings(Connection con, Action startOrStopUsageReporter)
         {
+            this.startOrStopUsageReporter = startOrStopUsageReporter;
             settings = new Dictionary<string, string?>();
             databaseConnection = con;
             ReloadSettings();
@@ -115,7 +117,7 @@ namespace Duplicati.Server.Database
 
             lock (databaseConnection.m_lock)
             {
-                m_latestUpdate = null;
+                latestUpdate = null;
                 if (clearExisting)
                     settings.Clear();
 
@@ -154,8 +156,7 @@ namespace Duplicati.Server.Database
             }
 
             // In case the usage reporter is enabled or disabled, refresh now
-            if (FIXMEGlobal.StartOrStopUsageReporter != null)
-                FIXMEGlobal.StartOrStopUsageReporter();
+            startOrStopUsageReporter?.Invoke();
         }
 
         public string? StartupDelayDuration
@@ -634,11 +635,11 @@ namespace Duplicati.Server.Database
 
                 try
                 {
-                    if (m_latestUpdate != null)
-                        return m_latestUpdate;
+                    if (latestUpdate != null)
+                        return latestUpdate;
 
                     using (var tr = new System.IO.StringReader(updateNew))
-                        return m_latestUpdate = Server.Serialization.Serializer.Deserialize<Library.AutoUpdater.UpdateInfo>(tr);
+                        return latestUpdate = Server.Serialization.Serializer.Deserialize<Library.AutoUpdater.UpdateInfo>(tr);
                 }
                 catch
                 {
@@ -658,7 +659,7 @@ namespace Duplicati.Server.Database
                     result = sb.ToString();
                 }
 
-                m_latestUpdate = value;
+                latestUpdate = value;
                 lock (databaseConnection.m_lock)
                     settings[CONST.UPDATE_CHECK_NEW_VERSION] = result;
 

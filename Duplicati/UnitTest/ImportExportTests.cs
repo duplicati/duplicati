@@ -29,7 +29,7 @@ using Duplicati.Server.Database;
 using Duplicati.Server.Serializable;
 using Duplicati.Server.Serialization;
 using Duplicati.Server.Serialization.Interface;
-using Microsoft.Extensions.DependencyInjection;
+using Duplicati.WebserverCore.Services;
 using NUnit.Framework;
 using Backup = Duplicati.Server.Database.Backup;
 
@@ -107,10 +107,8 @@ namespace Duplicati.UnitTest
             }
 
             byte[] jsonByteArray;
-            using (Program.DataConnection = Program.GetDatabaseConnection(advancedOptions, true))
-            {
-                jsonByteArray = BackupImportExportHandler.ExportToJSON(Program.DataConnection, backup, null);
-            }
+            using (var con = Program.GetDatabaseConnection(new ApplicationSettings(), advancedOptions, true))
+                jsonByteArray = BackupImportExportHandler.ExportToJSON(con, backup, null);
 
             // The username should not have the '%40' converted to '@' since the import code
             // cannot handle it (see issue #3619).
@@ -130,13 +128,6 @@ namespace Duplicati.UnitTest
             var metadata = new Dictionary<string, string> { { "SourceFilesCount", "1" } };
             var advancedOptions = new Dictionary<string, string> { { "server-datafolder", this.serverDatafolder } };
 
-            // Mock the setup enough to get the import/export working
-            var serviceCollection = new ServiceCollection();
-            serviceCollection.AddSingleton<INotificationUpdateService, NotificationUpdateService>();
-            serviceCollection.AddSingleton(new EventPollNotify());
-            FIXMEGlobal.Provider = new DefaultServiceProviderFactory().CreateServiceProvider(serviceCollection);
-            FIXMEGlobal.DataFolder = this.serverDatafolder;
-
             var dbpath = Path.Combine(this.serverDatafolder, Library.AutoUpdater.DataFolderManager.SERVER_DATABASE_FILENAME);
             if (File.Exists(dbpath))
                 File.Delete(dbpath);
@@ -145,7 +136,7 @@ namespace Duplicati.UnitTest
             SQLiteLoader.OpenDatabase(con, dbpath, null);
             DatabaseUpgrader.UpgradeDatabase(con, dbpath, typeof(Library.RestAPI.Database.DatabaseSchemaMarker));
 
-            using (var connection = new Connection(con, true, null))
+            using (var connection = new Connection(con, true, null, this.serverDatafolder, null))
             {
                 // Unencrypted file, don't import metadata.
                 string unencryptedWithoutMetadata = Path.Combine(this.serverDatafolder, Path.GetRandomFileName());

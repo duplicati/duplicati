@@ -19,7 +19,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 using Duplicati.Library.Logging;
-using Duplicati.Server;
+using Duplicati.WebserverCore.Abstractions;
 
 namespace Duplicati.WebserverCore.Dto;
 
@@ -56,7 +56,7 @@ public sealed record LogEntry
     /// <summary>
     /// The message ID
     /// </summary>
-    public required string ExceptionID { get; init; }
+    public required string? ExceptionID { get; init; }
 
     /// <summary>
     /// The message type
@@ -71,7 +71,7 @@ public sealed record LogEntry
     /// <summary>
     /// The backup ID, if any
     /// </summary>
-    public required string BackupID { get; init; }
+    public required string? BackupID { get; init; }
 
     /// <summary>
     /// The task ID, if any
@@ -83,7 +83,7 @@ public sealed record LogEntry
     /// </summary>
     /// <param name="entry">The internal record</param>
     /// <returns>The DTO record</returns>
-    public static LogEntry FromInternalEntry(LogWriteHandler.LogEntry entry)
+    public static LogEntry FromInternalEntry(ILogWriteHandler.LiveLogEntry entry)
     {
         return new LogEntry
         {

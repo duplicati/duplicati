@@ -108,7 +108,6 @@ public class DuplicatiWebserver
     /// <param name="Port">The listining port</param>
     /// <param name="Interface">The listening interface</param>
     /// <param name="Certificate">The certificate, if using SSL</param>
-    /// <param name="Servername">The servername to report</param>
     /// <param name="AllowedHostnames">The allowed hostnames</param>
     /// <param name="DisableStaticFiles">If static files should be disabled</param>
     /// <param name="SPAPaths">The paths to serve as SPAs</param>
@@ -119,7 +118,6 @@ public class DuplicatiWebserver
         int Port,
         System.Net.IPAddress Interface,
         X509Certificate2Collection? Certificate,
-        string Servername,
         IEnumerable<string> AllowedHostnames,
         bool DisableStaticFiles,
         IEnumerable<string> SPAPaths,
@@ -132,8 +130,10 @@ public class DuplicatiWebserver
     /// </summary>
     /// <param name="settings">The settings for the server</param>
     /// <param name="connection">The connection to the database</param>
+    /// <param name="logWriteHandler">The log write handler</param>
+    /// <param name="applicationSettings">The application settings</param>
     /// <returns>The new webserver instance</returns>
-    public static DuplicatiWebserver CreateWebServer(InitSettings settings, Connection connection)
+    public static DuplicatiWebserver CreateWebServer(InitSettings settings, Connection connection, ILogWriteHandler logWriteHandler, IApplicationSettings applicationSettings)
     {
         var builder = WebApplication.CreateBuilder(new WebApplicationOptions()
         {
@@ -279,7 +279,7 @@ public class DuplicatiWebserver
         builder.Services.AddHealthChecks()
             .AddCheck("Basic", () => HealthCheckResult.Healthy("Service is running"));
 
-        builder.Services.AddDuplicati(connection);
+        builder.Services.AddDuplicati(connection, logWriteHandler, applicationSettings);
 
         // Prevent logs from spamming the console, but allow enabling for debugging
         if (Environment.GetEnvironmentVariable("DUPLICATI_WEBSERVER_LOGGING") != "1")
@@ -330,6 +330,13 @@ public class DuplicatiWebserver
 
         if (!settings.DisableStaticFiles)
             app.UseDefaultStaticFiles(settings.WebRoot, settings.SPAPaths);
+
+        app.Use(async (context, next) =>
+        {
+            // Set up the log scope to capture any log messages for the livelog / server log
+            using (var scope = Library.Logging.Log.StartScope(logWriteHandler))
+                await next();
+        });
 
         app.UseExceptionHandler(app =>
         {
@@ -387,9 +394,9 @@ public class DuplicatiWebserver
         var _ = Task.Run(() => app.Services.GetRequiredService<ISystemInfoProvider>().GetSystemInfo(null));
 
         // Get a string description of the listen interface used
-        var listenInterface = settings.Interface == System.Net.IPAddress.Any
+        var listenInterface = settings.Interface == IPAddress.Any
             ? "*"
-            : settings.Interface == System.Net.IPAddress.Loopback
+            : settings.Interface == IPAddress.Loopback
                 ? "localhost"
                 : settings.Interface.ToString();
 

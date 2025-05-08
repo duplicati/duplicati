@@ -18,21 +18,20 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
-using Duplicati.Server;
-using Duplicati.WebserverCore.Abstractions;
-using Microsoft.AspNetCore.Mvc;
 
-namespace Duplicati.WebserverCore.Endpoints.V1;
+#nullable enable
 
-public class Updates : IEndpointV1
+using System;
+
+namespace Duplicati.WebserverCore.Abstractions;
+
+/// <summary>
+/// Produces system information.
+/// </summary>
+public interface IProgressStateProviderService
 {
-    public static void Map(RouteGroupBuilder group)
-    {
-        group.MapPost("/updates/check",
-            ([FromServices] UpdatePollThread updatePollThread) => Execute(updatePollThread))
-            .RequireAuthorization();
-    }
-
-    private static void Execute(UpdatePollThread updatePollThread)
-        => updatePollThread.CheckNow();
+    /// <summary>
+    /// Handler for progress state generation.
+    /// </summary>
+    Func<Server.Serialization.Interface.IProgressEventData>? GenerateProgressState { get; set; }
 }

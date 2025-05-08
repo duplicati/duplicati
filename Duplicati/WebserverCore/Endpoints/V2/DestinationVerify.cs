@@ -22,7 +22,6 @@
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main;
 using Duplicati.Library.Main.Volumes;
-using Duplicati.Library.RestAPI;
 using Duplicati.Server;
 using Duplicati.Server.Database;
 using Duplicati.WebserverCore.Abstractions;
@@ -35,8 +34,8 @@ public class DestinationVerify : IEndpointV2
 {
     public static void Map(RouteGroupBuilder group)
     {
-        group.MapPost("/destination/test", ([FromServices] Connection connection, [FromBody] Dto.V2.DestinationTestRequestDto input, CancellationToken cancelToken)
-            => ExecuteTest(input, cancelToken))
+        group.MapPost("/destination/test", ([FromServices] Connection connection, [FromServices] IApplicationSettings applicationSettings, [FromBody] Dto.V2.DestinationTestRequestDto input, CancellationToken cancelToken)
+            => ExecuteTest(connection, applicationSettings, input, cancelToken))
             .RequireAuthorization();
     }
 
@@ -51,11 +50,11 @@ public class DestinationVerify : IEndpointV2
         }
     }
 
-    private static Dictionary<string, string?> ParseUrlOptions(Library.Utility.Uri uri)
+    private static Dictionary<string, string?> ParseUrlOptions(Connection connection, Library.Utility.Uri uri)
     {
         var qp = uri.QueryParameters;
 
-        var opts = Runner.GetCommonOptions();
+        var opts = Runner.GetCommonOptions(connection);
         foreach (var k in qp.Keys.Cast<string>())
             opts[k] = qp[k];
 
@@ -75,13 +74,13 @@ public class DestinationVerify : IEndpointV2
         return modules;
     }
 
-    private static async Task<TupleDisposeWrapper> GetBackend(string url, CancellationToken cancelToken)
+    private static async Task<TupleDisposeWrapper> GetBackend(Connection connection, IApplicationSettings applicationSettings, string url, CancellationToken cancelToken)
     {
         var uri = new Library.Utility.Uri(url);
-        var opts = ParseUrlOptions(uri);
+        var opts = ParseUrlOptions(connection, uri);
 
         var tmp = new[] { uri };
-        await SecretProviderHelper.ApplySecretProviderAsync([], tmp, opts, Library.Utility.TempFolder.SystemTempPath, FIXMEGlobal.SecretProvider, cancelToken);
+        await SecretProviderHelper.ApplySecretProviderAsync([], tmp, opts, Library.Utility.TempFolder.SystemTempPath, applicationSettings.SecretProvider, cancelToken);
         url = tmp[0].ToString();
 
         var modules = ConfigureModules(opts);
@@ -90,13 +89,13 @@ public class DestinationVerify : IEndpointV2
     }
 
 
-    private static async Task<DestinationTestResponseDto> ExecuteTest(DestinationTestRequestDto input, CancellationToken cancelToken)
+    private static async Task<DestinationTestResponseDto> ExecuteTest(Connection connection, IApplicationSettings applicationSettings, DestinationTestRequestDto input, CancellationToken cancelToken)
     {
         TupleDisposeWrapper? wrapper = null;
 
         try
         {
-            wrapper = await GetBackend(input.DestinationUrl, cancelToken);
+            wrapper = await GetBackend(connection, applicationSettings, input.DestinationUrl, cancelToken);
 
             using (var b = wrapper.Backend)
             {

@@ -21,8 +21,8 @@
 using System.Globalization;
 using Duplicati.Library.AutoUpdater;
 using Duplicati.Library.Localization;
-using Duplicati.Library.RestAPI;
 using Duplicati.Server;
+using Duplicati.Server.Database;
 using Duplicati.Server.Serialization.Interface;
 using Duplicati.WebserverCore.Abstractions;
 using Duplicati.WebserverCore.Dto;
@@ -32,7 +32,7 @@ namespace Duplicati.WebserverCore.Services;
 /// <summary>
 /// Produces system information.
 /// </summary>
-public class SystemInfoProvider : ISystemInfoProvider
+public class SystemInfoProvider(IApplicationSettings applicationSettings) : ISystemInfoProvider
 {
     /// <summary>
     /// The API extensions that are available
@@ -86,11 +86,6 @@ public class SystemInfoProvider : ISystemInfoProvider
         /// The default URL to present for remote control registration
         /// </summary>
         public required string RemoteControlRegistrationUrl { get; init; }
-
-        /// <summary>
-        /// Gets or sets the started by.
-        /// </summary>
-        public required string StartedBy { get; init; }
 
         /// <summary>
         /// Gets or sets the default update channel.
@@ -231,12 +226,11 @@ public class SystemInfoProvider : ISystemInfoProvider
         => new StaticSystemInformation
         {
             APIVersion = 1,
-            PasswordPlaceholder = FIXMEGlobal.PASSWORD_PLACEHOLDER,
+            PasswordPlaceholder = Connection.PASSWORD_PLACEHOLDER,
             ServerVersion = UpdaterManager.SelfVersion.Version,
             ServerVersionName = License.VersionNumbers.VERSION_NAME,
             ServerVersionType = UpdaterManager.SelfVersion.ReleaseType,
             RemoteControlRegistrationUrl = Library.RemoteControl.RegisterForRemote.DefaultRegisterationUrl,
-            StartedBy = FIXMEGlobal.Origin,
             DefaultUpdateChannel = AutoUpdateSettings.DefaultUpdateChannel.ToString(),
             DefaultUsageReportLevel = Library.UsageReporter.Reporter.DefaultReportLevel,
             OSType = UpdaterManager.OperatingSystemName,
@@ -315,7 +309,7 @@ public class SystemInfoProvider : ISystemInfoProvider
             ServerVersionName = systeminfo.ServerVersionName,
             ServerVersionType = systeminfo.ServerVersionType,
             RemoteControlRegistrationUrl = systeminfo.RemoteControlRegistrationUrl,
-            StartedBy = systeminfo.StartedBy,
+            StartedBy = applicationSettings.Origin,
             DefaultUpdateChannel = systeminfo.DefaultUpdateChannel,
             DefaultUsageReportLevel = systeminfo.DefaultUsageReportLevel,
             ServerTime = DateTime.Now,

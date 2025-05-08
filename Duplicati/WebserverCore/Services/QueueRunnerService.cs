@@ -19,6 +19,8 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
+using Duplicati.Library.Interface;
+using Duplicati.Library.RestAPI;
 using Duplicati.Library.Utility;
 using Duplicati.Server;
 using Duplicati.Server.Database;
@@ -30,7 +32,12 @@ namespace Duplicati.WebserverCore.Services;
 /// <summary>
 /// Simple queue that will run the given task
 /// </summary>
-public class QueueRunnerService(Connection connection, EventPollNotify eventPollNotify) : IQueueRunnerService
+public class QueueRunnerService(
+    Connection connection,
+    EventPollNotify eventPollNotify,
+    INotificationUpdateService notificationUpdateService,
+    IProgressStateProviderService progressStateProviderService,
+    IApplicationSettings applicationSettings) : IQueueRunnerService
 {
     private readonly object _lock = new();
     /// <summary>
@@ -44,8 +51,7 @@ public class QueueRunnerService(Connection connection, EventPollNotify eventPoll
     private static readonly int MAX_TASK_RESULT_CACHE_SIZE = 100;
 
     private readonly List<IQueuedTask> _tasks = new();
-    private Task? _currentTask;
-    private IQueuedTask? _activeTask;
+    private (Task? Task, IQueuedTask? QueuedTask) _current;
     private bool _isPaused;
     private bool _isTerminated;
 
@@ -66,10 +72,10 @@ public class QueueRunnerService(Connection connection, EventPollNotify eventPoll
     }
 
     public bool GetIsActive()
-        => _activeTask != null;
+        => _current.Task != null;
 
     public IQueuedTask? GetCurrentTask()
-        => _activeTask;
+        => _current.QueuedTask;
 
     public List<IQueuedTask> GetCurrentTasks()
     {
@@ -96,7 +102,7 @@ public class QueueRunnerService(Connection connection, EventPollNotify eventPoll
         _isTerminated = true;
         if (wait)
         {
-            var task = _currentTask;
+            var task = _current.Task;
             if (task != null)
                 task.Await();
         }
@@ -106,23 +112,19 @@ public class QueueRunnerService(Connection connection, EventPollNotify eventPoll
     {
         lock (_lock)
         {
-            if (_isTerminated || _isPaused || (_currentTask != null && !_currentTask.IsCompleted))
+            if (_isTerminated || _isPaused || (_current.Task != null && !_current.Task.IsCompleted))
                 return;
 
             // Clean up completed tasks
-            if (_currentTask != null && _currentTask.IsCompleted)
-            {
-                _currentTask = null;
-                _activeTask = null;
-            }
+            if (_current.Task != null && _current.Task.IsCompleted)
+                _current = (null, null);
 
             if (_tasks.Count == 0)
                 return;
 
-            _activeTask = _tasks[0];
+            var nextTask = _tasks[0];
             _tasks.RemoveAt(0);
-            var task = _activeTask;
-            _currentTask = Task.Run(() => RunTask(task), CancellationToken.None);
+            _current = (Task.Run(() => RunTask(nextTask), CancellationToken.None), nextTask);
         }
     }
 
@@ -136,7 +138,7 @@ public class QueueRunnerService(Connection connection, EventPollNotify eventPoll
             if (task.OnStarting != null)
                 await task.OnStarting().ConfigureAwait(false);
 
-            await task.Execute();
+            Runner.Run(connection, eventPollNotify, notificationUpdateService, progressStateProviderService, applicationSettings, task, true);
 
             // If the task is completed, don't call OnFinished again
             completed = true;
@@ -157,8 +159,8 @@ public class QueueRunnerService(Connection connection, EventPollNotify eventPoll
         finally
         {
             task.TaskFinished = DateTime.UtcNow;
-            _currentTask = null;
-            _activeTask = null;
+            lock (_lock)
+                _current = (null, null);
             eventPollNotify.SignalNewEvent();
             StartNextTask();
         }
@@ -204,5 +206,11 @@ public class QueueRunnerService(Connection connection, EventPollNotify eventPoll
                 _taskCache.Remove(oldestTaskID);
             }
         }
+    }
+
+    /// <inheritdoc/>
+    public IBasicResults? RunImmediately(IQueuedTask task)
+    {
+        return Runner.Run(connection, eventPollNotify, notificationUpdateService, progressStateProviderService, applicationSettings, task, false);
     }
 }

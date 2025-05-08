@@ -40,6 +40,11 @@ namespace Duplicati.Server.Database
 {
     public class Connection : IDisposable
     {
+        /// <summary>
+        /// The placeholder for passwords in the UI
+        /// </summary>
+        public const string PASSWORD_PLACEHOLDER = "**********";
+
         private readonly IDbConnection m_connection;
         private readonly IDbCommand m_errorcmd;
         public readonly object m_lock = new object();
@@ -51,6 +56,7 @@ namespace Duplicati.Server.Database
         private IServiceProvider? m_serviceProvider;
         private INotificationUpdateService? m_notificationUpdateService;
         private EventPollNotify? m_eventPollNotifyer;
+        private readonly string m_dataFolder;
 
         private static readonly HashSet<string> _encryptedFields =
             BackendLoader.Backends.SelectMany(x => x.SupportedCommands ?? [])
@@ -71,14 +77,15 @@ namespace Duplicati.Server.Database
                 ])
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-        public Connection(IDbConnection connection, bool disableFieldEncryption, EncryptedFieldHelper.KeyInstance? key)
+        public Connection(IDbConnection connection, bool disableFieldEncryption, EncryptedFieldHelper.KeyInstance? key, string dataFolder, Action startOrStopUsageReporter)
         {
+            m_dataFolder = dataFolder;
             m_encryptSensitiveFields = !disableFieldEncryption;
             m_key = key;
             m_connection = connection;
             m_errorcmd = m_connection.CreateCommand(@"INSERT INTO ""ErrorLog"" (""BackupID"", ""Message"", ""Exception"", ""Timestamp"") VALUES (@BackupId,@Message,@Exception,@Timestamp)");
 
-            this.ApplicationSettings = new ServerSettings(this);
+            this.ApplicationSettings = new ServerSettings(this, startOrStopUsageReporter);
         }
 
         /// <summary>
@@ -331,7 +338,7 @@ namespace Duplicati.Server.Database
                         cmd => cmd.SetCommandAndParameters(@"INSERT INTO ""Option"" (""BackupID"", ""Filter"", ""Name"", ""Value"") VALUES (@BackupId, @Filter, @Name, @Value)"),
                         (cmd, f) =>
                         {
-                            if (FIXMEGlobal.PASSWORD_PLACEHOLDER.Equals(f.Value))
+                            if (PASSWORD_PLACEHOLDER.Equals(f.Value))
                                 throw new Exception("Attempted to save a property with the placeholder password");
 
                             cmd.SetParameterValue("@BackupId", id)
@@ -640,7 +647,7 @@ namespace Duplicati.Server.Database
                 bool update = item.ID != null;
                 if (!update && item.DBPath == null)
                 {
-                    var folder = FIXMEGlobal.DataFolder;
+                    var folder = m_dataFolder;
                     if (!System.IO.Directory.Exists(folder))
                         System.IO.Directory.CreateDirectory(folder);
 
@@ -673,7 +680,7 @@ namespace Duplicati.Server.Database
                         },
                         (cmd, n) =>
                         {
-                            if (n.TargetURL.IndexOf(FIXMEGlobal.PASSWORD_PLACEHOLDER, StringComparison.Ordinal) >= 0)
+                            if (n.TargetURL.IndexOf(PASSWORD_PLACEHOLDER, StringComparison.Ordinal) >= 0)
                                 throw new Exception("Attempted to save a backup with the password placeholder");
                             if (update && long.Parse(n.ID) <= 0)
                                 throw new Exception("Invalid update, cannot update application settings through update method");

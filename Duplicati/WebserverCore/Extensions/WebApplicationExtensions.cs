@@ -56,6 +56,10 @@ public static class WebApplicationExtensions
             methodMap!.Invoke(null, [group]);
         }
 
+        // Special handling for endpoints that are not supported in all modes
+        var applicationSettings = application.Services.GetRequiredService<IApplicationSettings>();
+        Endpoints.V1.RemoteControl.MapConditional(group, applicationSettings.Origin);
+
         return application;
     }
 

@@ -54,10 +54,6 @@ public interface IQueuedTask
     Func<Exception?, Task>? OnFinished { get; set; }
 
     /// <summary>
-    /// That action that performs the task.
-    /// </summary>
-    Task Execute();
-    /// <summary>
     /// Updates the throttle speeds for the task.
     /// </summary>
     /// <param name="uploadSpeed">The upload speed to set.</param>
