@@ -36,17 +36,17 @@ public class TahoeBackend : IStreamingBackend
     /// <summary>
     /// Base URL for the Tahoe-LAFS backend
     /// </summary>
-    private readonly string? _url;
-        
+    private readonly string _url;
+
     /// <summary>
     /// The timeout options for API requests.
     /// </summary>
-    private readonly TimeoutOptionsHelper.Timeouts? _timeouts ;
+    private readonly TimeoutOptionsHelper.Timeouts _timeouts;
 
     /// <summary>
     /// The options for the SSL certificate validation
     /// </summary>
-    private readonly SslOptionsHelper.SslCertificateOptions _certificateOptions = null!;
+    private readonly SslOptionsHelper.SslCertificateOptions _certificateOptions;
 
     /// <summary>
     /// Cached instance of HttpClient to be used
@@ -55,7 +55,9 @@ public class TahoeBackend : IStreamingBackend
 
     public TahoeBackend()
     {
-            
+        _url = null!;
+        _timeouts = null!;
+        _certificateOptions = null!;
     }
 
     public TahoeBackend(string url, Dictionary<string, string?> options)
@@ -73,18 +75,21 @@ public class TahoeBackend : IStreamingBackend
         _url = Util.AppendDirSeparator(_url, "/");
         _timeouts = TimeoutOptionsHelper.Parse(options);
     }
-        
+
     /// <inheritdoc />
     public Task TestAsync(CancellationToken cancelToken)
         => this.TestListAsync(cancelToken);
-        
+
     /// <inheritdoc />
     public async Task CreateFolderAsync(CancellationToken cancelToken)
     {
-        using var resp = await Utility.Utility.WithTimeout(_timeouts!.ListTimeout, cancelToken,
-            _ => GetHttpClient().SendAsync(CreateRequest(string.Empty, "t=mkdir", HttpMethod.Post),
-                HttpCompletionOption.ResponseContentRead, cancelToken)).ConfigureAwait(false);
-            
+        using var resp = await Utility.Utility.WithTimeout(_timeouts.ListTimeout, cancelToken,
+            innerCancelToken =>
+            {
+                using var request = CreateRequest(string.Empty, "t=mkdir", HttpMethod.Post);
+                return GetHttpClient().SendAsync(request, HttpCompletionOption.ResponseContentRead, innerCancelToken);
+            }).ConfigureAwait(false);
+
         resp.EnsureSuccessStatusCode();
     }
 
@@ -101,9 +106,12 @@ public class TahoeBackend : IStreamingBackend
 
         try
         {
-            using var resp = await Utility.Utility.WithTimeout(_timeouts!.ListTimeout, cancelToken,
-                _ => GetHttpClient().SendAsync(CreateRequest(string.Empty, "t=json", HttpMethod.Get),
-                    HttpCompletionOption.ResponseContentRead, cancelToken)).ConfigureAwait(false);
+            using var resp = await Utility.Utility.WithTimeout(_timeouts.ListTimeout, cancelToken,
+               innerCancelToken =>
+               {
+                   using var request = CreateRequest(string.Empty, "t=json", HttpMethod.Get);
+                   return GetHttpClient().SendAsync(request, HttpCompletionOption.ResponseContentRead, innerCancelToken);
+               }).ConfigureAwait(false);
             resp.EnsureSuccessStatusCode();
 
             await using var rs = await resp.Content.ReadAsStreamAsync(cancelToken).ConfigureAwait(false);
@@ -119,7 +127,7 @@ public class TahoeBackend : IStreamingBackend
         {
             throw new FolderMissingException(Strings.TahoeBackend.MissingFolderError(_url, wex.Message), wex);
         }
-            
+
         if (data is not { Node: not null } || data.Nodetype != "dirnode")
             throw new Exception("Invalid folder listing response");
 
@@ -139,7 +147,7 @@ public class TahoeBackend : IStreamingBackend
                 IsFolder = isDir
             };
 
-            if (e.Value.Node.Metadata != null && e.Value.Node.Metadata.Tahoe != null)
+            if (e.Value.Node.Metadata is { Tahoe: not null })
                 fe.LastModification = Utility.Utility.EPOCH + TimeSpan.FromSeconds(e.Value.Node.Metadata.Tahoe.Linkmotime);
 
             if (isFile)
@@ -168,9 +176,13 @@ public class TahoeBackend : IStreamingBackend
     {
         try
         {
-            using (await Utility.Utility.WithTimeout(_timeouts!.ShortTimeout, cancelToken,
-                       _ => GetHttpClient().SendAsync(CreateRequest(remotename, string.Empty, HttpMethod.Delete),
-                           cancelToken)).ConfigureAwait(false))
+            using (await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancelToken,
+                       innerCancelToken =>
+                       {
+                           using var request = CreateRequest(remotename, string.Empty, HttpMethod.Delete);
+                           return GetHttpClient().SendAsync(request,
+                               innerCancelToken);
+                       }).ConfigureAwait(false))
             { }
         }
         catch (WebException wex)
@@ -182,7 +194,7 @@ public class TahoeBackend : IStreamingBackend
 
     /// <inheritdoc />
     public IList<ICommandLineArgument> SupportedCommands => [
-        .. SslOptionsHelper.GetSslOnlyOption(),
+        .. SslOptionsHelper.GetSslOnlyOption(), .. TimeoutOptionsHelper.GetOptions()
     ];
 
     /// <inheritdoc />
@@ -201,37 +213,42 @@ public class TahoeBackend : IStreamingBackend
     {
         try
         {
-            var request = CreateRequest(remotename, string.Empty, HttpMethod.Put);
+            using var request = CreateRequest(remotename, string.Empty, HttpMethod.Put);
 
-            await using var timeoutStream = stream.ObserveReadTimeout(_timeouts!.ReadWriteTimeout, false);
+            await using var timeoutStream = stream.ObserveReadTimeout(_timeouts.ReadWriteTimeout, false);
             request.Content = new StreamContent(timeoutStream);
 
             request.Content.Headers.Add("Content-Type", "application/binary");
             request.Content.Headers.Add("Content-Length", timeoutStream.Length.ToString());
-                
-                
-            var response = await GetHttpClient().UploadStream(request, cancelToken).ConfigureAwait(false);
+
+            using var response = await GetHttpClient().UploadStream(request, cancelToken).ConfigureAwait(false);
 
             response.EnsureSuccessStatusCode();
         }
         catch (HttpRequestException wex)
             when (wex.StatusCode is HttpStatusCode.Conflict or HttpStatusCode.NotFound)
         {
-            throw new FolderMissingException(Strings.TahoeBackend.MissingFolderError(_url!, wex.Message), wex);
+            throw new FolderMissingException(Strings.TahoeBackend.MissingFolderError(_url, wex.Message), wex);
         }
     }
 
     /// <inheritdoc />
     public async Task GetAsync(string remotename, Stream stream, CancellationToken cancelToken)
     {
-        using var resp = await Utility.Utility.WithTimeout(_timeouts!.ListTimeout, cancelToken, _ => GetHttpClient().SendAsync(CreateRequest(remotename, string.Empty, HttpMethod.Get),cancelToken)).ConfigureAwait(false);
+        using var resp = await Utility.Utility.WithTimeout(_timeouts.ListTimeout, cancelToken,
+            innerCancelToken =>
+            {
+                using var request = CreateRequest(remotename, string.Empty, HttpMethod.Get);
+                return GetHttpClient().SendAsync(request, innerCancelToken);
+            }).ConfigureAwait(false);
+
         resp.EnsureSuccessStatusCode();
 
         await using var s = await resp.Content.ReadAsStreamAsync(cancelToken).ConfigureAwait(false);
         await using var t = s.ObserveReadTimeout(_timeouts.ReadWriteTimeout);
         await Utility.Utility.CopyStreamAsync(t, stream, true, cancelToken).ConfigureAwait(false);
     }
-        
+
     /// <summary>
     /// Prepares the base request for Tahoe-LAFS
     /// </summary>
@@ -245,14 +262,14 @@ public class TahoeBackend : IStreamingBackend
         request.Headers.UserAgent.ParseAdd($"Duplicati Tahoe-LAFS Client {Assembly.GetExecutingAssembly().GetName().Version?.ToString()}");
         return request;
     }
-        
+
     /// <summary>
     /// Returns the HttpClient instance to use for requests, cached for reuse.
     /// </summary>
     private HttpClient GetHttpClient()
     {
         if (_httpClient != null) return _httpClient;
-            
+
         _httpClient = HttpClientHelper.CreateClient(_certificateOptions.CreateHandler());
         _httpClient.Timeout = Timeout.InfiniteTimeSpan;
 
