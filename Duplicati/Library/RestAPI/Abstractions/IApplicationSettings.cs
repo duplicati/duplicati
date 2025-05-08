@@ -19,19 +19,46 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 #nullable enable
+
 using System;
-using Duplicati.Library.Utility;
-using Duplicati.Server;
+using System.Threading;
+using Duplicati.Library.Interface;
 
-namespace Duplicati.Library.RestAPI.Abstractions;
+namespace Duplicati.WebserverCore.Abstractions;
 
-public interface IWorkerThreadsManager
+/// <summary>
+/// Interface for application-wide settings for the server.
+/// </summary>
+public interface IApplicationSettings
 {
-    void Spawn(Action<Runner.IRunnerData> item);
+    /// <summary>
+    /// Action to start or stop the usage reporter
+    /// </summary>
+    Action? StartOrStopUsageReporter { get; set; }
 
-    Tuple<long, string>? CurrentTask { get; }
-    WorkerThread<Runner.IRunnerData>? WorkerThread { get; }
-    void UpdateThrottleSpeeds(string? uploadSpeed, string? downloadSpeed);
+    /// <summary>
+    /// Gets the folder where Duplicati data is stored
+    /// </summary>
+    string DataFolder { get; }
 
-    long AddTask(Runner.IRunnerData data, bool skipQueue = false);
+    /// <summary>
+    /// Used to check the origin of the web server (e.g. Tray icon or a stand alone Server)
+    /// </summary>
+    string Origin { get; set; }
+
+    /// <summary>
+    /// The application exit event
+    /// </summary>
+    ManualResetEvent ApplicationExitEvent { get; }
+
+    /// <summary>
+    /// The shared secret provider from the server invocation
+    /// </summary>
+    ISecretProvider? SecretProvider { get; set; }
+
+    /// <summary>
+    /// Flag to indicate if the settings encryption key was provided externally
+    /// </summary>
+    bool SettingsEncryptionKeyProvidedExternally { get; set; }
 }
+

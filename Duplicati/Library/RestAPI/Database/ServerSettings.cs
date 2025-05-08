@@ -1,4 +1,4 @@
-// Copyright (C) 2025, The Duplicati Team
+﻿// Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a 
@@ -29,6 +29,8 @@ using System.Text;
 using System.Security.Cryptography.X509Certificates;
 using Duplicati.Library.Utility;
 using Duplicati.Library.AutoUpdater;
+using Microsoft.Extensions.DependencyInjection;
+using Duplicati.WebserverCore.Abstractions;
 
 #nullable enable
 
@@ -78,10 +80,12 @@ namespace Duplicati.Server.Database
 
         private readonly Dictionary<string, string?> settings;
         private readonly Connection databaseConnection;
-        private UpdateInfo? m_latestUpdate;
+        private UpdateInfo? latestUpdate;
+        private readonly Action? startOrStopUsageReporter;
 
-        internal ServerSettings(Connection con)
+        internal ServerSettings(Connection con, Action startOrStopUsageReporter)
         {
+            this.startOrStopUsageReporter = startOrStopUsageReporter;
             settings = new Dictionary<string, string?>();
             databaseConnection = con;
             ReloadSettings();
@@ -113,7 +117,7 @@ namespace Duplicati.Server.Database
 
             lock (databaseConnection.m_lock)
             {
-                m_latestUpdate = null;
+                latestUpdate = null;
                 if (clearExisting)
                     settings.Clear();
 
@@ -142,17 +146,17 @@ namespace Duplicati.Server.Database
                     Value = n.Value
                 }, Database.Connection.SERVER_SETTINGS_ID);
 
-            if (FIXMEGlobal.IsServerStarted)
+            var provider = databaseConnection.ServiceProvider;
+            if (provider != null)
             {
-                FIXMEGlobal.NotificationUpdateService.IncrementLastDataUpdateId();
-                FIXMEGlobal.StatusEventNotifyer.SignalNewEvent();
+                provider?.GetRequiredService<INotificationUpdateService>()?.IncrementLastDataUpdateId();
+                provider?.GetRequiredService<EventPollNotify>()?.SignalNewEvent();
                 // If throttle options were changed, update now
-                FIXMEGlobal.WorkerThreadsManager.UpdateThrottleSpeeds(UploadSpeedLimit, DownloadSpeedLimit);
+                provider?.GetRequiredService<IQueueRunnerService>()?.GetCurrentTask()?.UpdateThrottleSpeeds(UploadSpeedLimit, DownloadSpeedLimit);
             }
 
             // In case the usage reporter is enabled or disabled, refresh now
-            if (FIXMEGlobal.StartOrStopUsageReporter != null)
-                FIXMEGlobal.StartOrStopUsageReporter();
+            startOrStopUsageReporter?.Invoke();
         }
 
         public string? StartupDelayDuration
@@ -602,7 +606,7 @@ namespace Duplicati.Server.Database
                 lock (databaseConnection.m_lock)
                     settings[CONST.UPDATE_CHECK_INTERVAL] = value;
                 SaveSettings();
-                FIXMEGlobal.UpdatePoller.Reschedule();
+                databaseConnection?.ServiceProvider?.GetRequiredService<UpdatePollThread>()?.Reschedule();
             }
         }
 
@@ -631,11 +635,11 @@ namespace Duplicati.Server.Database
 
                 try
                 {
-                    if (m_latestUpdate != null)
-                        return m_latestUpdate;
+                    if (latestUpdate != null)
+                        return latestUpdate;
 
                     using (var tr = new System.IO.StringReader(updateNew))
-                        return m_latestUpdate = Server.Serialization.Serializer.Deserialize<Library.AutoUpdater.UpdateInfo>(tr);
+                        return latestUpdate = Server.Serialization.Serializer.Deserialize<Library.AutoUpdater.UpdateInfo>(tr);
                 }
                 catch
                 {
@@ -655,7 +659,7 @@ namespace Duplicati.Server.Database
                     result = sb.ToString();
                 }
 
-                m_latestUpdate = value;
+                latestUpdate = value;
                 lock (databaseConnection.m_lock)
                     settings[CONST.UPDATE_CHECK_NEW_VERSION] = result;
 

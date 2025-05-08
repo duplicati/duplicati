@@ -19,35 +19,27 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 using System.Text;
-using Duplicati.Library.RestAPI;
-using Duplicati.Library.RestAPI.Abstractions;
 using Duplicati.Server;
 using Duplicati.WebserverCore.Abstractions;
 
 namespace Duplicati.WebserverCore.Services;
 
-public class CommandlineRunService(IWorkerThreadsManager workerThreadsManager) : ICommandlineRunService
+public class CommandlineRunService(IQueueRunnerService queueRunnerService, ILogWriteHandler logWriteHandler) : ICommandlineRunService
 {
     private static readonly string LOGTAG = Library.Logging.Log.LogTagFromType<CommandlineRunService>();
 
-    private class LogWriter : TextWriter
+    private class LogWriter(ActiveRun target, ILogWriteHandler logWriteHandler) : TextWriter
     {
-        private readonly ActiveRun m_target;
-        private readonly StringBuilder m_sb = new StringBuilder();
+        private readonly StringBuilder sb = new StringBuilder();
         private int m_newlinechars = 0;
-
-        public LogWriter(ActiveRun target)
-        {
-            m_target = target;
-        }
 
         public override Encoding Encoding => Encoding.UTF8;
 
         public override void Write(char value)
         {
-            lock (m_target.Lock)
+            lock (target.Lock)
             {
-                m_sb.Append(value);
+                sb.Append(value);
                 if (NewLine[m_newlinechars] == value)
                 {
                     m_newlinechars++;
@@ -62,34 +54,34 @@ public class CommandlineRunService(IWorkerThreadsManager workerThreadsManager) :
         public override void WriteLine(string? value)
         {
             value ??= string.Empty;
-            lock (m_target.Lock)
+            lock (target.Lock)
             {
-                m_target.LastAccess = DateTime.Now;
+                target.LastAccess = DateTime.Now;
 
                 //Avoid writing the log if it does not exist
-                if (m_target.IsLogDisposed)
+                if (target.IsLogDisposed)
                 {
-                    FIXMEGlobal.LogHandler.WriteMessage(new Library.Logging.LogEntry("Attempted to write message after closing: {0}", new object[] { value }, Library.Logging.LogMessageType.Warning, LOGTAG, "CommandLineOutputAfterLogClosed", null));
+                    logWriteHandler.WriteMessage(new Library.Logging.LogEntry("Attempted to write message after closing: {0}", new object[] { value }, Library.Logging.LogMessageType.Warning, LOGTAG, "CommandLineOutputAfterLogClosed", null));
                     return;
                 }
 
                 try
                 {
-                    if (m_sb.Length != 0)
+                    if (sb.Length != 0)
                     {
-                        m_target.Log.Add(m_sb + value);
-                        m_sb.Length = 0;
+                        target.Log.Add(sb + value);
+                        sb.Length = 0;
                         m_newlinechars = 0;
                     }
                     else
                     {
-                        m_target.Log.Add(value);
+                        target.Log.Add(value);
                     }
                 }
                 catch (Exception ex)
                 {
                     // This can happen on a very unlucky race where IsLogDisposed is set right after the check
-                    FIXMEGlobal.LogHandler.WriteMessage(new Library.Logging.LogEntry("Failed to forward commandline message: {0}", new object[] { value }, Library.Logging.LogMessageType.Warning, LOGTAG, "CommandLineOutputAfterLogClosed", ex));
+                    logWriteHandler.WriteMessage(new Library.Logging.LogEntry("Failed to forward commandline message: {0}", new object[] { value }, Library.Logging.LogMessageType.Warning, LOGTAG, "CommandLineOutputAfterLogClosed", ex));
                 }
             }
         }
@@ -141,7 +133,7 @@ public class CommandlineRunService(IWorkerThreadsManager workerThreadsManager) :
     public string StartTask(string[] args)
     {
         var k = new ActiveRun();
-        k.Writer = new LogWriter(k);
+        k.Writer = new LogWriter(k, logWriteHandler);
 
         m_activeItems[k.ID] = k;
         StartCleanupTask();
@@ -180,7 +172,7 @@ public class CommandlineRunService(IWorkerThreadsManager workerThreadsManager) :
             }
         });
 
-        workerThreadsManager.AddTask(k.Task);
+        queueRunnerService.AddTask(k.Task);
         return k.ID;
     }
 

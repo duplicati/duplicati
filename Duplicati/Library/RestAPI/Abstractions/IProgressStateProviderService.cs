@@ -18,36 +18,20 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
-using Duplicati.WebserverCore.Dto;
+
+#nullable enable
+
+using System;
 
 namespace Duplicati.WebserverCore.Abstractions;
 
-
 /// <summary>
-/// A cached task result
+/// Produces system information.
 /// </summary>
-/// <param name="TaskID">The task ID</param>
-/// <param name="BackupId">The backup ID</param>
-/// <param name="TaskStarted">The time the task started</param>
-/// <param name="TaskFinished">The time the task finished</param>
-/// <param name="Exception">The exception that was thrown</param>
-public sealed record CachedTaskResult(long TaskID, string? BackupId, DateTime? TaskStarted, DateTime? TaskFinished, Exception? Exception);
-
-
-/// <summary>
-/// Interface for the task result cache service
-/// </summary>
-public interface ITaskCacheService
+public interface IProgressStateProviderService
 {
     /// <summary>
-    /// Gets the cached task results for a given task ID
+    /// Handler for progress state generation.
     /// </summary>
-    /// <param name="taskID">The task ID</param>
-    /// <returns>The cached task result</returns>
-    CachedTaskResult? GetCachedTaskResults(long taskID);
-    /// <summary>
-    /// Adds a task result to the cache
-    /// </summary>
-    /// <param name="taskResult">The task result to add</param>
-    void AddTaskResult(CachedTaskResult taskResult);
+    Func<Server.Serialization.Interface.IProgressEventData>? GenerateProgressState { get; set; }
 }

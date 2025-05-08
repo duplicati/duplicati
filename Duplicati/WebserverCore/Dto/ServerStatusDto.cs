@@ -30,7 +30,7 @@ public sealed record ServerStatusDto
     /// <summary>
     /// Gets or sets the active task.
     /// </summary>
-    public required Tuple<long, string>? ActiveTask { get; init; }
+    public required Tuple<long, string?>? ActiveTask { get; init; }
 
     /// <summary>
     /// Gets or sets the state of the program.
@@ -40,7 +40,7 @@ public sealed record ServerStatusDto
     /// <summary>
     /// Gets the IDs of the tasks in the scheduler queue.
     /// </summary>
-    public required IList<Tuple<long, string>> SchedulerQueueIds { get; init; } = [];
+    public required IList<Tuple<long, string?>> SchedulerQueueIds { get; init; } = [];
 
     /// <summary>
     /// Gets or sets the proposed schedule.
