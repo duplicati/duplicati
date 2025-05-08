@@ -18,15 +18,47 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
-namespace Duplicati.WebserverCore.Dto;
+#nullable enable
+
+using System;
+using System.Threading;
+using Duplicati.Library.Interface;
+
+namespace Duplicati.WebserverCore.Abstractions;
 
 /// <summary>
-/// The get task state DTO
+/// Interface for application-wide settings for the server.
 /// </summary>
-/// <param name="Status">The status</param>
-/// <param name="ID">The ID</param>
-/// <param name="TaskStarted">When the task started</param>
-/// <param name="TaskFinished">When the task finished</param>
-/// <param name="ErrorMessage">The error message</param>
-/// <param name="Exception">The exception</param>
-public record GetTaskStateDto(string Status, long ID, DateTime? TaskStarted, DateTime? TaskFinished, string? ErrorMessage = null, string? Exception = null);
+public interface IApplicationSettings
+{
+    /// <summary>
+    /// Action to start or stop the usage reporter
+    /// </summary>
+    Action? StartOrStopUsageReporter { get; set; }
+
+    /// <summary>
+    /// Gets the folder where Duplicati data is stored
+    /// </summary>
+    string DataFolder { get; }
+
+    /// <summary>
+    /// Used to check the origin of the web server (e.g. Tray icon or a stand alone Server)
+    /// </summary>
+    string Origin { get; set; }
+
+    /// <summary>
+    /// The application exit event
+    /// </summary>
+    ManualResetEvent ApplicationExitEvent { get; }
+
+    /// <summary>
+    /// The shared secret provider from the server invocation
+    /// </summary>
+    ISecretProvider? SecretProvider { get; set; }
+
+    /// <summary>
+    /// Flag to indicate if the settings encryption key was provided externally
+    /// </summary>
+    bool SettingsEncryptionKeyProvidedExternally { get; set; }
+}
+

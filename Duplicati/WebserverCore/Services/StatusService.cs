@@ -19,7 +19,6 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 using Duplicati.Library.RestAPI;
-using Duplicati.Library.RestAPI.Abstractions;
 using Duplicati.Server;
 using Duplicati.Server.Serialization;
 using Duplicati.WebserverCore.Abstractions;
@@ -31,22 +30,24 @@ public class StatusService(
     LiveControls liveControls,
     UpdatePollThread updatePollThread,
     IUpdateService updateService,
-    IWorkerThreadsManager workerThreadsManager,
+    IQueueRunnerService queueRunnerService,
     ISettingsService settingsService,
-    IScheduler scheduler,
+    ISchedulerService scheduler,
     EventPollNotify eventPollNotify,
     INotificationUpdateService notificationUpdateService)
     : IStatusService
 {
     public ServerStatusDto GetStatus()
     {
+        var task = queueRunnerService.GetCurrentTask();
+
         var status = new ServerStatusDto
         {
             UpdatedVersion = GetUpdatedVersion(),
             UpdaterState = updatePollThread.ThreadState,
             UpdateDownloadProgress = updatePollThread.DownloadProgess,
-            ActiveTask = workerThreadsManager.CurrentTask,
-            SchedulerQueueIds = scheduler.GetSchedulerQueueIds(),
+            ActiveTask = task == null ? null : new Tuple<long, string?>(task.TaskID, task.BackupID),
+            SchedulerQueueIds = queueRunnerService.GetQueueWithIds(),
             ProposedSchedule = scheduler.GetProposedSchedule(),
             LastEventID = eventPollNotify.EventNo,
             LastDataUpdateID = notificationUpdateService.LastDataUpdateId,
@@ -72,7 +73,8 @@ public class StatusService(
 
     private SuggestedStatusIcon MapStateToIcon()
     {
-        if (workerThreadsManager.CurrentTask == null)
+        var task = queueRunnerService.GetCurrentTask();
+        if (task == null)
         {
             if (liveControls.State == LiveControls.LiveControlState.Paused)
                 return SuggestedStatusIcon.Paused;
