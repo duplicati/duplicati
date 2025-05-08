@@ -661,9 +661,9 @@ AND Fileset.ID NOT IN
             return res;
         }
 
-        public bool IsFilesetFullBackup(DateTime filesetTime)
+        public bool IsFilesetFullBackup(DateTime filesetTime, IDbTransaction? transaction)
         {
-            using (var cmd = m_connection.CreateCommand())
+            using (var cmd = m_connection.CreateCommand(transaction))
             using (var rd = cmd.SetCommandAndParameters($@"SELECT ""IsFullBackup"" FROM ""Fileset"" WHERE ""Timestamp"" = @Timestamp").SetParameterValue("@Timestamp", Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(filesetTime)).ExecuteReader())
             {
                 if (!rd.Read())
@@ -1504,8 +1504,19 @@ AND oldVersion.FilesetID = (SELECT ID FROM Fileset WHERE ID != @FilesetId ORDER 
             }
         }
 
+        /// <summary>
+        /// Adds a link between an index volume and a block volume.
+        /// </summary>
+        /// <param name="indexVolumeID">The ID of the index volume.</param>
+        /// <param name="blockVolumeID">The ID of the block volume.</param>
+        /// <param name="transaction">An optional transaction.</param>
         public void AddIndexBlockLink(long indexVolumeID, long blockVolumeID, IDbTransaction transaction)
         {
+            if (indexVolumeID <= 0)
+                throw new ArgumentOutOfRangeException(nameof(indexVolumeID), "Index volume ID must be greater than 0.");
+            if (blockVolumeID <= 0)
+                throw new ArgumentOutOfRangeException(nameof(blockVolumeID), "Block volume ID must be greater than 0.");
+
             m_insertIndexBlockLink.SetParameterValue("@IndexVolumeId", indexVolumeID)
                 .SetParameterValue("@BlockVolumeId", blockVolumeID)
                 .ExecuteNonQuery(transaction);

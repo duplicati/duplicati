@@ -166,7 +166,7 @@ namespace Duplicati.Library.Main.Operation
                             using (var tf = new Library.Utility.TempFile())
                             using (var vol = new Volumes.FilesetVolumeWriter(m_options, ts))
                             {
-                                var isOriginalFilesetFullBackup = db.IsFilesetFullBackup(tsOriginal);
+                                var isOriginalFilesetFullBackup = db.IsFilesetFullBackup(tsOriginal, tr);
                                 var newids = tempset.ConvertToPermanentFileset(vol.RemoteFilename, ts, isOriginalFilesetFullBackup);
                                 vol.VolumeID = newids.Item1;
                                 vol.CreateFilesetFile(isOriginalFilesetFullBackup);
