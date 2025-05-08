@@ -698,22 +698,20 @@ END ");
             public static IEnumerable<ILocalBlockSource> GetFilesAndSourceBlocks(IDbConnection connection, string filetablename, string blocktablename, long blocksize, bool skipMetadata)
             {
                 // TODO: Skip metadata as required
-                using (var cmd = connection.CreateCommand(FormatInvariant($@"SELECT DISTINCT ""A"".""TargetPath"", ""A"".""ID"", ""B"".""Hash"", (""B"".""Index"" * {blocksize}), ""B"".""Index"", ""B"".""Size"", ""C"".""Path"", (""D"".""Index"" * {blocksize}), ""E"".""Size"", ""B"".""Metadata"" FROM ""{filetablename}"" ""A"", ""{blocktablename}"" ""B"", ""File"" ""C"", ""BlocksetEntry"" ""D"", ""Block"" E WHERE ""A"".""ID"" = ""B"".""FileID"" AND ""C"".""BlocksetID"" = ""D"".""BlocksetID"" AND ""D"".""BlockID"" = ""E"".""ID"" AND ""B"".""Hash"" = ""E"".""Hash"" AND ""B"".""Size"" = ""E"".""Size"" AND ""B"".""Restored"" = 0")))
+                // Have to order by target path and hash, to ensure BlockDescriptor and BlockSource match adjacent rows
+                using (var cmd = connection.CreateCommand(FormatInvariant($@"SELECT DISTINCT ""A"".""TargetPath"", ""A"".""ID"", ""B"".""Hash"", (""B"".""Index"" * {blocksize}), ""B"".""Index"", ""B"".""Size"", ""C"".""Path"", (""D"".""Index"" * {blocksize}), ""E"".""Size"", ""B"".""Metadata"" FROM ""{filetablename}"" ""A"", ""{blocktablename}"" ""B"", ""File"" ""C"", ""BlocksetEntry"" ""D"", ""Block"" E WHERE ""A"".""ID"" = ""B"".""FileID"" AND ""C"".""BlocksetID"" = ""D"".""BlocksetID"" AND ""D"".""BlockID"" = ""E"".""ID"" AND ""B"".""Hash"" = ""E"".""Hash"" AND ""B"".""Size"" = ""E"".""Size"" AND ""B"".""Restored"" = 0 ORDER BY ""A"".""TargetPath"", ""B"".""Index""")))
                 using (var rd = cmd.ExecuteReader())
                 {
-                    if (rd.Read())
+                    var more = rd.Read();
+                    while (more)
                     {
-                        var more = true;
-                        while (more)
-                        {
-                            var f = new LocalBlockSource(rd);
-                            string current = f.TargetPath;
-                            yield return f;
+                        var f = new LocalBlockSource(rd);
+                        string current = f.TargetPath;
+                        yield return f;
 
-                            more = f.HasMore;
-                            while (more && current == f.TargetPath)
-                                more = rd.Read();
-                        }
+                        more = f.HasMore;
+                        while (more && current == f.TargetPath)
+                            more = rd.Read();
                     }
                 }
             }
