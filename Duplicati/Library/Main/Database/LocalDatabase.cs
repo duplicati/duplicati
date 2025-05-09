@@ -469,16 +469,12 @@ namespace Duplicati.Library.Main.Database
 
                 // Create and fill a temp table with the volids to delete. We avoid using too many parameters that way.
                 deletecmd.ExecuteNonQuery(FormatInvariant($@"CREATE TEMP TABLE ""{volidstable}"" (""ID"" INTEGER PRIMARY KEY)"));
-                deletecmd.SetCommandAndParameters(FormatInvariant($@"INSERT OR IGNORE INTO ""{volidstable}"" (""ID"") VALUES (@Id)"));
-                foreach (var name in names)
-                {
-                    var volumeid = GetRemoteVolumeID(name, tr.Parent);
-                    deletecmd.SetParameterValue("@Id", volumeid)
-                        .ExecuteNonQuery();
-                }
+                deletecmd.SetCommandAndParameters(FormatInvariant($@"INSERT OR IGNORE INTO ""{volidstable}"" SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""Name"" IN (@VolumeNames)"))
+                    .ExpandInClauseParameter("@VolumeNames", names.ToArray())
+                    .ExecuteNonQuery();
+
                 var volIdsSubQuery = FormatInvariant($@"SELECT ""ID"" FROM ""{volidstable}"" ");
                 deletecmd.Parameters.Clear();
-
 
                 var bsIdsSubQuery = FormatInvariant(@$"
 SELECT DISTINCT ""BlocksetEntry"".""BlocksetID"" FROM ""BlocksetEntry"", ""Block""
