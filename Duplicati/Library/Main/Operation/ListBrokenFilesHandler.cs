@@ -55,7 +55,7 @@ namespace Duplicati.Library.Main.Operation
                 await DoRunAsync(backendManager, db, tr, filter, callbackhandler).ConfigureAwait(false);
         }
 
-        public static async Task<(Tuple<DateTime, long, long>[], List<Database.RemoteVolumeEntry> Missing)> GetBrokenFilesetsFromRemote(IBackendManager backendManager, BasicResults result, Database.LocalListBrokenFilesDatabase db, System.Data.IDbTransaction transaction, Options options)
+        public static async Task<((DateTime FilesetTime, long FilesetID, long RemoveCount)[], List<Database.RemoteVolumeEntry> Missing)> GetBrokenFilesetsFromRemote(IBackendManager backendManager, BasicResults result, Database.LocalListBrokenFilesDatabase db, System.Data.IDbTransaction transaction, Options options)
         {
             List<Database.RemoteVolumeEntry> missing = null;
             var brokensets = db.GetBrokenFilesets(options.Time, options.Version, transaction).ToArray();

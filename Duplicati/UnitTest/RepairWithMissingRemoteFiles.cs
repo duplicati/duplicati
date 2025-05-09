@@ -386,7 +386,12 @@ namespace Duplicati.UnitTest
         [Category("Targeted")]
         public void TestPartialRepairPossibleWithMissingMetadata()
         {
-            var testopts = TestOptions.Expand(new { blocksize = "1kb", no_encryption = true, rebuild_missing_dblock_files = true });
+            var testopts = TestOptions.Expand(new
+            {
+                blocksize = "1kb",
+                no_encryption = true,
+                rebuild_missing_dblock_files = true
+            });
 
             // 1. Make some shared data 1kb blocks, 32 bytes hash, 3 blocklists, and 1028 bytes extra
             var data = new byte[1024 * 32 * 3 + 1028];
@@ -431,7 +436,12 @@ namespace Duplicati.UnitTest
         [TestCase(true)]
         public void TestPartialRepairPossibleWithDeletedFiles(bool deleteLargeFile)
         {
-            var testopts = TestOptions.Expand(new { blocksize = "1kb", no_encryption = true, rebuild_missing_dblock_files = true });
+            var testopts = TestOptions.Expand(new
+            {
+                blocksize = "1kb",
+                no_encryption = true,
+                rebuild_missing_dblock_files = true
+            });
 
             // 1. Make some shared data 1kb blocks, 32 bytes hash, 3 blocklists, and 1028 bytes extra
             var data = new byte[1024 * 32 * 3 + 1028];

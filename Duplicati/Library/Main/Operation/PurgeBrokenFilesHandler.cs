@@ -88,9 +88,16 @@ namespace Duplicati.Library.Main.Operation
                         SetCount = db.GetFilesetFileCount(x.Item2, tr)
                     }).ToArray();
 
-                    if (m_options.Dryrun)
-                        tr.Rollback();
-                    else
+                    var emptyBlocksetId = -1L;
+                    if (!m_options.DisableReplaceMissingMetadata)
+                    {
+                        var emptymetadata = Utility.WrapMetadata(new Dictionary<string, string>(), m_options);
+                        emptyBlocksetId = db.GetEmptyMetadataBlocksetId(missing.Select(x => x.ID), emptymetadata.FileHash, emptymetadata.Blob.Length, null);
+                        if (emptyBlocksetId < 0)
+                            throw new UserInformationException($"Failed to locate an empty metadata blockset to replace missing metadata. Set the option --disable-replace-missing-metadata=true to ignore this and drop files with missing metadata.", "FailedToLocateEmptyMetadataBlockset");
+                    }
+
+                    if (!m_options.Dryrun)
                         tr.Commit();
 
                     var fully_emptied = compare_list.Where(x => x.RemoveCount == x.SetCount).ToArray();
@@ -104,7 +111,7 @@ namespace Duplicati.Library.Main.Operation
                             Logging.Log.WriteInformationMessage(LOGTAG, "RemovingFilesets", "Removing {0} filesets where all file(s) are broken: {1}", fully_emptied.Length, string.Join(", ", fully_emptied.Select(x => x.Timestamp.ToLocalTime().ToString())));
 
                         m_result.DeleteResults = new DeleteResults(m_result);
-                        using (var rmdb = new Database.LocalDeleteDatabase(db))
+                        using (var rmdb = new LocalDeleteDatabase(db))
                         using (var deltr = new ReusableTransaction(rmdb))
                         {
                             var opts = new Options(new Dictionary<string, string>(m_options.RawOptions));
@@ -121,15 +128,6 @@ namespace Duplicati.Library.Main.Operation
 
                         pgoffset += (pgspan * fully_emptied.Length);
                         m_result.OperationProgressUpdater.UpdateProgress(pgoffset);
-                    }
-
-                    var emptyBlocksetId = -1L;
-                    if (!m_options.DisableReplaceMissingMetadata)
-                    {
-                        var emptymetadata = Utility.WrapMetadata(new Dictionary<string, string>(), m_options);
-                        emptyBlocksetId = db.GetEmptyMetadataBlocksetId(missing.Select(x => x.ID), emptymetadata.FileHash, emptymetadata.Blob.Length, null);
-                        if (emptyBlocksetId < 0)
-                            throw new UserInformationException($"Failed to locate an empty metadata blockset to replace missing metadata. Set the option --disable-replace-missing-metadata=true to ignore this and drop files with missing metadata.", "FailedToLocateEmptyMetadataBlockset");
                     }
 
                     if (to_purge.Length > 0)
