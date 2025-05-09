@@ -72,9 +72,10 @@ namespace Duplicati.Library.Main.Database
             long ParentID { get; }
             long RemovedFileCount { get; }
             long RemovedFileSize { get; }
+            long UpdatedFileCount { get; }
 
             void ApplyFilter(Library.Utility.IFilter filter);
-            void ApplyFilter(Action<IDbCommand, long, string> filtercommand);
+            void ApplyFilter(Func<IDbCommand, long, string, int> filtercommand);
             Tuple<long, long> ConvertToPermanentFileset(string name, DateTime timestamp, bool isFullBackup);
             IEnumerable<KeyValuePair<string, long>> ListAllDeletedFiles();
         }
@@ -89,6 +90,7 @@ namespace Duplicati.Library.Main.Database
             public long ParentID { get; private set; }
             public long RemovedFileCount { get; private set; }
             public long RemovedFileSize { get; private set; }
+            public long UpdatedFileCount { get; private set; }
 
             public TemporaryFileset(long parentid, LocalPurgeDatabase parentdb, IDbConnection connection, IDbTransaction transaction)
             {
@@ -102,12 +104,13 @@ namespace Duplicati.Library.Main.Database
                     cmd.ExecuteNonQuery(FormatInvariant($@"CREATE TEMPORARY TABLE ""{m_tablename}"" (""FileID"" INTEGER PRIMARY KEY) "));
             }
 
-            public void ApplyFilter(Action<IDbCommand, long, string> filtercommand)
+            public void ApplyFilter(Func<IDbCommand, long, string, int> filtercommand)
             {
+                int updated;
                 using (var cmd = m_connection.CreateCommand(m_transaction))
-                    filtercommand(cmd, ParentID, m_tablename);
+                    updated = filtercommand(cmd, ParentID, m_tablename);
 
-                PostFilterChecks();
+                PostFilterChecks(updated);
             }
 
             public void ApplyFilter(Library.Utility.IFilter filter)
@@ -156,15 +159,24 @@ namespace Duplicati.Library.Main.Database
                     }
                 }
 
-                PostFilterChecks();
+                PostFilterChecks(0);
             }
 
-            private void PostFilterChecks()
+            private void PostFilterChecks(int updated)
             {
                 using (var cmd = m_connection.CreateCommand(m_transaction))
                 {
+                    UpdatedFileCount = updated;
                     RemovedFileCount = cmd.ExecuteScalarInt64(FormatInvariant($@"SELECT COUNT(*) FROM ""{m_tablename}"""), 0);
-                    RemovedFileSize = cmd.ExecuteScalarInt64(FormatInvariant($@"SELECT SUM(""C"".""Length"") FROM ""{m_tablename}"" A, ""FileLookup"" B, ""Blockset"" C WHERE ""A"".""FileID"" = ""B"".""ID"" AND ""B"".""BlocksetID"" = ""C"".""ID"" "), 0);
+                    RemovedFileSize = cmd.ExecuteScalarInt64(FormatInvariant($@"
+                        SELECT 
+                            SUM(""C"".""Length"") 
+                        FROM
+                            ""{m_tablename}"" A, ""FileLookup"" B, ""Blockset"" C, ""Metadataset"" D
+                        WHERE
+                            ""A"".""FileID"" = ""B"".""ID""
+                            AND(""B"".""BlocksetID"" = ""C"".""ID"" OR(""B"".""MetadataID"" = ""D"".""ID"" AND ""D"".""BlocksetID"" = ""C"".""ID""))                    
+                        "), 0);
                     var filesetcount = cmd.ExecuteScalarInt64(FormatInvariant($@"SELECT COUNT(*) FROM ""FilesetEntry"" WHERE ""FilesetID"" = {ParentID}"), 0);
                     if (filesetcount == RemovedFileCount)
                         throw new Interface.UserInformationException($"Refusing to purge {RemovedFileCount} files from fileset with ID {ParentID}, as that would remove the entire fileset.\nTo delete a fileset, use the \"delete\" command.", "PurgeWouldRemoveEntireFileset");

@@ -102,11 +102,100 @@ WHERE ""BlocksetID"" IS NULL OR ""BlocksetID"" IN
             yield return new Tuple<string, long>(rd.ConvertValueToString(0) ?? throw new Exception("Filename was null"), rd.ConvertValueToInt64(1));
     }
 
+    /// <summary>
+    /// Returns all index files that are orphaned, i.e., not referenced by any block files.
+    /// </summary>
+    /// <param name="transaction">Transaction to use for the query.</param>
+    /// <returns>>All index files that are orphaned.</returns>
+    public IEnumerable<RemoteVolume> GetOrphanedIndexFiles(IDbTransaction transaction)
+    {
+      using var cmd = Connection.CreateCommand(transaction, FormatInvariant($@"SELECT ""Name"", ""Hash"", ""Size"" FROM ""RemoteVolume"" WHERE ""Type"" = '{RemoteVolumeType.Index.ToString()}' AND ""ID"" NOT IN (SELECT ""IndexVolumeID"" FROM ""IndexBlockLink"")"));
+
+      foreach (var rd in cmd.ExecuteReaderEnumerable())
+        yield return new RemoteVolume(
+            rd.ConvertValueToString(0) ?? throw new Exception("Filename was null"),
+            rd.ConvertValueToString(1) ?? throw new Exception("Hash was null"),
+            rd.ConvertValueToInt64(2, -1)
+        );
+    }
+
+    /// <summary>
+    /// Inserts the broken file IDs into the given table. The table must have a single column with the same name as the ID field name.
+    /// </summary>
+    /// <param name="filesetid">The filset id for the current operation</param>
+    /// <param name="tablename">The name of the table to insert into</param>
+    /// <param name="IDfieldname">The name of the ID field in the table</param>
+    /// <param name="transaction">The transaction to use for the query</param>
     public void InsertBrokenFileIDsIntoTable(long filesetid, string tablename, string IDfieldname, IDbTransaction transaction)
     {
       using var cmd = Connection.CreateCommand(transaction, INSERT_BROKEN_IDS(tablename, IDfieldname))
         .SetParameterValue("@FilesetId", filesetid);
       cmd.ExecuteNonQuery();
+    }
+
+    /// <summary>
+    /// Returns the ID of an empty metadata blockset. If no empty blockset is found, it returns the ID of the smallest blockset that is not in the given block volume IDs.
+    /// If no such blockset is found, it returns -1.
+    /// </summary>
+    /// <param name="blockVolumeIds">The volume ids to ignore when searching for a suitable metadata block</param>
+    /// <param name="emptyHash">The hash of the empty blockset</param>
+    /// <param name="emptyHashSize">The size of the empty blockset</param>
+    /// <param name="transaction">The transaction to use for the query</param>
+    /// <returns>The ID of the empty metadata blockset, or -1 if no suitable blockset is found</returns>
+    public long GetEmptyMetadataBlocksetId(IEnumerable<long> blockVolumeIds, string emptyHash, long emptyHashSize, IDbTransaction transaction)
+    {
+      using var cmd = Connection.CreateCommand(transaction, @"SELECT ""ID"" FROM ""Blockset"" WHERE ""FullHash"" = @EmptyHash AND ""Length"" == @EmptyHashSize AND ""ID"" NOT IN (SELECT ""BlocksetID"" FROM ""BlocksetEntry"", ""Block"" WHERE ""BlocksetEntry"".""BlockID"" = ""Block"".""ID"" AND ""Block"".""VolumeID"" NOT IN (@BlockVolumeIds))")
+        .ExpandInClauseParameter("@BlockVolumeIds", blockVolumeIds)
+        .SetParameterValue("@EmptyHash", emptyHash)
+        .SetParameterValue("@EmptyHashSize", emptyHashSize);
+
+      var res = cmd.ExecuteScalarInt64(-1);
+
+      // No empty block found, try to find a zero-length block instead
+      if (res < 0 && emptyHashSize != 0)
+        res = cmd.SetCommandAndParameters(@"SELECT ""ID"" FROM ""Blockset"" WHERE ""Length"" == @EmptyHashSize AND ""ID"" NOT IN (SELECT ""BlocksetID"" FROM ""BlocksetEntry"", ""Block"" WHERE ""BlocksetEntry"".""BlockID"" = ""Block"".""ID"" AND ""Block"".""VolumeID"" NOT IN (@BlockVolumeIds))")
+          .ExpandInClauseParameter("@BlockVolumeIds", blockVolumeIds)
+          .SetParameterValue("@EmptyHashSize", 0)
+          .ExecuteScalarInt64(-1);
+
+      // No empty block found, pick the smallest one
+      if (res < 0)
+        res = cmd.SetCommandAndParameters(@"SELECT ""Blockset"".""ID"" FROM ""BlocksetEntry"", ""Blockset"", ""Metadataset"", ""Block"" WHERE ""Metadataset"".""BlocksetID"" = ""Blockset"".""ID"" AND ""BlocksetEntry"".""BlocksetID"" = ""Blockset"".""ID"" AND ""Block"".""ID"" = ""BlocksetEntry"".""BlockID"" AND ""Block"".""VolumeID"" NOT IN (@BlockVolumeIds) ORDER BY ""Blockset"".""Length"" ASC LIMIT 1")
+          .ExpandInClauseParameter("@BlockVolumeIds", blockVolumeIds)
+          .ExecuteScalarInt64(-1);
+
+      return res;
+    }
+
+    /// <summary>
+    /// Replaces the metadata blockset ID in the Metadataset table with the empty blockset ID for all fileset entries that are not in any block volume.
+    /// This is used to clean up the metadata blocksets that are now missing.
+    /// </summary>
+    /// <param name="filesetId">The filesetId to target</param>
+    /// <param name="emptyBlocksetId">The empty blockset ID to replace with</param>
+    /// <param name="transaction">The transaction to use for the query</param>
+    /// <returns>The number of rows affected</returns>
+    public int ReplaceMetadata(long filesetId, long emptyBlocksetId, IDbTransaction transaction)
+    {
+      using var cmd = m_connection.CreateCommand(transaction, @"
+UPDATE ""Metadataset"" 
+SET ""BlocksetID"" = @EmptyBlocksetID 
+WHERE 
+  ""ID"" IN (
+    SELECT ""FileLookup"".""MetadataID"" 
+    FROM ""FileLookup"", ""FilesetEntry""
+    WHERE 
+      ""FilesetEntry"".""FilesetId"" = @FilesetId 
+      AND ""FileLookup"".""ID"" = ""FilesetEntry"".""FileID""
+    )
+  AND ""BlocksetID"" NOT IN (
+    SELECT ""BlocksetID"" 
+    FROM ""BlocksetEntry"", ""Block"" 
+    WHERE ""BlocksetEntry"".""BlockID"" = ""Block"".""ID""
+  )")
+        .SetParameterValue("@EmptyBlocksetId", emptyBlocksetId)
+        .SetParameterValue("@FilesetId", filesetId);
+      return cmd.ExecuteNonQuery();
     }
 
     public void RemoveMissingBlocks(IEnumerable<string> names, IDbTransaction transaction)

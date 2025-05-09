@@ -86,6 +86,11 @@ namespace Duplicati.Library.Main.Operation
 
                 // Drop all content from tables
                 db.RemoveMissingBlocks(missing.Select(x => x.Name), transaction);
+
+                // Mark all orphaned index files as disposable after removing the missing block files
+                foreach (var f in db.GetOrphanedIndexFiles(transaction).ToList())
+                    db.UpdateRemoteVolume(f.Name, RemoteVolumeState.Deleting, f.Size, f.Hash, transaction);
+
                 brokensets = db.GetBrokenFilesets(options.Time, options.Version, transaction).ToArray();
             }
 

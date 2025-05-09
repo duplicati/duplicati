@@ -159,15 +159,6 @@ namespace Duplicati.Library.Main.Database
                 yield return new RemoteVolume(rd.ConvertValueToString(0) ?? "", rd.ConvertValueToString(1) ?? "", rd.ConvertValueToInt64(2));
         }
 
-        public IEnumerable<IRemoteVolume> GetBlockVolumesFromBlockName(string blockName)
-        {
-            using var cmd = m_connection.CreateCommand(@"SELECT ""Name"", ""Hash"", ""Size"" FROM ""RemoteVolume"" WHERE ""ID"" IN (SELECT ""BlockVolumeID"" FROM ""IndexBlockLink"" WHERE ""IndexVolumeID"" IN (SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""Name"" = @Name)) ")
-                .SetParameterValue("@Name", blockName);
-
-            foreach (var rd in cmd.ExecuteReaderEnumerable())
-                yield return new RemoteVolume(rd.ConvertValueToString(0) ?? "", rd.ConvertValueToString(1) ?? "", rd.ConvertValueToInt64(2));
-        }
-
         /// <summary>
         /// A single block with source data for repair
         /// </summary>
@@ -212,8 +203,9 @@ namespace Duplicati.Library.Main.Database
             /// </summary>
             /// <param name="hash">The block hash</param>
             /// <param name="size">The block size</param>
+            /// <param name="volumeId">The volume ID of the new target volume</param>
             /// <returns>The restored blocks</returns>
-            bool SetBlockRestored(string hash, long size);
+            bool SetBlockRestored(string hash, long size, long volumeId);
             /// <summary>
             /// Gets the list of files that contains missing blocks
             /// </summary>
@@ -246,14 +238,6 @@ namespace Duplicati.Library.Main.Database
             /// </summary>
             /// <returns>>A list of remote files</returns>
             IEnumerable<IRemoteVolume> GetMissingBlockSources();
-            /// <summary>
-            /// Moves restored blocks to a new volume
-            /// </summary>
-            /// <param name="targetVolumeId">The volume that contains the blocks</param>
-            /// <param name="sourceVolumeId">The volume that used to contain the blocks</param>
-            /// <param name="transaction">The transaction to use</param>
-            /// <returns>>The number of moved blocks</returns>
-            long MoveBlocksToNewVolume(long targetVolumeId, long sourceVolumeId, IDbTransaction? transaction);
         }
 
         /// <summary>
@@ -273,6 +257,14 @@ namespace Duplicati.Library.Main.Database
             /// The insert command to use for restoring blocks
             /// </summary>
             private readonly IDbCommand m_insertCommand;
+            /// <summary>
+            /// The command to copy blocks into the duplicate block table
+            /// </summary>
+            private readonly IDbCommand m_copyIntoDuplicatedBlocks;
+            /// <summary>
+            /// The command to assign blocks to a new volume
+            /// </summary>
+            private readonly IDbCommand m_assignBlocksToNewVolume;
             /// <summary>
             /// The name of the temporary table
             /// </summary>
@@ -319,17 +311,38 @@ namespace Duplicati.Library.Main.Database
                 }
 
                 m_insertCommand = m_connection.CreateCommand(FormatInvariant($@"UPDATE ""{tablename}"" SET ""Restored"" = @NewRestoredValue WHERE ""Hash"" = @Hash AND ""Size"" = @Size AND ""Restored"" = @PreviousRestoredValue "));
+                m_copyIntoDuplicatedBlocks = m_connection.CreateCommand(@"INSERT OR IGNORE INTO ""DuplicateBlock"" (""BlockID"", ""VolumeID"") SELECT ""Block"".""ID"", ""Block"".""VolumeID"" FROM ""Block"" WHERE ""Block"".""Hash"" = @Hash AND ""Block"".""Size"" = @Size");
+                m_assignBlocksToNewVolume = m_connection.CreateCommand(@"UPDATE ""Block"" SET ""VolumeID"" = @TargetVolumeId WHERE ""Hash"" = @Hash AND ""Size"" = @Size");
                 m_missingBlocksQuery = FormatInvariant($@"SELECT ""{m_tablename}"".""Hash"", ""{m_tablename}"".""Size"" FROM ""{m_tablename}"" WHERE ""{m_tablename}"".""Restored"" = @Restored ");
             }
 
             /// <inheritdoc/>
-            public bool SetBlockRestored(string hash, long size)
+            public bool SetBlockRestored(string hash, long size, long targetVolumeId)
             {
-                return m_insertCommand.SetTransaction(m_transaction.Transaction).SetParameterValue("@NewRestoredValue", 1)
+                var restored = m_insertCommand.SetTransaction(m_transaction.Transaction).SetParameterValue("@NewRestoredValue", 1)
                     .SetParameterValue("@Hash", hash)
                     .SetParameterValue("@Size", size)
                     .SetParameterValue("@PreviousRestoredValue", 0)
                     .ExecuteNonQuery() == 1;
+
+                if (restored)
+                {
+                    m_copyIntoDuplicatedBlocks.SetTransaction(m_transaction.Transaction)
+                        .SetParameterValue("@Hash", hash)
+                        .SetParameterValue("@Size", size)
+                        .ExecuteNonQuery();
+
+                    var c = m_assignBlocksToNewVolume.SetTransaction(m_transaction.Transaction)
+                        .SetParameterValue("@TargetVolumeId", targetVolumeId)
+                        .SetParameterValue("@Hash", hash)
+                        .SetParameterValue("@Size", size)
+                        .ExecuteNonQuery();
+
+                    if (c != 1)
+                        throw new Exception($"Unexpected number of updated blocks: {c} != 1");
+                }
+
+                return restored;
             }
 
             /// <inheritdoc/>
@@ -368,48 +381,70 @@ namespace Duplicati.Library.Main.Database
             /// <inheritdoc/>
             public IEnumerable<BlocklistHashesEntry> GetBlocklistHashes(long hashesPerBlock)
             {
-                using var cmd = m_connection.CreateCommand(m_transaction.Transaction, FormatInvariant($@"
-                    SELECT 
-                        b.""Hash"", 
-                        bs.""Id"",
-                        bs.""Length"", 
-                        bse.""Index"" / @HashesPerBlock AS ""BlocklistHashIndex"",
-                        (
-                            SELECT blh.""Hash""
-                            FROM ""BlocklistHash"" blh
-                            WHERE blh.""BlocksetID"" = bs.""ID""
-                            AND blh.""Index"" == bse.""Index"" / @HashesPerBlock
-                            LIMIT 1
-                        ) AS ""BlocklistHashHash"",
-                        bse.""Index""
-                    FROM 
-                        ""BlocksetEntry"" bse
-                    JOIN ""Block"" b ON b.""ID"" = bse.""BlockID""
-                    JOIN ""Blockset"" bs ON bs.""ID"" = bse.""BlocksetID""
-                    WHERE 
-                        EXISTS (
-                            SELECT 1
-                            FROM ""BlocklistHash"" blh
-                            JOIN ""{m_tablename}"" mt ON mt.""Hash"" = blh.""Hash""
-                            WHERE blh.""BlocksetID"" = bs.""ID""
-                            AND mt.""Restored"" = @Restored
-                        )
-                    ORDER BY 
-                        bse.""BlocksetID"", bse.""Index""
-                "))
-                .SetParameterValue("@HashesPerBlock", hashesPerBlock)
-                .SetParameterValue("@Restored", 0);
-
-                foreach (var rd in cmd.ExecuteReaderEnumerable())
+                using var cmd = m_connection.CreateCommand(m_transaction.Transaction);
+                var blocklistTableName = $"BlocklistHashList-{Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray())}";
+                try
                 {
-                    var hash = rd.ConvertValueToString(0) ?? throw new Exception("Block.Hash is null");
-                    var blocksetId = rd.ConvertValueToInt64(1);
-                    var length = rd.ConvertValueToInt64(2);
-                    var blocklistHashIndex = rd.ConvertValueToInt64(3);
-                    var blocklistHash = rd.ConvertValueToString(4) ?? throw new Exception("BlocklistHash is null");
-                    var index = rd.ConvertValueToInt64(5);
+                    // We need to create a snapshot as we will be updating the m_tablename table during enumeration
+                    cmd.SetCommandAndParameters(FormatInvariant($@"
+                        CREATE TEMPORARY TABLE ""{blocklistTableName}"" AS
+                        SELECT 
+                            b.""Hash"" AS ""BlockHash"", 
+                            bs.""Id"" AS ""BlocksetId"",
+                            bs.""Length"" AS ""BlocksetLength"", 
+                            bse.""Index"" / @HashesPerBlock AS ""BlocklistHashIndex"",
+                            (
+                                SELECT blh.""Hash""
+                                FROM ""BlocklistHash"" blh
+                                WHERE blh.""BlocksetID"" = bs.""ID""
+                                AND blh.""Index"" == bse.""Index"" / @HashesPerBlock
+                                LIMIT 1
+                            ) AS ""BlocklistHashHash"",
+                            bse.""Index"" AS ""BlocksetEntryIndex""
+                        FROM 
+                            ""BlocksetEntry"" bse
+                        JOIN ""Block"" b ON b.""ID"" = bse.""BlockID""
+                        JOIN ""Blockset"" bs ON bs.""ID"" = bse.""BlocksetID""
+                        WHERE 
+                            EXISTS (
+                                SELECT 1
+                                FROM ""BlocklistHash"" blh
+                                JOIN ""{m_tablename}"" mt ON mt.""Hash"" = blh.""Hash""
+                                WHERE blh.""BlocksetID"" = bs.""ID""
+                                AND mt.""Restored"" = @Restored
+                            )
+                "))
+                    .SetParameterValue("@HashesPerBlock", hashesPerBlock)
+                    .SetParameterValue("@Restored", 0)
+                    .ExecuteNonQuery();
 
-                    yield return new BlocklistHashesEntry(blocksetId, blocklistHash, length, blocklistHashIndex, (int)index, hash);
+                    cmd.SetCommandAndParameters(FormatInvariant($@"
+                        SELECT 
+                            ""BlockHash"", 
+                            ""BlocksetId"", 
+                            ""BlocksetLength"", 
+                            ""BlocklistHashIndex"", 
+                            ""BlocklistHashHash"", 
+                            ""BlocksetEntryIndex"" 
+                        FROM ""{blocklistTableName}"" 
+                        ORDER BY ""BlocksetId"", ""BlocklistHashIndex"", ""BlocksetEntryIndex"""));
+
+                    foreach (var rd in cmd.ExecuteReaderEnumerable())
+                    {
+                        var hash = rd.ConvertValueToString(0) ?? throw new Exception("Block.Hash is null");
+                        var blocksetId = rd.ConvertValueToInt64(1);
+                        var length = rd.ConvertValueToInt64(2);
+                        var blocklistHashIndex = rd.ConvertValueToInt64(3);
+                        var blocklistHash = rd.ConvertValueToString(4) ?? throw new Exception("BlocklistHash is null");
+                        var index = rd.ConvertValueToInt64(5);
+
+                        yield return new BlocklistHashesEntry(blocksetId, blocklistHash, length, blocklistHashIndex, (int)index, hash);
+                    }
+                }
+                finally
+                {
+                    try { cmd.ExecuteNonQuery(FormatInvariant($@"DROP TABLE IF EXISTS ""{blocklistTableName}"" ")); }
+                    catch { }
                 }
             }
 

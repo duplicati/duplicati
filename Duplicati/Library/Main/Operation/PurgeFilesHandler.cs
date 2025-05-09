@@ -21,9 +21,9 @@
 
 using System;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Main.Volumes;
 using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Main.Operation
@@ -58,10 +58,10 @@ namespace Duplicati.Library.Main.Operation
             }
         }
 
-        public Task RunAsync(IBackendManager backendManager, Database.LocalPurgeDatabase db, float pgoffset, float pgspan, Action<System.Data.IDbCommand, long, string> filtercommand)
+        public Task RunAsync(IBackendManager backendManager, Database.LocalPurgeDatabase db, float pgoffset, float pgspan, Func<System.Data.IDbCommand, long, string, int> filtercommand)
             => DoRunAsync(backendManager, db, null, filtercommand, pgoffset, pgspan);
 
-        private async Task DoRunAsync(IBackendManager backendManager, Database.LocalPurgeDatabase db, IFilter filter, Action<System.Data.IDbCommand, long, string> filtercommand, float pgoffset, float pgspan)
+        private async Task DoRunAsync(IBackendManager backendManager, Database.LocalPurgeDatabase db, IFilter filter, Func<System.Data.IDbCommand, long, string, int> filtercommand, float pgoffset, float pgspan)
         {
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.PurgeFiles_Begin);
             Logging.Log.WriteInformationMessage(LOGTAG, "StartingPurge", "Starting purge operation");
@@ -116,33 +116,12 @@ namespace Duplicati.Library.Main.Operation
 
                 using (var tr = db.BeginTransaction())
                 {
-                    var ix = -1;
-                    for (var i = 0; i < filesets.Length; i++)
-                        if (filesets[i].Key == versionid)
-                        {
-                            ix = i;
-                            break;
-                        }
-
-                    if (ix < 0)
+                    (var _, var tsOriginal, var ix) = filesets.Select((x, i) => (x.Key, x.Value, i)).FirstOrDefault(x => x.Key == versionid);
+                    if (ix < 0 || tsOriginal.Ticks == 0)
                         throw new InvalidProgramException(string.Format("Fileset was reported with id {0}, but could not be found?", versionid));
 
-                    var secs = 0;
-                    while (secs < 60)
-                    {
-                        secs++;
-                        var tfn = Volumes.VolumeBase.GenerateFilename(RemoteVolumeType.Files, m_options, null, filesets[ix].Value.AddSeconds(secs));
-                        if (db.GetRemoteVolumeID(tfn, tr) < 0)
-                            break;
-                    }
-
-                    var tsOriginal = filesets[ix].Value;
-                    var ts = tsOriginal.AddSeconds(secs);
-
+                    var ts = FilesetVolumeWriter.ProbeUnusedFilenameName(db, tr, m_options, tsOriginal);
                     var prevfilename = db.GetRemoteVolumeNameForFileset(filesets[ix].Key, tr);
-
-                    if (secs >= 60)
-                        throw new Exception(string.Format("Unable to create a new fileset for {0} because the resulting timestamp {1} is more than 60 seconds away", prevfilename, ts));
 
                     if (ix != 0 && filesets[ix - 1].Value <= ts)
                         throw new Exception(string.Format("Unable to create a new fileset for {0} because the resulting timestamp {1} is larger than the next timestamp {2}", prevfilename, ts, filesets[ix - 1].Value));
@@ -154,7 +133,7 @@ namespace Duplicati.Library.Main.Operation
                         else
                             tempset.ApplyFilter(filtercommand);
 
-                        if (tempset.RemovedFileCount == 0)
+                        if (tempset.RemovedFileCount + tempset.UpdatedFileCount == 0)
                         {
                             Logging.Log.WriteInformationMessage(LOGTAG, "NotWritingNewFileset", "Not writing a new fileset for {0} as it was not changed", prevfilename);
                             currentprogress += versionprogress;
@@ -163,8 +142,8 @@ namespace Duplicati.Library.Main.Operation
                         }
                         else
                         {
-                            using (var tf = new Library.Utility.TempFile())
-                            using (var vol = new Volumes.FilesetVolumeWriter(m_options, ts))
+                            using (var tf = new TempFile())
+                            using (var vol = new FilesetVolumeWriter(m_options, ts))
                             {
                                 var isOriginalFilesetFullBackup = db.IsFilesetFullBackup(tsOriginal, tr);
                                 var newids = tempset.ConvertToPermanentFileset(vol.RemoteFilename, ts, isOriginalFilesetFullBackup);
@@ -177,6 +156,7 @@ namespace Duplicati.Library.Main.Operation
 
                                 m_result.RemovedFileSize += tempset.RemovedFileSize;
                                 m_result.RemovedFileCount += tempset.RemovedFileCount;
+                                m_result.UpdatedFileCount += tempset.UpdatedFileCount;
                                 m_result.RewrittenFileLists++;
 
                                 currentprogress += (versionprogress / 2);
@@ -208,7 +188,7 @@ namespace Duplicati.Library.Main.Operation
                                 }
                                 else
                                 {
-                                    var lst = db.DropFilesetsFromTable(new[] { filesets[ix].Value }, tr).ToArray();
+                                    var lst = db.DropFilesetsFromTable(new[] { tsOriginal }, tr).ToArray();
                                     foreach (var f in lst)
                                         db.UpdateRemoteVolume(f.Key, RemoteVolumeState.Deleting, f.Value, null, tr);
 
