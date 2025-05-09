@@ -935,7 +935,7 @@ namespace Duplicati.Library.Main.Operation
                     {
                         var isFile = File.Exists(block.Path);
                         var isDir = Directory.Exists(block.Path);
-                        if (!isFile || !isDir)
+                        if (!isFile && !isDir)
                         {
                             Logging.Log.WriteVerboseMessage(LOGTAG, "EntryNotFound", null, "Entry not found: {0}", block.Path);
                             continue;
