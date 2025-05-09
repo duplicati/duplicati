@@ -14,36 +14,36 @@ NUMBER_OF_FILES  default is 20
 
 ## Backends CI Status
 
-| Backend | CI Planned | CI Status |
-|----------|------------|-----------|
-| pCloud | Planned | Live      |
-| WebDav | Planned | Live      |
-| Shhv2 | Planned | Live      |
-| S3 | Planned | Live      |
-| Ftp | Planned | Live      |
-| Planned | Planned | Live      |
-| Dropbox | Planned | Live      |
-| AlternativeFTP | Planned | Live      |
-| AzureBlob | Planned | Live      |
-| CIFS | Planned | Live      |
-| Google Drive | Planned | Live      |
-| Box | Planned | Live      |
-| TahoeLAFS | Pending Decision |           |
-| TescentCOS | Pending Decision |           |
-| Storj | Pending Decision |           |
-| Sia | Pending Decision |           |
-| SharePoint | Pending Decision |           |
-| Rclone | Pending Decision |           |
-| OneDrive | Pending Decision |           |
-| OpenStack | Pending Decision |           |
-| Mega | Pending Decision |           |
-| Jottacloud | Pending Decision |           |
-| IDrive2 | Planned |           |
-| File | Planned |           |
-| CloudFiles | Pending Decision |           |
-| backBlaze | Planned | Live      |
-| AliyunOSS | Pending Decision |           |
-
+| Backend        | CI Planned       | CI Status |
+|----------------|------------------|-----------|
+| pCloud         | Planned          | Live      |
+| WebDav         | Planned          | Live      |
+| Shhv2          | Planned          | Live      |
+| S3             | Planned          | Live      |
+| Ftp            | Planned          | Live      |
+| Planned        | Planned          | Live      |
+| Dropbox        | Planned          | Live      |
+| AlternativeFTP | Planned          | Live      |
+| AzureBlob      | Planned          | Live      |
+| CIFS           | Planned          | Live      |
+| Google Drive   | Planned          | Live      |
+| Box            | Planned          | Live      |
+| FileJump       | Planed           | Live      |
+| OneDrive       | Planned          | Live      |
+| IDrive2        | Planned          | Live      |
+| backBlaze      | Planned          | Live      |
+| Filen          | Planned          | Live      |
+| File           | Planned          |           |
+| TahoeLAFS      | Planned          |           |
+| TescentCOS     | Pending Decision |           |
+| Storj          | Pending Decision |           |
+| Sia            | Pending Decision |           |
+| SharePoint     | Pending Decision |           |
+| Rclone         | Pending Decision |           |
+| OpenStack      | Pending Decision |           |
+| Mega           | Pending Decision |           |
+| Jottacloud     | Pending Decision |           |
+| AliyunOSS      | Pending Decision |           |
 
 ## Backends that do not require Environment variables
 
@@ -55,6 +55,31 @@ NUMBER_OF_FILES  default is 20
 Please note that TestContainers token has to be configured in secrets/Github actions yml.
 
 ## Backends that require Environment variables
+
+
+# iDrivee2
+
+```
+TESTCREDENTIAL_IDRIVEE2_BUCKET
+TESTCREDENTIAL_IDRIVEE2_ACCESS_KEY
+TESTCREDENTIAL_IDRIVEE2_SECRET_KEY
+TESTCREDENTIAL_IDRIVEE2_FOLDER
+```
+
+# Filejump
+
+```
+TESTCREDENTIAL_FILEJUMP_FOLDER
+TESTCREDENTIAL_FILEJUMP_TOKEN
+```
+
+## FileN
+
+```
+TESTCREDENTIAL_FILEN_FOLDER
+TESTCREDENTIAL_FILEN_USERNAME
+TESTCREDENTIAL_FILEN_PASSWORD
+```
 
 ## Box.com
 
