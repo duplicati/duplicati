@@ -61,6 +61,10 @@ namespace Duplicati.Library.Backend
         /// The option to specify if chunk encoding should be used
         /// </summary>
         private readonly bool m_useChunkEncoding;
+        /// <summary>
+        /// The option to specify if payload signing should be disabled
+        /// </summary>
+        private readonly bool m_disablePayloadSigning;
 
         /// <summary>
         /// The DNS host of the S3 server
@@ -93,7 +97,7 @@ namespace Duplicati.Library.Backend
         ]);
 
         public S3AwsClient(string awsID, string awsKey, string? locationConstraint, string servername,
-            string? storageClass, bool useSSL, bool disableChunkEncoding, TimeoutOptionsHelper.Timeouts timeouts, Dictionary<string, string?> options)
+            string? storageClass, bool useSSL, bool disableChunkEncoding, bool disablePayloadSigning, TimeoutOptionsHelper.Timeouts timeouts, Dictionary<string, string?> options)
         {
             var cfg = GetDefaultAmazonS3Config();
             cfg.UseHttp = !useSSL;
@@ -109,6 +113,7 @@ namespace Duplicati.Library.Backend
             m_storageClass = storageClass;
             m_dnsHost = string.IsNullOrWhiteSpace(cfg.ServiceURL) ? null : new System.Uri(cfg.ServiceURL).Host;
             m_useChunkEncoding = !disableChunkEncoding;
+            m_disablePayloadSigning = disablePayloadSigning;
             m_archiveClasses = ParseStorageClasses(options.GetValueOrDefault(S3_ARCHIVE_CLASSES_OPTION));
         }
 
@@ -217,13 +222,20 @@ namespace Duplicati.Library.Backend
         public virtual async Task AddFileStreamAsync(string bucketName, string keyName, Stream source,
             CancellationToken cancelToken)
         {
+            (source, var md5, var tmp) = await Utility.Utility.CalculateThrottledStreamHash(source, "MD5", cancelToken).ConfigureAwait(false);
+            using var _ = tmp;
+
+            md5 = Convert.ToBase64String(Utility.Utility.HexStringAsByteArray(md5));
+
             using var ts = source.ObserveReadTimeout(m_timeouts.ReadWriteTimeout, false);
             var objectAddRequest = new PutObjectRequest
             {
                 BucketName = bucketName,
                 Key = keyName,
                 InputStream = ts,
-                UseChunkEncoding = m_useChunkEncoding
+                UseChunkEncoding = m_useChunkEncoding,
+                MD5Digest = md5,
+                DisablePayloadSigning = m_disablePayloadSigning
             };
             if (!string.IsNullOrWhiteSpace(m_storageClass))
                 objectAddRequest.StorageClass = new S3StorageClass(m_storageClass);
