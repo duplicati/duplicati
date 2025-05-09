@@ -19,130 +19,165 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
+using System.Reflection;
+using System.Runtime.CompilerServices;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
 using Duplicati.Library.Utility.Options;
-using System.Runtime.CompilerServices;
 
 namespace Duplicati.Library.Backend
 {
-    public class Idrivee2Backend : IBackend, IStreamingBackend, IFolderEnabledBackend
+    public class Idrivee2Backend : IStreamingBackend, IFolderEnabledBackend
     {
-        // TODO: Non-standard naming, should be access-key-id and access-key-secret
+        // Non-standard naming managed with AuthOptionsHelper.ParseWithAlias
         private const string AUTH_USERNAME_OPTION = "access_key_id";
         private const string AUTH_PASSWORD_OPTION = "access_key_secret";
-        private readonly string m_prefix;
-        private readonly string m_bucket;
 
-        private IS3Client? m_s3Client;
-        private readonly TimeoutOptionsHelper.Timeouts m_timeouts;
-        private readonly AuthOptionsHelper.AuthOptions m_auth;
-        private readonly Dictionary<string, string?> m_options;
+        /// <summary>
+        /// Cached S3 client
+        /// </summary>
+        private IS3Client? _s3Client;
 
+        /// <summary>
+        /// The path prefix for all operations within the bucket
+        /// </summary>
+        private readonly string _prefix = null!;
+
+        /// <summary>
+        /// Bucked name
+        /// </summary>
+        private readonly string _bucket = null!;
+
+        /// <summary>
+        /// Lazy cached HttpClient
+        /// </summary>
+        private readonly Lazy<HttpClient> _httpClient = new(HttpClientHelper.CreateClient);
+
+        /// <summary>
+        /// The timeout options
+        /// </summary>
+        private readonly TimeoutOptionsHelper.Timeouts _timeouts;
+
+        /// <summary>
+        /// The authentication options
+        /// </summary>
+        private readonly AuthOptionsHelper.AuthOptions _auth;
+
+        /// <summary>
+        /// All options passed to the backend
+        /// </summary>
+        private readonly Dictionary<string, string?> _options;
+
+        /// <inheritdoc />
         public Idrivee2Backend()
         {
-            m_bucket = null!;
-            m_prefix = null!;
-            m_timeouts = null!;
-            m_auth = null!;
-            m_options = null!;
+            _timeouts = null!;
+            _auth = null!;
+            _options = null!;
         }
 
+        /// <inheritdoc />
         public Idrivee2Backend(string url, Dictionary<string, string?> options)
         {
             var uri = new Utility.Uri(url);
-            m_bucket = uri.Host;
-            m_prefix = uri.Path;
-            m_prefix = m_prefix.Trim();
-            if (m_prefix.Length != 0)
-                m_prefix = Util.AppendDirSeparator(m_prefix, "/");
+            _bucket = uri.Host;
+            _prefix = uri.Path;
+            _prefix = _prefix.Trim();
+            if (_prefix.Length != 0)
+                _prefix = Util.AppendDirSeparator(_prefix, "/");
 
-            m_timeouts = TimeoutOptionsHelper.Parse(options);
-            m_auth = AuthOptionsHelper.ParseWithAlias(options, uri, AUTH_USERNAME_OPTION, AUTH_PASSWORD_OPTION);
-            if (!m_auth.HasUsername)
+            _timeouts = TimeoutOptionsHelper.Parse(options);
+            _auth = AuthOptionsHelper.ParseWithAlias(options, uri, AUTH_USERNAME_OPTION, AUTH_PASSWORD_OPTION);
+            if (!_auth.HasUsername)
                 throw new UserInformationException(Strings.Idrivee2Backend.NoKeyIdError, "Idrivee2NoKeyId");
-            if (!m_auth.HasPassword)
+            if (!_auth.HasPassword)
                 throw new UserInformationException(Strings.Idrivee2Backend.NoKeySecretError, "Idrivee2NoKeySecret");
 
-            m_options = options;
+            _options = options;
         }
 
-        public async Task<string> GetRegionEndpointAsync(string url, CancellationToken cancellationToken)
+        /// <inheritdoc />
+        private async Task<string> GetRegionEndpointAsync(string url, CancellationToken cancellationToken)
         {
+            string result;
             try
             {
-                var req = (System.Net.HttpWebRequest)System.Net.WebRequest.Create(url);
-                req.Method = System.Net.WebRequestMethods.Http.Get;
+                var request = new HttpRequestMessage(HttpMethod.Get, url);
+                request.Headers.UserAgent.ParseAdd(
+                    $"Duplicati Idrivee2 Client {Assembly.GetExecutingAssembly().GetName().Version?.ToString()}");
 
-                var areq = new Utility.AsyncHttpRequest(req);
+                // Complete all operations within the using scope
+                using var resp = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancellationToken,
+                        innerCancellationToken => _httpClient.Value.SendAsync(request, innerCancellationToken))
+                    .ConfigureAwait(false);
 
-                using (var resp = await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancellationToken, _ => (System.Net.HttpWebResponse)areq.GetResponse()).ConfigureAwait(false))
-                {
-                    int code = (int)resp.StatusCode;
-                    if (code < 200 || code >= 300) //For some reason Mono does not throw this automatically
-                        throw new Exception("Failed to fetch region endpoint");
-                    using (var s = await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancellationToken, _ => areq.GetResponseStream()))
-                    using (var t = s.ObserveReadTimeout(m_timeouts.ReadWriteTimeout))
-                    {
-                        using (var reader = new StreamReader(t))
-                        {
-                            string endpoint = reader.ReadToEnd();
-                            return endpoint;
-                        }
-                    }
-                }
+                if (resp.StatusCode != System.Net.HttpStatusCode.OK)
+                    throw new Exception("Failed to fetch region endpoint");
+
+                await using var s = await resp.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
+                await using var t = s.ObserveReadTimeout(_timeouts.ReadWriteTimeout);
+                using var reader = new StreamReader(t);
+                result = await reader.ReadToEndAsync(cancellationToken).ConfigureAwait(false);
             }
-            catch (System.Net.WebException wex)
+            catch (Exception ex)
             {
-                //Convert to better exception
-                throw new Exception("Failed to fetch region endpoint", wex);
+                throw new Exception("Failed to fetch region endpoint", ex);
             }
+
+            return result;
         }
 
-        #region IBackend Members
-
+        /// <inheritdoc />
         public string DisplayName => Strings.Idrivee2Backend.DisplayName;
 
+        /// <inheritdoc />
         public string ProtocolKey => "e2";
 
+        /// <inheritdoc />
         public async IAsyncEnumerable<IFileEntry> ListAsync([EnumeratorCancellation] CancellationToken cancelToken)
         {
             var con = await GetConnection(cancelToken).ConfigureAwait(false);
-            await foreach (IFileEntry file in con.ListBucketAsync(m_bucket, m_prefix, false, cancelToken).ConfigureAwait(false))
+            await foreach (IFileEntry file in con.ListBucketAsync(_bucket, _prefix, false, cancelToken).ConfigureAwait(false))
                 yield return file;
         }
 
+        /// <inheritdoc />
         public async Task PutAsync(string remotename, string localname, CancellationToken cancelToken)
         {
-            using (FileStream fs = File.Open(localname, FileMode.Open, FileAccess.Read, FileShare.Read))
-                await PutAsync(remotename, fs, cancelToken);
+            await using FileStream fs = File.Open(localname, FileMode.Open, FileAccess.Read, FileShare.Read);
+            await PutAsync(remotename, fs, cancelToken).ConfigureAwait(false);
         }
 
+        /// <inheritdoc />
         public async Task PutAsync(string remotename, Stream input, CancellationToken cancelToken)
         {
             var con = await GetConnection(cancelToken).ConfigureAwait(false);
-            await con.AddFileStreamAsync(m_bucket, GetFullKey(remotename), input, cancelToken).ConfigureAwait(false);
+            await con.AddFileStreamAsync(_bucket, GetFullKey(remotename), input, cancelToken).ConfigureAwait(false);
         }
 
+        /// <inheritdoc />
         public async Task GetAsync(string remotename, string localname, CancellationToken cancellationToken)
         {
-            using (var fs = File.Open(localname, FileMode.Create, FileAccess.Write, FileShare.None))
-                await GetAsync(remotename, fs, cancellationToken).ConfigureAwait(false);
+            await using var fs = File.Open(localname, FileMode.Create, FileAccess.Write, FileShare.None);
+            await GetAsync(remotename, fs, cancellationToken).ConfigureAwait(false);
         }
 
+        /// <inheritdoc />
         public async Task GetAsync(string remotename, Stream output, CancellationToken cancellationToken)
         {
             var con = await GetConnection(cancellationToken).ConfigureAwait(false);
-            await con.GetFileStreamAsync(m_bucket, GetFullKey(remotename), output, cancellationToken).ConfigureAwait(false);
+            await con.GetFileStreamAsync(_bucket, GetFullKey(remotename), output, cancellationToken).ConfigureAwait(false);
         }
 
+        /// <inheritdoc />
         public async Task DeleteAsync(string remotename, CancellationToken cancellationToken)
         {
             var con = await GetConnection(cancellationToken).ConfigureAwait(false);
-            await con.DeleteObjectAsync(m_bucket, GetFullKey(remotename), cancellationToken).ConfigureAwait(false);
+            await con.DeleteObjectAsync(_bucket, GetFullKey(remotename), cancellationToken).ConfigureAwait(false);
         }
 
+        /// <inheritdoc />
         public IList<ICommandLineArgument> SupportedCommands =>
         [
             .. S3AwsClient.GetAwsExtendedOptions(),
@@ -151,65 +186,54 @@ namespace Duplicati.Library.Backend
             .. TimeoutOptionsHelper.GetOptions(),
         ];
 
+        /// <inheritdoc />
         public string Description => Strings.Idrivee2Backend.Description;
 
+        /// <inheritdoc />
         public Task TestAsync(CancellationToken cancelToken)
             => this.TestListAsync(cancelToken);
 
+        /// <inheritdoc />
         public async Task CreateFolderAsync(CancellationToken cancelToken)
         {
             var con = await GetConnection(cancelToken).ConfigureAwait(false);
             //S3 does not complain if the bucket already exists
-            await con.AddBucketAsync(m_bucket, cancelToken).ConfigureAwait(false);
+            await con.AddBucketAsync(_bucket, cancelToken).ConfigureAwait(false);
         }
 
-        #endregion
-
-        #region IRenameEnabledBackend Members
-
-        public async Task Rename(string source, string target, CancellationToken cancelToken)
-        {
-            var con = await GetConnection(cancelToken).ConfigureAwait(false);
-            await con.RenameFileAsync(m_bucket, GetFullKey(source), GetFullKey(target), cancelToken);
-        }
-
-        #endregion
-
-        #region IDisposable Members
-
+        /// <inheritdoc />
         public void Dispose()
         {
-            m_s3Client?.Dispose();
-            m_s3Client = null;
+            _s3Client?.Dispose();
+            _s3Client = null;
+            if (_httpClient.IsValueCreated) _httpClient.Value.Dispose();
         }
-
-        #endregion
 
         private async Task<IS3Client> GetConnection(CancellationToken cancellationToken)
         {
-            if (m_s3Client == null)
-            {
-                (var accessKeyId, var accessKeySecret) = m_auth.GetCredentials();
-                // TODO: Do not make blocking calls in the constructor
-                var host = await GetRegionEndpointAsync("https://api.idrivee2.com/api/service/get_region_end_point/" + accessKeyId, cancellationToken).ConfigureAwait(false);
-                m_s3Client = new S3AwsClient(accessKeyId, accessKeySecret, null, host, null, true, false, m_timeouts, m_options);
-            }
+            if (_s3Client != null) return _s3Client;
 
-            return m_s3Client;
+            var (accessKeyId, accessKeySecret) = _auth.GetCredentials();
+
+            var host = await GetRegionEndpointAsync("https://api.idrivee2.com/api/service/get_region_end_point/" + accessKeyId, cancellationToken).ConfigureAwait(false);
+            _s3Client = new S3AwsClient(accessKeyId, accessKeySecret, null, host, null, true, false, _timeouts, _options);
+
+            return _s3Client;
         }
 
+        /// <inheritdoc />
         public async Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken)
         {
             var con = await GetConnection(cancelToken).ConfigureAwait(false);
-            var dnshost = con.GetDnsHost();
-            return string.IsNullOrWhiteSpace(dnshost)
+            var dnsHost = con.GetDnsHost();
+            return string.IsNullOrWhiteSpace(dnsHost)
                 ? []
-                : [dnshost];
+                : [dnsHost];
         }
 
         private string GetFullKey(string? name)
             //AWS SDK encodes the filenames correctly
-            => $"{m_prefix}{name}";
+            => $"{_prefix}{name}";
 
         /// <inheritdoc/>
         public async IAsyncEnumerable<IFileEntry> ListAsync(string? path, [EnumeratorCancellation] CancellationToken cancellationToken)
@@ -219,7 +243,7 @@ namespace Duplicati.Library.Backend
                 filterPath = Util.AppendDirSeparator(filterPath, "/");
 
             var con = await GetConnection(cancellationToken).ConfigureAwait(false);
-            await foreach (var files in con.ListBucketAsync(m_bucket, filterPath, true, cancellationToken).ConfigureAwait(false))
+            await foreach (var files in con.ListBucketAsync(_bucket, filterPath, true, cancellationToken).ConfigureAwait(false))
                 yield return files;
         }
 
