@@ -23,6 +23,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -1397,7 +1398,8 @@ namespace Duplicati.Library.Utility
         /// <returns>The wrapped commandline element.</returns>
         /// <param name="arg">The argument to wrap.</param>
         /// <param name="allowEnvExpansion">A flag indicating if environment variables are allowed to be expanded</param>
-        public static string WrapCommandLineElement(string? arg, bool allowEnvExpansion)
+        [return: NotNullIfNotNull("arg")]
+        public static string? WrapCommandLineElement(string? arg, bool allowEnvExpansion)
         {
             if (string.IsNullOrWhiteSpace(arg))
                 return arg;
@@ -1846,6 +1848,91 @@ namespace Duplicati.Library.Utility
                     ? (int)timeout.TotalMilliseconds
                     : Timeout.Infinite
             };
+        }
+
+        /// <summary>
+        /// The types of streams that are considered basic (i.e. not wrapped)
+        /// </summary>
+        private static readonly IReadOnlySet<Type> _basicStreamTypes = new HashSet<Type>
+        {
+            typeof(FileStream),
+            typeof(MemoryStream),
+            typeof(NetworkStream),
+            typeof(BufferedStream),
+            typeof(System.IO.Compression.DeflateStream),
+            typeof(System.IO.Compression.GZipStream),
+            typeof(System.IO.Compression.ZLibStream)
+        };
+
+        /// <summary>
+        /// Unwraps a stream from layers of wrapping streams
+        /// </summary>
+        /// <param name="stream">The stream to unwrap</param>
+        /// <returns>The unwrapped stream</returns>
+        public static Stream UnwrapThrottledStream(this Stream stream)
+        {
+            if (stream == null)
+                throw new ArgumentNullException(nameof(stream));
+
+            var previousStream = stream;
+
+            do
+            {
+                previousStream = stream;
+
+                while (stream is WrappingStream wrappingStream)
+                    stream = wrappingStream.BaseStream;
+                while (stream is OverrideableStream overrideableStream)
+                    stream = overrideableStream.BaseStream;
+
+            } while (stream != previousStream);
+
+#if DEBUG
+            if (!_basicStreamTypes.Contains(stream.GetType()))
+                throw new InvalidOperationException($"The unwrapped stream is not a basic stream, but a {stream.GetType()}");
+#endif
+
+            return stream;
+        }
+
+        /// <summary>
+        /// Calculates the hash of a throttled stream and returns the stream to read
+        /// </summary>
+        /// <param name="stream">The source stream
+        /// <param name="hashalgorithm">The hash algorithm to use</param>
+        /// <param name="cancelToken">The cancellation token to observe</param>
+        /// <returns>A tuple with the stream, the hash and a temporary file if used</returns>
+        public static async Task<(Stream content, string hash, TempFile? tmpfile)> CalculateThrottledStreamHash(Stream stream, string hashalgorithm, CancellationToken cancelToken)
+        {
+            TempFile? tmp = null;
+            string contentHash;
+            var measure = stream.UnwrapThrottledStream();
+            if (measure.CanSeek)
+            {
+                var p = measure.Position;
+
+                // Compute the hash
+                using (var hashalg = HashFactory.CreateHasher(hashalgorithm))
+                    contentHash = ByteArrayAsHexString(hashalg.ComputeHash(measure));
+
+                measure.Position = p;
+            }
+            else
+            {
+                // No seeking possible, use a temp file
+                tmp = new TempFile();
+                await using (var sr = File.OpenWrite(tmp))
+                using (var hasher = HashFactory.CreateHasher(hashalgorithm))
+                await using (var hc = new HashCalculatingStream(measure, hasher))
+                {
+                    await CopyStreamAsync(hc, sr, cancelToken).ConfigureAwait(false);
+                    contentHash = hc.GetFinalHashString();
+                }
+
+                stream = File.OpenRead(tmp);
+            }
+
+            return (stream, contentHash, tmp);
         }
     }
 }
