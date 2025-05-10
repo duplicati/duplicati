@@ -38,6 +38,7 @@ CREATE TABLE "Remotevolume" (
 );
 
 /* Index for detecting broken states */
+CREATE UNIQUE INDEX IF NOT EXISTS "RemotevolumeNameOnly" ON "Remotevolume" ("Name");
 CREATE UNIQUE INDEX "RemotevolumeName" ON "Remotevolume" ("Name", "State");
 
 /*
@@ -294,4 +295,4 @@ CREATE TABLE "ChangeJournalData" (
     "ConfigHash" TEXT NOT NULL  
 );
 
-INSERT INTO "Version" ("Version") VALUES (15);
+INSERT INTO "Version" ("Version") VALUES (16);
