@@ -469,16 +469,12 @@ namespace Duplicati.Library.Main.Database
 
                 // Create and fill a temp table with the volids to delete. We avoid using too many parameters that way.
                 deletecmd.ExecuteNonQuery(FormatInvariant($@"CREATE TEMP TABLE ""{volidstable}"" (""ID"" INTEGER PRIMARY KEY)"));
-                deletecmd.SetCommandAndParameters(FormatInvariant($@"INSERT OR IGNORE INTO ""{volidstable}"" (""ID"") VALUES (@Id)"));
-                foreach (var name in names)
-                {
-                    var volumeid = GetRemoteVolumeID(name, tr.Parent);
-                    deletecmd.SetParameterValue("@Id", volumeid)
-                        .ExecuteNonQuery();
-                }
+                deletecmd.SetCommandAndParameters(FormatInvariant($@"INSERT OR IGNORE INTO ""{volidstable}"" SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""Name"" IN (@VolumeNames)"))
+                    .ExpandInClauseParameter("@VolumeNames", names.ToArray())
+                    .ExecuteNonQuery();
+
                 var volIdsSubQuery = FormatInvariant($@"SELECT ""ID"" FROM ""{volidstable}"" ");
                 deletecmd.Parameters.Clear();
-
 
                 var bsIdsSubQuery = FormatInvariant(@$"
 SELECT DISTINCT ""BlocksetEntry"".""BlocksetID"" FROM ""BlocksetEntry"", ""Block""
@@ -661,9 +657,9 @@ AND Fileset.ID NOT IN
             return res;
         }
 
-        public bool IsFilesetFullBackup(DateTime filesetTime)
+        public bool IsFilesetFullBackup(DateTime filesetTime, IDbTransaction? transaction)
         {
-            using (var cmd = m_connection.CreateCommand())
+            using (var cmd = m_connection.CreateCommand(transaction))
             using (var rd = cmd.SetCommandAndParameters($@"SELECT ""IsFullBackup"" FROM ""Fileset"" WHERE ""Timestamp"" = @Timestamp").SetParameterValue("@Timestamp", Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(filesetTime)).ExecuteReader())
             {
                 if (!rd.Read())
@@ -901,17 +897,17 @@ ON
 
                 if (!laxVerifyForRepair)
                 {
-                    var filesetsMissingVolumes = cmd.SetCommandAndParameters(@"SELECT COUNT(*) FROM ""Fileset"" WHERE ""VolumeID"" NOT IN (SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""Type"" = @Type AND ""State"" != @State)")
+                    var filesetsMissingVolumes = cmd.SetCommandAndParameters(@"SELECT COUNT(*) FROM ""Fileset"" WHERE ""VolumeID"" NOT IN (SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""Type"" = @Type AND ""State"" NOT IN (@States))")
                     .SetParameterValue("@Type", RemoteVolumeType.Files.ToString())
-                    .SetParameterValue("@State", RemoteVolumeState.Deleted.ToString())
+                    .ExpandInClauseParameter("@States", [RemoteVolumeState.Deleted.ToString(), RemoteVolumeState.Deleting.ToString()])
                     .ExecuteScalarInt64(0);
 
                     if (filesetsMissingVolumes != 0)
                     {
                         if (filesetsMissingVolumes == 1)
-                            using (var reader = cmd.SetCommandAndParameters(@"SELECT ""ID"", ""Timestamp"", ""VolumeID"" FROM ""Fileset"" WHERE ""VolumeID"" NOT IN (SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""Type"" = @Type AND ""State"" != @State)")
+                            using (var reader = cmd.SetCommandAndParameters(@"SELECT ""ID"", ""Timestamp"", ""VolumeID"" FROM ""Fileset"" WHERE ""VolumeID"" NOT IN (SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""Type"" = @Type AND ""State"" NOT IN (@States))")
                                 .SetParameterValue("@Type", RemoteVolumeType.Files.ToString())
-                                .SetParameterValue("@State", RemoteVolumeState.Deleted.ToString())
+                                .ExpandInClauseParameter("@States", [RemoteVolumeState.Deleted.ToString(), RemoteVolumeState.Deleting.ToString()])
                                 .ExecuteReader())
                                 if (reader.Read())
                                     throw new DatabaseInconsistencyException($"Detected 1 fileset with missing volume: FilesetId = {reader.ConvertValueToInt64(0)}, Time = ({ParseFromEpochSeconds(reader.ConvertValueToInt64(1))}), unmatched VolumeID {reader.ConvertValueToInt64(2)}");
@@ -919,16 +915,16 @@ ON
                         throw new DatabaseInconsistencyException($"Detected {filesetsMissingVolumes} filesets with missing volumes");
                     }
 
-                    var volumesMissingFilests = cmd.SetCommandAndParameters(@"SELECT COUNT(*) FROM ""RemoteVolume"" WHERE ""Type"" = @Type AND ""State"" != @State AND ""ID"" NOT IN (SELECT ""VolumeID"" FROM ""Fileset"")")
+                    var volumesMissingFilests = cmd.SetCommandAndParameters(@"SELECT COUNT(*) FROM ""RemoteVolume"" WHERE ""Type"" = @Type AND ""State"" NOT IN (@States) AND ""ID"" NOT IN (SELECT ""VolumeID"" FROM ""Fileset"")")
                         .SetParameterValue("@Type", RemoteVolumeType.Files.ToString())
-                        .SetParameterValue("@State", RemoteVolumeState.Deleted.ToString())
+                        .ExpandInClauseParameter("@States", [RemoteVolumeState.Deleted.ToString(), RemoteVolumeState.Deleting.ToString()])
                         .ExecuteScalarInt64(0);
                     if (volumesMissingFilests != 0)
                     {
                         if (volumesMissingFilests == 1)
-                            using (var reader = cmd.SetCommandAndParameters(@"SELECT ""ID"", ""Name"", ""State"" FROM ""RemoteVolume"" WHERE ""Type"" = @Type AND ""State"" != @State AND ""ID"" NOT IN (SELECT ""VolumeID"" FROM ""Fileset"")")
+                            using (var reader = cmd.SetCommandAndParameters(@"SELECT ""ID"", ""Name"", ""State"" FROM ""RemoteVolume"" WHERE ""Type"" = @Type AND ""State"" NOT IN (@States) AND ""ID"" NOT IN (SELECT ""VolumeID"" FROM ""Fileset"")")
                                 .SetParameterValue("@Type", RemoteVolumeType.Files.ToString())
-                                .SetParameterValue("@State", RemoteVolumeState.Deleted.ToString())
+                        .ExpandInClauseParameter("@States", [RemoteVolumeState.Deleted.ToString(), RemoteVolumeState.Deleting.ToString()])
                                 .ExecuteReader())
                                 if (reader.Read())
                                     throw new DatabaseInconsistencyException($"Detected 1 volume with missing filesets: VolumeId = {reader.ConvertValueToInt64(0)}, Name = {reader.ConvertValueToString(1)}, State = {reader.ConvertValueToString(2)}");
@@ -1504,8 +1500,19 @@ AND oldVersion.FilesetID = (SELECT ID FROM Fileset WHERE ID != @FilesetId ORDER 
             }
         }
 
+        /// <summary>
+        /// Adds a link between an index volume and a block volume.
+        /// </summary>
+        /// <param name="indexVolumeID">The ID of the index volume.</param>
+        /// <param name="blockVolumeID">The ID of the block volume.</param>
+        /// <param name="transaction">An optional transaction.</param>
         public void AddIndexBlockLink(long indexVolumeID, long blockVolumeID, IDbTransaction transaction)
         {
+            if (indexVolumeID <= 0)
+                throw new ArgumentOutOfRangeException(nameof(indexVolumeID), "Index volume ID must be greater than 0.");
+            if (blockVolumeID <= 0)
+                throw new ArgumentOutOfRangeException(nameof(blockVolumeID), "Block volume ID must be greater than 0.");
+
             m_insertIndexBlockLink.SetParameterValue("@IndexVolumeId", indexVolumeID)
                 .SetParameterValue("@BlockVolumeId", blockVolumeID)
                 .ExecuteNonQuery(transaction);

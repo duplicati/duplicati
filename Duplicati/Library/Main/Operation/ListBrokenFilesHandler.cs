@@ -55,7 +55,7 @@ namespace Duplicati.Library.Main.Operation
                 await DoRunAsync(backendManager, db, tr, filter, callbackhandler).ConfigureAwait(false);
         }
 
-        public static async Task<(Tuple<DateTime, long, long>[], List<Database.RemoteVolumeEntry> Missing)> GetBrokenFilesetsFromRemote(IBackendManager backendManager, BasicResults result, Database.LocalListBrokenFilesDatabase db, System.Data.IDbTransaction transaction, Options options)
+        public static async Task<((DateTime FilesetTime, long FilesetID, long RemoveCount)[], List<Database.RemoteVolumeEntry> Missing)> GetBrokenFilesetsFromRemote(IBackendManager backendManager, BasicResults result, Database.LocalListBrokenFilesDatabase db, System.Data.IDbTransaction transaction, Options options)
         {
             List<Database.RemoteVolumeEntry> missing = null;
             var brokensets = db.GetBrokenFilesets(options.Time, options.Version, transaction).ToArray();
@@ -86,6 +86,11 @@ namespace Duplicati.Library.Main.Operation
 
                 // Drop all content from tables
                 db.RemoveMissingBlocks(missing.Select(x => x.Name), transaction);
+
+                // Mark all orphaned index files as disposable after removing the missing block files
+                foreach (var f in db.GetOrphanedIndexFiles(transaction).ToList())
+                    db.UpdateRemoteVolume(f.Name, RemoteVolumeState.Deleting, f.Size, f.Hash, transaction);
+
                 brokensets = db.GetBrokenFilesets(options.Time, options.Version, transaction).ToArray();
             }
 

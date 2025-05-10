@@ -902,6 +902,7 @@ namespace Duplicati.Library.Main
         public long RemovedFileCount { get; set; }
         public long RemovedFileSize { get; set; }
         public long RewrittenFileLists { get; set; }
+        public long UpdatedFileCount { get; set; }
 
         public ICompactResults CompactResults { get; set; }
     }

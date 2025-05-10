@@ -471,6 +471,8 @@ namespace Duplicati.Library.Main
             new CommandLineArgument("ignore-filenames", CommandLineArgument.ArgumentType.Path, Strings.Options.IgnorefilenamesShort, Strings.Options.IgnorefilenamesLong, "CACHEDIR.TAG"),
             new CommandLineArgument("restore-symlink-metadata", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RestoresymlinkmetadataShort, Strings.Options.RestoresymlinkmetadataLong, "false"),
             new CommandLineArgument("rebuild-missing-dblock-files", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RebuildmissingdblockfilesShort, Strings.Options.RebuildmissingdblockfilesLong, "false"),
+            new CommandLineArgument("disable-partial-dblock-recovery", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisablePartialDblockRecoveryShort, Strings.Options.DisablePartialDblockRecoveryLong, "false"),
+            new CommandLineArgument("disable-replace-missing-metadata", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisableReplaceMissingMetadataShort, Strings.Options.DisableReplaceMissingMetadataLong, "false"),
 
             new CommandLineArgument("auto-compact-interval", CommandLineArgument.ArgumentType.Timespan, Strings.Options.AutoCompactIntervalShort, Strings.Options.AutoCompactIntervalLong, "0m"),
             new CommandLineArgument("auto-vacuum-interval", CommandLineArgument.ArgumentType.Timespan, Strings.Options.AutoVacuumIntervalShort, Strings.Options.AutoVacuumIntervalLong, "0m"),
@@ -1925,6 +1927,22 @@ namespace Duplicati.Library.Main
         public bool RebuildMissingDblockFiles
         {
             get { return GetBool("rebuild-missing-dblock-files"); }
+        }
+
+        /// <summary>
+        /// Gets a value indicating if partial dblock recovery is disabled
+        /// </summary>
+        public bool DisablePartialDblockRecovery
+        {
+            get { return GetBool("disable-partial-dblock-recovery"); }
+        }
+
+        /// <summary>
+        /// Gets a value indicating if missing metadata is replaced with empty content on purge-broken-files
+        /// </summary>
+        public bool DisableReplaceMissingMetadata
+        {
+            get { return GetBool("disable-replace-missing-metadata"); }
         }
 
         /// <summary>

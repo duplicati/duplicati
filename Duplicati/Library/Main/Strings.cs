@@ -310,6 +310,10 @@ namespace Duplicati.Library.Main.Strings
         public static string ProfilealldatabasequeriesShort { get { return LC.L("Activate logging of all database queries"); } }
         public static string RebuildmissingdblockfilesLong { get { return LC.L("If dblock files are missing from the destination, you can attempt to rebuild them using local source data. However, since the local data may have changed, it may not be possible to retrieve all the required data and the process may be slow. Use this option to attempt to rebuild missing dblock files."); } }
         public static string RebuildmissingdblockfilesShort { get { return LC.L("Rebuild dblock files when missing"); } }
+        public static string DisablePartialDblockRecoveryLong { get { return LC.L("If rebuilding dblock files, the process will attempt to use local data to fill in missing blocks. If it is not possible to fill in all missing blocks, Duplicati will attempt to create a dblock with as much data as possible. Use this option to disable this behavior and only create dblocks that are complete."); } }
+        public static string DisablePartialDblockRecoveryShort { get { return LC.L("Disable partial dblock recovery"); } }
+        public static string DisableReplaceMissingMetadataLong { get { return LC.L($"If metadata is missing during the {"list-broken-files"} or {"purge-broken-files"} command, Duplicati will attempt to replace the missing metadata with a new copy. Use this option to disable this behavior and drop entries that are missing metadata."); } }
+        public static string DisableReplaceMissingMetadataShort { get { return LC.L("Disable replacement of missing metadata"); } }
 
         public static string AutoCompactIntervalLong { get { return LC.L("The minimum amount of time that must elapse after the last compaction before another will be automatically triggered at the end of a backup job. Automatic compaction can be a long-running process and may not be desirable to run after every single backup."); } }
         public static string AutoCompactIntervalShort { get { return LC.L("Minimum time between auto compactions"); } }

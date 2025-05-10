@@ -296,8 +296,6 @@ namespace Duplicati.UnitTest
             {
                 operation = ((Library.Main.OperationMode)operationProperty.GetValue(results)).ToString();
             }
-            Assert.AreEqual(0, results.Errors.Count(), "{0} errors:\n{1}", operation, string.Join("\n", results.Errors));
-            Assert.AreEqual(0, results.Warnings.Count(), "{0} warnings:\n{1}", operation, string.Join("\n", results.Warnings));
 
             if (results is ITestResults testResults)
             {
@@ -321,6 +319,24 @@ namespace Duplicati.UnitTest
 
                     throw new TestVerificationException(sb.ToString());
                 }
+            }
+
+            if (results.Errors.Count() != 0)
+            {
+                var sb = new StringBuilder();
+                sb.AppendLine($"Errors - {operation}:");
+                foreach (var e in results.Errors)
+                    sb.AppendLine(e.ToString());
+                throw new TestVerificationException(sb.ToString());
+            }
+
+            if (results.Warnings.Count() != 0)
+            {
+                var sb = new StringBuilder();
+                sb.AppendLine($"Warnings - {operation}:");
+                foreach (var w in results.Warnings)
+                    sb.AppendLine(w.ToString());
+                throw new TestVerificationException(sb.ToString());
             }
         }
 

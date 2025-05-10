@@ -35,25 +35,85 @@ namespace Duplicati.Library.Main.Database
         /// </summary>
         private static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(LocalRepairDatabase));
 
+        /// <summary>
+        /// Creates a new local repair database
+        /// </summary>
+        /// <param name="path">The path to the database</param>
+        /// <param name="pagecachesize">The page cache size</param>
         public LocalRepairDatabase(string path, long pagecachesize)
             : base(path, "Repair", true, pagecachesize)
         {
 
         }
 
-        public long GetFilesetIdFromRemotename(string filelist)
+        /// <summary>
+        /// Gets the fileset ID from the remote name
+        /// </summary>
+        /// <param name="filelist">The remote name of the fileset</param>
+        /// <param name="transaction">An optional transaction</param>
+        /// <returns>>The fileset ID</returns>
+        public (long FilesetId, DateTime Time, bool IsFullBackup) GetFilesetFromRemotename(string filelist, IDbTransaction? transaction)
         {
-            using (var cmd = m_connection.CreateCommand())
+            using (var cmd = m_connection.CreateCommand(transaction))
             {
-                var filesetid = cmd.SetCommandAndParameters(@"SELECT ""Fileset"".""ID"" FROM ""Fileset"",""RemoteVolume"" WHERE ""Fileset"".""VolumeID"" = ""RemoteVolume"".""ID"" AND ""RemoteVolume"".""Name"" = @Name")
+                var rd = cmd.SetCommandAndParameters(@"SELECT ""Fileset"".""ID"", ""Fileset"".""Timestamp"", ""Fileset"".""IsFullBackup"" FROM ""Fileset"",""RemoteVolume"" WHERE ""Fileset"".""VolumeID"" = ""RemoteVolume"".""ID"" AND ""RemoteVolume"".""Name"" = @Name")
                     .SetParameterValue("@Name", filelist)
-                    .ExecuteScalarInt64(-1);
+                    .ExecuteReader();
 
-                if (filesetid == -1)
+                if (!rd.Read())
                     throw new Exception($"No such remote file: {filelist}");
 
-                return filesetid;
+                return (rd.ConvertValueToInt64(0, -1), ParseFromEpochSeconds(rd.ConvertValueToInt64(1)).ToLocalTime(), rd.GetInt32(2) == BackupType.FULL_BACKUP);
             }
+        }
+
+        /// <summary>
+        /// Moves entries in the FilesetEntry table from previous fileset to current fileset
+        /// </summary>
+        /// <param name="filesetid">Current fileset ID</param>
+        /// <param name="prevFilesetId">Source fileset ID</param>
+        /// <param name="transaction">The transaction</param>
+        public void MoveFilesFromFileset(long filesetid, long prevFilesetId, IDbTransaction transaction)
+        {
+            if (filesetid <= 0)
+                throw new ArgumentException("filesetid must be > 0");
+
+            if (prevFilesetId <= 0)
+                throw new ArgumentException("prevId must be > 0");
+
+            using var cmd = m_connection.CreateCommand(transaction);
+            cmd.SetCommandAndParameters(@"UPDATE ""FilesetEntry"" SET ""FilesetID"" = @CurrentFilesetId WHERE ""FilesetID"" = @PreviousFilesetId ")
+                .SetParameterValue("@CurrentFilesetId", filesetid)
+                .SetParameterValue("@PreviousFilesetId", prevFilesetId)
+                .ExecuteNonQuery();
+        }
+
+        /// <summary>
+        /// Deletes a fileset from the database
+        /// </summary>
+        /// <param name="filesetid">The fileset ID</param>
+        /// <param name="transaction">The transaction</param>
+        public void DeleteFileset(long filesetid, IDbTransaction transaction)
+        {
+            using var cmd = m_connection.CreateCommand(transaction);
+            cmd.SetCommandAndParameters(@"DELETE FROM ""Fileset"" WHERE ""ID"" = @FilesetId")
+                .SetParameterValue("@FilesetId", filesetid)
+                .ExecuteNonQuery();
+        }
+
+        /// <summary>
+        /// Gets the list of index files that reference a given block file
+        /// </summary>
+        /// <param name="blockfileid">The block file ID</param>
+        /// <returns>>A list of index file IDs</returns>
+        public IEnumerable<string> GetIndexFilesReferencingBlockFile(long blockfileid, IDbTransaction? transaction)
+        {
+            using var cmd = m_connection.CreateCommand(transaction, @"SELECT ""RemoteVolume"".""Name"" FROM ""RemoteVolume"", ""IndexBlockLink"" WHERE ""IndexBlockLink"".""BlockVolumeID"" = @BlockFileId AND ""RemoteVolume"".""ID"" = ""IndexBlockLink"".""IndexVolumeID"" AND ""RemoteVolume"".""Type"" = @Type")
+                .SetParameterValue("@BlockFileId", blockfileid)
+                .SetParameterValue("@Type", RemoteVolumeType.Index.ToString());
+
+            foreach (var rd in cmd.ExecuteReaderEnumerable())
+                yield return rd.ConvertValueToString(0) ?? throw new Exception("RemoteVolume name was null");
         }
 
         /// <summary>
@@ -88,63 +148,6 @@ namespace Duplicati.Library.Main.Database
                     .ExecuteNonQuery();
         }
 
-        public interface IBlockSource
-        {
-            string File { get; }
-            long Offset { get; }
-        }
-
-        public interface IBlockWithSources : IBlock
-        {
-            IEnumerable<IBlockSource> Sources { get; }
-        }
-
-        private class BlockWithSources : Block, IBlockWithSources
-        {
-            private class BlockSource : IBlockSource
-            {
-                public string File { get; private set; }
-                public long Offset { get; private set; }
-
-                public BlockSource(string file, long offset)
-                {
-                    this.File = file;
-                    this.Offset = offset;
-
-                }
-            }
-
-            private readonly IDataReader m_rd;
-            public bool Done { get; private set; }
-
-            public BlockWithSources(IDataReader rd)
-                : base(rd.ConvertValueToString(0) ?? throw new Exception("Hash value was null"), rd.ConvertValueToInt64(1))
-            {
-                m_rd = rd;
-                Done = !m_rd.Read();
-            }
-
-            public IEnumerable<IBlockSource> Sources
-            {
-                get
-                {
-                    if (Done)
-                        yield break;
-
-                    var cur = new BlockSource(m_rd.ConvertValueToString(2) ?? "", m_rd.ConvertValueToInt64(3));
-                    var file = cur.File;
-
-                    while (!Done && cur.File == file)
-                    {
-                        yield return cur;
-                        Done = m_rd.Read();
-                        if (!Done)
-                            cur = new BlockSource(m_rd.ConvertValueToString(2) ?? "", m_rd.ConvertValueToInt64(3));
-                    }
-                }
-            }
-        }
-
         private class RemoteVolume : IRemoteVolume
         {
             public string Name { get; private set; }
@@ -159,39 +162,152 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
-        public IEnumerable<IRemoteVolume> GetBlockVolumesFromIndexName(string name)
+        public IEnumerable<IRemoteVolume> GetBlockVolumesFromIndexName(string indexName)
         {
             using var cmd = m_connection.CreateCommand(@"SELECT ""Name"", ""Hash"", ""Size"" FROM ""RemoteVolume"" WHERE ""ID"" IN (SELECT ""BlockVolumeID"" FROM ""IndexBlockLink"" WHERE ""IndexVolumeID"" IN (SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""Name"" = @Name)) ")
-                .SetParameterValue("@Name", name);
+                .SetParameterValue("@Name", indexName);
 
             foreach (var rd in cmd.ExecuteReaderEnumerable())
                 yield return new RemoteVolume(rd.ConvertValueToString(0) ?? "", rd.ConvertValueToString(1) ?? "", rd.ConvertValueToInt64(2));
         }
 
+        /// <summary>
+        /// A single block with source data for repair
+        /// </summary>
+        /// <param name="Hash">The block hash</param>
+        /// <param name="Size">The block size</param>
+        /// <param name="File">The file that contains the block</param>
+        /// <param name="Offset">The offset of the block in the file</param>
+        public sealed record BlockWithSourceData(string Hash, long Size, string File, long Offset);
+
+        /// <summary>
+        /// A single block with metadata source data for repair
+        /// </summary>
+        /// <param name="Hash">The block hash</param>
+        /// <param name="Size">The block size</param>
+        /// <param name="Path">The path of the file or directory that contains the block</param>
+        public sealed record BlockWithMetadataSourceData(string Hash, long Size, string Path);
+
+        /// <summary>
+        /// A single blocklist hash entry
+        /// </summary>
+        /// <param name="BlocksetId">The blockset id</param>
+        /// <param name="BlocklistHash">The hash of the blocklist entry (when done)</param>
+        /// <param name="BlocklistHashLength">The total length of the blockset</param>
+        /// <param name="BlocklistHashIndex">The index of the blocklist hash</param>
+        /// <param name="Index">The index of the block in the blockset</param>
+        /// <param name="Hash">The hash of the entry</param>
+        public sealed record BlocklistHashesEntry(
+            long BlocksetId,
+            string BlocklistHash,
+            long BlocklistHashLength,
+            long BlocklistHashIndex,
+            int Index,
+            string Hash);
+
+        /// <summary>
+        /// Helper interface for the missing block list
+        /// </summary>
         public interface IMissingBlockList : IDisposable
         {
-            bool SetBlockRestored(string hash, long size);
-            IEnumerable<IBlockWithSources> GetSourceFilesWithBlocks(long blocksize);
-            IEnumerable<KeyValuePair<string, long>> GetMissingBlocks();
+            /// <summary>
+            /// Registers a block as restored
+            /// </summary>
+            /// <param name="hash">The block hash</param>
+            /// <param name="size">The block size</param>
+            /// <param name="volumeId">The volume ID of the new target volume</param>
+            /// <returns>The restored blocks</returns>
+            bool SetBlockRestored(string hash, long size, long volumeId);
+            /// <summary>
+            /// Gets the list of files that contains missing blocks
+            /// </summary>
+            /// <param name="blocksize">The blocksize setting</param>
+            /// <returns>A list of files with missing blocks</returns>
+            IEnumerable<BlockWithSourceData> GetSourceFilesWithBlocks(long blocksize);
+            /// <summary>
+            /// Gets a list for filesystem entries that contain missing blocks in metadata
+            /// </summary>
+            /// <returns>A list of filesystem entries with missing blocks</returns>
+            IEnumerable<BlockWithMetadataSourceData> GetSourceItemsWithMetadataBlocks();
+            /// <summary>
+            /// Gets missing blocklist hashes
+            /// </summary>
+            /// <param name="hashesPerBlock">The number of hashes for each block</param>
+            /// <returns>>A list of blocklist hashes</returns>
+            IEnumerable<BlocklistHashesEntry> GetBlocklistHashes(long hashesPerBlock);
+            /// <summary>
+            /// Gets the number of missing blocks
+            /// </summary>
+            /// <returns>>The number of missing blocks</returns>
+            long GetMissingBlockCount();
+            /// <summary>
+            /// Gets all the filesets that are affected by missing blocks
+            /// </summary>
+            /// <returns>>A list of filesets</returns>
             IEnumerable<IRemoteVolume> GetFilesetsUsingMissingBlocks();
+            /// <summary>
+            /// Gets a list of remote files that may contain missing blocks
+            /// </summary>
+            /// <returns>>A list of remote files</returns>
             IEnumerable<IRemoteVolume> GetMissingBlockSources();
         }
 
+        /// <summary>
+        /// Implementation of the missing block list
+        /// </summary>
         private class MissingBlockList : IMissingBlockList
         {
+            /// <summary>
+            /// The connection to the database
+            /// </summary>
             private readonly IDbConnection m_connection;
-            private readonly TemporaryTransactionWrapper m_transaction;
-            private IDbCommand m_insertCommand;
-            private string m_tablename;
+            /// <summary>
+            /// The transaction to use
+            /// </summary>
+            private readonly ReusableTransaction m_transaction;
+            /// <summary>
+            /// The insert command to use for restoring blocks
+            /// </summary>
+            private readonly IDbCommand m_insertCommand;
+            /// <summary>
+            /// The command to copy blocks into the duplicate block table
+            /// </summary>
+            private readonly IDbCommand m_copyIntoDuplicatedBlocks;
+            /// <summary>
+            /// The command to assign blocks to a new volume
+            /// </summary>
+            private readonly IDbCommand m_assignBlocksToNewVolume;
+            /// <summary>
+            /// The name of the temporary table
+            /// </summary>
+            private readonly string m_tablename;
+            /// <summary>
+            /// The name of the volume where blocks are missing
+            /// </summary>
             private readonly string m_volumename;
+            /// <summary>
+            /// The query to use for getting missing blocks
+            /// </summary>
+            private readonly string m_missingBlocksQuery;
 
-            public MissingBlockList(string volumename, IDbConnection connection, IDbTransaction? transaction)
+            /// <summary>
+            /// Whether the object has been disposed
+            /// </summary>
+            private bool m_isDisposed = false;
+
+            /// <summary>
+            /// Creates a new missing block list
+            /// </summary>
+            /// <param name="volumename">The name of the volume with missing blocks</param>
+            /// <param name="connection">The connection to the database</param>
+            /// <param name="transaction">The transaction to use</param>
+            public MissingBlockList(string volumename, IDbConnection connection, ReusableTransaction transaction)
             {
                 m_connection = connection;
-                m_transaction = new TemporaryTransactionWrapper(m_connection, transaction);
+                m_transaction = transaction;
                 m_volumename = volumename;
                 var tablename = "MissingBlocks-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
-                using (var cmd = m_connection.CreateCommand(m_transaction.Parent))
+                using (var cmd = m_connection.CreateCommand(m_transaction.Transaction))
                 {
                     cmd.ExecuteNonQuery(FormatInvariant($@"CREATE TEMPORARY TABLE ""{tablename}"" (""Hash"" TEXT NOT NULL, ""Size"" INTEGER NOT NULL, ""Restored"" INTEGER NOT NULL) "));
                     m_tablename = tablename;
@@ -206,38 +322,209 @@ namespace Duplicati.Library.Main.Database
                     cmd.ExecuteNonQuery(FormatInvariant($@"CREATE UNIQUE INDEX ""{tablename}-Ix"" ON ""{tablename}"" (""Hash"", ""Size"", ""Restored"")"));
                 }
 
-                m_insertCommand = m_connection.CreateCommand(m_transaction.Parent, FormatInvariant($@"UPDATE ""{tablename}"" SET ""Restored"" = @NewRestoredValue WHERE ""Hash"" = @Hash AND ""Size"" = @Size AND ""Restored"" = @PreviousRestoredValue "));
+                m_insertCommand = m_connection.CreateCommand(FormatInvariant($@"UPDATE ""{tablename}"" SET ""Restored"" = @NewRestoredValue WHERE ""Hash"" = @Hash AND ""Size"" = @Size AND ""Restored"" = @PreviousRestoredValue "));
+                m_copyIntoDuplicatedBlocks = m_connection.CreateCommand(@"INSERT OR IGNORE INTO ""DuplicateBlock"" (""BlockID"", ""VolumeID"") SELECT ""Block"".""ID"", ""Block"".""VolumeID"" FROM ""Block"" WHERE ""Block"".""Hash"" = @Hash AND ""Block"".""Size"" = @Size");
+                m_assignBlocksToNewVolume = m_connection.CreateCommand(@"UPDATE ""Block"" SET ""VolumeID"" = @TargetVolumeId WHERE ""Hash"" = @Hash AND ""Size"" = @Size");
+                m_missingBlocksQuery = FormatInvariant($@"SELECT ""{m_tablename}"".""Hash"", ""{m_tablename}"".""Size"" FROM ""{m_tablename}"" WHERE ""{m_tablename}"".""Restored"" = @Restored ");
             }
 
-            public bool SetBlockRestored(string hash, long size)
+            /// <inheritdoc/>
+            public bool SetBlockRestored(string hash, long size, long targetVolumeId)
             {
-                return m_insertCommand.SetParameterValue("@NewRestoredValue", 1)
+                var restored = m_insertCommand.SetTransaction(m_transaction.Transaction).SetParameterValue("@NewRestoredValue", 1)
                     .SetParameterValue("@Hash", hash)
                     .SetParameterValue("@Size", size)
-                    .SetParameterValue(@"PreviousRestoredValue", 0)
+                    .SetParameterValue("@PreviousRestoredValue", 0)
                     .ExecuteNonQuery() == 1;
+
+                if (restored)
+                {
+                    m_copyIntoDuplicatedBlocks.SetTransaction(m_transaction.Transaction)
+                        .SetParameterValue("@Hash", hash)
+                        .SetParameterValue("@Size", size)
+                        .ExecuteNonQuery();
+
+                    var c = m_assignBlocksToNewVolume.SetTransaction(m_transaction.Transaction)
+                        .SetParameterValue("@TargetVolumeId", targetVolumeId)
+                        .SetParameterValue("@Hash", hash)
+                        .SetParameterValue("@Size", size)
+                        .ExecuteNonQuery();
+
+                    if (c != 1)
+                        throw new Exception($"Unexpected number of updated blocks: {c} != 1");
+                }
+
+                return restored;
             }
 
-            public IEnumerable<IBlockWithSources> GetSourceFilesWithBlocks(long blocksize)
+            /// <inheritdoc/>
+            public IEnumerable<BlockWithSourceData> GetSourceFilesWithBlocks(long blocksize)
             {
-                using var cmd = m_connection.CreateCommand(m_transaction.Parent, FormatInvariant($@"SELECT DISTINCT ""{m_tablename}"".""Hash"", ""{m_tablename}"".""Size"", ""File"".""Path"", ""BlocksetEntry"".""Index"" * {blocksize} FROM  ""{m_tablename}"", ""Block"", ""BlocksetEntry"", ""File"" WHERE ""File"".""BlocksetID"" = ""BlocksetEntry"".""BlocksetID"" AND ""Block"".""ID"" = ""BlocksetEntry"".""BlockID"" AND ""{m_tablename}"".""Hash"" = ""Block"".""Hash"" AND ""{m_tablename}"".""Size"" = ""Block"".""Size"" AND ""{m_tablename}"".""Restored"" = @Restored "))
-                    .SetParameterValue("@Restored", 0);
-                using (var rd = cmd.ExecuteReader())
-                    if (rd.Read())
-                    {
-                        var bs = new BlockWithSources(rd);
-                        while (!bs.Done)
-                            yield return bs;
-                    }
-            }
-
-            public IEnumerable<KeyValuePair<string, long>> GetMissingBlocks()
-            {
-                using var cmd = m_connection.CreateCommand(m_transaction.Parent, FormatInvariant($@"SELECT ""{m_tablename}"".""Hash"", ""{m_tablename}"".""Size"" FROM ""{m_tablename}"" WHERE ""{m_tablename}"".""Restored"" = @Restored "))
+                using var cmd = m_connection.CreateCommand(m_transaction.Transaction, FormatInvariant($@"SELECT DISTINCT ""{m_tablename}"".""Hash"", ""{m_tablename}"".""Size"", ""File"".""Path"", ""BlocksetEntry"".""Index"" * {blocksize} FROM  ""{m_tablename}"", ""Block"", ""BlocksetEntry"", ""File"" WHERE ""File"".""BlocksetID"" = ""BlocksetEntry"".""BlocksetID"" AND ""Block"".""ID"" = ""BlocksetEntry"".""BlockID"" AND ""{m_tablename}"".""Hash"" = ""Block"".""Hash"" AND ""{m_tablename}"".""Size"" = ""Block"".""Size"" AND ""{m_tablename}"".""Restored"" = @Restored ORDER BY ""{m_tablename}"".""Hash"", ""{m_tablename}"".""Size"", ""File"".""Path"", ""BlocksetEntry"".""Index"" * {blocksize}"))
                     .SetParameterValue("@Restored", 0);
 
                 foreach (var rd in cmd.ExecuteReaderEnumerable())
-                    yield return new KeyValuePair<string, long>(rd.ConvertValueToString(0) ?? "", rd.ConvertValueToInt64(1));
+                {
+                    var hash = rd.ConvertValueToString(0) ?? throw new Exception("Hash value was null");
+                    var size = rd.ConvertValueToInt64(1);
+                    var file = rd.ConvertValueToString(2) ?? throw new Exception("File value was null");
+                    var offset = rd.ConvertValueToInt64(3);
+
+                    yield return new BlockWithSourceData(hash, size, file, offset);
+                }
+            }
+
+            /// <inheritdoc/>
+            public IEnumerable<BlockWithMetadataSourceData> GetSourceItemsWithMetadataBlocks()
+            {
+                using var cmd = m_connection.CreateCommand(m_transaction.Transaction, FormatInvariant($@"SELECT DISTINCT ""{m_tablename}"".""Hash"", ""{m_tablename}"".""Size"", ""File"".""Path"" FROM  ""{m_tablename}"", ""Block"", ""BlocksetEntry"", ""Metadataset"", ""File"" WHERE ""File"".""MetadataID"" == ""Metadataset"".""ID"" AND ""Metadataset"".""BlocksetID"" = ""BlocksetEntry"".""BlocksetID"" AND ""Block"".""ID"" = ""BlocksetEntry"".""BlockID"" AND ""{m_tablename}"".""Hash"" = ""Block"".""Hash"" AND ""{m_tablename}"".""Size"" = ""Block"".""Size"" AND ""{m_tablename}"".""Restored"" = @Restored ORDER BY ""{m_tablename}"".""Hash"", ""{m_tablename}"".""Size"", ""File"".""Path"""))
+                    .SetParameterValue("@Restored", 0);
+
+                foreach (var rd in cmd.ExecuteReaderEnumerable())
+                {
+                    var hash = rd.ConvertValueToString(0) ?? throw new Exception("Hash value was null");
+                    var size = rd.ConvertValueToInt64(1);
+                    var path = rd.ConvertValueToString(2) ?? throw new Exception("File value was null");
+
+                    yield return new BlockWithMetadataSourceData(hash, size, path);
+                }
+            }
+
+            /// <inheritdoc/>
+            public IEnumerable<BlocklistHashesEntry> GetBlocklistHashes(long hashesPerBlock)
+            {
+                using var cmd = m_connection.CreateCommand(m_transaction.Transaction);
+                var blocklistTableName = $"BlocklistHashList-{Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray())}";
+                try
+                {
+                    // We need to create a snapshot as we will be updating the m_tablename table during enumeration
+                    cmd.SetCommandAndParameters(FormatInvariant($@"
+                        CREATE TEMPORARY TABLE ""{blocklistTableName}"" AS
+                        SELECT 
+                            b.""Hash"" AS ""BlockHash"", 
+                            bs.""Id"" AS ""BlocksetId"",
+                            bs.""Length"" AS ""BlocksetLength"", 
+                            bse.""Index"" / @HashesPerBlock AS ""BlocklistHashIndex"",
+                            (
+                                SELECT blh.""Hash""
+                                FROM ""BlocklistHash"" blh
+                                WHERE blh.""BlocksetID"" = bs.""ID""
+                                AND blh.""Index"" == bse.""Index"" / @HashesPerBlock
+                                LIMIT 1
+                            ) AS ""BlocklistHashHash"",
+                            bse.""Index"" AS ""BlocksetEntryIndex""
+                        FROM 
+                            ""BlocksetEntry"" bse
+                        JOIN ""Block"" b ON b.""ID"" = bse.""BlockID""
+                        JOIN ""Blockset"" bs ON bs.""ID"" = bse.""BlocksetID""
+                        WHERE 
+                            EXISTS (
+                                SELECT 1
+                                FROM ""BlocklistHash"" blh
+                                JOIN ""{m_tablename}"" mt ON mt.""Hash"" = blh.""Hash""
+                                WHERE blh.""BlocksetID"" = bs.""ID""
+                                AND mt.""Restored"" = @Restored
+                            )
+                "))
+                    .SetParameterValue("@HashesPerBlock", hashesPerBlock)
+                    .SetParameterValue("@Restored", 0)
+                    .ExecuteNonQuery();
+
+                    cmd.SetCommandAndParameters(FormatInvariant($@"
+                        SELECT 
+                            ""BlockHash"", 
+                            ""BlocksetId"", 
+                            ""BlocksetLength"", 
+                            ""BlocklistHashIndex"", 
+                            ""BlocklistHashHash"", 
+                            ""BlocksetEntryIndex"" 
+                        FROM ""{blocklistTableName}"" 
+                        ORDER BY ""BlocksetId"", ""BlocklistHashIndex"", ""BlocksetEntryIndex"""));
+
+                    foreach (var rd in cmd.ExecuteReaderEnumerable())
+                    {
+                        var hash = rd.ConvertValueToString(0) ?? throw new Exception("Block.Hash is null");
+                        var blocksetId = rd.ConvertValueToInt64(1);
+                        var length = rd.ConvertValueToInt64(2);
+                        var blocklistHashIndex = rd.ConvertValueToInt64(3);
+                        var blocklistHash = rd.ConvertValueToString(4) ?? throw new Exception("BlocklistHash is null");
+                        var index = rd.ConvertValueToInt64(5);
+
+                        yield return new BlocklistHashesEntry(blocksetId, blocklistHash, length, blocklistHashIndex, (int)index, hash);
+                    }
+                }
+                finally
+                {
+                    try { cmd.ExecuteNonQuery(FormatInvariant($@"DROP TABLE IF EXISTS ""{blocklistTableName}"" ")); }
+                    catch { }
+                }
+            }
+
+            /// <inheritdoc/>
+            public long GetMissingBlockCount()
+            {
+                using var cmd = m_connection.CreateCommand(m_transaction.Transaction, FormatInvariant($@"SELECT COUNT(*) FROM ({m_missingBlocksQuery})"))
+                    .SetParameterValue("@Restored", 0);
+
+                return cmd.ExecuteScalarInt64(0);
+            }
+
+            /// <summary>
+            /// Gets the list of missing blocks
+            /// </summary>
+            /// <returns>>A list of missing blocks</returns>
+            public IEnumerable<(string Hash, long Size)> GetMissingBlocks()
+            {
+                using var cmd = m_connection.CreateCommand(m_transaction.Transaction, m_missingBlocksQuery)
+                    .SetParameterValue("@Restored", 0);
+
+                foreach (var rd in cmd.ExecuteReaderEnumerable())
+                    yield return (rd.ConvertValueToString(0) ?? "", rd.ConvertValueToInt64(1));
+            }
+
+            /// <inheritdoc/>
+            public long MoveBlocksToNewVolume(long targetVolumeId, long sourceVolumeId, IDbTransaction? transaction = null)
+            {
+                if (targetVolumeId <= 0)
+                    throw new ArgumentOutOfRangeException(nameof(targetVolumeId), "Target volume ID must be greater than 0");
+
+                // Move the source blocks into the DuplicateBlock table
+                using var cmd = m_connection.CreateCommand(transaction, FormatInvariant($@"
+                    INSERT OR IGNORE INTO ""DuplicateBlock"" (""BlockID"", ""VolumeID"")
+                    SELECT b.""ID"", b.""VolumeID""
+                    FROM ""Block"" b
+                    WHERE b.""VolumeID"" = @SourceVolumeId
+                    AND (b.""Hash"", b.""Size"") IN (
+                        SELECT ""Hash"", ""Size""
+                        FROM ""{m_tablename}""
+                        WHERE ""Restored"" = @Restored
+                    )
+                "))
+                    .SetParameterValue("@SourceVolumeId", sourceVolumeId)
+                    .SetParameterValue("@Restored", 1);
+
+                var moved = cmd.ExecuteNonQuery();
+
+                // Then update the blocks table to point to the new volume
+                cmd.SetCommandAndParameters(FormatInvariant($@"
+                    UPDATE ""Block"" 
+                    SET ""VolumeID"" = @TargetVolumeId 
+                    WHERE ""VolumeID"" = @SourceVolumeId 
+                    AND (""Hash"", ""Size"") IN (
+                        SELECT ""Hash"", ""Size"" 
+                        FROM ""{m_tablename}""
+                        WHERE ""Restored"" = @Restored
+                    )
+                "))
+                    .SetParameterValue("@TargetVolumeId", targetVolumeId)
+                    .SetParameterValue("@SourceVolumeId", sourceVolumeId)
+                    .SetParameterValue("@Restored", 1);
+
+                var updated = cmd.ExecuteNonQuery();
+                if (updated != moved)
+                    throw new Exception($"Unexpected number of updated blocks: {updated} != {moved}");
+
+                return updated;
             }
 
             public IEnumerable<IRemoteVolume> GetFilesetsUsingMissingBlocks()
@@ -246,7 +533,7 @@ namespace Duplicati.Library.Main.Database
                 var blocklists = FormatInvariant($@"SELECT DISTINCT ""FileLookup"".""ID"" AS ID FROM ""{m_tablename}"", ""Block"", ""Blockset"", ""BlocklistHash"", ""FileLookup"" WHERE ""Block"".""Hash"" = ""{m_tablename}"".""Hash"" AND ""Block"".""Size"" = ""{m_tablename}"".""Size"" AND ""BlocklistHash"".""Hash"" = ""Block"".""Hash"" AND ""BlocklistHash"".""BlocksetID"" = ""Blockset"".""ID"" AND ""FileLookup"".""BlocksetID"" = ""Blockset"".""ID"" ");
                 var cmdtxt = FormatInvariant($@"SELECT DISTINCT ""RemoteVolume"".""Name"", ""RemoteVolume"".""Hash"", ""RemoteVolume"".""Size"" FROM ""RemoteVolume"", ""FilesetEntry"", ""Fileset"" WHERE ""RemoteVolume"".""ID"" = ""Fileset"".""VolumeID"" AND ""Fileset"".""ID"" = ""FilesetEntry"".""FilesetID"" AND ""RemoteVolume"".""Type"" = @Type AND ""FilesetEntry"".""FileID"" IN  (SELECT DISTINCT ""ID"" FROM ( {blocks} UNION {blocklists} ))");
 
-                using var cmd = m_connection.CreateCommand(m_transaction.Parent, cmdtxt)
+                using var cmd = m_connection.CreateCommand(m_transaction.Transaction, cmdtxt)
                     .SetParameterValue("@Type", RemoteVolumeType.Files.ToString());
 
                 foreach (var rd in cmd.ExecuteReaderEnumerable())
@@ -255,7 +542,8 @@ namespace Duplicati.Library.Main.Database
 
             public IEnumerable<IRemoteVolume> GetMissingBlockSources()
             {
-                using var cmd = m_connection.CreateCommand(m_transaction.Parent, FormatInvariant($@"SELECT DISTINCT ""RemoteVolume"".""Name"", ""RemoteVolume"".""Hash"", ""RemoteVolume"".""Size"" FROM ""RemoteVolume"", ""Block"", ""{m_tablename}"" WHERE ""Block"".""Hash"" = ""{m_tablename}"".""Hash"" AND ""Block"".""Size"" = ""{m_tablename}"".""Size"" AND ""Block"".""VolumeID"" = ""RemoteVolume"".""ID"" AND ""Remotevolume"".""Name"" != @Name "))
+                using var cmd = m_connection.CreateCommand(m_transaction.Transaction, FormatInvariant($@"SELECT DISTINCT ""RemoteVolume"".""Name"", ""RemoteVolume"".""Hash"", ""RemoteVolume"".""Size"" FROM ""RemoteVolume"", ""Block"", ""{m_tablename}"" WHERE ""{m_tablename}"".""Restored"" = @Restored AND ""Block"".""Hash"" = ""{m_tablename}"".""Hash"" AND ""Block"".""Size"" = ""{m_tablename}"".""Size"" AND ""Block"".""VolumeID"" = ""RemoteVolume"".""ID"" AND ""Remotevolume"".""Name"" != @Name "))
+                    .SetParameterValue("@Restored", 0)
                     .SetParameterValue("@Name", m_volumename);
 
                 foreach (var rd in cmd.ExecuteReaderEnumerable())
@@ -264,25 +552,24 @@ namespace Duplicati.Library.Main.Database
 
             public void Dispose()
             {
-                if (m_tablename != null)
-                {
-                    try
-                    {
-                        using (var cmd = m_connection.CreateCommand(m_transaction.Parent))
-                            cmd.SetTransaction(m_transaction.Parent).ExecuteNonQuery(FormatInvariant($@"DROP TABLE IF EXISTS ""{m_tablename}"" "));
-                    }
-                    catch { }
-                    finally { m_tablename = null!; }
-                }
+                if (m_isDisposed)
+                    return;
 
-                if (m_insertCommand != null)
-                    try { m_insertCommand.Dispose(); }
-                    catch { }
-                    finally { m_insertCommand = null!; }
+                m_isDisposed = true;
+                try
+                {
+                    if (m_tablename != null)
+                        using (var cmd = m_connection.CreateCommand(m_transaction.Transaction))
+                            cmd.SetTransaction(m_transaction.Transaction).ExecuteNonQuery(FormatInvariant($@"DROP TABLE IF EXISTS ""{m_tablename}"" "));
+                }
+                catch { }
+
+                try { m_insertCommand?.Dispose(); }
+                catch { }
             }
         }
 
-        public IMissingBlockList CreateBlockList(string volumename, IDbTransaction? transaction = null)
+        public IMissingBlockList CreateBlockList(string volumename, ReusableTransaction transaction)
         {
             return new MissingBlockList(volumename, m_connection, transaction);
         }
@@ -589,13 +876,12 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
-        public void CheckAllBlocksAreInVolume(string filename, IEnumerable<KeyValuePair<string, long>> blocks)
+        public void CheckAllBlocksAreInVolume(string filename, IEnumerable<KeyValuePair<string, long>> blocks, IDbTransaction transaction)
         {
-            using (var tr = m_connection.BeginTransactionSafe())
-            using (var cmd = m_connection.CreateCommand(tr))
+            using var cmd = m_connection.CreateCommand(transaction);
+            var tablename = "ProbeBlocks-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
+            try
             {
-                var tablename = "ProbeBlocks-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
-
                 cmd.ExecuteNonQuery(FormatInvariant($@"CREATE TEMPORARY TABLE ""{tablename}"" (""Hash"" TEXT NOT NULL, ""Size"" INTEGER NOT NULL)"));
                 cmd.SetCommandAndParameters(FormatInvariant($@"INSERT INTO ""{tablename}"" (""Hash"", ""Size"") VALUES (@Hash, @Size)"));
 
@@ -614,16 +900,18 @@ namespace Duplicati.Library.Main.Database
                     .SetParameterValue("@VolumeId", id)
                     .ExecuteScalarInt64(0);
 
-                cmd.ExecuteNonQuery(FormatInvariant($@"DROP TABLE IF EXISTS ""{tablename}"" "));
-
                 if (aliens != 0)
                     throw new Exception($"Not all blocks were found in {filename}");
             }
+            finally
+            {
+                cmd.ExecuteNonQuery(FormatInvariant($@"DROP TABLE IF EXISTS ""{tablename}"" "));
+            }
         }
 
-        public void CheckBlocklistCorrect(string hash, long length, IEnumerable<string> blocklist, long blocksize, long blockhashlength)
+        public void CheckBlocklistCorrect(string hash, long length, IEnumerable<string> blocklist, long blocksize, long blockhashlength, IDbTransaction? transaction)
         {
-            using (var cmd = m_connection.CreateCommand())
+            using (var cmd = m_connection.CreateCommand(transaction))
             {
                 var query = FormatInvariant($@"
 SELECT 

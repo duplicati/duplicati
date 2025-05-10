@@ -88,13 +88,24 @@ namespace Duplicati.Library.Main.Operation
                         SetCount = db.GetFilesetFileCount(x.Item2, tr)
                     }).ToArray();
 
-                    if (m_options.Dryrun)
-                        tr.Rollback();
-                    else
-                        tr.Commit();
+                    var emptyBlocksetId = -1L;
+                    if (!m_options.DisableReplaceMissingMetadata)
+                    {
+                        var emptymetadata = Utility.WrapMetadata(new Dictionary<string, string>(), m_options);
+                        emptyBlocksetId = db.GetEmptyMetadataBlocksetId(missing.Select(x => x.ID), emptymetadata.FileHash, emptymetadata.Blob.Length, null);
+                        if (emptyBlocksetId < 0)
+                            throw new UserInformationException($"Failed to locate an empty metadata blockset to replace missing metadata. Set the option --disable-replace-missing-metadata=true to ignore this and drop files with missing metadata.", "FailedToLocateEmptyMetadataBlockset");
+                    }
 
                     var fully_emptied = compare_list.Where(x => x.RemoveCount == x.SetCount).ToArray();
                     var to_purge = compare_list.Where(x => x.RemoveCount != x.SetCount).ToArray();
+
+                    if (fully_emptied.Length == db.FilesetTimes.Count())
+                        throw new UserInformationException("All filesets are fully broken and needs to be removed. To avoid unexpected deletions, you must manually remove the remote files and delete the database.", "AllFilesetsBroken");
+
+                    if (!m_options.Dryrun)
+                        tr.Commit();
+
 
                     if (fully_emptied.Length != 0)
                     {
@@ -104,7 +115,7 @@ namespace Duplicati.Library.Main.Operation
                             Logging.Log.WriteInformationMessage(LOGTAG, "RemovingFilesets", "Removing {0} filesets where all file(s) are broken: {1}", fully_emptied.Length, string.Join(", ", fully_emptied.Select(x => x.Timestamp.ToLocalTime().ToString())));
 
                         m_result.DeleteResults = new DeleteResults(m_result);
-                        using (var rmdb = new Database.LocalDeleteDatabase(db))
+                        using (var rmdb = new LocalDeleteDatabase(db))
                         using (var deltr = new ReusableTransaction(rmdb))
                         {
                             var opts = new Options(new Dictionary<string, string>(m_options.RawOptions));
@@ -148,7 +159,14 @@ namespace Duplicati.Library.Main.Operation
                                 {
                                     if (filesetid != bs.FilesetID)
                                         throw new Exception(string.Format("Unexpected filesetid: {0}, expected {1}", filesetid, bs.FilesetID));
+
+                                    // Update entries that would be removed because of missing metadata
+                                    var updatedEntries = 0;
+                                    if (!m_options.DisableReplaceMissingMetadata)
+                                        updatedEntries = db.ReplaceMetadata(filesetid, emptyBlocksetId, cmd.Transaction);
+
                                     db.InsertBrokenFileIDsIntoTable(filesetid, tablename, "FileID", cmd.Transaction);
+                                    return updatedEntries;
                                 }).ConfigureAwait(false);
                             }
 

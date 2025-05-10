@@ -325,16 +325,13 @@ namespace Duplicati.Library.Main.Operation
 
         private async Task FinishVolumeAndUpload(LocalDeleteDatabase db, IBackendManager backendManager, BlockVolumeWriter newvol, IndexVolumeWriter newvolindex, List<KeyValuePair<string, long>> uploadedVolumes, ReusableTransaction rtr)
         {
-            Action indexVolumeFinished = () =>
-            {
-                if (newvolindex != null && m_options.IndexfilePolicy == Options.IndexFileStrategy.Full)
+            Action indexVolumeFinished = null;
+            if (newvolindex != null && m_options.IndexfilePolicy == Options.IndexFileStrategy.Full)
+                indexVolumeFinished = () =>
                 {
                     foreach (var blocklist in db.GetBlocklists(newvol.VolumeID, m_options.Blocksize, m_options.BlockhashSize))
-                    {
                         newvolindex.WriteBlocklist(blocklist.Item1, blocklist.Item2, 0, blocklist.Item3);
-                    }
-                }
-            };
+                };
 
             uploadedVolumes.Add(new KeyValuePair<string, long>(newvol.RemoteFilename, newvol.Filesize));
             if (newvolindex != null)
@@ -342,7 +339,7 @@ namespace Duplicati.Library.Main.Operation
 
             // TODO: The upload here does not flush the database messages,
             // and this can leave the database in a state where it does not know of the remote file
-            // To fix it, we need thread-safe access to the daabase and transaction
+            // To fix it, we need thread-safe access to the database and transaction
             // Once fixed, we can perhaps let he backend manager simply call the database directly
             if (!m_options.Dryrun)
             {
