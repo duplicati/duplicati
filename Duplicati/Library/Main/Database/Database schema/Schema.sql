@@ -114,7 +114,7 @@ CREATE TABLE "FileLookup" (
 /* Fast path based lookup, single properties are auto-indexed */
 CREATE UNIQUE INDEX "FileLookupPath" ON "FileLookup" ("PrefixID", "Path", "BlocksetID", "MetadataID");
 CREATE INDEX "nn_FileLookup_BlockMeta" ON FileLookup ("BlocksetID", "MetadataID");
-
+CREATE INDEX "FileLookupMetadataID" ON "FileLookup" ("MetadataID");
 
 
 /*
