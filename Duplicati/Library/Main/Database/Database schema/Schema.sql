@@ -38,6 +38,7 @@ CREATE TABLE "Remotevolume" (
 );
 
 /* Index for detecting broken states */
+CREATE UNIQUE INDEX IF NOT EXISTS "RemotevolumeNameOnly" ON "Remotevolume" ("Name");
 CREATE UNIQUE INDEX "RemotevolumeName" ON "Remotevolume" ("Name", "State");
 
 /*
@@ -113,7 +114,7 @@ CREATE TABLE "FileLookup" (
 /* Fast path based lookup, single properties are auto-indexed */
 CREATE UNIQUE INDEX "FileLookupPath" ON "FileLookup" ("PrefixID", "Path", "BlocksetID", "MetadataID");
 CREATE INDEX "nn_FileLookup_BlockMeta" ON FileLookup ("BlocksetID", "MetadataID");
-
+CREATE INDEX "FileLookupMetadataID" ON "FileLookup" ("MetadataID");
 
 
 /*
@@ -294,4 +295,4 @@ CREATE TABLE "ChangeJournalData" (
     "ConfigHash" TEXT NOT NULL  
 );
 
-INSERT INTO "Version" ("Version") VALUES (15);
+INSERT INTO "Version" ("Version") VALUES (16);
