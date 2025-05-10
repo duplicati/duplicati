@@ -535,19 +535,23 @@ namespace Duplicati.Library.Main.Operation
 
             volumeWriter.CreateFilesetFile(isPrevFull);
             var newFilesetID = db.CreateFileset(volumeWriter.VolumeID, filesetTime, rtr.Transaction);
+            db.UpdateFullBackupStateInFileset(newFilesetID, isPrevFull);
+
             db.LinkFilesetToVolume(newFilesetID, volumeWriter.VolumeID, rtr.Transaction);
             db.MoveFilesFromFileset(newFilesetID, prevFilesetId, rtr.Transaction);
 
             db.WriteFileset(volumeWriter, newFilesetID, rtr.Transaction);
             volumeWriter.Close();
 
+            db.UpdateRemoteVolume(volumeWriter.RemoteFilename, RemoteVolumeState.Uploading, -1, null, rtr.Transaction);
+            db.UpdateRemoteVolume(originalVolume.Name, RemoteVolumeState.Deleting, originalVolume.Size, originalVolume.Hash, false, TimeSpan.FromHours(2), null, rtr.Transaction);
+            db.DeleteFileset(prevFilesetId, rtr.Transaction);
+            await backendManager.FlushPendingMessagesAsync(db, rtr.Transaction, cancellationToken).ConfigureAwait(false);
+
             if (m_options.Dryrun)
-                Logging.Log.WriteDryrunMessage(LOGTAG, "WouldReUploadFileset", "would re-upload fileset {0}, with size {1}, previous size {2}", originalVolume.Name, Library.Utility.Utility.FormatSizeString(new System.IO.FileInfo(volumeWriter.LocalFilename).Length), Library.Utility.Utility.FormatSizeString(originalVolume.Size));
+                Logging.Log.WriteDryrunMessage(LOGTAG, "WouldReUploadFileset", "would upload fileset {0}, with size {1}, previous size {2}", originalVolume.Name, Library.Utility.Utility.FormatSizeString(new System.IO.FileInfo(volumeWriter.LocalFilename).Length), Library.Utility.Utility.FormatSizeString(originalVolume.Size));
             else
             {
-                db.UpdateRemoteVolume(volumeWriter.RemoteFilename, RemoteVolumeState.Uploading, -1, null, rtr.Transaction);
-                db.UpdateRemoteVolume(originalVolume.Name, RemoteVolumeState.Deleting, originalVolume.Size, originalVolume.Hash, false, TimeSpan.FromHours(2), null, rtr.Transaction);
-                await backendManager.FlushPendingMessagesAsync(db, rtr.Transaction, cancellationToken).ConfigureAwait(false);
                 if (!m_options.Dryrun)
                     rtr.Commit("CommitPriorToFilesetUpload");
                 await backendManager.PutAsync(volumeWriter, null, null, false, null, cancellationToken).ConfigureAwait(false);

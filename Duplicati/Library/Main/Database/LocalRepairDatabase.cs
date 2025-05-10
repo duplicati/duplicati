@@ -63,7 +63,7 @@ namespace Duplicati.Library.Main.Database
                 if (!rd.Read())
                     throw new Exception($"No such remote file: {filelist}");
 
-                return (rd.ConvertValueToInt64(0, -1), ParseFromEpochSeconds(rd.ConvertValueToInt64(1)).ToLocalTime(), rd.GetInt32(0) == BackupType.FULL_BACKUP);
+                return (rd.ConvertValueToInt64(0, -1), ParseFromEpochSeconds(rd.ConvertValueToInt64(1)).ToLocalTime(), rd.GetInt32(2) == BackupType.FULL_BACKUP);
             }
         }
 
@@ -86,7 +86,19 @@ namespace Duplicati.Library.Main.Database
                 .SetParameterValue("@CurrentFilesetId", filesetid)
                 .SetParameterValue("@PreviousFilesetId", prevFilesetId)
                 .ExecuteNonQuery();
+        }
 
+        /// <summary>
+        /// Deletes a fileset from the database
+        /// </summary>
+        /// <param name="filesetid">The fileset ID</param>
+        /// <param name="transaction">The transaction</param>
+        public void DeleteFileset(long filesetid, IDbTransaction transaction)
+        {
+            using var cmd = m_connection.CreateCommand(transaction);
+            cmd.SetCommandAndParameters(@"DELETE FROM ""Fileset"" WHERE ""ID"" = @FilesetId")
+                .SetParameterValue("@FilesetId", filesetid)
+                .ExecuteNonQuery();
         }
 
         /// <summary>
