@@ -23,17 +23,13 @@ namespace Duplicati.Library.Backend.Strings
 {
     internal static class Idrivee2Backend
     {
-        public static string Description { get { return LC.L(@"This backend can read and write data to IDrive e2. Allowed format is ""e2://bucket/folder""."); } }
-        public static string DisplayName { get { return LC.L(@"IDrive e2"); } }
-        public static string KeySecretDescriptionLong { get { return LC.L(@"Access Key Secret can be obtained after logging into your IDrive e2 account. This can also be supplied through the option --{0}.", "auth-password"); } }
-        public static string KeySecretDescriptionShort { get { return LC.L(@"Access Key Secret"); } }
-        public static string KeyIDDescriptionLong { get { return LC.L(@"Access Key ID can be obtained after logging into your IDrive e2 account. This can also be supplied through the option --{0}.", "auth-username"); } }
-        public static string KeyIDDescriptionShort { get { return LC.L(@"Access Key ID"); } }
-
-        public static string BucketNameOrPathDescriptionLong { get { return LC.L(@"The ""Bucket Name or Complete Path"" is name of target bucket or complete of a folder inside the bucket."); } }
-        public static string BucketNameOrPathDescriptionShort { get { return LC.L(@"The ""Bucket Name or Complete Path"""); } }
-
-        public static string NoKeySecretError { get { return LC.L(@"No Access Key Secret given"); } }
-        public static string NoKeyIdError { get { return LC.L(@"No Access Key ID given"); } }
+        public static string Description => LC.L(@"This backend can read and write data to IDrive e2. Allowed format is ""e2://bucket/folder"".");
+        public static string DisplayName => LC.L(@"IDrive e2");
+        public static string KeySecretDescriptionLong => LC.L(@"Access Key Secret can be obtained after logging into your IDrive e2 account. This can also be supplied through the option --{0}.", "auth-password");
+        public static string KeySecretDescriptionShort => LC.L(@"Access Key Secret");
+        public static string KeyIDDescriptionLong => LC.L(@"Access Key ID can be obtained after logging into your IDrive e2 account. This can also be supplied through the option --{0}.", "auth-username");
+        public static string KeyIDDescriptionShort => LC.L(@"Access Key ID");
+        public static string NoKeySecretError => LC.L(@"No Access Key Secret given");
+        public static string NoKeyIdError => LC.L(@"No Access Key ID given");
     }
 }
