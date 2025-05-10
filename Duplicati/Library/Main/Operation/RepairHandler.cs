@@ -267,7 +267,7 @@ namespace Duplicati.Library.Main.Operation
                                             if (entry.Hash != rv.Hash || entry.Size != rv.Length || !new[] { RemoteVolumeState.Uploading, RemoteVolumeState.Uploaded, RemoteVolumeState.Verified }.Contains(entry.State))
                                                 throw new Exception(string.Format("Volume {0} hash/size mismatch ({1} - {2}) vs ({3} - {4})", rv.Filename, entry.Hash, entry.Size, rv.Hash, rv.Length));
 
-                                            db.CheckAllBlocksAreInVolume(rv.Filename, rv.Blocks);
+                                            db.CheckAllBlocksAreInVolume(rv.Filename, rv.Blocks, rtr.Transaction);
                                         }
 
                                         var blocksize = m_options.Blocksize;

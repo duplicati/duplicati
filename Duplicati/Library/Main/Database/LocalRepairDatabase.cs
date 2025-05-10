@@ -876,13 +876,12 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
-        public void CheckAllBlocksAreInVolume(string filename, IEnumerable<KeyValuePair<string, long>> blocks)
+        public void CheckAllBlocksAreInVolume(string filename, IEnumerable<KeyValuePair<string, long>> blocks, IDbTransaction transaction)
         {
-            using (var tr = m_connection.BeginTransactionSafe())
-            using (var cmd = m_connection.CreateCommand(tr))
+            using var cmd = m_connection.CreateCommand(transaction);
+            var tablename = "ProbeBlocks-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
+            try
             {
-                var tablename = "ProbeBlocks-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
-
                 cmd.ExecuteNonQuery(FormatInvariant($@"CREATE TEMPORARY TABLE ""{tablename}"" (""Hash"" TEXT NOT NULL, ""Size"" INTEGER NOT NULL)"));
                 cmd.SetCommandAndParameters(FormatInvariant($@"INSERT INTO ""{tablename}"" (""Hash"", ""Size"") VALUES (@Hash, @Size)"));
 
@@ -901,10 +900,12 @@ namespace Duplicati.Library.Main.Database
                     .SetParameterValue("@VolumeId", id)
                     .ExecuteScalarInt64(0);
 
-                cmd.ExecuteNonQuery(FormatInvariant($@"DROP TABLE IF EXISTS ""{tablename}"" "));
-
                 if (aliens != 0)
                     throw new Exception($"Not all blocks were found in {filename}");
+            }
+            finally
+            {
+                cmd.ExecuteNonQuery(FormatInvariant($@"DROP TABLE IF EXISTS ""{tablename}"" "));
             }
         }
 
