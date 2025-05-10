@@ -18,15 +18,29 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
-namespace Duplicati.WebserverCore.Dto;
+
+namespace Duplicati.Backend.Tests.OneDrive;
 
 /// <summary>
-/// The get task state DTO
+/// OneDrive Tests
 /// </summary>
-/// <param name="Status">The status</param>
-/// <param name="ID">The ID</param>
-/// <param name="TaskStarted">When the task started</param>
-/// <param name="TaskFinished">When the task finished</param>
-/// <param name="ErrorMessage">The error message</param>
-/// <param name="Exception">The exception</param>
-public record GetTaskStateDto(string Status, long ID, DateTime? TaskStarted, DateTime? TaskFinished, string? ErrorMessage = null, string? Exception = null);
+[TestClass]
+public sealed class OneDriveTests : BaseTest
+{
+    [TestMethod]
+    public Task TestOneDrive()
+    {
+        CheckRequiredEnvironment(["TESTCREDENTIAL_ONEDRIVE_FOLDER", "TESTCREDENTIAL_ONEDRIVE_AUTHID"]);
+
+        var exitCode = CommandLine.BackendTester.Program.Main(
+            new[]
+            {
+                $"onedrivev2://{Environment.GetEnvironmentVariable("TESTCREDENTIAL_ONEDRIVE_FOLDER")}/?authid={Uri.EscapeDataString(Environment.GetEnvironmentVariable("TESTCREDENTIAL_ONEDRIVE_AUTHID")!)}",
+
+            }.Concat(Parameters.GlobalTestParameters).ToArray());
+
+        if (exitCode != 0) Assert.Fail("BackendTester is returning non-zero exit code, check logs for details");
+
+        return Task.CompletedTask;
+    }
+}

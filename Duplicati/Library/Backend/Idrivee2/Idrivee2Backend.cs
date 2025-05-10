@@ -216,7 +216,7 @@ namespace Duplicati.Library.Backend
             var (accessKeyId, accessKeySecret) = _auth.GetCredentials();
 
             var host = await GetRegionEndpointAsync("https://api.idrivee2.com/api/service/get_region_end_point/" + accessKeyId, cancellationToken).ConfigureAwait(false);
-            _s3Client = new S3AwsClient(accessKeyId, accessKeySecret, null, host, null, true, false, _timeouts, _options);
+            _s3Client = new S3AwsClient(accessKeyId, accessKeySecret, null, host, null, true, false, false, _timeouts, _options);
 
             return _s3Client;
         }

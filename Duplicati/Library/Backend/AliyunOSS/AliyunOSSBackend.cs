@@ -198,9 +198,14 @@ namespace Duplicati.Library.Backend.AliyunOSS
             var client = GetClient();
             try
             {
+                var metadata = new ObjectMetadata
+                {
+                    ContentLength = stream.Length
+                };
+
                 using var timeoutStream = stream.ObserveReadTimeout(_timeouts.ReadWriteTimeout, false);
                 var objectResult = await Task.Factory.FromAsync(
-                    (cb, state) => client.BeginPutObject(bucketName, objectName, timeoutStream, cb, state),
+                    (cb, state) => client.BeginPutObject(bucketName, objectName, timeoutStream, metadata, cb, state),
                     client.EndPutObject,
                     null).ConfigureAwait(false);
 

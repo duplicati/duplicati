@@ -334,9 +334,10 @@ namespace Duplicati.GUI.TrayIcon
         private async Task ObtainAccessTokenAsync()
         {
             // If we host the server, issue the access token from the service
-            if (FIXMEGlobal.IsServerStarted && m_passwordSource == Program.PasswordSource.HostedServer)
+            var sp = Server.Program.DuplicatiWebserver?.Provider;
+            if (sp != null && m_passwordSource == Program.PasswordSource.HostedServer)
             {
-                var provider = FIXMEGlobal.Provider.GetRequiredService<IJWTTokenProvider>();
+                var provider = sp.GetRequiredService<IJWTTokenProvider>();
                 m_accesstoken = provider.CreateAccessToken("trayicon", provider.TemporaryFamilyId);
                 return;
             }
@@ -412,12 +413,13 @@ namespace Duplicati.GUI.TrayIcon
             string signinjwt = null;
 
             // If we host the server, issue the token from the service
-            if (FIXMEGlobal.IsServerStarted && m_passwordSource == Program.PasswordSource.HostedServer)
+            var sp = Server.Program.DuplicatiWebserver?.Provider;
+            if (sp != null && m_passwordSource == Program.PasswordSource.HostedServer)
             {
-                if (FIXMEGlobal.DataConnection.ApplicationSettings.DisableSigninTokens)
+                if (sp.GetRequiredService<Server.Database.Connection>().ApplicationSettings.DisableSigninTokens)
                     return null;
 
-                signinjwt = FIXMEGlobal.Provider.GetRequiredService<IJWTTokenProvider>().CreateSigninToken("trayicon");
+                signinjwt = sp.GetRequiredService<IJWTTokenProvider>().CreateSigninToken("trayicon");
             }
 
             // If we have database access, grab the issuer key from the db and issue a token

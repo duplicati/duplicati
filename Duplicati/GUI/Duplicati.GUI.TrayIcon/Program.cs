@@ -30,9 +30,11 @@ using CoCoL;
 using Duplicati.CommandLine;
 using Duplicati.Library.AutoUpdater;
 using Duplicati.Library.Interface;
-using Duplicati.Library.RestAPI;
 using Duplicati.Library.Utility;
 using Duplicati.Server;
+using Duplicati.Server.Database;
+using Duplicati.WebserverCore.Services;
+using Microsoft.Extensions.DependencyInjection;
 using Uri = System.Uri;
 
 namespace Duplicati.GUI.TrayIcon
@@ -144,12 +146,13 @@ namespace Duplicati.GUI.TrayIcon
                 try
                 {
                     // Tell the hosted server it was started by the TrayIcon
-                    FIXMEGlobal.Origin = "Tray icon";
+                    var applicationSettings = new ApplicationSettings();
+                    applicationSettings.Origin = "Tray icon";
                     passwordSource = PasswordSource.HostedServer;
                     // Ignore TrayIcon specific settings
                     foreach (var c in BasicSupportedCommands.Select(x => x.Name))
                         Server.Program.ValidationIgnoredOptions.Add(c);
-                    hosted = new HostedInstanceKeeper(_args);
+                    hosted = new HostedInstanceKeeper(applicationSettings, _args);
                 }
                 catch (Exception ex)
                 {
@@ -164,17 +167,18 @@ namespace Duplicati.GUI.TrayIcon
 
                 // We have a hosted server, if this is the first run, 
                 // we should open the main page
-                openui = Server.Program.IsFirstRun || Server.Program.ServerPortChanged;
+                var connection = Server.Program.DuplicatiWebserver.Provider.GetRequiredService<Connection>();
+                openui = connection.ApplicationSettings.IsFirstRun || connection.ApplicationSettings.ServerPortChanged;
 
-                var scheme = Server.Program.DataConnection.ApplicationSettings.UseHTTPS ? "https" : "http";
+                var scheme = connection.ApplicationSettings.UseHTTPS ? "https" : "http";
                 serverURL = new UriBuilder(serverURL)
                 {
-                    Port = Server.Program.ServerPort,
+                    Port = Server.Program.DuplicatiWebserver.Port,
                     Scheme = scheme
                 }.Uri;
 
-                if (Server.Program.DataConnection.ApplicationSettings.UseHTTPS && string.IsNullOrWhiteSpace(acceptedHostCertificate))
-                    acceptedHostCertificate = Server.Program.DataConnection.ApplicationSettings.ServerSSLCertificate?.FirstOrDefault(x => x.HasPrivateKey)?.GetCertHashString();
+                if (connection.ApplicationSettings.UseHTTPS && string.IsNullOrWhiteSpace(acceptedHostCertificate))
+                    acceptedHostCertificate = connection.ApplicationSettings.ServerSSLCertificate?.FirstOrDefault(x => x.HasPrivateKey)?.GetCertHashString();
 
             }
             else if (Utility.ParseBoolOption(options, READCONFIGFROMDB_OPTION))
@@ -182,7 +186,7 @@ namespace Duplicati.GUI.TrayIcon
                 if (File.Exists(Path.Combine(DataFolderManager.GetDataFolder(DataFolderManager.AccessMode.ReadWritePermissionSet), DataFolderManager.SERVER_DATABASE_FILENAME)))
                 {
                     passwordSource = PasswordSource.Database;
-                    databaseConnection = Server.Program.GetDatabaseConnection(options, true);
+                    databaseConnection = Server.Program.GetDatabaseConnection(new ApplicationSettings(), options, true);
 
                     if (databaseConnection != null)
                     {
@@ -267,8 +271,9 @@ No password provided, unable to connect to server, exiting");
                                         }
 
                                         tk.ShowUrlInWindow(t.Result);
-                                        Server.Program.IsFirstRun = false;
-                                        Server.Program.ServerPortChanged = false;
+                                        var connection = Server.Program.DuplicatiWebserver.Provider.GetRequiredService<Connection>();
+                                        connection.ApplicationSettings.IsFirstRun = false;
+                                        connection.ApplicationSettings.ServerPortChanged = false;
 
                                     });
                                 }

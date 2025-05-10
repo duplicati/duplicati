@@ -19,7 +19,6 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 using Duplicati.Library.Crashlog;
-using Duplicati.Library.RestAPI;
 using Duplicati.Server.Database;
 using Duplicati.WebserverCore.Abstractions;
 using Duplicati.WebserverCore.Dto;
@@ -31,8 +30,8 @@ public class LogData : IEndpointV1
 {
     public static void Map(RouteGroupBuilder group)
     {
-        group.MapGet("/logdata/poll", ([FromServices] Connection connection, [FromQuery] Library.Logging.LogMessageType level, [FromQuery] long id, [FromQuery] long? offset, [FromQuery] int? pagesize)
-            => ExecuteLogPoll(level, id, offset ?? 0, pagesize ?? 100))
+        group.MapGet("/logdata/poll", ([FromServices] ILogWriteHandler logWriteHandler, [FromQuery] Library.Logging.LogMessageType level, [FromQuery] long id, [FromQuery] int? pagesize)
+            => ExecuteLogPoll(logWriteHandler, level, id, pagesize ?? 100))
             .RequireAuthorization();
 
         group.MapGet("/logdata/log", ([FromServices] Connection connection, [FromQuery] long? offset, [FromQuery] int? pagesize)
@@ -44,10 +43,10 @@ public class LogData : IEndpointV1
             .RequireAuthorization();
     }
 
-    private static LogEntry[] ExecuteLogPoll(Library.Logging.LogMessageType level, long id, long offset, int pagesize)
+    private static LogEntry[] ExecuteLogPoll(ILogWriteHandler logWriteHandler, Library.Logging.LogMessageType level, long id, int pagesize)
     {
         pagesize = Math.Max(1, Math.Min(500, pagesize));
-        return FIXMEGlobal.LogHandler.AfterID(id, level, pagesize).Select(x => Dto.LogEntry.FromInternalEntry(x)).ToArray();
+        return logWriteHandler.AfterID(id, level, pagesize).Select(x => Dto.LogEntry.FromInternalEntry(x)).ToArray();
     }
 
     private static List<Dictionary<string, object>>? ExecuteGetLog(Connection connection, long? offset, long pagesize)

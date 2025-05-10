@@ -41,6 +41,7 @@ namespace Duplicati.Library.Backend
         private const string SSL_OPTION = "use-ssl";
         private const string S3_CLIENT_OPTION = "s3-client";
         private const string S3_DISABLE_CHUNK_ENCODING_OPTION = "s3-disable-chunk-encoding";
+        private const string S3_DISABLE_PAYLOAD_SIGNING_OPTION = "s3-disable-payload-signing";
         private const string S3_LIST_API_VERSION_OPTION = "s3-list-api-version";
         private const string S3_RECURSIVE_LIST = "s3-recursive-list";
 
@@ -242,14 +243,15 @@ namespace Duplicati.Library.Backend
             if (!options.ContainsKey("s3-ext-forcepathstyle") && !hostname.EndsWith(".amazonaws.com", StringComparison.OrdinalIgnoreCase))
                 options["s3-ext-forcepathstyle"] = "true";
 
-            var disableChunkEncoding = Utility.Utility.ParseBoolOption(options, S3_DISABLE_CHUNK_ENCODING_OPTION);
 
             var s3ClientOptionValue = options.GetValueOrDefault(S3_CLIENT_OPTION);
 
             (var awsID, var awsKey) = auth.GetCredentials();
             if (string.IsNullOrWhiteSpace(s3ClientOptionValue) || string.Equals(s3ClientOptionValue, "aws", StringComparison.OrdinalIgnoreCase))
             {
-                m_s3Client = new S3AwsClient(awsID, awsKey, locationConstraint, hostname, storageClass, useSSL, disableChunkEncoding, timeout, options);
+                var disableChunkEncoding = Utility.Utility.ParseBoolOption(options, S3_DISABLE_CHUNK_ENCODING_OPTION);
+                var disablePayloadSigning = Utility.Utility.ParseBoolOption(options, S3_DISABLE_PAYLOAD_SIGNING_OPTION);
+                m_s3Client = new S3AwsClient(awsID, awsKey, locationConstraint, hostname, storageClass, useSSL, disableChunkEncoding, disablePayloadSigning, timeout, options);
             }
             else if (string.Equals(s3ClientOptionValue, "minio", StringComparison.OrdinalIgnoreCase))
             {
@@ -328,14 +330,15 @@ namespace Duplicati.Library.Backend
                 var exts = S3AwsClient.GetAwsExtendedOptions();
 
                 return [
-                    new CommandLineArgument("aws-access-key-id", CommandLineArgument.ArgumentType.String, Strings.S3Backend.AMZUserIDDescriptionShort, Strings.S3Backend.AMZUserIDDescriptionLong, null, [AuthOptionsHelper.AuthUsernameOption], null),
-                    new CommandLineArgument("aws-secret-access-key", CommandLineArgument.ArgumentType.Password, Strings.S3Backend.AMZKeyDescriptionShort, Strings.S3Backend.AMZKeyDescriptionLong,null, [AuthOptionsHelper.AuthPasswordOption], null ),
+                    new CommandLineArgument(AUTH_USERNAME_OPTION, CommandLineArgument.ArgumentType.String, Strings.S3Backend.AMZUserIDDescriptionShort, Strings.S3Backend.AMZUserIDDescriptionLong, null, [AuthOptionsHelper.AuthUsernameOption], null),
+                    new CommandLineArgument(AUTH_PASSWORD_OPTION, CommandLineArgument.ArgumentType.Password, Strings.S3Backend.AMZKeyDescriptionShort, Strings.S3Backend.AMZKeyDescriptionLong,null, [AuthOptionsHelper.AuthPasswordOption], null ),
                     new CommandLineArgument(STORAGECLASS_OPTION, CommandLineArgument.ArgumentType.String, Strings.S3Backend.S3StorageclassDescriptionShort, Strings.S3Backend.S3StorageclassDescriptionLong, "", null, KNOWN_S3_STORAGE_CLASSES.Select(x => x.Value).WhereNotNullOrWhiteSpace().ToArray()),
                     new CommandLineArgument(SERVER_NAME, CommandLineArgument.ArgumentType.String, Strings.S3Backend.S3ServerNameDescriptionShort, Strings.S3Backend.S3ServerNameDescriptionLong(hostnames.ToString()), DEFAULT_S3_HOST),
                     new CommandLineArgument(LOCATION_OPTION, CommandLineArgument.ArgumentType.String, Strings.S3Backend.S3LocationDescriptionShort, Strings.S3Backend.S3LocationDescriptionLong(locations.ToString())),
                     new CommandLineArgument(SSL_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.S3Backend.DescriptionUseSSLShort, Strings.S3Backend.DescriptionUseSSLLong),
                     new CommandLineArgument(S3_CLIENT_OPTION, CommandLineArgument.ArgumentType.Enumeration, Strings.S3Backend.S3ClientDescriptionShort, Strings.S3Backend.S3ClientDescriptionLong, "aws", null, new string[] { "aws", "minio" }),
                     new CommandLineArgument(S3_DISABLE_CHUNK_ENCODING_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.S3Backend.DescriptionDisableChunkEncodingShort, Strings.S3Backend.DescriptionDisableChunkEncodingLong, "false"),
+                    new CommandLineArgument(S3_DISABLE_PAYLOAD_SIGNING_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.S3Backend.DescriptionDisablePayloadSigningShort, Strings.S3Backend.DescriptionDisablePayloadSigningLong, "false"),
                     new CommandLineArgument(S3AwsClient.S3_ARCHIVE_CLASSES_OPTION, CommandLineArgument.ArgumentType.Flags, Strings.S3Backend.S3ArchiveClassesDescriptionShort, Strings.S3Backend.S3ArchiveClassesDescriptionLong, string.Join(",", S3AwsClient.DEFAULT_ARCHIVE_CLASSES.Select(x => x.Value)), null, KNOWN_S3_STORAGE_CLASSES.Select(x => x.Value).WhereNotNullOrWhiteSpace().ToArray()),
                     new CommandLineArgument(S3_LIST_API_VERSION_OPTION, CommandLineArgument.ArgumentType.Enumeration, Strings.S3Backend.DescriptionListApiVersionShort, Strings.S3Backend.DescriptionListApiVersionLong, "v1", null, ["v1", "v2"]),
                     new CommandLineArgument(S3_RECURSIVE_LIST, CommandLineArgument.ArgumentType.Boolean, Strings.S3Backend.DescriptionRecursiveListShort, Strings.S3Backend.DescriptionRecursiveListLong, "false"),

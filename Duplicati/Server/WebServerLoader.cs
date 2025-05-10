@@ -158,7 +158,6 @@ public static class WebServerLoader
     /// <param name="Port">The listining port</param>
     /// <param name="Interface">The listening interface</param>
     /// <param name="Certificate">SSL certificate, if any</param>
-    /// <param name="Servername">The servername to report</param>
     /// <param name="AllowedHostnames">The allowed hostnames</param>
     /// <param name="DisableStaticFiles">If static files should be disabled</param>
     /// <param name="SPAPaths">The paths to serve as SPAs</param>
@@ -168,7 +167,6 @@ public static class WebServerLoader
         int Port,
         System.Net.IPAddress Interface,
         X509Certificate2Collection? Certificate,
-        string Servername,
         IEnumerable<string> AllowedHostnames,
         bool DisableStaticFiles,
         IEnumerable<string> SPAPaths,
@@ -264,7 +262,6 @@ public static class WebServerLoader
             -1,
             listenInterface,
             connection.ApplicationSettings.UseHTTPS ? connection.ApplicationSettings.ServerSSLCertificate : null,
-            string.Format("{0} v{1}", Library.AutoUpdater.AutoUpdateSettings.AppName, Library.AutoUpdater.UpdaterManager.SelfVersion.Version),
             (connection.ApplicationSettings.AllowedHostnames ?? string.Empty).Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries),
             Utility.ParseBoolOption(options, OPTION_WEBSERVICE_API_ONLY),
             spaPathsString.Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries),

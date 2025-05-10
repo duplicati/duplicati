@@ -8,7 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Duplicati.StreamUtil" Version="1.0.3" />
+    <PackageReference Include="Duplicati.StreamUtil" Version="1.0.5" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.0" />
     <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
     <PackageReference Include="System.Management" Version="8.0.0" />

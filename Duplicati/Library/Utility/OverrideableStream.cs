@@ -38,6 +38,11 @@ namespace Duplicati.Library.Utility
         protected Stream m_basestream;
 
         /// <summary>
+        /// The base stream that is wrapped
+        /// </summary>
+        public Stream BaseStream => m_basestream;
+
+        /// <summary>
         /// Creates a new <see cref="OverrideableStream"/> instance
         /// </summary>
         /// <param name="basestream">The stream to wrap</param>

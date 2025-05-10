@@ -19,14 +19,69 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
-namespace Duplicati.Server.Serialization.Interface
+#nullable enable
+
+using System;
+using System.Threading.Tasks;
+
+namespace Duplicati.Server.Serialization.Interface;
+
+/// <summary>
+/// Represents a queued task.
+/// </summary>
+public interface IQueuedTask
 {
-    public interface IQueuedTask
-    {
-        long TaskID { get; }
-        string BackupID { get; }
-        Duplicati.Server.Serialization.DuplicatiOperation Operation { get; }
+    /// <summary>
+    /// The task ID.
+    /// </summary>
+    long TaskID { get; }
+    /// <summary>
+    /// The backup ID, if applicable.
+    /// </summary>
+    string? BackupID { get; }
+    /// <summary>
+    /// The operation type of the task.
+    /// </summary>
+    DuplicatiOperation Operation { get; }
+    /// <summary>
+    /// Callback to be executed when the task is starting.
+    /// </summary>
+    Func<Task>? OnStarting { get; set; }
+    /// <summary>
+    /// Callback to be executed when the task is finished.
+    /// If the task completes successfully, the exception parameter will be null.
+    /// </summary>
+    Func<Exception?, Task>? OnFinished { get; set; }
 
-    }
+    /// <summary>
+    /// Updates the throttle speeds for the task.
+    /// </summary>
+    /// <param name="uploadSpeed">The upload speed to set.</param>
+    /// <param name="downloadSpeed">The download speed to set.</param>
+    void UpdateThrottleSpeeds(string? uploadSpeed, string? downloadSpeed);
+    /// <summary>
+    /// The time when the task was starting to execute.
+    /// </summary>
+    DateTime? TaskStarted { get; set; }
+    /// <summary>
+    /// The time when the task was finished executing.
+    /// </summary>
+    DateTime? TaskFinished { get; set; }
+    /// <summary>
+    /// Stops the task.
+    /// </summary>
+    void Stop();
+    /// <summary>
+    /// Aborts the task.
+    /// </summary>
+    void Abort();
+    /// <summary>
+    /// Pauses the task.
+    /// </summary>
+    /// <param name="alsoTransfers">If true, also pauses transfers.</param>
+    void Pause(bool alsoTransfers);
+    /// <summary>
+    /// Resumes the task.
+    /// </summary>
+    void Resume();
 }
-

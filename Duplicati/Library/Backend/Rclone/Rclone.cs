@@ -158,9 +158,9 @@ namespace Duplicati.Library.Backend
             process.BeginOutputReadLine();
             process.BeginErrorReadLine();
 
-            using var timer = timeout == Timeout.InfiniteTimeSpan
+            var timer = timeout == Timeout.InfiniteTimeSpan
                 ? new TaskCompletionSource<bool>().Task
-                : Task.Delay(timeout);
+                : Task.Delay(timeout, cancelToken);
 
             var killed = false;
             while (!process.HasExited)
