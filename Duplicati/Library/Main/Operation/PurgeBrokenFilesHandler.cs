@@ -97,11 +97,15 @@ namespace Duplicati.Library.Main.Operation
                             throw new UserInformationException($"Failed to locate an empty metadata blockset to replace missing metadata. Set the option --disable-replace-missing-metadata=true to ignore this and drop files with missing metadata.", "FailedToLocateEmptyMetadataBlockset");
                     }
 
+                    var fully_emptied = compare_list.Where(x => x.RemoveCount == x.SetCount).ToArray();
+                    var to_purge = compare_list.Where(x => x.RemoveCount != x.SetCount).ToArray();
+
+                    if (fully_emptied.Length == db.FilesetTimes.Count())
+                        throw new UserInformationException("All filesets are fully broken and needs to be removed. To avoid unexpected deletions, you must manually remove the remote files and delete the database.", "AllFilesetsBroken");
+
                     if (!m_options.Dryrun)
                         tr.Commit();
 
-                    var fully_emptied = compare_list.Where(x => x.RemoveCount == x.SetCount).ToArray();
-                    var to_purge = compare_list.Where(x => x.RemoveCount != x.SetCount).ToArray();
 
                     if (fully_emptied.Length != 0)
                     {
