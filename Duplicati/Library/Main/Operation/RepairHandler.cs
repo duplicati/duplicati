@@ -544,16 +544,14 @@ namespace Duplicati.Library.Main.Operation
             volumeWriter.Close();
 
             db.UpdateRemoteVolume(volumeWriter.RemoteFilename, RemoteVolumeState.Uploading, -1, null, rtr.Transaction);
-            db.UpdateRemoteVolume(originalVolume.Name, RemoteVolumeState.Deleting, originalVolume.Size, originalVolume.Hash, false, TimeSpan.FromHours(2), null, rtr.Transaction);
-            db.DeleteFileset(prevFilesetId, rtr.Transaction);
+            db.UpdateRemoteVolume(originalVolume.Name, RemoteVolumeState.Deleted, originalVolume.Size, originalVolume.Hash, false, TimeSpan.FromHours(2), null, rtr.Transaction);
             await backendManager.FlushPendingMessagesAsync(db, rtr.Transaction, cancellationToken).ConfigureAwait(false);
 
             if (m_options.Dryrun)
                 Logging.Log.WriteDryrunMessage(LOGTAG, "WouldReUploadFileset", "would upload fileset {0}, with size {1}, previous size {2}", originalVolume.Name, Library.Utility.Utility.FormatSizeString(new System.IO.FileInfo(volumeWriter.LocalFilename).Length), Library.Utility.Utility.FormatSizeString(originalVolume.Size));
             else
             {
-                if (!m_options.Dryrun)
-                    rtr.Commit("CommitPriorToFilesetUpload");
+                rtr.Commit("CommitPriorToFilesetUpload");
                 await backendManager.PutAsync(volumeWriter, null, null, false, null, cancellationToken).ConfigureAwait(false);
             }
 
@@ -611,7 +609,7 @@ namespace Duplicati.Library.Main.Operation
                 Logging.Log.WriteDryrunMessage(LOGTAG, "WouldReUploadIndexFile", "would re-upload index file {0}, with size {1}, previous size {2}", originalVolume.Name, Library.Utility.Utility.FormatSizeString(new System.IO.FileInfo(indexWriter.LocalFilename).Length), Library.Utility.Utility.FormatSizeString(originalVolume.Size));
             else
             {
-                db.UpdateRemoteVolume(originalVolume.Name, RemoteVolumeState.Deleting, originalVolume.Size, originalVolume.Hash, false, TimeSpan.FromHours(2), null, rtr.Transaction);
+                db.UpdateRemoteVolume(originalVolume.Name, RemoteVolumeState.Deleted, originalVolume.Size, originalVolume.Hash, false, TimeSpan.FromHours(2), null, rtr.Transaction);
                 await backendManager.FlushPendingMessagesAsync(db, rtr.Transaction, cancellationToken).ConfigureAwait(false);
                 await backendManager.PutAsync(indexWriter, null, null, false, null, cancellationToken).ConfigureAwait(false);
             }
