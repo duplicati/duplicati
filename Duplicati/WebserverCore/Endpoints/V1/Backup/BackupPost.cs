@@ -72,12 +72,12 @@ public class BackupPost : IEndpointV1
             => ExecuteCompact(GetBackup(connection, id), queueRunnerService))
             .RequireAuthorization();
 
-        group.MapPost("/backup/{id}/start", ([FromServices] Connection connection, [FromServices] IQueueRunnerService queueRunnerService, [FromRoute] string id, [FromQuery] bool skipQueue)
-            => ExecuteRunBackup(GetBackup(connection, id), skipQueue, queueRunnerService))
+        group.MapPost("/backup/{id}/start", ([FromServices] Connection connection, [FromServices] IQueueRunnerService queueRunnerService, [FromRoute] string id, [FromQuery] bool? skipQueue)
+            => ExecuteRunBackup(GetBackup(connection, id), skipQueue ?? false, queueRunnerService))
             .RequireAuthorization();
 
-        group.MapPost("/backup/{id}/run", ([FromServices] Connection connection, [FromServices] IQueueRunnerService queueRunnerService, [FromRoute] string id, [FromQuery] bool skipQueue)
-            => ExecuteRunBackup(GetBackup(connection, id), skipQueue, queueRunnerService))
+        group.MapPost("/backup/{id}/run", ([FromServices] Connection connection, [FromServices] IQueueRunnerService queueRunnerService, [FromRoute] string id, [FromQuery] bool? skipQueue)
+            => ExecuteRunBackup(GetBackup(connection, id), skipQueue ?? false, queueRunnerService))
             .RequireAuthorization();
 
         group.MapPost("/backup/{id}/report-remote-size", ([FromServices] Connection connection, [FromServices] IQueueRunnerService queueRunnerService, [FromRoute] string id)
