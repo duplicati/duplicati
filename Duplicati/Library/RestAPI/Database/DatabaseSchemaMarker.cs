@@ -28,3 +28,13 @@ namespace Duplicati.Library.RestAPI.Database
     {
     }
 }
+
+namespace Duplicati.Library.RestAPI
+{
+    /// <summary>
+    /// This is a marker class for locating the assembly with the backup defaults.
+    /// </summary>
+    public static class BackupDefaultsResourceMarker
+    {
+    }
+}
