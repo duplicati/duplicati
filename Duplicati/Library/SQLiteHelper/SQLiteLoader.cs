@@ -114,6 +114,7 @@ namespace Duplicati.Library.SQLiteHelper
         /// <returns>The connection with the pragmas applied.</returns>
         public static async Task<Microsoft.Data.Sqlite.SqliteConnection> ApplyCustomPragmas(Microsoft.Data.Sqlite.SqliteConnection con, long pagecachesize)
         {
+            // TODO more default custom options
             var opts = Environment.GetEnvironmentVariable("CUSTOMSQLITEOPTIONS_DUPLICATI") ?? "";
             if (pagecachesize > MINIMUM_SQLITE_PAGE_CACHE_SIZE)
                 opts = string.Format(CultureInfo.InvariantCulture, "cache_size=-{0};{1}", pagecachesize / 1024L, opts);
@@ -237,6 +238,13 @@ namespace Duplicati.Library.SQLiteHelper
         {
             con.ConnectionString = "Data Source=" + path;
             await con.OpenAsync();
+            // TODO legacy configuration?
+            //if (con is Microsoft.Data.Sqlite.SqliteConnection sqlitecon && !OperatingSystem.IsMacOS())
+            //{
+            //    // These configuration options crash on MacOS (arm64), but the other platforms should be enough to detect incorrect SQL
+            //    sqlitecon.SetConfigurationOption(System.Data.SQLite.SQLiteConfigDbOpsEnum.SQLITE_DBCONFIG_DQS_DDL, false);
+            //    sqlitecon.SetConfigurationOption(System.Data.SQLite.SQLiteConfigDbOpsEnum.SQLITE_DBCONFIG_DQS_DML, false);
+            //}
 
             // Make the file only accessible by the current user, unless opting out
             if (!SystemIO.IO_OS.FileExists(SystemIO.IO_OS.PathCombine(SystemIO.IO_OS.PathGetDirectoryName(path), Util.InsecurePermissionsMarkerFile)))
