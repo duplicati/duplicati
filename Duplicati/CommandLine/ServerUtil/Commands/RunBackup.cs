@@ -57,14 +57,15 @@ public static class RunBackup
 
             if (!quiet)
                 output.AppendConsoleMessage($"Running backup {matchingBackup.Name} (ID: {matchingBackup.ID})");
-            
+
             await connection.RunBackup(matchingBackup.ID);
 
             if (wait)
             {
                 if (!quiet)
                     output.AppendConsoleMessage("Waiting for backup to finish...");
-                await connection.WaitForBackup(matchingBackup.ID, TimeSpan.FromSeconds(pollinterval), msg =>
+
+                await WaitForBackupWithRetries(connection, settings, matchingBackup.ID, pollinterval, output, msg =>
                 {
                     if (!quiet)
                         output.AppendConsoleMessage($"[{DateTime.Now}]: {msg}");
@@ -75,4 +76,47 @@ public static class RunBackup
             }
             output.SetResult(true);
         }));
+
+    /// <summary>
+    /// Waits for a backup to finish with retries
+    /// </summary>
+    /// <param name="connection">The connection to use</param>
+    /// <param name="settings">The settings to use</param>
+    /// <param name="backupId">The ID of the backup to wait for</param>
+    /// <param name="pollInterval">The interval in seconds to poll for backup status</param>
+    /// <param name="output">The output interceptor to use</param>
+    /// <param name="onPoll">The action to perform on each poll</param>
+    /// <returns>A task that represents the asynchronous operation</returns>
+    private static async Task WaitForBackupWithRetries(Connection connection, Settings settings, string backupId, int pollInterval, OutputInterceptor output, Action<string> onPoll)
+    {
+        var retry = true;
+
+        while (retry)
+        {
+            try
+            {
+                await connection.WaitForBackup(backupId, TimeSpan.FromSeconds(pollInterval), onPoll);
+                return;
+            }
+            catch (Exception)
+            {
+                retry = false;
+                try
+                {
+                    // See if we can get a new connection (re-connect)
+                    onPoll("Re-authenticating...");
+                    connection = await settings.GetConnection(output);
+                    retry = true;
+                }
+                catch (Exception)
+                {
+                }
+
+                // Throw original exception if we can't re-connect
+                if (!retry)
+                    throw;
+            }
+
+        } while (retry) ;
+    }
 }
