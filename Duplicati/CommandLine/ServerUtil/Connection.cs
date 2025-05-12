@@ -386,10 +386,11 @@ public class Connection
     /// Runs a backup
     /// </summary>
     /// <param name="backupId">The ID of the backup</param>
+    /// <param name="skipQueue">Whether to skip the queue</param>
     /// <returns>The task</returns>
-    public async Task RunBackup(string backupId)
+    public async Task RunBackup(string backupId, bool skipQueue)
     {
-        var response = await client.PostAsync($"backup/{Uri.EscapeDataString(backupId)}/run", null);
+        var response = await client.PostAsync($"backup/{Uri.EscapeDataString(backupId)}/run?skipqueue={skipQueue}", null);
         await EnsureSuccessStatusCodeWithParsing(response);
     }
 
