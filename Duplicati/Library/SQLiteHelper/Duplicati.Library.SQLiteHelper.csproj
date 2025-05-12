@@ -22,21 +22,15 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
 
-    <!-- 
-      MS Data.Sqlite seems much more portable, but does not support unnamed parameters,
-      which are used extensively in Duplicati.
-      Issue tracking progress on the unnamed parameters:
-      https://github.com/dotnet/efcore/issues/24480
-      
-      <PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.3" />
-    -->
-
+    <!--
     <PackageReference Include="System.Data.SQLite.Core" Version="1.0.115.0" />
     <PackageReference Include="System.Data.SQLite.Core.MSIL" Version="1.0.115.0" />
     <PackageReference Include="System.Data.SQLite.Core.Duplicati.macos.arm64" Version="1.0.116.1" />
     <PackageReference Include="System.Data.SQLite.Core.Duplicati.linux.arm64" Version="1.0.116" />
     <PackageReference Include="System.Data.SQLite.Core.Duplicati.linux.armv7" Version="1.0.116" />
     <PackageReference Include="System.Data.SQLite.Core.Duplicati.windows.arm64" Version="1.0.116.1" />
+    -->
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="9.0.4" />
   </ItemGroup>
 
 </Project>

@@ -46,7 +46,7 @@ namespace Duplicati.Library.SQLiteHelper
         /// <param name="con">The SQLite connection object</param>
         /// <param name="databasePath">The location of Duplicati's database.</param>
         /// <param name="decryptionPassword">The password to use for decryption.</param>
-        public static void OpenDatabase(System.Data.IDbConnection con, string databasePath, string? decryptionPassword)
+        public static async Task OpenDatabase(Microsoft.Data.Sqlite.SqliteConnection con, string databasePath, string? decryptionPassword)
         {
             if (!string.IsNullOrWhiteSpace(decryptionPassword) && SQLiteRC4Decrypter.IsDatabaseEncrypted(databasePath))
             {
@@ -85,14 +85,14 @@ namespace Duplicati.Library.SQLiteHelper
         /// Loads an SQLite connection instance and opening the database
         /// </summary>
         /// <returns>The SQLite connection instance.</returns>
-        public static System.Data.IDbConnection LoadConnection()
+        public static async Task<Microsoft.Data.Sqlite.SqliteConnection> LoadConnection()
         {
-            System.Data.IDbConnection? con = null;
+            Microsoft.Data.Sqlite.SqliteConnection? con = null;
             SetEnvironmentVariablesForSQLiteTempDir();
 
             try
             {
-                con = (System.Data.IDbConnection?)Activator.CreateInstance(Duplicati.Library.SQLiteHelper.SQLiteLoader.SQLiteConnectionType);
+                con = new Microsoft.Data.Sqlite.SqliteConnection();
             }
             catch (Exception ex)
             {
@@ -111,7 +111,7 @@ namespace Duplicati.Library.SQLiteHelper
         /// <param name="con">The connection to apply the pragmas to.</param>
         /// <param name="pagecachesize"> The page cache size to set.</param>
         /// <returns>The connection with the pragmas applied.</returns>
-        public static System.Data.IDbConnection ApplyCustomPragmas(System.Data.IDbConnection con, long pagecachesize)
+        public static async Task<Microsoft.Data.Sqlite.SqliteConnection> ApplyCustomPragmas(Microsoft.Data.Sqlite.SqliteConnection con, long pagecachesize)
         {
             var opts = Environment.GetEnvironmentVariable("CUSTOMSQLITEOPTIONS_DUPLICATI") ?? "";
             if (pagecachesize > MINIMUM_SQLITE_PAGE_CACHE_SIZE)
@@ -121,7 +121,9 @@ namespace Duplicati.Library.SQLiteHelper
                 return con;
 
             using (var cmd = con.CreateCommand())
-                foreach (var opt in opts.Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries))
+            using (var transaction = con.BeginTransaction())
+            {
+                cmd.Transaction = transaction;
                 {
                     Logging.Log.WriteVerboseMessage(LOGTAG, "CustomSQLiteOption", @"Setting custom SQLite option '{0}'.", opt);
                     try
@@ -143,7 +145,7 @@ namespace Duplicati.Library.SQLiteHelper
         /// <returns>The SQLite connection instance.</returns>
         /// <param name="targetpath">The optional path to the database.</param>
         /// <param name="pagecachesize"> The page cache size to set.</param>
-        public static System.Data.IDbConnection LoadConnection(string targetpath, long pagecachesize)
+        public static async Task<Microsoft.Data.Sqlite.SqliteConnection> LoadConnection(string targetpath, long pagecachesize)
         {
             if (string.IsNullOrWhiteSpace(targetpath))
                 throw new ArgumentNullException(nameof(targetpath));
@@ -173,7 +175,7 @@ namespace Duplicati.Library.SQLiteHelper
         {
             get
             {
-                return typeof(System.Data.SQLite.SQLiteConnection);
+                return typeof(Microsoft.Data.Sqlite.SqliteConnection);
             }
         }
 
@@ -215,7 +217,7 @@ namespace Duplicati.Library.SQLiteHelper
         /// Wrapper to dispose the SQLite connection
         /// </summary>
         /// <param name="con">The connection to close.</param>
-        private static void DisposeConnection(System.Data.IDbConnection? con)
+        private static async Task DisposeConnection(Microsoft.Data.Sqlite.SqliteConnection? con)
         {
             if (con != null)
                 try { con.Dispose(); }
@@ -227,7 +229,7 @@ namespace Duplicati.Library.SQLiteHelper
         /// </summary>
         /// <param name="con">The connection to use.</param>
         /// <param name="path">Path to the file to open, which may not exist.</param>
-        private static void OpenSQLiteFile(System.Data.IDbConnection con, string path)
+        private static async Task OpenSQLiteFile(Microsoft.Data.Sqlite.SqliteConnection con, string path)
         {
             con.ConnectionString = "Data Source=" + path;
             con.Open();
@@ -248,7 +250,7 @@ namespace Duplicati.Library.SQLiteHelper
         /// Tests the SQLite connection, throwing an exception if the connection does not work
         /// </summary>
         /// <param name="con">The connection to test.</param>
-        private static void TestSQLiteFile(System.Data.IDbConnection con)
+        private static async Task TestSQLiteFile(Microsoft.Data.Sqlite.SqliteConnection con)
         {
             // Do a dummy query to make sure we have a working db
             using (var cmd = con.CreateCommand())
