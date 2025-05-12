@@ -164,7 +164,7 @@ namespace Duplicati.UnitTest
                 Assert.AreEqual(0, backupResults.Warnings.Count());
             }
 
-            var dindexFiles = Directory.EnumerateFiles(this.TARGETFOLDER, "*dindex*").ToArray();
+            var dindexFiles = Directory.EnumerateFiles(this.TARGETFOLDER, "*.dindex.*").ToArray();
             Assert.Greater(dindexFiles.Length, 0);
             foreach (var f in dindexFiles)
             {
@@ -178,10 +178,8 @@ namespace Duplicati.UnitTest
                 Assert.AreEqual(0, repairResults.Warnings.Count());
             }
 
-            foreach (var file in dindexFiles)
-            {
-                Assert.IsTrue(File.Exists(Path.Combine(this.TARGETFOLDER, file)));
-            }
+            var recreatedIndexFiles = Directory.EnumerateFiles(this.TARGETFOLDER, "*dindex*").ToArray();
+            Assert.AreEqual(dindexFiles.Length, recreatedIndexFiles.Length);
         }
 
         [Test]
@@ -216,7 +214,7 @@ namespace Duplicati.UnitTest
                 Assert.AreEqual(0, backupResults.Warnings.Count());
             }
 
-            var dindexFiles = Directory.EnumerateFiles(this.TARGETFOLDER, "*dindex*").ToArray();
+            var dindexFiles = Directory.EnumerateFiles(this.TARGETFOLDER, "*.dindex.*").ToArray();
             Assert.Greater(dindexFiles.Length, 0);
             foreach (var f in dindexFiles)
             {
@@ -230,10 +228,8 @@ namespace Duplicati.UnitTest
                 Assert.AreEqual(0, repairResults.Warnings.Count());
             }
 
-            foreach (var file in dindexFiles)
-            {
-                Assert.IsTrue(File.Exists(Path.Combine(this.TARGETFOLDER, file)));
-            }
+            var recreatedIndexFiles = Directory.EnumerateFiles(this.TARGETFOLDER, "*dindex*").ToArray();
+            Assert.AreEqual(dindexFiles.Length, recreatedIndexFiles.Length);
         }
 
         [Test]

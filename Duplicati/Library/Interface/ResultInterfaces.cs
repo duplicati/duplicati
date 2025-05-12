@@ -494,6 +494,7 @@ namespace Duplicati.Library.Interface
     {
         long RemovedFileCount { get; }
         long RemovedFileSize { get; }
+        long UpdatedFileCount { get; }
         long RewrittenFileLists { get; }
         ICompactResults CompactResults { get; }
     }
