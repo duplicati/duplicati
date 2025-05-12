@@ -18,18 +18,28 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
-using Duplicati.Library.Localization.Short;
-namespace Duplicati.Library.Backend.Strings
+
+namespace Duplicati.Backend.Tests.iDrivee2;
+
+/// <summary>
+/// OneDrive Tests
+/// </summary>
+[TestClass]
+public sealed class iDrivee2Tests : BaseTest
 {
-    internal static class Idrivee2Backend
+    [TestMethod]
+    public Task TestiDrivee2()
     {
-        public static string Description => LC.L(@"This backend can read and write data to IDrive e2. Allowed format is ""e2://bucket/folder"".");
-        public static string DisplayName => LC.L(@"IDrive e2");
-        public static string KeySecretDescriptionLong => LC.L(@"Access Key Secret can be obtained after logging into your IDrive e2 account. This can also be supplied through the option --{0}.", "auth-password");
-        public static string KeySecretDescriptionShort => LC.L(@"Access Key Secret");
-        public static string KeyIDDescriptionLong => LC.L(@"Access Key ID can be obtained after logging into your IDrive e2 account. This can also be supplied through the option --{0}.", "auth-username");
-        public static string KeyIDDescriptionShort => LC.L(@"Access Key ID");
-        public static string NoKeySecretError => LC.L(@"No Access Key Secret given");
-        public static string NoKeyIdError => LC.L(@"No Access Key ID given");
+        CheckRequiredEnvironment(["TESTCREDENTIAL_IDRIVEE2_BUCKET", "TESTCREDENTIAL_IDRIVEE2_ACCESS_KEY", "TESTCREDENTIAL_IDRIVEE2_SECRET_KEY", "TESTCREDENTIAL_IDRIVEE2_FOLDER"]);
+
+        var exitCode = CommandLine.BackendTester.Program.Main(
+            new[]
+            {
+                $"e2://{Environment.GetEnvironmentVariable("TESTCREDENTIAL_IDRIVEE2_BUCKET")}/{Environment.GetEnvironmentVariable("TESTCREDENTIAL_IDRIVEE2_FOLDER")}?access_key_id={Uri.EscapeDataString(Environment.GetEnvironmentVariable("TESTCREDENTIAL_IDRIVEE2_ACCESS_KEY")!)}&access_key_secret={Uri.EscapeDataString(Environment.GetEnvironmentVariable("TESTCREDENTIAL_IDRIVEE2_SECRET_KEY")!)}",
+            }.Concat(Parameters.GlobalTestParameters).ToArray());
+
+        if (exitCode != 0) Assert.Fail("BackendTester is returning non-zero exit code, check logs for details");
+
+        return Task.CompletedTask;
     }
 }

@@ -19,287 +19,260 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
+using System.Net;
+using System.Reflection;
+using System.Runtime.CompilerServices;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
 using Duplicati.Library.Utility.Options;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using System.Net;
-using System.Runtime.CompilerServices;
+using Uri = Duplicati.Library.Utility.Uri;
 
-namespace Duplicati.Library.Backend
+namespace Duplicati.Library.Backend;
+
+public class TahoeBackend : IStreamingBackend
 {
-    public class TahoeBackend : IBackend, IStreamingBackend
+    /// <summary>
+    /// Base URL for the Tahoe-LAFS backend
+    /// </summary>
+    private readonly string _url;
+
+    /// <summary>
+    /// The timeout options for API requests.
+    /// </summary>
+    private readonly TimeoutOptionsHelper.Timeouts _timeouts;
+
+    /// <summary>
+    /// The options for the SSL certificate validation
+    /// </summary>
+    private readonly SslOptionsHelper.SslCertificateOptions _certificateOptions;
+
+    /// <summary>
+    /// Cached instance of HttpClient to be used
+    /// </summary>
+    private HttpClient? _httpClient;
+
+    public TahoeBackend()
     {
-        private readonly string m_url;
-        private readonly bool m_useSSL = false;
-        private readonly TimeoutOptionsHelper.Timeouts m_timeouts;
+        _url = null!;
+        _timeouts = null!;
+        _certificateOptions = null!;
+    }
 
-        private class TahoeEl
-        {
-            public string? nodetype { get; set; }
-            public TahoeNode? node { get; set; }
-        }
+    public TahoeBackend(string url, Dictionary<string, string?> options)
+    {
+        //Validate URL
+        var u = new Uri(url);
+        u.RequireHost();
 
-        private class TahoeNode
-        {
-            public string? rw_uri { get; set; }
-            public string? verify_uri { get; set; }
-            public string? ro_uri { get; set; }
-            public Dictionary<string, TahoeEl>? children { get; set; }
-            public bool mutable { get; set; }
-            public long size { get; set; }
-            public TahoeMetadata? metadata { get; set; }
-        }
+        if (!u.Path.StartsWith("uri/URI:DIR2:", StringComparison.Ordinal) && !u.Path.StartsWith("uri/URI%3ADIR2%3A", StringComparison.Ordinal))
+            throw new UserInformationException(Strings.TahoeBackend.UnrecognizedUriError, "TahoeInvalidUri");
 
-        private class TahoeMetadata
-        {
-            public TahoeStamps? tahoe { get; set; }
-        }
+        _certificateOptions = SslOptionsHelper.Parse(options);
 
-        private class TahoeStamps
-        {
-            public double linkmotime { get; set; }
-            public double linkcrtime { get; set; }
-        }
+        _url = u.SetScheme(_certificateOptions.UseSSL ? "https" : "http").SetQuery(null).SetCredentials(null, null).ToString();
+        _url = Util.AppendDirSeparator(_url, "/");
+        _timeouts = TimeoutOptionsHelper.Parse(options);
+    }
 
-        private class TahoeElConverter : JsonConverter
-        {
-            public override bool CanConvert(Type objectType)
-                => objectType == typeof(TahoeEl);
+    /// <inheritdoc />
+    public Task TestAsync(CancellationToken cancelToken)
+        => this.TestListAsync(cancelToken);
 
-            public override object ReadJson(JsonReader reader, Type objectType, object? existingValue, JsonSerializer serializer)
+    /// <inheritdoc />
+    public async Task CreateFolderAsync(CancellationToken cancelToken)
+    {
+        using var resp = await Utility.Utility.WithTimeout(_timeouts.ListTimeout, cancelToken,
+            innerCancelToken =>
             {
-                var array = JArray.Load(reader);
-                string? nodetype = null;
-                TahoeNode? node = null;
-                foreach (var token in array.Children())
-                    if (token.Type == JTokenType.String)
-                        nodetype = token.ToString();
-                    else if (token.Type == JTokenType.Object)
-                        node = token.ToObject<TahoeNode>(serializer);
+                using var request = CreateRequest(string.Empty, "t=mkdir", HttpMethod.Post);
+                return GetHttpClient().SendAsync(request, HttpCompletionOption.ResponseContentRead, innerCancelToken);
+            }).ConfigureAwait(false);
 
-                return new TahoeEl() { nodetype = nodetype, node = node };
-            }
+        resp.EnsureSuccessStatusCode();
+    }
 
-            public override void WriteJson(JsonWriter writer, object? value, JsonSerializer serializer)
-                => throw new NotImplementedException();
+    /// <inheritdoc />
+    public string DisplayName => Strings.TahoeBackend.Displayname;
+
+    /// <inheritdoc />
+    public string ProtocolKey => "tahoe";
+
+    /// <inheritdoc />
+    public async IAsyncEnumerable<IFileEntry> ListAsync([EnumeratorCancellation] CancellationToken cancelToken)
+    {
+        TahoeEl? data;
+
+        try
+        {
+            using var resp = await Utility.Utility.WithTimeout(_timeouts.ListTimeout, cancelToken,
+               innerCancelToken =>
+               {
+                   using var request = CreateRequest(string.Empty, "t=json", HttpMethod.Get);
+                   return GetHttpClient().SendAsync(request, HttpCompletionOption.ResponseContentRead, innerCancelToken);
+               }).ConfigureAwait(false);
+            resp.EnsureSuccessStatusCode();
+
+            await using var rs = await resp.Content.ReadAsStreamAsync(cancelToken).ConfigureAwait(false);
+            using var sr = new StreamReader(rs);
+            await using var jr = new JsonTextReader(sr);
+            var jsr = new JsonSerializer();
+            jsr.Converters.Add(new TahoeElConverter());
+            data = jsr.Deserialize<TahoeEl>(jr)
+                   ?? throw new Exception("Invalid folder listing response");
+        }
+        catch (HttpRequestException wex)
+            when (wex.StatusCode is HttpStatusCode.NotFound or HttpStatusCode.Conflict)
+        {
+            throw new FolderMissingException(Strings.TahoeBackend.MissingFolderError(_url, wex.Message), wex);
         }
 
+        if (data is not { Node: not null } || data.Nodetype != "dirnode")
+            throw new Exception("Invalid folder listing response");
 
-        public TahoeBackend()
+        foreach (var e in data.Node.Children ?? [])
         {
-            m_url = null!;
-            m_timeouts = null!;
+            if (e.Value.Node == null)
+                continue;
+
+            var isDir = e.Value.Nodetype == "dirnode";
+            var isFile = e.Value.Nodetype == "filenode";
+
+            if (!isDir && !isFile)
+                continue;
+
+            var fe = new FileEntry(e.Key)
+            {
+                IsFolder = isDir
+            };
+
+            if (e.Value.Node.Metadata is { Tahoe: not null })
+                fe.LastModification = Utility.Utility.EPOCH + TimeSpan.FromSeconds(e.Value.Node.Metadata.Tahoe.Linkmotime);
+
+            if (isFile)
+                fe.Size = e.Value.Node.Size;
+
+            yield return fe;
         }
+    }
 
-        public TahoeBackend(string url, Dictionary<string, string?> options)
+    /// <inheritdoc />
+    public async Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
+    {
+        await using var fs = File.OpenRead(filename);
+        await PutAsync(remotename, fs, cancelToken).ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
+    public async Task GetAsync(string remotename, string filename, CancellationToken cancelToken)
+    {
+        await using var fs = File.Create(filename);
+        await GetAsync(remotename, fs, cancelToken).ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
+    public async Task DeleteAsync(string remotename, CancellationToken cancelToken)
+    {
+        try
         {
-            //Validate URL
-            var u = new Utility.Uri(url);
-            u.RequireHost();
-
-            if (!u.Path.StartsWith("uri/URI:DIR2:", StringComparison.Ordinal) && !u.Path.StartsWith("uri/URI%3ADIR2%3A", StringComparison.Ordinal))
-                throw new UserInformationException(Strings.TahoeBackend.UnrecognizedUriError, "TahoeInvalidUri");
-
-            // TODO: When upgrading to HttpClient, also support the certificate options
-            var certOptions = SslOptionsHelper.Parse(options);
-            m_useSSL = certOptions.UseSSL;
-
-            m_url = u.SetScheme(m_useSSL ? "https" : "http").SetQuery(null).SetCredentials(null, null).ToString();
-            m_url = Util.AppendDirSeparator(m_url, "/");
-            m_timeouts = TimeoutOptionsHelper.Parse(options);
-        }
-
-        private HttpWebRequest CreateRequest(string remotename, string queryparams)
-        {
-            var req = (HttpWebRequest)HttpWebRequest.Create($"{m_url}{Utility.Uri.UrlEncode(remotename).Replace("+", "%20")}{(string.IsNullOrEmpty(queryparams) || queryparams.Trim().Length == 0 ? "" : "?" + queryparams)}");
-
-            req.KeepAlive = false;
-            req.UserAgent = "Duplicati Tahoe-LAFS Client v" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
-
-            return req;
-        }
-
-        #region IBackend Members
-
-        public Task TestAsync(CancellationToken cancelToken)
-            => this.TestListAsync(cancelToken);
-
-        public async Task CreateFolderAsync(CancellationToken cancelToken)
-        {
-            var req = CreateRequest("", "t=mkdir");
-            req.Method = WebRequestMethods.Http.Post;
-            var areq = new AsyncHttpRequest(req);
-            using (await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, _ => areq.GetResponse()).ConfigureAwait(false))
+            using (await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancelToken,
+                       innerCancelToken =>
+                       {
+                           using var request = CreateRequest(remotename, string.Empty, HttpMethod.Delete);
+                           return GetHttpClient().SendAsync(request,
+                               innerCancelToken);
+                       }).ConfigureAwait(false))
             { }
         }
-
-        public string DisplayName => Strings.TahoeBackend.Displayname;
-
-        public string ProtocolKey => "tahoe";
-
-        /// <inheritdoc />
-        public async IAsyncEnumerable<IFileEntry> ListAsync([EnumeratorCancellation] CancellationToken cancelToken)
+        catch (WebException wex)
+            when (wex.Response is HttpWebResponse { StatusCode: HttpStatusCode.NotFound })
         {
-            TahoeEl data;
-
-            try
-            {
-                var req = CreateRequest("", "t=json");
-                req.Method = WebRequestMethods.Http.Get;
-
-                var areq = new AsyncHttpRequest(req);
-                using (var resp = await Utility.Utility.WithTimeout(m_timeouts.ListTimeout, cancelToken, _ => (HttpWebResponse)areq.GetResponse()).ConfigureAwait(false))
-                {
-                    var code = (int)resp.StatusCode;
-                    if (code < 200 || code >= 300) //For some reason Mono does not throw this automatically
-                        throw new WebException(resp.StatusDescription, null, WebExceptionStatus.ProtocolError, resp);
-
-                    using (var rs = areq.GetResponseStream())
-                    using (var sr = new StreamReader(rs))
-                    using (var jr = new JsonTextReader(sr))
-                    {
-                        var jsr = new JsonSerializer();
-                        jsr.Converters.Add(new TahoeElConverter());
-                        data = jsr.Deserialize<TahoeEl>(jr)
-                            ?? throw new Exception("Invalid folder listing response");
-                    }
-                }
-            }
-            catch (WebException wex)
-                when (wex.Response is HttpWebResponse response
-                    && (response.StatusCode == HttpStatusCode.Conflict || response.StatusCode == HttpStatusCode.NotFound))
-            {
-                throw new FolderMissingException(Strings.TahoeBackend.MissingFolderError(m_url, wex.Message), wex);
-            }
-
-            if (data == null || data.node == null || data.nodetype != "dirnode")
-                throw new Exception("Invalid folder listing response");
-
-            foreach (var e in data.node.children ?? [])
-            {
-                if (e.Value == null || e.Value.node == null)
-                    continue;
-
-                var isDir = e.Value.nodetype == "dirnode";
-                var isFile = e.Value.nodetype == "filenode";
-
-                if (!isDir && !isFile)
-                    continue;
-
-                var fe = new FileEntry(e.Key);
-                fe.IsFolder = isDir;
-
-                if (e.Value.node.metadata != null && e.Value.node.metadata.tahoe != null)
-                    fe.LastModification = Utility.Utility.EPOCH + TimeSpan.FromSeconds(e.Value.node.metadata.tahoe.linkmotime);
-
-                if (isFile)
-                    fe.Size = e.Value.node.size;
-
-                yield return fe;
-            }
+            throw new FileMissingException(wex);
         }
+    }
 
-        public async Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
+    /// <inheritdoc />
+    public IList<ICommandLineArgument> SupportedCommands => [
+        .. SslOptionsHelper.GetSslOnlyOption(), .. TimeoutOptionsHelper.GetOptions()
+    ];
+
+    /// <inheritdoc />
+    public string Description => Strings.TahoeBackend.Description;
+
+    /// <inheritdoc />
+    public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(new[] { new System.Uri(_url).Host });
+
+    /// <inheritdoc />
+    public void Dispose()
+    {
+    }
+
+    /// <inheritdoc />
+    public async Task PutAsync(string remotename, Stream stream, CancellationToken cancelToken)
+    {
+        try
         {
-            using (var fs = File.OpenRead(filename))
-                await PutAsync(remotename, fs, cancelToken).ConfigureAwait(false);
-        }
+            using var request = CreateRequest(remotename, string.Empty, HttpMethod.Put);
 
-        public async Task GetAsync(string remotename, string filename, CancellationToken cancelToken)
+            await using var timeoutStream = stream.ObserveReadTimeout(_timeouts.ReadWriteTimeout, false);
+            request.Content = new StreamContent(timeoutStream);
+
+            request.Content.Headers.Add("Content-Type", "application/binary");
+            request.Content.Headers.Add("Content-Length", timeoutStream.Length.ToString());
+
+            using var response = await GetHttpClient().UploadStream(request, cancelToken).ConfigureAwait(false);
+
+            response.EnsureSuccessStatusCode();
+        }
+        catch (HttpRequestException wex)
+            when (wex.StatusCode is HttpStatusCode.Conflict or HttpStatusCode.NotFound)
         {
-            using (var fs = File.Create(filename))
-                await GetAsync(remotename, fs, cancelToken).ConfigureAwait(false);
+            throw new FolderMissingException(Strings.TahoeBackend.MissingFolderError(_url, wex.Message), wex);
         }
+    }
 
-        public async Task DeleteAsync(string remotename, CancellationToken cancelToken)
-        {
-            try
+    /// <inheritdoc />
+    public async Task GetAsync(string remotename, Stream stream, CancellationToken cancelToken)
+    {
+        using var resp = await Utility.Utility.WithTimeout(_timeouts.ListTimeout, cancelToken,
+            innerCancelToken =>
             {
-                var req = CreateRequest(remotename, "");
-                req.Method = "DELETE";
-                var areq = new AsyncHttpRequest(req);
-                using (await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, _ => areq.GetResponse()).ConfigureAwait(false))
-                { }
-            }
-            catch (WebException wex)
-                when (wex.Response is HttpWebResponse response && response.StatusCode == HttpStatusCode.NotFound)
-            {
-                throw new FileMissingException(wex);
-            }
-        }
+                using var request = CreateRequest(remotename, string.Empty, HttpMethod.Get);
+                return GetHttpClient().SendAsync(request, innerCancelToken);
+            }).ConfigureAwait(false);
 
-        public IList<ICommandLineArgument> SupportedCommands => [
-            .. SslOptionsHelper.GetSslOnlyOption(),
-        ];
+        resp.EnsureSuccessStatusCode();
 
-        public string Description => Strings.TahoeBackend.Description;
+        await using var s = await resp.Content.ReadAsStreamAsync(cancelToken).ConfigureAwait(false);
+        await using var t = s.ObserveReadTimeout(_timeouts.ReadWriteTimeout);
+        await Utility.Utility.CopyStreamAsync(t, stream, true, cancelToken).ConfigureAwait(false);
+    }
 
-        public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(new[] { new System.Uri(m_url).Host });
+    /// <summary>
+    /// Prepares the base request for Tahoe-LAFS
+    /// </summary>
+    /// <param name="remotename">Remotename parameter</param>
+    /// <param name="queryparams">Querystring parameters</param>
+    /// <param name="method">Http Method</param>
+    /// <returns></returns>
+    private HttpRequestMessage CreateRequest(string remotename, string queryparams, HttpMethod? method = null)
+    {
+        var request = new HttpRequestMessage(method == null ? HttpMethod.Get : method, $"{_url}{Uri.UrlEncode(remotename).Replace("+", "%20")}{(string.IsNullOrEmpty(queryparams) || queryparams.Trim().Length == 0 ? String.Empty : "?" + queryparams)}");
+        request.Headers.UserAgent.ParseAdd($"Duplicati Tahoe-LAFS Client {Assembly.GetExecutingAssembly().GetName().Version?.ToString()}");
+        return request;
+    }
 
-        #endregion
+    /// <summary>
+    /// Returns the HttpClient instance to use for requests, cached for reuse.
+    /// </summary>
+    private HttpClient GetHttpClient()
+    {
+        if (_httpClient != null) return _httpClient;
 
-        #region IDisposable Members
+        _httpClient = HttpClientHelper.CreateClient(_certificateOptions.CreateHandler());
+        _httpClient.Timeout = Timeout.InfiniteTimeSpan;
 
-        public void Dispose()
-        {
-        }
-
-        #endregion
-
-        #region IStreamingBackend Members
-
-        public async Task PutAsync(string remotename, Stream stream, CancellationToken cancelToken)
-        {
-            try
-            {
-                var req = CreateRequest(remotename, "");
-                req.Method = WebRequestMethods.Http.Put;
-                req.ContentType = "application/binary";
-
-                try { req.ContentLength = stream.Length; }
-                catch { }
-
-                var areq = new AsyncHttpRequest(req);
-                using (var s = areq.GetRequestStream())
-                using (var t = s.ObserveWriteTimeout(m_timeouts.ReadWriteTimeout))
-                    await Utility.Utility.CopyStreamAsync(stream, t, true, cancelToken).ConfigureAwait(false);
-
-                using (var resp = await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, _ => (HttpWebResponse)areq.GetResponse()).ConfigureAwait(false))
-                {
-                    int code = (int)resp.StatusCode;
-                    if (code < 200 || code >= 300)
-                        throw new WebException(resp.StatusDescription, null, WebExceptionStatus.ProtocolError, resp);
-                }
-            }
-            catch (WebException wex)
-                when (wex.Response is HttpWebResponse response
-                    && (response.StatusCode == HttpStatusCode.Conflict || response.StatusCode == HttpStatusCode.NotFound))
-            {
-                throw new FolderMissingException(Strings.TahoeBackend.MissingFolderError(m_url, wex.Message), wex);
-            }
-        }
-
-        public async Task GetAsync(string remotename, System.IO.Stream stream, CancellationToken cancelToken)
-        {
-            var req = CreateRequest(remotename, "");
-            req.Method = WebRequestMethods.Http.Get;
-
-            var areq = new AsyncHttpRequest(req);
-            using (var resp = await Utility.Utility.WithTimeout(m_timeouts.ListTimeout, cancelToken, _ => (HttpWebResponse)areq.GetResponse()).ConfigureAwait(false))
-            {
-                int code = (int)resp.StatusCode;
-                if (code < 200 || code >= 300)
-                    throw new WebException(resp.StatusDescription, null, WebExceptionStatus.ProtocolError, resp);
-
-                using (var s = areq.GetResponseStream())
-                using (var t = s.ObserveReadTimeout(m_timeouts.ReadWriteTimeout))
-                    await Utility.Utility.CopyStreamAsync(t, stream, true, cancelToken).ConfigureAwait(false);
-            }
-        }
-
-        #endregion
+        return _httpClient;
     }
 }

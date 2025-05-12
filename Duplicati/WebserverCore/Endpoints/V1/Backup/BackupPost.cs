@@ -72,12 +72,12 @@ public class BackupPost : IEndpointV1
             => ExecuteCompact(GetBackup(connection, id), queueRunnerService))
             .RequireAuthorization();
 
-        group.MapPost("/backup/{id}/start", ([FromServices] Connection connection, [FromServices] IQueueRunnerService queueRunnerService, [FromRoute] string id)
-            => ExecuteRunBackup(GetBackup(connection, id), queueRunnerService))
+        group.MapPost("/backup/{id}/start", ([FromServices] Connection connection, [FromServices] IQueueRunnerService queueRunnerService, [FromRoute] string id, [FromQuery] bool skipQueue)
+            => ExecuteRunBackup(GetBackup(connection, id), skipQueue, queueRunnerService))
             .RequireAuthorization();
 
-        group.MapPost("/backup/{id}/run", ([FromServices] Connection connection, [FromServices] IQueueRunnerService queueRunnerService, [FromRoute] string id)
-            => ExecuteRunBackup(GetBackup(connection, id), queueRunnerService))
+        group.MapPost("/backup/{id}/run", ([FromServices] Connection connection, [FromServices] IQueueRunnerService queueRunnerService, [FromRoute] string id, [FromQuery] bool skipQueue)
+            => ExecuteRunBackup(GetBackup(connection, id), skipQueue, queueRunnerService))
             .RequireAuthorization();
 
         group.MapPost("/backup/{id}/report-remote-size", ([FromServices] Connection connection, [FromServices] IQueueRunnerService queueRunnerService, [FromRoute] string id)
@@ -170,7 +170,7 @@ public class BackupPost : IEndpointV1
         return new Dto.TaskStartedDto("OK", queueRunnerService.AddTask(Runner.CreateTask(repairUpdate ? DuplicatiOperation.RepairUpdate : DuplicatiOperation.Repair, backup, extra, filters)));
     }
 
-    private static Dto.TaskStartedDto ExecuteRunBackup(IBackup backup, IQueueRunnerService queueRunnerService)
+    private static Dto.TaskStartedDto ExecuteRunBackup(IBackup backup, bool skipQueue, IQueueRunnerService queueRunnerService)
     {
         var t = queueRunnerService.GetCurrentTask();
         var bt = t?.BackupID;
@@ -183,7 +183,7 @@ public class BackupPost : IEndpointV1
         if (t != null)
             return new Dto.TaskStartedDto("OK", t.TaskID);
 
-        return new Dto.TaskStartedDto("OK", queueRunnerService.AddTask(Runner.CreateTask(DuplicatiOperation.Backup, backup), true));
+        return new Dto.TaskStartedDto("OK", queueRunnerService.AddTask(Runner.CreateTask(DuplicatiOperation.Backup, backup), skipQueue));
     }
 
     private class WrappedBackup : Server.Database.Backup

@@ -35,6 +35,9 @@ public static class RunBackup
             new Option<bool>("--wait", "Wait for the backup to finish before returning") {
                 IsRequired = false
             },
+            new Option<bool>("--skip-queue", "Insert the backup as the first task in the queue, instead of putting it at the end") {
+                IsRequired = false
+            },
             new Option<int>("--poll-interval", description: "The interval in seconds to poll for backup status", getDefaultValue: () => 5) {
                 IsRequired = false
             },
@@ -42,7 +45,7 @@ public static class RunBackup
                 IsRequired = false
             }
         }
-        .WithHandler(CommandHandler.Create<Settings, OutputInterceptor, string, bool, int, bool>(async (settings, output, backup, wait, pollinterval, quiet) =>
+        .WithHandler(CommandHandler.Create<Settings, OutputInterceptor, string, bool, bool, int, bool>(async (settings, output, backup, wait, skipqueue, pollinterval, quiet) =>
         {
             if (pollinterval < 1)
                 throw new UserReportedException("Poll interval must be at least 1 second");
@@ -58,7 +61,7 @@ public static class RunBackup
             if (!quiet)
                 output.AppendConsoleMessage($"Running backup {matchingBackup.Name} (ID: {matchingBackup.ID})");
 
-            await connection.RunBackup(matchingBackup.ID);
+            await connection.RunBackup(matchingBackup.ID, skipqueue);
 
             if (wait)
             {
