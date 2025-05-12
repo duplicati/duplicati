@@ -60,7 +60,7 @@ public class BackupDefaults : IEndpointV1
         {
             // Add built-in defaults
             Newtonsoft.Json.Linq.JObject? n;
-            using (var s = new StreamReader(typeof(Server.Runner).Assembly.GetManifestResourceStream(typeof(Server.Runner), "newbackup.json")!))
+            using (var s = new StreamReader(typeof(BackupDefaultsResourceMarker).Assembly.GetManifestResourceStream(typeof(BackupDefaultsResourceMarker), "newbackup.json")!))
                 n = (Newtonsoft.Json.Linq.JObject)Newtonsoft.Json.JsonConvert.DeserializeObject(s.ReadToEnd())!;
 
             o.Merge(n);
