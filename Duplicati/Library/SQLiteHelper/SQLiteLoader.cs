@@ -125,6 +125,7 @@ namespace Duplicati.Library.SQLiteHelper
             using (var transaction = con.BeginTransaction())
             {
                 cmd.Transaction = transaction;
+                foreach (var opt in opts.Split([';'], StringSplitOptions.RemoveEmptyEntries))
                 {
                     Logging.Log.WriteVerboseMessage(LOGTAG, "CustomSQLiteOption", @"Setting custom SQLite option '{0}'.", opt);
                     try
@@ -250,6 +251,8 @@ namespace Duplicati.Library.SQLiteHelper
         private static async Task TestSQLiteFile(Microsoft.Data.Sqlite.SqliteConnection con)
         {
             // Do a dummy query to make sure we have a working db
+            using var cmd = con.CreateCommand();
+            cmd.CommandText = "SELECT COUNT(*) FROM SQLITE_MASTER";
             await cmd.ExecuteScalarAsync();
         }
     }
