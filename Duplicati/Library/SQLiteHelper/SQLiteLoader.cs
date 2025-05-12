@@ -23,6 +23,7 @@
 
 using System;
 using System.Globalization;
+using System.Threading.Tasks;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 
@@ -66,12 +67,12 @@ namespace Duplicati.Library.SQLiteHelper
             try
             {
                 //Attempt to open in preferred state
-                OpenSQLiteFile(con, databasePath);
-                TestSQLiteFile(con);
+                await OpenSQLiteFile(con, databasePath);
+                await TestSQLiteFile(con);
             }
             catch
             {
-                try { con.Dispose(); }
+                try { await con.DisposeAsync(); }
                 catch { }
 
                 throw;
@@ -97,7 +98,7 @@ namespace Duplicati.Library.SQLiteHelper
             catch (Exception ex)
             {
                 Logging.Log.WriteErrorMessage(LOGTAG, "FailedToLoadConnectionSQLite", ex, "Failed to load connection.");
-                DisposeConnection(con);
+                await DisposeConnection(con);
 
                 throw;
             }
@@ -129,13 +130,15 @@ namespace Duplicati.Library.SQLiteHelper
                     try
                     {
                         cmd.CommandText = string.Format(CultureInfo.InvariantCulture, "PRAGMA {0}", opt);
-                        cmd.ExecuteNonQuery();
+                        await cmd.ExecuteNonQueryAsync();
                     }
                     catch (Exception ex)
                     {
                         Logging.Log.WriteWarningMessage(LOGTAG, "CustomSQLiteOption", ex, @"Error setting custom SQLite option '{0}'.", opt);
                     }
                 }
+                await transaction.CommitAsync();
+            }
             return con;
         }
 
@@ -150,22 +153,22 @@ namespace Duplicati.Library.SQLiteHelper
             if (string.IsNullOrWhiteSpace(targetpath))
                 throw new ArgumentNullException(nameof(targetpath));
 
-            var con = LoadConnection();
+            var con = await LoadConnection();
 
             try
             {
-                OpenSQLiteFile(con, targetpath);
+                await OpenSQLiteFile(con, targetpath);
             }
             catch (Exception ex)
             {
                 Logging.Log.WriteErrorMessage(LOGTAG, "FailedToLoadConnectionSQLite", ex, @"Failed to load connection with path '{0}'.", targetpath);
-                DisposeConnection(con);
+                await DisposeConnection(con);
 
                 throw;
             }
 
             // set custom Sqlite options
-            return ApplyCustomPragmas(con, pagecachesize);
+            return await ApplyCustomPragmas(con, pagecachesize);
         }
 
         /// <summary>
@@ -220,7 +223,7 @@ namespace Duplicati.Library.SQLiteHelper
         private static async Task DisposeConnection(Microsoft.Data.Sqlite.SqliteConnection? con)
         {
             if (con != null)
-                try { con.Dispose(); }
+                try { await con.DisposeAsync(); }
                 catch (Exception ex) { Logging.Log.WriteExplicitMessage(LOGTAG, "ConnectionDisposeError", ex, "Failed to dispose connection"); }
         }
 
@@ -232,13 +235,7 @@ namespace Duplicati.Library.SQLiteHelper
         private static async Task OpenSQLiteFile(Microsoft.Data.Sqlite.SqliteConnection con, string path)
         {
             con.ConnectionString = "Data Source=" + path;
-            con.Open();
-            if (con is System.Data.SQLite.SQLiteConnection sqlitecon && !OperatingSystem.IsMacOS())
-            {
-                // These configuration options crash on MacOS (arm64), but the other platforms should be enough to detect incorrect SQL
-                sqlitecon.SetConfigurationOption(System.Data.SQLite.SQLiteConfigDbOpsEnum.SQLITE_DBCONFIG_DQS_DDL, false);
-                sqlitecon.SetConfigurationOption(System.Data.SQLite.SQLiteConfigDbOpsEnum.SQLITE_DBCONFIG_DQS_DML, false);
-            }
+            await con.OpenAsync();
 
             // Make the file only accessible by the current user, unless opting out
             if (!SystemIO.IO_OS.FileExists(SystemIO.IO_OS.PathCombine(SystemIO.IO_OS.PathGetDirectoryName(path), Util.InsecurePermissionsMarkerFile)))
@@ -253,11 +250,7 @@ namespace Duplicati.Library.SQLiteHelper
         private static async Task TestSQLiteFile(Microsoft.Data.Sqlite.SqliteConnection con)
         {
             // Do a dummy query to make sure we have a working db
-            using (var cmd = con.CreateCommand())
-            {
-                cmd.CommandText = "SELECT COUNT(*) FROM SQLITE_MASTER";
-                cmd.ExecuteScalar();
-            }
+            await cmd.ExecuteScalarAsync();
         }
     }
 }
