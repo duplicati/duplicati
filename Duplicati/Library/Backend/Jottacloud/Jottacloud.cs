@@ -489,107 +489,70 @@ namespace Duplicati.Library.Backend
             //   we specify the file size in a custom header. And if the stream is not seek-able we are not able
             //   to use stream.Length, so we are back at square one.
 
-            // TODO: This unwrapping code is shared with CloudFiles
-            TempFile? tmpFile = null;
-            Stream? baseStream = stream;
-            while (baseStream is OverrideableStream)
-                baseStream = typeof(OverrideableStream).GetField("m_basestream", System.Reflection.BindingFlags.DeclaredOnly | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)?.GetValue(baseStream) as System.IO.Stream;
-            if (baseStream == null)
-                throw new Exception(string.Format("Unable to unwrap stream from: {0}", stream.GetType()));
-            string md5Hash;
-            if (baseStream.CanSeek)
-            {
-                var originalPosition = baseStream.Position;
-                using (var md5 = MD5.Create())
-                    md5Hash = Utility.Utility.ByteArrayAsHexString(md5.ComputeHash(baseStream));
-                baseStream.Position = originalPosition;
-            }
-            else
-            {
-                // No seeking possible, use a temp file
-                tmpFile = new TempFile();
-                using (var os = File.OpenWrite(tmpFile))
-                using (var hasher = MD5.Create())
-                using (var md5 = new HashCalculatingStream(baseStream, hasher))
-                {
-                    await Utility.Utility.CopyStreamAsync(md5, os, true, cancelToken).ConfigureAwait(false);
-                    md5Hash = md5.GetFinalHashString();
-                }
-                stream = File.OpenRead(tmpFile);
-            }
-            try
-            {
-                // Create request, with query parameter, and a few custom headers.
-                // NB: If we wanted to we could send the same POST request as below but without the file contents
-                // and with "cphash=[md5Hash]" as the only query parameter. Then we will get an HTTP 200 (OK) response
-                // if an identical file already exists, and we can skip uploading the new file. We will get
-                // HTTP 404 (Not Found) if file does not exists or it exists with a different hash, in which
-                // case we must send a new request to upload the new content.
-                var fileSize = stream.Length;
-                var req = CreateRequest(WebRequestMethods.Http.Post, remotename, "umode=nomultipart", true);
-                req.Headers.Add("JMd5", md5Hash); // Not required, but it will make the server verify the content and mark the file as corrupt if there is a mismatch.
-                req.Headers.Add("JSize", fileSize.ToString()); // Required, and used to mark file as incomplete if we upload something  be the total size of the original file!
-                // File time stamp headers: Since we are working with a stream here we do not know the local file's timestamps,
-                // and then we can just omit the JCreated and JModified and let the server automatically set the current time.
-                //req.Headers.Add("JCreated", timeCreated);
-                //req.Headers.Add("JModified", timeModified);
-                req.ContentType = "application/octet-stream";
-                req.ContentLength = fileSize;
+            (stream, var md5Hash, var tmp) = await Utility.Utility.CalculateThrottledStreamHash(stream, "MD5", cancelToken).ConfigureAwait(false);
+            using var _ = tmp;
 
-                // Write post data request
-                var areq = new AsyncHttpRequest(req);
-                using (var rs = areq.GetRequestStream())
-                using (var ts = rs.ObserveWriteTimeout(m_timeouts.ReadWriteTimeout))
-                    await Utility.Utility.CopyStreamAsync(stream, rs, true, cancelToken).ConfigureAwait(false);
-                // Send request, and check response
-                using (var resp = (HttpWebResponse)areq.GetResponse())
-                {
-                    if (resp.StatusCode != HttpStatusCode.Created)
-                        throw new WebException(Strings.Jottacloud.FileUploadError, null, WebExceptionStatus.ProtocolError, resp);
+            // Create request, with query parameter, and a few custom headers.
+            // NB: If we wanted to we could send the same POST request as below but without the file contents
+            // and with "cphash=[md5Hash]" as the only query parameter. Then we will get an HTTP 200 (OK) response
+            // if an identical file already exists, and we can skip uploading the new file. We will get
+            // HTTP 404 (Not Found) if file does not exists or it exists with a different hash, in which
+            // case we must send a new request to upload the new content.
+            var fileSize = stream.Length;
+            var req = CreateRequest(WebRequestMethods.Http.Post, remotename, "umode=nomultipart", true);
+            req.Headers.Add("JMd5", md5Hash); // Not required, but it will make the server verify the content and mark the file as corrupt if there is a mismatch.
+            req.Headers.Add("JSize", fileSize.ToString()); // Required, and used to mark file as incomplete if we upload something  be the total size of the original file!
+                                                           // File time stamp headers: Since we are working with a stream here we do not know the local file's timestamps,
+                                                           // and then we can just omit the JCreated and JModified and let the server automatically set the current time.
+                                                           //req.Headers.Add("JCreated", timeCreated);
+                                                           //req.Headers.Add("JModified", timeModified);
+            req.ContentType = "application/octet-stream";
+            req.ContentLength = fileSize;
 
-                    // Request seems to be successful, but we must verify the response XML content to be sure that the file
-                    // was correctly uploaded: The server will verify the JSize header and mark the file as incomplete if
-                    // there was mismatch, and it will verify the JMd5 header and mark the file as corrupt if there was a hash
-                    // mismatch. The returned XML contains a file element, and if upload was error free it contains a single
-                    // child element "currentRevision", which has a "state" child element with the string "COMPLETED".
-                    // If there was a problem we should have a "latestRevision" child element, and this will have state with
-                    // value "INCOMPLETE" or "CORRUPT". If the file was new or had no previous complete versions the latestRevision
-                    // will be the only child, but if not there may also be a "currentRevision" representing the previous
-                    // complete version - and then we need to detect the case where our upload failed but there was an existing
-                    // complete version!
-                    using (var rs = areq.GetResponseStream())
+            // Write post data request
+            var areq = new AsyncHttpRequest(req);
+            using (var rs = areq.GetRequestStream())
+            using (var ts = rs.ObserveWriteTimeout(m_timeouts.ReadWriteTimeout))
+                await Utility.Utility.CopyStreamAsync(stream, rs, true, cancelToken).ConfigureAwait(false);
+            // Send request, and check response
+            using (var resp = (HttpWebResponse)areq.GetResponse())
+            {
+                if (resp.StatusCode != HttpStatusCode.Created)
+                    throw new WebException(Strings.Jottacloud.FileUploadError, null, WebExceptionStatus.ProtocolError, resp);
+
+                // Request seems to be successful, but we must verify the response XML content to be sure that the file
+                // was correctly uploaded: The server will verify the JSize header and mark the file as incomplete if
+                // there was mismatch, and it will verify the JMd5 header and mark the file as corrupt if there was a hash
+                // mismatch. The returned XML contains a file element, and if upload was error free it contains a single
+                // child element "currentRevision", which has a "state" child element with the string "COMPLETED".
+                // If there was a problem we should have a "latestRevision" child element, and this will have state with
+                // value "INCOMPLETE" or "CORRUPT". If the file was new or had no previous complete versions the latestRevision
+                // will be the only child, but if not there may also be a "currentRevision" representing the previous
+                // complete version - and then we need to detect the case where our upload failed but there was an existing
+                // complete version!
+                using (var rs = areq.GetResponseStream())
+                {
+                    var doc = new System.Xml.XmlDocument();
+                    try { doc.Load(rs); }
+                    catch (System.Xml.XmlException)
                     {
-                        var doc = new System.Xml.XmlDocument();
-                        try { doc.Load(rs); }
-                        catch (System.Xml.XmlException)
-                        {
-                            throw new WebException(Strings.Jottacloud.FileUploadError, WebExceptionStatus.ProtocolError);
-                        }
-                        bool uploadCompletedSuccessfully = false;
-                        var xFile = doc["file"];
-                        if (xFile != null)
-                        {
-                            var xRevState = xFile.SelectSingleNode("latestRevision");
-                            if (xRevState == null)
-                            {
-                                xRevState = xFile.SelectSingleNode("currentRevision/state");
-                                if (xRevState != null)
-                                    uploadCompletedSuccessfully = xRevState.InnerText == "COMPLETED"; // Success: There is no "latestRevision", only a "currentRevision" (and it specifies the file is complete, but I think it always will).
-                            }
-                        }
-                        if (!uploadCompletedSuccessfully) // Report error (and we just let the incomplete/corrupt file revision stay on the server..)
-                            throw new WebException(Strings.Jottacloud.FileUploadError, WebExceptionStatus.ProtocolError);
+                        throw new WebException(Strings.Jottacloud.FileUploadError, WebExceptionStatus.ProtocolError);
                     }
+                    bool uploadCompletedSuccessfully = false;
+                    var xFile = doc["file"];
+                    if (xFile != null)
+                    {
+                        var xRevState = xFile.SelectSingleNode("latestRevision");
+                        if (xRevState == null)
+                        {
+                            xRevState = xFile.SelectSingleNode("currentRevision/state");
+                            if (xRevState != null)
+                                uploadCompletedSuccessfully = xRevState.InnerText == "COMPLETED"; // Success: There is no "latestRevision", only a "currentRevision" (and it specifies the file is complete, but I think it always will).
+                        }
+                    }
+                    if (!uploadCompletedSuccessfully) // Report error (and we just let the incomplete/corrupt file revision stay on the server..)
+                        throw new WebException(Strings.Jottacloud.FileUploadError, WebExceptionStatus.ProtocolError);
                 }
-            }
-            finally
-            {
-                try
-                {
-                    if (tmpFile != null)
-                        tmpFile.Dispose();
-                }
-                catch { }
             }
         }
     }

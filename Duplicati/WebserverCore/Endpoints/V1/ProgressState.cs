@@ -18,9 +18,9 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
-using Duplicati.Library.RestAPI;
 using Duplicati.WebserverCore.Abstractions;
 using Duplicati.WebserverCore.Exceptions;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Duplicati.WebserverCore.Endpoints.V1;
 
@@ -28,15 +28,16 @@ public class ProgressState : IEndpointV1
 {
     public static void Map(RouteGroupBuilder group)
     {
-        group.MapGet("/progressstate", Execute)
+        group.MapGet("/progressstate", ([FromServices] IProgressStateProviderService progressStateProviderService) => Execute(progressStateProviderService))
         .RequireAuthorization();
     }
 
-    private static Server.Serialization.Interface.IProgressEventData Execute()
+    private static Server.Serialization.Interface.IProgressEventData Execute(IProgressStateProviderService progressStateProviderService)
     {
-        if (FIXMEGlobal.GenerateProgressState == null)
+        var pgState = progressStateProviderService.GenerateProgressState;
+        if (pgState == null)
             throw new NotFoundException("No active backup");
 
-        return FIXMEGlobal.GenerateProgressState();
+        return pgState();
     }
 }

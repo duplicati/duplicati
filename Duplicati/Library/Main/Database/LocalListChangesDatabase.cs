@@ -204,7 +204,7 @@ namespace Duplicati.Library.Main.Database
                 var cmd = asNew ? m_insertCurrentElementCommand : m_insertPreviousElementCommand;
                 cmd.SetParameterValue("@Path", path);
                 cmd.SetParameterValue("@FileHash", filehash);
-                cmd.SetParameterValue(@"MetaHash", metahash);
+                cmd.SetParameterValue("@MetaHash", metahash);
                 cmd.SetParameterValue("@Size", size);
                 cmd.SetParameterValue("@Type", (int)type);
                 cmd.ExecuteNonQuery();

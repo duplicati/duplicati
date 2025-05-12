@@ -18,20 +18,20 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
+
 #nullable enable
+
 using System;
-using Duplicati.Library.Utility;
-using Duplicati.Server;
 
-namespace Duplicati.Library.RestAPI.Abstractions;
+namespace Duplicati.WebserverCore.Abstractions;
 
-public interface IWorkerThreadsManager
+/// <summary>
+/// Produces system information.
+/// </summary>
+public interface IProgressStateProviderService
 {
-    void Spawn(Action<Runner.IRunnerData> item);
-
-    Tuple<long, string>? CurrentTask { get; }
-    WorkerThread<Runner.IRunnerData>? WorkerThread { get; }
-    void UpdateThrottleSpeeds(string? uploadSpeed, string? downloadSpeed);
-
-    long AddTask(Runner.IRunnerData data, bool skipQueue = false);
+    /// <summary>
+    /// Handler for progress state generation.
+    /// </summary>
+    Func<Server.Serialization.Interface.IProgressEventData>? GenerateProgressState { get; set; }
 }

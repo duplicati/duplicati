@@ -190,9 +190,8 @@ namespace Duplicati.Library.Backend
             if (m_s3Client == null)
             {
                 (var accessKeyId, var accessKeySecret) = m_auth.GetCredentials();
-                // TODO: Do not make blocking calls in the constructor
                 var host = await GetRegionEndpointAsync("https://api.idrivee2.com/api/service/get_region_end_point/" + accessKeyId, cancellationToken).ConfigureAwait(false);
-                m_s3Client = new S3AwsClient(accessKeyId, accessKeySecret, null, host, null, true, false, m_timeouts, m_options);
+                m_s3Client = new S3AwsClient(accessKeyId, accessKeySecret, null, host, null, true, false, false, m_timeouts, m_options);
             }
 
             return m_s3Client;

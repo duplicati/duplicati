@@ -80,9 +80,9 @@ namespace Duplicati.Library.Logging
         /// </summary>
         public void Dispose()
         {
-            try { if (m_stream != null) m_stream.Flush(); }
+            try { m_stream?.Flush(); }
             catch { }
-            try { if (m_stream != null) m_stream.Close(); }
+            try { m_stream?.Dispose(); }
             catch { }
 
             m_stream = null;

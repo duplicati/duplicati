@@ -469,16 +469,12 @@ namespace Duplicati.Library.Main.Database
 
                 // Create and fill a temp table with the volids to delete. We avoid using too many parameters that way.
                 deletecmd.ExecuteNonQuery(FormatInvariant($@"CREATE TEMP TABLE ""{volidstable}"" (""ID"" INTEGER PRIMARY KEY)"));
-                deletecmd.SetCommandAndParameters(FormatInvariant($@"INSERT OR IGNORE INTO ""{volidstable}"" (""ID"") VALUES (@Id)"));
-                foreach (var name in names)
-                {
-                    var volumeid = GetRemoteVolumeID(name, tr.Parent);
-                    deletecmd.SetParameterValue("@Id", volumeid)
-                        .ExecuteNonQuery();
-                }
+                deletecmd.SetCommandAndParameters(FormatInvariant($@"INSERT OR IGNORE INTO ""{volidstable}"" SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""Name"" IN (@VolumeNames)"))
+                    .ExpandInClauseParameter("@VolumeNames", names.ToArray())
+                    .ExecuteNonQuery();
+
                 var volIdsSubQuery = FormatInvariant($@"SELECT ""ID"" FROM ""{volidstable}"" ");
                 deletecmd.Parameters.Clear();
-
 
                 var bsIdsSubQuery = FormatInvariant(@$"
 SELECT DISTINCT ""BlocksetEntry"".""BlocksetID"" FROM ""BlocksetEntry"", ""Block""
@@ -661,9 +657,9 @@ AND Fileset.ID NOT IN
             return res;
         }
 
-        public bool IsFilesetFullBackup(DateTime filesetTime)
+        public bool IsFilesetFullBackup(DateTime filesetTime, IDbTransaction? transaction)
         {
-            using (var cmd = m_connection.CreateCommand())
+            using (var cmd = m_connection.CreateCommand(transaction))
             using (var rd = cmd.SetCommandAndParameters($@"SELECT ""IsFullBackup"" FROM ""Fileset"" WHERE ""Timestamp"" = @Timestamp").SetParameterValue("@Timestamp", Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(filesetTime)).ExecuteReader())
             {
                 if (!rd.Read())
@@ -1504,8 +1500,19 @@ AND oldVersion.FilesetID = (SELECT ID FROM Fileset WHERE ID != @FilesetId ORDER 
             }
         }
 
+        /// <summary>
+        /// Adds a link between an index volume and a block volume.
+        /// </summary>
+        /// <param name="indexVolumeID">The ID of the index volume.</param>
+        /// <param name="blockVolumeID">The ID of the block volume.</param>
+        /// <param name="transaction">An optional transaction.</param>
         public void AddIndexBlockLink(long indexVolumeID, long blockVolumeID, IDbTransaction transaction)
         {
+            if (indexVolumeID <= 0)
+                throw new ArgumentOutOfRangeException(nameof(indexVolumeID), "Index volume ID must be greater than 0.");
+            if (blockVolumeID <= 0)
+                throw new ArgumentOutOfRangeException(nameof(blockVolumeID), "Block volume ID must be greater than 0.");
+
             m_insertIndexBlockLink.SetParameterValue("@IndexVolumeId", indexVolumeID)
                 .SetParameterValue("@BlockVolumeId", blockVolumeID)
                 .ExecuteNonQuery(transaction);

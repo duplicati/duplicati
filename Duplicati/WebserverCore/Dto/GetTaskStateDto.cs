@@ -25,6 +25,8 @@ namespace Duplicati.WebserverCore.Dto;
 /// </summary>
 /// <param name="Status">The status</param>
 /// <param name="ID">The ID</param>
+/// <param name="TaskStarted">When the task started</param>
+/// <param name="TaskFinished">When the task finished</param>
 /// <param name="ErrorMessage">The error message</param>
 /// <param name="Exception">The exception</param>
-public record GetTaskStateDto(string Status, long ID, string? ErrorMessage = null, string? Exception = null);
+public record GetTaskStateDto(string Status, long ID, DateTime? TaskStarted, DateTime? TaskFinished, string? ErrorMessage = null, string? Exception = null);

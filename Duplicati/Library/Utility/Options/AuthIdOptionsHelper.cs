@@ -44,7 +44,7 @@ public static class AuthIdOptionsHelper
     /// <returns>The authentication options</returns>
     public static CommandLineArgument[] GetOptions(string tokenurl, string? prefix = null) =>
     [
-        new CommandLineArgument($"{prefix}{AuthIdOption}", CommandLineArgument.ArgumentType.String, Strings.AuthIdSettingsHelper.AuthidShort, Strings.AuthIdSettingsHelper.AuthidLong(tokenurl))
+        new CommandLineArgument($"{prefix}{AuthIdOption}", CommandLineArgument.ArgumentType.Password, Strings.AuthIdSettingsHelper.AuthidShort, Strings.AuthIdSettingsHelper.AuthidLong(tokenurl))
     ];
 
     /// <summary>

@@ -310,43 +310,8 @@ public class B2 : IStreamingBackend
 
     public async Task PutAsync(string remotename, Stream stream, CancellationToken cancelToken)
     {
-        TempFile? tmp = null;
-
-        var measure = stream;
-        while (measure is OverrideableStream os &&
-               os.GetType().GetField("m_basestream", BindingFlags.NonPublic | BindingFlags.Instance)?.GetValue(os) is Stream baseStream)
-        {
-            measure = baseStream;
-        }
-
-        if (measure == null)
-            throw new Exception($"Unable to unwrap stream from: {stream.GetType()}");
-
-        string sha1;
-        if (measure.CanSeek)
-        {
-            var p = measure.Position;
-
-            // Compute the hash
-            using (var hashalg = HashFactory.CreateHasher("SHA1"))
-                sha1 = Utility.Utility.ByteArrayAsHexString(hashalg.ComputeHash(measure));
-
-            measure.Position = p;
-        }
-        else
-        {
-            // No seeking possible, use a temp file
-            tmp = new TempFile();
-            await using (var sr = File.OpenWrite(tmp))
-            using (var hasher = HashFactory.CreateHasher("SHA1"))
-            await using (var hc = new HashCalculatingStream(measure, hasher))
-            {
-                await Utility.Utility.CopyStreamAsync(hc, sr, cancelToken).ConfigureAwait(false);
-                sha1 = hc.GetFinalHashString();
-            }
-
-            stream = File.OpenRead(tmp);
-        }
+        (stream, var sha1, var tmp) = await Utility.Utility.CalculateThrottledStreamHash(stream, "SHA1", cancelToken).ConfigureAwait(false);
+        using var _ = tmp;
 
         if (_filecache == null)
             await RebuildFileCache(cancelToken).ConfigureAwait(false);
@@ -399,10 +364,6 @@ public class B2 : IStreamingBackend
                 _uploadUrl = null;
 
             throw;
-        }
-        finally
-        {
-            tmp?.Dispose();
         }
     }
 

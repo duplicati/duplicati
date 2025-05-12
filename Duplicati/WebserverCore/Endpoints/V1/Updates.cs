@@ -18,8 +18,9 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
-using Duplicati.Library.RestAPI;
+using Duplicati.Server;
 using Duplicati.WebserverCore.Abstractions;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Duplicati.WebserverCore.Endpoints.V1;
 
@@ -27,9 +28,11 @@ public class Updates : IEndpointV1
 {
     public static void Map(RouteGroupBuilder group)
     {
-        group.MapPost("/updates/check", Execute).RequireAuthorization();
+        group.MapPost("/updates/check",
+            ([FromServices] UpdatePollThread updatePollThread) => Execute(updatePollThread))
+            .RequireAuthorization();
     }
 
-    private static void Execute()
-        => FIXMEGlobal.UpdatePoller.CheckNow();
+    private static void Execute(UpdatePollThread updatePollThread)
+        => updatePollThread.CheckNow();
 }

@@ -24,6 +24,7 @@ using System.Net.Security;
 using System.Text.Json;
 using Duplicati.Library.AutoUpdater;
 using Duplicati.WebserverCore.Middlewares;
+using Duplicati.WebserverCore.Services;
 
 namespace Duplicati.CommandLine.ServerUtil;
 
@@ -141,7 +142,6 @@ public class Connection
     /// <returns>The connection</returns>
     public static async Task<Connection> Connect(Settings settings, bool obtainRefreshToken = false, OutputInterceptor? console = null)
     {
-        
         if (console != null)
             console.AppendConsoleMessage($"Connecting to {settings.HostUrl}...");
         else
@@ -201,7 +201,7 @@ public class Connection
             if (File.Exists(Path.Combine(DataFolderManager.GetDataFolder(DataFolderManager.AccessMode.ProbeOnly), DataFolderManager.SERVER_DATABASE_FILENAME)))
             {
                 string? cfg = null;
-                using (var connection = Server.Program.GetDatabaseConnection(opts, true))
+                using (var connection = Server.Program.GetDatabaseConnection(new ApplicationSettings(), opts, true))
                 {
                     cfg = connection.ApplicationSettings.JWTConfig;
                     if (settings.HostUrl.Scheme == "https" && connection.ApplicationSettings.ServerSSLCertificate != null && trustedCertificateHashes.Count == 0)

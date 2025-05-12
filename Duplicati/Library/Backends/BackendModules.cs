@@ -42,7 +42,6 @@ public static class BackendModules
         new Backend.AzureBlob.AzureBlobBackend(),
         new Backend.Backblaze.B2(),
         new Backend.Box.BoxBackend(),
-        new Backend.CloudFiles(),
         new Backend.Dropbox(),
         new Backend.FTP(),
         new Backend.AlternateFTPBackend(),

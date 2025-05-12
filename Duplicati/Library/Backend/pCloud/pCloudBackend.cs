@@ -39,7 +39,7 @@ public class pCloudBackend : IStreamingBackend
     /// <summary>
     /// The URL used to get a new token
     /// </summary>
-    private static readonly string TOKEN_URL = OAuthHelper.OAUTH_LOGIN_URL("pcloud");
+    private static readonly string TOKEN_URL = OAuthHelper.OAUTH_LOGIN_URL_NEW("pcloud");
     /// <summary>
     /// Implementation of interface property for the backend key
     /// </summary>
