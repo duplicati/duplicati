@@ -662,16 +662,17 @@ AND ""Fileset"".""ID"" NOT IN
             return res;
         }
 
-        public bool IsFilesetFullBackup(DateTime filesetTime, IDbTransaction? transaction)
+        public async Task<bool> IsFilesetFullBackup(DateTime filesetTime, SqliteTransaction transaction)
         {
-            using (var cmd = m_connection.CreateCommand(transaction))
-            using (var rd = cmd.SetCommandAndParameters($@"SELECT ""IsFullBackup"" FROM ""Fileset"" WHERE ""Timestamp"" = @Timestamp").SetParameterValue("@Timestamp", Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(filesetTime)).ExecuteReader())
-            {
-                if (!rd.Read())
-                    return false;
-                var isFullBackup = rd.GetInt32(0);
-                return isFullBackup == BackupType.FULL_BACKUP;
-            }
+            using var cmd = m_connection.CreateCommand();
+            cmd.Transaction = transaction;
+            cmd.SetCommandAndParameters($@"SELECT ""IsFullBackup"" FROM ""Fileset"" WHERE ""Timestamp"" = @Timestamp");
+            cmd.SetParameterValue("@Timestamp", Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(filesetTime));
+            using var rd = await cmd.ExecuteReaderAsync();
+            if (!await rd.ReadAsync())
+                return false;
+            var isFullBackup = rd.GetInt32(0);
+            return isFullBackup == BackupType.FULL_BACKUP;
         }
 
         // TODO: Remove this
@@ -1504,16 +1505,17 @@ AND oldVersion.FilesetID = (SELECT ID FROM Fileset WHERE ID != @FilesetId ORDER 
         /// <param name="indexVolumeID">The ID of the index volume.</param>
         /// <param name="blockVolumeID">The ID of the block volume.</param>
         /// <param name="transaction">An optional transaction.</param>
-        public void AddIndexBlockLink(long indexVolumeID, long blockVolumeID, IDbTransaction transaction)
+        public async Task AddIndexBlockLink(long indexVolumeID, long blockVolumeID, SqliteTransaction transaction)
         {
             if (indexVolumeID <= 0)
                 throw new ArgumentOutOfRangeException(nameof(indexVolumeID), "Index volume ID must be greater than 0.");
             if (blockVolumeID <= 0)
                 throw new ArgumentOutOfRangeException(nameof(blockVolumeID), "Block volume ID must be greater than 0.");
 
-            m_insertIndexBlockLink.SetParameterValue("@IndexVolumeId", indexVolumeID)
-                .SetParameterValue("@BlockVolumeId", blockVolumeID)
-                .ExecuteNonQuery(transaction);
+            m_insertIndexBlockLink.Transaction = transaction;
+            m_insertIndexBlockLink.SetParameterValue("@IndexVolumeId", indexVolumeID);
+            m_insertIndexBlockLink.SetParameterValue("@BlockVolumeId", blockVolumeID);
+            await m_insertIndexBlockLink.ExecuteNonQueryAsync();
         }
 
         /// <summary>
@@ -1687,7 +1689,7 @@ AND oldVersion.FilesetID = (SELECT ID FROM Fileset WHERE ID != @FilesetId ORDER 
             if (IsDisposed)
                 return;
 
-            DisposeAllFields<IDbCommand>(this, false);
+            DisposeAllFields<SqliteCommand>(this, false);
 
             if (ShouldCloseConnection && m_connection != null)
             {
@@ -1698,7 +1700,7 @@ AND oldVersion.FilesetID = (SELECT ID FROM Fileset WHERE ID != @FilesetId ORDER 
                     {
                         command.Transaction = transaction;
                         // SQLite recommends that PRAGMA optimize is run just before closing each database connection.
-                        command.ExecuteNonQuery("PRAGMA optimize");
+                        command.ExecuteNonQueryAsync("PRAGMA optimize").Await();
 
                         try
                         {
