@@ -27,6 +27,7 @@ using Duplicati.Library.Main.Database;
 using Duplicati.Library.Main.Operation.Common;
 using System.Threading.Tasks;
 using Duplicati.Library.Utility;
+using System.Data;
 
 namespace Duplicati.Library.Main.Volumes
 {
@@ -244,12 +245,13 @@ namespace Duplicati.Library.Main.Volumes
         /// </summary>
         /// <param name="database">The database to check for clashes</param>
         /// <param name="options">The options to use for the filename</param>
+        /// <param name="transaction">The transaction to use</param>
         /// <param name="start">The starting time to probe from</param>
         /// <param name="increment">The time to increment by each probe</param>
         /// <param name="maxTries">The maximum number of tries to probe</param>
         /// <returns>The first unused filename</returns>
-        internal static DateTime ProbeUnusedFilenameName(LocalDatabase database, Options options, DateTime start, TimeSpan increment = default, int maxTries = 60)
-            => ProbeUnusedFilenameName((name) => Task.FromResult(database.GetRemoteVolumeID(name)), options, start, increment, maxTries).Await();
+        internal static DateTime ProbeUnusedFilenameName(LocalDatabase database, IDbTransaction transaction, Options options, DateTime start, TimeSpan increment = default, int maxTries = 60)
+            => ProbeUnusedFilenameName((name) => Task.FromResult(database.GetRemoteVolumeID(name, transaction)), options, start, increment, maxTries).Await();
 
         /// <summary>
         /// Probes for an unused filename, using the current time as a starting point
