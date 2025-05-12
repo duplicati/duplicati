@@ -8,7 +8,7 @@
     <RootNamespace>Duplicati.Library.SQLiteHelper</RootNamespace>
 	  <Copyright>Copyright © 2025 Team Duplicati, MIT license</Copyright>
   </PropertyGroup>
-  
+
   <ItemGroup>
     <ProjectReference Include="..\Logging\Duplicati.Library.Logging.csproj" />
     <ProjectReference Include="..\Interface\Duplicati.Library.Interface.csproj" />
