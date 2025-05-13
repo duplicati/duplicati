@@ -146,7 +146,7 @@ namespace Duplicati.Library.Main.Operation
             // If the last backup failed, guard the incomplete fileset, so we can create a synthetic filelist
             var lastTempFilelist = await db.GetLastIncompleteFilesetVolume(rtr.Transaction);
             var tp = await FilelistProcessor.RemoteListAnalysis(backendManager, m_options, db, rtr.Transaction, m_result.BackendWriter, [lastTempFilelist.Name], null, FilelistProcessor.VerifyMode.VerifyAndCleanForced).ConfigureAwait(false);
-            rtr.Commit("CommitRemoteListAnalysisTransaction");
+            await rtr.CommitAsync("CommitRemoteListAnalysisTransaction");
 
             var buffer = new byte[m_options.Blocksize];
             var hashsize = m_options.BlockhashSize;
@@ -198,7 +198,7 @@ namespace Duplicati.Library.Main.Operation
                             {
                                 await backendManager.WaitForEmptyAsync(testdb, rtr.Transaction, cancellationToken).ConfigureAwait(false);
                                 if (!m_options.Dryrun)
-                                    rtr.Commit("CommitEarlyExit", false);
+                                    await rtr.CommitAsync("CommitEarlyExit", false);
                                 return;
                             }
 
@@ -227,7 +227,7 @@ namespace Duplicati.Library.Main.Operation
                                 throw;
                         }
 
-                    rtr.Commit("CommitVerificationTransaction");
+                    await rtr.CommitAsync("CommitVerificationTransaction");
                 }
 
                 // TODO: It is actually possible to use the extra files if we parse them
@@ -238,7 +238,7 @@ namespace Duplicati.Library.Main.Operation
                         {
                             await backendManager.WaitForEmptyAsync(db, rtr.Transaction, cancellationToken).ConfigureAwait(false);
                             if (!m_options.Dryrun)
-                                rtr.Commit("CommitEarlyExit", false);
+                                await rtr.CommitAsync("CommitEarlyExit", false);
                             return;
                         }
 
@@ -286,7 +286,7 @@ namespace Duplicati.Library.Main.Operation
                                             await db.AddIndexBlockLink(selfid, id, rtr.Transaction);
                                     }
                                     if (!m_options.Dryrun)
-                                        rtr.Commit("CommitIndexFileTransaction");
+                                        await rtr.CommitAsync("CommitIndexFileTransaction");
                                 }
 
                                 // All checks fine, we accept the new index file
@@ -326,7 +326,7 @@ namespace Duplicati.Library.Main.Operation
                     {
                         await backendManager.WaitForEmptyAsync(db, rtr.Transaction, cancellationToken).ConfigureAwait(false);
                         if (!m_options.Dryrun)
-                            rtr.Commit("CommitEarlyExit", false);
+                            await rtr.CommitAsync("CommitEarlyExit", false);
                         return;
                     }
 
@@ -362,7 +362,7 @@ namespace Duplicati.Library.Main.Operation
                     await backendManager.WaitForEmptyAsync(db, rtr.Transaction, cancellationToken).ConfigureAwait(false);
                     await backendManager.FlushPendingMessagesAsync(db, rtr.Transaction, cancellationToken).ConfigureAwait(false);
                     if (!m_options.Dryrun)
-                        rtr.Commit("CommitFilesetTransaction");
+                        await rtr.CommitAsync("CommitFilesetTransaction");
                 }
 
                 foreach (var volumename in missingLocalFilesets)
@@ -382,7 +382,7 @@ namespace Duplicati.Library.Main.Operation
 
                             await RecreateDatabaseHandler.RecreateFilesetFromRemoteList(recreatedb, rtr.Transaction, compressor, filesetid, m_options, new FilterExpression());
                             if (!m_options.Dryrun)
-                                rtr.Commit("CommitRecreateFilesetTransaction");
+                                await rtr.CommitAsync("CommitRecreateFilesetTransaction");
                         }
                     }
                 }
@@ -509,7 +509,7 @@ namespace Duplicati.Library.Main.Operation
             if (!m_options.Dryrun)
             {
                 db.TerminatedWithActiveUploads = false;
-                rtr.Commit("CommitRepairTransaction", false);
+                await rtr.CommitAsync("CommitRepairTransaction", false);
             }
         }
 
@@ -551,13 +551,13 @@ namespace Duplicati.Library.Main.Operation
                 Logging.Log.WriteDryrunMessage(LOGTAG, "WouldReUploadFileset", "would upload fileset {0}, with size {1}, previous size {2}", originalVolume.Name, Library.Utility.Utility.FormatSizeString(new System.IO.FileInfo(volumeWriter.LocalFilename).Length), Library.Utility.Utility.FormatSizeString(originalVolume.Size));
             else
             {
-                rtr.Commit("CommitPriorToFilesetUpload");
+                await rtr.CommitAsync("CommitPriorToFilesetUpload");
                 await backendManager.PutAsync(volumeWriter, null, null, false, null, cancellationToken).ConfigureAwait(false);
             }
 
             await backendManager.WaitForEmptyAsync(db, rtr.Transaction, cancellationToken).ConfigureAwait(false);
             if (!m_options.Dryrun)
-                rtr.Commit("CommitFilesetTransaction");
+                await rtr.CommitAsync("CommitFilesetTransaction");
         }
 
         /// <summary>
@@ -616,7 +616,7 @@ namespace Duplicati.Library.Main.Operation
 
             await backendManager.WaitForEmptyAsync(db, rtr.Transaction, cancellationToken).ConfigureAwait(false);
             if (!m_options.Dryrun)
-                rtr.Commit("CommitRepairTransaction");
+                await rtr.CommitAsync("CommitRepairTransaction");
         }
 
         /// <summary>
@@ -753,7 +753,7 @@ namespace Duplicati.Library.Main.Operation
                     {
                         await backendManager.WaitForEmptyAsync(db, rtr.Transaction, cancellationToken).ConfigureAwait(false);
                         if (!m_options.Dryrun)
-                            rtr.Commit("CommitEarlyExit", false);
+                            await rtr.CommitAsync("CommitEarlyExit", false);
                         return;
                     }
 
@@ -822,7 +822,7 @@ namespace Duplicati.Library.Main.Operation
                     Logging.Log.WriteDryrunMessage(LOGTAG, "WouldReplaceBlockFile", "would upload new block file {0}", completedVolume.RemoteFilename);
                 else
                 {
-                    rtr.Commit("PostRepairPreUploadBlockVolume");
+                    await rtr.CommitAsync("PostRepairPreUploadBlockVolume");
                     await backendManager.PutAsync(completedVolume, newvolindex, indexVolumeFinished, false, null, cancellationToken).ConfigureAwait(false);
                 }
             }
@@ -1127,7 +1127,7 @@ namespace Duplicati.Library.Main.Operation
                     await RecreateDatabaseHandler.RecreateFilesetFromRemoteList(rdb, tr.Transaction, compressor, entry.Key, m_options, new FilterExpression());
                 }
 
-                tr.Commit("PostRepairFileset");
+                await tr.CommitAsync("PostRepairFileset");
             }
         }
 
