@@ -1045,13 +1045,13 @@ ON
         {
             private class BlocklistHashEnumerator : IEnumerator<string>
             {
-                private readonly IDataReader m_reader;
+                private readonly SqliteDataReader m_reader;
                 private readonly BlocklistHashEnumerable m_parent;
                 private string? m_path = null;
                 private bool m_first = true;
                 private string? m_current = null;
 
-                public BlocklistHashEnumerator(BlocklistHashEnumerable parent, IDataReader reader)
+                public BlocklistHashEnumerator(BlocklistHashEnumerable parent, SqliteDataReader reader)
                 {
                     m_reader = reader;
                     m_parent = parent;
@@ -1080,7 +1080,7 @@ ON
                         if (m_current == null)
                             return false;
 
-                        if (!m_reader.Read())
+                        if (!m_reader.ReadAsync().Await())
                         {
                             m_current = null;
                             m_parent.MoreData = false;
@@ -1108,9 +1108,9 @@ ON
                 }
             }
 
-            private readonly IDataReader m_reader;
+            private readonly SqliteDataReader m_reader;
 
-            public BlocklistHashEnumerable(IDataReader reader)
+            public BlocklistHashEnumerable(SqliteDataReader reader)
             {
                 m_reader = reader;
                 MoreData = true;
