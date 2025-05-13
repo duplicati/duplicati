@@ -21,6 +21,7 @@
 
 using System;
 using System.Threading.Tasks;
+using Duplicati.Library.Utility;
 using Microsoft.Data.Sqlite;
 
 #nullable enable
@@ -30,7 +31,7 @@ namespace Duplicati.Library.Main.Database;
 /// <summary>
 /// Wraps a transaction so it can be comitted and restarted
 /// </summary>
-internal class ReusableTransaction : IDisposable
+internal class ReusableTransaction(LocalDatabase db, SqliteTransaction? transaction = null) : IDisposable
 {
     /// <summary>
     /// The tag used for logging
@@ -40,26 +41,20 @@ internal class ReusableTransaction : IDisposable
     /// <summary>
     /// The database to use
     /// </summary>
-    private readonly LocalDatabase m_db;
+    private readonly LocalDatabase m_db = db;
     /// <summary>
     /// The current transaction
     /// </summary>
-    private SqliteTransaction? m_transaction;
-
+    private SqliteTransaction m_transaction = transaction ?? db.Connection.BeginTransaction();
     /// <summary>
     /// Creates a new reusable transaction
     /// </summary>
-    /// <param name="db">The database to use</param>
-    public ReusableTransaction(LocalDatabase db, SqliteTransaction? transaction = null)
-    {
-        m_db = db;
-        m_transaction = transaction ?? db.Connection.BeginTransaction();
-    }
+    private bool m_disposed = false;
 
     /// <summary>
     /// The current transaction
     /// </summary>
-    public SqliteTransaction Transaction => m_transaction ?? throw new InvalidOperationException("Transaction is disposed");
+    public SqliteTransaction Transaction => m_disposed ? m_transaction : throw new InvalidOperationException("Transaction is disposed");
 
     /// <summary>
     /// Commits the current transaction and optionally restarts it
@@ -68,42 +63,36 @@ internal class ReusableTransaction : IDisposable
     /// <param name="restart">True if the transaction should be restarted</param>
     public void Commit(string? message, bool restart = true)
     {
-        if (m_transaction == null)
-            throw new InvalidOperationException("Transaction is already disposed");
-
-        if (m_transaction != null)
-        {
-            using (var timer = string.IsNullOrWhiteSpace(message) ? null : new Logging.Timer(LOGTAG, message, $"CommitTransaction: {message}"))
-                m_transaction.Commit();
-            m_transaction.Dispose();
-            m_transaction = null;
-        }
-
-        if (restart)
-            m_transaction = m_db.Connection.BeginTransaction();
+        CommitAsync(message, restart).Await();
     }
 
     public async Task CommitAsync(string? message, bool restart = true)
     {
-        if (m_transaction == null)
+        if (m_disposed)
             throw new InvalidOperationException("Transaction is already disposed");
 
-        if (m_transaction != null)
-        {
-            using (var timer = string.IsNullOrWhiteSpace(message) ? null : new Logging.Timer(LOGTAG, message, $"CommitTransaction: {message}"))
-                await m_transaction.CommitAsync();
-            await m_transaction.DisposeAsync();
-            m_transaction = null;
-        }
+        using (var timer = string.IsNullOrWhiteSpace(message) ? null : new Logging.Timer(LOGTAG, message, $"CommitTransaction: {message}"))
+            await m_transaction.CommitAsync();
+        await m_transaction.DisposeAsync();
 
         if (restart)
             m_transaction = m_db.Connection.BeginTransaction();
+        else
+            m_disposed = true;
     }
 
     /// <inheritdoc/>
     public void Dispose()
     {
-        m_transaction?.Dispose();
-        m_transaction = null;
+        DisposeAsync().Await();
+    }
+
+    public async Task DisposeAsync()
+    {
+        if (!m_disposed)
+        {
+            m_disposed = true;
+            await m_transaction.DisposeAsync();
+        }
     }
 }
