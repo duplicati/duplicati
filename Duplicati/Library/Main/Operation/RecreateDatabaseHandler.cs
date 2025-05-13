@@ -198,7 +198,7 @@ namespace Duplicati.Library.Main.Operation
                 var hasUpdatedOptions = false;
 
                 //Record all blocksets and files needed
-                using (var tr = restoredb.BeginTransaction())
+                using (var tr = restoredb.Connection.BeginTransaction(deferred: true))
                 {
                     var filelistWork = (from n in filelists orderby n.Time select new RemoteVolume(n.File) as IRemoteVolume).ToList();
                     Logging.Log.WriteInformationMessage(LOGTAG, "RebuildStarted", "Rebuild database started, downloading {0} filelists", filelistWork.Count);
@@ -301,7 +301,7 @@ namespace Duplicati.Library.Main.Operation
                     //Grab all index files, and update the block table
 
                     using (var hashalg = HashFactory.CreateHasher(m_options.BlockHashAlgorithm))
-                    using (var tr = restoredb.BeginTransaction())
+                    using (var tr = restoredb.Connection.BeginTransaction(deferred: true))
                     {
                         hashsize = hashalg.HashSize / 8;
 
@@ -460,7 +460,7 @@ namespace Duplicati.Library.Main.Operation
                             {
                                 using (tmpfile)
                                 using (var rd = new BlockVolumeReader(RestoreHandler.GetCompressionModule(name), tmpfile, m_options))
-                                using (var tr = restoredb.BeginTransaction())
+                                using (var tr = restoredb.Connection.BeginTransaction(deferred: true))
                                 {
                                     if (!await m_result.TaskControl.ProgressRendevouz().ConfigureAwait(false))
                                     {
@@ -583,7 +583,7 @@ namespace Duplicati.Library.Main.Operation
 
             // update fileset using filesetData
             await restoredb.UpdateFullBackupStateInFileset(filesetid, filesetData.IsFullBackup, transaction);
-            transaction = restoredb.BeginTransaction();
+            transaction = restoredb.Connection.BeginTransaction(deferred: true);
 
             // clear any existing fileset entries
             await restoredb.ClearFilesetEntries(filesetid, transaction);
