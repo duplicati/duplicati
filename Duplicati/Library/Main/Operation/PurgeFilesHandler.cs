@@ -71,7 +71,7 @@ namespace Duplicati.Library.Main.Operation
             if (db.PartiallyRecreated)
                 throw new UserInformationException("The purge command does not work on partially recreated databases", "PurgeNotAllowedOnPartialDatabase");
 
-            if (db.RepairInProgress && filtercommand == null)
+            if (db.RecreateInProgress && filtercommand == null)
                 throw new UserInformationException(string.Format("The purge command does not work on an incomplete database, try the {0} operation.", "purge-broken-files"), "PurgeNotAllowedOnIncompleteDatabase");
 
             var versions = db.GetFilesetIDs(m_options.Time, m_options.Version).OrderByDescending(x => x).ToArray();

@@ -125,7 +125,7 @@ namespace Duplicati.Library.Main.Operation
             //We build a local database in steps.
             using (var restoredb = new LocalRecreateDatabase(dbparent, m_options))
             {
-                restoredb.RepairInProgress = true;
+                restoredb.RecreateInProgress = true;
                 var expRecreateDb = false; // experimental recreate db code flag
                 var volumeIds = new Dictionary<string, long>();
 
@@ -560,7 +560,7 @@ namespace Duplicati.Library.Main.Operation
 
                     Logging.Log.WriteInformationMessage(LOGTAG, "RecreateCompleted", "Recreate completed, and consistency checks completed, marking database as complete");
 
-                    restoredb.RepairInProgress = false;
+                    restoredb.RecreateInProgress = false;
                 }
 
                 m_result.EndTime = DateTime.UtcNow;

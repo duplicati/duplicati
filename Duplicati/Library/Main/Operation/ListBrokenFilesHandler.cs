@@ -62,8 +62,8 @@ namespace Duplicati.Library.Main.Operation
 
             if (brokensets.Length == 0)
             {
-                if (db.RepairInProgress)
-                    throw new UserInformationException("Cannot continue because the database is marked as being under repair, but does not have broken files.", "CannotListOnDatabaseInRepair");
+                if (db.RecreateInProgress)
+                    throw new UserInformationException("Cannot continue because the database is marked as being recreated, but does not have broken files.", "CannotListOnDatabaseInRecreate");
 
                 Logging.Log.WriteInformationMessage(LOGTAG, "NoBrokenFilesetsInDatabase", "No broken filesets found in database, checking for missing remote files");
 

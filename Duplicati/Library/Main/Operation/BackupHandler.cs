@@ -327,8 +327,8 @@ namespace Duplicati.Library.Main.Operation
                     if (database.PartiallyRecreated)
                         throw new UserInformationException("The database was only partially recreated. This database may be incomplete and the repair process is not allowed to alter remote files as that could result in data loss.", "DatabaseIsPartiallyRecreated");
 
-                    if (database.RepairInProgress)
-                        throw new UserInformationException("The database was attempted repaired, but the repair did not complete. This database may be incomplete and the backup process cannot continue. You may delete the local database and attempt to repair it again.", "DatabaseRepairInProgress");
+                    if (database.RecreateInProgress)
+                        throw new UserInformationException("The database was attempted recreated, but the process did not complete. This database may be incomplete and the backup process cannot continue. You may delete the local database and attempt to repair it again.", "DatabaseRecreateInProgress");
 
                     using (var db = new Backup.BackupDatabase(database, options))
                     {

@@ -742,10 +742,21 @@ AND Fileset.ID NOT IN
         /// <summary>
         /// Flag indicating if a repair is in progress
         /// </summary>
-        public bool RepairInProgress
+        public bool RecreateInProgress
         {
-            get => GetDbOptions().ContainsKey("repair-in-progress");
-            set => UpdateDbOption("repair-in-progress", value);
+            get
+            {
+                // Older versions used "repair-in-progress" as the flag, so we need to check both
+                var opts = GetDbOptions();
+                return opts.ContainsKey("repair-in-progress") || opts.ContainsKey("recreate-in-progress");
+            }
+            set
+            {
+                // Older versions used "repair-in-progress" as the flag, clear it, but don't set it
+                if (!value)
+                    UpdateDbOption("repair-in-progress", value);
+                UpdateDbOption("recreate-in-progress", value);
+            }
         }
 
         /// <summary>

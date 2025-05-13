@@ -136,8 +136,8 @@ namespace Duplicati.Library.Main.Operation
                 if (db.PartiallyRecreated)
                     throw new UserInformationException("The database was only partially recreated. This database may be incomplete and the repair process is not allowed to alter remote files as that could result in data loss.", "DatabaseIsPartiallyRecreated");
 
-                if (db.RepairInProgress)
-                    throw new UserInformationException("The database was attempted repaired, but the repair did not complete. This database may be incomplete and the repair process is not allowed to alter remote files as that could result in data loss.", "DatabaseIsInRepairState");
+                if (db.RecreateInProgress)
+                    throw new UserInformationException("The database was attempted recreated, but the process did not complete. This database may be incomplete and the repair process is not allowed to alter remote files as that could result in data loss.", "DatabaseIsInRecreateState");
 
                 // Ensure the database is consistent before we start fixing the remote
                 db.VerifyConsistencyForRepair(m_options.Blocksize, m_options.BlockhashSize, true, rtr.Transaction);
@@ -1143,7 +1143,7 @@ namespace Duplicati.Library.Main.Operation
             {
                 Utility.UpdateOptionsFromDb(db, m_options);
 
-                if (db.RepairInProgress || db.PartiallyRecreated)
+                if (db.RecreateInProgress || db.PartiallyRecreated)
                     Logging.Log.WriteWarningMessage(LOGTAG, "InProgressDatabase", null, "The database is marked as \"in-progress\" and may be incomplete.");
 
                 db.FixDuplicateMetahash();
