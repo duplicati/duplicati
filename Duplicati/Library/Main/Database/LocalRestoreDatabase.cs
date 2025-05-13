@@ -27,10 +27,12 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Main.Operation.Restore;
 using Duplicati.Library.Main.Volumes;
 using Duplicati.Library.Utility;
+using Microsoft.Data.Sqlite;
 
 namespace Duplicati.Library.Main.Database
 {
@@ -47,7 +49,7 @@ namespace Duplicati.Library.Main.Database
         /// </summary>
         protected string? m_tempfiletable;
         protected string? m_tempblocktable;
-        protected ConcurrentBag<IDbConnection> m_connection_pool = [];
+        protected ConcurrentBag<SqliteConnection> m_connection_pool = [];
         protected string? m_latestblocktable;
         protected string? m_fileprogtable;
         protected string? m_totalprogtable;
@@ -83,46 +85,47 @@ namespace Duplicati.Library.Main.Database
         /// Note: If a file is done once and then set back to a none restored state, the file is not automatically removed.
         ///       But if it reaches a restored state later, it will be re-added (trigger will fire)
         /// </remarks>
-        public void CreateProgressTracker(bool createFilesNewlyDoneTracker)
+        public async Task CreateProgressTracker(bool createFilesNewlyDoneTracker)
         {
             m_fileprogtable = "FileProgress-" + m_temptabsetguid;
             m_totalprogtable = "TotalProgress-" + m_temptabsetguid;
             m_filesnewlydonetable = createFilesNewlyDoneTracker ? "FilesNewlyDone-" + m_temptabsetguid : null;
 
-            using (var cmd = m_connection.CreateCommand())
-            {
-                // How to handle METADATA?
-                cmd.ExecuteNonQuery(FormatInvariant($@"DROP TABLE IF EXISTS ""{m_fileprogtable}"" "));
-                cmd.ExecuteNonQuery(FormatInvariant($@"CREATE TEMPORARY TABLE ""{m_fileprogtable}"" (
+            using var cmd = m_connection.CreateCommand();
+            cmd.Transaction = m_connection.BeginTransaction(deferred: true);
+
+            // How to handle METADATA?
+            await cmd.ExecuteNonQueryAsync(FormatInvariant($@"DROP TABLE IF EXISTS ""{m_fileprogtable}"" "));
+            await cmd.ExecuteNonQueryAsync(FormatInvariant($@"CREATE TEMPORARY TABLE ""{m_fileprogtable}"" (
 ""FileId"" INTEGER PRIMARY KEY,
 ""TotalBlocks"" INTEGER NOT NULL, ""TotalSize"" INTEGER NOT NULL,
 ""BlocksRestored"" INTEGER NOT NULL, ""SizeRestored"" INTEGER NOT NULL
 )"));
 
-                cmd.ExecuteNonQuery(FormatInvariant($@"DROP TABLE IF EXISTS ""{m_totalprogtable}"" "));
-                cmd.ExecuteNonQuery(FormatInvariant($@"CREATE TEMPORARY TABLE ""{m_totalprogtable}"" (
+            await cmd.ExecuteNonQueryAsync(FormatInvariant($@"DROP TABLE IF EXISTS ""{m_totalprogtable}"" "));
+            await cmd.ExecuteNonQueryAsync(FormatInvariant($@"CREATE TEMPORARY TABLE ""{m_totalprogtable}"" (
 ""TotalFiles"" INTEGER NOT NULL, ""TotalBlocks"" INTEGER NOT NULL, ""TotalSize"" INTEGER NOT NULL,
 ""FilesFullyRestored"" INTEGER NOT NULL, ""FilesPartiallyRestored"" INTEGER NOT NULL,
 ""BlocksRestored"" INTEGER NOT NULL, ""SizeRestored"" INTEGER NOT NULL
 )"));
 
-                if (createFilesNewlyDoneTracker)
-                {
-                    cmd.ExecuteNonQuery(FormatInvariant($@"DROP TABLE IF EXISTS ""{m_filesnewlydonetable}"" "));
-                    cmd.ExecuteNonQuery(FormatInvariant($@"CREATE TEMPORARY TABLE ""{m_filesnewlydonetable}"" (
+            if (createFilesNewlyDoneTracker)
+            {
+                await cmd.ExecuteNonQueryAsync(FormatInvariant($@"DROP TABLE IF EXISTS ""{m_filesnewlydonetable}"" "));
+                await cmd.ExecuteNonQueryAsync(FormatInvariant($@"CREATE TEMPORARY TABLE ""{m_filesnewlydonetable}"" (
 ""ID"" INTEGER PRIMARY KEY
 )"));
-                }
+            }
 
-                try
-                {
-                    // Initialize statistics with File- and Block-Data (it is valid to already have restored blocks in files)
-                    // A rebuild with this function should be valid anytime.
-                    // Note: FilesNewlyDone is NOT initialized, as in initialization nothing is really new.
-                    string sql;
+            try
+            {
+                // Initialize statistics with File- and Block-Data (it is valid to already have restored blocks in files)
+                // A rebuild with this function should be valid anytime.
+                // Note: FilesNewlyDone is NOT initialized, as in initialization nothing is really new.
+                string sql;
 
-                    // We use a LEFT JOIN to allow for empty files (no data Blocks)
-                    sql = FormatInvariant($@" INSERT INTO ""{m_fileprogtable}"" (""FileId"", ""TotalBlocks"", ""TotalSize"", ""BlocksRestored"", ""SizeRestored"")
+                // We use a LEFT JOIN to allow for empty files (no data Blocks)
+                sql = FormatInvariant($@" INSERT INTO ""{m_fileprogtable}"" (""FileId"", ""TotalBlocks"", ""TotalSize"", ""BlocksRestored"", ""SizeRestored"")
 SELECT   ""F"".""ID"", IFNULL(COUNT(""B"".""ID""), 0), IFNULL(SUM(""B"".""Size""), 0)
        , IFNULL(COUNT(CASE ""B"".""Restored"" WHEN 1 THEN ""B"".""ID"" ELSE NULL END), 0)
        , IFNULL(SUM(CASE ""B"".""Restored"" WHEN 1 THEN ""B"".""Size"" ELSE 0 END), 0)
@@ -131,10 +134,10 @@ SELECT   ""F"".""ID"", IFNULL(COUNT(""B"".""ID""), 0), IFNULL(SUM(""B"".""Size""
  WHERE ""B"".""Metadata"" IS NOT 1
  GROUP BY ""F"".""ID"" ");
 
-                    // Will be one row per file.
-                    cmd.ExecuteNonQuery(sql);
+                // Will be one row per file.
+                await cmd.ExecuteNonQueryAsync(sql);
 
-                    sql = FormatInvariant($@"INSERT INTO ""{m_totalprogtable}"" (
+                sql = FormatInvariant($@"INSERT INTO ""{m_totalprogtable}"" (
   ""TotalFiles"", ""TotalBlocks"", ""TotalSize""
 , ""FilesFullyRestored"", ""FilesPartiallyRestored"", ""BlocksRestored"", ""SizeRestored""
  )
@@ -144,27 +147,27 @@ SELECT   ""F"".""ID"", IFNULL(COUNT(""B"".""ID""), 0), IFNULL(SUM(""B"".""Size""
         , IFNULL(SUM(""P"".""BlocksRestored""), 0), IFNULL(SUM(""P"".""SizeRestored""), 0)
    FROM ""{m_fileprogtable}"" ""P"" ");
 
-                    // Will result in a single line (no support to also track metadata)
-                    cmd.ExecuteNonQuery(sql);
+                // Will result in a single line (no support to also track metadata)
+                await cmd.ExecuteNonQueryAsync(sql);
 
-                    // Finally we create TRIGGERs to keep all our statistics up to date.
-                    // This is lightning fast, as SQLite uses internal hooks and our indices to do the update magic.
-                    // Note: We do assume that neither files nor blocks will be added or deleted during restore process
-                    //       and that the size of each block stays constant so there is no need to track that information
-                    //       with additional INSERT and DELETE triggers.
+                // Finally we create TRIGGERs to keep all our statistics up to date.
+                // This is lightning fast, as SQLite uses internal hooks and our indices to do the update magic.
+                // Note: We do assume that neither files nor blocks will be added or deleted during restore process
+                //       and that the size of each block stays constant so there is no need to track that information
+                //       with additional INSERT and DELETE triggers.
 
-                    // A trigger to update the file-stat entry each time a block changes restoration state.
-                    sql = FormatInvariant($@"CREATE TEMPORARY TRIGGER ""TrackRestoredBlocks_{m_tempblocktable}"" AFTER UPDATE OF ""Restored"" ON ""{m_tempblocktable}""
+                // A trigger to update the file-stat entry each time a block changes restoration state.
+                sql = FormatInvariant($@"CREATE TEMPORARY TRIGGER ""TrackRestoredBlocks_{m_tempblocktable}"" AFTER UPDATE OF ""Restored"" ON ""{m_tempblocktable}""
 WHEN OLD.""Restored"" != NEW.""Restored"" AND NEW.""Metadata"" = 0
 BEGIN UPDATE ""{m_fileprogtable}""
    SET ""BlocksRestored"" = ""{m_fileprogtable}"".""BlocksRestored"" + (NEW.""Restored"" - OLD.""Restored"")
      , ""SizeRestored"" = ""{m_fileprogtable}"".""SizeRestored"" + ((NEW.""Restored"" - OLD.""Restored"") * NEW.Size)
  WHERE ""{m_fileprogtable}"".""FileId"" = NEW.""FileID""
 ; END ");
-                    cmd.ExecuteNonQuery(sql);
+                await cmd.ExecuteNonQueryAsync(sql);
 
-                    // A trigger to update total stats each time a file stat changed (nested triggering by file-stats)
-                    sql = FormatInvariant($@"CREATE TEMPORARY TRIGGER ""UpdateTotalStats_{m_fileprogtable}"" AFTER UPDATE ON ""{m_fileprogtable}""
+                // A trigger to update total stats each time a file stat changed (nested triggering by file-stats)
+                sql = FormatInvariant($@"CREATE TEMPORARY TRIGGER ""UpdateTotalStats_{m_fileprogtable}"" AFTER UPDATE ON ""{m_fileprogtable}""
 BEGIN UPDATE ""{m_totalprogtable}""
    SET ""FilesFullyRestored"" = ""{m_totalprogtable}"".""FilesFullyRestored""
                + (CASE WHEN NEW.""BlocksRestored"" = NEW.""TotalBlocks"" THEN 1 ELSE 0 END)
@@ -175,156 +178,158 @@ BEGIN UPDATE ""{m_totalprogtable}""
      , ""BlocksRestored"" = ""{m_totalprogtable}"".""BlocksRestored"" + NEW.""BlocksRestored"" - OLD.""BlocksRestored""
      , ""SizeRestored"" = ""{m_totalprogtable}"".""SizeRestored"" + NEW.""SizeRestored"" - OLD.""SizeRestored""
 ; END");
-                    cmd.ExecuteNonQuery(sql);
+                await cmd.ExecuteNonQueryAsync(sql);
 
 
-                    if (createFilesNewlyDoneTracker)
-                    {
-                        // A trigger checking if a file is done (all blocks restored in file-stat) (nested triggering by file-stats)
-                        sql = FormatInvariant($@"CREATE TEMPORARY TRIGGER ""UpdateFilesNewlyDone_{m_fileprogtable}"" AFTER UPDATE OF ""BlocksRestored"", ""TotalBlocks"" ON ""{m_fileprogtable}""
+                if (createFilesNewlyDoneTracker)
+                {
+                    // A trigger checking if a file is done (all blocks restored in file-stat) (nested triggering by file-stats)
+                    sql = FormatInvariant($@"CREATE TEMPORARY TRIGGER ""UpdateFilesNewlyDone_{m_fileprogtable}"" AFTER UPDATE OF ""BlocksRestored"", ""TotalBlocks"" ON ""{m_fileprogtable}""
 WHEN NEW.""BlocksRestored"" = NEW.""TotalBlocks""
 BEGIN
    INSERT OR IGNORE INTO ""{m_filesnewlydonetable}"" (""ID"") VALUES (NEW.""FileId"");
 END ");
-                        cmd.ExecuteNonQuery(sql);
-                    }
+                    await cmd.ExecuteNonQueryAsync(sql);
+                }
 
-                }
-                catch (Exception ex)
-                {
-                    m_fileprogtable = null;
-                    m_totalprogtable = null;
-                    Logging.Log.WriteWarningMessage(LOGTAG, "ProgressTrackerSetupError", ex, "Failed to set up progress tracking tables");
-                    throw;
-                }
+            }
+            catch (Exception ex)
+            {
+                m_fileprogtable = null;
+                m_totalprogtable = null;
+                Logging.Log.WriteWarningMessage(LOGTAG, "ProgressTrackerSetupError", ex, "Failed to set up progress tracking tables");
+                throw;
+            }
+            finally
+            {
+                await cmd.Transaction.CommitAsync();
             }
         }
 
-        public Tuple<long, long> PrepareRestoreFilelist(DateTime restoretime, long[] versions, IFilter filter)
+        public async Task<Tuple<long, long>> PrepareRestoreFilelist(DateTime restoretime, long[] versions, IFilter filter)
         {
             m_tempfiletable = "Fileset-" + m_temptabsetguid;
             m_tempblocktable = "Blocks-" + m_temptabsetguid;
 
             using (var cmd = m_connection.CreateCommand())
             {
-                var filesetIds = GetFilesetIDs(Library.Utility.Utility.NormalizeDateTime(restoretime), versions).ToList();
+                cmd.Transaction = m_connection.BeginTransaction(deferred: true);
+                var filesetIds = (await GetFilesetIDs(Library.Utility.Utility.NormalizeDateTime(restoretime), versions)).ToList();
                 while (filesetIds.Count > 0)
                 {
                     var filesetId = filesetIds[0];
                     filesetIds.RemoveAt(0);
 
-                    m_restoreTime = ParseFromEpochSeconds(cmd
-                        .SetCommandAndParameters(@"SELECT ""Timestamp"" FROM ""Fileset"" WHERE ""ID"" = @FilesetId")
-                        .SetParameterValue("@FilesetId", filesetId)
-                        .ExecuteScalarInt64(0));
+                    cmd.SetCommandAndParameters(@"SELECT ""Timestamp"" FROM ""Fileset"" WHERE ""ID"" = @FilesetId");
+                    cmd.SetParameterValue("@FilesetId", filesetId);
+                    m_restoreTime = ParseFromEpochSeconds(await cmd.ExecuteScalarInt64Async(0));
 
-                    var ix = FilesetTimes.Select((value, index) => new { value.Key, index })
+                    var ix = await FilesetTimes().Select((value, index) => new { value.Key, index })
                             .Where(n => n.Key == filesetId)
                             .Select(pair => pair.index + 1)
-                            .FirstOrDefault() - 1;
+                            .FirstOrDefaultAsync() - 1;
 
                     Logging.Log.WriteInformationMessage(LOGTAG, "SearchingBackup", "Searching backup {0} ({1}) ...", ix, m_restoreTime);
 
                     cmd.Parameters.Clear();
 
-                    cmd.ExecuteNonQuery(FormatInvariant($@"DROP TABLE IF EXISTS ""{m_tempfiletable}"" "));
-                    cmd.ExecuteNonQuery(FormatInvariant($@"DROP TABLE IF EXISTS ""{m_tempblocktable}"" "));
-                    cmd.ExecuteNonQuery(FormatInvariant($@"CREATE TEMPORARY TABLE ""{m_tempfiletable}"" (""ID"" INTEGER PRIMARY KEY, ""Path"" TEXT NOT NULL, ""BlocksetID"" INTEGER NOT NULL, ""MetadataID"" INTEGER NOT NULL, ""TargetPath"" TEXT NULL, ""DataVerified"" BOOLEAN NOT NULL, ""LatestBlocksetId"" INTEGER, ""LocalSourceExists"" BOOLEAN) "));
-                    cmd.ExecuteNonQuery(FormatInvariant($@"CREATE TEMPORARY TABLE ""{m_tempblocktable}"" (""ID"" INTEGER PRIMARY KEY, ""FileID"" INTEGER NOT NULL, ""Index"" INTEGER NOT NULL, ""Hash"" TEXT NOT NULL, ""Size"" INTEGER NOT NULL, ""Restored"" BOOLEAN NOT NULL, ""Metadata"" BOOLEAN NOT NULL, ""VolumeID"" INTEGER NOT NULL, ""BlockID"" INTEGER NOT NULL)"));
+                    await cmd.ExecuteNonQueryAsync(FormatInvariant($@"DROP TABLE IF EXISTS ""{m_tempfiletable}"" "));
+                    await cmd.ExecuteNonQueryAsync(FormatInvariant($@"DROP TABLE IF EXISTS ""{m_tempblocktable}"" "));
+                    await cmd.ExecuteNonQueryAsync(FormatInvariant($@"CREATE TEMPORARY TABLE ""{m_tempfiletable}"" (""ID"" INTEGER PRIMARY KEY, ""Path"" TEXT NOT NULL, ""BlocksetID"" INTEGER NOT NULL, ""MetadataID"" INTEGER NOT NULL, ""TargetPath"" TEXT NULL, ""DataVerified"" BOOLEAN NOT NULL, ""LatestBlocksetId"" INTEGER, ""LocalSourceExists"" BOOLEAN) "));
+                    await cmd.ExecuteNonQueryAsync(FormatInvariant($@"CREATE TEMPORARY TABLE ""{m_tempblocktable}"" (""ID"" INTEGER PRIMARY KEY, ""FileID"" INTEGER NOT NULL, ""Index"" INTEGER NOT NULL, ""Hash"" TEXT NOT NULL, ""Size"" INTEGER NOT NULL, ""Restored"" BOOLEAN NOT NULL, ""Metadata"" BOOLEAN NOT NULL, ""VolumeID"" INTEGER NOT NULL, ""BlockID"" INTEGER NOT NULL)"));
 
                     // TODO: Optimize to use the path prefix
 
                     if (filter == null || filter.Empty)
                     {
                         // Simple case, restore everything
-                        cmd.SetCommandAndParameters(FormatInvariant($@"INSERT INTO ""{m_tempfiletable}"" (""ID"", ""Path"", ""BlocksetID"", ""MetadataID"", ""DataVerified"") SELECT ""File"".""ID"", ""File"".""Path"", ""File"".""BlocksetID"", ""File"".""MetadataID"", 0 FROM ""File"", ""FilesetEntry"" WHERE ""File"".""ID"" = ""FilesetEntry"".""FileID"" AND ""FilesetEntry"".""FilesetID"" = @FilesetId"))
-                            .SetParameterValue("@FilesetId", filesetId)
-                            .ExecuteNonQuery();
+                        cmd.SetCommandAndParameters(FormatInvariant($@"INSERT INTO ""{m_tempfiletable}"" (""ID"", ""Path"", ""BlocksetID"", ""MetadataID"", ""DataVerified"") SELECT ""File"".""ID"", ""File"".""Path"", ""File"".""BlocksetID"", ""File"".""MetadataID"", 0 FROM ""File"", ""FilesetEntry"" WHERE ""File"".""ID"" = ""FilesetEntry"".""FileID"" AND ""FilesetEntry"".""FilesetID"" = @FilesetId"));
+                        cmd.SetParameterValue("@FilesetId", filesetId);
+                        await cmd.ExecuteNonQueryAsync();
                     }
                     else if (Library.Utility.Utility.IsFSCaseSensitive && filter is FilterExpression expression && expression.Type == FilterType.Simple)
                     {
+                        using (new Logging.Timer(LOGTAG, "CommitBeforePrepareFileset", "CommitBeforePrepareFileset"))
+                            await cmd.Transaction.CommitAsync();
+                        cmd.Transaction = m_connection.BeginTransaction(deferred: true);
                         // If we get a list of filenames, the lookup table is faster
                         // unfortunately we cannot do this if the filesystem is case sensitive as
                         // SQLite only supports ASCII compares
-                        using (var tr = m_connection.BeginTransactionSafe())
+                        var p = expression.GetSimpleList();
+                        var m_filenamestable = "Filenames-" + m_temptabsetguid;
+                        await cmd.ExecuteNonQueryAsync(FormatInvariant($@"CREATE TEMPORARY TABLE ""{m_filenamestable}"" (""Path"" TEXT NOT NULL) "));
+                        cmd.SetCommandAndParameters(FormatInvariant($@"INSERT INTO ""{m_filenamestable}"" (""Path"") VALUES (@Path)"));
+
+                        foreach (var s in p)
                         {
-                            var p = expression.GetSimpleList();
-                            var m_filenamestable = "Filenames-" + m_temptabsetguid;
-                            cmd.Transaction = tr;
-                            cmd.ExecuteNonQuery(FormatInvariant($@"CREATE TEMPORARY TABLE ""{m_filenamestable}"" (""Path"" TEXT NOT NULL) "));
-                            cmd.SetCommandAndParameters(FormatInvariant($@"INSERT INTO ""{m_filenamestable}"" (""Path"") VALUES (@Path)"));
-
-                            foreach (var s in p)
-                            {
-                                cmd.SetParameterValue("@Path", s)
-                                    .ExecuteNonQuery();
-                            }
-
-                            var c = cmd.SetCommandAndParameters(FormatInvariant($@"INSERT INTO ""{m_tempfiletable}"" (""ID"", ""Path"", ""BlocksetID"", ""MetadataID"", ""DataVerified"") SELECT ""File"".""ID"", ""File"".""Path"", ""File"".""BlocksetID"", ""File"".""MetadataID"", 0 FROM ""File"", ""FilesetEntry"" WHERE ""File"".""ID"" = ""FilesetEntry"".""FileID"" AND ""FilesetEntry"".""FilesetID"" = @FilesetId AND ""Path"" IN (SELECT DISTINCT ""Path"" FROM ""{m_filenamestable}"") "))
-                                .SetParameterValue("@FilesetId", filesetId)
-                                .ExecuteNonQuery();
-
-                            cmd.Parameters.Clear();
-
-                            if (c != p.Length && c != 0)
-                            {
-                                var sb = new StringBuilder();
-                                sb.AppendLine();
-
-                                using (var rd = cmd.ExecuteReader(FormatInvariant($@"SELECT ""Path"" FROM ""{m_filenamestable}"" WHERE ""Path"" NOT IN (SELECT ""Path"" FROM ""{m_tempfiletable}"")")))
-                                    while (rd.Read())
-                                        sb.AppendLine(rd.ConvertValueToString(0));
-
-                                var actualrestoretime = ParseFromEpochSeconds(
-                                    cmd.SetCommandAndParameters(@"SELECT ""Timestamp"" FROM ""Fileset"" WHERE ""ID"" = @FilesetId")
-                                        .SetParameterValue("@FilesetId", filesetId)
-                                        .ExecuteScalarInt64(0));
-
-                                Logging.Log.WriteWarningMessage(LOGTAG, "FilesNotFoundInBackupList", null, "{0} File(s) were not found in list of files for backup at {1}, will not be restored: {2}", p.Length - c, actualrestoretime.ToLocalTime(), sb);
-                                cmd.Parameters.Clear();
-                            }
-
-                            cmd.ExecuteNonQuery(FormatInvariant($@"DROP TABLE IF EXISTS ""{m_filenamestable}"" "));
-
-                            using (new Logging.Timer(LOGTAG, "CommitPrepareFileset", "CommitPrepareFileset"))
-                                tr.Commit();
+                            cmd.SetParameterValue("@Path", s);
+                            await cmd.ExecuteNonQueryAsync();
                         }
+
+                        cmd.SetCommandAndParameters(FormatInvariant($@"INSERT INTO ""{m_tempfiletable}"" (""ID"", ""Path"", ""BlocksetID"", ""MetadataID"", ""DataVerified"") SELECT ""File"".""ID"", ""File"".""Path"", ""File"".""BlocksetID"", ""File"".""MetadataID"", 0 FROM ""File"", ""FilesetEntry"" WHERE ""File"".""ID"" = ""FilesetEntry"".""FileID"" AND ""FilesetEntry"".""FilesetID"" = @FilesetId AND ""Path"" IN (SELECT DISTINCT ""Path"" FROM ""{m_filenamestable}"") "));
+                        cmd.SetParameterValue("@FilesetId", filesetId);
+                        var c = await cmd.ExecuteNonQueryAsync();
+
+                        cmd.Parameters.Clear();
+
+                        if (c != p.Length && c != 0)
+                        {
+                            var sb = new StringBuilder();
+                            sb.AppendLine();
+
+                            using (var rd = await cmd.ExecuteReaderAsync(FormatInvariant($@"SELECT ""Path"" FROM ""{m_filenamestable}"" WHERE ""Path"" NOT IN (SELECT ""Path"" FROM ""{m_tempfiletable}"")")))
+                                while (await rd.ReadAsync())
+                                    sb.AppendLine(rd.ConvertValueToString(0));
+
+                            cmd.SetCommandAndParameters(@"SELECT ""Timestamp"" FROM ""Fileset"" WHERE ""ID"" = @FilesetId");
+                            cmd.SetParameterValue("@FilesetId", filesetId);
+                            var actualrestoretime = ParseFromEpochSeconds(await cmd.ExecuteScalarInt64Async(0));
+
+                            Logging.Log.WriteWarningMessage(LOGTAG, "FilesNotFoundInBackupList", null, "{0} File(s) were not found in list of files for backup at {1}, will not be restored: {2}", p.Length - c, actualrestoretime.ToLocalTime(), sb);
+                            cmd.Parameters.Clear();
+                        }
+
+                        await cmd.ExecuteNonQueryAsync(FormatInvariant($@"DROP TABLE IF EXISTS ""{m_filenamestable}"" "));
+
+                        using (new Logging.Timer(LOGTAG, "CommitAfterPrepareFileset", "CommitAfterPrepareFileset"))
+                            await cmd.Transaction.CommitAsync();
+                        cmd.Transaction = m_connection.BeginTransaction(deferred: true);
                     }
                     else
                     {
                         // Restore but filter elements based on the filter expression
                         // If this is too slow, we could add a special handler for wildcard searches too
-                        cmd.SetCommandAndParameters(@"SELECT ""File"".""ID"", ""File"".""Path"", ""File"".""BlocksetID"", ""File"".""MetadataID"" FROM ""File"", ""FilesetEntry"" WHERE ""File"".""ID"" = ""FilesetEntry"".""FileID"" AND ""FilesetID"" = @FilesetId")
-                            .SetParameterValue("@FilesetId", filesetId);
+                        cmd.SetCommandAndParameters(@"SELECT ""File"".""ID"", ""File"".""Path"", ""File"".""BlocksetID"", ""File"".""MetadataID"" FROM ""File"", ""FilesetEntry"" WHERE ""File"".""ID"" = ""FilesetEntry"".""FileID"" AND ""FilesetID"" = @FilesetId");
+                        cmd.SetParameterValue("@FilesetId", filesetId);
 
                         object[] values = new object[4];
-                        using (var cmd2 = m_connection.CreateCommand(FormatInvariant($@"INSERT INTO ""{m_tempfiletable}"" (""ID"", ""Path"", ""BlocksetID"", ""MetadataID"", ""DataVerified"") VALUES (@ID, @Path, @BlocksetID, @MetadataID, 0)")))
-                        using (var rd = cmd.ExecuteReader())
-                            while (rd.Read())
+                        using var cmd2 = m_connection.CreateCommand(FormatInvariant($@"INSERT INTO ""{m_tempfiletable}"" (""ID"", ""Path"", ""BlocksetID"", ""MetadataID"", ""DataVerified"") VALUES (@ID, @Path, @BlocksetID, @MetadataID, 0)"));
+                        using var rd = await cmd.ExecuteReaderAsync();
+                        while (await rd.ReadAsync())
+                        {
+                            rd.GetValues(values);
+                            if (values[1] != null && values[1] != DBNull.Value && FilterExpression.Matches(filter, values[1].ToString()))
                             {
-                                rd.GetValues(values);
-                                if (values[1] != null && values[1] != DBNull.Value && FilterExpression.Matches(filter, values[1].ToString()))
-                                {
-                                    cmd2.SetParameterValue("@ID", values[0])
-                                        .SetParameterValue("@Path", values[1])
-                                        .SetParameterValue("@BlocksetID", values[2])
-                                        .SetParameterValue("@MetadataID", values[3])
-                                        .ExecuteNonQuery();
-                                }
+                                cmd2.SetParameterValue("@ID", values[0]);
+                                cmd2.SetParameterValue("@Path", values[1]);
+                                cmd2.SetParameterValue("@BlocksetID", values[2]);
+                                cmd2.SetParameterValue("@MetadataID", values[3]);
+                                await cmd2.ExecuteNonQueryAsync();
                             }
+                        }
                     }
 
                     //creating indexes after insertion is much faster
-                    cmd.ExecuteNonQuery(FormatInvariant($@"CREATE INDEX ""{m_tempfiletable}_ID"" ON ""{m_tempfiletable}"" (""ID"")"));
-                    cmd.ExecuteNonQuery(FormatInvariant($@"CREATE INDEX ""{m_tempfiletable}_TargetPath"" ON ""{m_tempfiletable}"" (""TargetPath"")"));
-                    cmd.ExecuteNonQuery(FormatInvariant($@"CREATE INDEX ""{m_tempfiletable}_Path"" ON ""{m_tempfiletable}"" (""Path"")"));
+                    await cmd.ExecuteNonQueryAsync(FormatInvariant($@"CREATE INDEX ""{m_tempfiletable}_ID"" ON ""{m_tempfiletable}"" (""ID"")"));
+                    await cmd.ExecuteNonQueryAsync(FormatInvariant($@"CREATE INDEX ""{m_tempfiletable}_TargetPath"" ON ""{m_tempfiletable}"" (""TargetPath"")"));
+                    await cmd.ExecuteNonQueryAsync(FormatInvariant($@"CREATE INDEX ""{m_tempfiletable}_Path"" ON ""{m_tempfiletable}"" (""Path"")"));
 
-                    using (var rd = cmd.ExecuteReader(FormatInvariant($@"SELECT COUNT(DISTINCT ""{m_tempfiletable}"".""Path""), SUM(""Blockset"".""Length"") FROM ""{m_tempfiletable}"", ""Blockset"" WHERE ""{m_tempfiletable}"".""BlocksetID"" = ""Blockset"".""ID"" ")))
+                    using (var rd = await cmd.ExecuteReaderAsync(FormatInvariant($@"SELECT COUNT(DISTINCT ""{m_tempfiletable}"".""Path""), SUM(""Blockset"".""Length"") FROM ""{m_tempfiletable}"", ""Blockset"" WHERE ""{m_tempfiletable}"".""BlocksetID"" = ""Blockset"".""ID"" ")))
                     {
                         var filecount = 0L;
                         var filesize = 0L;
 
-                        if (rd.Read())
+                        if (await rd.ReadAsync())
                         {
                             filecount = rd.ConvertValueToInt64(0, 0);
                             filesize = rd.ConvertValueToInt64(1, 0);
@@ -337,161 +342,167 @@ END ");
                         }
                     }
                 }
+
+                await cmd.Transaction.CommitAsync();
             }
 
             return new Tuple<long, long>(0, 0);
         }
 
-        public string? GetFirstPath()
+        public async Task<string?> GetFirstPath()
         {
-            using (var cmd = m_connection.CreateCommand())
-            {
-                var v0 = cmd.ExecuteScalar(FormatInvariant($@"SELECT ""Path"" FROM ""{m_tempfiletable}"" ORDER BY LENGTH(""Path"") DESC LIMIT 1"));
-                if (v0 == null || v0 == DBNull.Value)
-                    return null;
+            using var cmd = m_connection.CreateCommand();
+            cmd.Transaction = m_connection.BeginTransaction(deferred: true);
+            var v0 = await cmd.ExecuteScalarAsync(FormatInvariant($@"SELECT ""Path"" FROM ""{m_tempfiletable}"" ORDER BY LENGTH(""Path"") DESC LIMIT 1"));
+            if (v0 == null || v0 == DBNull.Value)
+                return null;
+            await cmd.Transaction.CommitAsync();
 
-                return v0.ToString();
-            }
+            return v0.ToString();
         }
 
-        public string GetLargestPrefix()
+        public async Task<string> GetLargestPrefix()
         {
-            using (var cmd = m_connection.CreateCommand())
+            using var cmd = m_connection.CreateCommand();
+            cmd.Transaction = m_connection.BeginTransaction(deferred: true);
+            var v0 = await cmd.ExecuteScalarAsync(FormatInvariant($@"SELECT ""Path"" FROM ""{m_tempfiletable}"" ORDER BY LENGTH(""Path"") DESC LIMIT 1"));
+            var maxpath = "";
+            if (v0 != null && v0 != DBNull.Value)
+                maxpath = v0.ToString()!;
+
+            var dirsep = Util.GuessDirSeparator(maxpath);
+
+            var filecount = await cmd.ExecuteScalarInt64Async(FormatInvariant($@"SELECT COUNT(*) FROM ""{m_tempfiletable}"""), -1);
+            var foundfiles = -1L;
+
+            //TODO: Handle FS case-sensitive?
+            cmd.SetCommandAndParameters(FormatInvariant($@"SELECT COUNT(*) FROM ""{m_tempfiletable}"" WHERE SUBSTR(""Path"", 1, @PrefixLength) = @Prefix"));
+
+            while (filecount != foundfiles && maxpath.Length > 0)
             {
-                var v0 = cmd.ExecuteScalar(FormatInvariant($@"SELECT ""Path"" FROM ""{m_tempfiletable}"" ORDER BY LENGTH(""Path"") DESC LIMIT 1"));
-                var maxpath = "";
-                if (v0 != null && v0 != DBNull.Value)
-                    maxpath = v0.ToString()!;
+                var mp = Util.AppendDirSeparator(maxpath, dirsep);
+                cmd.SetParameterValue("@PrefixLength", mp.Length);
+                cmd.SetParameterValue("@Prefix", mp);
+                foundfiles = await cmd.ExecuteScalarInt64Async(-1);
 
-                var dirsep = Util.GuessDirSeparator(maxpath);
-
-                var filecount = cmd.ExecuteScalarInt64(FormatInvariant($@"SELECT COUNT(*) FROM ""{m_tempfiletable}"""), -1);
-                var foundfiles = -1L;
-
-                //TODO: Handle FS case-sensitive?
-                cmd.SetCommandAndParameters(FormatInvariant($@"SELECT COUNT(*) FROM ""{m_tempfiletable}"" WHERE SUBSTR(""Path"", 1, @PrefixLength) = @Prefix"));
-
-                while (filecount != foundfiles && maxpath.Length > 0)
+                if (filecount != foundfiles)
                 {
-                    var mp = Util.AppendDirSeparator(maxpath, dirsep);
-                    foundfiles = cmd.SetParameterValue("@PrefixLength", mp.Length)
-                        .SetParameterValue("@Prefix", mp)
-                        .ExecuteScalarInt64(-1);
+                    var oldlen = maxpath.Length;
 
-                    if (filecount != foundfiles)
-                    {
-                        var oldlen = maxpath.Length;
-
-                        var lix = maxpath.LastIndexOf(dirsep, maxpath.Length - 2, StringComparison.Ordinal);
-                        maxpath = maxpath.Substring(0, lix + 1);
-                        if (string.IsNullOrWhiteSpace(maxpath) || maxpath.Length == oldlen)
-                            maxpath = "";
-                    }
+                    var lix = maxpath.LastIndexOf(dirsep, maxpath.Length - 2, StringComparison.Ordinal);
+                    maxpath = maxpath.Substring(0, lix + 1);
+                    if (string.IsNullOrWhiteSpace(maxpath) || maxpath.Length == oldlen)
+                        maxpath = "";
                 }
-
-                return maxpath == "" ? "" : Util.AppendDirSeparator(maxpath, dirsep);
             }
+
+            await cmd.Transaction.CommitAsync();
+
+            return maxpath == "" ? "" : Util.AppendDirSeparator(maxpath, dirsep);
         }
 
-        public void SetTargetPaths(string largest_prefix, string destination)
+        public async Task SetTargetPaths(string largest_prefix, string destination)
         {
-            var dirsep = Util.GuessDirSeparator(string.IsNullOrWhiteSpace(largest_prefix) ? GetFirstPath() : largest_prefix);
+            var dirsep = Util.GuessDirSeparator(string.IsNullOrWhiteSpace(largest_prefix) ? await GetFirstPath() : largest_prefix);
 
-            using (var cmd = m_connection.CreateCommand())
+            using var cmd = m_connection.CreateCommand();
+            cmd.Transaction = m_connection.BeginTransaction(deferred: true);
+            if (string.IsNullOrEmpty(destination))
             {
-                if (string.IsNullOrEmpty(destination))
+                //The string fixing here is meant to provide some non-random
+                // defaults when restoring cross OS, e.g. backup on Linux, restore on Windows
+                //This is mostly meaningless, and the user really should use --restore-path
+
+                if ((OperatingSystem.IsMacOS() || OperatingSystem.IsLinux()) && dirsep == "\\")
                 {
-                    //The string fixing here is meant to provide some non-random
-                    // defaults when restoring cross OS, e.g. backup on Linux, restore on Windows
-                    //This is mostly meaningless, and the user really should use --restore-path
+                    // For Win -> Linux, we remove the colon from the drive letter, and use the drive letter as root folder
+                    await cmd.ExecuteNonQueryAsync(FormatInvariant($@"UPDATE ""{m_tempfiletable}"" SET ""Targetpath"" = CASE WHEN SUBSTR(""Path"", 2, 1) == ':' THEN '\\' || SUBSTR(""Path"", 1, 1) || SUBSTR(""Path"", 3) ELSE ""Path"" END"));
+                    await cmd.ExecuteNonQueryAsync(FormatInvariant($@"UPDATE ""{m_tempfiletable}"" SET ""Targetpath"" = CASE WHEN SUBSTR(""Path"", 1, 2) == '\\' THEN '\\' || SUBSTR(""Path"", 2) ELSE ""Path"" END"));
 
-                    if ((OperatingSystem.IsMacOS() || OperatingSystem.IsLinux()) && dirsep == "\\")
-                    {
-                        // For Win -> Linux, we remove the colon from the drive letter, and use the drive letter as root folder
-                        cmd.ExecuteNonQuery(FormatInvariant($@"UPDATE ""{m_tempfiletable}"" SET ""Targetpath"" = CASE WHEN SUBSTR(""Path"", 2, 1) == ':' THEN '\\' || SUBSTR(""Path"", 1, 1) || SUBSTR(""Path"", 3) ELSE ""Path"" END"));
-                        cmd.ExecuteNonQuery(FormatInvariant($@"UPDATE ""{m_tempfiletable}"" SET ""Targetpath"" = CASE WHEN SUBSTR(""Path"", 1, 2) == '\\' THEN '\\' || SUBSTR(""Path"", 2) ELSE ""Path"" END"));
-
-                    }
-                    else if (OperatingSystem.IsWindows() && dirsep == "/")
-                    {
-                        // For Linux -> Win, we use the temporary folder's drive as the root path
-                        cmd.SetCommandAndParameters(FormatInvariant($@"UPDATE ""{m_tempfiletable}"" SET ""Targetpath"" = CASE WHEN SUBSTR(""Path"", 1, 1) == '/' THEN @Path || SUBSTR(""Path"", 2) ELSE ""Path"" END"))
-                            .SetParameterValue("@Path", Util.AppendDirSeparator(System.IO.Path.GetPathRoot(Library.Utility.TempFolder.SystemTempPath)).Replace("\\", "/"))
-                            .ExecuteNonQuery();
-                    }
-                    else
-                    {
-                        // Same OS, just use the path directly
-                        cmd.ExecuteNonQuery(FormatInvariant($@"UPDATE ""{m_tempfiletable}"" SET ""Targetpath"" = ""Path"" "));
-                    }
+                }
+                else if (OperatingSystem.IsWindows() && dirsep == "/")
+                {
+                    // For Linux -> Win, we use the temporary folder's drive as the root path
+                    cmd.SetCommandAndParameters(FormatInvariant($@"UPDATE ""{m_tempfiletable}"" SET ""Targetpath"" = CASE WHEN SUBSTR(""Path"", 1, 1) == '/' THEN @Path || SUBSTR(""Path"", 2) ELSE ""Path"" END"));
+                    cmd.SetParameterValue("@Path", Util.AppendDirSeparator(System.IO.Path.GetPathRoot(Library.Utility.TempFolder.SystemTempPath)).Replace("\\", "/"));
+                    await cmd.ExecuteNonQueryAsync();
                 }
                 else
                 {
-                    if (string.IsNullOrEmpty(largest_prefix))
-                    {
-                        //Special case, restoring to new folder, but files are from different drives (no shared root on Windows)
-
-                        // We use the format <restore path> / <drive letter> / <source path>
-                        cmd.ExecuteNonQuery(FormatInvariant($@"UPDATE ""{m_tempfiletable}"" SET ""TargetPath"" = CASE WHEN SUBSTR(""Path"", 2, 1) == ':' THEN SUBSTR(""Path"", 1, 1) || SUBSTR(""Path"", 3) ELSE ""Path"" END"));
-
-                        // For UNC paths, we use \\server\folder -> <restore path> / <servername> / <source path>
-                        cmd.ExecuteNonQuery(FormatInvariant($@"UPDATE ""{m_tempfiletable}"" SET ""TargetPath"" = CASE WHEN SUBSTR(""Path"", 1, 2) == '\\' THEN SUBSTR(""Path"", 2) ELSE ""TargetPath"" END"));
-                    }
-                    else
-                    {
-                        largest_prefix = Util.AppendDirSeparator(largest_prefix, dirsep);
-                        cmd.SetCommandAndParameters(FormatInvariant($@"UPDATE ""{m_tempfiletable}"" SET ""TargetPath"" = SUBSTR(""Path"", @PrefixLength)"))
-                            .SetParameterValue("@PrefixLength", largest_prefix.Length + 1)
-                            .ExecuteNonQuery();
-                    }
-                }
-
-                // Cross-os path remapping support
-                if ((OperatingSystem.IsMacOS() || OperatingSystem.IsLinux()) && dirsep == "\\")
-                    // For Win paths on Linux
-                    cmd.ExecuteNonQuery(FormatInvariant($@"UPDATE ""{m_tempfiletable}"" SET ""TargetPath"" = REPLACE(""TargetPath"", '\', '/')"));
-                else if (OperatingSystem.IsWindows() && dirsep == "/")
-                    // For Linux paths on Windows
-                    cmd.ExecuteNonQuery(FormatInvariant($@"UPDATE ""{m_tempfiletable}"" SET ""TargetPath"" = REPLACE(REPLACE(""TargetPath"", '\', '_'), '/', '\')"));
-
-                if (!string.IsNullOrEmpty(destination))
-                {
-                    // Paths are now relative with target-os naming system
-                    // so we prefix them with the target path
-                    cmd.SetCommandAndParameters(FormatInvariant($@"UPDATE ""{m_tempfiletable}"" SET ""TargetPath"" = @Destination || ""TargetPath"" "))
-                        .SetParameterValue("@Destination", Util.AppendDirSeparator(destination))
-                        .ExecuteNonQuery();
+                    // Same OS, just use the path directly
+                    await cmd.ExecuteNonQueryAsync(FormatInvariant($@"UPDATE ""{m_tempfiletable}"" SET ""Targetpath"" = ""Path"" "));
                 }
             }
-        }
-
-        public void FindMissingBlocks(bool skipMetadata)
-        {
-            using (var cmd = m_connection.CreateCommand())
+            else
             {
-                var p1 = cmd.ExecuteNonQuery(FormatInvariant($@"INSERT INTO ""{m_tempblocktable}"" (""FileID"", ""Index"", ""Hash"", ""Size"", ""Restored"", ""Metadata"", ""VolumeId"", ""BlockId"") SELECT DISTINCT ""{m_tempfiletable}"".""ID"", ""BlocksetEntry"".""Index"", ""Block"".""Hash"", ""Block"".""Size"", 0, 0, ""Block"".""VolumeID"", ""Block"".""ID"" FROM ""{m_tempfiletable}"", ""BlocksetEntry"", ""Block"" WHERE ""{m_tempfiletable}"".""BlocksetID"" = ""BlocksetEntry"".""BlocksetID"" AND ""BlocksetEntry"".""BlockID"" = ""Block"".""ID"" "));
+                if (string.IsNullOrEmpty(largest_prefix))
+                {
+                    //Special case, restoring to new folder, but files are from different drives (no shared root on Windows)
 
-                var p2 = 0;
-                if (!skipMetadata)
-                    p2 = cmd.ExecuteNonQuery(FormatInvariant($@"INSERT INTO ""{m_tempblocktable}"" (""FileID"", ""Index"", ""Hash"", ""Size"", ""Restored"", ""Metadata"", ""VolumeId"", ""BlockId"") SELECT DISTINCT ""{m_tempfiletable}"".""ID"", ""BlocksetEntry"".""Index"", ""Block"".""Hash"", ""Block"".""Size"", 0, 1, ""Block"".""VolumeID"", ""Block"".""ID""   FROM ""{m_tempfiletable}"", ""BlocksetEntry"", ""Block"", ""Metadataset"" WHERE ""{m_tempfiletable}"".""MetadataID"" = ""Metadataset"".""ID"" AND ""Metadataset"".""BlocksetID"" = ""BlocksetEntry"".""BlocksetID"" AND ""BlocksetEntry"".""BlockID"" = ""Block"".""ID"" "));
+                    // We use the format <restore path> / <drive letter> / <source path>
+                    await cmd.ExecuteNonQueryAsync(FormatInvariant($@"UPDATE ""{m_tempfiletable}"" SET ""TargetPath"" = CASE WHEN SUBSTR(""Path"", 2, 1) == ':' THEN SUBSTR(""Path"", 1, 1) || SUBSTR(""Path"", 3) ELSE ""Path"" END"));
 
-                //creating indexes after insertion is much faster
-                cmd.ExecuteNonQuery(FormatInvariant($@"CREATE INDEX ""{m_tempblocktable}_HashSizeIndex"" ON ""{m_tempblocktable}"" (""Hash"", ""Size"")"));
-                // better suited to speed up commit on UpdateBlocks
-                cmd.ExecuteNonQuery(FormatInvariant($@"CREATE INDEX ""{m_tempblocktable}_FileIdIndexIndex"" ON ""{m_tempblocktable}"" (""FileId"", ""Index"")"));
-
-                var size = cmd.ExecuteScalarInt64(FormatInvariant($@"SELECT SUM(""Size"") FROM ""{m_tempblocktable}"" "), 0);
-                Logging.Log.WriteVerboseMessage(LOGTAG, "RestoreSourceSize", "Restore list contains {0} blocks with a total size of {1}", p1 + p2, Library.Utility.Utility.FormatSizeString(size));
+                    // For UNC paths, we use \\server\folder -> <restore path> / <servername> / <source path>
+                    await cmd.ExecuteNonQueryAsync(FormatInvariant($@"UPDATE ""{m_tempfiletable}"" SET ""TargetPath"" = CASE WHEN SUBSTR(""Path"", 1, 2) == '\\' THEN SUBSTR(""Path"", 2) ELSE ""TargetPath"" END"));
+                }
+                else
+                {
+                    largest_prefix = Util.AppendDirSeparator(largest_prefix, dirsep);
+                    cmd.SetCommandAndParameters(FormatInvariant($@"UPDATE ""{m_tempfiletable}"" SET ""TargetPath"" = SUBSTR(""Path"", @PrefixLength)"));
+                    cmd.SetParameterValue("@PrefixLength", largest_prefix.Length + 1);
+                    await cmd.ExecuteNonQueryAsync();
+                }
             }
+
+            // Cross-os path remapping support
+            if ((OperatingSystem.IsMacOS() || OperatingSystem.IsLinux()) && dirsep == "\\")
+                // For Win paths on Linux
+                await cmd.ExecuteNonQueryAsync(FormatInvariant($@"UPDATE ""{m_tempfiletable}"" SET ""TargetPath"" = REPLACE(""TargetPath"", '\', '/')"));
+            else if (OperatingSystem.IsWindows() && dirsep == "/")
+                // For Linux paths on Windows
+                await cmd.ExecuteNonQueryAsync(FormatInvariant($@"UPDATE ""{m_tempfiletable}"" SET ""TargetPath"" = REPLACE(REPLACE(""TargetPath"", '\', '_'), '/', '\')"));
+
+            if (!string.IsNullOrEmpty(destination))
+            {
+                // Paths are now relative with target-os naming system
+                // so we prefix them with the target path
+                cmd.SetCommandAndParameters(FormatInvariant($@"UPDATE ""{m_tempfiletable}"" SET ""TargetPath"" = @Destination || ""TargetPath"" "));
+                cmd.SetParameterValue("@Destination", Util.AppendDirSeparator(destination));
+                await cmd.ExecuteNonQueryAsync();
+            }
+
+            await cmd.Transaction.CommitAsync();
         }
 
-        public void UpdateTargetPath(long ID, string newname)
+        public async Task FindMissingBlocks(bool skipMetadata)
         {
-            using var cmd = m_connection.CreateCommand(FormatInvariant($@"UPDATE ""{m_tempfiletable}"" SET ""TargetPath"" = @TargetPath WHERE ""ID"" = @ID"))
-                .SetParameterValue("@TargetPath", newname)
-                .SetParameterValue("@ID", ID);
+            using var cmd = m_connection.CreateCommand();
+            cmd.Transaction = m_connection.BeginTransaction(deferred: true);
+            var p1 = await cmd.ExecuteNonQueryAsync(FormatInvariant($@"INSERT INTO ""{m_tempblocktable}"" (""FileID"", ""Index"", ""Hash"", ""Size"", ""Restored"", ""Metadata"", ""VolumeId"", ""BlockId"") SELECT DISTINCT ""{m_tempfiletable}"".""ID"", ""BlocksetEntry"".""Index"", ""Block"".""Hash"", ""Block"".""Size"", 0, 0, ""Block"".""VolumeID"", ""Block"".""ID"" FROM ""{m_tempfiletable}"", ""BlocksetEntry"", ""Block"" WHERE ""{m_tempfiletable}"".""BlocksetID"" = ""BlocksetEntry"".""BlocksetID"" AND ""BlocksetEntry"".""BlockID"" = ""Block"".""ID"" "));
 
-            cmd.ExecuteNonQuery();
+            var p2 = 0;
+            if (!skipMetadata)
+                p2 = await cmd.ExecuteNonQueryAsync(FormatInvariant($@"INSERT INTO ""{m_tempblocktable}"" (""FileID"", ""Index"", ""Hash"", ""Size"", ""Restored"", ""Metadata"", ""VolumeId"", ""BlockId"") SELECT DISTINCT ""{m_tempfiletable}"".""ID"", ""BlocksetEntry"".""Index"", ""Block"".""Hash"", ""Block"".""Size"", 0, 1, ""Block"".""VolumeID"", ""Block"".""ID""   FROM ""{m_tempfiletable}"", ""BlocksetEntry"", ""Block"", ""Metadataset"" WHERE ""{m_tempfiletable}"".""MetadataID"" = ""Metadataset"".""ID"" AND ""Metadataset"".""BlocksetID"" = ""BlocksetEntry"".""BlocksetID"" AND ""BlocksetEntry"".""BlockID"" = ""Block"".""ID"" "));
+
+            //creating indexes after insertion is much faster
+            await cmd.ExecuteNonQueryAsync(FormatInvariant($@"CREATE INDEX ""{m_tempblocktable}_HashSizeIndex"" ON ""{m_tempblocktable}"" (""Hash"", ""Size"")"));
+            // better suited to speed up commit on UpdateBlocks
+            await cmd.ExecuteNonQueryAsync(FormatInvariant($@"CREATE INDEX ""{m_tempblocktable}_FileIdIndexIndex"" ON ""{m_tempblocktable}"" (""FileId"", ""Index"")"));
+
+            var size = await cmd.ExecuteScalarInt64Async(FormatInvariant($@"SELECT SUM(""Size"") FROM ""{m_tempblocktable}"" "), 0);
+            Logging.Log.WriteVerboseMessage(LOGTAG, "RestoreSourceSize", "Restore list contains {0} blocks with a total size of {1}", p1 + p2, Library.Utility.Utility.FormatSizeString(size));
+
+            await cmd.Transaction.CommitAsync();
+        }
+
+        public async Task UpdateTargetPath(long ID, string newname)
+        {
+            using var cmd = m_connection.CreateCommand(FormatInvariant($@"UPDATE ""{m_tempfiletable}"" SET ""TargetPath"" = @TargetPath WHERE ""ID"" = @ID"));
+            cmd.Transaction = m_connection.BeginTransaction(deferred: true);
+            cmd.SetParameterValue("@TargetPath", newname);
+            cmd.SetParameterValue("@ID", ID);
+            await cmd.ExecuteNonQueryAsync();
+            await cmd.Transaction.CommitAsync();
         }
 
         public interface IExistingFileBlock
@@ -560,9 +571,9 @@ END ");
 
         private class ExistingFile : IExistingFile
         {
-            private readonly IDataReader m_reader;
+            private readonly SqliteDataReader m_reader;
 
-            public ExistingFile(IDataReader rd) { m_reader = rd; HasMore = true; }
+            public ExistingFile(SqliteDataReader rd) { m_reader = rd; HasMore = true; }
 
             public string TargetPath { get { return m_reader.ConvertValueToString(0) ?? ""; } }
             public string TargetHash { get { return m_reader.ConvertValueToString(1) ?? ""; } }
@@ -573,9 +584,9 @@ END ");
 
             private class ExistingFileBlock : IExistingFileBlock
             {
-                private readonly IDataReader m_reader;
+                private readonly SqliteDataReader m_reader;
 
-                public ExistingFileBlock(IDataReader rd) { m_reader = rd; }
+                public ExistingFileBlock(SqliteDataReader rd) { m_reader = rd; }
 
                 public string Hash { get { return m_reader.ConvertValueToString(4) ?? ""; } }
                 public long Index { get { return m_reader.ConvertValueToInt64(5); } }
@@ -590,33 +601,35 @@ END ");
                     while (HasMore && p == TargetPath)
                     {
                         yield return new ExistingFileBlock(m_reader);
-                        HasMore = m_reader.Read();
+                        HasMore = m_reader.ReadAsync().Await();
                     }
                 }
             }
 
-            public static IEnumerable<IExistingFile> GetExistingFilesWithBlocks(IDbConnection connection, string tablename)
+            public static async IAsyncEnumerable<IExistingFile> GetExistingFilesWithBlocks(SqliteConnection connection, string tablename)
             {
-                using (var cmd = connection.CreateCommand(FormatInvariant($@"SELECT ""{tablename}"".""TargetPath"", ""Blockset"".""FullHash"", ""{tablename}"".""ID"", ""Blockset"".""Length"", ""Block"".""Hash"", ""BlocksetEntry"".""Index"", ""Block"".""Size"" FROM ""{tablename}"", ""Blockset"", ""BlocksetEntry"", ""Block"" WHERE ""{tablename}"".""BlocksetID"" = ""Blockset"".""ID"" AND ""BlocksetEntry"".""BlocksetID"" = ""{tablename}"".""BlocksetID"" AND ""BlocksetEntry"".""BlockID"" = ""Block"".""ID"" ORDER BY ""{tablename}"".""TargetPath"", ""BlocksetEntry"".""Index""")))
-                using (var rd = cmd.ExecuteReader())
-                    if (rd.Read())
+                using var cmd = connection.CreateCommand(FormatInvariant($@"SELECT ""{tablename}"".""TargetPath"", ""Blockset"".""FullHash"", ""{tablename}"".""ID"", ""Blockset"".""Length"", ""Block"".""Hash"", ""BlocksetEntry"".""Index"", ""Block"".""Size"" FROM ""{tablename}"", ""Blockset"", ""BlocksetEntry"", ""Block"" WHERE ""{tablename}"".""BlocksetID"" = ""Blockset"".""ID"" AND ""BlocksetEntry"".""BlocksetID"" = ""{tablename}"".""BlocksetID"" AND ""BlocksetEntry"".""BlockID"" = ""Block"".""ID"" ORDER BY ""{tablename}"".""TargetPath"", ""BlocksetEntry"".""Index"""));
+                cmd.Transaction = connection.BeginTransaction(deferred: true);
+                using var rd = await cmd.ExecuteReaderAsync();
+                if (await rd.ReadAsync())
+                {
+                    var more = true;
+                    while (more)
                     {
-                        var more = true;
-                        while (more)
-                        {
-                            var f = new ExistingFile(rd);
-                            string current = f.TargetPath;
-                            yield return f;
+                        var f = new ExistingFile(rd);
+                        string current = f.TargetPath;
+                        yield return f;
 
-                            more = f.HasMore;
-                            while (more && current == f.TargetPath)
-                                more = rd.Read();
-                        }
+                        more = f.HasMore;
+                        while (more && current == f.TargetPath)
+                            more = await rd.ReadAsync();
                     }
+                }
+                await cmd.Transaction.CommitAsync();
             }
         }
 
-        public IEnumerable<IExistingFile> GetExistingFilesWithBlocks()
+        public IAsyncEnumerable<IExistingFile> GetExistingFilesWithBlocks()
         {
             if (string.IsNullOrWhiteSpace(m_tempfiletable) || string.IsNullOrWhiteSpace(m_tempblocktable))
                 throw new InvalidOperationException("No temporary file table set up for this restore.");
@@ -629,16 +642,16 @@ END ");
             {
                 private class BlockSource : IBlockSource
                 {
-                    private readonly IDataReader m_reader;
-                    public BlockSource(IDataReader rd) { m_reader = rd; }
+                    private readonly SqliteDataReader m_reader;
+                    public BlockSource(SqliteDataReader rd) { m_reader = rd; }
 
                     public string Path { get { return m_reader.ConvertValueToString(6) ?? ""; } }
                     public long Offset { get { return m_reader.ConvertValueToInt64(7); } }
                     public bool IsMetadata { get { return false; } }
                 }
 
-                private readonly IDataReader m_reader;
-                public BlockDescriptor(IDataReader rd) { m_reader = rd; HasMore = true; }
+                private readonly SqliteDataReader m_reader;
+                public BlockDescriptor(SqliteDataReader rd) { m_reader = rd; HasMore = true; }
 
                 private string TargetPath { get { return m_reader.ConvertValueToString(0) ?? ""; } }
 
@@ -661,14 +674,14 @@ END ");
                         while (HasMore && p == TargetPath && h == Hash && s == Size)
                         {
                             yield return new BlockSource(m_reader);
-                            HasMore = m_reader.Read();
+                            HasMore = m_reader.ReadAsync().Await();
                         }
                     }
                 }
             }
 
-            private readonly IDataReader m_reader;
-            public LocalBlockSource(IDataReader rd) { m_reader = rd; HasMore = true; }
+            private readonly SqliteDataReader m_reader;
+            public LocalBlockSource(SqliteDataReader rd) { m_reader = rd; HasMore = true; }
 
             public string TargetPath { get { return m_reader.ConvertValueToString(0) ?? ""; } }
             public long TargetFileID { get { return m_reader.ConvertValueToInt64(1); } }
@@ -690,55 +703,55 @@ END ");
 
                         HasMore = c.HasMore;
                         while (HasMore && c.Hash == h && c.Size == s && TargetPath == p)
-                            HasMore = m_reader.Read();
+                            HasMore = m_reader.ReadAsync().Await();
                     }
                 }
             }
 
-            public static IEnumerable<ILocalBlockSource> GetFilesAndSourceBlocks(IDbConnection connection, string filetablename, string blocktablename, long blocksize, bool skipMetadata)
+            public static async IAsyncEnumerable<ILocalBlockSource> GetFilesAndSourceBlocks(SqliteConnection connection, string filetablename, string blocktablename, long blocksize, bool skipMetadata)
             {
                 // TODO: Skip metadata as required
                 // Have to order by target path and hash, to ensure BlockDescriptor and BlockSource match adjacent rows
-                using (var cmd = connection.CreateCommand(FormatInvariant($@"SELECT DISTINCT ""A"".""TargetPath"", ""A"".""ID"", ""B"".""Hash"", (""B"".""Index"" * {blocksize}), ""B"".""Index"", ""B"".""Size"", ""C"".""Path"", (""D"".""Index"" * {blocksize}), ""E"".""Size"", ""B"".""Metadata"" FROM ""{filetablename}"" ""A"", ""{blocktablename}"" ""B"", ""File"" ""C"", ""BlocksetEntry"" ""D"", ""Block"" E WHERE ""A"".""ID"" = ""B"".""FileID"" AND ""C"".""BlocksetID"" = ""D"".""BlocksetID"" AND ""D"".""BlockID"" = ""E"".""ID"" AND ""B"".""Hash"" = ""E"".""Hash"" AND ""B"".""Size"" = ""E"".""Size"" AND ""B"".""Restored"" = 0 ORDER BY ""A"".""TargetPath"", ""B"".""Index""")))
-                using (var rd = cmd.ExecuteReader())
+                using var cmd = connection.CreateCommand(FormatInvariant($@"SELECT DISTINCT ""A"".""TargetPath"", ""A"".""ID"", ""B"".""Hash"", (""B"".""Index"" * {blocksize}), ""B"".""Index"", ""B"".""Size"", ""C"".""Path"", (""D"".""Index"" * {blocksize}), ""E"".""Size"", ""B"".""Metadata"" FROM ""{filetablename}"" ""A"", ""{blocktablename}"" ""B"", ""File"" ""C"", ""BlocksetEntry"" ""D"", ""Block"" E WHERE ""A"".""ID"" = ""B"".""FileID"" AND ""C"".""BlocksetID"" = ""D"".""BlocksetID"" AND ""D"".""BlockID"" = ""E"".""ID"" AND ""B"".""Hash"" = ""E"".""Hash"" AND ""B"".""Size"" = ""E"".""Size"" AND ""B"".""Restored"" = 0 ORDER BY ""A"".""TargetPath"", ""B"".""Index"""));
+                cmd.Transaction = connection.BeginTransaction(deferred: true);
+                using var rd = await cmd.ExecuteReaderAsync();
+                var more = await rd.ReadAsync();
+                while (more)
                 {
-                    var more = rd.Read();
-                    while (more)
-                    {
-                        var f = new LocalBlockSource(rd);
-                        string current = f.TargetPath;
-                        yield return f;
+                    var f = new LocalBlockSource(rd);
+                    string current = f.TargetPath;
+                    yield return f;
 
-                        more = f.HasMore;
-                        while (more && current == f.TargetPath)
-                            more = rd.Read();
-                    }
+                    more = f.HasMore;
+                    while (more && current == f.TargetPath)
+                        more = await rd.ReadAsync();
                 }
+                await cmd.Transaction.CommitAsync();
             }
         }
 
-        public IEnumerable<ILocalBlockSource> GetFilesAndSourceBlocks(bool skipMetadata, long blocksize)
+        public IAsyncEnumerable<ILocalBlockSource> GetFilesAndSourceBlocks(bool skipMetadata, long blocksize)
         {
             if (string.IsNullOrWhiteSpace(m_tempfiletable) || string.IsNullOrWhiteSpace(m_tempblocktable))
                 throw new InvalidOperationException("No temporary file table set up for this restore.");
             return LocalBlockSource.GetFilesAndSourceBlocks(m_connection, m_tempfiletable, m_tempblocktable, blocksize, skipMetadata);
         }
 
-        public IEnumerable<IRemoteVolume> GetMissingVolumes()
+        public async IAsyncEnumerable<IRemoteVolume> GetMissingVolumes()
         {
-            using (var cmd = m_connection.CreateCommand())
-            {
-                // Return order from SQLite-DISTINCT is likely to be sorted by Name, which is bad for restore.
-                // If the end of very large files (e.g. iso's) is restored before the beginning, most OS write out zeros to fill the file.
-                // If we manage to get the volumes in an order restoring front blocks first, this can save time.
-                // An optimal algorithm would build a dependency net with cycle resolution to find the best near topological
-                // order of volumes, but this is a bit too fancy here.
-                // We will just put a very simple heuristic to work, that will try to prefer volumes containing lower block indexes:
-                // We just order all volumes by the maximum block index they contain. This query is slow, but should be worth the effort.
-                // Now it is likely to restore all files from front to back. Large files will always be done last.
-                // One could also use like the average block number in a volume, that needs to be measured.
+            using var cmd = m_connection.CreateCommand();
+            cmd.Transaction = m_connection.BeginTransaction(deferred: true);
+            // Return order from SQLite-DISTINCT is likely to be sorted by Name, which is bad for restore.
+            // If the end of very large files (e.g. iso's) is restored before the beginning, most OS write out zeros to fill the file.
+            // If we manage to get the volumes in an order restoring front blocks first, this can save time.
+            // An optimal algorithm would build a dependency net with cycle resolution to find the best near topological
+            // order of volumes, but this is a bit too fancy here.
+            // We will just put a very simple heuristic to work, that will try to prefer volumes containing lower block indexes:
+            // We just order all volumes by the maximum block index they contain. This query is slow, but should be worth the effort.
+            // Now it is likely to restore all files from front to back. Large files will always be done last.
+            // One could also use like the average block number in a volume, that needs to be measured.
 
-                cmd.SetCommandAndParameters(FormatInvariant($@"SELECT ""RV"".""Name"", ""RV"".""Hash"", ""RV"".""Size"", ""BB"".""MaxIndex""
+            cmd.SetCommandAndParameters(FormatInvariant($@"SELECT ""RV"".""Name"", ""RV"".""Hash"", ""RV"".""Size"", ""BB"".""MaxIndex""
 FROM ""RemoteVolume"" ""RV"" INNER JOIN
       (SELECT ""TB"".""VolumeID"", MAX(""TB"".""Index"") as ""MaxIndex""
          FROM ""{m_tempblocktable}"" ""TB""
@@ -747,20 +760,19 @@ FROM ""RemoteVolume"" ""RV"" INNER JOIN
       ) as ""BB"" ON ""RV"".""ID"" = ""BB"".""VolumeID""
 ORDER BY ""BB"".""MaxIndex"" "));
 
-                using (var rd = cmd.ExecuteReader())
-                {
-                    object[] r = new object[3];
-                    while (rd.Read())
-                    {
-                        rd.GetValues(r);
-                        yield return new RemoteVolume(
-                            rd.ConvertValueToString(0),
-                            rd.ConvertValueToString(1),
-                            rd.ConvertValueToInt64(2, -1)
-                        );
-                    }
-                }
+            using var rd = await cmd.ExecuteReaderAsync();
+            object[] r = new object[3];
+            while (await rd.ReadAsync())
+            {
+                rd.GetValues(r);
+                yield return new RemoteVolume(
+                    rd.ConvertValueToString(0),
+                    rd.ConvertValueToString(1),
+                    rd.ConvertValueToInt64(2, -1)
+                );
             }
+
+            await cmd.Transaction.CommitAsync();
         }
 
         public interface IFilesAndMetadata : IDisposable
@@ -776,53 +788,58 @@ ORDER BY ""BB"".""MaxIndex"" "));
             private readonly string m_blocktablename;
             private readonly long m_blocksize;
 
-            private readonly IDbConnection m_connection;
+            private readonly SqliteConnection m_connection;
 
-            public FilesAndMetadata(IDbConnection connection, string filetablename, string blocktablename, long blocksize, BlockVolumeReader curvolume)
+            public FilesAndMetadata(SqliteConnection connection, string filetablename, string blocktablename, long blocksize, BlockVolumeReader curvolume)
             {
                 m_filetablename = filetablename;
                 m_blocktablename = blocktablename;
                 m_blocksize = blocksize;
                 m_connection = connection;
 
-                using (var c = m_connection.CreateCommand())
+                using var c = m_connection.CreateCommand();
+                c.Transaction = m_connection.BeginTransaction(deferred: true);
+                m_tmptable = "VolumeFiles-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
+                c.ExecuteNonQueryAsync(FormatInvariant($@"CREATE TEMPORARY TABLE ""{m_tmptable}"" ( ""Hash"" TEXT NOT NULL, ""Size"" INTEGER NOT NULL )")).Await();
+
+                c.SetCommandAndParameters(FormatInvariant($@"INSERT INTO ""{m_tmptable}"" (""Hash"", ""Size"") VALUES (@Hash, @Size)"));
+                foreach (var s in curvolume.Blocks)
                 {
-                    m_tmptable = "VolumeFiles-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
-                    c.ExecuteNonQuery(FormatInvariant($@"CREATE TEMPORARY TABLE ""{m_tmptable}"" ( ""Hash"" TEXT NOT NULL, ""Size"" INTEGER NOT NULL )"));
-
-                    c.SetCommandAndParameters(FormatInvariant($@"INSERT INTO ""{m_tmptable}"" (""Hash"", ""Size"") VALUES (@Hash, @Size)"));
-                    foreach (var s in curvolume.Blocks)
-                    {
-                        c.SetParameterValue("@Hash", s.Key);
-                        c.SetParameterValue("@Size", s.Value);
-                        c.ExecuteNonQuery();
-                    }
-
-                    // The index _HashSizeIndex is not needed anymore. Index on "Blocks-..." is used on Join in GetMissingBlocks
+                    c.SetParameterValue("@Hash", s.Key);
+                    c.SetParameterValue("@Size", s.Value);
+                    c.ExecuteNonQueryAsync().Await();
                 }
+
+                // The index _HashSizeIndex is not needed anymore. Index on "Blocks-..." is used on Join in GetMissingBlocks
+
+                c.Transaction.CommitAsync().Await();
             }
 
             public void Dispose()
             {
                 if (m_tmptable != null)
-                    using (var c = m_connection.CreateCommand())
-                        c.ExecuteNonQuery(FormatInvariant($@"DROP TABLE IF EXISTS ""{m_tmptable}"""));
+                {
+                    using var c = m_connection.CreateCommand();
+                    c.Transaction = m_connection.BeginTransaction(deferred: true);
+                    c.ExecuteNonQuery(FormatInvariant($@"DROP TABLE IF EXISTS ""{m_tmptable}"""));
+                    c.Transaction.CommitAsync().Await();
+                }
             }
 
             private class VolumePatch : IVolumePatch
             {
                 private class PatchBlock : IPatchBlock
                 {
-                    private readonly IDataReader m_reader;
-                    public PatchBlock(IDataReader rd) { m_reader = rd; }
+                    private readonly SqliteDataReader m_reader;
+                    public PatchBlock(SqliteDataReader rd) { m_reader = rd; }
 
                     public long Offset { get { return m_reader.ConvertValueToInt64(2); } }
                     public long Size { get { return m_reader.ConvertValueToInt64(3); } }
                     public string Key { get { return m_reader.ConvertValueToString(4) ?? ""; } }
                 }
 
-                private readonly IDataReader m_reader;
-                public VolumePatch(IDataReader rd) { m_reader = rd; HasMore = true; }
+                private readonly SqliteDataReader m_reader;
+                public VolumePatch(SqliteDataReader rd) { m_reader = rd; HasMore = true; }
 
                 public string Path { get { return m_reader.ConvertValueToString(0) ?? ""; } }
                 public long FileID { get { return m_reader.ConvertValueToInt64(1); } }
@@ -836,7 +853,7 @@ ORDER BY ""BB"".""MaxIndex"" "));
                         while (HasMore && p == Path)
                         {
                             yield return new PatchBlock(m_reader);
-                            HasMore = m_reader.Read();
+                            HasMore = m_reader.ReadAsync().Await();
                         }
                     }
                 }
@@ -846,32 +863,30 @@ ORDER BY ""BB"".""MaxIndex"" "));
             {
                 get
                 {
-                    using (var cmd = m_connection.CreateCommand())
-                    {
-                        // The IN-clause with subquery enables SQLite to use indexes better. Three way join (A,B,C) is slow here!
-                        cmd.SetCommandAndParameters(FormatInvariant($@"  SELECT DISTINCT ""A"".""TargetPath"", ""BB"".""FileID"", (""BB"".""Index"" * {m_blocksize}), ""BB"".""Size"", ""BB"".""Hash""
+                    using var cmd = m_connection.CreateCommand();
+                    cmd.Transaction = m_connection.BeginTransaction(deferred: true);
+                    // The IN-clause with subquery enables SQLite to use indexes better. Three way join (A,B,C) is slow here!
+                    cmd.SetCommandAndParameters(FormatInvariant($@"  SELECT DISTINCT ""A"".""TargetPath"", ""BB"".""FileID"", (""BB"".""Index"" * {m_blocksize}), ""BB"".""Size"", ""BB"".""Hash""
 FROM ""{m_filetablename}"" ""A"", ""{m_blocktablename}"" ""BB""
 WHERE ""A"".""ID"" = ""BB"".""FileID"" AND ""BB"".""Restored"" = 0 AND ""BB"".""Metadata"" = {"0"}
 AND ""BB"".""ID"" IN  (SELECT ""B"".""ID"" FROM ""{m_blocktablename}"" ""B"", ""{m_tmptable}"" ""C"" WHERE ""B"".""Hash"" = ""C"".""Hash"" AND ""B"".""Size"" = ""C"".""Size"")
 ORDER BY ""A"".""TargetPath"", ""BB"".""Index"""));
-                        using (var rd = cmd.ExecuteReader())
+                    using var rd = cmd.ExecuteReaderAsync().Await();
+                    if (rd.ReadAsync().Await())
+                    {
+                        var more = true;
+                        while (more)
                         {
-                            if (rd.Read())
-                            {
-                                var more = true;
-                                while (more)
-                                {
-                                    var f = new VolumePatch(rd);
-                                    var current = f.Path;
-                                    yield return f;
+                            var f = new VolumePatch(rd);
+                            var current = f.Path;
+                            yield return f;
 
-                                    more = f.HasMore;
-                                    while (more && current == f.Path)
-                                        more = rd.Read();
-                                }
-                            }
+                            more = f.HasMore;
+                            while (more && current == f.Path)
+                                more = rd.ReadAsync().Await();
                         }
                     }
+                    cmd.Transaction.CommitAsync().Await();
                 }
             }
 
@@ -879,30 +894,27 @@ ORDER BY ""A"".""TargetPath"", ""BB"".""Index"""));
             {
                 get
                 {
-                    using (var cmd = m_connection.CreateCommand())
-                    {
-                        // The IN-clause with subquery enables SQLite to use indexes better. Three way join (A,B,C) is slow here!
-                        cmd.SetCommandAndParameters(FormatInvariant($@"  SELECT DISTINCT ""A"".""TargetPath"", ""BB"".""FileID"", (""BB"".""Index"" * {m_blocksize}), ""BB"".""Size"", ""BB"".""Hash""
+                    using var cmd = m_connection.CreateCommand();
+                    cmd.Transaction = m_connection.BeginTransaction(deferred: true);
+                    // The IN-clause with subquery enables SQLite to use indexes better. Three way join (A,B,C) is slow here!
+                    cmd.SetCommandAndParameters(FormatInvariant($@"  SELECT DISTINCT ""A"".""TargetPath"", ""BB"".""FileID"", (""BB"".""Index"" * {m_blocksize}), ""BB"".""Size"", ""BB"".""Hash""
  FROM ""{m_filetablename}"" ""A"", ""{m_blocktablename}"" ""BB""
 WHERE ""A"".""ID"" = ""BB"".""FileID"" AND ""BB"".""Restored"" = 0 AND ""BB"".""Metadata"" = {"1"}
   AND ""BB"".""ID"" IN  (SELECT ""B"".""ID"" FROM ""{m_blocktablename}"" ""B"", ""{m_tmptable}"" ""C"" WHERE ""B"".""Hash"" = ""C"".""Hash"" AND ""B"".""Size"" = ""C"".""Size"")
 ORDER BY ""A"".""TargetPath"", ""BB"".""Index"""));
-                        using (var rd = cmd.ExecuteReader())
+                    using var rd = cmd.ExecuteReaderAsync().Await();
+                    if (rd.ReadAsync().Await())
+                    {
+                        var more = true;
+                        while (more)
                         {
-                            if (rd.Read())
-                            {
-                                var more = true;
-                                while (more)
-                                {
-                                    var f = new VolumePatch(rd);
-                                    string current = f.Path;
-                                    yield return f;
+                            var f = new VolumePatch(rd);
+                            string current = f.Path;
+                            yield return f;
 
-                                    more = f.HasMore;
-                                    while (more && current == f.Path)
-                                        more = rd.Read();
-                                }
-                            }
+                            more = f.HasMore;
+                            while (more && current == f.Path)
+                                more = rd.ReadAsync().Await();
                         }
                     }
                 }
@@ -920,19 +932,15 @@ ORDER BY ""A"".""TargetPath"", ""BB"".""Index"""));
         /// Returns a connection from the connection pool.
         /// </summary>
         /// <returns>A connection from the connection pool.</returns>
-        public IDbConnection GetConnectionFromPool()
+        public async Task<SqliteConnection> GetConnectionFromPool()
         {
             if (!m_connection_pool.TryTake(out var connection))
             {
-                connection = SQLiteHelper.SQLiteLoader.LoadConnection();
+                connection = await SQLiteHelper.SQLiteLoader.LoadConnection();
                 connection.ConnectionString = m_connection.ConnectionString + ";Cache=Shared;";
                 connection.Open();
 
-                SQLiteHelper.SQLiteLoader.ApplyCustomPragmas(connection, m_pagecachesize);
-
-                using var cmd = connection.CreateCommand();
-                cmd.ExecuteNonQuery("PRAGMA journal_mode = WAL;");
-                cmd.ExecuteNonQuery("PRAGMA read_uncommitted = true;");
+                await SQLiteHelper.SQLiteLoader.ApplyCustomPragmas(connection, m_pagecachesize);
             }
 
             return connection;
@@ -952,47 +960,56 @@ ORDER BY ""A"".""TargetPath"", ""BB"".""Index"""));
             }
         }
 
-        public IEnumerable<IFileToRestore> GetFilesToRestore(bool onlyNonVerified)
+        public async IAsyncEnumerable<IFileToRestore> GetFilesToRestore(bool onlyNonVerified)
         {
-            using var cmd = m_connection.CreateCommand(FormatInvariant($@"SELECT ""{m_tempfiletable}"".""ID"", ""{m_tempfiletable}"".""TargetPath"", ""Blockset"".""FullHash"", ""Blockset"".""Length"" FROM ""{m_tempfiletable}"",""Blockset"" WHERE ""{m_tempfiletable}"".""BlocksetID"" = ""Blockset"".""ID"" AND ""{m_tempfiletable}"".""DataVerified"" <= @Verified"))
-                .SetParameterValue("@Verified", !onlyNonVerified);
+            using var cmd = m_connection.CreateCommand(FormatInvariant($@"SELECT ""{m_tempfiletable}"".""ID"", ""{m_tempfiletable}"".""TargetPath"", ""Blockset"".""FullHash"", ""Blockset"".""Length"" FROM ""{m_tempfiletable}"",""Blockset"" WHERE ""{m_tempfiletable}"".""BlocksetID"" = ""Blockset"".""ID"" AND ""{m_tempfiletable}"".""DataVerified"" <= @Verified"));
+            cmd.Transaction = m_connection.BeginTransaction(deferred: true);
+            cmd.SetParameterValue("@Verified", !onlyNonVerified);
 
-            using (var rd = cmd.ExecuteReader())
-                while (rd.Read())
-                    yield return new FileToRestore(
-                        rd.ConvertValueToInt64(0), rd.ConvertValueToString(1) ?? "", rd.ConvertValueToString(2) ?? "", rd.ConvertValueToInt64(3));
+            using var rd = await cmd.ExecuteReaderAsync();
+            while (await rd.ReadAsync())
+                yield return new FileToRestore(
+                    rd.ConvertValueToInt64(0), rd.ConvertValueToString(1) ?? "", rd.ConvertValueToString(2) ?? "", rd.ConvertValueToInt64(3));
+
+            await cmd.Transaction.CommitAsync();
         }
 
         /// <summary>
         /// Returns a list of files and symlinks to restore.
         /// </summary>
         /// <returns>A list of files and symlinks to restore.</returns>
-        public IEnumerable<FileRequest> GetFilesAndSymlinksToRestore()
+        public async IAsyncEnumerable<FileRequest> GetFilesAndSymlinksToRestore()
         {
             using var cmd = m_connection.CreateCommand(FormatInvariant($@"
                 SELECT F.ID, F.Path, F.TargetPath, IFNULL(B.FullHash, ''), IFNULL(B.Length, 0), F.BlocksetID
                 FROM ""{m_tempfiletable}"" F
                 LEFT JOIN Blockset B ON F.BlocksetID = B.ID
                 WHERE F.BlocksetID != {FOLDER_BLOCKSET_ID}"));
-            using var rd = cmd.ExecuteReader();
-            while (rd.Read())
+            cmd.Transaction = m_connection.BeginTransaction(deferred: true);
+            using var rd = await cmd.ExecuteReaderAsync();
+            while (await rd.ReadAsync())
                 yield return new FileRequest(rd.ConvertValueToInt64(0), rd.ConvertValueToString(1), rd.ConvertValueToString(2), rd.ConvertValueToString(3), rd.ConvertValueToInt64(4), rd.ConvertValueToInt64(5));
+
+            await cmd.Transaction.CommitAsync();
         }
 
         /// <summary>
         /// Returns a list of folders to restore. Used to restore folder metadata.
         /// </summary>
         /// <returns>A list of folders to restore.</returns>
-        public IEnumerable<FileRequest> GetFolderMetadataToRestore()
+        public async IAsyncEnumerable<FileRequest> GetFolderMetadataToRestore()
         {
             using var cmd = m_connection.CreateCommand();
-            using var rd = cmd.ExecuteReader(FormatInvariant($@"
+            cmd.Transaction = m_connection.BeginTransaction(deferred: true);
+            using var rd = await cmd.ExecuteReaderAsync(FormatInvariant($@"
                 SELECT F.ID, '', F.TargetPath, '', 0, {FOLDER_BLOCKSET_ID}
                 FROM ""{m_tempfiletable}"" F
                 WHERE F.BlocksetID = {FOLDER_BLOCKSET_ID} AND F.MetadataID IS NOT NULL AND F.MetadataID >= 0"));
 
-            while (rd.Read())
+            while (await rd.ReadAsync())
                 yield return new FileRequest(rd.ConvertValueToInt64(0), rd.ConvertValueToString(1), rd.ConvertValueToString(2), rd.ConvertValueToString(3), rd.ConvertValueToInt64(4), rd.ConvertValueToInt64(5));
+
+            await cmd.Transaction.CommitAsync();
         }
 
         /// <summary>
@@ -1000,10 +1017,11 @@ ORDER BY ""A"".""TargetPath"", ""BB"".""Index"""));
         /// </summary>
         /// <param name="skipMetadata">Flag indicating whether the returned blocks should exclude the metadata blocks.</param>
         /// <returns>A list of tuples containing the block ID and the volume ID of the block.</returns>
-        public IEnumerable<(long, long)> GetBlocksAndVolumeIDs(bool skipMetadata)
+        public async IAsyncEnumerable<(long, long)> GetBlocksAndVolumeIDs(bool skipMetadata)
         {
             using var cmd = Connection.CreateCommand();
-            using var reader = cmd.ExecuteReader(FormatInvariant($@"
+            cmd.Transaction = Connection.BeginTransaction(deferred: true);
+            using var reader = await cmd.ExecuteReaderAsync(FormatInvariant($@"
                 SELECT ""Block"".""ID"", ""Block"".""VolumeID""
                 FROM ""BlocksetEntry""
                 INNER JOIN ""{m_tempfiletable}"" ON ""BlocksetEntry"".""BlocksetID"" = ""{m_tempfiletable}"".""BlocksetID""
@@ -1017,8 +1035,10 @@ ORDER BY ""A"".""TargetPath"", ""BB"".""Index"""));
                 INNER JOIN ""BlocksetEntry"" ON ""Metadataset"".""BlocksetID"" = ""BlocksetEntry"".""BlocksetID""
                 INNER JOIN ""Block"" ON ""BlocksetEntry"".""BlockID"" = ""Block"".""ID""
             ")));
-            while (reader.Read())
+            while (await reader.ReadAsync())
                 yield return (reader.ConvertValueToInt64(0), reader.ConvertValueToInt64(1));
+
+            await cmd.Transaction.CommitAsync();
         }
 
         /// <summary>
@@ -1026,19 +1046,22 @@ ORDER BY ""A"".""TargetPath"", ""BB"".""Index"""));
         /// </summary>
         /// <param name="blocksetID">The BlocksetID of the file.</param>
         /// <returns>A list of <see cref="BlockRequest"/> needed to restore the given file.</returns>
-        public IEnumerable<BlockRequest> GetBlocksFromFile(long blocksetID)
+        public async IAsyncEnumerable<BlockRequest> GetBlocksFromFile(long blocksetID)
         {
-            var connection = GetConnectionFromPool();
+            var connection = await GetConnectionFromPool();
             using var cmd = connection.CreateCommand(FormatInvariant(@$"
                 SELECT ""Block"".""ID"", ""Block"".""Hash"", ""Block"".""Size"", ""Block"".""VolumeID""
                 FROM ""BlocksetEntry"" INNER JOIN ""Block""
                 ON ""BlocksetEntry"".""BlockID"" = ""Block"".""ID""
-                WHERE ""BlocksetEntry"".""BlocksetID"" = @BlocksetID"))
-                .SetParameterValue("@BlocksetID", blocksetID);
+                WHERE ""BlocksetEntry"".""BlocksetID"" = @BlocksetID"));
+            cmd.SetParameterValue("@BlocksetID", blocksetID);
+            cmd.Transaction = connection.BeginTransaction(deferred: true);
 
-            using var reader = cmd.ExecuteReader();
-            for (long i = 0; reader.Read(); i++)
+            using var reader = await cmd.ExecuteReaderAsync();
+            for (long i = 0; await reader.ReadAsync(); i++)
                 yield return new BlockRequest(reader.ConvertValueToInt64(0), i, reader.ConvertValueToString(1), reader.ConvertValueToInt64(2), reader.ConvertValueToInt64(3), false);
+
+            await cmd.Transaction.CommitAsync();
 
             // Return the connection to the pool
             m_connection_pool.Add(connection);
@@ -1049,9 +1072,9 @@ ORDER BY ""A"".""TargetPath"", ""BB"".""Index"""));
         /// </summary>
         /// <param name="fileID">The ID of the file.</param>
         /// <returns>A list of <see cref="BlockRequest"/> needed to restore the metadata of the given file.</returns>
-        public IEnumerable<BlockRequest> GetMetadataBlocksFromFile(long fileID)
+        public async IAsyncEnumerable<BlockRequest> GetMetadataBlocksFromFile(long fileID)
         {
-            var connection = GetConnectionFromPool();
+            var connection = await GetConnectionFromPool();
             using var cmd = connection.CreateCommand(FormatInvariant($@"
                 SELECT ""Block"".""ID"", ""Block"".""Hash"", ""Block"".""Size"", ""Block"".""VolumeID""
                 FROM ""File""
@@ -1059,14 +1082,17 @@ ORDER BY ""A"".""TargetPath"", ""BB"".""Index"""));
                 INNER JOIN ""BlocksetEntry"" ON ""Metadataset"".""BlocksetID"" = ""BlocksetEntry"".""BlocksetID""
                 INNER JOIN ""Block"" ON ""BlocksetEntry"".""BlockID"" = ""Block"".""ID""
                 WHERE ""File"".""ID"" = @FileID
-            "))
-            .SetParameterValue("@FileID", fileID);
+            "));
+            cmd.Transaction = connection.BeginTransaction(deferred: true);
+            cmd.SetParameterValue("@FileID", fileID);
 
-            using var reader = cmd.ExecuteReader();
-            for (long i = 0; reader.Read(); i++)
+            using var reader = await cmd.ExecuteReaderAsync();
+            for (long i = 0; await reader.ReadAsync(); i++)
             {
                 yield return new BlockRequest(reader.ConvertValueToInt64(0), i, reader.ConvertValueToString(1), reader.ConvertValueToInt64(2), reader.ConvertValueToInt64(3), false);
             }
+
+            await cmd.Transaction.CommitAsync();
 
             // Return the connection to the pool
             m_connection_pool.Add(connection);
@@ -1077,78 +1103,80 @@ ORDER BY ""A"".""TargetPath"", ""BB"".""Index"""));
         /// </summary>
         /// <param name="VolumeID">The ID of the volume.</param>
         /// <returns>A tuple containing the name, size, and hash of the volume.</returns>
-        public IEnumerable<(string, long, string)> GetVolumeInfo(long VolumeID)
+        public async IAsyncEnumerable<(string, long, string)> GetVolumeInfo(long VolumeID)
         {
-            using var cmd = m_connection.CreateCommand("SELECT Name, Size, Hash FROM RemoteVolume WHERE ID = @VolumeID")
-                .SetParameterValue("@VolumeID", VolumeID);
-            using var reader = cmd.ExecuteReader();
-            while (reader.Read())
+            using var cmd = m_connection.CreateCommand("SELECT Name, Size, Hash FROM RemoteVolume WHERE ID = @VolumeID");
+            cmd.Transaction = m_connection.BeginTransaction(deferred: true);
+            cmd.SetParameterValue("@VolumeID", VolumeID);
+            using var reader = await cmd.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
                 yield return (reader.ConvertValueToString(0) ?? "", reader.ConvertValueToInt64(1), reader.ConvertValueToString(2) ?? "");
+            await cmd.Transaction.CommitAsync();
         }
 
-        public void DropRestoreTable()
+        public async Task DropRestoreTable()
         {
-            using (var cmd = m_connection.CreateCommand())
-            {
-                if (m_tempfiletable != null)
-                    try
-                    {
-                        cmd.ExecuteNonQuery(FormatInvariant($@"DROP TABLE IF EXISTS ""{m_tempfiletable}"""));
-                    }
-                    catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, "CleanupError", ex, "Cleanup error: {0}", ex.Message); }
-                    finally { m_tempfiletable = null; }
+            using var cmd = m_connection.CreateCommand();
+            cmd.Transaction = m_connection.BeginTransaction(deferred: true);
+            if (m_tempfiletable != null)
+                try
+                {
+                    await cmd.ExecuteNonQueryAsync(FormatInvariant($@"DROP TABLE IF EXISTS ""{m_tempfiletable}"""));
+                }
+                catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, "CleanupError", ex, "Cleanup error: {0}", ex.Message); }
+                finally { m_tempfiletable = null; }
 
-                if (m_tempblocktable != null)
-                    try
-                    {
-                        cmd.ExecuteNonQuery(FormatInvariant($@"DROP TABLE IF EXISTS ""{m_tempblocktable}"""));
-                    }
-                    catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, "CleanupError", ex, "Cleanup error: {0}", ex.Message); }
-                    finally { m_tempblocktable = null; }
+            if (m_tempblocktable != null)
+                try
+                {
+                    await cmd.ExecuteNonQueryAsync(FormatInvariant($@"DROP TABLE IF EXISTS ""{m_tempblocktable}"""));
+                }
+                catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, "CleanupError", ex, "Cleanup error: {0}", ex.Message); }
+                finally { m_tempblocktable = null; }
 
-                if (m_latestblocktable != null)
-                    try
-                    {
-                        cmd.ExecuteNonQuery(FormatInvariant($@"DROP TABLE IF EXISTS ""{m_latestblocktable}"""));
-                    }
-                    catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, "CleanupError", ex, "Cleanup error: {0}", ex.Message); }
-                    finally { m_latestblocktable = null; }
+            if (m_latestblocktable != null)
+                try
+                {
+                    await cmd.ExecuteNonQueryAsync(FormatInvariant($@"DROP TABLE IF EXISTS ""{m_latestblocktable}"""));
+                }
+                catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, "CleanupError", ex, "Cleanup error: {0}", ex.Message); }
+                finally { m_latestblocktable = null; }
 
-                if (m_fileprogtable != null)
-                    try
-                    {
-                        cmd.ExecuteNonQuery(FormatInvariant($@"DROP TABLE IF EXISTS ""{m_fileprogtable}"""));
-                    }
-                    catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, "CleanupError", ex, "Cleanup error: {0}", ex.Message); }
-                    finally { m_fileprogtable = null; }
+            if (m_fileprogtable != null)
+                try
+                {
+                    await cmd.ExecuteNonQueryAsync(FormatInvariant($@"DROP TABLE IF EXISTS ""{m_fileprogtable}"""));
+                }
+                catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, "CleanupError", ex, "Cleanup error: {0}", ex.Message); }
+                finally { m_fileprogtable = null; }
 
-                if (m_totalprogtable != null)
-                    try
-                    {
-                        cmd.ExecuteNonQuery(FormatInvariant($@"DROP TABLE IF EXISTS ""{m_totalprogtable}"""));
-                    }
-                    catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, "CleanupError", ex, "Cleanup error: {0}", ex.Message); }
-                    finally { m_totalprogtable = null; }
+            if (m_totalprogtable != null)
+                try
+                {
+                    await cmd.ExecuteNonQueryAsync(FormatInvariant($@"DROP TABLE IF EXISTS ""{m_totalprogtable}"""));
+                }
+                catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, "CleanupError", ex, "Cleanup error: {0}", ex.Message); }
+                finally { m_totalprogtable = null; }
 
-                if (m_filesnewlydonetable != null)
-                    try
-                    {
-                        cmd.ExecuteNonQuery(FormatInvariant($@"DROP TABLE IF EXISTS ""{m_filesnewlydonetable}"""));
-                    }
-                    catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, "CleanupError", ex, "Cleanup error: {0}", ex.Message); }
-                    finally { m_filesnewlydonetable = null; }
+            if (m_filesnewlydonetable != null)
+                try
+                {
+                    await cmd.ExecuteNonQueryAsync(FormatInvariant($@"DROP TABLE IF EXISTS ""{m_filesnewlydonetable}"""));
+                }
+                catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, "CleanupError", ex, "Cleanup error: {0}", ex.Message); }
+                finally { m_filesnewlydonetable = null; }
 
-            }
+            await cmd.Transaction.CommitAsync();
         }
 
         public interface IBlockMarker : IDisposable
         {
-            void SetBlockRestored(long targetfileid, long index, string hash, long blocksize, bool metadata);
-            void SetAllBlocksMissing(long targetfileid);
-            void SetAllBlocksRestored(long targetfileid, bool includeMetadata);
-            void SetFileDataVerified(long targetfileid);
-            void Commit();
-            void UpdateProcessed(IOperationProgressUpdater writer);
+            Task SetBlockRestored(long targetfileid, long index, string hash, long blocksize, bool metadata);
+            Task SetAllBlocksMissing(long targetfileid);
+            Task SetAllBlocksRestored(long targetfileid, bool includeMetadata);
+            Task SetFileDataVerified(long targetfileid);
+            Task CommitAsync();
+            Task UpdateProcessed(IOperationProgressUpdater writer);
         }
 
         /// <summary>
@@ -1158,110 +1186,113 @@ ORDER BY ""A"".""TargetPath"", ""BB"".""Index"""));
         /// </summary>
         private class DirectBlockMarker : IBlockMarker
         {
-            private IDbCommand m_insertblockCommand;
-            private IDbCommand m_resetfileCommand;
-            private IDbCommand m_updateAsRestoredCommand;
-            private IDbCommand m_updateFileAsDataVerifiedCommand;
-            private IDbCommand m_statUpdateCommand;
-            private IDbTransaction m_transaction;
+            private readonly SqliteCommand m_insertblockCommand;
+            private readonly SqliteCommand m_resetfileCommand;
+            private readonly SqliteCommand m_updateAsRestoredCommand;
+            private readonly SqliteCommand m_updateFileAsDataVerifiedCommand;
+            private readonly SqliteCommand m_statUpdateCommand;
+            private SqliteTransaction m_transaction;
             private bool m_hasUpdates = false;
 
             private readonly string m_blocktablename;
             private readonly string m_filetablename;
 
-            public DirectBlockMarker(IDbConnection connection, string blocktablename, string filetablename, string statstablename)
+            public DirectBlockMarker(SqliteConnection connection, string blocktablename, string filetablename, string statstablename)
             {
-                m_transaction = connection.BeginTransactionSafe();
+                m_transaction = connection.BeginTransaction(deferred: true);
                 m_blocktablename = blocktablename;
                 m_filetablename = filetablename;
 
-                m_insertblockCommand = connection.CreateCommand(m_transaction, FormatInvariant($@"UPDATE ""{m_blocktablename}"" SET ""Restored"" = 1
+                m_insertblockCommand = connection.CreateCommand(FormatInvariant($@"UPDATE ""{m_blocktablename}"" SET ""Restored"" = 1
 WHERE ""FileID"" = @TargetFileId AND ""Index"" = @Index AND ""Hash"" = @Hash AND ""Size"" = @Size AND ""Metadata"" = @Metadata AND ""Restored"" = 0 "));
+                m_insertblockCommand.Transaction = m_transaction;
 
-                m_resetfileCommand = connection.CreateCommand(m_transaction, FormatInvariant($@"UPDATE ""{m_blocktablename}"" SET ""Restored"" = 0 WHERE ""FileID"" = @TargetFileId "));
-                m_updateAsRestoredCommand = connection.CreateCommand(m_transaction, FormatInvariant($@"UPDATE ""{m_blocktablename}"" SET ""Restored"" = 1 WHERE ""FileID"" = @TargetFileId AND ""Metadata"" <= @Metadata "));
-                m_updateFileAsDataVerifiedCommand = connection.CreateCommand(m_transaction, FormatInvariant($@"UPDATE ""{m_filetablename}"" SET ""DataVerified"" = 1 WHERE ""ID"" = @TargetFileId"));
+                m_resetfileCommand = connection.CreateCommand(FormatInvariant($@"UPDATE ""{m_blocktablename}"" SET ""Restored"" = 0 WHERE ""FileID"" = @TargetFileId "));
+                m_resetfileCommand.Transaction = m_transaction;
+
+                m_updateAsRestoredCommand = connection.CreateCommand(FormatInvariant($@"UPDATE ""{m_blocktablename}"" SET ""Restored"" = 1 WHERE ""FileID"" = @TargetFileId AND ""Metadata"" <= @Metadata "));
+                m_updateAsRestoredCommand.Transaction = m_transaction;
+
+                m_updateFileAsDataVerifiedCommand = connection.CreateCommand(FormatInvariant($@"UPDATE ""{m_filetablename}"" SET ""DataVerified"" = 1 WHERE ""ID"" = @TargetFileId"));
+                m_updateFileAsDataVerifiedCommand.Transaction = m_transaction;
 
                 if (statstablename != null)
                 {
                     // Fields in Stats: TotalFiles, TotalBlocks, TotalSize
                     //                  FilesFullyRestored, FilesPartiallyRestored, BlocksRestored, SizeRestored
-                    m_statUpdateCommand = connection.CreateCommand(m_transaction, FormatInvariant($@"SELECT SUM(""FilesFullyRestored""), SUM(""SizeRestored"") FROM ""{statstablename}"" "));
+                    m_statUpdateCommand = connection.CreateCommand(FormatInvariant($@"SELECT SUM(""FilesFullyRestored""), SUM(""SizeRestored"") FROM ""{statstablename}"" "));
                 }
                 else // very slow fallback if stats tables were not created
-                    m_statUpdateCommand = connection.CreateCommand(m_transaction, FormatInvariant($@"SELECT COUNT(DISTINCT ""FileID""), SUM(""Size"") FROM ""{m_blocktablename}"" WHERE ""Restored"" = 1 "));
+                    m_statUpdateCommand = connection.CreateCommand(FormatInvariant($@"SELECT COUNT(DISTINCT ""FileID""), SUM(""Size"") FROM ""{m_blocktablename}"" WHERE ""Restored"" = 1 "));
+                m_statUpdateCommand.Transaction = m_transaction;
 
             }
 
-            public void UpdateProcessed(IOperationProgressUpdater updater)
+            public async Task UpdateProcessed(IOperationProgressUpdater updater)
             {
                 if (!m_hasUpdates)
                     return;
 
                 m_hasUpdates = false;
-                using (var rd = m_statUpdateCommand.ExecuteReader())
+                using var rd = await m_statUpdateCommand.ExecuteReaderAsync();
+                var filesprocessed = 0L;
+                var processedsize = 0L;
+
+                if (rd.Read())
                 {
-                    var filesprocessed = 0L;
-                    var processedsize = 0L;
-
-                    if (rd.Read())
-                    {
-                        filesprocessed += rd.ConvertValueToInt64(0, 0);
-                        processedsize += rd.ConvertValueToInt64(1, 0);
-                    }
-
-                    updater.UpdatefilesProcessed(filesprocessed, processedsize);
+                    filesprocessed += rd.ConvertValueToInt64(0, 0);
+                    processedsize += rd.ConvertValueToInt64(1, 0);
                 }
+
+                updater.UpdatefilesProcessed(filesprocessed, processedsize);
             }
 
-            public void SetAllBlocksMissing(long targetfileid)
+            public async Task SetAllBlocksMissing(long targetfileid)
             {
                 m_hasUpdates = true;
-                var r = m_resetfileCommand.SetParameterValue("@TargetFileId", targetfileid)
-                    .ExecuteNonQuery();
+                m_resetfileCommand.SetParameterValue("@TargetFileId", targetfileid);
+                var r = await m_resetfileCommand.ExecuteNonQueryAsync();
                 if (r <= 0)
                     throw new Exception("Unexpected reset result");
             }
 
-            public void SetAllBlocksRestored(long targetfileid, bool includeMetadata)
+            public async Task SetAllBlocksRestored(long targetfileid, bool includeMetadata)
             {
                 m_hasUpdates = true;
-                var r = m_updateAsRestoredCommand.SetParameterValue("@TargetFileId", targetfileid)
-                    .SetParameterValue("@Metadata", includeMetadata ? 1 : 0)
-                    .ExecuteNonQuery();
+                m_updateAsRestoredCommand.SetParameterValue("@TargetFileId", targetfileid);
+                m_updateAsRestoredCommand.SetParameterValue("@Metadata", includeMetadata ? 1 : 0);
+                var r = await m_updateAsRestoredCommand.ExecuteNonQueryAsync();
                 if (r <= 0)
                     throw new Exception("Unexpected reset result");
             }
 
-            public void SetFileDataVerified(long targetfileid)
+            public async Task SetFileDataVerified(long targetfileid)
             {
                 m_hasUpdates = true;
-                var r = m_updateFileAsDataVerifiedCommand.SetParameterValue("@TargetFileId", targetfileid)
-                    .ExecuteNonQuery();
+                m_updateFileAsDataVerifiedCommand.SetParameterValue("@TargetFileId", targetfileid);
+                var r = await m_updateFileAsDataVerifiedCommand.ExecuteNonQueryAsync();
                 if (r != 1)
                     throw new Exception("Unexpected result when marking file as verified.");
             }
 
-            public void SetBlockRestored(long targetfileid, long index, string hash, long size, bool metadata)
+            public async Task SetBlockRestored(long targetfileid, long index, string hash, long size, bool metadata)
             {
                 m_hasUpdates = true;
-                var r = m_insertblockCommand.SetParameterValue("@TargetFileId", targetfileid)
-                    .SetParameterValue("@Index", index)
-                    .SetParameterValue("@Hash", hash)
-                    .SetParameterValue("@Size", size)
-                    .SetParameterValue("@Metadata", metadata)
-                    .ExecuteNonQuery();
+                m_insertblockCommand.SetParameterValue("@TargetFileId", targetfileid);
+                m_insertblockCommand.SetParameterValue("@Index", index);
+                m_insertblockCommand.SetParameterValue("@Hash", hash);
+                m_insertblockCommand.SetParameterValue("@Size", size);
+                m_insertblockCommand.SetParameterValue("@Metadata", metadata);
+                var r = await m_insertblockCommand.ExecuteNonQueryAsync();
                 if (r != 1)
                     throw new Exception("Unexpected result when marking block.");
             }
 
-            public void Commit()
+            public async Task CommitAsync()
             {
-                m_insertblockCommand.Dispose();
-                m_insertblockCommand = null!;
                 using (new Logging.Timer(LOGTAG, "CommitBlockMarker", "CommitBlockMarker"))
-                    m_transaction.Commit();
-                m_transaction.Dispose();
+                    await m_transaction.CommitAsync();
+                await m_transaction.DisposeAsync();
                 m_transaction = null!;
             }
 
@@ -1293,17 +1324,19 @@ WHERE ""FileID"" = @TargetFileId AND ""Index"" = @Index AND ""Hash"" = @Hash AND
                 connection.Dispose();
             }
             m_connection_pool.Clear();
-            DropRestoreTable();
+            DropRestoreTable().Await();
             base.Dispose();
         }
 
-        public IEnumerable<string> GetTargetFolders()
+        public async IAsyncEnumerable<string> GetTargetFolders()
         {
-            using var cmd = m_connection.CreateCommand(FormatInvariant($@"SELECT ""TargetPath"" FROM ""{m_tempfiletable}"" WHERE ""BlocksetID"" == @BlocksetID"))
-                .SetParameterValue("@BlocksetID", FOLDER_BLOCKSET_ID);
-            using (var rd = cmd.ExecuteReader())
-                while (rd.Read())
-                    yield return rd.ConvertValueToString(0) ?? "";
+            using var cmd = m_connection.CreateCommand(FormatInvariant($@"SELECT ""TargetPath"" FROM ""{m_tempfiletable}"" WHERE ""BlocksetID"" == @BlocksetID"));
+            cmd.Transaction = m_connection.BeginTransaction(deferred: true);
+            cmd.SetParameterValue("@BlocksetID", FOLDER_BLOCKSET_ID);
+            using var rd = await cmd.ExecuteReaderAsync();
+            while (await rd.ReadAsync())
+                yield return rd.ConvertValueToString(0) ?? "";
+            await cmd.Transaction.CommitAsync();
         }
 
         public interface IFastSource
@@ -1326,18 +1359,18 @@ WHERE ""FileID"" = @TargetFileId AND ""Index"" = @Index AND ""Hash"" = @Hash AND
         {
             private class BlockEntry : IBlockEntry
             {
-                private readonly IDataReader m_rd;
+                private readonly SqliteDataReader m_rd;
                 private readonly long m_blocksize;
-                public BlockEntry(IDataReader rd, long blocksize) { m_rd = rd; m_blocksize = blocksize; }
+                public BlockEntry(SqliteDataReader rd, long blocksize) { m_rd = rd; m_blocksize = blocksize; }
                 public long Offset { get { return m_rd.ConvertValueToInt64(3) * m_blocksize; } }
                 public long Index { get { return m_rd.ConvertValueToInt64(3); } }
                 public long Size { get { return m_rd.ConvertValueToInt64(5); } }
                 public string Hash { get { return m_rd.ConvertValueToString(4) ?? ""; } }
             }
 
-            private readonly IDataReader m_rd;
+            private readonly SqliteDataReader m_rd;
             private readonly long m_blocksize;
-            public FastSource(IDataReader rd, long blocksize) { m_rd = rd; m_blocksize = blocksize; MoreData = true; }
+            public FastSource(SqliteDataReader rd, long blocksize) { m_rd = rd; m_blocksize = blocksize; MoreData = true; }
             public bool MoreData { get; private set; }
             public string TargetPath { get { return m_rd.ConvertValueToString(0) ?? ""; } }
             public long TargetFileID { get { return m_rd.ConvertValueToInt64(2); } }
@@ -1352,28 +1385,30 @@ WHERE ""FileID"" = @TargetFileId AND ""Index"" = @Index AND ""Hash"" = @Hash AND
                     do
                     {
                         yield return new BlockEntry(m_rd, m_blocksize);
-                    } while ((MoreData = m_rd.Read()) && tid == TargetFileID);
+                    } while ((MoreData = m_rd.ReadAsync().Await()) && tid == TargetFileID);
 
                 }
             }
         }
 
-        public IEnumerable<IFastSource> GetFilesAndSourceBlocksFast(long blocksize)
+        public async IAsyncEnumerable<IFastSource> GetFilesAndSourceBlocksFast(long blocksize)
         {
-            using (var transaction = m_connection.BeginTransactionSafe())
+            using (var transaction = m_connection.BeginTransaction(deferred: true))
             using (var cmdReader = m_connection.CreateCommand())
-            using (var cmd = m_connection.CreateCommand(transaction))
+            using (var cmd = m_connection.CreateCommand())
             {
+                cmdReader.Transaction = transaction;
+                cmd.Transaction = transaction;
                 cmd.SetCommandAndParameters(FormatInvariant($@"UPDATE ""{m_tempfiletable}"" SET ""LocalSourceExists"" = 1 WHERE Path = @Path"));
-                using (var rd = cmdReader.ExecuteReader(FormatInvariant($@"SELECT DISTINCT ""{m_tempfiletable}"".""Path"" FROM ""{m_tempfiletable}""")))
+                using (var rd = await cmdReader.ExecuteReaderAsync(FormatInvariant($@"SELECT DISTINCT ""{m_tempfiletable}"".""Path"" FROM ""{m_tempfiletable}""")))
                 {
-                    while (rd.Read())
+                    while (await rd.ReadAsync())
                     {
                         var sourcepath = rd.ConvertValueToString(0);
                         if (SystemIO.IO_OS.FileExists(sourcepath))
                         {
                             cmd.SetParameterValue("@Path", sourcepath);
-                            cmd.ExecuteNonQuery();
+                            await cmd.ExecuteNonQueryAsync();
                         }
                         else
                         {
@@ -1383,8 +1418,8 @@ WHERE ""FileID"" = @TargetFileId AND ""Index"" = @Index AND ""Hash"" = @Hash AND
                 }
 
                 //This localSourceExists index will make the query engine to start by searching FileSet table. As the result is ordered by FileSet.ID, we will get the cursor "instantly"
-                cmd.ExecuteNonQuery(FormatInvariant($@"CREATE INDEX ""{m_tempfiletable}_LocalSourceExists"" ON ""{m_tempfiletable}"" (""LocalSourceExists"")"));
-                transaction.Commit();
+                await cmd.ExecuteNonQueryAsync(FormatInvariant($@"CREATE INDEX ""{m_tempfiletable}_LocalSourceExists"" ON ""{m_tempfiletable}"" (""LocalSourceExists"")"));
+                await transaction.CommitAsync();
             }
 
             m_latestblocktable = "LatestBlocksetIds-" + m_temptabsetguid;
@@ -1417,13 +1452,15 @@ WHERE ""FileID"" = @TargetFileId AND ""Index"" = @Index AND ""Hash"" = @Hash AND
                             {whereclause})
                 GROUP BY ""File"".""Path""");
 
+            using var transaction2 = m_connection.BeginTransaction(deferred: true);
             using (var cmd = m_connection.CreateCommand())
             {
-                cmd.ExecuteNonQuery(FormatInvariant($@"DROP TABLE IF EXISTS ""{m_latestblocktable}"" "));
-                cmd.ExecuteNonQuery(FormatInvariant($@"CREATE TEMPORARY TABLE ""{m_latestblocktable}"" AS {latestBlocksetIds}"));
-                cmd.ExecuteNonQuery(FormatInvariant($@"CREATE INDEX ""{m_latestblocktable}_path"" ON ""{m_latestblocktable}"" (""Path"")"));
+                cmd.Transaction = transaction2;
+                await cmd.ExecuteNonQueryAsync(FormatInvariant($@"DROP TABLE IF EXISTS ""{m_latestblocktable}"" "));
+                await cmd.ExecuteNonQueryAsync(FormatInvariant($@"CREATE TEMPORARY TABLE ""{m_latestblocktable}"" AS {latestBlocksetIds}"));
+                await cmd.ExecuteNonQueryAsync(FormatInvariant($@"CREATE INDEX ""{m_latestblocktable}_path"" ON ""{m_latestblocktable}"" (""Path"")"));
 
-                cmd.ExecuteNonQuery(FormatInvariant($@"UPDATE ""{m_tempfiletable}"" SET LatestBlocksetId = (SELECT BlocksetId FROM ""{m_latestblocktable}"" WHERE Path = ""{m_tempfiletable}"".Path)"));
+                await cmd.ExecuteNonQueryAsync(FormatInvariant($@"UPDATE ""{m_tempfiletable}"" SET LatestBlocksetId = (SELECT BlocksetId FROM ""{m_latestblocktable}"" WHERE Path = ""{m_tempfiletable}"".Path)"));
             }
 
             var sources = FormatInvariant($@"
@@ -1447,9 +1484,10 @@ WHERE
 ORDER BY ""{m_tempfiletable}"".""ID"", ""{m_tempblocktable}"".""Index"" ");
 
             using (var cmd = m_connection.CreateCommand())
-            using (var rd = cmd.ExecuteReader(sources))
             {
-                if (rd.Read())
+                cmd.Transaction = transaction2;
+                using var rd = await cmd.ExecuteReaderAsync(sources);
+                if (await rd.ReadAsync())
                 {
                     bool more;
                     do
@@ -1460,11 +1498,13 @@ ORDER BY ""{m_tempfiletable}"".""ID"", ""{m_tempblocktable}"".""Index"" ");
 
                         more = n.MoreData;
                         while (more && n.TargetFileID == tid)
-                            more = rd.Read();
+                            more = await rd.ReadAsync();
 
                     } while (more);
                 }
             }
+
+            await transaction2.CommitAsync();
         }
 
     }
