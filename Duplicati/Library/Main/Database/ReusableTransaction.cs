@@ -29,43 +29,59 @@ using Microsoft.Data.Sqlite;
 namespace Duplicati.Library.Main.Database;
 
 /// <summary>
-/// Wraps a transaction so it can be comitted and restarted
+/// Wraps a transaction so it can be comitted and restarted.
 /// </summary>
+/// <remarks>
+/// Creates a new reusable transaction.
+/// </remarks>
+/// <param name="db">The database to use.</param>
+/// <param name="transaction">The transaction to use. If null, a new transaction is created.</param>
 internal class ReusableTransaction(LocalDatabase db, SqliteTransaction? transaction = null) : IDisposable
 {
     /// <summary>
-    /// The tag used for logging
+    /// The tag used for logging.
     /// </summary>
     private static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(ReusableTransaction));
 
     /// <summary>
-    /// The database to use
+    /// The database to use.
     /// </summary>
     private readonly LocalDatabase m_db = db;
     /// <summary>
-    /// The current transaction
+    /// The current transaction.
     /// </summary>
     private SqliteTransaction m_transaction = transaction ?? db.Connection.BeginTransaction();
     /// <summary>
-    /// Creates a new reusable transaction
+    /// True if the transaction is disposed.
     /// </summary>
     private bool m_disposed = false;
 
     /// <summary>
-    /// The current transaction
+    /// The current transaction.
     /// </summary>
     public SqliteTransaction Transaction => m_disposed ? m_transaction : throw new InvalidOperationException("Transaction is disposed");
 
     /// <summary>
-    /// Commits the current transaction and optionally restarts it
+    /// Commits the current transaction and optionally restarts it.
     /// </summary>
-    /// <param name="message">The log message to use</param>
-    /// <param name="restart">True if the transaction should be restarted</param>
+    /// <remarks>
+    /// Calls the Async version of this method and awaits it.
+    /// </remarks>
+    /// <param name="message">The log message to use.</param>
+    /// <param name="restart">True if the transaction should be restarted.</param>
+    /// <exception cref="InvalidOperationException">If the transaction is already Disposed.</exception>
     public void Commit(string? message, bool restart = true)
     {
         CommitAsync(message, restart).Await();
     }
 
+    /// <summary>
+    /// Async version of Commit: <inheritdoc cref="Commit(string?, bool)"/>
+    /// </summary>
+    /// <param name="message">The log message to use.</param>
+    /// <param name="restart">True if the transaction should be restarted.</param>
+    /// <returns>An awaitable task.</returns>
+    /// <exception cref="InvalidOperationException">If the transaction is already Disposed.</exception>
     public async Task CommitAsync(string? message, bool restart = true)
     {
         if (m_disposed)
@@ -82,11 +98,18 @@ internal class ReusableTransaction(LocalDatabase db, SqliteTransaction? transact
     }
 
     /// <inheritdoc/>
+    /// <remarks>
+    /// Calls the Async version of this method and awaits it.
+    /// </remarks>
     public void Dispose()
     {
         DisposeAsync().Await();
     }
 
+    /// <summary>
+    /// Async version of Dispose: <inheritdoc cref="Dispose()"/>
+    /// </summary>
+    /// <returns>An awaitable task.</returns>
     public async Task DisposeAsync()
     {
         if (!m_disposed)
