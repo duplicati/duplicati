@@ -20,7 +20,8 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System;
-using System.Data;
+using System.Threading.Tasks;
+using Microsoft.Data.Sqlite;
 
 #nullable enable
 
@@ -43,22 +44,22 @@ internal class ReusableTransaction : IDisposable
     /// <summary>
     /// The current transaction
     /// </summary>
-    private IDbTransaction? m_transaction;
+    private SqliteTransaction? m_transaction;
 
     /// <summary>
     /// Creates a new reusable transaction
     /// </summary>
     /// <param name="db">The database to use</param>
-    public ReusableTransaction(LocalDatabase db, IDbTransaction? transaction = null)
+    public ReusableTransaction(LocalDatabase db, SqliteTransaction? transaction = null)
     {
         m_db = db;
-        m_transaction = transaction ?? db.BeginTransaction();
+        m_transaction = transaction ?? db.Connection.BeginTransaction();
     }
 
     /// <summary>
     /// The current transaction
     /// </summary>
-    public IDbTransaction Transaction => m_transaction ?? throw new InvalidOperationException("Transaction is disposed");
+    public SqliteTransaction Transaction => m_transaction ?? throw new InvalidOperationException("Transaction is disposed");
 
     /// <summary>
     /// Commits the current transaction and optionally restarts it
@@ -79,7 +80,24 @@ internal class ReusableTransaction : IDisposable
         }
 
         if (restart)
-            m_transaction = m_db.BeginTransaction();
+            m_transaction = m_db.Connection.BeginTransaction();
+    }
+
+    public async Task CommitAsync(string? message, bool restart = true)
+    {
+        if (m_transaction == null)
+            throw new InvalidOperationException("Transaction is already disposed");
+
+        if (m_transaction != null)
+        {
+            using (var timer = string.IsNullOrWhiteSpace(message) ? null : new Logging.Timer(LOGTAG, message, $"CommitTransaction: {message}"))
+                await m_transaction.CommitAsync();
+            await m_transaction.DisposeAsync();
+            m_transaction = null;
+        }
+
+        if (restart)
+            m_transaction = m_db.Connection.BeginTransaction();
     }
 
     /// <inheritdoc/>
