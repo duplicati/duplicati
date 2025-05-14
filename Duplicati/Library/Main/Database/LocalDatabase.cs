@@ -106,7 +106,7 @@ namespace Duplicati.Library.Main.Database
             if (!Directory.Exists(Path.GetDirectoryName(path)))
                 Directory.CreateDirectory(Path.GetDirectoryName(path) ?? throw new DirectoryNotFoundException("Path was a root folder."));
 
-            var c = await SQLiteHelper.SQLiteLoader.LoadConnection(path, pagecachesize);
+            var c = await SQLiteHelper.SQLiteLoader.LoadConnectionAsync(path, pagecachesize);
 
             try
             {
@@ -376,7 +376,7 @@ namespace Duplicati.Library.Main.Database
 
         public async IAsyncEnumerable<KeyValuePair<string, long>> GetRemoteVolumeIDs(IEnumerable<string> files, SqliteTransaction? transaction = null)
         {
-            using var cmd = m_connection.CreateCommand(@"SELECT ""Name"", ""ID"" FROM ""RemoteVolume"" WHERE ""Name"" IN (@Name)");
+            using var cmd = await m_connection.CreateCommandAsync(@"SELECT ""Name"", ""ID"" FROM ""RemoteVolume"" WHERE ""Name"" IN (@Name)");
             cmd.Transaction = transaction;
             using var tmptable = new TemporaryDbValueList(m_connection, transaction, files);
             cmd.ExpandInClauseParameter("@Name", tmptable);
@@ -473,7 +473,7 @@ namespace Duplicati.Library.Main.Database
 
         public async Task UnlinkRemoteVolume(string name, RemoteVolumeState state, SqliteTransaction transaction)
         {
-            using var cmd = m_connection.CreateCommand(@"DELETE FROM ""RemoteVolume"" WHERE ""Name"" = @Name AND ""State"" = @State ");
+            using var cmd = await m_connection.CreateCommandAsync(@"DELETE FROM ""RemoteVolume"" WHERE ""Name"" = @Name AND ""State"" = @State ");
             cmd.Transaction = transaction;
             cmd.SetParameterValue("@Name", name);
             cmd.SetParameterValue("@State", state.ToString());
@@ -838,7 +838,7 @@ AND ""Fileset"".""ID"" NOT IN
 
         public async Task<long> GetBlocksLargerThan(long fhblocksize)
         {
-            using var cmd = m_connection.CreateCommand(@"SELECT COUNT(*) FROM ""Block"" WHERE ""Size"" > @Size");
+            using var cmd = await m_connection.CreateCommandAsync(@"SELECT COUNT(*) FROM ""Block"" WHERE ""Size"" > @Size");
             cmd.SetParameterValue("@Size", fhblocksize);
             return await cmd.ExecuteScalarInt64Async(-1);
         }
@@ -1068,7 +1068,7 @@ ON
 
         public async IAsyncEnumerable<IBlock> GetBlocks(long volumeid, SqliteTransaction transaction)
         {
-            using var cmd = m_connection.CreateCommand(@"SELECT DISTINCT ""Hash"", ""Size"" FROM ""Block"" WHERE ""VolumeID"" = @VolumeId");
+            using var cmd = await m_connection.CreateCommandAsync(@"SELECT DISTINCT ""Hash"", ""Size"" FROM ""Block"" WHERE ""VolumeID"" = @VolumeId");
             cmd.Transaction = transaction;
             cmd.SetParameterValue("@VolumeId", volumeid);
             using var rd = await cmd.ExecuteReaderAsync();
@@ -1388,7 +1388,7 @@ WHERE oldVersion.FileID = tempVersion.FileID
 AND tempVersion.FilesetID = @FilesetId
 AND oldVersion.FilesetID = (SELECT ID FROM Fileset WHERE ID != @FilesetId ORDER BY Timestamp DESC LIMIT 1)";
 
-            using var cmd = m_connection.CreateCommand(query);
+            using var cmd = await m_connection.CreateCommandAsync(query);
             cmd.Transaction = transaction;
             cmd.SetParameterValue("@FilesetId", filesetId);
             await cmd.ExecuteNonQueryAsync();
