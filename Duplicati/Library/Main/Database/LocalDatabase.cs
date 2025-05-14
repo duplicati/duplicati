@@ -52,26 +52,27 @@ namespace Duplicati.Library.Main.Database
         /// <remarks>SQLite has a limit of 999 parameters in a single statement</remarks>
         public const int CHUNK_SIZE = 128;
 
-        protected readonly SqliteConnection m_connection;
-        protected readonly long m_operationid = -1;
-        protected readonly long m_pagecachesize;
+        // All of the required fields have been set to null! to ignore the compiler warning, as they will be initialized in the Create* factory functions.
+        protected SqliteConnection m_connection = null!;
+        protected long m_operationid = -1;
+        protected long m_pagecachesize;
         private bool m_hasExecutedVacuum;
 
-        private readonly SqliteCommand m_updateremotevolumeCommand;
-        private readonly SqliteCommand m_selectremotevolumesCommand;
-        private readonly SqliteCommand m_selectremotevolumeCommand;
-        private readonly SqliteCommand m_removeremotevolumeCommand;
-        private readonly SqliteCommand m_removedeletedremotevolumeCommand;
-        private readonly SqliteCommand m_selectremotevolumeIdCommand;
-        private readonly SqliteCommand m_createremotevolumeCommand;
-        private readonly SqliteCommand m_selectduplicateRemoteVolumesCommand;
+        private SqliteCommand m_updateremotevolumeCommand = null!;
+        private SqliteCommand m_selectremotevolumesCommand = null!;
+        private SqliteCommand m_selectremotevolumeCommand = null!;
+        private SqliteCommand m_removeremotevolumeCommand = null!;
+        private SqliteCommand m_removedeletedremotevolumeCommand = null!;
+        private SqliteCommand m_selectremotevolumeIdCommand = null!;
+        private SqliteCommand m_createremotevolumeCommand = null!;
+        private SqliteCommand m_selectduplicateRemoteVolumesCommand = null!;
 
-        private readonly SqliteCommand m_insertlogCommand;
-        private readonly SqliteCommand m_insertremotelogCommand;
-        private readonly SqliteCommand m_insertIndexBlockLink;
+        private SqliteCommand m_insertlogCommand = null!;
+        private SqliteCommand m_insertremotelogCommand = null!;
+        private SqliteCommand m_insertIndexBlockLink = null!;
 
-        private readonly SqliteCommand m_findpathprefixCommand;
-        private readonly SqliteCommand m_insertpathprefixCommand;
+        private SqliteCommand m_findpathprefixCommand = null!;
+        private SqliteCommand m_insertpathprefixCommand = null!;
 
         public const long FOLDER_BLOCKSET_ID = -100;
         public const long SYMLINK_BLOCKSET_ID = -200;
@@ -84,7 +85,22 @@ namespace Duplicati.Library.Main.Database
 
         public bool ShouldCloseConnection { get; set; }
 
-        protected static async Task<SqliteConnection> CreateConnection(string path, long pagecachesize)
+        // Constructor is private to force use of CreateLocalDatabaseAsync
+        private LocalDatabase() { }
+
+        // Arguments are not used, but are required to match the constructor signatures
+        [Obsolete("Calling the constructor will throw an exception. Use the CreateLocalDatabaseAsync or CreateLocalDatabase functions instead")]
+        public LocalDatabase(object? _ignore1 = null, object? _ignore2 = null, object? _ignore3 = null, object? _ignore4 = null)
+        {
+            throw new NotImplementedException("Use the CreateLocalDatabaseAsync or CreateLocalDatabase functions instead");
+        }
+
+        protected static SqliteConnection CreateConnection(string path, long pagecachesize)
+        {
+            return CreateConnectionAsync(path, pagecachesize).Await();
+        }
+
+        protected static async Task<SqliteConnection> CreateConnectionAsync(string path, long pagecachesize)
         {
             path = Path.GetFullPath(path);
             if (!Directory.Exists(Path.GetDirectoryName(path)))
@@ -106,6 +122,107 @@ namespace Duplicati.Library.Main.Database
             return c;
         }
 
+        public static LocalDatabase CreateLocalDatabase(string path, string operation, bool shouldclose, long pagecachesize)
+        {
+            return CreateLocalDatabaseAsync(path, operation, shouldclose, pagecachesize).Await();
+        }
+
+        public static LocalDatabase CreateLocalDatabase(LocalDatabase db)
+        {
+            return CreateLocalDatabaseAsync(db).Await();
+        }
+
+        public static LocalDatabase CreateLocalDatabase(SqliteConnection connection, string operation)
+        {
+            return CreateLocalDatabaseAsync(connection, operation).Await();
+        }
+
+        private static LocalDatabase CreateLocalDatabase(SqliteConnection connection)
+        {
+            return CreateLocalDatabaseAsync(connection).Await();
+        }
+
+        public static async Task<LocalDatabase> CreateLocalDatabaseAsync(string path, string operation, bool shouldclose, long pagecachesize)
+        {
+            var connection = await CreateConnectionAsync(path, pagecachesize);
+            var db = await CreateLocalDatabaseAsync(connection, operation);
+
+            db.ShouldCloseConnection = shouldclose;
+            db.m_pagecachesize = pagecachesize;
+
+            return db;
+        }
+
+        public static async Task<LocalDatabase> CreateLocalDatabaseAsync(LocalDatabase db)
+        {
+            var new_db = await CreateLocalDatabaseAsync(db.m_connection);
+
+            new_db.OperationTimestamp = db.OperationTimestamp;
+            new_db.m_connection = db.m_connection;
+            new_db.m_operationid = db.m_operationid;
+            new_db.m_pagecachesize = db.m_pagecachesize;
+
+            return new_db;
+        }
+
+        public static async Task<LocalDatabase> CreateLocalDatabaseAsync(SqliteConnection connection, string operation)
+        {
+            var db = await CreateLocalDatabaseAsync(connection);
+
+            db.OperationTimestamp = DateTime.UtcNow;
+
+            if (db.m_connection.State != ConnectionState.Open)
+                await db.m_connection.OpenAsync();
+
+            using var cmd = db.m_connection.CreateCommand();
+            using var transaction = db.m_connection.BeginTransaction();
+            cmd.Transaction = transaction;
+            if (operation != null)
+            {
+                cmd.CommandText = @"INSERT INTO ""Operation"" (""Description"", ""Timestamp"") VALUES (@Description, @Timestamp); SELECT last_insert_rowid();";
+                cmd.SetParameterValue("@Description", operation);
+                cmd.SetParameterValue("@Timestamp", Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(db.OperationTimestamp));
+                db.m_operationid = await cmd.ExecuteScalarInt64Async(-1);
+            }
+            else
+            {
+                // Get last operation
+                using var rd = await cmd.ExecuteReaderAsync(@"SELECT ""ID"", ""Timestamp"" FROM ""Operation"" ORDER BY ""Timestamp"" DESC LIMIT 1");
+                if (!await rd.ReadAsync())
+                    throw new Exception("LocalDatabase does not contain a previous operation.");
+
+                db.m_operationid = rd.ConvertValueToInt64(0);
+                db.OperationTimestamp = ParseFromEpochSeconds(rd.ConvertValueToInt64(1));
+            }
+
+            return db;
+        }
+
+        private static async Task<LocalDatabase> CreateLocalDatabaseAsync(SqliteConnection connection)
+        {
+            var selectremotevolumes_sql = @"SELECT ""ID"", ""Name"", ""Type"", ""Size"", ""Hash"", ""State"", ""DeleteGraceTime"", ""ArchiveTime"" FROM ""Remotevolume""";
+
+            var db = new LocalDatabase
+            {
+                m_connection = connection,
+                m_insertlogCommand = await connection.CreateCommandAsync(@"INSERT INTO ""LogData"" (""OperationID"", ""Timestamp"", ""Type"", ""Message"", ""Exception"") VALUES (@OperationID, @Timestamp, @Type, @Message, @Exception)"),
+                m_insertremotelogCommand = await connection.CreateCommandAsync(@"INSERT INTO ""RemoteOperation"" (""OperationID"", ""Timestamp"", ""Operation"", ""Path"", ""Data"") VALUES (@OperationID, @Timestamp, @Operation, @Path, @Data)"),
+                m_updateremotevolumeCommand = await connection.CreateCommandAsync(@"UPDATE ""Remotevolume"" SET ""OperationID"" = @OperationID, ""State"" = @State, ""Hash"" = @Hash, ""Size"" = @Size WHERE ""Name"" = @Name"),
+                m_selectremotevolumesCommand = await connection.CreateCommandAsync(selectremotevolumes_sql),
+                m_selectremotevolumeCommand = await connection.CreateCommandAsync(@$"{selectremotevolumes_sql} WHERE ""Name"" = @Name"),
+                m_selectduplicateRemoteVolumesCommand = await connection.CreateCommandAsync(FormatInvariant($@"SELECT DISTINCT ""Name"", ""State"" FROM ""Remotevolume"" WHERE ""Name"" IN (SELECT ""Name"" FROM ""Remotevolume"" WHERE ""State"" IN ('{RemoteVolumeState.Deleted.ToString()}', '{RemoteVolumeState.Deleting.ToString()}')) AND NOT ""State"" IN ('{RemoteVolumeState.Deleted.ToString()}', '{RemoteVolumeState.Deleting.ToString()}')")),
+                m_removeremotevolumeCommand = await connection.CreateCommandAsync(@"DELETE FROM ""Remotevolume"" WHERE ""Name"" = @Name AND (""DeleteGraceTime"" < @Now OR ""State"" != @State)"),
+                m_removedeletedremotevolumeCommand = await connection.CreateCommandAsync(FormatInvariant($@"DELETE FROM ""Remotevolume"" WHERE ""State"" == '{RemoteVolumeState.Deleted.ToString()}' AND (""DeleteGraceTime"" < @Now OR LENGTH(""DeleteGraceTime"") > 12) ")), // >12 is to handle removal of old records that were in ticks
+                m_selectremotevolumeIdCommand = await connection.CreateCommandAsync(@"SELECT ""ID"" FROM ""Remotevolume"" WHERE ""Name"" = @Name"),
+                m_createremotevolumeCommand = await connection.CreateCommandAsync(@"INSERT INTO ""Remotevolume"" (""OperationID"", ""Name"", ""Type"", ""State"", ""Size"", ""VerificationCount"", ""DeleteGraceTime"", ""ArchiveTime"") VALUES (@OperationID, @Name, @Type, @State, @Size, @VerificationCount, @DeleteGraceTime, @ArchiveTime); SELECT last_insert_rowid();"),
+                m_insertIndexBlockLink = await connection.CreateCommandAsync(@"INSERT INTO ""IndexBlockLink"" (""IndexVolumeID"", ""BlockVolumeID"") VALUES (@IndexVolumeId, @BlockVolumeId)"),
+                m_findpathprefixCommand = await connection.CreateCommandAsync(@"SELECT ""ID"" FROM ""PathPrefix"" WHERE ""Prefix"" = @Prefix"),
+                m_insertpathprefixCommand = await connection.CreateCommandAsync(@"INSERT INTO ""PathPrefix"" (""Prefix"") VALUES (@Prefix); SELECT last_insert_rowid(); ")
+            };
+
+            return db;
+        }
+
         /// <summary>
         /// Formats the string using the invariant culture
         /// </summary>
@@ -117,87 +234,6 @@ namespace Duplicati.Library.Main.Database
         public static bool Exists(string path)
         {
             return File.Exists(path);
-        }
-
-        /// <summary>
-        /// Creates a new database instance and starts a new operation
-        /// </summary>
-        /// <param name="path">The path to the database</param>
-        /// <param name="operation">The name of the operation. If null, continues last operation</param>
-        /// <param name="shouldclose">Should the connection be closed when this object is disposed</param>
-        /// <param name="pagecachesize">The page cache size</param>
-        public LocalDatabase(string path, string operation, bool shouldclose, long pagecachesize)
-            : this(CreateConnection(path, pagecachesize).Await(), operation)
-        {
-            ShouldCloseConnection = shouldclose;
-            m_pagecachesize = pagecachesize;
-        }
-
-        /// <summary>
-        /// Creates a new database instance and starts a new operation
-        /// </summary>
-        public LocalDatabase(LocalDatabase db)
-            : this(db.m_connection)
-        {
-            OperationTimestamp = db.OperationTimestamp;
-            m_connection = db.m_connection;
-            m_operationid = db.m_operationid;
-            m_pagecachesize = db.m_pagecachesize;
-        }
-
-        /// <summary>
-        /// Creates a new database instance and starts a new operation
-        /// </summary>
-        /// <param name="operation">The name of the operation. If null, continues last operation</param>
-        public LocalDatabase(SqliteConnection connection, string operation)
-            : this(connection)
-        {
-            OperationTimestamp = DateTime.UtcNow;
-            m_connection = connection;
-
-            if (m_connection.State != ConnectionState.Open)
-                m_connection.Open();
-
-            if (operation != null)
-            {
-                using var cmd = m_connection.CreateCommand();
-                using var transaction = m_connection.BeginTransaction();
-                cmd.Transaction = transaction;
-                cmd.CommandText = @"INSERT INTO ""Operation"" (""Description"", ""Timestamp"") VALUES (@Description, @Timestamp); SELECT last_insert_rowid();";
-                cmd.SetParameterValue("@Description", operation);
-                cmd.SetParameterValue("@Timestamp", Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(OperationTimestamp));
-                m_operationid = cmd.ExecuteScalarInt64Async(-1).Await();
-            }
-            else
-            {
-                // Get last operation
-                using var cmd = m_connection.CreateCommand();
-                cmd.CommandText = @"SELECT ""ID"", ""Timestamp"" FROM ""Operation"" ORDER BY ""Timestamp"" DESC LIMIT 1";
-                using var rd = cmd.ExecuteReader(@"SELECT ""ID"", ""Timestamp"" FROM ""Operation"" ORDER BY ""Timestamp"" DESC LIMIT 1");
-                if (!rd.Read())
-                    throw new Exception("LocalDatabase does not contain a previous operation.");
-
-                m_operationid = rd.ConvertValueToInt64(0);
-                OperationTimestamp = ParseFromEpochSeconds(rd.ConvertValueToInt64(1));
-            }
-        }
-
-        private LocalDatabase(SqliteConnection connection)
-        {
-            m_connection = connection;
-            m_insertlogCommand = connection.CreateCommand(@"INSERT INTO ""LogData"" (""OperationID"", ""Timestamp"", ""Type"", ""Message"", ""Exception"") VALUES (@OperationID, @Timestamp, @Type, @Message, @Exception)");
-            m_insertremotelogCommand = connection.CreateCommand(@"INSERT INTO ""RemoteOperation"" (""OperationID"", ""Timestamp"", ""Operation"", ""Path"", ""Data"") VALUES (@OperationID, @Timestamp, @Operation, @Path, @Data)");
-            m_updateremotevolumeCommand = connection.CreateCommand(@"UPDATE ""Remotevolume"" SET ""OperationID"" = @OperationID, ""State"" = @State, ""Hash"" = @Hash, ""Size"" = @Size WHERE ""Name"" = @Name");
-            m_selectremotevolumesCommand = connection.CreateCommand(@"SELECT ""ID"", ""Name"", ""Type"", ""Size"", ""Hash"", ""State"", ""DeleteGraceTime"", ""ArchiveTime"" FROM ""Remotevolume""");
-            m_selectremotevolumeCommand = connection.CreateCommand(m_selectremotevolumesCommand.CommandText + @" WHERE ""Name"" = @Name");
-            m_selectduplicateRemoteVolumesCommand = connection.CreateCommand(FormatInvariant($@"SELECT DISTINCT ""Name"", ""State"" FROM ""Remotevolume"" WHERE ""Name"" IN (SELECT ""Name"" FROM ""Remotevolume"" WHERE ""State"" IN ('{RemoteVolumeState.Deleted.ToString()}', '{RemoteVolumeState.Deleting.ToString()}')) AND NOT ""State"" IN ('{RemoteVolumeState.Deleted.ToString()}', '{RemoteVolumeState.Deleting.ToString()}')"));
-            m_removeremotevolumeCommand = connection.CreateCommand(@"DELETE FROM ""Remotevolume"" WHERE ""Name"" = @Name AND (""DeleteGraceTime"" < @Now OR ""State"" != @State)");
-            m_removedeletedremotevolumeCommand = connection.CreateCommand(FormatInvariant($@"DELETE FROM ""Remotevolume"" WHERE ""State"" == '{RemoteVolumeState.Deleted.ToString()}' AND (""DeleteGraceTime"" < @Now OR LENGTH(""DeleteGraceTime"") > 12) ")); // >12 is to handle removal of old records that were in ticks
-            m_selectremotevolumeIdCommand = connection.CreateCommand(@"SELECT ""ID"" FROM ""Remotevolume"" WHERE ""Name"" = @Name");
-            m_createremotevolumeCommand = connection.CreateCommand(@"INSERT INTO ""Remotevolume"" (""OperationID"", ""Name"", ""Type"", ""State"", ""Size"", ""VerificationCount"", ""DeleteGraceTime"", ""ArchiveTime"") VALUES (@OperationID, @Name, @Type, @State, @Size, @VerificationCount, @DeleteGraceTime, @ArchiveTime); SELECT last_insert_rowid();");
-            m_insertIndexBlockLink = connection.CreateCommand(@"INSERT INTO ""IndexBlockLink"" (""IndexVolumeID"", ""BlockVolumeID"") VALUES (@IndexVolumeId, @BlockVolumeId)");
-            m_findpathprefixCommand = connection.CreateCommand(@"SELECT ""ID"" FROM ""PathPrefix"" WHERE ""Prefix"" = @Prefix");
-            m_insertpathprefixCommand = connection.CreateCommand(@"INSERT INTO ""PathPrefix"" (""Prefix"") VALUES (@Prefix); SELECT last_insert_rowid(); ");
         }
 
         /// <summary>
