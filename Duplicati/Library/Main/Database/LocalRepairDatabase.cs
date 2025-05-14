@@ -89,19 +89,6 @@ namespace Duplicati.Library.Main.Database
         }
 
         /// <summary>
-        /// Deletes a fileset from the database
-        /// </summary>
-        /// <param name="filesetid">The fileset ID</param>
-        /// <param name="transaction">The transaction</param>
-        public void DeleteFileset(long filesetid, IDbTransaction transaction)
-        {
-            using var cmd = m_connection.CreateCommand(transaction);
-            cmd.SetCommandAndParameters(@"DELETE FROM ""Fileset"" WHERE ""ID"" = @FilesetId")
-                .SetParameterValue("@FilesetId", filesetid)
-                .ExecuteNonQuery();
-        }
-
-        /// <summary>
         /// Gets the list of index files that reference a given block file
         /// </summary>
         /// <param name="blockfileid">The block file ID</param>
