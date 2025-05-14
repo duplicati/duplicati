@@ -1,3 +1,74 @@
+2025-05-12 - 2.1.0.118_canary_2025-05-12
+==========
+This release is a canary release intended to be used for testing.
+
+# Major changes in this version
+This version has a number of minor fixes and a major rewrite of the the "repair" command.
+The logic for the "repair" command is that it should be possible to recover loss of `.dblock` files, if the data is still present locally.
+This logic has been fixed in multiple ways and now also supports recovering data, even if no individual `.dblock` volumes can be fully recovered.
+In this case, the repair will recreate as much data as possible in new `.dblock` files, and configure it so as many files as possible are available.
+
+The `purge-broken-files` can be used after repair has failed to recover eveything, and will only purge the files that were lost.
+The `purge-broken-files` command has also been updated to support using incorrect metadata, such that files are not purged if they are only missing metadata.
+
+There are again numerous fixes to ngclient, including some faster browsing of restore contents, and better remote validation of folder contents.
+The UI now supports a number of different languages.
+
+## Database version upgrade to v16
+The local database is again upgraded with two index changes for correctness and performance.
+The bundled `Duplicati.CommandLine.DatabaseTool.exe` / `duplicati-database-tool` can downgrade databases.
+Since the change is only index addition, there is no data loss on downgrades.
+
+
+## Detailed list of changes:
+- Support `CACHEDIR.TAG` as a default exclude file marker
+- Improved `list-broken-files` to more accurately show contents, thanks @gpatel-fr
+- Added new faster API for listing restores (only used in ngclient)
+- Added new API for testing to check for existing files (only used in ngclient)
+- Updated translations, thanks to all the translators
+- Fixed pCloud OAuth url in CLI
+- Improved logic for combining Regex filters, thanks @Jojo-1000
+- Improved error parsing for `box.com` backend
+- Simplified log closing to avoid cases where the log file is kept open
+- Prevent database actions when delete is invoked with no versions to delete
+- Updated throttle library to force more smooth output
+- Tracking task metadata (start/stop time) for better log scoping
+- Fixed AuthID not being reported as a password property
+- Removed CloudFiles backend
+- Fixed issue with throttle not working correctly on some backends
+- Fixed an issue with rclone giving errors after each operation
+- Fixed repair command to support repairs with partial data available
+- Updated local DB schema to v16 (two new indexes)
+- Fixed scheduling order when starting a backup
+- Fixed case where warnings were emitted if the local data contains duplicates during repair, thanks @warwickmm and @Jojo-1000
+- Updated iDrivee2 to use HttpClient
+- Updated TahoeLAFS to use HttpClient
+- Removed long-standing `FIXMEGlobal` class
+- Fixed issue with `server-util` timing out after 15 min, if using the `--wait` option
+
+## Ngclient changes:
+- Fixed "Export as commandline"
+- Prevent GUI commandline from sending empty arguments
+- Fixed some options were missing from the commandline view
+- Added some confirmation dialogs
+- Added indicator to show if backup is encrypted
+- Improved notification state not always showing errors
+- Fixed issue with multiple request fired on restore browsing
+- Updated restore to use new faster API, if available
+- Fixed issue with percent-encoded paths from configuration import
+- Fixed issues with Test button not detecting SSL certificates or SSH key changes in all places
+- Updated the Test button to check for existing files if the API is available
+- Stop restore attempts early on known fatal errors (passphrase missing, empty folder, etc)
+- Fixed an issue with advanced option lists not showing the correct labels
+- Added a restore progress page
+- Support multiple root folders on restore
+- Test destination has a spinner while active
+- Added spinners for long-running tasks from the start page
+- Added TahoeLAFS UI
+- Fixed the Live logs area
+- Added multiple languages to the UI, thanks to all the translators
+- Updated login page and loading indicator
+
 2025-04-25 - 2.1.0.117_canary_2025-04-25
 ==========
 This release is a canary release intended to be used for testing.
