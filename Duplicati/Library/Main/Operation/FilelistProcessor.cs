@@ -302,6 +302,7 @@ namespace Duplicati.Library.Main.Operation
             var missingHash = new List<Tuple<long, RemoteVolumeEntry>>();
             var temporaryAndDeletedVolumes = new HashSet<string>();
             var missingUploadingVolumes = new HashSet<string>();
+            var protectedVolumes = new HashSet<string>();
 
             foreach (var e in database.DuplicateRemoteVolumes(transaction))
             {
@@ -362,6 +363,7 @@ namespace Duplicati.Library.Main.Operation
                             {
                                 if (i.State == RemoteVolumeState.Temporary && protectedFiles.Any(pf => pf == i.Name))
                                 {
+                                    protectedVolumes.Add(i.Name);
                                     Logging.Log.WriteInformationMessage(LOGTAG, "KeepIncompleteFile", "Keeping protected incomplete remote file listed as {0}: {1}", i.State, i.Name);
                                 }
                                 else
@@ -382,6 +384,7 @@ namespace Duplicati.Library.Main.Operation
                         {
                             if (protectedFiles.Any(pf => pf == i.Name))
                             {
+                                protectedVolumes.Add(i.Name);
                                 Logging.Log.WriteInformationMessage(LOGTAG, "KeepIncompleteFile", "Keeping protected incomplete remote file listed as {0}: {1}", i.State, i.Name);
                                 database.UpdateRemoteVolume(i.Name, RemoteVolumeState.Temporary, i.Size, i.Hash, false, new TimeSpan(0), null, transaction);
                             }
@@ -401,6 +404,7 @@ namespace Duplicati.Library.Main.Operation
                         {
                             if (protectedFiles.Any(pf => pf == i.Name))
                             {
+                                protectedVolumes.Add(i.Name);
                                 Logging.Log.WriteInformationMessage(LOGTAG, "KeepIncompleteFile", "Keeping protected incomplete remote file listed as {0}: {1}", i.State, i.Name);
                             }
                             else if (verifyMode == VerifyMode.VerifyStrict && !strictExcemptFiles.Any(pf => pf == i.Name))
@@ -460,7 +464,7 @@ namespace Duplicati.Library.Main.Operation
             {
                 database.RemoveRemoteVolumes(missingUploadingVolumes.Concat(temporaryAndDeletedVolumes), transaction);
                 // Clear the flag after we have cleaned up
-                if (!options.Dryrun)
+                if (!options.Dryrun && protectedVolumes.Count == 0)
                     database.TerminatedWithActiveUploads = false;
             }
             else if (verifyMode == VerifyMode.VerifyOnly && database.TerminatedWithActiveUploads)

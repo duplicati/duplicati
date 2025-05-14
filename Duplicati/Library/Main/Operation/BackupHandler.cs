@@ -347,6 +347,25 @@ namespace Duplicati.Library.Main.Operation
                         else
                         {
                             await FilelistProcessor.VerifyRemoteList(backendManager, options, database, null, result.BackendWriter, [lastTempFilelist.Name], [], logErrors: false, verifyMode: FilelistProcessor.VerifyMode.VerifyAndClean).ConfigureAwait(false);
+                            var updatedLastTemp = string.IsNullOrWhiteSpace(lastTempFilelist.Name) ? default : database.GetRemoteVolume(lastTempFilelist.Name, null);
+                            if (!string.IsNullOrWhiteSpace(updatedLastTemp.Name) && updatedLastTemp.State == RemoteVolumeState.Deleting)
+                            {
+                                // The last temporary filelist was emptied, and scheduled for deletion, so we need to delete it
+                                try
+                                {
+                                    await backendManager.DeleteAsync(updatedLastTemp.Name, updatedLastTemp.Size, true, result.TaskControl.ProgressToken).ConfigureAwait(false);
+                                }
+                                catch (Exception ex)
+                                {
+                                    Log.WriteMessage(LogMessageType.Information, LOGTAG, "BackendDeleteFailed", ex, "Backend delete failed: {0}", ex.Message);
+                                }
+
+                                await backendManager.WaitForEmptyAsync(database, null, result.TaskControl.ProgressToken).ConfigureAwait(false);
+                                // In case the backend delete failed, manually set the state to deleted
+                                database.UpdateRemoteVolume(updatedLastTemp.Name, RemoteVolumeState.Deleted, updatedLastTemp.Size, updatedLastTemp.Hash, false, TimeSpan.FromHours(2), null, null);
+                                // The last temporary filelist is no more
+                                lastTempFilelist = default;
+                            }
                         }
                     }
                     catch (RemoteListVerificationException ex)
