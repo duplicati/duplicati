@@ -330,15 +330,12 @@ namespace Duplicati.Library.Main.Operation
                     if (database.RepairInProgress)
                         throw new UserInformationException("The database was attempted repaired, but the repair did not complete. This database may be incomplete and the backup process cannot continue. You may delete the local database and attempt to repair it again.", "DatabaseRepairInProgress");
 
-                    using (var db = new Backup.BackupDatabase(database, options))
-                    {
-                        // Make sure the database is sane
-                        await db.VerifyConsistencyAsync(options.Blocksize, options.BlockhashSize, !options.DisableFilelistConsistencyChecks);
+                    // Make sure the database is sane
+                    database.VerifyConsistency(options.Blocksize, options.BlockhashSize, !options.DisableFilelistConsistencyChecks, null);
 
-                        // Guard the last filelist
-                        if (!options.DisableSyntheticFilelist)
-                            lastTempFilelist = database.GetLastIncompleteFilesetVolume(null);
-                    }
+                    // Guard the last filelist
+                    if (!options.DisableSyntheticFilelist)
+                        lastTempFilelist = database.GetLastIncompleteFilesetVolume(null);
 
                     try
                     {

@@ -24,6 +24,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Library.Main.Database;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Main.Operation.Common
 {
@@ -52,6 +53,8 @@ namespace Duplicati.Library.Main.Operation.Common
 
         protected System.Data.IDbTransaction GetTransaction()
         {
+            m_workerSource.Token.ThrowIfCancellationRequested();
+
             if (m_transaction == null)
                 m_transaction = m_db.BeginTransaction();
             return m_transaction;
@@ -156,10 +159,17 @@ namespace Duplicati.Library.Main.Operation.Common
 
         protected override void Dispose(bool isDisposing)
         {
-            base.Dispose(isDisposing);
-            var tr = System.Threading.Interlocked.Exchange(ref m_transaction, null);
-            tr?.Commit();
-            tr?.Dispose();
+            if (m_workerSource.IsCancellationRequested)
+                return;
+
+            RunOnMain(() =>
+            {
+                base.Dispose(isDisposing);
+
+                var tr = Interlocked.Exchange(ref m_transaction, null);
+                tr?.Commit();
+                tr?.Dispose();
+            }).Await();
         }
 
     }
