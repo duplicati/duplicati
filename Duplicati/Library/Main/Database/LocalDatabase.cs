@@ -179,15 +179,25 @@ namespace Duplicati.Library.Main.Database
             cmd.Transaction = transaction;
             if (operation != null)
             {
-                cmd.CommandText = @"INSERT INTO ""Operation"" (""Description"", ""Timestamp"") VALUES (@Description, @Timestamp); SELECT last_insert_rowid();";
-                cmd.SetParameterValue("@Description", operation);
-                cmd.SetParameterValue("@Timestamp", Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(db.OperationTimestamp));
-                db.m_operationid = await cmd.ExecuteScalarInt64Async(-1);
+                db.m_operationid = await cmd.SetCommandAndParameters(@"
+                    INSERT INTO ""Operation"" (""Description"", ""Timestamp"")
+                    VALUES (@Description, @Timestamp);
+                    SELECT last_insert_rowid();
+                ")
+                    .SetParameterValue("@Description", operation)
+                    .SetParameterValue("@Timestamp", db.OperationTimestamp)
+                    .ExecuteScalarInt64Async(-1);
             }
             else
             {
                 // Get last operation
-                using var rd = await cmd.ExecuteReaderAsync(@"SELECT ""ID"", ""Timestamp"" FROM ""Operation"" ORDER BY ""Timestamp"" DESC LIMIT 1");
+                using var rd = await cmd.ExecuteReaderAsync(@"
+                    SELECT ""ID"", ""Timestamp""
+                    FROM ""Operation""
+                    ORDER BY ""Timestamp""
+                    DESC LIMIT 1
+                ");
+
                 if (!await rd.ReadAsync())
                     throw new Exception("LocalDatabase does not contain a previous operation.");
 
@@ -200,36 +210,96 @@ namespace Duplicati.Library.Main.Database
 
         private static async Task<LocalDatabase> CreateLocalDatabaseAsync(SqliteConnection connection)
         {
-            var selectremotevolumes_sql = @"SELECT ""ID"", ""Name"", ""Type"", ""Size"", ""Hash"", ""State"", ""DeleteGraceTime"", ""ArchiveTime"" FROM ""Remotevolume""";
+            var selectremotevolumes_sql = @"
+                SELECT ""ID"", ""Name"", ""Type"", ""Size"", ""Hash"", ""State"", ""DeleteGraceTime"", ""ArchiveTime""
+                FROM ""Remotevolume""
+            ";
 
             var db = new LocalDatabase
             {
                 m_connection = connection,
-                m_insertlogCommand = await connection.CreateCommandAsync(@"INSERT INTO ""LogData"" (""OperationID"", ""Timestamp"", ""Type"", ""Message"", ""Exception"") VALUES (@OperationID, @Timestamp, @Type, @Message, @Exception)"),
-                m_insertremotelogCommand = await connection.CreateCommandAsync(@"INSERT INTO ""RemoteOperation"" (""OperationID"", ""Timestamp"", ""Operation"", ""Path"", ""Data"") VALUES (@OperationID, @Timestamp, @Operation, @Path, @Data)"),
-                m_updateremotevolumeCommand = await connection.CreateCommandAsync(@"UPDATE ""Remotevolume"" SET ""OperationID"" = @OperationID, ""State"" = @State, ""Hash"" = @Hash, ""Size"" = @Size WHERE ""Name"" = @Name"),
+                m_insertlogCommand = await connection.CreateCommandAsync(@"
+                    INSERT INTO ""LogData"" (""OperationID"", ""Timestamp"", ""Type"", ""Message"", ""Exception"")
+                    VALUES (@OperationID, @Timestamp, @Type, @Message, @Exception)
+                "),
+
+                m_insertremotelogCommand = await connection.CreateCommandAsync(@"
+                    INSERT INTO ""RemoteOperation"" (""OperationID"", ""Timestamp"", ""Operation"", ""Path"", ""Data"")
+                    VALUES (@OperationID, @Timestamp, @Operation, @Path, @Data)
+                "),
+
+                m_updateremotevolumeCommand = await connection.CreateCommandAsync(@"
+                    UPDATE ""Remotevolume""
+                    SET ""OperationID"" = @OperationID, ""State"" = @State, ""Hash"" = @Hash, ""Size"" = @Size
+                    WHERE ""Name"" = @Name
+                "),
+
                 m_selectremotevolumesCommand = await connection.CreateCommandAsync(selectremotevolumes_sql),
-                m_selectremotevolumeCommand = await connection.CreateCommandAsync(@$"{selectremotevolumes_sql} WHERE ""Name"" = @Name"),
-                m_selectduplicateRemoteVolumesCommand = await connection.CreateCommandAsync(FormatInvariant($@"SELECT DISTINCT ""Name"", ""State"" FROM ""Remotevolume"" WHERE ""Name"" IN (SELECT ""Name"" FROM ""Remotevolume"" WHERE ""State"" IN ('{RemoteVolumeState.Deleted.ToString()}', '{RemoteVolumeState.Deleting.ToString()}')) AND NOT ""State"" IN ('{RemoteVolumeState.Deleted.ToString()}', '{RemoteVolumeState.Deleting.ToString()}')")),
-                m_removeremotevolumeCommand = await connection.CreateCommandAsync(@"DELETE FROM ""Remotevolume"" WHERE ""Name"" = @Name AND (""DeleteGraceTime"" < @Now OR ""State"" != @State)"),
-                m_removedeletedremotevolumeCommand = await connection.CreateCommandAsync(FormatInvariant($@"DELETE FROM ""Remotevolume"" WHERE ""State"" == '{RemoteVolumeState.Deleted.ToString()}' AND (""DeleteGraceTime"" < @Now OR LENGTH(""DeleteGraceTime"") > 12) ")), // >12 is to handle removal of old records that were in ticks
-                m_selectremotevolumeIdCommand = await connection.CreateCommandAsync(@"SELECT ""ID"" FROM ""Remotevolume"" WHERE ""Name"" = @Name"),
-                m_createremotevolumeCommand = await connection.CreateCommandAsync(@"INSERT INTO ""Remotevolume"" (""OperationID"", ""Name"", ""Type"", ""State"", ""Size"", ""VerificationCount"", ""DeleteGraceTime"", ""ArchiveTime"") VALUES (@OperationID, @Name, @Type, @State, @Size, @VerificationCount, @DeleteGraceTime, @ArchiveTime); SELECT last_insert_rowid();"),
-                m_insertIndexBlockLink = await connection.CreateCommandAsync(@"INSERT INTO ""IndexBlockLink"" (""IndexVolumeID"", ""BlockVolumeID"") VALUES (@IndexVolumeId, @BlockVolumeId)"),
-                m_findpathprefixCommand = await connection.CreateCommandAsync(@"SELECT ""ID"" FROM ""PathPrefix"" WHERE ""Prefix"" = @Prefix"),
-                m_insertpathprefixCommand = await connection.CreateCommandAsync(@"INSERT INTO ""PathPrefix"" (""Prefix"") VALUES (@Prefix); SELECT last_insert_rowid(); ")
+
+                m_selectremotevolumeCommand = await connection.CreateCommandAsync(@$"
+                    {selectremotevolumes_sql}
+                    WHERE ""Name"" = @Name
+                "),
+
+                m_selectduplicateRemoteVolumesCommand = await connection.CreateCommandAsync($@"
+                    SELECT DISTINCT ""Name"", ""State""
+                    FROM ""Remotevolume""
+                    WHERE ""Name"" IN (
+                        SELECT ""Name""
+                        FROM ""Remotevolume""
+                        WHERE ""State"" IN ('{RemoteVolumeState.Deleted}', '{RemoteVolumeState.Deleting}')
+                    )
+                    AND NOT ""State"" IN ('{RemoteVolumeState.Deleted}', '{RemoteVolumeState.Deleting}')
+                "),
+
+                m_removeremotevolumeCommand = await connection.CreateCommandAsync(@"
+                    DELETE FROM ""Remotevolume""
+                    WHERE ""Name"" = @Name
+                    AND (
+                        ""DeleteGraceTime"" < @Now OR ""State"" != @State
+                    )
+                "),
+
+                m_removedeletedremotevolumeCommand = await connection.CreateCommandAsync($@"
+                    DELETE FROM ""Remotevolume""
+                    WHERE ""State"" == '{RemoteVolumeState.Deleted}'
+                    AND (
+                        ""DeleteGraceTime"" < @Now OR LENGTH(""DeleteGraceTime"") > 12
+                    )
+                "), // >12 is to handle removal of old records that were in ticks
+
+                m_selectremotevolumeIdCommand = await connection.CreateCommandAsync(@"
+                    SELECT ""ID""
+                    FROM ""Remotevolume""
+                    WHERE ""Name"" = @Name
+                "),
+
+                m_createremotevolumeCommand = await connection.CreateCommandAsync(@"
+                    INSERT INTO ""Remotevolume"" (""OperationID"", ""Name"", ""Type"", ""State"", ""Size"", ""VerificationCount"", ""DeleteGraceTime"", ""ArchiveTime"")
+                    VALUES (@OperationID, @Name, @Type, @State, @Size, @VerificationCount, @DeleteGraceTime, @ArchiveTime);
+                    SELECT last_insert_rowid();
+                "),
+
+                m_insertIndexBlockLink = await connection.CreateCommandAsync(@"
+                    INSERT INTO ""IndexBlockLink"" (""IndexVolumeID"", ""BlockVolumeID"")
+                    VALUES (@IndexVolumeId, @BlockVolumeId)
+                "),
+
+                m_findpathprefixCommand = await connection.CreateCommandAsync(@"
+                    SELECT ""ID""
+                    FROM ""PathPrefix""
+                    WHERE ""Prefix"" = @Prefix
+                "),
+
+                m_insertpathprefixCommand = await connection.CreateCommandAsync(@"
+                    INSERT INTO ""PathPrefix"" (""Prefix"")
+                    VALUES (@Prefix);
+                    SELECT last_insert_rowid();
+                ")
             };
 
             return db;
         }
-
-        /// <summary>
-        /// Formats the string using the invariant culture
-        /// </summary>
-        /// <param name="formattable">The formattable string</param>
-        /// <returns>The formatted string</returns>
-        public static string FormatInvariant(FormattableString formattable)
-            => Library.Utility.Utility.FormatInvariant(formattable);
 
         public static bool Exists(string path)
         {
