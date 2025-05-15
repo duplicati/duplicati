@@ -72,16 +72,15 @@ public static partial class ExtensionMethods
     public static async Task<SqliteCommand> CreateCommandAsync(this SqliteConnection self, string cmdtext)
     {
         var cmd = self.CreateCommand();
-        cmd.SetCommandAndParameters(Library.Utility.Utility.FormatInvariant(cmdtext));
+        cmd.SetCommandAndParameters(cmdtext);
         await cmd.PrepareAsync();
 
         return cmd;
     }
 
-    public static async Task<int> ExecuteNonQueryAsync(this SqliteCommand self, string cmd)
+    public static async Task<int> ExecuteNonQueryAsync(this SqliteCommand self, string cmdtext)
     {
-        self.CommandText = cmd;
-        self.Parameters.Clear();
+        self.SetCommandAndParameters(cmdtext);
 
         // TODO "late format string-ing"
         using (new Logging.Timer(LOGTAG, "ExecuteNonQueryAsync", $"ExecuteNonQueryAsync: {self.CommandText}"))
@@ -118,10 +117,9 @@ public static partial class ExtensionMethods
     //        return self.ExecuteReader();
     //}
 
-    public static async Task<SqliteDataReader> ExecuteReaderAsync(this SqliteCommand self, string cmd)
+    public static async Task<SqliteDataReader> ExecuteReaderAsync(this SqliteCommand self, string cmdtext)
     {
-        self.CommandText = cmd;
-        self.Parameters.Clear();
+        self.SetCommandAndParameters(cmdtext);
 
         // TODO "late format string-ing"
         using (new Logging.Timer(LOGTAG, "ExecuteReaderAsync", $"ExecuteReaderAsync: {self.CommandText}"))
@@ -152,9 +150,10 @@ public static partial class ExtensionMethods
             yield return rd;
     }
 
-    public static IAsyncEnumerable<SqliteDataReader> ExecuteReaderEnumerableAsync(this SqliteCommand self, string cmd)
+    public static IAsyncEnumerable<SqliteDataReader> ExecuteReaderEnumerableAsync(this SqliteCommand self, string cmdtext)
     {
-        self.CommandText = cmd;
+        self.SetCommandAndParameters(cmdtext);
+
         return ExecuteReaderEnumerableAsync(self);
     }
 
@@ -163,10 +162,9 @@ public static partial class ExtensionMethods
         return await self.ExecuteScalarAsync().ConfigureAwait(false);
     }
 
-    public static async Task<object?> ExecuteScalarAsync(this SqliteCommand self, string cmd)
+    public static async Task<object?> ExecuteScalarAsync(this SqliteCommand self, string cmdtext)
     {
-        self.CommandText = cmd;
-        self.Parameters.Clear();
+        self.SetCommandAndParameters(cmdtext);
 
         return await ExecuteScalarAsync(self).ConfigureAwait(false);
     }
@@ -198,10 +196,9 @@ public static partial class ExtensionMethods
         return defaultvalue;
     }
 
-    public static async Task<long> ExecuteScalarInt64Async(this SqliteCommand self, string cmd, long defaultvalue = -1)
+    public static async Task<long> ExecuteScalarInt64Async(this SqliteCommand self, string cmdtext, long defaultvalue = -1)
     {
-        self.CommandText = cmd;
-        self.Parameters.Clear();
+        self.SetCommandAndParameters(cmdtext);
 
         return await ExecuteScalarInt64Async(self, defaultvalue).ConfigureAwait(false);
     }
@@ -249,7 +246,7 @@ public static partial class ExtensionMethods
 
     public static SqliteCommand SetCommandAndParameters(this SqliteCommand cmd, string cmdtext)
     {
-        cmd.CommandText = cmdtext;
+        cmd.CommandText = Library.Utility.Utility.FormatInvariant(cmdtext);
         cmd.Parameters.Clear();
 
 #if DEBUG
