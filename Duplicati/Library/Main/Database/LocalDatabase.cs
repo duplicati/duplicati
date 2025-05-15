@@ -466,6 +466,7 @@ namespace Duplicati.Library.Main.Database
                 string temptransguid = Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
                 var volidstable = "DelVolSetIds-" + temptransguid;
                 var blocksetidstable = "DelBlockSetIds-" + temptransguid;
+                var filesetidstable = "DelFilesetIds-" + temptransguid;
 
                 // Create and fill a temp table with the volids to delete. We avoid using too many parameters that way.
                 deletecmd.ExecuteNonQuery(FormatInvariant($@"CREATE TEMP TABLE ""{volidstable}"" (""ID"" INTEGER PRIMARY KEY)"));
@@ -528,25 +529,38 @@ WHERE FileLookup.BlocksetID IN ({bsIdsSubQuery}))"));
                 deletecmd.ExecuteNonQuery(FormatInvariant($@"DELETE FROM ""DeletedBlock"" WHERE ""VolumeID"" IN ({volIdsSubQuery})"));
                 deletecmd.ExecuteNonQuery(FormatInvariant($@"DELETE FROM ""ChangeJournalData"" WHERE ""FilesetID"" IN (SELECT ""ID"" FROM ""Fileset"" WHERE ""VolumeID"" IN ({volIdsSubQuery}))"));
                 deletecmd.ExecuteNonQuery(FormatInvariant($@"DELETE FROM FilesetEntry WHERE FilesetID IN (SELECT ID FROM Fileset WHERE VolumeID IN ({volIdsSubQuery}))"));
-                deletecmd.ExecuteNonQuery(FormatInvariant($@"DELETE FROM Fileset WHERE VolumeID IN ({volIdsSubQuery})"));
 
+                deletecmd.ExecuteNonQuery(FormatInvariant($@"CREATE TABLE ""{filesetidstable}"" (""ID"" INTEGER PRIMARY KEY)"));
+                deletecmd.ExecuteNonQuery(FormatInvariant($@"INSERT OR IGNORE INTO ""{filesetidstable}"" SELECT ""ID"" FROM ""Fileset"" WHERE ""VolumeID"" IN ({volIdsSubQuery})"));
                 // Delete from Fileset if FilesetEntry rows were deleted by related metadata and there are no references in FilesetEntry anymore
-                deletecmd.ExecuteNonQuery(FormatInvariant($@"DELETE FROM Fileset WHERE Fileset.ID IN
-(SELECT DISTINCT FilesetID FROM ""{metadataFilesetTable}"")
-AND Fileset.ID NOT IN
-    (SELECT DISTINCT FilesetID FROM FilesetEntry)"));
+                deletecmd.ExecuteNonQuery(FormatInvariant($@"INSERT OR IGNORE INTO ""{filesetidstable}"" SELECT ""ID"" FROM ""Fileset"" WHERE ""Fileset"".""ID"" IN
+(SELECT DISTINCT ""FilesetID"" FROM ""{metadataFilesetTable}"")
+AND ""Fileset"".""ID"" NOT IN
+    (SELECT DISTINCT ""FilesetID"" FROM FilesetEntry)"));
+
+                // Since we are deleting the fileset, we also need to mark the remote volume as deleting so it will be cleaned up later
+                deletecmd.SetCommandAndParameters(FormatInvariant($@"UPDATE ""RemoteVolume"" SET ""State"" = @NewState WHERE ""ID"" IN (SELECT DISTINCT ""VolumeID"" FROM ""Fileset"" WHERE ""Fileset"".""ID"" IN (SELECT ""ID"" FROM ""{filesetidstable}"")) AND ""State"" IN (@AllowedStates)"))
+                    .SetParameterValue("@NewState", RemoteVolumeState.Deleting.ToString())
+                    .ExpandInClauseParameter("@AllowedStates", [RemoteVolumeState.Uploading.ToString(), RemoteVolumeState.Uploaded.ToString(), RemoteVolumeState.Verified.ToString(), RemoteVolumeState.Temporary.ToString()])
+                    .ExecuteNonQuery();
+
+                deletecmd.ExecuteNonQuery(FormatInvariant($@"DELETE FROM ""Fileset"" WHERE ""ID"" IN (SELECT ""ID"" FROM ""{filesetidstable}"")"));
+
 
                 // Clean up temp tables for subqueries. We truncate content and then try to delete.
                 // Drop in try-block, as it fails in nested transactions (SQLite problem)
                 // SQLite.SQLiteException (0x80004005): database table is locked
                 deletecmd.ExecuteNonQuery(FormatInvariant($@"DELETE FROM ""{blocksetidstable}"" "));
                 deletecmd.ExecuteNonQuery(FormatInvariant($@"DELETE FROM ""{volidstable}"" "));
+                deletecmd.ExecuteNonQuery(FormatInvariant($@"DELETE FROM ""{metadataFilesetTable}"" "));
+                deletecmd.ExecuteNonQuery(FormatInvariant($@"DELETE FROM ""{filesetidstable}"" "));
                 try
                 {
                     deletecmd.CommandTimeout = 2;
                     deletecmd.ExecuteNonQuery(FormatInvariant($@"DROP TABLE IF EXISTS ""{blocksetidstable}"" "));
                     deletecmd.ExecuteNonQuery(FormatInvariant($@"DROP TABLE IF EXISTS ""{volidstable}"" "));
                     deletecmd.ExecuteNonQuery(FormatInvariant($@"DROP TABLE IF EXISTS ""{metadataFilesetTable}"" "));
+                    deletecmd.ExecuteNonQuery(FormatInvariant($@"DROP TABLE IF EXISTS ""{filesetidstable}"" "));
                 }
                 catch { /* Ignore, will be deleted on close anyway. */ }
 
