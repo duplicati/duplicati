@@ -60,14 +60,14 @@ public static partial class ExtensionMethods
         return v.ToString();
     }
 
-    // public static SqliteCommand CreateCommand(this SqliteConnection self, string cmdtext)
-    // {
-    //     var cmd = self.CreateCommand();
-    //     cmd.SetCommandAndParameters(cmdtext);
-    //     cmd.PrepareAsync().Wait();
+    public static SqliteCommand CreateCommand(this SqliteConnection self, string cmdtext)
+    {
+        var cmd = self.CreateCommand();
+        cmd.SetCommandAndParameters(cmdtext);
+        cmd.PrepareAsync().Wait();
 
-    //     return cmd;
-    // }
+        return cmd;
+    }
 
     public static async Task<SqliteCommand> CreateCommandAsync(this SqliteConnection self, string cmdtext)
     {
