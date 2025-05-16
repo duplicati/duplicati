@@ -19,6 +19,8 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
+#nullable enable
+
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -45,19 +47,23 @@ namespace Duplicati.Library.Main.Operation
             m_result = result;
         }
 
-        public async Task RunAsync(IBackendManager backendManager, IFilter filter, Func<long, DateTime, long, string, long, bool> callbackhandler = null)
+        public async Task RunAsync(IBackendManager backendManager, IFilter filter, Func<long, DateTime, long, string, long, bool>? callbackhandler = null)
         {
             if (!File.Exists(m_options.Dbpath))
                 throw new UserInformationException(string.Format("Database file does not exist: {0}", m_options.Dbpath), "DatabaseDoesNotExist");
 
             using (var db = new Database.LocalListBrokenFilesDatabase(m_options.Dbpath, m_options.SqlitePageCache))
             using (var tr = db.BeginTransaction())
+            {
+                Utility.UpdateOptionsFromDb(db, m_options);
+                Utility.VerifyOptionsAndUpdateDatabase(db, m_options);
                 await DoRunAsync(backendManager, db, tr, filter, callbackhandler).ConfigureAwait(false);
+            }
         }
 
-        public static async Task<((DateTime FilesetTime, long FilesetID, long RemoveCount)[], List<Database.RemoteVolumeEntry> Missing)> GetBrokenFilesetsFromRemote(IBackendManager backendManager, BasicResults result, Database.LocalListBrokenFilesDatabase db, System.Data.IDbTransaction transaction, Options options)
+        public static async Task<((DateTime FilesetTime, long FilesetID, long RemoveCount)[]?, List<Database.RemoteVolumeEntry>? Missing)> GetBrokenFilesetsFromRemote(IBackendManager backendManager, BasicResults result, Database.LocalListBrokenFilesDatabase db, System.Data.IDbTransaction transaction, Options options)
         {
-            List<Database.RemoteVolumeEntry> missing = null;
+            List<Database.RemoteVolumeEntry>? missing = null;
             var brokensets = db.GetBrokenFilesets(options.Time, options.Version, transaction).ToArray();
 
             if (brokensets.Length == 0)
@@ -97,7 +103,7 @@ namespace Duplicati.Library.Main.Operation
             return (brokensets, missing);
         }
 
-        private async Task DoRunAsync(IBackendManager backendManager, Database.LocalListBrokenFilesDatabase db, System.Data.IDbTransaction transaction, IFilter filter, Func<long, DateTime, long, string, long, bool> callbackhandler)
+        private async Task DoRunAsync(IBackendManager backendManager, Database.LocalListBrokenFilesDatabase db, System.Data.IDbTransaction transaction, IFilter filter, Func<long, DateTime, long, string, long, bool>? callbackhandler)
         {
             if (filter != null && !filter.Empty)
                 throw new UserInformationException("Filters are not supported for this operation", "FiltersAreNotSupportedForListBrokenFiles");

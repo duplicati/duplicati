@@ -6,12 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="Database\Database schema\**" />
-    <EmbeddedResource Include="newbackup.json" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Microsoft.Win32.SystemEvents" Version="7.0.0" />    
+    <PackageReference Include="Microsoft.Win32.SystemEvents" Version="7.0.0" />
   </ItemGroup>
 
   <ItemGroup>
@@ -25,8 +20,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="Database\Database schema\**" />
+    <EmbeddedResource Include="newbackup.json" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Folder Include="WebServer\Kestrel\" />
   </ItemGroup>
 
 </Project>
-
