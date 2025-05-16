@@ -329,8 +329,8 @@ namespace Duplicati.Library.Main.Operation
             if (newvolindex != null && m_options.IndexfilePolicy == Options.IndexFileStrategy.Full)
                 indexVolumeFinished = () =>
                 {
-                    foreach (var blocklist in db.GetBlocklists(newvol.VolumeID, m_options.Blocksize, m_options.BlockhashSize))
-                        newvolindex.WriteBlocklist(blocklist.Item1, blocklist.Item2, 0, blocklist.Item3);
+                    foreach (var blocklist in db.GetBlocklists(newvol.VolumeID, m_options.Blocksize, m_options.BlockhashSize, rtr.Transaction))
+                        newvolindex.WriteBlocklist(blocklist.Hash, blocklist.Buffer, 0, blocklist.Size);
                 };
 
             uploadedVolumes.Add(new KeyValuePair<string, long>(newvol.RemoteFilename, newvol.Filesize));
