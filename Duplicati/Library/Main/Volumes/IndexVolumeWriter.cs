@@ -23,6 +23,7 @@ using System.Collections.Generic;
 using System.IO;
 using Newtonsoft.Json;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Main.Volumes
 {
@@ -95,6 +96,11 @@ namespace Duplicati.Library.Main.Volumes
             if (m_knownBlocklisthashes.Contains(hash))
                 throw new InvalidOperationException($"Attempted to write a blocklist with hash {hash} more than once");
             m_knownBlocklisthashes.Add(hash);
+
+            using var hashalg = HashFactory.CreateHasher(m_blockhash);
+            var hash2 = Convert.ToBase64String(hashalg.ComputeHash(data, offset, size));
+            if (hash2 != hash)
+                throw new InvalidOperationException($"Attempted to write a blocklist with hash {hash} but data has hash {hash2}");
 #endif
 
             if (size % m_blockhashsize != 0)
