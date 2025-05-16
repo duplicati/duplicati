@@ -33,7 +33,6 @@ using Duplicati.Library.Modules.Builtin.ResultSerialization;
 using Duplicati.Library.Utility;
 using Duplicati.Library.Interface;
 using Microsoft.Data.Sqlite;
-using CommunityToolkit.HighPerformance;
 
 // Expose internal classes to UnitTests, so that Database classes can be tested
 [assembly: InternalsVisibleTo("Duplicati.UnitTest")]
