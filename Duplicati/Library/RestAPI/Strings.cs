@@ -103,6 +103,13 @@ Error message: {0}", error); }
                 public static string SettingsencryptionkeyShort { get { return LC.L(@"Set the encryption key for the settings database"); } }
                 public static string SettingsencryptionkeyLong(string envname) { return LC.L(@"Use this option to set the encryption key for the settings database. This option can also be set with the environment variable {0}.", envname); }
                 public static string InvalidPauseResumeState(LiveControls.LiveControlState state) { return LC.L(@"Invalid pause/resume state: {0}", state); }
+                public static string RegisterRemoteControlShort { get { return LC.L(@"Register for remote control"); } }
+                public static string RegisterRemoteControlLong { get { return LC.L(@"Register for remote control using the pre-authenticated url. If the server is already registered, this option has no effect"); } }
+                public static string RegisterRemoteControlReregisterShort { get { return LC.L(@"Force register for remote control"); } }
+                public static string RegisterRemoteControlReregisterLong { get { return LC.L(@"Forces a re-registration if the server is already registered. If the server is not already registered, this option has no effect."); } }
+                public static string RemoteControlAlreadyRegistered { get { return LC.L(@"The server is already registered for remote control, ignoring registration request"); } }
+                public static string RemoteControlRegistrationUrl(string url) { return LC.L(@"The server is registered, use the following link to claim it: {0}", url); }
+                public static string RemoteControlRegistrationFailed(string message) { return LC.L(@"The server registration failed: {0}", message); }
         }
         internal static class Scheduler
         {
