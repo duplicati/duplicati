@@ -126,30 +126,38 @@ namespace Duplicati.Library.Main.Database
             return c;
         }
 
-        public static LocalDatabase CreateLocalDatabase(string path, string operation, bool shouldclose, long pagecachesize)
-        {
-            return CreateLocalDatabaseAsync(path, operation, shouldclose, pagecachesize).Await();
-        }
+        // TODO Create these once the signature is stable.
+        // public static LocalDatabase CreateLocalDatabase(string path, string operation, bool shouldclose, long pagecachesize)
+        // {
+        //     return CreateLocalDatabaseAsync(path, operation, shouldclose, pagecachesize).Await();
+        // }
 
-        public static LocalDatabase CreateLocalDatabase(LocalDatabase db)
-        {
-            return CreateLocalDatabaseAsync(db).Await();
-        }
+        // public static LocalDatabase CreateLocalDatabase(LocalDatabase db)
+        // {
+        //     return CreateLocalDatabaseAsync(db).Await();
+        // }
 
-        public static LocalDatabase CreateLocalDatabase(SqliteConnection connection, string operation)
-        {
-            return CreateLocalDatabaseAsync(connection, operation).Await();
-        }
+        // public static LocalDatabase CreateLocalDatabase(SqliteConnection connection, string operation)
+        // {
+        //     return CreateLocalDatabaseAsync(connection, operation).Await();
+        // }
 
-        private static LocalDatabase CreateLocalDatabase(SqliteConnection connection)
-        {
-            return CreateLocalDatabaseAsync(connection).Await();
-        }
+        // private static LocalDatabase CreateLocalDatabase(SqliteConnection connection)
+        // {
+        //     return CreateLocalDatabaseAsync(connection).Await();
+        // }
 
         public static async Task<LocalDatabase> CreateLocalDatabaseAsync(string path, string operation, bool shouldclose, long pagecachesize)
         {
+            var db = new LocalDatabase();
+
+            return await CreateLocalDatabaseAsync(db, path, operation, shouldclose, pagecachesize);
+        }
+
+        public static async Task<LocalDatabase> CreateLocalDatabaseAsync(LocalDatabase db, string path, string operation, bool shouldclose, long pagecachesize)
+        {
             var connection = await CreateConnectionAsync(path, pagecachesize);
-            var db = await CreateLocalDatabaseAsync(connection, operation);
+            db = await CreateLocalDatabaseAsync(db, connection, operation);
 
             db.ShouldCloseConnection = shouldclose;
             db.m_pagecachesize = pagecachesize;
@@ -157,21 +165,21 @@ namespace Duplicati.Library.Main.Database
             return db;
         }
 
-        public static async Task<LocalDatabase> CreateLocalDatabaseAsync(LocalDatabase db)
+        public static async Task<LocalDatabase> CreateLocalDatabaseAsync(LocalDatabase dbparent, LocalDatabase dbnew)
         {
-            var new_db = await CreateLocalDatabaseAsync(db.m_connection);
+            dbnew = await CreateLocalDatabaseAsync(dbnew, dbparent.m_connection);
 
-            new_db.OperationTimestamp = db.OperationTimestamp;
-            new_db.m_connection = db.m_connection;
-            new_db.m_operationid = db.m_operationid;
-            new_db.m_pagecachesize = db.m_pagecachesize;
+            dbnew.OperationTimestamp = dbparent.OperationTimestamp;
+            dbnew.m_connection = dbparent.m_connection;
+            dbnew.m_operationid = dbparent.m_operationid;
+            dbnew.m_pagecachesize = dbparent.m_pagecachesize;
 
-            return new_db;
+            return dbnew;
         }
 
-        public static async Task<LocalDatabase> CreateLocalDatabaseAsync(SqliteConnection connection, string operation)
+        public static async Task<LocalDatabase> CreateLocalDatabaseAsync(LocalDatabase db, SqliteConnection connection, string operation)
         {
-            var db = await CreateLocalDatabaseAsync(connection);
+            db = await CreateLocalDatabaseAsync(db, connection);
 
             db.OperationTimestamp = DateTime.UtcNow;
 
@@ -220,8 +228,10 @@ namespace Duplicati.Library.Main.Database
             return db;
         }
 
-        private static async Task<LocalDatabase> CreateLocalDatabaseAsync(SqliteConnection connection)
+        private static async Task<LocalDatabase> CreateLocalDatabaseAsync(LocalDatabase db, SqliteConnection connection)
         {
+            db.m_connection = connection;
+
             var selectremotevolumes_sql = @"
                 SELECT
                     ""ID"",
@@ -235,142 +245,139 @@ namespace Duplicati.Library.Main.Database
                 FROM ""Remotevolume""
             ";
 
-            var db = new LocalDatabase
-            {
-                m_connection = connection,
-                m_insertlogCommand = await connection.CreateCommandAsync(@"
-                    INSERT INTO ""LogData"" (
-                        ""OperationID"",
-                        ""Timestamp"",
-                        ""Type"",
-                        ""Message"",
-                        ""Exception""
-                    )
-                    VALUES (
-                        @OperationID,
-                        @Timestamp,
-                        @Type,
-                        @Message,
-                        @Exception
-                    )
-                "),
+            db.m_insertlogCommand = await connection.CreateCommandAsync(@"
+                INSERT INTO ""LogData"" (
+                    ""OperationID"",
+                    ""Timestamp"",
+                    ""Type"",
+                    ""Message"",
+                    ""Exception""
+                )
+                VALUES (
+                    @OperationID,
+                    @Timestamp,
+                    @Type,
+                    @Message,
+                    @Exception
+                )
+            ");
 
-                m_insertremotelogCommand = await connection.CreateCommandAsync(@"
-                    INSERT INTO ""RemoteOperation"" (
-                        ""OperationID"",
-                        ""Timestamp"",
-                        ""Operation"",
-                        ""Path"",
-                        ""Data""
-                    )
-                    VALUES (
-                        @OperationID,
-                        @Timestamp,
-                        @Operation,
-                        @Path,
-                        @Data
-                    )
-                "),
+            db.m_insertremotelogCommand = await connection.CreateCommandAsync(@"
+                INSERT INTO ""RemoteOperation"" (
+                    ""OperationID"",
+                    ""Timestamp"",
+                    ""Operation"",
+                    ""Path"",
+                    ""Data""
+                )
+                VALUES (
+                    @OperationID,
+                    @Timestamp,
+                    @Operation,
+                    @Path,
+                    @Data
+                )
+            ");
 
-                m_updateremotevolumeCommand = await connection.CreateCommandAsync(@"
-                    UPDATE ""Remotevolume""
-                    SET
-                        ""OperationID"" = @OperationID,
-                        ""State"" = @State,
-                        ""Hash"" = @Hash,
-                        ""Size"" = @Size
-                    WHERE ""Name"" = @Name
-                "),
+            db.m_updateremotevolumeCommand = await connection.CreateCommandAsync(@"
+                UPDATE ""Remotevolume""
+                SET
+                    ""OperationID"" = @OperationID,
+                    ""State"" = @State,
+                    ""Hash"" = @Hash,
+                    ""Size"" = @Size
+                WHERE ""Name"" = @Name
+            ");
 
-                m_selectremotevolumesCommand = await connection.CreateCommandAsync(selectremotevolumes_sql),
+            db.m_selectremotevolumesCommand = await connection.CreateCommandAsync(selectremotevolumes_sql);
 
-                m_selectremotevolumeCommand = await connection.CreateCommandAsync(@$"
-                    {selectremotevolumes_sql}
-                    WHERE ""Name"" = @Name
-                "),
+            db.m_selectremotevolumeCommand = await connection.CreateCommandAsync(@$"
+                {selectremotevolumes_sql}
+                WHERE ""Name"" = @Name
+            ");
 
-                m_selectduplicateRemoteVolumesCommand = await connection.CreateCommandAsync($@"
-                    SELECT DISTINCT ""Name"", ""State""
+            db.m_selectduplicateRemoteVolumesCommand = await connection.CreateCommandAsync($@"
+                SELECT DISTINCT ""Name"", ""State""
+                FROM ""Remotevolume""
+                WHERE ""Name"" IN (
+                    SELECT ""Name""
                     FROM ""Remotevolume""
-                    WHERE ""Name"" IN (
-                        SELECT ""Name""
-                        FROM ""Remotevolume""
-                        WHERE ""State"" IN ('{RemoteVolumeState.Deleted}', '{RemoteVolumeState.Deleting}')
-                    )
-                    AND NOT ""State"" IN ('{RemoteVolumeState.Deleted}', '{RemoteVolumeState.Deleting}')
-                "),
+                    WHERE ""State"" IN ('{RemoteVolumeState.Deleted}', '{RemoteVolumeState.Deleting}')
+                )
+                AND NOT ""State"" IN ('{RemoteVolumeState.Deleted}', '{RemoteVolumeState.Deleting}')
+            ");
 
-                m_removeremotevolumeCommand = await connection.CreateCommandAsync(@"
-                    DELETE FROM ""Remotevolume""
-                    WHERE ""Name"" = @Name
-                    AND (
-                        ""DeleteGraceTime"" < @Now
-                        OR ""State"" != @State
-                    )
-                "),
+            db.m_removeremotevolumeCommand = await connection.CreateCommandAsync(@"
+                DELETE FROM ""Remotevolume""
+                WHERE ""Name"" = @Name
+                AND (
+                    ""DeleteGraceTime"" < @Now
+                    OR ""State"" != @State
+                )
+            ");
 
-                m_removedeletedremotevolumeCommand = await connection.CreateCommandAsync($@"
-                    DELETE FROM ""Remotevolume""
-                    WHERE ""State"" == '{RemoteVolumeState.Deleted}'
-                    AND (
-                        ""DeleteGraceTime"" < @Now
-                        OR LENGTH(""DeleteGraceTime"") > 12
-                    )
-                "), // >12 is to handle removal of old records that were in ticks
+            // >12 is to handle removal of old records that were in ticks
+            db.m_removedeletedremotevolumeCommand = await connection.CreateCommandAsync($@"
+                DELETE FROM ""Remotevolume""
+                WHERE ""State"" == '{RemoteVolumeState.Deleted}'
+                AND (
+                    ""DeleteGraceTime"" < @Now
+                    OR LENGTH(""DeleteGraceTime"") > 12
+                )
+            ");
 
-                m_selectremotevolumeIdCommand = await connection.CreateCommandAsync(@"
-                    SELECT ""ID""
-                    FROM ""Remotevolume""
-                    WHERE ""Name"" = @Name
-                "),
+            db.m_selectremotevolumeIdCommand = await connection.CreateCommandAsync(@"
+                SELECT ""ID""
+                FROM ""Remotevolume""
+                WHERE ""Name"" = @Name
+            ");
 
-                m_createremotevolumeCommand = await connection.CreateCommandAsync(@"
-                    INSERT INTO ""Remotevolume"" (
-                        ""OperationID"",
-                        ""Name"",
-                        ""Type"",
-                        ""State"",
-                        ""Size"",
-                        ""VerificationCount"",
-                        ""DeleteGraceTime"",
-                        ""ArchiveTime""
-                    )
-                    VALUES (
-                        @OperationID,
-                        @Name,
-                        @Type,
-                        @State,
-                        @Size,
-                        @VerificationCount,
-                        @DeleteGraceTime,
-                        @ArchiveTime
-                    );
-                    SELECT last_insert_rowid();
-                "),
+            db.m_createremotevolumeCommand = await connection.CreateCommandAsync(@"
+                INSERT INTO ""Remotevolume"" (
+                    ""OperationID"",
+                    ""Name"",
+                    ""Type"",
+                    ""State"",
+                    ""Size"",
+                    ""VerificationCount"",
+                    ""DeleteGraceTime"",
+                    ""ArchiveTime""
+                )
+                VALUES (
+                    @OperationID,
+                    @Name,
+                    @Type,
+                    @State,
+                    @Size,
+                    @VerificationCount,
+                    @DeleteGraceTime,
+                    @ArchiveTime
+                );
+                SELECT last_insert_rowid();
+            ");
 
-                m_insertIndexBlockLink = await connection.CreateCommandAsync(@"
-                    INSERT INTO ""IndexBlockLink"" (
-                        ""IndexVolumeID"",
-                        ""BlockVolumeID""
-                    )
-                    VALUES (
-                        @IndexVolumeId,
-                        @BlockVolumeId
-                    )
-                "),
+            db.m_insertIndexBlockLink = await connection.CreateCommandAsync(@"
+                INSERT INTO ""IndexBlockLink"" (
+                    ""IndexVolumeID"",
+                    ""BlockVolumeID""
+                )
+                VALUES (
+                    @IndexVolumeId,
+                    @BlockVolumeId
+                )
+            ");
 
-                m_findpathprefixCommand = await connection.CreateCommandAsync(@"
-                    SELECT ""ID""
-                    FROM ""PathPrefix""
-                    WHERE ""Prefix"" = @Prefix
-                "),
+            db.m_findpathprefixCommand = await connection.CreateCommandAsync(@"
+                SELECT ""ID""
+                FROM ""PathPrefix""
+                WHERE ""Prefix"" = @Prefix
+            ");
 
-                m_insertpathprefixCommand = await connection.CreateCommandAsync(@"
-                    INSERT INTO ""PathPrefix"" (""Prefix"")
-                    VALUES (@Prefix);
-                    SELECT last_insert_rowid();
-                ")
-            };
+            db.m_insertpathprefixCommand = await connection.CreateCommandAsync(@"
+                INSERT INTO ""PathPrefix"" (""Prefix"")
+                VALUES (@Prefix);
+                SELECT last_insert_rowid();
+            ");
 
             return db;
         }
