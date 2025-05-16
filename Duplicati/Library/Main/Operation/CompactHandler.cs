@@ -337,6 +337,11 @@ namespace Duplicati.Library.Main.Operation
             if (newvolindex != null)
                 uploadedVolumes.Add(new KeyValuePair<string, long>(newvolindex.RemoteFilename, newvolindex.Filesize));
 
+            // We can handle at most one in-flight upload at a time,
+            // because the transaction is not thread-safe, and shared with the upload
+            await backendManager.WaitForEmptyAsync(db, rtr.Transaction, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
+            db.UpdateRemoteVolume(newvol.RemoteFilename, RemoteVolumeState.Uploading, -1, null, rtr.Transaction);
+
             // TODO: The upload here does not flush the database messages,
             // and this can leave the database in a state where it does not know of the remote file
             // To fix it, we need thread-safe access to the database and transaction
