@@ -782,38 +782,62 @@ ORDER BY ""BB"".""MaxIndex"" "));
 
         private class FilesAndMetadata : IFilesAndMetadata
         {
-            private readonly string m_tmptable;
-            private readonly string m_filetablename;
-            private readonly string m_blocktablename;
-            private readonly long m_blocksize;
+            private string m_tmptable = null!;
+            private string m_filetablename = null!;
+            private string m_blocktablename = null!;
+            private long m_blocksize;
 
-            private readonly SqliteConnection m_connection;
-            private readonly LocalDatabase m_db;
+            private LocalDatabase m_db = null!;
 
-            public FilesAndMetadata(LocalDatabase db, SqliteConnection connection, string filetablename, string blocktablename, long blocksize, BlockVolumeReader curvolume)
+            [Obsolete("Calling this constructor will throw an exception. Use CreateAsync instead.")]
+            public FilesAndMetadata(SqliteConnection connection, string filetablename, string blocktablename, long blocksize, BlockVolumeReader curvolume)
             {
-                m_db = db;
-                m_filetablename = filetablename;
-                m_blocktablename = blocktablename;
-                m_blocksize = blocksize;
-                m_connection = connection;
+                throw new NotImplementedException("Use CreateAsync instead of the constructor");
+            }
 
-                using var c = m_connection.CreateCommand();
-                c.Transaction = m_connection.BeginTransaction(deferred: true);
-                m_tmptable = "VolumeFiles-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
-                c.ExecuteNonQueryAsync(FormatInvariant($@"CREATE TEMPORARY TABLE ""{m_tmptable}"" ( ""Hash"" TEXT NOT NULL, ""Size"" INTEGER NOT NULL )")).Await();
+            private FilesAndMetadata() { }
 
-                c.SetCommandAndParameters(FormatInvariant($@"INSERT INTO ""{m_tmptable}"" (""Hash"", ""Size"") VALUES (@Hash, @Size)"));
+            public static async Task<FilesAndMetadata> CreateAsync(LocalDatabase db, string filetablename, string blocktablename, long blocksize, BlockVolumeReader curvolume)
+            {
+                var fam = new FilesAndMetadata()
+                {
+                    m_db = db,
+                    m_filetablename = filetablename,
+                    m_blocktablename = blocktablename,
+                    m_blocksize = blocksize,
+                };
+
+                using var c = db.Connection.CreateCommand()
+                    .SetTransaction(db.Transaction.Transaction);
+                fam.m_tmptable = "VolumeFiles-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
+                await c.ExecuteNonQueryAsync($@"
+                    CREATE TEMPORARY TABLE ""{fam.m_tmptable}"" (
+                        ""Hash"" TEXT NOT NULL,
+                        ""Size"" INTEGER NOT NULL
+                    )
+                ");
+
+                c.SetCommandAndParameters($@"
+                    INSERT INTO ""{fam.m_tmptable}"" (
+                        ""Hash"",
+                        ""Size""
+                    )
+                    VALUES (
+                        @Hash,
+                        @Size)
+                ");
                 foreach (var s in curvolume.Blocks)
                 {
-                    c.SetParameterValue("@Hash", s.Key);
-                    c.SetParameterValue("@Size", s.Value);
-                    c.ExecuteNonQueryAsync().Await();
+                    await c.SetParameterValue("@Hash", s.Key)
+                        .SetParameterValue("@Size", s.Value)
+                        .ExecuteNonQueryAsync();
                 }
 
                 // The index _HashSizeIndex is not needed anymore. Index on "Blocks-..." is used on Join in GetMissingBlocks
 
-                c.Transaction.CommitAsync().Await();
+                await db.Transaction.CommitAsync();
+
+                return fam;
             }
 
             public void Dispose()
@@ -1178,46 +1202,78 @@ ORDER BY ""A"".""TargetPath"", ""BB"".""Index"""));
         /// </summary>
         private class DirectBlockMarker : IBlockMarker
         {
-            private readonly SqliteCommand m_insertblockCommand;
-            private readonly SqliteCommand m_resetfileCommand;
-            private readonly SqliteCommand m_updateAsRestoredCommand;
-            private readonly SqliteCommand m_updateFileAsDataVerifiedCommand;
-            private readonly SqliteCommand m_statUpdateCommand;
-            private SqliteTransaction m_transaction;
+            private SqliteCommand m_insertblockCommand = null!;
+            private SqliteCommand m_resetfileCommand = null!;
+            private SqliteCommand m_updateAsRestoredCommand = null!;
+            private SqliteCommand m_updateFileAsDataVerifiedCommand = null!;
+            private SqliteCommand m_statUpdateCommand = null!;
+            private ReusableTransaction m_rtr = null!;
             private bool m_hasUpdates = false;
 
-            private readonly string m_blocktablename;
-            private readonly string m_filetablename;
+            private string m_blocktablename = null!;
+            private string m_filetablename = null!;
 
+            [Obsolete("Calling this constructor will throw an exception. Use CreateAsync instead.")]
             public DirectBlockMarker(SqliteConnection connection, string blocktablename, string filetablename, string statstablename)
             {
-                m_transaction = connection.BeginTransaction(deferred: true);
-                m_blocktablename = blocktablename;
-                m_filetablename = filetablename;
+                throw new NotImplementedException("Use CreateAsync instead of the constructor");
+            }
 
-                m_insertblockCommand = connection.CreateCommand(FormatInvariant($@"UPDATE ""{m_blocktablename}"" SET ""Restored"" = 1
-WHERE ""FileID"" = @TargetFileId AND ""Index"" = @Index AND ""Hash"" = @Hash AND ""Size"" = @Size AND ""Metadata"" = @Metadata AND ""Restored"" = 0 "));
-                m_insertblockCommand.Transaction = m_transaction;
+            private DirectBlockMarker() { }
 
-                m_resetfileCommand = connection.CreateCommand(FormatInvariant($@"UPDATE ""{m_blocktablename}"" SET ""Restored"" = 0 WHERE ""FileID"" = @TargetFileId "));
-                m_resetfileCommand.Transaction = m_transaction;
-
-                m_updateAsRestoredCommand = connection.CreateCommand(FormatInvariant($@"UPDATE ""{m_blocktablename}"" SET ""Restored"" = 1 WHERE ""FileID"" = @TargetFileId AND ""Metadata"" <= @Metadata "));
-                m_updateAsRestoredCommand.Transaction = m_transaction;
-
-                m_updateFileAsDataVerifiedCommand = connection.CreateCommand(FormatInvariant($@"UPDATE ""{m_filetablename}"" SET ""DataVerified"" = 1 WHERE ""ID"" = @TargetFileId"));
-                m_updateFileAsDataVerifiedCommand.Transaction = m_transaction;
-
-                if (statstablename != null)
+            public static async Task<DirectBlockMarker> CreateAsync(LocalDatabase db, string blocktablename, string filetablename, string statstablename)
+            {
+                var dbm = new DirectBlockMarker()
                 {
-                    // Fields in Stats: TotalFiles, TotalBlocks, TotalSize
-                    //                  FilesFullyRestored, FilesPartiallyRestored, BlocksRestored, SizeRestored
-                    m_statUpdateCommand = connection.CreateCommand(FormatInvariant($@"SELECT SUM(""FilesFullyRestored""), SUM(""SizeRestored"") FROM ""{statstablename}"" "));
-                }
-                else // very slow fallback if stats tables were not created
-                    m_statUpdateCommand = connection.CreateCommand(FormatInvariant($@"SELECT COUNT(DISTINCT ""FileID""), SUM(""Size"") FROM ""{m_blocktablename}"" WHERE ""Restored"" = 1 "));
-                m_statUpdateCommand.Transaction = m_transaction;
+                    m_rtr = db.Transaction,
+                    m_blocktablename = blocktablename,
+                    m_filetablename = filetablename,
 
+                    m_insertblockCommand = await db.Connection.CreateCommandAsync($@"
+                        UPDATE ""{blocktablename}"" SET ""Restored"" = 1
+                        WHERE ""FileID"" = @TargetFileId
+                        AND ""Index"" = @Index
+                        AND ""Hash"" = @Hash
+                        AND ""Size"" = @Size
+                        AND ""Metadata"" = @Metadata
+                        AND ""Restored"" = 0
+                    "),
+
+                    m_resetfileCommand = await db.Connection.CreateCommandAsync($@"
+                        UPDATE ""{blocktablename}""
+                        SET ""Restored"" = 0
+                        WHERE ""FileID"" = @TargetFileId
+                    "),
+
+                    m_updateAsRestoredCommand = await db.Connection.CreateCommandAsync($@"
+                        UPDATE ""{blocktablename}""
+                        SET ""Restored"" = 1
+                        WHERE ""FileID"" = @TargetFileId
+                        AND ""Metadata"" <= @Metadata
+                    "),
+
+                    m_updateFileAsDataVerifiedCommand = await db.Connection.CreateCommandAsync($@"
+                        UPDATE ""{filetablename}""
+                        SET ""DataVerified"" = 1
+                        WHERE ""ID"" = @TargetFileId
+                    "),
+
+                    m_statUpdateCommand = statstablename == null ?
+                        // very slow fallback if stats tables were not created
+                        await db.Connection.CreateCommandAsync($@"SELECT COUNT(DISTINCT ""FileID""), SUM(""Size"") FROM ""{blocktablename}"" WHERE ""Restored"" = 1 ")
+                        :
+                        // Fields in Stats: TotalFiles, TotalBlocks, TotalSize
+                        //                  FilesFullyRestored, FilesPartiallyRestored, BlocksRestored, SizeRestored
+                        await db.Connection.CreateCommandAsync($@"SELECT SUM(""FilesFullyRestored""), SUM(""SizeRestored"") FROM ""{statstablename}"" ")
+                };
+
+                dbm.m_insertblockCommand.SetTransaction(db.Transaction.Transaction);
+                dbm.m_resetfileCommand.SetTransaction(db.Transaction.Transaction);
+                dbm.m_updateAsRestoredCommand.SetTransaction(db.Transaction.Transaction);
+                dbm.m_updateFileAsDataVerifiedCommand.SetTransaction(db.Transaction.Transaction);
+                dbm.m_statUpdateCommand.SetTransaction(db.Transaction.Transaction);
+
+                return dbm;
             }
 
             public async Task UpdateProcessed(IOperationProgressUpdater updater)
@@ -1300,12 +1356,13 @@ WHERE ""FileID"" = @TargetFileId AND ""Index"" = @Index AND ""Hash"" = @Hash AND
         }
 
         public IBlockMarker CreateBlockMarker()
+        public async Task<IBlockMarker> CreateBlockMarkerAsync()
         {
             if (string.IsNullOrWhiteSpace(m_tempfiletable) || string.IsNullOrWhiteSpace(m_tempblocktable))
                 throw new InvalidOperationException("No temporary file table set up for this restore.");
             if (string.IsNullOrWhiteSpace(m_totalprogtable))
                 throw new InvalidOperationException("No progress table set up for this restore.");
-            return new DirectBlockMarker(m_connection, m_tempblocktable, m_tempfiletable, m_totalprogtable);
+            return await DirectBlockMarker.CreateAsync(this, m_tempblocktable, m_tempfiletable, m_totalprogtable);
         }
 
         public override void Dispose()
