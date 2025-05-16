@@ -11,7 +11,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Library\Interface\Duplicati.Library.Interface.csproj" />	
+    <ProjectReference Include="..\..\Library\Interface\Duplicati.Library.Interface.csproj" />
     <ProjectReference Include="..\..\Library\Utility\Duplicati.Library.Utility.csproj" />
   </ItemGroup>
 

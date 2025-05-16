@@ -15,7 +15,7 @@
     <PackageReference Include="AWSSDK.S3" Version="3.7.405.9" />
     <PackageReference Include="Minio" Version="6.0.4" />
   </ItemGroup>
-  
+
   <ItemGroup>
     <ProjectReference Include="../../SourceProvider/Builtin/Duplicati.Library.SourceProvider.Builtin.csproj" />
     <ProjectReference Include="..\..\Interface\Duplicati.Library.Interface.csproj" />

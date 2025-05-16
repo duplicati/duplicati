@@ -5,6 +5,7 @@
     <OutputType>Library</OutputType>
     <Copyright>Copyright © 2025 Team Duplicati, MIT license</Copyright>
   </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="CoCoL" Version="1.7.1" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />

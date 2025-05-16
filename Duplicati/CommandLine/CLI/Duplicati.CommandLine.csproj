@@ -7,7 +7,7 @@
     <ApplicationIcon>TrayWarning.ico</ApplicationIcon>
     <Copyright>Copyright © 2025 Team Duplicati, MIT license</Copyright>
   </PropertyGroup>
-  
+
   <ItemGroup>
     <ProjectReference Include="..\..\Library\Utility\Duplicati.Library.Utility.csproj" />
     <ProjectReference Include="..\..\Library\Common\Duplicati.Library.Common.csproj" />
@@ -24,7 +24,7 @@
     <ProjectReference Include="..\..\Tools\Duplicati.Tools.csproj" />
     <ProjectReference Include="..\..\Library\Crashlog\Duplicati.Library.Crashlog.csproj" />
   </ItemGroup>
-  
+
   <ItemGroup>
     <EmbeddedResource Include="help.txt" />
   </ItemGroup>

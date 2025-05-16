@@ -7,7 +7,7 @@
     <Copyright>Copyright © 2025 Team Duplicati, MIT license</Copyright>
   </PropertyGroup>
 
-  <ItemGroup>	
+  <ItemGroup>
     <ProjectReference Include="..\..\..\Duplicati\Service\Duplicati.Service.csproj" />
     <ProjectReference Include="..\..\..\Duplicati\Library\Crashlog\Duplicati.Library.Crashlog.csproj" />
   </ItemGroup>

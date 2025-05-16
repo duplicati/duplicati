@@ -5,6 +5,7 @@
     <OutputType>Library</OutputType>
     <Copyright>Copyright © 2025 Team Duplicati, MIT license</Copyright>
   </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
   </ItemGroup>
@@ -16,4 +17,3 @@
   </ItemGroup>
 
 </Project>
-

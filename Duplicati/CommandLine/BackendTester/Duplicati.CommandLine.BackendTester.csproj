@@ -6,7 +6,7 @@
     <AssemblyName>Duplicati.CommandLine.BackendTester.Implementation</AssemblyName>
     <Copyright>Copyright © 2025 Team Duplicati, MIT license</Copyright>
   </PropertyGroup>
-    
+
   <ItemGroup>
     <ProjectReference Include="..\..\Library\Utility\Duplicati.Library.Utility.csproj" />
     <ProjectReference Include="..\..\Library\DynamicLoader\Duplicati.Library.DynamicLoader.csproj" />
@@ -21,4 +21,3 @@
   </ItemGroup>
 
 </Project>
-

@@ -19,6 +19,7 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
+
   <ItemGroup>
     <None Include="..\..\Tools\Commandline\pause-resume.py">
       <Link>utility-scripts\pause-resume.py</Link>

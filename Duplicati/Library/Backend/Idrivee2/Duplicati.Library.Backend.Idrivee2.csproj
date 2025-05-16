@@ -8,7 +8,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
-  
+
   <ItemGroup>
     <ProjectReference Include="../../SourceProvider/Builtin/Duplicati.Library.SourceProvider.Builtin.csproj" />
     <ProjectReference Include="..\..\Interface\Duplicati.Library.Interface.csproj" />
@@ -19,4 +19,3 @@
   </ItemGroup>
 
 </Project>
-

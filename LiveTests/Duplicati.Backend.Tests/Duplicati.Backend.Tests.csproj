@@ -9,7 +9,7 @@
         <Description>Commandline implementation of Duplicati</Description>
         <Copyright>Copyright © 2025 Team Duplicati, MIT license</Copyright>
     </PropertyGroup>
-    
+
     <ItemGroup>
         <PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.1" />
         <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="8.0.1" />
@@ -19,7 +19,7 @@
         <PackageReference Include="Testcontainers" Version="3.4.0"/>
         <PackageReference Include="TestContainers.Container.Abstractions" Version="1.5.4" />
     </ItemGroup>
-    
+
     <ItemGroup>
       <ProjectReference Include="..\..\Duplicati\CommandLine\BackendTester\Duplicati.CommandLine.BackendTester.csproj" />
     </ItemGroup>

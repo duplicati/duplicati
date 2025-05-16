@@ -11,4 +11,5 @@
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.4" />
     <PackageReference Include="Microsoft.IdentityModel.Abstractions" Version="7.5.0" />
   </ItemGroup>
+
 </Project>

@@ -5,11 +5,11 @@
     <AssemblyName>Duplicati.Server.Implementation</AssemblyName>
     <Copyright>Copyright © 2025 Team Duplicati, MIT license</Copyright>
   </PropertyGroup>
-  
+
   <ItemGroup>
     <Compile Remove="Duplicati.Server.Serialization\**" />
   </ItemGroup>
-  
+
   <ItemGroup>
     <PackageReference Include="Microsoft.Win32.SystemEvents" Version="7.0.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
@@ -39,7 +39,7 @@
     <ProjectReference Include="..\Tools\Duplicati.Tools.csproj" />
     <ProjectReference Include="..\Library\Crashlog\Duplicati.Library.Crashlog.csproj" />
   </ItemGroup>
-  
+
   <ItemGroup>
     <Content Include="webroot\**">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>

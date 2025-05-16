@@ -6,9 +6,9 @@
     <Description>SourceTool for Duplicati</Description>
     <Copyright>Copyright © 2025 Team Duplicati, MIT license</Copyright>
   </PropertyGroup>
-  
-  <ItemGroup>	
-    <ProjectReference Include="..\..\..\Duplicati\Library\Crashlog\Duplicati.Library.Crashlog.csproj" />	
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\Duplicati\Library\Crashlog\Duplicati.Library.Crashlog.csproj" />
     <ProjectReference Include="..\..\..\Duplicati\CommandLine\SourceTool\Duplicati.CommandLine.SourceTool.csproj" />
   </ItemGroup>
 

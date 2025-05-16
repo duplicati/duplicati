@@ -13,7 +13,7 @@
     <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
     <PackageReference Include="System.Management" Version="8.0.0" />
   </ItemGroup>
-  
+
   <ItemGroup>
     <ProjectReference Include="..\Common\Duplicati.Library.Common.csproj" />
     <ProjectReference Include="..\Interface\Duplicati.Library.Interface.csproj" />
@@ -21,4 +21,3 @@
   </ItemGroup>
 
 </Project>
-

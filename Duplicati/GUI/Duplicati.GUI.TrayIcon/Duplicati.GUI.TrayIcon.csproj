@@ -53,5 +53,5 @@
     <ProjectReference Include="..\..\Library\UsageReporter\Duplicati.Library.UsageReporter.csproj" />
     <ProjectReference Include="..\..\Tools\Duplicati.Tools.csproj" />
   </ItemGroup>
-</Project>
 
+</Project>

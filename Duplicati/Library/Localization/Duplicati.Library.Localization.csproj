@@ -9,11 +9,11 @@
   <ItemGroup>
     <PackageReference Include="NGettext" Version="0.6.5" />
   </ItemGroup>
-  
-  <ItemGroup>    
+
+  <ItemGroup>
     <EmbeddedResource Include="..\..\..\Localizations\duplicati\*.mo" />
   </ItemGroup>
-  
+
   <ItemGroup>
     <ProjectReference Include="..\Logging\Duplicati.Library.Logging.csproj" />
   </ItemGroup>

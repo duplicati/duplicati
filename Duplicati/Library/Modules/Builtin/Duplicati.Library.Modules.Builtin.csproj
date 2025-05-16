@@ -6,7 +6,7 @@
     <RootNamespace>Duplicati.Library.Modules.Builtin</RootNamespace>
     <Copyright>Copyright © 2025 Team Duplicati, MIT license</Copyright>
   </PropertyGroup>
-  
+
   <ItemGroup>
     <PackageReference Include="Artalk.Xmpp" Version="1.0.5" />
     <PackageReference Include="DnsClient" Version="1.4.0" />
@@ -14,7 +14,7 @@
     <PackageReference Include="MailKit" Version="2.4.1" />
     <PackageReference Include="MimeKit" Version="2.4.1" />
   </ItemGroup>
-  
+
   <ItemGroup>
     <ProjectReference Include="..\..\Logging\Duplicati.Library.Logging.csproj" />
     <ProjectReference Include="..\..\Interface\Duplicati.Library.Interface.csproj" />
@@ -37,4 +37,3 @@
   </ItemGroup>
 
 </Project>
-

@@ -1,4 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <OutputType>Library</OutputType>
@@ -8,6 +9,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>Duplicati.Library.Backend.AliyunOSS</RootNamespace>
   </PropertyGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\..\Common\Duplicati.Library.Common.csproj" />
     <ProjectReference Include="..\..\Interface\Duplicati.Library.Interface.csproj" />
@@ -15,9 +17,11 @@
     <ProjectReference Include="..\..\Logging\Duplicati.Library.Logging.csproj" />
     <ProjectReference Include="..\..\Utility\Duplicati.Library.Utility.csproj" />
   </ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="Aliyun.OSS.SDK.NetCore" Version="2.13.0" />
     <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
   </ItemGroup>
+
 </Project>

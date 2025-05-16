@@ -5,12 +5,12 @@
     <Copyright>Copyright © 2025 Team Duplicati, MIT license</Copyright>
     <RootNamespace>Duplicati.Library.Snapshots</RootNamespace>
   </PropertyGroup>
-  
+
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="System.Linq.Async" Version="6.0.1" />
   </ItemGroup>
-  
+
   <ItemGroup>
     <ProjectReference Include="..\AutoUpdater\Duplicati.Library.AutoUpdater.csproj" />
     <ProjectReference Include="..\Common\Duplicati.Library.Common.csproj" />

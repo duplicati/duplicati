@@ -5,6 +5,7 @@
     <OutputType>Exe</OutputType>
     <Copyright>Copyright © 2025 Team Duplicati, MIT license</Copyright>
   </PropertyGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\..\Duplicati\Library\Interface\Duplicati.Library.Interface.csproj" />
     <ProjectReference Include="..\..\Duplicati\Library\Compression\Duplicati.Library.Compression.csproj" />
