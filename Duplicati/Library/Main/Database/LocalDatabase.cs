@@ -60,6 +60,7 @@ namespace Duplicati.Library.Main.Database
         // TODO use this rather than passing down transactions.
         // TODO dispose should check this, and report if it was not disposed prior to calling dispose. Maybe the rtr itself should check this during dispose? And just throw a warning during runtime.
         protected ReusableTransaction m_rtr;
+        public ReusableTransaction Transaction { get { return m_rtr; } }
 
         private SqliteCommand m_updateremotevolumeCommand = null!;
         private SqliteCommand m_selectremotevolumesCommand = null!;
