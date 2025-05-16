@@ -10,19 +10,7 @@
   </PropertyGroup>
   
   <ItemGroup>
-    <ProjectReference Include="..\Logging\Duplicati.Library.Logging.csproj" />
-    <ProjectReference Include="..\Interface\Duplicati.Library.Interface.csproj" />
-    <ProjectReference Include="..\Utility\Duplicati.Library.Utility.csproj" />
-    <ProjectReference Include="..\Localization\Duplicati.Library.Localization.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Microsoft.DotNet.Analyzers.Compatibility" Version="0.2.12-alpha">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-
-    <!-- 
+    <!--
       MS Data.Sqlite seems much more portable, but does not support unnamed parameters,
       which are used extensively in Duplicati.
       Issue tracking progress on the unnamed parameters:

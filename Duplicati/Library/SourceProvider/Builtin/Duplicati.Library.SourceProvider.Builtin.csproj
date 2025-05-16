@@ -17,15 +17,4 @@
     <ProjectReference Include="..\..\Snapshots\Duplicati.Library.Snapshots.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Microsoft.DotNet.Analyzers.Compatibility" Version="0.2.12-alpha">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="System.IO.Pipelines" Version="9.0.2" />
-  </ItemGroup>
-
 </Project>
