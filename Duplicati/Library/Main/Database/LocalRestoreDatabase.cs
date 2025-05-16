@@ -525,7 +525,7 @@ END ");
             string TargetHash { get; }
             long TargetFileID { get; }
             long Length { get; }
-            IEnumerable<IExistingFileBlock> Blocks { get; }
+            IAsyncEnumerable<IExistingFileBlock> Blocks();
         }
 
         public interface IBlockSource
@@ -542,14 +542,14 @@ END ");
             long Offset { get; }
             long Index { get; }
             bool IsMetadata { get; }
-            IEnumerable<IBlockSource> Blocksources { get; }
+            IAsyncEnumerable<IBlockSource> BlockSources();
         }
 
         public interface ILocalBlockSource
         {
             string TargetPath { get; }
             long TargetFileID { get; }
-            IEnumerable<IBlockDescriptor> Blocks { get; }
+            IAsyncEnumerable<IBlockDescriptor> Blocks();
         }
 
         /// <summary>
@@ -573,7 +573,7 @@ END ");
         {
             string Path { get; }
             long FileID { get; }
-            IEnumerable<IPatchBlock> Blocks { get; }
+            IAsyncEnumerable<IPatchBlock> Blocks();
         }
 
         private class ExistingFile : IExistingFile
@@ -600,20 +600,17 @@ END ");
                 public long Size { get { return m_reader.ConvertValueToInt64(6); } }
             }
 
-            public IEnumerable<IExistingFileBlock> Blocks
+            public async IAsyncEnumerable<IExistingFileBlock> Blocks()
             {
-                get
+                string p = TargetPath;
+                while (HasMore && p == TargetPath)
                 {
-                    string p = TargetPath;
-                    while (HasMore && p == TargetPath)
-                    {
-                        yield return new ExistingFileBlock(m_reader);
-                        HasMore = m_reader.ReadAsync().Await();
-                    }
+                    yield return new ExistingFileBlock(m_reader);
+                    HasMore = await m_reader.ReadAsync();
                 }
             }
 
-            public static async IAsyncEnumerable<IExistingFile> GetExistingFilesWithBlocks(SqliteConnection connection, string tablename)
+            public static async IAsyncEnumerable<IExistingFile> GetExistingFilesWithBlocks(LocalDatabase db, string tablename)
             {
                 using var cmd = connection.CreateCommand(FormatInvariant($@"SELECT ""{tablename}"".""TargetPath"", ""Blockset"".""FullHash"", ""{tablename}"".""ID"", ""Blockset"".""Length"", ""Block"".""Hash"", ""BlocksetEntry"".""Index"", ""Block"".""Size"" FROM ""{tablename}"", ""Blockset"", ""BlocksetEntry"", ""Block"" WHERE ""{tablename}"".""BlocksetID"" = ""Blockset"".""ID"" AND ""BlocksetEntry"".""BlocksetID"" = ""{tablename}"".""BlocksetID"" AND ""BlocksetEntry"".""BlockID"" = ""Block"".""ID"" ORDER BY ""{tablename}"".""TargetPath"", ""BlocksetEntry"".""Index"""));
                 cmd.Transaction = connection.BeginTransaction(deferred: true);
@@ -632,7 +629,7 @@ END ");
                             more = await rd.ReadAsync();
                     }
                 }
-                await cmd.Transaction.CommitAsync();
+                await db.Transaction.CommitAsync();
             }
         }
 
@@ -670,21 +667,19 @@ END ");
 
                 public bool HasMore { get; private set; }
 
-                public IEnumerable<IBlockSource> Blocksources
+                public async IAsyncEnumerable<IBlockSource> BlockSources()
                 {
-                    get
-                    {
-                        var p = TargetPath;
-                        var h = Hash;
-                        var s = Size;
+                    var p = TargetPath;
+                    var h = Hash;
+                    var s = Size;
 
-                        while (HasMore && p == TargetPath && h == Hash && s == Size)
-                        {
-                            yield return new BlockSource(m_reader);
-                            HasMore = m_reader.ReadAsync().Await();
-                        }
+                    while (HasMore && p == TargetPath && h == Hash && s == Size)
+                    {
+                        yield return new BlockSource(m_reader);
+                        HasMore = await m_reader.ReadAsync();
                     }
                 }
+
             }
 
             private readonly SqliteDataReader m_reader;
@@ -695,23 +690,20 @@ END ");
 
             public bool HasMore { get; private set; }
 
-            public IEnumerable<IBlockDescriptor> Blocks
+            public async IAsyncEnumerable<IBlockDescriptor> Blocks()
             {
-                get
+                var p = TargetPath;
+                while (HasMore && p == TargetPath)
                 {
-                    var p = TargetPath;
-                    while (HasMore && p == TargetPath)
-                    {
-                        var c = new BlockDescriptor(m_reader);
-                        var h = c.Hash;
-                        var s = c.Size;
+                    var c = new BlockDescriptor(m_reader);
+                    var h = c.Hash;
+                    var s = c.Size;
 
-                        yield return c;
+                    yield return c;
 
-                        HasMore = c.HasMore;
-                        while (HasMore && c.Hash == h && c.Size == s && TargetPath == p)
-                            HasMore = m_reader.ReadAsync().Await();
-                    }
+                    HasMore = c.HasMore;
+                    while (HasMore && c.Hash == h && c.Size == s && TargetPath == p)
+                        HasMore = await m_reader.ReadAsync();
                 }
             }
 
@@ -784,8 +776,8 @@ ORDER BY ""BB"".""MaxIndex"" "));
 
         public interface IFilesAndMetadata : IDisposable
         {
-            IEnumerable<IVolumePatch> FilesWithMissingBlocks { get; }
-            IEnumerable<IVolumePatch> MetadataWithMissingBlocks { get; }
+            IAsyncEnumerable<IVolumePatch> FilesWithMissingBlocks();
+            IAsyncEnumerable<IVolumePatch> MetadataWithMissingBlocks();
         }
 
         private class FilesAndMetadata : IFilesAndMetadata
@@ -796,9 +788,11 @@ ORDER BY ""BB"".""MaxIndex"" "));
             private readonly long m_blocksize;
 
             private readonly SqliteConnection m_connection;
+            private readonly LocalDatabase m_db;
 
-            public FilesAndMetadata(SqliteConnection connection, string filetablename, string blocktablename, long blocksize, BlockVolumeReader curvolume)
+            public FilesAndMetadata(LocalDatabase db, SqliteConnection connection, string filetablename, string blocktablename, long blocksize, BlockVolumeReader curvolume)
             {
+                m_db = db;
                 m_filetablename = filetablename;
                 m_blocktablename = blocktablename;
                 m_blocksize = blocksize;
@@ -852,77 +846,68 @@ ORDER BY ""BB"".""MaxIndex"" "));
                 public long FileID { get { return m_reader.ConvertValueToInt64(1); } }
                 public bool HasMore { get; private set; }
 
-                public IEnumerable<IPatchBlock> Blocks
+                public async IAsyncEnumerable<IPatchBlock> Blocks()
                 {
-                    get
+                    string p = Path;
+                    while (HasMore && p == Path)
                     {
-                        string p = Path;
-                        while (HasMore && p == Path)
-                        {
-                            yield return new PatchBlock(m_reader);
-                            HasMore = m_reader.ReadAsync().Await();
-                        }
+                        yield return new PatchBlock(m_reader);
+                        HasMore = await m_reader.ReadAsync();
                     }
                 }
             }
 
-            public IEnumerable<IVolumePatch> FilesWithMissingBlocks
+            public async IAsyncEnumerable<IVolumePatch> FilesWithMissingBlocks()
             {
-                get
-                {
-                    using var cmd = m_connection.CreateCommand();
-                    cmd.Transaction = m_connection.BeginTransaction(deferred: true);
-                    // The IN-clause with subquery enables SQLite to use indexes better. Three way join (A,B,C) is slow here!
-                    cmd.SetCommandAndParameters(FormatInvariant($@"  SELECT DISTINCT ""A"".""TargetPath"", ""BB"".""FileID"", (""BB"".""Index"" * {m_blocksize}), ""BB"".""Size"", ""BB"".""Hash""
+                using var cmd = m_connection.CreateCommand();
+                cmd.Transaction = m_connection.BeginTransaction(deferred: true);
+                // The IN-clause with subquery enables SQLite to use indexes better. Three way join (A,B,C) is slow here!
+                cmd.SetCommandAndParameters(FormatInvariant($@"  SELECT DISTINCT ""A"".""TargetPath"", ""BB"".""FileID"", (""BB"".""Index"" * {m_blocksize}), ""BB"".""Size"", ""BB"".""Hash""
 FROM ""{m_filetablename}"" ""A"", ""{m_blocktablename}"" ""BB""
 WHERE ""A"".""ID"" = ""BB"".""FileID"" AND ""BB"".""Restored"" = 0 AND ""BB"".""Metadata"" = {"0"}
 AND ""BB"".""ID"" IN  (SELECT ""B"".""ID"" FROM ""{m_blocktablename}"" ""B"", ""{m_tmptable}"" ""C"" WHERE ""B"".""Hash"" = ""C"".""Hash"" AND ""B"".""Size"" = ""C"".""Size"")
 ORDER BY ""A"".""TargetPath"", ""BB"".""Index"""));
-                    using var rd = cmd.ExecuteReaderAsync().Await();
-                    if (rd.ReadAsync().Await())
+                using var rd = await cmd.ExecuteReaderAsync();
+                if (await rd.ReadAsync())
+                {
+                    var more = true;
+                    while (more)
                     {
-                        var more = true;
-                        while (more)
-                        {
-                            var f = new VolumePatch(rd);
-                            var current = f.Path;
-                            yield return f;
+                        var f = new VolumePatch(rd);
+                        var current = f.Path;
+                        yield return f;
 
-                            more = f.HasMore;
-                            while (more && current == f.Path)
-                                more = rd.ReadAsync().Await();
-                        }
+                        more = f.HasMore;
+                        while (more && current == f.Path)
+                            more = await rd.ReadAsync();
                     }
-                    cmd.Transaction.CommitAsync().Await();
                 }
+                await m_db.Transaction.Transaction.CommitAsync();
             }
 
-            public IEnumerable<IVolumePatch> MetadataWithMissingBlocks
+            public async IAsyncEnumerable<IVolumePatch> MetadataWithMissingBlocks()
             {
-                get
-                {
-                    using var cmd = m_connection.CreateCommand();
-                    cmd.Transaction = m_connection.BeginTransaction(deferred: true);
-                    // The IN-clause with subquery enables SQLite to use indexes better. Three way join (A,B,C) is slow here!
-                    cmd.SetCommandAndParameters(FormatInvariant($@"  SELECT DISTINCT ""A"".""TargetPath"", ""BB"".""FileID"", (""BB"".""Index"" * {m_blocksize}), ""BB"".""Size"", ""BB"".""Hash""
+                using var cmd = m_connection.CreateCommand();
+                cmd.Transaction = m_connection.BeginTransaction(deferred: true);
+                // The IN-clause with subquery enables SQLite to use indexes better. Three way join (A,B,C) is slow here!
+                cmd.SetCommandAndParameters(FormatInvariant($@"  SELECT DISTINCT ""A"".""TargetPath"", ""BB"".""FileID"", (""BB"".""Index"" * {m_blocksize}), ""BB"".""Size"", ""BB"".""Hash""
  FROM ""{m_filetablename}"" ""A"", ""{m_blocktablename}"" ""BB""
 WHERE ""A"".""ID"" = ""BB"".""FileID"" AND ""BB"".""Restored"" = 0 AND ""BB"".""Metadata"" = {"1"}
   AND ""BB"".""ID"" IN  (SELECT ""B"".""ID"" FROM ""{m_blocktablename}"" ""B"", ""{m_tmptable}"" ""C"" WHERE ""B"".""Hash"" = ""C"".""Hash"" AND ""B"".""Size"" = ""C"".""Size"")
 ORDER BY ""A"".""TargetPath"", ""BB"".""Index"""));
-                    using var rd = cmd.ExecuteReaderAsync().Await();
-                    if (rd.ReadAsync().Await())
+                using var rd = await cmd.ExecuteReaderAsync();
+                if (await rd.ReadAsync())
+                {
+                    var more = true;
+                    while (more)
                     {
-                        var more = true;
-                        while (more)
-                        {
-                            var f = new VolumePatch(rd);
-                            string current = f.Path;
-                            yield return f;
+                        var f = new VolumePatch(rd);
+                        string current = f.Path;
+                        yield return f;
 
-                            more = f.HasMore;
-                            while (more && current == f.Path)
-                                more = rd.ReadAsync().Await();
-                        }
+                        more = f.HasMore;
+                        while (more && current == f.Path)
+                            more = await rd.ReadAsync();
                     }
                 }
             }
@@ -1351,7 +1336,7 @@ WHERE ""FileID"" = @TargetFileId AND ""Index"" = @Index AND ""Hash"" = @Hash AND
             string TargetPath { get; }
             long TargetFileID { get; }
             string SourcePath { get; }
-            IEnumerable<IBlockEntry> Blocks { get; }
+            IAsyncEnumerable<IBlockEntry> Blocks();
         }
 
         public interface IBlockEntry
@@ -1383,18 +1368,14 @@ WHERE ""FileID"" = @TargetFileId AND ""Index"" = @Index AND ""Hash"" = @Hash AND
             public long TargetFileID { get { return m_rd.ConvertValueToInt64(2); } }
             public string SourcePath { get { return m_rd.ConvertValueToString(1) ?? ""; } }
 
-            public IEnumerable<IBlockEntry> Blocks
+            public async IAsyncEnumerable<IBlockEntry> Blocks()
             {
-                get
+                var tid = TargetFileID;
+
+                do
                 {
-                    var tid = TargetFileID;
-
-                    do
-                    {
-                        yield return new BlockEntry(m_rd, m_blocksize);
-                    } while ((MoreData = m_rd.ReadAsync().Await()) && tid == TargetFileID);
-
-                }
+                    yield return new BlockEntry(m_rd, m_blocksize);
+                } while ((MoreData = await m_rd.ReadAsync()) && tid == TargetFileID);
             }
         }
 
