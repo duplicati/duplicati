@@ -666,12 +666,21 @@ namespace Duplicati.Library.Main.Database
             var filesetidstable = "DelFilesetIds-" + temptransguid;
 
             // Create and fill a temp table with the volids to delete. We avoid using too many parameters that way.
-            deletecmd.ExecuteNonQuery(FormatInvariant($@"CREATE TEMP TABLE ""{volidstable}"" (""ID"" INTEGER PRIMARY KEY)"));
-            deletecmd.SetCommandAndParameters(FormatInvariant($@"INSERT OR IGNORE INTO ""{volidstable}"" SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""Name"" IN (@VolumeNames)"))
-                .ExpandInClauseParameter("@VolumeNames", names.ToArray())
-                .ExecuteNonQuery();
+            await deletecmd.ExecuteNonQueryAsync($@"
+                CREATE TEMP TABLE ""{volidstable}"" (
+                    ""ID"" INTEGER PRIMARY KEY
+                )
+            ");
+            await deletecmd.SetCommandAndParameters($@"
+                INSERT OR IGNORE INTO ""{volidstable}""
+                SELECT ""ID""
+                FROM ""RemoteVolume""
+                WHERE ""Name"" IN (@VolumeNames)
+            ")
+                .ExpandInClauseParameter("@VolumeNames", [.. names])
+                .ExecuteNonQueryAsync();
 
-            var volIdsSubQuery = FormatInvariant($@"SELECT ""ID"" FROM ""{volidstable}"" ");
+            var volIdsSubQuery = $@"SELECT ""ID"" FROM ""{volidstable}"" ";
             deletecmd.Parameters.Clear();
 
             var bsIdsSubQuery = @$"
@@ -792,43 +801,107 @@ namespace Duplicati.Library.Main.Database
             ");
 
             // If the volume is a block or index volume, this will update the crosslink table, otherwise nothing will happen
-            deletecmd.ExecuteNonQuery(FormatInvariant($@"DELETE FROM ""IndexBlockLink"" WHERE ""BlockVolumeID"" IN ({volIdsSubQuery}) OR ""IndexVolumeID"" IN ({volIdsSubQuery})"));
-            deletecmd.ExecuteNonQuery(FormatInvariant($@"DELETE FROM ""Block"" WHERE ""VolumeID"" IN ({volIdsSubQuery})"));
-            deletecmd.ExecuteNonQuery(FormatInvariant($@"DELETE FROM ""DeletedBlock"" WHERE ""VolumeID"" IN ({volIdsSubQuery})"));
-            deletecmd.ExecuteNonQuery(FormatInvariant($@"DELETE FROM ""ChangeJournalData"" WHERE ""FilesetID"" IN (SELECT ""ID"" FROM ""Fileset"" WHERE ""VolumeID"" IN ({volIdsSubQuery}))"));
-            deletecmd.ExecuteNonQuery(FormatInvariant($@"DELETE FROM FilesetEntry WHERE FilesetID IN (SELECT ID FROM Fileset WHERE VolumeID IN ({volIdsSubQuery}))"));
+            await deletecmd.ExecuteNonQueryAsync($@"
+                DELETE FROM ""IndexBlockLink""
+                WHERE ""BlockVolumeID"" IN ({volIdsSubQuery})
+                OR ""IndexVolumeID"" IN ({volIdsSubQuery})
+            ");
+            await deletecmd.ExecuteNonQueryAsync($@"
+                DELETE FROM ""Block""
+                WHERE ""VolumeID"" IN ({volIdsSubQuery})
+            ");
+            await deletecmd.ExecuteNonQueryAsync($@"
+                DELETE FROM ""DeletedBlock""
+                WHERE ""VolumeID"" IN ({volIdsSubQuery})
+            ");
+            await deletecmd.ExecuteNonQueryAsync($@"
+                DELETE FROM ""ChangeJournalData""
+                WHERE ""FilesetID"" IN (
+                    SELECT ""ID""
+                    FROM ""Fileset""
+                    WHERE ""VolumeID"" IN ({volIdsSubQuery})
+                )
+            ");
+            await deletecmd.ExecuteNonQueryAsync($@"
+                DELETE FROM FilesetEntry
+                WHERE FilesetID IN (
+                    SELECT ID
+                    FROM Fileset
+                    WHERE VolumeID IN ({volIdsSubQuery})
+                )
+            ");
 
-            deletecmd.ExecuteNonQuery(FormatInvariant($@"CREATE TABLE ""{filesetidstable}"" (""ID"" INTEGER PRIMARY KEY)"));
-            deletecmd.ExecuteNonQuery(FormatInvariant($@"INSERT OR IGNORE INTO ""{filesetidstable}"" SELECT ""ID"" FROM ""Fileset"" WHERE ""VolumeID"" IN ({volIdsSubQuery})"));
+            await deletecmd.ExecuteNonQueryAsync($@"
+                CREATE TABLE ""{filesetidstable}"" (
+                    ""ID"" INTEGER PRIMARY KEY
+                )
+            ");
+            await deletecmd.ExecuteNonQueryAsync($@"
+                INSERT OR IGNORE INTO ""{filesetidstable}""
+                SELECT ""ID""
+                FROM ""Fileset""
+                WHERE ""VolumeID"" IN ({volIdsSubQuery})
+            ");
             // Delete from Fileset if FilesetEntry rows were deleted by related metadata and there are no references in FilesetEntry anymore
-            deletecmd.ExecuteNonQuery(FormatInvariant($@"INSERT OR IGNORE INTO ""{filesetidstable}"" SELECT ""ID"" FROM ""Fileset"" WHERE ""Fileset"".""ID"" IN
-(SELECT DISTINCT ""FilesetID"" FROM ""{metadataFilesetTable}"")
-AND ""Fileset"".""ID"" NOT IN
-    (SELECT DISTINCT ""FilesetID"" FROM FilesetEntry)"));
+            await deletecmd.ExecuteNonQueryAsync($@"
+                INSERT OR IGNORE INTO ""{filesetidstable}""
+                SELECT ""ID""
+                FROM ""Fileset""
+                WHERE ""Fileset"".""ID"" IN (
+                    SELECT DISTINCT ""FilesetID""
+                    FROM ""{metadataFilesetTable}""
+                )
+                AND ""Fileset"".""ID"" NOT IN (
+                    SELECT DISTINCT ""FilesetID""
+                    FROM FilesetEntry
+                )
+            ");
 
             // Since we are deleting the fileset, we also need to mark the remote volume as deleting so it will be cleaned up later
-            deletecmd.SetCommandAndParameters(FormatInvariant($@"UPDATE ""RemoteVolume"" SET ""State"" = @NewState WHERE ""ID"" IN (SELECT DISTINCT ""VolumeID"" FROM ""Fileset"" WHERE ""Fileset"".""ID"" IN (SELECT ""ID"" FROM ""{filesetidstable}"")) AND ""State"" IN (@AllowedStates)"))
+            await deletecmd.SetCommandAndParameters($@"
+                UPDATE ""RemoteVolume""
+                SET ""State"" = @NewState
+                WHERE ""ID"" IN (
+                    SELECT DISTINCT ""VolumeID""
+                    FROM ""Fileset""
+                    WHERE ""Fileset"".""ID"" IN (
+                        SELECT ""ID""
+                        FROM ""{filesetidstable}""
+                    )
+                )
+                AND ""State"" IN (@AllowedStates)
+            ")
                 .SetParameterValue("@NewState", RemoteVolumeState.Deleting.ToString())
-                .ExpandInClauseParameter("@AllowedStates", [RemoteVolumeState.Uploading.ToString(), RemoteVolumeState.Uploaded.ToString(), RemoteVolumeState.Verified.ToString(), RemoteVolumeState.Temporary.ToString()])
-                .ExecuteNonQuery();
+                .ExpandInClauseParameter("@AllowedStates", [
+                        RemoteVolumeState.Uploading.ToString(),
+                        RemoteVolumeState.Uploaded.ToString(),
+                        RemoteVolumeState.Verified.ToString(),
+                        RemoteVolumeState.Temporary.ToString()
+                    ])
+                .ExecuteNonQueryAsync();
 
-            deletecmd.ExecuteNonQuery(FormatInvariant($@"DELETE FROM ""Fileset"" WHERE ""ID"" IN (SELECT ""ID"" FROM ""{filesetidstable}"")"));
-
+            await deletecmd.ExecuteNonQueryAsync($@"
+                DELETE FROM ""Fileset""
+                WHERE ""ID"" IN (
+                    SELECT ""ID""
+                    FROM ""{filesetidstable}""
+                )
+            ");
 
             // Clean up temp tables for subqueries. We truncate content and then try to delete.
             // Drop in try-block, as it fails in nested transactions (SQLite problem)
             // SQLite.SQLiteException (0x80004005): database table is locked
-            deletecmd.ExecuteNonQuery(FormatInvariant($@"DELETE FROM ""{blocksetidstable}"" "));
-            deletecmd.ExecuteNonQuery(FormatInvariant($@"DELETE FROM ""{volidstable}"" "));
-            deletecmd.ExecuteNonQuery(FormatInvariant($@"DELETE FROM ""{metadataFilesetTable}"" "));
-            deletecmd.ExecuteNonQuery(FormatInvariant($@"DELETE FROM ""{filesetidstable}"" "));
+            await deletecmd.ExecuteNonQueryAsync($@"DELETE FROM ""{blocksetidstable}"" ");
+            await deletecmd.ExecuteNonQueryAsync($@"DELETE FROM ""{volidstable}"" ");
+            await deletecmd.ExecuteNonQueryAsync($@"DELETE FROM ""{metadataFilesetTable}"" ");
+            await deletecmd.ExecuteNonQueryAsync($@"DELETE FROM ""{filesetidstable}"" ");
             try
             {
                 deletecmd.CommandTimeout = 2;
-                deletecmd.ExecuteNonQuery(FormatInvariant($@"DROP TABLE IF EXISTS ""{blocksetidstable}"" "));
-                deletecmd.ExecuteNonQuery(FormatInvariant($@"DROP TABLE IF EXISTS ""{volidstable}"" "));
-                deletecmd.ExecuteNonQuery(FormatInvariant($@"DROP TABLE IF EXISTS ""{metadataFilesetTable}"" "));
-                deletecmd.ExecuteNonQuery(FormatInvariant($@"DROP TABLE IF EXISTS ""{filesetidstable}"" "));
+                await deletecmd.ExecuteNonQueryAsync($@"DROP TABLE IF EXISTS ""{blocksetidstable}"" ");
+                await deletecmd.ExecuteNonQueryAsync($@"DROP TABLE IF EXISTS ""{volidstable}"" ");
+                await deletecmd.ExecuteNonQueryAsync($@"DROP TABLE IF EXISTS ""{metadataFilesetTable}"" ");
+                await deletecmd.ExecuteNonQueryAsync($@"DROP TABLE IF EXISTS ""{filesetidstable}"" ");
             }
             catch { /* Ignore, will be deleted on close anyway. */ }
 
@@ -980,56 +1053,15 @@ AND ""Fileset"".""ID"" NOT IN
             return isFullBackup == BackupType.FULL_BACKUP;
         }
 
-        // TODO: Remove this
-        public IDbTransaction BeginTransaction()
+        private async IAsyncEnumerable<KeyValuePair<string, string>> GetDbOptionList(SqliteTransaction transaction)
         {
-            return m_connection.BeginTransactionSafe();
-        }
-
-        protected class TemporaryTransactionWrapper : IDisposable
-        {
-            private readonly IDbTransaction m_parent;
-            private readonly bool m_isTemporary;
-
-            public TemporaryTransactionWrapper(IDbConnection connection, IDbTransaction? transaction)
-            {
-                if (transaction != null)
-                {
-                    m_parent = transaction;
-                    m_isTemporary = false;
-                }
-                else
-                {
-                    m_parent = connection.BeginTransactionSafe();
-                    m_isTemporary = true;
-                }
-            }
-
-            public void Commit()
-            {
-                if (m_isTemporary)
-                    m_parent.Commit();
-            }
-
-            public void Dispose()
-            {
-                if (m_isTemporary)
-                    m_parent.Dispose();
-            }
-
-            public IDbTransaction Parent { get { return m_parent; } }
-        }
-
-        private IEnumerable<KeyValuePair<string, string>> GetDbOptionList(IDbTransaction? transaction = null)
-        {
-            using var cmd = m_connection.CreateCommand();
-            cmd.SetCommandAndParameters(@"
+            using var cmd = m_connection.CreateCommand(@"
                 SELECT
                     ""Key"",
                     ""Value""
                 FROM ""Configuration""
-            ");
-            cmd.SetTransaction(transaction);
+            ")
+                .SetTransaction(transaction);
 
             using var rd = await cmd.ExecuteReaderAsync();
             while (await rd.ReadAsync())
