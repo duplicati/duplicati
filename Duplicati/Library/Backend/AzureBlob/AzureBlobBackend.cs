@@ -119,7 +119,7 @@ namespace Duplicati.Library.Backend.AzureBlob
             if (string.IsNullOrWhiteSpace(storageClass))
                 return DEFAULT_ARCHIVE_CLASSES;
 
-            return new HashSet<AccessTier>(storageClass.Split([','], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Select(x => new AccessTier(x)));
+            return new HashSet<AccessTier>(storageClass.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Select(x => new AccessTier(x)));
         }
 
         public string DisplayName => Strings.AzureBlobBackend.DisplayName;
