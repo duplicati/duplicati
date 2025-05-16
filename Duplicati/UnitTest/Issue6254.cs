@@ -37,7 +37,7 @@ namespace Duplicati.UnitTest
     {
         [Test]
         [Category("Targeted")]
-        public void VerifyCompactHasLists()
+        public void VerifyCompactKeepsIndexFileBlocklists()
         {
             var testopts = TestOptions.Expand(new
             {
@@ -52,10 +52,11 @@ namespace Duplicati.UnitTest
                 dblock_size = "4mb"
             });
 
+            var rnd = Random.Shared; //new Random(42);
             var data1 = new byte[1024 * 1024 * 10];
-            Random.Shared.NextBytes(data1);
+            rnd.NextBytes(data1);
             var data2 = new byte[1024 * 1024 * 10];
-            Random.Shared.NextBytes(data1);
+            rnd.NextBytes(data1);
 
             // Create some files
             for (var i = 0; i < 10; i++)
@@ -103,7 +104,7 @@ namespace Duplicati.UnitTest
                     matches++;
             }
 
-            Assert.That(matches, Is.EqualTo(0), "No new index files found with list folder");
+            Assert.That(matches, Is.EqualTo(newIndexFiles.Count), "No new index files found with list folder");
 
             // Check that recreate does not load dblock files
             BackendLoader.AddBackend(new BlockDblockBackend());
@@ -111,7 +112,6 @@ namespace Duplicati.UnitTest
 
             using (var c = new Library.Main.Controller(BlockDblockBackend.Key + "://" + TARGETFOLDER, testopts, null))
                 TestUtils.AssertResults(c.Repair());
-
         }
 
         private class BlockDblockBackend : IStreamingBackend
