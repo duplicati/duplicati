@@ -59,6 +59,9 @@ namespace Duplicati.Library.Main.Operation
                 if (db.PartiallyRecreated)
                     throw new UserInformationException("The command does not work on partially recreated databases", "CannotPurgeOnPartialDatabase");
 
+                Utility.UpdateOptionsFromDb(db, m_options);
+                Utility.VerifyOptionsAndUpdateDatabase(db, m_options);
+
                 (var sets, var missing) = await ListBrokenFilesHandler.GetBrokenFilesetsFromRemote(backendManager, m_result, db, tr, m_options).ConfigureAwait(false);
                 if (sets == null)
                     return;

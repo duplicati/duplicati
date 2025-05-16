@@ -54,7 +54,11 @@ namespace Duplicati.Library.Main.Operation
 
             using (var db = new Database.LocalListBrokenFilesDatabase(m_options.Dbpath, m_options.SqlitePageCache))
             using (var tr = db.BeginTransaction())
+            {
+                Utility.UpdateOptionsFromDb(db, m_options);
+                Utility.VerifyOptionsAndUpdateDatabase(db, m_options);
                 await DoRunAsync(backendManager, db, tr, filter, callbackhandler).ConfigureAwait(false);
+            }
         }
 
         public static async Task<((DateTime FilesetTime, long FilesetID, long RemoveCount)[]?, List<Database.RemoteVolumeEntry>? Missing)> GetBrokenFilesetsFromRemote(IBackendManager backendManager, BasicResults result, Database.LocalListBrokenFilesDatabase db, System.Data.IDbTransaction transaction, Options options)
