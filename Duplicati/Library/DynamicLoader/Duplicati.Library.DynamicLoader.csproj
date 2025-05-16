@@ -6,7 +6,7 @@
     <Copyright>Copyright © 2025 Team Duplicati, MIT license</Copyright>
   </PropertyGroup>
 
-  <ItemGroup>  
+  <ItemGroup>
     <ProjectReference Include="..\Logging\Duplicati.Library.Logging.csproj" />
     <ProjectReference Include="..\Interface\Duplicati.Library.Interface.csproj" />
     <ProjectReference Include="..\Utility\Duplicati.Library.Utility.csproj" />
@@ -18,13 +18,6 @@
     <ProjectReference Include="..\AutoUpdater\Duplicati.Library.AutoUpdater.csproj" />
     <ProjectReference Include="..\SecretProvider\Duplicati.Library.SecretProvider.csproj" />
     <ProjectReference Include="..\SourceProviders\Duplicati.Library.SourceProviders.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Microsoft.DotNet.Analyzers.Compatibility" Version="0.2.12-alpha">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
   </ItemGroup>
 
 </Project>

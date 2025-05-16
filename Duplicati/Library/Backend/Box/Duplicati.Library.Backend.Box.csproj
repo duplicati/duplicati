@@ -8,7 +8,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>Duplicati.Library.Backend.Box</RootNamespace>
   </PropertyGroup>
-  
+
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="System.Linq.Async" Version="6.0.1" />
@@ -20,13 +20,6 @@
     <ProjectReference Include="..\..\Utility\Duplicati.Library.Utility.csproj" />
     <ProjectReference Include="..\..\Logging\Duplicati.Library.Logging.csproj" />
     <ProjectReference Include="..\..\Backend\OAuthHelper\Duplicati.Library.OAuthHelper.csproj" />
-  </ItemGroup>
-  
-  <ItemGroup>
-    <PackageReference Include="Microsoft.DotNet.Analyzers.Compatibility" Version="0.2.12-alpha">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
   </ItemGroup>
 
 </Project>

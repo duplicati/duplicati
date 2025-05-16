@@ -5,7 +5,7 @@
     <OutputType>Library</OutputType>
     <Copyright>Copyright © 2025 Team Duplicati, MIT license</Copyright>
   </PropertyGroup>
-  
+
   <ItemGroup>
     <Content Include="acknowledgements.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -299,12 +299,14 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
-  
+
   <ItemGroup>
     <EmbeddedResource Include="VersionTag.txt" />
   </ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\Library\Common\Duplicati.Library.Common.csproj" />
     <ProjectReference Include="..\Library\Utility\Duplicati.Library.Utility.csproj" />
   </ItemGroup>
+
 </Project>

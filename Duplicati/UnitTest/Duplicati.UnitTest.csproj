@@ -26,7 +26,7 @@
     <ProjectReference Include="..\Library\Main\Duplicati.Library.Main.csproj" />
     <ProjectReference Include="..\Library\Utility\Duplicati.Library.Utility.csproj" />
     <ProjectReference Include="..\License\Duplicati.License.csproj" />
-	  <ProjectReference Include="..\Server\Duplicati.Server.Serialization\Duplicati.Server.Serialization.csproj" />
+    <ProjectReference Include="..\Server\Duplicati.Server.Serialization\Duplicati.Server.Serialization.csproj" />
     <ProjectReference Include="..\Server\Duplicati.Server.csproj" />
     <ProjectReference Include="..\CommandLine\BackendTool\Duplicati.CommandLine.BackendTool.csproj" />
     <ProjectReference Include="..\Library\Snapshots\Duplicati.Library.Snapshots.csproj" />
@@ -39,12 +39,4 @@
     <ProjectReference Include="..\..\Tools\RemoteSynchronization\RemoteSynchronization.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Microsoft.DotNet.Analyzers.Compatibility" Version="0.2.12-alpha">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-  </ItemGroup>
-
 </Project>
-
