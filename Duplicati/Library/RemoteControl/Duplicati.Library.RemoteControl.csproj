@@ -14,7 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
-  	<ProjectReference Include="..\Logging\Duplicati.Library.Logging.csproj" />
+    <ProjectReference Include="..\Logging\Duplicati.Library.Logging.csproj" />
     <ProjectReference Include="..\Utility\Duplicati.Library.Utility.csproj" />
     <ProjectReference Include="..\Encryption\Duplicati.Library.Encryption.csproj" />
     <ProjectReference Include="..\Main\Duplicati.Library.Main.csproj" />

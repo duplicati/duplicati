@@ -2,10 +2,10 @@
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
-	  <OutputType>Library</OutputType>
+    <OutputType>Library</OutputType>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-	  <NoDefaultLaunchSettingsFile>true</NoDefaultLaunchSettingsFile>
+    <NoDefaultLaunchSettingsFile>true</NoDefaultLaunchSettingsFile>
     <RootNamespace>Duplicati.WebserverCore</RootNamespace>
     <Copyright>Copyright © 2025 Team Duplicati, MIT license</Copyright>
   </PropertyGroup>

@@ -6,30 +6,30 @@
     <AssemblyName>Duplicati.GUI.TrayIcon.Implementation</AssemblyName>
     <RootNamespace>Duplicati.GUI.TrayIcon</RootNamespace>
     <ApplicationIcon>Duplicati.ico</ApplicationIcon>
-  	<!--Avalonia doesen't support TrimMode=link currently,but we are working on that https://github.com/AvaloniaUI/Avalonia/issues/6892 -->
+    <!--Avalonia doesen't support TrimMode=link currently,but we are working on that https://github.com/AvaloniaUI/Avalonia/issues/6892 -->
     <TrimMode>copyused</TrimMode>
     <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <Copyright>Copyright © 2025 Team Duplicati, MIT license</Copyright>
   </PropertyGroup>
 
-	<ItemGroup>
-	    <!--This helps with theme dll-s trimming.
+  <ItemGroup>
+    <!--This helps with theme dll-s trimming.
     If you will publish your application in self-contained mode with p:PublishTrimmed=true and it will use Fluent theme Default theme will be trimmed from the output and vice versa.
     https://github.com/AvaloniaUI/Avalonia/issues/5593 -->
-	    <TrimmableAssembly Include="Avalonia.Themes.Fluent" />
-	    <TrimmableAssembly Include="Avalonia.Themes.Default" />
-    </ItemGroup>
-    <ItemGroup>
-	    <PackageReference Include="Avalonia" Version="11.2.0" />
-	    <PackageReference Include="Avalonia.Desktop" Version="11.2.0" />
-      <PackageReference Include="Avalonia.Themes.Fluent" Version="11.2.0" />
-	    <!--Condition below is needed to remove Avalonia.Diagnostics package from build output in Release configuration.-->
-	    <PackageReference Condition="'$(Configuration)' == 'Debug'" Include="Avalonia.Diagnostics" Version="11.2.0" />
-    </ItemGroup>
-    <ItemGroup>
-	    <AvaloniaResource Include="Assets\**" />
-    </ItemGroup>
+    <TrimmableAssembly Include="Avalonia.Themes.Fluent" />
+    <TrimmableAssembly Include="Avalonia.Themes.Default" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Avalonia" Version="11.2.0" />
+    <PackageReference Include="Avalonia.Desktop" Version="11.2.0" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="11.2.0" />
+    <!--Condition below is needed to remove Avalonia.Diagnostics package from build output in Release configuration.-->
+    <PackageReference Condition="'$(Configuration)' == 'Debug'" Include="Avalonia.Diagnostics" Version="11.2.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <AvaloniaResource Include="Assets\**" />
+  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\Library\Backend\OAuthHelper\Duplicati.Library.OAuthHelper.csproj" />

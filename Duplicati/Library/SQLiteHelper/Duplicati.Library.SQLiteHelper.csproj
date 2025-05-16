@@ -6,7 +6,7 @@
     <AssemblyName>SQLiteHelper</AssemblyName>
     <Description>SQLiteHelper for Duplicati</Description>
     <RootNamespace>Duplicati.Library.SQLiteHelper</RootNamespace>
-	  <Copyright>Copyright © 2025 Team Duplicati, MIT license</Copyright>
+    <Copyright>Copyright © 2025 Team Duplicati, MIT license</Copyright>
   </PropertyGroup>
 
   <ItemGroup>

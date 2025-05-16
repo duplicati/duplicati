@@ -8,7 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-	  <ProjectReference Include="..\..\..\Duplicati\CommandLine\BackendTester\Duplicati.CommandLine.BackendTester.csproj" />
+    <ProjectReference Include="..\..\..\Duplicati\CommandLine\BackendTester\Duplicati.CommandLine.BackendTester.csproj" />
     <ProjectReference Include="..\..\..\Duplicati\Library\Crashlog\Duplicati.Library.Crashlog.csproj" />
   </ItemGroup>
 
