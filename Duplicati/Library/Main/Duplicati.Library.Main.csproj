@@ -32,11 +32,5 @@
     </Content>
   </ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="CoCoL" Version="1.8.1" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-    <PackageReference Include="System.Linq.Async" Version="6.0.1" />
-  </ItemGroup>
-
 </Project>
 

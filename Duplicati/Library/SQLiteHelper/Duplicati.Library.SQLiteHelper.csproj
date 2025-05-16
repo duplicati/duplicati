@@ -27,5 +27,12 @@
     <PackageReference Include="System.Data.SQLite.Core.Duplicati.windows.arm64" Version="1.0.116.1" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Logging\Duplicati.Library.Logging.csproj" />
+    <ProjectReference Include="..\Interface\Duplicati.Library.Interface.csproj" />
+    <ProjectReference Include="..\Utility\Duplicati.Library.Utility.csproj" />
+    <ProjectReference Include="..\Localization\Duplicati.Library.Localization.csproj" />
+  </ItemGroup>
+
 </Project>
 
