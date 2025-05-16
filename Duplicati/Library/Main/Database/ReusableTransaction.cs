@@ -82,7 +82,7 @@ internal class ReusableTransaction(LocalDatabase db, SqliteTransaction? transact
     /// <param name="restart">True if the transaction should be restarted.</param>
     /// <returns>An awaitable task.</returns>
     /// <exception cref="InvalidOperationException">If the transaction is already Disposed.</exception>
-    public async Task CommitAsync(string? message, bool restart = true)
+    public async Task CommitAsync(string? message = null, bool restart = true)
     {
         if (m_disposed)
             throw new InvalidOperationException("Transaction is already disposed");
