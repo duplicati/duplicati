@@ -301,6 +301,13 @@ public static partial class ExtensionMethods
         return self;
     }
 
+    public static SqliteCommand SetTransaction(this SqliteCommand self, SqliteTransaction transaction)
+    {
+        self.Transaction = transaction;
+
+        return self;
+    }
+
     /// <summary>
     /// The tag used for logging
     /// </summary>
