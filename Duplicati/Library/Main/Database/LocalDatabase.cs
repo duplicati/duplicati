@@ -1474,10 +1474,23 @@ AND oldVersion.FilesetID = (SELECT ID FROM Fileset WHERE ID != @FilesetId ORDER 
             public string Tablename { get; private set; }
             private readonly SqliteConnection m_connection;
 
+            private FilteredFilenameTable(SqliteConnection connection)
+            {
+                Tablename = "Filenames-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
+                m_connection = connection;
+            }
+
+            [Obsolete("Calling this constructor will throw an exception. Use the Create method instead.")]
             public FilteredFilenameTable(SqliteConnection connection, IFilter filter, SqliteTransaction transaction)
             {
-                m_connection = connection;
-                Tablename = "Filenames-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
+                throw new NotImplementedException("Use the Create method instead.");
+            }
+
+            public async Task<FilteredFilenameTable> CreateFilteredFilenameTableAsync(SqliteConnection connection, IFilter filter, SqliteTransaction transaction)
+            {
+                var ftt = new FilteredFilenameTable(connection);
+
+                // TODO factory
                 var type = FilterType.Regexp;
                 if (filter is FilterExpression expression)
                     type = expression.Type;
@@ -1490,8 +1503,8 @@ AND oldVersion.FilesetID = (SELECT ID FROM Fileset WHERE ID != @FilesetId ORDER 
                 {
                     using var cmd = m_connection.CreateCommand();
                     cmd.Transaction = transaction;
-                    cmd.ExecuteNonQueryAsync($@"CREATE TEMPORARY TABLE ""{Tablename}"" AS SELECT DISTINCT ""Path"" FROM ""File"" ").Await();
-                    return;
+                    await cmd.ExecuteNonQueryAsync($@"CREATE TEMPORARY TABLE ""{Tablename}"" AS SELECT DISTINCT ""Path"" FROM ""File"" ");
+                    return ftt;
                 }
 
                 if (type == FilterType.Regexp || type == FilterType.Group)
@@ -1499,11 +1512,11 @@ AND oldVersion.FilesetID = (SELECT ID FROM Fileset WHERE ID != @FilesetId ORDER 
                     using var cmd = m_connection.CreateCommand();
                     cmd.Transaction = transaction;
                     // TODO: Optimize this to not rely on the "File" view, and not instantiate the paths in full
-                    cmd.ExecuteNonQueryAsync($@"CREATE TEMPORARY TABLE ""{Tablename}"" (""Path"" TEXT NOT NULL)").Await();
+                    await cmd.ExecuteNonQueryAsync($@"CREATE TEMPORARY TABLE ""{Tablename}"" (""Path"" TEXT NOT NULL)");
                     cmd.SetCommandAndParameters($@"INSERT INTO ""{Tablename}"" (""Path"") VALUES (@Path)");
                     using (var c2 = m_connection.CreateCommand())
-                    using (var rd = c2.ExecuteReaderAsync(@"SELECT DISTINCT ""Path"" FROM ""File"" ").Await())
-                        while (rd.ReadAsync().Await())
+                    using (var rd = await c2.ExecuteReaderAsync(@"SELECT DISTINCT ""Path"" FROM ""File"" "))
+                        while (await rd.ReadAsync())
                         {
                             var p = rd.ConvertValueToString(0);
                             if (FilterExpression.Matches(filter, p))
@@ -1513,7 +1526,7 @@ AND oldVersion.FilesetID = (SELECT ID FROM Fileset WHERE ID != @FilesetId ORDER 
                             }
                         }
 
-                    transaction.CommitAsync().Await();
+                    await transaction.CommitAsync();
                 }
                 else
                 {
@@ -1539,10 +1552,12 @@ AND oldVersion.FilesetID = (SELECT ID FROM Fileset WHERE ID != @FilesetId ORDER 
 
                     using var cmd = m_connection.CreateCommand();
                     cmd.Transaction = transaction;
-                    cmd.ExecuteNonQueryAsync($@"CREATE TEMPORARY TABLE ""{Tablename}"" (""Path"" TEXT NOT NULL)").Await();
-                    cmd.ExecuteNonQueryAsync($@"INSERT INTO ""{Tablename}"" SELECT DISTINCT ""Path"" FROM ""File"" WHERE {sb}", args).Await();
-                    transaction.CommitAsync().Await();
+                    await cmd.ExecuteNonQueryAsync($@"CREATE TEMPORARY TABLE ""{Tablename}"" (""Path"" TEXT NOT NULL)");
+                    await cmd.ExecuteNonQueryAsync($@"INSERT INTO ""{Tablename}"" SELECT DISTINCT ""Path"" FROM ""File"" WHERE {sb}", args);
+                    await transaction.CommitAsync();
                 }
+
+                return ftt;
             }
 
             public void Dispose()
