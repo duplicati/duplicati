@@ -164,6 +164,7 @@ namespace Duplicati.Library.Main.Operation
 
         private class MockList<T> : IList<T>
         {
+            private readonly List<T> _dummy = new List<T>();
             public MockList(int count)
             {
                 Count = count;
@@ -180,54 +181,26 @@ namespace Duplicati.Library.Main.Operation
             public bool IsReadOnly => true;
 
             public void Add(T item)
-            {
-                throw new NotImplementedException();
-            }
-
+                => throw new NotImplementedException();
             public void Clear()
-            {
-                throw new NotImplementedException();
-            }
-
+                => throw new NotImplementedException();
             public bool Contains(T item)
-            {
-                throw new NotImplementedException();
-            }
-
+                => throw new NotImplementedException();
             public void CopyTo(T[] array, int arrayIndex)
-            {
-                throw new NotImplementedException();
-            }
-
+                => throw new NotImplementedException();
             public IEnumerator<T> GetEnumerator()
-            {
-                throw new NotImplementedException();
-            }
+                => _dummy.GetEnumerator();
 
             public int IndexOf(T item)
-            {
-                throw new NotImplementedException();
-            }
-
+                => throw new NotImplementedException();
             public void Insert(int index, T item)
-            {
-                throw new NotImplementedException();
-            }
-
+                => throw new NotImplementedException();
             public bool Remove(T item)
-            {
-                throw new NotImplementedException();
-            }
-
+                => throw new NotImplementedException();
             public void RemoveAt(int index)
-            {
-                throw new NotImplementedException();
-            }
-
+                => throw new NotImplementedException();
             IEnumerator IEnumerable.GetEnumerator()
-            {
-                throw new NotImplementedException();
-            }
+                => _dummy.GetEnumerator();
         }
     }
 }
