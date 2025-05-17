@@ -126,7 +126,7 @@ WHERE ""BlocksetID"" IS NULL OR ""BlocksetID"" IN
         /// <param name="tablename">The name of the table to insert into</param>
         /// <param name="IDfieldname">The name of the ID field in the table</param>
         /// <param name="transaction">The transaction to use for the query</param>
-        public void InsertBrokenFileIDsIntoTable(long filesetid, string tablename, string IDfieldname, IDbTransaction transaction)
+        public void InsertBrokenFileIDsIntoTable(long filesetid, string tablename, string IDfieldname, IDbTransaction? transaction)
         {
             using var cmd = Connection.CreateCommand(transaction, INSERT_BROKEN_IDS(tablename, IDfieldname))
               .SetParameterValue("@FilesetId", filesetid);
@@ -142,7 +142,7 @@ WHERE ""BlocksetID"" IS NULL OR ""BlocksetID"" IN
         /// <param name="emptyHashSize">The size of the empty blockset</param>
         /// <param name="transaction">The transaction to use for the query</param>
         /// <returns>The ID of the empty metadata blockset, or -1 if no suitable blockset is found</returns>
-        public long GetEmptyMetadataBlocksetId(IEnumerable<long> blockVolumeIds, string emptyHash, long emptyHashSize, IDbTransaction transaction)
+        public long GetEmptyMetadataBlocksetId(IEnumerable<long> blockVolumeIds, string emptyHash, long emptyHashSize, IDbTransaction? transaction)
         {
             using var cmd = Connection.CreateCommand(transaction, @"SELECT ""ID"" FROM ""Blockset"" WHERE ""FullHash"" = @EmptyHash AND ""Length"" == @EmptyHashSize AND ""ID"" NOT IN (SELECT ""BlocksetID"" FROM ""BlocksetEntry"", ""Block"" WHERE ""BlocksetEntry"".""BlockID"" = ""Block"".""ID"" AND ""Block"".""VolumeID"" NOT IN (@BlockVolumeIds))")
               .ExpandInClauseParameter("@BlockVolumeIds", blockVolumeIds)
@@ -175,7 +175,7 @@ WHERE ""BlocksetID"" IS NULL OR ""BlocksetID"" IN
         /// <param name="emptyBlocksetId">The empty blockset ID to replace with</param>
         /// <param name="transaction">The transaction to use for the query</param>
         /// <returns>The number of rows affected</returns>
-        public int ReplaceMetadata(long filesetId, long emptyBlocksetId, IDbTransaction transaction)
+        public int ReplaceMetadata(long filesetId, long emptyBlocksetId, IDbTransaction? transaction)
         {
             using var cmd = m_connection.CreateCommand(transaction, @"
 UPDATE ""Metadataset"" 

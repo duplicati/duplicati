@@ -816,7 +816,7 @@ AND ""Fileset"".""ID"" NOT IN
         /// <param name="hashsize">The hash size in byts</param>
         /// <param name="verifyfilelists">Also verify filelists (can be slow)</param>
         /// <param name="transaction">The transaction to run in</param>
-        public void VerifyConsistency(long blocksize, long hashsize, bool verifyfilelists, IDbTransaction transaction)
+        public void VerifyConsistency(long blocksize, long hashsize, bool verifyfilelists, IDbTransaction? transaction)
             => VerifyConsistencyInner(blocksize, hashsize, verifyfilelists, false, transaction);
 
         /// <summary>
@@ -826,7 +826,7 @@ AND ""Fileset"".""ID"" NOT IN
         /// <param name="hashsize">The hash size in byts</param>
         /// <param name="verifyfilelists">Also verify filelists (can be slow)</param>
         /// <param name="transaction">The transaction to run in</param>
-        public void VerifyConsistencyForRepair(long blocksize, long hashsize, bool verifyfilelists, IDbTransaction transaction)
+        public void VerifyConsistencyForRepair(long blocksize, long hashsize, bool verifyfilelists, IDbTransaction? transaction)
             => VerifyConsistencyInner(blocksize, hashsize, verifyfilelists, true, transaction);
 
         /// <summary>
@@ -837,7 +837,7 @@ AND ""Fileset"".""ID"" NOT IN
         /// <param name="verifyfilelists">Also verify filelists (can be slow)</param>
         /// <param name="laxVerifyForRepair">Disable verify for errors that will be fixed by repair</param>
         /// <param name="transaction">The transaction to run in</param>
-        private void VerifyConsistencyInner(long blocksize, long hashsize, bool verifyfilelists, bool laxVerifyForRepair, IDbTransaction transaction)
+        private void VerifyConsistencyInner(long blocksize, long hashsize, bool verifyfilelists, bool laxVerifyForRepair, IDbTransaction? transaction)
         {
             using (var cmd = m_connection.CreateCommand(transaction))
             {

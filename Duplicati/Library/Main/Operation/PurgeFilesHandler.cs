@@ -188,6 +188,7 @@ namespace Duplicati.Library.Main.Operation
                                 }
                                 else
                                 {
+                                    db.UpdateRemoteVolume(vol.RemoteFilename, RemoteVolumeState.Uploading, -1, null, tr);
                                     var lst = db.DropFilesetsFromTable(new[] { tsOriginal }, tr).ToArray();
                                     foreach (var f in lst)
                                         db.UpdateRemoteVolume(f.Key, RemoteVolumeState.Deleting, f.Value, null, tr);

@@ -19,6 +19,8 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -57,6 +59,9 @@ namespace Duplicati.Library.Main.Operation
                 if (db.PartiallyRecreated)
                     throw new UserInformationException("The command does not work on partially recreated databases", "CannotPurgeOnPartialDatabase");
 
+                Utility.UpdateOptionsFromDb(db, m_options);
+                Utility.VerifyOptionsAndUpdateDatabase(db, m_options);
+
                 (var sets, var missing) = await ListBrokenFilesHandler.GetBrokenFilesetsFromRemote(backendManager, m_result, db, tr, m_options).ConfigureAwait(false);
                 if (sets == null)
                     return;
@@ -72,7 +77,7 @@ namespace Duplicati.Library.Main.Operation
                 }
                 else
                 {
-                    Logging.Log.WriteInformationMessage(LOGTAG, "FoundBrokenFilesets", "Found {0} broken filesets with {1} affected files, purging files", sets.Length, sets.Sum(x => x.Item3));
+                    Logging.Log.WriteInformationMessage(LOGTAG, "FoundBrokenFilesets", "Found {0} broken filesets with {1} affected files, purging files", sets.Length, sets.Sum(x => x.RemoveCount));
 
                     var pgoffset = 0.0f;
                     var pgspan = 0.95f / sets.Length;
@@ -88,12 +93,12 @@ namespace Duplicati.Library.Main.Operation
                         SetCount = db.GetFilesetFileCount(x.Item2, tr)
                     }).ToArray();
 
-                    var emptyBlocksetId = -1L;
+                    var replacementMetadataBlocksetId = -1L;
                     if (!m_options.DisableReplaceMissingMetadata)
                     {
                         var emptymetadata = Utility.WrapMetadata(new Dictionary<string, string>(), m_options);
-                        emptyBlocksetId = db.GetEmptyMetadataBlocksetId(missing.Select(x => x.ID), emptymetadata.FileHash, emptymetadata.Blob.Length, null);
-                        if (emptyBlocksetId < 0)
+                        replacementMetadataBlocksetId = db.GetEmptyMetadataBlocksetId((missing ?? []).Select(x => x.ID), emptymetadata.FileHash, emptymetadata.Blob.Length, null);
+                        if (replacementMetadataBlocksetId < 0)
                             throw new UserInformationException($"Failed to locate an empty metadata blockset to replace missing metadata. Set the option --disable-replace-missing-metadata=true to ignore this and drop files with missing metadata.", "FailedToLocateEmptyMetadataBlockset");
                     }
 
@@ -163,7 +168,7 @@ namespace Duplicati.Library.Main.Operation
                                     // Update entries that would be removed because of missing metadata
                                     var updatedEntries = 0;
                                     if (!m_options.DisableReplaceMissingMetadata)
-                                        updatedEntries = db.ReplaceMetadata(filesetid, emptyBlocksetId, cmd.Transaction);
+                                        updatedEntries = db.ReplaceMetadata(filesetid, replacementMetadataBlocksetId, cmd.Transaction);
 
                                     db.InsertBrokenFileIDsIntoTable(filesetid, tablename, "FileID", cmd.Transaction);
                                     return updatedEntries;

@@ -10,18 +10,14 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="System.Linq.Async" Version="6.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\Interface\Duplicati.Library.Interface.csproj" />
     <ProjectReference Include="..\..\Localization\Duplicati.Library.Localization.csproj" />
     <ProjectReference Include="..\..\Utility\Duplicati.Library.Utility.csproj" />
     <ProjectReference Include="..\..\Snapshots\Duplicati.Library.Snapshots.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Microsoft.DotNet.Analyzers.Compatibility" Version="0.2.12-alpha">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-    <PackageReference Include="System.Linq.Async" Version="6.0.1" />
   </ItemGroup>
 
 </Project>

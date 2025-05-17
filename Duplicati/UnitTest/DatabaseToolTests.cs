@@ -39,14 +39,14 @@ namespace Duplicati.UnitTest
             cmd.CommandText = LocalSchemaV12;
             cmd.ExecuteNonQuery();
 
-            await Program.Main(["upgrade", dbfile, "--no-backups"]);
-            await Program.Main(["downgrade", dbfile, "--server-version=6", "--local-version=12", "--no-backups"]);
-            await Program.Main(["upgrade", dbfile, "--no-backups"]);
+            Assert.AreEqual(0, await Program.Main(["upgrade", dbfile, "--no-backups"]));
+            Assert.AreEqual(0, await Program.Main(["downgrade", dbfile, "--server-version=6", "--local-version=12", "--no-backups"]));
+            Assert.AreEqual(0, await Program.Main(["upgrade", dbfile, "--no-backups"]));
 
-            await Program.Main(["list", dbfile]);
-            await Program.Main(["list", dbfile, "RemoteVolume"]);
-            await Program.Main(["list", dbfile, "RemoteVolume", "--output-json"]);
-            await Program.Main(["execute", dbfile, "SELECT * FROM RemoteVolume", "--output-json"]);
+            Assert.AreEqual(0, await Program.Main(["list", dbfile]));
+            Assert.AreEqual(0, await Program.Main(["list", dbfile, "RemoteVolume"]));
+            Assert.AreEqual(0, await Program.Main(["list", dbfile, "RemoteVolume", "--output-json"]));
+            Assert.AreEqual(0, await Program.Main(["execute", dbfile, "SELECT * FROM RemoteVolume", "--output-json"]));
         }
 
         [Test]
@@ -59,14 +59,14 @@ namespace Duplicati.UnitTest
             cmd.CommandText = ServerSchemaV6;
             cmd.ExecuteNonQuery();
 
-            await Program.Main(["upgrade", dbfile, "--no-backups"]);
-            await Program.Main(["downgrade", dbfile, "--server-version=6", "--local-version=12", "--no-backups"]);
-            await Program.Main(["upgrade", dbfile, "--no-backups"]);
+            Assert.AreEqual(0, await Program.Main(["upgrade", dbfile, "--no-backups"]));
+            Assert.AreEqual(0, await Program.Main(["downgrade", dbfile, "--server-version=6", "--local-version=12", "--no-backups"]));
+            Assert.AreEqual(0, await Program.Main(["upgrade", dbfile, "--no-backups"]));
 
-            await Program.Main(["list", dbfile]);
-            await Program.Main(["list", dbfile, "Source"]);
-            await Program.Main(["list", dbfile, "Source", "--output-json"]);
-            await Program.Main(["execute", dbfile, "SELECT * FROM Source", "--output-json"]);
+            Assert.AreEqual(0, await Program.Main(["list", dbfile]));
+            Assert.AreEqual(0, await Program.Main(["list", dbfile, "Source"]));
+            Assert.AreEqual(0, await Program.Main(["list", dbfile, "Source", "--output-json"]));
+            Assert.AreEqual(0, await Program.Main(["execute", dbfile, "SELECT * FROM Source", "--output-json"]));
         }
 
         /// <summary>

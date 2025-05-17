@@ -5,18 +5,18 @@
     <Copyright>Copyright © 2025 Team Duplicati, MIT license</Copyright>
     <RootNamespace>Duplicati.Library.Snapshots</RootNamespace>
   </PropertyGroup>
-  
+
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="System.Linq.Async" Version="6.0.1" />
   </ItemGroup>
-  
+
   <ItemGroup>
     <ProjectReference Include="..\AutoUpdater\Duplicati.Library.AutoUpdater.csproj" />
     <ProjectReference Include="..\Common\Duplicati.Library.Common.csproj" />
     <ProjectReference Include="..\Interface\Duplicati.Library.Interface.csproj" />
     <ProjectReference Include="..\Localization\Duplicati.Library.Localization.csproj" />
-  	<ProjectReference Include="..\Logging\Duplicati.Library.Logging.csproj" />
+    <ProjectReference Include="..\Logging\Duplicati.Library.Logging.csproj" />
     <ProjectReference Include="..\Utility\Duplicati.Library.Utility.csproj" />
   </ItemGroup>
 
@@ -30,13 +30,6 @@
     <Content Include="lvm-scripts\remove-lvm-snapshot.sh">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Microsoft.DotNet.Analyzers.Compatibility" Version="0.2.12-alpha">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
   </ItemGroup>
 
 </Project>
