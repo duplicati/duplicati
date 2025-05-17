@@ -1540,28 +1540,61 @@ AND oldVersion.FilesetID = (SELECT ID FROM Fileset WHERE ID != @FilesetId ORDER 
         /// <param name="hashsize">The size of the hash</param>
         /// <param name="transaction">An optional external transaction</param>
         /// <returns>An enumerable of tuples containing the blocklist hash, the blocklist data and the length of the data</returns>
-        public IEnumerable<Tuple<string, byte[], int>> GetBlocklists(long volumeid, long blocksize, int hashsize, IDbTransaction? transaction = null)
+        public IEnumerable<(string Hash, byte[] Buffer, int Size)> GetBlocklists(long volumeid, long blocksize, int hashsize, IDbTransaction? transaction = null)
         {
             using (var cmd = m_connection.CreateCommand(transaction))
             {
                 // Group subquery by hash to ensure that each blocklist hash appears only once in the result
-                var sql = FormatInvariant($@"SELECT ""A"".""Hash"", ""C"".""Hash"" FROM 
-(SELECT ""BlocklistHash"".""BlocksetID"", ""Block"".""Hash"", ""BlocklistHash"".""Index"" FROM  ""BlocklistHash"",""Block"" WHERE  ""BlocklistHash"".""Hash"" = ""Block"".""Hash"" AND ""Block"".""VolumeID"" = @VolumeId GROUP BY ""Block"".""Hash"", ""Block"".""Size"") A,
- ""BlocksetEntry"" B, ""Block"" C WHERE ""B"".""BlocksetID"" = ""A"".""BlocksetID"" AND 
- ""B"".""Index"" >= (""A"".""Index"" * {blocksize / hashsize}) AND ""B"".""Index"" < ((""A"".""Index"" + 1) * {blocksize / hashsize}) AND ""C"".""ID"" = ""B"".""BlockID"" 
- ORDER BY ""A"".""BlocksetID"", ""B"".""Index""");
+                // The AllBlocks CTE is used to map both active and duplicate blocks from the volume,
+                // because the new volume is initially registered with only duplicate blocks.
+                var sql = @"
+WITH ""AllBlocksInVolume"" AS (
+  SELECT DISTINCT ""ID"", ""Hash"", ""Size"" FROM (
+    SELECT ""ID"", ""Hash"", ""Size"" 
+    FROM ""Block"" 
+    WHERE ""VolumeID"" = @VolumeId
+    
+    UNION
+  
+  	SELECT ""DuplicateBlock"".""BlockID"" AS ""ID"", ""Block"".""Hash"" AS ""Hash"", ""Block"".""Size"" AS ""Size"" 
+  	FROM ""DuplicateBlock"" INNER JOIN ""Block"" 
+  	ON ""DuplicateBlock"".""BlockID"" = ""Block"".""ID"" 
+  	WHERE ""DuplicateBlock"".""VolumeID"" = @VolumeId
+  )
+)
+
+SELECT ""A"".""Hash"" AS ""BlockHash"", ""C"".""Hash"" AS ""ItemHash""
+FROM (
+  SELECT ""BlocklistHash"".""BlocksetID"", ""AllBlocksInVolume"".""Hash"", ""BlocklistHash"".""Index"" 
+  FROM ""BlocklistHash"",""AllBlocksInVolume"" 
+  WHERE ""BlocklistHash"".""Hash"" = ""AllBlocksInVolume"".""Hash"" GROUP BY ""AllBlocksInVolume"".""Hash"", ""AllBlocksInVolume"".""Size""
+) A,
+""BlocksetEntry"" B, 
+""Block"" C 
+
+WHERE 
+  ""B"".""BlocksetID"" = ""A"".""BlocksetID"" 
+  AND ""B"".""Index"" >= (""A"".""Index"" * @HashesPerBlock) 
+  AND ""B"".""Index"" < ((""A"".""Index"" + 1) * @HashesPerBlock) 
+  AND ""C"".""ID"" = ""B"".""BlockID"" 
+ORDER BY ""A"".""BlocksetID"", ""B"".""Index""
+";
 
                 string? curHash = null;
                 var count = 0;
                 var buffer = new byte[blocksize];
 
-                using (var rd = cmd.SetCommandAndParameters(sql).SetParameterValue("@VolumeId", volumeid).ExecuteReader())
+                cmd.SetCommandAndParameters(sql)
+                    .SetParameterValue("@VolumeId", volumeid)
+                    .SetParameterValue("@HashesPerBlock", blocksize / hashsize);
+
+                using (var rd = cmd.ExecuteReader())
                     while (rd.Read())
                     {
                         var blockhash = rd.ConvertValueToString(0);
-                        if ((blockhash != curHash && curHash != null) || count + hashsize > buffer.Length)
+                        if (curHash != null && (blockhash != curHash || count + hashsize > buffer.Length))
                         {
-                            yield return new Tuple<string, byte[], int>(curHash!, buffer, count);
+                            yield return (curHash, buffer, count);
                             buffer = new byte[blocksize];
                             count = 0;
                         }
@@ -1573,7 +1606,7 @@ AND oldVersion.FilesetID = (SELECT ID FROM Fileset WHERE ID != @FilesetId ORDER 
                     }
 
                 if (curHash != null)
-                    yield return new Tuple<string, byte[], int>(curHash, buffer, count);
+                    yield return (curHash, buffer, count);
             }
         }
 
