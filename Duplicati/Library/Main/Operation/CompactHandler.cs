@@ -204,6 +204,11 @@ namespace Duplicati.Library.Main.Operation
                                                 // Commit as we have uploaded a volume
                                                 if (!m_options.Dryrun)
                                                     rtr.Commit("CommitCompact");
+
+                                                // Preserve space by deleting the old volume
+                                                await foreach (var d in DoDelete(db, backendManager, deleteableVolumes, rtr, m_result.TaskControl.ProgressToken).ConfigureAwait(false))
+                                                    deletedVolumes.Add(d);
+                                                deleteableVolumes.Clear();
                                             }
                                         }
                                     }
