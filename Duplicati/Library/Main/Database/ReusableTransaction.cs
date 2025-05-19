@@ -70,7 +70,7 @@ internal class ReusableTransaction(LocalDatabase db, SqliteTransaction? transact
     /// <param name="message">The log message to use.</param>
     /// <param name="restart">True if the transaction should be restarted.</param>
     /// <exception cref="InvalidOperationException">If the transaction is already Disposed.</exception>
-    public void Commit(string? message, bool restart = true)
+    public void Commit(string? message = null, bool restart = true)
     {
         CommitAsync(message, restart).Await();
     }
