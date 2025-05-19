@@ -241,7 +241,7 @@ public static partial class ExtensionMethods
         return cmd;
     }
 
-    public static SqliteCommand ExpandInClauseParameter(this SqliteCommand cmd, string originalParamName, TemporaryDbValueList values)
+    internal static SqliteCommand ExpandInClauseParameter(this SqliteCommand cmd, string originalParamName, TemporaryDbValueList values)
     {
         if (string.IsNullOrWhiteSpace(originalParamName) || !originalParamName.StartsWith("@"))
             throw new ArgumentException("Parameter name must start with '@'", nameof(originalParamName));
