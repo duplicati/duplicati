@@ -23,9 +23,10 @@
 
 using System;
 using System.Collections.Generic;
-using System.Data;
 using System.Linq;
+using System.Threading.Tasks;
 using Duplicati.Library.Interface;
+using Microsoft.Data.Sqlite;
 
 namespace Duplicati.Library.Main.Database
 {
@@ -43,18 +44,26 @@ namespace Duplicati.Library.Main.Database
 
         private const string REGISTER_COMMAND = @"INSERT OR IGNORE INTO ""DuplicateBlock"" (""BlockID"", ""VolumeID"") SELECT ""ID"", @VolumeId FROM ""Block"" WHERE ""Hash"" = @Hash AND ""Size"" = @Size ";
 
-        private IDbCommand m_registerDuplicateBlockCommand;
+        private SqliteCommand m_registerDuplicateBlockCommand = null!;
 
-        public LocalDeleteDatabase(string path, string operation, long pagecachesize)
-            : base(path, operation, true, pagecachesize)
+        public static async Task<LocalDeleteDatabase> CreateAsync(string path, long pagecachesize)
         {
-            m_registerDuplicateBlockCommand = m_connection.CreateCommand(REGISTER_COMMAND);
+            var db = new LocalDeleteDatabase();
+
+            db = (LocalDeleteDatabase)await CreateLocalDatabaseAsync(db, path, "BugReportCreate", false, pagecachesize);
+
+            return db;
         }
 
-        public LocalDeleteDatabase(LocalDatabase db)
-            : base(db)
+        public static async Task<LocalDeleteDatabase> CreateAsync(LocalDatabase dbparent)
         {
-            m_registerDuplicateBlockCommand = m_connection.CreateCommand(REGISTER_COMMAND);
+            var dbnew = new LocalDeleteDatabase();
+
+            dbnew = (LocalDeleteDatabase)await CreateLocalDatabaseAsync(dbparent, dbnew);
+
+            dbnew.m_registerDuplicateBlockCommand = await dbnew.Connection.CreateCommandAsync(REGISTER_COMMAND);
+
+            return dbnew;
         }
 
         /// <summary>
@@ -480,7 +489,7 @@ namespace Duplicati.Library.Main.Database
                         {
                             if (lookupIndexfiles.TryGetValue(sh.Name, out var backref))
                             {
-                                //If this is the last reference, 
+                                //If this is the last reference,
                                 // remove the index file as well
                                 if (backref.Remove(r.Name) && backref.Count == 0)
                                     yield return sh;
