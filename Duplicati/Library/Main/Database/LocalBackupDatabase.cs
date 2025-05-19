@@ -18,6 +18,7 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
+
 #nullable enable
 
 using System;
@@ -102,20 +103,191 @@ namespace Duplicati.Library.Main.Database
 
             dbnew.m_logQueries = options.ProfileAllDatabaseQueries;
 
-            dbnew.m_findblockCommand = await dbnew.Connection.CreateCommandAsync(@"SELECT ""ID"" FROM ""Block"" WHERE ""Hash"" = @hash AND ""Size"" = @Size");
-            dbnew.m_findblocksetCommand = await dbnew.Connection.CreateCommandAsync(@"SELECT ""ID"" FROM ""Blockset"" WHERE ""Fullhash"" = @Fullhash AND ""Length"" = @Length");
-            dbnew.m_findmetadatasetCommand = await dbnew.Connection.CreateCommandAsync(@"SELECT ""A"".""ID"" FROM ""Metadataset"" A, ""BlocksetEntry"" B, ""Block"" C WHERE ""A"".""BlocksetID"" = ""B"".""BlocksetID"" AND ""B"".""BlockID"" = ""C"".""ID"" AND ""C"".""Hash"" = @Hash AND ""C"".""Size"" = @Size");
-            dbnew.m_findfilesetCommand = await dbnew.Connection.CreateCommandAsync(@"SELECT ""ID"" FROM ""FileLookup"" WHERE ""BlocksetID"" = @BlocksetId AND ""MetadataID"" = @MetadataId AND ""Path"" = @Path AND ""PrefixID"" = @PrefixId");
-            dbnew.m_insertblockCommand = await dbnew.Connection.CreateCommandAsync(@"INSERT INTO ""Block"" (""Hash"", ""VolumeID"", ""Size"") VALUES (@Hash, @VolumeId, @Size); SELECT last_insert_rowid();");
-            dbnew.m_insertfileOperationCommand = await dbnew.Connection.CreateCommandAsync(@"INSERT INTO ""FilesetEntry"" (""FilesetID"", ""FileID"", ""Lastmodified"") VALUES (@FilesetId, @FileId, @LastModified)");
-            dbnew.m_insertfileCommand = await dbnew.Connection.CreateCommandAsync(@"INSERT INTO ""FileLookup"" (""PrefixID"", ""Path"",""BlocksetID"", ""MetadataID"") VALUES (@PrefixId, @Path, @BlocksetId, @MetadataId); SELECT last_insert_rowid();");
-            dbnew.m_insertblocksetCommand = await dbnew.Connection.CreateCommandAsync(@"INSERT INTO ""Blockset"" (""Length"", ""FullHash"") VALUES (@Length, @Fullhash); SELECT last_insert_rowid();");
-            dbnew.m_insertblocksetentryCommand = await dbnew.Connection.CreateCommandAsync(@"INSERT INTO ""BlocksetEntry"" (""BlocksetID"", ""Index"", ""BlockID"") SELECT @BlocksetId AS A, @Index AS B, ""ID"" FROM ""Block"" WHERE ""Hash"" = @Hash AND ""Size"" = @Size");
-            dbnew.m_insertblocklistHashesCommand = await dbnew.Connection.CreateCommandAsync(@"INSERT INTO ""BlocklistHash"" (""BlocksetID"", ""Index"", ""Hash"") VALUES (@BlocksetId, @Index, @Hash)");
-            dbnew.m_insertmetadatasetCommand = await dbnew.Connection.CreateCommandAsync(@"INSERT INTO ""Metadataset"" (""BlocksetID"") VALUES (@BlocksetId); SELECT last_insert_rowid();");
-            dbnew.m_selectfilelastmodifiedCommand = await dbnew.Connection.CreateCommandAsync(@"SELECT ""A"".""ID"", ""B"".""LastModified"" FROM (SELECT ""ID"" FROM ""FileLookup"" WHERE ""PrefixID"" = @PrefixId AND ""Path"" = @Path) ""A"" CROSS JOIN ""FilesetEntry"" ""B"" WHERE ""A"".""ID"" = ""B"".""FileID"" AND ""B"".""FilesetID"" = @FilesetId");
-            dbnew.m_selectfilelastmodifiedWithSizeCommand = await dbnew.Connection.CreateCommandAsync(@"SELECT ""C"".""ID"", ""C"".""LastModified"", ""D"".""Length"" FROM (SELECT ""A"".""ID"", ""B"".""LastModified"", ""A"".""BlocksetID"" FROM (SELECT ""ID"", ""BlocksetID"" FROM ""FileLookup"" WHERE ""PrefixID"" = @PrefixId AND ""Path"" = @Path) ""A"" CROSS JOIN ""FilesetEntry"" ""B"" WHERE ""A"".""ID"" = ""B"".""FileID"" AND ""B"".""FilesetID"" = @FilesetId) AS ""C"", ""Blockset"" AS ""D"" WHERE ""C"".""BlocksetID"" == ""D"".""ID"" ");
-            dbnew.m_selectfilemetadatahashandsizeCommand = await dbnew.Connection.CreateCommandAsync(@"SELECT ""Blockset"".""Length"", ""Blockset"".""FullHash"" FROM ""Blockset"", ""Metadataset"", ""File"" WHERE ""File"".""ID"" = @FileId AND ""Blockset"".""ID"" = ""Metadataset"".""BlocksetID"" AND ""Metadataset"".""ID"" = ""File"".""MetadataID"" ");
+            dbnew.m_findblockCommand = await dbnew.Connection.CreateCommandAsync(@"
+                SELECT ""ID""
+                FROM ""Block""
+                WHERE
+                    ""Hash"" = @hash
+                    AND ""Size"" = @Size
+            ");
+
+            dbnew.m_findblocksetCommand = await dbnew.Connection.CreateCommandAsync(@"
+                SELECT ""ID""
+                FROM ""Blockset""
+                WHERE
+                    ""Fullhash"" = @Fullhash
+                    AND ""Length"" = @Length
+            ");
+
+            dbnew.m_findmetadatasetCommand = await dbnew.Connection.CreateCommandAsync(@"
+                SELECT ""A"".""ID""
+                FROM
+                    ""Metadataset"" A,
+                    ""BlocksetEntry"" B,
+                    ""Block"" C
+                WHERE
+                    ""A"".""BlocksetID"" = ""B"".""BlocksetID""
+                    AND ""B"".""BlockID"" = ""C"".""ID""
+                    AND ""C"".""Hash"" = @Hash
+                    AND ""C"".""Size"" = @Size
+            ");
+
+            dbnew.m_findfilesetCommand = await dbnew.Connection.CreateCommandAsync(@"
+                SELECT ""ID""
+                FROM ""FileLookup""
+                WHERE
+                    ""BlocksetID"" = @BlocksetId
+                    AND ""MetadataID"" = @MetadataId
+                    AND ""Path"" = @Path
+                    AND ""PrefixID"" = @PrefixId
+            ");
+
+            dbnew.m_insertblockCommand = await dbnew.Connection.CreateCommandAsync(@"
+                INSERT INTO ""Block"" (
+                    ""Hash"",
+                    ""VolumeID"",
+                    ""Size""
+                )
+                VALUES (
+                    @Hash,
+                    @VolumeId,
+                    @Size
+                );
+                SELECT last_insert_rowid();
+            ");
+
+            dbnew.m_insertfileOperationCommand = await dbnew.Connection.CreateCommandAsync(@"
+                INSERT INTO ""FilesetEntry"" (
+                    ""FilesetID"",
+                    ""FileID"",
+                    ""Lastmodified""
+                )
+                VALUES (
+                    @FilesetId,
+                    @FileId,
+                    @LastModified
+                )
+            ");
+
+            dbnew.m_insertfileCommand = await dbnew.Connection.CreateCommandAsync(@"
+                INSERT INTO ""FileLookup"" (
+                    ""PrefixID"",
+                    ""Path"",
+                    ""BlocksetID"",
+                    ""MetadataID""
+                )
+                VALUES (
+                    @PrefixId,
+                    @Path,
+                    @BlocksetId,
+                    @MetadataId
+                );
+                SELECT last_insert_rowid();
+            ");
+
+            dbnew.m_insertblocksetCommand = await dbnew.Connection.CreateCommandAsync(@"
+                INSERT INTO ""Blockset"" (
+                    ""Length"",
+                    ""FullHash""
+                )
+                VALUES (
+                    @Length,
+                    @Fullhash
+                );
+                SELECT last_insert_rowid();");
+
+            dbnew.m_insertblocksetentryCommand = await dbnew.Connection.CreateCommandAsync(@"
+                INSERT INTO ""BlocksetEntry"" (
+                    ""BlocksetID"",
+                    ""Index"",
+                    ""BlockID""
+                )
+                SELECT
+                    @BlocksetId AS A,
+                    @Index AS B,
+                    ""ID""
+                FROM ""Block""
+                WHERE ""Hash"" = @Hash
+                AND ""Size"" = @Size
+            ");
+
+            dbnew.m_insertblocklistHashesCommand = await dbnew.Connection.CreateCommandAsync(@"
+                INSERT INTO ""BlocklistHash"" (
+                    ""BlocksetID"",
+                    ""Index"",
+                    ""Hash""
+                )
+                VALUES (
+                    @BlocksetId,
+                    @Index,
+                    @Hash
+                )
+            ");
+
+            dbnew.m_insertmetadatasetCommand = await dbnew.Connection.CreateCommandAsync(@"
+                INSERT INTO ""Metadataset"" (""BlocksetID"")
+                VALUES (@BlocksetId);
+                SELECT last_insert_rowid();
+            ");
+
+            dbnew.m_selectfilelastmodifiedCommand = await dbnew.Connection.CreateCommandAsync(@"
+                SELECT
+                    ""A"".""ID"",
+                    ""B"".""LastModified""
+                FROM (
+                    SELECT ""ID""
+                    FROM ""FileLookup""
+                    WHERE ""PrefixID"" = @PrefixId
+                    AND ""Path"" = @Path
+                ) ""A""
+                CROSS JOIN ""FilesetEntry"" ""B""
+                WHERE
+                    ""A"".""ID"" = ""B"".""FileID""
+                    AND ""B"".""FilesetID"" = @FilesetId
+            ");
+
+            dbnew.m_selectfilelastmodifiedWithSizeCommand = await dbnew.Connection.CreateCommandAsync(@"
+                SELECT
+                    ""C"".""ID"",
+                    ""C"".""LastModified"",
+                    ""D"".""Length""
+                FROM
+                    (
+                        SELECT
+                            ""A"".""ID"",
+                            ""B"".""LastModified"",
+                            ""A"".""BlocksetID""
+                        FROM (
+                            SELECT
+                                ""ID"",
+                                ""BlocksetID""
+                            FROM ""FileLookup""
+                            WHERE
+                                ""PrefixID"" = @PrefixId
+                                AND ""Path"" = @Path
+                        ) ""A""
+                        CROSS JOIN ""FilesetEntry"" ""B""
+                        WHERE
+                            ""A"".""ID"" = ""B"".""FileID""
+                            AND ""B"".""FilesetID"" = @FilesetId
+                    ) AS ""C"",
+                    ""Blockset"" AS ""D""
+                WHERE ""C"".""BlocksetID"" == ""D"".""ID""
+            ");
+
+            dbnew.m_selectfilemetadatahashandsizeCommand = await dbnew.Connection.CreateCommandAsync(@"
+                SELECT
+                    ""Blockset"".""Length"",
+                    ""Blockset"".""FullHash""
+                FROM
+                    ""Blockset"",
+                    ""Metadataset"",
+                    ""File""
+                WHERE
+                    ""File"".""ID"" = @FileId
+                    AND ""Blockset"".""ID"" = ""Metadataset"".""BlocksetID""
+                    AND ""Metadataset"".""ID"" = ""File"".""MetadataID""
+            ");
 
             // Experimental toggling of the deleted block cache
             // If the value is less than zero, the lookup is disabled
