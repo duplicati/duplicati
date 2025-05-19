@@ -1,30 +1,30 @@
 // Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
-// 
-// Permission is hereby granted, free of charge, to any person obtaining a 
-// copy of this software and associated documentation files (the "Software"), 
-// to deal in the Software without restriction, including without limitation 
-// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
-// and/or sell copies of the Software, and to permit persons to whom the 
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the "Software"),
+// to deal in the Software without restriction, including without limitation
+// the rights to use, copy, modify, merge, publish, distribute, sublicense,
+// and/or sell copies of the Software, and to permit persons to whom the
 // Software is furnished to do so, subject to the following conditions:
-// 
-// The above copyright notice and this permission notice shall be included in 
+//
+// The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
-// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 #nullable enable
 
 using System;
 using System.Collections.Generic;
-using System.Data;
-using System.Globalization;
 using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.Data.Sqlite;
 
 namespace Duplicati.Library.Main.Database
 {
@@ -36,29 +36,29 @@ namespace Duplicati.Library.Main.Database
         /// </summary>
         private static readonly string LOGTAG = Logging.Log.LogTagFromType<LocalBackupDatabase>();
 
-        private readonly IDbCommand m_findblockCommand;
-        private readonly IDbCommand m_findblocksetCommand;
-        private readonly IDbCommand m_findfilesetCommand;
-        private readonly IDbCommand m_findmetadatasetCommand;
+        private SqliteCommand m_findblockCommand = null!;
+        private SqliteCommand m_findblocksetCommand = null!;
+        private SqliteCommand m_findfilesetCommand = null!;
+        private SqliteCommand m_findmetadatasetCommand = null!;
 
-        private readonly IDbCommand m_insertblockCommand;
+        private SqliteCommand m_insertblockCommand = null!;
 
-        private readonly IDbCommand m_insertfileCommand;
+        private SqliteCommand m_insertfileCommand = null!;
 
-        private readonly IDbCommand m_insertblocksetCommand;
-        private readonly IDbCommand m_insertblocksetentryCommand;
-        private readonly IDbCommand m_insertblocklistHashesCommand;
+        private SqliteCommand m_insertblocksetCommand = null!;
+        private SqliteCommand m_insertblocksetentryCommand = null!;
+        private SqliteCommand m_insertblocklistHashesCommand = null!;
 
-        private readonly IDbCommand m_insertmetadatasetCommand;
+        private SqliteCommand m_insertmetadatasetCommand = null!;
 
-        private readonly IDbCommand m_findfileCommand;
-        private readonly IDbCommand m_selectfilelastmodifiedCommand;
-        private readonly IDbCommand m_selectfilelastmodifiedWithSizeCommand;
-        private readonly IDbCommand m_selectfileHashCommand;
+        private SqliteCommand m_findfileCommand = null!;
+        private SqliteCommand m_selectfilelastmodifiedCommand = null!;
+        private SqliteCommand m_selectfilelastmodifiedWithSizeCommand = null!;
+        private SqliteCommand m_selectfileHashCommand = null!;
 
-        private readonly IDbCommand m_insertfileOperationCommand;
-        private readonly IDbCommand m_selectfilemetadatahashandsizeCommand;
-        private readonly IDbCommand m_getfirstfilesetwithblockinblockset;
+        private SqliteCommand m_insertfileOperationCommand = null!;
+        private SqliteCommand m_selectfilemetadatahashandsizeCommand = null!;
+        private SqliteCommand m_getfirstfilesetwithblockinblockset = null!;
 
         private HashSet<string> m_blocklistHashes;
 
@@ -73,41 +73,48 @@ namespace Duplicati.Library.Main.Database
         /// <summary>
         /// The command used to move deleted blocks to the main block table; null if not used
         /// </summary>
-        private readonly IDbCommand? m_moveblockfromdeletedCommand;
+        private SqliteCommand? m_moveblockfromdeletedCommand;
         /// <summary>
         /// The command used to find blocks in the deleted blocks table; null if not used
         /// </summary>
-        private readonly IDbCommand? m_findindeletedCommand;
+        private SqliteCommand? m_findindeletedCommand;
 
         private long m_filesetId;
 
-        private readonly bool m_logQueries;
+        private bool m_logQueries;
 
-        public LocalBackupDatabase(string path, Options options)
-            : this(new LocalDatabase(path, "Backup", false, options.SqlitePageCache), options)
+        public static async Task<LocalBackupDatabase> CreateAsync(string path, Options options)
         {
-            this.ShouldCloseConnection = true;
+            var db = new LocalBackupDatabase();
+
+            db = (LocalBackupDatabase)await CreateLocalDatabaseAsync(db, path, "Backup", false, options.SqlitePageCache);
+            db.ShouldCloseConnection = true;
+
+            return await CreateAsync(db, options);
         }
 
-        public LocalBackupDatabase(LocalDatabase db, Options options)
-            : base(db)
+        public static async Task<LocalBackupDatabase> CreateAsync(LocalBackupDatabase dbparent, Options options)
         {
-            m_logQueries = options.ProfileAllDatabaseQueries;
+            var dbnew = new LocalBackupDatabase();
 
-            m_findblockCommand = m_connection.CreateCommand(@"SELECT ""ID"" FROM ""Block"" WHERE ""Hash"" = @hash AND ""Size"" = @Size");
-            m_findblocksetCommand = m_connection.CreateCommand(@"SELECT ""ID"" FROM ""Blockset"" WHERE ""Fullhash"" = @Fullhash AND ""Length"" = @Length");
-            m_findmetadatasetCommand = m_connection.CreateCommand(@"SELECT ""A"".""ID"" FROM ""Metadataset"" A, ""BlocksetEntry"" B, ""Block"" C WHERE ""A"".""BlocksetID"" = ""B"".""BlocksetID"" AND ""B"".""BlockID"" = ""C"".""ID"" AND ""C"".""Hash"" = @Hash AND ""C"".""Size"" = @Size");
-            m_findfilesetCommand = m_connection.CreateCommand(@"SELECT ""ID"" FROM ""FileLookup"" WHERE ""BlocksetID"" = @BlocksetId AND ""MetadataID"" = @MetadataId AND ""Path"" = @Path AND ""PrefixID"" = @PrefixId");
-            m_insertblockCommand = m_connection.CreateCommand(@"INSERT INTO ""Block"" (""Hash"", ""VolumeID"", ""Size"") VALUES (@Hash, @VolumeId, @Size); SELECT last_insert_rowid();");
-            m_insertfileOperationCommand = m_connection.CreateCommand(@"INSERT INTO ""FilesetEntry"" (""FilesetID"", ""FileID"", ""Lastmodified"") VALUES (@FilesetId, @FileId, @LastModified)");
-            m_insertfileCommand = m_connection.CreateCommand(@"INSERT INTO ""FileLookup"" (""PrefixID"", ""Path"",""BlocksetID"", ""MetadataID"") VALUES (@PrefixId, @Path, @BlocksetId, @MetadataId); SELECT last_insert_rowid();");
-            m_insertblocksetCommand = m_connection.CreateCommand(@"INSERT INTO ""Blockset"" (""Length"", ""FullHash"") VALUES (@Length, @Fullhash); SELECT last_insert_rowid();");
-            m_insertblocksetentryCommand = m_connection.CreateCommand(@"INSERT INTO ""BlocksetEntry"" (""BlocksetID"", ""Index"", ""BlockID"") SELECT @BlocksetId AS A, @Index AS B, ""ID"" FROM ""Block"" WHERE ""Hash"" = @Hash AND ""Size"" = @Size");
-            m_insertblocklistHashesCommand = m_connection.CreateCommand(@"INSERT INTO ""BlocklistHash"" (""BlocksetID"", ""Index"", ""Hash"") VALUES (@BlocksetId, @Index, @Hash)");
-            m_insertmetadatasetCommand = m_connection.CreateCommand(@"INSERT INTO ""Metadataset"" (""BlocksetID"") VALUES (@BlocksetId); SELECT last_insert_rowid();");
-            m_selectfilelastmodifiedCommand = m_connection.CreateCommand(@"SELECT ""A"".""ID"", ""B"".""LastModified"" FROM (SELECT ""ID"" FROM ""FileLookup"" WHERE ""PrefixID"" = @PrefixId AND ""Path"" = @Path) ""A"" CROSS JOIN ""FilesetEntry"" ""B"" WHERE ""A"".""ID"" = ""B"".""FileID"" AND ""B"".""FilesetID"" = @FilesetId");
-            m_selectfilelastmodifiedWithSizeCommand = m_connection.CreateCommand(@"SELECT ""C"".""ID"", ""C"".""LastModified"", ""D"".""Length"" FROM (SELECT ""A"".""ID"", ""B"".""LastModified"", ""A"".""BlocksetID"" FROM (SELECT ""ID"", ""BlocksetID"" FROM ""FileLookup"" WHERE ""PrefixID"" = @PrefixId AND ""Path"" = @Path) ""A"" CROSS JOIN ""FilesetEntry"" ""B"" WHERE ""A"".""ID"" = ""B"".""FileID"" AND ""B"".""FilesetID"" = @FilesetId) AS ""C"", ""Blockset"" AS ""D"" WHERE ""C"".""BlocksetID"" == ""D"".""ID"" ");
-            m_selectfilemetadatahashandsizeCommand = m_connection.CreateCommand(@"SELECT ""Blockset"".""Length"", ""Blockset"".""FullHash"" FROM ""Blockset"", ""Metadataset"", ""File"" WHERE ""File"".""ID"" = @FileId AND ""Blockset"".""ID"" = ""Metadataset"".""BlocksetID"" AND ""Metadataset"".""ID"" = ""File"".""MetadataID"" ");
+            dbnew = (LocalBackupDatabase)await CreateLocalDatabaseAsync(dbparent, dbnew);
+
+            dbnew.m_logQueries = options.ProfileAllDatabaseQueries;
+
+            dbnew.m_findblockCommand = await dbnew.Connection.CreateCommandAsync(@"SELECT ""ID"" FROM ""Block"" WHERE ""Hash"" = @hash AND ""Size"" = @Size");
+            dbnew.m_findblocksetCommand = await dbnew.Connection.CreateCommandAsync(@"SELECT ""ID"" FROM ""Blockset"" WHERE ""Fullhash"" = @Fullhash AND ""Length"" = @Length");
+            dbnew.m_findmetadatasetCommand = await dbnew.Connection.CreateCommandAsync(@"SELECT ""A"".""ID"" FROM ""Metadataset"" A, ""BlocksetEntry"" B, ""Block"" C WHERE ""A"".""BlocksetID"" = ""B"".""BlocksetID"" AND ""B"".""BlockID"" = ""C"".""ID"" AND ""C"".""Hash"" = @Hash AND ""C"".""Size"" = @Size");
+            dbnew.m_findfilesetCommand = await dbnew.Connection.CreateCommandAsync(@"SELECT ""ID"" FROM ""FileLookup"" WHERE ""BlocksetID"" = @BlocksetId AND ""MetadataID"" = @MetadataId AND ""Path"" = @Path AND ""PrefixID"" = @PrefixId");
+            dbnew.m_insertblockCommand = await dbnew.Connection.CreateCommandAsync(@"INSERT INTO ""Block"" (""Hash"", ""VolumeID"", ""Size"") VALUES (@Hash, @VolumeId, @Size); SELECT last_insert_rowid();");
+            dbnew.m_insertfileOperationCommand = await dbnew.Connection.CreateCommandAsync(@"INSERT INTO ""FilesetEntry"" (""FilesetID"", ""FileID"", ""Lastmodified"") VALUES (@FilesetId, @FileId, @LastModified)");
+            dbnew.m_insertfileCommand = await dbnew.Connection.CreateCommandAsync(@"INSERT INTO ""FileLookup"" (""PrefixID"", ""Path"",""BlocksetID"", ""MetadataID"") VALUES (@PrefixId, @Path, @BlocksetId, @MetadataId); SELECT last_insert_rowid();");
+            dbnew.m_insertblocksetCommand = await dbnew.Connection.CreateCommandAsync(@"INSERT INTO ""Blockset"" (""Length"", ""FullHash"") VALUES (@Length, @Fullhash); SELECT last_insert_rowid();");
+            dbnew.m_insertblocksetentryCommand = await dbnew.Connection.CreateCommandAsync(@"INSERT INTO ""BlocksetEntry"" (""BlocksetID"", ""Index"", ""BlockID"") SELECT @BlocksetId AS A, @Index AS B, ""ID"" FROM ""Block"" WHERE ""Hash"" = @Hash AND ""Size"" = @Size");
+            dbnew.m_insertblocklistHashesCommand = await dbnew.Connection.CreateCommandAsync(@"INSERT INTO ""BlocklistHash"" (""BlocksetID"", ""Index"", ""Hash"") VALUES (@BlocksetId, @Index, @Hash)");
+            dbnew.m_insertmetadatasetCommand = await dbnew.Connection.CreateCommandAsync(@"INSERT INTO ""Metadataset"" (""BlocksetID"") VALUES (@BlocksetId); SELECT last_insert_rowid();");
+            dbnew.m_selectfilelastmodifiedCommand = await dbnew.Connection.CreateCommandAsync(@"SELECT ""A"".""ID"", ""B"".""LastModified"" FROM (SELECT ""ID"" FROM ""FileLookup"" WHERE ""PrefixID"" = @PrefixId AND ""Path"" = @Path) ""A"" CROSS JOIN ""FilesetEntry"" ""B"" WHERE ""A"".""ID"" = ""B"".""FileID"" AND ""B"".""FilesetID"" = @FilesetId");
+            dbnew.m_selectfilelastmodifiedWithSizeCommand = await dbnew.Connection.CreateCommandAsync(@"SELECT ""C"".""ID"", ""C"".""LastModified"", ""D"".""Length"" FROM (SELECT ""A"".""ID"", ""B"".""LastModified"", ""A"".""BlocksetID"" FROM (SELECT ""ID"", ""BlocksetID"" FROM ""FileLookup"" WHERE ""PrefixID"" = @PrefixId AND ""Path"" = @Path) ""A"" CROSS JOIN ""FilesetEntry"" ""B"" WHERE ""A"".""ID"" = ""B"".""FileID"" AND ""B"".""FilesetID"" = @FilesetId) AS ""C"", ""Blockset"" AS ""D"" WHERE ""C"".""BlocksetID"" == ""D"".""ID"" ");
+            dbnew.m_selectfilemetadatahashandsizeCommand = await dbnew.Connection.CreateCommandAsync(@"SELECT ""Blockset"".""Length"", ""Blockset"".""FullHash"" FROM ""Blockset"", ""Metadataset"", ""File"" WHERE ""File"".""ID"" = @FileId AND ""Blockset"".""ID"" = ""Metadataset"".""BlocksetID"" AND ""Metadataset"".""ID"" = ""File"".""MetadataID"" ");
 
             // Experimental toggling of the deleted block cache
             // If the value is less than zero, the lookup is disabled
@@ -121,58 +128,58 @@ namespace Duplicati.Library.Main.Database
 
             if (deletedBlockCacheSizeLong >= 0)
             {
-                using (var cmd = m_connection.CreateCommand())
+                using (var cmd = dbnew.Connection.CreateCommand())
                 {
-                    m_tempDeletedBlockTable = "DeletedBlock-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
-                    cmd.SetCommandAndParameters(FormatInvariant($@"CREATE TEMPORARY TABLE ""{m_tempDeletedBlockTable}"" AS ")
+                    dbnew.m_tempDeletedBlockTable = "DeletedBlock-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
+                    cmd.SetCommandAndParameters($@"CREATE TEMPORARY TABLE ""{dbnew.m_tempDeletedBlockTable}"" AS "
                         + @$"SELECT MAX(""ID"") AS ""ID"", ""Hash"", ""Size"" FROM ""DeletedBlock"" WHERE ""VolumeID"" IN (SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""State"" NOT IN (@States)) GROUP BY ""Hash"", ""Size""")
                         .ExpandInClauseParameter("@States", [RemoteVolumeState.Deleted, RemoteVolumeState.Deleting])
                         .ExecuteNonQuery();
 
-                    var deletedBlocks = cmd.ExecuteScalarInt64(FormatInvariant(@$"SELECT COUNT(*) FROM ""{m_tempDeletedBlockTable}"""), 0);
+                    var deletedBlocks = cmd.ExecuteScalarInt64(@$"SELECT COUNT(*) FROM ""{dbnew.m_tempDeletedBlockTable}""", 0);
 
                     // There are no deleted blocks, so we can drop the table
                     if (deletedBlocks == 0)
                     {
-                        cmd.ExecuteNonQuery(FormatInvariant($@"DROP TABLE ""{m_tempDeletedBlockTable}"""));
-                        m_tempDeletedBlockTable = null;
+                        cmd.ExecuteNonQuery($@"DROP TABLE ""{dbnew.m_tempDeletedBlockTable}""");
+                        dbnew.m_tempDeletedBlockTable = null;
 
                     }
                     // The deleted blocks are small enough to fit in memory
                     else if (deletedBlocks <= deletedBlockCacheSizeLong)
                     {
-                        m_deletedBlockLookup = new Dictionary<string, Dictionary<long, long>>();
-                        using (var reader = cmd.ExecuteReader(FormatInvariant(@$"SELECT ""ID"", ""Hash"", ""Size"" FROM ""{m_tempDeletedBlockTable}""")))
+                        dbnew.m_deletedBlockLookup = new Dictionary<string, Dictionary<long, long>>();
+                        using (var reader = cmd.ExecuteReader(@$"SELECT ""ID"", ""Hash"", ""Size"" FROM ""{dbnew.m_tempDeletedBlockTable}"""))
                             while (reader.Read())
                             {
                                 var id = reader.ConvertValueToInt64(0);
                                 var hash = reader.ConvertValueToString(1) ?? throw new Exception("Hash is null");
                                 var size = reader.ConvertValueToInt64(2);
 
-                                if (!m_deletedBlockLookup.TryGetValue(hash, out var sizes))
-                                    m_deletedBlockLookup[hash] = sizes = new Dictionary<long, long>();
+                                if (!dbnew.m_deletedBlockLookup.TryGetValue(hash, out var sizes))
+                                    dbnew.m_deletedBlockLookup[hash] = sizes = new Dictionary<long, long>();
                                 sizes[size] = id;
                             }
 
-                        cmd.ExecuteNonQuery(FormatInvariant($@"DROP TABLE ""{m_tempDeletedBlockTable}"""));
-                        m_tempDeletedBlockTable = null;
+                        cmd.ExecuteNonQuery($@"DROP TABLE ""{dbnew.m_tempDeletedBlockTable}""");
+                        dbnew.m_tempDeletedBlockTable = null;
                     }
                     // The deleted blocks are too large to fit in memory, so we use a temporary table
                     else
                     {
-                        cmd.ExecuteNonQuery(FormatInvariant($@"CREATE UNIQUE INDEX ""unique_{m_tempDeletedBlockTable}"" ON ""{m_tempDeletedBlockTable}"" (""Hash"", ""Size"")"));
-                        m_findindeletedCommand = m_connection.CreateCommand(FormatInvariant($@"SELECT ""ID"" FROM ""{m_tempDeletedBlockTable}"" WHERE ""Hash"" = @Hash AND ""Size"" = @Size"));
-                        m_moveblockfromdeletedCommand = m_connection.CreateCommand(string.Join(";",
+                        cmd.ExecuteNonQuery($@"CREATE UNIQUE INDEX ""unique_{dbnew.m_tempDeletedBlockTable}"" ON ""{dbnew.m_tempDeletedBlockTable}"" (""Hash"", ""Size"")");
+                        dbnew.m_findindeletedCommand = dbnew.m_connection.CreateCommand($@"SELECT ""ID"" FROM ""{dbnew.m_tempDeletedBlockTable}"" WHERE ""Hash"" = @Hash AND ""Size"" = @Size");
+                        dbnew.m_moveblockfromdeletedCommand = dbnew.m_connection.CreateCommand(string.Join(";",
                             @"INSERT INTO ""Block"" (""Hash"", ""Size"", ""VolumeID"") SELECT ""Hash"", ""Size"", ""VolumeID"" FROM ""DeletedBlock"" WHERE ""ID"" = @DeletedBlockId LIMIT 1",
                             @"DELETE FROM ""DeletedBlock"" WHERE ""ID"" = @DeletedBlockId",
-                            FormatInvariant(@$"DELETE FROM {m_tempDeletedBlockTable} WHERE ""ID"" = @DeletedBlockId"),
-                            "SELECT last_insert_rowid()"));
+                            @$"DELETE FROM {dbnew.m_tempDeletedBlockTable} WHERE ""ID"" = @DeletedBlockId"),
+                            "SELECT last_insert_rowid()");
 
                     }
 
                     if (deletedBlocks > 0)
                     {
-                        m_moveblockfromdeletedCommand = m_connection.CreateCommand(string.Join(";",
+                        dbnew.m_moveblockfromdeletedCommand = dbnew.m_connection.CreateCommand(string.Join(";",
                             @"INSERT INTO ""Block"" (""Hash"", ""Size"", ""VolumeID"") SELECT ""Hash"", ""Size"", ""VolumeID"" FROM ""DeletedBlock"" WHERE ""ID"" = @DeletedBlockId LIMIT 1",
                             @"DELETE FROM ""DeletedBlock"" WHERE ""ID"" = @DeletedBlockId",
                             "SELECT last_insert_rowid()"));
@@ -188,13 +195,13 @@ namespace Duplicati.Library.Main.Database
             if (testqueryversion != 0)
                 Logging.Log.WriteWarningMessage(LOGTAG, "TestFileQuery", null, "Using performance test query version {0} as the TEST_QUERY_VERSION environment variable is set", testqueryversion);
 
-            // The original query (v==1) finds the most recent entry of the file in question, 
+            // The original query (v==1) finds the most recent entry of the file in question,
             // but it requires some large joins to extract the required information.
             // To speed it up, we use a slightly simpler approach that only looks at the
             // previous fileset, and uses information here.
             // If there is a case where a file is sometimes there and sometimes not
             // (i.e. filter file, remove filter) we will not find the file.
-            // We currently use this faster version, 
+            // We currently use this faster version,
             // but allow users to switch back via an environment variable
             // such that we can get performance feedback
 
@@ -225,10 +232,10 @@ namespace Duplicati.Library.Main.Database
                         @"  WHERE ""A"".""ID"" = ""B"".""FileID"" " +
                         @"    AND ""B"".""FilesetID"" = @FilesetId ";
 
-                    findQuery = FormatInvariant($@"SELECT ""C"".""ID"" AS ""FileID"", ""C"".""LastModified"", ""D"".""Length"", ""E"".""FullHash"" as ""Metahash"", ""E"".""Length"" AS ""Metasize""
-FROM ({getLastFileEntryForPath}) AS ""C"", ""Blockset"" AS ""D"", ""Blockset"" AS ""E"", ""Metadataset"" ""F"" 
-WHERE ""C"".""BlocksetID"" == ""D"".""ID"" AND ""C"".""MetadataID"" == ""F"".""ID"" AND ""F"".""BlocksetID"" = ""E"".""ID"" 
-LIMIT 1");
+                    findQuery = $@"SELECT ""C"".""ID"" AS ""FileID"", ""C"".""LastModified"", ""D"".""Length"", ""E"".""FullHash"" as ""Metahash"", ""E"".""Length"" AS ""Metasize""
+FROM ({getLastFileEntryForPath}) AS ""C"", ""Blockset"" AS ""D"", ""Blockset"" AS ""E"", ""Metadataset"" ""F""
+WHERE ""C"".""BlocksetID"" == ""D"".""ID"" AND ""C"".""MetadataID"" == ""F"".""ID"" AND ""F"".""BlocksetID"" = ""E"".""ID""
+LIMIT 1";
                     break;
 
                 // Potentially faster query: https://forum.duplicati.com/t/release-2-0-3-10-canary-2018-08-30/4497/25
@@ -261,14 +268,16 @@ LIMIT 1");
 
             }
 
-            m_findfileCommand = m_connection.CreateCommand(findQuery);
+            dbnew.m_findfileCommand = dbnew.m_connection.CreateCommand(findQuery);
 
-            m_selectfileHashCommand = m_connection.CreateCommand(@"SELECT ""Blockset"".""Fullhash"" FROM ""Blockset"", ""FileLookup"" WHERE ""Blockset"".""ID"" = ""FileLookup"".""BlocksetID"" AND ""FileLookup"".""ID"" = @FileId  ");
-            m_getfirstfilesetwithblockinblockset = m_connection.CreateCommand(@"SELECT MIN(""FilesetEntry"".""FilesetID"") FROM ""FilesetEntry"" WHERE  ""FilesetEntry"".""FileID"" IN (
+            dbnew.m_selectfileHashCommand = dbnew.m_connection.CreateCommand(@"SELECT ""Blockset"".""Fullhash"" FROM ""Blockset"", ""FileLookup"" WHERE ""Blockset"".""ID"" = ""FileLookup"".""BlocksetID"" AND ""FileLookup"".""ID"" = @FileId  ");
+            dbnew.m_getfirstfilesetwithblockinblockset = dbnew.m_connection.CreateCommand(@"SELECT MIN(""FilesetEntry"".""FilesetID"") FROM ""FilesetEntry"" WHERE  ""FilesetEntry"".""FileID"" IN (
 SELECT ""File"".""ID"" FROM ""File"" WHERE ""File"".""BlocksetID"" IN(
 SELECT ""BlocklistHash"".""BlocksetID"" FROM ""BlocklistHash"" WHERE ""BlocklistHash"".""Hash"" = @Hash))");
 
-            m_blocklistHashes = new HashSet<string>();
+            dbnew.m_blocklistHashes = new HashSet<string>();
+
+            return dbnew;
         }
 
         /// <summary>
@@ -714,7 +723,7 @@ SELECT ""BlocklistHash"".""BlocksetID"" FROM ""BlocklistHash"" WHERE ""Blocklist
         }
 
         /// <summary>
-        /// Populates FilesetEntry table with files from previous fileset, which aren't 
+        /// Populates FilesetEntry table with files from previous fileset, which aren't
         /// yet part of the new fileset, and which aren't on the (optional) list of <c>deleted</c> paths.
         /// </summary>
         /// <param name="transaction">Transaction</param>
@@ -725,7 +734,7 @@ SELECT ""BlocklistHash"".""BlocksetID"" FROM ""BlocklistHash"" WHERE ""Blocklist
         }
 
         /// <summary>
-        /// Populates FilesetEntry table with files from previous fileset, which aren't 
+        /// Populates FilesetEntry table with files from previous fileset, which aren't
         /// yet part of the new fileset, and which aren't on the (optional) list of <c>deleted</c> paths.
         /// </summary>
         /// <param name="transaction">Transaction</param>
@@ -762,8 +771,8 @@ SELECT ""BlocklistHash"".""BlocksetID"" FROM ""BlocklistHash"" WHERE ""Blocklist
         }
 
         /// <summary>
-        /// Populates FilesetEntry table with files from previous fileset, which aren't 
-        /// yet part of the new fileset, and which aren't excluded by the (optional) exclusion 
+        /// Populates FilesetEntry table with files from previous fileset, which aren't
+        /// yet part of the new fileset, and which aren't excluded by the (optional) exclusion
         /// predicate.
         /// </summary>
         /// <param name="transaction">Transaction</param>
@@ -774,8 +783,8 @@ SELECT ""BlocklistHash"".""BlocksetID"" FROM ""BlocklistHash"" WHERE ""Blocklist
         }
 
         /// <summary>
-        /// Populates FilesetEntry table with files from previous fileset, which aren't 
-        /// yet part of the new fileset, and which aren't excluded by the (optional) exclusion 
+        /// Populates FilesetEntry table with files from previous fileset, which aren't
+        /// yet part of the new fileset, and which aren't excluded by the (optional) exclusion
         /// predicate.
         /// </summary>
         /// <param name="transaction">Transaction</param>
@@ -806,7 +815,7 @@ SELECT ""BlocklistHash"".""BlocksetID"" FROM ""BlocklistHash"" WHERE ""Blocklist
                     .SetParameterValue("@CurrentFilesetId", fileSetId)
                     .ExecuteNonQuery();
 
-                // now we need to remove, from the above, any entries that were enumerated by the 
+                // now we need to remove, from the above, any entries that were enumerated by the
                 // UNC-driven backup
                 cmdDelete.SetTransaction(tr.Parent)
                     .SetCommandAndParameters(FormatInvariant($@"DELETE FROM ""{tempFileSetTable}"" WHERE ""FileID"" = @FileId"));
@@ -828,7 +837,7 @@ SELECT ""BlocklistHash"".""BlocksetID"" FROM ""BlocklistHash"" WHERE ""Blocklist
                 }
 
                 // now copy the temporary table into the FileSetEntry table
-                cmd.SetCommandAndParameters(FormatInvariant($@"INSERT INTO ""FilesetEntry"" (""FilesetID"", ""FileID"", ""Lastmodified"") 
+                cmd.SetCommandAndParameters(FormatInvariant($@"INSERT INTO ""FilesetEntry"" (""FilesetID"", ""FileID"", ""Lastmodified"")
                                       SELECT @FilesetId, ""FileID"", ""Lastmodified"" FROM ""{tempFileSetTable}"""))
                     .SetParameterValue("@FilesetId", fileSetId)
                     .ExecuteNonQuery();
