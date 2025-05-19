@@ -98,7 +98,7 @@ namespace Duplicati.Library.Main.Database
             m_filesnewlydonetable = createFilesNewlyDoneTracker ? "FilesNewlyDone-" + m_temptabsetguid : null;
 
             using var cmd = m_connection.CreateCommand()
-                .SetTransaction(m_rtr.Transaction);
+                .SetTransaction(m_rtr);
 
             // How to handle METADATA?
             await cmd.ExecuteNonQueryAsync($@"DROP TABLE IF EXISTS ""{m_fileprogtable}"" ");
@@ -263,7 +263,7 @@ namespace Duplicati.Library.Main.Database
 
             using (var cmd = m_connection.CreateCommand())
             {
-                cmd.SetTransaction(m_rtr.Transaction);
+                cmd.SetTransaction(m_rtr);
                 var filesetIds = (await GetFilesetIDs(Library.Utility.Utility.NormalizeDateTime(restoretime), versions)).ToList();
                 while (filesetIds.Count > 0)
                 {
@@ -349,7 +349,7 @@ namespace Duplicati.Library.Main.Database
                     {
                         using (new Logging.Timer(LOGTAG, "CommitBeforePrepareFileset", "CommitBeforePrepareFileset"))
                             await m_rtr.CommitAsync();
-                        cmd.SetTransaction(m_rtr.Transaction);
+                        cmd.SetTransaction(m_rtr);
                         // If we get a list of filenames, the lookup table is faster
                         // unfortunately we cannot do this if the filesystem is case sensitive as
                         // SQLite only supports ASCII compares
@@ -432,7 +432,7 @@ namespace Duplicati.Library.Main.Database
 
                         using (new Logging.Timer(LOGTAG, "CommitAfterPrepareFileset", "CommitAfterPrepareFileset"))
                             await m_rtr.CommitAsync();
-                        cmd.SetTransaction(m_rtr.Transaction);
+                        cmd.SetTransaction(m_rtr);
                     }
                     else
                     {
@@ -541,7 +541,7 @@ namespace Duplicati.Library.Main.Database
                 ORDER BY LENGTH(""Path"") DESC
                 LIMIT 1
             ")
-                .SetTransaction(m_rtr.Transaction);
+                .SetTransaction(m_rtr);
 
             var v0 = await cmd.ExecuteScalarAsync();
             if (v0 == null || v0 == DBNull.Value)
@@ -560,7 +560,7 @@ namespace Duplicati.Library.Main.Database
                 ORDER BY LENGTH(""Path"") DESC
                 LIMIT 1
             ")
-                .SetTransaction(m_rtr.Transaction);
+                .SetTransaction(m_rtr);
 
             var v0 = await cmd.ExecuteScalarAsync();
             var maxpath = "";
@@ -610,7 +610,7 @@ namespace Duplicati.Library.Main.Database
             var dirsep = Util.GuessDirSeparator(string.IsNullOrWhiteSpace(largest_prefix) ? await GetFirstPath() : largest_prefix);
 
             using var cmd = m_connection.CreateCommand()
-                .SetTransaction(m_rtr.Transaction);
+                .SetTransaction(m_rtr);
             if (string.IsNullOrEmpty(destination))
             {
                 //The string fixing here is meant to provide some non-random
@@ -735,7 +735,7 @@ namespace Duplicati.Library.Main.Database
         public async Task FindMissingBlocks(bool skipMetadata)
         {
             using var cmd = m_connection.CreateCommand()
-                .SetTransaction(m_rtr.Transaction);
+                .SetTransaction(m_rtr);
             var p1 = await cmd.ExecuteNonQueryAsync($@"
                 INSERT INTO ""{m_tempblocktable}"" (
                     ""FileID"",
@@ -825,7 +825,7 @@ namespace Duplicati.Library.Main.Database
                 SET ""TargetPath"" = @TargetPath
                 WHERE ""ID"" = @ID
             ");
-            await cmd.SetTransaction(m_rtr.Transaction)
+            await cmd.SetTransaction(m_rtr)
                 .SetParameterValue("@TargetPath", newname)
                 .SetParameterValue("@ID", ID)
                 .ExecuteNonQueryAsync();
@@ -955,7 +955,7 @@ namespace Duplicati.Library.Main.Database
                         ""{tablename}"".""TargetPath"",
                         ""BlocksetEntry"".""Index""
                 ")
-                    .SetTransaction(db.Transaction.Transaction);
+                    .SetTransaction(db.Transaction);
                 using var rd = await cmd.ExecuteReaderAsync();
                 if (await rd.ReadAsync())
                 {
@@ -1082,7 +1082,7 @@ namespace Duplicati.Library.Main.Database
                         ""A"".""TargetPath"",
                         ""B"".""Index""
                 ")
-                    .SetTransaction(db.Transaction.Transaction);
+                    .SetTransaction(db.Transaction);
                 using var rd = await cmd.ExecuteReaderAsync();
                 var more = await rd.ReadAsync();
 
@@ -1128,7 +1128,7 @@ namespace Duplicati.Library.Main.Database
                     ON ""RV"".""ID"" = ""BB"".""VolumeID""
                 ORDER BY ""BB"".""MaxIndex""
             ")
-                .SetTransaction(m_rtr.Transaction);
+                .SetTransaction(m_rtr);
 
             // Return order from SQLite-DISTINCT is likely to be sorted by Name, which is bad for restore.
             // If the end of very large files (e.g. iso's) is restored before the beginning, most OS write out zeros to fill the file.
@@ -1189,7 +1189,7 @@ namespace Duplicati.Library.Main.Database
                 };
 
                 using var c = db.Connection.CreateCommand()
-                    .SetTransaction(db.Transaction.Transaction);
+                    .SetTransaction(db.Transaction);
                 fam.m_tmptable = "VolumeFiles-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
                 await c.ExecuteNonQueryAsync($@"
                     CREATE TEMPORARY TABLE ""{fam.m_tmptable}"" (
@@ -1231,7 +1231,7 @@ namespace Duplicati.Library.Main.Database
                 if (m_tmptable != null)
                 {
                     using var c = m_db.Connection.CreateCommand(@"DROP TABLE IF EXISTS ""{m_tmptable}""")
-                        .SetTransaction(m_db.Transaction.Transaction);
+                        .SetTransaction(m_db.Transaction);
                     await c.ExecuteNonQueryAsync();
                     await m_db.Transaction.CommitAsync();
                 }
@@ -1297,7 +1297,7 @@ namespace Duplicati.Library.Main.Database
                         ""A"".""TargetPath"",
                         ""BB"".""Index""
                 ")
-                    .SetTransaction(m_db.Transaction.Transaction);
+                    .SetTransaction(m_db.Transaction);
 
                 using var rd = await cmd.ExecuteReaderAsync();
                 if (await rd.ReadAsync())
@@ -1347,7 +1347,7 @@ namespace Duplicati.Library.Main.Database
                         ""A"".""TargetPath"",
                         ""BB"".""Index""
                 ")
-                    .SetTransaction(m_db.Transaction.Transaction);
+                    .SetTransaction(m_db.Transaction);
 
                 using var rd = await cmd.ExecuteReaderAsync();
                 if (await rd.ReadAsync())
@@ -1421,7 +1421,7 @@ namespace Duplicati.Library.Main.Database
                     ""{m_tempfiletable}"".""BlocksetID"" = ""Blockset"".""ID""
                     AND ""{m_tempfiletable}"".""DataVerified"" <= @Verified
             ")
-                .SetTransaction(m_rtr.Transaction)
+                .SetTransaction(m_rtr)
                 .SetParameterValue("@Verified", !onlyNonVerified);
 
             using var rd = await cmd.ExecuteReaderAsync();
@@ -1451,7 +1451,7 @@ namespace Duplicati.Library.Main.Database
                     ON F.BlocksetID = B.ID
                 WHERE F.BlocksetID != {FOLDER_BLOCKSET_ID}
             ")
-                .SetTransaction(m_rtr.Transaction);
+                .SetTransaction(m_rtr);
             using var rd = await cmd.ExecuteReaderAsync();
             while (await rd.ReadAsync())
                 yield return new FileRequest(rd.ConvertValueToInt64(0), rd.ConvertValueToString(1), rd.ConvertValueToString(2), rd.ConvertValueToString(3), rd.ConvertValueToInt64(4), rd.ConvertValueToInt64(5));
@@ -1526,7 +1526,7 @@ namespace Duplicati.Library.Main.Database
                     ON ""BlocksetEntry"".""BlockID"" = ""Block"".""ID""
                 {metadata_query}
             ")
-                .SetTransaction(m_rtr.Transaction);
+                .SetTransaction(m_rtr);
             using var reader = await cmd.ExecuteReaderAsync();
             while (await reader.ReadAsync())
                 yield return (
@@ -1556,7 +1556,7 @@ namespace Duplicati.Library.Main.Database
                     ON ""BlocksetEntry"".""BlockID"" = ""Block"".""ID""
                 WHERE ""BlocksetEntry"".""BlocksetID"" = @BlocksetID
             ")
-                .SetTransaction(m_rtr.Transaction)
+                .SetTransaction(m_rtr)
                 .SetParameterValue("@BlocksetID", blocksetID);
 
             using var reader = await cmd.ExecuteReaderAsync();
@@ -1599,7 +1599,7 @@ namespace Duplicati.Library.Main.Database
                     ON ""BlocksetEntry"".""BlockID"" = ""Block"".""ID""
                 WHERE ""File"".""ID"" = @FileID
             ")
-                .SetTransaction(m_rtr.Transaction)
+                .SetTransaction(m_rtr)
                 .SetParameterValue("@FileID", fileID);
 
             using var reader = await cmd.ExecuteReaderAsync();
@@ -1629,7 +1629,7 @@ namespace Duplicati.Library.Main.Database
                 FROM RemoteVolume
                 WHERE ID = @VolumeID
             ")
-                .SetTransaction(m_rtr.Transaction)
+                .SetTransaction(m_rtr)
                 .SetParameterValue("@VolumeID", VolumeID);
 
             using var reader = await cmd.ExecuteReaderAsync();
@@ -1642,7 +1642,7 @@ namespace Duplicati.Library.Main.Database
         public async Task DropRestoreTable()
         {
             using var cmd = m_connection.CreateCommand()
-                .SetTransaction(m_rtr.Transaction);
+                .SetTransaction(m_rtr);
 
             if (m_tempfiletable != null)
                 try
@@ -1790,11 +1790,11 @@ namespace Duplicati.Library.Main.Database
                         ")
                 };
 
-                dbm.m_insertblockCommand.SetTransaction(db.Transaction.Transaction);
-                dbm.m_resetfileCommand.SetTransaction(db.Transaction.Transaction);
-                dbm.m_updateAsRestoredCommand.SetTransaction(db.Transaction.Transaction);
-                dbm.m_updateFileAsDataVerifiedCommand.SetTransaction(db.Transaction.Transaction);
-                dbm.m_statUpdateCommand.SetTransaction(db.Transaction.Transaction);
+                dbm.m_insertblockCommand.SetTransaction(db.Transaction);
+                dbm.m_resetfileCommand.SetTransaction(db.Transaction);
+                dbm.m_updateAsRestoredCommand.SetTransaction(db.Transaction);
+                dbm.m_updateFileAsDataVerifiedCommand.SetTransaction(db.Transaction);
+                dbm.m_statUpdateCommand.SetTransaction(db.Transaction);
 
                 return dbm;
             }
@@ -1913,7 +1913,7 @@ namespace Duplicati.Library.Main.Database
                 FROM ""{m_tempfiletable}""
                 WHERE ""BlocksetID"" == @BlocksetID
             ")
-                .SetTransaction(m_rtr.Transaction)
+                .SetTransaction(m_rtr)
                 .SetParameterValue("@BlocksetID", FOLDER_BLOCKSET_ID);
 
             using var rd = await cmd.ExecuteReaderAsync();
@@ -1976,8 +1976,8 @@ namespace Duplicati.Library.Main.Database
             using (var cmdReader = m_connection.CreateCommand())
             using (var cmd = m_connection.CreateCommand())
             {
-                cmdReader.SetTransaction(m_rtr.Transaction);
-                cmd.SetTransaction(m_rtr.Transaction);
+                cmdReader.SetTransaction(m_rtr);
+                cmd.SetTransaction(m_rtr);
                 cmd.SetCommandAndParameters($@"
                     UPDATE ""{m_tempfiletable}""
                     SET ""LocalSourceExists"" = 1
@@ -2048,7 +2048,7 @@ namespace Duplicati.Library.Main.Database
 
             using (var cmd = m_connection.CreateCommand())
             {
-                cmd.SetTransaction(m_rtr.Transaction);
+                cmd.SetTransaction(m_rtr);
                 await cmd.ExecuteNonQueryAsync($@"DROP TABLE IF EXISTS ""{m_latestblocktable}"" ");
                 await cmd.ExecuteNonQueryAsync($@"CREATE TEMPORARY TABLE ""{m_latestblocktable}"" AS {latestBlocksetIds}");
                 await cmd.ExecuteNonQueryAsync($@"
@@ -2091,7 +2091,7 @@ namespace Duplicati.Library.Main.Database
 
             using (var cmd = m_connection.CreateCommand())
             {
-                cmd.SetTransaction(m_rtr.Transaction);
+                cmd.SetTransaction(m_rtr);
                 using var rd = await cmd.ExecuteReaderAsync(sources);
                 if (await rd.ReadAsync())
                 {
