@@ -1016,7 +1016,9 @@ public static partial class Command
             Directory.Delete(tmpbuild, true);
         Directory.CreateDirectory(tmpbuild);
 
-        var tarsrc = Path.Combine(tmpbuild, $"duplicati-{rtcfg.ReleaseInfo.Version}");
+        var servicename = target.Interface == InterfaceType.Agent ? "-agent" : "";
+
+        var tarsrc = Path.Combine(tmpbuild, $"duplicati{servicename}-{rtcfg.ReleaseInfo.Version}");
         EnvHelper.CopyDirectory(Path.Combine(buildRoot, target.BuildTargetString), tarsrc, recursive: true);
 
         await PackageSupport.InstallPackageIdentifier(tarsrc, target);
@@ -1090,7 +1092,7 @@ public static partial class Command
                 .Replace("%BUILDVERSION%", rtcfg.ReleaseInfo.Version.ToString())
                 .Replace("%BUILDTAG%", rtcfg.ReleaseInfo.Channel.ToString().ToLowerInvariant())
                 .Replace("%VERSION%", rtcfg.ReleaseInfo.Version.ToString())
-                .Replace("%SERVICENAME%", target.Interface == InterfaceType.Agent ? "-agent" : "")
+                .Replace("%SERVICENAME%", servicename)
                 .Replace("%PROVIDES%", string.Join("\n", executables.Select(x => $"Provides:\t{x}")))
                 .Replace("%DEPENDS%", string.Join("\n",
                     (target.Interface == InterfaceType.GUI
