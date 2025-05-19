@@ -41,10 +41,13 @@ namespace Duplicati.Library.Main.Database
         /// </summary>
         /// <param name="path">The path to the database</param>
         /// <param name="pagecachesize">The page cache size</param>
-        public LocalRepairDatabase(string path, long pagecachesize)
-            : base(path, "Repair", true, pagecachesize)
+        public static async Task<LocalRepairDatabase> CreateRepairDatabase(string path, long pagecachesize)
         {
+            var db = new LocalRepairDatabase();
 
+            db = (LocalRepairDatabase)await CreateLocalDatabaseAsync(db, path, "Repair", false, pagecachesize);
+
+            return db;
         }
 
         /// <summary>
@@ -260,15 +263,17 @@ namespace Duplicati.Library.Main.Database
             /// <summary>
             /// The insert command to use for restoring blocks
             /// </summary>
-            private readonly SqliteCommand m_insertCommand;
+            private SqliteCommand m_insertCommand = null!;
             /// <summary>
             /// The command to copy blocks into the duplicate block table
             /// </summary>
-            private readonly SqliteCommand m_copyIntoDuplicatedBlocks;
+            private SqliteCommand m_copyIntoDuplicatedBlocks = null!;
             /// <summary>
             /// The command to assign blocks to a new volume
             /// </summary>
-            private readonly SqliteCommand m_assignBlocksToNewVolume;
+            private SqliteCommand m_assignBlocksToNewVolume = null!;
+            private SqliteCommand m_missingBlocksCommand = null!;
+            private SqliteCommand m_missingBlocksCountCommand = null!;
             /// <summary>
             /// The name of the temporary table
             /// </summary>
@@ -277,10 +282,11 @@ namespace Duplicati.Library.Main.Database
             /// The name of the volume where blocks are missing
             /// </summary>
             private readonly string m_volumename;
+            // TODO remove
             /// <summary>
             /// The query to use for getting missing blocks
             /// </summary>
-            private readonly string m_missingBlocksQuery;
+            //private readonly string m_missingBlocksQuery;
 
             /// <summary>
             /// Whether the object has been disposed
@@ -293,32 +299,101 @@ namespace Duplicati.Library.Main.Database
             /// <param name="volumename">The name of the volume with missing blocks</param>
             /// <param name="connection">The connection to the database</param>
             /// <param name="transaction">The transaction to use</param>
-            public MissingBlockList(string volumename, SqliteConnection connection, ReusableTransaction transaction)
+            private MissingBlockList(string volumename, SqliteConnection connection, ReusableTransaction transaction)
             {
                 m_connection = connection;
                 m_transaction = transaction;
                 m_volumename = volumename;
                 var tablename = "MissingBlocks-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
-                using (var cmd = m_connection.CreateCommand())
-                {
-                    cmd.Transaction = transaction.Transaction;
-                    cmd.ExecuteNonQueryAsync(FormatInvariant($@"CREATE TEMPORARY TABLE ""{tablename}"" (""Hash"" TEXT NOT NULL, ""Size"" INTEGER NOT NULL, ""Restored"" INTEGER NOT NULL) ")).Await();
-                    m_tablename = tablename;
+                m_tablename = tablename;
+            }
 
-                    cmd.SetCommandAndParameters(FormatInvariant($@"INSERT INTO ""{m_tablename}"" (""Hash"", ""Size"", ""Restored"") SELECT DISTINCT ""Block"".""Hash"", ""Block"".""Size"", 0 AS ""Restored"" FROM ""Block"",""Remotevolume"" WHERE ""Block"".""VolumeID"" = ""Remotevolume"".""ID"" AND ""Remotevolume"".""Name"" = @Name "));
-                    cmd.SetParameterValue("@Name", volumename);
-                    var blockCount = cmd.ExecuteNonQueryAsync().Await();
+            public static async Task<IMissingBlockList> CreateMissingBlockList(string volumename, SqliteConnection connection, ReusableTransaction transaction)
+            {
+                var blocklist = new MissingBlockList(volumename, connection, transaction);
+                using (var cmd = connection.CreateCommand())
+                {
+                    cmd.SetTransaction(transaction.Transaction);
+                    await cmd.ExecuteNonQueryAsync($@"
+                        CREATE TEMPORARY TABLE ""{blocklist.m_tablename}"" (
+                            ""Hash"" TEXT NOT NULL,
+                            ""Size"" INTEGER NOT NULL,
+                            ""Restored"" INTEGER NOT NULL
+                        )
+                    ");
+
+                    cmd.SetCommandAndParameters($@"
+                        INSERT INTO ""{blocklist.m_tablename}"" (
+                            ""Hash"",
+                            ""Size"",
+                            ""Restored""
+                        )
+                        SELECT DISTINCT
+                            ""Block"".""Hash"",
+                            ""Block"".""Size"",
+                            0 AS ""Restored"" FROM ""Block"",
+                            ""Remotevolume""
+                        WHERE ""Block"".""VolumeID"" = ""Remotevolume"".""ID""
+                        AND ""Remotevolume"".""Name"" = @Name
+                    ")
+                        .SetParameterValue("@Name", volumename);
+                    var blockCount = await cmd.ExecuteNonQueryAsync();
 
                     if (blockCount == 0)
                         throw new Exception($"Unexpected empty block volume: {0}");
 
-                    cmd.ExecuteNonQueryAsync(FormatInvariant($@"CREATE UNIQUE INDEX ""{tablename}-Ix"" ON ""{tablename}"" (""Hash"", ""Size"", ""Restored"")")).Await();
+                    await cmd.ExecuteNonQueryAsync($@"
+                        CREATE UNIQUE INDEX ""{blocklist.m_tablename}-Ix""
+                        ON ""{blocklist.m_tablename}"" (
+                            ""Hash"",
+                            ""Size"",
+                            ""Restored""
+                        )
+                    ");
                 }
 
-                m_insertCommand = m_connection.CreateCommand(FormatInvariant($@"UPDATE ""{tablename}"" SET ""Restored"" = @NewRestoredValue WHERE ""Hash"" = @Hash AND ""Size"" = @Size AND ""Restored"" = @PreviousRestoredValue "));
-                m_copyIntoDuplicatedBlocks = m_connection.CreateCommand(@"INSERT OR IGNORE INTO ""DuplicateBlock"" (""BlockID"", ""VolumeID"") SELECT ""Block"".""ID"", ""Block"".""VolumeID"" FROM ""Block"" WHERE ""Block"".""Hash"" = @Hash AND ""Block"".""Size"" = @Size");
-                m_assignBlocksToNewVolume = m_connection.CreateCommand(@"UPDATE ""Block"" SET ""VolumeID"" = @TargetVolumeId WHERE ""Hash"" = @Hash AND ""Size"" = @Size");
-                m_missingBlocksQuery = FormatInvariant($@"SELECT ""{m_tablename}"".""Hash"", ""{m_tablename}"".""Size"" FROM ""{m_tablename}"" WHERE ""{m_tablename}"".""Restored"" = @Restored ");
+                blocklist.m_insertCommand = await connection.CreateCommandAsync($@"
+                    UPDATE ""{blocklist.m_tablename}""
+                    SET ""Restored"" = @NewRestoredValue
+                    WHERE ""Hash"" = @Hash
+                    AND ""Size"" = @Size
+                    AND ""Restored"" = @PreviousRestoredValue
+                ");
+
+                blocklist.m_copyIntoDuplicatedBlocks = await connection.CreateCommandAsync(@"
+                    INSERT OR IGNORE INTO ""DuplicateBlock"" (
+                        ""BlockID"",
+                        ""VolumeID""
+                    )
+                    SELECT
+                        ""Block"".""ID"",
+                        ""Block"".""VolumeID""
+                    FROM ""Block""
+                    WHERE ""Block"".""Hash"" = @Hash
+                    AND ""Block"".""Size"" = @Size
+                ");
+
+                blocklist.m_assignBlocksToNewVolume = await connection.CreateCommandAsync(@"
+                    UPDATE ""Block""
+                    SET ""VolumeID"" = @TargetVolumeId
+                    WHERE ""Hash"" = @Hash
+                    AND ""Size"" = @Size
+                ");
+
+                var m_missingBlocksQuery = $@"
+                    SELECT
+                        ""{blocklist.m_tablename}"".""Hash"",
+                        ""{blocklist.m_tablename}"".""Size""
+                    FROM ""{blocklist.m_tablename}""
+                    WHERE ""{blocklist.m_tablename}"".""Restored"" = @Restored ";
+                blocklist.m_missingBlocksCommand = await connection.CreateCommandAsync(m_missingBlocksQuery);
+
+                blocklist.m_missingBlocksCountCommand = await connection.CreateCommandAsync($@"
+                    SELECT COUNT(*)
+                    FROM ({m_missingBlocksQuery})
+                ");
+
+                return blocklist;
             }
 
             /// <inheritdoc/>
