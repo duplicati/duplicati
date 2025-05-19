@@ -338,8 +338,9 @@ namespace Duplicati.Library.Main.Database
                             FROM
                                 ""File"",
                                 ""FilesetEntry""
-                            WHERE ""File"".""ID"" = ""FilesetEntry"".""FileID""
-                            AND ""FilesetEntry"".""FilesetID"" = @FilesetId
+                            WHERE
+                                ""File"".""ID"" = ""FilesetEntry"".""FileID""
+                                AND ""FilesetEntry"".""FilesetID"" = @FilesetId
                         ")
                             .SetParameterValue("@FilesetId", filesetId)
                             .ExecuteNonQueryAsync();
@@ -387,12 +388,13 @@ namespace Duplicati.Library.Main.Database
                             FROM
                                 ""File"",
                                 ""FilesetEntry""
-                            WHERE ""File"".""ID"" = ""FilesetEntry"".""FileID""
-                            AND ""FilesetEntry"".""FilesetID"" = @FilesetId
-                            AND ""Path"" IN (
-                                SELECT DISTINCT ""Path""
-                                FROM ""{m_filenamestable}""
-                            )
+                            WHERE
+                                ""File"".""ID"" = ""FilesetEntry"".""FileID""
+                                AND ""FilesetEntry"".""FilesetID"" = @FilesetId
+                                AND ""Path"" IN (
+                                    SELECT DISTINCT ""Path""
+                                    FROM ""{m_filenamestable}""
+                                )
                         ")
                             .SetParameterValue("@FilesetId", filesetId)
                             .ExecuteNonQueryAsync();
@@ -445,8 +447,9 @@ namespace Duplicati.Library.Main.Database
                             FROM
                                 ""File"",
                                 ""FilesetEntry""
-                            WHERE ""File"".""ID"" = ""FilesetEntry"".""FileID""
-                            AND ""FilesetID"" = @FilesetId
+                            WHERE
+                                ""File"".""ID"" = ""FilesetEntry"".""FileID""
+                                AND ""FilesetID"" = @FilesetId
                         ")
                             .SetParameterValue("@FilesetId", filesetId);
 
@@ -757,8 +760,9 @@ namespace Duplicati.Library.Main.Database
                     ""{m_tempfiletable}"",
                     ""BlocksetEntry"",
                     ""Block""
-                WHERE ""{m_tempfiletable}"".""BlocksetID"" = ""BlocksetEntry"".""BlocksetID""
-                AND ""BlocksetEntry"".""BlockID"" = ""Block"".""ID""
+                WHERE
+                    ""{m_tempfiletable}"".""BlocksetID"" = ""BlocksetEntry"".""BlocksetID""
+                    AND ""BlocksetEntry"".""BlockID"" = ""Block"".""ID""
             ");
 
             var p2 = 0;
@@ -788,9 +792,10 @@ namespace Duplicati.Library.Main.Database
                         ""BlocksetEntry"",
                         ""Block"",
                         ""Metadataset""
-                    WHERE ""{m_tempfiletable}"".""MetadataID"" = ""Metadataset"".""ID""
-                    AND ""Metadataset"".""BlocksetID"" = ""BlocksetEntry"".""BlocksetID""
-                    AND ""BlocksetEntry"".""BlockID"" = ""Block"".""ID""
+                    WHERE
+                        ""{m_tempfiletable}"".""MetadataID"" = ""Metadataset"".""ID""
+                        AND ""Metadataset"".""BlocksetID"" = ""BlocksetEntry"".""BlocksetID""
+                        AND ""BlocksetEntry"".""BlockID"" = ""Block"".""ID""
                 ");
 
             //creating indexes after insertion is much faster
@@ -942,10 +947,13 @@ namespace Duplicati.Library.Main.Database
                         ""Blockset"",
                         ""BlocksetEntry"",
                         ""Block""
-                    WHERE ""{tablename}"".""BlocksetID"" = ""Blockset"".""ID""
-                    AND ""BlocksetEntry"".""BlocksetID"" = ""{tablename}"".""BlocksetID""
-                    AND ""BlocksetEntry"".""BlockID"" = ""Block"".""ID""
-                    ORDER BY ""{tablename}"".""TargetPath"", ""BlocksetEntry"".""Index""
+                    WHERE
+                        ""{tablename}"".""BlocksetID"" = ""Blockset"".""ID""
+                        AND ""BlocksetEntry"".""BlocksetID"" = ""{tablename}"".""BlocksetID""
+                        AND ""BlocksetEntry"".""BlockID"" = ""Block"".""ID""
+                    ORDER BY
+                        ""{tablename}"".""TargetPath"",
+                        ""BlocksetEntry"".""Index""
                 ")
                     .SetTransaction(db.Transaction.Transaction);
                 using var rd = await cmd.ExecuteReaderAsync();
@@ -1063,12 +1071,13 @@ namespace Duplicati.Library.Main.Database
                         ""File"" ""C"",
                         ""BlocksetEntry"" ""D"",
                         ""Block"" E
-                    WHERE ""A"".""ID"" = ""B"".""FileID""
-                    AND ""C"".""BlocksetID"" = ""D"".""BlocksetID""
-                    AND ""D"".""BlockID"" = ""E"".""ID""
-                    AND ""B"".""Hash"" = ""E"".""Hash""
-                    AND ""B"".""Size"" = ""E"".""Size""
-                    AND ""B"".""Restored"" = 0
+                    WHERE
+                        ""A"".""ID"" = ""B"".""FileID""
+                        AND ""C"".""BlocksetID"" = ""D"".""BlocksetID""
+                        AND ""D"".""BlockID"" = ""E"".""ID""
+                        AND ""B"".""Hash"" = ""E"".""Hash""
+                        AND ""B"".""Size"" = ""E"".""Size""
+                        AND ""B"".""Restored"" = 0
                     ORDER BY
                         ""A"".""TargetPath"",
                         ""B"".""Index""
@@ -1271,17 +1280,19 @@ namespace Duplicati.Library.Main.Database
                     FROM
                         ""{m_filetablename}"" ""A"",
                         ""{m_blocktablename}"" ""BB""
-                    WHERE ""A"".""ID"" = ""BB"".""FileID""
-                    AND ""BB"".""Restored"" = 0
-                    AND ""BB"".""Metadata"" = {"0"}
-                    AND ""BB"".""ID"" IN (
-                        SELECT ""B"".""ID""
-                        FROM
-                            ""{m_blocktablename}"" ""B"",
-                            ""{m_tmptable}"" ""C""
-                        WHERE ""B"".""Hash"" = ""C"".""Hash""
-                        AND ""B"".""Size"" = ""C"".""Size""
-                    )
+                    WHERE
+                        ""A"".""ID"" = ""BB"".""FileID""
+                        AND ""BB"".""Restored"" = 0
+                        AND ""BB"".""Metadata"" = {"0"}
+                        AND ""BB"".""ID"" IN (
+                            SELECT ""B"".""ID""
+                            FROM
+                                ""{m_blocktablename}"" ""B"",
+                                ""{m_tmptable}"" ""C""
+                            WHERE
+                                ""B"".""Hash"" = ""C"".""Hash""
+                                AND ""B"".""Size"" = ""C"".""Size""
+                        )
                     ORDER BY
                         ""A"".""TargetPath"",
                         ""BB"".""Index""
@@ -1319,17 +1330,19 @@ namespace Duplicati.Library.Main.Database
                     FROM
                         ""{m_filetablename}"" ""A"",
                         ""{m_blocktablename}"" ""BB""
-                    WHERE ""A"".""ID"" = ""BB"".""FileID""
-                    AND ""BB"".""Restored"" = 0
-                    AND ""BB"".""Metadata"" = {"1"}
-                    AND ""BB"".""ID"" IN (
-                        SELECT ""B"".""ID""
-                        FROM
-                            ""{m_blocktablename}"" ""B"",
-                            ""{m_tmptable}"" ""C""
-                        WHERE ""B"".""Hash"" = ""C"".""Hash""
-                        AND ""B"".""Size"" = ""C"".""Size""
-                    )
+                    WHERE
+                        ""A"".""ID"" = ""BB"".""FileID""
+                        AND ""BB"".""Restored"" = 0
+                        AND ""BB"".""Metadata"" = {"1"}
+                        AND ""BB"".""ID"" IN (
+                            SELECT ""B"".""ID""
+                            FROM
+                                ""{m_blocktablename}"" ""B"",
+                                ""{m_tmptable}"" ""C""
+                            WHERE
+                                ""B"".""Hash"" = ""C"".""Hash""
+                                AND ""B"".""Size"" = ""C"".""Size""
+                        )
                     ORDER BY
                         ""A"".""TargetPath"",
                         ""BB"".""Index""
@@ -1404,8 +1417,9 @@ namespace Duplicati.Library.Main.Database
                 FROM
                     ""{m_tempfiletable}"",
                     ""Blockset""
-                WHERE ""{m_tempfiletable}"".""BlocksetID"" = ""Blockset"".""ID""
-                AND ""{m_tempfiletable}"".""DataVerified"" <= @Verified
+                WHERE
+                    ""{m_tempfiletable}"".""BlocksetID"" = ""Blockset"".""ID""
+                    AND ""{m_tempfiletable}"".""DataVerified"" <= @Verified
             ")
                 .SetTransaction(m_rtr.Transaction)
                 .SetParameterValue("@Verified", !onlyNonVerified);
@@ -1462,9 +1476,10 @@ namespace Duplicati.Library.Main.Database
                     0,
                     {FOLDER_BLOCKSET_ID}
                 FROM ""{m_tempfiletable}"" F
-                WHERE F.BlocksetID = {FOLDER_BLOCKSET_ID}
-                AND F.MetadataID IS NOT NULL
-                AND F.MetadataID >= 0
+                WHERE
+                    F.BlocksetID = {FOLDER_BLOCKSET_ID}
+                    AND F.MetadataID IS NOT NULL
+                    AND F.MetadataID >= 0
             ");
 
             while (await rd.ReadAsync())
@@ -1726,12 +1741,13 @@ namespace Duplicati.Library.Main.Database
 
                     m_insertblockCommand = await db.Connection.CreateCommandAsync($@"
                         UPDATE ""{blocktablename}"" SET ""Restored"" = 1
-                        WHERE ""FileID"" = @TargetFileId
-                        AND ""Index"" = @Index
-                        AND ""Hash"" = @Hash
-                        AND ""Size"" = @Size
-                        AND ""Metadata"" = @Metadata
-                        AND ""Restored"" = 0
+                        WHERE
+                            ""FileID"" = @TargetFileId
+                            AND ""Index"" = @Index
+                            AND ""Hash"" = @Hash
+                            AND ""Size"" = @Size
+                            AND ""Metadata"" = @Metadata
+                            AND ""Restored"" = 0
                     "),
 
                     m_resetfileCommand = await db.Connection.CreateCommandAsync($@"
@@ -1743,8 +1759,9 @@ namespace Duplicati.Library.Main.Database
                     m_updateAsRestoredCommand = await db.Connection.CreateCommandAsync($@"
                         UPDATE ""{blocktablename}""
                         SET ""Restored"" = 1
-                        WHERE ""FileID"" = @TargetFileId
-                        AND ""Metadata"" <= @Metadata
+                        WHERE
+                            ""FileID"" = @TargetFileId
+                            AND ""Metadata"" <= @Metadata
                     "),
 
                     m_updateFileAsDataVerifiedCommand = await db.Connection.CreateCommandAsync($@"
@@ -1755,11 +1772,22 @@ namespace Duplicati.Library.Main.Database
 
                     m_statUpdateCommand = statstablename == null ?
                         // very slow fallback if stats tables were not created
-                        await db.Connection.CreateCommandAsync($@"SELECT COUNT(DISTINCT ""FileID""), SUM(""Size"") FROM ""{blocktablename}"" WHERE ""Restored"" = 1 ")
+                        await db.Connection.CreateCommandAsync($@"
+                            SELECT
+                                COUNT(DISTINCT ""FileID""),
+                                SUM(""Size"")
+                            FROM ""{blocktablename}""
+                            WHERE ""Restored"" = 1
+                        ")
                         :
                         // Fields in Stats: TotalFiles, TotalBlocks, TotalSize
                         //                  FilesFullyRestored, FilesPartiallyRestored, BlocksRestored, SizeRestored
-                        await db.Connection.CreateCommandAsync($@"SELECT SUM(""FilesFullyRestored""), SUM(""SizeRestored"") FROM ""{statstablename}"" ")
+                        await db.Connection.CreateCommandAsync($@"
+                            SELECT
+                                SUM(""FilesFullyRestored""),
+                                SUM(""SizeRestored"")
+                            FROM ""{statstablename}""
+                        ")
                 };
 
                 dbm.m_insertblockCommand.SetTransaction(db.Transaction.Transaction);
@@ -2003,16 +2031,18 @@ namespace Duplicati.Library.Main.Database
                     ""File"",
                     ""FilesetEntry"",
                     ""Fileset""
-                WHERE ""File"".""ID"" = ""FilesetEntry"".""FileID""
-                AND ""FilesetEntry"".""FilesetID"" = ""Fileset"".""ID""
-                AND ""File"".""Path"" IN (
-                    SELECT DISTINCT ""{m_tempfiletable}"".""Path""
-                    FROM
-                        ""{m_tempfiletable}"",
-                        ""{m_tempblocktable}""
-                    WHERE ""{m_tempfiletable}"".""ID"" = ""{m_tempblocktable}"".""FileID""
-                    AND {whereclause}
-                )
+                WHERE
+                    ""File"".""ID"" = ""FilesetEntry"".""FileID""
+                    AND ""FilesetEntry"".""FilesetID"" = ""Fileset"".""ID""
+                    AND ""File"".""Path"" IN (
+                        SELECT DISTINCT ""{m_tempfiletable}"".""Path""
+                        FROM
+                            ""{m_tempfiletable}"",
+                            ""{m_tempblocktable}""
+                        WHERE
+                            ""{m_tempfiletable}"".""ID"" = ""{m_tempblocktable}"".""FileID""
+                            AND {whereclause}
+                    )
                 GROUP BY ""File"".""Path""
             ";
 
@@ -2048,11 +2078,12 @@ namespace Duplicati.Library.Main.Database
                     ""{m_tempfiletable}"",
                     ""{m_tempblocktable}"",
                     ""BlocksetEntry""
-                WHERE ""{m_tempfiletable}"".""ID"" = ""{m_tempblocktable}"".""FileID""
-                AND ""BlocksetEntry"".""BlocksetID"" = ""{m_tempfiletable}"".""LatestBlocksetID""
-                AND ""BlocksetEntry"".""BlockID"" = ""{m_tempblocktable}"".""BlockID""
-                AND ""BlocksetEntry"".""Index"" = ""{m_tempblocktable}"".""Index""
-                AND {whereclause}
+                WHERE
+                    ""{m_tempfiletable}"".""ID"" = ""{m_tempblocktable}"".""FileID""
+                    AND ""BlocksetEntry"".""BlocksetID"" = ""{m_tempfiletable}"".""LatestBlocksetID""
+                    AND ""BlocksetEntry"".""BlockID"" = ""{m_tempblocktable}"".""BlockID""
+                    AND ""BlocksetEntry"".""Index"" = ""{m_tempblocktable}"".""Index""
+                    AND {whereclause}
                 ORDER BY
                     ""{m_tempfiletable}"".""ID"",
                     ""{m_tempblocktable}"".""Index""

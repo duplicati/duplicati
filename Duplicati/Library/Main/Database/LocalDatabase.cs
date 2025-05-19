@@ -299,31 +299,34 @@ namespace Duplicati.Library.Main.Database
             db.m_selectduplicateRemoteVolumesCommand = await connection.CreateCommandAsync($@"
                 SELECT DISTINCT ""Name"", ""State""
                 FROM ""Remotevolume""
-                WHERE ""Name"" IN (
-                    SELECT ""Name""
-                    FROM ""Remotevolume""
-                    WHERE ""State"" IN ('{RemoteVolumeState.Deleted}', '{RemoteVolumeState.Deleting}')
-                )
-                AND NOT ""State"" IN ('{RemoteVolumeState.Deleted}', '{RemoteVolumeState.Deleting}')
+                WHERE
+                    ""Name"" IN (
+                        SELECT ""Name""
+                        FROM ""Remotevolume""
+                        WHERE ""State"" IN ('{RemoteVolumeState.Deleted}', '{RemoteVolumeState.Deleting}')
+                    )
+                    AND NOT ""State"" IN ('{RemoteVolumeState.Deleted}', '{RemoteVolumeState.Deleting}')
             ");
 
             db.m_removeremotevolumeCommand = await connection.CreateCommandAsync(@"
                 DELETE FROM ""Remotevolume""
-                WHERE ""Name"" = @Name
-                AND (
-                    ""DeleteGraceTime"" < @Now
-                    OR ""State"" != @State
-                )
+                WHERE
+                    ""Name"" = @Name
+                    AND (
+                        ""DeleteGraceTime"" < @Now
+                        OR ""State"" != @State
+                    )
             ");
 
             // >12 is to handle removal of old records that were in ticks
             db.m_removedeletedremotevolumeCommand = await connection.CreateCommandAsync($@"
                 DELETE FROM ""Remotevolume""
-                WHERE ""State"" == '{RemoteVolumeState.Deleted}'
-                AND (
-                    ""DeleteGraceTime"" < @Now
-                    OR LENGTH(""DeleteGraceTime"") > 12
-                )
+                WHERE
+                    ""State"" == '{RemoteVolumeState.Deleted}'
+                    AND (
+                        ""DeleteGraceTime"" < @Now
+                        OR LENGTH(""DeleteGraceTime"") > 12
+                    )
             ");
 
             db.m_selectremotevolumeIdCommand = await connection.CreateCommandAsync(@"
@@ -643,8 +646,9 @@ namespace Duplicati.Library.Main.Database
         {
             using var cmd = await m_connection.CreateCommandAsync(@"
                 DELETE FROM ""RemoteVolume""
-                WHERE ""Name"" = @Name
-                AND ""State"" = @State
+                WHERE
+                    ""Name"" = @Name
+                    AND ""State"" = @State
             ");
             var c = await cmd.SetTransaction(transaction)
                 .SetParameterValue("@Name", name)
@@ -693,8 +697,9 @@ namespace Duplicati.Library.Main.Database
             var bsIdsSubQuery = @$"
                 SELECT DISTINCT ""BlocksetEntry"".""BlocksetID""
                 FROM ""BlocksetEntry"", ""Block""
-                WHERE ""BlocksetEntry"".""BlockID"" = ""Block"".""ID""
-                AND ""Block"".""VolumeID"" IN ({volIdsSubQuery})
+                WHERE
+                    ""BlocksetEntry"".""BlockID"" = ""Block"".""ID""
+                    AND ""Block"".""VolumeID"" IN ({volIdsSubQuery})
                 UNION ALL
                 SELECT DISTINCT ""BlocksetID""
                 FROM ""BlocklistHash""
@@ -755,18 +760,19 @@ namespace Duplicati.Library.Main.Database
             // Delete FilesetEntry rows that had their metadata deleted
             await deletecmd.ExecuteNonQueryAsync($@"
                 DELETE FROM FilesetEntry
-                WHERE FilesetEntry.FilesetID IN (
-                    SELECT DISTINCT FilesetID FROM ""{metadataFilesetTable}""
-                )
-                AND FilesetEntry.FileID IN (
-	                SELECT FilesetEntry.FileID
-	                FROM FilesetEntry
-	                INNER JOIN FileLookup
-                        ON FileLookup.ID = FilesetEntry.FileID
-	                WHERE FileLookup.MetadataID IN (
-                        SELECT MetadataID FROM ""{metadataFilesetTable}""
+                WHERE
+                    FilesetEntry.FilesetID IN (
+                        SELECT DISTINCT FilesetID FROM ""{metadataFilesetTable}""
                     )
-                )
+                    AND FilesetEntry.FileID IN (
+                        SELECT FilesetEntry.FileID
+                        FROM FilesetEntry
+                        INNER JOIN FileLookup
+                            ON FileLookup.ID = FilesetEntry.FileID
+                        WHERE FileLookup.MetadataID IN (
+                            SELECT MetadataID FROM ""{metadataFilesetTable}""
+                        )
+                    )
             ");
 
             // Delete FilesetEntry rows that had their blocks deleted
@@ -854,29 +860,31 @@ namespace Duplicati.Library.Main.Database
                 INSERT OR IGNORE INTO ""{filesetidstable}""
                 SELECT ""ID""
                 FROM ""Fileset""
-                WHERE ""Fileset"".""ID"" IN (
-                    SELECT DISTINCT ""FilesetID""
-                    FROM ""{metadataFilesetTable}""
-                )
-                AND ""Fileset"".""ID"" NOT IN (
-                    SELECT DISTINCT ""FilesetID""
-                    FROM FilesetEntry
-                )
+                WHERE
+                    ""Fileset"".""ID"" IN (
+                        SELECT DISTINCT ""FilesetID""
+                        FROM ""{metadataFilesetTable}""
+                    )
+                    AND ""Fileset"".""ID"" NOT IN (
+                        SELECT DISTINCT ""FilesetID""
+                        FROM FilesetEntry
+                    )
             ");
 
             // Since we are deleting the fileset, we also need to mark the remote volume as deleting so it will be cleaned up later
             await deletecmd.SetCommandAndParameters($@"
                 UPDATE ""RemoteVolume""
                 SET ""State"" = @NewState
-                WHERE ""ID"" IN (
-                    SELECT DISTINCT ""VolumeID""
-                    FROM ""Fileset""
-                    WHERE ""Fileset"".""ID"" IN (
-                        SELECT ""ID""
-                        FROM ""{filesetidstable}""
+                WHERE
+                    ""ID"" IN (
+                        SELECT DISTINCT ""VolumeID""
+                        FROM ""Fileset""
+                        WHERE ""Fileset"".""ID"" IN (
+                            SELECT ""ID""
+                            FROM ""{filesetidstable}""
+                        )
                     )
-                )
-                AND ""State"" IN (@AllowedStates)
+                    AND ""State"" IN (@AllowedStates)
             ")
                 .SetParameterValue("@NewState", RemoteVolumeState.Deleting.ToString())
                 .ExpandInClauseParameter("@AllowedStates", [
@@ -1250,8 +1258,9 @@ namespace Duplicati.Library.Main.Database
                     ""Length"", ""A"".""BlocksetID"",
                     ""File"".""Path""
                 FROM ({combinedLengths}) A, ""File""
-                WHERE ""A"".""BlocksetID"" = ""File"".""BlocksetID""
-                AND ""A"".""CalcLen"" != ""A"".""Length""
+                WHERE
+                    ""A"".""BlocksetID"" = ""File"".""BlocksetID""
+                    AND ""A"".""CalcLen"" != ""A"".""Length""
             ";
 
             using (var rd = await cmd.ExecuteReaderAsync(reportDetails))
@@ -1326,11 +1335,12 @@ namespace Duplicati.Library.Main.Database
             cmd.SetCommandAndParameters(@"
                 SELECT COUNT(*)
                 FROM ""Blockset""
-                WHERE ""Length"" > 0
-                AND ""ID"" NOT IN (
-                    SELECT ""BlocksetId""
-                    FROM ""BlocksetEntry""
-                )
+                WHERE
+                    ""Length"" > 0
+                    AND ""ID"" NOT IN (
+                        SELECT ""BlocksetId""
+                        FROM ""BlocksetEntry""
+                    )
             ");
             if (await cmd.ExecuteScalarInt64Async() != 0)
                 throw new DatabaseInconsistencyException("Detected non-empty blocksets with no associated blocks!");
@@ -1338,12 +1348,13 @@ namespace Duplicati.Library.Main.Database
             cmd.SetCommandAndParameters(@"
                 SELECT COUNT(*)
                 FROM ""FileLookup""
-                WHERE ""BlocksetID"" != @FolderBlocksetId
-                AND ""BlocksetID"" != @SymlinkBlocksetId
-                AND NOT ""BlocksetID"" IN (
-                    SELECT ""ID""
-                    FROM ""Blockset""
-                )
+                WHERE
+                    ""BlocksetID"" != @FolderBlocksetId
+                    AND ""BlocksetID"" != @SymlinkBlocksetId
+                    AND NOT ""BlocksetID"" IN (
+                        SELECT ""ID""
+                        FROM ""Blockset""
+                    )
             ");
             cmd.SetParameterValue("@FolderBlocksetId", FOLDER_BLOCKSET_ID);
             cmd.SetParameterValue("@SymlinkBlocksetId", SYMLINK_BLOCKSET_ID);
@@ -1358,8 +1369,9 @@ namespace Duplicati.Library.Main.Database
                     WHERE ""VolumeID"" NOT IN (
                         SELECT ""ID""
                         FROM ""RemoteVolume""
-                        WHERE ""Type"" = @Type
-                        AND ""State"" != @State
+                        WHERE
+                            ""Type"" = @Type
+                            AND ""State"" != @State
                     )
                 ");
                 cmd.SetParameterValue("@Type", RemoteVolumeType.Files.ToString());
@@ -1379,8 +1391,9 @@ namespace Duplicati.Library.Main.Database
                             WHERE ""VolumeID"" NOT IN (
                                 SELECT ""ID""
                                 FROM ""RemoteVolume""
-                                WHERE ""Type"" = @Type
-                                AND ""State"" != @State
+                                WHERE
+                                    ""Type"" = @Type
+                                    AND ""State"" != @State
                             )
                         ");
                         cmd.SetParameterValue("@Type", RemoteVolumeType.Files.ToString());
@@ -1396,12 +1409,13 @@ namespace Duplicati.Library.Main.Database
                 cmd.SetCommandAndParameters(@"
                     SELECT COUNT(*)
                     FROM ""RemoteVolume""
-                    WHERE ""Type"" = @Type
-                    AND ""State"" != @State
-                    AND ""ID"" NOT IN (
-                        SELECT ""VolumeID""
-                        FROM ""Fileset""
-                    )
+                    WHERE
+                        ""Type"" = @Type
+                        AND ""State"" != @State
+                        AND ""ID"" NOT IN (
+                            SELECT ""VolumeID""
+                            FROM ""Fileset""
+                        )
                 ");
                 cmd.SetParameterValue("@Type", RemoteVolumeType.Files.ToString());
                 cmd.SetParameterValue("@State", RemoteVolumeState.Deleted.ToString());
@@ -1416,12 +1430,13 @@ namespace Duplicati.Library.Main.Database
                                 ""Name"",
                                 ""State""
                             FROM ""RemoteVolume""
-                            WHERE ""Type"" = @Type
-                            AND ""State"" != @State
-                            AND ""ID"" NOT IN (
-                                SELECT ""VolumeID""
-                                FROM ""Fileset""
-                            )
+                            WHERE
+                                ""Type"" = @Type
+                                AND ""State"" != @State
+                                AND ""ID"" NOT IN (
+                                    SELECT ""VolumeID""
+                                    FROM ""Fileset""
+                                )
                         ");
                         cmd.SetParameterValue("@Type", RemoteVolumeType.Files.ToString());
                         cmd.SetParameterValue("@State", RemoteVolumeState.Deleted.ToString());
@@ -1712,16 +1727,17 @@ namespace Duplicati.Library.Main.Database
                         ON ""E"".""ID"" = ""I"".""BlocksetID""
                     LEFT JOIN ""Block"" H
                         ON ""I"".""BlockID"" = ""H"".""ID""
-                    WHERE ""A"".""BlocksetId"" >= 0
-                    AND ""D"".""FilesetID"" = @FilesetId
-                    AND (
-                        ""I"".""Index"" = 0
-                        OR ""I"".""Index"" IS NULL
-                    )
-                    AND (
-                        ""G"".""Index"" = 0
-                        OR ""G"".""Index"" IS NULL
-                    )
+                    WHERE
+                        ""A"".""BlocksetId"" >= 0
+                        AND ""D"".""FilesetID"" = @FilesetId
+                        AND (
+                            ""I"".""Index"" = 0
+                            OR ""I"".""Index"" IS NULL
+                        )
+                        AND (
+                            ""G"".""Index"" = 0
+                            OR ""G"".""Index"" IS NULL
+                        )
                 ) J
                 LEFT OUTER JOIN ""BlocklistHash"" K
                     ON ""K"".""BlocksetID"" = ""J"".""BlocksetID""
@@ -1874,15 +1890,16 @@ namespace Duplicati.Library.Main.Database
                 UPDATE FilesetEntry AS oldVersion
                 SET Lastmodified = tempVersion.Lastmodified
                 FROM FilesetEntry AS tempVersion
-                WHERE oldVersion.FileID = tempVersion.FileID
-                AND tempVersion.FilesetID = @FilesetId
-                AND oldVersion.FilesetID = (
-                    SELECT ID
-                    FROM Fileset
-                    WHERE ID != @FilesetId
-                    ORDER BY Timestamp DESC
-                    LIMIT 1
-                )
+                WHERE
+                    oldVersion.FileID = tempVersion.FileID
+                    AND tempVersion.FilesetID = @FilesetId
+                    AND oldVersion.FilesetID = (
+                        SELECT ID
+                        FROM Fileset
+                        WHERE ID != @FilesetId
+                        ORDER BY Timestamp DESC
+                        LIMIT 1
+                    )
             ";
 
             using var cmd = await m_connection.CreateCommandAsync(query);
@@ -2141,18 +2158,20 @@ namespace Duplicati.Library.Main.Database
                     FROM
                         ""BlocklistHash"",
                         ""Block""
-                    WHERE ""BlocklistHash"".""Hash"" = ""Block"".""Hash""
-                    AND ""Block"".""VolumeID"" = @VolumeId
+                    WHERE
+                        ""BlocklistHash"".""Hash"" = ""Block"".""Hash""
+                        AND ""Block"".""VolumeID"" = @VolumeId
                     GROUP BY
                         ""Block"".""Hash"",
                         ""Block"".""Size""
                 ) A,
                     ""BlocksetEntry"" B,
                     ""Block"" C
-                WHERE ""B"".""BlocksetID"" = ""A"".""BlocksetID""
-                AND ""B"".""Index"" >= (""A"".""Index"" * {blocksize / hashsize})
-                AND ""B"".""Index"" < ((""A"".""Index"" + 1) * {blocksize / hashsize})
-                AND ""C"".""ID"" = ""B"".""BlockID""
+                WHERE
+                    ""B"".""BlocksetID"" = ""A"".""BlocksetID""
+                    AND ""B"".""Index"" >= (""A"".""Index"" * {blocksize / hashsize})
+                    AND ""B"".""Index"" < ((""A"".""Index"" + 1) * {blocksize / hashsize})
+                    AND ""C"".""ID"" = ""B"".""BlockID""
                 ORDER BY
                     ""A"".""BlocksetID"",
                     ""B"".""Index""
@@ -2252,15 +2271,16 @@ namespace Duplicati.Library.Main.Database
                 FROM
                     ""Fileset"",
                     ""RemoteVolume""
-                WHERE ""RemoteVolume"".""ID"" = ""Fileset"".""VolumeID""
-                AND ""Fileset"".""ID"" IN (
-                    SELECT ""FilesetID""
-                    FROM ""FilesetEntry""
-                )
-                AND (
-                    ""RemoteVolume"".""State"" = '{RemoteVolumeState.Uploading}'
-                    OR ""RemoteVolume"".""State"" = '{RemoteVolumeState.Temporary}'
-                )
+                WHERE
+                    ""RemoteVolume"".""ID"" = ""Fileset"".""VolumeID""
+                    AND ""Fileset"".""ID"" IN (
+                        SELECT ""FilesetID""
+                        FROM ""FilesetEntry""
+                    )
+                    AND (
+                        ""RemoteVolume"".""State"" = '{RemoteVolumeState.Uploading}'
+                        OR ""RemoteVolume"".""State"" = '{RemoteVolumeState.Temporary}'
+                    )
             ");
 
             using var rd = await cmd.SetTransaction(transaction)
@@ -2296,8 +2316,9 @@ namespace Duplicati.Library.Main.Database
                 FROM
                     ""RemoteVolume"",
                     ""Fileset""
-                WHERE ""Fileset"".""VolumeID"" = ""RemoteVolume"".""ID""
-                AND ""Fileset"".""ID"" = @FilesetId
+                WHERE
+                    ""Fileset"".""VolumeID"" = ""RemoteVolume"".""ID""
+                    AND ""Fileset"".""ID"" = @FilesetId
             ");
 
             using var rd = await cmd.SetTransaction(transaction)
