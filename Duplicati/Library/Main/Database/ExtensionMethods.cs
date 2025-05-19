@@ -24,6 +24,7 @@ using System.Data;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Duplicati.Library.Utility;
 using Microsoft.Data.Sqlite;
 
 #nullable enable
@@ -62,11 +63,7 @@ public static partial class ExtensionMethods
 
     public static SqliteCommand CreateCommand(this SqliteConnection self, string cmdtext)
     {
-        var cmd = self.CreateCommand();
-        cmd.SetCommandAndParameters(cmdtext);
-        cmd.PrepareAsync().Wait();
-
-        return cmd;
+        return CreateCommandAsync(self, cmdtext).Await();
     }
 
     public static async Task<SqliteCommand> CreateCommandAsync(this SqliteConnection self, string cmdtext)
@@ -76,6 +73,19 @@ public static partial class ExtensionMethods
         await cmd.PrepareAsync();
 
         return cmd;
+    }
+
+    public static SqliteCommand CreateCommand(this SqliteConnection self, SqliteTransaction transaction)
+    {
+        var cmd = self.CreateCommand();
+        cmd.SetTransaction(transaction);
+
+        return cmd;
+    }
+
+    internal static SqliteCommand CreateCommand(this SqliteConnection self, ReusableTransaction rtr)
+    {
+        return self.CreateCommand(rtr.Transaction);
     }
 
     public static async Task<int> ExecuteNonQueryAsync(this SqliteCommand self, string cmdtext)
@@ -304,6 +314,13 @@ public static partial class ExtensionMethods
     public static SqliteCommand SetTransaction(this SqliteCommand self, SqliteTransaction transaction)
     {
         self.Transaction = transaction;
+
+        return self;
+    }
+
+    internal static SqliteCommand SetTransaction(this SqliteCommand self, ReusableTransaction rtr)
+    {
+        self.Transaction = rtr.Transaction;
 
         return self;
     }

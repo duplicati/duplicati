@@ -70,7 +70,7 @@ namespace Duplicati.Library.Main.Database
                     ""Fileset"".""VolumeID"" = ""RemoteVolume"".""ID""
                     AND ""RemoteVolume"".""Name"" = @Name
             ")
-                .SetTransaction(m_rtr.Transaction)
+                .SetTransaction(m_rtr)
                 .SetParameterValue("@Name", filelist);
             var rd = await cmd.ExecuteReaderAsync();
 
@@ -103,7 +103,7 @@ namespace Duplicati.Library.Main.Database
                 SET ""FilesetID"" = @CurrentFilesetId
                 WHERE ""FilesetID"" = @PreviousFilesetId
             ")
-                .SetTransaction(m_rtr.Transaction)
+                .SetTransaction(m_rtr)
                 .SetParameterValue("@CurrentFilesetId", filesetid)
                 .SetParameterValue("@PreviousFilesetId", prevFilesetId);
 
@@ -127,7 +127,7 @@ namespace Duplicati.Library.Main.Database
                     AND ""RemoteVolume"".""ID"" = ""IndexBlockLink"".""IndexVolumeID""
                     AND ""RemoteVolume"".""Type"" = @Type
             ")
-                .SetTransaction(m_rtr.Transaction)
+                .SetTransaction(m_rtr)
                 .SetParameterValue("@BlockFileId", blockfileid)
                 .SetParameterValue("@Type", RemoteVolumeType.Index.ToString());
 
@@ -156,7 +156,7 @@ namespace Duplicati.Library.Main.Database
                     )
                 )
             ")
-                .SetTransaction(m_rtr.Transaction);
+                .SetTransaction(m_rtr);
 
             using var rd = await cmd.ExecuteReaderAsync();
             while (await rd.ReadAsync())
@@ -180,7 +180,7 @@ namespace Duplicati.Library.Main.Database
                 DELETE FROM ""FilesetEntry""
                 WHERE ""FilesetID"" = @FilesetId
             ")
-                .SetTransaction(m_rtr.Transaction)
+                .SetTransaction(m_rtr)
                 .SetParameterValue("@FilesetId", filesetid);
 
             return await cmd.ExecuteNonQueryAsync();
@@ -218,7 +218,7 @@ namespace Duplicati.Library.Main.Database
                     )
                 )
             ")
-                .SetTransaction(m_rtr.Transaction)
+                .SetTransaction(m_rtr)
                 .SetParameterValue("@Name", indexName);
 
             await foreach (var rd in cmd.ExecuteReaderEnumerableAsync())
@@ -322,7 +322,7 @@ namespace Duplicati.Library.Main.Database
             /// <summary>
             /// The transaction to use
             /// </summary>
-            private readonly ReusableTransaction m_transaction;
+            private readonly ReusableTransaction m_rtr;
             /// <summary>
             /// The insert command to use for restoring blocks
             /// </summary>
@@ -361,11 +361,11 @@ namespace Duplicati.Library.Main.Database
             /// </summary>
             /// <param name="volumename">The name of the volume with missing blocks</param>
             /// <param name="connection">The connection to the database</param>
-            /// <param name="transaction">The transaction to use</param>
-            private MissingBlockList(string volumename, SqliteConnection connection, ReusableTransaction transaction)
+            /// <param name="rtr">The transaction to use</param>
+            private MissingBlockList(string volumename, SqliteConnection connection, ReusableTransaction rtr)
             {
                 m_connection = connection;
-                m_transaction = transaction;
+                m_rtr = rtr;
                 m_volumename = volumename;
                 var tablename = "MissingBlocks-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
                 m_tablename = tablename;
@@ -465,7 +465,7 @@ namespace Duplicati.Library.Main.Database
             /// <inheritdoc/>
             public async Task<bool> SetBlockRestored(string hash, long size, long targetVolumeId)
             {
-                var restored = await m_insertCommand.SetTransaction(m_transaction.Transaction)
+                var restored = await m_insertCommand.SetTransaction(m_rtr)
                     .SetParameterValue("@NewRestoredValue", 1)
                     .SetParameterValue("@Hash", hash)
                     .SetParameterValue("@Size", size)
@@ -474,12 +474,12 @@ namespace Duplicati.Library.Main.Database
 
                 if (restored)
                 {
-                    await m_copyIntoDuplicatedBlocks.SetTransaction(m_transaction.Transaction)
+                    await m_copyIntoDuplicatedBlocks.SetTransaction(m_rtr)
                         .SetParameterValue("@Hash", hash)
                         .SetParameterValue("@Size", size)
                         .ExecuteNonQueryAsync();
 
-                    var c = await m_assignBlocksToNewVolume.SetTransaction(m_transaction.Transaction)
+                    var c = await m_assignBlocksToNewVolume.SetTransaction(m_rtr)
                         .SetParameterValue("@TargetVolumeId", targetVolumeId)
                         .SetParameterValue("@Hash", hash)
                         .SetParameterValue("@Size", size)
@@ -518,7 +518,7 @@ namespace Duplicati.Library.Main.Database
                         ""File"".""Path"",
                         ""BlocksetEntry"".""Index"" * {blocksize}
                 ")
-                    .SetTransaction(m_transaction.Transaction)
+                    .SetTransaction(m_rtr)
                     .SetParameterValue("@Restored", 0);
 
                 await foreach (var rd in cmd.ExecuteReaderEnumerableAsync())
@@ -558,7 +558,7 @@ namespace Duplicati.Library.Main.Database
                         ""{m_tablename}"".""Size"",
                         ""File"".""Path""
                 ")
-                    .SetTransaction(m_transaction.Transaction)
+                    .SetTransaction(m_rtr)
                     .SetParameterValue("@Restored", 0);
 
                 await foreach (var rd in cmd.ExecuteReaderEnumerableAsync())
@@ -574,7 +574,7 @@ namespace Duplicati.Library.Main.Database
             /// <inheritdoc/>
             public async IAsyncEnumerable<BlocklistHashesEntry> GetBlocklistHashes(long hashesPerBlock)
             {
-                using var cmd = m_connection.CreateCommand(m_transaction.Transaction);
+                using var cmd = m_connection.CreateCommand(m_rtr);
 
                 var blocklistTableName = $"BlocklistHashList-{Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray())}";
 
@@ -666,7 +666,7 @@ namespace Duplicati.Library.Main.Database
             public async Task<long> GetMissingBlockCount()
             {
                 return await m_missingBlocksCountCommand
-                    .SetTransaction(m_transaction.Transaction)
+                    .SetTransaction(m_rtr)
                     .SetParameterValue("@Restored", 0)
                     .ExecuteScalarInt64Async(0);
             }
@@ -678,7 +678,7 @@ namespace Duplicati.Library.Main.Database
             public async IAsyncEnumerable<(string Hash, long Size)> GetMissingBlocks()
             {
                 m_missingBlocksCommand
-                    .SetTransaction(m_transaction.Transaction)
+                    .SetTransaction(m_rtr)
                     .SetParameterValue("@Restored", 0);
 
                 await foreach (var rd in m_missingBlocksCommand.ExecuteReaderEnumerableAsync())
@@ -795,7 +795,7 @@ namespace Duplicati.Library.Main.Database
                 ";
 
                 using var cmd = m_connection.CreateCommand(cmdtxt)
-                    .SetTransaction(m_transaction.Transaction)
+                    .SetTransaction(m_rtr)
                     .SetParameterValue("@Type", RemoteVolumeType.Files.ToString());
 
                 await foreach (var rd in cmd.ExecuteReaderEnumerableAsync())
@@ -824,7 +824,7 @@ namespace Duplicati.Library.Main.Database
                         AND ""Block"".""VolumeID"" = ""RemoteVolume"".""ID""
                         AND ""Remotevolume"".""Name"" != @Name
                 ")
-                    .SetTransaction(m_transaction.Transaction)
+                    .SetTransaction(m_rtr)
                     .SetParameterValue("@Restored", 0)
                     .SetParameterValue("@Name", m_volumename);
 
@@ -856,7 +856,7 @@ namespace Duplicati.Library.Main.Database
                     {
 
                         using var cmd = await m_connection.CreateCommandAsync($@"DROP TABLE IF EXISTS ""{m_tablename}""");
-                        await cmd.SetTransaction(m_transaction.Transaction)
+                        await cmd.SetTransaction(m_rtr)
                             .ExecuteNonQueryAsync();
                     }
                 }
@@ -1610,7 +1610,7 @@ namespace Duplicati.Library.Main.Database
                         FROM ""Fileset""
                     )
             ")
-                .SetTransaction(m_rtr.Transaction)
+                .SetTransaction(m_rtr)
                 .SetParameterValue("@Type", RemoteVolumeType.Files.ToString())
                 .ExpandInClauseParameter("@States", [
                     RemoteVolumeState.Deleting.ToString(),
@@ -1637,7 +1637,7 @@ namespace Duplicati.Library.Main.Database
                         AND ""State"" NOT IN (@States)
                 )
             ")
-                .SetTransaction(m_rtr.Transaction)
+                .SetTransaction(m_rtr)
                 .SetParameterValue("@Type", RemoteVolumeType.Files.ToString())
                 .ExpandInClauseParameter("@States", [
                     RemoteVolumeState.Deleting.ToString(),
@@ -1668,7 +1668,7 @@ namespace Duplicati.Library.Main.Database
                         FROM ""IndexBlockLink""
                     )
             ")
-                .SetTransaction(m_rtr.Transaction)
+                .SetTransaction(m_rtr)
                 .SetParameterValue("@Type", RemoteVolumeType.Index.ToString())
                 .ExpandInClauseParameter("@States", [
                     RemoteVolumeState.Uploaded.ToString(),
