@@ -88,6 +88,20 @@ public static partial class ExtensionMethods
         return self.CreateCommand(rtr.Transaction);
     }
 
+    public static async Task<int> ExecuteNonQueryAsync(this SqliteCommand self, bool writeLog)
+    {
+        return await ExecuteNonQueryAsync(self, writeLog, null);
+    }
+
+    public static async Task<int> ExecuteNonQueryAsync(this SqliteCommand self, bool writeLog, string? cmd)
+    {
+        if (cmd != null)
+            self.SetCommandAndParameters(cmd);
+
+        using (writeLog ? new Logging.Timer(LOGTAG, "ExecuteNonQueryAsync", string.Format("ExecuteNonQueryAsync: {0}", self.GetPrintableCommandText())) : null)
+            return await self.ExecuteNonQueryAsync();
+    }
+
     public static async Task<int> ExecuteNonQueryAsync(this SqliteCommand self, string cmdtext)
     {
         self.SetCommandAndParameters(cmdtext);
@@ -110,7 +124,7 @@ public static partial class ExtensionMethods
         if (values != null && values.Count > 0)
             self.SetParameterValues(values);
 
-        using (writeLog ? new Logging.Timer(LOGTAG, "ExecuteNonQuery", string.Format("ExecuteNonQuery: {0}", self.GetPrintableCommandText())) : null)
+        using (writeLog ? new Logging.Timer(LOGTAG, "ExecuteNonQueryAsync", string.Format("ExecuteNonQueryAsync: {0}", self.GetPrintableCommandText())) : null)
             return await self.ExecuteNonQueryAsync();
     }
 
@@ -126,6 +140,15 @@ public static partial class ExtensionMethods
     //    using (writeLog ? new Logging.Timer(LOGTAG, "ExecuteReader", string.Format("ExecuteReader: {0}", self.GetPrintableCommandText())) : null)
     //        return self.ExecuteReader();
     //}
+
+    public static async Task<SqliteDataReader> ExecuteReaderAsync(this SqliteCommand self, bool writeLog, string? cmd)
+    {
+        if (cmd != null)
+            self.SetCommandAndParameters(cmd);
+
+        using (writeLog ? new Logging.Timer(LOGTAG, "ExecuteReaderAsync", string.Format("ExecuteReaderAsync: {0}", self.GetPrintableCommandText())) : null)
+            return await self.ExecuteReaderAsync();
+    }
 
     public static async Task<SqliteDataReader> ExecuteReaderAsync(this SqliteCommand self, string cmdtext)
     {
@@ -172,6 +195,15 @@ public static partial class ExtensionMethods
         return await self.ExecuteScalarAsync().ConfigureAwait(false);
     }
 
+    public static async Task<object?> ExecuteScalarAsync(this SqliteCommand self, bool writeLog, string? cmd)
+    {
+        if (cmd != null)
+            self.SetCommandAndParameters(cmd);
+
+        using (writeLog ? new Logging.Timer(LOGTAG, "ExecuteScalarAsync", string.Format("ExecuteScalarAsync: {0}", self.GetPrintableCommandText())) : null)
+            return self.ExecuteScalar();
+    }
+
     public static async Task<object?> ExecuteScalarAsync(this SqliteCommand self, string cmdtext)
     {
         self.SetCommandAndParameters(cmdtext);
@@ -196,6 +228,24 @@ public static partial class ExtensionMethods
     //
     //    return defaultvalue;
     //}
+
+    public static async Task<long> ExecuteScalarInt64Async(this SqliteCommand self, bool writeLog, long defaultvalue = -1)
+    {
+        return await ExecuteScalarInt64Async(self, writeLog, null, defaultvalue);
+    }
+
+    public static async Task<long> ExecuteScalarInt64Async(this SqliteCommand self, bool writeLog, string? cmd, long defaultvalue)
+    {
+        if (cmd != null)
+            self.SetCommandAndParameters(cmd);
+
+        using (writeLog ? new Logging.Timer(LOGTAG, "ExecuteScalarInt64Async", string.Format("ExecuteScalarInt64Async: {0}", self.GetPrintableCommandText())) : null)
+        using (var rd = await self.ExecuteReaderAsync())
+            if (await rd.ReadAsync())
+                return ConvertValueToInt64(rd, 0, defaultvalue);
+
+        return defaultvalue;
+    }
 
     public static async Task<long> ExecuteScalarInt64Async(this SqliteCommand self, long defaultvalue = -1)
     {
@@ -241,7 +291,7 @@ public static partial class ExtensionMethods
         return cmd;
     }
 
-    internal static async Task<SqliteCommand> ExpandInClauseParameter(this SqliteCommand cmd, string originalParamName, TemporaryDbValueList values)
+    internal static async Task<SqliteCommand> ExpandInClauseParameterAsync(this SqliteCommand cmd, string originalParamName, TemporaryDbValueList values)
     {
         if (string.IsNullOrWhiteSpace(originalParamName) || !originalParamName.StartsWith("@"))
             throw new ArgumentException("Parameter name must start with '@'", nameof(originalParamName));
