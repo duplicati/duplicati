@@ -44,23 +44,49 @@ namespace Duplicati.Library.Main.Database
             return db;
         }
 
+        public async Task Fix()
+        {
+            using (var cmd = m_connection.CreateCommand(m_rtr))
             {
-                cmd.Transaction = tr;
                 var tablename = "PathMap-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
 
                 // TODO: Rewrite this to use PathPrefix
                 // TODO: Needs to be much faster
-                using (var upcmd = m_connection.CreateCommand())
+                using (var upcmd = m_connection.CreateCommand(m_rtr))
                 {
+                    await upcmd.ExecuteNonQueryAsync($@"
+                        CREATE TEMPORARY TABLE ""{tablename}"" (
+                            ""ID"" INTEGER PRIMARY KEY,
+                            ""RealPath"" TEXT NOT NULL,
+                            ""Obfuscated"" TEXT NULL
+                        )
+                    ");
 
-                    upcmd.Transaction = tr;
-                    upcmd.ExecuteNonQuery(FormatInvariant($@"CREATE TEMPORARY TABLE ""{tablename}"" (""ID"" INTEGER PRIMARY KEY, ""RealPath"" TEXT NOT NULL, ""Obfuscated"" TEXT NULL)"));
-                    upcmd.ExecuteNonQuery(FormatInvariant($@"INSERT INTO ""{tablename}"" (""RealPath"") SELECT DISTINCT ""Path"" FROM ""File"" ORDER BY ""Path"" "));
-                    upcmd.SetCommandAndParameters(FormatInvariant($@"UPDATE ""{tablename}"" SET ""Obfuscated"" = @StartPath || length(""RealPath"") || @DirSep || ""ID"" || (CASE WHEN substr(""RealPath"", length(""RealPath"")) = @DirSep THEN @DirSep ELSE @FileExt END) "))
+                    await upcmd.ExecuteNonQueryAsync($@"
+                        INSERT INTO ""{tablename}"" (""RealPath"")
+                        SELECT DISTINCT ""Path""
+                        FROM ""File""
+                        ORDER BY ""Path""
+                    ");
+
+                    await upcmd.SetCommandAndParameters($@"
+                        UPDATE ""{tablename}""
+                        SET ""Obfuscated"" =
+                            @StartPath
+                            || length(""RealPath"")
+                            || @DirSep
+                            || ""ID""
+                            || (
+                                CASE WHEN substr(""RealPath"", length(""RealPath"")) = @DirSep
+                                THEN @DirSep
+                                ELSE @FileExt
+                                END
+                            )
+                        ")
                         .SetParameterValue("@StartPath", !OperatingSystem.IsWindows() ? "/" : "X:\\")
                         .SetParameterValue("@DirSep", Util.DirectorySeparatorString)
                         .SetParameterValue("@FileExt", ".bin")
-                        .ExecuteNonQuery();
+                        .ExecuteNonQueryAsync();
 
                     /*long id = 1;
                     using(var rd = cmd.ExecuteReader(string.Format(@"SELECT ""RealPath"", ""Obfuscated"" FROM ""{0}"" ", tablename)))
@@ -75,24 +101,51 @@ namespace Duplicati.Library.Main.Database
                         */
                 }
 
-                cmd.ExecuteNonQuery(@"UPDATE ""LogData"" SET ""Message"" = 'ERASED!' WHERE ""Message"" LIKE '%/%' OR ""Message"" LIKE '%:\%' ");
-                cmd.ExecuteNonQuery(@"UPDATE ""LogData"" SET ""Exception"" = 'ERASED!' WHERE ""Exception"" LIKE '%/%' OR ""Exception"" LIKE '%:\%' ");
+                await cmd.ExecuteNonQueryAsync(@"
+                    UPDATE ""LogData""
+                    SET ""Message"" = 'ERASED!'
+                    WHERE
+                        ""Message"" LIKE '%/%'
+                        OR ""Message"" LIKE '%:\%'
+                ");
 
-                cmd.ExecuteNonQuery(@"UPDATE ""Configuration"" SET ""Value"" = 'ERASED!' WHERE ""Key"" = 'passphrase' ");
+                await cmd.ExecuteNonQueryAsync(@"
+                    UPDATE ""LogData""
+                    SET ""Exception"" = 'ERASED!'
+                    WHERE
+                        ""Exception"" LIKE '%/%'
+                        OR ""Exception"" LIKE '%:\%'
+                ");
 
-                cmd.ExecuteNonQuery(FormatInvariant($@"CREATE TABLE ""FixedFile"" AS SELECT ""B"".""ID"" AS ""ID"", ""A"".""Obfuscated"" AS ""Path"", ""B"".""BlocksetID"" AS ""BlocksetID"", ""B"".""MetadataID"" AS ""MetadataID"" FROM ""{tablename}"" ""A"", ""File"" ""B"" WHERE ""A"".""RealPath"" = ""B"".""Path"" "));
-                cmd.ExecuteNonQuery(@"DROP VIEW ""File"" ");
-                cmd.ExecuteNonQuery(@"DROP TABLE ""FileLookup"" ");
-                cmd.ExecuteNonQuery(@"DROP TABLE ""PathPrefix"" ");
+                await cmd.ExecuteNonQueryAsync(@"
+                    UPDATE ""Configuration""
+                    SET ""Value"" = 'ERASED!'
+                    WHERE ""Key"" = 'passphrase'
+                ");
 
-                cmd.ExecuteNonQuery(FormatInvariant($@"DROP TABLE IF EXISTS ""{tablename}"" "));
+                await cmd.ExecuteNonQueryAsync($@"
+                    CREATE TABLE ""FixedFile"" AS
+                    SELECT
+                        ""B"".""ID"" AS ""ID"",
+                        ""A"".""Obfuscated"" AS ""Path"",
+                        ""B"".""BlocksetID"" AS ""BlocksetID"",
+                        ""B"".""MetadataID"" AS ""MetadataID""
+                    FROM
+                        ""{tablename}"" ""A"",
+                        ""File"" ""B""
+                    WHERE ""A"".""RealPath"" = ""B"".""Path""
+                ");
+
+                await cmd.ExecuteNonQueryAsync(@"DROP VIEW ""File"" ");
+                await cmd.ExecuteNonQueryAsync(@"DROP TABLE ""FileLookup"" ");
+                await cmd.ExecuteNonQueryAsync(@"DROP TABLE ""PathPrefix"" ");
+                await cmd.ExecuteNonQueryAsync($@"DROP TABLE IF EXISTS ""{tablename}"" ");
 
                 using (new Logging.Timer(LOGTAG, "CommitUpdateBugReport", "CommitUpdateBugReport"))
-                    tr.Commit();
+                    await m_rtr.CommitAsync();
 
-                cmd.Transaction = null;
-
-                cmd.ExecuteNonQuery("VACUUM");
+                // TODO maybe this needs a transaction.
+                await cmd.ExecuteNonQueryAsync("VACUUM");
             }
         }
     }
