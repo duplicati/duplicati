@@ -124,27 +124,36 @@ namespace Duplicati.Library.Main.Database
         /// exposed to the user. This is in contrast to other cases where the Version is the ID in the
         /// Fileset table.
         /// </summary>
-        internal IEnumerable<IListResultFileset> FilesetsWithBackupVersion
+        internal async IAsyncEnumerable<IListResultFileset> FilesetsWithBackupVersion()
         {
-            get
+            using (var cmd = m_connection.CreateCommand(m_rtr))
             {
-                var filesets = new List<IListResultFileset>();
-                using (var cmd = m_connection.CreateCommand())
+                // TODO check if this is still the case? (shouldn't be with new sqlite driver):
+                // We can also use the ROW_NUMBER() window function to generate the backup versions,
+                // but this requires at least SQLite 3.25, which is not available in some common
+                // distributions (e.g., Debian) currently.
+                cmd.SetCommandAndParameters(@"
+                    SELECT
+                        ""IsFullBackup"",
+                        ""Timestamp""
+                    FROM ""Fileset""
+                    ORDER BY ""Timestamp"" DESC
+                ");
+
+                using (var reader = await cmd.ExecuteReaderAsync())
                 {
-                    // We can also use the ROW_NUMBER() window function to generate the backup versions,
-                    // but this requires at least SQLite 3.25, which is not available in some common
-                    // distributions (e.g., Debian) currently.
-                    using (IDataReader reader = cmd.ExecuteReader(@"SELECT ""IsFullBackup"", ""Timestamp"" FROM ""Fileset"" ORDER BY ""Timestamp"" DESC"))
+                    int version = 0;
+                    while (await reader.ReadAsync())
                     {
-                        int version = 0;
-                        while (reader.Read())
-                        {
-                            filesets.Add(new ListResultFileset(version++, reader.GetInt32(0), ParseFromEpochSeconds(reader.ConvertValueToInt64(1)).ToLocalTime(), -1L, -1L));
-                        }
+                        yield return new ListResultFileset(
+                            version++,
+                            reader.GetInt32(0),
+                            ParseFromEpochSeconds(reader.ConvertValueToInt64(1)).ToLocalTime(),
+                            -1L,
+                            -1L
+                        );
                     }
                 }
-
-                return filesets;
             }
         }
 
