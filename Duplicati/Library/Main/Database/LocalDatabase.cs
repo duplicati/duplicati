@@ -394,19 +394,19 @@ namespace Duplicati.Library.Main.Database
             return Library.Utility.Utility.EPOCH.AddSeconds(seconds);
         }
 
-        public async Task UpdateRemoteVolume(string name, RemoteVolumeState state, long size, string? hash, SqliteTransaction transaction)
+        public async Task UpdateRemoteVolume(string name, RemoteVolumeState state, long size, string? hash)
         {
-            await UpdateRemoteVolume(name, state, size, hash, false, transaction);
+            await UpdateRemoteVolume(name, state, size, hash, false);
         }
 
-        public async Task UpdateRemoteVolume(string name, RemoteVolumeState state, long size, string? hash, bool suppressCleanup, SqliteTransaction transaction)
+        public async Task UpdateRemoteVolume(string name, RemoteVolumeState state, long size, string? hash, bool suppressCleanup)
         {
-            await UpdateRemoteVolume(name, state, size, hash, suppressCleanup, new TimeSpan(0), null, transaction);
+            await UpdateRemoteVolume(name, state, size, hash, suppressCleanup, new TimeSpan(0), null);
         }
 
-        public async Task UpdateRemoteVolume(string name, RemoteVolumeState state, long size, string? hash, bool suppressCleanup, TimeSpan deleteGraceTime, bool? setArchived, SqliteTransaction transaction)
+        public async Task UpdateRemoteVolume(string name, RemoteVolumeState state, long size, string? hash, bool suppressCleanup, TimeSpan deleteGraceTime, bool? setArchived)
         {
-            var c = await m_updateremotevolumeCommand.SetTransaction(transaction)
+            var c = await m_updateremotevolumeCommand.SetTransaction(m_rtr)
                 .SetParameterValue("@OperationID", m_operationid)
                 .SetParameterValue("@State", state.ToString())
                 .SetParameterValue("@Hash", hash)
@@ -426,7 +426,7 @@ namespace Duplicati.Library.Main.Database
                     SET ""DeleteGraceTime"" = @DeleteGraceTime
                     WHERE ""Name"" = @Name
                 ");
-                c = await cmd.SetTransaction(transaction)
+                c = await cmd.SetTransaction(m_rtr)
                     .SetParameterValue("@DeleteGraceTime", Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(DateTime.UtcNow + deleteGraceTime))
                     .SetParameterValue("@Name", name)
                     .ExecuteNonQueryAsync();
@@ -442,7 +442,7 @@ namespace Duplicati.Library.Main.Database
                     SET ""ArchiveTime"" = @ArchiveTime
                     WHERE ""Name"" = @Name
                 ");
-                c = await cmd.SetTransaction(transaction)
+                c = await cmd.SetTransaction(m_rtr)
                     .SetParameterValue("@ArchiveTime", setArchived.Value ? Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(DateTime.UtcNow) : 0)
                     .SetParameterValue("@Name", name)
                     .ExecuteNonQueryAsync();
@@ -453,7 +453,7 @@ namespace Duplicati.Library.Main.Database
 
             if (!suppressCleanup && state == RemoteVolumeState.Deleted)
             {
-                await RemoveRemoteVolume(name, transaction);
+                await RemoveRemoteVolume(name);
             }
         }
 
@@ -526,10 +526,10 @@ namespace Duplicati.Library.Main.Database
             return (query.ToString(), args);
         }
 
-        public async Task<long> GetRemoteVolumeID(string file, SqliteTransaction transaction)
+        public async Task<long> GetRemoteVolumeID(string file)
         {
             return await m_selectremotevolumeIdCommand
-                .SetTransaction(transaction)
+                .SetTransaction(m_rtr)
                 .SetParameterValue("@Name", file)
                 .ExecuteScalarInt64Async(-1);
         }
@@ -630,10 +630,10 @@ namespace Duplicati.Library.Main.Database
         /// <param name="type">The message type</param>
         /// <param name="message">The message</param>
         /// <param name="exception">An optional exception</param>
-        public async Task LogMessage(string type, string message, Exception? exception, SqliteTransaction transaction)
+        public async Task LogMessage(string type, string message, Exception? exception)
         {
             await m_insertlogCommand
-                .SetTransaction(transaction)
+                .SetTransaction(m_rtr)
                 .SetParameterValue("@OperationID", m_operationid)
                 .SetParameterValue("@Timestamp", Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(DateTime.UtcNow))
                 .SetParameterValue("@Type", type)
@@ -661,16 +661,16 @@ namespace Duplicati.Library.Main.Database
             await transaction.CommitAsync();
         }
 
-        public async Task RemoveRemoteVolume(string name, SqliteTransaction transaction)
+        public async Task RemoveRemoteVolume(string name)
         {
-            await RemoveRemoteVolumes([name], transaction);
+            await RemoveRemoteVolumes([name]);
         }
 
-        public async Task RemoveRemoteVolumes(IEnumerable<string> names, SqliteTransaction transaction)
+        public async Task RemoveRemoteVolumes(IEnumerable<string> names)
         {
             if (names == null || !names.Any()) return;
 
-            using var deletecmd = m_connection.CreateCommand();
+            using var deletecmd = m_connection.CreateCommand(m_rtr);
             string temptransguid = Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
             var volidstable = "DelVolSetIds-" + temptransguid;
             var blocksetidstable = "DelBlockSetIds-" + temptransguid;
@@ -921,12 +921,13 @@ namespace Duplicati.Library.Main.Database
             catch { /* Ignore, will be deleted on close anyway. */ }
 
             m_removeremotevolumeCommand
-                .SetTransaction(transaction)
+                .SetTransaction(m_rtr)
                 .SetParameterValue("@Now", Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(DateTime.UtcNow))
                 .SetParameterValue("@State", RemoteVolumeState.Deleted.ToString());
             foreach (var name in names)
             {
                 await m_removeremotevolumeCommand
+                    .SetTransaction(m_rtr)
                     .SetParameterValue("@Name", name)
                     .ExecuteNonQueryAsync();
             }
@@ -942,7 +943,7 @@ namespace Duplicati.Library.Main.Database
             if (nonAttachedFiles > 0)
                 throw new ConstraintException($"Detected {nonAttachedFiles} file(s) in FilesetEntry without corresponding FileLookup entry");
 
-            await transaction.CommitAsync();
+            await m_rtr.CommitAsync();
         }
 
         public async Task Vacuum()
@@ -2087,7 +2088,7 @@ namespace Duplicati.Library.Main.Database
         /// <param name="volumeid">The ID of the fileset volume to update</param>
         /// <param name="timestamp">The timestamp of the operation to create</param>
         /// <param name="transaction">An optional external transaction</param>
-        public virtual async Task<long> CreateFileset(long volumeid, DateTime timestamp, SqliteTransaction transaction)
+        public virtual async Task<long> CreateFileset(long volumeid, DateTime timestamp)
         {
             using var cmd = await m_connection.CreateCommandAsync(@"
                 INSERT INTO ""Fileset"" (
@@ -2104,14 +2105,14 @@ namespace Duplicati.Library.Main.Database
                 );
                 SELECT last_insert_rowid();
             ");
-            var id = await cmd.SetTransaction(transaction)
+            var id = await cmd.SetTransaction(m_rtr)
                 .SetParameterValue("@OperationId", m_operationid)
                 .SetParameterValue("@Timestamp", Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(timestamp))
                 .SetParameterValue("@VolumeId", volumeid)
                 .SetParameterValue("@IsFullBackup", BackupType.PARTIAL_BACKUP)
                 .ExecuteScalarInt64Async(-1);
 
-            await transaction.CommitAsync();
+            await m_rtr.CommitAsync();
 
             return id;
         }
@@ -2246,13 +2247,13 @@ namespace Duplicati.Library.Main.Database
         /// </summary>
         /// <param name="transaction">The transaction to use</param>
         /// <returns>The last incomplete fileset or default</returns>
-        public async Task<RemoteVolumeEntry> GetLastIncompleteFilesetVolume(SqliteTransaction transaction)
+        public async Task<RemoteVolumeEntry> GetLastIncompleteFilesetVolume()
         {
-            var candidates = GetIncompleteFilesets(transaction)
+            var candidates = GetIncompleteFilesets()
                 .OrderBy(x => x.Value);
 
             if (await candidates.AnyAsync())
-                return await GetRemoteVolumeFromFilesetID((await candidates.LastAsync()).Key, transaction);
+                return await GetRemoteVolumeFromFilesetID((await candidates.LastAsync()).Key);
 
             return default;
         }
@@ -2262,7 +2263,7 @@ namespace Duplicati.Library.Main.Database
         /// </summary>
         /// <param name="transaction">An optional transaction</param>
         /// <returns>A list of fileset IDs and timestamps</returns>
-        public async IAsyncEnumerable<KeyValuePair<long, DateTime>> GetIncompleteFilesets(SqliteTransaction transaction)
+        public async IAsyncEnumerable<KeyValuePair<long, DateTime>> GetIncompleteFilesets()
         {
             using var cmd = await m_connection.CreateCommandAsync(@$"
                 SELECT DISTINCT
@@ -2283,7 +2284,7 @@ namespace Duplicati.Library.Main.Database
                     )
             ");
 
-            using var rd = await cmd.SetTransaction(transaction)
+            using var rd = await cmd.SetTransaction(m_rtr)
                 .ExecuteReaderAsync();
             while (await rd.ReadAsync())
             {
@@ -2301,7 +2302,7 @@ namespace Duplicati.Library.Main.Database
         /// <param name="filesetID">The fileset ID</param>
         /// <param name="transaction">An optional transaction</param>
         /// <returns>The remote volume entry or default</returns>
-        public async Task<RemoteVolumeEntry> GetRemoteVolumeFromFilesetID(long filesetID, SqliteTransaction transaction)
+        public async Task<RemoteVolumeEntry> GetRemoteVolumeFromFilesetID(long filesetID)
         {
             using var cmd = await m_connection.CreateCommandAsync(@"
                 SELECT
@@ -2321,7 +2322,7 @@ namespace Duplicati.Library.Main.Database
                     AND ""Fileset"".""ID"" = @FilesetId
             ");
 
-            using var rd = await cmd.SetTransaction(transaction)
+            using var rd = await cmd.SetTransaction(m_rtr)
                 .SetParameterValue("@FilesetId", filesetID)
                 .ExecuteReaderAsync();
             if (await rd.ReadAsync())
@@ -2481,7 +2482,6 @@ namespace Duplicati.Library.Main.Database
                 var serializer = new JsonFormatSerializer();
                 await LogMessage("Result",
                     serializer.SerializeResults(result),
-                    null,
                     null
                 );
             }
@@ -2502,7 +2502,7 @@ namespace Duplicati.Library.Main.Database
         /// <returns>The path prefix ID.</returns>
         /// <param name="prefix">The path to get the prefix for.</param>
         /// <param name="transaction">The transaction to use for insertion, or null for no transaction</param>
-        public async Task<long> GetOrCreatePathPrefix(string prefix, SqliteTransaction transaction)
+        public async Task<long> GetOrCreatePathPrefix(string prefix)
         {
             // Ring-buffer style lookup
             for (var i = 0; i < m_pathPrefixLookup.Length; i++)
@@ -2512,13 +2512,13 @@ namespace Duplicati.Library.Main.Database
                     return m_pathPrefixLookup[ix].Value;
             }
 
-            var id = await m_findpathprefixCommand.SetTransaction(transaction)
+            var id = await m_findpathprefixCommand.SetTransaction(m_rtr)
                 .SetParameterValue("@Prefix", prefix)
                 .ExecuteScalarInt64Async();
 
             if (id < 0)
             {
-                id = await m_insertpathprefixCommand.SetTransaction(transaction)
+                id = await m_insertpathprefixCommand.SetTransaction(m_rtr)
                     .SetParameterValue("@Prefix", prefix)
                     .ExecuteScalarInt64Async();
             }
