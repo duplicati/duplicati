@@ -59,8 +59,6 @@ namespace Duplicati.Library.Main.Database
 
         public DateTime RestoreTime { get { return m_restoreTime; } }
 
-        private LocalRestoreDatabase() { }
-
         public static async Task<LocalRestoreDatabase> CreateAsync(string path, long pagecachesize)
         {
             var db = new LocalRestoreDatabase();
