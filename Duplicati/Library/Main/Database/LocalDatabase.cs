@@ -552,10 +552,10 @@ namespace Duplicati.Library.Main.Database
                 yield return new KeyValuePair<string, long>(rd.ConvertValueToString(0) ?? "", rd.ConvertValueToInt64(1));
         }
 
-        public async Task<RemoteVolumeEntry> GetRemoteVolume(string file, SqliteTransaction transaction)
+        public async Task<RemoteVolumeEntry> GetRemoteVolume(string file)
         {
             m_selectremotevolumeCommand
-                .SetTransaction(transaction)
+                .SetTransaction(m_rtr)
                 .SetParameterValue("@Name", file);
 
             using (var rd = await m_selectremotevolumeCommand.ExecuteReaderAsync())

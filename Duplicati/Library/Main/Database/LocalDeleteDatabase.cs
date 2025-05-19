@@ -72,50 +72,164 @@ namespace Duplicati.Library.Main.Database
         /// <param name="toDelete">The fileset entries to delete</param>
         /// <param name="transaction">The transaction to execute the commands in</param>
         /// <returns>A list of filesets to delete</returns>
-        public IEnumerable<KeyValuePair<string, long>> DropFilesetsFromTable(DateTime[] toDelete, IDbTransaction transaction)
+        public async IAsyncEnumerable<KeyValuePair<string, long>> DropFilesetsFromTable(DateTime[] toDelete)
         {
-            using (var cmd = m_connection.CreateCommand(transaction))
+            using (var cmd = m_connection.CreateCommand(m_rtr))
             {
                 var deleted = 0;
 
-                using (var tempTable = new TemporaryDbValueList(m_connection, transaction, toDelete.Select(Library.Utility.Utility.NormalizeDateTimeToEpochSeconds)))
-                    deleted += cmd.SetCommandAndParameters(@"DELETE FROM ""Fileset"" WHERE ""Timestamp"" IN (@Timestamps) ")
-                        .ExpandInClauseParameter("@Timestamps", tempTable)
-                        .ExecuteNonQuery();
+                using (var tempTable = await TemporaryDbValueList.CreateAsync(this, toDelete.Select(Library.Utility.Utility.NormalizeDateTimeToEpochSeconds)))
+                    deleted += await (await cmd.SetCommandAndParameters(@"
+                        DELETE FROM ""Fileset""
+                        WHERE ""Timestamp"" IN (@Timestamps)
+                    ")
+                        .ExpandInClauseParameterAsync("@Timestamps", tempTable))
+                        .ExecuteNonQueryAsync();
 
                 if (deleted != toDelete.Length)
                     throw new Exception($"Unexpected number of deleted filesets {deleted} vs {toDelete.Length}");
 
                 //Then we delete anything that is no longer being referenced
-                cmd.ExecuteNonQuery(@"DELETE FROM ""FilesetEntry"" WHERE ""FilesetID"" NOT IN (SELECT DISTINCT ""ID"" FROM ""Fileset"")");
-                cmd.ExecuteNonQuery(@"DELETE FROM ""ChangeJournalData"" WHERE ""FilesetID"" NOT IN (SELECT DISTINCT ""ID"" FROM ""Fileset"")");
-                cmd.ExecuteNonQuery(@"DELETE FROM ""FileLookup"" WHERE ""ID"" NOT IN (SELECT DISTINCT ""FileID"" FROM ""FilesetEntry"") ");
-                cmd.ExecuteNonQuery(@"DELETE FROM ""Metadataset"" WHERE ""ID"" NOT IN (SELECT DISTINCT ""MetadataID"" FROM ""FileLookup"") ");
-                cmd.ExecuteNonQuery(@"DELETE FROM ""Blockset"" WHERE ""ID"" NOT IN (SELECT DISTINCT ""BlocksetID"" FROM ""FileLookup"" UNION SELECT DISTINCT ""BlocksetID"" FROM ""Metadataset"") ");
-                cmd.ExecuteNonQuery(@"DELETE FROM ""BlocksetEntry"" WHERE ""BlocksetID"" NOT IN (SELECT DISTINCT ""ID"" FROM ""Blockset"") ");
-                cmd.ExecuteNonQuery(@"DELETE FROM ""BlocklistHash"" WHERE ""BlocksetID"" NOT IN (SELECT DISTINCT ""ID"" FROM ""Blockset"") ");
+                await cmd.ExecuteNonQueryAsync(@"
+                    DELETE FROM ""FilesetEntry""
+                    WHERE ""FilesetID"" NOT IN (
+                        SELECT DISTINCT ""ID""
+                        FROM ""Fileset""
+                    )
+                ");
+
+                await cmd.ExecuteNonQueryAsync(@"
+                    DELETE FROM ""ChangeJournalData""
+                    WHERE ""FilesetID"" NOT IN (
+                        SELECT DISTINCT ""ID""
+                        FROM ""Fileset""
+                    )
+                ");
+
+                await cmd.ExecuteNonQueryAsync(@"
+                    DELETE FROM ""FileLookup""
+                    WHERE ""ID"" NOT IN (
+                        SELECT DISTINCT ""FileID""
+                        FROM ""FilesetEntry""
+                    )
+                ");
+
+                await cmd.ExecuteNonQueryAsync(@"
+                    DELETE FROM ""Metadataset""
+                    WHERE ""ID"" NOT IN (
+                        SELECT DISTINCT ""MetadataID""
+                        FROM ""FileLookup""
+                    )
+                ");
+
+                await cmd.ExecuteNonQueryAsync(@"
+                    DELETE FROM ""Blockset""
+                    WHERE ""ID"" NOT IN (
+                        SELECT DISTINCT ""BlocksetID""
+                        FROM ""FileLookup""
+                        UNION
+                            SELECT DISTINCT ""BlocksetID""
+                            FROM ""Metadataset""
+                    )
+                ");
+
+                await cmd.ExecuteNonQueryAsync(@"
+                    DELETE FROM ""BlocksetEntry""
+                    WHERE ""BlocksetID"" NOT IN (
+                        SELECT DISTINCT ""ID""
+                        FROM ""Blockset""
+                    )
+                ");
+
+                await cmd.ExecuteNonQueryAsync(@"
+                    DELETE FROM ""BlocklistHash""
+                    WHERE ""BlocksetID"" NOT IN (
+                        SELECT DISTINCT ""ID""
+                        FROM ""Blockset""
+                    )
+                ");
 
                 //We save the block info for the remote files, before we delete it
-                cmd.ExecuteNonQuery(@"INSERT INTO ""DeletedBlock"" (""Hash"", ""Size"", ""VolumeID"") SELECT ""Hash"", ""Size"", ""VolumeID"" FROM ""Block"" WHERE ""ID"" NOT IN (SELECT DISTINCT ""BlockID"" AS ""BlockID"" FROM ""BlocksetEntry"" UNION SELECT DISTINCT ""ID"" FROM ""Block"", ""BlocklistHash"" WHERE ""Block"".""Hash"" = ""BlocklistHash"".""Hash"") ");
-                cmd.ExecuteNonQuery(@"DELETE FROM ""Block"" WHERE ""ID"" NOT IN (SELECT DISTINCT ""BlockID"" FROM ""BlocksetEntry"" UNION SELECT DISTINCT ""ID"" FROM ""Block"", ""BlocklistHash"" WHERE ""Block"".""Hash"" = ""BlocklistHash"".""Hash"") ");
+                await cmd.ExecuteNonQueryAsync(@"
+                    INSERT INTO ""DeletedBlock"" (
+                        ""Hash"",
+                        ""Size"",
+                        ""VolumeID""
+                    )
+                    SELECT
+                        ""Hash"",
+                        ""Size"",
+                        ""VolumeID""
+                    FROM ""Block""
+                    WHERE ""ID"" NOT IN (
+                        SELECT DISTINCT ""BlockID"" AS ""BlockID""
+                        FROM ""BlocksetEntry""
+                        UNION
+                            SELECT DISTINCT ""ID""
+                            FROM
+                                ""Block"",
+                                ""BlocklistHash""
+                            WHERE ""Block"".""Hash"" = ""BlocklistHash"".""Hash""
+                    )
+                ");
+
+                await cmd.ExecuteNonQueryAsync(@"
+                    DELETE FROM ""Block""
+                    WHERE ""ID"" NOT IN (
+                        SELECT DISTINCT ""BlockID""
+                        FROM ""BlocksetEntry""
+                        UNION
+                            SELECT DISTINCT ""ID""
+                            FROM
+                                ""Block"",
+                                ""BlocklistHash""
+                            WHERE ""Block"".""Hash"" = ""BlocklistHash"".""Hash""
+                    )
+                ");
 
                 //Find all remote filesets that are no longer required, and mark them as deleting
-                var updated = cmd.SetCommandAndParameters(@"UPDATE ""RemoteVolume"" SET ""State"" = @NewState WHERE ""Type"" = @CurrentType AND ""State"" IN (@AllowedStates) AND ""ID"" NOT IN (SELECT ""VolumeID"" FROM ""Fileset"") ")
+                var updated = await cmd.SetCommandAndParameters(@"
+                    UPDATE ""RemoteVolume""
+                    SET ""State"" = @NewState
+                    WHERE
+                        ""Type"" = @CurrentType
+                        AND ""State"" IN (@AllowedStates)
+                        AND ""ID"" NOT IN (
+                            SELECT ""VolumeID""
+                            FROM ""Fileset""
+                        )
+                ")
                     .SetParameterValue("@NewState", RemoteVolumeState.Deleting.ToString())
                     .SetParameterValue("@CurrentType", RemoteVolumeType.Files.ToString())
-                    .ExpandInClauseParameter("@AllowedStates", [RemoteVolumeState.Uploaded.ToString(), RemoteVolumeState.Verified.ToString(), RemoteVolumeState.Temporary.ToString(), RemoteVolumeState.Deleting.ToString()])
-                    .ExecuteNonQuery();
+                    .ExpandInClauseParameter("@AllowedStates", [
+                        RemoteVolumeState.Uploaded.ToString(),
+                        RemoteVolumeState.Verified.ToString(),
+                        RemoteVolumeState.Temporary.ToString(),
+                        RemoteVolumeState.Deleting.ToString()
+                    ])
+                    .ExecuteNonQueryAsync();
 
                 if (deleted != updated)
                     throw new Exception($"Unexpected number of remote volumes marked as deleted. Found {deleted} filesets, but {updated} volumes");
 
-                cmd.SetCommandAndParameters(@"SELECT ""Name"", ""Size"" FROM ""RemoteVolume"" WHERE ""Type"" = @Type AND ""State"" = @State ")
+                cmd.SetCommandAndParameters(@"
+                    SELECT
+                        ""Name"",
+                        ""Size""
+                    FROM ""RemoteVolume""
+                    WHERE
+                        ""Type"" = @Type
+                        AND ""State"" = @State
+                ")
                     .SetParameterValue("@Type", RemoteVolumeType.Files.ToString())
                     .SetParameterValue("@State", RemoteVolumeState.Deleting.ToString());
 
-                using (var rd = cmd.ExecuteReader())
-                    while (rd.Read())
-                        yield return new KeyValuePair<string, long>(rd.ConvertValueToString(0) ?? "", rd.ConvertValueToInt64(1));
+                using (var rd = await cmd.ExecuteReaderAsync())
+                    while (await rd.ReadAsync())
+                        yield return new KeyValuePair<string, long>(
+                            rd.ConvertValueToString(0) ?? "",
+                            rd.ConvertValueToInt64(1)
+                        );
             }
         }
 
@@ -179,39 +293,171 @@ namespace Duplicati.Library.Main.Database
         /// The sizes are the uncompressed values.
         /// </summary>
         /// <returns>A list of tuples with name, datasize, wastedbytes.</returns>
-        private IEnumerable<VolumeUsage> GetWastedSpaceReport(IDbTransaction transaction)
+        private async IAsyncEnumerable<VolumeUsage> GetWastedSpaceReport()
         {
             var tmptablename = "UsageReport-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
 
-            var usedBlocks = @"SELECT SUM(""Block"".""Size"") AS ""ActiveSize"", ""Block"".""VolumeID"" AS ""VolumeID"" FROM ""Block"", ""Remotevolume"" WHERE ""Block"".""VolumeID"" = ""Remotevolume"".""ID"" AND ""Block"".""ID"" NOT IN (SELECT ""Block"".""ID"" FROM ""Block"",""DeletedBlock"" WHERE ""Block"".""Hash"" = ""DeletedBlock"".""Hash"" AND ""Block"".""Size"" = ""DeletedBlock"".""Size"" AND ""Block"".""VolumeID"" = ""DeletedBlock"".""VolumeID"") GROUP BY ""Block"".""VolumeID"" ";
-            var lastmodifiedFile = @"SELECT ""Block"".""VolumeID"" AS ""VolumeID"", ""Fileset"".""Timestamp"" AS ""Sorttime"" FROM ""Fileset"", ""FilesetEntry"", ""FileLookup"", ""BlocksetEntry"", ""Block"" WHERE ""FilesetEntry"".""FileID"" = ""FileLookup"".""ID"" AND ""FileLookup"".""BlocksetID"" = ""BlocksetEntry"".""BlocksetID"" AND ""BlocksetEntry"".""BlockID"" = ""Block"".""ID"" AND ""Fileset"".""ID"" = ""FilesetEntry"".""FilesetID"" ";
-            var lastmodifiedMetadata = @"SELECT ""Block"".""VolumeID"" AS ""VolumeID"", ""Fileset"".""Timestamp"" AS ""Sorttime"" FROM ""Fileset"", ""FilesetEntry"", ""FileLookup"", ""BlocksetEntry"", ""Block"", ""Metadataset"" WHERE ""FilesetEntry"".""FileID"" = ""FileLookup"".""ID"" AND ""FileLookup"".""MetadataID"" = ""Metadataset"".""ID"" AND ""Metadataset"".""BlocksetID"" = ""BlocksetEntry"".""BlocksetID"" AND ""BlocksetEntry"".""BlockID"" = ""Block"".""ID"" AND ""Fileset"".""ID"" = ""FilesetEntry"".""FilesetID"" ";
-            var scantime = @"SELECT ""VolumeID"" AS ""VolumeID"", MIN(""Sorttime"") AS ""Sorttime"" FROM (" + lastmodifiedFile + @" UNION " + lastmodifiedMetadata + @") GROUP BY ""VolumeID"" ";
-            var active = @"SELECT ""A"".""ActiveSize"" AS ""ActiveSize"",  0 AS ""InactiveSize"", ""A"".""VolumeID"" AS ""VolumeID"", CASE WHEN ""B"".""Sorttime"" IS NULL THEN 0 ELSE ""B"".""Sorttime"" END AS ""Sorttime"" FROM (" + usedBlocks + @") A LEFT OUTER JOIN (" + scantime + @") B ON ""B"".""VolumeID"" = ""A"".""VolumeID"" ";
+            var usedBlocks = @"
+                SELECT
+                    SUM(""Block"".""Size"") AS ""ActiveSize"",
+                    ""Block"".""VolumeID"" AS ""VolumeID"" FROM ""Block"",
+                    ""Remotevolume""
+                WHERE
+                    ""Block"".""VolumeID"" = ""Remotevolume"".""ID""
+                    AND ""Block"".""ID"" NOT IN (
+                        SELECT ""Block"".""ID""
+                        FROM
+                            ""Block"",
+                            ""DeletedBlock""
+                        WHERE
+                            ""Block"".""Hash"" = ""DeletedBlock"".""Hash""
+                            AND ""Block"".""Size"" = ""DeletedBlock"".""Size""
+                            AND ""Block"".""VolumeID"" = ""DeletedBlock"".""VolumeID""
+                    )
+                    GROUP BY ""Block"".""VolumeID""
+            ";
 
-            var inactive = @"SELECT 0 AS ""ActiveSize"", SUM(""Size"") AS ""InactiveSize"", ""VolumeID"" AS ""VolumeID"", 0 AS ""SortScantime"" FROM ""DeletedBlock"" GROUP BY ""VolumeID"" ";
-            var empty = @"SELECT 0 AS ""ActiveSize"", 0 AS ""InactiveSize"", ""Remotevolume"".""ID"" AS ""VolumeID"", 0 AS ""SortScantime"" FROM ""Remotevolume"" WHERE ""Remotevolume"".""Type"" = @Type AND ""Remotevolume"".""State"" IN (@AllowedStates) AND ""Remotevolume"".""ID"" NOT IN (SELECT ""VolumeID"" FROM ""Block"") ";
+            var lastmodifiedFile = @"
+                SELECT
+                    ""Block"".""VolumeID"" AS ""VolumeID"",
+                    ""Fileset"".""Timestamp"" AS ""Sorttime""
+                FROM
+                    ""Fileset"",
+                    ""FilesetEntry"",
+                    ""FileLookup"",
+                    ""BlocksetEntry"",
+                    ""Block""
+                WHERE
+                    ""FilesetEntry"".""FileID"" = ""FileLookup"".""ID""
+                    AND ""FileLookup"".""BlocksetID"" = ""BlocksetEntry"".""BlocksetID""
+                    AND ""BlocksetEntry"".""BlockID"" = ""Block"".""ID""
+                    AND ""Fileset"".""ID"" = ""FilesetEntry"".""FilesetID""
+            ";
 
-            var combined = active + " UNION " + inactive + " UNION " + empty;
-            var collected = @"SELECT ""VolumeID"" AS ""VolumeID"", SUM(""ActiveSize"") AS ""ActiveSize"", SUM(""InactiveSize"") AS ""InactiveSize"", MAX(""Sorttime"") AS ""Sorttime"" FROM (" + combined + @") GROUP BY ""VolumeID"" ";
-            var createtable = FormatInvariant($"{@$"CREATE {TEMPORARY} TABLE ""{tmptablename}"" AS "}{collected}");
+            var lastmodifiedMetadata = @"
+                SELECT
+                    ""Block"".""VolumeID"" AS ""VolumeID"",
+                    ""Fileset"".""Timestamp"" AS ""Sorttime""
+                FROM
+                    ""Fileset"",
+                    ""FilesetEntry"",
+                    ""FileLookup"",
+                    ""BlocksetEntry"",
+                    ""Block"",
+                    ""Metadataset""
+                WHERE
+                    ""FilesetEntry"".""FileID"" = ""FileLookup"".""ID""
+                    AND ""FileLookup"".""MetadataID"" = ""Metadataset"".""ID""
+                    AND ""Metadataset"".""BlocksetID"" = ""BlocksetEntry"".""BlocksetID""
+                    AND ""BlocksetEntry"".""BlockID"" = ""Block"".""ID""
+                    AND ""Fileset"".""ID"" = ""FilesetEntry"".""FilesetID""
+            ";
 
-            using (var cmd = m_connection.CreateCommand(transaction))
+            var scantime = @$"
+                SELECT
+                    ""VolumeID"" AS ""VolumeID"",
+                    MIN(""Sorttime"") AS ""Sorttime""
+                FROM (
+                    {lastmodifiedFile}
+                    UNION {lastmodifiedMetadata}
+                )
+                GROUP BY ""VolumeID""
+            ";
+
+            var active = @$"
+                SELECT
+                    ""A"".""ActiveSize"" AS ""ActiveSize"",
+                    0 AS ""InactiveSize"",
+                    ""A"".""VolumeID"" AS ""VolumeID"",
+                    CASE
+                        WHEN ""B"".""Sorttime"" IS NULL
+                        THEN 0
+                        ELSE ""B"".""Sorttime""
+                    END AS ""Sorttime""
+                FROM ({usedBlocks}) A
+                LEFT OUTER JOIN ({scantime}) B
+                    ON ""B"".""VolumeID"" = ""A"".""VolumeID""
+            ";
+
+            var inactive = @"
+                SELECT
+                    0 AS ""ActiveSize"",
+                    SUM(""Size"") AS ""InactiveSize"",
+                    ""VolumeID"" AS ""VolumeID"",
+                    0 AS ""SortScantime""
+                FROM ""DeletedBlock""
+                GROUP BY ""VolumeID""
+            ";
+
+            var empty = @"
+                SELECT
+                    0 AS ""ActiveSize"",
+                    0 AS ""InactiveSize"",
+                    ""Remotevolume"".""ID"" AS ""VolumeID"",
+                    0 AS ""SortScantime""
+                FROM ""Remotevolume""
+                WHERE
+                    ""Remotevolume"".""Type"" = @Type
+                    AND ""Remotevolume"".""State"" IN (@AllowedStates)
+                    AND ""Remotevolume"".""ID"" NOT IN (
+                        SELECT ""VolumeID""
+                        FROM ""Block""
+                    )
+            ";
+
+            var combined = $"{active}  UNION {inactive} UNION {empty}";
+            var collected = @$"
+                SELECT
+                    ""VolumeID"" AS ""VolumeID"",
+                    SUM(""ActiveSize"") AS ""ActiveSize"",
+                    SUM(""InactiveSize"") AS ""InactiveSize"",
+                    MAX(""Sorttime"") AS ""Sorttime""
+                FROM ({combined})
+                GROUP BY ""VolumeID""
+            ";
+
+            var createtable = $"{@$"CREATE {TEMPORARY} TABLE ""{tmptablename}"" AS "}{collected}";
+
+            using (var cmd = m_connection.CreateCommand(m_rtr))
             {
                 try
                 {
-                    cmd.SetCommandAndParameters(createtable)
+                    await cmd.SetCommandAndParameters(createtable)
                         .SetParameterValue("@Type", RemoteVolumeType.Blocks.ToString())
-                        .ExpandInClauseParameter("@AllowedStates", [RemoteVolumeState.Uploaded.ToString(), RemoteVolumeState.Verified.ToString()])
-                        .ExecuteNonQuery();
+                        .ExpandInClauseParameter("@AllowedStates", [
+                            RemoteVolumeState.Uploaded.ToString(),
+                            RemoteVolumeState.Verified.ToString()
+                        ])
+                        .ExecuteNonQueryAsync();
 
-                    using (var rd = cmd.ExecuteReader(FormatInvariant($@"SELECT ""A"".""Name"", ""B"".""ActiveSize"", ""B"".""InactiveSize"", ""A"".""Size"" FROM ""Remotevolume"" A, ""{tmptablename}"" B WHERE ""A"".""ID"" = ""B"".""VolumeID"" ORDER BY ""B"".""Sorttime"" ASC ")))
-                        while (rd.Read())
-                            yield return new VolumeUsage(rd.ConvertValueToString(0) ?? "", rd.ConvertValueToInt64(1, 0) + rd.ConvertValueToInt64(2, 0), rd.ConvertValueToInt64(2, 0), rd.ConvertValueToInt64(3, 0));
+                    cmd.SetCommandAndParameters($@"
+                        SELECT
+                            ""A"".""Name"",
+                            ""B"".""ActiveSize"",
+                            ""B"".""InactiveSize"",
+                            ""A"".""Size""
+                        FROM
+                            ""Remotevolume"" A,
+                            ""{tmptablename}"" B
+                        WHERE ""A"".""ID"" = ""B"".""VolumeID""
+                        ORDER BY ""B"".""Sorttime"" ASC
+                    ");
+
+                    using (var rd = await cmd.ExecuteReaderAsync())
+                        while (await rd.ReadAsync())
+                            yield return new VolumeUsage(
+                                rd.ConvertValueToString(0) ?? "",
+                                rd.ConvertValueToInt64(1, 0) + rd.ConvertValueToInt64(2, 0),
+                                rd.ConvertValueToInt64(2, 0),
+                                rd.ConvertValueToInt64(3, 0)
+                            );
                 }
                 finally
                 {
-                    try { cmd.ExecuteNonQuery(FormatInvariant($@"DROP TABLE IF EXISTS ""{tmptablename}"" ")); }
+                    try
+                    {
+                        await cmd.ExecuteNonQueryAsync($@"DROP TABLE IF EXISTS ""{tmptablename}"" ");
+                    }
                     catch { }
                 }
             }
@@ -315,9 +561,9 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
-        public ICompactReport GetCompactReport(long volsize, long wastethreshold, long smallfilesize, long maxsmallfilecount, IDbTransaction transaction)
+        public async Task<ICompactReport> GetCompactReport(long volsize, long wastethreshold, long smallfilesize, long maxsmallfilecount)
         {
-            return new CompactReport(volsize, wastethreshold, smallfilesize, maxsmallfilecount, GetWastedSpaceReport(transaction).ToList());
+            return new CompactReport(volsize, wastethreshold, smallfilesize, maxsmallfilecount, await GetWastedSpaceReport().ToListAsync());
         }
 
 
@@ -331,25 +577,50 @@ namespace Duplicati.Library.Main.Database
             /// <param name="volumeId">The volume ID to check, or -1 to check all volumes</param>
             /// <param name="transaction">The transaction to execute the command in</param>
             /// <returns>True if the block is in use</returns>
-            bool UseBlock(string hash, long size, long volumeId, IDbTransaction? transaction);
+            Task<bool> UseBlock(string hash, long size, long volumeId);
         }
 
         private class BlockQuery : IBlockQuery
         {
-            private IDbCommand m_command;
+            private LocalDatabase m_db = null!;
 
-            public BlockQuery(IDbConnection con, IDbTransaction transaction)
+            private SqliteCommand m_command = null!;
+
+            [Obsolete("Calling this constructor will throw an exception. Use CreateAsync() instead.")]
+            public BlockQuery(SqliteConnection connection, SqliteTransaction? transaction)
             {
-                m_command = con.CreateCommand(transaction, @"SELECT ""VolumeID"" FROM ""Block"" WHERE ""Hash"" = @Hash AND ""Size"" = @Size ");
+                throw new NotImplementedException("Use CreateAsync() instead");
+            }
+
+            private BlockQuery()
+            {
+                // Private constructor to prevent instantiation without CreateAsync
+            }
+
+            public static async Task<BlockQuery> CreateAsync(LocalDatabase db)
+            {
+                return new BlockQuery
+                {
+                    m_db = db,
+                    m_command = await db.Connection.CreateCommandAsync(@"
+                        SELECT ""VolumeID""
+                        FROM ""Block""
+                        WHERE
+                            ""Hash"" = @Hash
+                            AND ""Size"" = @Size
+                    ")
+                };
             }
 
             /// <inheritdoc />
-            public bool UseBlock(string hash, long size, long volumeId, IDbTransaction? transaction)
+            public async Task<bool> UseBlock(string hash, long size, long volumeId)
             {
-                var r = m_command.SetTransaction(transaction)
+                var r = await m_command
+                    .SetTransaction(m_db.Transaction)
                     .SetParameterValue("@Hash", hash)
                     .SetParameterValue("@Size", size)
-                    .ExecuteScalarInt64(-1);
+                    .ExecuteScalarInt64Async(-1);
+
                 if (r == -1)
                 {
                     return false;
@@ -373,13 +644,14 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
+        // TODO signature has been changed.
         /// <summary>
         /// Builds a lookup table to enable faster response to block queries
         /// </summary>
-        public IBlockQuery CreateBlockQueryHelper(IDbTransaction transaction)
-        {
-            return new BlockQuery(m_connection, transaction);
-        }
+        //public IBlockQuery CreateBlockQueryHelper(IDbTransaction transaction)
+        //{
+        //    return new BlockQuery(m_connection, transaction);
+        //}
 
         /// <summary>
         /// Registers a block as moved to a new volume
@@ -387,15 +659,15 @@ namespace Duplicati.Library.Main.Database
         /// <param name="hash">The hash of the block</param>
         /// <param name="size">The size of the block</param>
         /// <param name="volumeID">The new volume ID</param>
-        /// <param name="tr">The transaction to execute the command in</param>
-        public void RegisterDuplicatedBlock(string hash, long size, long volumeID, IDbTransaction tr)
+        public async Task RegisterDuplicatedBlock(string hash, long size, long volumeID)
         {
-            m_registerDuplicateBlockCommand.Transaction = tr;
-            m_registerDuplicateBlockCommand.SetParameterValue("@VolumeId", volumeID);
-            m_registerDuplicateBlockCommand.SetParameterValue("@Hash", hash);
-            m_registerDuplicateBlockCommand.SetParameterValue("@Size", size);
             // Using INSERT OR IGNORE to avoid duplicate entries, result may be 1 or 0
-            m_registerDuplicateBlockCommand.ExecuteNonQuery();
+            await m_registerDuplicateBlockCommand
+                .SetTransaction(m_rtr)
+                .SetParameterValue("@VolumeId", volumeID)
+                .SetParameterValue("@Hash", hash)
+                .SetParameterValue("@Size", size)
+                .ExecuteNonQueryAsync();
         }
 
         /// <summary>
@@ -404,49 +676,114 @@ namespace Duplicati.Library.Main.Database
         /// <param name="filename">The file to remove</param>
         /// <param name="volumeIdsToBeRemoved">The volume IDs that will be removed</param>
         /// <param name="transaction">The transaction to execute the command in</param>
-        public void PrepareForDelete(string filename, IEnumerable<long> volumeIdsToBeRemoved, IDbTransaction transaction)
+        public async Task PrepareForDelete(string filename, IEnumerable<long> volumeIdsToBeRemoved)
         {
-            var deletedVolume = GetRemoteVolume(filename, transaction);
+            var deletedVolume = await GetRemoteVolume(filename);
             if (deletedVolume.Type != RemoteVolumeType.Blocks)
                 return;
 
-            using (var cmd = m_connection.CreateCommand(transaction))
+            using (var cmd = m_connection.CreateCommand(m_rtr))
             {
                 var updatedBlocks = "BlocksToUpdate-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
                 var replacementBlocks = "ReplacementBlocks-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
                 try
                 {
-                    cmd.SetCommandAndParameters(FormatInvariant($@"CREATE {TEMPORARY} TABLE ""{updatedBlocks}"" AS SELECT ""ID"" FROM ""Block"" WHERE ""VolumeID"" = @VolumeId"))
+                    await cmd.SetCommandAndParameters($@"
+                        CREATE {TEMPORARY} TABLE ""{updatedBlocks}"" AS
+                        SELECT ""ID""
+                        FROM ""Block""
+                        WHERE ""VolumeID"" = @VolumeId
+                    ")
                         .SetParameterValue("@VolumeId", deletedVolume.ID)
-                        .ExecuteNonQuery();
+                        .ExecuteNonQueryAsync();
 
-                    using (var tempTable = new TemporaryDbValueList(m_connection, transaction, volumeIdsToBeRemoved))
-                        cmd.SetCommandAndParameters(FormatInvariant($@"CREATE {TEMPORARY} TABLE ""{replacementBlocks}"" AS SELECT ""BlockID"", MAX(""VolumeID"") AS ""VolumeID"" FROM ""DuplicateBlock"" WHERE ""VolumeID"" NOT IN (@VolumeIds) AND ""BlockID"" IN (SELECT ""ID"" FROM ""{updatedBlocks}"") GROUP BY ""BlockID"" "))
-                            .ExpandInClauseParameter("@VolumeIds", tempTable)
-                            .ExecuteNonQuery();
+                    using (var tempTable = await TemporaryDbValueList.CreateAsync(this, volumeIdsToBeRemoved))
+                        await (await cmd.SetCommandAndParameters($@"
+                            CREATE {TEMPORARY} TABLE ""{replacementBlocks}"" AS
+                            SELECT
+                                ""BlockID"",
+                                MAX(""VolumeID"") AS ""VolumeID""
+                            FROM ""DuplicateBlock""
+                            WHERE
+                                ""VolumeID"" NOT IN (@VolumeIds)
+                                AND ""BlockID"" IN (
+                                    SELECT ""ID""
+                                    FROM ""{updatedBlocks}""
+                                )
+                                GROUP BY ""BlockID""
+                        ")
+                            .ExpandInClauseParameterAsync("@VolumeIds", tempTable))
+                            .ExecuteNonQueryAsync();
 
-                    var targetCount = cmd.ExecuteScalarInt64(FormatInvariant($@"SELECT COUNT(*) FROM ""{updatedBlocks}"" "));
+                    var targetCount = await cmd.ExecuteScalarInt64Async($@"
+                        SELECT COUNT(*)
+                        FROM ""{updatedBlocks}""
+                    ");
+
                     if (targetCount == 0)
                         return;
 
-                    var replacementCount = cmd.ExecuteScalarInt64($@"SELECT COUNT(*) FROM ""{replacementBlocks}"" ");
-                    var updateCount = cmd.SetCommandAndParameters(FormatInvariant(@$"UPDATE ""Block"" SET ""VolumeID"" = (SELECT ""VolumeID"" FROM ""{replacementBlocks}"" WHERE ""{replacementBlocks}"".""BlockID"" = ""Block"".""ID"" AND ""Block"".""VolumeID"" = @VolumeId) WHERE ""Block"".""VolumeID"" = @VolumeId "))
+                    var replacementCount = await cmd.ExecuteScalarInt64Async($@"
+                        SELECT COUNT(*)
+                        FROM ""{replacementBlocks}""
+                    ");
+
+                    var updateCount = await cmd.SetCommandAndParameters(@$"
+                        UPDATE ""Block""
+                        SET ""VolumeID"" = (
+                            SELECT ""VolumeID""
+                            FROM ""{replacementBlocks}""
+                            WHERE
+                                ""{replacementBlocks}"".""BlockID"" = ""Block"".""ID""
+                                AND ""Block"".""VolumeID"" = @VolumeId
+                        )
+                        WHERE ""Block"".""VolumeID"" = @VolumeId
+                    ")
                         .SetParameterValue("@VolumeId", deletedVolume.ID)
-                        .ExecuteNonQuery();
-                    var deleteCount = cmd.ExecuteNonQuery(FormatInvariant(@$"DELETE FROM ""DuplicateBlock"" WHERE (""DuplicateBlock"".""BlockID"" || ':' || ""DuplicateBlock"".""VolumeID"") IN (SELECT ""RB"".""BlockID"" || ':' || ""RB"".""VolumeID"" FROM ""{replacementBlocks}"" RB)"));
-                    if (targetCount != updateCount || replacementCount != deleteCount || updateCount != deleteCount)
+                        .ExecuteNonQueryAsync();
+
+                    var deleteCount = await cmd.ExecuteNonQueryAsync(@$"
+                        DELETE FROM ""DuplicateBlock""
+                        WHERE
+                            (
+                                ""DuplicateBlock"".""BlockID""
+                                || ':'
+                                || ""DuplicateBlock"".""VolumeID""
+                            ) IN (
+                                SELECT
+                                    ""RB"".""BlockID""
+                                    || ':'
+                                    || ""RB"".""VolumeID""
+                                FROM ""{replacementBlocks}"" RB
+                            )
+                    ");
+
+                    if (targetCount != updateCount
+                        || replacementCount != deleteCount
+                        || updateCount != deleteCount)
+                    {
                         throw new Exception($"Unexpected number of rows updated. Expected {targetCount} but got updated {updateCount}, deleted {deleteCount}, and replaced {replacementCount}");
+                    }
 
                     // Remove knowledge of any old blocks
-                    cmd.SetCommandAndParameters(FormatInvariant(@$"DELETE FROM ""DuplicateBlock"" WHERE ""VolumeID"" = @VolumeId"))
+                    await cmd.SetCommandAndParameters(@$"
+                        DELETE FROM ""DuplicateBlock""
+                        WHERE ""VolumeID"" = @VolumeId
+                    ")
                         .SetParameterValue("@VolumeId", deletedVolume.ID)
-                        .ExecuteNonQuery();
+                        .ExecuteNonQueryAsync();
                 }
                 finally
                 {
-                    try { cmd.ExecuteNonQuery(FormatInvariant($@"DROP TABLE IF EXISTS ""{updatedBlocks}"" ")); }
+                    try
+                    {
+                        await cmd.ExecuteNonQueryAsync($@"DROP TABLE IF EXISTS ""{updatedBlocks}"" ");
+                    }
                     catch { }
-                    try { cmd.ExecuteNonQuery(FormatInvariant($@"DROP TABLE IF EXISTS ""{replacementBlocks}"" ")); }
+                    try
+                    {
+                        await cmd.ExecuteNonQueryAsync($@"DROP TABLE IF EXISTS ""{replacementBlocks}"" ");
+                    }
                     catch { }
                 }
             }
@@ -458,9 +795,9 @@ namespace Duplicati.Library.Main.Database
         /// <param name="deleteableVolumes">Block volumes slated for deletion.</param>
         /// <param name="transaction">The transaction to execute the command in</param>
         /// <returns>The deletable volumes.</returns>
-        public IEnumerable<IRemoteVolume> ReOrderDeleteableVolumes(IEnumerable<IRemoteVolume> deleteableVolumes, IDbTransaction transaction)
+        public async IAsyncEnumerable<IRemoteVolume> ReOrderDeleteableVolumes(IEnumerable<IRemoteVolume> deleteableVolumes)
         {
-            using (var cmd = m_connection.CreateCommand(transaction))
+            using (var cmd = m_connection.CreateCommand(m_rtr))
             {
                 // Although the generated index volumes are always in pairs,
                 // this code handles many-to-many relations between
@@ -468,8 +805,25 @@ namespace Duplicati.Library.Main.Database
                 var lookupBlock = new Dictionary<string, List<IRemoteVolume>>();
                 var lookupIndexfiles = new Dictionary<string, List<string>>();
 
-                using (var rd = cmd.ExecuteReader(@"SELECT ""C"".""Name"", ""B"".""Name"", ""B"".""Hash"", ""B"".""Size"" FROM ""IndexBlockLink"" A, ""RemoteVolume"" B, ""RemoteVolume"" C WHERE ""A"".""IndexVolumeID"" = ""B"".""ID"" AND ""A"".""BlockVolumeID"" = ""C"".""ID"" AND ""B"".""Hash"" IS NOT NULL AND ""B"".""Size"" IS NOT NULL "))
-                    while (rd.Read())
+                cmd.SetCommandAndParameters(@"
+                    SELECT
+                        ""C"".""Name"",
+                        ""B"".""Name"",
+                        ""B"".""Hash"",
+                        ""B"".""Size""
+                    FROM
+                        ""IndexBlockLink"" A,
+                        ""RemoteVolume"" B,
+                        ""RemoteVolume"" C
+                    WHERE
+                        ""A"".""IndexVolumeID"" = ""B"".""ID""
+                        AND ""A"".""BlockVolumeID"" = ""C"".""ID""
+                        AND ""B"".""Hash"" IS NOT NULL
+                        AND ""B"".""Size"" IS NOT NULL
+                ");
+
+                using (var rd = await cmd.ExecuteReaderAsync())
+                    while (await rd.ReadAsync())
                     {
                         var name = rd.ConvertValueToString(0) ?? "";
                         if (!lookupBlock.TryGetValue(name, out var indexfileList))
@@ -478,7 +832,11 @@ namespace Duplicati.Library.Main.Database
                             lookupBlock.Add(name, indexfileList);
                         }
 
-                        var v = new RemoteVolume(rd.ConvertValueToString(1), rd.ConvertValueToString(2), rd.ConvertValueToInt64(3));
+                        var v = new RemoteVolume(
+                            rd.ConvertValueToString(1),
+                            rd.ConvertValueToString(2),
+                            rd.ConvertValueToInt64(3)
+                        );
                         indexfileList.Add(v);
 
                         if (!lookupIndexfiles.TryGetValue(v.Name, out var blockList))
