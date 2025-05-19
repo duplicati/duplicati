@@ -544,8 +544,8 @@ namespace Duplicati.Library.Main.Database
                 WHERE ""Name"" IN (@Name)
             ");
             cmd.SetTransaction(transaction);
-            using var tmptable = new TemporaryDbValueList(m_connection, transaction, files);
-            cmd.ExpandInClauseParameter("@Name", tmptable);
+            using var tmptable = await TemporaryDbValueList.CreateAsync(this, files);
+            await cmd.ExpandInClauseParameter("@Name", tmptable);
 
             using var rd = await cmd.ExecuteReaderAsync();
             while (await rd.ReadAsync())

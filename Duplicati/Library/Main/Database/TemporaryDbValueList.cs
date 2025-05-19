@@ -22,6 +22,8 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using System.Threading.Tasks;
+using Duplicati.Library.Utility;
 using Microsoft.Data.Sqlite;
 
 #nullable enable
@@ -42,7 +44,7 @@ internal class TemporaryDbValueList : IDisposable
     /// The command to use
     /// </summary>
     private SqliteCommand? _cmd;
-    private LocalDatabase _db;
+    private readonly LocalDatabase _db;
     /// <summary>
     /// The table to use
     /// </summary>
@@ -59,7 +61,7 @@ internal class TemporaryDbValueList : IDisposable
     /// <summary>
     /// The values to use
     /// </summary>
-    private IEnumerable<object> _values;
+    private readonly IEnumerable<object> _values;
     /// <summary>
     /// The type of the values
     /// </summary>
@@ -68,35 +70,34 @@ internal class TemporaryDbValueList : IDisposable
     /// <summary>
     /// Creates a new reusable transaction
     /// </summary>
-    /// <param name="con">The connection to use</param>
-    /// <param name="transaction">The transaction to use</param>
-    /// <param name="values">The values to use</param>
-    public TemporaryDbValueList(LocalDatabase db, IEnumerable<long> values)
-    {
-        _db = db;
-        _valuesType = "INTEGER";
-        if (values == null)
-            throw new ArgumentNullException(nameof(values));
-        _values = values.Cast<object>();
-        if (values.Count() > LocalDatabase.CHUNK_SIZE)
-            ForceToTable();
-    }
-
-    /// <summary>
-    /// Creates a new reusable transaction
-    /// </summary>
     /// <param name="cmd">The command to use</param>
     /// <param name="con">The connection to use</param>
     /// <param name="values">The values to use</param>
-    public TemporaryDbValueList(LocalDatabase db, IEnumerable<string> values)
+    private TemporaryDbValueList(LocalDatabase db, IEnumerable<object> values, string valuesType)
     {
         _db = db;
-        _valuesType = "TEXT";
-        if (values == null)
-            throw new ArgumentNullException(nameof(values));
-        _values = values.Cast<object>();
-        if (values.Count() > LocalDatabase.CHUNK_SIZE)
-            ForceToTable();
+        _valuesType = valuesType;
+        _values = values;
+
+        ArgumentNullException.ThrowIfNull(values);
+    }
+
+    internal static async Task<TemporaryDbValueList> CreateAsync(LocalDatabase db, IEnumerable<long> values)
+    {
+        return await DoCreateAsync(new TemporaryDbValueList(db, values.Cast<object>(), "INTEGER"));
+    }
+
+    internal static async Task<TemporaryDbValueList> CreateAsync(LocalDatabase db, IEnumerable<string> values)
+    {
+        return await DoCreateAsync(new TemporaryDbValueList(db, values.Cast<object>(), "TEXT"));
+    }
+
+    private static async Task<TemporaryDbValueList> DoCreateAsync(TemporaryDbValueList valueList)
+    {
+        if (valueList._values.Count() > LocalDatabase.CHUNK_SIZE)
+            await valueList.ForceToTable();
+
+        return valueList;
     }
 
     /// <summary>
@@ -113,20 +114,23 @@ internal class TemporaryDbValueList : IDisposable
     /// Get the in clause for the values, creating the table if needed
     /// </summary>
     /// <returns>The in clause for the values</returns>
-    public string GetInClause()
+    public async Task<string> GetInClause()
     {
         if (_disposed)
             throw new ObjectDisposedException(nameof(TemporaryDbValueList));
 
-        ForceToTable();
+        await ForceToTable();
 
-        return $@"SELECT ""Value"" FROM ""{_tableName}""";
+        return $@"
+            SELECT ""Value""
+            FROM ""{_tableName}""
+        ";
     }
 
     /// <summary>
     /// Force the values to be written to a table, if not already done
     /// </summary>
-    public void ForceToTable()
+    public async Task ForceToTable()
     {
         if (_disposed)
             throw new ObjectDisposedException(nameof(TemporaryDbValueList));
@@ -135,18 +139,23 @@ internal class TemporaryDbValueList : IDisposable
             return;
 
         _cmd = _db.Connection.CreateCommand(_db.Transaction);
-        _cmd.ExecuteNonQuery($@"CREATE TEMPORARY TABLE ""{_tableName}"" (""Value"" {_valuesType})");
+        await _cmd.ExecuteNonQueryAsync($@"
+            CREATE TEMPORARY TABLE ""{_tableName}"" (""Value"" {_valuesType})
+        ");
         _isTable = true;
         foreach (var slice in _values.Chunk(LocalDatabase.CHUNK_SIZE))
         {
             var parameterNames = slice.Select((_, i) => $"@p{i}").ToArray();
-            var sql = $@"INSERT INTO ""{_tableName}"" (""Value"") VALUES {string.Join(", ", parameterNames.Select(p => $"({p})"))}";
+            var sql = $@"
+                INSERT INTO ""{_tableName}"" (""Value"")
+                VALUES {string.Join(", ", parameterNames.Select(p => $"({p})"))}
+            ";
 
-            _cmd.CommandText = sql;
+            _cmd.SetCommandAndParameters(sql);
             for (int i = 0; i < slice.Length; i++)
-                _cmd.AddNamedParameter(parameterNames[i], slice[i]);
+                _cmd.SetParameterValue(parameterNames[i], slice[i]);
 
-            _cmd.ExecuteNonQuery();
+            await _cmd.ExecuteNonQueryAsync();
         }
     }
 
@@ -158,6 +167,11 @@ internal class TemporaryDbValueList : IDisposable
     /// <inheritdoc/>
     public void Dispose()
     {
+        DisposeAsync().Await();
+    }
+
+    public async Task DisposeAsync()
+    {
         if (_disposed)
             return;
         _disposed = true;
@@ -167,8 +181,10 @@ internal class TemporaryDbValueList : IDisposable
         try
         {
             if (_cmd != null)
-                _cmd.ExecuteNonQuery($@"DROP TABLE ""{_tableName}""");
-            _cmd?.Dispose();
+            {
+                await _cmd.ExecuteNonQueryAsync($@"DROP TABLE ""{_tableName}""");
+                await _cmd.DisposeAsync();
+            }
             _cmd = null;
         }
         catch (Exception ex)

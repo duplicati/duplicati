@@ -241,7 +241,7 @@ public static partial class ExtensionMethods
         return cmd;
     }
 
-    internal static SqliteCommand ExpandInClauseParameter(this SqliteCommand cmd, string originalParamName, TemporaryDbValueList values)
+    internal static async Task<SqliteCommand> ExpandInClauseParameter(this SqliteCommand cmd, string originalParamName, TemporaryDbValueList values)
     {
         if (string.IsNullOrWhiteSpace(originalParamName) || !originalParamName.StartsWith("@"))
             throw new ArgumentException("Parameter name must start with '@'", nameof(originalParamName));
@@ -250,7 +250,7 @@ public static partial class ExtensionMethods
             return ExpandInClauseParameter(cmd, originalParamName, values.Values);
 
         // We have a temporary table, so we need to replace the parameter with the table name
-        cmd.CommandText = cmd.CommandText.Replace(originalParamName, values.GetInClause(), StringComparison.OrdinalIgnoreCase);
+        cmd.CommandText = cmd.CommandText.Replace(originalParamName, await values.GetInClause(), StringComparison.OrdinalIgnoreCase);
         return cmd;
     }
 
