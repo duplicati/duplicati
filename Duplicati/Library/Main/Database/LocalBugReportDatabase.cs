@@ -22,6 +22,7 @@
 #nullable enable
 
 using System;
+using System.Threading.Tasks;
 using Duplicati.Library.Common.IO;
 
 namespace Duplicati.Library.Main.Database
@@ -33,16 +34,16 @@ namespace Duplicati.Library.Main.Database
         /// </summary>
         private static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(LocalBugReportDatabase));
 
-        public LocalBugReportDatabase(string path, long pagecachesize)
-            : base(path, "BugReportCreate", false, pagecachesize)
+        public static async Task<LocalBugReportDatabase> CreateAsync(string path, long pagecachesize)
         {
-            ShouldCloseConnection = true;
+            var db = new LocalBugReportDatabase();
+
+            db = (LocalBugReportDatabase)await CreateLocalDatabaseAsync(db, path, "BugReportCreate", false, pagecachesize);
+            db.ShouldCloseConnection = true;
+
+            return db;
         }
 
-        public void Fix()
-        {
-            using (var tr = m_connection.BeginTransactionSafe())
-            using (var cmd = m_connection.CreateCommand())
             {
                 cmd.Transaction = tr;
                 var tablename = "PathMap-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
