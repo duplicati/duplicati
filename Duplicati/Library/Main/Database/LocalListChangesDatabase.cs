@@ -1,22 +1,22 @@
 // Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
-// 
-// Permission is hereby granted, free of charge, to any person obtaining a 
-// copy of this software and associated documentation files (the "Software"), 
-// to deal in the Software without restriction, including without limitation 
-// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
-// and/or sell copies of the Software, and to permit persons to whom the 
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the "Software"),
+// to deal in the Software without restriction, including without limitation
+// the rights to use, copy, modify, merge, publish, distribute, sublicense,
+// and/or sell copies of the Software, and to permit persons to whom the
 // Software is furnished to do so, subject to the following conditions:
-// 
-// The above copyright notice and this permission notice shall be included in 
+//
+// The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
-// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
 #nullable enable
@@ -24,16 +24,22 @@
 using System;
 using System.Data;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Main.Database
 {
     internal class LocalListChangesDatabase : LocalDatabase
     {
-        public LocalListChangesDatabase(string path, long pagecachesize)
-            : base(path, "ListChanges", false, pagecachesize)
+
+        public static async Task<LocalListChangesDatabase> CreateAsync(string path, long pagecachesize)
         {
-            ShouldCloseConnection = true;
+            var db = new LocalListChangesDatabase();
+
+            db = (LocalListChangesDatabase)await CreateLocalDatabaseAsync(db, path, "ListChanges", false, pagecachesize);
+            db.ShouldCloseConnection = true;
+
+            return db;
         }
 
         public interface IStorageHelper : IDisposable
@@ -97,31 +103,39 @@ namespace Duplicati.Library.Main.Database
 
         private class StorageHelper : IStorageHelper
         {
-            private readonly IDbConnection m_connection;
-            private IDbTransaction m_transaction;
+            private IDbConnection m_connection = null!;
+            private IDbTransaction m_transaction = null!;
 
-            private IDbCommand m_insertPreviousElementCommand;
-            private IDbCommand m_insertCurrentElementCommand;
+            private IDbCommand m_insertPreviousElementCommand = null!;
+            private IDbCommand m_insertCurrentElementCommand = null!;
 
-            private string m_previousTable;
-            private string m_currentTable;
+            private string m_previousTable = null!;
+            private string m_currentTable = null!;
 
+            [Obsolete("Calling this constructor will throw an exception. Use CreateAsync instead.")]
             public StorageHelper(IDbConnection con)
             {
-                m_connection = con;
-                m_previousTable = "Previous-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
-                m_currentTable = "Current-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
+            }
 
-                m_transaction = m_connection.BeginTransactionSafe();
+            private StorageHelper() { }
 
-                using (var cmd = m_connection.CreateCommand(m_transaction))
+            public static async Task<StorageHelper> CreateAsync(LocalDatabase db)
+            {
+                var sh = new StorageHelper();
+                sh.m_connection = db.Connection;
+                sh.m_previousTable = "Previous-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
+                sh.m_currentTable = "Current-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
+
+                using (var cmd = sh.m_connection.CreateCommand(db.Transaction))
                 {
-                    cmd.ExecuteNonQuery(FormatInvariant($@"CREATE TEMPORARY TABLE ""{m_previousTable}"" (""Path"" TEXT NOT NULL, ""FileHash"" TEXT NULL, ""MetaHash"" TEXT NOT NULL, ""Size"" INTEGER NOT NULL, ""Type"" INTEGER NOT NULL) "));
-                    cmd.ExecuteNonQuery(FormatInvariant($@"CREATE TEMPORARY TABLE ""{m_currentTable}"" (""Path"" TEXT NOT NULL, ""FileHash"" TEXT NULL, ""MetaHash"" TEXT NOT NULL, ""Size"" INTEGER NOT NULL, ""Type"" INTEGER NOT NULL) "));
+                    cmd.ExecuteNonQuery(FormatInvariant($@"CREATE TEMPORARY TABLE ""{sh.m_previousTable}"" (""Path"" TEXT NOT NULL, ""FileHash"" TEXT NULL, ""MetaHash"" TEXT NOT NULL, ""Size"" INTEGER NOT NULL, ""Type"" INTEGER NOT NULL) "));
+                    cmd.ExecuteNonQuery(FormatInvariant($@"CREATE TEMPORARY TABLE ""{sh.m_currentTable}"" (""Path"" TEXT NOT NULL, ""FileHash"" TEXT NULL, ""MetaHash"" TEXT NOT NULL, ""Size"" INTEGER NOT NULL, ""Type"" INTEGER NOT NULL) "));
                 }
 
-                m_insertPreviousElementCommand = m_connection.CreateCommand(m_transaction, FormatInvariant($@"INSERT INTO ""{m_previousTable}"" (""Path"", ""FileHash"", ""MetaHash"", ""Size"", ""Type"") VALUES (@Path,@FileHash,@MetaHash,@Size,@Type)"));
-                m_insertCurrentElementCommand = m_connection.CreateCommand(FormatInvariant($@"INSERT INTO ""{m_currentTable}"" (""Path"", ""FileHash"", ""MetaHash"", ""Size"", ""Type"") VALUES (@Path,@FileHash,@MetaHash,@Size,@Type)"));
+                sh.m_insertPreviousElementCommand = sh.m_connection.CreateCommand(sh.m_transaction, FormatInvariant($@"INSERT INTO ""{sh.m_previousTable}"" (""Path"", ""FileHash"", ""MetaHash"", ""Size"", ""Type"") VALUES (@Path,@FileHash,@MetaHash,@Size,@Type)"));
+                sh.m_insertCurrentElementCommand = sh.m_connection.CreateCommand(FormatInvariant($@"INSERT INTO ""{sh.m_currentTable}"" (""Path"", ""FileHash"", ""MetaHash"", ""Size"", ""Type"") VALUES (@Path,@FileHash,@MetaHash,@Size,@Type)"));
+
+                return sh;
             }
 
             public void AddFromDb(long filesetId, bool asNew, IFilter filter)
