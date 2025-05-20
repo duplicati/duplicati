@@ -22,10 +22,10 @@
 #nullable enable
 
 using System;
-using System.Data;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Duplicati.Library.Utility;
+using Microsoft.Data.Sqlite;
 
 namespace Duplicati.Library.Main.Database
 {
@@ -50,14 +50,9 @@ namespace Duplicati.Library.Main.Database
             return dbnew;
         }
 
-        public ITemporaryFileset CreateTemporaryFileset(long parentid, IDbTransaction transaction)
+        public string GetRemoteVolumeNameForFileset(long id)
         {
-            return new TemporaryFileset(parentid, this, m_connection, transaction);
-        }
-
-        public string GetRemoteVolumeNameForFileset(long id, IDbTransaction transaction)
-        {
-            using var cmd = m_connection.CreateCommand(transaction, @"SELECT ""B"".""Name"" FROM ""Fileset"" A, ""RemoteVolume"" B WHERE ""A"".""VolumeID"" = ""B"".""ID"" AND ""A"".""ID"" = @FilesetId ")
+            using var cmd = m_connection.CreateCommand(@"SELECT ""B"".""Name"" FROM ""Fileset"" A, ""RemoteVolume"" B WHERE ""A"".""VolumeID"" = ""B"".""ID"" AND ""A"".""ID"" = @FilesetId ")
                 .SetParameterValue("@FilesetId", id);
             using (var rd = cmd.ExecuteReader())
                 if (!rd.Read())
@@ -66,9 +61,9 @@ namespace Duplicati.Library.Main.Database
                     return rd.ConvertValueToString(0) ?? throw new Exception($"Remote volume name for fileset with id {id} is null");
         }
 
-        internal long CountOrphanFiles(IDbTransaction transaction)
+        internal long CountOrphanFiles()
         {
-            using (var cmd = m_connection.CreateCommand(transaction))
+            using (var cmd = m_connection.CreateCommand())
             using (var rd = cmd.ExecuteReader(@"SELECT COUNT(*) FROM ""FileLookup"" WHERE ""ID"" NOT IN (SELECT DISTINCT ""FileID"" FROM ""FilesetEntry"")"))
                 if (rd.Read())
                     return rd.ConvertValueToInt64(0, 0);
@@ -84,7 +79,7 @@ namespace Duplicati.Library.Main.Database
             long UpdatedFileCount { get; }
 
             void ApplyFilter(Library.Utility.IFilter filter);
-            void ApplyFilter(Func<IDbCommand, long, string, int> filtercommand);
+            void ApplyFilter(Func<SqliteCommand, long, string, int> filtercommand);
             Tuple<long, long> ConvertToPermanentFileset(string name, DateTime timestamp, bool isFullBackup);
             IEnumerable<KeyValuePair<string, long>> ListAllDeletedFiles();
         }
@@ -100,7 +95,7 @@ namespace Duplicati.Library.Main.Database
             public long UpdatedFileCount { get; private set; }
 
             [Obsolete("Calling this constructor will throw an exception. Use CreateAsync instead.")]
-            public TemporaryFileset(long parentid, LocalPurgeDatabase parentdb, IDbConnection connection, IDbTransaction transaction)
+            public TemporaryFileset(long parentid, LocalPurgeDatabase parentdb, SqliteConnection connection, SqliteTransaction transaction)
             {
                 throw new NotImplementedException("Use CreateAsync instead");
             }
@@ -122,10 +117,10 @@ namespace Duplicati.Library.Main.Database
                 return tempf;
             }
 
-            public void ApplyFilter(Func<IDbCommand, long, string, int> filtercommand)
+            public void ApplyFilter(Func<SqliteCommand, long, string, int> filtercommand)
             {
                 int updated;
-                using (var cmd = m_connection.CreateCommand(m_transaction))
+                using (var cmd = m_connection.CreateCommand())
                     updated = filtercommand(cmd, ParentID, m_tablename);
 
                 PostFilterChecks(updated);
@@ -140,7 +135,7 @@ namespace Duplicati.Library.Main.Database
                     // SQLite only supports ASCII compares
                     var p = expression.GetSimpleList();
                     var filenamestable = "Filenames-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
-                    using (var cmd = m_connection.CreateCommand(m_transaction))
+                    using (var cmd = m_connection.CreateCommand())
                     {
                         cmd.ExecuteNonQuery(FormatInvariant($@"CREATE TEMPORARY TABLE ""{filenamestable}"" (""Path"" TEXT NOT NULL) "));
                         cmd.SetCommandAndParameters(FormatInvariant($@"INSERT INTO ""{filenamestable}"" (""Path"") VALUES (@Path)"));
@@ -158,8 +153,8 @@ namespace Duplicati.Library.Main.Database
                 {
                     // Do row-wise iteration
                     var values = new object[2];
-                    using (var cmd = m_connection.CreateCommand(m_transaction))
-                    using (var cmd2 = m_connection.CreateCommand(m_transaction))
+                    using (var cmd = m_connection.CreateCommand())
+                    using (var cmd2 = m_connection.CreateCommand())
                     {
                         cmd2.SetCommandAndParameters(FormatInvariant($@"INSERT INTO ""{m_tablename}"" (""FileID"") VALUES (@FileId)"));
                         cmd.SetCommandAndParameters(@"SELECT ""B"".""Path"", ""A"".""FileID"" FROM ""FilesetEntry"" A, ""File"" B WHERE ""A"".""FilesetID"" = @FilesetId AND ""A"".""FileID"" = ""B"".""ID"" ")
@@ -182,7 +177,7 @@ namespace Duplicati.Library.Main.Database
 
             private void PostFilterChecks(int updated)
             {
-                using (var cmd = m_connection.CreateCommand(m_transaction))
+                using (var cmd = m_connection.CreateCommand())
                 {
                     UpdatedFileCount = updated;
                     RemovedFileCount = cmd.ExecuteScalarInt64(FormatInvariant($@"SELECT COUNT(*) FROM ""{m_tablename}"""), 0);
@@ -203,11 +198,11 @@ namespace Duplicati.Library.Main.Database
 
             public Tuple<long, long> ConvertToPermanentFileset(string name, DateTime timestamp, bool isFullBackup)
             {
-                var remotevolid = m_db.RegisterRemoteVolume(name, RemoteVolumeType.Files, RemoteVolumeState.Temporary, m_transaction);
-                var filesetid = m_db.CreateFileset(remotevolid, timestamp, m_transaction);
+                var remotevolid = m_db.RegisterRemoteVolume(name, RemoteVolumeType.Files, RemoteVolumeState.Temporary);
+                var filesetid = m_db.CreateFileset(remotevolid, timestamp);
                 m_db.UpdateFullBackupStateInFileset(filesetid, isFullBackup);
 
-                using (var cmd = m_connection.CreateCommand(m_transaction))
+                using (var cmd = m_connection.CreateCommand())
                     cmd.SetCommandAndParameters(FormatInvariant($@"INSERT INTO ""FilesetEntry"" (""FilesetID"", ""FileID"", ""Lastmodified"") SELECT @TargetFilesetId, ""FileID"", ""LastModified"" FROM ""FilesetEntry"" WHERE ""FilesetID"" = @SourceFilesetId AND ""FileID"" NOT IN ""{m_tablename}"" "))
                     .SetParameterValue("@TargetFilesetId", filesetid)
                     .SetParameterValue("@SourceFilesetId", ParentID)
@@ -218,7 +213,7 @@ namespace Duplicati.Library.Main.Database
 
             public IEnumerable<KeyValuePair<string, long>> ListAllDeletedFiles()
             {
-                using (var cmd = m_connection.CreateCommand(m_transaction))
+                using (var cmd = m_connection.CreateCommand())
                 using (var rd = cmd.ExecuteReader(FormatInvariant($@"SELECT ""B"".""Path"", ""C"".""Length"" FROM ""{m_tablename}"" A, ""File"" B, ""Blockset"" C WHERE ""A"".""FileID"" = ""B"".""ID"" AND ""B"".""BlocksetID"" = ""C"".""ID"" ")))
                     while (rd.Read())
                         yield return new KeyValuePair<string, long>(rd.ConvertValueToString(0) ?? "", rd.ConvertValueToInt64(1));
@@ -228,7 +223,7 @@ namespace Duplicati.Library.Main.Database
             {
                 try
                 {
-                    using (var cmd = m_connection.CreateCommand(m_transaction))
+                    using (var cmd = m_connection.CreateCommand())
                         cmd.ExecuteNonQuery(FormatInvariant($@"DROP TABLE IF EXISTS ""{m_tablename}"""));
                 }
                 catch
