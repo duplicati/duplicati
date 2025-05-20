@@ -789,8 +789,33 @@ namespace Duplicati.Library.Utility
         /// <param name="default">default value</param> 
         /// <returns></returns> 
         public static int ParseIntOption(IReadOnlyDictionary<string, string?> options, string value, int @default)
+            => options.TryGetValue(value, out var opt) && int.TryParse(opt ?? string.Empty, out var result) ? result : @default;
+
+        /// <summary> 
+        /// Parses an option with long value, returning the default value if the option is not found or cannot be parsed 
+        /// </summary> 
+        /// <param name="options">The set of options to look for the setting in</param> 
+        /// <param name="value">The value to look for in the settings</param> 
+        /// <param name="default">default value</param> 
+        /// <returns></returns> 
+        public static long ParseLongOption(IReadOnlyDictionary<string, string?> options, string value, long @default)
+            => options.TryGetValue(value, out var opt) && long.TryParse(opt ?? string.Empty, out var result) ? result : @default;
+
+        /// <summary>
+        /// Parses a size option from the option set, returning the default value if the option is not found or cannot be parsed
+        /// </summary>
+        /// <param name="options">The set of options to look for the setting in</param>
+        /// <param name="value">The value to look for in the settings</param>
+        /// <param name="defaultMultiplier">Multiplier to use if the value does not have a multiplier</param>
+        /// <param name="default">The default value to return if there are no matches.</param>
+        /// <returns>The parsed or default size value.</returns>
+        public static long ParseSizeOption(IReadOnlyDictionary<string, string?> options, string value, string defaultMultiplier, string @default)
         {
-            return options.TryGetValue(value, out var opt) && int.TryParse(opt ?? string.Empty, out var result) ? result : @default;
+            var opt = options.GetValueOrDefault(value);
+            if (string.IsNullOrWhiteSpace(opt))
+                opt = @default;
+
+            return Sizeparser.ParseSize(opt, defaultMultiplier);
         }
 
         /// <summary>
@@ -1569,26 +1594,7 @@ namespace Duplicati.Library.Utility
         public static string IpVersionCompatibleLoopback =>
             HasIPv4Loopback ? IPAddress.Loopback.ToString() : $"[{IPAddress.IPv6Loopback.ToString()}]";
 
-        /// <summary>
-        /// Flattens an exception and its inner exceptions
-        /// </summary>
-        /// <param name="ex">The exception to flatten</param>
-        /// <returns>An enumerable of exceptions</returns>
-        public static IEnumerable<Exception> FlattenException(Exception? ex)
-        {
-            if (ex == null)
-                yield break;
 
-            yield return ex;
-
-            if (ex is AggregateException aex)
-                foreach (var iex in aex.Flatten().InnerExceptions)
-                    foreach (var iex2 in FlattenException(iex))
-                        yield return iex2;
-
-            foreach (var iex in FlattenException(ex.InnerException))
-                yield return iex;
-        }
 
         /// <summary>
         /// Guesses the URL scheme and returns it
@@ -1637,26 +1643,6 @@ namespace Duplicati.Library.Utility
             }
 
             return sanitizedUrl;
-        }
-
-        /// <summary>
-        /// Checks if an exception is a stop, cancel or timeout exception
-        /// </summary>
-        /// <param name="ex">The operation to check</param>
-        /// <returns><c>true</c> if the exception is a stop or cancel exception, <c>false</c> otherwise</returns>
-        public static bool IsAbortOrCancelException(this Exception ex)
-        {
-            return ex is OperationCanceledException || ex is ThreadAbortException || ex is TaskCanceledException || ex is TimeoutException;
-        }
-
-        /// <summary>
-        /// Checks if an exception is a stop exception
-        /// </summary>
-        /// <param name="ex">The operation to check</param>
-        /// <returns><c>true</c> if the exception is a stop exception, <c>false</c> otherwise</returns>
-        public static bool IsAbortException(this Exception ex)
-        {
-            return ex is OperationCanceledException || ex is ThreadAbortException;
         }
 
         /// <summary>

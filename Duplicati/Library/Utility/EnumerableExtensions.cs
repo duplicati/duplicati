@@ -47,7 +47,7 @@ public static class EnumerableExtensions
     /// <returns>A sequence that contains only the non-null elements from the input sequence.</returns>
     public static IEnumerable<T> WhereNotNull<T>(this IEnumerable<T?> source) where T : struct
         => source.Where(x => x != null)
-                .Select(x => x.Value);
+                .Select(x => x!.Value);
 
     /// <summary>
     /// Filters a sequence of values to exclude null or whitespace elements.

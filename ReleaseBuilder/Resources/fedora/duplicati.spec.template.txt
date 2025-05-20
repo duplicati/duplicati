@@ -2,6 +2,7 @@
 
 # Set up some defaults
 %global namer duplicati
+%global installname %{namer}%SERVICENAME%
 %global debug_package %{nil}
 %global alphatag .git
 %global _builddate %BUILDDATE%
@@ -10,7 +11,7 @@
 
 # All lines starting with #GUI_ONLY# are removed in CLI builds
 
-Name:	%{namer}
+Name:	%{installname}
 Version:	%{_buildversion}
 Release:	%{_buildtag}
 Icon: duplicati.xpm
@@ -27,11 +28,11 @@ URL:	https://duplicati.com
 Source0:	duplicati-%{_buildversion}.tar.bz2
 Source1:	%{namer}-install-recursive.sh
 Source2:	%{namer}-install-binaries.sh
-Source3:	%{namer}%SERVICENAME%.service
-Source4:	%{namer}%SERVICENAME%.default
+Source3:	%{installname}.service
+Source4:	%{installname}.default
 #GUI_ONLY#Source5:	%{namer}.png
 #GUI_ONLY#Source6:	%{namer}.desktop
-#AGENT_ONLY#Source5:	%{namer}%SERVICENAME%.preset
+#AGENT_ONLY#Source5:	%{installname}.preset
 
 #GUI_ONLY#BuildRequires:  desktop-file-utils
 BuildRequires:  systemd
@@ -44,8 +45,8 @@ Requires:	bash
 %description 
 Duplicati is a free backup client that securely stores encrypted,
 incremental, compressed backups on cloud storage services and remote file
-servers.  It supports targets like Amazon S3, Windows Live SkyDrive,
-Rackspace Cloud Files or WebDAV, SSH, FTP (and many more).
+servers.  It supports targets like Amazon S3, Backblaze B2,
+Microsoft OneDrive, WebDAV, SSH, FTP (and many more).
  
 Duplicati has built-in AES-256 encryption and backups be can signed using
 GNU Privacy Guard.  A built-in scheduler makes sure that backups are always
@@ -54,7 +55,7 @@ tweaks like filters, deletion rules, transfer and bandwidth options to run
 backups for specific purposes.
 
 %prep
-%setup -q -n %{namer}-%{_buildversion}
+%setup -q -n %{installname}-%{_buildversion}
 
 %build
 
@@ -64,10 +65,10 @@ backups for specific purposes.
 %install
 
 #GUI_ONLY#install -d %{buildroot}%{_datadir}/pixmaps/
-install -d %{buildroot}%{_exec_prefix}/lib/%{namer}/
-install -d %{buildroot}%{_exec_prefix}/lib/%{namer}/licenses/
-install -d %{buildroot}%{_exec_prefix}/lib/%{namer}/webroot/
-install -d %{buildroot}%{_exec_prefix}/lib/%{namer}/lvm-scripts/
+install -d %{buildroot}%{_exec_prefix}/lib/%{installname}/
+install -d %{buildroot}%{_exec_prefix}/lib/%{installname}/licenses/
+install -d %{buildroot}%{_exec_prefix}/lib/%{installname}/webroot/
+install -d %{buildroot}%{_exec_prefix}/lib/%{installname}/lvm-scripts/
 install -d %{buildroot}%{_exec_prefix}/bin/
 install -d %{buildroot}%{_unitdir}
 install -d %{buildroot}%{_sysconfdir}/sysconfig/
@@ -77,35 +78,35 @@ install -d %{buildroot}%{_sysconfdir}/sysconfig/
 find . -type f -name ._\* | xargs rm -rf
 
 # Install all files, but the list is too long to be in the script itself :/
-/bin/bash %{_topdir}/SOURCES/%{namer}-install-recursive.sh "." "%{buildroot}%{_exec_prefix}/lib/%{namer}/"
+/bin/bash %{_topdir}/SOURCES/%{namer}-install-recursive.sh "." "%{buildroot}%{_exec_prefix}/lib/%{installname}/"
 
 # Move the icon in to place
 #GUI_ONLY#install -p  %{_topdir}/SOURCES/%{namer}.png %{buildroot}%{_datadir}/pixmaps/
 
 # Fix executable permissions and install symlinks
-/bin/bash %{_topdir}/SOURCES/%{namer}-install-binaries.sh "%{buildroot}" "%{_exec_prefix}" "%{namer}"
+/bin/bash %{_topdir}/SOURCES/%{namer}-install-binaries.sh "%{buildroot}" "%{_exec_prefix}" "%{installname}"
 
 #GUI_ONLY#desktop-file-install %{_topdir}/SOURCES/%{namer}.desktop
 
 # Install the service:
 install -p -D -m 644 %{_topdir}/SOURCES/%{namer}%SERVICENAME%.service %{buildroot}%{_unitdir}
-install -p -D -m 644 %{_topdir}/SOURCES/%{namer}%SERVICENAME%.default %{buildroot}%{_sysconfdir}/sysconfig/%{namer}
-
+install -p -D -m 644 %{_topdir}/SOURCES/%{namer}%SERVICENAME%.default %{buildroot}%{_sysconfdir}/sysconfig/%{installname}
+#AGENT_ONLY#install -p -D -m 644 %{_topdir}/SOURCES/%{installname}.preset %{buildroot}%{_presetdir}/50-%{installname}.preset
+ 
 %post
 #GUI_ONLY#/bin/touch --no-create %{_datadir}/icons/hicolor || :
 #GUI_ONLY#%{_bindir}/gtk-update-icon-cache \
 #GUI_ONLY#  --quiet %{_datadir}/icons/hicolor 2> /dev/null|| :
-%systemd_post %{namer}%SERVICENAME%.service
-#AGENT_ONLY#%{__install} -Dm644 %{namer}%SERVICENAME%.preset %{buildroot}%{_presetdir}/50-%{namer}%SERVICENAME%.preset
+%systemd_post %{installname}.service
 
 %preun
-%systemd_preun %{namer}%SERVICENAME%.service
+%systemd_preun %{installname}.service
 
 %postun
 #GUI_ONLY#/bin/touch --no-create %{_datadir}/icons/hicolor || :
 #GUI_ONLY#%{_bindir}/gtk-update-icon-cache \
 #GUI_ONLY#  --quiet %{_datadir}/icons/hicolor 2> /dev/null|| :
-%systemd_postun_with_restart %{namer}%SERVICENAME%.service
+%systemd_postun_with_restart %{installname}.service
 
 %posttrans
 #GUI_ONLY#/usr/bin/gtk-update-icon-cache %{_datadir}/icons/hicolor &>/dev/null || :
@@ -116,10 +117,14 @@ install -p -D -m 644 %{_topdir}/SOURCES/%{namer}%SERVICENAME%.default %{buildroo
 #GUI_ONLY#%{_datadir}/*/*
 %{_exec_prefix}/lib/*
 %{_exec_prefix}/bin/*
-%{_sysconfdir}/sysconfig/*
-
+%config(noreplace) %{_sysconfdir}/sysconfig/%{installname}
+#AGENT_ONLY#%{_presetdir}/50-%{installname}.preset
 
 %changelog
+* Mon May 19 2025 Kenneth Skovhede <kenneth@duplicati.com> - 2.0.0-0.20250519.git
+- Fixed config files not being overwritten
+- Moved agent files into separate folder to allow cli and agent to co-exist
+
 * Wed May 22 2024 Kenneth Skovhede <kenneth@duplicati.com> - 2.0.0-0.20240522.git
 - Split for CLI and GUI package
 

@@ -422,7 +422,7 @@ partial class BackendManager
                     }
 
                     // Refresh DNS name if we fail to connect in order to prevent issues with incorrect DNS entries
-                    var dnsFailure = Library.Utility.Utility.FlattenException(ex).Any(x => x is System.Net.WebException wex && wex.Status == System.Net.WebExceptionStatus.NameResolutionFailure);
+                    var dnsFailure = Library.Utility.ExceptionExtensions.FlattenException(ex).Any(x => x is System.Net.WebException wex && wex.Status == System.Net.WebExceptionStatus.NameResolutionFailure);
                     if (dnsFailure)
                     {
                         try
@@ -443,7 +443,7 @@ partial class BackendManager
                     var recovered = false;
 
                     // Check if this was a folder missing exception and we are allowed to autocreate folders
-                    if (!(anyDownloaded || anyUploaded) && context.Options.AutocreateFolders && Library.Utility.Utility.FlattenException(ex).Any(x => x is FolderMissingException))
+                    if (!(anyDownloaded || anyUploaded) && context.Options.AutocreateFolders && Library.Utility.ExceptionExtensions.FlattenException(ex).Any(x => x is FolderMissingException))
                     {
                         if (await TryCreateFolder().ConfigureAwait(false))
                             recovered = true;

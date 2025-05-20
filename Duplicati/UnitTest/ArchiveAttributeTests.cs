@@ -69,7 +69,7 @@ namespace Duplicati.UnitTest
             public Task GetAsync(string remotename, string filename, CancellationToken cancellationToken)
                 => backend.GetAsync(remotename, filename, cancellationToken);
             public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken)
-                => GetDNSNamesAsync(cancelToken);
+                => backend.GetDNSNamesAsync(cancelToken);
             public IAsyncEnumerable<IFileEntry> ListAsync(CancellationToken cancellationToken)
                 => ListModifier(backend.ListAsync(cancellationToken));
 

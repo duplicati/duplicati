@@ -151,7 +151,7 @@ destination will be verified before being overwritten (if they seemingly match).
             log_level_enum = log_level_parsed ? log_level_enum : Duplicati.Library.Logging.LogMessageType.Information;
 
             using var console_sink = new Duplicati.CommandLine.ConsoleOutput(Console.Out, global_options);
-            using var multi_sink = new Duplicati.Library.Main.ControllerMultiLogTarget(console_sink, log_level_enum, null);
+            using var multi_sink = new Duplicati.Library.Main.ControllerMultiLogTarget(console_sink, log_level_enum, null, null);
 
             // Parse the log file
             // The log file sink doesn't have to be disposed, as the multi_sink will take care of it
