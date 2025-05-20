@@ -30,7 +30,7 @@ namespace Duplicati.UnitTest
     {
         [Test]
         [Category("Targeted")]
-        public void RepairWithDlistRetries([Values(2)] int keepVersions)
+        public void RepairWithDlistRetries([Values(1, 2)] int keepVersions)
         {
             var testopts = TestOptions.Expand(new
             {
