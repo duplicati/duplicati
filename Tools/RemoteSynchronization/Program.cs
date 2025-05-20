@@ -21,6 +21,7 @@
 
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Utility;
 using System;
 using System.Collections.Generic;
 using System.CommandLine;
@@ -394,7 +395,12 @@ destination will be verified before being overwritten (if they seemingly match).
                         if (config.VerifyGetAfterPut)
                         {
                             // Start calculating the hash of the source file while we are downloading
-                            var srchashtask = Duplicati.Library.Utility.Utility.CalculateThrottledStreamHash(s_src, "SHA256", CancellationToken.None);
+                            var srchashtask = Task.Run(() =>
+                            {
+                                using var hasher = HashFactory.CreateHasher("SHA256");
+                                return Convert.ToBase64String(hasher.ComputeHash(s_src));
+                            });
+
                             using var s_dst = Duplicati.Library.Utility.TempFileStream.Create();
 
                             sw_get_dst.Start();
@@ -409,7 +415,8 @@ destination will be verified before being overwritten (if they seemingly match).
                                 err_string = $"The sizes of the files do not match: {s_src.Length} != {s_dst.Length}.";
                             }
 
-                            var dsthash = await Duplicati.Library.Utility.Utility.CalculateThrottledStreamHash(s_dst, "SHA256", CancellationToken.None);
+                            using var hasher = HashFactory.CreateHasher("SHA256");
+                            var dsthash = Convert.ToBase64String(hasher.ComputeHash(s_dst));
 
                             if (await srchashtask != dsthash)
                             {
