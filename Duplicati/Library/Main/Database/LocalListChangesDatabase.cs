@@ -22,10 +22,10 @@
 #nullable enable
 
 using System;
-using System.Data;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Duplicati.Library.Utility;
+using Microsoft.Data.Sqlite;
 
 namespace Duplicati.Library.Main.Database
 {
@@ -103,17 +103,16 @@ namespace Duplicati.Library.Main.Database
 
         private class StorageHelper : IStorageHelper
         {
-            private IDbConnection m_connection = null!;
-            private IDbTransaction m_transaction = null!;
+            private LocalDatabase m_db = null!;
 
-            private IDbCommand m_insertPreviousElementCommand = null!;
-            private IDbCommand m_insertCurrentElementCommand = null!;
+            private SqliteCommand m_insertPreviousElementCommand = null!;
+            private SqliteCommand m_insertCurrentElementCommand = null!;
 
             private string m_previousTable = null!;
             private string m_currentTable = null!;
 
             [Obsolete("Calling this constructor will throw an exception. Use CreateAsync instead.")]
-            public StorageHelper(IDbConnection con)
+            public StorageHelper(SqliteConnection con)
             {
             }
 
@@ -122,18 +121,18 @@ namespace Duplicati.Library.Main.Database
             public static async Task<StorageHelper> CreateAsync(LocalDatabase db)
             {
                 var sh = new StorageHelper();
-                sh.m_connection = db.Connection;
+                sh.m_db = db;
                 sh.m_previousTable = "Previous-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
                 sh.m_currentTable = "Current-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
 
-                using (var cmd = sh.m_connection.CreateCommand(db.Transaction))
+                using (var cmd = sh.m_db.Connection.CreateCommand(db.Transaction))
                 {
                     cmd.ExecuteNonQuery(FormatInvariant($@"CREATE TEMPORARY TABLE ""{sh.m_previousTable}"" (""Path"" TEXT NOT NULL, ""FileHash"" TEXT NULL, ""MetaHash"" TEXT NOT NULL, ""Size"" INTEGER NOT NULL, ""Type"" INTEGER NOT NULL) "));
                     cmd.ExecuteNonQuery(FormatInvariant($@"CREATE TEMPORARY TABLE ""{sh.m_currentTable}"" (""Path"" TEXT NOT NULL, ""FileHash"" TEXT NULL, ""MetaHash"" TEXT NOT NULL, ""Size"" INTEGER NOT NULL, ""Type"" INTEGER NOT NULL) "));
                 }
 
-                sh.m_insertPreviousElementCommand = sh.m_connection.CreateCommand(sh.m_transaction, FormatInvariant($@"INSERT INTO ""{sh.m_previousTable}"" (""Path"", ""FileHash"", ""MetaHash"", ""Size"", ""Type"") VALUES (@Path,@FileHash,@MetaHash,@Size,@Type)"));
-                sh.m_insertCurrentElementCommand = sh.m_connection.CreateCommand(FormatInvariant($@"INSERT INTO ""{sh.m_currentTable}"" (""Path"", ""FileHash"", ""MetaHash"", ""Size"", ""Type"") VALUES (@Path,@FileHash,@MetaHash,@Size,@Type)"));
+                sh.m_insertPreviousElementCommand = sh.m_db.Connection.CreateCommand(FormatInvariant($@"INSERT INTO ""{sh.m_previousTable}"" (""Path"", ""FileHash"", ""MetaHash"", ""Size"", ""Type"") VALUES (@Path,@FileHash,@MetaHash,@Size,@Type)"));
+                sh.m_insertCurrentElementCommand = sh.m_db.Connection.CreateCommand(FormatInvariant($@"INSERT INTO ""{sh.m_currentTable}"" (""Path"", ""FileHash"", ""MetaHash"", ""Size"", ""Type"") VALUES (@Path,@FileHash,@MetaHash,@Size,@Type)"));
 
                 return sh;
             }
@@ -148,7 +147,7 @@ namespace Duplicati.Library.Main.Database
                 var combined = "(" + folders + " UNION " + symlinks + " UNION " + files + ")";
 
 
-                using (var cmd = m_connection.CreateCommand(m_transaction))
+                using (var cmd = m_db.Connection.CreateCommand(m_db.Transaction))
                 {
                     if (filter == null || filter.Empty)
                     {
@@ -224,7 +223,7 @@ namespace Duplicati.Library.Main.Database
                 cmd.ExecuteNonQuery();
             }
 
-            private static IEnumerable<string?> ReaderToStringList(IDataReader rd)
+            private static IEnumerable<string?> ReaderToStringList(SqliteDataReader rd)
             {
                 using (rd)
                     while (rd.Read())
@@ -253,7 +252,7 @@ namespace Duplicati.Library.Main.Database
                 var deleted = sqls.Deleted;
                 //var modified = sqls.Modified;
 
-                using (var cmd = m_connection.CreateCommand(m_transaction))
+                using (var cmd = m_db.Connection.CreateCommand(m_db.Transaction))
                 {
                     var result = new ChangeSizeReport();
 
@@ -274,7 +273,7 @@ namespace Duplicati.Library.Main.Database
                 var deleted = @"SELECT COUNT(*) FROM (" + sqls.Deleted + ")";
                 var modified = @"SELECT COUNT(*) FROM (" + sqls.Modified + ")";
 
-                using (var cmd = m_connection.CreateCommand(m_transaction))
+                using (var cmd = m_db.Connection.CreateCommand(m_db.Transaction))
                 {
                     var result = new ChangeCountReport();
                     result.AddedFolders = cmd.SetCommandAndParameters(added)
@@ -315,7 +314,7 @@ namespace Duplicati.Library.Main.Database
             {
                 var sqls = GetSqls(false);
 
-                using (var cmd = m_connection.CreateCommand(m_transaction))
+                using (var cmd = m_db.Connection.CreateCommand(m_db.Transaction))
                 {
                     var elTypes = new[] {
                         Interface.ListChangesElementType.Folder,
@@ -323,7 +322,7 @@ namespace Duplicati.Library.Main.Database
                         Interface.ListChangesElementType.File
                     };
 
-                    IEnumerable<Tuple<Interface.ListChangesChangeType, Interface.ListChangesElementType, string>> BuildResult(IDbCommand cmd, string sql, Interface.ListChangesChangeType changeType)
+                    IEnumerable<Tuple<Interface.ListChangesChangeType, Interface.ListChangesElementType, string>> BuildResult(SqliteCommand cmd, string sql, Interface.ListChangesChangeType changeType)
                     {
                         cmd.SetCommandAndParameters(sql);
                         foreach (var type in elTypes)
@@ -342,6 +341,11 @@ namespace Duplicati.Library.Main.Database
 
             public void Dispose()
             {
+                DisposeAsync().Await();
+            }
+
+            public async Task DisposeAsync()
+            {
                 if (m_insertPreviousElementCommand != null)
                 {
                     try { m_insertPreviousElementCommand.Dispose(); }
@@ -356,23 +360,14 @@ namespace Duplicati.Library.Main.Database
                     finally { m_insertCurrentElementCommand = null!; }
                 }
 
-                if (m_transaction != null)
+                try { await m_db.Transaction.RollBackAsync(); }
+                catch { }
+                finally
                 {
-                    try { m_transaction.Rollback(); }
-                    catch { }
-                    finally
-                    {
-                        m_previousTable = null!;
-                        m_currentTable = null!;
-                        m_transaction = null!;
-                    }
+                    m_previousTable = null!;
+                    m_currentTable = null!;
                 }
             }
-        }
-
-        public IStorageHelper CreateStorageHelper()
-        {
-            return new StorageHelper(m_connection);
         }
     }
 }
