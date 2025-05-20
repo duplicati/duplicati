@@ -63,10 +63,10 @@ namespace Duplicati.Library.Main.Database
         {
             IAsyncEnumerable<IFileset> Sets();
             IAsyncEnumerable<IFileset> QuickSets();
-            IEnumerable<IFileversion> SelectFiles(IFilter filter);
-            IEnumerable<IFileversion> GetLargestPrefix(IFilter filter);
-            IEnumerable<IFileversion> SelectFolderContents(IFilter filter);
-            void TakeFirst();
+            IAsyncEnumerable<IFileversion> SelectFiles(IFilter filter);
+            IAsyncEnumerable<IFileversion> GetLargestPrefix(IFilter filter);
+            IAsyncEnumerable<IFileversion> SelectFolderContents(IFilter filter);
+            Task TakeFirst();
         }
 
         private class FileSets : IFileSets
@@ -83,7 +83,7 @@ namespace Duplicati.Library.Main.Database
 
             private FileSets() { }
 
-            public async Task<FileSets> CreateAsync(LocalListDatabase owner, DateTime time, long[] versions)
+            public static async Task<FileSets> CreateAsync(LocalListDatabase owner, DateTime time, long[] versions)
             {
                 var fs = new FileSets
                 {
@@ -91,14 +91,14 @@ namespace Duplicati.Library.Main.Database
                     m_filesets = await owner.FilesetTimes().ToArrayAsync(),
                     m_tablename = "Filesets-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray())
                 };
-                var tmp = await owner.GetFilelistWhereClause(time, versions, m_filesets);
+                var tmp = await owner.GetFilelistWhereClause(time, versions, fs.m_filesets);
                 var query = tmp.Item1;
                 var args = tmp.Item2;
 
-                using (var cmd = m_db.Connection.CreateCommand())
+                using (var cmd = fs.m_db.Connection.CreateCommand())
                 {
-                    cmd.ExecuteNonQuery($@"CREATE TEMPORARY TABLE ""{m_tablename}"" AS SELECT DISTINCT ""ID"" AS ""FilesetID"", ""IsFullBackup"" AS ""IsFullBackup"" , ""Timestamp"" AS ""Timestamp"" FROM ""Fileset"" {query}", args);
-                    cmd.ExecuteNonQuery($@"CREATE INDEX ""{m_tablename}_FilesetIDTimestampIndex"" ON ""{m_tablename}"" (""FilesetID"", ""Timestamp"" DESC)");
+                    await cmd.ExecuteNonQueryAsync($@"CREATE TEMPORARY TABLE ""{fs.m_tablename}"" AS SELECT DISTINCT ""ID"" AS ""FilesetID"", ""IsFullBackup"" AS ""IsFullBackup"" , ""Timestamp"" AS ""Timestamp"" FROM ""Fileset"" {query}", args);
+                    await cmd.ExecuteNonQueryAsync($@"CREATE INDEX ""{fs.m_tablename}_FilesetIDTimestampIndex"" ON ""{fs.m_tablename}"" (""FilesetID"", ""Timestamp"" DESC)");
                 }
 
                 return fs;
@@ -154,7 +154,7 @@ namespace Duplicati.Library.Main.Database
                 public IEnumerable<long> Sizes { get { return new long[0]; } }
             }
 
-            public IEnumerable<IFileversion> GetLargestPrefix(IFilter filter)
+            public IAsyncEnumerable<IFileversion> GetLargestPrefix(IFilter filter)
             {
                 return GetLargestPrefix(filter, null);
             }
@@ -162,10 +162,10 @@ namespace Duplicati.Library.Main.Database
             private async IAsyncEnumerable<IFileversion> GetLargestPrefix(IFilter filter, string? prefixrule)
             {
                 using (var tmpnames = await FilteredFilenameTable.CreateFilteredFilenameTableAsync(m_db, filter))
-                using (var cmd = m_connection.CreateCommand())
+                using (var cmd = m_db.Connection.CreateCommand())
                 {
                     //First we trim the filelist to exclude filenames not found in any of the filesets
-                    cmd.ExecuteNonQuery($@"DELETE FROM ""{tmpnames.Tablename}"" WHERE ""Path"" NOT IN (SELECT DISTINCT ""Path"" FROM ""File"", ""FilesetEntry"" WHERE ""FilesetEntry"".""FileID"" = ""File"".""ID"" AND ""FilesetEntry"".""FilesetID"" IN (SELECT ""FilesetID"" FROM ""{m_tablename}"") ) ");
+                    await cmd.ExecuteNonQueryAsync($@"DELETE FROM ""{tmpnames.Tablename}"" WHERE ""Path"" NOT IN (SELECT DISTINCT ""Path"" FROM ""File"", ""FilesetEntry"" WHERE ""FilesetEntry"".""FileID"" = ""File"".""ID"" AND ""FilesetEntry"".""FilesetID"" IN (SELECT ""FilesetID"" FROM ""{m_tablename}"") ) ");
 
                     //If we have a prefix rule, apply it
                     if (!string.IsNullOrWhiteSpace(prefixrule))
@@ -174,25 +174,25 @@ namespace Duplicati.Library.Main.Database
                             .ExecuteNonQuery();
 
                     // Then we recursively find the largest prefix
-                    var v0 = cmd.ExecuteScalar($@"SELECT ""Path"" FROM ""{tmpnames.Tablename}"" ORDER BY LENGTH(""Path"") DESC LIMIT 1");
+                    var v0 = await cmd.ExecuteScalarAsync($@"SELECT ""Path"" FROM ""{tmpnames.Tablename}"" ORDER BY LENGTH(""Path"") DESC LIMIT 1");
                     var maxpath = "";
                     if (v0 != null)
                         maxpath = v0.ToString() ?? "";
 
                     var dirsep = Util.GuessDirSeparator(maxpath);
 
-                    var filecount = cmd.ExecuteScalarInt64($@"SELECT COUNT(*) FROM ""{tmpnames.Tablename}""", 0);
+                    var filecount = await cmd.ExecuteScalarInt64Async($@"SELECT COUNT(*) FROM ""{tmpnames.Tablename}""", 0);
                     var foundfiles = -1L;
 
                     //TODO: Handle FS case-sensitive?
-                    cmd.SetCommandAndParameters($@"SELECT COUNT(*) FROM ""{tmpnames.Tablename}"" WHERE SUBSTR(""Path"", 1, @PrefixLength) = @Prefix");
+                    await cmd.SetCommandAndParameters($@"SELECT COUNT(*) FROM ""{tmpnames.Tablename}"" WHERE SUBSTR(""Path"", 1, @PrefixLength) = @Prefix").PrepareAsync();
 
                     while (filecount != foundfiles && maxpath.Length > 0)
                     {
                         var mp = Util.AppendDirSeparator(maxpath, dirsep);
-                        foundfiles = cmd.SetParameterValue("@PrefixLength", mp.Length)
+                        foundfiles = await cmd.SetParameterValue("@PrefixLength", mp.Length)
                             .SetParameterValue("@Prefix", mp)
-                            .ExecuteScalarInt64(0);
+                            .ExecuteScalarInt64Async(0);
 
                         if (filecount != foundfiles)
                         {
@@ -208,28 +208,32 @@ namespace Duplicati.Library.Main.Database
                     // Special handling for Windows and multi-drive/UNC backups as they do not have a single common root
                     if (string.IsNullOrWhiteSpace(maxpath) && string.IsNullOrWhiteSpace(prefixrule))
                     {
-                        var paths = cmd.ExecuteReaderEnumerable($@"SELECT Path FROM ""{tmpnames.Tablename}""").Select(x => x.ConvertValueToString(0) ?? "").ToArray();
-                        var roots = paths.Select(x => x.Substring(0, 1)).Distinct().Where(x => x != "\\").ToArray();
+                        var paths = cmd.ExecuteReaderEnumerableAsync($@"SELECT Path FROM ""{tmpnames.Tablename}""").Select(x => x.ConvertValueToString(0) ?? "");
+                        var roots = paths.Select(x => x.Substring(0, 1)).Distinct().Where(x => x != "\\");
 
                         //unc path like \\server.domain\
                         var regexUNCPrefix = new System.Text.RegularExpressions.Regex(@"^\\\\.*?\\");
-                        var rootsUNC = paths.Select(x => regexUNCPrefix.Match(x)).Where(x => x.Success).Select(x => x.Value).Distinct().ToArray();
+                        var rootsUNC = paths.Select(x => regexUNCPrefix.Match(x)).Where(x => x.Success).Select(x => x.Value).Distinct();
 
-                        return roots.Concat(rootsUNC).Select(x => GetLargestPrefix(filter, x).First()).Distinct().ToArray();
+                        await foreach (var el in roots.Concat(rootsUNC).Select(x => GetLargestPrefix(filter, x).FirstAsync()).Distinct())
+                            yield return await el;
                     }
 
-                    return [new FileversionFixed { Path = maxpath == "" ? "" : Util.AppendDirSeparator(maxpath, dirsep) }];
+                    yield return new FileversionFixed
+                    {
+                        Path = maxpath == "" ? "" : Util.AppendDirSeparator(maxpath, dirsep)
+                    };
                 }
             }
 
-            private IEnumerable<string> SelectFolderEntries(SqliteCommand cmd, string prefix, string table)
+            private async IAsyncEnumerable<string> SelectFolderEntries(SqliteCommand cmd, string prefix, string table)
             {
                 if (!string.IsNullOrEmpty(prefix))
                     prefix = Util.AppendDirSeparator(prefix, Util.GuessDirSeparator(prefix));
 
                 var ppl = prefix.Length;
-                using (var rd = cmd.ExecuteReader($@"SELECT DISTINCT ""Path"" FROM ""{table}"" "))
-                    while (rd.Read())
+                using (var rd = await cmd.ExecuteReaderAsync($@"SELECT DISTINCT ""Path"" FROM ""{table}"" "))
+                    while (await rd.ReadAsync())
                     {
                         var s = rd.ConvertValueToString(0) ?? "";
                         if (!s.StartsWith(prefix, StringComparison.Ordinal))
@@ -245,7 +249,7 @@ namespace Duplicati.Library.Main.Database
                     }
             }
 
-            public IEnumerable<IFileversion> SelectFolderContents(IFilter filter)
+            public async IAsyncEnumerable<IFileversion> SelectFolderContents(IFilter filter)
             {
                 var tbname = "Filenames-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
                 try
@@ -264,10 +268,10 @@ namespace Duplicati.Library.Main.Database
                         pathprefix = Util.AppendDirSeparator(pathprefix, dirsep);
 
                     using (var tmpnames = await FilteredFilenameTable.CreateFilteredFilenameTableAsync(m_db, new FilterExpression(new string[] { pathprefix + "*" }, true)))
-                    using (var cmd = m_connection.CreateCommand())
+                    using (var cmd = m_db.Connection.CreateCommand())
                     {
                         //First we trim the filelist to exclude filenames not found in any of the filesets
-                        cmd.ExecuteNonQuery($@"DELETE FROM ""{tmpnames.Tablename}"" WHERE ""Path"" NOT IN (SELECT DISTINCT ""Path"" FROM ""File"", ""FilesetEntry"" WHERE ""FilesetEntry"".""FileID"" = ""File"".""ID"" AND ""FilesetEntry"".""FilesetID"" IN (SELECT ""FilesetID"" FROM ""{m_tablename}"") ) ");
+                        await cmd.ExecuteNonQueryAsync($@"DELETE FROM ""{tmpnames.Tablename}"" WHERE ""Path"" NOT IN (SELECT DISTINCT ""Path"" FROM ""File"", ""FilesetEntry"" WHERE ""FilesetEntry"".""FileID"" = ""File"".""ID"" AND ""FilesetEntry"".""FilesetID"" IN (SELECT ""FilesetID"" FROM ""{m_tablename}"") ) ");
 
                         // If we had instr support this would work:
                         /*var distinctPaths = @"SELECT DISTINCT :1 || " +
@@ -278,16 +282,16 @@ namespace Duplicati.Library.Main.Database
                             @" FROM (" + cartesianPathFileset + @")";*/
 
                         // Instead we manually iterate the paths
-                        cmd.ExecuteNonQuery($@"CREATE TEMPORARY TABLE ""{tbname}"" (""Path"" TEXT NOT NULL)");
+                        await cmd.ExecuteNonQueryAsync($@"CREATE TEMPORARY TABLE ""{tbname}"" (""Path"" TEXT NOT NULL)");
 
-                        using (var c2 = m_connection.CreateCommand())
+                        using (var c2 = m_db.Connection.CreateCommand())
                         {
                             c2.SetCommandAndParameters($@"INSERT INTO ""{tbname}"" (""Path"") VALUES (@Path)");
-                            foreach (var n in SelectFolderEntries(cmd, pathprefix, tmpnames.Tablename).Distinct())
-                                c2.SetParameterValue("@Path", n)
-                                    .ExecuteNonQuery();
+                            await foreach (var n in SelectFolderEntries(cmd, pathprefix, tmpnames.Tablename).Distinct())
+                                await c2.SetParameterValue("@Path", n)
+                                    .ExecuteNonQueryAsync();
 
-                            c2.ExecuteNonQuery($@"CREATE INDEX ""{tbname}_PathIndex"" ON ""{tbname}"" (""Path"")");
+                            await c2.ExecuteNonQueryAsync($@"CREATE INDEX ""{tbname}_PathIndex"" ON ""{tbname}"" (""Path"")");
                         }
 
                         //Then we select the matching results
@@ -297,8 +301,8 @@ namespace Duplicati.Library.Main.Database
                         var filesWithSizes = $@"SELECT ""Length"", ""FilesetEntry"".""FilesetID"", ""File"".""Path"" FROM ""Blockset"", ""FilesetEntry"", ""File"" WHERE ""File"".""BlocksetID"" = ""Blockset"".""ID"" AND ""FilesetEntry"".""FileID"" = ""File"".""ID"" AND FilesetEntry.""FilesetID"" IN (SELECT DISTINCT ""FilesetID"" FROM ""{m_tablename}"") ";
                         var query = @"SELECT ""C"".""Path"", ""D"".""Length"", ""C"".""FilesetID"" FROM (" + cartesianPathFileset + @") C LEFT OUTER JOIN (" + filesWithSizes + @") D ON ""C"".""FilesetID"" = ""D"".""FilesetID"" AND ""C"".""Path"" = ""D"".""Path""";
 
-                        using (var rd = cmd.ExecuteReader(query))
-                            if (rd.Read())
+                        using (var rd = await cmd.ExecuteReaderAsync(query))
+                            if (await rd.ReadAsync())
                             {
                                 bool more;
                                 do
@@ -322,8 +326,8 @@ namespace Duplicati.Library.Main.Database
                 {
                     try
                     {
-                        using (var c = m_connection.CreateCommand())
-                            c.ExecuteNonQuery($@"DROP TABLE IF EXISTS ""{tbname}""");
+                        using (var c = m_db.Connection.CreateCommand())
+                            await c.ExecuteNonQueryAsync($@"DROP TABLE IF EXISTS ""{tbname}""");
                     }
                     catch
                     {
@@ -331,21 +335,21 @@ namespace Duplicati.Library.Main.Database
                 }
             }
 
-            public IEnumerable<IFileversion> SelectFiles(IFilter filter)
+            public async IAsyncEnumerable<IFileversion> SelectFiles(IFilter filter)
             {
-                using (var tmpnames = new FilteredFilenameTable(m_connection, filter, null))
-                using (var cmd = m_connection.CreateCommand())
+                using (var tmpnames = await FilteredFilenameTable.CreateFilteredFilenameTableAsync(m_db, filter))
+                using (var cmd = m_db.Connection.CreateCommand())
                 {
                     //First we trim the filelist to exclude filenames not found in any of the filesets
-                    cmd.ExecuteNonQuery($@"DELETE FROM ""{tmpnames.Tablename}"" WHERE ""Path"" NOT IN (SELECT DISTINCT ""Path"" FROM ""File"", ""FilesetEntry"" WHERE ""FilesetEntry"".""FileID"" = ""File"".""ID"" AND ""FilesetEntry"".""FilesetID"" IN (SELECT ""FilesetID"" FROM ""{m_tablename}"") ) ");
+                    await cmd.ExecuteNonQueryAsync($@"DELETE FROM ""{tmpnames.Tablename}"" WHERE ""Path"" NOT IN (SELECT DISTINCT ""Path"" FROM ""File"", ""FilesetEntry"" WHERE ""FilesetEntry"".""FileID"" = ""File"".""ID"" AND ""FilesetEntry"".""FilesetID"" IN (SELECT ""FilesetID"" FROM ""{m_tablename}"") ) ");
 
                     //Then we select the matching results
                     var filesets = $@"SELECT ""FilesetID"", ""Timestamp"" FROM ""{m_tablename}"" ORDER BY ""Timestamp"" DESC";
                     var cartesianPathFileset = $@"SELECT ""A"".""Path"", ""B"".""FilesetID"" FROM ""{tmpnames.Tablename}"" A, ({filesets}) B ORDER BY ""A"".""Path"" ASC, ""B"".""Timestamp"" DESC";
                     var filesWithSizes = $@"SELECT ""Length"", ""FilesetEntry"".""FilesetID"", ""File"".""Path"" FROM ""Blockset"", ""FilesetEntry"", ""File"" WHERE ""File"".""BlocksetID"" = ""Blockset"".""ID"" AND ""FilesetEntry"".""FileID"" = ""File"".""ID""  AND FilesetEntry.""FilesetID"" IN (SELECT DISTINCT ""FilesetID"" FROM ""{m_tablename}"") ";
                     var query = @"SELECT ""C"".""Path"", ""D"".""Length"", ""C"".""FilesetID"" FROM (" + cartesianPathFileset + @") C LEFT OUTER JOIN (" + filesWithSizes + @") D ON ""C"".""FilesetID"" = ""D"".""FilesetID"" AND ""C"".""Path"" = ""D"".""Path""";
-                    using (var rd = cmd.ExecuteReader(query))
-                        if (rd.Read())
+                    using (var rd = await cmd.ExecuteReaderAsync(query))
+                        if (await rd.ReadAsync())
                         {
                             bool more;
                             do
@@ -358,10 +362,10 @@ namespace Duplicati.Library.Main.Database
                 }
             }
 
-            public void TakeFirst()
+            public async Task TakeFirst()
             {
-                using (var cmd = m_connection.CreateCommand())
-                    cmd.ExecuteNonQuery($@"DELETE FROM ""{m_tablename}"" WHERE ""FilesetID"" NOT IN (SELECT ""FilesetID"" FROM ""{m_tablename}"" ORDER BY ""Timestamp"" DESC LIMIT 1 )");
+                using var cmd = m_db.Connection.CreateCommand();
+                await cmd.ExecuteNonQueryAsync($@"DELETE FROM ""{m_tablename}"" WHERE ""FilesetID"" NOT IN (SELECT ""FilesetID"" FROM ""{m_tablename}"" ORDER BY ""Timestamp"" DESC LIMIT 1 )");
             }
 
             public async IAsyncEnumerable<IFileset> QuickSets()
@@ -408,23 +412,27 @@ namespace Duplicati.Library.Main.Database
 
             public void Dispose()
             {
+                DisposeAsync().Await();
+            }
+
+            public async Task DisposeAsync()
+            {
                 if (m_tablename != null)
                 {
                     try
                     {
-                        using (var cmd = m_connection.CreateCommand())
-                            cmd.ExecuteNonQuery(@$"DROP TABLE IF EXISTS ""{m_tablename}"" ");
+                        using (var cmd = m_db.Connection.CreateCommand())
+                            await cmd.ExecuteNonQueryAsync(@$"DROP TABLE IF EXISTS ""{m_tablename}"" ");
                     }
                     catch { }
                     finally { m_tablename = null!; }
                 }
-
             }
         }
 
-        public IFileSets SelectFileSets(DateTime time, long[] versions)
+        public async Task<IFileSets> SelectFileSets(DateTime time, long[] versions)
         {
-            return new FileSets(this, time, versions);
+            return await FileSets.CreateAsync(this, time, versions);
         }
 
         /// <summary>
@@ -441,7 +449,7 @@ namespace Duplicati.Library.Main.Database
         /// Lists all filesets with summary data
         /// </summary>
         /// <returns>A collection of fileset entries</returns>
-        public IEnumerable<IListFilesetResultFileset> ListFilesetsExtended()
+        public async IAsyncEnumerable<IListFilesetResultFileset> ListFilesetsExtended()
         {
             const string query = @"
 SELECT
@@ -465,14 +473,20 @@ ORDER BY
 ";
 
             using (var cmd = m_connection.CreateCommand(query))
-                foreach (var rd in cmd.ExecuteReaderEnumerable())
+                await foreach (var rd in cmd.ExecuteReaderEnumerableAsync())
                 {
                     var id = rd.ConvertValueToInt64(0);
                     var time = ParseFromEpochSeconds(rd.ConvertValueToInt64(1));
                     var isFullBackup = rd.GetInt32(2) == BackupType.FULL_BACKUP;
                     var filecount = rd.ConvertValueToInt64(3, -1L);
                     var filesizes = rd.ConvertValueToInt64(4, -1L);
-                    yield return new FilesetEntry(id, isFullBackup, time, filecount, filesizes);
+                    yield return new FilesetEntry(
+                        id,
+                        isFullBackup,
+                        time,
+                        filecount,
+                        filesizes
+                    );
                 }
         }
 
@@ -494,7 +508,7 @@ ORDER BY
         /// <param name="offset">The offset for pagination.</param>
         /// <param name="limit">>The limit for pagination.</param>
         /// <returns>A paginated result set of folder entries.</returns>
-        public IPaginatedResults<IListFolderEntry> ListFolder(IEnumerable<long> prefixIds, long filesetid, long offset, long limit)
+        public async Task<IPaginatedResults<IListFolderEntry>> ListFolder(IEnumerable<long> prefixIds, long filesetid, long offset, long limit)
         {
             if (offset != 0 && limit <= 0)
                 throw new ArgumentException("Cannot use offset without limit specified.", nameof(offset));
@@ -524,13 +538,13 @@ ORDER BY
     ")
                 .SetParameterValue("@FolderBlocksetId", FOLDER_BLOCKSET_ID)
                 .SetParameterValue("@SymlinkBlocksetId", SYMLINK_BLOCKSET_ID)
-                .ExpandInClauseParameter("@PrefixIds", prefixIds)
+                .ExpandInClauseParameter("@PrefixIds", prefixIds.Cast<object>())
                 .SetParameterValue("@filesetid", filesetid)
                 .SetParameterValue("@limit", limit)
                 .SetParameterValue("@offset", offset);
 
             var results = new List<IListFolderEntry>();
-            foreach (var rd in cmd.ExecuteReaderEnumerable())
+            await foreach (var rd in cmd.ExecuteReaderEnumerableAsync())
             {
                 var path = rd.ConvertValueToString(0) ?? string.Empty;
                 var size = rd.ConvertValueToInt64(-1);
@@ -538,7 +552,13 @@ ORDER BY
                 var isSymlink = rd.GetInt32(3) != 0;
                 var lastModified = new DateTime(rd.ConvertValueToInt64(4, 0), DateTimeKind.Utc);
 
-                results.Add(new FolderEntry(path, size, isDir, isSymlink, lastModified));
+                results.Add(new FolderEntry(
+                    path,
+                    size,
+                    isDir,
+                    isSymlink,
+                    lastModified
+                ));
             }
 
             long totalCount;
@@ -555,16 +575,16 @@ ORDER BY
             else
             {
                 // Get the total count of files for the given fileset and prefix IDs
-                totalCount = cmd.SetCommandAndParameters($@"
+                totalCount = await cmd.SetCommandAndParameters($@"
                     SELECT COUNT(*)
                     FROM FilesetEntry fe
                     INNER JOIN FileLookup fl ON fe.FileID = fl.ID
                     WHERE fe.FilesetID = @filesetid
                     AND fl.PrefixID IN (@PrefixIds)
                 ")
-                .ExpandInClauseParameter("@PrefixIds", prefixIds)
+                .ExpandInClauseParameter("@PrefixIds", prefixIds.Cast<object>())
                 .SetParameterValue("@filesetid", filesetid)
-                .ExecuteScalarInt64(0);
+                .ExecuteScalarInt64Async(0);
             }
 
             // Return paginated results
@@ -579,7 +599,7 @@ ORDER BY
         /// <param name="offset">The offset for pagination.</param>
         /// <param name="limit">>The limit for pagination.</param>
         /// <returns>A paginated result set of folder entries.</returns>
-        public IPaginatedResults<IListFolderEntry> ListFilesetEntries(IEnumerable<long> prefixIds, long filesetid, long offset, long limit)
+        public async Task<IPaginatedResults<IListFolderEntry>> ListFilesetEntries(IEnumerable<long> prefixIds, long filesetid, long offset, long limit)
         {
             if (offset != 0 && limit <= 0)
                 throw new ArgumentException("Cannot use offset without limit specified.", nameof(offset));
@@ -611,12 +631,12 @@ ORDER BY
             .SetParameterValue("@FolderBlocksetId", FOLDER_BLOCKSET_ID)
             .SetParameterValue("@SymlinkBlocksetId", SYMLINK_BLOCKSET_ID)
             .SetParameterValue("@FilesetId", filesetid)
-            .ExpandInClauseParameter("@PrefixIds", prefixIds)
+            .ExpandInClauseParameter("@PrefixIds", prefixIds.Cast<object>())
             .SetParameterValue("@limit", limit)
             .SetParameterValue("@offset", offset);
 
             var results = new List<IListFolderEntry>();
-            foreach (var rd in cmd.ExecuteReaderEnumerable())
+            await foreach (var rd in cmd.ExecuteReaderEnumerableAsync())
             {
                 var path = rd.ConvertValueToString(0) ?? string.Empty;
                 var size = rd.ConvertValueToInt64(-1);
@@ -640,7 +660,7 @@ ORDER BY
             }
             else
             {
-                totalCount = cmd.SetCommandAndParameters(@"
+                totalCount = await cmd.SetCommandAndParameters(@"
                     SELECT COUNT(*)
                     FROM ""FilesetEntry"" fe
                     INNER JOIN ""FileLookup"" fl ON fe.""FileID"" = fl.""ID""
@@ -648,8 +668,8 @@ ORDER BY
                     AND fl.""PrefixId"" IN (@PrefixIds)
                 ")
                 .SetParameterValue("@FilesetId", filesetid)
-                .ExpandInClauseParameter("@PrefixIds", prefixIds)
-                .ExecuteScalarInt64(0);
+                .ExpandInClauseParameter("@PrefixIds", prefixIds.Cast<object>())
+                .ExecuteScalarInt64Async(0);
             }
 
             var intLimit = limit > int.MaxValue ? int.MaxValue : (int)limit;
@@ -661,7 +681,7 @@ ORDER BY
         /// </summary>
         /// <param name="prefixes">The prefixes to get the IDs for.</param>
         /// <returns>>A list of prefix IDs.</returns>
-        public IEnumerable<long> GetPrefixIds(IEnumerable<string> prefixes)
+        public IAsyncEnumerable<long> GetPrefixIds(IEnumerable<string> prefixes)
         {
             using var cmd = m_connection.CreateCommand();
 
@@ -669,9 +689,8 @@ ORDER BY
             cmd.SetCommandAndParameters($@"SELECT ""ID"" FROM ""PathPrefix"" WHERE ""Prefix"" IN (@Prefixes)")
                 .ExpandInClauseParameter("@Prefixes", prefixes);
 
-            return cmd.ExecuteReaderEnumerable()
-                .Select(x => x.ConvertValueToInt64(0))
-                .ToList();
+            return cmd.ExecuteReaderEnumerableAsync()
+                .Select(x => x.ConvertValueToInt64(0));
         }
 
         /// <summary>
@@ -679,7 +698,7 @@ ORDER BY
         /// </summary>
         /// <param name="filesetid">The filesetId to get the prefixes for</param>
         /// <returns>A list of root prefixes</returns>
-        public IEnumerable<long> GetRootPrefixes(long filesetid)
+        public IAsyncEnumerable<long> GetRootPrefixes(long filesetid)
         {
             using var cmd = m_connection.CreateCommand();
 
@@ -704,10 +723,9 @@ ORDER BY
     ")
             .SetParameterValue("@filesetid", filesetid);
 
-            return cmd.ExecuteReaderEnumerable()
+            return cmd.ExecuteReaderEnumerableAsync()
                 .Select(x => x.ConvertValueToInt64(0, -1))
-                .Where(x => x != -1)
-                .ToList();
+                .Where(x => x != -1);
         }
 
         /// <summary>
@@ -715,7 +733,7 @@ ORDER BY
         /// </summary>
         /// <param name="filesetid">The filesetId to get the prefixes for</param>
         /// <returns>A list of (PrefixID, ParentPrefixID) pairs</returns>
-        public IEnumerable<(long PrefixId, long ParentPrefixId)> GetRootPrefixesWithParents(long filesetid)
+        public IAsyncEnumerable<(long PrefixId, long ParentPrefixId)> GetRootPrefixesWithParents(long filesetid)
         {
             using var cmd = m_connection.CreateCommand();
 
@@ -756,7 +774,7 @@ ORDER BY
             .SetParameterValue("@dirSeparator", dirSeparator)
             .SetParameterValue("@filesetid", filesetid);
 
-            return cmd.ExecuteReaderEnumerable()
+            return cmd.ExecuteReaderEnumerableAsync()
                 .Select(x => (
                     PrefixId: x.ConvertValueToInt64(0, -1),
                     ParentPrefixId: x.ConvertValueToInt64(1, -1)
@@ -771,7 +789,7 @@ ORDER BY
         /// <param name="offset">Pagination offset.</param>
         /// <param name="limit">Pagination limit.</param>
         /// <returns>All matching file versions ordered by path and then version time.</returns>
-        public IPaginatedResults<IListFileVersion> ListFileVersions(IEnumerable<string> paths, long[]? filesetIds, long offset, long limit)
+        public async Task<IPaginatedResults<IListFileVersion>> ListFileVersions(IEnumerable<string> paths, long[]? filesetIds, long offset, long limit)
         {
             if (paths == null || !paths.Any())
                 return new PaginatedResults<IListFileVersion>(0, (int)(limit > 0 ? limit : long.MaxValue), 0, 0, Enumerable.Empty<IListFileVersion>());
@@ -789,9 +807,9 @@ ORDER BY
 
             cmd.SetCommandAndParameters(@"SELECT ""ID"" FROM ""Fileset"" ORDER BY ""Timestamp"" DESC");
 
-            var versionMap = cmd.ExecuteReaderEnumerable()
+            var versionMap = await cmd.ExecuteReaderEnumerableAsync()
                 .Select((x, i) => (Version: i, FilesetId: x.ConvertValueToInt64(0)))
-                .ToDictionary(x => x.FilesetId, x => x.Version);
+                .ToDictionaryAsync(x => x.FilesetId, x => x.Version);
 
             // Then fetch the actual data
             var fetchSql = @"
@@ -819,10 +837,10 @@ ORDER BY
                .SetParameterValue("@offset", offset);
 
             if (filesetIds != null && filesetIds.Length > 0)
-                cmd.ExpandInClauseParameter("@FilesetIds", filesetIds);
+                cmd.ExpandInClauseParameter("@FilesetIds", filesetIds.Cast<object>());
 
             var results = new List<IListFileVersion>();
-            foreach (var rd in cmd.ExecuteReaderEnumerable())
+            await foreach (var rd in cmd.ExecuteReaderEnumerableAsync())
             {
                 var version = versionMap[rd.ConvertValueToInt64(0, -1)];
                 var time = new DateTime(rd.ConvertValueToInt64(1, 0), DateTimeKind.Utc);
@@ -832,7 +850,15 @@ ORDER BY
                 var isSymlink = rd.GetInt32(5) != 0;
                 var lastModified = new DateTime(rd.ConvertValueToInt64(6, 0), DateTimeKind.Utc);
 
-                results.Add(new ListFileVersion(version, time, path, size, isDirectory, isSymlink, lastModified));
+                results.Add(new ListFileVersion(
+                    version,
+                    time,
+                    path,
+                    size,
+                    isDirectory,
+                    isSymlink,
+                    lastModified
+                ));
             }
 
             long totalCount;
@@ -859,9 +885,9 @@ ORDER BY
                    .ExpandInClauseParameter("@Paths", paths);
 
                 if (filesetIds != null && filesetIds.Length > 0)
-                    cmd.ExpandInClauseParameter("@FilesetIds", filesetIds);
+                    cmd.ExpandInClauseParameter("@FilesetIds", filesetIds.Cast<object>());
 
-                totalCount = cmd.ExecuteScalarInt64(0);
+                totalCount = await cmd.ExecuteScalarInt64Async(0);
             }
 
             var intLimit = limit > int.MaxValue ? int.MaxValue : (int)limit;
@@ -885,7 +911,7 @@ ORDER BY
         /// <param name="offset">The offset for pagination.</param>
         /// <param name="limit">The limit for pagination.</param>
         /// <returns>All matching file versions ordered by path and then version time.</returns>
-        public IPaginatedResults<ISearchFileVersion> SearchEntries(IEnumerable<string>? pathprefixes, IFilter filter, long[]? filesetIds, long offset, long limit)
+        public async Task<IPaginatedResults<ISearchFileVersion>> SearchEntries(IEnumerable<string>? pathprefixes, IFilter filter, long[]? filesetIds, long offset, long limit)
         {
             if (offset != 0 && limit <= 0)
                 throw new ArgumentException("Cannot use offset without limit specified.", nameof(offset));
@@ -1000,9 +1026,9 @@ ORDER BY
 
             cmd.SetCommandAndParameters(@"SELECT ""ID"" FROM ""Fileset"" ORDER BY ""Timestamp"" DESC");
 
-            var versionMap = cmd.ExecuteReaderEnumerable()
+            var versionMap = await cmd.ExecuteReaderEnumerableAsync()
                 .Select((x, i) => (Version: i, FilesetId: x.ConvertValueToInt64(0)))
-                .ToDictionary(x => x.FilesetId, x => x.Version);
+                .ToDictionaryAsync(x => x.FilesetId, x => x.Version);
 
             // Fetch results
             var fetchSql = $@"
@@ -1036,10 +1062,10 @@ ORDER BY
                 cmd.ExpandInClauseParameter("@PathPrefixes", pathprefixes);
 
             if (filesetIds != null && filesetIds.Length > 0)
-                cmd.ExpandInClauseParameter("@FilesetIds", filesetIds);
+                cmd.ExpandInClauseParameter("@FilesetIds", filesetIds.Cast<object>());
 
             var results = new List<ISearchFileVersion>();
-            foreach (var rd in cmd.ExecuteReaderEnumerable())
+            await foreach (var rd in cmd.ExecuteReaderEnumerableAsync())
             {
                 var version = versionMap[rd.ConvertValueToInt64(0, -1)];
                 var time = new DateTime(rd.ConvertValueToInt64(1, 0), DateTimeKind.Utc);
@@ -1084,9 +1110,9 @@ ORDER BY
                     cmd.ExpandInClauseParameter("@PathPrefixes", pathprefixes);
 
                 if (filesetIds != null && filesetIds.Length > 0)
-                    cmd.ExpandInClauseParameter("@FilesetIds", filesetIds);
+                    cmd.ExpandInClauseParameter("@FilesetIds", filesetIds.Cast<object>());
 
-                totalCount = cmd.ExecuteScalarInt64(0);
+                totalCount = await cmd.ExecuteScalarInt64Async(0);
             }
 
             var intLimit = limit > int.MaxValue ? int.MaxValue : (int)limit;
