@@ -310,18 +310,13 @@ partial class BackendManager
                 // Terminate any active uploads and downloads. Exceptions thrown by the downloads should be captured by the callers.
                 tcs.Cancel();
 
-                if (activeUploads.Count > 0)
-                {
-                    Logging.Log.WriteWarningMessage(LOGTAG, "BackendManagerDisposeWhileActive", null, "Terminating {0} active uploads", activeUploads.Count);
+                await WaitForPendingItems("upload", activeUploads).ConfigureAwait(false);
+                await WaitForPendingItems("download", activeDownloads).ConfigureAwait(false);
 
-                    await WaitForPendingItems("upload", activeUploads).ConfigureAwait(false);
-                    await WaitForPendingItems("download", activeDownloads).ConfigureAwait(false);
-
-                    // Dispose of any remaining backends
-                    while (backendPool.TryDequeue(out var backend))
-                        try { backend.Dispose(); }
-                        catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, "BackendManagerDisposeError", ex, "Failed to dispose backend instance: {0}", ex.Message); }
-                }
+                // Dispose of any remaining backends
+                while (backendPool.TryDequeue(out var backend))
+                    try { backend.Dispose(); }
+                    catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, "BackendManagerDisposeError", ex, "Failed to dispose backend instance: {0}", ex.Message); }
             }
         }
 

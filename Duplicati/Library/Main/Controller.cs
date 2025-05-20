@@ -506,25 +506,25 @@ namespace Duplicati.Library.Main
                         finally
                         {
                             m_currentBackendManager = null;
-                        }
 
-                        // TODO: Should also have a single shared database connection for all operations
-                        // The transactions should be managed inside the connection, and not passed around
+                            // TODO: Should also have a single shared database connection for all operations
+                            // The transactions should be managed inside the connection, and not passed around
 
-                        // This would allow us to pass the database instance to the backend manager
-                        // And safeguard against remote operations not being logged in the database
+                            // This would allow us to pass the database instance to the backend manager
+                            // And safeguard against remote operations not being logged in the database
 
-                        // This would also allow us to control the unclean shutdown flag,
-                        // by toggling this on start and completion of transfers in the manager,
-                        // instead of relying on the operations to correctly toggle the flag
-                        if (LocalDatabase.Exists(m_options.Dbpath))
-                        {
-                            using (var db = new LocalDatabase(m_options.Dbpath, result.MainOperation.ToString(), true, m_options.SqlitePageCache))
-                                backend.StopRunnerAndFlushMessages(db, null).Await();
-                        }
-                        else
-                        {
-                            backend.StopRunnerAndDiscardMessages();
+                            // This would also allow us to control the unclean shutdown flag,
+                            // by toggling this on start and completion of transfers in the manager,
+                            // instead of relying on the operations to correctly toggle the flag
+                            if (LocalDatabase.Exists(m_options.Dbpath) && !m_options.NoLocalDb)
+                            {
+                                using (var db = new LocalDatabase(m_options.Dbpath, result.MainOperation.ToString(), true, m_options.SqlitePageCache))
+                                    backend.StopRunnerAndFlushMessages(db, null).Await();
+                            }
+                            else
+                            {
+                                backend.StopRunnerAndDiscardMessages();
+                            }
                         }
                     }
 
