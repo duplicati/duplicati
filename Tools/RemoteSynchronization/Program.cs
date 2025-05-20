@@ -356,8 +356,6 @@ destination will be verified before being overwritten (if they seemingly match).
         {
             long successful_copies = 0;
             List<IFileEntry> errors = [];
-            using var s_src = new MemoryStream();
-            using var s_dst = new MemoryStream();
             long i = 0, n = files.Count();
             var sw_get_src = new System.Diagnostics.Stopwatch();
             var sw_put_dst = new System.Diagnostics.Stopwatch();
@@ -372,10 +370,13 @@ destination will be verified before being overwritten (if they seemingly match).
                 Duplicati.Library.Logging.Log.WriteVerboseMessage(LOGTAG, "rsync",
                     "Copying {0} from {1} to {2}", f.Name, b_src.DisplayName, b_dst.DisplayName);
 
+                using var s_src = Duplicati.Library.Utility.TempFileStream.Create();
+
                 try
                 {
                     sw_get_src.Start();
                     await b_src.GetAsync(f.Name, s_src, CancellationToken.None);
+                    s_src.Position = 0;
                     sw_get_src.Stop();
                     if (config.DryRun)
                     {
@@ -388,11 +389,17 @@ destination will be verified before being overwritten (if they seemingly match).
                     {
                         sw_put_dst.Start();
                         await b_dst.PutAsync(f.Name, s_src, CancellationToken.None);
+                        s_src.Position = 0;
                         sw_put_dst.Stop();
                         if (config.VerifyGetAfterPut)
                         {
+                            // Start calculating the hash of the source file while we are downloading
+                            var srchashtask = Duplicati.Library.Utility.Utility.CalculateThrottledStreamHash(s_src, "SHA256", CancellationToken.None);
+                            using var s_dst = Duplicati.Library.Utility.TempFileStream.Create();
+
                             sw_get_dst.Start();
                             await b_dst.GetAsync(f.Name, s_dst, CancellationToken.None);
+                            s_dst.Position = 0;
                             sw_get_dst.Stop();
 
                             sw_get_cmp.Start();
@@ -402,7 +409,9 @@ destination will be verified before being overwritten (if they seemingly match).
                                 err_string = $"The sizes of the files do not match: {s_src.Length} != {s_dst.Length}.";
                             }
 
-                            if (!s_src.ToArray().SequenceEqual(s_dst.ToArray()))
+                            var dsthash = await Duplicati.Library.Utility.Utility.CalculateThrottledStreamHash(s_dst, "SHA256", CancellationToken.None);
+
+                            if (await srchashtask != dsthash)
                             {
                                 err_string = (err_string is null ? "" : err_string + " ") + "The contents of the files do not match.";
                             }
@@ -425,8 +434,6 @@ destination will be verified before being overwritten (if they seemingly match).
                 }
                 finally
                 {
-                    s_src.SetLength(0);
-                    s_dst.SetLength(0);
                     i++;
 
                     // Stop any running timers
