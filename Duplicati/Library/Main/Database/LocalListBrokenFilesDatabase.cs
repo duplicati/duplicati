@@ -31,7 +31,7 @@ namespace Duplicati.Library.Main.Database
 {
     internal class LocalListBrokenFilesDatabase : LocalDatabase
     {
-        private static readonly string BLOCK_VOLUME_IDS = FormatInvariant($@"SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""Type"" = '{RemoteVolumeType.Blocks.ToString()}'");
+        private static readonly string BLOCK_VOLUME_IDS = $@"SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""Type"" = '{RemoteVolumeType.Blocks.ToString()}'";
 
         // Invalid blocksets include those that:
         // - Have BlocksetEntries with unknown/invalid blocks (meaning the data to rebuild the blockset isn't available)
@@ -39,7 +39,7 @@ namespace Duplicati.Library.Main.Database
         // - Have BlocklistHash entries with unknown/invalid blocks (meaning the data which defines the list of hashes that makes up the blockset isn't available)
         // - Are defined in the Blockset table but have no entries in the BlocksetEntries table (this can happen during recreate if Files volumes reference blocksets that are not found in any Index files)
         // However, blocksets with a length of 0 are excluded from this check, as the corresponding blocks for these are not needed.
-        private static readonly string BROKEN_FILE_IDS = FormatInvariant($@"
+        private static readonly string BROKEN_FILE_IDS = $@"
 SELECT DISTINCT ""ID"" FROM (
   SELECT ""ID"" AS ""ID"", ""BlocksetID"" AS ""BlocksetID"" FROM ""FileLookup"" WHERE ""BlocksetID"" != {FOLDER_BLOCKSET_ID} AND ""BlocksetID"" != {SYMLINK_BLOCKSET_ID}
 UNION
@@ -61,12 +61,12 @@ WHERE ""BlocksetID"" IS NULL OR ""BlocksetID"" IN
     )
     WHERE ""BlocksetID"" NOT IN (SELECT ""ID"" FROM ""Blockset"" WHERE ""Length"" == 0)
   )
-");
-        private static readonly string BROKEN_FILE_SETS = FormatInvariant($@"SELECT DISTINCT ""B"".""Timestamp"", ""A"".""FilesetID"", COUNT(""A"".""FileID"") AS ""FileCount"" FROM ""FilesetEntry"" A, ""Fileset"" B WHERE ""A"".""FilesetID"" = ""B"".""ID"" AND ""A"".""FileID"" IN ({BROKEN_FILE_IDS})");
+";
+        private static readonly string BROKEN_FILE_SETS = $@"SELECT DISTINCT ""B"".""Timestamp"", ""A"".""FilesetID"", COUNT(""A"".""FileID"") AS ""FileCount"" FROM ""FilesetEntry"" A, ""Fileset"" B WHERE ""A"".""FilesetID"" = ""B"".""ID"" AND ""A"".""FileID"" IN ({BROKEN_FILE_IDS})";
 
-        private static readonly string BROKEN_FILE_NAMES = FormatInvariant($@"SELECT ""A"".""Path"", ""B"".""Length"" FROM ""File"" A LEFT JOIN ""Blockset"" B ON (""A"".""BlocksetID"" = ""B"".""ID"") WHERE ""A"".""ID"" IN ({BROKEN_FILE_IDS}) AND ""A"".""ID"" IN (SELECT ""FileID"" FROM ""FilesetEntry"" WHERE ""FilesetID"" = @FilesetId)");
+        private static readonly string BROKEN_FILE_NAMES = $@"SELECT ""A"".""Path"", ""B"".""Length"" FROM ""File"" A LEFT JOIN ""Blockset"" B ON (""A"".""BlocksetID"" = ""B"".""ID"") WHERE ""A"".""ID"" IN ({BROKEN_FILE_IDS}) AND ""A"".""ID"" IN (SELECT ""FileID"" FROM ""FilesetEntry"" WHERE ""FilesetID"" = @FilesetId)";
 
-        private static string INSERT_BROKEN_IDS(string tablename, string IDfieldname) => FormatInvariant($@"INSERT INTO ""{tablename}"" (""{IDfieldname}"") {BROKEN_FILE_IDS} AND ""ID"" IN (SELECT ""FileID"" FROM ""FilesetEntry"" WHERE ""FilesetID"" = @FilesetId)");
+        private static string INSERT_BROKEN_IDS(string tablename, string IDfieldname) => $@"INSERT INTO ""{tablename}"" (""{IDfieldname}"") {BROKEN_FILE_IDS} AND ""ID"" IN (SELECT ""FileID"" FROM ""FilesetEntry"" WHERE ""FilesetID"" = @FilesetId)";
 
         public static async Task<LocalListBrokenFilesDatabase> CreateAsync(string path, long pagecachesize)
         {
@@ -93,7 +93,7 @@ WHERE ""BlocksetID"" IS NULL OR ""BlocksetID"" IN
             var query = BROKEN_FILE_SETS;
             var clause = GetFilelistWhereClause(time, versions);
             if (!string.IsNullOrWhiteSpace(clause.Item1))
-                query += FormatInvariant($@" AND ""A"".""FilesetID"" IN (SELECT ""ID"" FROM ""Fileset"" {clause.Item1})");
+                query += $@" AND ""A"".""FilesetID"" IN (SELECT ""ID"" FROM ""Fileset"" {clause.Item1})";
 
             query += @" GROUP BY ""A"".""FilesetID""";
 
@@ -118,7 +118,7 @@ WHERE ""BlocksetID"" IS NULL OR ""BlocksetID"" IN
         /// <returns>>All index files that are orphaned.</returns>
         public IEnumerable<RemoteVolume> GetOrphanedIndexFiles(IDbTransaction transaction)
         {
-            using var cmd = Connection.CreateCommand(transaction, FormatInvariant($@"SELECT ""Name"", ""Hash"", ""Size"" FROM ""RemoteVolume"" WHERE ""Type"" = '{RemoteVolumeType.Index.ToString()}' AND ""ID"" NOT IN (SELECT ""IndexVolumeID"" FROM ""IndexBlockLink"")"));
+            using var cmd = Connection.CreateCommand(transaction, $@"SELECT ""Name"", ""Hash"", ""Size"" FROM ""RemoteVolume"" WHERE ""Type"" = '{RemoteVolumeType.Index.ToString()}' AND ""ID"" NOT IN (SELECT ""IndexVolumeID"" FROM ""IndexBlockLink"")");
 
             foreach (var rd in cmd.ExecuteReaderEnumerable())
                 yield return new RemoteVolume(
@@ -219,29 +219,29 @@ WHERE
                 var volidstable = "DelVolSetIds-" + temptransguid;
 
                 // Create and fill a temp table with the volids to delete. We avoid using too many parameters that way.
-                deletecmd.ExecuteNonQuery(FormatInvariant($@"CREATE TEMP TABLE ""{volidstable}"" (""ID"" INTEGER PRIMARY KEY)"));
+                deletecmd.ExecuteNonQuery($@"CREATE TEMP TABLE ""{volidstable}"" (""ID"" INTEGER PRIMARY KEY)");
 
                 using (var tmptable = new TemporaryDbValueList(m_connection, transaction, names))
-                    deletecmd.SetCommandAndParameters(FormatInvariant($@"INSERT OR IGNORE INTO ""{volidstable}"" (""ID"") SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""Name"" IN (@Names)"))
+                    deletecmd.SetCommandAndParameters($@"INSERT OR IGNORE INTO ""{volidstable}"" (""ID"") SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""Name"" IN (@Names)")
                       .ExpandInClauseParameter("@Names", tmptable)
                       .ExecuteNonQuery();
 
-                var volIdsSubQuery = FormatInvariant($@"SELECT ""ID"" FROM ""{volidstable}"" ");
+                var volIdsSubQuery = $@"SELECT ""ID"" FROM ""{volidstable}"" ";
                 deletecmd.Parameters.Clear();
 
-                deletecmd.ExecuteNonQuery(FormatInvariant($@"DELETE FROM ""IndexBlockLink"" WHERE ""BlockVolumeID"" IN ({volIdsSubQuery}) OR ""IndexVolumeID"" IN ({volIdsSubQuery})"));
-                deletecmd.ExecuteNonQuery(FormatInvariant($@"DELETE FROM ""Block"" WHERE ""VolumeID"" IN ({volIdsSubQuery})"));
-                deletecmd.ExecuteNonQuery(FormatInvariant($@"DELETE FROM ""DeletedBlock"" WHERE ""VolumeID"" IN ({volIdsSubQuery})"));
-                deletecmd.ExecuteNonQuery(FormatInvariant($@"DELETE FROM ""DuplicateBlock"" WHERE ""VolumeID"" IN ({volIdsSubQuery})"));
+                deletecmd.ExecuteNonQuery($@"DELETE FROM ""IndexBlockLink"" WHERE ""BlockVolumeID"" IN ({volIdsSubQuery}) OR ""IndexVolumeID"" IN ({volIdsSubQuery})");
+                deletecmd.ExecuteNonQuery($@"DELETE FROM ""Block"" WHERE ""VolumeID"" IN ({volIdsSubQuery})");
+                deletecmd.ExecuteNonQuery($@"DELETE FROM ""DeletedBlock"" WHERE ""VolumeID"" IN ({volIdsSubQuery})");
+                deletecmd.ExecuteNonQuery($@"DELETE FROM ""DuplicateBlock"" WHERE ""VolumeID"" IN ({volIdsSubQuery})");
 
                 // Clean up temp tables for subqueries. We truncate content and then try to delete.
                 // Drop in try-block, as it fails in nested transactions (SQLite problem)
                 // SQLite.SQLiteException (0x80004005): database table is locked
-                deletecmd.ExecuteNonQuery(FormatInvariant($@"DELETE FROM ""{volidstable}"" "));
+                deletecmd.ExecuteNonQuery($@"DELETE FROM ""{volidstable}"" ");
                 try
                 {
                     deletecmd.CommandTimeout = 2;
-                    deletecmd.ExecuteNonQuery(FormatInvariant($@"DROP TABLE IF EXISTS ""{volidstable}"" "));
+                    deletecmd.ExecuteNonQuery($@"DROP TABLE IF EXISTS ""{volidstable}"" ");
                 }
                 catch { /* Ignore, will be deleted on close anyway. */ }
             }
