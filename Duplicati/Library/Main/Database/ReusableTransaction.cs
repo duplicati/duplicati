@@ -118,4 +118,23 @@ internal class ReusableTransaction(LocalDatabase db, SqliteTransaction? transact
             await m_transaction.DisposeAsync();
         }
     }
+
+    public async Task RollBackAsync(string? message = null, bool restart = true)
+    {
+        if (m_disposed)
+            throw new InvalidOperationException("Transaction is already disposed");
+
+        using (var timer = new Logging.Timer(LOGTAG, message, $"RollbackTransaction: {message}"))
+            await m_transaction.RollbackAsync();
+        await m_transaction.DisposeAsync();
+
+        if (restart)
+        {
+            m_transaction = m_db.Connection.BeginTransaction();
+        }
+        else
+        {
+            m_disposed = true;
+        }
+    }
 }
