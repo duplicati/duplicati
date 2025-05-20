@@ -1919,12 +1919,12 @@ namespace Duplicati.Library.Main.Database
         public class FilteredFilenameTable : IDisposable
         {
             public string Tablename { get; private set; }
-            private readonly SqliteConnection m_connection;
+            private readonly LocalDatabase m_db;
 
-            private FilteredFilenameTable(SqliteConnection connection)
+            private FilteredFilenameTable(LocalDatabase db)
             {
                 Tablename = "Filenames-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
-                m_connection = connection;
+                m_db = db;
             }
 
             [Obsolete("Calling this constructor will throw an exception. Use the Create method instead.")]
@@ -1933,9 +1933,9 @@ namespace Duplicati.Library.Main.Database
                 throw new NotImplementedException("Use the Create method instead.");
             }
 
-            public async Task<FilteredFilenameTable> CreateFilteredFilenameTableAsync(SqliteConnection connection, IFilter filter, SqliteTransaction transaction)
+            public static async Task<FilteredFilenameTable> CreateFilteredFilenameTableAsync(LocalDatabase db, IFilter filter)
             {
-                var ftt = new FilteredFilenameTable(connection);
+                var ftt = new FilteredFilenameTable(db);
 
                 // TODO factory
                 var type = FilterType.Regexp;
@@ -1948,12 +1948,12 @@ namespace Duplicati.Library.Main.Database
 
                 if (filter.Empty)
                 {
-                    using var cmd = await m_connection.CreateCommandAsync($@"
-                        CREATE TEMPORARY TABLE ""{Tablename}"" AS
+                    using var cmd = await db.Connection.CreateCommandAsync($@"
+                        CREATE TEMPORARY TABLE ""{ftt.Tablename}"" AS
                         SELECT DISTINCT ""Path""
                         FROM ""File""
                     ");
-                    await cmd.SetTransaction(transaction)
+                    await cmd.SetTransaction(db.Transaction)
                         .ExecuteNonQueryAsync();
                     return ftt;
                 }
@@ -1961,23 +1961,23 @@ namespace Duplicati.Library.Main.Database
                 if (type == FilterType.Regexp || type == FilterType.Group)
                 {
                     // TODO: Optimize this to not rely on the "File" view, and not instantiate the paths in full
-                    using var cmd = await m_connection.CreateCommandAsync($@"
-                        CREATE TEMPORARY TABLE ""{Tablename}"" (
+                    using var cmd = await db.Connection.CreateCommandAsync($@"
+                        CREATE TEMPORARY TABLE ""{ftt.Tablename}"" (
                             ""Path"" TEXT NOT NULL
                         )
                     ");
-                    await cmd.SetTransaction(transaction)
+                    await cmd.SetTransaction(db.Transaction)
                         .ExecuteNonQueryAsync();
 
                     cmd.SetCommandAndParameters($@"
-                        INSERT INTO ""{Tablename}"" (""Path"")
+                        INSERT INTO ""{ftt.Tablename}"" (""Path"")
                         VALUES (@Path)
                     ");
-                    using var c2 = await m_connection.CreateCommandAsync(@"
+                    using var c2 = await db.Connection.CreateCommandAsync(@"
                         SELECT DISTINCT ""Path""
                         FROM ""File""
                     ");
-                    c2.SetTransaction(transaction);
+                    c2.SetTransaction(db.Transaction);
                     using (var rd = await c2.ExecuteReaderAsync())
                         while (await rd.ReadAsync())
                         {
@@ -1989,7 +1989,7 @@ namespace Duplicati.Library.Main.Database
                             }
                         }
 
-                    await transaction.CommitAsync();
+                    await db.Transaction.CommitAsync();
                 }
                 else
                 {
@@ -2013,20 +2013,23 @@ namespace Duplicati.Library.Main.Database
                         }
                     }
 
-                    using var cmd = m_connection.CreateCommand();
-                    cmd.SetTransaction(transaction);
+                    using var cmd = db.Connection.CreateCommand();
+                    cmd.SetTransaction(db.Transaction);
+
                     await cmd.ExecuteNonQueryAsync($@"
-                        CREATE TEMPORARY TABLE ""{Tablename}"" (
+                        CREATE TEMPORARY TABLE ""{ftt.Tablename}"" (
                             ""Path"" TEXT NOT NULL
                         )
                     ");
+
                     await cmd.ExecuteNonQueryAsync($@"
-                        INSERT INTO ""{Tablename}""
+                        INSERT INTO ""{ftt.Tablename}""
                         SELECT DISTINCT ""Path""
                         FROM ""File""
                         WHERE {sb}
                     ", args);
-                    await transaction.CommitAsync();
+
+                    await db.Transaction.CommitAsync();
                 }
 
                 return ftt;
@@ -2042,7 +2045,7 @@ namespace Duplicati.Library.Main.Database
                 if (Tablename != null)
                     try
                     {
-                        using var cmd = m_connection.CreateCommand();
+                        using var cmd = m_db.Connection.CreateCommand();
                         await cmd.ExecuteNonQueryAsync(@$"
                             DROP TABLE IF EXISTS ""{Tablename}""
                         ");
