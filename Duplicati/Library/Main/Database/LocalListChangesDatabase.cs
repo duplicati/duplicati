@@ -44,13 +44,13 @@ namespace Duplicati.Library.Main.Database
 
         public interface IStorageHelper : IDisposable
         {
-            void AddElement(string path, string filehash, string metahash, long size, Interface.ListChangesElementType type, bool asNew);
+            Task AddElement(string path, string filehash, string metahash, long size, Interface.ListChangesElementType type, bool asNew);
 
-            void AddFromDb(long filesetId, bool asNew, IFilter filter);
+            Task AddFromDb(long filesetId, bool asNew, IFilter filter);
 
-            IChangeCountReport CreateChangeCountReport();
-            IChangeSizeReport CreateChangeSizeReport();
-            IEnumerable<Tuple<Interface.ListChangesChangeType, Interface.ListChangesElementType, string>> CreateChangedFileReport();
+            Task<IChangeCountReport> CreateChangeCountReport();
+            Task<IChangeSizeReport> CreateChangeSizeReport();
+            IAsyncEnumerable<Tuple<Interface.ListChangesChangeType, Interface.ListChangesElementType, string>> CreateChangedFileReport();
         }
 
         public interface IChangeCountReport
@@ -129,17 +129,17 @@ namespace Duplicati.Library.Main.Database
 
                 using (var cmd = sh.m_db.Connection.CreateCommand(db.Transaction))
                 {
-                    cmd.ExecuteNonQuery($@"CREATE TEMPORARY TABLE ""{sh.m_previousTable}"" (""Path"" TEXT NOT NULL, ""FileHash"" TEXT NULL, ""MetaHash"" TEXT NOT NULL, ""Size"" INTEGER NOT NULL, ""Type"" INTEGER NOT NULL) ");
-                    cmd.ExecuteNonQuery($@"CREATE TEMPORARY TABLE ""{sh.m_currentTable}"" (""Path"" TEXT NOT NULL, ""FileHash"" TEXT NULL, ""MetaHash"" TEXT NOT NULL, ""Size"" INTEGER NOT NULL, ""Type"" INTEGER NOT NULL) ");
+                    await cmd.ExecuteNonQueryAsync($@"CREATE TEMPORARY TABLE ""{sh.m_previousTable}"" (""Path"" TEXT NOT NULL, ""FileHash"" TEXT NULL, ""MetaHash"" TEXT NOT NULL, ""Size"" INTEGER NOT NULL, ""Type"" INTEGER NOT NULL) ");
+                    await cmd.ExecuteNonQueryAsync($@"CREATE TEMPORARY TABLE ""{sh.m_currentTable}"" (""Path"" TEXT NOT NULL, ""FileHash"" TEXT NULL, ""MetaHash"" TEXT NOT NULL, ""Size"" INTEGER NOT NULL, ""Type"" INTEGER NOT NULL) ");
                 }
 
-                sh.m_insertPreviousElementCommand = sh.m_db.Connection.CreateCommand($@"INSERT INTO ""{sh.m_previousTable}"" (""Path"", ""FileHash"", ""MetaHash"", ""Size"", ""Type"") VALUES (@Path,@FileHash,@MetaHash,@Size,@Type)");
-                sh.m_insertCurrentElementCommand = sh.m_db.Connection.CreateCommand($@"INSERT INTO ""{sh.m_currentTable}"" (""Path"", ""FileHash"", ""MetaHash"", ""Size"", ""Type"") VALUES (@Path,@FileHash,@MetaHash,@Size,@Type)");
+                sh.m_insertPreviousElementCommand = await sh.m_db.Connection.CreateCommandAsync($@"INSERT INTO ""{sh.m_previousTable}"" (""Path"", ""FileHash"", ""MetaHash"", ""Size"", ""Type"") VALUES (@Path,@FileHash,@MetaHash,@Size,@Type)");
+                sh.m_insertCurrentElementCommand = await sh.m_db.Connection.CreateCommandAsync($@"INSERT INTO ""{sh.m_currentTable}"" (""Path"", ""FileHash"", ""MetaHash"", ""Size"", ""Type"") VALUES (@Path,@FileHash,@MetaHash,@Size,@Type)");
 
                 return sh;
             }
 
-            public void AddFromDb(long filesetId, bool asNew, IFilter filter)
+            public async Task AddFromDb(long filesetId, bool asNew, IFilter filter)
             {
                 var tablename = asNew ? m_currentTable : m_previousTable;
 
@@ -154,9 +154,9 @@ namespace Duplicati.Library.Main.Database
                     if (filter == null || filter.Empty)
                     {
                         // Simple case, select everything
-                        cmd.SetCommandAndParameters($@"INSERT INTO ""{tablename}"" (""Path"", ""FileHash"", ""MetaHash"", ""Size"", ""Type"") SELECT ""Path"", ""FileHash"", ""MetaHash"", ""Size"", ""Type"" FROM {combined} A WHERE ""A"".""FilesetID"" = @FilesetId ")
+                        await cmd.SetCommandAndParameters($@"INSERT INTO ""{tablename}"" (""Path"", ""FileHash"", ""MetaHash"", ""Size"", ""Type"") SELECT ""Path"", ""FileHash"", ""MetaHash"", ""Size"", ""Type"" FROM {combined} A WHERE ""A"".""FilesetID"" = @FilesetId ")
                             .SetParameterValue("@FilesetId", filesetId)
-                            .ExecuteNonQuery();
+                            .ExecuteNonQueryAsync();
                     }
                     else if (Library.Utility.Utility.IsFSCaseSensitive && filter is FilterExpression expression && expression.Type == Duplicati.Library.Utility.FilterType.Simple)
                     {
@@ -165,12 +165,13 @@ namespace Duplicati.Library.Main.Database
                         // SQLite only supports ASCII compares
                         var p = expression.GetSimpleList();
                         var filenamestable = "Filenames-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
-                        cmd.ExecuteNonQuery($@"CREATE TEMPORARY TABLE ""{filenamestable}"" (""Path"" TEXT NOT NULL) ");
-                        cmd.SetCommandAndParameters($@"INSERT INTO ""{filenamestable}"" (""Path"") VALUES (@Path)");
+                        await cmd.ExecuteNonQueryAsync($@"CREATE TEMPORARY TABLE ""{filenamestable}"" (""Path"" TEXT NOT NULL) ");
+                        await cmd.SetCommandAndParameters($@"INSERT INTO ""{filenamestable}"" (""Path"") VALUES (@Path)")
+                            .PrepareAsync();
 
                         foreach (var s in p)
-                            cmd.SetParameterValue("@Path", s)
-                                .ExecuteNonQuery();
+                            await cmd.SetParameterValue("@Path", s)
+                                .ExecuteNonQueryAsync();
 
                         string whereClause;
                         if (expression.Result)
@@ -183,52 +184,55 @@ namespace Duplicati.Library.Main.Database
                             // Exclude filter
                             whereClause = $@"""A"".""FilesetID"" = @FilesetId AND ""A"".""Path"" NOT IN (SELECT DISTINCT ""Path"" FROM ""{filenamestable}"")";
                         }
-                        cmd.SetCommandAndParameters($@"INSERT INTO ""{tablename}"" (""Path"", ""FileHash"", ""MetaHash"", ""Size"", ""Type"") SELECT ""Path"", ""FileHash"", ""MetaHash"", ""Size"", ""Type"" FROM {combined} A WHERE {whereClause} ")
+                        await cmd.SetCommandAndParameters($@"INSERT INTO ""{tablename}"" (""Path"", ""FileHash"", ""MetaHash"", ""Size"", ""Type"") SELECT ""Path"", ""FileHash"", ""MetaHash"", ""Size"", ""Type"" FROM {combined} A WHERE {whereClause} ")
                             .SetParameterValue("@FilesetId", filesetId)
-                            .ExecuteNonQuery();
+                            .ExecuteNonQueryAsync();
 
-                        cmd.ExecuteNonQuery($@"DROP TABLE IF EXISTS ""{filenamestable}"" ");
+                        await cmd.ExecuteNonQueryAsync($@"DROP TABLE IF EXISTS ""{filenamestable}"" ");
                     }
                     else
                     {
                         // Do row-wise iteration
                         var values = new object[5];
-                        cmd.SetCommandAndParameters($@"SELECT ""A"".""Path"", ""A"".""FileHash"", ""A"".""MetaHash"", ""A"".""Size"", ""A"".""Type"" FROM {combined} A WHERE ""A"".""FilesetID"" = @FilesetId")
-                            .SetParameterValue("@FilesetId", filesetId);
+                        await cmd.SetCommandAndParameters($@"SELECT ""A"".""Path"", ""A"".""FileHash"", ""A"".""MetaHash"", ""A"".""Size"", ""A"".""Type"" FROM {combined} A WHERE ""A"".""FilesetID"" = @FilesetId")
+                            .SetParameterValue("@FilesetId", filesetId)
+                            .PrepareAsync();
                         using (var cmd2 = m_db.Connection.CreateCommand(m_db.Transaction).SetCommandAndParameters($@"INSERT INTO ""{tablename}"" (""Path"", ""FileHash"", ""MetaHash"", ""Size"", ""Type"") VALUES (@Path,@FileHash,@MetaHash,@Size,@Type)"))
-                        using (var rd = cmd.ExecuteReader())
-                            while (rd.Read())
+                        using (var rd = await cmd.ExecuteReaderAsync())
+                            while (await rd.ReadAsync())
                             {
                                 rd.GetValues(values);
                                 if (values[0] != null && values[0] != DBNull.Value && FilterExpression.Matches(filter, values[0].ToString()))
                                 {
-                                    cmd2.SetParameterValue("@Path", values[0])
+                                    await cmd2
+                                        .SetParameterValue("@Path", values[0])
                                         .SetParameterValue("@FileHash", values[1])
                                         .SetParameterValue("@MetaHash", values[2])
                                         .SetParameterValue("@Size", values[3])
                                         .SetParameterValue("@Type", values[4])
-                                        .ExecuteNonQuery();
+                                        .ExecuteNonQueryAsync();
                                 }
                             }
                     }
                 }
             }
 
-            public void AddElement(string path, string filehash, string metahash, long size, Interface.ListChangesElementType type, bool asNew)
+            public async Task AddElement(string path, string filehash, string metahash, long size, Interface.ListChangesElementType type, bool asNew)
             {
                 var cmd = asNew ? m_insertCurrentElementCommand : m_insertPreviousElementCommand;
-                cmd.SetParameterValue("@Path", path);
-                cmd.SetParameterValue("@FileHash", filehash);
-                cmd.SetParameterValue("@MetaHash", metahash);
-                cmd.SetParameterValue("@Size", size);
-                cmd.SetParameterValue("@Type", (int)type);
-                cmd.ExecuteNonQuery();
+                await cmd
+                    .SetParameterValue("@Path", path)
+                    .SetParameterValue("@FileHash", filehash)
+                    .SetParameterValue("@MetaHash", metahash)
+                    .SetParameterValue("@Size", size)
+                    .SetParameterValue("@Type", (int)type)
+                    .ExecuteNonQueryAsync();
             }
 
-            private static IEnumerable<string?> ReaderToStringList(SqliteDataReader rd)
+            private static async IAsyncEnumerable<string?> ReaderToStringList(SqliteDataReader rd)
             {
                 using (rd)
-                    while (rd.Read())
+                    while (await rd.ReadAsync())
                     {
                         var v = rd.GetValue(0);
                         if (v == null || v == DBNull.Value)
@@ -247,7 +251,7 @@ namespace Duplicati.Library.Main.Database
                 );
             }
 
-            public IChangeSizeReport CreateChangeSizeReport()
+            public async Task<IChangeSizeReport> CreateChangeSizeReport()
             {
                 var sqls = GetSqls(true);
                 var added = sqls.Added;
@@ -258,17 +262,17 @@ namespace Duplicati.Library.Main.Database
                 {
                     var result = new ChangeSizeReport();
 
-                    result.PreviousSize = cmd.ExecuteScalarInt64($@"SELECT SUM(""Size"") FROM ""{m_previousTable}"" ", 0);
-                    result.CurrentSize = cmd.ExecuteScalarInt64($@"SELECT SUM(""Size"") FROM ""{m_currentTable}"" ", 0);
+                    result.PreviousSize = await cmd.ExecuteScalarInt64Async($@"SELECT SUM(""Size"") FROM ""{m_previousTable}"" ", 0);
+                    result.CurrentSize = await cmd.ExecuteScalarInt64Async($@"SELECT SUM(""Size"") FROM ""{m_currentTable}"" ", 0);
 
-                    result.AddedSize = cmd.ExecuteScalarInt64($@"SELECT SUM(""Size"") FROM ""{m_currentTable}"" WHERE ""{m_currentTable}"".""Path"" IN ({added}) ", 0);
-                    result.DeletedSize = cmd.ExecuteScalarInt64($@"SELECT SUM(""Size"") FROM ""{m_previousTable}"" WHERE ""{m_previousTable}"".""Path"" IN ({deleted}) ", 0);
+                    result.AddedSize = await cmd.ExecuteScalarInt64Async($@"SELECT SUM(""Size"") FROM ""{m_currentTable}"" WHERE ""{m_currentTable}"".""Path"" IN ({added}) ", 0);
+                    result.DeletedSize = await cmd.ExecuteScalarInt64Async($@"SELECT SUM(""Size"") FROM ""{m_previousTable}"" WHERE ""{m_previousTable}"".""Path"" IN ({deleted}) ", 0);
 
                     return result;
                 }
             }
 
-            public IChangeCountReport CreateChangeCountReport()
+            public async Task<IChangeCountReport> CreateChangeCountReport()
             {
                 var sqls = GetSqls(false);
                 var added = @"SELECT COUNT(*) FROM (" + sqls.Added + ")";
@@ -278,41 +282,41 @@ namespace Duplicati.Library.Main.Database
                 using (var cmd = m_db.Connection.CreateCommand(m_db.Transaction))
                 {
                     var result = new ChangeCountReport();
-                    result.AddedFolders = cmd.SetCommandAndParameters(added)
+                    result.AddedFolders = await cmd.SetCommandAndParameters(added)
                         .SetParameterValue("@Type", (int)Interface.ListChangesElementType.Folder)
-                        .ExecuteScalarInt64(0);
-                    result.AddedSymlinks = cmd.SetCommandAndParameters(added)
+                        .ExecuteScalarInt64Async(0);
+                    result.AddedSymlinks = await cmd.SetCommandAndParameters(added)
                         .SetParameterValue("@Type", (int)Interface.ListChangesElementType.Symlink)
-                        .ExecuteScalarInt64(0);
-                    result.AddedFiles = cmd.SetCommandAndParameters(added)
+                        .ExecuteScalarInt64Async(0);
+                    result.AddedFiles = await cmd.SetCommandAndParameters(added)
                         .SetParameterValue("@Type", (int)Interface.ListChangesElementType.File)
-                        .ExecuteScalarInt64(0);
+                        .ExecuteScalarInt64Async(0);
 
-                    result.DeletedFolders = cmd.SetCommandAndParameters(deleted)
+                    result.DeletedFolders = await cmd.SetCommandAndParameters(deleted)
                         .SetParameterValue("@Type", (int)Interface.ListChangesElementType.Folder)
-                        .ExecuteScalarInt64(0);
-                    result.DeletedSymlinks = cmd.SetCommandAndParameters(deleted)
+                        .ExecuteScalarInt64Async(0);
+                    result.DeletedSymlinks = await cmd.SetCommandAndParameters(deleted)
                         .SetParameterValue("@Type", (int)Interface.ListChangesElementType.Symlink)
-                        .ExecuteScalarInt64(0);
-                    result.DeletedFiles = cmd.SetCommandAndParameters(deleted)
+                        .ExecuteScalarInt64Async(0);
+                    result.DeletedFiles = await cmd.SetCommandAndParameters(deleted)
                         .SetParameterValue("@Type", (int)Interface.ListChangesElementType.File)
-                        .ExecuteScalarInt64(0);
+                        .ExecuteScalarInt64Async(0);
 
-                    result.ModifiedFolders = cmd.SetCommandAndParameters(modified)
+                    result.ModifiedFolders = await cmd.SetCommandAndParameters(modified)
                         .SetParameterValue("@Type", (int)Interface.ListChangesElementType.Folder)
-                        .ExecuteScalarInt64(0);
-                    result.ModifiedSymlinks = cmd.SetCommandAndParameters(modified)
+                        .ExecuteScalarInt64Async(0);
+                    result.ModifiedSymlinks = await cmd.SetCommandAndParameters(modified)
                         .SetParameterValue("@Type", (int)Interface.ListChangesElementType.Symlink)
-                        .ExecuteScalarInt64(0);
-                    result.ModifiedFiles = cmd.SetCommandAndParameters(modified)
+                        .ExecuteScalarInt64Async(0);
+                    result.ModifiedFiles = await cmd.SetCommandAndParameters(modified)
                         .SetParameterValue("@Type", (int)Interface.ListChangesElementType.File)
-                        .ExecuteScalarInt64(0);
+                        .ExecuteScalarInt64Async(0);
 
                     return result;
                 }
             }
 
-            public IEnumerable<Tuple<Interface.ListChangesChangeType, Interface.ListChangesElementType, string>> CreateChangedFileReport()
+            public async IAsyncEnumerable<Tuple<Interface.ListChangesChangeType, Interface.ListChangesElementType, string>> CreateChangedFileReport()
             {
                 var sqls = GetSqls(false);
 
@@ -324,19 +328,19 @@ namespace Duplicati.Library.Main.Database
                         Interface.ListChangesElementType.File
                     };
 
-                    IEnumerable<Tuple<Interface.ListChangesChangeType, Interface.ListChangesElementType, string>> BuildResult(SqliteCommand cmd, string sql, Interface.ListChangesChangeType changeType)
+                    async IAsyncEnumerable<Tuple<Interface.ListChangesChangeType, Interface.ListChangesElementType, string>> BuildResult(SqliteCommand cmd, string sql, Interface.ListChangesChangeType changeType)
                     {
                         cmd.SetCommandAndParameters(sql);
                         foreach (var type in elTypes)
-                            foreach (var s in ReaderToStringList(cmd.SetParameterValue("@Type", (int)type).ExecuteReader()))
+                            await foreach (var s in ReaderToStringList(cmd.SetParameterValue("@Type", (int)type).ExecuteReader()))
                                 yield return new Tuple<Interface.ListChangesChangeType, Interface.ListChangesElementType, string>(changeType, type, s ?? "");
                     }
 
-                    foreach (var r in BuildResult(cmd, sqls.Added, Interface.ListChangesChangeType.Added))
+                    await foreach (var r in BuildResult(cmd, sqls.Added, Interface.ListChangesChangeType.Added))
                         yield return r;
-                    foreach (var r in BuildResult(cmd, sqls.Deleted, Interface.ListChangesChangeType.Deleted))
+                    await foreach (var r in BuildResult(cmd, sqls.Deleted, Interface.ListChangesChangeType.Deleted))
                         yield return r;
-                    foreach (var r in BuildResult(cmd, sqls.Modified, Interface.ListChangesChangeType.Modified))
+                    await foreach (var r in BuildResult(cmd, sqls.Modified, Interface.ListChangesChangeType.Modified))
                         yield return r;
                 }
             }
@@ -350,14 +354,14 @@ namespace Duplicati.Library.Main.Database
             {
                 if (m_insertPreviousElementCommand != null)
                 {
-                    try { m_insertPreviousElementCommand.Dispose(); }
+                    try { await m_insertPreviousElementCommand.DisposeAsync(); }
                     catch { }
                     finally { m_insertPreviousElementCommand = null!; }
                 }
 
                 if (m_insertCurrentElementCommand != null)
                 {
-                    try { m_insertCurrentElementCommand.Dispose(); }
+                    try { await m_insertCurrentElementCommand.DisposeAsync(); }
                     catch { }
                     finally { m_insertCurrentElementCommand = null!; }
                 }
