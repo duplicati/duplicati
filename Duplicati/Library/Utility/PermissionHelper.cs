@@ -1,4 +1,26 @@
+// Copyright (C) 2025, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the "Software"),
+// to deal in the Software without restriction, including without limitation
+// the rights to use, copy, modify, merge, publish, distribute, sublicense,
+// and/or sell copies of the Software, and to permit persons to whom the
+// Software is furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+// DEALINGS IN THE SOFTWARE.
+
 #nullable enable
+
 using System;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
@@ -18,7 +40,10 @@ public static class PermissionHelper
     public static bool HasSeBackupPrivilege()
     {
         if (OperatingSystem.IsWindows())
-            try { return HasBackupPrivilegeClaim() && PrivilegeChecker.IsPrivilegeEnabled("SeBackupPrivilege"); }
+            try
+            {
+                return PrivilegeChecker.TryEnablePrivilege("SeBackupPrivilege");
+            }
             catch (DllNotFoundException)
             {
                 // If the function is not available, we assume the privilege is not present.
@@ -65,21 +90,6 @@ public static class PermissionHelper
     }
 
     /// <summary>
-    /// Check if the current process has the Backup Privilege.
-    /// </summary>
-    /// <returns>True if has Backup Privilege, false otherwise.</returns>
-    [SupportedOSPlatform("windows")]
-    private static bool HasBackupPrivilegeClaim()
-    {
-        using (var identity = WindowsIdentity.GetCurrent())
-            foreach (var claim in identity.Claims)
-                if (claim.Value.Contains("SeBackupPrivilege"))
-                    return true;
-
-        return false;
-    }
-
-    /// <summary>
     /// Gets the effective user ID of the calling process.
     /// </summary>
     /// <returns>The effective user ID of the calling process.</returns>
@@ -102,6 +112,10 @@ public static class PermissionHelper
     /// </summary>
     private class PrivilegeChecker
     {
+        /// <summary>
+        /// Constant for adjusting token privileges
+        /// </summary>
+        const int TOKEN_ADJUST_PRIVILEGES = 0x0020;
         /// <summary>
         /// Constants for token access rights.
         /// </summary>
@@ -214,6 +228,84 @@ public static class PermissionHelper
         static extern bool LookupPrivilegeValue(string? lpSystemName, string lpName, out LUID lpLuid);
 
         /// <summary>
+        /// Adjusts the privileges of a specified access token.
+        /// </summary>
+        /// <param name="TokenHandle">A handle to the access token whose privileges are to be adjusted.</param>
+        /// <param name="DisableAllPrivileges">Specifies whether all privileges are to be disabled.</param>
+        /// <param name="NewState">A pointer to a TOKEN_PRIVILEGES structure that specifies the new privileges.</param>
+        /// <param name="BufferLength">The size of the buffer pointed to by the PreviousState parameter.</param>
+        /// <param name="PreviousState">A pointer to a buffer that receives the previous state of the privileges.</param>
+        /// <param name="ReturnLength">A pointer to a variable that receives the size of the data returned in the PreviousState buffer.</param>
+        /// <returns><c>true</c> if the function succeeds; otherwise, <c>false</c>.</returns>
+        [DllImport("advapi32.dll", SetLastError = true)]
+        static extern bool AdjustTokenPrivileges(
+            IntPtr TokenHandle,
+            bool DisableAllPrivileges,
+            ref TOKEN_PRIVILEGES NewState,
+            int BufferLength,
+            IntPtr PreviousState,
+            IntPtr ReturnLength
+        );
+
+        /// <summary>
+        /// Retrieves the calling thread's last-error code value.
+        /// </summary>
+        /// <returns>The last-error code value.</returns>
+        [DllImport("kernel32.dll")]
+        static extern uint GetLastError();
+
+        /// <summary>
+        /// Flag tracking if backup privilege is enabled
+        /// </summary>
+        private static bool? _isPrivilegeEnabled;
+
+        /// <summary>
+        /// Tries to enable a specific privilege in the current process token.
+        /// </summary>
+        /// <param name="privilegeName">The name of the privilege (e.g., "SeBackupPrivilege").</param>
+        /// <returns>
+        /// True if the privilege is present and was successfully enabled.
+        /// False if the privilege is not held or could not be enabled.
+        /// </returns>
+        public static bool TryEnablePrivilege(string privilegeName)
+        {
+            if (_isPrivilegeEnabled.HasValue)
+                return _isPrivilegeEnabled.Value;
+
+            try
+            {
+                _isPrivilegeEnabled = false;
+                if (!OpenProcessToken(GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, out IntPtr tokenHandle))
+                    return false;
+
+                if (!LookupPrivilegeValue(null, privilegeName, out LUID luid))
+                    return false;
+
+                var tp = new TOKEN_PRIVILEGES
+                {
+                    PrivilegeCount = 1,
+                    Privileges = new LUID_AND_ATTRIBUTES()
+                    {
+                        Luid = luid,
+                        Attributes = SE_PRIVILEGE_ENABLED
+                    }
+                };
+
+                if (!AdjustTokenPrivileges(tokenHandle, false, ref tp, 0, IntPtr.Zero, IntPtr.Zero))
+                    return false;
+
+                _isPrivilegeEnabled = (GetLastError() == 0); // If not zero, then the privilege wasn't assigned (e.g., ERROR_NOT_ALL_ASSIGNED)
+                return _isPrivilegeEnabled.Value;
+            }
+            catch (Exception)
+            {
+                // Ignore this error     
+            }
+
+            return _isPrivilegeEnabled ?? false;
+        }
+
+        /// <summary>
         /// Determines whether the current process token has the specified Windows privilege enabled.
         /// </summary>
         /// <param name="privilegeName">
@@ -251,9 +343,7 @@ public static class PermissionHelper
                 {
                     LUID_AND_ATTRIBUTES laa = Marshal.PtrToStructure<LUID_AND_ATTRIBUTES>(luidPtr + i * structSize);
                     if (laa.Luid.Equals(targetLuid))
-                    {
                         return (laa.Attributes & SE_PRIVILEGE_ENABLED) != 0;
-                    }
                 }
                 return false;
             }
