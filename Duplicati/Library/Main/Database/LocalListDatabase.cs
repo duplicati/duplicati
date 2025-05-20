@@ -61,8 +61,8 @@ namespace Duplicati.Library.Main.Database
 
         public interface IFileSets : IDisposable
         {
-            IEnumerable<IFileset> Sets { get; }
-            IEnumerable<IFileset> QuickSets { get; }
+            IAsyncEnumerable<IFileset> Sets();
+            IAsyncEnumerable<IFileset> QuickSets();
             IEnumerable<IFileversion> SelectFiles(IFilter filter);
             IEnumerable<IFileversion> GetLargestPrefix(IFilter filter);
             IEnumerable<IFileversion> SelectFolderContents(IFilter filter);
@@ -364,52 +364,46 @@ namespace Duplicati.Library.Main.Database
                     cmd.ExecuteNonQuery($@"DELETE FROM ""{m_tablename}"" WHERE ""FilesetID"" NOT IN (SELECT ""FilesetID"" FROM ""{m_tablename}"" ORDER BY ""Timestamp"" DESC LIMIT 1 )");
             }
 
-            public IEnumerable<IFileset> QuickSets
+            public async IAsyncEnumerable<IFileset> QuickSets()
             {
-                get
-                {
-                    var dict = new Dictionary<long, long>();
-                    for (var i = 0; i < m_filesets.Length; i++)
-                        dict[m_filesets[i].Key] = i;
+                var dict = new Dictionary<long, long>();
+                for (var i = 0; i < m_filesets.Length; i++)
+                    dict[m_filesets[i].Key] = i;
 
-                    using (var cmd = m_connection.CreateCommand())
-                    using (var rd = cmd.ExecuteReader(@"SELECT DISTINCT ""ID"", ""IsFullBackup"" FROM ""Fileset"" ORDER BY ""Timestamp"" DESC "))
-                        while (rd.Read())
-                        {
-                            var id = rd.ConvertValueToInt64(0);
-                            var backupType = rd.GetInt32(1);
-                            var e = dict[id];
-                            yield return new Fileset(e, backupType, m_filesets[e].Value, -1L, -1L);
-                        }
-                }
+                using (var cmd = m_db.Connection.CreateCommand())
+                using (var rd = await cmd.ExecuteReaderAsync(@"SELECT DISTINCT ""ID"", ""IsFullBackup"" FROM ""Fileset"" ORDER BY ""Timestamp"" DESC "))
+                    while (await rd.ReadAsync())
+                    {
+                        var id = rd.ConvertValueToInt64(0);
+                        var backupType = rd.GetInt32(1);
+                        var e = dict[id];
+                        yield return new Fileset(e, backupType, m_filesets[e].Value, -1L, -1L);
+                    }
             }
 
-            public IEnumerable<IFileset> Sets
+            public async IAsyncEnumerable<IFileset> Sets()
             {
-                get
-                {
-                    var dict = new Dictionary<long, long>();
-                    for (var i = 0; i < m_filesets.Length; i++)
-                        dict[m_filesets[i].Key] = i;
+                var dict = new Dictionary<long, long>();
+                for (var i = 0; i < m_filesets.Length; i++)
+                    dict[m_filesets[i].Key] = i;
 
-                    var summation =
-                        $@"SELECT ""A"".""FilesetID"" AS ""FilesetID"", COUNT(*) AS ""FileCount"", SUM(""C"".""Length"") AS ""FileSizes"" FROM ""FilesetEntry"" A, ""File"" B, ""Blockset"" C WHERE ""A"".""FileID"" = ""B"".""ID"" AND ""B"".""BlocksetID"" = ""C"".""ID"" AND ""A"".""FilesetID"" IN (SELECT DISTINCT ""FilesetID"" FROM ""{m_tablename}"") GROUP BY ""A"".""FilesetID"" ";
+                var summation =
+                    $@"SELECT ""A"".""FilesetID"" AS ""FilesetID"", COUNT(*) AS ""FileCount"", SUM(""C"".""Length"") AS ""FileSizes"" FROM ""FilesetEntry"" A, ""File"" B, ""Blockset"" C WHERE ""A"".""FileID"" = ""B"".""ID"" AND ""B"".""BlocksetID"" = ""C"".""ID"" AND ""A"".""FilesetID"" IN (SELECT DISTINCT ""FilesetID"" FROM ""{m_tablename}"") GROUP BY ""A"".""FilesetID"" ";
 
-                    using (var cmd = m_connection.CreateCommand())
-                    using (var rd = cmd.ExecuteReader(
-                        $@"SELECT DISTINCT ""A"".""FilesetID"", ""A"".""IsFullBackup"", ""B"".""FileCount"", ""B"".""FileSizes"" FROM ""{m_tablename}"" A LEFT OUTER JOIN ( {summation} ) B ON ""A"".""FilesetID"" = ""B"".""FilesetID"" ORDER BY ""A"".""Timestamp"" DESC ")
-                    )
-                        while (rd.Read())
-                        {
-                            var id = rd.ConvertValueToInt64(0);
-                            var isFullBackup = rd.GetInt32(1);
-                            var e = dict[id];
-                            var filecount = rd.ConvertValueToInt64(2, -1L);
-                            var filesizes = rd.ConvertValueToInt64(3, -1L);
+                using (var cmd = m_db.Connection.CreateCommand())
+                using (var rd = await cmd.ExecuteReaderAsync(
+                    $@"SELECT DISTINCT ""A"".""FilesetID"", ""A"".""IsFullBackup"", ""B"".""FileCount"", ""B"".""FileSizes"" FROM ""{m_tablename}"" A LEFT OUTER JOIN ( {summation} ) B ON ""A"".""FilesetID"" = ""B"".""FilesetID"" ORDER BY ""A"".""Timestamp"" DESC ")
+                )
+                    while (await rd.ReadAsync())
+                    {
+                        var id = rd.ConvertValueToInt64(0);
+                        var isFullBackup = rd.GetInt32(1);
+                        var e = dict[id];
+                        var filecount = rd.ConvertValueToInt64(2, -1L);
+                        var filesizes = rd.ConvertValueToInt64(3, -1L);
 
-                            yield return new Fileset(e, isFullBackup, m_filesets[e].Value, filecount, filesizes);
-                        }
-                }
+                        yield return new Fileset(e, isFullBackup, m_filesets[e].Value, filecount, filesizes);
+                    }
             }
 
             public void Dispose()
