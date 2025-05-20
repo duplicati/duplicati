@@ -25,6 +25,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace Duplicati.Library.Main.Database
 {
@@ -67,16 +68,24 @@ WHERE ""BlocksetID"" IS NULL OR ""BlocksetID"" IN
 
         private static string INSERT_BROKEN_IDS(string tablename, string IDfieldname) => FormatInvariant($@"INSERT INTO ""{tablename}"" (""{IDfieldname}"") {BROKEN_FILE_IDS} AND ""ID"" IN (SELECT ""FileID"" FROM ""FilesetEntry"" WHERE ""FilesetID"" = @FilesetId)");
 
-        public LocalListBrokenFilesDatabase(string path, long pagecachesize)
-            : base(path, "ListBrokenFiles", false, pagecachesize)
+        public static async Task<LocalListBrokenFilesDatabase> CreateAsync(string path, long pagecachesize)
         {
-            ShouldCloseConnection = true;
+            var db = new LocalListBrokenFilesDatabase();
+
+            db = (LocalListBrokenFilesDatabase)await CreateLocalDatabaseAsync(db, path, "ListBrokenFiles", false, pagecachesize);
+            db.ShouldCloseConnection = true;
+
+            return db;
         }
 
-        public LocalListBrokenFilesDatabase(LocalDatabase parent)
-            : base(parent)
+        public static async Task<LocalListBrokenFilesDatabase> CreateAsync(LocalDatabase dbparent)
         {
-            ShouldCloseConnection = false;
+            var dbnew = new LocalListBrokenFilesDatabase();
+
+            dbnew = (LocalListBrokenFilesDatabase)await CreateLocalDatabaseAsync(dbparent, dbnew);
+            dbnew.ShouldCloseConnection = false;
+
+            return dbnew;
         }
 
         public IEnumerable<(DateTime FilesetTime, long FilesetID, long RemoveFileCount)> GetBrokenFilesets(DateTime time, long[] versions, IDbTransaction transaction)
