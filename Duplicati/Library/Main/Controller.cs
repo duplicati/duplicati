@@ -478,7 +478,7 @@ namespace Duplicati.Library.Main
         {
             OnOperationStarted?.Invoke(result);
             var resultSetter = result as ISetCommonOptions;
-            using (var logTarget = new ControllerMultiLogTarget(result, Logging.LogMessageType.Information, null))
+            using (var logTarget = new ControllerMultiLogTarget(result, Logging.LogMessageType.Information, null, m_options.SuppressWarningsFilter))
             using (Logging.Log.StartScope(logTarget, null))
             {
                 logTarget.AddTarget(m_messageSink, m_options.ConsoleLoglevel, m_options.ConsoleLogFilter);

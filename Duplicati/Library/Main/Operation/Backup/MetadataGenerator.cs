@@ -55,7 +55,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                         }
                         catch (Exception ex)
                         {
-                            Logging.Log.WriteWarningMessage(METALOGTAG, "TimestampReadFailed", ex, "Failed to read timestamp on \"{0}\"", entry.Path);
+                            LogExceptionHelper.LogCommonWarning(ex, METALOGTAG, "TimestampReadFailed", entry.Path, "Failed to read timestamp on \"{0}\"");
                         }
                     }
 
@@ -67,7 +67,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                         }
                         catch (Exception ex)
                         {
-                            Logging.Log.WriteWarningMessage(METALOGTAG, "TimestampReadFailed", ex, "Failed to read timestamp on \"{0}\"", entry.Path);
+                            LogExceptionHelper.LogCommonWarning(ex, METALOGTAG, "TimestampReadFailed", entry.Path, "Failed to read timestamp on \"{0}\"");
                         }
                     }
                 }
@@ -80,7 +80,7 @@ namespace Duplicati.Library.Main.Operation.Backup
             }
             catch (Exception ex)
             {
-                Logging.Log.WriteWarningMessage(METALOGTAG, "MetadataProcessFailed", ex, "Failed to process metadata for \"{0}\", storing empty metadata", entry.Path);
+                LogExceptionHelper.LogCommonWarning(ex, METALOGTAG, "MetadataProcessFailed", entry.Path, "Failed to process metadata on \"{0}\", storing empty metadata");
                 return new Dictionary<string, string>();
             }
         }

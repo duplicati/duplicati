@@ -25,10 +25,8 @@ using Duplicati.Library.Main.Operation.Common;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using Duplicati.Library.Utility;
-using System.Linq;
 using Duplicati.Library.Interface;
 using System.IO;
-using System.Security.Cryptography;
 
 namespace Duplicati.Library.Main.Operation.Backup
 {
@@ -87,7 +85,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                                 }
                                 catch (Exception ex)
                                 {
-                                    Logging.Log.WriteWarningMessage(FILELOGTAG, "FileLengthFailure", ex, "Failed to read file length for file {0}", e.Path);
+                                    LogExceptionHelper.LogCommonWarning(ex, FILELOGTAG, "FileLengthFailure", e.Path, "Failed to read file length for \"{0}\"");
                                 }
 
                                 if (e.IsMetadata && fslen > maxmetadatasize)
