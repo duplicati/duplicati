@@ -34,7 +34,7 @@ namespace Duplicati.UnitTest
         public void VerifyMultiVolumeCompactWorks()
         {
             const int FILESIZE = 500 * 1024;
-            const int FILECOUNT = 20;
+            const int FILECOUNT = 40;
 
             var testopts = TestOptions.Expand(new
             {
