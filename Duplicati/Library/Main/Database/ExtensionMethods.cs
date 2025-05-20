@@ -201,7 +201,7 @@ public static partial class ExtensionMethods
             self.SetCommandAndParameters(cmd);
 
         using (writeLog ? new Logging.Timer(LOGTAG, "ExecuteScalarAsync", string.Format("ExecuteScalarAsync: {0}", self.GetPrintableCommandText())) : null)
-            return self.ExecuteScalar();
+            return await self.ExecuteScalarAsync();
     }
 
     public static async Task<object?> ExecuteScalarAsync(this SqliteCommand self, string cmdtext)
