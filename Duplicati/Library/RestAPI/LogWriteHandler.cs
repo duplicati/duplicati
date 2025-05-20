@@ -116,7 +116,7 @@ namespace Duplicati.Server
         private RingBuffer<ILogWriteHandler.LiveLogEntry> m_buffer;
 
 
-        private readonly ControllerMultiLogTarget m_target = new ControllerMultiLogTarget(null, LogMessageType.Warning, null);
+        private readonly ControllerMultiLogTarget m_target = new ControllerMultiLogTarget(null, LogMessageType.Warning, null, null);
         private LogMessageType m_logLevel;
 
         public LogWriteHandler()

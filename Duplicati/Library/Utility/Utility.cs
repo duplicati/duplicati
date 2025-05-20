@@ -1569,26 +1569,7 @@ namespace Duplicati.Library.Utility
         public static string IpVersionCompatibleLoopback =>
             HasIPv4Loopback ? IPAddress.Loopback.ToString() : $"[{IPAddress.IPv6Loopback.ToString()}]";
 
-        /// <summary>
-        /// Flattens an exception and its inner exceptions
-        /// </summary>
-        /// <param name="ex">The exception to flatten</param>
-        /// <returns>An enumerable of exceptions</returns>
-        public static IEnumerable<Exception> FlattenException(Exception? ex)
-        {
-            if (ex == null)
-                yield break;
 
-            yield return ex;
-
-            if (ex is AggregateException aex)
-                foreach (var iex in aex.Flatten().InnerExceptions)
-                    foreach (var iex2 in FlattenException(iex))
-                        yield return iex2;
-
-            foreach (var iex in FlattenException(ex.InnerException))
-                yield return iex;
-        }
 
         /// <summary>
         /// Guesses the URL scheme and returns it
@@ -1637,26 +1618,6 @@ namespace Duplicati.Library.Utility
             }
 
             return sanitizedUrl;
-        }
-
-        /// <summary>
-        /// Checks if an exception is a stop, cancel or timeout exception
-        /// </summary>
-        /// <param name="ex">The operation to check</param>
-        /// <returns><c>true</c> if the exception is a stop or cancel exception, <c>false</c> otherwise</returns>
-        public static bool IsAbortOrCancelException(this Exception ex)
-        {
-            return ex is OperationCanceledException || ex is ThreadAbortException || ex is TaskCanceledException || ex is TimeoutException;
-        }
-
-        /// <summary>
-        /// Checks if an exception is a stop exception
-        /// </summary>
-        /// <param name="ex">The operation to check</param>
-        /// <returns><c>true</c> if the exception is a stop exception, <c>false</c> otherwise</returns>
-        public static bool IsAbortException(this Exception ex)
-        {
-            return ex is OperationCanceledException || ex is ThreadAbortException;
         }
 
         /// <summary>

@@ -19,6 +19,8 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -29,12 +31,25 @@ namespace Duplicati.Library.Main
     /// <summary>
     /// The log target handler for the controller, which sends to multiple log targets
     /// </summary>
-    public class ControllerMultiLogTarget : Logging.ILogDestination, IDisposable
+    public class ControllerMultiLogTarget : ILogDestination, IDisposable
     {
+        /// <summary>
+        /// The target entry for the log target
+        /// </summary>
+        /// <param name="Target">The log target.</param>
+        /// <param name="Level">The minimum log level to consider</param>
+        /// <param name="Filter">The log filter.</param>
+        private sealed record TargetEntry(ILogDestination Target, LogMessageType Level, Library.Utility.IFilter Filter);
+
         /// <summary>
         /// The list of log targets to handle
         /// </summary>
-        private readonly List<Tuple<ILogDestination, LogMessageType, Library.Utility.IFilter>> m_targets = new List<Tuple<ILogDestination, LogMessageType, Library.Utility.IFilter>>();
+        private readonly List<TargetEntry> m_targets = new List<TargetEntry>();
+
+        /// <summary>
+        /// The filter used to suppress warnings
+        /// </summary>
+        private readonly HashSet<string>? m_supressWarningFilter;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="T:Duplicati.Library.Main.ControllerMultiLogTarget"/> class.
@@ -42,8 +57,9 @@ namespace Duplicati.Library.Main
         /// <param name="target">The log target.</param>
         /// <param name="loglevel">The minimum log level to consider</param>
         /// <param name="filter">The log filter.</param>
-        public ControllerMultiLogTarget(ILogDestination target, Logging.LogMessageType loglevel, Library.Utility.IFilter filter)
+        public ControllerMultiLogTarget(ILogDestination target, Logging.LogMessageType loglevel, Library.Utility.IFilter? filter, HashSet<string>? supressWarningFilter)
         {
+            m_supressWarningFilter = supressWarningFilter;
             AddTarget(target, loglevel, filter);
         }
 
@@ -53,12 +69,12 @@ namespace Duplicati.Library.Main
         /// <param name="target">The log target.</param>
         /// <param name="loglevel">The minimum log level to consider</param>
         /// <param name="filter">The log filter.</param>
-        public void AddTarget(ILogDestination target, LogMessageType loglevel, Library.Utility.IFilter filter)
+        public void AddTarget(ILogDestination target, LogMessageType loglevel, Library.Utility.IFilter? filter)
         {
             if (target == null)
                 return;
 
-            m_targets.Add(new Tuple<ILogDestination, LogMessageType, Library.Utility.IFilter>(target, loglevel, filter ?? new Library.Utility.FilterExpression()));
+            m_targets.Add(new TargetEntry(target, loglevel, filter ?? new Library.Utility.FilterExpression()));
         }
 
         /// <summary>
@@ -73,7 +89,7 @@ namespace Duplicati.Library.Main
 		public void Dispose()
         {
             foreach (var m in m_targets)
-                (m.Item1 as IDisposable)?.Dispose();
+                (m.Target as IDisposable)?.Dispose();
             m_targets.Clear();
         }
 
@@ -81,7 +97,7 @@ namespace Duplicati.Library.Main
         /// Gets the minimum log level of all the targets
         /// </summary>
         public LogMessageType MinimumLevel
-            => m_targets.Select(x => x.Item2).DefaultIfEmpty(LogMessageType.Error).Min();
+            => m_targets.Select(x => x.Level).DefaultIfEmpty(LogMessageType.Error).Min();
 
         /// <summary>
         /// Writes the message to all the destinations.
@@ -89,9 +105,13 @@ namespace Duplicati.Library.Main
         /// <param name="entry">Entry.</param>
         public void WriteMessage(LogEntry entry)
         {
+            // If the message is a warning, check if we should suppress it
+            if (m_supressWarningFilter != null && entry.Level == LogMessageType.Warning && m_supressWarningFilter.Contains(entry.Id))
+                entry = new LogEntry(entry.Message, entry.Arguments, LogMessageType.Information, entry.Tag, entry.Id, entry.Exception);
+
             foreach (var e in m_targets)
             {
-                var found = e.Item3.Matches(entry.FilterTag, out var result, out var match);
+                var found = e.Filter.Matches(entry.FilterTag, out var result, out var _);
 
                 // If there is a filter match, use that
                 if (found)
@@ -102,12 +122,12 @@ namespace Duplicati.Library.Main
                 else
                 {
                     // Otherwise, filter by log-level
-                    if (entry.Level < e.Item2)
+                    if (entry.Level < e.Level)
                         continue;
                 }
 
                 // If we get here, write the message
-                e.Item1.WriteMessage(entry);
+                e.Target.WriteMessage(entry);
             }
         }
     }

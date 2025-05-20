@@ -375,11 +375,14 @@ namespace Duplicati.Library.Main
             new CommandLineArgument("log-file", CommandLineArgument.ArgumentType.Path, Strings.Options.LogfileShort, Strings.Options.LogfileLong),
             new CommandLineArgument("log-file-log-level", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.LogfileloglevelShort, Strings.Options.LogfileloglevelLong, "Warning", null, Enum.GetNames(typeof(Duplicati.Library.Logging.LogMessageType))),
             new CommandLineArgument("log-file-log-filter", CommandLineArgument.ArgumentType.String, Strings.Options.LogfilelogfiltersShort, Strings.Options.LogfilelogfiltersLong(System.IO.Path.PathSeparator.ToString()), null),
+            new CommandLineArgument("log-file-log-ignore", CommandLineArgument.ArgumentType.String, Strings.Options.LogfilelogignoreShort, Strings.Options.LogfilelogignoreLong(System.IO.Path.PathSeparator.ToString()), null),
 
             new CommandLineArgument("console-log-level", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.ConsoleloglevelShort, Strings.Options.ConsoleloglevelLong, "Warning", null, Enum.GetNames(typeof(Duplicati.Library.Logging.LogMessageType))),
             new CommandLineArgument("console-log-filter", CommandLineArgument.ArgumentType.String, Strings.Options.ConsolelogfiltersShort, Strings.Options.ConsolelogfiltersLong(System.IO.Path.PathSeparator.ToString()), null),
+            new CommandLineArgument("console-log-ignore", CommandLineArgument.ArgumentType.String, Strings.Options.ConsolelogignoreShort, Strings.Options.ConsolelogignoreLong(System.IO.Path.PathSeparator.ToString()), null),
 
             new CommandLineArgument("log-level", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.LoglevelShort, Strings.Options.LoglevelLong, "Warning", null, Enum.GetNames(typeof(Duplicati.Library.Logging.LogMessageType)), Strings.Options.LogLevelDeprecated("log-file-log-level", "console-log-level")),
+            new CommandLineArgument("suppress-warnings", CommandLineArgument.ArgumentType.String, Strings.Options.SuppresswarningsShort, Strings.Options.SuppresswarningsLong),
 
             new CommandLineArgument("profile-all-database-queries", CommandLineArgument.ArgumentType.Boolean, Strings.Options.ProfilealldatabasequeriesShort, Strings.Options.ProfilealldatabasequeriesLong, "false"),
 
@@ -1214,30 +1217,30 @@ namespace Duplicati.Library.Main
         }
 
         /// <summary>
+        /// Gets the filter used to suppress warning messages.
+        /// </summary>
+        public HashSet<string>? SuppressWarningsFilter
+            => m_options.GetValueOrDefault("suppress-warnings")?.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)?.ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        /// <summary>
         /// Gets the filter used for log-file messages.
         /// </summary>
         /// <value>The log file filter.</value>
-        public IFilter LogFileLogFilter
-        {
-            get
-            {
-                m_options.TryGetValue("log-file-log-filter", out var value);
-                return Library.Utility.FilterExpression.ParseLogFilter(value);
-            }
-        }
+        public IFilter? LogFileLogFilter
+            => FilterExpression.Combine(
+                new FilterExpression(m_options.GetValueOrDefault("log-file-log-ignore")?.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)?.Select(x => $"*-{x}"), false),
+                FilterExpression.ParseLogFilter(m_options.GetValueOrDefault("log-file-log-filter"))
+            );
 
         /// <summary>
         /// Gets the filter used for console messages.
         /// </summary>
         /// <value>The log file filter.</value>
-        public IFilter ConsoleLogFilter
-        {
-            get
-            {
-                m_options.TryGetValue("console-log-filter", out var value);
-                return Library.Utility.FilterExpression.ParseLogFilter(value);
-            }
-        }
+        public IFilter? ConsoleLogFilter
+            => FilterExpression.Combine(
+                new FilterExpression(m_options.GetValueOrDefault("console-log-ignore")?.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)?.Select(x => $"*-{x}"), false),
+                FilterExpression.ParseLogFilter(m_options.GetValueOrDefault("console-log-filter"))
+            );
 
         /// <summary>
         /// Gets the console log detail level

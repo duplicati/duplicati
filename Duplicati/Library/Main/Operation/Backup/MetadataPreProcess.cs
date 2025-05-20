@@ -98,7 +98,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                     }
                     catch (Exception ex)
                     {
-                        Logging.Log.WriteWarningMessage(FILELOGTAG, "TimestampReadFailed", ex, "Failed to read timestamp on \"{0}\"", entry.Path);
+                        LogExceptionHelper.LogCommonWarning(ex, FILELOGTAG, "TimestampReadFailed", entry.Path, "Failed to read timestamp on \"{0}\"");
                     }
 
                     try
@@ -107,7 +107,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                     }
                     catch (Exception ex)
                     {
-                        Logging.Log.WriteVerboseMessage(FILELOGTAG, "FailedAttributeRead", "Failed to read attributes from {0}: {1}", entry.Path, ex.Message);
+                        LogExceptionHelper.LogCommonWarning(ex, FILELOGTAG, "AttributeReadFailed", entry.Path, "Failed to read attributes on \"{0}\"");
                     }
 
                     // If we only have metadata, stop here
@@ -166,8 +166,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                             if (ex.IsRetiredException())
                                 continue;
 
-                            Logging.Log.WriteWarningMessage(FILELOGTAG, "ProcessingMetadataFailed", ex,
-                                "Failed to process entry, path: {0}", entry.Path);
+                            LogExceptionHelper.LogCommonWarning(ex, FILELOGTAG, "ProcessingMetadataFailed", entry.Path);
                         }
                     }
                 }
