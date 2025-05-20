@@ -1486,7 +1486,11 @@ AND oldVersion.FilesetID = (SELECT ID FROM Fileset WHERE ID != @FilesetId ORDER 
 
                 //Create a fake new entry with the old name and mark as deleting
                 // as this ensures we will remove it, if it shows up in some later listing
-                RegisterRemoteVolume(oldname, type, RemoteVolumeState.Deleting, tr.Parent);
+                var newvolId = RegisterRemoteVolume(oldname, type, RemoteVolumeState.Deleting, tr.Parent);
+
+                // IF needed, also create an empty fileset, so the validation works
+                if (type == RemoteVolumeType.Files)
+                    CreateFileset(newvolId, DateTime.UnixEpoch, tr.Parent);
 
                 tr.Commit();
             }

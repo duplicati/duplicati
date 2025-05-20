@@ -52,10 +52,10 @@ namespace Duplicati.UnitTest
             var count = 0;
             DeterministicErrorBackend.ErrorGenerator = (action, remotename) =>
             {
-                if (action.IsPutOperation && remotename.Contains(".dlist."))
+                if (action == DeterministicErrorBackend.BackendAction.PutBefore && remotename.Contains(".dlist."))
                 {
                     count++;
-                    if (count < 2)
+                    if (count <= 2)
                         return true;
                 }
                 return false;
@@ -68,7 +68,7 @@ namespace Duplicati.UnitTest
             Assert.That(count, Is.EqualTo(3), "Did not retry the dlist upload");
 
             // Check that repair works
-            using (var c = new Library.Main.Controller(new DeterministicErrorBackend().ProtocolKey + "://" + TARGETFOLDER, testopts, null))
+            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
                 TestUtils.AssertResults(c.Repair());
 
             // Check that recreate works
