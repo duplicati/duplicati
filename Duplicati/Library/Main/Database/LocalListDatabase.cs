@@ -1,22 +1,22 @@
 // Copyright (C) 2025, The Duplicati Team
 // https://duplicati.com, hello@duplicati.com
-// 
-// Permission is hereby granted, free of charge, to any person obtaining a 
-// copy of this software and associated documentation files (the "Software"), 
-// to deal in the Software without restriction, including without limitation 
-// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
-// and/or sell copies of the Software, and to permit persons to whom the 
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the "Software"),
+// to deal in the Software without restriction, including without limitation
+// the rights to use, copy, modify, merge, publish, distribute, sublicense,
+// and/or sell copies of the Software, and to permit persons to whom the
 // Software is furnished to do so, subject to the following conditions:
-// 
-// The above copyright notice and this permission notice shall be included in 
+//
+// The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
-// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
 #nullable enable
@@ -25,6 +25,7 @@ using System;
 using System.Data;
 using System.Linq;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Utility;
 using Duplicati.Library.Interface;
@@ -33,10 +34,14 @@ namespace Duplicati.Library.Main.Database
 {
     internal class LocalListDatabase : LocalDatabase
     {
-        public LocalListDatabase(string path, long pagecachesize)
-            : base(path, "List", false, pagecachesize)
+        public static async Task<LocalListDatabase> CreateAsync(string path, long pagecachesize)
         {
-            ShouldCloseConnection = true;
+            var db = new LocalListDatabase();
+
+            db = (LocalListDatabase)await CreateLocalDatabaseAsync(db, path, "List", false, pagecachesize);
+            db.ShouldCloseConnection = true;
+
+            return db;
         }
 
         public interface IFileversion
@@ -66,24 +71,37 @@ namespace Duplicati.Library.Main.Database
 
         private class FileSets : IFileSets
         {
-            private readonly IDbConnection m_connection;
-            private string m_tablename;
-            private readonly KeyValuePair<long, DateTime>[] m_filesets;
+            private LocalDatabase m_db = null!;
+            private string m_tablename = null!;
+            private KeyValuePair<long, DateTime>[] m_filesets = [];
 
+            [Obsolete("Calling this constructor will throw an exception. Use CreateAsync instead.")]
             public FileSets(LocalListDatabase owner, DateTime time, long[] versions)
             {
-                m_connection = owner.m_connection;
-                m_filesets = owner.FilesetTimes.ToArray();
-                m_tablename = "Filesets-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
-                var tmp = owner.GetFilelistWhereClause(time, versions, m_filesets);
+                throw new NotSupportedException("Use CreateAsync instead.");
+            }
+
+            private FileSets() { }
+
+            public async Task<FileSets> CreateAsync(LocalListDatabase owner, DateTime time, long[] versions)
+            {
+                var fs = new FileSets
+                {
+                    m_db = owner,
+                    m_filesets = await owner.FilesetTimes().ToArrayAsync(),
+                    m_tablename = "Filesets-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray())
+                };
+                var tmp = await owner.GetFilelistWhereClause(time, versions, m_filesets);
                 var query = tmp.Item1;
                 var args = tmp.Item2;
 
-                using (var cmd = m_connection.CreateCommand())
+                using (var cmd = m_db.Connection.CreateCommand())
                 {
                     cmd.ExecuteNonQuery(FormatInvariant($@"CREATE TEMPORARY TABLE ""{m_tablename}"" AS SELECT DISTINCT ""ID"" AS ""FilesetID"", ""IsFullBackup"" AS ""IsFullBackup"" , ""Timestamp"" AS ""Timestamp"" FROM ""Fileset"" {query}"), args);
                     cmd.ExecuteNonQuery(FormatInvariant($@"CREATE INDEX ""{m_tablename}_FilesetIDTimestampIndex"" ON ""{m_tablename}"" (""FilesetID"", ""Timestamp"" DESC)"));
                 }
+
+                return fs;
             }
 
             private class Fileset : IFileset
@@ -432,23 +450,23 @@ namespace Duplicati.Library.Main.Database
         public IEnumerable<IListFilesetResultFileset> ListFilesetsExtended()
         {
             const string query = @"
-SELECT 
+SELECT
     f.""ID"" AS ""FilesetID"",
     f.""Timestamp"",
     f.""IsFullBackup"",
     COUNT(fe.""FileID"") AS ""NumberOfFiles"",
     COALESCE(SUM(b.""Length""), 0) AS ""TotalFileSize""
-FROM 
+FROM
     ""Fileset"" f
-LEFT JOIN 
+LEFT JOIN
     ""FilesetEntry"" fe ON f.""ID"" = fe.""FilesetID""
-LEFT JOIN 
+LEFT JOIN
     ""FileLookup"" fl ON fe.""FileID"" = fl.""ID""
-LEFT JOIN 
+LEFT JOIN
     ""Blockset"" b ON fl.""BlocksetID"" = b.""ID""
-GROUP BY 
+GROUP BY
     f.""ID""
-ORDER BY 
+ORDER BY
     f.""Timestamp"" DESC;
 ";
 
@@ -496,7 +514,7 @@ ORDER BY
 
             // Then query the matching files
             cmd.SetCommandAndParameters($@"
-        SELECT 
+        SELECT
             pp.""Prefix"" || fl.""Path"" AS ""FullPath"",
             b.""Length"",
             (CASE WHEN fl.""BlocksetID"" = @FolderBlocksetId THEN 1 ELSE 0 END) AS ""IsDirectory"",
@@ -581,7 +599,7 @@ ORDER BY
 
             // Fetch entries
             cmd.SetCommandAndParameters(@"
-        SELECT 
+        SELECT
             pp.""Prefix"" || fl.""Path"" AS ""FullPath"",
             b.""Length"",
             CASE WHEN fl.""BlocksetID"" = @FolderBlocksetId THEN 1 ELSE 0 END AS ""IsDirectory"",
@@ -783,7 +801,7 @@ ORDER BY
 
             // Then fetch the actual data
             var fetchSql = @"
-        SELECT 
+        SELECT
             fe.""FilesetID"",
             f.""Timestamp"",
             fl.""Path"",
@@ -994,7 +1012,7 @@ ORDER BY
 
             // Fetch results
             var fetchSql = $@"
-        SELECT 
+        SELECT
             fe.""FilesetID"",
             f.""Timestamp"",
             pp.""Prefix"" || fl.""Path"" AS ""FullPath"",
