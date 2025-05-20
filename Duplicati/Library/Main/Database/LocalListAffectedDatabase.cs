@@ -73,13 +73,41 @@ namespace Duplicati.Library.Main.Database
             for (var i = 0; i < filesets.Length; i++)
                 dict[filesets[i].Key] = i;
 
-            var sql = $@"SELECT DISTINCT ""FilesetID"" FROM (
-SELECT ""FilesetID"" FROM ""FilesetEntry"" WHERE ""FileID"" IN ( SELECT ""ID"" FROM ""FileLookup"" WHERE ""BlocksetID"" IN ( SELECT ""BlocksetID"" FROM ""BlocksetEntry"" WHERE ""BlockID"" IN ( SELECT ""ID"" From ""Block"" WHERE ""VolumeID"" IN ( SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""Name"" IN (@Names)))))
-UNION
-SELECT ""ID"" FROM ""Fileset"" WHERE ""VolumeID"" IN ( SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""Name"" IN (@Names))
-)";
+            var sql = $@"
+                SELECT DISTINCT ""FilesetID""
+                FROM (
+                    SELECT ""FilesetID""
+                    FROM ""FilesetEntry""
+                    WHERE ""FileID"" IN (
+                        SELECT ""ID""
+                        FROM ""FileLookup""
+                        WHERE ""BlocksetID"" IN (
+                            SELECT ""BlocksetID""
+                            FROM ""BlocksetEntry""
+                            WHERE ""BlockID"" IN (
+                                SELECT ""ID""
+                                FROM ""Block""
+                                WHERE ""VolumeID"" IN (
+                                    SELECT ""ID""
+                                    FROM ""RemoteVolume""
+                                    WHERE ""Name"" IN (@Names)
+                                )
+                            )
+                        )
+                    )
+                    UNION
+                        SELECT ""ID""
+                        FROM ""Fileset""
+                        WHERE ""VolumeID"" IN (
+                            SELECT ""ID""
+                            FROM ""RemoteVolume""
+                            WHERE ""Name"" IN (@Names)
+                        )
+                )
+            ";
+
             using (var tmptable = await TemporaryDbValueList.CreateAsync(this, items))
-            using (var cmd = await m_connection.CreateCommand(sql).ExpandInClauseParameterAsync("@Names", tmptable))
+            using (var cmd = await m_connection.CreateCommand(sql).SetTransaction(m_rtr).ExpandInClauseParameterAsync("@Names", tmptable))
             using (var rd = await cmd.ExecuteReaderAsync())
                 while (await rd.ReadAsync())
                 {
@@ -94,13 +122,63 @@ SELECT ""ID"" FROM ""Fileset"" WHERE ""VolumeID"" IN ( SELECT ""ID"" FROM ""Remo
 
         public async IAsyncEnumerable<Interface.IListResultFile> GetFiles(IEnumerable<string> items)
         {
-            var sql = $@"SELECT DISTINCT ""Path"" FROM (
-SELECT ""Path"" FROM ""File"" WHERE ""BlocksetID"" IN (SELECT ""BlocksetID"" FROM ""BlocksetEntry"" WHERE ""BlockID"" IN (SELECT ""ID"" FROM ""Block"" WHERE ""VolumeID"" IN (SELECT ""ID"" from ""RemoteVolume"" WHERE ""Name"" IN (@Names))))
- UNION
-SELECT ""Path"" FROM ""File"" WHERE ""MetadataID"" IN (SELECT ""ID"" FROM ""Metadataset"" WHERE ""BlocksetID"" IN (SELECT ""BlocksetID"" FROM ""BlocksetEntry"" WHERE ""BlockID"" IN (SELECT ""ID"" FROM ""Block"" WHERE ""VolumeID"" IN (SELECT ""ID"" from ""RemoteVolume"" WHERE ""Name"" IN (@Names)))))
- UNION
-SELECT ""Path"" FROM ""File"" WHERE ""ID"" IN ( SELECT ""FileID"" FROM ""FilesetEntry"" WHERE ""FilesetID"" IN ( SELECT ""ID"" FROM ""Fileset"" WHERE ""VolumeID"" IN ( SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""Name"" IN (@Names))))
-) ORDER BY ""Path""";
+            var sql = $@"
+                SELECT DISTINCT ""Path""
+                FROM (
+                    SELECT ""Path""
+                    FROM ""File""
+                    WHERE ""BlocksetID"" IN (
+                        SELECT ""BlocksetID""
+                        FROM ""BlocksetEntry""
+                        WHERE ""BlockID"" IN (
+                            SELECT ""ID""
+                            FROM ""Block""
+                            WHERE ""VolumeID"" IN (
+                                SELECT ""ID""
+                                FROM ""RemoteVolume""
+                                WHERE ""Name"" IN (@Names)
+                            )
+                        )
+                    )
+                    UNION
+                        SELECT ""Path""
+                        FROM ""File""
+                        WHERE ""MetadataID"" IN (
+                            SELECT ""ID""
+                            FROM ""Metadataset""
+                            WHERE ""BlocksetID"" IN (
+                                SELECT ""BlocksetID""
+                                FROM ""BlocksetEntry""
+                                WHERE ""BlockID"" IN (
+                                    SELECT ""ID""
+                                    FROM ""Block""
+                                    WHERE ""VolumeID"" IN (
+                                        SELECT ""ID""
+                                        FROM ""RemoteVolume""
+                                        WHERE ""Name"" IN (@Names)
+                                    )
+                                )
+                            )
+                        )
+                    UNION
+                        SELECT ""Path""
+                        FROM ""File""
+                        WHERE ""ID"" IN (
+                            SELECT ""FileID""
+                            FROM ""FilesetEntry""
+                            WHERE ""FilesetID"" IN (
+                                SELECT ""ID""
+                                FROM ""Fileset""
+                                WHERE ""VolumeID"" IN (
+                                    SELECT ""ID""
+                                    FROM ""RemoteVolume""
+                                    WHERE ""Name"" IN (@Names)
+                                )
+                            )
+                        )
+                )
+                ORDER BY ""Path""
+            ";
 
             using (var tmptable = await TemporaryDbValueList.CreateAsync(this, items))
             using (var cmd = await m_connection.CreateCommand(sql).ExpandInClauseParameterAsync("@Names", tmptable))
@@ -120,9 +198,26 @@ SELECT ""Path"" FROM ""File"" WHERE ""ID"" IN ( SELECT ""FileID"" FROM ""Fileset
             foreach (var slice in items.Chunk(CHUNK_SIZE / 2))
             {
                 var sql = $@"
-SELECT ""TimeStamp"", ""Message"" || ' ' || CASE WHEN ""Exception"" IS NULL THEN '' ELSE ""Exception"" END FROM ""LogData"" WHERE {string.Join(" OR ", slice.Select((x, i) => @$"""Message"" LIKE @Message{i}"))}
-UNION
-SELECT ""Timestamp"", ""Data"" FROM ""RemoteOperation"" WHERE ""Path"" IN (@Paths)";
+                    SELECT
+                        ""TimeStamp"",
+                        ""Message""
+                            || ' '
+                            ||
+                            CASE
+                                WHEN ""Exception"" IS NULL
+                                THEN ''
+                                ELSE ""Exception""
+                            END
+                    FROM ""LogData""
+                    WHERE
+                        {string.Join(" OR ", slice.Select((x, i) => @$"""Message"" LIKE @Message{i}"))}
+                    UNION
+                        SELECT
+                            ""Timestamp"",
+                            ""Data""
+                        FROM ""RemoteOperation""
+                        WHERE ""Path"" IN (@Paths)
+                ";
 
                 cmd.SetCommandAndParameters(sql)
                     .ExpandInClauseParameter("@Paths", items.ToArray());
@@ -141,11 +236,70 @@ SELECT ""Timestamp"", ""Data"" FROM ""RemoteOperation"" WHERE ""Path"" IN (@Path
 
         public async IAsyncEnumerable<Interface.IListResultRemoteVolume> GetVolumes(IEnumerable<string> items)
         {
-            var sql = $@"SELECT DISTINCT ""Name"" FROM (
-SELECT ""Name"" FROM ""Remotevolume"" WHERE ""ID"" IN ( SELECT ""VolumeID"" FROM ""Block"" WHERE ""ID"" IN ( SELECT ""BlockID"" FROM ""BlocksetEntry"" WHERE ""BlocksetID"" IN ( SELECT ""BlocksetID"" FROM ""FileLookup"" WHERE ""ID"" IN ( SELECT ""FileID"" FROM ""FilesetEntry"" WHERE ""FilesetID"" IN ( SELECT ""ID"" FROM ""Fileset"" WHERE ""VolumeID"" IN ( SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""Name"" IN (@Names)))))))
-UNION
-SELECT ""Name"" FROM ""Remotevolume"" WHERE ""ID"" IN ( SELECT ""VolumeID"" FROM ""Block"" WHERE ""ID"" IN ( SELECT ""BlockID"" FROM ""BlocksetEntry"" WHERE ""BlocksetID"" IN ( SELECT ""BlocksetID"" FROM ""Metadataset"" WHERE ""ID"" IN ( SELECT ""MetadataID"" FROM ""FileLookup"" WHERE ""ID"" IN ( SELECT ""FileID"" FROM ""FilesetEntry"" WHERE ""FilesetID"" IN ( SELECT ""ID"" FROM ""Fileset"" WHERE ""VolumeID"" IN ( SELECT ""ID"" FROM ""RemoteVolume"" WHERE ""Name"" IN (@Names))))))))
-)";
+            var sql = $@"
+                SELECT DISTINCT ""Name""
+                FROM (
+                    SELECT ""Name""
+                    FROM ""Remotevolume""
+                    WHERE ""ID"" IN (
+                        SELECT ""VolumeID""
+                        FROM ""Block""
+                        WHERE ""ID"" IN (
+                            SELECT ""BlockID""
+                            FROM ""BlocksetEntry""
+                            WHERE ""BlocksetID"" IN (
+                                SELECT ""BlocksetID""
+                                FROM ""FileLookup""
+                                WHERE ""ID"" IN (
+                                    SELECT ""FileID""
+                                    FROM ""FilesetEntry""
+                                    WHERE ""FilesetID"" IN (
+                                        SELECT ""ID""
+                                        FROM ""Fileset""
+                                        WHERE ""VolumeID"" IN (
+                                            SELECT ""ID""
+                                            FROM ""RemoteVolume""
+                                            WHERE ""Name"" IN (@Names)
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                    )
+                UNION
+                    SELECT ""Name""
+                    FROM ""Remotevolume""
+                    WHERE ""ID"" IN (
+                        SELECT ""VolumeID""
+                        FROM ""Block""
+                        WHERE ""ID"" IN (
+                            SELECT ""BlockID""
+                            FROM ""BlocksetEntry""
+                            WHERE ""BlocksetID"" IN (
+                                SELECT ""BlocksetID""
+                                FROM ""Metadataset""
+                                WHERE ""ID"" IN (
+                                    SELECT ""MetadataID""
+                                    FROM ""FileLookup""
+                                    WHERE ""ID"" IN (
+                                        SELECT ""FileID""
+                                        FROM ""FilesetEntry""
+                                        WHERE ""FilesetID"" IN (
+                                            SELECT ""ID""
+                                            FROM ""Fileset""
+                                            WHERE ""VolumeID"" IN (
+                                                SELECT ""ID""
+                                                FROM ""RemoteVolume""
+                                                WHERE ""Name"" IN (@Names)
+                                            )
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                    )
+                )
+            ";
 
             using (var cmd = m_connection.CreateCommand(sql).ExpandInClauseParameter("@Names", items.ToArray()))
             using (var rd = await cmd.ExecuteReaderAsync())
