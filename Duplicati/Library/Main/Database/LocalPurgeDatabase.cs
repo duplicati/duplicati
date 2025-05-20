@@ -35,7 +35,7 @@ namespace Duplicati.Library.Main.Database
         {
             var db = new LocalPurgeDatabase();
 
-            db = (LocalPurgeDatabase)await CreateLocalDatabaseAsync(db, path, "ListBrokenFiles", false, pagecachesize);
+            db = (LocalPurgeDatabase)await CreateLocalDatabaseAsync(db, path, "Purge", false, pagecachesize);
             db.ShouldCloseConnection = true;
 
             return db;
@@ -52,8 +52,18 @@ namespace Duplicati.Library.Main.Database
 
         public async Task<string> GetRemoteVolumeNameForFileset(long id)
         {
-            using var cmd = m_connection.CreateCommand(@"SELECT ""B"".""Name"" FROM ""Fileset"" A, ""RemoteVolume"" B WHERE ""A"".""VolumeID"" = ""B"".""ID"" AND ""A"".""ID"" = @FilesetId ")
-                .SetParameterValue("@FilesetId", id);
+            using var cmd = m_connection.CreateCommand(@"
+                SELECT
+                    ""B"".""Name""
+                FROM
+                    ""Fileset"" A,
+                    ""RemoteVolume"" B
+                WHERE
+                    ""A"".""VolumeID"" = ""B"".""ID""
+                    AND ""A"".""ID"" = @FilesetId
+                ")
+                    .SetParameterValue("@FilesetId", id);
+
             using (var rd = await cmd.ExecuteReaderAsync())
                 if (!await rd.ReadAsync())
                     throw new Exception($"No remote volume found for fileset with id {id}");
@@ -63,12 +73,20 @@ namespace Duplicati.Library.Main.Database
 
         internal async Task<long> CountOrphanFiles()
         {
-            using (var cmd = m_connection.CreateCommand())
-            using (var rd = await cmd.ExecuteReaderAsync(@"SELECT COUNT(*) FROM ""FileLookup"" WHERE ""ID"" NOT IN (SELECT DISTINCT ""FileID"" FROM ""FilesetEntry"")"))
-                if (await rd.ReadAsync())
-                    return rd.ConvertValueToInt64(0, 0);
-                else
-                    return 0;
+            using var cmd = m_connection.CreateCommand(m_rtr);
+            cmd.SetCommandAndParameters(@"
+                SELECT COUNT(*)
+                FROM ""FileLookup""
+                WHERE ""ID"" NOT IN (
+                    SELECT DISTINCT ""FileID""
+                    FROM ""FilesetEntry""
+                )
+            ");
+            using var rd = await cmd.ExecuteReaderAsync();
+            if (await rd.ReadAsync())
+                return rd.ConvertValueToInt64(0, 0);
+            else
+                return 0;
         }
 
         public interface ITemporaryFileset : IDisposable
@@ -112,7 +130,11 @@ namespace Duplicati.Library.Main.Database
                 };
 
                 using (var cmd = db.Connection.CreateCommand())
-                    await cmd.ExecuteNonQueryAsync($@"CREATE TEMPORARY TABLE ""{tempf.m_tablename}"" (""FileID"" INTEGER PRIMARY KEY) ");
+                    await cmd.ExecuteNonQueryAsync($@"
+                        CREATE TEMPORARY TABLE ""{tempf.m_tablename}"" (
+                            ""FileID"" INTEGER PRIMARY KEY
+                        )
+                    ");
 
                 return tempf;
             }
@@ -137,16 +159,36 @@ namespace Duplicati.Library.Main.Database
                     var filenamestable = "Filenames-" + Library.Utility.Utility.ByteArrayAsHexString(Guid.NewGuid().ToByteArray());
                     using (var cmd = m_db.Connection.CreateCommand())
                     {
-                        await cmd.ExecuteNonQueryAsync($@"CREATE TEMPORARY TABLE ""{filenamestable}"" (""Path"" TEXT NOT NULL) ");
-                        await cmd.SetCommandAndParameters($@"INSERT INTO ""{filenamestable}"" (""Path"") VALUES (@Path)")
+                        await cmd.ExecuteNonQueryAsync($@"
+                            CREATE TEMPORARY TABLE ""{filenamestable}"" (
+                                ""Path"" TEXT NOT NULL
+                            )
+                        ");
+
+                        await cmd.SetCommandAndParameters($@"
+                            INSERT INTO ""{filenamestable}"" (""Path"")
+                            VALUES (@Path)
+                        ")
                             .PrepareAsync();
+
                         foreach (var s in p)
                             await cmd.SetParameterValue("@Path", s)
                                 .ExecuteNonQueryAsync();
 
-                        await cmd.SetCommandAndParameters($@"INSERT INTO ""{m_tablename}"" (""FileID"") SELECT DISTINCT ""A"".""FileID"" FROM ""FilesetEntry"" A, ""File"" B WHERE ""A"".""FilesetID"" = @FilesetId AND ""A"".""FileID"" = ""B"".""ID"" AND ""B"".""Path"" IN ""{filenamestable}""")
+                        await cmd.SetCommandAndParameters($@"
+                            INSERT INTO ""{m_tablename}"" (""FileID"")
+                            SELECT DISTINCT ""A"".""FileID""
+                            FROM
+                                ""FilesetEntry"" A,
+                                ""File"" B
+                            WHERE
+                                ""A"".""FilesetID"" = @FilesetId
+                                AND ""A"".""FileID"" = ""B"".""ID""
+                                AND ""B"".""Path"" IN ""{filenamestable}""
+                        ")
                             .SetParameterValue("@FilesetId", ParentID)
                             .ExecuteNonQueryAsync();
+
                         await cmd.ExecuteNonQueryAsync($@"DROP TABLE IF EXISTS ""{filenamestable}"" ");
                     }
                 }
@@ -157,16 +199,33 @@ namespace Duplicati.Library.Main.Database
                     using (var cmd = m_db.Connection.CreateCommand())
                     using (var cmd2 = m_db.Connection.CreateCommand())
                     {
-                        cmd2.SetCommandAndParameters($@"INSERT INTO ""{m_tablename}"" (""FileID"") VALUES (@FileId)");
-                        cmd.SetCommandAndParameters(@"SELECT ""B"".""Path"", ""A"".""FileID"" FROM ""FilesetEntry"" A, ""File"" B WHERE ""A"".""FilesetID"" = @FilesetId AND ""A"".""FileID"" = ""B"".""ID"" ")
+                        await cmd2.SetCommandAndParameters($@"
+                            INSERT INTO ""{m_tablename}"" (""FileID"")
+                            VALUES (@FileId)
+                        ")
+                            .PrepareAsync();
+
+                        cmd.SetCommandAndParameters(@"
+                            SELECT
+                                ""B"".""Path"",
+                                ""A"".""FileID""
+                            FROM
+                                ""FilesetEntry"" A,
+                                ""File"" B
+                            WHERE
+                                ""A"".""FilesetID"" = @FilesetId
+                                AND ""A"".""FileID"" = ""B"".""ID""
+                        ")
                             .SetParameterValue("@FilesetId", ParentID);
+
                         using (var rd = await cmd.ExecuteReaderAsync())
                             while (await rd.ReadAsync())
                             {
                                 rd.GetValues(values);
                                 if (values[0] != null && values[0] != DBNull.Value && Library.Utility.FilterExpression.Matches(filter, values[0].ToString()))
                                 {
-                                    await cmd2.SetParameterValue("@FileId", values[1])
+                                    await cmd2
+                                        .SetParameterValue("@FileId", values[1])
                                         .ExecuteNonQueryAsync();
                                 }
                             }
@@ -181,17 +240,36 @@ namespace Duplicati.Library.Main.Database
                 using (var cmd = m_db.Connection.CreateCommand())
                 {
                     UpdatedFileCount = updated;
-                    RemovedFileCount = await cmd.ExecuteScalarInt64Async($@"SELECT COUNT(*) FROM ""{m_tablename}""", 0);
+
+                    RemovedFileCount = await cmd.ExecuteScalarInt64Async($@"
+                        SELECT COUNT(*)
+                        FROM ""{m_tablename}""
+                    ", 0);
+
                     RemovedFileSize = await cmd.ExecuteScalarInt64Async($@"
-                        SELECT
-                            SUM(""C"".""Length"")
+                        SELECT SUM(""C"".""Length"")
                         FROM
-                            ""{m_tablename}"" A, ""FileLookup"" B, ""Blockset"" C, ""Metadataset"" D
+                            ""{m_tablename}"" A,
+                            ""FileLookup"" B,
+                            ""Blockset"" C,
+                            ""Metadataset"" D
                         WHERE
                             ""A"".""FileID"" = ""B"".""ID""
-                            AND(""B"".""BlocksetID"" = ""C"".""ID"" OR(""B"".""MetadataID"" = ""D"".""ID"" AND ""D"".""BlocksetID"" = ""C"".""ID""))
+                            AND (
+                                ""B"".""BlocksetID"" = ""C"".""ID""
+                                OR (
+                                    ""B"".""MetadataID"" = ""D"".""ID""
+                                    AND ""D"".""BlocksetID"" = ""C"".""ID""
+                                )
+                            )
                         ", 0);
-                    var filesetcount = await cmd.ExecuteScalarInt64Async($@"SELECT COUNT(*) FROM ""FilesetEntry"" WHERE ""FilesetID"" = {ParentID}", 0);
+
+                    var filesetcount = await cmd.ExecuteScalarInt64Async($@"
+                        SELECT COUNT(*)
+                        FROM ""FilesetEntry""
+                        WHERE ""FilesetID"" = {ParentID}
+                    ", 0);
+
                     if (filesetcount == RemovedFileCount)
                         throw new Interface.UserInformationException($"Refusing to purge {RemovedFileCount} files from fileset with ID {ParentID}, as that would remove the entire fileset.\nTo delete a fileset, use the \"delete\" command.", "PurgeWouldRemoveEntireFileset");
                 }
@@ -203,11 +281,25 @@ namespace Duplicati.Library.Main.Database
                 var filesetid = await m_db.CreateFileset(remotevolid, timestamp);
                 await m_db.UpdateFullBackupStateInFileset(filesetid, isFullBackup);
 
-                using (var cmd = m_db.Connection.CreateCommand())
-                    await cmd.SetCommandAndParameters($@"INSERT INTO ""FilesetEntry"" (""FilesetID"", ""FileID"", ""Lastmodified"") SELECT @TargetFilesetId, ""FileID"", ""LastModified"" FROM ""FilesetEntry"" WHERE ""FilesetID"" = @SourceFilesetId AND ""FileID"" NOT IN ""{m_tablename}"" ")
-                    .SetParameterValue("@TargetFilesetId", filesetid)
-                    .SetParameterValue("@SourceFilesetId", ParentID)
-                    .ExecuteNonQueryAsync();
+                using (var cmd = m_db.Connection.CreateCommand(m_db.Transaction))
+                    await cmd.SetCommandAndParameters($@"
+                        INSERT INTO ""FilesetEntry"" (
+                            ""FilesetID"",
+                            ""FileID"",
+                            ""Lastmodified""
+                        )
+                        SELECT
+                            @TargetFilesetId,
+                            ""FileID"",
+                            ""LastModified""
+                        FROM ""FilesetEntry""
+                        WHERE
+                            ""FilesetID"" = @SourceFilesetId
+                            AND ""FileID"" NOT IN ""{m_tablename}""
+                    ")
+                        .SetParameterValue("@TargetFilesetId", filesetid)
+                        .SetParameterValue("@SourceFilesetId", ParentID)
+                        .ExecuteNonQueryAsync();
 
                 return new Tuple<long, long>(remotevolid, filesetid);
             }
@@ -215,7 +307,18 @@ namespace Duplicati.Library.Main.Database
             public async IAsyncEnumerable<KeyValuePair<string, long>> ListAllDeletedFiles()
             {
                 using (var cmd = m_db.Connection.CreateCommand())
-                using (var rd = await cmd.ExecuteReaderAsync($@"SELECT ""B"".""Path"", ""C"".""Length"" FROM ""{m_tablename}"" A, ""File"" B, ""Blockset"" C WHERE ""A"".""FileID"" = ""B"".""ID"" AND ""B"".""BlocksetID"" = ""C"".""ID"" "))
+                using (var rd = await cmd.ExecuteReaderAsync($@"
+                    SELECT
+                        ""B"".""Path"",
+                        ""C"".""Length""
+                    FROM
+                        ""{m_tablename}"" A,
+                        ""File"" B,
+                        ""Blockset"" C
+                    WHERE
+                        ""A"".""FileID"" = ""B"".""ID""
+                        AND ""B"".""BlocksetID"" = ""C"".""ID""
+                "))
                     while (await rd.ReadAsync())
                         yield return new KeyValuePair<string, long>(rd.ConvertValueToString(0) ?? "", rd.ConvertValueToInt64(1));
             }
@@ -232,11 +335,8 @@ namespace Duplicati.Library.Main.Database
                     using (var cmd = m_db.Connection.CreateCommand())
                         await cmd.ExecuteNonQueryAsync($@"DROP TABLE IF EXISTS ""{m_tablename}""");
                 }
-                catch
-                {
-                }
+                catch { }
             }
         }
-
     }
 }
