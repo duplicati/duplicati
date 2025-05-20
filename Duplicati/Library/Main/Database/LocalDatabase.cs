@@ -956,24 +956,23 @@ namespace Duplicati.Library.Main.Database
 
         public async Task<long> RegisterRemoteVolume(string name, RemoteVolumeType type, long size, RemoteVolumeState state)
         {
-            var transaction = m_connection.BeginTransaction();
-            return await RegisterRemoteVolume(name, type, state, size, new TimeSpan(0), transaction);
+            return await RegisterRemoteVolume(name, type, state, size, new TimeSpan(0));
         }
 
-        public async Task<long> RegisterRemoteVolume(string name, RemoteVolumeType type, RemoteVolumeState state, SqliteTransaction transaction)
+        public async Task<long> RegisterRemoteVolume(string name, RemoteVolumeType type, RemoteVolumeState state)
         {
-            return await RegisterRemoteVolume(name, type, state, new TimeSpan(0), transaction);
+            return await RegisterRemoteVolume(name, type, state, new TimeSpan(0));
         }
 
-        public async Task<long> RegisterRemoteVolume(string name, RemoteVolumeType type, RemoteVolumeState state, TimeSpan deleteGraceTime, SqliteTransaction transaction)
+        public async Task<long> RegisterRemoteVolume(string name, RemoteVolumeType type, RemoteVolumeState state, TimeSpan deleteGraceTime)
         {
-            return await RegisterRemoteVolume(name, type, state, -1, deleteGraceTime, transaction);
+            return await RegisterRemoteVolume(name, type, state, -1, deleteGraceTime);
         }
 
-        public async Task<long> RegisterRemoteVolume(string name, RemoteVolumeType type, RemoteVolumeState state, long size, TimeSpan deleteGraceTime, SqliteTransaction transaction)
+        public async Task<long> RegisterRemoteVolume(string name, RemoteVolumeType type, RemoteVolumeState state, long size, TimeSpan deleteGraceTime)
         {
             var r = await m_createremotevolumeCommand
-                .SetTransaction(transaction)
+                .SetTransaction(m_rtr)
                 .SetParameterValue("@OperationId", m_operationid)
                 .SetParameterValue("@Name", name)
                 .SetParameterValue("@Type", type.ToString())
@@ -984,7 +983,7 @@ namespace Duplicati.Library.Main.Database
                 .SetParameterValue("@ArchiveTime", 0)
                 .ExecuteScalarInt64Async();
 
-            await transaction.CommitAsync();
+            await m_rtr.CommitAsync();
 
             return r;
         }
@@ -2055,7 +2054,7 @@ namespace Duplicati.Library.Main.Database
             }
         }
 
-        public async Task RenameRemoteFile(string oldname, string newname, SqliteTransaction transaction)
+        public async Task RenameRemoteFile(string oldname, string newname)
         {
             //Rename the old entry, to preserve ID links
             using var cmd = await m_connection.CreateCommandAsync(@"
@@ -2063,7 +2062,7 @@ namespace Duplicati.Library.Main.Database
                 SET ""Name"" = @Newname
                 WHERE ""Name"" = @Oldname
             ");
-            var c = await cmd.SetTransaction(transaction)
+            var c = await cmd.SetTransaction(m_rtr)
                 .SetParameterValue("@Newname", newname)
                 .SetParameterValue("@Oldname", oldname)
                 .ExecuteNonQueryAsync();
@@ -2084,9 +2083,9 @@ namespace Duplicati.Library.Main.Database
 
             //Create a fake new entry with the old name and mark as deleting
             // as this ensures we will remove it, if it shows up in some later listing
-            await RegisterRemoteVolume(oldname, type, RemoteVolumeState.Deleting, transaction);
+            await RegisterRemoteVolume(oldname, type, RemoteVolumeState.Deleting);
 
-            await transaction.CommitAsync();
+            await m_rtr.CommitAsync();
         }
 
         /// <summary>
@@ -2218,19 +2217,19 @@ namespace Duplicati.Library.Main.Database
         /// <param name="fileSetId">Existing file set to update</param>
         /// <param name="isFullBackup">Full backup state</param>
         /// <param name="transaction">An optional external transaction</param>
-        public async Task UpdateFullBackupStateInFileset(long fileSetId, bool isFullBackup, SqliteTransaction transaction)
+        public async Task UpdateFullBackupStateInFileset(long fileSetId, bool isFullBackup)
         {
             using var cmd = await m_connection.CreateCommandAsync(@"
                 UPDATE ""Fileset""
                 SET ""IsFullBackup"" = @IsFullBackup
                 WHERE ""ID"" = @FilesetId
             ");
-            await cmd.SetTransaction(transaction)
+            await cmd.SetTransaction(m_rtr)
                 .SetParameterValue("@FilesetId", fileSetId)
                 .SetParameterValue("@IsFullBackup", isFullBackup ? BackupType.FULL_BACKUP : BackupType.PARTIAL_BACKUP)
                 .ExecuteNonQueryAsync();
 
-            await transaction.CommitAsync();
+            await m_rtr.CommitAsync();
         }
 
         /// <summary>
