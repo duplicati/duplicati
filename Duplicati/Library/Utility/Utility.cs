@@ -789,8 +789,33 @@ namespace Duplicati.Library.Utility
         /// <param name="default">default value</param> 
         /// <returns></returns> 
         public static int ParseIntOption(IReadOnlyDictionary<string, string?> options, string value, int @default)
+            => options.TryGetValue(value, out var opt) && int.TryParse(opt ?? string.Empty, out var result) ? result : @default;
+
+        /// <summary> 
+        /// Parses an option with long value, returning the default value if the option is not found or cannot be parsed 
+        /// </summary> 
+        /// <param name="options">The set of options to look for the setting in</param> 
+        /// <param name="value">The value to look for in the settings</param> 
+        /// <param name="default">default value</param> 
+        /// <returns></returns> 
+        public static long ParseLongOption(IReadOnlyDictionary<string, string?> options, string value, long @default)
+            => options.TryGetValue(value, out var opt) && long.TryParse(opt ?? string.Empty, out var result) ? result : @default;
+
+        /// <summary>
+        /// Parses a size option from the option set, returning the default value if the option is not found or cannot be parsed
+        /// </summary>
+        /// <param name="options">The set of options to look for the setting in</param>
+        /// <param name="value">The value to look for in the settings</param>
+        /// <param name="defaultMultiplier">Multiplier to use if the value does not have a multiplier</param>
+        /// <param name="default">The default value to return if there are no matches.</param>
+        /// <returns>The parsed or default size value.</returns>
+        public static long ParseSizeOption(IReadOnlyDictionary<string, string?> options, string value, string defaultMultiplier, string @default)
         {
-            return options.TryGetValue(value, out var opt) && int.TryParse(opt ?? string.Empty, out var result) ? result : @default;
+            var opt = options.GetValueOrDefault(value);
+            if (string.IsNullOrWhiteSpace(opt))
+                opt = @default;
+
+            return Sizeparser.ParseSize(opt, defaultMultiplier);
         }
 
         /// <summary>
